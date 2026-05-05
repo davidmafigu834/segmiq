@@ -65,23 +65,42 @@ export function CampaignsDashboard({ allClients }: { allClients: AllClient[] }) 
           <p className="mt-2 text-[14px] text-ink-secondary">Live performance across all connected ad accounts</p>
         </div>
         <div className="flex flex-col items-stretch gap-3 layout:items-end">
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <select
-              aria-label="Filter by client"
-              multiple
-              value={Array.from(selected)}
-              onChange={(e) => {
-                const opts = Array.from(e.target.selectedOptions).map((o) => o.value);
-                setSelected(new Set(opts));
-              }}
-              className="input-base min-h-[40px] w-full min-w-0 max-w-full py-1 text-sm sm:min-w-[200px]"
+          <div className="-mx-1 flex flex-wrap items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide">
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className={`h-8 shrink-0 rounded-sm px-3 text-[12px] font-medium transition-colors ${
+                selected.size === 0
+                  ? "bg-ink-primary text-white"
+                  : "border border-border bg-transparent text-ink-secondary hover:bg-surface-card-alt"
+              }`}
             >
-              {allClients.map((c) => (
-                <option key={c.id} value={c.id}>
+              All clients
+            </button>
+            {allClients.map((c) => {
+              const active = selected.has(c.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    const next = new Set(selected);
+                    if (next.has(c.id)) next.delete(c.id);
+                    else next.add(c.id);
+                    setSelected(next);
+                  }}
+                  className={`h-8 shrink-0 rounded-sm px-3 text-[12px] font-medium transition-colors ${
+                    active
+                      ? "bg-ink-primary text-white"
+                      : "border border-border bg-transparent text-ink-secondary hover:bg-surface-card-alt"
+                  }`}
+                >
                   {c.name}
-                </option>
-              ))}
-            </select>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-end gap-2">
             <select
               aria-label="Date range"
               value={datePreset}
@@ -103,7 +122,7 @@ export function CampaignsDashboard({ allClients }: { allClients: AllClient[] }) 
             </button>
           </div>
           <p className="max-w-md text-right text-[11px] text-ink-tertiary">
-            Hold Ctrl/Cmd to select multiple clients. Empty selection = all connected accounts.
+            Select clients to filter. Empty selection shows all connected accounts.
           </p>
         </div>
       </div>

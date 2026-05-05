@@ -823,7 +823,7 @@ export function AllLeadsView({
 
       {!emptyFiltered && !emptyAll ? (
         <>
-          <div className="space-y-2 md:hidden">
+          <div className="space-y-2 lg:hidden">
             {initialRows.map((lead) => (
               <div
                 key={lead.id}
@@ -903,7 +903,7 @@ export function AllLeadsView({
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto md:block">
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[960px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-border">
@@ -1016,7 +1016,7 @@ export function AllLeadsView({
       ) : null}
 
       {selectedIds.size > 0 ? (
-        <div className="safe-bottom fixed bottom-4 left-1/2 z-40 flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 flex-col items-stretch gap-2 rounded-2xl border border-border bg-surface-sidebar px-4 py-3 text-[var(--text-on-dark)] shadow-lg sm:bottom-6 sm:w-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 sm:rounded-full sm:px-5">
+        <div className="safe-bottom fixed bottom-20 left-1/2 z-40 flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 flex-col items-stretch gap-2 rounded-2xl border border-border bg-surface-sidebar px-4 py-3 text-[var(--text-on-dark)] shadow-lg layout:bottom-6 sm:w-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 sm:rounded-full sm:px-5">
           <span className="text-center text-sm sm:text-left">{selectedIds.size} selected</span>
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <button type="button" className="min-h-11 flex-1 rounded-md px-3 text-sm hover:bg-white/10 sm:min-h-0 sm:flex-none" onClick={() => setReassignOpen(true)}>

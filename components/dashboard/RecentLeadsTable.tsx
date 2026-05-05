@@ -77,8 +77,8 @@ export function RecentLeadsTable({
         label: "Name",
         mobilePrimary: true,
         render: (r) => (
-          <div>
-            <div className="text-[13px] font-medium text-ink-primary">{r.name ?? "—"}</div>
+          <div className="min-w-0">
+            <div className="truncate text-[13px] font-medium text-ink-primary">{r.name ?? "—"}</div>
             <div className="font-mono text-[11px] text-ink-tertiary">{r.phone ?? "—"}</div>
           </div>
         ),
@@ -86,6 +86,7 @@ export function RecentLeadsTable({
       {
         key: "client",
         label: "Client",
+        width: "160px",
         render: (r) => (
           <div className="flex min-w-0 items-center gap-1.5">
             <ClientAvatar name={r.clientName} size={20} />
@@ -94,27 +95,28 @@ export function RecentLeadsTable({
         ),
       },
       {
-        key: "budget",
-        label: "Budget",
-        render: (r) => (
-          <span className="font-mono text-[13px] tabular-nums text-ink-primary">
-            {r.budget != null && r.budget !== "" ? r.budget : <span className="text-ink-tertiary">—</span>}
-          </span>
-        ),
-      },
-      {
         key: "source",
         label: "Source",
-        render: (r) => <SourceCell source={r.source} />,
+        width: "140px",
+        render: (r) => (
+          <div className="flex flex-col gap-0.5">
+            <SourceCell source={r.source} />
+            {r.budget != null && r.budget !== "" ? (
+              <span className="font-mono text-[11px] text-ink-tertiary">{r.budget}</span>
+            ) : null}
+          </div>
+        ),
       },
       {
         key: "status",
         label: "Status",
+        width: "110px",
         render: (r) => <StatusPill status={r.status} />,
       },
       {
         key: "assigned",
         label: "Assigned",
+        width: "160px",
         render: (r) => (
           <div className="flex min-w-0 items-center gap-2">
             {r.assigneeFullName ? <ClientAvatar name={r.assigneeFullName} size={24} /> : null}
@@ -125,6 +127,7 @@ export function RecentLeadsTable({
       {
         key: "time",
         label: "Time",
+        width: "80px",
         render: (r) => <span className="font-mono text-[11px] text-ink-tertiary">{formatTimeAgo(r.createdAt)}</span>,
       },
     ],

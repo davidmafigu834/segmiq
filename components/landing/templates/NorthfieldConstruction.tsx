@@ -77,7 +77,7 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
         <section className={styles.nfHero}>
           <div>
             <p className={styles.nfEyebrow}>
-              <EditableZone path="hero.eyebrow" mode="text" label="Eyebrow">
+              <EditableZone path="hero.eyebrow" mode="text" label="Eyebrow" as="span">
                 <span>{content.hero.eyebrow}</span>
               </EditableZone>
             </p>
@@ -133,13 +133,13 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
               </EditableZone>
             </div>
             <p className={styles.nfQuoteSub}>
-              <EditableZone path="quote_card.subtitle" mode="text" label="Form subtitle">
+              <EditableZone path="quote_card.subtitle" mode="text" label="Form subtitle" as="span">
                 {content.quote_card.subtitle}
               </EditableZone>
             </p>
             <div className="nfFormSlot">{leadFormSlot}</div>
             <p className={styles.nfQuoteSub} style={{ marginTop: "0.75rem", marginBottom: 0 }}>
-              <EditableZone path="quote_card.caption" mode="text" label="Form caption">
+              <EditableZone path="quote_card.caption" mode="text" label="Form caption" as="span">
                 {content.quote_card.caption}
               </EditableZone>
             </p>
@@ -231,7 +231,7 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
                   ) : null}
                 </h3>
                 <p style={{ marginTop: "0.65rem", fontSize: "0.9rem", lineHeight: 1.55, opacity: 0.78 }}>
-                  <EditableZone path={`services.items[${idx}].description`} mode="textarea" label="Service description">
+                  <EditableZone path={`services.items[${idx}].description`} mode="textarea" label="Service description" as="span">
                     {svc.description}
                   </EditableZone>
                 </p>
@@ -285,24 +285,24 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
                     </EditableZone>
                   </h3>
                   <p style={{ fontSize: "0.85rem", marginTop: "0.35rem", opacity: 0.8 }}>
-                    <EditableZone path={`projects.items[${idx}].type_heading`} mode="text" label="Type heading">
+                    <EditableZone path={`projects.items[${idx}].type_heading`} mode="text" label="Type heading" as="span">
                       <strong>{pr.type_heading}</strong>
                     </EditableZone>
                     <br />
-                    <EditableZone path={`projects.items[${idx}].type_detail`} mode="text" label="Type detail">
+                    <EditableZone path={`projects.items[${idx}].type_detail`} mode="text" label="Type detail" as="span">
                       {pr.type_detail}
                     </EditableZone>
                   </p>
                   <p style={{ fontSize: "0.8rem", marginTop: "0.5rem", opacity: 0.65 }}>
-                    <EditableZone path={`projects.items[${idx}].completed_heading`} mode="text" label="Completed heading">
+                    <EditableZone path={`projects.items[${idx}].completed_heading`} mode="text" label="Completed heading" as="span">
                       <strong>{pr.completed_heading}</strong>
                     </EditableZone>{" "}
-                    <EditableZone path={`projects.items[${idx}].completed_detail`} mode="text" label="Completed detail">
+                    <EditableZone path={`projects.items[${idx}].completed_detail`} mode="text" label="Completed detail" as="span">
                       {pr.completed_detail}
                     </EditableZone>
                   </p>
                   <p style={{ marginTop: "auto", paddingTop: "0.75rem", fontFamily: "var(--font-fraunces)", fontSize: "1.25rem" }}>
-                    <EditableZone path={`projects.items[${idx}].value`} mode="text" label="Project value">
+                    <EditableZone path={`projects.items[${idx}].value`} mode="text" label="Project value" as="span">
                       {pr.value}
                     </EditableZone>
                   </p>
@@ -343,7 +343,7 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
                   ) : null}
                 </h3>
                 <p style={{ marginTop: "0.5rem", fontSize: "0.88rem", lineHeight: 1.55, opacity: 0.78 }}>
-                  <EditableZone path={`process.steps[${idx}].description`} mode="textarea" label="Step description">
+                  <EditableZone path={`process.steps[${idx}].description`} mode="textarea" label="Step description" as="span">
                     {st.description}
                   </EditableZone>
                 </p>
@@ -377,12 +377,12 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
               </EditableZone>
             </div>
             <p style={{ marginTop: "0.5rem", fontWeight: 600 }}>
-              <EditableZone path="testimonial.author_name" mode="text" label="Author name">
+              <EditableZone path="testimonial.author_name" mode="text" label="Author name" as="span">
                 {content.testimonial.author_name}
               </EditableZone>
             </p>
             <p style={{ fontSize: "0.85rem", opacity: 0.65 }}>
-              <EditableZone path="testimonial.author_role" mode="text" label="Author role">
+              <EditableZone path="testimonial.author_role" mode="text" label="Author role" as="span">
                 {content.testimonial.author_role}
               </EditableZone>
             </p>
@@ -399,17 +399,17 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
             </EditableZone>
           </h2>
           <p style={{ marginTop: "0.75rem", maxWidth: "40rem", marginInline: "auto", opacity: 0.75 }}>
-            <EditableZone path="cta.subtitle" mode="textarea" label="CTA subtitle">
+            <EditableZone path="cta.subtitle" mode="textarea" label="CTA subtitle" as="span">
               {content.cta.subtitle}
             </EditableZone>
           </p>
           <p style={{ marginTop: "1.25rem", fontFamily: "var(--font-fraunces)", fontSize: "1.35rem" }}>
-            <EditableZone path="cta.phone_display" mode="text" label="CTA phone">
+            <EditableZone path="cta.phone_display" mode="text" label="CTA phone" as="span">
               {content.cta.phone_display}
             </EditableZone>
           </p>
           <p style={{ marginTop: "0.5rem", fontSize: "0.85rem", opacity: 0.65, whiteSpace: "pre-line" }}>
-            <EditableZone path="cta.hours_text" mode="textarea" label="Hours">
+            <EditableZone path="cta.hours_text" mode="textarea" label="Hours" as="span">
               {content.cta.hours_text}
             </EditableZone>
           </p>
@@ -426,7 +426,7 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
 
         <footer className={styles.nfFooter}>
           <p style={{ maxWidth: "36rem", marginBottom: "1.5rem", lineHeight: 1.55, opacity: 0.78 }}>
-            <EditableZone path="footer.tagline" mode="textarea" label="Footer tagline">
+            <EditableZone path="footer.tagline" mode="textarea" label="Footer tagline" as="span">
               {content.footer.tagline}
             </EditableZone>
           </p>
@@ -449,7 +449,7 @@ export function NorthfieldConstruction({ content, theme, leadFormSlot, isPreview
             ))}
           </div>
           <p style={{ marginTop: "1.5rem", fontSize: "0.85rem", opacity: 0.55 }}>
-            <EditableZone path="footer.copyright" mode="text" label="Copyright">
+            <EditableZone path="footer.copyright" mode="text" label="Copyright" as="span">
               {content.footer.copyright}
             </EditableZone>
           </p>

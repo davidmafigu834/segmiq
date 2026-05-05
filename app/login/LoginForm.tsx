@@ -90,6 +90,10 @@ function LoginFormInner() {
         </button>
       </form>
       <p className="mt-8 text-center text-xs text-ink-tertiary">Accounts are created by your agency admin.</p>
+      <div className="mt-3 flex justify-center gap-4 text-xs text-ink-tertiary">
+        <a href="/legal/privacy" className="hover:text-ink-primary">Privacy Policy</a>
+        <a href="/legal/terms" className="hover:text-ink-primary">Terms of Service</a>
+      </div>
     </div>
   );
 }

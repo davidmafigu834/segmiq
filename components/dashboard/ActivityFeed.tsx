@@ -52,6 +52,29 @@ export function ActivityFeed() {
         </div>
       </div>
 
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--border)] pb-3">
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-tertiary">
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: "#3B82F6" }} aria-hidden />
+          New lead
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-tertiary">
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: "#DC2626" }} aria-hidden />
+          Flagged
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-tertiary">
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: "#F59E0B" }} aria-hidden />
+          Follow-up
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-tertiary">
+          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: "#10B981" }} aria-hidden />
+          Contacted
+        </span>
+        <span className="flex items-center gap-1.5 text-[11px] text-ink-tertiary">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden />
+          Deal won
+        </span>
+      </div>
+
       <div className="border-l border-[var(--border)]">
         <ul className="relative m-0 list-none p-0">
           <AnimatePresence initial={false}>

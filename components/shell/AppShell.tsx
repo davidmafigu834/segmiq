@@ -10,6 +10,7 @@ import { NewLeadModal } from "@/components/agency/NewLeadModal";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { AgencySidebar } from "./AgencySidebar";
 import { AgencyHeaderClock } from "./AgencyHeaderClock";
+import { ShellIcon } from "./shell-icons";
 import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
 
 export type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
@@ -267,10 +268,35 @@ export function AppShell({
           </header>
         )}
 
-        <main className="flex-1 overflow-x-hidden px-4 py-6 md:px-6 md:py-8 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-10 layout:py-10">
+        <main className="flex-1 overflow-x-hidden px-4 pt-6 pb-28 md:px-6 md:pt-8 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-10 layout:pt-10">
           {children}
         </main>
       </div>
+
+      <nav
+        aria-label="Bottom navigation"
+        className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--surface-sidebar-border)] bg-surface-sidebar layout:hidden"
+      >
+        {primaryNav.slice(0, 5).map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium leading-none ${
+              navActive(item.href)
+                ? "text-accent"
+                : "text-[var(--text-on-dark-dim)]"
+            }`}
+          >
+            <ShellIcon name={item.icon} className="h-5 w-5 shrink-0" />
+            <span className="mt-0.5 max-w-[56px] truncate text-center leading-tight">{item.label}</span>
+            {item.badge != null && item.badge > 0 ? (
+              <span className="absolute right-1/2 top-1.5 flex min-w-[16px] translate-x-4 items-center justify-center rounded-full bg-accent px-1 font-mono text-[9px] font-bold text-accent-ink">
+                {item.badge > 99 ? "99+" : item.badge}
+              </span>
+            ) : null}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

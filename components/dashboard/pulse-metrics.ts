@@ -33,10 +33,8 @@ export function buildPulseMetrics(props: {
   avgResponseDeltaMinutes: number | null;
 }): PulseBarMetric[] {
   let d1: string;
-  let darkMuted = false;
   if (props.leadsDeltaNeutral) {
     d1 = "No leads today";
-    darkMuted = true;
   } else {
     const delta = props.dayDeltaPct;
     const arrow = delta > 0 ? "↗" : delta < 0 ? "↘" : "·";
@@ -81,10 +79,10 @@ export function buildPulseMetrics(props: {
     {
       eyebrow: "Leads today",
       value: String(props.leadsToday),
-      variant: "dark",
+      variant: "light",
       deltaLine: d1,
-      darkDeltaMuted: darkMuted,
       deltaPlain: props.leadsDeltaNeutral,
+      deltaKind: props.leadsDeltaNeutral ? "neutral" : props.dayDeltaPct > 0 ? "positive" : props.dayDeltaPct < 0 ? "negative" : "neutral",
     },
     {
       eyebrow: "Contact rate",

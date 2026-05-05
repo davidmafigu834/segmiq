@@ -32,30 +32,40 @@ export function DeviceFrame({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
     const resize = () => {
-      const container = containerRef.current;
-      if (!container) return;
       const availWidth = container.clientWidth - 64;
-      const nextScale = availWidth < targetWidth ? availWidth / targetWidth : 1;
-      setScale(nextScale);
+      const availHeight = container.clientHeight - 64;
+      const scaleX = availWidth / targetWidth;
+      const scaleY = availHeight / targetHeight;
+      const next = Math.min(scaleX, scaleY, 1);
+      setScale(next > 0 ? next : 1);
     };
     resize();
-    const el = containerRef.current;
-    if (!el) return;
     const observer = new ResizeObserver(resize);
-    observer.observe(el);
+    observer.observe(container);
     return () => observer.disconnect();
-  }, [mode, targetWidth]);
+  }, [mode, targetWidth, targetHeight]);
+
+  const radius = mode === "mobile" ? 24 : mode === "tablet" ? 16 : 8;
 
   return (
-    <div ref={containerRef} className="flex min-h-0 flex-1 items-start justify-center overflow-hidden p-8">
+    <div
+      ref={containerRef}
+      className="relative min-h-0 flex-1 overflow-hidden"
+    >
       <div
-        className="origin-top overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-sm"
+        className="overflow-hidden border border-[var(--border)] bg-white shadow-sm"
         style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
           width: targetWidth,
           height: targetHeight,
-          transform: `scale(${scale})`,
-          marginBottom: targetHeight * (1 - scale) * -1,
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          transformOrigin: "center center",
+          borderRadius: radius,
         }}
       >
         <iframe
@@ -63,7 +73,7 @@ export function DeviceFrame({
           key={`${src}-${mode}`}
           title="Landing preview"
           src={src}
-          className="h-full w-full border-0"
+          className="block border-0"
           style={{ width: targetWidth, height: targetHeight }}
           onLoad={onLoad}
         />

@@ -7,6 +7,7 @@ export type ResponsiveTableColumn<T> = {
   mobilePrimary?: boolean;
   mobileHidden?: boolean;
   align?: "left" | "right";
+  width?: string;
 };
 
 export function ResponsiveTable<T>({
@@ -28,12 +29,13 @@ export function ResponsiveTable<T>({
 
   return (
     <>
-      <table className="hidden w-full md:table">
+      <table className="hidden w-full lg:table">
         <thead>
           <tr className="border-b border-border-strong">
             {columns.map((col) => (
               <th
                 key={col.key}
+                style={col.width ? { width: col.width } : undefined}
                 className={`py-3 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-ink-tertiary ${
                   col.align === "right" ? "text-right" : "text-left"
                 }`}
@@ -57,7 +59,7 @@ export function ResponsiveTable<T>({
                 .join(" ")}
             >
               {columns.map((col) => (
-                <td key={col.key} className={`py-3 ${col.align === "right" ? "text-right" : ""}`}>
+                <td key={col.key} style={col.width ? { width: col.width } : undefined} className={`py-3 ${col.align === "right" ? "text-right" : ""}`}>
                   {col.render(row)}
                 </td>
               ))}
@@ -66,7 +68,7 @@ export function ResponsiveTable<T>({
         </tbody>
       </table>
 
-      <div className="space-y-2 md:hidden">
+      <div className="space-y-2 lg:hidden">
         {rows.map((row) => {
           const extra = rowClassName?.(row);
           const primary = columns.filter((c) => c.mobilePrimary);

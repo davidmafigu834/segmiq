@@ -22,7 +22,8 @@ export async function GET(req: Request) {
     .limit(limit);
 
   if (error) {
-    return NextResponse.json({ error: "Failed to load notifications" }, { status: 500 });
+    console.error("[notifications GET]", error.message, error.details, error.hint);
+    return NextResponse.json({ error: error.message || "Failed to load notifications" }, { status: 500 });
   }
 
   return NextResponse.json({ notifications: data ?? [] });
