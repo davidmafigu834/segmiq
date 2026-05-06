@@ -439,6 +439,12 @@ export default function ProjectDetailPage() {
                         ref={drag.innerRef}
                         {...drag.draggableProps}
                         {...drag.dragHandleProps}
+                        onClick={() => {
+                          if (!snap.isDragging) {
+                            setLightboxIdx(idx);
+                            setCaptionDraft(m.caption ?? "");
+                          }
+                        }}
                         className={`group relative aspect-square cursor-grab overflow-hidden rounded-xl bg-white/5 active:cursor-grabbing ${snap.isDragging ? "z-10 ring-2 ring-[#D4FF4F]" : ""}`}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -446,9 +452,8 @@ export default function ProjectDetailPage() {
                           src={m.public_url}
                           alt={m.caption ?? `Photo ${idx + 1}`}
                           className="h-full w-full object-cover"
-                          onClick={() => { setLightboxIdx(idx); setCaptionDraft(m.caption ?? ""); }}
                         />
-                        {/* Hover overlay */}
+                        {/* Hover overlay — desktop only */}
                         <div className="pointer-events-none absolute inset-0 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100" />
                         {m.caption && (
                           <p className="pointer-events-none absolute bottom-2 left-2 right-2 text-[10px] text-white/80 opacity-0 transition-opacity group-hover:opacity-100">
@@ -456,8 +461,8 @@ export default function ProjectDetailPage() {
                           </p>
                         )}
                         <button
-                          onClick={() => void deleteMedia(m.id)}
-                          className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white/60 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
+                          onClick={(e) => { e.stopPropagation(); void deleteMedia(m.id); }}
+                          className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white/60 transition-opacity hover:text-red-400 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                         >
                           <X className="h-3 w-3" />
                         </button>
