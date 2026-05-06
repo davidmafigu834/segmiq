@@ -31,20 +31,25 @@ export async function generateMetadata({ params }: { params: { projectId: string
 
 export default async function CloudSharePage({ params }: { params: { projectId: string } }) {
   const supabase = createAdminClient();
+
   const { data: project } = await supabase
     .from("projects")
-    .select("*, clients(name, primary_color, slug), project_media(*)")
+    .select("*, clients(name, primary_color, slug)")
     .or(`id.eq.${params.projectId},slug.eq.${params.projectId}`)
     .eq("is_public", true)
     .maybeSingle();
 
   if (!project) notFound();
 
+  const { data: rawMedia } = await supabase
+    .from("project_media")
+    .select("id, public_url, display_order, caption")
+    .eq("project_id", project.id as string)
+    .order("display_order", { ascending: true });
+
   const client = project.clients as { name: string; primary_color: string | null; slug: string } | null;
   const accentColor = client?.primary_color ?? "#D4FF4F";
-  const media = ((project.project_media ?? []) as MediaItem[]).sort(
-    (a, b) => a.display_order - b.display_order
-  );
+  const media = (rawMedia ?? []) as MediaItem[];
   const cover = media[0]?.public_url;
 
   const profileSlug = project.client_id
