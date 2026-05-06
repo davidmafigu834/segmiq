@@ -96,7 +96,7 @@ export function NewProjectSlideOver({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-[60] flex">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -203,7 +203,7 @@ export function NewProjectSlideOver({
             )}
           </div>
 
-          <div className="border-t border-white/10 px-6 py-4">
+          <div className="border-t border-white/10 px-6 py-4 pb-24 lg:pb-4">
             <button
               type="submit"
               disabled={loading}

@@ -139,7 +139,7 @@ export default function CloudSettingsPage() {
   const profileUrl = profile?.slug ? `/p/${profile.slug}` : null;
 
   return (
-    <div className="px-6 py-6 lg:px-8">
+    <div className="px-6 py-6 pb-28 lg:px-8 lg:pb-8">
       <div className="mx-auto max-w-xl space-y-8">
 
         {/* Business profile */}

@@ -220,7 +220,7 @@ export default function CloudTeamPage() {
 
       {/* Invite slide-over */}
       {showInvite && (
-        <div className="fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-[60] flex">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowInvite(false)} />
           <div className="relative ml-auto flex h-full w-full max-w-md flex-col bg-[#111111] shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
@@ -295,7 +295,7 @@ export default function CloudTeamPage() {
                 )}
               </div>
 
-              <div className="border-t border-white/10 px-6 py-4">
+              <div className="border-t border-white/10 px-6 py-4 pb-24 lg:pb-4">
                 <button
                   type="submit"
                   disabled={inviting}
