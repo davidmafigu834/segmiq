@@ -23,14 +23,22 @@ export async function middleware(req: NextRequest) {
   if (isCloudSubdomain) {
     const path = req.nextUrl.pathname;
 
-    // Map incoming URL paths to internal /cloud/* paths
-    // e.g. / → /cloud, /login → /cloud/login, /dashboard/x → /cloud/dashboard/x
+    // Map known URL paths to internal /cloud/* paths.
+    // IMPORTANT: only rewrite explicit cloud routes — do NOT catch static files
+    // like /manifest.json, /sw.js, /icons/* (those must be served as-is).
     let cloudPath: string | null = null;
     if (path === "/") {
       cloudPath = "/cloud";
-    } else if (!path.startsWith("/cloud")) {
+    } else if (
+      path === "/login" ||
+      path === "/signup" ||
+      path === "/forgot-password" ||
+      path.startsWith("/dashboard") ||
+      path.startsWith("/share/")
+    ) {
       cloudPath = "/cloud" + path;
     }
+    // /manifest.json, /sw.js, /icons/*, /api/*, etc. pass through unchanged
 
     // Resolved internal path for auth checks
     const resolved = cloudPath ?? path;
