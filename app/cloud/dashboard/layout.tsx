@@ -54,49 +54,49 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
   const pageTitle = pageTitleFor(pathname);
 
   return (
-    <div className="flex min-h-screen bg-[var(--bg-primary)]">
+    <div className="flex min-h-screen bg-black">
       {/* Sidebar — desktop */}
-      <aside className="fixed inset-y-0 left-0 hidden w-[220px] flex-col border-r border-[var(--border)] bg-[var(--surface-sidebar)] lg:flex">
+      <aside className="fixed inset-y-0 left-0 hidden w-[220px] flex-col border-r border-white/[0.08] bg-black lg:flex">
         {/* Logo / brand */}
-        <div className="flex items-center gap-2.5 border-b border-[var(--border)] px-4 py-3">
-          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-[var(--accent)]">
+        <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-white/[0.08] px-4">
+          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-[#D4FF4F]">
             <CloudUpload className="h-3.5 w-3.5 text-black" strokeWidth={2.5} />
           </div>
-          <span className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{displayName}</span>
+          <span className="max-w-[160px] truncate text-[13px] font-medium text-white">{displayName}</span>
         </div>
 
         {/* Nav links */}
-        <nav className="flex-1 space-y-0.5 p-2">
+        <nav className="flex-1 space-y-0.5 py-2">
           {NAV.map(({ href, icon: Icon, label }) => (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-[13px] transition-colors ${
+              className={`flex h-8 items-center gap-2.5 rounded-md px-3 mx-1 text-[13px] transition-colors ${
                 isActive(href, pathname)
-                  ? "bg-[var(--surface-sidebar-elevated)] text-[var(--text-primary)] font-medium"
-                  : "font-normal text-[var(--text-secondary)] hover:bg-[var(--surface-sidebar-elevated)] hover:text-[var(--text-primary)]"
+                  ? "bg-[#111] text-white font-medium"
+                  : "text-[#888] hover:text-white hover:bg-[#111]"
               }`}
             >
-              <Icon className="h-4 w-4 flex-shrink-0" />
+              <Icon className="h-4 w-4 shrink-0" />
               {label}
             </Link>
           ))}
         </nav>
 
         {/* User + sign out */}
-        <div className="border-t border-[var(--border)] p-3">
+        <div className="p-3 border-t border-white/[0.08]">
           <div className="flex items-center gap-2.5 px-2 py-1.5">
-            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-[var(--accent)] text-[10px] font-bold text-black">
+            <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-[#D4FF4F] text-[10px] font-bold text-black">
               {initials}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] font-medium text-[var(--text-primary)]">{session?.user?.name ?? "—"}</p>
-              <p className="text-[10px] text-[var(--text-tertiary)]">{session?.role}</p>
+              <p className="truncate text-[12px] font-medium text-white">{session?.user?.name ?? "—"}</p>
+              <p className="text-[10px] text-[#555] uppercase tracking-wide">{session?.role}</p>
             </div>
           </div>
           <button
             onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
-            className="mt-0.5 flex w-full items-center gap-2.5 rounded-md px-3 py-1.5 text-[12px] text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+            className="flex w-full items-center gap-2 mt-2 px-2 py-1.5 text-[12px] text-[#555] hover:text-[#888] rounded-md hover:bg-[#111] transition-colors cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
             Sign out
@@ -107,13 +107,15 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
       {/* Content area */}
       <div className="flex min-h-screen flex-1 flex-col lg:ml-[220px]">
         {/* Top bar — desktop */}
-        <header className="sticky top-0 z-10 hidden h-12 items-center justify-between border-b border-[var(--border)] bg-[var(--bg-primary)] px-6 lg:flex">
-          <h1 className="text-[13px] font-medium text-[var(--text-primary)]">{pageTitle}</h1>
+        <header className="sticky top-0 z-10 hidden h-12 shrink-0 items-center justify-between border-b border-white/[0.08] bg-black px-4 lg:flex">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[13px] font-medium text-white">{pageTitle}</span>
+          </div>
           <Link
             href="/cloud/dashboard/upload"
-            className="btn-primary"
+            className="flex items-center gap-1.5 h-8 px-3 bg-[#D4FF4F] text-black text-[12px] font-semibold rounded-md hover:bg-[#c8f244] transition-colors"
           >
-            <Camera className="h-3.5 w-3.5" />
+            <Camera className="w-3.5 h-3.5" />
             Upload photos
           </Link>
         </header>
@@ -123,7 +125,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
       </div>
 
       {/* Bottom tab bar — mobile */}
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--border)] bg-[var(--bg-primary)] safe-bottom lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.08] bg-black safe-bottom lg:hidden">
         <div className="flex items-end">
           {NAV.map(({ href, icon: Icon, label }, idx) => {
             const active = isActive(href, pathname);

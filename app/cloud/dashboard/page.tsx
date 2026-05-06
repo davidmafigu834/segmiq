@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Camera, Plus, ArrowRight, Upload, Folder } from "lucide-react";
+import { Camera, Plus, ArrowRight, Folder } from "lucide-react";
 import { NewProjectSlideOver } from "./projects/NewProjectSlideOver";
 
 type MediaItem = { public_url: string; display_order: number };
@@ -57,21 +57,21 @@ export default function CloudDashboardHome() {
   }
 
   return (
-    <div className="px-6 py-6 lg:px-8">
+    <div className="max-w-[1100px] mx-auto px-6 py-5">
       {projects.length === 0 ? (
         /* ── Empty state ── */
         <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5">
-            <Camera className="h-8 w-8 text-[#D4FF4F]" strokeWidth={1.5} />
+          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-white/[0.08] bg-[#1a1a1a]">
+            <Camera className="h-5 w-5 text-[#888]" strokeWidth={1.5} />
           </div>
-          <h2 className="mb-2 text-xl font-semibold text-white">Add your first project</h2>
-          <p className="mb-8 max-w-xs text-sm text-white/50">
+          <h2 className="mb-2 text-[22px] font-semibold tracking-tight text-white">Add your first project</h2>
+          <p className="mb-6 max-w-xs text-[13px] text-[#555]">
             Start by creating a project for a job you&apos;re working on. Then upload photos
             straight from your phone.
           </p>
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 rounded-xl bg-[#D4FF4F] px-6 py-3 text-sm font-semibold text-black hover:bg-[#c4ef3f] transition-colors"
+            className="flex items-center gap-2 rounded-md bg-[#D4FF4F] px-4 py-2 text-[13px] font-semibold text-black hover:bg-[#c8f244] transition-colors"
           >
             <Plus className="h-4 w-4" />
             Create a project
@@ -80,45 +80,48 @@ export default function CloudDashboardHome() {
       ) : (
         <>
           {/* Recent projects */}
-          <div className="mb-8">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-white">Recent projects</h2>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-medium text-[#555] uppercase tracking-[0.08em]">01 / RECENT PROJECTS</p>
               <Link
                 href="/cloud/dashboard/projects"
-                className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors"
+                className="flex items-center gap-1 text-[12px] text-[#555] hover:text-[#888] transition-colors"
               >
-                View all <ArrowRight className="h-3 w-3" />
+                View all <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {recent.map((p) => (
                 <Link
                   key={p.id}
                   href={`/cloud/dashboard/projects/${p.id}`}
-                  className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-white/5"
+                  className="group relative rounded-lg overflow-hidden bg-[#111] border border-white/[0.08] hover:border-white/[0.15] transition-colors cursor-pointer aspect-[4/3]"
                 >
                   {cover(p) ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={cover(p)!}
                       alt={p.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">
                       <Folder className="h-8 w-8 text-white/20" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)' }}
+                  />
                   {p.category && (
-                    <span className="absolute left-2 top-2 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-medium text-white/80 backdrop-blur-sm">
+                    <span className="absolute top-2.5 left-2.5 flex h-5 items-center px-2 text-[10px] font-medium rounded bg-black/60 text-white/80 border border-white/10 backdrop-blur-sm">
                       {p.category}
                     </span>
                   )}
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="truncate text-xs font-semibold text-white">{p.title}</p>
-                    <p className="text-[10px] text-white/50">
+                  <div className="absolute bottom-2.5 left-3 right-3">
+                    <p className="text-[13px] font-semibold text-white leading-tight">{p.title}</p>
+                    <p className="text-[11px] text-white/50 mt-0.5">
                       {p.project_media?.length ?? 0} photos
                     </p>
                   </div>
@@ -128,27 +131,29 @@ export default function CloudDashboardHome() {
               {/* New project card */}
               <button
                 onClick={() => setShowNew(true)}
-                className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-transparent text-white/30 transition-colors hover:border-[#D4FF4F] hover:text-[#D4FF4F]"
+                className="flex flex-col items-center justify-center rounded-lg border border-dashed border-white/[0.12] hover:border-white/[0.25] hover:bg-white/[0.02] transition-colors cursor-pointer aspect-[4/3] gap-2"
               >
-                <Plus className="h-6 w-6" />
-                <span className="text-xs">New project</span>
+                <div className="w-8 h-8 rounded-full border border-white/[0.15] flex items-center justify-center">
+                  <Plus className="w-4 h-4 text-[#555]" />
+                </div>
+                <span className="text-[12px] text-[#555]">New project</span>
               </button>
             </div>
           </div>
 
           {/* Quick upload shortcut */}
-          <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#111111] px-5 py-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#D4FF4F]">
-                <Camera className="h-5 w-5 text-black" />
-              </div>
-              <p className="text-sm text-white/60">Upload photos to an existing project</p>
+          <div className="flex items-center gap-3 px-4 py-3 bg-[#111] border border-white/[0.08] rounded-lg hover:border-white/[0.15] transition-colors cursor-pointer">
+            <div className="w-8 h-8 rounded-md bg-[#1a1a1a] border border-white/[0.08] flex items-center justify-center shrink-0">
+              <Camera className="w-4 h-4 text-[#888]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[13px] text-[#888] font-medium">Upload photos to an existing project</p>
             </div>
             <Link
               href="/cloud/dashboard/upload"
-              className="flex items-center gap-1.5 rounded-lg bg-white/10 px-4 py-2 text-xs font-medium text-white hover:bg-white/15 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 h-7 px-3 bg-transparent border border-white/[0.15] text-[12px] text-[#888] rounded-md hover:border-white/[0.3] hover:text-white transition-colors shrink-0"
             >
-              <Upload className="h-3.5 w-3.5" />
               Upload
             </Link>
           </div>
