@@ -65,15 +65,12 @@ function LoginForm() {
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <label className="text-xs font-medium text-white/60">Password</label>
-              <button
-                type="button"
-                onClick={() =>
-                  setError("To reset your password, contact support at support@leadstaq.tech")
-                }
+              <Link
+                href="/cloud/forgot-password"
                 className="text-xs text-white/40 hover:text-white/70 transition-colors"
               >
                 Forgot password?
-              </button>
+              </Link>
             </div>
             <div className="relative">
               <input

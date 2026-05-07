@@ -33,6 +33,7 @@ export async function middleware(req: NextRequest) {
       path === "/login" ||
       path === "/signup" ||
       path === "/forgot-password" ||
+      path === "/reset-password" ||
       path.startsWith("/dashboard") ||
       path.startsWith("/share/")
     ) {
@@ -49,6 +50,8 @@ export async function middleware(req: NextRequest) {
       resolved === "/cloud/login" ||
       resolved === "/cloud/signup" ||
       resolved === "/cloud/forgot-password" ||
+      resolved === "/cloud/reset-password" ||
+      resolved === "/cloud/help" ||
       resolved.startsWith("/cloud/share/");
 
     if (!isCloudPublic) {
@@ -117,6 +120,8 @@ export async function middleware(req: NextRequest) {
     path === "/cloud/login" ||
     path === "/cloud/signup" ||
     path === "/cloud/forgot-password" ||
+    path === "/cloud/reset-password" ||
+    path === "/cloud/help" ||
     path.startsWith("/cloud/share/");
 
   if (isPublic) return NextResponse.next();

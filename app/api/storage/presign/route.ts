@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { generatePresignedUploadUrl, generateMediaKey, generateHeroKey, generateTestimonialPhotoKey, getPublicUrl } from "@/lib/storage/r2";
 
+function generateLogoKey(clientId: string, filename: string): string {
+  const ext = filename.split(".").pop() ?? "png";
+  return `clients/${clientId}/logo/${Date.now()}.${ext}`;
+}
+
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"];
 
 export async function POST(req: Request) {
@@ -16,7 +21,7 @@ export async function POST(req: Request) {
     contentType: string;
     clientId: string;
     projectId?: string;
-    purpose?: "hero" | "media" | "testimonial";
+    purpose?: "hero" | "media" | "testimonial" | "logo";
   };
 
   if (session.role !== "AGENCY_ADMIN" && session.clientId !== clientId) {
@@ -42,6 +47,8 @@ export async function POST(req: Request) {
     key = generateHeroKey(clientId, filename);
   } else if (purpose === "testimonial") {
     key = generateTestimonialPhotoKey(clientId, filename);
+  } else if (purpose === "logo") {
+    key = generateLogoKey(clientId, filename);
   } else {
     if (!projectId) return NextResponse.json({ error: "projectId is required for media uploads" }, { status: 400 });
     key = generateMediaKey(clientId, projectId, filename);

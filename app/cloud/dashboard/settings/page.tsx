@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive } from "lucide-react";
+import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive, Droplets } from "lucide-react";
 
 type ClientData = {
   id: string;
@@ -47,14 +47,30 @@ export default function CloudSettingsPage() {
   const [pwSaved, setPwSaved] = useState(false);
 
   const [togglingPublish, setTogglingPublish] = useState(false);
-  const [stats, setStats] = useState<{ total_bytes: number; total_photos: number; total_projects: number } | null>(null);
+  const [stats, setStats] = useState<{
+    plan: string; limit_bytes: number; total_bytes: number;
+    total_photos: number; total_projects: number; pct: number;
+  } | null>(null);
+
+  type WatermarkSettings = {
+    enabled: boolean;
+    position: "bottom-right" | "bottom-left" | "bottom-center" | "center";
+    opacity: number;
+    size: "small" | "medium" | "large";
+  };
+  const [watermark, setWatermark] = useState<WatermarkSettings>({
+    enabled: false, position: "bottom-right", opacity: 40, size: "small",
+  });
+  const [savingWatermark, setSavingWatermark] = useState(false);
+  const [watermarkSaved, setWatermarkSaved] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!session?.clientId) return;
-    const [clientListRes, profileRes, statsRes] = await Promise.all([
+    const [clientListRes, profileRes, statsRes, watermarkRes] = await Promise.all([
       fetch(`/api/clients`),
       fetch(`/api/clients/${session.clientId}/profile`),
-      fetch(`/api/cloud/stats`),
+      fetch(`/api/cloud/storage/usage`),
+      fetch(`/api/cloud/watermark`),
     ]);
     if (clientListRes.ok) {
       const list = (await clientListRes.json()) as ClientData[];
@@ -70,8 +86,12 @@ export default function CloudSettingsPage() {
       setProfile(p);
     }
     if (statsRes.ok) {
-      const s = (await statsRes.json()) as { total_bytes: number; total_photos: number; total_projects: number };
+      const s = (await statsRes.json()) as typeof stats;
       setStats(s);
+    }
+    if (watermarkRes.ok) {
+      const w = (await watermarkRes.json()) as WatermarkSettings;
+      setWatermark(w);
     }
     setUserName(session.user?.name ?? "");
   }, [session?.clientId, session?.user?.name]);
@@ -140,6 +160,18 @@ export default function CloudSettingsPage() {
       setProfile((p) => p ? { ...p, is_published: !p.is_published } : p);
     }
     setTogglingPublish(false);
+  }
+
+  async function saveWatermark() {
+    setSavingWatermark(true);
+    await fetch("/api/cloud/watermark", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(watermark),
+    });
+    setSavingWatermark(false);
+    setWatermarkSaved(true);
+    setTimeout(() => setWatermarkSaved(false), 2000);
   }
 
   const profileUrl = profile?.slug ? `/p/${profile.slug}` : null;
@@ -326,37 +358,37 @@ export default function CloudSettingsPage() {
             <HardDrive className="h-4 w-4 text-white/40" />
             <h2 className="text-[15px] font-semibold text-white">Storage</h2>
           </div>
-
           {stats ? (() => {
-            const FREE_LIMIT_BYTES = 5 * 1024 * 1024 * 1024;
-            const usedBytes = stats.total_bytes;
-            const pct = Math.min(100, (usedBytes / FREE_LIMIT_BYTES) * 100);
-            const usedMB = usedBytes < 1024 * 1024 * 1024
-              ? `${(usedBytes / (1024 * 1024)).toFixed(1)} MB`
-              : `${(usedBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+            const limitGB = (stats.limit_bytes / (1024 * 1024 * 1024)).toFixed(0);
+            const usedStr = stats.total_bytes < 1024 * 1024 * 1024
+              ? `${(stats.total_bytes / (1024 * 1024)).toFixed(1)} MB`
+              : `${(stats.total_bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+            const planLabel = stats.plan.charAt(0).toUpperCase() + stats.plan.slice(1);
             return (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-white/40">Used storage</span>
-                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[12px] font-medium text-white/60">Free plan</span>
+                  <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[12px] font-medium text-white/60">{planLabel} plan</span>
                 </div>
                 <div className="overflow-hidden rounded-full bg-white/[0.06] h-2">
                   <div
-                    className={`h-full rounded-full transition-all ${pct > 80 ? "bg-red-400" : "bg-[#D4FF4F]"}`}
-                    style={{ width: `${pct}%` }}
+                    className={`h-full rounded-full transition-all ${stats.pct > 80 ? "bg-red-400" : "bg-[#D4FF4F]"}`}
+                    style={{ width: `${stats.pct}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between text-[13px]">
-                  <span className="text-white/40">{usedMB} of 5 GB used</span>
+                  <span className="text-white/40">{usedStr} of {limitGB} GB used</span>
                   <span className="text-white/30">{stats.total_photos.toLocaleString()} photos · {stats.total_projects} projects</span>
                 </div>
-                <div className="rounded-xl border border-[#D4FF4F]/20 bg-[#D4FF4F]/5 p-4">
-                  <p className="mb-1 text-[13px] font-semibold text-[#D4FF4F]">Upgrade to Pro</p>
-                  <p className="mb-3 text-[13px] text-white/40">Get 10 GB storage, unlimited projects, and a public portfolio page.</p>
-                  <button className="rounded-lg bg-[#D4FF4F] px-4 py-2 text-[13px] font-semibold text-black hover:bg-[#c4ef3f] transition-colors">
-                    Upgrade — $29 / mo
-                  </button>
-                </div>
+                {stats.plan === "free" && (
+                  <div className="rounded-xl border border-[#D4FF4F]/20 bg-[#D4FF4F]/5 p-4">
+                    <p className="mb-1 text-[13px] font-semibold text-[#D4FF4F]">Upgrade to Pro</p>
+                    <p className="mb-3 text-[13px] text-white/40">Get 50 GB storage, priority support, and advanced watermarking.</p>
+                    <button className="rounded-lg bg-[#D4FF4F] px-4 py-2 text-[13px] font-semibold text-black hover:bg-[#c4ef3f] transition-colors">
+                      Upgrade — $29 / mo
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })() : (
@@ -364,6 +396,94 @@ export default function CloudSettingsPage() {
               <Loader2 className="h-5 w-5 animate-spin text-white/20" />
             </div>
           )}
+        </section>
+
+        {/* Watermark */}
+        <section>
+          <h2 className="mb-4 text-[15px] font-semibold text-white">Watermark</h2>
+          <div className="rounded-2xl border border-white/10 bg-[#111111] p-5 space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[14px] font-medium text-white">Enable watermark</p>
+                <p className="text-[13px] text-white/40">Overlay your logo on shared project photos</p>
+              </div>
+              <button
+                onClick={() => setWatermark((w) => ({ ...w, enabled: !w.enabled }))}
+                className={`relative h-6 w-11 rounded-full transition-colors ${watermark.enabled ? "bg-[#D4FF4F]" : "bg-white/10"}`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${watermark.enabled ? "translate-x-5" : "translate-x-0.5"}`} />
+              </button>
+            </div>
+
+            {watermark.enabled && (
+              <>
+                <div>
+                  <label className="mb-2 block text-[13px] font-medium text-white/60">Position</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["bottom-right", "bottom-left", "bottom-center", "center"] as const).map((pos) => (
+                      <button
+                        key={pos}
+                        onClick={() => setWatermark((w) => ({ ...w, position: pos }))}
+                        className={`rounded-xl border px-3 py-2 text-[13px] font-medium transition-colors ${
+                          watermark.position === pos
+                            ? "border-[#D4FF4F]/50 bg-[#D4FF4F]/10 text-[#D4FF4F]"
+                            : "border-white/10 text-white/50 hover:bg-white/5"
+                        }`}
+                      >
+                        {pos.replace("-", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-[13px] font-medium text-white/60">
+                    Opacity — {watermark.opacity}%
+                  </label>
+                  <input
+                    type="range"
+                    min={10}
+                    max={90}
+                    step={5}
+                    value={watermark.opacity}
+                    onChange={(e) => setWatermark((w) => ({ ...w, opacity: Number(e.target.value) }))}
+                    className="w-full accent-[#D4FF4F]"
+                  />
+                  <div className="flex justify-between text-[11px] text-white/30 mt-1">
+                    <span>10%</span><span>90%</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-[13px] font-medium text-white/60">Size</label>
+                  <div className="flex gap-2">
+                    {(["small", "medium", "large"] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setWatermark((w) => ({ ...w, size: s }))}
+                        className={`flex-1 rounded-xl border py-2 text-[13px] font-medium transition-colors ${
+                          watermark.size === s
+                            ? "border-[#D4FF4F]/50 bg-[#D4FF4F]/10 text-[#D4FF4F]"
+                            : "border-white/10 text-white/50 hover:bg-white/5"
+                        }`}
+                      >
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            <button
+              onClick={() => void saveWatermark()}
+              disabled={savingWatermark}
+              className="flex items-center gap-2 rounded-xl bg-[#D4FF4F] px-5 py-2.5 text-sm font-semibold text-black disabled:opacity-60 hover:bg-[#c4ef3f]"
+            >
+              {savingWatermark ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Droplets className="h-3.5 w-3.5" />}
+              {watermarkSaved ? "Saved!" : "Save watermark"}
+            </button>
+          </div>
         </section>
       </div>
     </div>

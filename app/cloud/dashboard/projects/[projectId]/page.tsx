@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import {
-  ArrowLeft, Camera, Check, ChevronLeft, ChevronRight, Copy,
+  ArrowLeft, BarChart2, Camera, Check, ChevronLeft, ChevronRight, Copy,
   Download, Loader2, MoreVertical, Pencil, Trash2, X,
   MapPin, Calendar,
 } from "lucide-react";
@@ -351,7 +351,14 @@ export default function ProjectDetailPage() {
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-10 z-20 w-40 rounded-xl border border-white/10 bg-[#1a1a1a] py-1.5 shadow-xl">
+                <div className="absolute right-0 top-10 z-20 w-44 rounded-xl border border-white/10 bg-[#1a1a1a] py-1.5 shadow-xl">
+                  <Link
+                    href={`/cloud/dashboard/projects/${projectId}/analytics`}
+                    className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white"
+                  >
+                    <BarChart2 className="h-3.5 w-3.5" />
+                    View analytics
+                  </Link>
                   <button
                     onClick={() => void handleDeleteProject()}
                     className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10"
