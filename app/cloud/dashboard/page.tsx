@@ -24,13 +24,6 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
-function getTimeOfDay(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "morning";
-  if (h < 17) return "afternoon";
-  return "evening";
-}
-
 function getInitials(name: string): string {
   const parts = name.trim().split(" ").filter(Boolean);
   if (parts.length >= 2) return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
@@ -50,7 +43,6 @@ export default function CloudDashboardHome() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [showNew, setShowNew] = useState(false);
-  const [clientName, setClientName] = useState("");
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   const fetchProjects = useCallback(() => {
@@ -73,19 +65,6 @@ export default function CloudDashboardHome() {
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   useEffect(() => {
-    if (!session?.clientId) return;
-    fetch("/api/clients")
-      .then((r) => r.json())
-      .then((list: unknown) => {
-        if (Array.isArray(list) && list.length > 0) {
-          const client = (list as { id: string; name: string }[]).find((c) => c.id === session.clientId) ?? (list as { id: string; name: string }[])[0];
-          if (client?.name) setClientName(client.name);
-        }
-      })
-      .catch(() => {});
-  }, [session?.clientId]);
-
-  useEffect(() => {
     if (!session?.userId) return;
     fetch("/api/cloud/team")
       .then((r) => r.json())
@@ -98,7 +77,6 @@ export default function CloudDashboardHome() {
   const percentUsed = (storageUsed / storageLimit) * 100;
   const projectCount = stats?.total_projects ?? 0;
   const photoCount = stats?.total_photos ?? 0;
-  const displayName = clientName || session?.user?.name || "Leadstaq Cloud";
   const recentActivity = projects.slice(0, 2).map((p) => ({
     message: `${p.project_media?.length ?? 0} photos · ${p.title}`,
   }));
