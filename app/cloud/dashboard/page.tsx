@@ -280,6 +280,46 @@ export default function CloudDashboardHome() {
         </div>
       </div>
 
+      {/* ── STATS CARD ── */}
+      <div style={{ padding: "16px 20px 0" }}>
+        <div style={{ background: "radial-gradient(circle at 92% 88%, rgba(96,165,250,0.09) 0%, transparent 42%), linear-gradient(135deg, #0F172A 0%, #1A2744 100%)", border: "0.5px solid rgba(255,255,255,0.09)", borderRadius: 20, padding: 18 }}>
+          {/* Header row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(96,165,250,0.15)", border: "0.5px solid rgba(96,165,250,0.24)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+              </div>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: "rgba(255,255,255,0.40)", margin: 0, fontFamily: F }}>Analytics</p>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#FFFFFF", margin: 0, fontFamily: F }}>Your overview</p>
+              </div>
+            </div>
+            <button onClick={() => router.push("/cloud/dashboard/projects")} style={{ height: 34, padding: "0 16px", background: "#D4FF4F", color: "#111111", fontSize: 13, fontWeight: 700, borderRadius: 10, border: "none", cursor: "pointer", flexShrink: 0, fontFamily: F, display: "flex", alignItems: "center", gap: 4 }}>
+              View stats
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+          {/* Stats row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            {([
+              { label: "Projects", value: String(projectCount), bar: Math.min((projectCount / 20) * 100, 100), color: "#60A5FA" },
+              { label: "Photos", value: String(photoCount), bar: Math.min((photoCount / 500) * 100, 100), color: "#34D399" },
+              { label: "Storage", value: `${percentUsed}%`, bar: percentUsed, color: "#D4FF4F" },
+            ] as { label: string; value: string; bar: number; color: string }[]).map((s) => (
+              <div key={s.label}>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.42)", margin: "0 0 4px", fontFamily: F }}>{s.label}</p>
+                <p style={{ fontFamily: S, fontSize: 22, color: "#FFFFFF", margin: "0 0 8px", lineHeight: 1 }}>{s.value}</p>
+                <div style={{ height: 4, background: "rgba(255,255,255,0.10)", borderRadius: 2 }}>
+                  <div style={{ height: 4, background: s.color, borderRadius: 2, width: `${Math.max(s.bar, 3)}%`, transition: "width 0.6s ease" }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {session?.clientId && (
         <NewProjectSlideOver
           clientId={session.clientId}

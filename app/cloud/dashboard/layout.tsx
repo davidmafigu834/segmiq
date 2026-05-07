@@ -37,6 +37,17 @@ function isActive(href: string, pathname: string) {
   return pathname.startsWith(href);
 }
 
+function getPageTitle(pathname: string): string {
+  if (pathname.startsWith("/cloud/dashboard/projects/")) return "Project";
+  if (pathname.startsWith("/cloud/dashboard/projects")) return "Projects";
+  if (pathname.startsWith("/cloud/dashboard/upload")) return "Upload";
+  if (pathname.startsWith("/cloud/dashboard/team")) return "Team";
+  if (pathname.startsWith("/cloud/dashboard/settings")) return "Settings";
+  if (pathname.startsWith("/cloud/dashboard/notifications")) return "Notifications";
+  if (pathname.startsWith("/cloud/dashboard/billing")) return "Billing";
+  return "Dashboard";
+}
+
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -199,10 +210,14 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
       <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
         {/* Desktop topbar */}
         <header className="sticky top-0 z-10 hidden h-[56px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:flex">
-          <div>
-            <p className="font-cloud-body text-[12px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
-            <p className="font-cloud-display text-[20px] text-[#111111] leading-tight">{displayName}</p>
-          </div>
+          {pathname === "/cloud/dashboard" ? (
+            <div>
+              <p className="font-cloud-body text-[12px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
+              <p className="font-cloud-display text-[20px] text-[#111111] leading-tight">{displayName}</p>
+            </div>
+          ) : (
+            <p className="font-cloud-display text-[22px] text-[#111111] leading-tight">{getPageTitle(pathname)}</p>
+          )}
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/cloud/dashboard/notifications")}
@@ -226,10 +241,14 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
 
         {/* Mobile topbar */}
         <header className="sticky top-0 z-10 flex h-[72px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:hidden">
-          <div>
-            <p className="font-cloud-body text-[12px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
-            <p className="font-cloud-display text-[22px] text-[#111111] leading-tight">{displayName}</p>
-          </div>
+          {pathname === "/cloud/dashboard" ? (
+            <div>
+              <p className="font-cloud-body text-[12px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
+              <p className="font-cloud-display text-[22px] text-[#111111] leading-tight">{displayName}</p>
+            </div>
+          ) : (
+            <p className="font-cloud-display text-[22px] text-[#111111] leading-tight">{getPageTitle(pathname)}</p>
+          )}
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/cloud/dashboard/notifications")}
