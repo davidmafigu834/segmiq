@@ -105,7 +105,7 @@ export default function CloudDashboardHome() {
 
   if (status === "loading" || loading) {
     return (
-      <div style={{ display: "flex", minHeight: "60vh", alignItems: "center", justifyContent: "center", background: "#F5F5F0" }}>
+      <div style={{ display: "flex", minHeight: "60vh", alignItems: "center", justifyContent: "center", background: "#fff" }}>
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-[#0a0a0a]" />
       </div>
     );
@@ -115,13 +115,7 @@ export default function CloudDashboardHome() {
   const S = "var(--font-dm-serif), Georgia, serif";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F5F0", fontFamily: F }}>
-
-      {/* Greeting */}
-      <div style={{ padding: "20px 20px 8px" }}>
-        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#999", marginBottom: 4, fontFamily: F }}>Good {getTimeOfDay()}</p>
-        <h1 style={{ fontFamily: S, fontSize: 24, color: "#0a0a0a", lineHeight: 1.1, margin: 0 }}>{displayName}</h1>
-      </div>
+    <div style={{ minHeight: "100vh", background: "#fff", fontFamily: F }}>
 
       {/* Storage card */}
       <div style={{ padding: "0 20px 16px" }}>
@@ -129,9 +123,9 @@ export default function CloudDashboardHome() {
           <div style={{ position: "absolute", top: -30, right: -30, width: 100, height: 100, borderRadius: "50%", background: "rgba(212,255,79,0.06)" }} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
             <div>
-              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px", fontFamily: F }}>Cloud storage</p>
+              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px", fontFamily: F }}>Cloud storage</p>
               <p style={{ fontFamily: S, fontSize: 32, color: "#fff", margin: 0, lineHeight: 1 }}>{formatBytes(storageUsed)}</p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", margin: "4px 0 0", fontFamily: F }}>storage used</p>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.62)", margin: "4px 0 0", fontFamily: F }}>storage used</p>
             </div>
             <span style={{ fontSize: 10, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", padding: "5px 12px", borderRadius: 20, fontWeight: 600, fontFamily: F }}>Free plan</span>
           </div>
@@ -145,7 +139,7 @@ export default function CloudDashboardHome() {
               { label: `of ${formatBytes(storageLimit)}`, value: formatBytes(storageUsed), accent: true },
             ] as { label: string; value: string; accent?: boolean }[]).map((stat, i) => (
               <div key={stat.label} style={{ borderRight: i < 2 ? "1px solid rgba(255,255,255,0.08)" : "none", paddingRight: i < 2 ? 12 : 0, paddingLeft: i > 0 ? 12 : 0 }}>
-                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", margin: "0 0 4px", fontFamily: F }}>{stat.label}</p>
+                <p style={{ fontSize: 10, color: "rgba(255,255,255,0.62)", margin: "0 0 4px", fontFamily: F }}>{stat.label}</p>
                 <p style={{ fontFamily: S, fontSize: 20, margin: 0, lineHeight: 1, color: stat.accent ? "#D4FF4F" : "#fff" }}>{stat.value}</p>
               </div>
             ))}

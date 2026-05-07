@@ -198,7 +198,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
 
       <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
         {/* Desktop topbar */}
-        <header className="sticky top-0 z-10 hidden h-[60px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F5F5F0] px-5 lg:flex">
+        <header className="sticky top-0 z-10 hidden h-[60px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-white px-5 lg:flex">
           <div>
             <p className="font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#999990]">{getGreeting()}</p>
             <p className="font-cloud-display text-[18px] text-[#0a0a0a] leading-tight">{displayName}</p>
@@ -225,7 +225,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
         </header>
 
         {/* Mobile topbar */}
-        <header className="sticky top-0 z-10 flex h-[60px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F5F5F0] px-5 lg:hidden">
+        <header className="sticky top-0 z-10 flex h-[60px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-white px-5 lg:hidden">
           <div>
             <p className="font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#999990]">{getGreeting()}</p>
             <p className="font-cloud-display text-[20px] text-[#0a0a0a] leading-tight">{displayName}</p>
