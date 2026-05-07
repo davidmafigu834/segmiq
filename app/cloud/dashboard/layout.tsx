@@ -127,7 +127,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
   const initials = getInitials(session?.user?.name ?? "");
 
   return (
-    <div className="flex min-h-screen bg-[#F5F5F0] font-cloud-body">
+    <div className="flex min-h-screen bg-[#F7F7F8] font-cloud-body">
       {/* Sidebar — desktop only */}
       <aside className="fixed inset-y-0 left-0 hidden w-[240px] flex-col border-r border-black/[0.07] bg-white lg:flex" style={{ boxShadow: '1px 0 0 rgba(0,0,0,0.04)' }}>
         <div className="flex h-[60px] shrink-0 items-center gap-2.5 border-b border-black/[0.06] px-5">
@@ -198,25 +198,25 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
 
       <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
         {/* Desktop topbar */}
-        <header className="sticky top-0 z-10 hidden h-[60px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-white px-5 lg:flex">
+        <header className="sticky top-0 z-10 hidden h-[56px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:flex">
           <div>
-            <p className="font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#999990]">{getGreeting()}</p>
-            <p className="font-cloud-display text-[18px] text-[#0a0a0a] leading-tight">{displayName}</p>
+            <p className="font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
+            <p className="font-cloud-display text-[18px] text-[#111111] leading-tight">{displayName}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/cloud/dashboard/notifications")}
-              className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white border border-black/[0.08] text-[#666660] transition-colors hover:border-black/[0.15] hover:text-[#0a0a0a] active:scale-95 cursor-pointer"
+              className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white border border-black/[0.08] text-[#6B7280] transition-colors hover:border-black/[0.15] hover:text-[#111111] active:scale-95 cursor-pointer"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" strokeWidth={1.8} />
               {unreadCount > 0 && (
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#D4FF4F] border-2 border-[#F5F5F0]" />
+                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#D4FF4F] border-2 border-[#F7F7F8]" />
               )}
             </button>
             <Link
               href="/cloud/dashboard/upload"
-              className="flex items-center gap-1.5 h-[34px] px-4 bg-[#D4FF4F] text-black text-[12px] font-bold rounded-xl hover:bg-[#C8F244] transition-colors font-cloud-body"
+              className="flex items-center gap-1.5 h-[34px] px-4 bg-[#D4FF4F] text-[#111111] text-[12px] font-bold rounded-xl hover:bg-[#C8F244] transition-colors font-cloud-body"
             >
               <Camera className="w-3.5 h-3.5" />
               Upload
@@ -225,15 +225,15 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
         </header>
 
         {/* Mobile topbar */}
-        <header className="sticky top-0 z-10 flex h-[60px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-white px-5 lg:hidden">
+        <header className="sticky top-0 z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:hidden">
           <div>
-            <p className="font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#999990]">{getGreeting()}</p>
-            <p className="font-cloud-display text-[20px] text-[#0a0a0a] leading-tight">{displayName}</p>
+            <p className="font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
+            <p className="font-cloud-display text-[20px] text-[#111111] leading-tight">{displayName}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => router.push("/cloud/dashboard/notifications")}
-              className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white border border-black/[0.08] text-[#666660] active:scale-95 transition-transform cursor-pointer"
+              className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white border border-black/[0.08] text-[#6B7280] active:scale-95 transition-transform cursor-pointer"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" strokeWidth={1.8} />
@@ -243,7 +243,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
             </button>
             <button
               onClick={() => router.push("/cloud/dashboard/settings")}
-              className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#0a0a0a] text-[11px] font-bold text-[#D4FF4F] active:scale-95 transition-transform cursor-pointer"
+              className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] active:scale-95 transition-transform cursor-pointer"
               aria-label="Account settings"
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
@@ -257,8 +257,8 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
 
       {/* Bottom tab bar — mobile */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 bg-white border-t border-black/[0.06] flex items-center justify-around px-2 lg:hidden font-cloud-body"
-        style={{ height: 'var(--cloud-nav-height)', paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
+        className="fixed inset-x-0 bottom-0 z-50 bg-white border-t border-black/[0.08] flex items-center justify-around px-2 lg:hidden font-cloud-body"
+        style={{ paddingTop: 10, paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
       >
         {MOBILE_NAV.map(({ href, icon: Icon, label }, idx) => {
           const active = isActive(href, pathname);
@@ -271,17 +271,17 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
             >
               {isCenter ? (
                 <div
-                  className="flex items-center justify-center rounded-full bg-[#D4FF4F] -mt-5"
-                  style={{ width: 50, height: 50, boxShadow: '0 6px 20px rgba(212,255,79,0.45)' }}
+                  className="flex items-center justify-center rounded-full bg-[#D4FF4F]"
+                  style={{ width: 52, height: 52, marginTop: -22, boxShadow: '0 6px 20px rgba(212,255,79,0.45)' }}
                 >
-                  <Icon className="h-[22px] w-[22px] text-[#0a0a0a]" strokeWidth={2} />
+                  <Icon className="h-[22px] w-[22px] text-[#111111]" strokeWidth={2} />
                 </div>
               ) : (
                 <>
                   <div className="relative flex items-center justify-center h-[22px] w-[22px]">
                     <Icon
                       className="h-[22px] w-[22px]"
-                      style={{ color: active ? '#0a0a0a' : '#bbbbbb' }}
+                      style={{ color: active ? '#111111' : '#C0C0BE' }}
                       strokeWidth={active ? 2.2 : 1.8}
                     />
                     {href === "/cloud/dashboard/notifications" && unreadCount > 0 && (
@@ -291,7 +291,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
                   {label && (
                     <span
                       className="text-[9px] font-semibold"
-                      style={{ color: active ? '#0a0a0a' : '#bbbbbb' }}
+                      style={{ color: active ? '#111111' : '#C0C0BE' }}
                     >
                       {label}
                     </span>

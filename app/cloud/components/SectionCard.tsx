@@ -1,59 +1,50 @@
-type CardVariant =
-  | 'storage'
-  | 'team'
-  | 'activity'
-  | 'upload'
-  | 'storage-usage'
-  | 'watermark'
-  | 'profile'
-  | 'billing'
-  | 'stats'
-  | 'white';
+import React from "react";
 
-const gradients: Record<CardVariant, string> = {
-  storage: 'bg-[#0a0a0a]',
-  team: 'bg-gradient-to-br from-[#FFFBF0] via-[#FFF3D0] to-[#FFE8A0]',
-  activity: 'bg-gradient-to-br from-[#F5F0FF] via-[#EDE5FF] to-[#DDD0FF]',
-  upload: 'bg-gradient-to-br from-[#F0FFF8] via-[#E0FFF0] to-[#C8FFE0]',
-  'storage-usage': 'bg-gradient-to-br from-[#F0F8FF] via-[#E0F0FF] to-[#C8E4FF]',
-  watermark: 'bg-gradient-to-br from-[#FFF5F5] via-[#FFE8E8] to-[#FFD0D0]',
-  profile: 'bg-gradient-to-br from-[#FFF8F0] via-[#FFEEDD] to-[#FFE0C0]',
-  billing: 'bg-gradient-to-br from-[#F8FFE0] via-[#EEFF99] to-[#E4FF66]',
-  stats: 'bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0]',
-  white: 'bg-white',
-};
+export type SectionCardVariant =
+  | "dark"
+  | "team"
+  | "activity"
+  | "upload"
+  | "storage"
+  | "watermark"
+  | "billing"
+  | "profile"
+  | "white";
 
-const borders: Record<CardVariant, string> = {
-  storage: 'border-white/[0.06]',
-  team: 'border-[#FFD070]/30',
-  activity: 'border-[#C4A8FF]/30',
-  upload: 'border-[#60E8A0]/30',
-  'storage-usage': 'border-[#80C8FF]/30',
-  watermark: 'border-[#FFB0B0]/30',
-  profile: 'border-[#FFB870]/30',
-  billing: 'border-[#C8FF20]/40',
-  stats: 'border-[#D0D0C0]/40',
-  white: 'border-black/[0.07]',
+const VARIANT_STYLES: Record<SectionCardVariant, { bg: string; border: string }> = {
+  dark:      { bg: "#111111", border: "rgba(255,255,255,0.07)" },
+  team:      { bg: "linear-gradient(145deg, #FFFBF0 0%, #FFF3CC 100%)", border: "rgba(255,196,0,0.25)" },
+  activity:  { bg: "linear-gradient(145deg, #F3EEFF 0%, #E5D5FF 100%)", border: "rgba(139,92,246,0.22)" },
+  upload:    { bg: "linear-gradient(145deg, #EDFFF6 0%, #D0FFE8 100%)", border: "rgba(0,180,100,0.22)" },
+  storage:   { bg: "linear-gradient(145deg, #EBF5FF 0%, #D0E8FF 100%)", border: "rgba(0,112,243,0.20)" },
+  watermark: { bg: "linear-gradient(145deg, #FFF0F0 0%, #FFD9D9 100%)", border: "rgba(220,60,60,0.20)" },
+  billing:   { bg: "linear-gradient(145deg, #F5FFD9 0%, #E8FF99 100%)", border: "rgba(140,200,0,0.30)" },
+  profile:   { bg: "linear-gradient(145deg, #FFF5EB 0%, #FFE4C0 100%)", border: "rgba(210,120,0,0.22)" },
+  white:     { bg: "#FFFFFF", border: "rgba(0,0,0,0.07)" },
 };
 
 type Props = {
-  variant: CardVariant;
+  variant: SectionCardVariant;
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
+  style?: React.CSSProperties;
 };
 
-export function SectionCard({ variant, children, className, onClick }: Props) {
+export function SectionCard({ variant, children, className, onClick, style }: Props) {
+  const { bg, border } = VARIANT_STYLES[variant];
   return (
     <div
       onClick={onClick}
-      className={[
-        'rounded-[20px] border overflow-hidden',
-        gradients[variant],
-        borders[variant],
-        onClick ? 'cursor-pointer active:scale-[0.99] transition-transform' : '',
-        className ?? '',
-      ].join(' ')}
+      className={className}
+      style={{
+        background: bg,
+        border: `0.5px solid ${border}`,
+        borderRadius: 20,
+        overflow: "hidden",
+        cursor: onClick ? "pointer" : undefined,
+        ...style,
+      }}
     >
       {children}
     </div>
