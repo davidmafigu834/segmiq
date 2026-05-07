@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive, Droplets } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive, Droplets, LogOut } from "lucide-react";
 
 type ClientData = {
   id: string;
@@ -406,6 +406,16 @@ export default function CloudSettingsPage() {
               {watermarkSaved ? "Saved!" : "Save watermark"}
             </button>
           </div>
+        </section>
+        {/* Sign out */}
+        <section className="pb-4">
+          <button
+            onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
+            className="flex w-full items-center justify-center gap-2 rounded-[20px] border border-red-200/60 bg-gradient-to-br from-[#FFF5F5] via-[#FFE8E8] to-[#FFD0D0] py-4 text-[14px] font-semibold text-red-500 active:scale-[0.99] transition-transform font-cloud-body"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
         </section>
       </div>
     </div>
