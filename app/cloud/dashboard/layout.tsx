@@ -200,8 +200,8 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
         {/* Desktop topbar */}
         <header className="sticky top-0 z-10 hidden h-[56px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:flex">
           <div>
-            <p className="font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
-            <p className="font-cloud-display text-[18px] text-[#111111] leading-tight">{displayName}</p>
+            <p className="font-cloud-body text-[12px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
+            <p className="font-cloud-display text-[20px] text-[#111111] leading-tight">{displayName}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -227,8 +227,8 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
         {/* Mobile topbar */}
         <header className="sticky top-0 z-10 flex h-[56px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:hidden">
           <div>
-            <p className="font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
-            <p className="font-cloud-display text-[20px] text-[#111111] leading-tight">{displayName}</p>
+            <p className="font-cloud-body text-[12px] font-bold uppercase tracking-[0.08em] text-[#9CA3AF]">{getGreeting()}</p>
+            <p className="font-cloud-display text-[22px] text-[#111111] leading-tight">{displayName}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -290,7 +290,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
                   </div>
                   {label && (
                     <span
-                      className="text-[9px] font-semibold"
+                      className="text-[12px] font-semibold"
                       style={{ color: active ? '#111111' : '#C0C0BE' }}
                     >
                       {label}
