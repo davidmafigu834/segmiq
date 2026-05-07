@@ -136,7 +136,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
       .catch(() => {});
   }, [session?.userId, pathname]);
 
-  const displayName = businessName || session?.user?.name || "Leadstaq Cloud";
+  const displayName = businessName || "Leadstaq Cloud";
   const initials = getInitials(session?.user?.name ?? "");
 
   return (
