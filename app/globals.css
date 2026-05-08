@@ -298,6 +298,23 @@
   }
 }
 
+/* ── Fieldwork (fw) design tokens ── */
+:root {
+  --fw-soil: #1C1410;
+  --fw-lime: #D4FF4F;
+  --fw-card: #FFFFFF;
+  --fw-sunken: #F5F5F0;
+  --fw-border: rgba(28,20,16,0.07);
+  --fw-border-strong: rgba(28,20,16,0.14);
+  --fw-text-primary: #1C1410;
+  --fw-text-secondary: #6B7280;
+  --fw-text-tertiary: #9CA3AF;
+  --fw-text-muted: #B0B0A8;
+  --fw-page-x: 20px;
+  --fw-font-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
+  --fw-font-body: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
+}
+
 /* ── Cloud dashboard design tokens ── */
 :root {
   --cloud-bg: #F7F7F8;

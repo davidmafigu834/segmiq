@@ -202,16 +202,15 @@ export default function CloudProjectsPage() {
           )}
         </div>
       ) : (
-        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "0 20px" }}>
           {filtered.map((p) => {
-            const s = getProjectCardStyles(p.category);
             return (
-              <div key={p.id} className="mb-4 break-inside-avoid">
-                <div className={`relative overflow-hidden rounded-[20px] border ${s.gradient} ${s.border}`}>
+              <div key={p.id} style={{ minWidth: 0 }}>
+                <div style={{ borderRadius: 18, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", overflow: "hidden", cursor: "pointer", position: "relative" }}>
                   {/* Top row: category badge + three-dot menu */}
                   <div className="flex items-center justify-between px-3.5 pt-3.5 pb-1">
                     {p.category ? (
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold font-cloud-body ${s.badge}`}>
+                      <span className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold font-cloud-body" style={{ background: "var(--fw-sunken)", color: "var(--fw-text-secondary)" }}>
                         {p.category}
                       </span>
                     ) : <span />}
@@ -224,9 +223,10 @@ export default function CloudProjectsPage() {
                     <div className="relative ml-auto">
                       <button
                         onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
-                        className="rounded-lg bg-white/40 p-1.5 text-current hover:bg-white/60 transition-colors"
+                        className="rounded-lg p-1.5 transition-colors"
+                        style={{ background: "var(--fw-sunken)" }}
                       >
-                        <MoreVertical className={`h-4 w-4 ${s.text}`} />
+                        <MoreVertical className="h-4 w-4" style={{ color: "var(--fw-text-secondary)" }} />
                       </button>
                       {menuOpen === p.id && (
                         <div className="absolute right-0 top-8 z-20 w-44 rounded-xl border border-black/[0.08] bg-white py-1.5 shadow-xl">
@@ -267,7 +267,7 @@ export default function CloudProjectsPage() {
 
                   {/* Cover photo */}
                   <Link href={`/cloud/dashboard/projects/${p.id}`}>
-                    <div className="mx-3.5 rounded-xl overflow-hidden bg-white/30" style={{ height: 110 }}>
+                    <div className="overflow-hidden" style={{ height: 120, background: "var(--fw-sunken)" }}>
                       {cover(p) ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
@@ -277,15 +277,15 @@ export default function CloudProjectsPage() {
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center">
-                          <Folder className={`h-8 w-8 opacity-30 ${s.text}`} />
+                          <Folder className="h-8 w-8" style={{ color: "var(--fw-text-muted)" }} />
                         </div>
                       )}
                     </div>
 
                     {/* Info */}
                     <div className="px-3.5 py-3">
-                      <p className={`font-cloud-display text-[15px] leading-tight truncate ${s.text}`}>{p.title}</p>
-                      <div className={`mt-1 flex items-center gap-2 text-[11px] font-cloud-body ${s.subtext}`}>
+                      <p className="font-cloud-display text-[15px] leading-tight truncate" style={{ color: "var(--fw-text-primary)" }}>{p.title}</p>
+                      <div className="mt-1 flex items-center gap-2 text-[11px] font-cloud-body" style={{ color: "var(--fw-text-tertiary)" }}>
                         {p.location && <span className="truncate">{p.location}</span>}
                         <span className="ml-auto flex items-center gap-1">
                           {p.project_media?.length ?? 0} photos
@@ -300,17 +300,13 @@ export default function CloudProjectsPage() {
           })}
 
           {/* New project dashed card */}
-          <div className="mb-4 break-inside-avoid">
-            <button
-              onClick={() => setShowNew(true)}
-              className="w-full rounded-[20px] border-2 border-dashed border-[#D8D8D0] bg-[#EEEEE8] flex flex-col items-center justify-center gap-3 py-10 hover:border-[#C0C0B8] transition-colors active:scale-[0.99]"
-            >
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center" style={{ boxShadow: 'var(--cloud-shadow-card)' }}>
-                <Plus className="w-4 h-4 text-[#999990]" />
-              </div>
-              <span className="text-[13px] text-[#999990] font-cloud-body">New project</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setShowNew(true)}
+            style={{ borderRadius: 18, border: "1.5px dashed rgba(28,20,16,0.14)", background: "var(--fw-sunken)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "24px 12px", gridColumn: "span 2", minHeight: 80, maxHeight: 100, width: "100%" }}
+          >
+            <Plus className="w-4 h-4" style={{ color: "var(--fw-text-muted)" }} />
+            <span className="text-[12px] font-cloud-body" style={{ color: "var(--fw-text-tertiary)" }}>New project</span>
+          </button>
         </div>
       )}
 

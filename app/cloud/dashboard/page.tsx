@@ -109,33 +109,19 @@ export default function CloudDashboardHome() {
       {/* ── QUICK ACTION PILLS ── */}
       <div style={{ padding: "12px 20px 16px", display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", width: "100%" } as React.CSSProperties}>
         {([
-          { label: "New project",   Icon: Plus,      bg: "#D4FF4F", color: "#0a0a0a", action: () => setShowNew(true) },
-          { label: "All projects",  Icon: FolderOpen, bg: "#FFE8A0", color: "#7A3800", href: "/cloud/dashboard/projects" },
-          { label: "Upload photos", Icon: Camera,     bg: "#C8FFE0", color: "#004D30", href: "/cloud/dashboard/upload" },
-          { label: "Invite team",   Icon: UserPlus,   bg: "#DDD0FF", color: "#2D1B6B", href: "/cloud/dashboard/team" },
-        ] as { label: string; Icon: React.ElementType; bg: string; color: string; href?: string; action?: () => void }[]).map((a) => (
+          { label: "New project", Icon: Plus,      bg: "var(--fw-soil)", color: "var(--fw-lime)",         border: "none",                             action: () => setShowNew(true) },
+          { label: "Projects",     Icon: FolderOpen, bg: "var(--fw-card)", color: "var(--fw-text-primary)", border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/projects" },
+          { label: "Upload",       Icon: Camera,     bg: "var(--fw-lime)", color: "var(--fw-soil)",         border: "none",                             href: "/cloud/dashboard/upload" },
+          { label: "Invite",       Icon: UserPlus,   bg: "var(--fw-card)", color: "var(--fw-text-primary)", border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/team" },
+        ] as { label: string; Icon: React.ElementType; bg: string; color: string; border: string; href?: string; action?: () => void }[]).map((a) => (
           <button
             key={a.label}
             onClick={a.action ? a.action : () => router.push(a.href!)}
-            style={{ display: "flex", alignItems: "center", gap: 8, height: 40, padding: "0 16px", background: a.bg, color: a.color, borderRadius: 20, border: "none", cursor: "pointer", flexShrink: 0, fontFamily: F, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}
+            style={{ display: "flex", alignItems: "center", gap: 8, height: 40, padding: "0 16px", background: a.bg, color: a.color, borderRadius: 20, border: a.border, cursor: "pointer", flexShrink: 0, fontFamily: F, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}
           >
             <a.Icon size={15} strokeWidth={2.2} aria-hidden="true" />
             {a.label}
           </button>
-        ))}
-      </div>
-
-      {/* ── STATS BAR ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, margin: "0 20px 16px" }}>
-        {([
-          { label: "Projects", value: String(projectCount) },
-          { label: "Photos",   value: String(photoCount) },
-          { label: "Storage",  value: formatBytes(storageUsed) },
-        ] as { label: string; value: string }[]).map((stat) => (
-          <div key={stat.label} style={{ background: "#FFFFFF", borderRadius: 16, border: "0.5px solid rgba(0,0,0,0.07)", padding: "14px 14px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-            <p style={{ fontFamily: S, fontSize: 26, color: "#111111", margin: "0 0 5px", lineHeight: 1 }}>{stat.value}</p>
-            <p style={{ fontSize: 10, color: "#9CA3AF", margin: 0, fontFamily: F, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>{stat.label}</p>
-          </div>
         ))}
       </div>
 
@@ -190,14 +176,14 @@ export default function CloudDashboardHome() {
 
       {projects.length === 0 ? (
         <div style={{ padding: "0 20px" }}>
-          <div style={{ background: "linear-gradient(145deg, #EDFFF6 0%, #D0FFE8 100%)", border: "0.5px solid rgba(0,180,100,0.22)", borderRadius: 20, padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(255,255,255,0.65)", border: "0.5px solid rgba(0,180,100,0.25)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <Camera size={26} color="#00613A" strokeWidth={1.5} />
+          <div style={{ background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", borderRadius: 20, padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: "var(--fw-sunken)", border: "0.5px solid var(--fw-border-strong)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+              <Camera size={26} color="var(--fw-text-secondary)" strokeWidth={1.5} />
             </div>
-            <p style={{ fontFamily: S, fontSize: 24, color: "#004D30", margin: "0 0 8px", lineHeight: 1.25 }}>Add your first project</p>
-            <p style={{ fontSize: 16, color: "#007A4A", lineHeight: 1.6, margin: "0 0 24px", maxWidth: 260, fontFamily: F }}>Create a project for a job you are working on, then upload photos straight from your phone.</p>
-            <button onClick={() => setShowNew(true)} style={{ display: "flex", alignItems: "center", gap: 8, height: 48, padding: "0 24px", background: "#D4FF4F", color: "#111111", fontSize: 16, fontWeight: 700, borderRadius: 12, border: "none", cursor: "pointer", fontFamily: F }}>
-              <Plus size={16} strokeWidth={2.5} />
+            <p style={{ fontFamily: S, fontSize: 24, color: "var(--fw-text-primary)", margin: "0 0 8px", lineHeight: 1.25 }}>Add your first project</p>
+            <p style={{ fontSize: 14, color: "var(--fw-text-tertiary)", lineHeight: 1.6, margin: "0 0 24px", maxWidth: 260, fontFamily: F }}>Create a project for a job you are working on, then upload photos straight from your phone.</p>
+            <button onClick={() => setShowNew(true)} style={{ display: "flex", alignItems: "center", gap: 8, height: 44, padding: "0 20px", background: "var(--fw-soil)", color: "var(--fw-lime)", fontSize: 14, fontWeight: 700, borderRadius: 12, border: "none", cursor: "pointer", fontFamily: F }}>
+              <Plus size={15} strokeWidth={2.5} />
               Create a project
             </button>
           </div>
@@ -210,7 +196,7 @@ export default function CloudDashboardHome() {
             const pCount = p.project_media?.length ?? 0;
             return (
               <div key={p.id} onClick={() => router.push(`/cloud/dashboard/projects/${p.id}`)}
-                   style={{ background: ps.gradient, border: `0.5px solid ${ps.border}`, borderRadius: 20, overflow: "hidden", minWidth: 160, width: 160, flexShrink: 0, cursor: "pointer" }}>
+                   style={{ background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", borderRadius: 20, overflow: "hidden", minWidth: 160, width: 160, flexShrink: 0, cursor: "pointer" }}>
                 <div style={{ margin: "10px 10px 0", borderRadius: 14, overflow: "hidden", position: "relative" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 3, height: 130 }}>
                     {([0, 1, 2, 3] as const).map((idx) => (
@@ -233,8 +219,8 @@ export default function CloudDashboardHome() {
                   )}
                 </div>
                 <div style={{ padding: "10px 12px 14px" }}>
-                  <p style={{ fontFamily: S, fontSize: 14, color: ps.titleColor, margin: "0 0 4px", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</p>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: ps.subtextColor, background: "rgba(255,255,255,0.6)", padding: "2px 7px", borderRadius: 20, fontFamily: F }}>{p.category || "Project"}</span>
+                  <p style={{ fontFamily: S, fontSize: 14, color: "var(--fw-text-primary)", margin: "0 0 4px", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</p>
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--fw-text-tertiary)", background: "var(--fw-sunken)", padding: "2px 7px", borderRadius: 20, fontFamily: F }}>{p.category || "Project"}</span>
                 </div>
               </div>
             );
@@ -252,61 +238,59 @@ export default function CloudDashboardHome() {
       <div style={{ padding: "20px 20px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
 
         {/* Team card */}
-        <div style={{ borderRadius: 20, background: "linear-gradient(160deg, #FFFBF0 0%, #FFF3D0 60%, #FFE8A0 100%)", border: "0.5px solid rgba(255,208,112,0.4)", padding: 20, display: "flex", flexDirection: "column" }}>
+        <div style={{ borderRadius: 20, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", padding: 20, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#BF7020", margin: 0, fontFamily: F }}>Team</p>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.6)", display: "flex", alignItems: "center", justifyContent: "center", border: "0.5px solid rgba(255,180,50,0.3)" }}>
-              <Users size={14} color="#BF7020" strokeWidth={1.8} />
+            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--fw-text-tertiary)", margin: 0, fontFamily: F }}>Team</p>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--fw-sunken)", display: "flex", alignItems: "center", justifyContent: "center", border: "0.5px solid var(--fw-border-strong)" }}>
+              <Users size={14} color="var(--fw-text-secondary)" strokeWidth={1.8} />
             </div>
           </div>
-          <p style={{ fontFamily: S, fontSize: 48, color: "#7A3800", margin: "0 0 4px", lineHeight: 1 }}>{teamMembers.length}</p>
-          <p style={{ fontSize: 12, color: "#BF7020", margin: "0 0 16px", fontFamily: F }}>{teamMembers.length === 1 ? "team member" : "team members"}</p>
+          <p style={{ fontFamily: S, fontSize: 48, color: "var(--fw-text-primary)", margin: "0 0 4px", lineHeight: 1 }}>{teamMembers.length}</p>
+          <p style={{ fontSize: 12, color: "var(--fw-text-tertiary)", margin: "0 0 16px", fontFamily: F }}>{teamMembers.length === 1 ? "team member" : "team members"}</p>
           {teamMembers.length > 0 && (
             <div style={{ display: "flex", marginBottom: 16 }}>
               {teamMembers.slice(0, 4).map((m, i) => (
-                <div key={m.id} title={m.name} style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #FFFBF0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, marginLeft: i === 0 ? 0 : -8, background: (["#0a0a0a", "#D4FF4F", "#FFD080", "#E8C0A0"])[i % 4], color: i === 1 ? "#7A3800" : i === 0 ? "#D4FF4F" : "#7A3800", fontFamily: F, zIndex: 4 - i, position: "relative", flexShrink: 0 }}>
+                <div key={m.id} title={m.name} style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid var(--fw-card)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, marginLeft: i === 0 ? 0 : -8, background: (["var(--fw-soil)", "var(--fw-lime)", "var(--fw-sunken)", "var(--fw-sunken)"])[i % 4], color: i === 1 ? "var(--fw-soil)" : i === 0 ? "var(--fw-lime)" : "var(--fw-text-secondary)", fontFamily: F, zIndex: 4 - i, position: "relative", flexShrink: 0 }}>
                   {getInitials(m.name)}
                 </div>
               ))}
               {teamMembers.length > 4 && (
-                <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #FFFBF0", background: "#FFE0A0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#7A3800", marginLeft: -8, zIndex: 0, position: "relative", fontFamily: F, flexShrink: 0 }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid var(--fw-card)", background: "var(--fw-sunken)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "var(--fw-text-secondary)", marginLeft: -8, zIndex: 0, position: "relative", fontFamily: F, flexShrink: 0 }}>
                   +{teamMembers.length - 4}
                 </div>
               )}
             </div>
           )}
-          <button onClick={() => router.push("/cloud/dashboard/team")} style={{ marginTop: "auto", height: 38, background: "rgba(255,255,255,0.7)", border: "0.5px solid rgba(255,180,50,0.4)", borderRadius: 12, color: "#7A3800", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: F }}>
+          <button onClick={() => router.push("/cloud/dashboard/team")} style={{ marginTop: "auto", height: 38, background: "var(--fw-soil)", border: "none", borderRadius: 12, color: "var(--fw-lime)", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: F }}>
             Manage team
             <ArrowRight size={13} strokeWidth={2.5} />
           </button>
         </div>
 
         {/* Activity card */}
-        <div style={{ borderRadius: 20, background: "linear-gradient(160deg, #F5F0FF 0%, #EDE5FF 60%, #DDD0FF 100%)", border: "0.5px solid rgba(196,168,255,0.4)", padding: 20, display: "flex", flexDirection: "column" }}>
+        <div style={{ borderRadius: 20, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", padding: 20, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7B5EA7", margin: 0, fontFamily: F }}>Activity</p>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", border: "0.5px solid rgba(180,140,255,0.3)" }}>
-              <Activity size={14} color="#7B5EA7" strokeWidth={1.8} />
+            <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--fw-text-tertiary)", margin: 0, fontFamily: F }}>Activity</p>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--fw-sunken)", display: "flex", alignItems: "center", justifyContent: "center", border: "0.5px solid var(--fw-border-strong)" }}>
+              <Activity size={14} color="var(--fw-text-secondary)" strokeWidth={1.8} />
             </div>
           </div>
-          <p style={{ fontFamily: S, fontSize: 48, color: "#2D1B6B", margin: "0 0 4px", lineHeight: 1 }}>{photoCount}</p>
-          <p style={{ fontSize: 12, color: "#7B5EA7", margin: "0 0 16px", fontFamily: F }}>photos uploaded</p>
+          <p style={{ fontFamily: S, fontSize: 48, color: "var(--fw-text-primary)", margin: "0 0 4px", lineHeight: 1 }}>{photoCount}</p>
+          <p style={{ fontSize: 12, color: "var(--fw-text-tertiary)", margin: "0 0 16px", fontFamily: F }}>photos uploaded</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
             {recentActivity.length > 0 ? recentActivity.slice(0, 3).map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, background: (["rgba(255,255,255,0.7)", "rgba(212,255,79,0.3)", "rgba(255,220,100,0.4)"])[i % 3], border: "0.5px solid rgba(180,140,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#2D1B6B", fontFamily: F }}>
-                  {item.userInitials}
-                </div>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 5, background: i === 0 ? "var(--fw-lime)" : "var(--fw-text-muted)" }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 11, color: "#2D1B6B", fontWeight: 600, margin: "0 0 1px", lineHeight: 1.3, fontFamily: F, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.message}</p>
-                  <p style={{ fontSize: 10, color: "#9B7FCC", margin: 0, fontFamily: F }}>{item.time}</p>
+                  <p style={{ fontSize: 11, color: "var(--fw-text-primary)", fontWeight: 600, margin: "0 0 1px", lineHeight: 1.3, fontFamily: F, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.message}</p>
+                  <p style={{ fontSize: 10, color: "var(--fw-text-tertiary)", margin: 0, fontFamily: F }}>{item.time}</p>
                 </div>
               </div>
             )) : (
-              <p style={{ fontSize: 12, color: "#9B7FCC", margin: 0, fontFamily: F }}>No activity yet. Upload your first photos to get started.</p>
+              <p style={{ fontSize: 12, color: "var(--fw-text-tertiary)", margin: 0, fontFamily: F }}>No activity yet. Upload your first photos to get started.</p>
             )}
           </div>
-          <button onClick={() => router.push("/cloud/dashboard/notifications")} style={{ marginTop: "auto", height: 38, background: "rgba(255,255,255,0.6)", border: "0.5px solid rgba(180,140,255,0.4)", borderRadius: 12, color: "#2D1B6B", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: F }}>
+          <button onClick={() => router.push("/cloud/dashboard/notifications")} style={{ marginTop: "auto", height: 38, background: "var(--fw-sunken)", border: "none", borderRadius: 12, color: "var(--fw-text-primary)", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: F }}>
             View all activity
             <ArrowRight size={13} strokeWidth={2.5} />
           </button>
@@ -314,15 +298,15 @@ export default function CloudDashboardHome() {
       </div>
 
       {/* ── PUBLIC PROFILE CARD ── */}
-      <div style={{ margin: "16px 20px 0", borderRadius: 20, background: "linear-gradient(160deg, #FFF8F0 0%, #FFEEDD 60%, #FFE0C0 100%)", border: "0.5px solid rgba(255,180,100,0.3)", padding: "18px 20px", display: "flex", alignItems: "center", gap: 16 }}>
-        <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(255,255,255,0.6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "0.5px solid rgba(255,160,60,0.3)" }}>
-          <Globe size={22} color="#BF5000" strokeWidth={1.6} />
+      <div style={{ margin: "16px 20px 0", borderRadius: 18, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--fw-sunken)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "0.5px solid var(--fw-border-strong)" }}>
+          <Globe size={20} color="var(--fw-text-primary)" strokeWidth={1.6} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: S, fontSize: 16, color: "#7A3000", margin: "0 0 3px", lineHeight: 1.2 }}>Your public profile</p>
-          <p style={{ fontSize: 11, color: "#BF7020", margin: 0, fontFamily: F, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Share your projects with clients</p>
+          <p style={{ fontFamily: S, fontSize: 15, color: "var(--fw-text-primary)", margin: "0 0 2px", lineHeight: 1.2 }}>Your public profile</p>
+          <p style={{ fontSize: 11, color: "var(--fw-text-tertiary)", margin: 0, fontFamily: F, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Share your projects with clients</p>
         </div>
-        <button onClick={() => router.push("/cloud/dashboard/settings")} style={{ height: 34, padding: "0 14px", background: "rgba(255,255,255,0.7)", border: "0.5px solid rgba(255,160,60,0.3)", borderRadius: 10, color: "#7A3000", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0, fontFamily: F, display: "flex", alignItems: "center", gap: 5 }}>
+        <button onClick={() => router.push("/cloud/dashboard/settings")} style={{ height: 32, padding: "0 12px", background: "var(--fw-sunken)", border: "0.5px solid var(--fw-border-strong)", borderRadius: 10, color: "var(--fw-text-primary)", fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0, fontFamily: F, display: "flex", alignItems: "center", gap: 5 }}>
           Manage
           <ExternalLink size={11} strokeWidth={2} />
         </button>

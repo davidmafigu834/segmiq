@@ -178,8 +178,8 @@ export default function CloudSettingsPage() {
 
   const inputCls = "w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body";
   const labelCls = "mb-1.5 block text-[12px] font-semibold text-[#666660] uppercase tracking-[0.06em] font-cloud-body";
-  const saveBtnCls = "flex items-center gap-2 rounded-xl bg-[#D4FF4F] px-5 py-2.5 text-[13px] font-bold text-black disabled:opacity-60 hover:bg-[#C8F244] transition-colors font-cloud-body";
-  const sectionCardCls = "rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 space-y-4";
+  const saveBtnCls = "flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-bold disabled:opacity-60 transition-opacity font-cloud-body cursor-pointer" + " bg-[var(--fw-soil)] text-[var(--fw-lime)]";  
+  const sectionCardCls = "rounded-[20px] border p-5 space-y-4 bg-white" + " border-[var(--fw-border)]";  
 
   return (
     <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 pb-28 lg:px-8 lg:pb-8">
@@ -411,7 +411,7 @@ export default function CloudSettingsPage() {
         <section className="pb-4">
           <button
             onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
-            className="flex w-full items-center justify-center gap-2 rounded-[20px] border border-red-200/60 bg-gradient-to-br from-[#FFF5F5] via-[#FFE8E8] to-[#FFD0D0] py-4 text-[14px] font-semibold text-red-500 active:scale-[0.99] transition-transform font-cloud-body"
+            className="flex w-full items-center justify-center gap-2 rounded-[20px] border border-red-200/60 bg-white py-4 text-[14px] font-semibold text-red-500 active:scale-[0.99] transition-transform font-cloud-body"
           >
             <LogOut className="h-4 w-4" />
             Sign out
