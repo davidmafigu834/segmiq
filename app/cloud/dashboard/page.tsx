@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { NewProjectSlideOver } from "./projects/NewProjectSlideOver";
-import { getProjectStyle } from "@/app/cloud/components/ui/projectCardStyles";
+import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
 import { Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink } from "lucide-react";
 
 type MediaItem = { public_url: string; display_order: number };
@@ -100,14 +100,14 @@ export default function CloudDashboardHome() {
     );
   }
 
-  const F = "var(--font-dm-sans), system-ui, sans-serif";
-  const S = "var(--font-dm-serif), Georgia, serif";
+  const F = "var(--fw-font-body), system-ui, sans-serif";
+  const S = "var(--fw-font-display), Georgia, serif";
 
   return (
     <div style={{ minHeight: "100vh", background: "#F5F5F0", fontFamily: F, paddingBottom: 100 }}>
 
       {/* ── STORAGE CARD (dark anchor) ── */}
-      <div style={{ margin: "0 20px 20px", borderRadius: 24, background: "#0a0a0a", padding: 20, position: "relative", overflow: "hidden", border: "0.5px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ margin: "0 20px 20px", borderRadius: 24, background: "#1C1410", padding: 20, position: "relative", overflow: "hidden", border: "0.5px solid rgba(255,255,255,0.07)" }}>
         <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, borderRadius: "50%", background: "rgba(212,255,79,0.05)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -20, right: 20, width: 80, height: 80, borderRadius: "50%", background: "rgba(212,255,79,0.03)", pointerEvents: "none" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
@@ -148,31 +148,32 @@ export default function CloudDashboardHome() {
       </div>
 
       {/* ── QUICK ACTION PILLS ── */}
-      <div className="fw-pills-scroll" style={{ overflowX: "auto", overflowY: "visible", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", padding: "12px 20px 16px" } as React.CSSProperties}>
-        <div style={{ display: "flex", gap: 10, width: "max-content" }}>
-          {([
-            { label: "New project", Icon: Plus,      bg: "var(--fw-soil)", color: "var(--fw-lime)",         border: "none",                             action: () => setShowNew(true) },
-            { label: "Projects",    Icon: FolderOpen, bg: "var(--fw-card)", color: "var(--fw-text-primary)", border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/projects" },
-            { label: "Upload",      Icon: Camera,     bg: "var(--fw-lime)", color: "var(--fw-soil)",         border: "none",                             href: "/cloud/dashboard/upload" },
-            { label: "Invite",      Icon: UserPlus,   bg: "var(--fw-card)", color: "var(--fw-text-primary)", border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/team" },
-          ] as { label: string; Icon: React.ElementType; bg: string; color: string; border: string; href?: string; action?: () => void }[]).map((a) => (
-            <button
-              key={a.label}
-              onClick={a.action ? a.action : () => router.push(a.href!)}
-              style={{ display: "flex", alignItems: "center", gap: 8, height: 40, padding: "0 16px", background: a.bg, color: a.color, borderRadius: 20, border: a.border, cursor: "pointer", flexShrink: 0, fontFamily: F, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}
-            >
-              <a.Icon size={15} strokeWidth={2.2} aria-hidden="true" />
-              {a.label}
-            </button>
-          ))}
-        </div>
+      <div
+        className="pills-scroll"
+        style={{ display: "flex", gap: 8, padding: "8px 20px 14px", overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+      >
+        {([
+          { label: "New project", Icon: Plus,      bg: "var(--fw-soil)", color: "var(--fw-lime)",          border: "none",                              action: () => setShowNew(true) },
+          { label: "Projects",    Icon: FolderOpen, bg: "var(--fw-card)", color: "var(--fw-text-primary)",  border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/projects" },
+          { label: "Upload",      Icon: Camera,     bg: "var(--fw-lime)", color: "var(--fw-soil)",          border: "none",                              href: "/cloud/dashboard/upload" },
+          { label: "Invite",      Icon: UserPlus,   bg: "var(--fw-card)", color: "var(--fw-text-primary)",  border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/team" },
+        ] as { label: string; Icon: React.ElementType; bg: string; color: string; border: string; href?: string; action?: () => void }[]).map((a) => (
+          <button
+            key={a.label}
+            onClick={a.action ? a.action : () => router.push(a.href!)}
+            style={{ display: "flex", alignItems: "center", gap: 8, height: 40, padding: "0 16px", background: a.bg, color: a.color, borderRadius: 20, border: a.border, cursor: "pointer", flexShrink: 0, fontFamily: F, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}
+          >
+            <a.Icon size={15} strokeWidth={2.2} aria-hidden="true" />
+            {a.label}
+          </button>
+        ))}
       </div>
 
       {/* ── RECENT PROJECTS ── */}
       <div style={{ padding: "0 20px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: "#4B5563", margin: 0, fontFamily: F }}>Recent projects</p>
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: 0, fontFamily: F }}>Recent projects</p>
         {projects.length > 0 && (
-          <button onClick={() => router.push("/cloud/dashboard/projects")} style={{ fontSize: 13, color: "#374151", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: F, fontWeight: 600 }}>View all →</button>
+          <button onClick={() => router.push("/cloud/dashboard/projects")} style={{ fontSize: 11, color: "#8C7B6B", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: F, fontWeight: 600 }}>View all →</button>
         )}
       </div>
 
@@ -191,47 +192,60 @@ export default function CloudDashboardHome() {
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 20px 4px", scrollbarWidth: "none", width: "100%" } as React.CSSProperties}>
+        <div
+          className="pills-scroll"
+          style={{ display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", padding: "0 20px 12px" } as React.CSSProperties}
+        >
           {projects.slice(0, 5).map((p) => {
-            const ps = getProjectStyle(p.category);
-            const mediaItems = [...(p.project_media ?? [])].sort((a, b) => a.display_order - b.display_order).slice(0, 4);
+            const cat = getCategoryStyle(p.category);
+            const coverPhoto = [...(p.project_media ?? [])].sort((a, b) => a.display_order - b.display_order)[0];
             const pCount = p.project_media?.length ?? 0;
             return (
-              <div key={p.id} onClick={() => router.push(`/cloud/dashboard/projects/${p.id}`)}
-                   style={{ background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", borderRadius: 20, overflow: "hidden", minWidth: 160, width: 160, flexShrink: 0, cursor: "pointer" }}>
-                <div style={{ margin: "10px 10px 0", borderRadius: 14, overflow: "hidden", position: "relative" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 3, height: 130 }}>
-                    {([0, 1, 2, 3] as const).map((idx) => (
-                      <div key={idx} style={{ overflow: "hidden", background: ps.photoFallbackBg, opacity: mediaItems[idx] ? 1 : 0.35 }}>
-                        {mediaItems[idx] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={mediaItems[idx]!.public_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                        ) : (
-                          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={ps.photoIconColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {pCount > 0 && (
-                    <div style={{ position: "absolute", bottom: 7, right: 7, background: "#D4FF4F", color: "#0a0a0a", fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 20, fontFamily: F, lineHeight: 1.4 }}>{pCount} photos</div>
+              <div
+                key={p.id}
+                onClick={() => router.push(`/cloud/dashboard/projects/${p.id}`)}
+                style={{ minWidth: 148, maxWidth: 148, borderRadius: 20, background: "#FFFFFF", border: "0.5px solid rgba(28,20,16,0.08)", overflow: "hidden", flexShrink: 0, cursor: "pointer" }}
+              >
+                {/* Image area */}
+                <div style={{ height: 108, background: cat.sceneBg, position: "relative", overflow: "hidden" }}>
+                  {coverPhoto && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={coverPhoto.public_url} alt={p.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                   )}
+                  {/* Dark gradient overlay */}
+                  <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${cat.overlayFrom} 0%, transparent 55%)` }} />
+                  {/* Category badge — top left */}
+                  <span style={{ position: "absolute", top: 8, left: 8, background: cat.badge, color: cat.labelColor, fontSize: 8, fontWeight: 700, padding: "2px 7px", borderRadius: 20, letterSpacing: "0.04em", textTransform: "uppercase", fontFamily: F }}>
+                    {p.category || "Project"}
+                  </span>
+                  {/* Photo count badge — top right */}
+                  <span style={{ position: "absolute", top: 8, right: 8, background: "#D4FF4F", color: "#1C1410", fontSize: 8, fontWeight: 700, padding: "2px 6px", borderRadius: 20, fontFamily: F }}>
+                    {pCount}
+                  </span>
                 </div>
-                <div style={{ padding: "10px 12px 14px" }}>
-                  <p style={{ fontFamily: S, fontSize: 14, color: "var(--fw-text-primary)", margin: "0 0 4px", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</p>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--fw-text-tertiary)", background: "var(--fw-sunken)", padding: "2px 7px", borderRadius: 20, fontFamily: F }}>{p.category || "Project"}</span>
+                {/* Info below */}
+                <div style={{ padding: "10px 12px 13px" }}>
+                  <p style={{ fontFamily: S, fontSize: 13, color: "#1C1410", lineHeight: 1.2, margin: "0 0 3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</p>
+                  <p style={{ fontSize: 9, color: "#8C7B6B", margin: "0 0 8px", fontFamily: F }}>In progress</p>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "#8C7B6B", fontFamily: F }}>{pCount} photos</span>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#EDE9E3", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <ArrowRight size={11} color="#4A3828" strokeWidth={2} />
+                    </div>
+                  </div>
                 </div>
               </div>
             );
           })}
-          <div onClick={() => setShowNew(true)} style={{ minWidth: 110, width: 110, border: "1.5px dashed rgba(0,0,0,0.15)", borderRadius: 20, background: "#EEEEEA", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, flexShrink: 0, cursor: "pointer", padding: "24px 0" }}>
-            <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#FFFFFF", border: "0.5px solid rgba(0,0,0,0.10)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Plus size={18} color="#6B7280" strokeWidth={2.5} />
+          {/* New project dashed card */}
+          <div
+            onClick={() => setShowNew(true)}
+            style={{ minWidth: 120, maxWidth: 120, borderRadius: 20, border: "1.5px dashed rgba(28,20,16,0.14)", background: "#EDE9E3", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, flexShrink: 0, cursor: "pointer", height: 185 }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#FFFFFF", border: "0.5px solid rgba(28,20,16,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Plus size={16} color="#4A3828" strokeWidth={2.2} />
             </div>
-            <p style={{ fontSize: 13, color: "#9CA3AF", fontWeight: 500, textAlign: "center", margin: 0, lineHeight: 1.4, fontFamily: F }}>New<br/>project</p>
+            <p style={{ fontSize: 11, fontWeight: 500, color: "#8C7B6B", textAlign: "center", lineHeight: 1.4, margin: 0, fontFamily: F }}>New<br />project</p>
           </div>
         </div>
       )}
@@ -247,8 +261,8 @@ export default function CloudDashboardHome() {
               <Users size={14} color="var(--fw-text-secondary)" strokeWidth={1.8} />
             </div>
           </div>
-          <p style={{ fontFamily: S, fontSize: 48, color: "var(--fw-text-primary)", margin: "0 0 4px", lineHeight: 1 }}>{teamMembers.length}</p>
-          <p style={{ fontSize: 12, color: "var(--fw-text-tertiary)", margin: "0 0 16px", fontFamily: F }}>{teamMembers.length === 1 ? "team member" : "team members"}</p>
+          <p style={{ fontFamily: S, fontSize: 44, color: "#1C1410", lineHeight: 1, margin: "0 0 4px" }}>{teamMembers.length}</p>
+          <p style={{ fontSize: 11, color: "#8C7B6B", margin: "0 0 16px", fontFamily: F }}>{teamMembers.length === 1 ? "team member" : "team members"}</p>
           {teamMembers.length > 0 && (
             <div style={{ display: "flex", marginBottom: 16 }}>
               {teamMembers.slice(0, 4).map((m, i) => (
@@ -277,15 +291,15 @@ export default function CloudDashboardHome() {
               <Activity size={14} color="var(--fw-text-secondary)" strokeWidth={1.8} />
             </div>
           </div>
-          <p style={{ fontFamily: S, fontSize: 48, color: "var(--fw-text-primary)", margin: "0 0 4px", lineHeight: 1 }}>{photoCount}</p>
-          <p style={{ fontSize: 12, color: "var(--fw-text-tertiary)", margin: "0 0 16px", fontFamily: F }}>photos uploaded</p>
+          <p style={{ fontFamily: S, fontSize: 44, color: "#1C1410", lineHeight: 1, margin: "0 0 4px" }}>{photoCount}</p>
+          <p style={{ fontSize: 11, color: "#8C7B6B", margin: "0 0 16px", fontFamily: F }}>photos uploaded</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
             {recentActivity.length > 0 ? recentActivity.slice(0, 3).map((item, i) => (
               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, marginTop: 5, background: i === 0 ? "var(--fw-lime)" : "var(--fw-text-muted)" }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 11, color: "var(--fw-text-primary)", fontWeight: 600, margin: "0 0 1px", lineHeight: 1.3, fontFamily: F, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.message}</p>
-                  <p style={{ fontSize: 10, color: "var(--fw-text-tertiary)", margin: 0, fontFamily: F }}>{item.time}</p>
+                  <p style={{ fontSize: 10, fontWeight: 600, color: "#1C1410", margin: "0 0 1px", lineHeight: 1.3, fontFamily: F, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.message}</p>
+                  <p style={{ fontSize: 9, color: "#B4A898", margin: 0, fontFamily: F }}>{item.time}</p>
                 </div>
               </div>
             )) : (

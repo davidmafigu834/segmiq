@@ -298,21 +298,26 @@
   }
 }
 
-/* ── Hide scrollbars on swipeable pill rows ── */
+/* ── Hide scrollbars on swipeable pill/scroll rows ── */
 .fw-pills-scroll::-webkit-scrollbar { display: none; }
+.pills-scroll::-webkit-scrollbar { display: none; }
 
 /* ── Fieldwork (fw) design tokens ── */
 :root {
-  --fw-soil: #1C1410;
-  --fw-lime: #D4FF4F;
-  --fw-card: #FFFFFF;
-  --fw-sunken: #F5F5F0;
-  --fw-border: rgba(28,20,16,0.07);
-  --fw-border-strong: rgba(28,20,16,0.14);
-  --fw-text-primary: #1C1410;
-  --fw-text-secondary: #6B7280;
-  --fw-text-tertiary: #9CA3AF;
-  --fw-text-muted: #B0B0A8;
+  --fw-soil:          #1C1410;
+  --fw-soil-2:        #2E2218;
+  --fw-soil-3:        #4A3828;
+  --fw-canvas:        #F7F4EF;
+  --fw-card:          #FFFFFF;
+  --fw-sunken:        #EDE9E3;
+  --fw-border:        rgba(28, 20, 16, 0.08);
+  --fw-border-strong: rgba(28, 20, 16, 0.15);
+  --fw-lime:          #D4FF4F;
+  --fw-lime-fg:       #1C1410;
+  --fw-text-primary:   #1C1410;
+  --fw-text-secondary: #4A3828;
+  --fw-text-tertiary:  #8C7B6B;
+  --fw-text-muted:     #B4A898;
   --fw-page-x: 20px;
   --fw-font-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
   --fw-font-body: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
