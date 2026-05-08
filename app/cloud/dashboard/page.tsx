@@ -104,10 +104,10 @@ export default function CloudDashboardHome() {
   const S = "var(--font-dm-serif), Georgia, serif";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F5F0", fontFamily: F, paddingBottom: 100 }}>
+    <div style={{ minHeight: "100vh", background: "#F5F5F0", fontFamily: F, paddingBottom: 100, overflowX: "hidden" }}>
 
       {/* ── QUICK ACTION PILLS ── */}
-      <div style={{ padding: "12px 20px 16px", display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none" } as React.CSSProperties}>
+      <div style={{ padding: "12px 20px 16px", display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", width: "100%" } as React.CSSProperties}>
         {([
           { label: "New project",   Icon: Plus,      bg: "#D4FF4F", color: "#0a0a0a", action: () => setShowNew(true) },
           { label: "All projects",  Icon: FolderOpen, bg: "#FFE8A0", color: "#7A3800", href: "/cloud/dashboard/projects" },
@@ -189,7 +189,7 @@ export default function CloudDashboardHome() {
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 20px 4px", scrollbarWidth: "none" } as React.CSSProperties}>
+        <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 20px 4px", scrollbarWidth: "none", width: "100%" } as React.CSSProperties}>
           {projects.slice(0, 5).map((p) => {
             const ps = getProjectStyle(p.category);
             const mediaItems = [...(p.project_media ?? [])].sort((a, b) => a.display_order - b.display_order).slice(0, 4);
