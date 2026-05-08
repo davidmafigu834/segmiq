@@ -50,12 +50,6 @@ function getPageTitle(pathname: string): string {
   return "Dashboard";
 }
 
-function getGreeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
 
 function getInitials(name: string): string {
   const parts = name.trim().split(" ").filter(Boolean);

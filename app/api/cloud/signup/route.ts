@@ -84,6 +84,7 @@ export async function POST(req: Request) {
       name: businessName.trim(),
       industry: industry.trim(),
       slug,
+      plan: "starter",
       is_active: true,
       response_time_limit_hours: 24,
     })

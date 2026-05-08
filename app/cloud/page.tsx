@@ -311,73 +311,85 @@ export default function CloudLandingPage() {
       <section id="pricing" className="border-t border-white/10 px-6 py-24">
         <div className="mx-auto max-w-6xl">
           <p className="mb-4 text-center font-mono text-[11px] uppercase tracking-[0.2em] text-[#D4FF4F]">
-            Simple pricing
+            Pricing
           </p>
           <h2 className="mb-4 text-center text-3xl font-light text-white md:text-4xl">
-            Start free. Upgrade when you&apos;re ready.
+            Simple, honest pricing
           </h2>
-          <p className="mb-16 text-center text-base text-white/40">No credit card required. Cancel anytime.</p>
+          <p className="mb-16 text-center text-base text-white/40">No free tier. No hidden fees. Pay for what you use, cancel any time.</p>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Starter */}
-            <div className="rounded-2xl border border-white/10 bg-[#111111] p-8">
-              <p className="mb-2 text-sm font-medium text-white/60">Starter</p>
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-white">Free</span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {["5 projects", "100 photos / month", "Share links", "Mobile upload", "1 user"].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/60">
-                    <Check className="h-4 w-4 flex-shrink-0 text-[#D4FF4F]" /> {f}
-                  </li>
+          {(() => {
+            const pricingPlans = [
+              {
+                name: "Starter", price: "$20", period: "per month", storage: "20 GB",
+                team: "Up to 3 members",
+                features: ["Unlimited projects", "Public share links", "Basic watermarking", "Public profile page", "Mobile PWA app"],
+                cta: "Get started", highlight: false, note: null,
+              },
+              {
+                name: "Professional", price: "$49", period: "per month", storage: "100 GB",
+                team: "Up to 10 members",
+                features: ["Everything in Starter", "Custom logo watermark", "Project analytics", "AI photo enhancement", "Priority support"],
+                cta: "Get started", highlight: true, note: "Most popular",
+              },
+              {
+                name: "Business", price: "$99", period: "per month", storage: "500 GB",
+                team: "Unlimited members",
+                features: ["Everything in Professional", "Custom domain", "Video URL embeds", "Testimonials manager", "CSV data export", "Dedicated onboarding"],
+                cta: "Get started", highlight: false, note: null,
+              },
+            ];
+            return (
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-start", maxWidth: 1100, margin: "0 auto" }}>
+                {pricingPlans.map((plan) => (
+                  <div
+                    key={plan.name}
+                    style={{
+                      background: plan.highlight ? "#1C1410" : "#FFFFFF",
+                      border: plan.highlight ? "0.5px solid rgba(212,255,79,0.2)" : "0.5px solid rgba(28,20,16,0.08)",
+                      borderRadius: 20, padding: "28px 24px", position: "relative",
+                      flex: "1 1 280px", maxWidth: 340,
+                    }}
+                  >
+                    {plan.note && (
+                      <span style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: "#D4FF4F", color: "#1C1410", fontSize: 10, fontWeight: 700, padding: "4px 14px", borderRadius: 20, letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap", fontFamily: "var(--fw-font-body), system-ui, sans-serif" }}>
+                        {plan.note}
+                      </span>
+                    )}
+                    <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: plan.highlight ? "rgba(255,255,255,0.5)" : "#8C7B6B", margin: "0 0 8px" }}>
+                      {plan.name}
+                    </p>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 4, margin: "0 0 4px" }}>
+                      <span style={{ fontFamily: "var(--fw-font-display), Georgia, serif", fontSize: 44, color: plan.highlight ? "#FFFFFF" : "#1C1410", lineHeight: 1 }}>
+                        {plan.price}
+                      </span>
+                      <span style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 13, color: plan.highlight ? "rgba(255,255,255,0.4)" : "#8C7B6B" }}>
+                        {plan.period}
+                      </span>
+                    </div>
+                    <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 13, color: plan.highlight ? "rgba(255,255,255,0.5)" : "#8C7B6B", margin: "0 0 20px" }}>
+                      {plan.storage} storage · {plan.team}
+                    </p>
+                    <div style={{ height: "0.5px", background: plan.highlight ? "rgba(255,255,255,0.08)" : "rgba(28,20,16,0.07)", margin: "0 0 20px" }} />
+                    <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px" }}>
+                      {plan.features.map((feature) => (
+                        <li key={feature} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10, fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 13, color: plan.highlight ? "rgba(255,255,255,0.75)" : "#4A3828" }}>
+                          <Check style={{ width: 14, height: 14, flexShrink: 0, marginTop: 1, color: plan.highlight ? "#D4FF4F" : "#2E7D5E" }} />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      href="/cloud/signup"
+                      style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 48, borderRadius: 14, background: plan.highlight ? "#D4FF4F" : "#1C1410", color: plan.highlight ? "#1C1410" : "#D4FF4F", fontSize: 13, fontWeight: 700, fontFamily: "var(--fw-font-body), system-ui, sans-serif", textDecoration: "none" }}
+                    >
+                      {plan.cta}
+                    </Link>
+                  </div>
                 ))}
-              </ul>
-              <Link href="/cloud/signup" className="block rounded-xl border border-white/20 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-white/40">
-                Get started free
-              </Link>
-            </div>
-
-            {/* Pro */}
-            <div className="relative rounded-2xl border border-[#D4FF4F]/40 bg-[#111111] p-8">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="rounded-full bg-[#D4FF4F] px-3 py-1 text-xs font-bold text-black">Most popular</span>
               </div>
-              <p className="mb-2 text-sm font-medium text-white/60">Pro</p>
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-white">$29</span>
-                <span className="text-white/40">/mo</span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {["Unlimited projects", "10 GB storage", "Public portfolio page", "2 team members", "Watermark branding", "Priority email support"].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/60">
-                    <Check className="h-4 w-4 flex-shrink-0 text-[#D4FF4F]" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/cloud/signup" className="block rounded-xl bg-[#D4FF4F] py-3 text-center text-sm font-semibold text-black transition-colors hover:bg-[#c4ef3f]">
-                Start free trial
-              </Link>
-            </div>
-
-            {/* Business */}
-            <div className="rounded-2xl border border-white/10 bg-[#111111] p-8">
-              <p className="mb-2 text-sm font-medium text-white/60">Business</p>
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-white">$79</span>
-                <span className="text-white/40">/mo</span>
-              </div>
-              <ul className="mb-8 space-y-3">
-                {["Unlimited projects", "50 GB storage", "10 team members", "Watermark branding", "Analytics", "Priority support"].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-white/60">
-                    <Check className="h-4 w-4 flex-shrink-0 text-[#D4FF4F]" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/cloud/signup" className="block rounded-xl border border-white/20 py-3 text-center text-sm font-semibold text-white transition-colors hover:border-white/40">
-                Get started
-              </Link>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </section>
 

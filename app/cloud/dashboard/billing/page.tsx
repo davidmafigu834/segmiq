@@ -7,48 +7,50 @@ type Plan = { id: string; name: string; price: string; storage: string; features
 
 const PLANS: Plan[] = [
   {
-    id: "free",
-    name: "Free",
-    price: "$0",
-    storage: "5 GB",
+    id: "starter",
+    name: "Starter",
+    price: "$20",
+    storage: "20 GB",
     icon: Zap,
     accent: "text-[#666660]",
-    features: ["5 GB storage", "10 projects", "Public portfolio page", "Project share links", "1 team member"],
+    features: ["Unlimited projects", "Public share links", "Basic watermarking", "Public profile page", "Mobile PWA app", "Up to 3 members"],
   },
   {
     id: "professional",
     name: "Professional",
-    price: "$29",
-    storage: "50 GB",
+    price: "$49",
+    storage: "100 GB",
     icon: Rocket,
     accent: "text-[#3D7A00]",
-    features: ["50 GB storage", "Unlimited projects", "Logo watermarking", "Priority support", "5 team members", "Analytics"],
+    features: ["Everything in Starter", "Custom logo watermark", "Project analytics", "AI photo enhancement", "Priority support", "Up to 10 members"],
   },
   {
     id: "business",
     name: "Business",
-    price: "$79",
-    storage: "200 GB",
+    price: "$99",
+    storage: "500 GB",
     icon: Building2,
     accent: "text-[#1A4A7A]",
-    features: ["200 GB storage", "Unlimited projects & team", "Custom domain", "White-label portfolio", "Advanced analytics", "Dedicated support"],
+    features: ["Everything in Professional", "Custom domain", "Video URL embeds", "Testimonials manager", "CSV data export", "Unlimited members"],
   },
 ];
 
+const PLAN_ORDER: Record<string, number> = { starter: 0, professional: 1, business: 2 };
+
 export default function BillingPage() {
-  const [currentPlan, setCurrentPlan] = useState<string>("free");
+  const [currentPlan, setCurrentPlan] = useState<string>("starter");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/cloud/storage/usage")
       .then((r) => r.json())
-      .then((d: { plan?: string }) => setCurrentPlan(d.plan ?? "free"))
+      .then((d: { plan?: string }) => { const raw = d.plan ?? "starter"; setCurrentPlan(raw === "free" ? "starter" : raw); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const planCardStyles: Record<string, { gradient: string; border: string; text: string; subtext: string; checkColor: string }> = {
-    free:         { gradient: "bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0]", border: "border-[#D0D0C0]/40", text: "text-[#0a0a0a]", subtext: "text-[#666660]", checkColor: "text-[#666660]" },
+    starter:      { gradient: "bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0]", border: "border-[#D0D0C0]/40", text: "text-[#0a0a0a]", subtext: "text-[#666660]", checkColor: "text-[#666660]" },
     professional: { gradient: "bg-gradient-to-br from-[#F8FFF0] via-[#EFFFDC] to-[#DCFFB8]", border: "border-[#B8F060]/40", text: "text-[#1A3D00]", subtext: "text-[#3D7A00]", checkColor: "text-[#3D7A00]" },
     business:     { gradient: "bg-gradient-to-br from-[#F0F8FF] via-[#DCF0FF] to-[#C4E4FF]", border: "border-[#7BC8FF]/40", text: "text-[#001A3D]", subtext: "text-[#1A4A7A]", checkColor: "text-[#1A4A7A]" },
   };
@@ -67,7 +69,7 @@ export default function BillingPage() {
           </div>
         ) : (
           <>
-            {currentPlan !== "free" && (
+            {(
               <div className="mb-6 rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5">
                 <p className="mb-0.5 text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase font-cloud-body">Current plan</p>
                 <p className="font-cloud-display text-[20px] text-[#0a0a0a] capitalize">{currentPlan}</p>
@@ -79,7 +81,7 @@ export default function BillingPage() {
               {PLANS.map((plan) => {
                 const isActive = plan.id === currentPlan;
                 const Icon = plan.icon;
-                const s = planCardStyles[plan.id] ?? planCardStyles.free;
+                const s = planCardStyles[plan.id] ?? planCardStyles.starter;
                 return (
                   <div
                     key={plan.id}
@@ -96,7 +98,7 @@ export default function BillingPage() {
                     </div>
                     <div className="mb-5">
                       <span className={`font-cloud-display text-[32px] ${s.text}`}>{plan.price}</span>
-                      {plan.id !== "free" && <span className={`ml-1 text-[13px] font-cloud-body ${s.subtext}`}>/ mo</span>}
+                      <span className={`ml-1 text-[13px] font-cloud-body ${s.subtext}`}>/ mo</span>
                     </div>
                     <ul className="mb-6 flex-1 space-y-2">
                       {plan.features.map((f) => (
@@ -112,7 +114,7 @@ export default function BillingPage() {
                         className="mt-auto w-full rounded-xl border border-black/[0.1] bg-white/50 py-2.5 text-[13px] font-semibold text-[#999990] transition-colors disabled:cursor-not-allowed font-cloud-body"
                         title="Billing coming soon"
                       >
-                        {plan.id === "free" ? "Downgrade" : "Upgrade"} — coming soon
+                        {(PLAN_ORDER[plan.id] ?? 0) > (PLAN_ORDER[currentPlan] ?? 0) ? "Upgrade" : "Downgrade"} — coming soon
                       </button>
                     )}
                   </div>

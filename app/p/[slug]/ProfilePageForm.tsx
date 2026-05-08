@@ -82,7 +82,6 @@ const DEFAULT_STEPS: FormStepDef[] = [
 
 export function ProfilePageForm({
   clientId,
-  accentColor,
   ctaText,
   formSteps,
 }: {
