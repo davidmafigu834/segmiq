@@ -151,7 +151,7 @@ export default function CloudDashboardHome() {
       </div>
 
       {/* ── STORAGE CARD (dark anchor) ── */}
-      <div style={{ margin: "0 20px 0", borderRadius: 24, background: "#1C1410", padding: 20, position: "relative", overflow: "hidden", border: "0.5px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ margin: "0 20px 20px", borderRadius: 24, background: "#1C1410", padding: 20, position: "relative", overflow: "hidden", border: "0.5px solid rgba(255,255,255,0.07)" }}>
         <div style={{ position: "absolute", top: -40, right: -40, width: 120, height: 120, borderRadius: "50%", background: "rgba(212,255,79,0.05)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -20, right: 20, width: 80, height: 80, borderRadius: "50%", background: "rgba(212,255,79,0.03)", pointerEvents: "none" }} />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
@@ -194,7 +194,7 @@ export default function CloudDashboardHome() {
       {/* ── QUICK ACTION PILLS ── */}
       <div
         className="pills-scroll"
-        style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", padding: "14px 20px 6px", width: "100%", boxSizing: "border-box" } as React.CSSProperties}
+        style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", padding: "4px 20px 16px", width: "100%", boxSizing: "border-box" } as React.CSSProperties}
       >
         <div style={{ display: "flex", gap: 8, width: "max-content" }}>
         {([
@@ -216,7 +216,7 @@ export default function CloudDashboardHome() {
       </div>
 
       {/* ── RECENT PROJECTS ── */}
-      <div style={{ padding: "0 20px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "12px 20px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: 0, fontFamily: F }}>Recent projects</p>
         {projects.length > 0 && (
           <button onClick={() => router.push("/cloud/dashboard/projects")} style={{ fontSize: 11, color: "#8C7B6B", background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: F, fontWeight: 600 }}>View all →</button>
