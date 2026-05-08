@@ -150,8 +150,9 @@ export default function CloudDashboardHome() {
       {/* ── QUICK ACTION PILLS ── */}
       <div
         className="pills-scroll"
-        style={{ display: "flex", gap: 8, padding: "8px 20px 14px", overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+        style={{ overflowX: "auto", overflowY: "visible", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", touchAction: "pan-x", padding: "8px 20px 14px" } as React.CSSProperties}
       >
+        <div style={{ display: "flex", gap: 8, width: "max-content" }}>
         {([
           { label: "New project", Icon: Plus,      bg: "var(--fw-soil)", color: "var(--fw-lime)",          border: "none",                              action: () => setShowNew(true) },
           { label: "Projects",    Icon: FolderOpen, bg: "var(--fw-card)", color: "var(--fw-text-primary)",  border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/projects" },
@@ -167,6 +168,7 @@ export default function CloudDashboardHome() {
             {a.label}
           </button>
         ))}
+        </div>
       </div>
 
       {/* ── RECENT PROJECTS ── */}
@@ -194,8 +196,9 @@ export default function CloudDashboardHome() {
       ) : (
         <div
           className="pills-scroll"
-          style={{ display: "flex", gap: 10, overflowX: "auto", scrollbarWidth: "none", WebkitOverflowScrolling: "touch", padding: "0 20px 12px" } as React.CSSProperties}
+          style={{ overflowX: "auto", overflowY: "visible", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", touchAction: "pan-x", padding: "0 20px 12px" } as React.CSSProperties}
         >
+          <div style={{ display: "flex", gap: 10, width: "max-content" }}>
           {projects.slice(0, 5).map((p) => {
             const cat = getCategoryStyle(p.category);
             const coverPhoto = [...(p.project_media ?? [])].sort((a, b) => a.display_order - b.display_order)[0];
@@ -247,7 +250,8 @@ export default function CloudDashboardHome() {
             </div>
             <p style={{ fontSize: 11, fontWeight: 500, color: "#8C7B6B", textAlign: "center", lineHeight: 1.4, margin: 0, fontFamily: F }}>New<br />project</p>
           </div>
-        </div>
+          </div>{/* inner flex div */}
+        </div>{/* outer scroll div */}
       )}
 
       {/* ── TEAM + ACTIVITY ROW ── */}
