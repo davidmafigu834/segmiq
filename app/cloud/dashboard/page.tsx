@@ -255,10 +255,10 @@ export default function CloudDashboardHome() {
       )}
 
       {/* ── TEAM + ACTIVITY ROW ── */}
-      <div style={{ padding: "20px 20px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+      <div style={{ padding: "20px 20px 0", display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 12 }}>
 
         {/* Team card */}
-        <div style={{ borderRadius: 20, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", padding: 20, display: "flex", flexDirection: "column" }}>
+        <div style={{ minWidth: 0, borderRadius: 20, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", padding: 20, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--fw-text-tertiary)", margin: 0, fontFamily: F }}>Team</p>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--fw-sunken)", display: "flex", alignItems: "center", justifyContent: "center", border: "0.5px solid var(--fw-border-strong)" }}>
@@ -288,7 +288,7 @@ export default function CloudDashboardHome() {
         </div>
 
         {/* Activity card */}
-        <div style={{ borderRadius: 20, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", padding: 20, display: "flex", flexDirection: "column" }}>
+        <div style={{ minWidth: 0, borderRadius: 20, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", padding: 20, display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--fw-text-tertiary)", margin: 0, fontFamily: F }}>Activity</p>
             <div style={{ width: 28, height: 28, borderRadius: 8, background: "var(--fw-sunken)", display: "flex", alignItems: "center", justifyContent: "center", border: "0.5px solid var(--fw-border-strong)" }}>

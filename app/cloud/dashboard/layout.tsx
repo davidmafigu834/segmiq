@@ -209,7 +209,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px]">
+      <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px] overflow-x-hidden">
         {/* Desktop topbar */}
         <header className="sticky top-0 z-10 hidden h-[56px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:flex">
           {pathname === "/cloud/dashboard" ? (
