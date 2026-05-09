@@ -149,7 +149,6 @@ export default function CloudTeamPage() {
     <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 lg:px-8">
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <p className="font-cloud-display text-[22px] text-[#0a0a0a]">Your team</p>
           {isAdmin && clients.length > 0 && (
             <select
               value={selectedClientId}

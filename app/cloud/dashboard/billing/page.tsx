@@ -12,7 +12,7 @@ const PLANS: Plan[] = [
     id: "starter",
     name: "Starter",
     monthlyPrice: 20, annualPrice: 200, annualMonthly: 16.67, saving: 40,
-    storage: "20 GB", team: "Up to 3 members",
+    storage: "50 GB", team: "Up to 3 members",
     icon: Zap,
     accent: "text-[#666660]",
     features: ["Unlimited projects", "Public share links", "Basic watermarking", "Public profile page", "Mobile PWA app", "Up to 3 members"],
@@ -21,7 +21,7 @@ const PLANS: Plan[] = [
     id: "professional",
     name: "Professional",
     monthlyPrice: 49, annualPrice: 490, annualMonthly: 40.83, saving: 98,
-    storage: "100 GB", team: "Up to 10 members",
+    storage: "200 GB", team: "Up to 10 members",
     icon: Rocket,
     accent: "text-[#3D7A00]",
     features: ["Everything in Starter", "Custom logo watermark", "Project analytics", "AI photo enhancement", "Priority support", "Up to 10 members"],
@@ -30,7 +30,7 @@ const PLANS: Plan[] = [
     id: "business",
     name: "Business",
     monthlyPrice: 99, annualPrice: 990, annualMonthly: 82.50, saving: 198,
-    storage: "500 GB", team: "Unlimited members",
+    storage: "1 TB", team: "Unlimited members",
     icon: Building2,
     accent: "text-[#1A4A7A]",
     features: ["Everything in Professional", "Custom domain", "Video URL embeds", "Testimonials manager", "CSV data export", "Unlimited members"],
@@ -61,11 +61,6 @@ export default function BillingPage() {
   return (
     <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 lg:px-8">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-6">
-          <p className="font-cloud-display text-[22px] text-[#0a0a0a]">Billing</p>
-          <p className="mt-0.5 text-[13px] text-[#999990] font-cloud-body">Manage your plan and storage.</p>
-        </div>
-
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="h-5 w-5 animate-spin text-[#0a0a0a]/20" />
