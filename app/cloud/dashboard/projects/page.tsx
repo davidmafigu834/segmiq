@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Plus, Folder, Star, MoreVertical, Search, Copy, Trash2, Edit2, ArrowRight } from "lucide-react";
 import { NewProjectSlideOver } from "./NewProjectSlideOver";
-import { getProjectCardStyles } from "@/app/cloud/components/ProjectCard";
+import { SkeletonPhotoGrid } from "@/app/cloud/components/SkeletonCard";
 import ProjectSceneIllustration from "@/app/cloud/components/ProjectSceneIllustration";
 
 type MediaItem = { public_url: string; display_order: number };
@@ -103,8 +103,11 @@ export default function CloudProjectsPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center bg-[#F5F5F0]">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-[#0a0a0a]" />
+      <div className="min-h-screen bg-[#F5F5F0] font-cloud-body pt-4">
+        <div className="px-5 mb-4">
+          <div style={{ height: 44, borderRadius: 12, background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.5s infinite', maxWidth: 360 }} />
+        </div>
+        <SkeletonPhotoGrid />
       </div>
     );
   }
@@ -147,28 +150,34 @@ export default function CloudProjectsPage() {
 
       {/* Category filter pills */}
       {allCategories.length > 0 && (
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div style={{ display: 'flex', gap: 8, padding: '4px 0 12px', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', alignItems: 'center', marginBottom: 4 } as React.CSSProperties}>
           <button
             onClick={() => setActiveCategory(null)}
-            className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors font-cloud-body ${
-              activeCategory === null
-                ? "bg-[#0a0a0a] text-white"
-                : "border border-black/[0.08] bg-white text-[#666660] hover:border-black/[0.15]"
-            }`}
+            style={{
+              height: 44, padding: '0 16px', borderRadius: 22, fontSize: 12, fontWeight: 600,
+              fontFamily: 'var(--fw-font-body), system-ui, sans-serif', cursor: 'pointer',
+              flexShrink: 0, whiteSpace: 'nowrap',
+              background: activeCategory === null ? '#0a0a0a' : '#FFFFFF',
+              color: activeCategory === null ? '#FFFFFF' : '#666660',
+              border: activeCategory === null ? 'none' : '0.5px solid rgba(0,0,0,0.08)',
+            }}
           >
             All
           </button>
           {allCategories.map((cat) => {
-            const s = getProjectCardStyles(cat);
             const isAct = activeCategory === cat;
             return (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors font-cloud-body ${
-                  isAct ? '' : 'border border-black/[0.08] bg-white text-[#666660] hover:border-black/[0.15]'
-                }`}
-                style={isAct ? { background: '#1C1410', color: '#FFFFFF', border: 'none' } : {}}
+                style={{
+                  height: 44, padding: '0 16px', borderRadius: 22, fontSize: 12, fontWeight: 600,
+                  fontFamily: 'var(--fw-font-body), system-ui, sans-serif', cursor: 'pointer',
+                  flexShrink: 0, whiteSpace: 'nowrap',
+                  background: isAct ? '#1C1410' : '#FFFFFF',
+                  color: isAct ? '#FFFFFF' : '#666660',
+                  border: isAct ? 'none' : '0.5px solid rgba(0,0,0,0.08)',
+                }}
               >
                 {cat}
               </button>
@@ -274,6 +283,8 @@ export default function CloudProjectsPage() {
                         <img
                           src={cover(p)!}
                           alt={p.title}
+                          loading="eager"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       ) : (

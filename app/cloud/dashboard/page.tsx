@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { NewProjectSlideOver } from "./projects/NewProjectSlideOver";
 import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
 import { Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink } from "lucide-react";
+import { SkeletonScrollRow } from "@/app/cloud/components/SkeletonCard";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -116,7 +117,7 @@ export default function CloudDashboardHome() {
     time: formatRelativeTime(p.updated_at),
   }));
 
-  if (status === "loading" || loading) {
+  if (status === "loading") {
     return (
       <div style={{ display: "flex", minHeight: "60vh", alignItems: "center", justifyContent: "center", background: "#F7F7F8" }}>
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-[#111]" />
@@ -218,7 +219,9 @@ export default function CloudDashboardHome() {
         )}
       </div>
 
-      {projects.length === 0 ? (
+      {loading ? (
+        <SkeletonScrollRow />
+      ) : projects.length === 0 ? (
         <div style={{ padding: "0 20px" }}>
           <div style={{ background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", borderRadius: 20, padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: "var(--fw-sunken)", border: "0.5px solid var(--fw-border-strong)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>

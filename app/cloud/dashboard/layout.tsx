@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
-  Grid, Folder, Camera, Users, Settings, LogOut, CloudUpload,
+  Grid, Folder, Camera, Users, Settings, LayoutGrid, LogOut, CloudUpload,
   Bell, CreditCard, HelpCircle, BarChart2,
 } from "lucide-react";
 import { Suspense } from "react";
@@ -30,7 +30,7 @@ const MOBILE_NAV = [
   { href: "/cloud/dashboard/projects", icon: Folder, label: "Projects" },
   { href: "/cloud/dashboard/upload", icon: Camera, label: "Upload" },
   { href: "/cloud/dashboard/notifications", icon: Bell, label: "Alerts" },
-  { href: "/cloud/dashboard/settings", icon: Settings, label: "Settings" },
+  { href: "/cloud/dashboard/more", icon: LayoutGrid, label: "More" },
 ];
 
 function isActive(href: string, pathname: string) {
@@ -47,6 +47,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/cloud/dashboard/notifications")) return "Notifications";
   if (pathname.startsWith("/cloud/dashboard/analytics")) return "Analytics";
   if (pathname.startsWith("/cloud/dashboard/billing")) return "Billing";
+  if (pathname.startsWith("/cloud/dashboard/more")) return "More";
   return "Dashboard";
 }
 
@@ -86,6 +87,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
   const router = useRouter();
   const [businessName, setBusinessName] = useState<string>("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
   const onboardingChecked = useRef(false);
 
   useEffect(() => {
@@ -129,6 +131,18 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
       .then((data: { unread?: number }) => setUnreadCount(data.unread ?? 0))
       .catch(() => {});
   }, [session?.userId, pathname]);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const displayName = businessName || "Leadstaq Cloud";
   const initials = getInitials(session?.user?.name ?? "");
@@ -258,27 +272,45 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
                 <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#D4FF4F] border-2 border-[#F5F5F0]" />
               )}
             </button>
-            <button
-              onClick={() => router.push("/cloud/dashboard/settings")}
-              className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] active:scale-95 transition-transform cursor-pointer"
-              aria-label="Account settings"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
-            >
-              {initials}
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => router.push("/cloud/dashboard/settings")}
+                className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] active:scale-95 transition-transform cursor-pointer"
+                aria-label="Account settings"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                {initials}
+              </button>
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: isOnline ? '#2E7D5E' : '#E8602C', border: '2px solid #F7F4EF', transition: 'background 0.3s ease' }} />
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 pb-[calc(var(--cloud-nav-height)+20px)] lg:pb-8">{children}</main>
+        {/* Offline banner */}
+        {!isOnline && (
+          <div style={{ position: 'fixed', top: 62, left: 0, right: 0, zIndex: 50, background: '#E8602C', padding: '8px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <p style={{ fontFamily: 'var(--fw-font-body), system-ui, sans-serif', fontSize: 12, fontWeight: 600, color: '#FFFFFF', margin: 0 }}>
+              No connection · Photos will upload when signal returns
+            </p>
+          </div>
+        )}
+
+        <main className="flex-1 lg:pb-8" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>{children}</main>
       </div>
 
       {/* Bottom tab bar — mobile */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 bg-white border-t border-black/[0.08] flex items-center justify-around px-2 lg:hidden font-cloud-body"
-        style={{ paddingTop: 10, paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
+        className="cloud-bottom-nav fixed inset-x-0 bottom-0 z-50 bg-white border-t border-black/[0.08] flex items-center justify-around px-2 lg:hidden font-cloud-body"
+        style={{ paddingTop: 8 }}
       >
         {MOBILE_NAV.map(({ href, icon: Icon, label }, idx) => {
-          const active = isActive(href, pathname);
+          const active = href === "/cloud/dashboard/more"
+            ? (pathname === "/cloud/dashboard/more"
+                || pathname.startsWith("/cloud/dashboard/settings")
+                || pathname.startsWith("/cloud/dashboard/billing")
+                || pathname.startsWith("/cloud/dashboard/team")
+                || pathname.startsWith("/cloud/dashboard/analytics"))
+            : isActive(href, pathname);
           const isCenter = idx === 2;
           return (
             <Link

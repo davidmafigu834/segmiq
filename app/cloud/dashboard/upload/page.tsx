@@ -347,7 +347,7 @@ export default function CloudUploadPage() {
             </div>
 
             {/* Big upload zone */}
-            <label className="flex flex-col items-center justify-center gap-4 rounded-[20px] border-2 border-dashed border-[#60E8A0]/40 bg-gradient-to-br from-[#F0FFF8] via-[#E0FFF0] to-[#C8FFE0] py-16 cursor-pointer hover:border-[#60E8A0]/70 transition-colors">
+            <label htmlFor="photo-input" className="flex flex-col items-center justify-center gap-4 rounded-[20px] border-2 border-dashed border-[#60E8A0]/40 bg-gradient-to-br from-[#F0FFF8] via-[#E0FFF0] to-[#C8FFE0] py-16 cursor-pointer hover:border-[#60E8A0]/70 transition-colors">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#D4FF4F]" style={{ boxShadow: 'var(--cloud-shadow-elevated)' }}>
                 <Camera className="h-8 w-8 text-[#1C1410]" strokeWidth={1.5} />
               </div>
@@ -357,8 +357,9 @@ export default function CloudUploadPage() {
               </div>
               <input
                 ref={fileInputRef}
+                id="photo-input"
                 type="file"
-                accept="image/*"
+                accept="image/*,image/heic,image/heif"
                 multiple
                 capture="environment"
                 className="hidden"

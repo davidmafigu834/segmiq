@@ -357,3 +357,25 @@ body {
   --cloud-nav-height: 68px;
   --cloud-topbar-height: 60px;
 }
+
+/* ── Skeleton shimmer animation ── */
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Safe area support for PWA installed to home screen ── */
+.cloud-bottom-nav {
+  padding-bottom: 16px;
+}
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .cloud-bottom-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  }
+}
+
+/* ── Upload zone touch optimization ── */
+label[for="photo-input"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}

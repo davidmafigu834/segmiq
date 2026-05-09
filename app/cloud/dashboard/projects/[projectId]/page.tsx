@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import {
   ArrowLeft, BarChart2, Camera, Check, ChevronLeft, ChevronRight, Copy,
-  Download, Loader2, MoreVertical, Pencil, Trash2, X,
+  Download, MoreVertical, Pencil, Trash2, X,
   MapPin, Calendar,
 } from "lucide-react";
 import Link from "next/link";
@@ -271,8 +271,24 @@ export default function ProjectDetailPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-[#D4FF4F]" />
+      <div className="min-h-screen bg-[#F5F5F0]" style={{ padding: '20px 20px 0' }}>
+        <div style={{ height: 14, width: 64, background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.5s infinite', borderRadius: 4, marginBottom: 14 }} />
+        <div style={{ height: 26, width: '65%', background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.5s infinite', borderRadius: 6, marginBottom: 28 }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                aspectRatio: '1',
+                borderRadius: 12,
+                background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'skeleton-shimmer 1.5s infinite',
+                animationDelay: `${i * 0.1}s`,
+              }}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -396,7 +412,7 @@ export default function ProjectDetailPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,image/heic,image/heif"
           multiple
           className="hidden"
           onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }}
@@ -476,6 +492,8 @@ export default function ProjectDetailPage() {
                         <img
                           src={m.public_url}
                           alt={m.caption ?? `Photo ${idx + 1}`}
+                          loading={idx === 0 ? 'eager' : 'lazy'}
+                          decoding="async"
                           className="h-full w-full object-cover"
                         />
                         <div className="pointer-events-none absolute inset-0 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100" />
