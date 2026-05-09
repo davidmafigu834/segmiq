@@ -19,6 +19,7 @@ type Project = {
   updated_at: string;
   created_at: string;
   project_media: MediaItem[];
+  project_milestones?: { id: string; is_completed: boolean }[];
 };
 
 type SortKey = "newest" | "oldest" | "most_photos" | "alpha";
@@ -295,7 +296,7 @@ export default function CloudProjectsPage() {
                     </div>
 
                     {/* Info */}
-                    <div style={{ padding: '10px 12px 18px' }}>
+                    <div style={{ padding: '10px 12px 14px' }}>
                       <p className="font-cloud-display text-[15px] leading-tight truncate" style={{ color: "var(--fw-text-primary)", margin: '0 0 6px' }}>{p.title}</p>
                       <div className="mt-1 flex items-center gap-2 text-[11px] font-cloud-body" style={{ color: "#4A3828" }}>
                         {p.location && <span className="truncate">{p.location}</span>}
@@ -304,6 +305,22 @@ export default function CloudProjectsPage() {
                           <ArrowRight className="h-3 w-3" />
                         </span>
                       </div>
+                      {p.project_milestones && p.project_milestones.length > 0 && (() => {
+                        const total = p.project_milestones.length;
+                        const done = p.project_milestones.filter((m) => m.is_completed).length;
+                        const pct = Math.round((done / total) * 100);
+                        return (
+                          <div style={{ marginTop: 10 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <span style={{ fontFamily: 'var(--fw-font-body), system-ui, sans-serif', fontSize: 9, color: '#8C7B6B', fontWeight: 600 }}>{done}/{total} milestones</span>
+                              <span style={{ fontFamily: 'var(--fw-font-body), system-ui, sans-serif', fontSize: 9, color: '#8C7B6B' }}>{pct}%</span>
+                            </div>
+                            <div style={{ height: 4, background: 'rgba(28,20,16,0.08)', borderRadius: 2 }}>
+                              <div style={{ height: 4, borderRadius: 2, background: pct === 100 ? '#D4FF4F' : '#1C1410', width: `${pct}%`, transition: 'width 0.3s ease' }} />
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </Link>
                 </div>

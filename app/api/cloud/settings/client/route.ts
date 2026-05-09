@@ -15,6 +15,7 @@ const patchSchema = z.object({
   name: z.string().min(2).max(200).optional(),
   industry: z.enum(INDUSTRIES as [string, ...string[]]).optional(),
   logo_url: z.string().url().nullable().optional(),
+  logo_key: z.string().min(1).optional(),
 });
 
 export async function PATCH(req: Request) {
@@ -31,6 +32,7 @@ export async function PATCH(req: Request) {
   if (parsed.data.name) update.name = parsed.data.name.trim();
   if (parsed.data.industry) update.industry = parsed.data.industry;
   if (parsed.data.logo_url !== undefined) update.logo_url = parsed.data.logo_url;
+  if (parsed.data.logo_key !== undefined) update.logo_key = parsed.data.logo_key;
 
   if (Object.keys(update).length === 1) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });

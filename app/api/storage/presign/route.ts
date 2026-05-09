@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { generatePresignedUploadUrl, generateMediaKey, generateHeroKey, generateTestimonialPhotoKey, getPublicUrl } from "@/lib/storage/r2";
+import { generatePresignedUploadUrl, generateOriginalMediaKey, generateHeroKey, generateTestimonialPhotoKey, getPublicUrl } from "@/lib/storage/r2";
 
 function generateLogoKey(clientId: string, filename: string): string {
   const ext = filename.split(".").pop() ?? "png";
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     key = generateLogoKey(clientId, filename);
   } else {
     if (!projectId) return NextResponse.json({ error: "projectId is required for media uploads" }, { status: 400 });
-    key = generateMediaKey(clientId, projectId, filename);
+    key = generateOriginalMediaKey(clientId, projectId, filename);
   }
 
   try {

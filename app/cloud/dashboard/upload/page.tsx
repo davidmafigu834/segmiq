@@ -130,7 +130,7 @@ export default function CloudUploadPage() {
           body: item.file,
         });
 
-        await fetch(`/api/clients/${session.clientId}/projects/${selectedProject.id}/media`, {
+        const mediaRes = await fetch(`/api/clients/${session.clientId}/projects/${selectedProject.id}/media`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -138,6 +138,13 @@ export default function CloudUploadPage() {
             public_url: publicUrl,
             file_size_bytes: item.file.size,
           }),
+        });
+        const savedMedia = (await mediaRes.json()) as { id: string };
+
+        await fetch("/api/cloud/watermark/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mediaId: savedMedia.id, originalKey: key, clientId: session.clientId }),
         });
 
         doneCount++;

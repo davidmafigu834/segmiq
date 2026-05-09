@@ -7,8 +7,11 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-p
 import {
   ArrowLeft, BarChart2, Camera, Check, ChevronLeft, ChevronRight, Copy,
   Download, MoreVertical, Pencil, Trash2, X,
-  MapPin, Calendar,
+  MapPin, Calendar, LayoutGrid, GitBranch, Plus, CheckCircle2,
+  XCircle, Paperclip, Trophy,
 } from "lucide-react";
+import { MilestoneForm } from "@/app/cloud/components/MilestoneForm";
+import { MediaAttachPicker } from "@/app/cloud/components/MediaAttachPicker";
 import Link from "next/link";
 import { getProjectCardStyles } from "@/app/cloud/components/ProjectCard";
 
@@ -18,6 +21,26 @@ type MediaItem = {
   storage_key: string;
   display_order: number;
   caption: string | null;
+  milestone_id?: string | null;
+};
+
+type MilestoneMedia = {
+  id: string;
+  public_url: string;
+  caption?: string | null;
+  display_order: number;
+  milestone_id?: string | null;
+};
+
+type Milestone = {
+  id: string;
+  title: string;
+  description?: string | null;
+  milestone_date: string;
+  display_order: number;
+  is_completed: boolean;
+  created_at: string;
+  project_media: MilestoneMedia[];
 };
 
 type Project = {
@@ -82,6 +105,14 @@ export default function ProjectDetailPage() {
 
   const [toastMsg, setToastMsg] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<"gallery" | "timeline">("gallery");
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestonesLoading, setMilestonesLoading] = useState(false);
+  const [showMilestoneForm, setShowMilestoneForm] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [showMediaPicker, setShowMediaPicker] = useState<string | null>(null);
+  const [openMilestoneMenu, setOpenMilestoneMenu] = useState<string | null>(null);
 
   function showToast(msg: string) {
     setToastMsg(msg);
@@ -232,7 +263,14 @@ export default function ProjectDetailPage() {
       );
       const newMediaItem = (await mediaRes.json()) as MediaItem;
 
-      setMedia((prev) => [...prev, { ...newMediaItem, display_order: prev.length }]);
+      const wmRes = await fetch("/api/cloud/watermark/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mediaId: newMediaItem.id, originalKey: key, clientId: session.clientId }),
+      });
+      const wmData = (await wmRes.json()) as { publicUrl: string };
+
+      setMedia((prev) => [...prev, { ...newMediaItem, public_url: wmData.publicUrl, display_order: prev.length }]);
       setUploadFiles((prev) =>
         prev.map((f) => f.id === item.id ? { ...f, status: "done", progress: 100 } : f)
       );
@@ -267,6 +305,81 @@ export default function ProjectDetailPage() {
         })
       )
     );
+  }
+
+  async function fetchMilestones() {
+    if (!session?.clientId) return;
+    setMilestonesLoading(true);
+    try {
+      const res = await fetch(`/api/clients/${session.clientId}/projects/${projectId}/milestones`);
+      const body = (await res.json()) as { milestones: Milestone[] };
+      setMilestones(body.milestones ?? []);
+    } finally {
+      setMilestonesLoading(false);
+    }
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (activeTab === "timeline") { void fetchMilestones(); } }, [activeTab]);
+
+  async function createMilestone(data: { title: string; description: string; milestone_date: string }) {
+    if (!session?.clientId) return;
+    const res = await fetch(`/api/clients/${session.clientId}/projects/${projectId}/milestones`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Failed to create milestone");
+    await fetchMilestones();
+  }
+
+  async function updateMilestone(
+    milestoneId: string,
+    data: { title?: string; description?: string; milestone_date?: string; is_completed?: boolean }
+  ) {
+    if (!session?.clientId) return;
+    const res = await fetch(
+      `/api/clients/${session.clientId}/projects/${projectId}/milestones/${milestoneId}`,
+      { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }
+    );
+    if (!res.ok) throw new Error("Failed to update milestone");
+    await fetchMilestones();
+  }
+
+  async function deleteMilestone(milestoneId: string) {
+    if (!confirm("Delete this milestone? Photos will remain in the project.")) return;
+    if (!session?.clientId) return;
+    await fetch(
+      `/api/clients/${session.clientId}/projects/${projectId}/milestones/${milestoneId}`,
+      { method: "DELETE" }
+    );
+    await fetchMilestones();
+  }
+
+  async function toggleMilestoneComplete(milestone: Milestone) {
+    await updateMilestone(milestone.id, { is_completed: !milestone.is_completed });
+    setOpenMilestoneMenu(null);
+  }
+
+  async function attachMediaToMilestone(milestoneId: string, mediaIds: string[]) {
+    if (!session?.clientId) return;
+    const res = await fetch(
+      `/api/clients/${session.clientId}/projects/${projectId}/milestones/${milestoneId}/media`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mediaIds }),
+      }
+    );
+    if (!res.ok) throw new Error("Failed to attach photos");
+    await fetchMilestones();
+    void fetchProject();
+  }
+
+  function formatMilestoneDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString("en-GB", {
+      day: "numeric", month: "long", year: "numeric",
+    });
   }
 
   if (status === "loading" || loading) {
@@ -392,6 +505,36 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
+      {/* Gallery / Timeline tab switcher */}
+      <div style={{ display: "flex", marginBottom: 16, background: "#F7F4EF", borderRadius: 12, padding: 3 }}>
+        {(["gallery", "timeline"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              flex: 1, height: 36,
+              background: activeTab === tab ? "#FFFFFF" : "transparent",
+              border: "none", borderRadius: 10,
+              fontSize: 12, fontWeight: 700,
+              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
+              color: activeTab === tab ? "#1C1410" : "#8C7B6B",
+              cursor: "pointer",
+              boxShadow: activeTab === tab ? "0 1px 3px rgba(28,20,16,0.08)" : "none",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              textTransform: "capitalize", transition: "all 0.15s ease",
+            }}
+          >
+            {tab === "gallery" ? <LayoutGrid size={13} /> : <GitBranch size={13} />}
+            {tab}
+            {tab === "timeline" && milestones.length > 0 && (
+              <span style={{ background: "#1C1410", color: "#D4FF4F", fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 10 }}>
+                {milestones.length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* Upload zone — mint SectionCard */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDraggingOver(true); }}
@@ -455,16 +598,16 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
-      {/* Photo count bar */}
-      {media.length > 0 && (
+      {/* Photo count bar — gallery tab only */}
+      {activeTab === "gallery" && media.length > 0 && (
         <div className="mb-3 flex items-center justify-between">
           <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase font-cloud-body">{media.length} photos</p>
           <p className="text-[11px] text-[#999990] font-cloud-body">drag to reorder</p>
         </div>
       )}
 
-      {/* Photo grid with drag to reorder */}
-      {media.length > 0 && (
+      {/* Photo grid with drag to reorder — gallery tab only */}
+      {activeTab === "gallery" && media.length > 0 && (
         <DragDropContext onDragEnd={(r) => void handleDragEnd(r)}>
           <Droppable droppableId="photos" direction="horizontal">
             {(provided) => (
@@ -517,6 +660,187 @@ export default function ProjectDetailPage() {
             )}
           </Droppable>
         </DragDropContext>
+      )}
+
+      {/* ── TIMELINE TAB ── */}
+      {activeTab === "timeline" && (
+        <div style={{ marginBottom: 20 }}>
+          {/* Header row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: 0 }}>
+              Milestones
+            </p>
+            <button
+              onClick={() => setShowMilestoneForm(true)}
+              style={{ display: "flex", alignItems: "center", gap: 5, height: 32, padding: "0 12px", background: "#1C1410", color: "#D4FF4F", border: "none", borderRadius: 10, fontSize: 12, fontWeight: 700, fontFamily: "var(--fw-font-body), system-ui, sans-serif", cursor: "pointer" }}
+            >
+              <Plus size={13} />
+              Add milestone
+            </button>
+          </div>
+
+          {/* Progress summary */}
+          {milestones.length > 0 && (
+            <div style={{ background: "#F7F4EF", borderRadius: 14, padding: "12px 14px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 11, color: "#4A3828", fontWeight: 600 }}>
+                    {milestones.filter((m) => m.is_completed).length} of {milestones.length} complete
+                  </span>
+                  <span style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 11, color: "#8C7B6B" }}>
+                    {Math.round((milestones.filter((m) => m.is_completed).length / milestones.length) * 100)}%
+                  </span>
+                </div>
+                <div style={{ height: 6, background: "rgba(28,20,16,0.1)", borderRadius: 3 }}>
+                  <div style={{
+                    height: 6, borderRadius: 3,
+                    background: milestones.every((m) => m.is_completed) ? "#D4FF4F" : "#1C1410",
+                    width: `${Math.round((milestones.filter((m) => m.is_completed).length / milestones.length) * 100)}%`,
+                    transition: "width 0.4s ease",
+                  }} />
+                </div>
+              </div>
+              {milestones.every((m) => m.is_completed) && (
+                <Trophy size={22} color="#1C1410" />
+              )}
+            </div>
+          )}
+
+          {/* Loading skeleton */}
+          {milestonesLoading && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{ height: 80, borderRadius: 14, background: "linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)", backgroundSize: "200% 100%", animation: "skeleton-shimmer 1.5s infinite", animationDelay: `${i * 0.1}s` }} />
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!milestonesLoading && milestones.length === 0 && (
+            <div style={{ textAlign: "center", padding: "40px 20px", background: "#F7F4EF", borderRadius: 18, border: "1.5px dashed rgba(28,20,16,0.14)" }}>
+              <GitBranch size={32} color="#B4A898" style={{ display: "block", margin: "0 auto 12px" }} />
+              <p style={{ fontFamily: "var(--fw-font-display), Georgia, serif", fontSize: 18, color: "#1C1410", margin: "0 0 6px" }}>No milestones yet</p>
+              <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 12, color: "#8C7B6B", margin: "0 0 20px" }}>
+                Track your project progress by adding key stages
+              </p>
+              <button
+                onClick={() => setShowMilestoneForm(true)}
+                style={{ height: 44, padding: "0 20px", background: "#1C1410", color: "#D4FF4F", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, fontFamily: "var(--fw-font-body), system-ui, sans-serif", cursor: "pointer" }}
+              >
+                Add first milestone
+              </button>
+            </div>
+          )}
+
+          {/* Milestone cards */}
+          {!milestonesLoading && milestones.map((milestone, idx) => (
+            <div key={milestone.id} style={{ marginBottom: 12, position: "relative" }}>
+              {/* Vertical connector line */}
+              {idx < milestones.length - 1 && (
+                <div style={{ position: "absolute", left: 18, top: 40, bottom: -12, width: 2, background: milestone.is_completed ? "rgba(28,20,16,0.15)" : "rgba(28,20,16,0.07)", zIndex: 0 }} />
+              )}
+
+              <div style={{ background: "#FFFFFF", borderRadius: 16, border: `0.5px solid ${milestone.is_completed ? "rgba(28,20,16,0.12)" : "rgba(28,20,16,0.07)"}`, overflow: "hidden", position: "relative", zIndex: 1 }}>
+                {/* Card header */}
+                <div style={{ padding: "14px 14px 12px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  {/* Status indicator */}
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, background: milestone.is_completed ? "#1C1410" : "#F7F4EF", border: `1.5px solid ${milestone.is_completed ? "#1C1410" : "rgba(28,20,16,0.15)"}`, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2 }}>
+                    {milestone.is_completed
+                      ? <CheckCircle2 size={16} color="#D4FF4F" />
+                      : <span style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 11, fontWeight: 700, color: "#8C7B6B" }}>{String(idx + 1).padStart(2, "0")}</span>
+                    }
+                  </div>
+
+                  {/* Title + date */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: "var(--fw-font-display), Georgia, serif", fontSize: 15, color: milestone.is_completed ? "#8C7B6B" : "#1C1410", margin: "0 0 2px", textDecoration: milestone.is_completed ? "line-through" : "none" }}>
+                      {milestone.title}
+                    </p>
+                    <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 11, color: "#8C7B6B", margin: 0 }}>
+                      {formatMilestoneDate(milestone.milestone_date)}
+                    </p>
+                    {milestone.description && (
+                      <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 12, color: "#4A3828", margin: "6px 0 0", lineHeight: 1.5 }}>
+                        {milestone.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Menu */}
+                  <div style={{ position: "relative", flexShrink: 0 }}>
+                    <button
+                      onClick={() => setOpenMilestoneMenu(openMilestoneMenu === milestone.id ? null : milestone.id)}
+                      style={{ width: 28, height: 28, borderRadius: 8, background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#8C7B6B" }}
+                    >
+                      <MoreVertical size={15} />
+                    </button>
+                    {openMilestoneMenu === milestone.id && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setOpenMilestoneMenu(null)} />
+                        <div style={{ position: "absolute", right: 0, top: 32, zIndex: 20, background: "#FFFFFF", borderRadius: 12, border: "0.5px solid rgba(28,20,16,0.12)", padding: "6px 0", minWidth: 168, boxShadow: "0 4px 16px rgba(28,20,16,0.12)" }}>
+                          <button
+                            onClick={() => { void toggleMilestoneComplete(milestone); }}
+                            style={{ width: "100%", padding: "8px 14px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#1C1410", fontFamily: "var(--fw-font-body), system-ui, sans-serif", display: "flex", alignItems: "center", gap: 8 }}
+                          >
+                            {milestone.is_completed ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+                            {milestone.is_completed ? "Mark incomplete" : "Mark complete"}
+                          </button>
+                          <button
+                            onClick={() => { setEditingMilestone(milestone); setOpenMilestoneMenu(null); }}
+                            style={{ width: "100%", padding: "8px 14px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#1C1410", fontFamily: "var(--fw-font-body), system-ui, sans-serif", display: "flex", alignItems: "center", gap: 8 }}
+                          >
+                            <Pencil size={14} />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => { void deleteMilestone(milestone.id); setOpenMilestoneMenu(null); }}
+                            style={{ width: "100%", padding: "8px 14px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#E8602C", fontFamily: "var(--fw-font-body), system-ui, sans-serif", display: "flex", alignItems: "center", gap: 8 }}
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Photo strip */}
+                {milestone.project_media && milestone.project_media.length > 0 && (
+                  <div style={{ padding: "0 14px 12px", display: "flex", gap: 6, overflowX: "auto" }}>
+                    {[...milestone.project_media].sort((a, b) => a.display_order - b.display_order).slice(0, 6).map((pm) => (
+                      <div key={pm.id} style={{ width: 64, height: 64, borderRadius: 10, overflow: "hidden", flexShrink: 0 }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={pm.public_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      </div>
+                    ))}
+                    {milestone.project_media.length > 6 && (
+                      <div style={{ width: 64, height: 64, borderRadius: 10, background: "#F7F4EF", border: "0.5px solid rgba(28,20,16,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <span style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 12, fontWeight: 700, color: "#4A3828" }}>
+                          +{milestone.project_media.length - 6}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Attach photos button */}
+                <div style={{ padding: "0 14px 14px" }}>
+                  <button
+                    onClick={() => setShowMediaPicker(milestone.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", background: "#F7F4EF", border: "0.5px solid rgba(28,20,16,0.1)", borderRadius: 10, fontSize: 11, fontWeight: 600, fontFamily: "var(--fw-font-body), system-ui, sans-serif", color: "#4A3828", cursor: "pointer" }}
+                  >
+                    <Paperclip size={12} />
+                    {milestone.project_media && milestone.project_media.length > 0
+                      ? `${milestone.project_media.length} photo${milestone.project_media.length !== 1 ? "s" : ""} · Add more`
+                      : "Attach photos"
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Description — stats SectionCard */}
@@ -572,6 +896,41 @@ export default function ProjectDetailPage() {
           View →
         </Link>
       </div>
+
+      {/* MilestoneForm — create */}
+      {showMilestoneForm && (
+        <MilestoneForm
+          projectCategory={project.category ?? "Other"}
+          mode="create"
+          onSave={createMilestone}
+          onClose={() => setShowMilestoneForm(false)}
+        />
+      )}
+
+      {/* MilestoneForm — edit */}
+      {editingMilestone && (
+        <MilestoneForm
+          projectCategory={project.category ?? "Other"}
+          mode="edit"
+          initialData={{
+            title: editingMilestone.title,
+            description: editingMilestone.description ?? "",
+            milestone_date: editingMilestone.milestone_date,
+          }}
+          onSave={(data) => updateMilestone(editingMilestone.id, data)}
+          onClose={() => setEditingMilestone(null)}
+        />
+      )}
+
+      {/* MediaAttachPicker */}
+      {showMediaPicker && (
+        <MediaAttachPicker
+          allMedia={media}
+          currentMilestoneId={showMediaPicker}
+          onAttach={(ids) => attachMediaToMilestone(showMediaPicker, ids)}
+          onClose={() => setShowMediaPicker(null)}
+        />
+      )}
 
       {/* Lightbox */}
       {lightboxIdx !== null && currentMedia && (

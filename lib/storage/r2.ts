@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function getR2Client(): S3Client {
@@ -50,4 +50,22 @@ export function generateHeroKey(clientId: string, filename: string): string {
 export function generateTestimonialPhotoKey(clientId: string, filename: string): string {
   const ext = filename.split(".").pop() ?? "jpg";
   return `clients/${clientId}/testimonials/${Date.now()}.${ext}`;
+}
+
+export function generateOriginalMediaKey(clientId: string, projectId: string, filename: string): string {
+  const ext = filename.split(".").pop() ?? "jpg";
+  return `clients/${clientId}/projects/${projectId}/originals/${Date.now()}.${ext}`;
+}
+
+export async function getObject(key: string): Promise<Buffer> {
+  const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
+  if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");
+  const res = await getR2Client().send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  return Buffer.from(await res.Body!.transformToByteArray());
+}
+
+export async function putObject(key: string, body: Buffer, contentType: string): Promise<void> {
+  const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
+  if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");
+  await getR2Client().send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
 }

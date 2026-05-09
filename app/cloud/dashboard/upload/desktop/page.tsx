@@ -180,6 +180,12 @@ export default function DesktopUploadPage() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ storage_key: key, public_url: publicUrl, file_size_bytes: item.file.size }),
             })
+              .then((r) => r.json() as Promise<{ id: string }>)
+              .then((savedMedia) => fetch("/api/cloud/watermark/apply", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mediaId: savedMedia.id, originalKey: key, clientId }),
+              }))
               .then(() => {
                 setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, status: "done", progress: 100 } : f));
                 setCompletedCount((c) => c + 1);

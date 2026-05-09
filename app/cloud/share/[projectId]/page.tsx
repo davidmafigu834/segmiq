@@ -5,7 +5,7 @@ import { MapPin, Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { ViewRecorder } from "./ViewRecorder";
 import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
-import { ShareGallery } from "./ShareGallery";
+import { ShareViewSwitcher } from "./ShareViewSwitcher";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(" ").filter(Boolean);
@@ -59,6 +59,15 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
     .select("id, public_url, display_order, caption")
     .eq("project_id", project.id as string)
     .order("display_order", { ascending: true });
+
+  type MilestoneMedia = { id: string; public_url: string; caption: string | null; display_order: number };
+  type MilestoneRow = { id: string; title: string; description: string | null; milestone_date: string; display_order: number; is_completed: boolean; project_media: MilestoneMedia[] };
+  const { data: rawMilestones } = await supabase
+    .from("project_milestones")
+    .select("id, title, description, milestone_date, display_order, is_completed, project_media(id, public_url, caption, display_order)")
+    .eq("project_id", project.id as string)
+    .order("milestone_date", { ascending: true });
+  const milestones = (rawMilestones ?? []) as MilestoneRow[];
 
   const client = project.clients as { name: string; primary_color: string | null; slug: string; logo_url: string | null } | null;
   const media = (rawMedia ?? []) as MediaItem[];
@@ -326,7 +335,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
             Photos · {media.length}
           </p>
           <div style={{ maxWidth: 960, margin: "0 auto" }}>
-            <ShareGallery media={media} watermark={watermarkConfig} />
+            <ShareViewSwitcher media={media} milestones={milestones} watermark={watermarkConfig} />
           </div>
         </div>
       )}

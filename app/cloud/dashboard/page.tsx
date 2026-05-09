@@ -15,6 +15,7 @@ type Project = {
   category: string | null;
   updated_at: string;
   project_media: MediaItem[];
+  project_milestones?: { id: string; is_completed: boolean }[];
 };
 type Stats = { total_projects: number; total_photos: number; total_bytes: number; plan?: string; limit_bytes?: number };
 type TeamMember = { id: string; name: string; email: string };
@@ -269,9 +270,21 @@ export default function CloudDashboardHome() {
                   </span>
                 </div>
                 {/* Info below */}
-                <div style={{ padding: "10px 12px 18px" }}>
+                <div style={{ padding: "10px 12px 14px" }}>
                   <p style={{ fontFamily: S, fontSize: 13, color: "#1C1410", lineHeight: 1.2, margin: "0 0 6px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{p.title}</p>
-                  <p style={{ fontSize: 9, color: "#4A3828", margin: "0 0 8px", fontFamily: F }}>In progress</p>
+                  {p.project_milestones && p.project_milestones.length > 0 ? (() => {
+                    const total = p.project_milestones.length;
+                    const done = p.project_milestones.filter((m) => m.is_completed).length;
+                    const pct = Math.round((done / total) * 100);
+                    return (
+                      <div style={{ marginBottom: 8 }}>
+                        <div style={{ height: 3, background: 'rgba(28,20,16,0.08)', borderRadius: 2, marginBottom: 4 }}>
+                          <div style={{ height: 3, borderRadius: 2, background: pct === 100 ? '#D4FF4F' : '#1C1410', width: `${pct}%` }} />
+                        </div>
+                        <span style={{ fontSize: 8, color: '#8C7B6B', fontFamily: F }}>{done}/{total} milestones</span>
+                      </div>
+                    );
+                  })() : <p style={{ fontSize: 9, color: "#4A3828", margin: "0 0 8px", fontFamily: F }}>In progress</p>}
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontSize: 9, fontWeight: 700, color: "#4A3828", fontFamily: F }}>{pCount} photos</span>
                     <div style={{ width: 22, height: 22, borderRadius: "50%", background: "#EDE9E3", display: "flex", alignItems: "center", justifyContent: "center" }}>

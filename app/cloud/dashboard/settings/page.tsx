@@ -145,12 +145,12 @@ export default function CloudSettingsPage() {
         body: JSON.stringify({ filename: logoFile.name, contentType: logoFile.type, clientId: session.clientId, purpose: "logo" }),
       });
       if (!presignRes.ok) throw new Error("Failed to get upload URL");
-      const { uploadUrl, publicUrl } = (await presignRes.json()) as { uploadUrl: string; publicUrl: string };
+      const { uploadUrl, key: logoKey, publicUrl } = (await presignRes.json()) as { uploadUrl: string; key: string; publicUrl: string };
       await fetch(uploadUrl, { method: "PUT", body: logoFile, headers: { "Content-Type": logoFile.type } });
       await fetch("/api/cloud/settings/client", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ logo_url: publicUrl }),
+        body: JSON.stringify({ logo_url: publicUrl, logo_key: logoKey }),
       });
       setLogoUrl(publicUrl);
       setLogoFile(null);
