@@ -230,7 +230,13 @@ export default function CloudUploadPage() {
           /* ── State A: no project selected ── */
           <>
             <p className="font-cloud-display text-[22px] text-[#0a0a0a] mb-1">Upload photos</p>
-            <p className="text-[13px] text-[#999990] font-cloud-body mb-5">Choose a project to add photos to.</p>
+            <p className="text-[13px] text-[#999990] font-cloud-body mb-1">Choose a project to add photos to.</p>
+            <p className="text-[12px] text-[#B4A898] font-cloud-body mb-5">
+              Uploading from desktop?{" "}
+              <a href="/cloud/dashboard/upload/desktop" className="font-semibold text-[#666660] underline underline-offset-2">
+                Use bulk upload →
+              </a>
+            </p>
 
             <div className="mb-3 space-y-2">
               {recent5.map((p) => {

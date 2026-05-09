@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, ChevronDown, ExternalLink, Loader2, MoreHorizontal, X } from "lucide-react";
+import { AlertTriangle, ExternalLink, Loader2, MoreHorizontal, X } from "lucide-react";
 
 export type CloudClientRow = {
   id: string;
