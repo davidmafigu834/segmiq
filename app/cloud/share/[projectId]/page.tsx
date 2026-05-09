@@ -47,7 +47,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
 
   const { data: project } = await supabase
     .from("projects")
-    .select("*, clients(name, primary_color, slug)")
+    .select("*, clients(name, primary_color, slug, logo_url)")
     .or(`id.eq.${params.projectId},slug.eq.${params.projectId}`)
     .eq("is_public", true)
     .maybeSingle();
@@ -60,19 +60,37 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
     .eq("project_id", project.id as string)
     .order("display_order", { ascending: true });
 
-  const client = project.clients as { name: string; primary_color: string | null; slug: string } | null;
+  const client = project.clients as { name: string; primary_color: string | null; slug: string; logo_url: string | null } | null;
   const media = (rawMedia ?? []) as MediaItem[];
   const cover = media[0]?.public_url;
 
-  const profileSlug = project.client_id
+  type ClientProfileRow = {
+    slug?: string;
+    watermark_enabled?: boolean;
+    watermark_position?: string;
+    watermark_opacity?: number;
+    watermark_size?: string;
+  };
+  const clientProfile = project.client_id
     ? await (async () => {
         const { data: cp } = await supabase
           .from("client_profiles")
-          .select("slug")
+          .select("slug, watermark_enabled, watermark_position, watermark_opacity, watermark_size")
           .eq("client_id", project.client_id as string)
           .maybeSingle();
-        return (cp as { slug?: string } | null)?.slug ?? client?.slug ?? null;
+        return cp as ClientProfileRow | null;
       })()
+    : null;
+
+  const profileSlug = clientProfile?.slug ?? client?.slug ?? null;
+  const logoUrl = client?.logo_url ?? null;
+  const watermarkConfig = clientProfile?.watermark_enabled && logoUrl
+    ? {
+        logoUrl,
+        position: (clientProfile.watermark_position ?? "bottom-right") as "bottom-right" | "bottom-left" | "bottom-center" | "center",
+        opacity: clientProfile.watermark_opacity ?? 40,
+        size: (clientProfile.watermark_size ?? "small") as "small" | "medium" | "large",
+      }
     : null;
 
   const cat = getCategoryStyle(project.category as string | null);
@@ -83,6 +101,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
     descriptionText.trim() !== "" &&
     descriptionText.trim() !== "Everything";
   const ctaProfileSlug = profileSlug ?? client?.slug ?? null;
+
 
   return (
     <div
@@ -288,7 +307,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
             Photos · {media.length}
           </p>
           <div style={{ maxWidth: 960, margin: "0 auto" }}>
-            <ShareGallery media={media} />
+            <ShareGallery media={media} watermark={watermarkConfig} />
           </div>
         </div>
       )}

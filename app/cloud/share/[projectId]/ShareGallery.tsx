@@ -5,7 +5,28 @@ import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 type MediaItem = { id: string; public_url: string; display_order: number; caption: string | null };
 
-export function ShareGallery({ media }: { media: MediaItem[] }) {
+type WatermarkConfig = {
+  logoUrl: string;
+  position: "bottom-right" | "bottom-left" | "bottom-center" | "center";
+  opacity: number;
+  size: "small" | "medium" | "large";
+};
+
+function getWatermarkPositionStyles(position: WatermarkConfig["position"]): React.CSSProperties {
+  const base: React.CSSProperties = { position: "absolute", pointerEvents: "none" };
+  if (position === "bottom-right") return { ...base, bottom: "6%", right: "5%" };
+  if (position === "bottom-left") return { ...base, bottom: "6%", left: "5%" };
+  if (position === "bottom-center") return { ...base, bottom: "6%", left: "50%", transform: "translateX(-50%)" };
+  return { ...base, top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+}
+
+function getWatermarkWidth(size: WatermarkConfig["size"]): string {
+  if (size === "small") return "15%";
+  if (size === "medium") return "25%";
+  return "35%";
+}
+
+export function ShareGallery({ media, watermark }: { media: MediaItem[]; watermark?: WatermarkConfig | null }) {
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [hovered, setHovered] = useState<number | null>(null);
 
@@ -48,6 +69,7 @@ export function ShareGallery({ media }: { media: MediaItem[] }) {
               overflow: "hidden",
               cursor: "pointer",
               position: "relative",
+              display: "block",
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -57,6 +79,21 @@ export function ShareGallery({ media }: { media: MediaItem[] }) {
               style={{ width: "100%", display: "block" }}
               loading={index < 6 ? "eager" : "lazy"}
             />
+            {watermark && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={watermark.logoUrl}
+                alt=""
+                style={{
+                  ...getWatermarkPositionStyles(watermark.position),
+                  width: getWatermarkWidth(watermark.size),
+                  maxWidth: 160,
+                  opacity: watermark.opacity / 100,
+                  objectFit: "contain",
+                  userSelect: "none",
+                }}
+              />
+            )}
             <div
               style={{
                 position: "absolute",
