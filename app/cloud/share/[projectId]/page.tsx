@@ -19,7 +19,7 @@ function formatDate(d: string): string {
 
 export const dynamic = "force-dynamic";
 
-type MediaItem = { id: string; public_url: string; display_order: number; caption: string | null };
+type MediaItem = { id: string; public_url: string; display_order: number; caption: string | null; type?: string; thumbnail_url?: string | null; duration_seconds?: number | null };
 
 export async function generateMetadata({ params }: { params: { projectId: string } }): Promise<Metadata> {
   const supabase = createAdminClient();
@@ -56,7 +56,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
 
   const { data: rawMedia } = await supabase
     .from("project_media")
-    .select("id, public_url, display_order, caption")
+    .select("id, public_url, display_order, caption, type, thumbnail_url, duration_seconds")
     .eq("project_id", project.id as string)
     .order("display_order", { ascending: true });
 
@@ -302,7 +302,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
             fontFamily: "var(--fw-font-body), system-ui, sans-serif",
           }}
         >
-          {media.length} {media.length === 1 ? "Photo" : "Photos"}
+          {media.length} {media.some(m => m.type === "video") ? (media.length === 1 ? "Item" : "Items") : (media.length === 1 ? "Photo" : "Photos")}
         </span>
       </div>
 
@@ -332,7 +332,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
               textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 16px",
             }}
           >
-            Photos · {media.length}
+            {media.some(m => m.type === "video") ? "Media" : "Photos"} · {media.length}
           </p>
           <div style={{ maxWidth: 960, margin: "0 auto" }}>
             <ShareViewSwitcher media={media} milestones={milestones} watermark={watermarkConfig} />

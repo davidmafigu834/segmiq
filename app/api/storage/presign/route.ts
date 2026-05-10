@@ -1,14 +1,27 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { generatePresignedUploadUrl, generateOriginalMediaKey, generateHeroKey, generateTestimonialPhotoKey, getPublicUrl } from "@/lib/storage/r2";
+import { generatePresignedUploadUrl, generateOriginalMediaKey, generateHeroKey, generateTestimonialPhotoKey, generateVideoKey, getPublicUrl } from "@/lib/storage/r2";
 
 function generateLogoKey(clientId: string, filename: string): string {
   const ext = filename.split(".").pop() ?? "png";
   return `clients/${clientId}/logo/${Date.now()}.${ext}`;
 }
 
-const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"];
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "video/mp4",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/webm",
+  "video/3gpp",
+  "video/3gpp2",
+];
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -16,13 +29,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { filename, contentType, clientId, projectId, purpose } = await req.json() as {
+  const { filename, contentType, clientId, projectId, purpose, fileSize } = await req.json() as {
     filename: string;
     contentType: string;
     clientId: string;
     projectId?: string;
     purpose?: "hero" | "media" | "testimonial" | "logo";
+    fileSize?: number;
   };
+
+  const isVideo = contentType.startsWith("video/");
+  const maxSize = isVideo ? 200 * 1024 * 1024 : 20 * 1024 * 1024;
+  if (fileSize && fileSize > maxSize) {
+    return NextResponse.json(
+      {
+        error: isVideo
+          ? "Video is too large. Maximum size is 200MB. For longer videos, use a YouTube link instead."
+          : "Photo is too large. Maximum size is 20MB.",
+      },
+      { status: 400 }
+    );
+  }
 
   if (session.role !== "AGENCY_ADMIN" && session.clientId !== clientId) {
     return NextResponse.json(
@@ -33,7 +60,7 @@ export async function POST(req: Request) {
 
   if (!ALLOWED_TYPES.includes(contentType)) {
     return NextResponse.json(
-      { error: "File type not supported. Upload photos only (JPEG, PNG, WEBP, HEIC)." },
+      { error: "File type not supported. Upload photos (JPEG, PNG, WEBP, HEIC) or videos (MP4, MOV, WEBM, 3GP)." },
       { status: 400 }
     );
   }
@@ -51,7 +78,9 @@ export async function POST(req: Request) {
     key = generateLogoKey(clientId, filename);
   } else {
     if (!projectId) return NextResponse.json({ error: "projectId is required for media uploads" }, { status: 400 });
-    key = generateOriginalMediaKey(clientId, projectId, filename);
+    key = isVideo
+      ? generateVideoKey(clientId, projectId, filename)
+      : generateOriginalMediaKey(clientId, projectId, filename);
   }
 
   try {

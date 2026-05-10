@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Play, Video } from "lucide-react";
+import { formatDuration } from "@/app/cloud/lib/video-thumbnail";
 
-type MediaItem = { id: string; public_url: string; display_order: number; caption: string | null };
+type MediaItem = { id: string; public_url: string; display_order: number; caption: string | null; type?: string; thumbnail_url?: string | null; duration_seconds?: number | null };
 
 type WatermarkConfig = {
   logoUrl: string;
@@ -72,45 +73,77 @@ export function ShareGallery({ media, watermark }: { media: MediaItem[]; waterma
               display: "block",
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.public_url}
-              alt={item.caption ?? `Photo ${index + 1}`}
-              style={{ width: "100%", display: "block" }}
-              loading={index < 6 ? "eager" : "lazy"}
-            />
-            {watermark && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={watermark.logoUrl}
-                alt=""
-                style={{
-                  ...getWatermarkPositionStyles(watermark.position),
-                  width: getWatermarkWidth(watermark.size),
-                  maxWidth: 160,
-                  opacity: watermark.opacity / 100,
-                  objectFit: "contain",
-                  userSelect: "none",
-                }}
-              />
+            {item.type === "video" ? (
+              <>
+                {item.thumbnail_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.thumbnail_url}
+                    alt={item.caption ?? "Video"}
+                    style={{ width: "100%", display: "block" }}
+                    loading={index < 6 ? "eager" : "lazy"}
+                  />
+                ) : (
+                  <div style={{ width: "100%", aspectRatio: "16/9", background: "#2E2218", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Video size={32} color="rgba(255,255,255,0.3)" />
+                  </div>
+                )}
+                <div style={{ position: "absolute", inset: 0, background: "rgba(28,20,16,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Play style={{ fill: "#1C1410", color: "#1C1410", width: 18, height: 18, marginLeft: 2 }} />
+                  </div>
+                </div>
+                {item.duration_seconds ? (
+                  <span style={{ position: "absolute", bottom: 8, right: 8, background: "rgba(0,0,0,0.7)", color: "#FFFFFF", fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 5, fontFamily: "var(--fw-font-body), system-ui, sans-serif" }}>
+                    {formatDuration(item.duration_seconds)}
+                  </span>
+                ) : null}
+              </>
+            ) : (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.public_url}
+                  alt={item.caption ?? `Photo ${index + 1}`}
+                  style={{ width: "100%", display: "block" }}
+                  loading={index < 6 ? "eager" : "lazy"}
+                />
+                {watermark && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={watermark.logoUrl}
+                    alt=""
+                    style={{
+                      ...getWatermarkPositionStyles(watermark.position),
+                      width: getWatermarkWidth(watermark.size),
+                      maxWidth: 160,
+                      opacity: watermark.opacity / 100,
+                      objectFit: "contain",
+                      userSelect: "none",
+                    }}
+                  />
+                )}
+              </>
             )}
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: hovered === index ? "rgba(28,20,16,0.35)" : "rgba(28,20,16,0)",
-                transition: "background 0.2s ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {hovered === index && (
-                <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-                </svg>
-              )}
-            </div>
+            {item.type !== "video" && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: hovered === index ? "rgba(28,20,16,0.35)" : "rgba(28,20,16,0)",
+                  transition: "background 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {hovered === index && (
+                  <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                  </svg>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -151,13 +184,24 @@ export function ShareGallery({ media, watermark }: { media: MediaItem[]; waterma
             </button>
           )}
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={media[lightbox].public_url}
-            alt={media[lightbox].caption ?? `Photo ${lightbox + 1}`}
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 10 }}
-          />
+          {media[lightbox].type === "video" ? (
+            <video
+              src={media[lightbox].public_url}
+              controls
+              autoPlay
+              playsInline
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 10 }}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={media[lightbox].public_url}
+              alt={media[lightbox].caption ?? `Photo ${lightbox + 1}`}
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: "90vw", maxHeight: "85vh", objectFit: "contain", borderRadius: 10 }}
+            />
+          )}
 
           {media.length > 1 && (
             <button

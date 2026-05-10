@@ -57,6 +57,12 @@ export function generateOriginalMediaKey(clientId: string, projectId: string, fi
   return `clients/${clientId}/projects/${projectId}/originals/${Date.now()}.${ext}`;
 }
 
+export function generateVideoKey(clientId: string, projectId: string, filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "mp4";
+  const timestamp = Date.now();
+  return `clients/${clientId}/projects/${projectId}/videos/${timestamp}.${ext}`;
+}
+
 export async function getObject(key: string): Promise<Buffer> {
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
   if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");

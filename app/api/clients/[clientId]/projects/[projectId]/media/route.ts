@@ -33,9 +33,12 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   const body = await req.json() as {
     storage_key: string;
     public_url: string;
+    type?: string;
     caption?: string;
     file_size_bytes?: number;
     display_order?: number;
+    thumbnail_url?: string;
+    duration_seconds?: number;
   };
 
   const supabase = createAdminClient();
@@ -55,12 +58,14 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     .insert({
       project_id: params.projectId,
       client_id: params.clientId,
-      type: "photo",
+      type: body.type ?? "photo",
       storage_key: body.storage_key,
       public_url: body.public_url,
       caption: body.caption ?? null,
       file_size_bytes: body.file_size_bytes ?? null,
       display_order: body.display_order ?? nextOrder,
+      thumbnail_url: body.thumbnail_url ?? null,
+      duration_seconds: body.duration_seconds ?? null,
     })
     .select()
     .single();

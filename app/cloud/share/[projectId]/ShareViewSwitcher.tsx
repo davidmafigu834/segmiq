@@ -4,7 +4,7 @@ import { useState } from "react";
 import { LayoutGrid, GitBranch, CheckCircle2, Calendar, Trophy } from "lucide-react";
 import { ShareGallery } from "./ShareGallery";
 
-type MediaItem = { id: string; public_url: string; display_order: number; caption: string | null };
+type MediaItem = { id: string; public_url: string; display_order: number; caption: string | null; type?: string; thumbnail_url?: string | null; duration_seconds?: number | null };
 
 type WatermarkConfig = {
   logoUrl: string;

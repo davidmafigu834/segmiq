@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Camera, Check, ChevronRight, Loader2, Plus, X, ArrowRight, Folder,
 } from "lucide-react";
+import { generateVideoThumbnail, formatFileSize } from "@/app/cloud/lib/video-thumbnail";
 import { InstallPrompt } from "@/app/cloud/components/InstallPrompt";
 import { IOSInstallBanner } from "@/app/cloud/components/IOSInstallBanner";
 import { getProjectCardStyles } from "@/app/cloud/components/ProjectCard";
@@ -24,6 +25,9 @@ type QueueItem = {
   previewUrl: string;
   progress: number;
   status: "pending" | "uploading" | "done" | "error";
+  fileType: "photo" | "video";
+  thumbnailBlob?: Blob;
+  duration?: number;
 };
 
 const CATEGORIES = [
@@ -85,19 +89,49 @@ export default function CloudUploadPage() {
     }
   }, [fetchProjects]);
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith("image/"));
-    if (!files.length) return;
-    const items: QueueItem[] = files.map((file) => ({
-      id: `${Date.now()}-${Math.random()}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      progress: 0,
-      status: "pending",
-    }));
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const rawFiles = Array.from(e.target.files ?? []).filter(
+      (f) => f.type.startsWith("image/") || f.type.startsWith("video/")
+    );
+    e.target.value = "";
+    if (!rawFiles.length) return;
+
+    const items: QueueItem[] = [];
+    for (const file of rawFiles) {
+      const isVideo = file.type.startsWith("video/");
+      const maxSize = isVideo ? 200 * 1024 * 1024 : 20 * 1024 * 1024;
+      if (file.size > maxSize) continue;
+
+      let previewUrl = URL.createObjectURL(file);
+      let duration: number | undefined;
+      let thumbnailBlob: Blob | undefined;
+
+      if (isVideo) {
+        try {
+          const result = await generateVideoThumbnail(file);
+          thumbnailBlob = result.thumbnailBlob;
+          duration = result.duration;
+          previewUrl = URL.createObjectURL(thumbnailBlob);
+        } catch (err) {
+          console.warn("Thumbnail generation failed:", err);
+        }
+      }
+
+      items.push({
+        id: `${Date.now()}-${Math.random()}`,
+        file,
+        previewUrl,
+        progress: 0,
+        status: "pending",
+        fileType: isVideo ? "video" : "photo",
+        thumbnailBlob,
+        duration,
+      });
+    }
+
+    if (!items.length) return;
     setQueue(items);
     setAllDone(false);
-    e.target.value = "";
   }
 
   async function uploadAll() {
@@ -106,6 +140,7 @@ export default function CloudUploadPage() {
     let doneCount = 0;
 
     for (const item of queue) {
+      const isVideo = item.fileType === "video";
       setQueue((prev) => prev.map((q) => q.id === item.id ? { ...q, status: "uploading" } : q));
       try {
         const presignRes = await fetch("/api/storage/presign", {
@@ -117,6 +152,7 @@ export default function CloudUploadPage() {
             clientId: session.clientId,
             projectId: selectedProject.id,
             purpose: "media",
+            fileSize: item.file.size,
           }),
         });
         if (!presignRes.ok) throw new Error("Presign failed");
@@ -130,22 +166,54 @@ export default function CloudUploadPage() {
           body: item.file,
         });
 
+        let thumbnailUrl: string | undefined;
+        if (isVideo && item.thumbnailBlob) {
+          const thumbPresign = await fetch("/api/storage/presign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filename: `thumb_${item.file.name}.jpg`,
+              contentType: "image/jpeg",
+              clientId: session.clientId,
+              projectId: selectedProject.id,
+              purpose: "media",
+              fileSize: item.thumbnailBlob.size,
+            }),
+          });
+          if (thumbPresign.ok) {
+            const { uploadUrl: thumbUploadUrl, publicUrl: thumbPublicUrl } = (await thumbPresign.json()) as {
+              uploadUrl: string; publicUrl: string;
+            };
+            await fetch(thumbUploadUrl, {
+              method: "PUT",
+              body: item.thumbnailBlob,
+              headers: { "Content-Type": "image/jpeg" },
+            });
+            thumbnailUrl = thumbPublicUrl;
+          }
+        }
+
         const mediaRes = await fetch(`/api/clients/${session.clientId}/projects/${selectedProject.id}/media`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            type: isVideo ? "video" : "photo",
             storage_key: key,
             public_url: publicUrl,
+            thumbnail_url: thumbnailUrl,
+            duration_seconds: item.duration,
             file_size_bytes: item.file.size,
           }),
         });
         const savedMedia = (await mediaRes.json()) as { id: string };
 
-        await fetch("/api/cloud/watermark/apply", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mediaId: savedMedia.id, originalKey: key, clientId: session.clientId }),
-        });
+        if (!isVideo) {
+          await fetch("/api/cloud/watermark/apply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mediaId: savedMedia.id, originalKey: key, clientId: session.clientId }),
+          });
+        }
 
         doneCount++;
         setQueue((prev) =>
@@ -359,18 +427,19 @@ export default function CloudUploadPage() {
                 <Camera className="h-8 w-8 text-[#1C1410]" strokeWidth={1.5} />
               </div>
               <div className="text-center">
-                <p className="font-cloud-display text-[20px] text-[#004D30]">Select photos</p>
-                <p className="mt-1 text-[13px] text-[#00875A] font-cloud-body">Tap to choose from your gallery</p>
+                <p className="font-cloud-display text-[20px] text-[#004D30]">Add photos or videos</p>
+                <p className="mt-1 text-[13px] text-[#00875A] font-cloud-body">From your gallery or camera</p>
+                <p className="mt-0.5 text-[11px] text-[#4A9E7A] font-cloud-body">Photos up to 20MB · Videos up to 200MB</p>
               </div>
               <input
                 ref={fileInputRef}
                 id="photo-input"
                 type="file"
-                accept="image/*,image/heic,image/heif"
+                accept="image/*,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/3gpp"
                 multiple
                 capture="environment"
                 className="hidden"
-                onChange={handleFileSelect}
+                onChange={(e) => { void handleFileSelect(e); }}
               />
             </label>
           </div>
@@ -416,24 +485,36 @@ export default function CloudUploadPage() {
             {/* Thumbnail grid */}
             <div className="mb-5 grid grid-cols-4 gap-2 sm:grid-cols-5">
               {queue.map((f) => (
-                <div key={f.id} className="relative aspect-square overflow-hidden rounded-xl bg-black/5">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={f.previewUrl} alt="" className="h-full w-full object-cover" />
-                  {f.status === "uploading" && (
-                    <div className="absolute inset-x-0 bottom-0 h-1 bg-black/10">
-                      <div className="h-full bg-[#1C1410] transition-all duration-200" style={{ width: `${f.progress}%` }} />
-                    </div>
-                  )}
-                  {f.status === "done" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <Check className="h-5 w-5 text-white" />
-                    </div>
-                  )}
-                  {f.status === "error" && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
-                      <X className="h-4 w-4 text-red-500" />
-                    </div>
-                  )}
+                <div key={f.id} className="flex flex-col gap-1">
+                  <div className="relative aspect-square overflow-hidden rounded-xl bg-black/5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={f.previewUrl} alt="" className="h-full w-full object-cover" />
+                    {f.status === "uploading" && (
+                      <div className="absolute inset-x-0 bottom-0 h-1 bg-black/10">
+                        <div className="h-full bg-[#1C1410] transition-all duration-200" style={{ width: `${f.progress}%` }} />
+                      </div>
+                    )}
+                    {f.status === "done" && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Check className="h-5 w-5 text-white" />
+                      </div>
+                    )}
+                    {f.status === "error" && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-red-500/20">
+                        <X className="h-4 w-4 text-red-500" />
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    {f.fileType === "video" && (
+                      <span style={{ fontSize: 9, fontWeight: 700, background: "#1C1410", color: "#D4FF4F", padding: "2px 5px", borderRadius: 4, fontFamily: "var(--fw-font-body), system-ui, sans-serif", letterSpacing: "0.04em", textTransform: "uppercase", flexShrink: 0 }}>
+                        VIDEO
+                      </span>
+                    )}
+                    <span style={{ fontSize: 10, color: "#8C7B6B", fontFamily: "var(--fw-font-body), system-ui, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {formatFileSize(f.file.size)}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -444,7 +525,7 @@ export default function CloudUploadPage() {
                 disabled={pendingCount === 0}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1C1410] py-4 text-[14px] font-bold text-[#D4FF4F] disabled:opacity-50 hover:bg-[#2E2218] transition-colors font-cloud-body"
               >
-                Upload {queue.length} photo{queue.length !== 1 ? "s" : ""}
+                Upload {queue.length} {queue.some(q => q.fileType === "video") ? "file" : "photo"}{queue.length !== 1 ? "s" : ""}
               </button>
             )}
           </div>

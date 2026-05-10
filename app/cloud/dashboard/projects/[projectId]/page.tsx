@@ -6,10 +6,11 @@ import { useSession } from "next-auth/react";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import {
   ArrowLeft, BarChart2, Camera, Check, ChevronLeft, ChevronRight, Copy,
-  Download, MoreVertical, Pencil, Trash2, X,
+  Download, MoreVertical, Pencil, Play, Trash2, Video, X,
   MapPin, Calendar, LayoutGrid, GitBranch, Plus, CheckCircle2,
   XCircle, Paperclip, Trophy,
 } from "lucide-react";
+import { generateVideoThumbnail, formatDuration } from "@/app/cloud/lib/video-thumbnail";
 import { MilestoneForm } from "@/app/cloud/components/MilestoneForm";
 import { MediaAttachPicker } from "@/app/cloud/components/MediaAttachPicker";
 import Link from "next/link";
@@ -21,6 +22,9 @@ type MediaItem = {
   storage_key: string;
   display_order: number;
   caption: string | null;
+  type?: string;
+  thumbnail_url?: string | null;
+  duration_seconds?: number | null;
   milestone_id?: string | null;
 };
 
@@ -63,6 +67,9 @@ type UploadFile = {
   previewUrl: string;
   progress: number;
   status: "pending" | "uploading" | "done" | "error";
+  fileType: "photo" | "video";
+  thumbnailBlob?: Blob;
+  duration?: number;
 };
 
 async function pooled<T>(
@@ -208,21 +215,58 @@ export default function ProjectDetailPage() {
     setMenuOpen(false);
   }
 
-  function addFiles(files: File[]) {
-    const images = files.filter((f) => f.type.startsWith("image/"));
-    const newItems: UploadFile[] = images.map((file) => ({
-      id: `${Date.now()}-${Math.random()}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      progress: 0,
-      status: "pending",
-    }));
+  async function addFilesAsync(files: File[]) {
+    const validFiles = files.filter(
+      (f) => f.type.startsWith("image/") || f.type.startsWith("video/")
+    );
+
+    const newItems: UploadFile[] = [];
+    for (const file of validFiles) {
+      const isVideo = file.type.startsWith("video/");
+      const maxSize = isVideo ? 200 * 1024 * 1024 : 20 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast(
+          isVideo
+            ? `${file.name} is too large. Videos must be under 200MB.`
+            : `${file.name} is too large. Photos must be under 20MB.`
+        );
+        continue;
+      }
+
+      let previewUrl = URL.createObjectURL(file);
+      let duration: number | undefined;
+      let thumbnailBlob: Blob | undefined;
+
+      if (isVideo) {
+        try {
+          const result = await generateVideoThumbnail(file);
+          thumbnailBlob = result.thumbnailBlob;
+          duration = result.duration;
+          previewUrl = URL.createObjectURL(thumbnailBlob);
+        } catch (err) {
+          console.warn("Thumbnail generation failed:", err);
+        }
+      }
+
+      newItems.push({
+        id: `${Date.now()}-${Math.random()}`,
+        file,
+        previewUrl,
+        progress: 0,
+        status: "pending",
+        fileType: isVideo ? "video" : "photo",
+        thumbnailBlob,
+        duration,
+      });
+    }
+
     setUploadFiles((prev) => [...prev, ...newItems]);
     void uploadAll(newItems);
   }
 
   async function uploadSingle(item: UploadFile): Promise<void> {
     if (!session?.clientId) return;
+    const isVideo = item.fileType === "video";
     setUploadFiles((prev) =>
       prev.map((f) => f.id === item.id ? { ...f, status: "uploading" } : f)
     );
@@ -236,9 +280,13 @@ export default function ProjectDetailPage() {
           clientId: session.clientId,
           projectId,
           purpose: "media",
+          fileSize: item.file.size,
         }),
       });
-      if (!presignRes.ok) throw new Error("Presign failed");
+      if (!presignRes.ok) {
+        const errData = (await presignRes.json()) as { error?: string };
+        throw new Error(errData.error || "Presign failed");
+      }
       const { uploadUrl, key, publicUrl } = (await presignRes.json()) as {
         uploadUrl: string; key: string; publicUrl: string;
       };
@@ -249,32 +297,67 @@ export default function ProjectDetailPage() {
         body: item.file,
       });
 
+      let thumbnailUrl: string | undefined;
+      if (isVideo && item.thumbnailBlob) {
+        const thumbPresign = await fetch("/api/storage/presign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: `thumb_${item.file.name}.jpg`,
+            contentType: "image/jpeg",
+            clientId: session.clientId,
+            projectId,
+            purpose: "media",
+            fileSize: item.thumbnailBlob.size,
+          }),
+        });
+        if (thumbPresign.ok) {
+          const { uploadUrl: thumbUploadUrl, publicUrl: thumbPublicUrl } = (await thumbPresign.json()) as {
+            uploadUrl: string; publicUrl: string;
+          };
+          await fetch(thumbUploadUrl, {
+            method: "PUT",
+            body: item.thumbnailBlob,
+            headers: { "Content-Type": "image/jpeg" },
+          });
+          thumbnailUrl = thumbPublicUrl;
+        }
+      }
+
       const mediaRes = await fetch(
         `/api/clients/${session.clientId}/projects/${projectId}/media`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            type: isVideo ? "video" : "photo",
             storage_key: key,
             public_url: publicUrl,
+            thumbnail_url: thumbnailUrl,
+            duration_seconds: item.duration,
             file_size_bytes: item.file.size,
           }),
         }
       );
       const newMediaItem = (await mediaRes.json()) as MediaItem;
 
-      const wmRes = await fetch("/api/cloud/watermark/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mediaId: newMediaItem.id, originalKey: key, clientId: session.clientId }),
-      });
-      const wmData = (await wmRes.json()) as { publicUrl: string };
+      if (!isVideo) {
+        const wmRes = await fetch("/api/cloud/watermark/apply", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mediaId: newMediaItem.id, originalKey: key, clientId: session.clientId }),
+        });
+        const wmData = (await wmRes.json()) as { publicUrl: string };
+        setMedia((prev) => [...prev, { ...newMediaItem, public_url: wmData.publicUrl, display_order: prev.length }]);
+      } else {
+        setMedia((prev) => [...prev, { ...newMediaItem, display_order: prev.length }]);
+      }
 
-      setMedia((prev) => [...prev, { ...newMediaItem, public_url: wmData.publicUrl, display_order: prev.length }]);
       setUploadFiles((prev) =>
         prev.map((f) => f.id === item.id ? { ...f, status: "done", progress: 100 } : f)
       );
-    } catch {
+    } catch (err) {
+      if (err instanceof Error) showToast(err.message);
       setUploadFiles((prev) =>
         prev.map((f) => f.id === item.id ? { ...f, status: "error" } : f)
       );
@@ -542,7 +625,7 @@ export default function ProjectDetailPage() {
         onDrop={(e) => {
           e.preventDefault();
           setDraggingOver(false);
-          addFiles(Array.from(e.dataTransfer.files));
+          void addFilesAsync(Array.from(e.dataTransfer.files));
         }}
         onClick={() => fileInputRef.current?.click()}
         className={`mb-5 cursor-pointer rounded-[20px] border transition-all ${
@@ -555,18 +638,18 @@ export default function ProjectDetailPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,image/heic,image/heif"
+          accept="image/*,image/heic,image/heif,video/mp4,video/quicktime,video/webm,video/3gpp"
           multiple
           className="hidden"
-          onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }}
+          onChange={(e) => { void addFilesAsync(Array.from(e.target.files ?? [])); e.target.value = ""; }}
         />
         <div className="flex flex-col items-center justify-center py-3 px-5">
           <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/70" style={{ boxShadow: 'var(--cloud-shadow-card)' }}>
             <Camera className={`h-5 w-5 ${draggingOver ? "text-[#00875A]" : "text-[#00875A]"}`} strokeWidth={1.8} />
           </div>
-          <p className="font-cloud-display" style={{ fontSize: 15, color: '#1C1410', margin: 0 }}>Add photos</p>
+          <p className="font-cloud-display" style={{ fontSize: 15, color: '#1C1410', margin: 0 }}>Add photos or videos</p>
           <p className="mt-0.5 font-cloud-body" style={{ fontSize: 11, color: '#8C7B6B', margin: 0 }}>
-            {draggingOver ? "Drop to add" : "Tap to select · or drag & drop"}
+            {draggingOver ? "Drop to add" : "Photos up to 20MB · Videos up to 200MB"}
           </p>
         </div>
       </div>
@@ -601,7 +684,9 @@ export default function ProjectDetailPage() {
       {/* Photo count bar — gallery tab only */}
       {activeTab === "gallery" && media.length > 0 && (
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase font-cloud-body">{media.length} photos</p>
+          <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase font-cloud-body">
+            {media.length} {media.some(m => m.type === "video") ? "items" : "photos"}
+          </p>
           <p className="text-[11px] text-[#999990] font-cloud-body">drag to reorder</p>
         </div>
       )}
@@ -631,14 +716,44 @@ export default function ProjectDetailPage() {
                         }}
                         className={`group relative aspect-square cursor-grab overflow-hidden rounded-xl bg-black/5 active:cursor-grabbing ${snap.isDragging ? "z-10 ring-2 ring-[#D4FF4F]" : ""}`}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={m.public_url}
-                          alt={m.caption ?? `Photo ${idx + 1}`}
-                          loading={idx === 0 ? 'eager' : 'lazy'}
-                          decoding="async"
-                          className="h-full w-full object-cover"
-                        />
+                        {m.type === "video" ? (
+                          <>
+                            {m.thumbnail_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={m.thumbnail_url}
+                                alt={m.caption ?? "Video"}
+                                loading="lazy"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center" style={{ background: "#2E2218" }}>
+                                <Video className="h-7 w-7" style={{ color: "rgba(255,255,255,0.3)" }} />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(28,20,16,0.35)" }}>
+                              <div className="flex items-center justify-center" style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.9)" }}>
+                                <Play style={{ fill: "#1C1410", color: "#1C1410", width: 16, height: 16, marginLeft: 2 }} />
+                              </div>
+                            </div>
+                            {m.duration_seconds ? (
+                              <span style={{ position: "absolute", bottom: 6, right: 6, background: "rgba(0,0,0,0.7)", color: "#FFFFFF", fontSize: 10, fontWeight: 600, padding: "2px 6px", borderRadius: 4, fontFamily: "var(--fw-font-body), system-ui, sans-serif" }}>
+                                {formatDuration(m.duration_seconds)}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={m.public_url}
+                              alt={m.caption ?? `Photo ${idx + 1}`}
+                              loading={idx === 0 ? 'eager' : 'lazy'}
+                              decoding="async"
+                              className="h-full w-full object-cover"
+                            />
+                          </>
+                        )}
                         <div className="pointer-events-none absolute inset-0 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100" />
                         {m.caption && (
                           <p className="pointer-events-none absolute bottom-2 left-2 right-2 text-[10px] text-white/90 opacity-0 transition-opacity group-hover:opacity-100 font-cloud-body">
@@ -979,13 +1094,24 @@ export default function ProjectDetailPage() {
             </button>
           )}
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={currentMedia.public_url}
-            alt={currentMedia.caption ?? ""}
-            className="max-h-[80vh] max-w-[90vw] rounded-lg object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {currentMedia.type === "video" ? (
+            <video
+              src={currentMedia.public_url}
+              controls
+              autoPlay
+              playsInline
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: "90vw", maxHeight: "80vh", borderRadius: 12 }}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={currentMedia.public_url}
+              alt={currentMedia.caption ?? ""}
+              className="max-h-[80vh] max-w-[90vw] rounded-lg object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
 
           <div
             className="absolute bottom-6 left-1/2 w-full max-w-md -translate-x-1/2 px-4"
