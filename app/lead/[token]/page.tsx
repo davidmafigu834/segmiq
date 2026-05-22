@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MagicLinkErrorPage } from "@/components/magic/MagicLinkErrorPage";
+import { MagicLinkExpiredPage } from "@/components/magic/MagicLinkExpiredPage";
 import { MagicLinkActionView, type MagicCallLogRow, type MagicLeadForView } from "@/components/magic/MagicLinkActionView";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +45,7 @@ export default async function MagicLeadPage({ params }: { params: { token: strin
   }
 
   if (row.magic_token_expires_at && new Date(row.magic_token_expires_at as string) < new Date()) {
-    return <MagicLinkErrorPage reason="expired" />;
+    return <MagicLinkExpiredPage token={params.token} />;
   }
 
   const logsRaw = (row as { call_logs?: unknown }).call_logs;

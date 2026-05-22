@@ -92,6 +92,7 @@ export function ClientSettingsClient({
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [tempPass, setTempPass] = useState<string | null>(null);
   const [tempPassExpiresAt, setTempPassExpiresAt] = useState<number | null>(null);
+  const [inviteEmailResult, setInviteEmailResult] = useState<{ email: string; emailSent: boolean } | null>(null);
 
   const savedClientName = useMemo(() => String(client.name ?? "").trim(), [client.name]);
 
@@ -261,7 +262,9 @@ export function ClientSettingsClient({
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Failed");
       const newUser = j.user as Partial<UserRow> | undefined;
-      if (j.temporaryPassword) {
+      const emailSent = typeof j.emailSent === "boolean" ? j.emailSent : false;
+      setInviteEmailResult({ email: inviteForm.email, emailSent });
+      if (!emailSent && j.temporaryPassword) {
         setTempPass(j.temporaryPassword as string);
         setTempPassExpiresAt(Date.now() + TEMP_PASS_TTL_MS);
       }
@@ -311,7 +314,9 @@ export function ClientSettingsClient({
       const j = await res.json();
       if (!res.ok) throw new Error(j.error ?? "Failed");
       const newMgr = j.user as Partial<ManagerRow> | undefined;
-      if (j.temporaryPassword) {
+      const emailSent = typeof j.emailSent === "boolean" ? j.emailSent : false;
+      setInviteEmailResult({ email: inviteForm.email, emailSent });
+      if (!emailSent && j.temporaryPassword) {
         setTempPass(j.temporaryPassword as string);
         setTempPassExpiresAt(Date.now() + TEMP_PASS_TTL_MS);
       }
@@ -378,7 +383,37 @@ export function ClientSettingsClient({
         {toast ? (
           <div className="mb-4 rounded-md border border-border bg-surface-card-alt px-3 py-2 text-sm">{toast}</div>
         ) : null}
-        {tempPass ? (
+        {inviteEmailResult?.emailSent === true ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", background: "rgba(61,214,140,0.08)", border: "0.5px solid rgba(61,214,140,0.2)", borderRadius: 10, marginBottom: 16 }}>
+            <i className="ti ti-mail-check" style={{ fontSize: 16, color: "#3dd68c" }} />
+            <p style={{ fontSize: 13, color: "#3dd68c", margin: 0, flex: 1 }}>
+              Login details sent to {inviteEmailResult.email}
+            </p>
+            <button type="button" style={{ fontSize: 12, color: "#3dd68c", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }} onClick={() => setInviteEmailResult(null)}>
+              Dismiss
+            </button>
+          </div>
+        ) : inviteEmailResult?.emailSent === false ? (
+          <div style={{ padding: "12px 14px", background: "rgba(245,166,35,0.08)", border: "0.5px solid rgba(245,166,35,0.2)", borderRadius: 10, marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: "#f5a623", margin: "0 0 8px", fontWeight: 600 }}>
+              Email failed to send. Share these credentials manually:
+            </p>
+            <p style={{ fontSize: 13, color: "#ededed", margin: "0 0 4px" }}>
+              Email: {inviteEmailResult.email}
+            </p>
+            <p style={{ fontSize: 13, color: "#ededed", margin: "0 0 8px", fontFamily: "monospace" }}>
+              Password: {tempPass}
+            </p>
+            <div>
+              <button type="button" style={{ fontSize: 12, textDecoration: "underline", background: "none", border: "none", cursor: "pointer", marginRight: 12 }} onClick={() => void copyTempPassword()}>
+                Copy password
+              </button>
+              <button type="button" style={{ fontSize: 12, textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }} onClick={() => { setInviteEmailResult(null); setTempPass(null); }}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        ) : tempPass ? (
           <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
             Temporary password: <code className="font-mono">{tempPass}</code>
             <button type="button" className="ml-2 underline" onClick={() => void copyTempPassword()}>

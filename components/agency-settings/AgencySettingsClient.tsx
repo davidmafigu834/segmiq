@@ -135,6 +135,7 @@ export function AgencySettingsClient() {
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteResult, setInviteResult] = useState<{ email: string; emailSent: boolean } | null>(null);
   const [pendingAdminPasswords, setPendingAdminPasswords] = useState<PendingAdminPassword[]>([]);
   const skipNextPersistRef = useRef(true);
   const [messageLogs, setMessageLogs] = useState<MessageLogRow[]>([]);
@@ -413,18 +414,21 @@ export function AgencySettingsClient() {
         error?: string;
         user?: { id?: string; email?: string };
         temporaryPassword?: string;
+        emailSent?: boolean;
       };
       if (!res.ok) throw new Error(j.error ?? "Invite failed");
       const user = j.user;
       const temporaryPassword = j.temporaryPassword;
       const userId = user?.id;
-      if (userId && temporaryPassword) {
-        const email = typeof user?.email === "string" ? user.email : inviteEmail.trim();
+      const emailSent = typeof j.emailSent === "boolean" ? j.emailSent : false;
+      const resolvedEmail = typeof user?.email === "string" ? user.email : inviteEmail.trim();
+      setInviteResult({ email: resolvedEmail, emailSent });
+      if (!emailSent && userId && temporaryPassword) {
         setPendingAdminPasswords((prev) => [
           ...prev.filter((p) => p.userId !== userId),
           {
             userId,
-            email,
+            email: resolvedEmail,
             password: temporaryPassword,
             expiresAt: Date.now() + AGENCY_TEAM_TEMP_PASS_TTL_MS,
           },
@@ -792,6 +796,26 @@ export function AgencySettingsClient() {
                 Invite admin
               </button>
             </div>
+            {inviteResult?.emailSent === true ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", background: "rgba(61,214,140,0.08)", border: "0.5px solid rgba(61,214,140,0.2)", borderRadius: 10 }}>
+                <i className="ti ti-mail-check" style={{ fontSize: 16, color: "#3dd68c" }} />
+                <p style={{ fontSize: 13, color: "#3dd68c", margin: 0, flex: 1 }}>
+                  Login details sent to {inviteResult.email}
+                </p>
+                <button type="button" style={{ fontSize: 12, color: "#3dd68c", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }} onClick={() => setInviteResult(null)}>
+                  Dismiss
+                </button>
+              </div>
+            ) : inviteResult?.emailSent === false ? (
+              <div style={{ padding: "12px 14px", background: "rgba(245,166,35,0.08)", border: "0.5px solid rgba(245,166,35,0.2)", borderRadius: 10 }}>
+                <p style={{ fontSize: 12, color: "#f5a623", margin: "0 0 4px", fontWeight: 600 }}>
+                  Email failed to send. Credentials are shown below — share them manually.
+                </p>
+                <button type="button" style={{ fontSize: 12, color: "#f5a623", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }} onClick={() => setInviteResult(null)}>
+                  Dismiss
+                </button>
+              </div>
+            ) : null}
             {pendingAdminPasswords.length > 0 ? (
               <div className="space-y-3">
                 {pendingAdminPasswords.map((p) => (

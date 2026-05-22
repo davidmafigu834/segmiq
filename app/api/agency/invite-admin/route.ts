@@ -4,6 +4,8 @@ import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRoles } from "@/lib/api-guards";
 import { hashPassword } from "@/lib/password";
+import { sendEmail } from "@/lib/email/resend";
+import { inviteSalespersonEmail } from "@/lib/email/templates/invite-salesperson";
 
 export const dynamic = "force-dynamic";
 
@@ -49,9 +51,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const loginUrl = `${process.env.NEXTAUTH_URL}/login`;
+  const name = parsed.data.name?.trim() || email.split("@")[0];
+  const { subject, html } = inviteSalespersonEmail({
+    inviteeName: name,
+    invitedByName: g.session.user?.name || "Leadstaq",
+    clientName: "Leadstaq Agency",
+    role: "AGENCY_ADMIN",
+    email,
+    temporaryPassword: tempPass,
+    loginUrl,
+  });
+  const emailResult = await sendEmail({ to: email, subject, html });
+  if (!emailResult.success) {
+    console.error("Admin invite email failed:", emailResult.error);
+  }
+
   return NextResponse.json({
     user: row,
     temporaryPassword: tempPass,
+    emailSent: emailResult.success,
     message: "Share this password with the new admin once. They should change it after signing in.",
   });
 }

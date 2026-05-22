@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 function LoginFormInner() {
   const router = useRouter();
@@ -83,6 +84,11 @@ function LoginFormInner() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+        </div>
+        <div className="text-right -mt-2 mb-1">
+          <Link href="/forgot-password" className="text-xs text-ink-tertiary hover:text-ink-primary">
+            Forgot password?
+          </Link>
         </div>
         {error ? <div className="text-sm text-[var(--danger)]">{error}</div> : null}
         <button type="submit" disabled={loading} className="btn-primary h-11 w-full sm:h-9">

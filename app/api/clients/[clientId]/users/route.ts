@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRoles } from "@/lib/api-guards";
 import { hashPassword } from "@/lib/password";
 import { normalizeToE164 } from "@/lib/phone-validate";
+import { sendEmail } from "@/lib/email/resend";
+import { inviteSalespersonEmail } from "@/lib/email/templates/invite-salesperson";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +61,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   }
 
   const supabase = createAdminClient();
-  const { data: client } = await supabase.from("clients").select("id").eq("id", params.clientId).maybeSingle();
+  const { data: client } = await supabase.from("clients").select("id, name").eq("id", params.clientId).maybeSingle();
   if (!client) {
     return NextResponse.json({ error: "Client not found" }, { status: 404 });
   }
@@ -91,9 +93,24 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       if (updateErr) {
         return NextResponse.json({ error: updateErr.message }, { status: 500 });
       }
+      const loginUrl = `${process.env.NEXTAUTH_URL}/login`;
+      const { subject: reactivateSubject, html: reactivateHtml } = inviteSalespersonEmail({
+        inviteeName: parsed.data.name.trim(),
+        invitedByName: g.session.user?.name || "Your manager",
+        clientName: (client as { id: string; name: string }).name,
+        role: parsed.data.role,
+        email,
+        temporaryPassword: tempPass,
+        loginUrl,
+      });
+      const reactivateEmailResult = await sendEmail({ to: email, subject: reactivateSubject, html: reactivateHtml });
+      if (!reactivateEmailResult.success) {
+        console.error("Reactivation invite email failed:", reactivateEmailResult.error);
+      }
       return NextResponse.json({
         user: updated,
         temporaryPassword: tempPass,
+        emailSent: reactivateEmailResult.success,
         message: "Existing user reactivated with a new temporary password.",
       });
     }
@@ -140,8 +157,24 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const loginUrl = `${process.env.NEXTAUTH_URL}/login`;
+  const { subject, html } = inviteSalespersonEmail({
+    inviteeName: parsed.data.name.trim(),
+    invitedByName: g.session.user?.name || "Your manager",
+    clientName: (client as { id: string; name: string }).name,
+    role: parsed.data.role,
+    email,
+    temporaryPassword: tempPass,
+    loginUrl,
+  });
+  const emailResult = await sendEmail({ to: email, subject, html });
+  if (!emailResult.success) {
+    console.error("Invite email failed to send:", emailResult.error);
+  }
+
   return NextResponse.json({
     user,
     temporaryPassword: tempPass,
+    emailSent: emailResult.success,
   });
 }
