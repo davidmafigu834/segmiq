@@ -76,7 +76,10 @@ export function ClientReadOnlyKanban({
     const active = grouped.find((g) => g.col === activeCol);
     return (
       <div>
-        <div className="overflow-x-auto border-b border-border pb-3 scrollbar-hide [touch-action:pan-x]">
+        <div
+          className="border-b border-border pb-3 scrollbar-hide"
+          style={{ overflowX: "scroll", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }}
+        >
           <div className="flex w-max gap-1">
             {grouped.map(({ col, items }) => {
               const on = activeCol === col;
