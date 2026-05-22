@@ -20,7 +20,7 @@ body {
   /* ── Surfaces (keep legacy names so Tailwind aliases auto-update) ── */
   --surface-sidebar: #000000;
   --surface-sidebar-elevated: #111111;
-  --surface-sidebar-border: rgba(255, 255, 255, 0.08);
+  --surface-sidebar-border: rgba(255, 255, 255, 0.15);
   --surface-canvas: #000000;
   --surface-card: #111111;
   --surface-card-alt: #161616;
@@ -71,11 +71,11 @@ body {
   --info-border: rgba(0, 112, 243, 0.2);
 
   /* ── Borders ── */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.15);
-  --border-focus: rgba(255, 255, 255, 0.3);
-  --border-strong: rgba(255, 255, 255, 0.2);
-  --border-dark: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.15);
+  --border-hover: rgba(255, 255, 255, 0.24);
+  --border-focus: rgba(255, 255, 255, 0.4);
+  --border-strong: rgba(255, 255, 255, 0.28);
+  --border-dark: rgba(255, 255, 255, 0.15);
 
   /* ── Shadows ── */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -93,10 +93,10 @@ body {
   /* ── Sidebar / topbar layout ── */
   --sidebar-width: 240px;
   --sidebar-bg: #000000;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-border: rgba(255, 255, 255, 0.15);
   --topbar-height: 48px;
   --topbar-bg: #000000;
-  --topbar-border: rgba(255, 255, 255, 0.08);
+  --topbar-border: rgba(255, 255, 255, 0.15);
 
   /* ── Transitions ── */
   --transition-fast: 100ms ease;
