@@ -211,11 +211,11 @@ export function AppShell({
             >
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             </button>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)] md:text-[11px]">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <span className="shrink-0 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)] md:text-[11px]">
                 {breadcrumb}
-              </div>
-              <h1 className={titleClass}>{pageTitle}</h1>
+              </span>
+              <h1 className="min-w-0 truncate font-display text-[14px] leading-tight text-[var(--text-primary)] md:text-[17px] layout:text-[22px]">{pageTitle}</h1>
             </div>
             <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
               <div className="hidden items-center lg:flex">
