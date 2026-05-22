@@ -88,7 +88,7 @@ export function ClientDetailView({
         <div className="flex items-start gap-5">
           <ClientAvatar name={name} size="lg" />
           <div className="min-w-0">
-            <h1 className="mb-1 font-display text-4xl tracking-display text-ink-primary">{name}</h1>
+            <h1 className="mb-1 min-w-0 truncate font-display text-2xl tracking-display text-ink-primary md:text-3xl layout:text-4xl">{name}</h1>
             <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">
               {industry || "No industry set"}
             </div>
@@ -119,7 +119,7 @@ export function ClientDetailView({
         </div>
       </header>
 
-      <nav className="-mx-4 flex snap-x snap-mandatory gap-1 overflow-x-auto border-b border-border px-4 scrollbar-hide">
+      <nav className="flex snap-x snap-mandatory gap-1 overflow-x-auto border-b border-border scrollbar-hide">
         {items.map((t) => {
           const active = pathname === t.href;
           return (

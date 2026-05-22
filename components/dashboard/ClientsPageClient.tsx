@@ -26,9 +26,9 @@ export function ClientsPageClient({ clients }: { clients: ClientsPageListRow[] }
             className="ag-card-hover group flex items-center gap-4 border border-[var(--ag-border)] bg-surface-card p-5 rounded-lg"
           >
             <ClientAvatar name={c.name} />
-            <div>
-              <div className="text-[13px] font-medium text-[var(--ag-text-primary)]" style={{ fontFamily: "var(--ag-font-body)" }}>{c.name}</div>
-              <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--ag-text-tertiary)]" style={{ fontFamily: "var(--ag-font-body)" }}>{c.industry}</div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-medium text-[var(--ag-text-primary)]" style={{ fontFamily: "var(--ag-font-body)" }}>{c.name}</div>
+              <div className="truncate text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--ag-text-tertiary)]" style={{ fontFamily: "var(--ag-font-body)" }}>{c.industry}</div>
             </div>
           </Link>
         ))}
