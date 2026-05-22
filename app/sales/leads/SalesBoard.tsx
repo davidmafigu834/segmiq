@@ -324,10 +324,17 @@ export function SalesBoard({
       ) : isMobileKanban ? (
         <div>
           <div
-            className="border-b border-border pb-3 scrollbar-hide"
-            style={{ overflowX: "scroll" }}
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              overflowX: "scroll",
+              gap: "4px",
+              paddingBottom: "12px",
+              borderBottom: "1px solid var(--border)",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+            }}
           >
-            <div className="flex w-max gap-1">
             {COLS.map((col) => {
               const count = grouped[col].length;
               const isActive = activeColumn === col;
@@ -349,7 +356,6 @@ export function SalesBoard({
                 </button>
               );
             })}
-            </div>
           </div>
           <div
             className="pt-4"

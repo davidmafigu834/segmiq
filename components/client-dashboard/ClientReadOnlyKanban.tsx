@@ -77,29 +77,35 @@ export function ClientReadOnlyKanban({
     return (
       <div>
         <div
-          className="border-b border-border pb-3 scrollbar-hide"
-          style={{ overflowX: "scroll" }}
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            overflowX: "scroll",
+            gap: "4px",
+            paddingBottom: "12px",
+            borderBottom: "1px solid var(--border)",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
         >
-          <div className="flex w-max gap-1">
-            {grouped.map(({ col, items }) => {
-              const on = activeCol === col;
-              return (
-                <button
-                  key={col}
-                  type="button"
-                  onClick={() => setActiveCol(col)}
-                  className={[
-                    "flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs",
-                    on ? "bg-surface-sidebar text-[var(--text-on-dark)]" : "bg-surface-card-alt text-ink-secondary",
-                  ].join(" ")}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: COL_DOT[col] }} />
-                  <span className="uppercase tracking-wide">{COL_LABEL[col]}</span>
-                  <span className="font-mono tabular-nums opacity-70">{items.length}</span>
-                </button>
-              );
-            })}
-          </div>
+          {grouped.map(({ col, items }) => {
+            const on = activeCol === col;
+            return (
+              <button
+                key={col}
+                type="button"
+                onClick={() => setActiveCol(col)}
+                className={[
+                  "flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs",
+                  on ? "bg-surface-sidebar text-[var(--text-on-dark)]" : "bg-surface-card-alt text-ink-secondary",
+                ].join(" ")}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: COL_DOT[col] }} />
+                <span className="uppercase tracking-wide">{COL_LABEL[col]}</span>
+                <span className="font-mono tabular-nums opacity-70">{items.length}</span>
+              </button>
+            );
+          })}
         </div>
         <div className="pt-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           {active && active.items.length > 0 ? (
