@@ -268,7 +268,7 @@ export function AppShell({
           </header>
         )}
 
-        <main className="flex-1 [overflow-x:clip] px-4 pt-6 pb-28 md:px-6 md:pt-8 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-8">
+        <main style={{ overflowX: "clip" }} className="flex-1 px-4 pt-6 pb-28 md:px-6 md:pt-8 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-8">
           {children}
         </main>
       </div>
