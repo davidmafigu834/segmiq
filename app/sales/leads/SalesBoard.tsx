@@ -326,13 +326,10 @@ export function SalesBoard({
           <div
             style={{
               display: "flex",
-              flexDirection: "row",
-              overflowX: "scroll",
-              gap: "4px",
+              flexWrap: "wrap",
+              gap: "8px",
               paddingBottom: "12px",
               borderBottom: "1px solid var(--border)",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
             }}
           >
             {COLS.map((col) => {
