@@ -364,14 +364,14 @@ body {
   --ag-surface: #0a0a0a;
   --ag-surface-2: #111111;
   --ag-surface-3: #1a1a1a;
-  --ag-border: rgba(255, 255, 255, 0.07);
-  --ag-border-hover: rgba(255, 255, 255, 0.14);
-  --ag-border-strong: rgba(255, 255, 255, 0.2);
+  --ag-border: rgba(255, 255, 255, 0.15);
+  --ag-border-hover: rgba(255, 255, 255, 0.24);
+  --ag-border-strong: rgba(255, 255, 255, 0.28);
 
   --ag-text-primary: #ededed;
-  --ag-text-secondary: #999999;
-  --ag-text-tertiary: #666666;
-  --ag-text-muted: #444444;
+  --ag-text-secondary: #bbbbbb;
+  --ag-text-tertiary: #999999;
+  --ag-text-muted: #777777;
 
   --ag-lime: #D4FF4F;
   --ag-lime-fg: #000000;
