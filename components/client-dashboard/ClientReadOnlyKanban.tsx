@@ -76,25 +76,27 @@ export function ClientReadOnlyKanban({
     const active = grouped.find((g) => g.col === activeCol);
     return (
       <div>
-        <div className="flex gap-1 overflow-x-auto border-b border-border pb-3 scrollbar-hide">
-          {grouped.map(({ col, items }) => {
-            const on = activeCol === col;
-            return (
-              <button
-                key={col}
-                type="button"
-                onClick={() => setActiveCol(col)}
-                className={[
-                  "flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs",
-                  on ? "bg-surface-sidebar text-[var(--text-on-dark)]" : "bg-surface-card-alt text-ink-secondary",
-                ].join(" ")}
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: COL_DOT[col] }} />
-                <span className="uppercase tracking-wide">{COL_LABEL[col]}</span>
-                <span className="font-mono tabular-nums opacity-70">{items.length}</span>
-              </button>
-            );
-          })}
+        <div className="overflow-x-auto border-b border-border pb-3 scrollbar-hide [touch-action:pan-x]">
+          <div className="flex w-max gap-1">
+            {grouped.map(({ col, items }) => {
+              const on = activeCol === col;
+              return (
+                <button
+                  key={col}
+                  type="button"
+                  onClick={() => setActiveCol(col)}
+                  className={[
+                    "flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs",
+                    on ? "bg-surface-sidebar text-[var(--text-on-dark)]" : "bg-surface-card-alt text-ink-secondary",
+                  ].join(" ")}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: COL_DOT[col] }} />
+                  <span className="uppercase tracking-wide">{COL_LABEL[col]}</span>
+                  <span className="font-mono tabular-nums opacity-70">{items.length}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div className="pt-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           {active && active.items.length > 0 ? (
