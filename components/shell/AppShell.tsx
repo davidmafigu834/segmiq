@@ -198,22 +198,23 @@ export function AppShell({
             ) : null}
           </header>
         ) : (
-          <header className="safe-top sticky top-0 z-30 flex min-h-12 shrink-0 flex-wrap items-center gap-3 border-b border-[var(--border)] bg-bg-primary px-4 py-2 md:min-h-12 md:px-6 layout:px-10">
+          <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-bg-primary px-4 md:px-6 layout:px-10">
             <button
               type="button"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] layout:hidden"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] layout:hidden"
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
             >
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             </button>
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <span className="shrink-0 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)] md:text-[11px]">
+            <div className="flex min-w-0 flex-1 items-baseline gap-1.5 overflow-hidden">
+              <span className="shrink-0 whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
                 {breadcrumb}
               </span>
-              <h1 className={`min-w-0 truncate font-display leading-tight text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] md:text-[20px] layout:text-[28px]" : "text-[14px] md:text-[17px] layout:text-[22px]"}`}>{pageTitle}</h1>
+              <span className="shrink-0 text-[10px] text-[var(--text-tertiary)] opacity-50">·</span>
+              <h1 className={`min-w-0 truncate font-semibold leading-none text-[var(--text-primary)] ${titleSize === "hero" ? "text-[15px] md:text-[18px] layout:text-[22px]" : "text-[14px] md:text-[16px] layout:text-[20px]"}`}>{pageTitle}</h1>
             </div>
-            <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <div className="hidden items-center lg:flex">
                 <AgencyHeaderClock />
               </div>
