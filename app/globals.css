@@ -31,12 +31,12 @@ body {
 
   /* ── Text ── */
   --text-primary: #ededed;
-  --text-secondary: #888888;
-  --text-tertiary: #555555;
-  --text-disabled: #333333;
+  --text-secondary: #aaaaaa;
+  --text-tertiary: #808080;
+  --text-disabled: #444444;
   --text-inverse: #000000;
   --text-on-dark: #ededed;
-  --text-on-dark-dim: #888888;
+  --text-on-dark-dim: #aaaaaa;
 
   /* ── Accent — lime (Leadstaq brand) ── */
   --accent: #d4ff4f;
