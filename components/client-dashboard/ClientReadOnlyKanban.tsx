@@ -78,7 +78,7 @@ export function ClientReadOnlyKanban({
       <div>
         <div
           className="border-b border-border pb-3 scrollbar-hide"
-          style={{ overflowX: "scroll", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }}
+          style={{ overflowX: "scroll" }}
         >
           <div className="flex w-max gap-1">
             {grouped.map(({ col, items }) => {

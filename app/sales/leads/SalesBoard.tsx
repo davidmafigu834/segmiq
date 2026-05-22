@@ -325,7 +325,7 @@ export function SalesBoard({
         <div>
           <div
             className="border-b border-border pb-3 scrollbar-hide"
-            style={{ overflowX: "scroll", overscrollBehaviorX: "contain", WebkitOverflowScrolling: "touch" }}
+            style={{ overflowX: "scroll" }}
           >
             <div className="flex w-max gap-1">
             {COLS.map((col) => {
