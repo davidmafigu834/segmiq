@@ -85,10 +85,6 @@ export function AppShell({
 
   const hideQuick = showQuickAction === false || notificationRole === "CLIENT_MANAGER";
   const hideSearch = showWorkspaceSearch === false;
-  const titleClass =
-    titleSize === "hero"
-      ? "font-display text-[20px] leading-[1.05] tracking-tight text-[var(--text-primary)] md:text-[24px] layout:text-[28px]"
-      : "font-display text-[16px] leading-tight text-[var(--text-primary)] md:text-[18px] layout:text-[22px]";
 
   const sidebar = (
     <AgencySidebar
@@ -215,7 +211,7 @@ export function AppShell({
               <span className="shrink-0 text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)] md:text-[11px]">
                 {breadcrumb}
               </span>
-              <h1 className="min-w-0 truncate font-display text-[14px] leading-tight text-[var(--text-primary)] md:text-[17px] layout:text-[22px]">{pageTitle}</h1>
+              <h1 className={`min-w-0 truncate font-display leading-tight text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] md:text-[20px] layout:text-[28px]" : "text-[14px] md:text-[17px] layout:text-[22px]"}`}>{pageTitle}</h1>
             </div>
             <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
               <div className="hidden items-center lg:flex">
