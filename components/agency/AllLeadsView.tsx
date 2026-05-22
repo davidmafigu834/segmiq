@@ -403,7 +403,7 @@ export function AllLeadsView({
         </div>
       </header>
 
-      <div className="mb-3 flex min-w-0 gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] scrollbar-hide md:flex-wrap md:overflow-visible">
+      <div className="mb-3 flex flex-wrap gap-2 pb-1">
         <FilterPill active={filters.status === "all"} count={counts.total} onClick={() => setStatus("all")}>
           All
         </FilterPill>
