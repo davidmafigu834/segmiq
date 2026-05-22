@@ -30,7 +30,7 @@ export function ClientReportsPageClient({ clientName }: { clientName: string }) 
           <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">
             {clientName} / REPORTS
           </p>
-          <h1 className="font-display text-[40px] leading-none tracking-display text-ink-primary">Performance</h1>
+          <h1 className="font-display text-[26px] leading-none tracking-display text-ink-primary sm:text-[36px]">Performance</h1>
           <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
             Here&apos;s what&apos;s happening in your pipeline.
           </p>

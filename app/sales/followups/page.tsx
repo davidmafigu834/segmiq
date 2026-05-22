@@ -117,16 +117,16 @@ export default async function SalesFollowupsPage() {
                       <Link
                         href={`/sales/leads?lead=${l.id}`}
                         prefetch={false}
-                        className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-surface-card-alt ${
+                        className={`flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-card-alt ${
                           overdueSection ? "border-l-2 border-l-[var(--danger)]" : ""
                         }`}
                       >
-                        <div>
-                          <div className="font-medium text-ink-primary">{l.name as string}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium text-ink-primary">{l.name as string}</div>
                           <div className="font-mono text-xs text-ink-tertiary">{l.phone as string}</div>
                           <div className="mt-1 text-[11px] text-ink-secondary">{clientName}</div>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex shrink-0 items-center gap-2">
                           <span className="font-mono text-xs text-ink-secondary">
                             {l.follow_up_date
                               ? format(

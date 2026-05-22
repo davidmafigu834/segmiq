@@ -374,7 +374,7 @@ export function ClientAccountClient({
         <p className="mb-6 text-sm text-[--text-secondary]">How we contact you about leads and deals.</p>
 
         <div className="space-y-5">
-          <div className="flex items-start gap-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             <label className="relative cursor-pointer shrink-0">
               <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={(e) => void onAvatarChange(e)} />
               <ClientAvatar name={name} size={80} src={avatarUrl} />

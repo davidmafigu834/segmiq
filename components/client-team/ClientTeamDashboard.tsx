@@ -122,7 +122,7 @@ export function ClientTeamDashboard({
           <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">
             {clientName} / TEAM
           </p>
-          <h1 className="font-display text-[40px] leading-none tracking-display text-ink-primary">Your team</h1>
+          <h1 className="font-display text-[26px] leading-none tracking-display text-ink-primary sm:text-[36px]">Your team</h1>
           {data ? (
             <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
               {data.team.length} salespeople · {data.teamAggregate.winRate}% win rate ·{" "}

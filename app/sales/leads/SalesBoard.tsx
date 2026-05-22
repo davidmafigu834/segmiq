@@ -322,7 +322,7 @@ export function SalesBoard({
           </button>
         </div>
       ) : isMobileKanban ? (
-        <div className="flex min-h-0 min-h-[45svh] max-h-[calc(100dvh-10.5rem)] flex-1 flex-col">
+        <div className="flex min-h-[45svh] max-h-[calc(100dvh-10.5rem)] flex-1 flex-col">
           <div className="-mx-4 flex min-w-0 gap-1 overflow-x-auto border-b border-border px-4 pb-3 scrollbar-hide">
             {COLS.map((col) => {
               const count = grouped[col].length;

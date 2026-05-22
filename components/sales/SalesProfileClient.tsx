@@ -181,7 +181,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
     <div className="mx-auto max-w-[640px] space-y-12 pb-16">
       <header>
         <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">SALES / PROFILE</p>
-        <h1 className="font-display text-[40px] leading-none tracking-display text-ink-primary">Your profile</h1>
+        <h1 className="font-display text-[26px] leading-none tracking-display text-ink-primary sm:text-[36px]">Your profile</h1>
         <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
           Keep your contact info current so leads reach you fast.
         </p>
@@ -193,7 +193,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
 
       <section className="space-y-6">
         <h2 className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Personal info</h2>
-        <div className="flex items-start gap-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
           <label className="relative cursor-pointer">
             <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={(e) => void onAvatarChange(e)} />
             <ClientAvatar name={name} size={80} src={avatarUrl} />
