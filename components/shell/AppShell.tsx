@@ -217,7 +217,7 @@ export function AppShell({
               </div>
               <h1 className={titleClass}>{pageTitle}</h1>
             </div>
-            <div className="ml-auto flex w-full shrink-0 flex-wrap items-center justify-end gap-2 sm:w-auto">
+            <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
               <div className="hidden items-center lg:flex">
                 <AgencyHeaderClock />
               </div>
