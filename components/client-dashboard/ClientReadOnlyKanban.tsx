@@ -75,8 +75,8 @@ export function ClientReadOnlyKanban({
   if (isMobile) {
     const active = grouped.find((g) => g.col === activeCol);
     return (
-      <div className="flex min-h-[60svh] max-h-[calc(100svh-220px)] flex-col">
-        <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-border px-4 pb-3 scrollbar-hide">
+      <div>
+        <div className="flex gap-1 overflow-x-auto border-b border-border pb-3 scrollbar-hide">
           {grouped.map(({ col, items }) => {
             const on = activeCol === col;
             return (
@@ -96,7 +96,7 @@ export function ClientReadOnlyKanban({
             );
           })}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto pb-20 pt-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div className="pt-4" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           {active && active.items.length > 0 ? (
             <div className="space-y-3">
               {active.items.map((l) => {

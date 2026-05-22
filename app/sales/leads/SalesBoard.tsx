@@ -323,7 +323,7 @@ export function SalesBoard({
         </div>
       ) : isMobileKanban ? (
         <div>
-          <div className="-mx-4 flex min-w-0 gap-1 overflow-x-auto border-b border-border px-4 pb-3 scrollbar-hide">
+          <div className="flex min-w-0 gap-1 overflow-x-auto border-b border-border pb-3 scrollbar-hide">
             {COLS.map((col) => {
               const count = grouped[col].length;
               const isActive = activeColumn === col;
