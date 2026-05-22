@@ -297,7 +297,7 @@ export function SalesBoard({
           </span>
           <input
             type="search"
-            placeholder="Search leads by name, phone, or email"
+            placeholder="Search by name, phone…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input-base h-10 w-full min-w-0 text-sm sm:h-8 sm:max-w-[min(100%,20rem)] sm:text-xs"
@@ -322,7 +322,7 @@ export function SalesBoard({
           </button>
         </div>
       ) : isMobileKanban ? (
-        <div className="flex min-h-[45svh] max-h-[calc(100dvh-10.5rem)] flex-1 flex-col">
+        <div>
           <div className="-mx-4 flex min-w-0 gap-1 overflow-x-auto border-b border-border px-4 pb-3 scrollbar-hide">
             {COLS.map((col) => {
               const count = grouped[col].length;
@@ -347,7 +347,7 @@ export function SalesBoard({
             })}
           </div>
           <div
-            className="min-h-0 flex-1 overflow-y-auto pb-24 pt-4"
+            className="pt-4"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
