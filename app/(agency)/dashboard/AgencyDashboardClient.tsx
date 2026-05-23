@@ -40,7 +40,6 @@ type ActivityEvent = {
   event_data: Record<string, unknown>;
   created_at: string;
   client_id: string;
-  leads?: { name: string } | null;
 };
 
 type DashboardData = {
@@ -101,7 +100,14 @@ export function AgencyDashboardClient() {
 
   useEffect(() => {
     fetch("/api/agency/dashboard")
-      .then((r) => r.json() as Promise<DashboardData>)
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = await r.text().catch(() => "(no body)");
+          console.error(`[dashboard] API error ${r.status}:`, body);
+          throw new Error(`API ${r.status}`);
+        }
+        return r.json() as Promise<DashboardData>;
+      })
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false));

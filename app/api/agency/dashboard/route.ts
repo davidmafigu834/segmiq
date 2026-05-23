@@ -64,12 +64,13 @@ export async function GET() {
     .eq("is_active", true);
 
   // Get recent activity across all clients
-  const { data: recentEvents } = await supabase
+  const { data: recentEvents, error: recentError } = await supabase
     .from("lead_events")
-    .select("id, event_type, actor_name, event_data, created_at, client_id, leads(name, client_id)")
+    .select("id, event_type, actor_name, event_data, created_at, client_id")
     .in("client_id", clientIds)
     .order("created_at", { ascending: false })
     .limit(20);
+  if (recentError) console.error("[dashboard] lead_events query error:", recentError.message);
 
   // Build per-client stats
   const clientStats = clients.map((client) => {
