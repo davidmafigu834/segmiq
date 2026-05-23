@@ -86,7 +86,7 @@ function parseCsvIds(raw: string | undefined): string[] {
 }
 
 function parseSources(raw: string | undefined): LeadSource[] {
-  const allowed: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL"];
+  const allowed: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"];
   if (!raw?.trim()) return [];
   const parts = raw.split(",").map((s) => s.trim().toUpperCase());
   return parts.filter((p): p is LeadSource => allowed.includes(p as LeadSource));

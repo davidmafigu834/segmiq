@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ImportLeadsModal } from "@/components/leads/ImportLeadsModal";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   addDays,
@@ -37,6 +38,7 @@ const PAGE_SIZE = 25;
 function SourceDot({ source }: { source: LeadSource }) {
   if (source === "FACEBOOK") return <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--info)]" />;
   if (source === "LANDING_PAGE") return <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--accent)]" />;
+  if (source === "REFERRAL") return <span className="h-2 w-2 shrink-0 rounded-full bg-purple-400" />;
   return <span className="h-2 w-2 shrink-0 rounded-full bg-ink-tertiary" />;
 }
 
@@ -92,20 +94,32 @@ function inDateRange(createdAt: string, preset: DatePreset, customFrom: string, 
 }
 
 export function ClientLeadsTable({
+  clientId,
   clientName,
   initialLeads,
   salespeople,
   totalThisMonth,
+  initialHasMore = false,
+  totalCount,
 }: {
+  clientId?: string;
   clientName: string;
   initialLeads: ClientLeadListRow[];
   salespeople: { id: string; name: string }[];
   totalThisMonth: number;
+  initialHasMore?: boolean;
+  totalCount?: number;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const leadFromUrl = searchParams.get("lead");
+
+  const [leads, setLeads] = useState<ClientLeadListRow[]>(initialLeads);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadedPage, setLoadedPage] = useState(1);
+  const [showImport, setShowImport] = useState(false);
 
   const [status, setStatus] = useState<"all" | LeadStatus>("all");
   const [source, setSource] = useState<"all" | LeadSource>("all");
@@ -125,14 +139,33 @@ export function ClientLeadsTable({
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
 
+  async function loadMore() {
+    if (!clientId || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = loadedPage + 1;
+      const res = await fetch(`/api/leads/client?clientId=${clientId}&page=${nextPage}&limit=50`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const newLeads = (data.leads ?? []) as ClientLeadListRow[];
+      setLeads((prev) => [...prev, ...newLeads]);
+      setHasMore(data.hasMore ?? false);
+      setLoadedPage(nextPage);
+    } catch {
+      // silent fail
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   const baseFiltered = useMemo(() => {
-    return initialLeads.filter((l) => {
+    return leads.filter((l) => {
       if (source !== "all" && l.source !== source) return false;
       if (assignee !== "all" && l.assigned_to_id !== assignee) return false;
       if (!inDateRange(l.created_at, datePreset, customFrom, customTo)) return false;
       return true;
     });
-  }, [initialLeads, source, assignee, datePreset, customFrom, customTo]);
+  }, [leads, source, assignee, datePreset, customFrom, customTo]);
 
   const statusCounts = useMemo(() => {
     const m: Record<string, number> = { all: baseFiltered.length };
@@ -197,9 +230,9 @@ export function ClientLeadsTable({
 
   useEffect(() => {
     if (!leadFromUrl) return;
-    if (!initialLeads.some((l) => l.id === leadFromUrl)) return;
+    if (!leads.some((l) => l.id === leadFromUrl)) return;
     openLeadPanel(leadFromUrl);
-  }, [leadFromUrl, initialLeads]);
+  }, [leadFromUrl, leads]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -229,16 +262,16 @@ export function ClientLeadsTable({
 
   const panelLeads = useMemo(
     () =>
-      initialLeads.map((row) => {
+      leads.map((row) => {
         const { last_call_at, assigned_to, ...rest } = row;
         void last_call_at;
         void assigned_to;
         return rest as import("@/types").LeadRow;
       }),
-    [initialLeads]
+    [leads]
   );
 
-  const totalAll = initialLeads.length;
+  const totalAll = totalCount ?? leads.length;
   const noLeadsEver = totalAll === 0;
   const noMatch = !noLeadsEver && sorted.length === 0;
 
@@ -251,17 +284,29 @@ export function ClientLeadsTable({
           </div>
           <h1 className="font-display text-4xl tracking-tight text-ink-primary">Leads</h1>
           <p className="mt-2 text-sm text-ink-secondary">
-            {totalThisMonth} total leads this month · {totalAll} all time
+            {totalThisMonth} total leads this month · {totalAll} total
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleExportCsv}
-          className="inline-flex shrink-0 items-center gap-2 self-start rounded-md border border-border px-4 py-2 text-sm text-ink-secondary hover:bg-surface-card-alt"
-        >
-          <Download className="h-4 w-4" strokeWidth={1.5} />
-          Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          {clientId && (
+            <button
+              type="button"
+              onClick={() => setShowImport(true)}
+              className="inline-flex shrink-0 items-center gap-2 self-start rounded-md border border-border px-4 py-2 text-sm text-ink-secondary hover:bg-surface-card-alt"
+            >
+              <i className="ti ti-upload" style={{ fontSize: 14 }} />
+              Import CSV
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="inline-flex shrink-0 items-center gap-2 self-start rounded-md border border-border px-4 py-2 text-sm text-ink-secondary hover:bg-surface-card-alt"
+          >
+            <Download className="h-4 w-4" strokeWidth={1.5} />
+            Export CSV
+          </button>
+        </div>
       </header>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -287,6 +332,7 @@ export function ClientLeadsTable({
             <option value="FACEBOOK">Facebook</option>
             <option value="LANDING_PAGE">Landing page</option>
             <option value="MANUAL">Manual</option>
+            <option value="REFERRAL">Referral</option>
           </select>
         </label>
         <label className="text-xs text-ink-secondary">
@@ -494,31 +540,56 @@ export function ClientLeadsTable({
             </table>
           </div>
 
-          <div className="mt-6 flex justify-end gap-4 text-sm text-ink-secondary">
-            <span>
-              Page {pageSafe} of {totalPages}
-            </span>
-            <button
-              type="button"
-              className="text-ink-primary hover:underline disabled:opacity-40"
-              disabled={pageSafe <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              className="text-ink-primary hover:underline disabled:opacity-40"
-              disabled={pageSafe >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </button>
+          <div className="mt-6 flex flex-col items-center gap-4">
+            <div className="flex justify-end gap-4 self-stretch text-sm text-ink-secondary">
+              <span>
+                Page {pageSafe} of {totalPages}
+              </span>
+              <button
+                type="button"
+                className="text-ink-primary hover:underline disabled:opacity-40"
+                disabled={pageSafe <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="text-ink-primary hover:underline disabled:opacity-40"
+                disabled={pageSafe >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </button>
+            </div>
+            {hasMore && (
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="rounded-md border border-border px-6 py-2 text-sm text-ink-secondary hover:bg-surface-card-alt disabled:opacity-50"
+              >
+                {loadingMore ? "Loading…" : `Load more (${totalAll - leads.length} remaining)`}
+              </button>
+            )}
           </div>
         </>
       )}
 
       <LeadDetailPanel leads={panelLeads} readOnly onClose={() => clearLeadQuery()} />
+
+      {showImport && clientId && (
+        <ImportLeadsModal
+          clientId={clientId}
+          onClose={() => setShowImport(false)}
+          onSuccess={(result) => {
+            setShowImport(false);
+            if (result.imported > 0) {
+              window.location.reload();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -40,6 +40,7 @@ export type ClientReportPayload = {
     FACEBOOK: { leads: number; won: number };
     LANDING_PAGE: { leads: number; won: number };
     MANUAL: { leads: number; won: number };
+    REFERRAL: { leads: number; won: number };
   };
   pipeline: Record<
     "NEW" | "CONTACTED" | "NEGOTIATING" | "PROPOSAL_SENT" | "WON" | "LOST" | "NOT_QUALIFIED",
@@ -172,6 +173,10 @@ export async function computeClientReport(
     MANUAL: {
       leads: cohort.filter((l) => l.source === "MANUAL").length,
       won: cohort.filter((l) => l.source === "MANUAL" && l.status === "WON").length,
+    },
+    REFERRAL: {
+      leads: cohort.filter((l) => l.source === "REFERRAL").length,
+      won: cohort.filter((l) => l.source === "REFERRAL" && l.status === "WON").length,
     },
   };
 

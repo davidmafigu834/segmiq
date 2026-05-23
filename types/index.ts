@@ -1,6 +1,6 @@
 export type UserRole = "AGENCY_ADMIN" | "CLIENT_MANAGER" | "SALESPERSON";
 
-export type LeadSource = "LANDING_PAGE" | "FACEBOOK" | "MANUAL";
+export type LeadSource = "LANDING_PAGE" | "FACEBOOK" | "MANUAL" | "REFERRAL";
 
 export type LeadStatus =
   | "NEW"

@@ -16,17 +16,23 @@ export default async function ClientLeadsPage() {
   const supabase = createAdminClient();
   const clientId = session.clientId;
 
-  const [{ data: leadsRaw }, { data: salespeople }, { data: clientRow }] = await Promise.all([
+  const PAGE_LIMIT = 50;
+
+  const [{ data: leadsRaw, count: leadsCount }, { data: salespeople }, { data: clientRow }] = await Promise.all([
     supabase
       .from("leads")
-      .select("*, assigned_to:users!assigned_to_id ( id, name, avatar_url )")
+      .select("*, assigned_to:users!assigned_to_id ( id, name, avatar_url )", { count: "exact" })
       .eq("client_id", clientId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .range(0, PAGE_LIMIT - 1),
     supabase.from("users").select("id, name").eq("client_id", clientId).eq("role", "SALESPERSON").eq("is_active", true),
     supabase.from("clients").select("name, slug").eq("id", clientId).maybeSingle(),
   ]);
 
   const rows = leadsRaw ?? [];
+  const totalCount = leadsCount ?? 0;
+  const hasMore = rows.length >= PAGE_LIMIT && totalCount > PAGE_LIMIT;
+
   const ids = rows.map((l) => l.id as string);
   const lastBy = new Map<string, string>();
   if (ids.length) {
@@ -57,10 +63,13 @@ export default async function ClientLeadsPage() {
       <Suspense fallback={<div className="shimmer h-64 rounded-lg" />}>
         <div className="px-0">
           <ClientLeadsTable
+            clientId={clientId}
             clientName={clientName}
             initialLeads={initialLeads}
             salespeople={(salespeople ?? []) as { id: string; name: string }[]}
             totalThisMonth={totalThisMonth}
+            initialHasMore={hasMore}
+            totalCount={totalCount}
           />
         </div>
       </Suspense>

@@ -61,6 +61,6 @@ export function newMagicToken(): { token: string; expires: string } {
 }
 
 export function sourceFromString(s: string): LeadSource {
-  if (s === "FACEBOOK" || s === "LANDING_PAGE" || s === "MANUAL") return s;
+  if (s === "FACEBOOK" || s === "LANDING_PAGE" || s === "MANUAL" || s === "REFERRAL") return s;
   return "MANUAL";
 }

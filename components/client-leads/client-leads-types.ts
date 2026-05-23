@@ -30,5 +30,6 @@ export function statusLabel(s: LeadStatus): string {
 export function sourceLabel(s: LeadSource): string {
   if (s === "FACEBOOK") return "Facebook";
   if (s === "LANDING_PAGE") return "Landing page";
+  if (s === "REFERRAL") return "Referral";
   return "Manual";
 }

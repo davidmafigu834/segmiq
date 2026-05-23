@@ -64,7 +64,7 @@ export type AgencyReport = {
   byNotQualifiedReason: Array<{ reason: string; count: number }>;
 };
 
-const SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL"];
+const SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"];
 
 function isContacted(status: string): boolean {
   return status !== "NEW";

@@ -27,6 +27,7 @@ function firstName(full: string): string {
 function sourceLabel(s: LeadSource): string {
   if (s === "LANDING_PAGE") return "Landing";
   if (s === "FACEBOOK") return "Facebook";
+  if (s === "REFERRAL") return "Referral";
   return "Manual";
 }
 
@@ -479,7 +480,7 @@ export function AllLeadsView({
           onClear={() => setDraftSources([])}
           onApply={() => replaceUrl({ ...filters, sources: draftSources, page: 1 })}
         >
-          {(["FACEBOOK", "LANDING_PAGE", "MANUAL"] as const).map((s) => (
+          {(["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"] as const).map((s) => (
             <label key={s} className="flex cursor-pointer items-center gap-2 px-1 py-1.5 text-[13px] hover:bg-surface-card-alt">
               <input
                 type="checkbox"
@@ -655,7 +656,7 @@ export function AllLeadsView({
           <div>
             <div className="mb-2 font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">Source</div>
             <div className="space-y-1 rounded-md border border-border p-2">
-              {(["FACEBOOK", "LANDING_PAGE", "MANUAL"] as const).map((s) => (
+              {(["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"] as const).map((s) => (
                 <label key={s} className="flex min-h-11 cursor-pointer items-center gap-2 px-1 py-2 text-[13px] hover:bg-surface-card-alt">
                   <input
                     type="checkbox"

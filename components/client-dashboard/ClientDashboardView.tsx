@@ -74,6 +74,7 @@ function SourceDonut({ bySource, totalLeads }: { bySource: ClientReportPayload["
         fill: "var(--text-primary)",
       },
       { name: "Manual", key: "MANUAL" as const, value: bySource.MANUAL.leads, fill: "#9ca3af" },
+      { name: "Referral", key: "REFERRAL" as const, value: bySource.REFERRAL.leads, fill: "#a855f7" },
     ];
     return rows.filter((r) => r.value > 0);
   }, [bySource]);

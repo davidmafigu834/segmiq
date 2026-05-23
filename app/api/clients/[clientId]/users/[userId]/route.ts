@@ -30,6 +30,48 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
 
   const { error } = await supabase.from("users").update({ is_active: parsed.data.is_active }).eq("id", params.userId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (!parsed.data.is_active) {
+    const { data: remaining } = await supabase
+      .from("users")
+      .select("id, round_robin_order")
+      .eq("client_id", params.clientId)
+      .eq("role", "SALESPERSON")
+      .eq("is_active", true)
+      .order("round_robin_order", { ascending: true });
+
+    const active = remaining ?? [];
+
+    if (active.length > 0) {
+      const { data: newLeads } = await supabase
+        .from("leads")
+        .select("id")
+        .eq("assigned_to_id", params.userId)
+        .eq("status", "NEW");
+
+      for (let i = 0; i < (newLeads ?? []).length; i++) {
+        const lead = newLeads![i];
+        const newAssignee = active[i % active.length];
+        await supabase
+          .from("leads")
+          .update({ assigned_to_id: newAssignee.id })
+          .eq("id", lead.id as string);
+      }
+
+      for (let i = 0; i < active.length; i++) {
+        await supabase
+          .from("users")
+          .update({ round_robin_order: i })
+          .eq("id", active[i].id as string);
+      }
+    }
+
+    await supabase
+      .from("clients")
+      .update({ round_robin_index: 0 })
+      .eq("id", params.clientId);
+  }
+
   return NextResponse.json({ ok: true });
 }
 

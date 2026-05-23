@@ -30,6 +30,14 @@ function SourceCell({ source }: { source: LeadSource }) {
       </span>
     );
   }
+  if (source === "REFERRAL") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[12px] text-[var(--text-secondary)]">
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple-400" />
+        Referral
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1.5 text-[12px] text-[var(--text-secondary)]">
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--text-tertiary)]" />

@@ -195,6 +195,7 @@ function formatSource(source: string): string {
   if (source === "FACEBOOK") return "Facebook Lead Ad";
   if (source === "LANDING_PAGE") return "Landing page";
   if (source === "MANUAL") return "Manual entry";
+  if (source === "REFERRAL") return "Referral";
   return source;
 }
 

@@ -243,9 +243,9 @@ export function ReportsControls({ clients }: { clients: ClientOption[] }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="-mx-1 flex min-w-full items-center gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide md:mx-0 md:min-w-0 md:flex-wrap md:overflow-visible md:px-0">
           <span className="font-mono text-[11px] uppercase text-ink-tertiary">Source</span>
-          {(["ALL", "FACEBOOK", "LANDING_PAGE", "MANUAL"] as const).map((s) => {
+          {(["ALL", "FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"] as const).map((s) => {
             const label =
-              s === "ALL" ? "All" : s === "LANDING_PAGE" ? "Landing page" : s === "FACEBOOK" ? "Facebook" : "Manual";
+              s === "ALL" ? "All" : s === "LANDING_PAGE" ? "Landing page" : s === "FACEBOOK" ? "Facebook" : s === "REFERRAL" ? "Referral" : "Manual";
             const active = (s === "ALL" && sourceFilter === "ALL") || sourceFilter === s;
             return (
               <button

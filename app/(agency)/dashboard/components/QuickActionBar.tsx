@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ImportLeadsModal } from "@/components/leads/ImportLeadsModal";
 
 export function QuickActionBar() {
   const router = useRouter();
+  const [showImport, setShowImport] = useState(false);
 
   const actions = [
     {
@@ -22,7 +25,7 @@ export function QuickActionBar() {
       label: "Import leads",
       icon: "ti-upload",
       primary: false,
-      action: () => router.push("/dashboard/leads"),
+      action: () => setShowImport(true),
     },
     {
       label: "Invite salesperson",
@@ -33,6 +36,7 @@ export function QuickActionBar() {
   ];
 
   return (
+    <>
     <div
       style={{
         display: "flex",
@@ -70,5 +74,13 @@ export function QuickActionBar() {
         </button>
       ))}
     </div>
+
+    {showImport && (
+      <ImportLeadsModal
+        onClose={() => setShowImport(false)}
+        onSuccess={() => setShowImport(false)}
+      />
+    )}
+    </>
   );
 }

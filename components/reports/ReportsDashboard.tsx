@@ -18,12 +18,14 @@ const SOURCE_LABEL: Record<LeadSource, string> = {
   FACEBOOK: "Facebook",
   LANDING_PAGE: "Landing page",
   MANUAL: "Manual",
+  REFERRAL: "Referral",
 };
 
 const SOURCE_DOT: Record<LeadSource, string> = {
   FACEBOOK: "bg-blue-500",
   LANDING_PAGE: "bg-[var(--accent)]",
   MANUAL: "bg-ink-tertiary",
+  REFERRAL: "bg-purple-500",
 };
 
 async function fetcher(url: string): Promise<AgencyReport> {
@@ -36,7 +38,7 @@ async function fetcher(url: string): Promise<AgencyReport> {
 }
 
 function SourceTable({ report }: { report: AgencyReport }) {
-  const sources: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL"];
+  const sources: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"];
   const rows = sources.map((s) => ({ s, ...report.bySource[s] }));
   const columns: ResponsiveTableColumn<(typeof rows)[number]>[] = [
     {

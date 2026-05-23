@@ -89,6 +89,7 @@ export function ClientReportsDashboard() {
         fill: "var(--text-primary)",
       },
       { name: "Manual", key: "MANUAL" as const, value: data.bySource.MANUAL.leads, fill: "#9ca3af" },
+      { name: "Referral", key: "REFERRAL" as const, value: data.bySource.REFERRAL.leads, fill: "#a855f7" },
     ];
     return rows.filter((r) => r.value > 0);
   }, [data]);
@@ -232,6 +233,7 @@ export function ClientReportsDashboard() {
                   { label: "Facebook", v: data.bySource.FACEBOOK.leads },
                   { label: "Landing page", v: data.bySource.LANDING_PAGE.leads },
                   { label: "Manual", v: data.bySource.MANUAL.leads },
+                  { label: "Referral", v: data.bySource.REFERRAL.leads },
                 ].map((row) => (
                   <li key={row.label} className="flex justify-between gap-4">
                     <span className="text-ink-secondary">{row.label}</span>
