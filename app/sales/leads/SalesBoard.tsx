@@ -14,6 +14,7 @@ import { openLeadPanel } from "@/store/uiStore";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
 import { LeadDetailPanel } from "./LeadDetailPanel";
+import { ScoreBadge } from "@/components/ui/ScoreBadge";
 
 const COLS = ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"] as const satisfies readonly LeadStatus[];
 
@@ -385,6 +386,9 @@ export function SalesBoard({
                       {l.budget ?? "—"} · {l.project_type ?? "Project"}
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
+                      {l.score !== null && l.score !== undefined && (
+                        <ScoreBadge score={l.score} />
+                      )}
                       <span
                         className={`rounded-sm px-2 py-0.5 font-mono text-[10px] ${
                           kanbanLeadIsSlow(l)
@@ -460,6 +464,9 @@ export function SalesBoard({
                                 {l.budget ?? "—"} · {l.project_type ?? "Project"}
                               </div>
                               <div className="mt-3 flex flex-wrap gap-2">
+                                {l.score !== null && l.score !== undefined && (
+                                  <ScoreBadge score={l.score} />
+                                )}
                                 <span
                                   className={`rounded-sm px-2 py-0.5 font-mono text-[10px] ${
                                     kanbanLeadIsSlow(l)

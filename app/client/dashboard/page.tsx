@@ -6,6 +6,7 @@ import { computeClientReport } from "@/lib/client-report";
 import { getActivePipelineLeads } from "@/lib/client-active-pipeline";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { ClientDashboardView } from "@/components/client-dashboard/ClientDashboardView";
+import { StaleLeadsAlert } from "@/components/client-dashboard/StaleLeadsAlert";
 
 export default async function ClientDashboardPage({
   searchParams,
@@ -30,6 +31,7 @@ export default async function ClientDashboardPage({
 
   return (
     <ClientManagerLayout breadcrumbPage="DASHBOARD" pageTitle="Performance">
+      <StaleLeadsAlert clientId={clientId} />
       <ClientDashboardView report={report} activeLeads={activeLeads} />
     </ClientManagerLayout>
   );

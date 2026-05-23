@@ -16,6 +16,7 @@ import {
 import { Download, Inbox, Search } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { StatusPill } from "@/components/StatusPill";
+import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { LeadDetailPanel } from "@/app/sales/leads/LeadDetailPanel";
 import { openLeadPanel } from "@/store/uiStore";
 import type { LeadSource, LeadStatus } from "@/types";
@@ -30,7 +31,7 @@ import {
 
 type DatePreset = "all" | "this_month" | "last_month" | "last_90" | "custom";
 
-type SortKey = "name" | "created_at" | "last_activity" | "deal_value" | "status";
+type SortKey = "name" | "created_at" | "last_activity" | "deal_value" | "status" | "score";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 25;
@@ -215,6 +216,11 @@ export function ClientLeadsTable({
       if (sortKey === "status") {
         return a.status.localeCompare(b.status) * dir;
       }
+      if (sortKey === "score") {
+        const as_ = a.score ?? 0;
+        const bs_ = b.score ?? 0;
+        return (as_ - bs_) * dir;
+      }
       return 0;
     });
     return copy;
@@ -239,6 +245,7 @@ export function ClientLeadsTable({
     else {
       setSortKey(key);
       setSortDir(key === "name" || key === "status" ? "asc" : "desc");
+      if (key === "score") setSortDir("desc");
     }
   }
 
@@ -443,7 +450,12 @@ export function ClientLeadsTable({
                   onClick={() => openLeadPanel(l.id)}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <div className="font-medium text-ink-primary">{l.name ?? "—"}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-ink-primary">{l.name ?? "—"}</div>
+                      {l.score !== null && l.score !== undefined && (
+                        <ScoreBadge score={l.score} />
+                      )}
+                    </div>
                     <StatusPill status={l.status} />
                   </div>
                   <div className="mt-1 font-mono-data text-xs text-ink-tertiary">{l.phone ?? "—"}</div>
@@ -488,6 +500,12 @@ export function ClientLeadsTable({
                     Deal value {sortKey === "deal_value" ? (sortDir === "asc" ? "↑" : "↓") : ""}
                   </th>
                   <th
+                    className="cursor-pointer pb-3 pr-4 hover:text-ink-primary"
+                    onClick={() => toggleSort("score")}
+                  >
+                    Score {sortKey === "score" ? (sortDir === "asc" ? "↑" : "↓") : ""}
+                  </th>
+                  <th
                     className="cursor-pointer pb-3 pr-2 text-right hover:text-ink-primary"
                     onClick={() => toggleSort("created_at")}
                   >
@@ -527,6 +545,13 @@ export function ClientLeadsTable({
                         </div>
                       </td>
                       <td className="py-3 pr-4 text-xs text-ink-secondary">{lastActivityText(l)}</td>
+                      <td className="py-3 pr-4">
+                        {l.score !== null && l.score !== undefined ? (
+                          <ScoreBadge score={l.score} />
+                        ) : (
+                          <span className="font-mono text-xs text-ink-tertiary">—</span>
+                        )}
+                      </td>
                       <td className="py-3 text-right font-mono-data text-xs text-ink-tertiary">
                         {l.status === "WON" && l.deal_value != null ? formatCurrencyUsd(Number(l.deal_value)) : "—"}
                       </td>

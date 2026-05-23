@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MapPin, Calendar, ArrowRight } from "lucide-react";
-import { ProfilePageForm } from "./ProfilePageForm";
+import { ConversationalForm, type ConversationalFormStep } from "@/components/profile/ConversationalForm";
 import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
 
 function getInitials(name: string): string {
@@ -48,6 +48,18 @@ type FormFieldDef = {
   display_order: number | null;
 };
 type FormStepDef = { id: string; step_number: number; title: string; form_fields: FormFieldDef[] };
+type PricingPackage = {
+  id: string;
+  name: string;
+  description: string | null;
+  price_from: number | null;
+  price_to: number | null;
+  price_label: string | null;
+  currency: string;
+  includes: string[] | null;
+  is_featured: boolean;
+  valid_until: string | null;
+};
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = createAdminClient();
@@ -90,11 +102,8 @@ export default async function ProfilePage({ params }: { params: { slug: string }
   const clientId = profile.client_id as string;
   const client = profile.clients as { id: string; name: string; slug: string; logo_url: string | null; primary_color: string | null } | null;
   const clientName = client?.name ?? "Company";
-  const accentColor = client?.primary_color ?? "#D4FF4F";
   const ctaText = (profile.cta_text as string | null) ?? "Get a Free Quote";
-  const formTitle = (profile.form_title as string | null) ?? "Start Your Project";
-
-  const [{ data: projects }, { data: testimonials }, { data: formSteps }] = await Promise.all([
+  const [{ data: projects }, { data: testimonials }, { data: formSteps }, { data: formSchema }, { data: packages }] = await Promise.all([
     supabase
       .from("projects")
       .select("id, slug, title, category, location, completion_date, description, project_media(public_url, display_order)")
@@ -113,11 +122,64 @@ export default async function ProfilePage({ params }: { params: { slug: string }
       .select("id, step_number, title, form_fields(id, field_type, label, placeholder, options, is_required, maps_to, display_order)")
       .eq("client_id", clientId)
       .order("step_number", { ascending: true }),
+    supabase
+      .from("form_schemas")
+      .select("form_title, opening_message")
+      .eq("client_id", clientId)
+      .maybeSingle(),
+    supabase
+      .from("pricing_packages")
+      .select("*")
+      .eq("client_id", clientId)
+      .eq("is_active", true)
+      .order("display_order", { ascending: true }),
   ]);
 
   const typedProjects = (projects ?? []) as unknown as Project[];
   const typedTestimonials = (testimonials ?? []) as unknown as Testimonial[];
   const typedFormSteps = (formSteps ?? []) as unknown as FormStepDef[];
+  const typedPackages = (packages ?? []) as unknown as PricingPackage[];
+
+  const conversationalFormTitle =
+    (formSchema?.form_title as string | null) ??
+    (profile.form_title as string | null) ??
+    "Tell us about your project";
+  const conversationalOpeningMessage =
+    (formSchema?.opening_message as string | null) ??
+    "Hello! Thank you for considering us. We would love to learn more about what you are looking for so that our team can reach out to you with exactly the right information.";
+
+  const conversationalSteps: ConversationalFormStep[] = typedFormSteps.length > 0
+    ? typedFormSteps.map((step) => ({
+        id: step.id,
+        title: step.title,
+        fields: [...(step.form_fields ?? [])]
+          .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+          .map((f) => ({
+            id: f.id,
+            field_type: f.field_type as ConversationalFormStep["fields"][number]["field_type"],
+            label: f.label,
+            placeholder: f.placeholder ?? undefined,
+            options: f.options ?? undefined,
+            is_required: f.is_required ?? false,
+            maps_to: f.maps_to ?? undefined,
+          })),
+      }))
+    : [
+        {
+          id: "default",
+          title: "Contact details",
+          fields: [
+            { id: "name", field_type: "text" as const, label: "What is your full name?", placeholder: "Your full name", is_required: true, maps_to: "name" },
+            { id: "phone", field_type: "phone" as const, label: "Best phone number to reach you?", placeholder: "+1 555 000 0000", is_required: true, maps_to: "phone" },
+            { id: "email", field_type: "email" as const, label: "Your email address?", placeholder: "you@example.com", is_required: false, maps_to: "email" },
+            { id: "notes", field_type: "textarea" as const, label: "Anything you would like us to know?", placeholder: "Tell us about your project…", is_required: false, maps_to: "notes" },
+          ],
+        },
+      ];
+
+  const portfolioUrl = (profile.is_published as boolean) && (profile.slug as string)
+    ? `${process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://leadstaq.tech"}/p/${profile.slug as string}`
+    : undefined;
 
   const firstProjectCover = typedProjects[0]?.project_media
     ? [...typedProjects[0].project_media].sort((a, b) => a.display_order - b.display_order)[0]?.public_url ?? null
@@ -271,27 +333,220 @@ export default async function ProfilePage({ params }: { params: { slug: string }
         </section>
       )}
 
-      {/* ── Section 4: Contact form ── */}
-      <section id="contact" style={{ background: "#F7F4EF", padding: "clamp(40px, 6vw, 72px) clamp(20px, 5vw, 60px)" }}>
-        <div style={{ maxWidth: 580, margin: "0 auto" }}>
-          <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 8px" }}>
-            Get in touch
+      {/* ── Section 3b: Pricing packages ── */}
+      {typedPackages.length > 0 && (
+        <section
+          id="pricing"
+          style={{
+            background: "#1C1410",
+            padding: "clamp(40px, 6vw, 72px) clamp(20px, 5vw, 60px)",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "var(--fw-font-body, system-ui)",
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.4)",
+              margin: "0 0 8px",
+            }}
+          >
+            Pricing
           </p>
-          <h2 style={{ fontFamily: "var(--fw-font-display), Georgia, serif", fontSize: "clamp(24px, 4vw, 38px)", color: "#1C1410", margin: "0 0 8px", lineHeight: 1.2 }}>
-            {formTitle}
+          <h2
+            style={{
+              fontFamily: "var(--fw-font-display, Georgia, serif)",
+              fontSize: "clamp(24px, 4vw, 36px)",
+              color: "#FFFFFF",
+              margin: "0 0 40px",
+              lineHeight: 1.15,
+            }}
+          >
+            Our packages
           </h2>
-          <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 14, color: "#8C7B6B", margin: "0 0 32px", lineHeight: 1.6 }}>
-            Fill in a few details and we&apos;ll be in touch within the hour.
-          </p>
-          <div style={{ background: "#FFFFFF", borderRadius: 20, border: "0.5px solid rgba(28,20,16,0.08)", padding: "clamp(24px, 4vw, 40px)" }}>
-            <ProfilePageForm
-              clientId={clientId}
-              accentColor={accentColor}
-              ctaText={ctaText}
-              formSteps={typedFormSteps}
-            />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+              gap: 16,
+              maxWidth: 1100,
+            }}
+          >
+            {typedPackages.map((pkg) => {
+              const priceDisplay = pkg.price_label
+                ? pkg.price_label
+                : pkg.price_from && pkg.price_to
+                ? `${pkg.currency} ${Number(pkg.price_from).toLocaleString()} \u2013 ${Number(pkg.price_to).toLocaleString()}`
+                : pkg.price_from
+                ? `From ${pkg.currency} ${Number(pkg.price_from).toLocaleString()}`
+                : "Get a quote";
+              const isFeatured = pkg.is_featured;
+              return (
+                <div
+                  key={pkg.id}
+                  style={{
+                    background: isFeatured ? "rgba(212,255,79,0.06)" : "rgba(255,255,255,0.04)",
+                    border: isFeatured
+                      ? "0.5px solid rgba(212,255,79,0.25)"
+                      : "0.5px solid rgba(255,255,255,0.08)",
+                    borderRadius: 20,
+                    padding: "28px 24px",
+                    position: "relative",
+                  }}
+                >
+                  {isFeatured && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: -11,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        background: "#D4FF4F",
+                        color: "#1C1410",
+                        fontSize: 9,
+                        fontWeight: 700,
+                        padding: "3px 12px",
+                        borderRadius: 20,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                        fontFamily: "var(--fw-font-body, system-ui)",
+                      }}
+                    >
+                      Most popular
+                    </span>
+                  )}
+                  <p
+                    style={{
+                      fontFamily: "var(--fw-font-body, system-ui)",
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: isFeatured ? "rgba(212,255,79,0.7)" : "rgba(255,255,255,0.4)",
+                      margin: "0 0 10px",
+                    }}
+                  >
+                    {pkg.name}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "var(--fw-font-display, Georgia, serif)",
+                      fontSize: 32,
+                      color: "#FFFFFF",
+                      margin: "0 0 6px",
+                      lineHeight: 1,
+                      letterSpacing: "-0.3px",
+                    }}
+                  >
+                    {priceDisplay}
+                  </p>
+                  {pkg.description && (
+                    <p
+                      style={{
+                        fontFamily: "var(--fw-font-body, system-ui)",
+                        fontSize: 13,
+                        color: "rgba(255,255,255,0.5)",
+                        margin: "0 0 20px",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {pkg.description}
+                    </p>
+                  )}
+                  <div
+                    style={{
+                      height: "0.5px",
+                      background: "rgba(255,255,255,0.08)",
+                      margin: "0 0 20px",
+                    }}
+                  />
+                  {pkg.includes && pkg.includes.length > 0 && (
+                    <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px" }}>
+                      {pkg.includes.map((item, i) => (
+                        <li
+                          key={i}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 10,
+                            marginBottom: 10,
+                            fontFamily: "var(--fw-font-body, system-ui)",
+                            fontSize: 13,
+                            color: "rgba(255,255,255,0.65)",
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          <i
+                            className="ti ti-check"
+                            style={{
+                              fontSize: 14,
+                              flexShrink: 0,
+                              marginTop: 1,
+                              color: isFeatured ? "#D4FF4F" : "rgba(255,255,255,0.4)",
+                            }}
+                          />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {pkg.valid_until && (
+                    <p
+                      style={{
+                        fontFamily: "var(--fw-font-body, system-ui)",
+                        fontSize: 11,
+                        color: "rgba(255,255,255,0.3)",
+                        margin: "0 0 16px",
+                      }}
+                    >
+                      Valid until{" "}
+                      {new Date(pkg.valid_until).toLocaleDateString("en-GB", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                  )}
+                  <a
+                    href="#contact"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: 46,
+                      borderRadius: 12,
+                      background: isFeatured ? "#D4FF4F" : "rgba(255,255,255,0.08)",
+                      color: isFeatured ? "#1C1410" : "#FFFFFF",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      fontFamily: "var(--fw-font-body, system-ui)",
+                      textDecoration: "none",
+                      border: isFeatured ? "none" : "0.5px solid rgba(255,255,255,0.12)",
+                    }}
+                  >
+                    Get a quote
+                  </a>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        </section>
+      )}
+
+      {/* ── Section 4: Contact form ── */}
+      <section id="contact" style={{ padding: 0 }}>
+        <ConversationalForm
+          clientId={clientId}
+          clientName={clientName}
+          clientLogo={client?.logo_url ?? undefined}
+          formTitle={conversationalFormTitle}
+          openingMessage={conversationalOpeningMessage}
+          steps={conversationalSteps}
+          portfolioUrl={portfolioUrl}
+        />
       </section>
 
       {/* ── Section 5: Footer ── */}

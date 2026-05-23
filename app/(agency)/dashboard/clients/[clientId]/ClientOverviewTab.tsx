@@ -5,6 +5,7 @@ import { RecentLeadsTable } from "@/components/dashboard/RecentLeadsTable";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { OnboardingChecklist } from "@/components/client/OnboardingChecklist";
 import type { ClientTeamOverviewRow, RecentLeadRow } from "@/lib/dashboard-data";
+import { WinInsightsSection } from "@/components/dashboard/WinInsightsSection";
 
 export function ClientOverviewTab({
   clientId,
@@ -147,6 +148,8 @@ export function ClientOverviewTab({
           />
         </div>
       </section>
+
+      <WinInsightsSection clientId={clientId} />
     </div>
   );
 }

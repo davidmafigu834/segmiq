@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyDealWon } from "@/lib/notifications";
 import { getManagerPrefs } from "@/lib/notification-prefs";
 import { background } from "@/lib/background";
+import { logCallLogged } from "@/lib/lead-events";
 import type { CallOutcome, LeadRow, LeadStatus } from "@/types";
 import { z } from "zod";
 
@@ -173,6 +174,27 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     outcome,
     notes: callLogNotes,
     follow_up_date: outcome === "FOLLOW_UP" ? (followUpDate as string) : null,
+  });
+
+  // Log CALL_LOGGED event (fire-and-forget)
+  background("logCallLogged", async () => {
+    const { data: actorForLog } = await supabase
+      .from("users")
+      .select("name, role")
+      .eq("id", actorUserId)
+      .maybeSingle();
+    await logCallLogged({
+      leadId,
+      clientId: (lead as { client_id: string }).client_id,
+      actor: {
+        id: actorUserId,
+        name: (actorForLog as { name: string } | null)?.name || "Unknown",
+        role: (actorForLog as { role: string } | null)?.role || "SALESPERSON",
+      },
+      outcome,
+      notes: callLogNotes,
+      followUpDate: outcome === "FOLLOW_UP" ? (followUpDate as string | null) : null,
+    });
   });
 
   const nextStatus = statusFromOutcome(outcome);

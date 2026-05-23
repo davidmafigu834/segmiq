@@ -20,6 +20,7 @@ export default async function FormBuilderPage({ params }: { params: { clientId: 
     form_title: (form?.form_title as string | null) ?? "Contact",
     submit_button_text: (form?.submit_button_text as string | null) ?? "Submit",
     thank_you_message: (form?.thank_you_message as string | null) ?? "Thanks!",
+    opening_message: (form?.opening_message as string | null) ?? "",
   };
 
   return (
@@ -35,7 +36,7 @@ export default async function FormBuilderPage({ params }: { params: { clientId: 
           title="The form builder needs a laptop"
           description="Designing forms and field logic works best on a wide screen. Open this on a laptop or desktop."
         >
-          <FormBuilder clientId={params.clientId} initial={initial} />
+          <FormBuilder clientId={params.clientId} clientIndustry={String(client.industry ?? "")} initial={initial} />
         </DesktopOnlyGate>
       </ClientDetailView>
     </AgencyLayout>

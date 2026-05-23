@@ -10,6 +10,12 @@ import type { LeadRow, LeadStatus } from "@/types";
 import { MagicLinkButton } from "@/components/MagicLinkButton";
 import { FormAnswersSection } from "@/components/leads/FormAnswersSection";
 import { LogCallForm } from "@/components/leads/LogCallForm";
+import { LeadTimeline } from "@/components/leads/LeadTimeline";
+import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
+import { HandoverBanner } from "@/components/leads/HandoverBanner";
+import { LeadBriefing } from "@/components/leads/LeadBriefing";
+import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
+import { ScoreBadge } from "@/components/ui/ScoreBadge";
 
 type CallLogApiRow = {
   id: string;
@@ -50,7 +56,13 @@ export function LeadDetailPanel({
   const { data: session } = useSession();
   const role = session?.role;
   const [logRefresh, setLogRefresh] = useState(0);
+  const [timelineRefresh, setTimelineRefresh] = useState(0);
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "send">("details");
+
+  useEffect(() => {
+    setActiveTab("details");
+  }, [leadId]);
 
   useLayoutEffect(() => {
     setPortalEl(document.body);
@@ -128,8 +140,188 @@ export function LeadDetailPanel({
             <X className="h-4 w-4" strokeWidth={1.5} />
           </button>
         </div>
+        {/* Tab bar */}
+        <div className="flex shrink-0 border-b border-border">
+          <button
+            type="button"
+            onClick={() => setActiveTab("details")}
+            className={`flex-1 border-b-2 px-4 py-2.5 text-center font-mono text-[11px] uppercase tracking-wide transition-colors ${
+              activeTab === "details"
+                ? "border-[var(--info)] text-ink-primary"
+                : "border-transparent text-ink-secondary hover:text-ink-primary"
+            }`}
+          >
+            Details
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("timeline")}
+            className={`flex-1 border-b-2 px-4 py-2.5 text-center font-mono text-[11px] uppercase tracking-wide transition-colors ${
+              activeTab === "timeline"
+                ? "border-[var(--info)] text-ink-primary"
+                : "border-transparent text-ink-secondary hover:text-ink-primary"
+            }`}
+          >
+            Timeline
+          </button>
+          {!isReadOnly ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab("send")}
+              className={`flex-1 border-b-2 px-4 py-2.5 text-center font-mono text-[11px] uppercase tracking-wide transition-colors ${
+                activeTab === "send"
+                  ? "border-[var(--info)] text-ink-primary"
+                  : "border-transparent text-ink-secondary hover:text-ink-primary"
+              }`}
+            >
+              Send
+            </button>
+          ) : null}
+        </div>
         <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overflow-x-hidden overscroll-y-contain pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm max-md:text-[15px] [touch-action:pan-y]">
+          {activeTab === "timeline" ? (
+            <LeadTimeline key={timelineRefresh} leadId={activeLead.id} />
+          ) : null}
+          {activeTab === "send" && !isReadOnly ? (
+            <div className="p-4 sm:p-5">
+              <SendAssetPanel
+                leadId={activeLead.id}
+                clientId={activeLead.client_id}
+                leadPhone={activeLead.phone}
+                onSent={() => {
+                  setTimelineRefresh((k) => k + 1);
+                  setActiveTab("timeline");
+                }}
+              />
+            </div>
+          ) : null}
+          <div className={activeTab === "timeline" || activeTab === "send" ? "hidden" : ""}>
           <div className="space-y-3 p-4 max-md:pt-3 sm:p-5">
+            <LeadBriefing leadId={activeLead.id} />
+            <HandoverBanner leadId={activeLead.id} />
+            {activeLead.is_stale && (
+              <StaleLeadRecovery
+                leadId={activeLead.id}
+                leadName={activeLead.name ?? "Lead"}
+                clientId={activeLead.client_id}
+                staleDays={Math.round(
+                  (Date.now() -
+                    new Date(
+                      activeLead.stale_since ?? activeLead.created_at
+                    ).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )}
+                assetsSentTypes={[]}
+                onSent={() => setTimelineRefresh((k) => k + 1)}
+              />
+            )}
+            {activeLead.score !== null && activeLead.score !== undefined && (
+              <div
+                style={{
+                  padding: "14px 16px",
+                  background: "var(--ag-surface)",
+                  border: "0.5px solid var(--ag-border)",
+                  borderRadius: 10,
+                  marginBottom: 16,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: 10,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "var(--ag-font-body)",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--ag-text-tertiary)",
+                      margin: 0,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    Lead score
+                  </p>
+                  <ScoreBadge score={activeLead.score} />
+                </div>
+                <div
+                  style={{
+                    height: 4,
+                    background: "var(--ag-surface-3)",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    marginBottom: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      height: 4,
+                      borderRadius: 2,
+                      width: `${activeLead.score}%`,
+                      background:
+                        activeLead.score >= 70
+                          ? "#3dd68c"
+                          : activeLead.score >= 40
+                          ? "#f5a623"
+                          : "#555555",
+                      transition: "width 0.8s ease",
+                    }}
+                  />
+                </div>
+                {activeLead.score_breakdown && (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: 6,
+                    }}
+                  >
+                    {Object.entries(activeLead.score_breakdown).map(
+                      ([key, value]) => (
+                        <div
+                          key={key}
+                          style={{
+                            textAlign: "center",
+                            padding: "6px 4px",
+                            background: "var(--ag-surface-2)",
+                            borderRadius: 6,
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontFamily: "var(--ag-font-body)",
+                              fontSize: 14,
+                              fontWeight: 700,
+                              color: "var(--ag-text-primary)",
+                              margin: "0 0 2px",
+                              lineHeight: 1,
+                            }}
+                          >
+                            {value}
+                          </p>
+                          <p
+                            style={{
+                              fontFamily: "var(--ag-font-body)",
+                              fontSize: 9,
+                              color: "var(--ag-text-muted)",
+                              margin: 0,
+                              textTransform: "capitalize",
+                              letterSpacing: "0.04em",
+                            }}
+                          >
+                            {key.replace(/_/g, " ")}
+                          </p>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {isReadOnly ? (
               <div className="min-w-0 break-words text-[13px] text-ink-secondary">
                 {phone ? (
@@ -216,6 +408,7 @@ export function LeadDetailPanel({
               <CallHistory leadId={activeLead.id} refreshKey={logRefresh} />
             </div>
           ) : null}
+          </div>{/* end details tab wrapper */}
         </div>
       </div>
     </div>
@@ -236,6 +429,7 @@ function AgencyLeadAdminSection({
 }) {
   const [salespeople, setSalespeople] = useState<{ id: string; name: string }[]>([]);
   const [assigneeId, setAssigneeId] = useState(lead.assigned_to_id ?? "");
+  const [handoverNotes, setHandoverNotes] = useState("");
   const [busy, setBusy] = useState<"assign" | "archive" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -284,7 +478,10 @@ function AgencyLeadAdminSection({
   async function handleReassign() {
     setBusy("assign");
     const nextId = assigneeId === "" ? null : assigneeId;
-    await patchLead({ assigned_to_id: nextId });
+    await patchLead({
+      assigned_to_id: nextId,
+      handover_notes: handoverNotes.trim() || null,
+    });
     setBusy(null);
   }
 
@@ -327,6 +524,13 @@ function AgencyLeadAdminSection({
             {busy === "assign" ? "Saving…" : "Apply"}
           </button>
         </div>
+        <textarea
+          className="mt-2 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-[13px] text-ink-primary placeholder:text-ink-tertiary"
+          rows={2}
+          placeholder="Handover notes (optional) — visible in timeline"
+          value={handoverNotes}
+          onChange={(e) => setHandoverNotes(e.target.value)}
+        />
       </div>
       <button
         type="button"

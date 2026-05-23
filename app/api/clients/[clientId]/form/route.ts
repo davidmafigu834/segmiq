@@ -9,6 +9,7 @@ const patchSchema = z.object({
   thank_you_message: z.string().optional(),
   form_title: z.string().optional(),
   submit_button_text: z.string().optional(),
+  opening_message: z.string().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string } }) {

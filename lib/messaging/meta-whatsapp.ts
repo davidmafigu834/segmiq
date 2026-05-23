@@ -4,13 +4,89 @@ import { getFacebookGraphBase } from "@/lib/facebook/graph";
 import { fbLog } from "@/lib/facebook/log";
 import { logMessage, type LogMessageParams, type SendResult } from "@/lib/messaging/log";
 
+// ---------------------------------------------------------------------------
+// Template registry
+// ---------------------------------------------------------------------------
+// IMPORTANT: All templates must be submitted to Meta Business Manager for
+// approval before they will work in production.
+//
+// Template name: leadstaq_lead_confirmation
+// Category:      UTILITY
+// Language:      English (en_US)
+// Body:
+//   Hi {{1}}, thank you for reaching out to {{2}}.
+//
+//   We have received your inquiry about {{3}} and our team will be in touch
+//   with you within {{4}} hours.
+//
+//   While you wait, you can view our completed projects and client testimonials here:
+//   {{5}}
+//
+//   We look forward to speaking with you.
+//
+// Variables:
+//   {{1}} — lead first name
+//   {{2}} — company name
+//   {{3}} — service or project type they enquired about
+//   {{4}} — response time in hours from client SLA settings
+//   {{5}} — company portfolio URL
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Send-asset templates — UTILITY category, English (en_US)
+// Submit all to Meta Business Manager for approval before use in production.
+//
+// leadstaq_send_portfolio:
+//   Hi {{1}}, here are some of our completed projects from {{2}}. You can browse our full portfolio here:
+//   {{3}}
+//   Let us know if you have any questions.
+//
+// leadstaq_send_project:
+//   Hi {{1}}, {{2}} wanted to share a project with you that may be relevant to what you are looking for.
+//   {{3}}
+//   {{4}}
+//   Take a look and let us know your thoughts.
+//
+// leadstaq_send_pricing:
+//   Hi {{1}}, here are the pricing details for the {{3}} package from {{2}}:
+//   Price: {{4}}
+//   What is included:
+//   {{5}}
+//   You can view our full portfolio here: {{6}}
+//   Let us know if you have any questions.
+//
+// leadstaq_send_testimonials:
+//   Hi {{1}}, {{2}} wanted to share what some of our clients have said about working with us:
+//   {{3}}
+//   We look forward to speaking with you.
+//
+// leadstaq_send_document:
+//   Hi {{1}}, {{2}} has shared the following document with you:
+//   {{3}}
+//   {{4}}
+//   Let us know if you need anything else.
+//
+// leadstaq_send_custom:
+//   Hi {{1}}, a message from {{2}}:
+//   {{3}}
+// ---------------------------------------------------------------------------
+
 export type TemplateKey =
   | "NEW_LEAD_SALESPERSON"
   | "NEW_LEAD_MANAGER"
   | "DEAL_WON"
   | "FOLLOW_UP_REMINDER"
   | "UNCONTACTED_LEAD_ALERT"
-  | "MAGIC_LINK_RENEWAL";
+  | "MAGIC_LINK_RENEWAL"
+  | "LEAD_CONFIRMATION_PROSPECT"
+  | "SEND_PORTFOLIO"
+  | "SEND_PROJECT"
+  | "SEND_PRICING_PACKAGE"
+  | "SEND_TESTIMONIALS"
+  | "SEND_DOCUMENT"
+  | "SEND_CUSTOM_MESSAGE"
+  | "DAILY_COACHING"
+  | "SALESPERSON_ONBOARDING";
 
 const TEMPLATE_ENV_KEYS: Record<TemplateKey, string> = {
   NEW_LEAD_SALESPERSON: "META_TEMPLATE_NEW_LEAD_SALESPERSON",
@@ -19,6 +95,15 @@ const TEMPLATE_ENV_KEYS: Record<TemplateKey, string> = {
   FOLLOW_UP_REMINDER: "META_TEMPLATE_FOLLOW_UP_REMINDER",
   UNCONTACTED_LEAD_ALERT: "META_TEMPLATE_UNCONTACTED_LEAD_ALERT",
   MAGIC_LINK_RENEWAL: "META_TEMPLATE_MAGIC_LINK_RENEWAL",
+  LEAD_CONFIRMATION_PROSPECT: "META_TEMPLATE_LEAD_CONFIRMATION_PROSPECT",
+  SEND_PORTFOLIO: "META_TEMPLATE_SEND_PORTFOLIO",
+  SEND_PROJECT: "META_TEMPLATE_SEND_PROJECT",
+  SEND_PRICING_PACKAGE: "META_TEMPLATE_SEND_PRICING",
+  SEND_TESTIMONIALS: "META_TEMPLATE_SEND_TESTIMONIALS",
+  SEND_DOCUMENT: "META_TEMPLATE_SEND_DOCUMENT",
+  SEND_CUSTOM_MESSAGE: "META_TEMPLATE_SEND_CUSTOM",
+  DAILY_COACHING: "META_TEMPLATE_DAILY_COACHING",
+  SALESPERSON_ONBOARDING: "META_TEMPLATE_SALESPERSON_ONBOARDING",
 };
 
 export type SendWhatsAppParams = {

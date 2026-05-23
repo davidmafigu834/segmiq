@@ -22,19 +22,69 @@ function newId() {
   return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `f_${Math.random().toString(36).slice(2)}`;
 }
 
+type GeneratedQuestion = {
+  label: string;
+  field_type: string;
+  placeholder?: string;
+  options?: string[];
+  required?: boolean;
+  maps_to?: string;
+};
+
 export function FormBuilder({
   clientId,
+  clientIndustry,
   initial,
 }: {
   clientId: string;
-  initial: { fields: FormField[]; form_title: string | null; submit_button_text: string | null; thank_you_message: string | null };
+  clientIndustry: string;
+  initial: { fields: FormField[]; form_title: string | null; submit_button_text: string | null; thank_you_message: string | null; opening_message: string | null };
 }) {
   const [fields, setFields] = useState<FormField[]>(initial.fields ?? []);
   const [formTitle, setFormTitle] = useState(initial.form_title ?? "Contact");
   const [submitText, setSubmitText] = useState(initial.submit_button_text ?? "Submit");
   const [thanks, setThanks] = useState(initial.thank_you_message ?? "Thank you!");
+  const [openingMessage, setOpeningMessage] = useState(initial.opening_message ?? "");
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState<FormField | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [additionalContext, setAdditionalContext] = useState("");
+
+  async function handleGenerateQuestions() {
+    if (!clientIndustry) return;
+    if (
+      fields.length > 0 &&
+      !confirm("This will replace your current questions with AI-generated ones. Continue?")
+    ) {
+      return;
+    }
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/form/generate-questions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ industry: clientIndustry, additionalContext }),
+      });
+      const data = (await res.json()) as { questions?: GeneratedQuestion[] };
+      if (res.ok && Array.isArray(data.questions)) {
+        setFields(
+          data.questions.map((q) => ({
+            id: newId(),
+            type: q.field_type,
+            label: q.label,
+            placeholder: q.placeholder ?? "",
+            required: q.required ?? false,
+            options:
+              q.options && q.options.length > 0 ? q.options : undefined,
+          }))
+        );
+      }
+    } catch {
+      // fails silently
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   const onDragEnd = useCallback((result: DropResult) => {
     if (!result.destination) return;
@@ -54,6 +104,7 @@ export function FormBuilder({
         form_title: formTitle,
         submit_button_text: submitText,
         thank_you_message: thanks,
+        opening_message: openingMessage,
       }),
     });
     setSaving(false);
@@ -95,6 +146,45 @@ export function FormBuilder({
             ))}
           </div>
         </div>
+        {/* AI generation section */}
+        <div
+          style={{
+            padding: 16,
+            background: "rgba(212,255,79,0.04)",
+            border: "0.5px solid rgba(212,255,79,0.15)",
+            borderRadius: 12,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <i className="ti ti-sparkles" style={{ fontSize: 14, color: "#D4FF4F" }} />
+            <p className="text-[13px] font-semibold text-ink-primary" style={{ margin: 0 }}>
+              Generate questions with AI
+            </p>
+          </div>
+          <p className="text-[12px] text-ink-tertiary" style={{ margin: "0 0 10px", lineHeight: 1.5 }}>
+            AI will generate smart lead capture questions based on the{" "}
+            {clientIndustry || "client"} industry. You can edit them after.
+          </p>
+          <textarea
+            value={additionalContext}
+            onChange={(e) => setAdditionalContext(e.target.value)}
+            placeholder={`Optional: describe anything specific — e.g. "residential solar only, minimum 5kW systems"`}
+            rows={2}
+            className="input-base w-full resize-none text-[12px]"
+            style={{ marginBottom: 10 }}
+          />
+          <button
+            type="button"
+            onClick={() => void handleGenerateQuestions()}
+            disabled={generating || !clientIndustry}
+            className="btn-primary h-9 text-xs"
+            style={{ display: "flex", alignItems: "center", gap: 6 }}
+          >
+            <i className="ti ti-sparkles" style={{ fontSize: 12 }} />
+            {generating ? "Generating…" : "Generate questions"}
+          </button>
+        </div>
+
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="canvas">
             {(provided) => (
@@ -172,6 +262,16 @@ export function FormBuilder({
           <label className="mt-3 block text-sm text-ink-secondary">
             Thank you message
             <input className="input-base mt-1" value={thanks} onChange={(e) => setThanks(e.target.value)} />
+          </label>
+          <label className="mt-3 block text-sm text-ink-secondary">
+            Opening message
+            <span className="ml-1 text-[10px] text-ink-tertiary">(shown at the start of the conversation)</span>
+            <textarea
+              className="input-base mt-1 h-24 resize-none"
+              value={openingMessage}
+              onChange={(e) => setOpeningMessage(e.target.value)}
+              placeholder="Hello! Thank you for considering us…"
+            />
           </label>
         </div>
       </div>

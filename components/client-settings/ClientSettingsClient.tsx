@@ -4,12 +4,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { ClientAvatar } from "@/components/ClientAvatar";
+import { PackagesManager } from "@/components/client-settings/PackagesManager";
 
 const TABS = [
   { id: "profile", label: "Profile" },
   { id: "team", label: "Team" },
   { id: "notifications", label: "Notifications" },
   { id: "branding", label: "Branding" },
+  { id: "packages", label: "Packages" },
   { id: "advanced", label: "Advanced" },
 ];
 
@@ -78,6 +80,7 @@ export function ClientSettingsClient({
 
   const [notifForm, setNotifForm] = useState({
     twilio_whatsapp_override: String(initialClient.twilio_whatsapp_override ?? ""),
+    send_prospect_confirmation: (initialClient.send_prospect_confirmation as boolean | null) ?? true,
   });
 
   const [brandForm, setBrandForm] = useState({
@@ -189,6 +192,7 @@ export function ClientSettingsClient({
     try {
       await patchClient({
         twilio_whatsapp_override: notifForm.twilio_whatsapp_override.trim() || null,
+        send_prospect_confirmation: notifForm.send_prospect_confirmation,
       });
       setToast("Saved notification settings.");
     } catch (e) {
@@ -731,6 +735,33 @@ export function ClientSettingsClient({
                 placeholder="Leave blank to use agency default"
               />
             </label>
+            <label className="flex cursor-pointer items-center gap-3">
+              <div className="relative inline-block">
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={notifForm.send_prospect_confirmation}
+                  onChange={(e) => setNotifForm((f) => ({ ...f, send_prospect_confirmation: e.target.checked }))}
+                />
+                <div
+                  className={`h-5 w-9 rounded-full transition-colors ${
+                    notifForm.send_prospect_confirmation ? "bg-[var(--info)]" : "bg-surface-card-alt border border-border"
+                  }`}
+                />
+                <div
+                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    notifForm.send_prospect_confirmation ? "translate-x-4" : "translate-x-0.5"
+                  }`}
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-ink-primary">Prospect confirmation WhatsApp</p>
+                <p className="text-xs text-ink-secondary">
+                  Send an automatic WhatsApp message to the prospect right after they submit the form,
+                  confirming receipt and sharing the portfolio link.
+                </p>
+              </div>
+            </label>
             <button type="button" className="btn-primary" disabled={saving} onClick={() => void saveNotifications()}>
               Save
             </button>
@@ -759,6 +790,13 @@ export function ClientSettingsClient({
             <button type="button" className="btn-primary" disabled={saving} onClick={() => void saveBranding()}>
               Save
             </button>
+          </div>
+        ) : null}
+
+        {tab === "packages" ? (
+          <div className="max-w-2xl space-y-6">
+            <h2 className="font-display text-2xl">Packages &amp; Documents</h2>
+            <PackagesManager clientId={clientId} />
           </div>
         ) : null}
 

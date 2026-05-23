@@ -36,6 +36,11 @@ function apiLeadToRow(lead: Record<string, unknown>): LeadRow {
     facebook_lead_id: (lead.facebook_lead_id as string | null) ?? null,
     created_at: String(lead.created_at),
     updated_at: String(lead.updated_at),
+    score: lead.score != null ? Number(lead.score) : null,
+    score_updated_at: (lead.score_updated_at as string | null) ?? null,
+    score_breakdown: (lead.score_breakdown as Record<string, number> | null) ?? null,
+    is_stale: (lead.is_stale as boolean | null) ?? null,
+    stale_since: (lead.stale_since as string | null) ?? null,
   };
 }
 

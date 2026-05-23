@@ -3,6 +3,8 @@ import { newMagicToken, parseLeadFields } from "@/lib/lead-helpers";
 import { notifyNewLead, notifyAdminsNoSalesperson } from "@/lib/notifications";
 import { getManagerPrefs, parseSalesPrefs } from "@/lib/notification-prefs";
 import { background } from "@/lib/background";
+import { sendWhatsApp } from "@/lib/messaging/provider";
+import { logLeadCreated } from "@/lib/lead-events";
 import type { LeadRow, LeadSource } from "@/types";
 
 export type CreateLeadInput = {
@@ -127,6 +129,22 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
 
   const leadRow = lead as unknown as LeadRow;
 
+  // Log LEAD_CREATED event (fire-and-forget — never blocks lead creation)
+  const assignedSalesperson = assignedId ? (list.find((s) => s.id === assignedId) ?? null) : null;
+  const formDataSummary =
+    (leadRow.project_type as string | null) ||
+    (leadRow.budget as string | null) ||
+    null;
+  background("logLeadCreated", () =>
+    logLeadCreated({
+      leadId: leadRow.id,
+      clientId,
+      source,
+      assignedToName: assignedSalesperson ? (assignedSalesperson.name as string) : undefined,
+      formDataSummary: formDataSummary ?? undefined,
+    })
+  );
+
   if (!skipNotifications) {
     if (assignedId) {
       const sp = list.find((s) => s.id === assignedId)!;
@@ -165,6 +183,59 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
           clientId,
         })
       );
+    }
+
+    // Send prospect confirmation WhatsApp on public form submissions only.
+    // Not sent for MANUAL source, when phone is missing, or when client has disabled it.
+    // NOTE: Opt-out (STOP) handling should be added here once the incoming message
+    // system tracks WhatsApp opt-outs in a blocked_numbers table.
+    if (
+      source !== "MANUAL" &&
+      leadRow.phone &&
+      (client as { send_prospect_confirmation?: boolean }).send_prospect_confirmation !== false
+    ) {
+      background("sendProspectConfirmation", async () => {
+        const adminClient = createAdminClient();
+        const { data: profile } = await adminClient
+          .from("client_profiles")
+          .select("slug, is_published")
+          .eq("client_id", clientId)
+          .maybeSingle();
+
+        const rawDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost:3000";
+        const protocol = rawDomain.includes("localhost") ? "http" : "https";
+        const portfolioUrl =
+          (profile as { is_published?: boolean; slug?: string } | null)?.is_published &&
+          (profile as { slug?: string } | null)?.slug
+            ? `${protocol}://${rawDomain}/p/${(profile as { slug: string }).slug}`
+            : `${protocol}://${rawDomain}`;
+
+        const serviceDescription =
+          (leadRow.project_type as string | null) ||
+          (leadRow.budget as string | null) ||
+          "your project";
+        const firstName = (leadRow.name as string | null)?.split(" ")[0] || "there";
+        const companyName = client.name as string;
+        const responseTimeHours = (client.response_time_limit_hours as number) || 2;
+
+        await sendWhatsApp({
+          to: leadRow.phone,
+          template: "LEAD_CONFIRMATION_PROSPECT",
+          variables: {
+            "1": firstName,
+            "2": companyName,
+            "3": serviceDescription,
+            "4": String(responseTimeHours),
+            "5": portfolioUrl,
+          },
+          fallbackBody: `Hi ${firstName}, thank you for reaching out to ${companyName}. We have received your inquiry about ${serviceDescription} and our team will be in touch within ${responseTimeHours} hours. Portfolio: ${portfolioUrl}`,
+          context: {
+            leadId: leadRow.id,
+            clientId,
+            notificationType: "LEAD_CONFIRMATION_PROSPECT",
+          },
+        });
+      });
     }
   }
 

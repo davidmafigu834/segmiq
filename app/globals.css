@@ -451,6 +451,12 @@ label[for="photo-input"] {
   transform: scale(1.04);
 }
 
+/* ── Skeleton shimmer — used by AI loading states ── */
+@keyframes skeleton-shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 /* ── Agency dashboard fade-in animations ── */
 @keyframes ag-fade-up {
   from {
@@ -499,6 +505,11 @@ label[for="photo-input"] {
     animation: none;
     opacity: 1;
   }
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

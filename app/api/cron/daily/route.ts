@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { executeFollowUpReminders } from "@/lib/follow-up-reminders";
 import { checkUncontactedLeads } from "@/lib/notifications";
+import { scoreAllLeads } from "@/lib/lead-scoring";
+import { sendDailySalespersonCoaching } from "@/lib/ai/daily-coaching";
+import { runOnboardingCronJobs } from "@/lib/ai/salesperson-onboarding";
 
 /**
  * Single daily job for Vercel Hobby (free): cron schedules must run at most once per day.
@@ -18,6 +21,30 @@ export async function GET(req: Request) {
   const errors: string[] = [];
   let uncontacted: { flagged: number } | undefined;
   let followUp: Awaited<ReturnType<typeof executeFollowUpReminders>> | undefined;
+
+  try {
+    await scoreAllLeads();
+    console.log("[cron daily] Lead scoring complete");
+  } catch (e) {
+    console.error("[cron daily] scoreAllLeads", e);
+    errors.push(`scoring: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  try {
+    await sendDailySalespersonCoaching();
+    console.log("[cron daily] Daily coaching sent");
+  } catch (e) {
+    console.error("[cron daily] sendDailySalespersonCoaching", e);
+    errors.push(`coaching: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  try {
+    await runOnboardingCronJobs();
+    console.log("[cron daily] Onboarding coaching sent");
+  } catch (e) {
+    console.error("[cron daily] runOnboardingCronJobs", e);
+    errors.push(`onboarding: ${e instanceof Error ? e.message : String(e)}`);
+  }
 
   try {
     uncontacted = await checkUncontactedLeads();

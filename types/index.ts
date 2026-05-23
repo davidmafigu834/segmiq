@@ -86,6 +86,11 @@ export interface LeadRow {
   facebook_lead_id: string | null;
   created_at: string;
   updated_at: string;
+  score: number | null;
+  score_updated_at: string | null;
+  score_breakdown: Record<string, number> | null;
+  is_stale: boolean | null;
+  stale_since: string | null;
 }
 
 export interface FormField {
