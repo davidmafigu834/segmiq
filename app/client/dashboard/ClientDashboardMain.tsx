@@ -167,13 +167,10 @@ export default function ClientDashboardMain({
           PAGE HEADER
           ============================================ */}
       <div className="mb-8">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
+        <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
           {today}
         </p>
-        <h1
-          className="text-[28px] text-[var(--text-primary)] mb-0 leading-tight"
-          style={{ fontFamily: "var(--font-instrument-serif)" }}
-        >
+        <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">
           Good {getGreeting()}, {firstName}
         </h1>
       </div>
@@ -225,7 +222,6 @@ export default function ClientDashboardMain({
               icon: PhoneOff,
               urgent: data.focus.uncontacted > 0,
               href: "/client/leads?status=NEW",
-              urgentColour: "var(--error)",
             },
             {
               label: "Follow-ups due",
@@ -234,7 +230,6 @@ export default function ClientDashboardMain({
               icon: CalendarClock,
               urgent: data.focus.followUpToday > 0,
               href: "/client/leads?followup=today",
-              urgentColour: "var(--warning)",
             },
             {
               label: "Stale leads",
@@ -243,44 +238,26 @@ export default function ClientDashboardMain({
               icon: Clock,
               urgent: data.focus.staleLeads > 0,
               href: "/client/leads?stale=true",
-              urgentColour: "var(--error)",
             },
           ] as const
         ).map((item) => (
           <div
             key={item.label}
             onClick={() => router.push(item.href)}
-            className={`rounded-xl border p-5 cursor-pointer transition-colors ${
-              item.urgent
-                ? "border-[var(--border-hover)] bg-[var(--surface-card)]"
-                : "border-[var(--border)] bg-[var(--surface-card)] hover:border-[var(--border-hover)]"
-            }`}
+            className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 cursor-pointer hover:border-[var(--border-hover)] transition-colors"
           >
-            <div className="flex items-center justify-between mb-4">
-              <p
-                className={`text-[11px] font-semibold uppercase tracking-widest ${
-                  item.urgent ? "" : "text-[var(--text-tertiary)]"
-                }`}
-                style={item.urgent ? { color: item.urgentColour } : undefined}
-              >
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
                 {item.label}
               </p>
-              <item.icon
-                size={16}
-                style={item.urgent ? { color: item.urgentColour } : undefined}
-                className={!item.urgent ? "text-[var(--text-disabled)]" : ""}
-              />
+              <item.icon size={15} className="text-[var(--text-disabled)]" />
             </div>
-            <p
-              className="text-[48px] leading-none font-semibold mb-2"
-              style={{
-                fontFamily: "var(--font-instrument-serif)",
-                color: item.urgent ? item.urgentColour : "var(--text-primary)",
-              }}
-            >
+            <p className="font-display text-[36px] font-semibold leading-none text-[var(--text-primary)] mb-2">
               {item.value}
             </p>
-            <p className="text-[12px] text-[var(--text-tertiary)]">
+            <p className={`text-[12px] font-medium ${
+              item.urgent ? "text-[var(--error)]" : "text-[var(--text-tertiary)]"
+            }`}>
               {item.description}
             </p>
           </div>
@@ -382,7 +359,54 @@ export default function ClientDashboardMain({
             </button>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile: stacked cards */}
+          <div className="md:hidden space-y-2 px-5 py-3">
+            {data.salespersonStats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <Users className="w-7 h-7 text-[var(--text-disabled)] mb-3" />
+                <p className="text-[13px] text-[var(--text-tertiary)]">No salespeople yet</p>
+              </div>
+            ) : (
+              data.salespersonStats.map((sp) => (
+                <div key={sp.id} className="rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="relative shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-[var(--bg-quaternary)] border border-[var(--border)] flex items-center justify-center text-[10px] font-semibold text-[var(--text-secondary)]">
+                          {getInitials(sp.name)}
+                        </div>
+                        <div className={`absolute bottom-0 right-0 w-[8px] h-[8px] rounded-full border border-[var(--surface-card)] ${
+                          sp.activeToday ? "bg-[var(--success)]" : "bg-[var(--text-disabled)]"
+                        }`} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{sp.name}</p>
+                        <p className="text-[10px] text-[var(--text-tertiary)]">{sp.assignedLeads} leads</p>
+                      </div>
+                    </div>
+                    <p className={`text-[13px] font-semibold shrink-0 ${contactRateColour(sp.contactRate)}`}>
+                      {sp.contactRate !== null ? `${sp.contactRate}%` : "—"}
+                    </p>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-[var(--border)] grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Won", val: sp.wonThisWeek, cls: sp.wonThisWeek > 0 ? "text-[var(--success)]" : "text-[var(--text-disabled)]" },
+                      { label: "Calls", val: sp.calledToday, cls: sp.calledToday > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-disabled)]" },
+                      { label: "Sent", val: sp.sentThisWeek, cls: sp.sentThisWeek > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-disabled)]" },
+                    ].map(({ label, val, cls }) => (
+                      <div key={label} className="text-center">
+                        <p className="text-[9px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)] mb-0.5">{label}</p>
+                        <p className={`font-display text-[18px] font-semibold ${cls}`}>{val}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop: scrollable table */}
+          <div className="hidden md:block overflow-x-auto">
           {data.salespersonStats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-5">
               <Users className="w-8 h-8 text-[var(--text-disabled)] mb-3" />
@@ -420,9 +444,7 @@ export default function ClientDashboardMain({
                 <div
                   key={sp.id}
                   className={`min-w-[480px] grid grid-cols-[1fr_80px_60px_60px_60px] gap-0 px-5 py-3 items-center hover:bg-[var(--bg-tertiary)] transition-colors ${
-                    index < data.salespersonStats.length - 1
-                      ? "border-b border-[var(--border)]"
-                      : ""
+                    index < data.salespersonStats.length - 1 ? "border-b border-[var(--border)]" : ""
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -452,43 +474,28 @@ export default function ClientDashboardMain({
                     {sp.contactRate !== null ? `${sp.contactRate}%` : "—"}
                   </p>
 
-                  <p
-                    className={`text-[18px] font-semibold text-center ${
-                      sp.wonThisWeek > 0
-                        ? "text-[var(--success)]"
-                        : "text-[var(--text-disabled)]"
-                    }`}
-                    style={{ fontFamily: "var(--font-instrument-serif)" }}
-                  >
+                  <p className={`font-display text-[18px] font-semibold text-center ${
+                    sp.wonThisWeek > 0 ? "text-[var(--success)]" : "text-[var(--text-disabled)]"
+                  }`}>
                     {sp.wonThisWeek}
                   </p>
 
-                  <p
-                    className={`text-[18px] font-semibold text-center ${
-                      sp.calledToday > 0
-                        ? "text-[var(--text-primary)]"
-                        : "text-[var(--text-disabled)]"
-                    }`}
-                    style={{ fontFamily: "var(--font-instrument-serif)" }}
-                  >
+                  <p className={`font-display text-[18px] font-semibold text-center ${
+                    sp.calledToday > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-disabled)]"
+                  }`}>
                     {sp.calledToday}
                   </p>
 
-                  <p
-                    className={`text-[18px] font-semibold text-center ${
-                      sp.sentThisWeek > 0
-                        ? "text-[var(--text-primary)]"
-                        : "text-[var(--text-disabled)]"
-                    }`}
-                    style={{ fontFamily: "var(--font-instrument-serif)" }}
-                  >
+                  <p className={`font-display text-[18px] font-semibold text-center ${
+                    sp.sentThisWeek > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-disabled)]"
+                  }`}>
                     {sp.sentThisWeek}
                   </p>
                 </div>
               ))}
             </>
           )}
-          </div>
+          </div>{/* end desktop table */}
         </div>
 
         {/* RIGHT COLUMN — pipeline + score */}
@@ -576,8 +583,7 @@ export default function ClientDashboardMain({
                         </span>
                       </div>
                       <span
-                        className="text-[18px] font-semibold text-[var(--text-primary)]"
-                        style={{ fontFamily: "var(--font-instrument-serif)" }}
+                        className="font-display text-[18px] font-semibold text-[var(--text-primary)]"
                       >
                         {tier.count}
                       </span>
@@ -650,8 +656,7 @@ export default function ClientDashboardMain({
                   </p>
                 </div>
                 <p
-                  className="text-[28px] font-semibold text-[var(--text-primary)] leading-none"
-                  style={{ fontFamily: "var(--font-instrument-serif)" }}
+                  className="font-display text-[28px] font-semibold text-[var(--text-primary)] leading-none"
                 >
                   {stat.value}
                 </p>
@@ -749,8 +754,7 @@ export default function ClientDashboardMain({
                   />
                 </div>
                 <span
-                  className="text-[17px] font-semibold text-[var(--text-primary)] w-8 text-right shrink-0"
-                  style={{ fontFamily: "var(--font-instrument-serif)" }}
+                  className="font-display text-[17px] font-semibold text-[var(--text-primary)] w-8 text-right shrink-0"
                 >
                   {hasSourceData ? count : "—"}
                 </span>

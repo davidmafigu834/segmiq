@@ -208,10 +208,10 @@ export function AppShell({
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             </button>
             <div className="flex min-w-0 flex-1 items-baseline gap-1.5 overflow-hidden">
-              <span className="shrink-0 whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+              <span className="hidden md:inline shrink-0 whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
                 {breadcrumb}
               </span>
-              <span className="shrink-0 text-[10px] text-[var(--text-tertiary)] opacity-50">·</span>
+              <span className="hidden md:inline shrink-0 text-[10px] text-[var(--text-tertiary)] opacity-50">·</span>
               <h1 className={`min-w-0 truncate font-semibold leading-none text-[var(--text-primary)] ${titleSize === "hero" ? "text-[15px] md:text-[18px] layout:text-[22px]" : "text-[14px] md:text-[16px] layout:text-[20px]"}`}>{pageTitle}</h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
