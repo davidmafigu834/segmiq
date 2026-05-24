@@ -430,3 +430,195 @@ export async function fetchClientTeamOverview(clientId: string): Promise<ClientT
     leadsThisWeek: countByAssignee.get(u.id as string) ?? 0,
   }));
 }
+
+export async function fetchClientManagerDashboardData(clientId: string) {
+  const supabase = createAdminClient();
+
+  const now = new Date();
+
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 7);
+  weekStart.setHours(0, 0, 0, 0);
+
+  const monthStart = new Date(now);
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+
+  const [
+    { data: allLeads },
+    { data: salespeople },
+    { data: todayCallLogs },
+    { data: weekEvents },
+    { data: recentWins },
+    { data: client },
+  ] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("id, status, assigned_to_id, created_at, follow_up_date, deal_value, score, is_stale, source")
+      .eq("client_id", clientId)
+      .eq("is_archived", false),
+
+    supabase
+      .from("users")
+      .select("id, name, created_at")
+      .eq("client_id", clientId)
+      .eq("role", "SALESPERSON")
+      .eq("is_active", true),
+
+    supabase
+      .from("call_logs")
+      .select("id, user_id, lead_id, created_at")
+      .gte("created_at", todayStart.toISOString()),
+
+    supabase
+      .from("lead_events")
+      .select("id, actor_id, event_type, event_data, created_at, lead_id")
+      .eq("client_id", clientId)
+      .eq("event_type", "DOCUMENT_SENT")
+      .gte("created_at", weekStart.toISOString()),
+
+    supabase
+      .from("win_analysis")
+      .select("lead_id, salesperson_name, deal_value, days_to_close, created_at, leads(name)")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false })
+      .limit(5),
+
+    supabase
+      .from("clients")
+      .select("id, name, response_time_limit_hours")
+      .eq("id", clientId)
+      .single(),
+  ]);
+
+  const leads = allLeads ?? [];
+  const reps = salespeople ?? [];
+  const todayCalls = todayCallLogs ?? [];
+  const sentEvents = weekEvents ?? [];
+
+  const uncontacted = leads.filter((l) => l.status === "NEW").length;
+
+  const followUpToday = leads.filter((l) => {
+    if (!l.follow_up_date) return false;
+    return (
+      new Date(l.follow_up_date) <= now &&
+      !["WON", "LOST", "NOT_QUALIFIED"].includes(l.status as string)
+    );
+  }).length;
+
+  const staleLeads = leads.filter((l) => l.is_stale).length;
+
+  const pipeline: Record<string, number> = {
+    NEW: 0,
+    CONTACTED: 0,
+    QUALIFIED: 0,
+    NEGOTIATING: 0,
+    WON: 0,
+    LOST: 0,
+  };
+  leads.forEach((l) => {
+    const s = l.status as string;
+    if (pipeline[s] !== undefined) pipeline[s]++;
+  });
+
+  const activeLeads = leads.filter(
+    (l) => !["WON", "LOST", "NOT_QUALIFIED"].includes(l.status as string)
+  );
+
+  const scoreDistribution = {
+    hot: activeLeads.filter((l) => ((l.score as number | null) ?? 0) >= 70).length,
+    warm: activeLeads.filter((l) => {
+      const s = (l.score as number | null) ?? 0;
+      return s >= 40 && s < 70;
+    }).length,
+    cold: activeLeads.filter((l) => ((l.score as number | null) ?? 0) < 40).length,
+    total: activeLeads.length,
+  };
+
+  const sourceCounts: Record<string, number> = {
+    FACEBOOK: 0,
+    LANDING_PAGE: 0,
+    MANUAL: 0,
+    REFERRAL: 0,
+  };
+  leads.forEach((l) => {
+    const src = l.source as string;
+    if (sourceCounts[src] !== undefined) sourceCounts[src]++;
+  });
+
+  const salespersonStats = reps.map((sp) => {
+    const spLeads = leads.filter((l) => l.assigned_to_id === sp.id);
+    const spWeekLeads = spLeads.filter(
+      (l) => new Date(l.created_at as string) >= weekStart
+    );
+    const spContacted = spWeekLeads.filter((l) => l.status !== "NEW").length;
+    const spWonWeek = spWeekLeads.filter((l) => l.status === "WON").length;
+    const spWonMonth = spLeads.filter(
+      (l) => l.status === "WON" && new Date(l.created_at as string) >= monthStart
+    ).length;
+    const calledToday = todayCalls.filter((cl) => cl.user_id === sp.id).length;
+    const sentThisWeek = sentEvents.filter((e) => e.actor_id === sp.id).length;
+    const contactRate =
+      spWeekLeads.length > 0
+        ? Math.round((spContacted / spWeekLeads.length) * 100)
+        : null;
+    const activeToday = todayCalls.some((cl) => cl.user_id === sp.id);
+
+    return {
+      id: sp.id as string,
+      name: sp.name as string,
+      assignedLeads: spLeads.length,
+      weekLeads: spWeekLeads.length,
+      contactRate,
+      wonThisWeek: spWonWeek,
+      wonThisMonth: spWonMonth,
+      calledToday,
+      sentThisWeek,
+      activeToday,
+    };
+  });
+
+  const assetsSent = {
+    total: sentEvents.length,
+    portfolio: sentEvents.filter(
+      (e) => (e.event_data as Record<string, unknown>)?.document_type === "PORTFOLIO"
+    ).length,
+    projects: sentEvents.filter(
+      (e) => (e.event_data as Record<string, unknown>)?.document_type === "PROJECT"
+    ).length,
+    pricing: sentEvents.filter(
+      (e) => (e.event_data as Record<string, unknown>)?.document_type === "PRICING_PACKAGE"
+    ).length,
+    documents: sentEvents.filter(
+      (e) => (e.event_data as Record<string, unknown>)?.document_type === "DOCUMENT"
+    ).length,
+  };
+
+  const weekLeads = leads.filter((l) => new Date(l.created_at as string) >= weekStart);
+  const weekContacted = weekLeads.filter((l) => l.status !== "NEW").length;
+  const weekWon = weekLeads.filter((l) => l.status === "WON").length;
+  const contactRate =
+    weekLeads.length > 0
+      ? Math.round((weekContacted / weekLeads.length) * 100)
+      : null;
+
+  return {
+    focus: { uncontacted, followUpToday, staleLeads },
+    pipeline,
+    scoreDistribution,
+    sourceCounts,
+    salespersonStats,
+    assetsSent,
+    recentWins: recentWins ?? [],
+    pulseMetrics: {
+      weekLeads: weekLeads.length,
+      contactRate,
+      weekWon,
+      totalActiveLeads: activeLeads.length,
+    },
+    clientName: (client?.name as string) ?? "",
+  };
+}
