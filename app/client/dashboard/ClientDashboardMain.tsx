@@ -161,7 +161,7 @@ export default function ClientDashboardMain({
   const maxSource = Math.max(...Object.values(data.sourceCounts), 1);
 
   return (
-    <div className="px-4 pt-6 pb-28 md:px-6 layout:pb-10 layout:px-8">
+    <div>
 
       {/* ============================================
           PAGE HEADER
@@ -215,7 +215,7 @@ export default function ClientDashboardMain({
       {/* ============================================
           TODAY'S FOCUS — 3 urgent numbers
           ============================================ */}
-      <div className="ag-fade-in grid grid-cols-3 gap-3 mb-8">
+      <div className="ag-fade-in grid grid-cols-1 min-[480px]:grid-cols-3 gap-3 mb-8">
         {(
           [
             {
@@ -382,6 +382,7 @@ export default function ClientDashboardMain({
             </button>
           </div>
 
+          <div className="overflow-x-auto">
           {data.salespersonStats.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-5">
               <Users className="w-8 h-8 text-[var(--text-disabled)] mb-3" />
@@ -400,7 +401,7 @@ export default function ClientDashboardMain({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-[1fr_80px_60px_60px_60px] gap-0 px-5 py-2 border-b border-[var(--border)]">
+              <div className="min-w-[480px] grid grid-cols-[1fr_80px_60px_60px_60px] gap-0 px-5 py-2 border-b border-[var(--border)]">
                 {["Salesperson", "Contact %", "Won", "Calls", "Sent"].map(
                   (col, i) => (
                     <p
@@ -418,7 +419,7 @@ export default function ClientDashboardMain({
               {data.salespersonStats.map((sp, index) => (
                 <div
                   key={sp.id}
-                  className={`grid grid-cols-[1fr_80px_60px_60px_60px] gap-0 px-5 py-3 items-center hover:bg-[var(--bg-tertiary)] transition-colors ${
+                  className={`min-w-[480px] grid grid-cols-[1fr_80px_60px_60px_60px] gap-0 px-5 py-3 items-center hover:bg-[var(--bg-tertiary)] transition-colors ${
                     index < data.salespersonStats.length - 1
                       ? "border-b border-[var(--border)]"
                       : ""
@@ -487,6 +488,7 @@ export default function ClientDashboardMain({
               ))}
             </>
           )}
+          </div>
         </div>
 
         {/* RIGHT COLUMN — pipeline + score */}
