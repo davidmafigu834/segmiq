@@ -2,9 +2,9 @@
 
 import useSWR from "swr";
 import { AnimatePresence, motion } from "framer-motion";
+import { Activity } from "lucide-react";
 import type { ActivityEventDTO, ActivityEventKind } from "@/lib/activity-feed-types";
 import { formatTimeAgo } from "@/lib/format";
-import { EmptyState } from "@/app/(agency)/dashboard/components/EmptyState";
 
 const fetcher = (u: string) =>
   fetch(u).then((r) => {
@@ -21,13 +21,13 @@ const labelFor: Record<ActivityEventKind, string> = {
   CONTACTED: "Contacted",
 };
 
-const bulletColor: Record<ActivityEventKind, string> = {
-  NEW_LEAD: "#3B82F6",
-  DEAL_WON: "var(--accent)",
-  FOLLOW_UP_SET: "#F59E0B",
-  FLAGGED: "#DC2626",
-  NOT_QUALIFIED: "#9CA3AF",
-  CONTACTED: "#10B981",
+const bulletClass: Record<ActivityEventKind, string> = {
+  NEW_LEAD: "bg-[#3B82F6]",
+  DEAL_WON: "bg-accent",
+  FOLLOW_UP_SET: "bg-[#F59E0B]",
+  FLAGGED: "bg-[#DC2626]",
+  NOT_QUALIFIED: "bg-[#9CA3AF]",
+  CONTACTED: "bg-[#10B981]",
 };
 
 export function ActivityFeed() {
@@ -49,25 +49,25 @@ export function ActivityFeed() {
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
             />
           </p>
-          <h2 className="mt-1 text-[18px] font-semibold text-[var(--ag-text-primary)]" style={{ fontFamily: "var(--ag-font-body)" }}>Activity</h2>
+          <h2 className="mt-1 text-[18px] font-semibold text-[var(--text-primary)]">Activity</h2>
         </div>
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--border)] pb-3">
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
-          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: "#3B82F6" }} aria-hidden />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[#3B82F6]" aria-hidden />
           New lead
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
-          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: "#DC2626" }} aria-hidden />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[#DC2626]" aria-hidden />
           Flagged
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
-          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: "#F59E0B" }} aria-hidden />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[#F59E0B]" aria-hidden />
           Follow-up
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
-          <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: "#10B981" }} aria-hidden />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[#10B981]" aria-hidden />
           Contacted
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
@@ -90,18 +90,14 @@ export function ActivityFeed() {
                 className="relative border-b border-[var(--border)] py-3.5 pl-6 last:border-b-0"
               >
                 <span
-                  className="absolute left-[-4px] top-[22px] h-2 w-2 rounded-full"
-                  style={{
-                    backgroundColor: bulletColor[e.type],
-                    boxShadow: "0 0 0 1px var(--bg-primary)",
-                  }}
+                  className={`absolute left-[-4px] top-[22px] h-2 w-2 rounded-full shadow-[0_0_0_1px_var(--bg-primary)] ${bulletClass[e.type]}`}
                   aria-hidden
                 />
                 <div className="flex items-start justify-between gap-3">
-                  <span style={{ fontFamily: "var(--ag-font-body)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ag-text-tertiary)" }}>
+                  <span className="text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
                     {labelFor[e.type]}
                   </span>
-                  <span style={{ fontFamily: "var(--ag-font-body)", fontSize: 11, color: "var(--ag-text-tertiary)" }} className="shrink-0 tabular-nums">
+                  <span className="shrink-0 tabular-nums text-[11px] text-[var(--text-tertiary)]">
                     {formatTimeAgo(e.timestamp)}
                   </span>
                 </div>
@@ -111,11 +107,11 @@ export function ActivityFeed() {
           </AnimatePresence>
         </ul>
         {!events.length ? (
-          <EmptyState
-            icon="ti-activity"
-            title="No activity yet"
-            description="Activity will appear here as your team logs calls, sends messages, and updates leads."
-          />
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Activity className="mb-3 h-8 w-8 text-[var(--text-disabled)]" />
+            <p className="mb-1 text-[14px] font-semibold text-[var(--text-secondary)]">No activity yet</p>
+            <p className="text-[12px] text-[var(--text-tertiary)]">Activity will appear here as your team logs calls, sends messages, and updates leads.</p>
+          </div>
         ) : null}
       </div>
     </div>

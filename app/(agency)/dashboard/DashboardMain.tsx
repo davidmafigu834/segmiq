@@ -1,16 +1,35 @@
+import { BarChart2 } from "lucide-react";
 import { PulseBar } from "@/components/dashboard/PulseBar";
 import { buildPulseMetrics } from "@/components/dashboard/pulse-metrics";
 import { FlagAlert } from "@/components/dashboard/FlagAlert";
 import { RecentLeadsTable } from "@/components/dashboard/RecentLeadsTable";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { ClientPerformanceGrid } from "@/components/dashboard/ClientPerformanceGrid";
-import { PipelineSection } from "@/components/dashboard/PipelineSection";
-import { QuickActionBar } from "./components/QuickActionBar";
+import { QuickActions } from "./components/QuickActions";
 import { fetchAgencyDashboardData } from "@/lib/dashboard-data";
 
-const GHOST_SOURCE_WIDTHS = [65, 40, 25, 15];
-const LEAD_SOURCE_LABELS = ["Facebook Ads", "Profile page", "Manual entry", "Referral"];
-const LEAD_SOURCE_KEYS = ["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"];
+const PIPELINE_STAGES = [
+  { key: "NEW", label: "New", barClass: "bg-[var(--text-tertiary)]" },
+  { key: "CONTACTED", label: "Contacted", barClass: "bg-[#4A7AB5]" },
+  { key: "QUALIFIED", label: "Qualified", barClass: "bg-[#C49A3C]" },
+  { key: "NEGOTIATING", label: "Negotiating", barClass: "bg-[#E8602C]" },
+  { key: "WON", label: "Won", barClass: "bg-[var(--success)]" },
+  { key: "LOST", label: "Lost", barClass: "bg-[var(--error)]" },
+];
+
+const LEAD_SOURCE_ROWS = [
+  { key: "FACEBOOK", label: "Facebook" },
+  { key: "LANDING_PAGE", label: "Profile page" },
+  { key: "MANUAL", label: "Manual" },
+  { key: "REFERRAL", label: "Referral" },
+];
+
+const GHOST_WIDTHS: Record<string, number> = {
+  FACEBOOK: 65,
+  LANDING_PAGE: 40,
+  MANUAL: 25,
+  REFERRAL: 15,
+};
 
 export async function DashboardMain() {
   const d = await fetchAgencyDashboardData();
@@ -30,27 +49,22 @@ export async function DashboardMain() {
     avgResponseDeltaMinutes: d.avgResponseDeltaMinutes,
   });
 
-  const pipelineByStatus: Record<string, number> = {};
-  for (const lead of d.recentLeads) {
-    const key = lead.status.toLowerCase();
-    pipelineByStatus[key] = (pipelineByStatus[key] ?? 0) + 1;
-  }
-
-  const sourceCountMap: Record<string, number> = {};
+  const leadSourceCounts: Record<string, number> = {
+    FACEBOOK: 0,
+    LANDING_PAGE: 0,
+    MANUAL: 0,
+    REFERRAL: 0,
+  };
   for (const lead of d.recentLeads) {
     const src = lead.source as string;
-    sourceCountMap[src] = (sourceCountMap[src] ?? 0) + 1;
+    if (src in leadSourceCounts) leadSourceCounts[src]++;
   }
-  const leadSources = LEAD_SOURCE_KEYS.map((key, i) => ({
-    label: LEAD_SOURCE_LABELS[i]!,
-    count: sourceCountMap[key] ?? 0,
-  }));
-  const maxSourceCount = Math.max(...leadSources.map((s) => s.count), 1);
-  const hasSourceData = leadSources.some((s) => s.count > 0);
+  const hasSourceData = Object.values(leadSourceCounts).some((v) => v > 0);
+  const maxSourceCount = Math.max(...Object.values(leadSourceCounts), 1);
 
   return (
     <>
-      <QuickActionBar />
+      <QuickActions />
 
       <div className="ag-fade-in ag-delay-1">
         <PulseBar metrics={pulse} />
@@ -70,174 +84,87 @@ export async function DashboardMain() {
       </div>
 
       <div className="ag-fade-in ag-delay-3 mt-10 grid grid-cols-1 gap-6 min-[800px]:grid-cols-2">
-        <div
-          style={{
-            background: "var(--ag-surface)",
-            border: "0.5px solid var(--ag-border)",
-            borderRadius: 12,
-            padding: "20px 24px",
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "var(--ag-font-body)",
-              fontSize: 11,
-              fontWeight: 500,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--ag-text-tertiary)",
-              margin: "0 0 4px",
-            }}
-          >
+
+        {/* Pipeline */}
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
             Pipeline
           </p>
-          <h2
-            style={{
-              fontFamily: "var(--ag-font-display)",
-              fontSize: 18,
-              color: "var(--ag-text-primary)",
-              margin: "0 0 16px",
-              lineHeight: 1.2,
-            }}
-          >
+          <h2 className="mb-5 text-[18px] font-semibold text-[var(--text-primary)]">
             Lead stages
           </h2>
-          <PipelineSection pipeline={pipelineByStatus} />
-        </div>
 
-        <div
-          style={{
-            background: "var(--ag-surface)",
-            border: "0.5px solid var(--ag-border)",
-            borderRadius: 12,
-            padding: "20px 24px",
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "var(--ag-font-body)",
-              fontSize: 11,
-              fontWeight: 500,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--ag-text-tertiary)",
-              margin: "0 0 4px",
-            }}
-          >
-            Sources
-          </p>
-          <h2
-            style={{
-              fontFamily: "var(--ag-font-display)",
-              fontSize: 18,
-              color: "var(--ag-text-primary)",
-              margin: "0 0 16px",
-              lineHeight: 1.2,
-            }}
-          >
-            Lead sources
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "4px 0" }}>
-            {hasSourceData
-              ? leadSources.map((s) => {
-                  const pct = Math.round((s.count / maxSourceCount) * 100);
-                  return (
-                    <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span
-                        style={{
-                          fontFamily: "var(--ag-font-body)",
-                          fontSize: 11,
-                          color: "var(--ag-text-tertiary)",
-                          width: 90,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {s.label}
-                      </span>
-                      <div
-                        style={{
-                          flex: 1,
-                          height: 6,
-                          background: "var(--ag-surface-3)",
-                          borderRadius: 3,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: 6,
-                            background: "var(--ag-lime)",
-                            borderRadius: 3,
-                            width: s.count > 0 ? `${pct}%` : "0",
-                          }}
-                        />
-                      </div>
-                      <span
-                        style={{
-                          fontFamily: "var(--ag-font-display)",
-                          fontSize: 14,
-                          color: s.count > 0 ? "var(--ag-text-primary)" : "var(--ag-text-muted)",
-                          width: 24,
-                          textAlign: "right",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {s.count > 0 ? s.count : "—"}
-                      </span>
-                    </div>
-                  );
-                })
-              : GHOST_SOURCE_WIDTHS.map((w, i) => (
-                  <div key={LEAD_SOURCE_LABELS[i]} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span
-                      style={{
-                        fontFamily: "var(--ag-font-body)",
-                        fontSize: 11,
-                        color: "var(--ag-text-muted)",
-                        width: 90,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {LEAD_SOURCE_LABELS[i]}
+          {Object.values(d.pipelineByStatus).every((v) => v === 0) ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <BarChart2 className="mb-3 h-7 w-7 text-[var(--text-disabled)]" />
+              <p className="text-[13px] text-[var(--text-tertiary)]">Pipeline is empty</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {PIPELINE_STAGES.map((stage) => {
+                const count = d.pipelineByStatus[stage.key] ?? 0;
+                const max = Math.max(...Object.values(d.pipelineByStatus), 1);
+                const pct = Math.round((count / max) * 100);
+                return (
+                  <div key={stage.key} className="flex items-center gap-3">
+                    <span className="w-[90px] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                      {stage.label}
                     </span>
-                    <div
-                      style={{
-                        flex: 1,
-                        height: 6,
-                        background: "var(--ag-surface-3)",
-                        borderRadius: 3,
-                        opacity: 0.4,
-                      }}
-                    >
+                    <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
                       <div
-                        style={{
-                          height: 6,
-                          background: "var(--ag-surface-3)",
-                          borderRadius: 3,
-                          width: `${w}%`,
-                        }}
+                        className={`h-full rounded-full transition-[width] duration-700 ${stage.barClass}`}
+                        style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span style={{ fontSize: 13, color: "var(--ag-text-muted)", width: 24, textAlign: "right" }}>
-                      —
+                    <span className="w-8 shrink-0 text-right font-display text-[17px] font-semibold text-[var(--text-primary)]">
+                      {count}
                     </span>
                   </div>
-                ))}
-            {!hasSourceData && (
-              <p
-                style={{
-                  fontFamily: "var(--ag-font-body)",
-                  fontSize: 11,
-                  color: "var(--ag-text-muted)",
-                  textAlign: "center",
-                  margin: "8px 0 0",
-                }}
-              >
-                Lead source data will appear here
-              </p>
-            )}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* Lead sources */}
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+            Sources
+          </p>
+          <h2 className="mb-5 text-[18px] font-semibold text-[var(--text-primary)]">
+            Lead sources
+          </h2>
+
+          <div className="flex flex-col gap-3">
+            {LEAD_SOURCE_ROWS.map((source) => {
+              const count = leadSourceCounts[source.key] ?? 0;
+              const pct = hasSourceData ? Math.round((count / maxSourceCount) * 100) : 0;
+              return (
+                <div key={source.key} className="flex items-center gap-3">
+                  <span className="w-[90px] shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+                    {source.label}
+                  </span>
+                  <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
+                    <div
+                      className={`h-full rounded-full bg-[var(--accent)] transition-[width] duration-700 ${hasSourceData ? "opacity-100" : "opacity-25"}`}
+                      style={{ width: hasSourceData ? `${pct}%` : `${GHOST_WIDTHS[source.key] ?? 0}%` }}
+                    />
+                  </div>
+                  <span className="w-8 shrink-0 text-right font-display text-[17px] font-semibold text-[var(--text-primary)]">
+                    {hasSourceData ? count : "—"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {!hasSourceData && (
+            <p className="mt-4 text-center text-[12px] text-[var(--text-tertiary)]">
+              Lead source data will appear here
+            </p>
+          )}
+        </div>
+
       </div>
 
       <div className="ag-fade-in ag-delay-4">

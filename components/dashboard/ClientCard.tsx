@@ -52,7 +52,7 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
     <div
       role="link"
       tabIndex={0}
-      className="ag-card-hover group relative block cursor-pointer rounded-lg border border-[var(--ag-border)] bg-surface-card p-5"
+      className="ag-card-hover group relative block cursor-pointer rounded-lg border border-[var(--border)] bg-surface-card p-5"
       onClick={() => router.push(`/dashboard/clients/${row.id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

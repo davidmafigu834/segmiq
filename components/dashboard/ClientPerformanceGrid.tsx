@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { Building2 } from "lucide-react";
 import { ClientCard } from "./ClientCard";
 import type { ClientPerfRow } from "@/lib/dashboard-data";
-import { EmptyState } from "@/app/(agency)/dashboard/components/EmptyState";
 
 export function ClientPerformanceGrid({ rows }: { rows: ClientPerfRow[] }) {
   return (
@@ -11,10 +11,7 @@ export function ClientPerformanceGrid({ rows }: { rows: ClientPerfRow[] }) {
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
             03 / PORTFOLIO
           </p>
-          <h2
-            className="mt-1 text-[18px] font-semibold text-[var(--text-primary)]"
-            style={{ fontFamily: "var(--ag-font-body)" }}
-          >
+          <h2 className="mt-1 text-[18px] font-semibold text-[var(--text-primary)]">
             Client performance
           </h2>
         </div>
@@ -27,11 +24,11 @@ export function ClientPerformanceGrid({ rows }: { rows: ClientPerfRow[] }) {
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState
-          icon="ti-building"
-          title="No clients yet"
-          description="Add your first client to start tracking leads and performance."
-        />
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Building2 className="mb-3 h-8 w-8 text-[var(--text-disabled)]" />
+          <p className="mb-1 text-[14px] font-semibold text-[var(--text-secondary)]">No clients yet</p>
+          <p className="text-[12px] text-[var(--text-tertiary)]">Add your first client to start tracking leads and performance.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 layout:grid-cols-3">
           {rows.map((r) => (

@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { Users } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import type { RecentLeadRow } from "@/lib/dashboard-data";
-import { EmptyState } from "@/app/(agency)/dashboard/components/EmptyState";
 import { StatusPill } from "@/components/StatusPill";
 import type { LeadSource } from "@/types";
 import { formatTimeAgo } from "@/lib/format";
@@ -151,7 +151,7 @@ export function RecentLeadsTable({
       <div className="mb-5 flex flex-col gap-4 min-[640px]:flex-row min-[640px]:items-end min-[640px]:justify-between">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">{eyebrow}</p>
-          <h2 className="mt-1 text-[18px] font-semibold text-[var(--ag-text-primary)]" style={{ fontFamily: "var(--ag-font-body)" }}>{title}</h2>
+          <h2 className="mt-1 text-[18px] font-semibold text-[var(--text-primary)]">{title}</h2>
         </div>
         {showSourceFilters ? (
           <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide sm:flex-wrap">
@@ -177,11 +177,11 @@ export function RecentLeadsTable({
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon="ti-user-plus"
-          title="No leads yet"
-          description="Leads will appear here when they come in through Facebook, your profile page, or manual entry."
-        />
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Users className="mb-3 h-8 w-8 text-[var(--text-disabled)]" />
+          <p className="mb-1 text-[14px] font-semibold text-[var(--text-secondary)]">No leads yet</p>
+          <p className="text-[12px] text-[var(--text-tertiary)]">Leads will appear here when they come in through Facebook, your profile page, or manual entry.</p>
+        </div>
       ) : (
         <div className="w-full">
           <ResponsiveTable

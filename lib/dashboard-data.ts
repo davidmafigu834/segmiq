@@ -97,6 +97,7 @@ export async function fetchAgencyDashboardData() {
     recentLeadsRaw,
     monthLeadsAllRes,
     activeClientsRes,
+    pipelineLeadsRes,
   ] = await Promise.all([
     supabase.from("leads").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
     supabase
@@ -131,6 +132,10 @@ export async function fetchAgencyDashboardData() {
       .select("id, name, industry, response_time_limit_hours, is_active")
       .eq("is_archived", false)
       .order("name"),
+    supabase
+      .from("leads")
+      .select("id, status")
+      .not("status", "in", "(WON,LOST)"),
   ]);
 
   const batchErr =
@@ -143,7 +148,8 @@ export async function fetchAgencyDashboardData() {
     clientsRes.error ??
     recentLeadsRaw.error ??
     monthLeadsAllRes.error ??
-    activeClientsRes.error;
+    activeClientsRes.error ??
+    pipelineLeadsRes.error;
   if (batchErr) {
     throw new Error(`Dashboard data (batch 1): ${batchErr.message}`);
   }
@@ -170,6 +176,19 @@ export async function fetchAgencyDashboardData() {
     getAvgResponseMinutes(monthStartD, nextMonthStartD, {}),
     getAvgResponseMinutes(prevMonthStartD, monthStartD, {}),
   ]);
+
+  const pipelineByStatus: Record<string, number> = {
+    NEW: 0,
+    CONTACTED: 0,
+    QUALIFIED: 0,
+    NEGOTIATING: 0,
+    WON: 0,
+    LOST: 0,
+  };
+  for (const l of pipelineLeadsRes.data ?? []) {
+    const s = l.status as string;
+    if (s in pipelineByStatus) pipelineByStatus[s]++;
+  }
 
   const leadsToday = leadsTodayRes.count ?? 0;
   const leadsYesterday = leadsYesterdayRes.count ?? 0;
@@ -340,6 +359,7 @@ export async function fetchAgencyDashboardData() {
     uncontactedFlags,
     recentLeads,
     clientPerf,
+    pipelineByStatus,
   };
 }
 
