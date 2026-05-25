@@ -31,13 +31,28 @@ export async function generateMetadata({ params }: { params: { projectId: string
   if (!project) return { title: "Project | Leadstaq Cloud" };
   const media = (project.project_media as MediaItem[] | null) ?? [];
   const cover = media.sort((a, b) => a.display_order - b.display_order)[0]?.public_url;
+  const title = project.title as string;
+  const description = (project.description as string | null) ?? undefined;
+  const baseUrl = process.env.NEXT_PUBLIC_CLOUD_DOMAIN ?? "https://cloud.leadstaq.tech";
+  const pageUrl = `${baseUrl}/share/${params.projectId}`;
   return {
-    title: `${project.title as string} | Leadstaq Cloud`,
-    description: (project.description as string | null) ?? undefined,
+    title: `${title} | Leadstaq Cloud`,
+    description,
+    alternates: { canonical: pageUrl },
     openGraph: {
-      title: project.title as string,
-      description: (project.description as string | null) ?? undefined,
-      images: cover ? [{ url: cover }] : [],
+      title,
+      description,
+      url: pageUrl,
+      siteName: "Leadstaq Cloud",
+      type: "website",
+      locale: "en_US",
+      images: cover ? [{ url: cover, alt: title }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: cover ? [cover] : [],
     },
   };
 }

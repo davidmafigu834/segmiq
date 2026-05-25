@@ -65,18 +65,42 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const supabase = createAdminClient();
   const { data: profile } = await supabase
     .from("client_profiles")
-    .select("headline, subheadline, hero_image_url, clients(name)")
+    .select("headline, subheadline, hero_image_url, is_published, clients(name)")
     .eq("slug", params.slug)
     .maybeSingle();
   if (!profile) return { title: "Leadstaq" };
+  const isPublished = (profile.is_published as boolean | null) ?? false;
+  if (!isPublished) {
+    return {
+      title: "Leadstaq",
+      robots: { index: false, follow: false },
+    };
+  }
   const clientName = (profile.clients as { name?: string } | null)?.name ?? "Company";
   const title = (profile.headline as string | null) ?? clientName;
   const description = (profile.subheadline as string | null) ?? undefined;
   const heroImg = profile.hero_image_url as string | null;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://leadstaq.tech";
+  const pageUrl = `${baseUrl}/p/${params.slug}`;
   return {
     title,
     description,
-    openGraph: { title, description, images: heroImg ? [{ url: heroImg }] : [] },
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      siteName: "Leadstaq",
+      type: "website",
+      locale: "en_US",
+      images: heroImg ? [{ url: heroImg, alt: title }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: heroImg ? [heroImg] : [],
+    },
   };
 }
 

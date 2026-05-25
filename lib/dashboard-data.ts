@@ -130,7 +130,7 @@ export async function fetchAgencyDashboardData() {
     supabase
       .from("clients")
       .select("id, name, industry, response_time_limit_hours, is_active")
-      .not("is_archived", "is", true)
+      .eq("is_archived", false)
       .order("name"),
     supabase
       .from("leads")
@@ -459,7 +459,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       .from("leads")
       .select("id, status, assigned_to_id, created_at, follow_up_date, deal_value, score, is_stale, source")
       .eq("client_id", clientId)
-      .not("is_archived", "is", true),
+      .eq("is_archived", false),
 
     supabase
       .from("users")
@@ -651,7 +651,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
         "id, name, phone, status, score, score_breakdown, is_stale, stale_since, follow_up_date, created_at, source, form_data, client_id"
       )
       .eq("assigned_to_id", userId)
-      .not("is_archived", "is", true)
+      .eq("is_archived", false)
       .order("score", { ascending: false }),
 
     supabase
