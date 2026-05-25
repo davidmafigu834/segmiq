@@ -81,7 +81,7 @@ export default function CloudSettingsPage() {
   const [savingWatermark, setSavingWatermark] = useState(false);
   const [watermarkSaved, setWatermarkSaved] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
-  const [reprocessResult, setReprocessResult] = useState<{ processed: number; failed: number; total: number } | null>(null);
+  const [reprocessResult, setReprocessResult] = useState<{ processed: number; failed: number; total: number; firstError?: string | null } | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!session?.clientId) return;
@@ -573,10 +573,15 @@ export default function CloudSettingsPage() {
               <p className="text-[12px] text-[#666660] font-cloud-body">Updating your existing photos with the new watermark settings…</p>
             )}
             {!reprocessing && reprocessResult && reprocessResult.total > 0 && (
-              <p className="text-[12px] text-[#666660] font-cloud-body">
-                ✓ {reprocessResult.processed} photo{reprocessResult.processed !== 1 ? "s" : ""} updated
-                {reprocessResult.failed > 0 ? ` · ${reprocessResult.failed} failed` : ""}
-              </p>
+              <div className="space-y-1">
+                <p className="text-[12px] text-[#666660] font-cloud-body">
+                  {reprocessResult.processed > 0 ? "✓ " : ""}{reprocessResult.processed} photo{reprocessResult.processed !== 1 ? "s" : ""} updated
+                  {reprocessResult.failed > 0 ? ` · ${reprocessResult.failed} failed` : ""}
+                </p>
+                {reprocessResult.firstError && (
+                  <p className="text-[11px] text-red-400 font-cloud-body break-all">{reprocessResult.firstError}</p>
+                )}
+              </div>
             )}
           </div>
         </section>

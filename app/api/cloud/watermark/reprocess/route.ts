@@ -8,7 +8,11 @@ import { applyWatermark } from "@/lib/watermark";
 
 export const maxDuration = 60;
 
-type MediaRow = { id: string; storage_key: string };
+type MediaRow = { id: string; storage_key: string; watermarked: boolean | null };
+
+async function fetchBuffer(key: string): Promise<Buffer> {
+  return getObject(key);
+}
 
 export async function POST() {
   const session = await getServerSession(authOptions);
@@ -44,7 +48,7 @@ export async function POST() {
 
   const { data: mediaItems } = await supabase
     .from("project_media")
-    .select("id, storage_key")
+    .select("id, storage_key, watermarked")
     .eq("client_id", clientId)
     .neq("type", "video")
     .not("storage_key", "is", null);
@@ -54,7 +58,10 @@ export async function POST() {
   }
 
   const processable = (mediaItems as MediaRow[]).filter(
-    (m) => m.storage_key && /\/projects\/[^/]+\/photos\//.test(m.storage_key)
+    (m) =>
+      m.storage_key &&
+      (/\/projects\/[^/]+\/photos\//.test(m.storage_key) ||
+        /\/projects\/[^/]+\/originals\//.test(m.storage_key))
   );
 
   if (!processable.length) {
@@ -66,12 +73,13 @@ export async function POST() {
     try {
       logoBuffer = await getObject(logoKey);
     } catch {
-      return NextResponse.json({ error: "Logo not found in storage" }, { status: 400 });
+      return NextResponse.json({ error: "Logo not found in storage — upload a logo first." }, { status: 400 });
     }
   }
 
   let processed = 0;
   let failed = 0;
+  let firstError: string | null = null;
 
   const CONCURRENCY = 3;
   for (let i = 0; i < processable.length; i += CONCURRENCY) {
@@ -79,37 +87,54 @@ export async function POST() {
     await Promise.all(
       batch.map(async (item) => {
         try {
-          const originalKey = item.storage_key.replace(/\/photos\//, "/originals/");
-          const publicKey = item.storage_key;
+          const hasPhotosKey = /\/photos\//.test(item.storage_key);
+          const originalKey = hasPhotosKey
+            ? item.storage_key.replace(/\/photos\//, "/originals/")
+            : item.storage_key;
+          const publicKey = hasPhotosKey
+            ? item.storage_key
+            : item.storage_key.replace(/\/originals\//, "/photos/");
 
-          const photoBuffer = await getObject(originalKey);
+          let rawBuffer: Buffer;
+          try {
+            rawBuffer = await fetchBuffer(originalKey);
+          } catch {
+            rawBuffer = await fetchBuffer(item.storage_key);
+          }
+
+          const jpegBuffer = await sharp(rawBuffer).jpeg({ quality: 92 }).toBuffer();
 
           let outputBuffer: Buffer;
           if (watermarkEnabled && logoBuffer) {
-            outputBuffer = await applyWatermark(photoBuffer, logoBuffer, {
+            outputBuffer = await applyWatermark(jpegBuffer, logoBuffer, {
               position: (profile?.watermark_position ?? "bottom-right") as
                 "bottom-right" | "bottom-left" | "bottom-center" | "center",
               opacity: profile?.watermark_opacity ?? 40,
               size: (profile?.watermark_size ?? "small") as "small" | "medium" | "large",
             });
           } else {
-            outputBuffer = await sharp(photoBuffer).jpeg({ quality: 90 }).toBuffer();
+            outputBuffer = jpegBuffer;
           }
 
           await putObject(publicKey, outputBuffer, "image/jpeg");
           await supabase
             .from("project_media")
-            .update({ watermarked: watermarkEnabled })
+            .update({
+              storage_key: publicKey,
+              watermarked: watermarkEnabled,
+            })
             .eq("id", item.id);
 
           processed++;
         } catch (err) {
-          console.error(`[watermark/reprocess] failed for media ${item.id}:`, err);
+          const msg = err instanceof Error ? err.message : String(err);
+          if (!firstError) firstError = msg;
+          console.error(`[watermark/reprocess] failed for media ${item.id}:`, msg);
           failed++;
         }
       })
     );
   }
 
-  return NextResponse.json({ processed, failed, total: processable.length });
+  return NextResponse.json({ processed, failed, total: processable.length, firstError });
 }
