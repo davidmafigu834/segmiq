@@ -80,6 +80,8 @@ export default function CloudSettingsPage() {
   });
   const [savingWatermark, setSavingWatermark] = useState(false);
   const [watermarkSaved, setWatermarkSaved] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
+  const [reprocessResult, setReprocessResult] = useState<{ processed: number; failed: number; total: number } | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!session?.clientId) return;
@@ -263,14 +265,26 @@ export default function CloudSettingsPage() {
 
   async function saveWatermark() {
     setSavingWatermark(true);
-    await fetch("/api/cloud/watermark", {
+    const res = await fetch("/api/cloud/watermark", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(watermark),
     });
     setSavingWatermark(false);
-    setWatermarkSaved(true);
-    setTimeout(() => setWatermarkSaved(false), 2000);
+    if (!res.ok) return;
+    setReprocessing(true);
+    setReprocessResult(null);
+    try {
+      const rpRes = await fetch("/api/cloud/watermark/reprocess", { method: "POST" });
+      const rpData = (await rpRes.json()) as { processed: number; failed: number; total: number };
+      setReprocessResult(rpData);
+    } catch {
+      // non-fatal
+    } finally {
+      setReprocessing(false);
+      setWatermarkSaved(true);
+      setTimeout(() => { setWatermarkSaved(false); setReprocessResult(null); }, 5000);
+    }
   }
 
   const profileUrl = profile?.slug ? `/p/${profile.slug}` : null;
@@ -551,10 +565,19 @@ export default function CloudSettingsPage() {
               </>
             )}
 
-            <button onClick={() => void saveWatermark()} disabled={savingWatermark} className={saveBtnCls}>
-              {savingWatermark ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Droplets className="h-3.5 w-3.5" />}
-              {watermarkSaved ? "Saved!" : "Save watermark"}
+            <button onClick={() => void saveWatermark()} disabled={savingWatermark || reprocessing} className={saveBtnCls}>
+              {(savingWatermark || reprocessing) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Droplets className="h-3.5 w-3.5" />}
+              {savingWatermark ? "Saving..." : reprocessing ? "Applying to all photos..." : watermarkSaved ? "Applied!" : "Save watermark"}
             </button>
+            {reprocessing && (
+              <p className="text-[12px] text-[#666660] font-cloud-body">Updating your existing photos with the new watermark settings…</p>
+            )}
+            {!reprocessing && reprocessResult && reprocessResult.total > 0 && (
+              <p className="text-[12px] text-[#666660] font-cloud-body">
+                ✓ {reprocessResult.processed} photo{reprocessResult.processed !== 1 ? "s" : ""} updated
+                {reprocessResult.failed > 0 ? ` · ${reprocessResult.failed} failed` : ""}
+              </p>
+            )}
           </div>
         </section>
         {/* Sign out */}
