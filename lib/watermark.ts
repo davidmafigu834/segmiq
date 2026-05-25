@@ -55,21 +55,21 @@ export async function applyWatermark(
       tile: true,
       blend: "dest-in",
     }])
+    .png()
     .toBuffer({ resolveWithObject: true });
 
-  const logoMeta = processedLogo.info;
+  const { width: logoW, height: logoH } = processedLogo.info;
   const { left, top } = getLogoPosition(
     photoWidth,
     photoHeight,
-    logoMeta.width,
-    logoMeta.height,
+    logoW,
+    logoH,
     settings.position
   );
 
   return sharp(photoBuffer)
     .composite([{
       input: processedLogo.data,
-      raw: { width: logoMeta.width, height: logoMeta.height, channels: 4 },
       left,
       top,
       blend: "over",
