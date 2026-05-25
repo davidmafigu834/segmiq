@@ -78,6 +78,7 @@ export function AppShell({
   function navActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
     if (href === "/client/dashboard") return pathname === "/client/dashboard";
+    if (href === "/sales/dashboard") return pathname === "/sales/dashboard";
     if (href === "/sales/leads") return pathname === "/sales/leads";
     if (href === "/sales/won-lost") return pathname === "/sales/won-lost";
     return pathname === href || pathname.startsWith(href + "/");

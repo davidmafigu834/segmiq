@@ -622,3 +622,135 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     clientName: (client?.name as string) ?? "",
   };
 }
+
+// ============================================
+// SALESPERSON DASHBOARD
+// ============================================
+
+export async function fetchSalespersonDashboardData(userId: string) {
+  const supabase = createAdminClient();
+
+  const now = new Date();
+
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+
+  const monthStart = new Date(now);
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+
+  const [
+    { data: allLeads },
+    { data: todayCallLogs },
+    { data: recentEvents },
+    { data: monthWins },
+  ] = await Promise.all([
+    supabase
+      .from("leads")
+      .select(
+        "id, name, phone, status, score, score_breakdown, is_stale, stale_since, follow_up_date, created_at, source, form_data, client_id"
+      )
+      .eq("assigned_to_id", userId)
+      .eq("is_archived", false)
+      .order("score", { ascending: false }),
+
+    supabase
+      .from("call_logs")
+      .select("id, lead_id, outcome, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", todayStart.toISOString()),
+
+    supabase
+      .from("lead_events")
+      .select("id, event_type, event_data, created_at, lead_id, leads(name)")
+      .eq("actor_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(8),
+
+    supabase
+      .from("win_analysis")
+      .select("id, deal_value, days_to_close, created_at, leads(name)")
+      .eq("salesperson_id", userId)
+      .gte("created_at", monthStart.toISOString()),
+  ]);
+
+  const leads = allLeads ?? [];
+  const activeLeads = leads.filter(
+    (l) => !["WON", "LOST", "NOT_QUALIFIED"].includes(l.status as string)
+  );
+
+  const totalActive = activeLeads.length;
+  const calledToday = (todayCallLogs ?? []).length;
+  const wonThisMonth = (monthWins ?? []).length;
+
+  const followUpToday = activeLeads.filter((l) => {
+    if (!l.follow_up_date) return false;
+    return new Date(l.follow_up_date as string) <= now;
+  }).length;
+
+  type PriorityLead = (typeof leads)[0] & {
+    priorityLabel: string;
+    priorityColor: string;
+    priorityOrder: number;
+    followUpDue: boolean;
+  };
+
+  const priorityLeads: PriorityLead[] = activeLeads
+    .map((lead) => {
+      const followUpDue =
+        !!lead.follow_up_date && new Date(lead.follow_up_date as string) <= now;
+      const neverCalled = lead.status === "NEW";
+
+      let priorityLabel: string;
+      let priorityColor: string;
+      let priorityOrder: number;
+
+      if (neverCalled) {
+        priorityLabel = "New — call first";
+        priorityColor = "var(--accent)";
+        priorityOrder = 1;
+      } else if (followUpDue) {
+        priorityLabel = "Follow up today";
+        priorityColor = "var(--warning)";
+        priorityOrder = 2;
+      } else if ((lead.score ?? 0) >= 70) {
+        priorityLabel = "Hot";
+        priorityColor = "var(--success)";
+        priorityOrder = 3;
+      } else if (lead.is_stale) {
+        priorityLabel = "Stale";
+        priorityColor = "var(--error)";
+        priorityOrder = 4;
+      } else if ((lead.score ?? 0) >= 40) {
+        priorityLabel = "Check in";
+        priorityColor = "#60a5fa";
+        priorityOrder = 5;
+      } else {
+        priorityLabel = "Low priority";
+        priorityColor = "var(--text-disabled)";
+        priorityOrder = 6;
+      }
+
+      return { ...lead, priorityLabel, priorityColor, priorityOrder, followUpDue };
+    })
+    .sort((a, b) => a.priorityOrder - b.priorityOrder);
+
+  return {
+    priorityLeads: priorityLeads.slice(0, 20),
+    allActiveLeads: activeLeads.map((l) => ({
+      ...l,
+      priorityLabel: "",
+      priorityColor: "var(--text-disabled)",
+      priorityOrder: 6,
+      followUpDue: false,
+    })),
+    numbers: {
+      totalActive,
+      calledToday,
+      followUpToday,
+      wonThisMonth,
+    },
+    recentActivity: recentEvents ?? [],
+    recentWins: monthWins ?? [],
+  };
+}

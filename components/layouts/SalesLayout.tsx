@@ -41,19 +41,20 @@ export async function SalesLayout({
   }
 
   const primaryNav = [
-    { href: "/sales/leads", label: "My Pipeline", icon: "layout-grid" as const },
-    { href: "/sales/followups", label: "Follow-ups", icon: "clock" as const, badge: followupBadge || undefined },
-    { href: "/sales/won-lost", label: "Won & Lost", icon: "archive" as const },
+    { href: "/sales/dashboard", label: "Dashboard", icon: "layout-dashboard" as const },
+    { href: "/sales/leads", label: "My leads", icon: "layout-grid" as const },
+    { href: "/sales/followups", label: "Follow-ups", icon: "calendar" as const, badge: followupBadge || undefined },
+    { href: "/sales/won-lost", label: "Won / Lost", icon: "trophy" as const },
+    { href: "/sales/profile", label: "Profile", icon: "user" as const },
   ];
 
   const secondaryNav = [
     { href: "/upload", label: "Upload Photos", icon: "camera" as const },
-    { href: "/sales/profile", label: "Profile", icon: "user" as const },
   ];
 
   return (
     <AppShell
-      homeHref="/sales/leads"
+      homeHref="/sales/dashboard"
       roleLabel="Sales"
       primaryNav={primaryNav}
       secondaryNav={secondaryNav}
