@@ -40,6 +40,8 @@ export function ProfileSettings({
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const [savedIsPublished, setSavedIsPublished] = useState(initialProfile?.is_published ?? false);
   const [heroUploading, setHeroUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +67,7 @@ export function ProfileSettings({
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setSaveError(false);
     try {
       const res = await fetch(`/api/clients/${clientId}/profile`, {
         method: "PUT",
@@ -73,9 +76,16 @@ export function ProfileSettings({
       });
       if (res.ok) {
         setSaved(true);
+        setSavedIsPublished(form.is_published);
         setTimeout(() => setSaved(false), 2500);
         router.refresh();
+      } else {
+        setSaveError(true);
+        setTimeout(() => setSaveError(false), 4000);
       }
+    } catch {
+      setSaveError(true);
+      setTimeout(() => setSaveError(false), 4000);
     } finally {
       setSaving(false);
     }
@@ -90,7 +100,7 @@ export function ProfileSettings({
           <h2 className="font-display text-2xl tracking-display text-ink-primary">Profile Page</h2>
           <p className="mt-1 text-sm text-ink-secondary">{clientName}</p>
         </div>
-        {form.is_published && (
+        {savedIsPublished && (
           <a
             href={publicUrl}
             target="_blank"
@@ -109,7 +119,11 @@ export function ProfileSettings({
             <div>
               <p className="font-medium text-ink-primary">Profile page is {form.is_published ? "live" : "hidden"}</p>
               <p className="mt-0.5 text-sm text-ink-secondary">
-                {form.is_published ? `Visible at ${publicUrl}` : "Turn on to make it publicly accessible"}
+                {form.is_published
+                  ? savedIsPublished
+                    ? `Visible at ${publicUrl}`
+                    : `Save changes below to publish`
+                  : "Turn on to make it publicly accessible"}
               </p>
             </div>
             <button
@@ -224,10 +238,13 @@ export function ProfileSettings({
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
             {saving ? "Saving…" : saved ? "Saved!" : "Save changes"}
           </button>
-          {form.is_published && (
+          {savedIsPublished && (
             <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-ink-secondary hover:text-ink-primary underline underline-offset-4">
-              Preview page →
+              View live page →
             </a>
+          )}
+          {saveError && (
+            <p className="text-sm text-red-500">Save failed — please try again.</p>
           )}
         </div>
       </form>
