@@ -17,6 +17,7 @@ const tabs = (id: string) =>
     { label: "Team", href: `/dashboard/clients/${id}/team` },
     { label: "Facebook", href: `/dashboard/clients/${id}/facebook` },
     { label: "Campaigns", href: `/dashboard/clients/${id}/campaigns` },
+    { label: "Audiences", href: `/dashboard/clients/${id}/audiences` },
     { label: "Settings", href: `/dashboard/clients/${id}/settings` },
   ] as const;
 

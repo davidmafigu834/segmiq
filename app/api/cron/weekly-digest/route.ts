@@ -3,6 +3,8 @@ import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/resend";
 import { weeklyDigestEmail } from "@/lib/email/templates/weekly-digest";
+import { buildWeeklyIntelligenceSnapshot } from "@/lib/lead-intelligence";
+import { runPerformanceAnalysisAllClients } from "@/lib/performance-intelligence";
 
 export const dynamic = "force-dynamic";
 
@@ -153,9 +155,21 @@ export async function GET(req: Request) {
           errors.push(`Failed to send to ${manager.email}: ${result.error}`);
         }
       }
+      try {
+        await buildWeeklyIntelligenceSnapshot(client.id as string);
+      } catch (err) {
+        errors.push(`Snapshot failed for client ${client.id as string}: ${String(err)}`);
+      }
     } catch (err) {
       errors.push(`Error processing client ${client.id}: ${String(err)}`);
     }
+  }
+
+  try {
+    await runPerformanceAnalysisAllClients();
+    console.log("[weekly-digest] Performance analysis complete");
+  } catch (err) {
+    errors.push(`Performance analysis failed: ${String(err)}`);
   }
 
   return NextResponse.json({

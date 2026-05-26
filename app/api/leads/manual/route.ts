@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAgencyAdmin } from "@/lib/auth/permissions";
 import { createLead } from "@/lib/leads/createLead";
 import { normalizeToE164 } from "@/lib/phone-validate";
+import { processLeadIntelligence } from "@/lib/lead-intelligence";
 
 const manualLeadSchema = z.object({
   clientId: z.string().uuid(),
@@ -81,6 +82,11 @@ export async function POST(req: Request) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
+
+  // Fire and forget — do not await, do not block response
+  processLeadIntelligence(result.leadId).catch((err) =>
+    console.error("Lead intelligence processing failed:", err)
+  );
 
   return NextResponse.json({ ok: true, leadId: result.leadId });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createLead } from "@/lib/leads/createLead";
 import { sourceFromString } from "@/lib/lead-helpers";
+import { processLeadIntelligence } from "@/lib/lead-intelligence";
 import { z } from "zod";
 
 const bodySchema = z.object({
@@ -40,6 +41,11 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
+
+    // Fire and forget — do not await, do not block response
+    processLeadIntelligence(result.leadId).catch((err) =>
+      console.error("Lead intelligence processing failed:", err)
+    );
 
     return NextResponse.json({
       success: true,

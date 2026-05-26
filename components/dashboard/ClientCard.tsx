@@ -2,16 +2,33 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Lightbulb } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { formatDuration } from "@/lib/format";
 import type { ClientPerfRow } from "@/lib/dashboard-data";
+
+type RecSummary = { count: number; hasCritical: boolean };
 
 export function ClientCard({ row }: { row: ClientPerfRow }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [barWidth, setBarWidth] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [recSummary, setRecSummary] = useState<RecSummary | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/clients/${row.id}/recommendations`)
+      .then((r) => r.json())
+      .then((data: { recommendations?: Array<{ priority: string }> }) => {
+        const recs = data.recommendations ?? [];
+        if (recs.length === 0) return;
+        setRecSummary({
+          count: recs.length,
+          hasCritical: recs.some((r) => r.priority === "critical"),
+        });
+      })
+      .catch(() => {});
+  }, [row.id]);
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setBarWidth(Math.min(100, Math.max(0, row.slaComplianceRate))));
@@ -67,7 +84,27 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
           aria-label="Has uncontacted leads over limit"
         />
       ) : null}
-      <div className={`flex items-start justify-between gap-2 ${row.hasFlag ? "pr-8" : ""}`}>
+      {recSummary && !row.hasFlag ? (
+        <div
+          className="absolute right-4 top-4 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          style={{
+            background: recSummary.hasCritical
+              ? "rgba(255,68,68,0.12)"
+              : "rgba(245,166,35,0.12)",
+            color: recSummary.hasCritical ? "var(--error)" : "var(--warning)",
+            border: `1px solid ${
+              recSummary.hasCritical
+                ? "rgba(255,68,68,0.25)"
+                : "rgba(245,166,35,0.25)"
+            }`,
+          }}
+          aria-label="Active recommendations"
+        >
+          <Lightbulb size={9} />
+          {recSummary.count}
+        </div>
+      ) : null}
+      <div className={`flex items-start justify-between gap-2 ${row.hasFlag || recSummary ? "pr-8" : ""}`}>
         <div className="flex min-w-0 gap-3">
           <ClientAvatar name={row.name} size={36} />
           <div className="min-w-0">

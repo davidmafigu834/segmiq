@@ -14,6 +14,7 @@ import { LeadTimeline } from "@/components/leads/LeadTimeline";
 import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
 import { HandoverBanner } from "@/components/leads/HandoverBanner";
 import { LeadBriefing } from "@/components/leads/LeadBriefing";
+import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 
@@ -198,6 +199,12 @@ export function LeadDetailPanel({
           <div className={activeTab === "timeline" || activeTab === "send" ? "hidden" : ""}>
           <div className="space-y-3 p-4 max-md:pt-3 sm:p-5">
             <LeadBriefing leadId={activeLead.id} />
+            <LeadIntelligenceCard
+              leadId={activeLead.id}
+              canReprocess={
+                role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER"
+              }
+            />
             <HandoverBanner leadId={activeLead.id} />
             {activeLead.is_stale && (
               <StaleLeadRecovery

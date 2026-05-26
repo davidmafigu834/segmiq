@@ -11,11 +11,18 @@ import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { addMonths, startOfMonth, subHours, subMonths } from "date-fns";
 import { buildClientDetailHero } from "@/lib/client-hero";
 import { isWhatsAppDeliveryConfigured } from "@/lib/messaging/provider";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export default async function ClientDetailPage({ params }: { params: { clientId: string } }) {
   const supabase = createAdminClient();
-  const { data: client } = await supabase.from("clients").select("*").eq("id", params.clientId).maybeSingle();
+  const [{ data: client }, session] = await Promise.all([
+    supabase.from("clients").select("*").eq("id", params.clientId).maybeSingle(),
+    getServerSession(authOptions),
+  ]);
   if (!client) notFound();
+
+  const isAgencyAdmin = session?.role === "AGENCY_ADMIN";
 
   const now = new Date();
   const monthStart = startOfMonth(now);
@@ -103,6 +110,7 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
           fbPageId={fbPageId}
           notificationsConfigured={notificationsConfigured}
           onboarding={{ formFieldCount, salespeopleCount, hasManager, fbConnected }}
+          isAgencyAdmin={isAgencyAdmin}
         />
       </ClientDetailView>
     </AgencyLayout>

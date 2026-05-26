@@ -5,6 +5,9 @@ import { checkUncontactedLeads } from "@/lib/notifications";
 import { scoreAllLeads } from "@/lib/lead-scoring";
 import { sendDailySalespersonCoaching } from "@/lib/ai/daily-coaching";
 import { runOnboardingCronJobs } from "@/lib/ai/salesperson-onboarding";
+import { processUnprocessedLeads } from "@/lib/lead-intelligence";
+import { seedAllClientSegments } from "@/lib/audience-segments";
+import { runPerformanceAnalysisAllClients } from "@/lib/performance-intelligence";
 
 /**
  * Single daily job for Vercel Hobby (free): cron schedules must run at most once per day.
@@ -28,6 +31,30 @@ export async function GET(req: Request) {
   } catch (e) {
     console.error("[cron daily] scoreAllLeads", e);
     errors.push(`scoring: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  try {
+    await processUnprocessedLeads();
+    console.log("[cron daily] Lead intelligence batch processing complete");
+  } catch (e) {
+    console.error("[cron daily] processUnprocessedLeads", e);
+    errors.push(`intelligence: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  try {
+    await seedAllClientSegments();
+    console.log("[cron daily] Audience segments seeded");
+  } catch (e) {
+    console.error("[cron daily] seedAllClientSegments", e);
+    errors.push(`segments: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  try {
+    await runPerformanceAnalysisAllClients();
+    console.log("[cron daily] Performance analysis complete");
+  } catch (e) {
+    console.error("[cron daily] runPerformanceAnalysisAllClients", e);
+    errors.push(`performance: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   try {

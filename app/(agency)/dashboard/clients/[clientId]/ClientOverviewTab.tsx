@@ -6,6 +6,10 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { OnboardingChecklist } from "@/components/client/OnboardingChecklist";
 import type { ClientTeamOverviewRow, RecentLeadRow } from "@/lib/dashboard-data";
 import { WinInsightsSection } from "@/components/dashboard/WinInsightsSection";
+import { ClientIntelligenceOverview } from "@/components/intelligence/ClientIntelligenceOverview";
+import { AudienceSummaryCard } from "@/components/intelligence/AudienceSummaryCard";
+import { PerformanceTrends } from "@/components/intelligence/PerformanceTrends";
+import { ClientRecommendations } from "@/components/intelligence/ClientRecommendations";
 
 export function ClientOverviewTab({
   clientId,
@@ -18,6 +22,7 @@ export function ClientOverviewTab({
   fbPageId,
   notificationsConfigured,
   onboarding,
+  isAgencyAdmin,
 }: {
   clientId: string;
   clientName: string;
@@ -34,6 +39,7 @@ export function ClientOverviewTab({
     hasManager: boolean;
     fbConnected: boolean;
   };
+  isAgencyAdmin: boolean;
 }) {
   const fbIntegrationActive = Boolean(fbPageName?.trim() || fbPageId);
 
@@ -150,6 +156,10 @@ export function ClientOverviewTab({
       </section>
 
       <WinInsightsSection clientId={clientId} />
+      <ClientIntelligenceOverview clientId={clientId} />
+      <AudienceSummaryCard clientId={clientId} />
+      <PerformanceTrends clientId={clientId} />
+      <ClientRecommendations clientId={clientId} isAgencyAdmin={isAgencyAdmin} />
     </div>
   );
 }

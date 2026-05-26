@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRoles } from "@/lib/api-guards";
 import { getDefaultResponseHoursForNewClients } from "@/lib/agency-settings";
+import { seedPredefinedSegments } from "@/lib/audience-segments";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,11 @@ export async function POST(req: Request) {
     slug: parsed.data.slug.trim(),
     is_published: false,
   });
+
+  // Fire-and-forget: seed predefined audience segments for the new client
+  seedPredefinedSegments(client.id as string).catch((err) =>
+    console.error("[POST /api/clients] seedPredefinedSegments failed:", err)
+  );
 
   return NextResponse.json({ client });
 }
