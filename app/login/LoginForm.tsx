@@ -45,9 +45,10 @@ function LoginFormInner() {
   return (
     <div className="w-full max-w-[420px] rounded-xl border border-border bg-surface-card p-6 shadow-sm sm:p-10">
       <div className="text-center">
-        <div className="flex items-center justify-center gap-2.5">
-          <span className="h-1.5 w-1.5 rounded-sm bg-[var(--accent)]" aria-hidden />
-          <span className="font-display text-xl tracking-display text-ink-primary sm:text-2xl">Segmiq</span>
+        <div className="flex items-center justify-center">
+          <div className="rounded-lg bg-[#0a0a0a] px-4 py-2">
+            <img src="/segmiq-wordmark.png" alt="Segmiq" className="h-7 w-auto" />
+          </div>
         </div>
         <h1 className="mt-6 font-display text-[26px] leading-tight tracking-tight text-ink-primary sm:text-[32px]">
           Welcome back

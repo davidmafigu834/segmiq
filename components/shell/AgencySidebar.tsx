@@ -120,7 +120,7 @@ export function AgencySidebar({
                   </div>
                 )}
                 <div className="h-3 w-px shrink-0 bg-white/20" aria-hidden />
-                <span className="font-display text-lg tracking-display text-[var(--text-on-dark)]">Segmiq</span>
+                <img src="/segmiq-wordmark.png" alt="Segmiq" className="h-5 w-auto" />
               </div>
             ) : (
               <>
@@ -129,7 +129,7 @@ export function AgencySidebar({
                     {coBrand}
                   </div>
                 ) : null}
-                <div className="font-display text-xl tracking-display text-[var(--text-on-dark)]">Segmiq</div>
+                <img src="/segmiq-wordmark.png" alt="Segmiq" className="h-6 w-auto" />
               </>
             )}
             <div className="mt-1 font-mono text-[10px] uppercase tracking-wide text-[var(--text-on-dark-dim)]">
