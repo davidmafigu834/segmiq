@@ -28,10 +28,24 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://leadstaq.tech"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://segmiq.com"),
   title: "Segmiq — Lead Platform",
   description: "Lead management for marketing agencies",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon/favicon.ico", sizes: "any" },
+    ],
+    apple: [
+      { url: "/favicon/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    other: [
+      { rel: "android-chrome", url: "/favicon/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { rel: "android-chrome", url: "/favicon/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     title: "Segmiq",
@@ -59,7 +73,7 @@ export default function RootLayout({
       className={`${instrumentSerif.variable} ${GeistSans.variable} ${GeistMono.variable} ${dmSans.variable} ${dmSerif.variable}`}
     >
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" />
       </head>
       <body className="min-h-screen bg-surface-canvas font-sans text-sm text-ink-primary antialiased">
