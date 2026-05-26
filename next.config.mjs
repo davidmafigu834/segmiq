@@ -1,5 +1,10 @@
 /** @type {import('next').NextConfig} */
 
+const _appDomain = (process.env.NEXT_PUBLIC_APP_DOMAIN || "leadstaq.tech")
+  .replace(/^https?:\/\//i, "")
+  .split("/")[0];
+const _cloudHost = `cloud.${_appDomain}`;
+
 function cloudRewrites(host) {
   return [
     { source: "/", has: [{ type: "host", value: host }], destination: "/cloud" },
@@ -18,7 +23,7 @@ const nextConfig = {
   },
   async rewrites() {
     return [
-      ...cloudRewrites("cloud.leadstaq.tech"),
+      ...cloudRewrites(_cloudHost),
       ...cloudRewrites("cloud.localhost:3000"),
     ];
   },

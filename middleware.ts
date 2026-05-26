@@ -18,7 +18,7 @@ export async function middleware(req: NextRequest) {
     .split("/")[0]
     .split(":")[0];
 
-  const isCloudSubdomain = host === "cloud.leadstaq.tech" || host === "cloud.localhost";
+  const isCloudSubdomain = host === `cloud.${appDomain}` || host === "cloud.localhost";
 
   if (isCloudSubdomain) {
     const path = req.nextUrl.pathname;

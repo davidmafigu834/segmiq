@@ -77,7 +77,14 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax" as const,
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "production" ? ".leadstaq.tech" : undefined,
+        domain:
+          process.env.NODE_ENV === "production"
+            ? "." +
+              (process.env.NEXT_PUBLIC_APP_DOMAIN ?? "segmiq.com")
+                .replace(/^https?:\/\//i, "")
+                .split("/")[0]
+                .split(":")[0]
+            : undefined,
       },
     },
   },
