@@ -76,7 +76,7 @@ function WelcomeToast() {
   if (!show) return null;
   return (
     <div className="fixed bottom-28 left-1/2 z-[300] -translate-x-1/2 rounded-xl border border-[#D4FF4F]/20 bg-[#111] px-5 py-3 text-[13px] font-medium text-white shadow-xl lg:bottom-6 font-cloud-body">
-      Welcome to Leadstaq Cloud. Your account is ready. 🎉
+      Welcome to Segmiq Cloud. Your account is ready. 🎉
     </div>
   );
 }
@@ -144,7 +144,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
     };
   }, []);
 
-  const displayName = businessName || "Leadstaq Cloud";
+  const displayName = businessName || "Segmiq Cloud";
   const initials = getInitials(session?.user?.name ?? "");
 
   return (

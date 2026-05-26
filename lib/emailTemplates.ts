@@ -56,7 +56,7 @@ export function renderManagerNewLeadEmail({
         </div>
         <p style="font-size: 11px; color: #9498A1; margin-top: 32px; border-top: 1px solid #E8E6DF; padding-top: 16px;">
           You're receiving this as the manager for ${escapeHtml(client.name)}.<br />
-          Leadstaq · Lead management for ${escapeHtml(client.name)}
+          Segmiq · Lead management for ${escapeHtml(client.name)}
         </p>
       </td>
     </tr>
@@ -100,7 +100,7 @@ export function renderManagerDealWonEmail({
         </a>
         <p style="font-size: 11px; color: #9498A1; margin-top: 32px; border-top: 1px solid #E8E6DF; padding-top: 16px;">
           You're receiving this as the manager for ${escapeHtml(client.name)}.<br />
-          Leadstaq · ${escapeHtml(client.name)}
+          Segmiq · ${escapeHtml(client.name)}
         </p>
       </td>
     </tr>
@@ -171,7 +171,7 @@ export function renderManagerUncontactedLeadEmail({
           </tr>
         </table>
         <p style="font-size: 11px; color: #9498A1; margin-top: 32px; border-top: 1px solid #E8E6DF; padding-top: 16px;">
-          ${escapeHtml(client.name)} · Leadstaq
+          ${escapeHtml(client.name)} · Segmiq
         </p>
       </td>
     </tr>

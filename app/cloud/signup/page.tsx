@@ -106,7 +106,7 @@ export default function CloudSignupPage() {
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4FF4F]">
           <CloudUpload className="h-5 w-5 text-black" strokeWidth={2.5} />
         </div>
-        <span className="text-sm font-semibold text-white">Leadstaq Cloud</span>
+        <span className="text-sm font-semibold text-white">Segmiq Cloud</span>
       </div>
 
       <div className="w-full max-w-sm">
@@ -297,7 +297,7 @@ export default function CloudSignupPage() {
             </Link>
           </p>
           <p className="text-xs text-white/25">
-            Have a Leadstaq agency account?{" "}
+            Have a Segmiq agency account?{" "}
             <Link href="/login" className="hover:text-white/50 transition-colors">
               Sign in →
             </Link>

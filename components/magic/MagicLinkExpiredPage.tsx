@@ -56,7 +56,7 @@ export function MagicLinkExpiredPage({ token }: { token: string }) {
             margin: "0 0 32px",
           }}
         >
-          Leadstaq
+          Segmiq
         </p>
 
         <div

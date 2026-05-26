@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Zap, Building2, Rocket, Loader2 } from "lucide-react";
 
-const SUPPORT_WHATSAPP = "27000000000"; // Replace with actual Leadstaq support WhatsApp number (no + prefix)
+const SUPPORT_WHATSAPP = "27000000000"; // Replace with actual Segmiq support WhatsApp number (no + prefix)
 
 type Plan = { id: string; name: string; monthlyPrice: number; annualPrice: number; annualMonthly: number; saving: number; storage: string; team: string; features: string[]; icon: React.ElementType; accent: string };
 
@@ -139,7 +139,7 @@ export default function BillingPage() {
                     </ul>
                     {!isActive && (
                       <a
-                        href={`https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(`Hi, I'd like to upgrade my Leadstaq Cloud account to the ${plan.name} plan (${annual ? `$${plan.annualPrice}/year` : `$${plan.monthlyPrice}/month`}, billed ${annual ? "annually" : "monthly"}). My account email is `)}`}
+                        href={`https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(`Hi, I'd like to upgrade my Segmiq Cloud account to the ${plan.name} plan (${annual ? `$${plan.annualPrice}/year` : `$${plan.monthlyPrice}/month`}, billed ${annual ? "annually" : "monthly"}). My account email is `)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`mt-auto block w-full rounded-xl py-2.5 text-center text-[13px] font-semibold font-cloud-body transition-colors ${

@@ -24,7 +24,7 @@ export function inviteSalespersonEmail({
           ? "Agency Admin"
           : role;
 
-  const subject = `You have been invited to Leadstaq — ${clientName}`;
+  const subject = `You have been invited to Segmiq — ${clientName}`;
 
   const html = `
 <!DOCTYPE html>
@@ -43,7 +43,7 @@ export function inviteSalespersonEmail({
           <tr>
             <td style="background:#000000;padding:32px 40px;">
               <p style="margin:0;font-size:20px;font-weight:700;color:#D4FF4F;letter-spacing:-0.3px;">
-                Leadstaq
+                Segmiq
               </p>
             </td>
           </tr>
@@ -57,7 +57,7 @@ export function inviteSalespersonEmail({
               </p>
 
               <h1 style="margin:0 0 24px;font-size:26px;font-weight:700;color:#09090b;line-height:1.2;">
-                Welcome to Leadstaq,<br />${escapeHtml(inviteeName)}
+                Welcome to Segmiq,<br />${escapeHtml(inviteeName)}
               </h1>
 
               <p style="margin:0 0 24px;font-size:15px;color:#3f3f46;line-height:1.6;">
@@ -96,7 +96,7 @@ export function inviteSalespersonEmail({
                   <td style="background:#09090b;border-radius:10px;">
                     <a href="${escapeHtml(loginUrl)}"
                        style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:700;color:#D4FF4F;text-decoration:none;letter-spacing:-0.1px;">
-                      Log in to Leadstaq &rarr;
+                      Log in to Segmiq &rarr;
                     </a>
                   </td>
                 </tr>
@@ -109,7 +109,7 @@ export function inviteSalespersonEmail({
           <tr>
             <td style="padding:24px 40px;border-top:1px solid #f4f4f5;">
               <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
-                This invitation was sent by ${escapeHtml(invitedByName)} via Leadstaq.
+                This invitation was sent by ${escapeHtml(invitedByName)} via Segmiq.
                 If you were not expecting this, you can ignore this email.
               </p>
             </td>

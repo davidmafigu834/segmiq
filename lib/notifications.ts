@@ -476,7 +476,7 @@ export async function notifyUncontactedLeadToManager(
     leadId: lead.id,
   });
 
-  const fallbackWa = `Leadstaq: Lead ${lead.name ?? "—"} has been uncontacted for ${hoursUncontacted}h. Assigned to ${salespersonName}.`;
+  const fallbackWa = `Segmiq: Lead ${lead.name ?? "—"} has been uncontacted for ${hoursUncontacted}h. Assigned to ${salespersonName}`;
 
   if (prefs.uncontactedLead.whatsapp && manager.phone?.trim()) {
     background("uncontactedLeadManagerWhatsApp", async () => {
@@ -659,7 +659,7 @@ export async function sendTokenExpiryAlert(clientId: string): Promise<void> {
     if (!admin.email) continue;
     const html = `
           <p>Hi ${escapeHtml((admin.name as string) || "there")},</p>
-          <p>The Facebook connection for <strong>${escapeHtml(client.name as string)}</strong> has expired or was revoked. Lead Ads for this client are not flowing into Leadstaq until you reconnect.</p>
+          <p>The Facebook connection for <strong>${escapeHtml(client.name as string)}</strong> has expired or was revoked. Lead Ads for this client are not flowing into Segmiq until you reconnect.</p>
           ${pageLine ? `<p>${pageLine}</p>` : ""}
           <p><a href="${reconnectUrl}">Reconnect now →</a></p>
           <p style="font-size:12px;color:#666">If the button does not work, copy this URL:<br/>${escapeHtml(reconnectUrl)}</p>

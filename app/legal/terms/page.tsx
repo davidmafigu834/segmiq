@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service · Leadstaq",
-  description: "The terms governing your use of Leadstaq.",
+  title: "Terms of Service · Segmiq",
+  description: "The terms governing your use of Segmiq.",
 };
 
 const LAST_UPDATED = "29 April 2026";
@@ -18,8 +18,8 @@ export default function TermsOfServicePage() {
       </p>
 
       <p className="mb-8 text-base leading-relaxed text-ink-secondary">
-        These Terms of Service (&quot;Terms&quot;) govern your access to and use of Leadstaq (the &quot;Service&quot;),
-        operated by Adlense Network (&quot;Leadstaq&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;). By creating an
+        These Terms of Service (&quot;Terms&quot;) govern your access to and use of Segmiq (the &quot;Service&quot;),
+        operated by Adlense Network (&quot;Segmiq&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;). By creating an
         account or using the Service, you agree to these Terms.
       </p>
 
@@ -27,7 +27,7 @@ export default function TermsOfServicePage() {
         1. The Service
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
-        Leadstaq is a software platform that helps marketing agencies generate, distribute, and
+        Segmiq is a software platform that helps marketing agencies generate, distribute, and
         manage sales leads on behalf of their clients. The Service includes landing page hosting,
         lead capture forms, integrations with advertising and messaging platforms, pipeline
         tracking, and reporting tools.
@@ -98,7 +98,7 @@ export default function TermsOfServicePage() {
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
         Specific pricing, billing cycles, and payment terms are governed by the service agreement
-        signed between Leadstaq (or the Agency operating Leadstaq) and the paying party. Where
+        signed between Segmiq (or the Agency operating Segmiq) and the paying party. Where
         there is no separate agreement, plan details visible on our pricing page apply.
       </p>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
@@ -108,7 +108,7 @@ export default function TermsOfServicePage() {
       </p>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
         Advertising spend (e.g., Facebook ad budget) is paid by you directly to the relevant
-        platform and is not part of Leadstaq&apos;s fees.
+        platform and is not part of Segmiq&apos;s fees.
       </p>
 
       <h2 className="mb-4 mt-12 font-serif text-2xl tracking-tight text-ink-primary md:text-3xl">
@@ -116,7 +116,7 @@ export default function TermsOfServicePage() {
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
         You retain ownership of content you upload to the Service (logos, branding assets, lead
-        data, written copy, etc.). By uploading, you grant Leadstaq a non-exclusive, worldwide
+        data, written copy, etc.). By uploading, you grant Segmiq a non-exclusive, worldwide
         license to host, process, and display the content solely as needed to provide the Service.
       </p>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
@@ -129,14 +129,14 @@ export default function TermsOfServicePage() {
         7. Our content
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
-        The Leadstaq platform — including our software, design, templates, branding, documentation,
+        The Segmiq platform — including our software, design, templates, branding, documentation,
         and features — is owned by us and protected by intellectual property laws. We grant you a
         limited, non-exclusive, non-transferable license to use the Service while your account is
         active and your fees are current.
       </p>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
         Landing page templates included in the Service may be used for landing pages within the
-        Service but may not be extracted, redistributed, or used outside Leadstaq.
+        Service but may not be extracted, redistributed, or used outside Segmiq.
       </p>
 
       <h2 className="mb-4 mt-12 font-serif text-2xl tracking-tight text-ink-primary md:text-3xl">
@@ -150,7 +150,7 @@ export default function TermsOfServicePage() {
       </p>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
         If a third-party platform suspends, restricts, or changes its services in a way that
-        affects Leadstaq, we will work to restore functionality but cannot guarantee uninterrupted
+        affects Segmiq, we will work to restore functionality but cannot guarantee uninterrupted
         access.
       </p>
 
@@ -167,7 +167,7 @@ export default function TermsOfServicePage() {
         10. No guarantee of results
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
-        Leadstaq provides tools to capture and manage leads. We do not guarantee any specific
+        Segmiq provides tools to capture and manage leads. We do not guarantee any specific
         outcome — including but not limited to a particular volume of leads, conversion rates,
         customer acquisition, or revenue. Results depend on factors including ad spend, market
         conditions, sales team performance, and many variables outside our control.
@@ -220,7 +220,7 @@ export default function TermsOfServicePage() {
         14. Indemnification
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
-        You agree to indemnify and hold harmless Leadstaq, its directors, employees, and agents
+        You agree to indemnify and hold harmless Segmiq, its directors, employees, and agents
         from any claims, damages, or expenses (including reasonable legal fees) arising from your
         use of the Service, your violation of these Terms, or your violation of any third-party
         rights.
@@ -250,7 +250,7 @@ export default function TermsOfServicePage() {
       <ul className="mb-4 list-disc space-y-2 pl-6 text-base leading-relaxed text-ink-primary">
         <li>
           <strong>Entire agreement</strong> — these Terms (together with your service agreement, if
-          any, and our Privacy Policy) form the complete agreement between you and Leadstaq.
+          any, and our Privacy Policy) form the complete agreement between you and Segmiq.
         </li>
         <li>
           <strong>Severability</strong> — if any provision is found unenforceable, the rest remains

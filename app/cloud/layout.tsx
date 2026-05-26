@@ -12,8 +12,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_CLOUD_DOMAIN ?? "https://cloud.leadstaq.tech"),
   title: {
-    default: "Leadstaq Cloud",
-    template: "%s · Leadstaq Cloud",
+    default: "Segmiq Cloud",
+    template: "%s · Segmiq Cloud",
   },
   description:
     "Document your projects from the field. Upload photos, share with clients instantly.",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Leadstaq Cloud",
+    title: "Segmiq Cloud",
     startupImage: "/icons/apple-touch-icon.png",
   },
   icons: {
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "black-translucent",
-    "apple-mobile-web-app-title": "Leadstaq Cloud",
+    "apple-mobile-web-app-title": "Segmiq Cloud",
     "msapplication-TileColor": "#D4FF4F",
     "msapplication-tap-highlight": "no",
   },

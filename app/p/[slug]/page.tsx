@@ -68,11 +68,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     .select("headline, subheadline, hero_image_url, is_published, clients(name)")
     .eq("slug", params.slug)
     .maybeSingle();
-  if (!profile) return { title: "Leadstaq" };
+  if (!profile) return { title: "Segmiq" };
   const isPublished = (profile.is_published as boolean | null) ?? false;
   if (!isPublished) {
     return {
-      title: "Leadstaq",
+      title: "Segmiq",
       robots: { index: false, follow: false },
     };
   }
@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       title,
       description,
       url: pageUrl,
-      siteName: "Leadstaq",
+      siteName: "Segmiq",
       type: "website",
       locale: "en_US",
       images: heroImg ? [{ url: heroImg, alt: title }] : [],
@@ -581,7 +581,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
         <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 12, color: "rgba(255,255,255,0.25)", margin: 0 }}>
           Powered by{" "}
           <a href="https://leadstaq.tech" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(212,255,79,0.45)", textDecoration: "none" }}>
-            Leadstaq
+            Segmiq
           </a>
         </p>
       </footer>

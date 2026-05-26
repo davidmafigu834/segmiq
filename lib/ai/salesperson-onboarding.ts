@@ -9,7 +9,7 @@ const COACHING_MESSAGES: Record<
     getMessage: (name, clientName, loginUrl) =>
       `Welcome to ${clientName}, ${name}!
 
-You have been added to Leadstaq — the platform that keeps all your leads organised so nothing falls through the cracks.
+You have been added to Segmiq — the platform that keeps all your leads organised so nothing falls through the cracks.
 
 Here is what to do first:
 

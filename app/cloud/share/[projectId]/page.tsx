@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: { projectId: string
     .select("title, description, project_media(public_url, display_order)")
     .or(`id.eq.${params.projectId},slug.eq.${params.projectId}`)
     .maybeSingle();
-  if (!project) return { title: "Project | Leadstaq Cloud" };
+  if (!project) return { title: "Project | Segmiq Cloud" };
   const media = (project.project_media as MediaItem[] | null) ?? [];
   const cover = media.sort((a, b) => a.display_order - b.display_order)[0]?.public_url;
   const title = project.title as string;
@@ -36,14 +36,14 @@ export async function generateMetadata({ params }: { params: { projectId: string
   const baseUrl = process.env.NEXT_PUBLIC_CLOUD_DOMAIN ?? "https://cloud.leadstaq.tech";
   const pageUrl = `${baseUrl}/share/${params.projectId}`;
   return {
-    title: `${title} | Leadstaq Cloud`,
+    title: `${title} | Segmiq Cloud`,
     description,
     alternates: { canonical: pageUrl },
     openGraph: {
       title,
       description,
       url: pageUrl,
-      siteName: "Leadstaq Cloud",
+      siteName: "Segmiq Cloud",
       type: "website",
       locale: "en_US",
       images: cover ? [{ url: cover, alt: title }] : [],
@@ -206,7 +206,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
               fontSize: 11, color: "#8C7B6B", textDecoration: "none",
             }}
           >
-            Leadstaq Cloud
+            Segmiq Cloud
           </Link>
           <a
             href="#cta"
@@ -471,7 +471,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
             href="https://cloud.leadstaq.tech"
             style={{ color: "rgba(212,255,79,0.5)", textDecoration: "none" }}
           >
-            Leadstaq Cloud
+            Segmiq Cloud
           </a>
         </p>
       </div>

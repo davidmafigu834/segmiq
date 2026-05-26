@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
           margin: '0 0 40px',
           letterSpacing: '-0.3px',
         }}>
-          Leadstaq
+          Segmiq
         </p>
 
         <div style={{

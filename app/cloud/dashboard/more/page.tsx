@@ -61,7 +61,7 @@ const menuSections: MenuSection[] = [
       {
         icon: HelpCircle,
         label: "Help & FAQ",
-        description: "How to use Leadstaq Cloud",
+        description: "How to use Segmiq Cloud",
         href: "/cloud/help",
       },
       {
@@ -177,7 +177,7 @@ export default function MorePage() {
 
       {/* App version */}
       <p style={{ textAlign: "center", fontFamily: F, fontSize: 11, color: "#B4A898", margin: "0 0 20px" }}>
-        Leadstaq Cloud · Version 1.0
+        Segmiq Cloud · Version 1.0
       </p>
 
     </div>

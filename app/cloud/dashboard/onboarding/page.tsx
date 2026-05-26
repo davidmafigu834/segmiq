@@ -212,7 +212,7 @@ export default function OnboardingPage() {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4FF4F]">
           <CloudUpload className="h-4.5 w-4.5 text-black" strokeWidth={2.5} />
         </div>
-        <span className="text-[13px] font-semibold text-white">Leadstaq Cloud</span>
+        <span className="text-[13px] font-semibold text-white">Segmiq Cloud</span>
       </div>
 
       <div className="w-full max-w-lg">

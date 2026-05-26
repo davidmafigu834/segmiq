@@ -95,7 +95,7 @@ export async function POST(req: Request) {
       await resend.emails.send({
         from: fromEmail,
         to: email.toLowerCase().trim(),
-        subject: `You've been added to ${clientName} on Leadstaq Cloud`,
+        subject: `You've been added to ${clientName} on Segmiq Cloud`,
         html: `
 <!DOCTYPE html>
 <html>
@@ -104,14 +104,14 @@ export async function POST(req: Request) {
     <tr><td>
       <div style="margin-bottom:24px;">
         <div style="display:inline-block;background:#D4FF4F;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;color:#0a0a0a;letter-spacing:0.05em;text-transform:uppercase;">
-          Leadstaq Cloud
+          Segmiq Cloud
         </div>
       </div>
       <h1 style="font-family:Georgia,serif;font-size:24px;color:#ffffff;margin:0 0 16px;font-weight:400;">
         You've been added to ${clientName}
       </h1>
       <p style="font-size:14px;color:rgba(255,255,255,0.6);line-height:1.6;margin:0 0 24px;">
-        Hi ${name}, you've been added to <strong style="color:#ffffff;">${clientName}</strong> on Leadstaq Cloud as a <strong style="color:#ffffff;">${role === "CLIENT_MANAGER" ? "Manager" : "Salesperson"}</strong>.
+        Hi ${name}, you've been added to <strong style="color:#ffffff;">${clientName}</strong> on Segmiq Cloud as a <strong style="color:#ffffff;">${role === "CLIENT_MANAGER" ? "Manager" : "Salesperson"}</strong>.
       </p>
       <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.05);border-radius:10px;padding:16px;margin-bottom:24px;">
         <tr><td style="font-size:11px;color:rgba(255,255,255,0.4);padding-bottom:4px;">Email</td></tr>
@@ -123,10 +123,10 @@ export async function POST(req: Request) {
         Please change your password after signing in.
       </p>
       <a href="https://cloud.leadstaq.tech/login" style="display:inline-block;background:#D4FF4F;color:#0a0a0a;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:700;">
-        Sign in to Leadstaq Cloud →
+        Sign in to Segmiq Cloud →
       </a>
       <p style="font-size:11px;color:rgba(255,255,255,0.2);margin-top:32px;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">
-        Leadstaq Cloud · ${clientName}
+        Segmiq Cloud · ${clientName}
       </p>
     </td></tr>
   </table>

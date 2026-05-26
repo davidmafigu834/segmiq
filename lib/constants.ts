@@ -1,4 +1,4 @@
-export const APP_NAME = "Leadstaq";
+export const APP_NAME = "Segmiq";
 
 export function getPublicBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");

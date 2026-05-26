@@ -47,7 +47,7 @@ function LoginFormInner() {
       <div className="text-center">
         <div className="flex items-center justify-center gap-2.5">
           <span className="h-1.5 w-1.5 rounded-sm bg-[var(--accent)]" aria-hidden />
-          <span className="font-display text-xl tracking-display text-ink-primary sm:text-2xl">Leadstaq</span>
+          <span className="font-display text-xl tracking-display text-ink-primary sm:text-2xl">Segmiq</span>
         </div>
         <h1 className="mt-6 font-display text-[26px] leading-tight tracking-tight text-ink-primary sm:text-[32px]">
           Welcome back

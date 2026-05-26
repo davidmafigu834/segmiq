@@ -208,7 +208,7 @@ export function CloudClientsClient({
 
   return (
     <div>
-      <p className="mb-6 text-[13px] text-[var(--text-tertiary)]">Manage Leadstaq Cloud client plans and billing.</p>
+      <p className="mb-6 text-[13px] text-[var(--text-tertiary)]">Manage Segmiq Cloud client plans and billing.</p>
 
       {/* Overdue warning banner */}
       {overdueClients.length > 0 && (

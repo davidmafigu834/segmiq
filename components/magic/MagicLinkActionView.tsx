@@ -143,7 +143,7 @@ export function MagicLinkActionView({ lead, token }: { lead: MagicLeadForView; t
   return (
     <div className="min-h-[100dvh] w-full min-w-0 max-w-[100vw] overflow-x-hidden bg-white pb-[max(7rem,env(safe-area-inset-bottom))] text-ink-primary [-webkit-tap-highlight-color:transparent]">
       <header className="safe-top sticky top-0 z-30 flex min-h-[52px] w-full min-w-0 max-w-[100vw] items-center justify-between gap-2 border-b border-border bg-white/95 px-3 backdrop-blur-sm sm:gap-3 sm:px-4">
-        <span className="shrink-0 font-serif text-lg tracking-tight text-ink-primary">Leadstaq</span>
+        <span className="shrink-0 font-serif text-lg tracking-tight text-ink-primary">Segmiq</span>
         <div className="flex min-w-0 shrink justify-end pl-1 sm:pl-2">
           <StatusPill status={lead.status} />
         </div>
@@ -265,7 +265,7 @@ export function MagicLinkActionView({ lead, token }: { lead: MagicLeadForView; t
                   href="/login"
                   className="rounded-md bg-surface-sidebar py-3 text-center text-sm font-medium text-[var(--text-on-dark)]"
                 >
-                  Open Leadstaq
+                  Open Segmiq
                 </Link>
                 <button
                   type="button"
@@ -282,7 +282,7 @@ export function MagicLinkActionView({ lead, token }: { lead: MagicLeadForView; t
 
       <footer className="mx-auto w-full min-w-0 max-w-md px-3 pb-[max(2.5rem,env(safe-area-inset-bottom))] text-center text-[11px] text-ink-tertiary sm:px-4">
         <p className="break-words">
-          Leadstaq · Secure link
+          Segmiq · Secure link
           {daysLeft != null ? (daysLeft === 0 ? " has expired" : ` expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`) : " is active"}
         </p>
         <p className="mt-1 break-words">Not expecting this? Forward to your manager.</p>

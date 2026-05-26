@@ -734,7 +734,7 @@ export function AgencySettingsClient() {
                 />
               </label>
               <p className="text-xs text-ink-secondary">
-                Leave this blank to send the test to your Leadstaq login email. Or enter any valid address (work,
+                Leave this blank to send the test to your Segmiq login email. Or enter any valid address (work,
                 personal, a colleague) to confirm Resend delivery there.
               </p>
               <button type="button" className="btn-primary h-11 md:h-9" disabled={saving} onClick={() => void testNotification()}>

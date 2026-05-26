@@ -28,7 +28,7 @@ export function IOSInstallBanner() {
           <span className="text-lg font-bold text-black">C</span>
         </div>
         <div className="flex-1">
-          <p className="mb-0.5 text-sm font-semibold text-white">Install Leadstaq Cloud</p>
+          <p className="mb-0.5 text-sm font-semibold text-white">Install Segmiq Cloud</p>
           <p className="text-xs leading-relaxed text-white/50">
             Tap the <strong className="text-white">Share</strong> button ⬆ then{" "}
             <strong className="text-white">&quot;Add to Home Screen&quot;</strong> for quick access from your phone.

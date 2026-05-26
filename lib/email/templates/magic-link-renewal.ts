@@ -9,7 +9,7 @@ export function magicLinkRenewalEmail({
   magicLink: string;
   expiresAt: Date;
 }): { subject: string; html: string } {
-  const subject = `Your Leadstaq link for ${leadName} has been renewed`;
+  const subject = `Your Segmiq link for ${leadName} has been renewed`;
 
   const expiryString = expiresAt.toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -35,7 +35,7 @@ export function magicLinkRenewalEmail({
           <tr>
             <td style="background:#000000;padding:32px 40px;">
               <p style="margin:0;font-size:20px;font-weight:700;color:#D4FF4F;letter-spacing:-0.3px;">
-                Leadstaq
+                Segmiq
               </p>
             </td>
           </tr>
@@ -87,7 +87,7 @@ export function magicLinkRenewalEmail({
           <tr>
             <td style="padding:24px 40px;border-top:1px solid #f4f4f5;">
               <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
-                Leadstaq · This link is personal to you. Keep it safe.
+                Segmiq · This link is personal to you. Keep it safe.
               </p>
             </td>
           </tr>

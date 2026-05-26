@@ -7,7 +7,7 @@ export function passwordResetEmail({
   resetUrl: string;
   expiresInMinutes?: number;
 }): { subject: string; html: string } {
-  const subject = 'Reset your Leadstaq password';
+  const subject = 'Reset your Segmiq password';
 
   const html = `
 <!DOCTYPE html>
@@ -26,7 +26,7 @@ export function passwordResetEmail({
           <tr>
             <td style="background:#000000;padding:32px 40px;">
               <p style="margin:0;font-size:20px;font-weight:700;color:#D4FF4F;letter-spacing:-0.3px;">
-                Leadstaq
+                Segmiq
               </p>
             </td>
           </tr>
@@ -44,7 +44,7 @@ export function passwordResetEmail({
               </h1>
 
               <p style="margin:0 0 24px;font-size:15px;color:#3f3f46;line-height:1.6;">
-                We received a request to reset the password for your Leadstaq account.
+                We received a request to reset the password for your Segmiq account.
                 Click the button below to choose a new password.
               </p>
 
@@ -77,7 +77,7 @@ export function passwordResetEmail({
           <tr>
             <td style="padding:24px 40px;border-top:1px solid #f4f4f5;">
               <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
-                Leadstaq · If you need help contact your administrator.
+                Segmiq · If you need help contact your administrator.
               </p>
             </td>
           </tr>

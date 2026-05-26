@@ -56,7 +56,7 @@ export async function POST(req: Request) {
         await resendClient.emails.send({
           from: fromEmail,
           to: typedUser.email,
-          subject: "Reset your Leadstaq Cloud password",
+          subject: "Reset your Segmiq Cloud password",
           html: `
 <!DOCTYPE html>
 <html>
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:12px;padding:32px;border:1px solid #eaeaea;">
     <h2 style="font-size:20px;font-weight:600;color:#111;margin:0 0 8px;">Reset your password</h2>
     <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 24px;">
-      Hi ${typedUser.name}, we received a request to reset your Leadstaq Cloud password.
+      Hi ${typedUser.name}, we received a request to reset your Segmiq Cloud password.
       Click the button below to choose a new password. This link expires in 1 hour.
     </p>
     <a href="${resetUrl}"

@@ -317,7 +317,7 @@ export function ConversationalForm({
             color: "#B4A898",
           }}
         >
-          Powered by Leadstaq
+          Powered by Segmiq
         </p>
       </div>
     );

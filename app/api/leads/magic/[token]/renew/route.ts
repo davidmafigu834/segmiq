@@ -103,7 +103,7 @@ export async function POST(
           "2": (lead.name as string) || "Unknown",
           "3": magicLink,
         },
-        fallbackBody: `Hi ${salesperson.name || "there"}, your Leadstaq link for ${lead.name || "your lead"} has been renewed. Open it here: ${magicLink}`,
+        fallbackBody: `Hi ${salesperson.name || "there"}, your Segmiq link for ${lead.name || "your lead"} has been renewed. Open it here: ${magicLink}`,
         context: {
           userId: salesperson.id,
           leadId: lead.id as string,

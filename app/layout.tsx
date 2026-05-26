@@ -29,12 +29,12 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://leadstaq.tech"),
-  title: "Leadstaq — Lead Platform",
+  title: "Segmiq — Lead Platform",
   description: "Lead management for marketing agencies",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "Leadstaq",
+    title: "Segmiq",
     statusBarStyle: "default",
   },
   other: {

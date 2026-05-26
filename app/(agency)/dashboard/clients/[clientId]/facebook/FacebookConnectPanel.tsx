@@ -523,7 +523,7 @@ export function FacebookConnectPanel({
           <div className="border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-5 text-sm text-[var(--danger-fg)]">
             <p className="font-semibold">Connection expired</p>
             <p className="mt-2 text-ink-secondary">
-              Leads from this Facebook form are not flowing into Leadstaq until you reconnect. Meta rejected the saved
+              Leads from this Facebook form are not flowing into Segmiq until you reconnect. Meta rejected the saved
               access token.
             </p>
             <a
@@ -629,7 +629,7 @@ export function FacebookConnectPanel({
             <div className="flex h-full w-full max-w-md flex-col border border-border bg-surface-card p-5 shadow-lg md:h-auto md:rounded-lg md:p-6">
               <h4 className="font-display text-lg text-ink-primary">Backfill missed leads</h4>
               <p className="mt-2 text-sm text-ink-secondary">
-                Fetch and import any leads from this form created after this date that did not reach Leadstaq.
+                Fetch and import any leads from this form created after this date that did not reach Segmiq.
               </p>
               <label className="mt-4 block text-xs font-mono uppercase text-ink-tertiary">Since</label>
               <input
@@ -671,7 +671,7 @@ export function FacebookConnectPanel({
             <FacebookGlyph />
             <h3 className="mt-6 font-display text-2xl text-ink-primary">Connect Facebook</h3>
             <p className="mt-3 text-sm text-ink-secondary">
-              Grant Leadstaq access to this client&apos;s Facebook Pages, Lead Forms, and ad accounts. You&apos;ll need
+              Grant Segmiq access to this client&apos;s Facebook Pages, Lead Forms, and ad accounts. You&apos;ll need
               to be added as a partner in their Business Manager first.
             </p>
             <a

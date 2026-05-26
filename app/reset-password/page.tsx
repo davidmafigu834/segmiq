@@ -127,7 +127,7 @@ function ResetPasswordInner() {
             color: '#D4FF4F',
             margin: '0 0 40px',
           }}>
-            Leadstaq
+            Segmiq
           </p>
           <div style={cardStyle}>
             <div style={{ textAlign: 'center' }}>
@@ -189,7 +189,7 @@ function ResetPasswordInner() {
             color: '#D4FF4F',
             margin: '0 0 40px',
           }}>
-            Leadstaq
+            Segmiq
           </p>
           <div style={cardStyle}>
             <div style={{ textAlign: 'center' }}>
@@ -238,7 +238,7 @@ function ResetPasswordInner() {
           color: '#D4FF4F',
           margin: '0 0 40px',
         }}>
-          Leadstaq
+          Segmiq
         </p>
         <div style={cardStyle}>
           <h1 style={{

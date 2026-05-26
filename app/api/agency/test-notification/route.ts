@@ -49,9 +49,9 @@ export async function POST(req: Request) {
       template: "NEW_LEAD_MANAGER",
       variables: {
         "1": (user?.name as string) || "You",
-        "2": "Leadstaq test",
+        "2": "Segmiq test",
       },
-      fallbackBody: `Test message from Leadstaq — notifications are working.`,
+      fallbackBody: `Test message from Segmiq — notifications are working.`,
       context: {
         userId: g.session.userId,
         leadId: null,
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       mail: {
         to: emailTo,
         from: sendFrom,
-        subject: "Leadstaq test email",
+        subject: "Segmiq test email",
         text: "Test email — your Resend integration is working.",
       },
       context: {

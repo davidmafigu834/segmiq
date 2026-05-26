@@ -55,8 +55,8 @@ export async function POST(req: Request) {
   const name = parsed.data.name?.trim() || email.split("@")[0];
   const { subject, html } = inviteSalespersonEmail({
     inviteeName: name,
-    invitedByName: g.session.user?.name || "Leadstaq",
-    clientName: "Leadstaq Agency",
+    invitedByName: g.session.user?.name || "Segmiq",
+    clientName: "Segmiq Agency",
     role: "AGENCY_ADMIN",
     email,
     temporaryPassword: tempPass,

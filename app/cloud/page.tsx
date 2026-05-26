@@ -80,7 +80,7 @@ export default function CloudLandingPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#D4FF4F]">
               <CloudUpload className="h-4 w-4 text-black" strokeWidth={2.5} />
             </div>
-            <span className="text-sm font-semibold tracking-tight text-white">Leadstaq Cloud</span>
+            <span className="text-sm font-semibold tracking-tight text-white">Segmiq Cloud</span>
           </div>
 
           {/* Desktop nav */}
@@ -286,7 +286,7 @@ export default function CloudLandingPage() {
                 LC
               </div>
               <div className="text-left">
-                <p className="text-sm font-medium text-white">Leadstaq Cloud</p>
+                <p className="text-sm font-medium text-white">Segmiq Cloud</p>
                 <p className="text-xs text-white/40">Launching in Zimbabwe &middot; 2026</p>
               </div>
             </div>
@@ -426,7 +426,7 @@ export default function CloudLandingPage() {
           <h2 className="mb-4 text-3xl font-light text-white md:text-4xl">
             Start documenting your work today.
           </h2>
-          <p className="mb-10 text-base text-white/50">Join contractors across Africa who are building their business archive on Leadstaq Cloud.</p>
+          <p className="mb-10 text-base text-white/50">Join contractors across Africa who are building their business archive on Segmiq Cloud.</p>
           <Link
             href="/cloud/signup"
             className="inline-flex items-center gap-2 rounded-xl bg-[#D4FF4F] px-10 py-4 text-base font-semibold text-black hover:bg-[#c4ef3f] transition-colors"
@@ -453,7 +453,7 @@ export default function CloudLandingPage() {
             <div className="flex h-5 w-5 items-center justify-center rounded bg-[#D4FF4F]">
               <CloudUpload className="h-3 w-3 text-black" strokeWidth={2.5} />
             </div>
-            <span className="text-sm text-white/50">Leadstaq Cloud · © 2026 Leadstaq</span>
+            <span className="text-sm text-white/50">Segmiq Cloud · © 2026 Segmiq</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-white/40">
             <Link href="/legal/privacy" className="hover:text-white/70 transition-colors">Privacy</Link>

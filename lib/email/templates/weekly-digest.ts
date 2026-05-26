@@ -137,7 +137,7 @@ export function weeklyDigestEmail({
 
           <tr>
             <td style="background:#000000;padding:32px 40px;">
-              <p style="margin:0 0 4px;font-size:20px;font-weight:700;color:#D4FF4F;">Leadstaq</p>
+              <p style="margin:0 0 4px;font-size:20px;font-weight:700;color:#D4FF4F;">Segmiq</p>
               <p style="margin:0;font-size:13px;color:rgba(255,255,255,0.45);">Weekly performance report</p>
             </td>
           </tr>
@@ -170,7 +170,7 @@ export function weeklyDigestEmail({
           <tr>
             <td style="padding:32px 40px;border-top:1px solid #f4f4f5;margin-top:28px;">
               <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
-                Leadstaq · Automated weekly report for ${clientName}.
+                Segmiq · Automated weekly report for ${clientName}.
                 Sent every Monday morning.
               </p>
             </td>

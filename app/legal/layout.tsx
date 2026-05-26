@@ -7,7 +7,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="h-6 w-6 rounded bg-accent" />
-            <span className="font-serif text-xl tracking-tight text-ink-primary">Leadstaq</span>
+            <span className="font-serif text-xl tracking-tight text-ink-primary">Segmiq</span>
           </Link>
           <nav className="flex items-center gap-6 text-sm">
             <Link href="/legal/privacy" className="text-ink-secondary hover:text-ink-primary">
@@ -29,7 +29,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
 
       <footer className="border-t border-border bg-surface-card">
         <div className="mx-auto flex max-w-3xl flex-col items-start justify-between gap-4 px-6 py-8 text-sm text-ink-tertiary md:flex-row md:items-center">
-          <span>© {new Date().getFullYear()} Leadstaq. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} Segmiq. All rights reserved.</span>
           <div className="flex items-center gap-6">
             <Link href="/legal/privacy" className="hover:text-ink-primary">
               Privacy

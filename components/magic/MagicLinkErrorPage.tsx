@@ -11,14 +11,14 @@ export function MagicLinkErrorPage({ reason }: { reason: "invalid" | "expired" }
       </h1>
       <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-secondary">
         {expired
-          ? "Magic links work for 30 days after a lead arrives. Log in to Leadstaq to see the latest leads."
+          ? "Magic links work for 30 days after a lead arrives. Log in to Segmiq to see the latest leads."
           : "The link you followed doesn't match any lead. It may have been mistyped."}
       </p>
       <Link
         href="/login"
         className="mt-8 inline-flex items-center justify-center rounded-md bg-surface-sidebar px-6 py-3 text-sm font-medium text-[var(--text-on-dark)] hover:opacity-95"
       >
-        Log in to Leadstaq
+        Log in to Segmiq
       </Link>
     </div>
   );

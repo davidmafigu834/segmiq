@@ -81,7 +81,7 @@ export default function HelpPage() {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#D4FF4F]">
               <CloudUpload className="h-4 w-4 text-black" strokeWidth={2.5} />
             </div>
-            <span className="text-[14px] font-semibold text-white">Leadstaq Cloud</span>
+            <span className="text-[14px] font-semibold text-white">Segmiq Cloud</span>
           </Link>
           <Link
             href="/cloud/dashboard"
@@ -96,7 +96,7 @@ export default function HelpPage() {
         <div className="mb-10">
           <h1 className="mb-2 text-[28px] font-semibold text-white">Help centre</h1>
           <p className="text-[14px] text-white/50">
-            Frequently asked questions about Leadstaq Cloud.
+            Frequently asked questions about Segmiq Cloud.
           </p>
         </div>
 
@@ -128,7 +128,7 @@ export default function HelpPage() {
 
       <footer className="border-t border-white/[0.06] py-6">
         <div className="mx-auto max-w-3xl px-6 text-center text-[12px] text-white/25">
-          <Link href="/cloud" className="hover:text-white/50 transition-colors">Leadstaq Cloud</Link>
+          <Link href="/cloud" className="hover:text-white/50 transition-colors">Segmiq Cloud</Link>
           {" · "}
           <a href="mailto:support@leadstaq.tech" className="hover:text-white/50 transition-colors">Contact</a>
         </div>

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Leadstaq",
-  description: "How Leadstaq collects, uses, and protects your data.",
+  title: "Privacy Policy · Segmiq",
+  description: "How Segmiq collects, uses, and protects your data.",
 };
 
 const LAST_UPDATED = "29 April 2026";
@@ -18,8 +18,8 @@ export default function PrivacyPolicyPage() {
       </p>
 
       <p className="mb-8 text-base leading-relaxed text-ink-secondary">
-        This Privacy Policy explains how Leadstaq (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) collects, uses, shares, and
-        protects information in connection with the Leadstaq platform, websites, and services
+        This Privacy Policy explains how Segmiq (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) collects, uses, shares, and
+        protects information in connection with the Segmiq platform, websites, and services
         (collectively, the &quot;Service&quot;). By using the Service, you agree to the practices described
         here.
       </p>
@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
         1. Who we are
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
-        Leadstaq is a software-as-a-service platform operated by Adlense Network, a company
+        Segmiq is a software-as-a-service platform operated by Adlense Network, a company
         registered in Zimbabwe (registration number No 11026/2023). Our principal place of
         business is No 8 Roosevelt Road, Winston Park, Marondera, Zimbabwe.
       </p>
@@ -44,21 +44,21 @@ export default function PrivacyPolicyPage() {
         2. Who this policy applies to
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
-        Leadstaq serves three categories of people, and this policy explains how we treat data for
+        Segmiq serves three categories of people, and this policy explains how we treat data for
         each:
       </p>
       <ul className="mb-4 list-disc space-y-2 pl-6 text-base leading-relaxed text-ink-primary">
         <li>
-          <strong>Agency users</strong> — marketing agencies that use Leadstaq to manage lead
+          <strong>Agency users</strong> — marketing agencies that use Segmiq to manage lead
           generation for their clients.
         </li>
         <li>
           <strong>Client users</strong> — businesses (and their staff) who are clients of an agency
-          and use Leadstaq to view leads and pipeline data.
+          and use Segmiq to view leads and pipeline data.
         </li>
         <li>
           <strong>Leads</strong> — members of the public who submit forms on landing pages built
-          with Leadstaq, expressing interest in the products or services of a Client.
+          with Segmiq, expressing interest in the products or services of a Client.
         </li>
       </ul>
 
@@ -105,7 +105,7 @@ export default function PrivacyPolicyPage() {
       </p>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
         <strong>Important role distinction:</strong> For Lead data, the Client is the data
-        controller — they decide what to ask, why they need it, and how it will be used. Leadstaq is
+        controller — they decide what to ask, why they need it, and how it will be used. Segmiq is
         the data processor, handling the data on the Client&apos;s behalf according to their instructions
         and this policy.
       </p>
@@ -264,7 +264,7 @@ export default function PrivacyPolicyPage() {
       </ul>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
         For Lead data, requests should be directed first to the Client (the agency&apos;s customer) who
-        collected your information. If you submitted a form on a landing page built with Leadstaq,
+        collected your information. If you submitted a form on a landing page built with Segmiq,
         the business operating that landing page is the data controller for your information.
       </p>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
@@ -299,7 +299,7 @@ export default function PrivacyPolicyPage() {
       </h2>
       <p className="mb-4 text-base leading-relaxed text-ink-primary">
         The Service is not directed at children under 18. We do not knowingly collect data from
-        children. If you believe a child has submitted information through Leadstaq, contact us and
+        children. If you believe a child has submitted information through Segmiq, contact us and
         we will delete it.
       </p>
 
