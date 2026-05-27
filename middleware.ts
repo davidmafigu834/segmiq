@@ -100,6 +100,17 @@ export async function middleware(req: NextRequest) {
   }
 
   const path = req.nextUrl.pathname;
+
+  // Root route: show landing page for guests; redirect authenticated users to their dashboard
+  if (path === "/") {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (token) {
+      const role = token.role as UserRole;
+      return NextResponse.redirect(new URL(homeForRole(role), req.url));
+    }
+    return NextResponse.next();
+  }
+
   if (path.startsWith("/api/facebook/webhook")) return NextResponse.next();
   if (path.startsWith("/api/leads/submit")) return NextResponse.next();
   if (path.startsWith("/api/leads/magic/")) return NextResponse.next();
