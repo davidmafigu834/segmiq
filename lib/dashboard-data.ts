@@ -639,21 +639,39 @@ export async function fetchSalespersonDashboardData(userId: string) {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
 
+  // Leads query with archived filter fallback (handles environments without is_archived column)
+  const baseSelect =
+    "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id";
+  let archivedFilterUsed = true;
+  let leadsErr: { message?: string } | null = null;
+  let allLeads: unknown[] | null = null;
+  {
+    const first = await supabase
+      .from("leads")
+      .select(baseSelect)
+      .eq("assigned_to_id", userId)
+      .or("is_archived.is.null,is_archived.eq.false")
+      .order("created_at", { ascending: false });
+    leadsErr = first.error;
+    if (first.error && String(first.error.message || "").includes("column leads.is_archived does not exist")) {
+      archivedFilterUsed = false;
+      const retry = await supabase
+        .from("leads")
+        .select(baseSelect)
+        .eq("assigned_to_id", userId)
+        .order("created_at", { ascending: false });
+      allLeads = retry.data ?? [];
+      leadsErr = retry.error;
+    } else {
+      allLeads = first.data ?? [];
+    }
+  }
+
   const [
-    { data: allLeads, error: leadsErr },
     { data: todayCallLogs },
     { data: recentEvents },
     { data: monthWins },
   ] = await Promise.all([
-    supabase
-      .from("leads")
-      .select(
-        "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id"
-      )
-      .eq("assigned_to_id", userId)
-      .or("is_archived.is.null,is_archived.eq.false")
-      .order("created_at", { ascending: false }),
-
     supabase
       .from("call_logs")
       .select("id, lead_id, outcome, created_at")
@@ -781,6 +799,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
         totalLeadsOverall: totalLeadsOverall ?? null,
         assignedCountOverall: assignedCountOverall ?? null,
         createdToday: createdToday ?? null,
+        archivedFilterUsed,
       };
     })()),
   };
