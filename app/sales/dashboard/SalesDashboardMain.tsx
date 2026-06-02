@@ -28,8 +28,8 @@ type PriorityLead = {
   name: string | null;
   phone: string | null;
   status: string;
-  score: number | null;
-  is_stale: boolean | null;
+  score?: number | null;
+  is_stale?: boolean | null;
   follow_up_date: string | null;
   followUpDue: boolean;
   priorityLabel: string;

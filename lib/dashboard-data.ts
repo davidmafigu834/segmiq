@@ -648,11 +648,11 @@ export async function fetchSalespersonDashboardData(userId: string) {
     supabase
       .from("leads")
       .select(
-        "id, name, phone, status, score, score_breakdown, is_stale, stale_since, follow_up_date, created_at, source, form_data, client_id, assigned_to_id"
+        "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id"
       )
       .eq("assigned_to_id", userId)
       .or("is_archived.is.null,is_archived.eq.false")
-      .order("score", { ascending: false }),
+      .order("created_at", { ascending: false }),
 
     supabase
       .from("call_logs")
@@ -713,18 +713,6 @@ export async function fetchSalespersonDashboardData(userId: string) {
         priorityLabel = "Follow up today";
         priorityColor = "var(--warning)";
         priorityOrder = 2;
-      } else if ((lead.score ?? 0) >= 70) {
-        priorityLabel = "Hot";
-        priorityColor = "var(--success)";
-        priorityOrder = 3;
-      } else if (lead.is_stale) {
-        priorityLabel = "Stale";
-        priorityColor = "var(--error)";
-        priorityOrder = 4;
-      } else if ((lead.score ?? 0) >= 40) {
-        priorityLabel = "Check in";
-        priorityColor = "#60a5fa";
-        priorityOrder = 5;
       } else {
         priorityLabel = "Low priority";
         priorityColor = "var(--text-disabled)";
