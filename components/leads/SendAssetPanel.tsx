@@ -116,6 +116,25 @@ export function SendAssetPanel({ leadId, clientId, leadPhone, onSent }: Props) {
     setErrorMsg("");
 
     try {
+      // For custom messages, open WhatsApp directly instead of hitting the API
+      if (selectedType === "CUSTOM_MESSAGE") {
+        const digits = String(leadPhone || "").replace(/\D+/g, "");
+        const msg = encodeURIComponent(customMessage.trim());
+        const url = digits
+          ? `https://api.whatsapp.com/send?phone=${digits}&text=${msg}`
+          : `https://api.whatsapp.com/send?text=${msg}`;
+        window.open(url, "_blank", "noopener,noreferrer");
+        setResult("success");
+        setTimeout(() => {
+          setSelectedType(null);
+          setSelectedAssetId("");
+          setCustomMessage("");
+          setResult(null);
+          onSent();
+        }, 300);
+        return;
+      }
+
       const res = await fetch(`/api/leads/${leadId}/send-asset`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
