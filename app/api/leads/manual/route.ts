@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAgencyAdmin } from "@/lib/auth/permissions";
+import { requireRoles } from "@/lib/api-guards";
 import { createLead } from "@/lib/leads/createLead";
 import { normalizeToE164 } from "@/lib/phone-validate";
 import { processLeadIntelligence } from "@/lib/lead-intelligence";
@@ -20,10 +20,8 @@ const manualLeadSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const check = await requireAgencyAdmin();
-  if ("error" in check) {
-    return NextResponse.json({ error: check.error }, { status: check.status });
-  }
+  const check = await requireRoles(["AGENCY_ADMIN", "CLIENT_MANAGER"]);
+  if ("error" in check) return check.error;
 
   const parsed = manualLeadSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -43,6 +41,12 @@ export async function POST(req: Request) {
     assigneeId,
     sendNotifications,
   } = parsed.data;
+
+  // Client managers can only create leads for their own client
+  const session = check.session;
+  if (session.role === "CLIENT_MANAGER" && session.clientId !== clientId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const normalizedPhone = normalizeToE164(phone.trim(), process.env.DEFAULT_COUNTRY_CODE || "US");
   if (!normalizedPhone) {
