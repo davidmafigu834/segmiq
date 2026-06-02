@@ -101,11 +101,14 @@ export function SendAssetPanel({ leadId, clientId, leadPhone, onSent }: Props) {
   }
 
   function canSend(): boolean {
-    if (!selectedType || !leadPhone) return false;
+    if (!selectedType) return false;
+    if (selectedType === "CUSTOM_MESSAGE") {
+      return Boolean(customMessage.trim());
+    }
+    if (!leadPhone) return false;
     if (selectedType === "PROJECT" && !selectedAssetId) return false;
     if (selectedType === "PRICING_PACKAGE" && !selectedAssetId) return false;
     if (selectedType === "DOCUMENT" && !selectedAssetId) return false;
-    if (selectedType === "CUSTOM_MESSAGE" && !customMessage.trim()) return false;
     return true;
   }
 
@@ -118,20 +121,26 @@ export function SendAssetPanel({ leadId, clientId, leadPhone, onSent }: Props) {
     try {
       // For custom messages, open WhatsApp directly instead of hitting the API
       if (selectedType === "CUSTOM_MESSAGE") {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
         const digits = String(leadPhone || "").replace(/\D+/g, "");
         const msg = encodeURIComponent(customMessage.trim());
-        const url = digits
-          ? `https://api.whatsapp.com/send?phone=${digits}&text=${msg}`
-          : `https://api.whatsapp.com/send?text=${msg}`;
-        window.open(url, "_blank", "noopener,noreferrer");
-        setResult("success");
-        setTimeout(() => {
-          setSelectedType(null);
-          setSelectedAssetId("");
-          setCustomMessage("");
-          setResult(null);
-          onSent();
-        }, 300);
+        // Prefer native scheme on mobile, otherwise use web link
+        const url = isMobile
+          ? (digits
+              ? `whatsapp://send?phone=${digits}&text=${msg}`
+              : `whatsapp://send?text=${msg}`)
+          : (digits
+              ? `https://wa.me/${digits}?text=${msg}`
+              : `https://wa.me/?text=${msg}`);
+        const win = window.open(url, "_blank", "noopener,noreferrer");
+        if (!win) {
+          // Pop-up blocked — fallback to same-tab navigation
+          window.location.href = url;
+        }
+        // Do not show API-style success state — simply stop loading
+        setSending(false);
         return;
       }
 
