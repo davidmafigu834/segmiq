@@ -640,7 +640,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
   monthStart.setHours(0, 0, 0, 0);
 
   const [
-    { data: allLeads },
+    { data: allLeads, error: leadsErr },
     { data: todayCallLogs },
     { data: recentEvents },
     { data: monthWins },
@@ -752,7 +752,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
     },
     recentActivity: recentEvents ?? [],
     recentWins: monthWins ?? [],
-    debug: (() => {
+    debug: (await (async () => {
       const statuses: Record<string, number> = {};
       for (const r of leads) {
         const s = (r.status as string) ?? "UNKNOWN";
@@ -764,13 +764,36 @@ export async function fetchSalespersonDashboardData(userId: string) {
         created_at: r.created_at as string,
         assigned_to_id: (r as { assigned_to_id?: string | null }).assigned_to_id ?? null,
       }));
+      const supabaseHost = (() => {
+        try {
+          return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname || null;
+        } catch {
+          return null;
+        }
+      })();
+      const { count: totalLeadsOverall } = await createAdminClient()
+        .from("leads")
+        .select("id", { count: "exact", head: true });
+      const { count: assignedCountOverall } = await createAdminClient()
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .eq("assigned_to_id", userId);
+      const { count: createdToday } = await createAdminClient()
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", todayStart.toISOString());
       return {
         queryUserId: userId,
         totalAllLeads: leads.length,
         totalActive,
         statuses,
         sample,
+        leadsQueryError: leadsErr?.message ?? null,
+        supabaseHost,
+        totalLeadsOverall: totalLeadsOverall ?? null,
+        assignedCountOverall: assignedCountOverall ?? null,
+        createdToday: createdToday ?? null,
       };
-    })(),
+    })()),
   };
 }
