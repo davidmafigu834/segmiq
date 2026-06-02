@@ -640,11 +640,22 @@ export async function fetchSalespersonDashboardData(userId: string) {
   monthStart.setHours(0, 0, 0, 0);
 
   // Leads query with archived filter fallback (handles environments without is_archived column)
+  type DBLeadRow = {
+    id: string;
+    name: string | null;
+    phone: string | null;
+    status: string;
+    follow_up_date: string | null;
+    created_at: string;
+    source?: string | null;
+    client_id: string;
+    assigned_to_id?: string | null;
+  };
   const baseSelect =
     "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id";
   let archivedFilterUsed = true;
   let leadsErr: { message?: string } | null = null;
-  let allLeads: unknown[] | null = null;
+  let allLeads: DBLeadRow[] | null = null;
   {
     const first = await supabase
       .from("leads")
@@ -660,10 +671,10 @@ export async function fetchSalespersonDashboardData(userId: string) {
         .select(baseSelect)
         .eq("assigned_to_id", userId)
         .order("created_at", { ascending: false });
-      allLeads = retry.data ?? [];
+      allLeads = (retry.data as DBLeadRow[] | null) ?? [];
       leadsErr = retry.error;
     } else {
-      allLeads = first.data ?? [];
+      allLeads = (first.data as DBLeadRow[] | null) ?? [];
     }
   }
 
@@ -692,8 +703,8 @@ export async function fetchSalespersonDashboardData(userId: string) {
       .gte("created_at", monthStart.toISOString()),
   ]);
 
-  const leads = allLeads ?? [];
-  const activeLeads = leads.filter(
+  const leads: DBLeadRow[] = allLeads ?? [];
+  const activeLeads: DBLeadRow[] = leads.filter(
     (l) => !["WON", "LOST", "NOT_QUALIFIED"].includes(l.status as string)
   );
 
@@ -706,7 +717,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
     return new Date(l.follow_up_date as string) <= now;
   }).length;
 
-  type PriorityLead = (typeof leads)[0] & {
+  type PriorityLead = DBLeadRow & {
     priorityLabel: string;
     priorityColor: string;
     priorityOrder: number;
@@ -737,7 +748,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
         priorityOrder = 6;
       }
 
-      return { ...lead, priorityLabel, priorityColor, priorityOrder, followUpDue };
+      return { ...lead, priorityLabel, priorityColor, priorityOrder, followUpDue } as PriorityLead;
     })
     .sort((a, b) => a.priorityOrder - b.priorityOrder);
 
@@ -749,7 +760,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
       priorityColor: "var(--text-disabled)",
       priorityOrder: 6,
       followUpDue: false,
-    })),
+    })) as PriorityLead[],
     numbers: {
       totalActive,
       calledToday,
