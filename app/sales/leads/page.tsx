@@ -18,6 +18,7 @@ export default async function SalesLeadsPage() {
     .from("leads")
     .select("*, clients ( response_time_limit_hours )")
     .eq("assigned_to_id", session.userId)
+    .or("is_archived.is.null,is_archived.eq.false")
     .order("score", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false });
 

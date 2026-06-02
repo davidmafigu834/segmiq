@@ -651,7 +651,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
         "id, name, phone, status, score, score_breakdown, is_stale, stale_since, follow_up_date, created_at, source, form_data, client_id, assigned_to_id"
       )
       .eq("assigned_to_id", userId)
-      .eq("is_archived", false)
+      .or("is_archived.is.null,is_archived.eq.false")
       .order("score", { ascending: false }),
 
     supabase
