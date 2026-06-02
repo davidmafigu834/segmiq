@@ -648,7 +648,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
     supabase
       .from("leads")
       .select(
-        "id, name, phone, status, score, score_breakdown, is_stale, stale_since, follow_up_date, created_at, source, form_data, client_id"
+        "id, name, phone, status, score, score_breakdown, is_stale, stale_since, follow_up_date, created_at, source, form_data, client_id, assigned_to_id"
       )
       .eq("assigned_to_id", userId)
       .eq("is_archived", false)
@@ -752,5 +752,25 @@ export async function fetchSalespersonDashboardData(userId: string) {
     },
     recentActivity: recentEvents ?? [],
     recentWins: monthWins ?? [],
+    debug: (() => {
+      const statuses: Record<string, number> = {};
+      for (const r of leads) {
+        const s = (r.status as string) ?? "UNKNOWN";
+        statuses[s] = (statuses[s] ?? 0) + 1;
+      }
+      const sample = leads.slice(0, 20).map((r) => ({
+        id: r.id as string,
+        status: r.status as string,
+        created_at: r.created_at as string,
+        assigned_to_id: (r as { assigned_to_id?: string | null }).assigned_to_id ?? null,
+      }));
+      return {
+        queryUserId: userId,
+        totalAllLeads: leads.length,
+        totalActive,
+        statuses,
+        sample,
+      };
+    })(),
   };
 }

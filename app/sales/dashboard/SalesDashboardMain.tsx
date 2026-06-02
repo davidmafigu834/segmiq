@@ -66,6 +66,13 @@ type DashboardData = {
   };
   recentActivity: ActivityEvent[];
   recentWins: RecentWin[];
+  debug?: {
+    queryUserId: string;
+    totalAllLeads: number;
+    totalActive: number;
+    statuses: Record<string, number>;
+    sample: Array<{ id: string; status: string; created_at: string; assigned_to_id: string | null }>;
+  };
 };
 
 type Outcome =
@@ -209,7 +216,6 @@ function QuickLogSheet({
             <X size={14} />
           </button>
         </div>
-
         <div
           className="px-5 py-5"
           style={{ paddingBottom: "calc(20px + env(safe-area-inset-bottom))" }}
@@ -408,6 +414,13 @@ export default function SalesDashboardMain({
           </div>
         ))}
       </div>
+
+      {data.numbers.totalActive === 0 && data.debug ? (
+        <div className="mb-6 rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-card)] p-4 text-[12px] text-[var(--text-secondary)]">
+          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Debug</div>
+          <pre className="overflow-auto whitespace-pre-wrap">{JSON.stringify(data.debug, null, 2)}</pre>
+        </div>
+      ) : null}
 
       {/* ============================================
           PRIORITY LEAD LIST
