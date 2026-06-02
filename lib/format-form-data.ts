@@ -27,7 +27,7 @@ function formatSingleValue(value: string): string {
 }
 
 export function formatFormData(
-  formData: Record<string, any>
+  formData: Record<string, unknown>
 ): Array<{ label: string; value: string }> {
   if (!formData) return [];
 
@@ -40,6 +40,6 @@ export function formatFormData(
     })
     .map(([key, value]) => ({
       label: formatFormKey(key),
-      value: formatFormValue(value),
+      value: formatFormValue(value as string | string[]),
     }));
 }

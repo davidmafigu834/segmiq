@@ -30,7 +30,7 @@ type Props = {
 };
 
 export function FormAnswersSection({ formData, lead, className, compactMobile }: Props) {
-  const entries = formatFormData(formData as Record<string, any>).filter(entry => {
+  const entries = formatFormData(formData as Record<string, unknown>).filter(entry => {
     const normalizedKey = entry.label.toLowerCase().trim();
     return !STRUCTURED_FIELD_LABELS.has(normalizedKey);
   });
