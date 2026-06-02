@@ -1,5 +1,7 @@
 "use client";
 
+import { formatFormData } from "@/lib/format-form-data";
+
 const STRUCTURED_FIELD_LABELS = new Set([
   "name",
   "full name",
@@ -27,41 +29,11 @@ type Props = {
   compactMobile?: boolean;
 };
 
-function formatFormValue(val: unknown): string {
-  if (val === null || val === undefined) return "";
-  if (Array.isArray(val)) return val.map((v) => formatFormValue(v)).filter(Boolean).join(", ");
-  if (typeof val === "boolean") return val ? "Yes" : "No";
-  if (typeof val === "object") {
-    const o = val as Record<string, unknown>;
-    if (typeof o.label === "string" && "value" in o) {
-      const inner = o.value;
-      if (inner !== null && inner !== undefined && String(inner).trim() !== "") {
-        return `${o.label}: ${formatFormValue(inner)}`;
-      }
-      return o.label;
-    }
-    try {
-      return JSON.stringify(val);
-    } catch {
-      return String(val);
-    }
-  }
-  return String(val);
-}
-
 export function FormAnswersSection({ formData, lead, className, compactMobile }: Props) {
-  const entries: Array<{ label: string; value: string }> = [];
-
-  if (formData && typeof formData === "object") {
-    for (const [key, val] of Object.entries(formData)) {
-      if (val === null || val === undefined || val === "") continue;
-      const normalizedKey = key.toLowerCase().trim();
-      if (STRUCTURED_FIELD_LABELS.has(normalizedKey)) continue;
-      const displayValue = formatFormValue(val);
-      if (!displayValue.trim()) continue;
-      entries.push({ label: key, value: displayValue });
-    }
-  }
+  const entries = formatFormData(formData as Record<string, any>).filter(entry => {
+    const normalizedKey = entry.label.toLowerCase().trim();
+    return !STRUCTURED_FIELD_LABELS.has(normalizedKey);
+  });
 
   if (lead.budget && !entries.some((e) => e.label.toLowerCase().includes("budget"))) {
     entries.unshift({ label: "Budget", value: lead.budget });

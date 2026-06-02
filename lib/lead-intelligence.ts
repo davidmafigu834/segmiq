@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callClaude } from "@/lib/ai/claude";
+import { formatFormKey, formatFormValue } from "@/lib/format-form-data";
 
 // ============================================
 // TYPES
@@ -126,7 +127,7 @@ export async function processLeadIntelligence(leadId: string): Promise<void> {
         formData[field.label as string] ??
         null;
       if (!value) return null;
-      return `${field.label as string}: ${Array.isArray(value) ? (value as unknown[]).join(", ") : String(value)}`;
+      return `${formatFormKey(field.label as string)}: ${formatFormValue(Array.isArray(value) ? value : String(value))}`;
     })
     .filter(Boolean)
     .join("\n");
@@ -134,7 +135,7 @@ export async function processLeadIntelligence(leadId: string): Promise<void> {
   // Also include any form_data keys not mapped to specific fields
   const unmappedAnswers = Object.entries(formData)
     .filter(([key]) => !fields.some((f) => f.maps_to === key))
-    .map(([key, value]) => `${key}: ${String(value)}`)
+    .map(([key, value]) => `${formatFormKey(key)}: ${formatFormValue(value as string)}`)
     .join("\n");
 
   const allAnswers = [formAnswers, unmappedAnswers].filter(Boolean).join("\n");
