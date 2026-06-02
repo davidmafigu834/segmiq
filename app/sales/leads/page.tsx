@@ -7,6 +7,9 @@ import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SalesBoard } from "./SalesBoard";
 import type { LeadWithClientResponseLimit } from "@/lib/leadStatus";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 export default async function SalesLeadsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");

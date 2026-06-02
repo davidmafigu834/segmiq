@@ -123,7 +123,7 @@ export function SalesBoard({
   const closed = useMemo(
     () =>
       leads
-        .filter((l) => l.status === "WON" || l.status === "LOST")
+        .filter((l) => l.status === "WON" || l.status === "LOST" || l.status === "NOT_QUALIFIED")
         .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
     [leads]
   );
