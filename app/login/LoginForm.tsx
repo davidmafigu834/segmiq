@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -47,7 +48,14 @@ function LoginFormInner() {
       <div className="text-center">
         <div className="flex items-center justify-center">
           <div className="rounded-lg bg-[#0a0a0a] px-4 py-2">
-            <img src="/segmiq-wordmark.png" alt="Segmiq" className="h-7 w-auto" />
+            <Image
+              src="/segmiq-wordmark.png"
+              alt="Segmiq"
+              width={160}
+              height={28}
+              className="h-7 w-auto"
+              priority
+            />
           </div>
         </div>
         <h1 className="mt-6 font-display text-[26px] leading-tight tracking-tight text-ink-primary sm:text-[32px]">

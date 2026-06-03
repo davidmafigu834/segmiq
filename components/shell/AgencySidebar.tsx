@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { signOut } from "next-auth/react";
 import { ChevronRight } from "lucide-react";
 import { ShellIcon } from "./shell-icons";
@@ -120,7 +121,7 @@ export function AgencySidebar({
                   </div>
                 )}
                 <div className="h-3 w-px shrink-0 bg-white/20" aria-hidden />
-                <img src="/segmiq-wordmark.png" alt="Segmiq" className="h-5 w-auto" />
+                <Image src="/segmiq-wordmark.png" alt="Segmiq" width={140} height={24} className="h-5 w-auto" />
               </div>
             ) : (
               <>
@@ -129,7 +130,7 @@ export function AgencySidebar({
                     {coBrand}
                   </div>
                 ) : null}
-                <img src="/segmiq-wordmark.png" alt="Segmiq" className="h-6 w-auto" />
+                <Image src="/segmiq-wordmark.png" alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
               </>
             )}
             <div className="mt-1 font-mono text-[10px] uppercase tracking-wide text-[var(--text-on-dark-dim)]">

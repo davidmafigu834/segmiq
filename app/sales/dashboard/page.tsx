@@ -7,6 +7,9 @@ import { SalesLayout } from "@/components/layouts/SalesLayout";
 import SalesDashboardMain from "./SalesDashboardMain";
 import SalesDashboardSkeleton from "./SalesDashboardSkeleton";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 export default async function SalesDashboardPage() {
   const session = await getServerSession(authOptions);
 

@@ -12,14 +12,14 @@ export async function POST(req: Request) {
 
   const supabase = createAdminClient();
 
-  let body: { leadId?: string; outcome?: string; notes?: string };
+  let body: { leadId?: string; outcome?: string; notes?: string; channel?: "call" | "whatsapp" };
   try {
-    body = (await req.json()) as { leadId?: string; outcome?: string; notes?: string };
+    body = (await req.json()) as { leadId?: string; outcome?: string; notes?: string; channel?: "call" | "whatsapp" };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { leadId, outcome, notes } = body;
+  const { leadId, outcome, notes, channel } = body;
 
   if (!leadId || !outcome) {
     return NextResponse.json({ error: "leadId and outcome required" }, { status: 400 });
@@ -82,6 +82,7 @@ export async function POST(req: Request) {
     },
     outcome,
     notes: notes?.trim() || null,
+    channel: channel === "whatsapp" ? "whatsapp" : "call",
   });
 
   return NextResponse.json({ success: true });

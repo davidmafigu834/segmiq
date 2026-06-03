@@ -13,6 +13,12 @@ const patchSchema = z
     logo_url: z.string().optional().nullable(),
     response_time_limit_hours: z.number().int().min(1).max(168).optional(),
     twilio_whatsapp_override: z.string().optional().nullable(),
+    send_prospect_confirmation: z.boolean().optional(),
+    dial_code: z
+      .string()
+      .regex(/^[0-9]{2,4}$/)
+      .optional()
+      .nullable(),
     primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
     /** @deprecated Manager alerts use `users.notification_prefs` (CLIENT_MANAGER). Column kept for compatibility. */
     manager_notification_prefs: z
@@ -81,6 +87,8 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   if (body.logo_url !== undefined) update.logo_url = body.logo_url || null;
   if (body.response_time_limit_hours !== undefined) update.response_time_limit_hours = body.response_time_limit_hours;
   if (body.twilio_whatsapp_override !== undefined) update.twilio_whatsapp_override = body.twilio_whatsapp_override?.trim() || null;
+  if (body.send_prospect_confirmation !== undefined) update.send_prospect_confirmation = body.send_prospect_confirmation;
+  if (body.dial_code !== undefined) update.dial_code = body.dial_code ? body.dial_code.trim() : null;
   if (body.primary_color !== undefined) update.primary_color = body.primary_color;
   if (body.manager_notification_prefs !== undefined) update.manager_notification_prefs = body.manager_notification_prefs;
   if (body.is_active !== undefined) update.is_active = body.is_active;

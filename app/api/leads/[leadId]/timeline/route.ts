@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: { leadId: string 
   // Fetch lead_events (structured events)
   const { data: events, error: eventsError } = await supabase
     .from("lead_events")
-    .select("id, event_type, event_data, actor_name, actor_role, created_at")
+    .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
     .eq("lead_id", params.leadId)
     .order("created_at", { ascending: true });
 

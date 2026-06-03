@@ -22,12 +22,14 @@ export async function logLeadEvent({
   actor,
   eventType,
   eventData = {},
+  channel,
 }: {
   leadId: string;
   clientId: string;
   actor: Actor;
   eventType: EventType;
   eventData?: Record<string, unknown>;
+  channel?: "call" | "whatsapp";
 }): Promise<void> {
   const supabase = createAdminClient();
 
@@ -39,6 +41,7 @@ export async function logLeadEvent({
     actor_role: actor.role,
     event_type: eventType,
     event_data: eventData,
+    channel: channel ?? null,
   });
 
   if (error) {
@@ -164,6 +167,7 @@ export async function logCallLogged({
   outcome,
   notes,
   followUpDate,
+  channel,
 }: {
   leadId: string;
   clientId: string;
@@ -171,6 +175,7 @@ export async function logCallLogged({
   outcome: string;
   notes?: string | null;
   followUpDate?: string | null;
+  channel?: "call" | "whatsapp";
 }): Promise<void> {
   await logLeadEvent({
     leadId,
@@ -181,7 +186,9 @@ export async function logCallLogged({
       outcome,
       notes: notes ?? null,
       follow_up_date: followUpDate ?? null,
+      channel: channel ?? null,
     },
+    channel,
   });
 }
 

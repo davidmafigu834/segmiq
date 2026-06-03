@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { format, formatDistanceToNow, isBefore, isToday, startOfDay } from "date-fns";
-import { Inbox } from "lucide-react";
+import { Inbox, Phone, MessageCircle } from "lucide-react";
+import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import { sortKanbanLeads } from "@/lib/kanbanSort";
 import { isLeadSlow } from "@/lib/leadStatus";
 import type { LeadWithClientResponseLimit } from "@/lib/leadStatus";
@@ -377,7 +378,46 @@ export function SalesBoard({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <SourceDot source={l.source} />
-                      <span className="text-ink-tertiary">⋯</span>
+                      <div className="flex items-center gap-1.5">
+                        {l.phone ? (
+                          <a
+                            href={`tel:${l.phone}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                            }}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-card-alt text-ink-tertiary hover:text-ink-primary"
+                            aria-label="Call"
+                          >
+                            <Phone size={13} />
+                          </a>
+                        ) : null}
+                        {l.phone ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              try {
+                                window.localStorage.setItem(`log:channel:${l.id}`, "whatsapp");
+                              } catch {}
+                              void openWhatsAppAndLog({
+                                leadId: l.id,
+                                clientId: l.client_id,
+                                leadName: l.name,
+                                leadPhone: l.phone,
+                                repName: "",
+                                formData: (l.form_data as Record<string, unknown> | null) ?? null,
+                                tier: "neutral",
+                              });
+                              openLeadPanel(l.id);
+                            }}
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-card-alt text-ink-tertiary hover:text-ink-primary"
+                            aria-label="WhatsApp"
+                          >
+                            <MessageCircle size={13} />
+                          </button>
+                        ) : null}
+                        <span className="text-ink-tertiary">⋯</span>
+                      </div>
                     </div>
                     <div className="mt-2 text-sm font-medium leading-snug text-ink-primary">{l.name}</div>
                     <div className="mt-1 font-mono text-xs text-ink-tertiary">{l.phone}</div>
@@ -453,9 +493,48 @@ export function SalesBoard({
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <SourceDot source={l.source} />
-                                <button type="button" className="text-ink-tertiary" aria-label="More">
-                                  ⋯
-                                </button>
+                                <div className="flex items-center gap-1.5">
+                                  {l.phone ? (
+                                    <a
+                                      href={`tel:${l.phone}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                      }}
+                                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-card-alt text-ink-tertiary hover:text-ink-primary"
+                                      aria-label="Call"
+                                    >
+                                      <Phone size={13} />
+                                    </a>
+                                  ) : null}
+                                  {l.phone ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        try {
+                                          window.localStorage.setItem(`log:channel:${l.id}`, "whatsapp");
+                                        } catch {}
+                                        void openWhatsAppAndLog({
+                                          leadId: l.id,
+                                          clientId: l.client_id,
+                                          leadName: l.name,
+                                          leadPhone: l.phone,
+                                          repName: "",
+                                          formData: (l.form_data as Record<string, unknown> | null) ?? null,
+                                          tier: "neutral",
+                                        });
+                                        openLeadPanel(l.id);
+                                      }}
+                                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-card-alt text-ink-tertiary hover:text-ink-primary"
+                                      aria-label="WhatsApp"
+                                    >
+                                      <MessageCircle size={13} />
+                                    </button>
+                                  ) : null}
+                                  <button type="button" className="text-ink-tertiary" aria-label="More">
+                                    ⋯
+                                  </button>
+                                </div>
                               </div>
                               <div className="mt-2 text-sm font-medium leading-snug text-ink-primary">{l.name}</div>
                               <div className="mt-1 font-mono text-xs text-ink-tertiary">{l.phone}</div>

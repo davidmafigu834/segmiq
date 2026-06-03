@@ -4,7 +4,8 @@ import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, X, MessageCircle } from "lucide-react";
+import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import { useLeadPanel, closeLeadPanel } from "@/store/uiStore";
 import type { LeadRow, LeadStatus } from "@/types";
 import { MagicLinkButton } from "@/components/MagicLinkButton";
@@ -353,12 +354,34 @@ export function LeadDetailPanel({
             </div>
             <MagicLinkButton token={activeLead.magic_token} />
             {!isReadOnly ? (
-              <a
-                className="btn-primary flex min-h-12 w-full items-center justify-center touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
-                href={`tel:${phone}`}
-              >
-                Call {first}
-              </a>
+              <div className="flex w-full gap-2">
+                <a
+                  className="btn-primary flex min-h-12 flex-1 items-center justify-center touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
+                  href={`tel:${phone}`}
+                >
+                  Call {first}
+                </a>
+                <button
+                  type="button"
+                  className="btn-secondary min-h-12 flex-1 touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
+                  onClick={() => {
+                    try {
+                      window.localStorage.setItem(`log:channel:${activeLead.id}`, "whatsapp");
+                    } catch {}
+                    openWhatsAppAndLog({
+                      leadId: activeLead.id,
+                      clientId: activeLead.client_id,
+                      leadName: activeLead.name,
+                      leadPhone: activeLead.phone,
+                      repName: session?.user?.name ?? "",
+                      formData: (activeLead.form_data as Record<string, unknown> | null) ?? null,
+                      tier: "neutral",
+                    });
+                  }}
+                >
+                  <MessageCircle size={16} className="mr-2" /> Message on WhatsApp
+                </button>
+              </div>
             ) : null}
           </div>
           {role === "SALESPERSON" &&
@@ -396,6 +419,7 @@ export function LeadDetailPanel({
               </div>
               {!isClosed ? (
                 <div className="p-4 sm:p-5">
+                  <div id="log-call-form-anchor" />
                   <LogCallForm
                     leadId={activeLead.id}
                     onLogged={() => setLogRefresh((k) => k + 1)}

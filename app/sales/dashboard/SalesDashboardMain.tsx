@@ -17,7 +17,9 @@ import {
   Activity,
   Users,
   X,
+  MessageCircle,
 } from "lucide-react";
+import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 
 // ============================================
 // TYPES
@@ -42,6 +44,7 @@ type ActivityEvent = {
   id: string;
   event_type: string;
   event_data: Record<string, unknown> | null;
+  channel?: string | null;
   created_at: string;
   lead_id: string;
   leads: { name: string | null }[] | null;
@@ -132,11 +135,14 @@ function formatFollowUpDate(dateStr: string): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
-function formatEventType(type: string, data: Record<string, unknown> | null): string {
+function formatEventType(type: string, data: Record<string, unknown> | null, channel?: string | null): string {
   const d = data ?? {};
   const map: Record<string, (d: Record<string, unknown>) => string> = {
-    CALL_LOGGED: (d) =>
-      `Call — ${String(d.outcome ?? "").toLowerCase().replace(/_/g, " ")}`,
+    CALL_LOGGED: (d) => {
+      const out = String(d.outcome ?? "").toLowerCase().replace(/_/g, " ");
+      const ch = (channel as string | undefined) || (d.channel as string | undefined) || "call";
+      return ch === "whatsapp" ? `Contacted via WhatsApp — ${out}` : `Call — ${out}`;
+    },
     DOCUMENT_SENT: (d) => `Sent ${String(d.document_name ?? "document")}`,
     STATUS_CHANGED: (d) =>
       `Moved to ${String(d.to_status ?? "").toLowerCase()}`,
@@ -154,17 +160,20 @@ function QuickLogSheet({
   preselectedLeadId,
   onClose,
   onSuccess,
+  defaultChannel = "call",
 }: {
   leads: PriorityLead[];
   preselectedLeadId: string;
   onClose: () => void;
   onSuccess: () => void;
+  defaultChannel?: "call" | "whatsapp";
 }) {
   const [selectedLeadId, setSelectedLeadId] = useState(preselectedLeadId);
   const [selectedOutcome, setSelectedOutcome] = useState<Outcome | "">("");
   const [notes, setNotes] = useState("");
   const [logging, setLogging] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [channel] = useState<"call" | "whatsapp">(defaultChannel);
 
   async function handleLog() {
     if (!selectedLeadId || !selectedOutcome) return;
@@ -177,6 +186,7 @@ function QuickLogSheet({
           leadId: selectedLeadId,
           outcome: selectedOutcome,
           notes: notes.trim() || undefined,
+          channel,
         }),
       });
       if (res.ok) {
@@ -207,7 +217,7 @@ function QuickLogSheet({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
           <h3 className="font-display text-[18px] font-semibold text-[var(--text-primary)]">
-            Log a call
+            {channel === "whatsapp" ? "Log WhatsApp contact" : "Log a call"}
           </h3>
           <button
             onClick={onClose}
@@ -225,7 +235,7 @@ function QuickLogSheet({
               <div className="w-12 h-12 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center mb-3">
                 <CheckCircle size={22} className="text-[var(--success)]" />
               </div>
-              <p className="text-[15px] font-semibold text-[var(--success)]">Call logged</p>
+              <p className="text-[15px] font-semibold text-[var(--success)]">{channel === "whatsapp" ? "WhatsApp contact logged" : "Call logged"}</p>
             </div>
           ) : (
             <>
@@ -308,7 +318,7 @@ function QuickLogSheet({
                     : "bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]"
                 }`}
               >
-                {logging ? "Logging..." : "Log call"}
+                {logging ? "Logging..." : channel === "whatsapp" ? "Log WhatsApp" : "Log call"}
               </button>
             </>
           )}
@@ -340,9 +350,11 @@ export default function SalesDashboardMain({
 
   const [showLogSheet, setShowLogSheet] = useState(false);
   const [preselectedLeadId, setPreselectedLeadId] = useState("");
+  const [logChannel, setLogChannel] = useState<"call" | "whatsapp">("call");
 
-  function openLogSheet(leadId = "") {
+  function openLogSheet(leadId = "", channel: "call" | "whatsapp" = "call") {
     setPreselectedLeadId(leadId);
+    setLogChannel(channel);
     setShowLogSheet(true);
   }
 
@@ -517,6 +529,33 @@ export default function SalesDashboardMain({
                       </div>
                     )}
 
+                    {/* WhatsApp */}
+                    {lead.phone ? (
+                      <button
+                        type="button"
+                        className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--border-hover)] transition-colors"
+                        onClick={() => {
+                          openWhatsAppAndLog({
+                            leadId: lead.id,
+                            clientId: lead.client_id,
+                            leadName: lead.name,
+                            leadPhone: lead.phone,
+                            repName: s?.user?.name ?? "",
+                            formData: undefined,
+                            tier: "neutral",
+                          });
+                          openLogSheet(lead.id, "whatsapp");
+                        }}
+                        aria-label="Message on WhatsApp"
+                      >
+                        <MessageCircle size={15} className="text-[var(--success)]" />
+                      </button>
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center opacity-30">
+                        <MessageCircle size={15} className="text-[var(--text-disabled)]" />
+                      </div>
+                    )}
+
                     {/* Log call */}
                     <button
                       type="button"
@@ -593,7 +632,7 @@ export default function SalesDashboardMain({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] text-[var(--text-secondary)] leading-snug mb-0.5">
-                        {formatEventType(event.event_type, event.event_data)}
+                        {formatEventType(event.event_type, event.event_data, (event as { channel?: string | null }).channel)}
                         {" — "}
                         <span className="text-[var(--text-primary)] font-semibold">
                           {event.leads?.[0]?.name ?? "Unknown"}
@@ -685,6 +724,7 @@ export default function SalesDashboardMain({
           preselectedLeadId={preselectedLeadId}
           onClose={() => setShowLogSheet(false)}
           onSuccess={handleLogSuccess}
+          defaultChannel={logChannel}
         />
       )}
     </div>

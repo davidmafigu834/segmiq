@@ -34,6 +34,7 @@ const nextConfig = {
       { protocol: "https", hostname: "*.fbcdn.net", pathname: "/**" },
       { protocol: "https", hostname: "*.r2.cloudflarestorage.com", pathname: "/**" },
       { protocol: "https", hostname: "*.r2.dev", pathname: "/**" },
+      { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
     ],
   },
   async headers() {

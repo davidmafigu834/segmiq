@@ -48,6 +48,7 @@ export interface ClientRow {
   response_time_limit_hours: number;
   round_robin_index: number;
   twilio_whatsapp_override: string | null;
+  dial_code: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -100,6 +101,7 @@ export interface FormField {
   placeholder?: string;
   required?: boolean;
   options?: string[];
+  role?: "location" | "urgency";
   conditionalLogic?: {
     action: "show" | "hide" | "block";
     fieldId: string;

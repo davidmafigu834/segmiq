@@ -76,6 +76,7 @@ export function ClientSettingsClient({
     slug: String(initialClient.slug ?? ""),
     logo_url: String(initialClient.logo_url ?? ""),
     response_time_limit_hours: Number(initialClient.response_time_limit_hours ?? agencyDefaultHours),
+    dial_code: String(initialClient.dial_code ?? "263"),
   });
 
   const [notifForm, setNotifForm] = useState({
@@ -178,6 +179,7 @@ export function ClientSettingsClient({
         slug: profileForm.slug.trim(),
         logo_url: profileForm.logo_url.trim() || null,
         response_time_limit_hours: profileForm.response_time_limit_hours,
+        dial_code: profileForm.dial_code.trim() || null,
       });
       setToast("Saved profile.");
     } catch (e) {
@@ -486,6 +488,19 @@ export function ClientSettingsClient({
                     setProfileForm((f) => ({ ...f, response_time_limit_hours: Number(e.target.value) || 1 }))
                   }
                 />
+              </label>
+              <label className="block">
+                <span className="font-mono text-[10px] uppercase text-ink-tertiary">Default country dial code</span>
+                <select
+                  className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-sm"
+                  value={profileForm.dial_code}
+                  onChange={(e) => setProfileForm((f) => ({ ...f, dial_code: e.target.value }))}
+                >
+                  <option value="263">Zimbabwe (+263)</option>
+                  <option value="260">Zambia (+260)</option>
+                  <option value="27">South Africa (+27)</option>
+                  <option value="254">Kenya (+254)</option>
+                </select>
               </label>
             </div>
             <div className="sticky bottom-0 border-t border-border bg-[var(--surface-page)] pt-4">

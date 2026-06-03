@@ -9,6 +9,7 @@ type TimelineEvent = {
   event_data: Record<string, unknown>;
   actor_name: string;
   actor_role: string;
+  channel?: string | null;
   created_at: string;
   _source: "lead_events" | "call_logs";
 };
@@ -134,11 +135,12 @@ function EventContent({ event }: { event: TimelineEvent }) {
     const outcome = (d.outcome as string) || "";
     const notes = d.notes as string | null;
     const followUp = d.follow_up_date as string | null;
+    const channel = (event.channel as string | undefined) || (d.channel as string | undefined) || "call";
     return (
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[11px] font-medium uppercase tracking-wide text-ink-secondary">
-            Call
+            {channel === "whatsapp" ? "Contacted via WhatsApp" : "Call"}
           </span>
           <OutcomeBadge outcome={outcome} />
         </div>

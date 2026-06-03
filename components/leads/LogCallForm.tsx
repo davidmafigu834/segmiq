@@ -54,9 +54,18 @@ export function LogCallForm({
   const [dealValueFieldError, setDealValueFieldError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [savedToast, setSavedToast] = useState(false);
+  const [channel, setChannel] = useState<"call" | "whatsapp">("call");
   const isMagic = variant === "magic";
 
   useEffect(() => {
+    try {
+      const key = `log:channel:${leadId}`;
+      const v = window.localStorage.getItem(key);
+      if (v === "whatsapp") {
+        setChannel("whatsapp");
+        window.localStorage.removeItem(key);
+      }
+    } catch {}
     if (outcome !== "FOLLOW_UP") {
       setFollowUpDate("");
       setFollowUpFieldError(null);
@@ -71,7 +80,7 @@ export function LogCallForm({
         return `${y}-${mo}-${da}`;
       });
     }
-  }, [outcome]);
+  }, [outcome, leadId]);
 
   useEffect(() => {
     if (outcome !== "LOST") {
@@ -140,6 +149,7 @@ export function LogCallForm({
           notes,
           followUpDate: outcome === "FOLLOW_UP" ? followUpDate : null,
           lostReason: outcome === "LOST" ? lostReason.trim() : null,
+          channel,
         };
         if (outcome === "WON") {
           body.dealValue = Number(dealValue);

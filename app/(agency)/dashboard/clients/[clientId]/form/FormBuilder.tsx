@@ -240,6 +240,28 @@ export function FormBuilder({
                           />
                           Required
                         </label>
+                        <div className="mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                          <label className="block">
+                            Field role
+                            <select
+                              className="input-base mt-1"
+                              value={field.role ?? ""}
+                              onChange={(e) =>
+                                setFields((fs) =>
+                                  fs.map((x) =>
+                                    x.id === field.id
+                                      ? { ...x, role: (e.target.value || undefined) as "location" | "urgency" | undefined }
+                                      : x
+                                  )
+                                )
+                              }
+                            >
+                              <option value="">— None —</option>
+                              <option value="location">Location</option>
+                              <option value="urgency">Urgency</option>
+                            </select>
+                          </label>
+                        </div>
                       </div>
                     )}
                   </Draggable>

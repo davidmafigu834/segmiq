@@ -27,6 +27,7 @@ const logCallSchema = z
     followUpDate: z.union([z.string(), z.null()]).optional(),
     dealValue: z.number().nullable().optional(),
     lostReason: z.string().max(500).optional().nullable(),
+    channel: z.enum(["call", "whatsapp"]).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.outcome === "FOLLOW_UP") {
@@ -124,7 +125,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     );
   }
 
-  const { outcome, notes, followUpDate, dealValue, lostReason } = parsed.data;
+  const { outcome, notes, followUpDate, dealValue, lostReason, channel } = parsed.data;
 
   let actorUserId: string;
 
@@ -194,6 +195,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
       outcome,
       notes: callLogNotes,
       followUpDate: outcome === "FOLLOW_UP" ? (followUpDate as string | null) : null,
+      channel: channel === "whatsapp" ? "whatsapp" : "call",
     });
   });
 

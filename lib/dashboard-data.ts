@@ -691,7 +691,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
 
     supabase
       .from("lead_events")
-      .select("id, event_type, event_data, created_at, lead_id, leads(name)")
+      .select("id, event_type, event_data, channel, created_at, lead_id, leads(name)")
       .eq("actor_id", userId)
       .order("created_at", { ascending: false })
       .limit(8),
