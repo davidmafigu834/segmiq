@@ -22,10 +22,10 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
-  Search, Sparkles, ArrowRight, ChevronLeft, ChevronRight, ChevronDown,
+  Sparkles, ArrowRight, ChevronLeft, ChevronRight, ChevronDown,
   Layers, MessageCircle, TrendingUp, Link2, GraduationCap, Target, Check,
   Clock, BarChart3, Zap, Send, Play, Sun, Home, Sprout, Building2,
-  BookOpen, Brain, ListChecks, Menu, X, type LucideIcon,
+  BookOpen, Brain, ListChecks, type LucideIcon,
 } from "lucide-react";
 
 /* ---------- placeholder imagery (swap for R2-hosted client photos) ---------- */
@@ -96,15 +96,12 @@ const PLANS = [
 
 const MARKETS = ["Harare", "Lusaka", "Johannesburg", "Nairobi", "Cape Town", "Bulawayo"];
 
-const NAV = ["Overview", "Solutions", "Products", "Pricing", "Resources"];
-
 /* ---------- component ---------- */
 export default function SegmiqLandingPage() {
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState("For owners");
   const [openRow, setOpenRow] = useState(0);
   const [industry, setIndustry] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -115,50 +112,6 @@ export default function SegmiqLandingPage() {
 
   return (
     <div className="bg-white text-[#0C0C0C] antialiased font-sans">
-      {/* ===== NAV ===== */}
-      <header className="sticky top-0 z-50 bg-white/85 backdrop-blur border-b border-black/[0.08]">
-        <div className="mx-auto max-w-[1100px] px-5 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <a href="#" className="flex items-center gap-2">
-              <span className="grid place-items-center w-[26px] h-[26px] rounded-[7px] bg-[#D4FF4F] text-black font-extrabold text-sm">S</span>
-              <span className="text-lg font-semibold tracking-tight">Segmiq</span>
-            </a>
-            <nav className="hidden lg:flex items-center gap-6 text-sm text-[#5b5b5b]">
-              {NAV.map((n) => (
-                <a key={n} href={`#${n.toLowerCase()}`} className="hover:text-black">{n}</a>
-              ))}
-            </nav>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <a href="#" className="hidden sm:inline text-[#5b5b5b] hover:text-black"><Search className="w-[18px] h-[18px]" /></a>
-            <a href="#" className="hidden md:inline text-[#5b5b5b] hover:text-black">Docs</a>
-            <a href="#" className="hidden md:inline text-[#5b5b5b] hover:text-black">Support</a>
-            <a href="#" className="hidden sm:inline font-medium hover:text-black">Sign in</a>
-            <a href="#" className="hidden sm:inline px-4 py-2 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">Book a demo</a>
-            <button
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              onClick={() => setMenuOpen((o) => !o)}
-              className="lg:hidden w-10 h-10 -mr-2 grid place-items-center"
-            >
-              {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-
-        {/* mobile menu */}
-        <div className={`lg:hidden overflow-hidden transition-[max-height] duration-300 ease-in-out border-black/[0.08] bg-white ${menuOpen ? "max-h-96 border-t" : "max-h-0"}`}>
-          <nav className="mx-auto max-w-[1100px] px-5 py-4 flex flex-col text-[15px]">
-            {NAV.map((n) => (
-              <a key={n} href={`#${n.toLowerCase()}`} onClick={() => setMenuOpen(false)} className="py-2.5 border-b border-black/[0.08] text-[#5b5b5b] hover:text-black">{n}</a>
-            ))}
-            <div className="flex gap-3 pt-4">
-              <a href="#" className="flex-1 text-center px-4 py-2.5 rounded-full border border-black/[0.08] font-semibold">Sign in</a>
-              <a href="#" className="flex-1 text-center px-4 py-2.5 rounded-full bg-[#D4FF4F] text-black font-semibold">Book a demo</a>
-            </div>
-          </nav>
-        </div>
-      </header>
-
       {/* ===== HERO ===== */}
       <section className="pt-20 pb-10 text-center">
         <div className="mx-auto max-w-[1100px] px-5">
@@ -507,40 +460,6 @@ export default function SegmiqLandingPage() {
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
-      <footer id="resources" className="border-t border-black/[0.08] pt-12 pb-8 bg-[#F8F7F4]">
-        <div className="mx-auto max-w-[1100px] px-5">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
-            {[
-              { h: "Why Segmiq", links: ["For service businesses", "Built for Africa", "WhatsApp-first", "Security"] },
-              { h: "Products & pricing", links: ["Segmiq CRM", "Segmiq Cloud", "Pricing", "All features"] },
-              { h: "Solutions", links: ["Construction", "Solar", "Roofing", "Electrical & landscaping"] },
-              { h: "Resources", links: ["Docs", "Onboarding guide", "Blog", "Support"] },
-              { h: "Engage", links: ["Contact sales", "Become a partner", "Book a demo", "We're hiring"] },
-            ].map((col) => (
-              <div key={col.h}>
-                <div className="font-semibold mb-3">{col.h}</div>
-                <ul className="space-y-2 text-[#5b5b5b]">
-                  {col.links.map((l) => (
-                    <li key={l}><a href="#" className="hover:text-black">{l}</a></li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="mt-10 pt-6 border-t border-black/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-[#8a8a8a]">
-            <div className="flex items-center gap-2">
-              <span className="grid place-items-center w-[22px] h-[22px] rounded-md bg-[#D4FF4F] text-black font-extrabold text-xs">S</span>
-              <span>© 2026 Segmiq · segmiq.com</span>
-            </div>
-            <div className="flex gap-5">
-              <a href="#" className="hover:text-black">Privacy</a>
-              <a href="#" className="hover:text-black">Terms</a>
-              <a href="#" className="hover:text-black">Status</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

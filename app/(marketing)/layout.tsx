@@ -1,19 +1,13 @@
-import type { Metadata } from 'next';
+import type { ReactNode } from "react";
+import MarketingHeader from "@/components/marketing/MarketingHeader";
+import MarketingFooter from "@/components/marketing/MarketingFooter";
 
-export const metadata: Metadata = {
-  title: 'Segmiq — Revenue operating system for service businesses',
-  description:
-    'AI-powered lead management for construction, solar, roofing, and trade businesses across Africa.',
-};
-
-export default function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#0C0C0C]">
-      {children}
+    <div className="bg-white text-[#0C0C0C] antialiased font-sans">
+      <MarketingHeader />
+      <main>{children}</main>
+      <MarketingFooter />
     </div>
   );
 }
