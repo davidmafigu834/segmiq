@@ -68,6 +68,12 @@ const SCORES = [
   { label: "Electrical — Mt Pleasant", pct: 64 },
 ];
 
+const METRICS = [
+  { value: "92", label: "intent score", className: "" },
+  { value: "18m", label: "avg response", className: "text-[#D4FF4F]" },
+  { value: "7", label: "hot leads", className: "" },
+];
+
 const CAPS = [
   { Icon: History, t: "Complete lead timeline", d: "Every call, message, and status change recorded against the lead — permanently." },
   { Icon: Send, t: "One-tap send panel", d: "Push portfolio, projects, pricing, testimonials, documents, or a custom message in seconds." },
@@ -208,10 +214,10 @@ export default function SegmiqCrmPage() {
               <span className="w-2.5 h-2.5 rounded-full bg-[#3dd68c]" />
             </div>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              {["92", "intent score", ""], ["18m", "avg response", "text-[#D4FF4F]"], ["7", "hot leads", ""]].map(([v, l, c]) => (
-                <div key={l} className="rounded-lg bg-[#181818] p-3">
-                  <div className={`text-2xl font-extrabold ${c}`}>{v}</div>
-                  <div className="text-[11px] text-white/50">{l}</div>
+              {METRICS.map(({ value, label, className }) => (
+                <div key={label || value} className="rounded-lg bg-[#181818] p-3">
+                  <div className={`text-2xl font-extrabold ${className}`}>{value}</div>
+                  <div className="text-[11px] text-white/50">{label}</div>
                 </div>
               ))}
             </div>
