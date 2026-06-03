@@ -13,7 +13,7 @@ import {
   type ManagerNotificationPrefs,
   type SalesNotificationPrefs,
 } from "@/lib/notification-prefs";
-import { sendWhatsApp } from "@/lib/messaging/provider";
+import { sendWhatsApp, isWhatsAppDeliveryConfigured } from "@/lib/messaging/provider";
 import { sendEmailWithLog } from "@/lib/messaging/email";
 import { logMessage } from "@/lib/messaging/log";
 import { background } from "@/lib/background";
@@ -28,6 +28,162 @@ export type NotifyLeadOptions = {
 function formatSource(source: string | null | undefined): string {
   if (!source) return "—";
   return String(source).replace(/_/g, " ");
+}
+
+type BulkReassignmentPayload = {
+  clientId: string;
+  leadIds: string[];
+  actorId: string;
+};
+
+export async function notifyBulkReassignment({ clientId, leadIds, actorId }: BulkReassignmentPayload): Promise<void> {
+  if (leadIds.length === 0) return;
+
+  const supabase = createAdminClient();
+
+  const { data: leads } = await supabase
+    .from("leads")
+    .select("id, assigned_to_id, name")
+    .in("id", leadIds);
+
+  if (!leads?.length) return;
+
+  const leadsByAssignee = new Map<string, { leadIds: string[]; names: string[] }>();
+
+  for (const lead of leads) {
+    const assignedId = (lead.assigned_to_id as string | null) ?? null;
+    if (!assignedId) continue;
+    if (!leadsByAssignee.has(assignedId)) {
+      leadsByAssignee.set(assignedId, { leadIds: [], names: [] });
+    }
+    const bucket = leadsByAssignee.get(assignedId)!;
+    bucket.leadIds.push(lead.id as string);
+    const name = (lead.name as string | null) ?? "Lead";
+    bucket.names.push(name);
+  }
+
+  if (leadsByAssignee.size === 0) return;
+
+  const assigneeIds = Array.from(leadsByAssignee.keys());
+
+  const { data: users } = await supabase
+    .from("users")
+    .select("id, name, email, phone, notification_prefs")
+    .in("id", assigneeIds)
+    .eq("role", "SALESPERSON")
+    .eq("is_active", true);
+
+  if (!users?.length) return;
+
+  const prefsById = new Map<string, SalesNotificationPrefs>();
+  const phoneById = new Map<string, string | null>();
+  const emailById = new Map<string, string | null>();
+  const nameById = new Map<string, string>();
+
+  for (const user of users) {
+    const id = user.id as string;
+    prefsById.set(id, parseSalesPrefs((user as { notification_prefs?: unknown }).notification_prefs));
+    phoneById.set(id, (user.phone as string | null) ?? null);
+    emailById.set(id, (user.email as string | null) ?? null);
+    nameById.set(id, (user.name as string | null) ?? "Representative");
+  }
+
+  const { data: actorUser } = await supabase.from("users").select("name").eq("id", actorId).maybeSingle();
+  const actorName = (actorUser as { name: string } | null)?.name ?? "Manager";
+
+  const baseUrl = getPublicBaseUrl();
+  const leadsUrl = `${baseUrl}/sales/leads`;
+
+  const whatsappTemplateAvailable = Boolean(process.env.META_TEMPLATE_LEADS_ASSIGNED);
+  const allowWhatsApp = whatsappTemplateAvailable && isWhatsAppDeliveryConfigured();
+
+  for (const [assigneeId, info] of Array.from(leadsByAssignee.entries())) {
+    const count = info.leadIds.length;
+    if (count === 0) continue;
+    const prefs = prefsById.get(assigneeId) ?? parseSalesPrefs(null);
+    const salespersonName = nameById.get(assigneeId) ?? "Representative";
+    const firstLeadName = info.names[0] ?? "Lead";
+
+    const summaryLine = count === 1 ? firstLeadName : `${firstLeadName} and ${count - 1} others`;
+    const emailBody = `
+      <p>Hi ${escapeHtml(salespersonName)},</p>
+      <p>${escapeHtml(actorName)} reassigned ${count} lead${count === 1 ? "" : "s"} to you.</p>
+      <p>${escapeHtml(summaryLine)}</p>
+      <p><a href="${leadsUrl}">View your leads →</a></p>
+    `;
+
+    if (prefs.email) {
+      const to = emailById.get(assigneeId);
+      if (to && process.env.RESEND_FROM_EMAIL) {
+        await sendEmailWithLog({
+          mail: {
+            to,
+            from: process.env.RESEND_FROM_EMAIL,
+            subject: `Assigned ${count} new lead${count === 1 ? "" : "s"}`,
+            html: emailBody,
+          },
+          context: {
+            userId: assigneeId,
+            leadId: info.leadIds[0] ?? null,
+            clientId,
+            notificationType: "BULK_LEADS_ASSIGNED",
+          },
+          payloadPreview: `Assigned ${count} leads via bulk reassignment`,
+        });
+      } else {
+        await logMessage(
+          { ok: false, error: "Email skipped", errorCode: "SKIPPED_NO_RESEND" },
+          {
+            userId: assigneeId,
+            leadId: info.leadIds[0] ?? null,
+            clientId,
+            channel: "email",
+            notificationType: "BULK_LEADS_ASSIGNED",
+            recipient: to ?? "(missing)",
+            templateKey: null,
+            payloadPreview: null,
+          }
+        );
+      }
+    }
+
+    if (prefs.whatsapp && allowWhatsApp) {
+      const phone = phoneById.get(assigneeId);
+      if (phone) {
+        const fallbackBody = `${actorName} assigned ${count} lead${count === 1 ? "" : "s"} to you. Check your Segmiq pipeline.`;
+        await sendWhatsApp({
+          to: phone,
+          template: "BULK_LEADS_ASSIGNED",
+          variables: {
+            "1": salespersonName,
+            "2": String(count),
+            "3": actorName,
+          },
+          fallbackBody,
+          context: {
+            userId: assigneeId,
+            leadId: info.leadIds[0] ?? null,
+            clientId,
+            notificationType: "BULK_LEADS_ASSIGNED",
+          },
+        });
+      } else {
+        await logMessage(
+          { ok: false, error: "WhatsApp skipped", errorCode: "SKIPPED_NO_PHONE" },
+          {
+            userId: assigneeId,
+            leadId: info.leadIds[0] ?? null,
+            clientId,
+            channel: "whatsapp",
+            notificationType: "BULK_LEADS_ASSIGNED",
+            recipient: "(no phone)",
+            templateKey: "BULK_LEADS_ASSIGNED",
+            payloadPreview: null,
+          }
+        );
+      }
+    }
+  }
 }
 
 type InAppNotificationType =

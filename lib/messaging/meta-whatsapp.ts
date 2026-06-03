@@ -79,6 +79,7 @@ export type TemplateKey =
   | "UNCONTACTED_LEAD_ALERT"
   | "MAGIC_LINK_RENEWAL"
   | "LEAD_CONFIRMATION_PROSPECT"
+  | "BULK_LEADS_ASSIGNED"
   | "SEND_PORTFOLIO"
   | "SEND_PROJECT"
   | "SEND_PRICING_PACKAGE"
@@ -96,6 +97,7 @@ const TEMPLATE_NAMES: Record<TemplateKey, string> = {
   UNCONTACTED_LEAD_ALERT: "uncontacted_lead_alert",
   MAGIC_LINK_RENEWAL: "magic_link_renewal",
   LEAD_CONFIRMATION_PROSPECT: "segmiq_lead_confirmation",
+  BULK_LEADS_ASSIGNED: "segmiq_leads_assigned",
   SEND_PORTFOLIO: "segmiq_send_portfolio",
   SEND_PROJECT: "segmiq_send_project",
   SEND_PRICING_PACKAGE: "segmiq_send_pricing",

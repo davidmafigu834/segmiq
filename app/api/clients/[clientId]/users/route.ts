@@ -3,6 +3,9 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRoles } from "@/lib/api-guards";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { canReassignLeads } from "@/lib/auth/permissions";
 import { hashPassword } from "@/lib/password";
 import { normalizeToE164 } from "@/lib/phone-validate";
 import { sendEmail } from "@/lib/email/resend";
@@ -12,8 +15,14 @@ export const dynamic = "force-dynamic";
 
 /** Active salespeople for reassignment pickers (agency admin). */
 export async function GET(_req: Request, { params }: { params: { clientId: string } }) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
-  if ("error" in g) return g.error;
+  const session = await getServerSession(authOptions);
+  if (!session?.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!canReassignLeads(session, params.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = createAdminClient();
   const { data, error } = await supabase

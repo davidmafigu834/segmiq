@@ -13,7 +13,7 @@ import {
   subDays,
   subMonths,
 } from "date-fns";
-import { Download, Inbox, Search } from "lucide-react";
+import { Download, Inbox, Search, CheckSquare } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { StatusPill } from "@/components/StatusPill";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
@@ -121,6 +121,12 @@ export function ClientLeadsTable({
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadedPage, setLoadedPage] = useState(1);
   const [showImport, setShowImport] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkSalespeople, setBulkSalespeople] = useState<{ id: string; name: string }[]>(salespeople);
+  const [bulkAssignee, setBulkAssignee] = useState<string>("");
+  const [bulkFeedback, setBulkFeedback] = useState<string | null>(null);
 
   const [status, setStatus] = useState<"all" | LeadStatus>("all");
   const [source, setSource] = useState<"all" | LeadSource>("all");
@@ -230,8 +236,84 @@ export function ClientLeadsTable({
   const pageSafe = Math.min(page, totalPages);
   const pageRows = sorted.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
 
+  const visibleIds = useMemo(() => sorted.map((l) => l.id), [sorted]);
+  const hasSelection = selectedIds.size > 0;
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+  const someVisibleSelected = visibleIds.some((id) => selectedIds.has(id));
+
+  function toggleSelect(id: string, checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll(checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        for (const id of visibleIds) next.add(id);
+      } else {
+        for (const id of visibleIds) next.delete(id);
+      }
+      return next;
+    });
+  }
+
+  async function handleBulkAssign() {
+    if (!clientId || selectedIds.size === 0) return;
+    setBulkBusy(true);
+    setBulkFeedback(null);
+    try {
+      const body = {
+        leadIds: Array.from(selectedIds),
+        assigned_to_id: bulkAssignee || null,
+      };
+      const res = await fetch("/api/leads/bulk/reassign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        updated?: number;
+        skipped?: number;
+        failed?: number;
+      };
+      if (!res.ok || !json.ok) {
+        setBulkFeedback(json.error ?? "Bulk assignment failed");
+        return;
+      }
+      setBulkFeedback(`Assigned ${json.updated ?? 0}; skipped ${json.skipped ?? 0}; failed ${json.failed ?? 0}`);
+      setSelectedIds(new Set());
+      setBulkOpen(false);
+      setTimeout(() => window.location.reload(), 600);
+    } catch (err) {
+      console.error("[ClientLeadsTable] bulk assignment failed", err);
+      setBulkFeedback("Bulk assignment failed");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  function renderCheckbox(id: string) {
+    const checked = selectedIds.has(id);
+    return (
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-border text-[var(--accent)] focus:ring-[var(--accent)]"
+        checked={checked}
+        onChange={(e) => toggleSelect(id, e.target.checked)}
+      />
+    );
+  }
+
   useEffect(() => {
     setPage(1);
+    setSelectedIds(new Set());
   }, [status, source, datePreset, assignee, search, sortKey, sortDir, customFrom, customTo]);
 
   useEffect(() => {
@@ -239,6 +321,16 @@ export function ClientLeadsTable({
     if (!leads.some((l) => l.id === leadFromUrl)) return;
     openLeadPanel(leadFromUrl);
   }, [leadFromUrl, leads]);
+
+  useEffect(() => {
+    if (!clientId) return;
+    fetch(`/api/clients/${clientId}/users`)
+      .then((r) => r.ok ? r.json() : Promise.reject(r))
+      .then((json: { users?: { id: string; name: string }[] }) => {
+        if (json?.users) setBulkSalespeople(json.users);
+      })
+      .catch(() => {});
+  }, [clientId]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -284,6 +376,66 @@ export function ClientLeadsTable({
 
   return (
     <div>
+      {hasSelection ? (
+        <div className="sticky top-[60px] z-30 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-card px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-3 text-sm text-ink-secondary">
+            <CheckSquare className="h-4 w-4 text-ink-primary" strokeWidth={1.5} />
+            <span>{selectedIds.size} selected</span>
+            {bulkFeedback ? <span className="text-xs text-[var(--status-warning-fg)]">{bulkFeedback}</span> : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className="input-base h-9 min-w-[180px] text-sm"
+              value={bulkAssignee}
+              onChange={(e) => setBulkAssignee(e.target.value)}
+            >
+              <option value="">Unassigned</option>
+              {bulkSalespeople.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="btn-primary h-9 px-4 text-sm"
+              disabled={bulkBusy || (!bulkAssignee && bulkSalespeople.length === 0)}
+              onClick={() => setBulkOpen(true)}
+            >
+              Assign
+            </button>
+          </div>
+          {bulkOpen ? (
+            <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+              <div className="w-full max-w-md rounded-lg border border-border bg-surface-card p-6 shadow-lg">
+                <h2 className="font-display text-xl text-ink-primary">Confirm bulk assignment</h2>
+                <p className="mt-2 text-sm text-ink-secondary">
+                  Assign {selectedIds.size} lead{selectedIds.size === 1 ? "" : "s"} to{" "}
+                  {bulkAssignee ? bulkSalespeople.find((s) => s.id === bulkAssignee)?.name ?? "selected rep" : "Unassigned"}?
+                </p>
+                <div className="mt-6 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    className="btn-ghost h-9 px-3 text-sm"
+                    onClick={() => setBulkOpen(false)}
+                    disabled={bulkBusy}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary h-9 px-4 text-sm"
+                    disabled={bulkBusy}
+                    onClick={() => void handleBulkAssign()}
+                  >
+                    {bulkBusy ? "Assigning…" : `Assign ${selectedIds.size}`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <header className="mb-8 flex flex-col gap-6 layout:flex-row layout:items-baseline layout:justify-between">
         <div>
           <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">
@@ -449,6 +601,17 @@ export function ClientLeadsTable({
                   className="w-full border border-border bg-surface-card p-3 text-left"
                   onClick={() => openLeadPanel(l.id)}
                 >
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-border text-[var(--accent)] focus:ring-[var(--accent)]"
+                        checked={selectedIds.has(l.id)}
+                        onChange={(e) => toggleSelect(l.id, e.target.checked)}
+                      />
+                      <span className="text-xs text-ink-secondary">Select</span>
+                    </label>
+                  </div>
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div className="font-medium text-ink-primary">{l.name ?? "—"}</div>
@@ -477,6 +640,19 @@ export function ClientLeadsTable({
             <table className="w-full min-w-[960px] border-collapse text-left text-sm">
               <thead>
                 <tr className="border-b border-border font-mono text-[11px] uppercase text-ink-tertiary">
+                  <th className="w-12 pb-3 pr-2">
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-border text-[var(--accent)] focus:ring-[var(--accent)]"
+                        checked={allVisibleSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = !allVisibleSelected && someVisibleSelected;
+                        }}
+                        onChange={(e) => toggleSelectAll(e.target.checked)}
+                      />
+                    </label>
+                  </th>
                   <th className="cursor-pointer pb-3 pr-4 hover:text-ink-primary" onClick={() => toggleSort("name")}>
                     Name {sortKey === "name" ? (sortDir === "asc" ? "↑" : "↓") : ""}
                   </th>
@@ -523,6 +699,9 @@ export function ClientLeadsTable({
                       className="cursor-pointer border-b border-border transition-colors hover:bg-surface-card-alt"
                       onClick={() => openLeadPanel(l.id)}
                     >
+                      <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
+                        {renderCheckbox(l.id)}
+                      </td>
                       <td className="py-3 pr-4">
                         <div className="font-medium text-ink-primary">{l.name ?? "—"}</div>
                         <div className="font-mono-data mt-0.5 text-xs text-ink-tertiary">{l.phone ?? "—"}</div>

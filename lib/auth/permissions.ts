@@ -24,6 +24,17 @@ type LeadScope = {
   assigned_to_id: string | null;
 };
 
+export function canReassignLeads(session: {
+  userId?: string | null;
+  role?: UserRole | null;
+  clientId?: string | null;
+}, clientId: string): boolean {
+  if (!session?.userId) return false;
+  if (session.role === "AGENCY_ADMIN") return true;
+  if (session.role === "CLIENT_MANAGER" && session.clientId === clientId) return true;
+  return false;
+}
+
 export async function canModifyLead(leadId: string): Promise<
   | { allowed: true; lead: LeadScope; userId: string; role: UserRole }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
