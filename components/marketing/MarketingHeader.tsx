@@ -14,8 +14,9 @@ import { Search, Menu, X } from "lucide-react";
 
 const NAV = [
   { label: "Overview", href: "/" },
-  { label: "Solutions", href: "#" },
-  { label: "Products", href: "#" },
+  { label: "Why Segmiq", href: "/why-segmiq" },
+  { label: "Security", href: "/security" },
+  { label: "Segmiq CRM", href: "/products/segmiq-crm" },
   { label: "Pricing", href: "#" },
   { label: "Resources", href: "#" },
 ];

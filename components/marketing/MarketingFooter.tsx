@@ -6,11 +6,51 @@
 import Link from "next/link";
 
 const COLS = [
-  { h: "Why Segmiq", links: ["For service businesses", "Built for Africa", "WhatsApp-first", "Security"] },
-  { h: "Products & pricing", links: ["Segmiq CRM", "Segmiq Cloud", "Pricing", "All features"] },
-  { h: "Solutions", links: ["Construction", "Solar", "Roofing", "Electrical & landscaping"] },
-  { h: "Resources", links: ["Docs", "Onboarding guide", "Blog", "Support"] },
-  { h: "Engage", links: ["Contact sales", "Become a partner", "Book a demo", "We're hiring"] },
+  {
+    h: "Platform",
+    links: [
+      { label: "Overview", href: "/" },
+      { label: "Why Segmiq", href: "/why-segmiq" },
+      { label: "Security", href: "/security" },
+      { label: "Segmiq CRM", href: "/products/segmiq-crm" },
+    ],
+  },
+  {
+    h: "Products & pricing",
+    links: [
+      { label: "Segmiq CRM", href: "/products/segmiq-crm" },
+      { label: "Segmiq Cloud", href: "#" },
+      { label: "Pricing", href: "#" },
+      { label: "Implementation", href: "#" },
+    ],
+  },
+  {
+    h: "Solutions",
+    links: [
+      { label: "Construction", href: "#" },
+      { label: "Solar", href: "#" },
+      { label: "Roofing", href: "#" },
+      { label: "Electrical & landscaping", href: "#" },
+    ],
+  },
+  {
+    h: "Resources",
+    links: [
+      { label: "Docs", href: "#" },
+      { label: "Onboarding guide", href: "#" },
+      { label: "Blog", href: "#" },
+      { label: "Support", href: "#" },
+    ],
+  },
+  {
+    h: "Engage",
+    links: [
+      { label: "Contact sales", href: "#" },
+      { label: "Become a partner", href: "#" },
+      { label: "Book a demo", href: "#" },
+      { label: "Careers", href: "#" },
+    ],
+  },
 ];
 
 export default function MarketingFooter() {
@@ -22,10 +62,10 @@ export default function MarketingFooter() {
             <div key={col.h}>
               <div className="font-semibold mb-3">{col.h}</div>
               <ul className="space-y-2 text-[#5b5b5b]">
-                {col.links.map((l) => (
-                  <li key={l}>
-                    <Link href="#" className="hover:text-black">
-                      {l}
+                {col.links.map(({ label, href }) => (
+                  <li key={label}>
+                    <Link href={href} className="hover:text-black">
+                      {label}
                     </Link>
                   </li>
                 ))}
@@ -39,10 +79,10 @@ export default function MarketingFooter() {
             <span>© 2026 Segmiq · segmiq.com</span>
           </div>
           <div className="flex gap-5">
-            <Link href="#" className="hover:text-black">
+            <Link href="/legal/privacy" className="hover:text-black">
               Privacy
             </Link>
-            <Link href="#" className="hover:text-black">
+            <Link href="/legal/terms" className="hover:text-black">
               Terms
             </Link>
             <Link href="#" className="hover:text-black">
