@@ -122,6 +122,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const marketingPublic =
+    path === "/" ||
+    path === "/why-segmiq" ||
+    path === "/security" ||
+    path === "/products/segmiq-crm";
+
   const isPublic =
     path === "/login" ||
     path === "/forgot-password" ||
@@ -137,7 +143,7 @@ export async function middleware(req: NextRequest) {
     path === "/cloud/help" ||
     path.startsWith("/cloud/share/");
 
-  if (isPublic) return NextResponse.next();
+  if (marketingPublic || isPublic) return NextResponse.next();
 
   const token = await getToken({
     req,
