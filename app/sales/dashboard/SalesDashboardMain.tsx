@@ -514,7 +514,7 @@ export default function SalesDashboardMain({
                   </div>
 
                   {/* Action buttons */}
-                  <div className="flex items-center gap-2 px-3 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 px-3 py-1 shrink-0 sm:gap-2 sm:py-0">
                     {/* Call */}
                     {lead.phone ? (
                       <a

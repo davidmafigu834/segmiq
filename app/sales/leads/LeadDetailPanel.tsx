@@ -354,7 +354,7 @@ export function LeadDetailPanel({
             </div>
             <MagicLinkButton token={activeLead.magic_token} />
             {!isReadOnly ? (
-              <div className="flex w-full gap-2">
+              <div className="flex flex-col sm:flex-row w-full gap-2">
                 <a
                   className="btn-primary flex min-h-12 flex-1 items-center justify-center touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
                   href={`tel:${phone}`}
@@ -363,7 +363,7 @@ export function LeadDetailPanel({
                 </a>
                 <button
                   type="button"
-                  className="btn-secondary min-h-12 flex-1 touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
+                  className="btn-secondary-dark flex min-h-12 flex-1 items-center justify-center touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
                   onClick={() => {
                     try {
                       window.localStorage.setItem(`log:channel:${activeLead.id}`, "whatsapp");
@@ -379,7 +379,7 @@ export function LeadDetailPanel({
                     });
                   }}
                 >
-                  <MessageCircle size={16} className="mr-2" /> Message on WhatsApp
+                  <MessageCircle size={16} /> Message on WhatsApp
                 </button>
               </div>
             ) : null}
