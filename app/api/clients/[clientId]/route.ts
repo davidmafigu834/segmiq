@@ -32,7 +32,7 @@ const patchSchema = z
     is_archived: z.boolean().optional(),
     custom_domain: z.string().optional().nullable(),
     font_choice: z.string().min(1).max(64).optional().nullable(),
-    deleteConfirmName: z.string().optional(),
+    deleteConfirmName: z.string().min(1).optional(),
   })
   .strict();
 
@@ -68,15 +68,20 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     if (body.deleteConfirmName.trim() !== savedName) {
       return NextResponse.json({ error: "Name does not match — delete cancelled" }, { status: 400 });
     }
-    const { error } = await supabase
+    const { data: archived, error } = await supabase
       .from("clients")
       .update({
         is_archived: true,
         is_active: false,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", params.clientId);
+      .eq("id", params.clientId)
+      .select("id")
+      .maybeSingle();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!archived) {
+      return NextResponse.json({ error: "Client could not be archived" }, { status: 404 });
+    }
     return NextResponse.json({ ok: true, archived: true });
   }
 
@@ -94,9 +99,17 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   if (body.is_active !== undefined) update.is_active = body.is_active;
   if (body.is_archived !== undefined) update.is_archived = body.is_archived;
 
-  const { data: client, error } = await supabase.from("clients").update(update).eq("id", params.clientId).select("*").single();
+  const { data: client, error } = await supabase
+    .from("clients")
+    .update(update)
+    .eq("id", params.clientId)
+    .select("*")
+    .maybeSingle();
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  if (!client) {
+    return NextResponse.json({ error: "Client not found" }, { status: 404 });
   }
 
   if (body.custom_domain !== undefined || body.font_choice !== undefined) {

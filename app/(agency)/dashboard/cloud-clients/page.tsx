@@ -22,6 +22,7 @@ export default async function CloudClientsPage() {
       users (id, name, email, role, created_at),
       projects (id, project_media (file_size_bytes))
     `)
+    .or("is_archived.is.null,is_archived.eq.false")
     .order("created_at", { ascending: false });
 
   const cloudClients = ((data ?? []) as CloudClientRow[]).filter((c) =>

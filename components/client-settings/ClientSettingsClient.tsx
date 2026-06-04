@@ -99,6 +99,10 @@ export function ClientSettingsClient({
   const [inviteEmailResult, setInviteEmailResult] = useState<{ email: string; emailSent: boolean } | null>(null);
 
   const savedClientName = useMemo(() => String(client.name ?? "").trim(), [client.name]);
+  const profileNameDirty = useMemo(
+    () => profileForm.name.trim() !== savedClientName,
+    [profileForm.name, savedClientName]
+  );
 
   const rrList = useMemo(
     () => [...sales].filter((s) => s.is_active).sort((a, b) => a.round_robin_order - b.round_robin_order),
@@ -219,11 +223,22 @@ export function ClientSettingsClient({
   }
 
   async function deleteClient() {
+    const confirmName = deleteConfirm.trim();
+    if (!confirmName || confirmName !== savedClientName) {
+      setToast("Type the exact client name to confirm deletion.");
+      return;
+    }
     setSaving(true);
     try {
-      await patchClient({ deleteConfirmName: deleteConfirm.trim() });
+      const res = await fetch(`/api/clients/${clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deleteConfirmName: confirmName }),
+      });
+      const j = (await res.json()) as { error?: string; archived?: boolean };
+      if (!res.ok) throw new Error(j.error ?? "Request failed");
       setToast("Client archived.");
-      window.location.href = "/dashboard/clients";
+      window.location.assign("/dashboard/clients");
     } catch (e) {
       setToast(e instanceof Error ? e.message : "Error");
     } finally {
@@ -503,18 +518,18 @@ export function ClientSettingsClient({
                 </select>
               </label>
             </div>
-            <div className="sticky bottom-0 border-t border-border bg-[var(--surface-page)] pt-4">
-              <button type="button" className="btn-primary" disabled={saving} onClick={() => void saveProfile()}>
-                Save
-              </button>
-            </div>
 
-            <div className="mt-12 border-t border-[var(--danger-border)] pt-8">
+            <div className="mt-12 border-t border-[var(--danger-border)] pt-8 pb-8">
               <h3 className="text-sm font-semibold text-[var(--danger-fg)]">Danger zone</h3>
               <p className="mt-2 text-sm text-ink-secondary">
-                Type the <strong>saved</strong> client name <strong>{savedClientName || "—"}</strong> to archive and hide
-                this client. If you edited the name above, click <strong>Save</strong> first so the confirmation matches
-                what is stored.
+                Type the client name <strong>{savedClientName || "—"}</strong> to archive and hide this client from
+                lists.
+                {profileNameDirty ? (
+                  <>
+                    {" "}
+                    You have unsaved name changes — click <strong>Save</strong> below first.
+                  </>
+                ) : null}
               </p>
               <input
                 className="mt-3 max-w-md rounded-md border border-border px-3 py-2 text-sm"
@@ -526,10 +541,18 @@ export function ClientSettingsClient({
               <button
                 type="button"
                 className="mt-3 block rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-sm text-[var(--danger-fg)]"
-                disabled={saving || !savedClientName || deleteConfirm.trim() !== savedClientName}
+                disabled={
+                  saving || !savedClientName || profileNameDirty || deleteConfirm.trim() !== savedClientName
+                }
                 onClick={() => void deleteClient()}
               >
                 Delete client
+              </button>
+            </div>
+
+            <div className="safe-bottom sticky bottom-0 z-10 border-t border-border bg-[var(--surface-page)] pt-4">
+              <button type="button" className="btn-primary" disabled={saving} onClick={() => void saveProfile()}>
+                Save
               </button>
             </div>
           </div>

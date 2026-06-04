@@ -2,6 +2,8 @@ import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientsPageClient } from "@/components/dashboard/ClientsPageClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientsPage() {
   const supabase = createAdminClient();
   const { data: clients } = await supabase
