@@ -56,12 +56,14 @@ export async function logLeadCreated({
   source,
   assignedToName,
   formDataSummary,
+  requestedPackage,
 }: {
   leadId: string;
   clientId: string;
   source: string;
   assignedToName?: string;
   formDataSummary?: string;
+  requestedPackage?: { id: string; slug: string; name: string };
 }): Promise<void> {
   await logLeadEvent({
     leadId,
@@ -72,6 +74,7 @@ export async function logLeadCreated({
       source,
       assigned_to_name: assignedToName ?? null,
       form_data_summary: formDataSummary ?? null,
+      ...(requestedPackage ? { requestedPackage } : {}),
     },
   });
 }

@@ -104,7 +104,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function ProfilePage({ params }: { params: { slug: string } }) {
+export default async function ProfilePage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string };
+  searchParams: { pkg?: string };
+}) {
   const supabase = createAdminClient();
 
   const { data: profile } = await supabase
@@ -127,6 +133,26 @@ export default async function ProfilePage({ params }: { params: { slug: string }
   const client = profile.clients as { id: string; name: string; slug: string; logo_url: string | null; primary_color: string | null } | null;
   const clientName = client?.name ?? "Company";
   const ctaText = (profile.cta_text as string | null) ?? "Get a Free Quote";
+
+  const pkgSlug = typeof searchParams.pkg === "string" ? searchParams.pkg.trim() : "";
+  let requestedPackage: { id: string; slug: string; name: string } | undefined;
+  if (pkgSlug) {
+    const { data: pkgRow } = await supabase
+      .from("pricing_packages")
+      .select("id, slug, name")
+      .eq("client_id", clientId)
+      .eq("slug", pkgSlug)
+      .eq("is_public", true)
+      .maybeSingle();
+    if (pkgRow?.id && pkgRow.slug && pkgRow.name) {
+      requestedPackage = {
+        id: pkgRow.id as string,
+        slug: pkgRow.slug as string,
+        name: pkgRow.name as string,
+      };
+    }
+  }
+
   const [{ data: projects }, { data: testimonials }, { data: formSteps }, { data: formSchema }, { data: packages }] = await Promise.all([
     supabase
       .from("projects")
@@ -570,6 +596,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           openingMessage={conversationalOpeningMessage}
           steps={conversationalSteps}
           portfolioUrl={portfolioUrl}
+          requestedPackage={requestedPackage}
         />
       </section>
 

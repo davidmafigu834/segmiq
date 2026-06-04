@@ -7,11 +7,18 @@ import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logLeadCreated } from "@/lib/lead-events";
 import type { LeadRow, LeadSource } from "@/types";
 
+export type RequestedPackageRef = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
 export type CreateLeadInput = {
   clientId: string;
   source: LeadSource;
   formData: Record<string, unknown>;
   facebookLeadId?: string;
+  requestedPackage?: RequestedPackageRef;
   /** When set, assigns this salesperson and does not advance the client's round-robin index. */
   overrideAssigneeId?: string | null;
   /** When true, skips WhatsApp/email/in-app notifications for the new lead. */
@@ -27,7 +34,8 @@ export type CreateLeadResult =
     };
 
 export async function createLead(input: CreateLeadInput): Promise<CreateLeadResult> {
-  const { clientId, source, formData, facebookLeadId, overrideAssigneeId, skipNotifications } = input;
+  const { clientId, source, formData, facebookLeadId, requestedPackage, overrideAssigneeId, skipNotifications } =
+    input;
   const supabase = createAdminClient();
 
   if (source === "FACEBOOK" && facebookLeadId) {
@@ -89,12 +97,16 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
   const fields = parseLeadFields(formData);
   const { token, expires } = newMagicToken();
 
+  const storedFormData = requestedPackage
+    ? { ...formData, _requestedPackageName: requestedPackage.name }
+    : formData;
+
   const leadInsert = {
     client_id: clientId,
     assigned_to_id: assignedId,
     source,
     status: "NEW" as const,
-    form_data: formData,
+    form_data: storedFormData,
     name: fields.name,
     phone: fields.phone,
     email: fields.email,
@@ -142,6 +154,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       source,
       assignedToName: assignedSalesperson ? (assignedSalesperson.name as string) : undefined,
       formDataSummary: formDataSummary ?? undefined,
+      requestedPackage,
     })
   );
 

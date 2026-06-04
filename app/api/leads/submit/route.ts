@@ -9,6 +9,13 @@ const bodySchema = z.object({
   source: z.string(),
   formData: z.record(z.unknown()),
   facebookLeadId: z.string().optional(),
+  requestedPackage: z
+    .object({
+      id: z.string(),
+      slug: z.string(),
+      name: z.string(),
+    })
+    .optional(),
 });
 
 export async function POST(req: Request) {
@@ -18,7 +25,7 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }
-    const { clientId, source, formData, facebookLeadId } = parsed.data;
+    const { clientId, source, formData, facebookLeadId, requestedPackage } = parsed.data;
 
     const src = sourceFromString(source);
     if (src === "FACEBOOK" && !facebookLeadId) {
@@ -30,6 +37,7 @@ export async function POST(req: Request) {
       source: src,
       formData: formData as Record<string, unknown>,
       facebookLeadId,
+      requestedPackage,
     });
 
     if (!result.ok) {

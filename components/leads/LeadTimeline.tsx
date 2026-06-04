@@ -76,6 +76,11 @@ function EventContent({ event }: { event: TimelineEvent }) {
     const source = (d.source as string | null) ?? "Unknown";
     const assignedTo = d.assigned_to_name as string | null;
     const summary = d.form_data_summary as string | null;
+    const requestedPackage = d.requestedPackage as { name?: string } | null | undefined;
+    const packageName =
+      requestedPackage && typeof requestedPackage.name === "string"
+        ? requestedPackage.name
+        : null;
     return (
       <div>
         <p className="text-[13px] text-ink-primary">
@@ -87,6 +92,9 @@ function EventContent({ event }: { event: TimelineEvent }) {
         ) : (
           <p className="mt-0.5 text-[12px] text-ink-tertiary">Unassigned</p>
         )}
+        {packageName ? (
+          <p className="mt-0.5 text-[12px] text-ink-secondary">Requested package: {packageName}</p>
+        ) : null}
         {summary ? <p className="mt-0.5 text-[12px] text-ink-tertiary">{summary}</p> : null}
       </div>
     );

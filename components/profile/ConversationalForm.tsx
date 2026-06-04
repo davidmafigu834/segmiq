@@ -18,6 +18,12 @@ export type ConversationalFormStep = {
   fields: ConversationalFormField[];
 };
 
+export type RequestedPackage = {
+  id: string;
+  slug: string;
+  name: string;
+};
+
 type Props = {
   clientId: string;
   clientName: string;
@@ -26,6 +32,7 @@ type Props = {
   openingMessage: string;
   steps: ConversationalFormStep[];
   portfolioUrl?: string;
+  requestedPackage?: RequestedPackage;
 };
 
 type Message = {
@@ -49,6 +56,7 @@ export function ConversationalForm({
   openingMessage,
   steps,
   portfolioUrl,
+  requestedPackage,
 }: Props) {
   const allFields = steps.flatMap((s) => s.fields);
 
@@ -136,7 +144,12 @@ export function ConversationalForm({
       const res = await fetch("/api/leads/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, formData: answers, source: "LANDING_PAGE" }),
+        body: JSON.stringify({
+          clientId,
+          formData: answers,
+          source: "LANDING_PAGE",
+          ...(requestedPackage ? { requestedPackage } : {}),
+        }),
       });
       if (!res.ok) throw new Error("Submission failed");
       setTypingVisible(false);
@@ -231,6 +244,23 @@ export function ConversationalForm({
             {clientName}
           </p>
         </div>
+
+        {requestedPackage ? (
+          <p
+            style={{
+              width: "100%",
+              maxWidth: 480,
+              marginBottom: 12,
+              fontFamily: "var(--fw-font-body, system-ui)",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#4A3828",
+              textAlign: "center",
+            }}
+          >
+            Requesting: {requestedPackage.name}
+          </p>
+        ) : null}
 
         <div
           style={{
@@ -333,6 +363,23 @@ export function ConversationalForm({
         fontFamily: "var(--fw-font-body, system-ui)",
       }}
     >
+      {requestedPackage ? (
+        <div
+          style={{
+            background: "#EDE9E3",
+            borderBottom: "0.5px solid rgba(28,20,16,0.08)",
+            padding: "10px 20px",
+            textAlign: "center",
+            fontFamily: "var(--fw-font-body, system-ui)",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#4A3828",
+          }}
+        >
+          Requesting: {requestedPackage.name}
+        </div>
+      ) : null}
+
       {/* Top bar */}
       <div
         style={{
