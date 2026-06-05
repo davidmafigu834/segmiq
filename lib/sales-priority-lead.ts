@@ -1,3 +1,4 @@
+import { parseBudgetValue, parseUrgencyLevel } from "@/lib/lead-lanes";
 import type { CampaignQualifiers } from "@/lib/lead-lanes";
 
 export type PriorityLead = {
@@ -51,22 +52,81 @@ export function daysSince(dateStr: string): number {
   return Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000));
 }
 
-function leadState(formData: Record<string, unknown> | null | undefined): string | null {
+function collectFormText(
+  formData: Record<string, unknown> | null | undefined,
+  keys: string[]
+): string | null {
   if (!formData) return null;
-  for (const key of ["state", "region", "city", "location", "province"]) {
-    const v = formData[key];
-    if (typeof v === "string" && v.trim()) return v.trim();
+  const parts: string[] = [];
+  for (const key of Object.keys(formData)) {
+    if (keys.some((k) => key.toLowerCase().includes(k))) {
+      const v = formData[key];
+      if (typeof v === "string" && v.trim()) parts.push(v.trim());
+      else if (Array.isArray(v)) parts.push(v.join(" "));
+    }
   }
+  const joined = parts.join(" ").trim();
+  return joined || null;
+}
+
+function formatBudgetDisplay(value: number): string {
+  if (value >= 1_000_000) {
+    return `$${(value / 1_000_000).toFixed(value % 1_000_000 ? 1 : 0)}m`;
+  }
+  if (value >= 1_000) return `$${Math.round(value / 1_000)}k`;
+  return `$${Math.round(value)}`;
+}
+
+function budgetDisplayText(lead: PriorityLead): string | null {
+  const column = lead.budget?.trim();
+  if (column) return column;
+  const fromForm = collectFormText(lead.form_data, ["budget", "price", "value"]);
+  if (!fromForm) return null;
+  const parsed = parseBudgetValue(fromForm);
+  return parsed != null ? formatBudgetDisplay(parsed) : fromForm;
+}
+
+function urgencyDisplayText(lead: PriorityLead): string | null {
+  const raw =
+    lead.timeline?.trim() ||
+    collectFormText(lead.form_data, ["timeline", "urgency", "when", "time frame", "timeframe"]);
+  if (!raw) return null;
+  const level = parseUrgencyLevel(raw);
+  if (level === "immediate") return "urgent";
+  if (level === "this_month") return "this month";
+  if (level === "exploring") return "exploring";
   return null;
 }
 
-export function reasonSegments(lead: PriorityLead): string[] {
-  const segments: string[] = [];
-  const state = leadState(lead.form_data);
-  if (state) segments.push(state);
-  if (lead.budget && lead.budget.trim()) segments.push(lead.budget.trim());
-  if (lead.project_type && lead.project_type.trim())
-    segments.push(lead.project_type.trim());
-  segments.push(timeAgo(lead.created_at));
-  return segments;
+function serviceDisplayText(lead: PriorityLead): string | null {
+  const column = lead.project_type?.trim();
+  if (column) return column;
+  return collectFormText(lead.form_data, ["service", "project", "type", "category"]);
+}
+
+/**
+ * Display-only reason line: budget → urgency → service → relative age.
+ * Does not surface tier windows, phone presence, or scoring internals.
+ */
+export function buildReasonLine(lead: PriorityLead): string {
+  const parts: string[] = [];
+  const budget = budgetDisplayText(lead);
+  if (budget) parts.push(budget);
+  const urgency = urgencyDisplayText(lead);
+  if (urgency) parts.push(urgency);
+  const service = serviceDisplayText(lead);
+  if (service) parts.push(service);
+  parts.push(timeAgo(lead.created_at));
+  return parts.join(" · ");
+}
+
+/** True when the promised callback date is before today (local midnight). */
+export function isFollowUpOverdue(
+  followUpDate: string,
+  now: Date = new Date()
+): boolean {
+  const due = new Date(followUpDate);
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  return due < startOfToday;
 }

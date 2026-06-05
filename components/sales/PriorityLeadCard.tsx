@@ -15,7 +15,6 @@ import {
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import {
   classifyLeadLane,
-  computeRulesScore,
   matchesQualifiers,
   HIGH_SCORE_THRESHOLD,
   type LeadLane,
@@ -25,7 +24,8 @@ import {
   timeAgo,
   formatFollowUpDate,
   daysSince,
-  reasonSegments,
+  buildReasonLine,
+  isFollowUpOverdue,
 } from "@/lib/sales-priority-lead";
 
 const SLA_TARGET_MS = 5 * 60 * 1000;
@@ -53,10 +53,11 @@ function SlaCountdown({ createdAt }: { createdAt: string }) {
   const breached = remainingMs <= 0;
 
   if (breached) {
+    const lateMins = Math.max(1, Math.ceil(Math.abs(remainingMs) / 60_000));
     return (
       <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--warning)]">
         <Clock size={13} />
-        SLA breached
+        {lateMins}m late
       </span>
     );
   }
@@ -95,13 +96,7 @@ export function PriorityLeadCard({
   const highScore = (aiScore ?? 0) >= HIGH_SCORE_THRESHOLD;
 
   const fit = matchesQualifiers(lead, lead.qualifiers ?? null);
-  const rulesFactors = showChip
-    ? []
-    : computeRulesScore(lead, lead.qualifiers ?? null, now).factors;
-  const reasonText =
-    rulesFactors.length > 0
-      ? rulesFactors.join(" · ")
-      : reasonSegments(lead).join(" · ");
+  const reasonText = buildReasonLine(lead);
 
   return (
     <article className={`rounded-xl border ${accent} bg-[var(--surface-card)] p-5`}>
@@ -147,6 +142,7 @@ export function PriorityLeadCard({
           {lane === "call_now" && tier === "hot" ? (
             <SlaCountdown createdAt={lead.created_at} />
           ) : lane === "call_now" ? (
+            // 5-minute SLA applies to hot tier only; same-day leads are not on the clock.
             <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--text-secondary)]">
               <Clock size={13} />
               Awaiting first call
@@ -154,10 +150,13 @@ export function PriorityLeadCard({
           ) : lane === "follow_ups" ? (
             <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--warning)]">
               <Clock size={13} />
-              Promised callback
-              {lead.follow_up_date
-                ? ` · ${formatFollowUpDate(lead.follow_up_date)}`
-                : ""}
+              {lead.follow_up_date && isFollowUpOverdue(lead.follow_up_date, now)
+                ? `Overdue · ${formatFollowUpDate(lead.follow_up_date)}`
+                : `Promised callback${
+                    lead.follow_up_date
+                      ? ` · ${formatFollowUpDate(lead.follow_up_date)}`
+                      : ""
+                  }`}
             </span>
           ) : lane === "recover" ? (
             <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--warning)]">

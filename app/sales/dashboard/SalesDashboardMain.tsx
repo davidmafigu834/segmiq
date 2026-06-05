@@ -82,7 +82,7 @@ function getGreeting(): string {
 
 const LANE_META: Record<LeadLane, { eyebrow: string; title: string }> = {
   call_now: { eyebrow: "Speed to lead", title: "Call now" },
-  follow_ups: { eyebrow: "Promised", title: "Follow-ups due today" },
+  follow_ups: { eyebrow: "Promised", title: "Follow-ups due" },
   recover: { eyebrow: "Slipped", title: "Recover — slipped" },
   nurture: { eyebrow: "Low intent", title: "Nurture" },
 };
