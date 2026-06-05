@@ -6,7 +6,9 @@ import { canAccessClient } from "@/lib/auth/permissions";
 import {
   resolveSegmentLeads,
   generateAudienceCSV,
+  RETARGETING_GRADUATED_KEY,
 } from "@/lib/audience-segments";
+import { syncRetargetingForClient } from "@/lib/retargeting";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +57,7 @@ export async function GET(
     {
       minScore: segment.min_score as number | null,
       dateRangeDays: segment.date_range_days as number | null,
+      minAgeDays: (segment as { min_age_days?: number | null }).min_age_days ?? null,
     }
   );
 
@@ -132,11 +135,18 @@ export async function POST(
     {
       minScore: segment.min_score as number | null,
       dateRangeDays: segment.date_range_days as number | null,
+      minAgeDays: (segment as { min_age_days?: number | null }).min_age_days ?? null,
       exportFields,
     }
   );
 
   const csv = generateAudienceCSV(leads, exportFields);
+
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("name")
+    .eq("id", params.clientId)
+    .maybeSingle();
 
   // Log the export
   await supabase.from("audience_export_history").insert({
@@ -157,6 +167,17 @@ export async function POST(
       updated_at: new Date().toISOString(),
     })
     .eq("id", params.segmentId);
+
+  if (segment.predefined_key === RETARGETING_GRADUATED_KEY) {
+    try {
+      await syncRetargetingForClient(
+        params.clientId,
+        (clientRow?.name as string) ?? "Client"
+      );
+    } catch {
+      // retargeting tables may not exist until migration 037 is applied
+    }
+  }
 
   const segmentName = (segment.name as string).replace(/[^a-z0-9]/gi, "_").toLowerCase();
   const filename = `${segmentName}_${new Date().toISOString().slice(0, 10)}.csv`;

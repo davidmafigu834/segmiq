@@ -1,5 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const RETARGETING_GRADUATED_KEY = "retargeting_graduated";
+
 // ============================================
 // PREDEFINED SEGMENT DEFINITIONS
 // These are created automatically for every client
@@ -19,6 +21,7 @@ type PredefinedSegment = {
   export_fields: string[];
   min_score: number | null;
   date_range_days: number | null;
+  min_age_days: number | null;
 };
 
 export const PREDEFINED_SEGMENTS: PredefinedSegment[] = [
@@ -32,6 +35,7 @@ export const PREDEFINED_SEGMENTS: PredefinedSegment[] = [
     export_fields: ["phone", "email", "name"],
     min_score: null,
     date_range_days: null,
+    min_age_days: null,
   },
   {
     name: "Contacted but did not convert",
@@ -49,6 +53,7 @@ export const PREDEFINED_SEGMENTS: PredefinedSegment[] = [
     export_fields: ["phone", "email", "name"],
     min_score: null,
     date_range_days: 90,
+    min_age_days: null,
   },
   {
     name: "Never answered",
@@ -63,6 +68,7 @@ export const PREDEFINED_SEGMENTS: PredefinedSegment[] = [
     export_fields: ["phone", "email", "name"],
     min_score: null,
     date_range_days: 60,
+    min_age_days: null,
   },
   {
     name: "High budget — did not convert",
@@ -85,6 +91,7 @@ export const PREDEFINED_SEGMENTS: PredefinedSegment[] = [
     export_fields: ["phone", "email", "name"],
     min_score: null,
     date_range_days: 120,
+    min_age_days: null,
   },
   {
     name: "Immediate urgency leads",
@@ -107,6 +114,7 @@ export const PREDEFINED_SEGMENTS: PredefinedSegment[] = [
     export_fields: ["phone", "email", "name"],
     min_score: null,
     date_range_days: 30,
+    min_age_days: null,
   },
   {
     name: "High intent — not yet contacted",
@@ -121,6 +129,19 @@ export const PREDEFINED_SEGMENTS: PredefinedSegment[] = [
     export_fields: ["phone", "email", "name"],
     min_score: null,
     date_range_days: 60,
+    min_age_days: null,
+  },
+  {
+    name: "Graduated — retargeting",
+    description:
+      "Uncontacted leads aged 30+ days that have graduated from manual calling. Export as a custom audience for Meta retargeting.",
+    predefined_key: RETARGETING_GRADUATED_KEY,
+    filters: [{ field: "status", operator: "eq", value: "NEW" }],
+    filter_logic: "and",
+    export_fields: ["phone", "email", "name"],
+    min_score: null,
+    date_range_days: null,
+    min_age_days: 30,
   },
 ];
 
@@ -163,6 +184,7 @@ export async function seedPredefinedSegments(clientId: string): Promise<void> {
     export_fields: seg.export_fields,
     min_score: seg.min_score,
     date_range_days: seg.date_range_days,
+    min_age_days: seg.min_age_days,
     is_active: true,
   }));
 
@@ -246,6 +268,7 @@ export async function resolveSegmentLeads(
   options?: {
     minScore?: number | null;
     dateRangeDays?: number | null;
+    minAgeDays?: number | null;
     exportFields?: string[];
   }
 ): Promise<LeadRow[]> {
@@ -278,11 +301,18 @@ export async function resolveSegmentLeads(
     .eq("client_id", clientId)
     .eq("is_archived", false);
 
-  // Apply date range if set
+  // Apply date range if set (created within last N days)
   if (options?.dateRangeDays) {
     const since = new Date();
     since.setDate(since.getDate() - options.dateRangeDays);
     query = query.gte("created_at", since.toISOString());
+  }
+
+  // Apply minimum age if set (created at least N days ago — graduated leads)
+  if (options?.minAgeDays) {
+    const before = new Date();
+    before.setDate(before.getDate() - options.minAgeDays);
+    query = query.lte("created_at", before.toISOString());
   }
 
   // Apply minimum score if set

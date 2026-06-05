@@ -9,7 +9,10 @@ import {
   X,
   ChevronRight,
   TriangleAlert,
+  Radio,
 } from "lucide-react";
+import { RETARGETING_GRADUATED_KEY } from "@/lib/audience-segments";
+import type { RetargetingStatusView } from "@/lib/retargeting";
 
 // ============================================
 // TYPES
@@ -486,14 +489,19 @@ function SegmentCard({
   isAgencyAdmin,
   onExport,
   onDeleted,
+  retargetingStatus,
+  onRetargetingUpdated,
 }: {
   segment: Segment;
   clientId: string;
   isAgencyAdmin: boolean;
   onExport: (segment: Segment) => void;
   onDeleted: () => void;
+  retargetingStatus: RetargetingStatusView | null;
+  onRetargetingUpdated: () => void;
 }) {
   const [deleting, setDeleting] = useState(false);
+  const [markingLive, setMarkingLive] = useState(false);
 
   const handleDelete = async () => {
     if (
@@ -516,6 +524,25 @@ function SegmentCard({
   };
 
   const count = segment.lead_count;
+  const isRetargetingGraduated =
+    segment.predefined_key === RETARGETING_GRADUATED_KEY;
+  const showMarkLive =
+    isAgencyAdmin &&
+    isRetargetingGraduated &&
+    retargetingStatus?.status === "ad_pending";
+
+  const handleMarkLive = async () => {
+    setMarkingLive(true);
+    try {
+      const res = await fetch(
+        `/api/clients/${clientId}/retargeting/mark-live`,
+        { method: "POST" }
+      );
+      if (res.ok) onRetargetingUpdated();
+    } finally {
+      setMarkingLive(false);
+    }
+  };
 
   return (
     <div className="flex flex-col rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 gap-4 ag-fade-in">
@@ -587,6 +614,17 @@ function SegmentCard({
           Export CSV
         </button>
 
+        {showMarkLive && (
+          <button
+            onClick={handleMarkLive}
+            disabled={markingLive}
+            className="btn-ghost text-[var(--success)]"
+          >
+            <Radio size={13} />
+            {markingLive ? "Saving…" : "Mark ad live"}
+          </button>
+        )}
+
         {isAgencyAdmin && segment.segment_type === "custom" && (
           <button
             onClick={handleDelete}
@@ -625,6 +663,19 @@ export function AudienceSegmentsMain({
   const [loading, setLoading] = useState(true);
   const [exportTarget, setExportTarget] = useState<Segment | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [retargetingStatus, setRetargetingStatus] =
+    useState<RetargetingStatusView | null>(null);
+
+  const fetchRetargetingStatus = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/clients/${clientId}/retargeting/status`);
+      if (res.ok) {
+        setRetargetingStatus(await res.json());
+      }
+    } catch {
+      setRetargetingStatus(null);
+    }
+  }, [clientId]);
 
   const fetchSegments = useCallback(async () => {
     setLoading(true);
@@ -641,7 +692,8 @@ export function AudienceSegmentsMain({
 
   useEffect(() => {
     fetchSegments();
-  }, [fetchSegments]);
+    fetchRetargetingStatus();
+  }, [fetchSegments, fetchRetargetingStatus]);
 
   const predefined = segments.filter((s) => s.segment_type === "predefined");
   const custom = segments.filter((s) => s.segment_type === "custom");
@@ -699,6 +751,8 @@ export function AudienceSegmentsMain({
                     isAgencyAdmin={isAgencyAdmin}
                     onExport={setExportTarget}
                     onDeleted={fetchSegments}
+                    retargetingStatus={retargetingStatus}
+                    onRetargetingUpdated={fetchRetargetingStatus}
                   />
                 ))}
               </div>
@@ -720,6 +774,8 @@ export function AudienceSegmentsMain({
                     isAgencyAdmin={isAgencyAdmin}
                     onExport={setExportTarget}
                     onDeleted={fetchSegments}
+                    retargetingStatus={retargetingStatus}
+                    onRetargetingUpdated={fetchRetargetingStatus}
                   />
                 ))}
               </div>
@@ -751,7 +807,11 @@ export function AudienceSegmentsMain({
         <ExportModal
           segment={exportTarget}
           clientId={clientId}
-          onClose={() => setExportTarget(null)}
+          onClose={() => {
+            setExportTarget(null);
+            fetchSegments();
+            fetchRetargetingStatus();
+          }}
         />
       )}
 

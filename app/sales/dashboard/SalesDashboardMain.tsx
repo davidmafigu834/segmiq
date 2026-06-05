@@ -1,44 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Phone,
-  PhoneMissed,
-  PhoneCall,
-  PhoneOff,
   CalendarClock,
   CheckCircle,
-  XCircle,
   MinusCircle,
   Send,
   ChevronRight,
+  ChevronDown,
   Trophy,
   Activity,
   Users,
-  X,
-  MessageCircle,
 } from "lucide-react";
-import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
+import {
+  classifyLeadLane,
+  sortWithinLane,
+  sortCallNowLane,
+  LANE_ORDER,
+  type LeadLane,
+} from "@/lib/lead-lanes";
+import { isRetargetingGraduated, type RetargetingStatusView } from "@/lib/retargeting";
+import { type PriorityLead, timeAgo } from "@/lib/sales-priority-lead";
+import { PriorityLeadCard } from "@/components/sales/PriorityLeadCard";
+import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
+import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 
 // ============================================
 // TYPES
 // ============================================
-
-type PriorityLead = {
-  id: string;
-  name: string | null;
-  phone: string | null;
-  status: string;
-  score?: number | null;
-  is_stale?: boolean | null;
-  follow_up_date: string | null;
-  followUpDue: boolean;
-  priorityLabel: string;
-  priorityColor: string;
-  priorityOrder: number;
-  client_id: string;
-};
 
 type ActivityEvent = {
   id: string;
@@ -69,6 +60,7 @@ type DashboardData = {
   };
   recentActivity: ActivityEvent[];
   recentWins: RecentWin[];
+  retargetingStatuses?: RetargetingStatusView[];
   debug?: {
     queryUserId: string;
     totalAllLeads: number;
@@ -78,36 +70,6 @@ type DashboardData = {
   };
 };
 
-type Outcome =
-  | "ANSWERED"
-  | "NO_ANSWER"
-  | "FOLLOW_UP"
-  | "WON"
-  | "LOST"
-  | "NOT_QUALIFIED";
-
-// ============================================
-// CONSTANTS
-// ============================================
-
-const OUTCOMES: Array<{
-  value: Outcome;
-  label: string;
-  icon: React.ElementType;
-  colour: string;
-}> = [
-  { value: "ANSWERED", label: "Answered", icon: Phone, colour: "var(--success)" },
-  { value: "NO_ANSWER", label: "No answer", icon: PhoneMissed, colour: "var(--text-tertiary)" },
-  { value: "FOLLOW_UP", label: "Follow-up", icon: PhoneCall, colour: "var(--warning)" },
-  { value: "WON", label: "Won", icon: CheckCircle, colour: "var(--accent)" },
-  { value: "LOST", label: "Lost", icon: XCircle, colour: "var(--error)" },
-  { value: "NOT_QUALIFIED", label: "Not qualified", icon: MinusCircle, colour: "var(--text-disabled)" },
-];
-
-// ============================================
-// HELPERS
-// ============================================
-
 function getGreeting(): string {
   const h = new Date().getHours();
   if (h < 12) return "morning";
@@ -115,25 +77,12 @@ function getGreeting(): string {
   return "evening";
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (mins < 2) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-}
-
-function formatFollowUpDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  if (date.toDateString() === now.toDateString()) return "Today";
-  if (date.toDateString() === new Date(now.getTime() + 86400000).toDateString())
-    return "Tomorrow";
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
+const LANE_META: Record<LeadLane, { eyebrow: string; title: string }> = {
+  call_now: { eyebrow: "Speed to lead", title: "Call now" },
+  follow_ups: { eyebrow: "Promised", title: "Follow-ups due today" },
+  recover: { eyebrow: "Slipped", title: "Recover — slipped" },
+  nurture: { eyebrow: "Low intent", title: "Nurture" },
+};
 
 function formatEventType(type: string, data: Record<string, unknown> | null, channel?: string | null): string {
   const d = data ?? {};
@@ -151,187 +100,6 @@ function formatEventType(type: string, data: Record<string, unknown> | null, cha
   return map[type]?.(d) ?? type.replace(/_/g, " ").toLowerCase();
 }
 
-// ============================================
-// QUICK LOG SHEET
-// ============================================
-
-function QuickLogSheet({
-  leads,
-  preselectedLeadId,
-  onClose,
-  onSuccess,
-  defaultChannel = "call",
-}: {
-  leads: PriorityLead[];
-  preselectedLeadId: string;
-  onClose: () => void;
-  onSuccess: () => void;
-  defaultChannel?: "call" | "whatsapp";
-}) {
-  const [selectedLeadId, setSelectedLeadId] = useState(preselectedLeadId);
-  const [selectedOutcome, setSelectedOutcome] = useState<Outcome | "">("");
-  const [notes, setNotes] = useState("");
-  const [logging, setLogging] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [channel] = useState<"call" | "whatsapp">(defaultChannel);
-
-  async function handleLog() {
-    if (!selectedLeadId || !selectedOutcome) return;
-    setLogging(true);
-    try {
-      const res = await fetch("/api/sales/quick-log", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          leadId: selectedLeadId,
-          outcome: selectedOutcome,
-          notes: notes.trim() || undefined,
-          channel,
-        }),
-      });
-      if (res.ok) {
-        setSuccess(true);
-        setTimeout(() => {
-          onSuccess();
-          onClose();
-        }, 1200);
-      }
-    } catch {
-      // silent — user can retry
-    } finally {
-      setLogging(false);
-    }
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/75"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="w-full rounded-t-2xl bg-[var(--surface-card)] border-t border-x border-[var(--border)]">
-        {/* Handle */}
-        <div className="w-10 h-1 rounded-full bg-[var(--bg-quaternary)] mx-auto mt-3" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
-          <h3 className="font-display text-[18px] font-semibold text-[var(--text-primary)]">
-            {channel === "whatsapp" ? "Log WhatsApp contact" : "Log a call"}
-          </h3>
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            <X size={14} />
-          </button>
-        </div>
-        <div
-          className="px-5 py-5"
-          style={{ paddingBottom: "calc(20px + env(safe-area-inset-bottom))" }}
-        >
-          {success ? (
-            <div className="flex flex-col items-center justify-center py-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center mb-3">
-                <CheckCircle size={22} className="text-[var(--success)]" />
-              </div>
-              <p className="text-[15px] font-semibold text-[var(--success)]">{channel === "whatsapp" ? "WhatsApp contact logged" : "Call logged"}</p>
-            </div>
-          ) : (
-            <>
-              {/* Lead selector */}
-              <div className="mb-4">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-2">
-                  Lead
-                </p>
-                <select
-                  value={selectedLeadId}
-                  onChange={(e) => setSelectedLeadId(e.target.value)}
-                  className="w-full h-11 px-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)] text-[var(--text-primary)] text-[14px] focus:border-[var(--border-focus,var(--border-hover))] focus:outline-none transition-colors"
-                >
-                  <option value="">Select lead...</option>
-                  {leads.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name ?? "Unknown"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Outcome grid */}
-              <div className="mb-4">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-2">
-                  Outcome
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {OUTCOMES.map((outcome) => {
-                    const isSelected = selectedOutcome === outcome.value;
-                    return (
-                      <button
-                        key={outcome.value}
-                        type="button"
-                        onClick={() => setSelectedOutcome(outcome.value)}
-                        className="h-11 rounded-lg border text-[12px] font-semibold transition-colors flex items-center justify-center gap-1.5"
-                        style={{
-                          background: isSelected
-                            ? `color-mix(in srgb, ${outcome.colour} 15%, transparent)`
-                            : undefined,
-                          borderColor: isSelected
-                            ? `color-mix(in srgb, ${outcome.colour} 40%, transparent)`
-                            : "var(--border)",
-                          color: isSelected ? outcome.colour : "var(--text-tertiary)",
-                        }}
-                      >
-                        <outcome.icon size={13} />
-                        {outcome.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div className="mb-5">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-2">
-                  Notes{" "}
-                  <span className="normal-case font-normal text-[var(--text-disabled)]">
-                    optional
-                  </span>
-                </p>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="What happened on the call..."
-                  rows={2}
-                  className="w-full px-3 py-2.5 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border)] text-[var(--text-primary)] text-[14px] resize-none focus:border-[var(--border-focus,var(--border-hover))] focus:outline-none transition-colors placeholder:text-[var(--text-disabled)]"
-                />
-              </div>
-
-              {/* Submit */}
-              <button
-                type="button"
-                onClick={handleLog}
-                disabled={!selectedLeadId || !selectedOutcome || logging}
-                className={`w-full h-12 rounded-xl text-[15px] font-semibold transition-colors ${
-                  !selectedLeadId || !selectedOutcome || logging
-                    ? "bg-[var(--bg-tertiary)] text-[var(--text-disabled)] cursor-not-allowed border border-[var(--border)]"
-                    : "bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]"
-                }`}
-              >
-                {logging ? "Logging..." : channel === "whatsapp" ? "Log WhatsApp" : "Log call"}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// MAIN COMPONENT
-// ============================================
-
 export default function SalesDashboardMain({
   data,
   session,
@@ -348,18 +116,47 @@ export default function SalesDashboardMain({
     month: "long",
   });
 
-  const [showLogSheet, setShowLogSheet] = useState(false);
-  const [preselectedLeadId, setPreselectedLeadId] = useState("");
-  const [logChannel, setLogChannel] = useState<"call" | "whatsapp">("call");
+  const repName = s?.user?.name ?? "";
+  const { openLogSheet, logSheetProps } = useSalesLogSheet();
+  const { sheet } = logSheetProps(data.allActiveLeads);
 
-  function openLogSheet(leadId = "", channel: "call" | "whatsapp" = "call") {
-    setPreselectedLeadId(leadId);
-    setLogChannel(channel);
-    setShowLogSheet(true);
-  }
+  // Captured once on mount so lanes stay stable across incidental re-renders
+  // (the per-second SLA countdown runs on its own timer).
+  const [now] = useState(() => new Date());
+  const [nurtureOpen, setNurtureOpen] = useState(false);
 
-  function handleLogSuccess() {
-    router.refresh();
+  const lanes = useMemo(() => {
+    const all = data.allActiveLeads ?? [];
+    const buckets: Record<LeadLane, PriorityLead[]> = {
+      call_now: [],
+      follow_ups: [],
+      recover: [],
+      nurture: [],
+    };
+    for (const lead of all) {
+      const lane = classifyLeadLane(lead, now).lane;
+      if (
+        (lane === "call_now" || lane === "recover") &&
+        isRetargetingGraduated(lead, now)
+      ) {
+        continue;
+      }
+      buckets[lane].push(lead);
+    }
+    return {
+      call_now: sortCallNowLane(buckets.call_now, now),
+      follow_ups: sortWithinLane(buckets.follow_ups),
+      recover: sortWithinLane(buckets.recover),
+      nurture: sortWithinLane(buckets.nurture),
+    } as Record<LeadLane, PriorityLead[]>;
+  }, [data.allActiveLeads, now]);
+
+  const hasAnyLeads = (data.allActiveLeads?.length ?? 0) > 0;
+
+  function seeAllHref(lane: LeadLane): string | null {
+    if (lane === "call_now") return "/sales/call-now";
+    if (lane === "recover") return "/sales/recover";
+    return null;
   }
 
   return (
@@ -375,6 +172,10 @@ export default function SalesDashboardMain({
           Good {getGreeting()}, {firstName}
         </h1>
       </div>
+
+      {(data.retargetingStatuses?.length ?? 0) > 0 && (
+        <RetargetingBanners statuses={data.retargetingStatuses!} />
+      )}
 
       {/* ============================================
           NUMBERS STRIP — 4 compact stat cards
@@ -437,8 +238,8 @@ export default function SalesDashboardMain({
       {/* ============================================
           PRIORITY LEAD LIST
           ============================================ */}
-      <div className="ag-fade-in ag-delay-1 mb-8">
-        <div className="flex items-center justify-between mb-3">
+      <div className="mb-8">
+        <div className="ag-fade-in flex items-center justify-between mb-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-0.5">
               Today
@@ -457,7 +258,7 @@ export default function SalesDashboardMain({
           </button>
         </div>
 
-        {data.priorityLeads.length === 0 ? (
+        {!hasAnyLeads ? (
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] flex flex-col items-center justify-center py-16 text-center px-5">
             <CheckCircle className="w-8 h-8 text-[var(--success)] mb-3" />
             <p className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">
@@ -468,117 +269,120 @@ export default function SalesDashboardMain({
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            {data.priorityLeads.map((lead, index) => (
-              <div
-                key={lead.id}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] overflow-hidden"
-                style={{ animationDelay: `${0.05 + index * 0.04}s` }}
-              >
-                <div className="flex items-center gap-0">
-                  {/* Priority colour bar */}
-                  <div
-                    className="w-1 self-stretch shrink-0"
-                    style={{ background: lead.priorityColor }}
-                  />
+          <div className="flex flex-col gap-6">
+            {LANE_ORDER.map((lane, laneIndex) => {
+              const laneLeads = lanes[lane];
+              const count = laneLeads.length;
+              if (count === 0) return null;
 
-                  {/* Lead info */}
-                  <div
-                    className="flex-1 min-w-0 px-4 py-3 cursor-pointer"
-                    onClick={() => router.push(`/sales/leads?lead=${lead.id}`)}
-                  >
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <p className="text-[14px] font-semibold text-[var(--text-primary)]">
-                        {lead.name ?? "Unknown"}
-                      </p>
-                      {/* Priority badge */}
-                      <span
-                        className="inline-flex items-center h-5 px-2 rounded-full text-[10px] font-bold uppercase tracking-wide border"
-                        style={{
-                          color: lead.priorityColor,
-                          borderColor: `color-mix(in srgb, ${lead.priorityColor} 35%, transparent)`,
-                          background: `color-mix(in srgb, ${lead.priorityColor} 12%, transparent)`,
-                        }}
-                      >
-                        {lead.priorityLabel}
+              const meta = LANE_META[lane];
+              const delayClass = `ag-delay-${Math.min(laneIndex + 1, 5)}`;
+
+              // Nurture renders as a single collapsed, expandable row.
+              if (lane === "nurture") {
+                return (
+                  <section key={lane} className={`ag-fade-in ${delayClass}`}>
+                    <button
+                      type="button"
+                      onClick={() => setNurtureOpen((o) => !o)}
+                      className="w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] px-5 py-4 hover:border-[var(--border-hover)] transition-colors text-left"
+                      aria-expanded={nurtureOpen}
+                    >
+                      <div className="flex items-center gap-2">
+                        <MinusCircle size={15} className="text-[var(--text-tertiary)]" />
+                        <span className="text-[14px] font-semibold text-[var(--text-primary)]">
+                          {meta.title}
+                        </span>
+                        <span className="text-[13px] text-[var(--text-tertiary)]">
+                          {count}
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={16}
+                        className={`text-[var(--text-tertiary)] transition-transform ${
+                          nurtureOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {nurtureOpen && (
+                      <div className="flex flex-col gap-2 mt-2">
+                        {laneLeads.slice(0, 5).map((lead) => (
+                          <PriorityLeadCard
+                            key={lead.id}
+                            lead={lead}
+                            lane={lane}
+                            now={now}
+                            repName={repName}
+                            onOpenLogSheet={openLogSheet}
+                          />
+                        ))}
+                        {count > 5 && (
+                          <button
+                            type="button"
+                            onClick={() => router.push("/sales/leads")}
+                            className="flex items-center justify-center gap-1 py-2 text-[12px] font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
+                          >
+                            See all ({count})
+                            <ChevronRight size={12} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                );
+              }
+
+              return (
+                <section key={lane} className={`ag-fade-in ${delayClass}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">
+                        {meta.title}
+                      </h3>
+                      <span className="text-[13px] text-[var(--text-tertiary)]">
+                        {count}
                       </span>
                     </div>
-                    <p className="text-[12px] text-[var(--text-tertiary)]">
-                      {lead.status.charAt(0) + lead.status.slice(1).toLowerCase()}
-                      {lead.follow_up_date && lead.followUpDue
-                        ? " · Follow-up due today"
-                        : lead.follow_up_date
-                        ? ` · Follow-up ${formatFollowUpDate(lead.follow_up_date)}`
-                        : " · No follow-up set"}
-                    </p>
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="flex flex-wrap items-center gap-1.5 px-3 py-1 shrink-0 sm:gap-2 sm:py-0">
-                    {/* Call */}
-                    {lead.phone ? (
-                      <a
-                        href={`tel:${lead.phone}`}
-                        className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--border-hover)] transition-colors"
-                      >
-                        <Phone size={15} className="text-[var(--success)]" />
-                      </a>
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center opacity-30">
-                        <PhoneOff size={15} className="text-[var(--text-disabled)]" />
-                      </div>
-                    )}
-
-                    {/* WhatsApp */}
-                    {lead.phone ? (
+                    {(seeAllHref(lane)
+                      ? lane === "recover"
+                        ? count > 0
+                        : count > 5
+                      : count > 5) && seeAllHref(lane) ? (
                       <button
                         type="button"
-                        className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--border-hover)] transition-colors"
-                        onClick={() => {
-                          openWhatsAppAndLog({
-                            leadId: lead.id,
-                            clientId: lead.client_id,
-                            leadName: lead.name,
-                            leadPhone: lead.phone,
-                            repName: s?.user?.name ?? "",
-                            formData: undefined,
-                            tier: "neutral",
-                          });
-                          openLogSheet(lead.id, "whatsapp");
-                        }}
-                        aria-label="Message on WhatsApp"
+                        onClick={() => router.push(seeAllHref(lane)!)}
+                        className="flex items-center gap-1 text-[12px] font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
                       >
-                        <MessageCircle size={15} className="text-[var(--success)]" />
+                        See all ({count})
+                        <ChevronRight size={12} />
                       </button>
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center opacity-30">
-                        <MessageCircle size={15} className="text-[var(--text-disabled)]" />
-                      </div>
-                    )}
-
-                    {/* Log call */}
-                    <button
-                      type="button"
-                      onClick={() => openLogSheet(lead.id)}
-                      className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
-                    >
-                      <Activity size={14} />
-                    </button>
-
-                    {/* Send */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        router.push(`/sales/leads?lead=${lead.id}&tab=send`)
-                      }
-                      className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] flex items-center justify-center hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-colors text-[var(--text-secondary)]"
-                    >
-                      <Send size={14} />
-                    </button>
+                    ) : count > 5 ? (
+                      <button
+                        type="button"
+                        onClick={() => router.push("/sales/leads")}
+                        className="flex items-center gap-1 text-[12px] font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
+                      >
+                        See all ({count})
+                        <ChevronRight size={12} />
+                      </button>
+                    ) : null}
                   </div>
-                </div>
-              </div>
-            ))}
+                  <div className="flex flex-col gap-2">
+                    {laneLeads.slice(0, 5).map((lead) => (
+                      <PriorityLeadCard
+                        key={lead.id}
+                        lead={lead}
+                        lane={lane}
+                        now={now}
+                        repName={repName}
+                        onOpenLogSheet={openLogSheet}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         )}
       </div>
@@ -717,15 +521,7 @@ export default function SalesDashboardMain({
       {/* ============================================
           QUICK LOG SHEET
           ============================================ */}
-      {showLogSheet && (
-        <QuickLogSheet
-          leads={data.allActiveLeads}
-          preselectedLeadId={preselectedLeadId}
-          onClose={() => setShowLogSheet(false)}
-          onSuccess={handleLogSuccess}
-          defaultChannel={logChannel}
-        />
-      )}
+      {sheet}
     </div>
   );
 }

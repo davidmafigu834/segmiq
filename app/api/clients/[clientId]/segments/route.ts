@@ -52,6 +52,7 @@ export async function GET(
           {
             minScore: segment.min_score as number | null,
             dateRangeDays: segment.date_range_days as number | null,
+            minAgeDays: (segment as { min_age_days?: number | null }).min_age_days ?? null,
           }
         );
         return { ...segment, lead_count: leads.length };

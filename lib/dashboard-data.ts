@@ -1,7 +1,22 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { firstCallResponseMinutes, getAvgResponseMinutes } from "@/lib/metrics";
 import type { LeadSource, LeadStatus } from "@/types";
+import type { CampaignQualifiers } from "@/lib/lead-lanes";
+import {
+  syncRetargetingForClient,
+  type RetargetingStatusView,
+} from "@/lib/retargeting";
 import { addMonths, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
+
+// Raw campaign_qualifiers row shape (read-only; table added in migration 037).
+type CampaignQualifierRow = {
+  client_id: string;
+  budget_min: number | null;
+  budget_max: number | null;
+  target_service_types: string[] | null;
+  target_locations: string[] | null;
+  min_urgency: string | null;
+};
 
 export type ClientTeamOverviewRow = {
   id: string;
@@ -605,6 +620,14 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       ? Math.round((weekContacted / weekLeads.length) * 100)
       : null;
 
+  const clientName = (client?.name as string) ?? "";
+  let retargeting: RetargetingStatusView | null = null;
+  try {
+    retargeting = await syncRetargetingForClient(clientId, clientName);
+  } catch {
+    retargeting = null;
+  }
+
   return {
     focus: { uncontacted, followUpToday, staleLeads },
     pipeline,
@@ -619,7 +642,8 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       weekWon,
       totalActiveLeads: activeLeads.length,
     },
-    clientName: (client?.name as string) ?? "",
+    clientName,
+    retargeting,
   };
 }
 
@@ -650,9 +674,16 @@ export async function fetchSalespersonDashboardData(userId: string) {
     source?: string | null;
     client_id: string;
     assigned_to_id?: string | null;
+    score?: number | null;
+    is_stale?: boolean | null;
+    stale_since?: string | null;
+    budget?: string | null;
+    project_type?: string | null;
+    timeline?: string | null;
+    form_data?: Record<string, unknown> | null;
   };
   const baseSelect =
-    "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id";
+    "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, score, is_stale, stale_since, budget, project_type, timeline";
   let archivedFilterUsed = true;
   let leadsErr: { message?: string } | null = null;
   let allLeads: DBLeadRow[] | null = null;
@@ -717,11 +748,85 @@ export async function fetchSalespersonDashboardData(userId: string) {
     return new Date(l.follow_up_date as string) <= now;
   }).length;
 
+  // AI enrichment scores (read-only — the AI pipeline is never modified here).
+  // A lead with no intent_score row is treated as "no AI" downstream. AI is only
+  // honoured for clients with ai_enabled = true; otherwise we force the rules
+  // path by leaving aiScore null.
+  const activeIds = activeLeads.map((l) => l.id);
+  const clientIds = Array.from(new Set(activeLeads.map((l) => l.client_id)));
+
+  const [{ data: intelRows }, { data: clientRows }, { data: qualifierRows }] =
+    await Promise.all([
+      activeIds.length
+        ? supabase
+            .from("lead_intelligence")
+            .select("lead_id, intent_score")
+            .in("lead_id", activeIds)
+        : Promise.resolve({ data: [] as Array<{ lead_id: string; intent_score: number | null }> }),
+      clientIds.length
+        ? supabase.from("clients").select("id, ai_enabled, name").in("id", clientIds)
+        : Promise.resolve({
+            data: [] as Array<{ id: string; ai_enabled: boolean | null; name: string | null }>,
+          }),
+      clientIds.length
+        ? supabase
+            .from("campaign_qualifiers")
+            .select(
+              "client_id, budget_min, budget_max, target_service_types, target_locations, min_urgency"
+            )
+            .in("client_id", clientIds)
+        : Promise.resolve({ data: [] as CampaignQualifierRow[] }),
+    ]);
+
+  const intentByLead = new Map<string, number>();
+  for (const row of (intelRows ?? []) as Array<{ lead_id: string; intent_score: number | null }>) {
+    if (typeof row.intent_score === "number") {
+      intentByLead.set(row.lead_id, row.intent_score);
+    }
+  }
+
+  const aiEnabledByClient = new Map<string, boolean>();
+  const clientNameById = new Map<string, string>();
+  for (const row of (clientRows ?? []) as Array<{
+    id: string;
+    ai_enabled: boolean | null;
+    name: string | null;
+  }>) {
+    aiEnabledByClient.set(row.id, row.ai_enabled === true);
+    clientNameById.set(row.id, row.name ?? "Client");
+  }
+
+  const qualifiersByClient = new Map<string, CampaignQualifierRow>();
+  for (const row of (qualifierRows ?? []) as CampaignQualifierRow[]) {
+    qualifiersByClient.set(row.client_id, row);
+  }
+
+  // aiScore is honoured only when the client has AI enabled AND the lead has a
+  // real intent score. Otherwise null → the rules engine drives ranking.
+  function resolveAiScore(lead: DBLeadRow): number | null {
+    if (!aiEnabledByClient.get(lead.client_id)) return null;
+    return intentByLead.get(lead.id) ?? null;
+  }
+
+  function resolveQualifiers(lead: DBLeadRow): CampaignQualifiers | null {
+    const row = qualifiersByClient.get(lead.client_id);
+    if (!row) return null;
+    return {
+      budget_min: row.budget_min,
+      budget_max: row.budget_max,
+      target_service_types: row.target_service_types,
+      target_locations: row.target_locations,
+      min_urgency: row.min_urgency,
+    };
+  }
+
   type PriorityLead = DBLeadRow & {
     priorityLabel: string;
     priorityColor: string;
     priorityOrder: number;
     followUpDue: boolean;
+    aiScore: number | null;
+    qualifiers: CampaignQualifiers | null;
   };
 
   const priorityLeads: PriorityLead[] = activeLeads
@@ -748,9 +853,26 @@ export async function fetchSalespersonDashboardData(userId: string) {
         priorityOrder = 6;
       }
 
-      return { ...lead, priorityLabel, priorityColor, priorityOrder, followUpDue } as PriorityLead;
+      return {
+        ...lead,
+        priorityLabel,
+        priorityColor,
+        priorityOrder,
+        followUpDue,
+        aiScore: resolveAiScore(lead),
+        qualifiers: resolveQualifiers(lead),
+      } as PriorityLead;
     })
     .sort((a, b) => a.priorityOrder - b.priorityOrder);
+
+  const retargetingStatuses: RetargetingStatusView[] = [];
+  for (const [cid, cname] of Array.from(clientNameById.entries())) {
+    try {
+      retargetingStatuses.push(await syncRetargetingForClient(cid, cname));
+    } catch {
+      // segment tables may not exist in all environments yet
+    }
+  }
 
   return {
     priorityLeads: priorityLeads.slice(0, 20),
@@ -760,6 +882,8 @@ export async function fetchSalespersonDashboardData(userId: string) {
       priorityColor: "var(--text-disabled)",
       priorityOrder: 6,
       followUpDue: false,
+      aiScore: resolveAiScore(l),
+      qualifiers: resolveQualifiers(l),
     })) as PriorityLead[],
     numbers: {
       totalActive,
@@ -769,6 +893,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
     },
     recentActivity: recentEvents ?? [],
     recentWins: monthWins ?? [],
+    retargetingStatuses,
     debug: (await (async () => {
       const statuses: Record<string, number> = {};
       for (const r of leads) {
