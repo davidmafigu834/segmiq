@@ -18,6 +18,140 @@ type CampaignQualifierRow = {
   min_urgency: string | null;
 };
 
+type SalespersonLeadRow = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  status: string;
+  follow_up_date: string | null;
+  created_at: string;
+  source?: string | null;
+  client_id: string;
+  assigned_to_id?: string | null;
+  score?: number | null;
+  is_stale?: boolean | null;
+  stale_since?: string | null;
+  budget?: string | null;
+  project_type?: string | null;
+  timeline?: string | null;
+  form_data?: Record<string, unknown> | null;
+};
+
+function isMissingLeadsColumn(
+  err: { message?: string } | null,
+  column: string
+): boolean {
+  return String(err?.message ?? "").includes(`column leads.${column} does not exist`);
+}
+
+const SALESPERSON_LEAD_CORE_SELECT =
+  "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, budget, project_type, timeline";
+
+function salespersonLeadSelect(includeScoring: boolean): string {
+  return includeScoring
+    ? `${SALESPERSON_LEAD_CORE_SELECT}, score, is_stale, stale_since`
+    : SALESPERSON_LEAD_CORE_SELECT;
+}
+
+/** Handles DBs that predate migration 032 (score/is_stale) or lack is_archived. */
+async function fetchAssignedLeadsForSalesperson(
+  supabase: ReturnType<typeof createAdminClient>,
+  userId: string
+): Promise<{
+  leads: SalespersonLeadRow[];
+  error: { message?: string } | null;
+  archivedFilterUsed: boolean;
+  scoringColumnsAvailable: boolean;
+}> {
+  let archivedFilterUsed = true;
+  let includeScoring = true;
+
+  const run = (select: string, useArchived: boolean) => {
+    let q = supabase
+      .from("leads")
+      .select(select)
+      .eq("assigned_to_id", userId);
+    if (useArchived) {
+      q = q.or("is_archived.is.null,is_archived.eq.false");
+    }
+    return q.order("created_at", { ascending: false });
+  };
+
+  let result = await run(salespersonLeadSelect(includeScoring), archivedFilterUsed);
+
+  if (result.error && isMissingLeadsColumn(result.error, "is_archived")) {
+    archivedFilterUsed = false;
+    result = await run(salespersonLeadSelect(includeScoring), false);
+  }
+
+  if (
+    result.error &&
+    (isMissingLeadsColumn(result.error, "score") ||
+      isMissingLeadsColumn(result.error, "is_stale") ||
+      isMissingLeadsColumn(result.error, "stale_since"))
+  ) {
+    includeScoring = false;
+    result = await run(salespersonLeadSelect(false), archivedFilterUsed);
+    if (result.error && isMissingLeadsColumn(result.error, "is_archived")) {
+      archivedFilterUsed = false;
+      result = await run(salespersonLeadSelect(false), false);
+    }
+  }
+
+  return {
+    leads: (result.data as SalespersonLeadRow[] | null) ?? [],
+    error: result.error,
+    archivedFilterUsed,
+    scoringColumnsAvailable: includeScoring,
+  };
+}
+
+async function fetchClientLeadsWithFallback(
+  supabase: ReturnType<typeof createAdminClient>,
+  clientId: string
+): Promise<{
+  leads: Array<{
+    id: string;
+    status: string;
+    assigned_to_id: string | null;
+    created_at: string;
+    follow_up_date: string | null;
+    deal_value: number | null;
+    score?: number | null;
+    is_stale?: boolean | null;
+    source: string | null;
+  }>;
+}> {
+  const withScoring =
+    "id, status, assigned_to_id, created_at, follow_up_date, deal_value, score, is_stale, source";
+  const withoutScoring =
+    "id, status, assigned_to_id, created_at, follow_up_date, deal_value, source";
+
+  const variants = [
+    { select: withScoring, useArchived: true },
+    { select: withoutScoring, useArchived: true },
+    { select: withScoring, useArchived: false },
+    { select: withoutScoring, useArchived: false },
+  ];
+
+  for (const variant of variants) {
+    let q = supabase.from("leads").select(variant.select).eq("client_id", clientId);
+    if (variant.useArchived) {
+      q = q.eq("is_archived", false);
+    }
+    const result = await q;
+    if (!result.error) {
+      return { leads: result.data ?? [] };
+    }
+    const msg = String(result.error.message ?? "");
+    if (!msg.includes("column leads.") || !msg.includes("does not exist")) {
+      break;
+    }
+  }
+
+  return { leads: [] };
+}
+
 export type ClientTeamOverviewRow = {
   id: string;
   name: string;
@@ -462,20 +596,18 @@ export async function fetchClientManagerDashboardData(clientId: string) {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
 
+  const { leads: allLeadsData } = await fetchClientLeadsWithFallback(
+    supabase,
+    clientId
+  );
+
   const [
-    { data: allLeads },
     { data: salespeople },
     { data: todayCallLogs },
     { data: weekEvents },
     { data: recentWins },
     { data: client },
   ] = await Promise.all([
-    supabase
-      .from("leads")
-      .select("id, status, assigned_to_id, created_at, follow_up_date, deal_value, score, is_stale, source")
-      .eq("client_id", clientId)
-      .eq("is_archived", false),
-
     supabase
       .from("users")
       .select("id, name, created_at")
@@ -663,51 +795,13 @@ export async function fetchSalespersonDashboardData(userId: string) {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
 
-  // Leads query with archived filter fallback (handles environments without is_archived column)
-  type DBLeadRow = {
-    id: string;
-    name: string | null;
-    phone: string | null;
-    status: string;
-    follow_up_date: string | null;
-    created_at: string;
-    source?: string | null;
-    client_id: string;
-    assigned_to_id?: string | null;
-    score?: number | null;
-    is_stale?: boolean | null;
-    stale_since?: string | null;
-    budget?: string | null;
-    project_type?: string | null;
-    timeline?: string | null;
-    form_data?: Record<string, unknown> | null;
-  };
-  const baseSelect =
-    "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, score, is_stale, stale_since, budget, project_type, timeline";
-  let archivedFilterUsed = true;
-  let leadsErr: { message?: string } | null = null;
-  let allLeads: DBLeadRow[] | null = null;
-  {
-    const first = await supabase
-      .from("leads")
-      .select(baseSelect)
-      .eq("assigned_to_id", userId)
-      .or("is_archived.is.null,is_archived.eq.false")
-      .order("created_at", { ascending: false });
-    leadsErr = first.error;
-    if (first.error && String(first.error.message || "").includes("column leads.is_archived does not exist")) {
-      archivedFilterUsed = false;
-      const retry = await supabase
-        .from("leads")
-        .select(baseSelect)
-        .eq("assigned_to_id", userId)
-        .order("created_at", { ascending: false });
-      allLeads = (retry.data as DBLeadRow[] | null) ?? [];
-      leadsErr = retry.error;
-    } else {
-      allLeads = (first.data as DBLeadRow[] | null) ?? [];
-    }
-  }
+  type DBLeadRow = SalespersonLeadRow;
+  const {
+    leads: allLeadsArray,
+    error: leadsErr,
+    archivedFilterUsed,
+    scoringColumnsAvailable,
+  } = await fetchAssignedLeadsForSalesperson(supabase, userId);
 
   const [
     { data: todayCallLogs },
@@ -734,7 +828,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
       .gte("created_at", monthStart.toISOString()),
   ]);
 
-  const leads: DBLeadRow[] = allLeads ?? [];
+  const leads: DBLeadRow[] = allLeadsArray;
   const activeLeads: DBLeadRow[] = leads.filter(
     (l) => !["WON", "LOST", "NOT_QUALIFIED"].includes(l.status as string)
   );
@@ -936,6 +1030,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
         assignedCountOverall: assignedCountOverall ?? null,
         createdToday: createdToday ?? null,
         archivedFilterUsed,
+        scoringColumnsAvailable,
       };
     })()),
   };

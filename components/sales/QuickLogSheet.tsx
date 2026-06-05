@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   Phone,
-  PhoneMissed,
-  PhoneCall,
+  PhoneOff,
+  CalendarClock,
   CheckCircle,
   XCircle,
   MinusCircle,
@@ -23,12 +24,12 @@ type Outcome =
 const OUTCOMES: Array<{
   value: Outcome;
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   colour: string;
 }> = [
   { value: "ANSWERED", label: "Answered", icon: Phone, colour: "var(--success)" },
-  { value: "NO_ANSWER", label: "No answer", icon: PhoneMissed, colour: "var(--text-tertiary)" },
-  { value: "FOLLOW_UP", label: "Follow-up", icon: PhoneCall, colour: "var(--warning)" },
+  { value: "NO_ANSWER", label: "No answer", icon: PhoneOff, colour: "var(--text-tertiary)" },
+  { value: "FOLLOW_UP", label: "Follow-up", icon: CalendarClock, colour: "var(--warning)" },
   { value: "WON", label: "Won", icon: CheckCircle, colour: "var(--accent)" },
   { value: "LOST", label: "Lost", icon: XCircle, colour: "var(--error)" },
   { value: "NOT_QUALIFIED", label: "Not qualified", icon: MinusCircle, colour: "var(--text-disabled)" },
@@ -143,6 +144,7 @@ export function QuickLogSheet({
                 <div className="grid grid-cols-3 gap-2">
                   {OUTCOMES.map((outcome) => {
                     const isSelected = selectedOutcome === outcome.value;
+                    const OutcomeIcon = outcome.icon;
                     return (
                       <button
                         key={outcome.value}
@@ -159,7 +161,7 @@ export function QuickLogSheet({
                           color: isSelected ? outcome.colour : "var(--text-tertiary)",
                         }}
                       >
-                        <outcome.icon size={13} />
+                        <OutcomeIcon size={13} />
                         {outcome.label}
                       </button>
                     );

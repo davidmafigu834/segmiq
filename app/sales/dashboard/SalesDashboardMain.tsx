@@ -21,7 +21,10 @@ import {
   LANE_ORDER,
   type LeadLane,
 } from "@/lib/lead-lanes";
-import { isRetargetingGraduated, type RetargetingStatusView } from "@/lib/retargeting";
+import {
+  isRetargetingGraduated,
+  type RetargetingStatusView,
+} from "@/lib/retargeting-shared";
 import { type PriorityLead, timeAgo } from "@/lib/sales-priority-lead";
 import { PriorityLeadCard } from "@/components/sales/PriorityLeadCard";
 import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
@@ -209,12 +212,14 @@ export default function SalesDashboardMain({
               data.numbers.wonThisMonth > 0 ? "var(--accent)" : "var(--text-disabled)",
             icon: Trophy,
           },
-        ].map((stat) => (
+        ].map((stat) => {
+          const StatIcon = stat.icon;
+          return (
           <div
             key={stat.label}
             className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 flex flex-col items-center"
           >
-            <stat.icon size={14} className="mb-2 text-[var(--text-disabled)]" />
+            <StatIcon size={14} className="mb-2 text-[var(--text-disabled)]" />
             <p
               className="font-display text-3xl font-semibold leading-none mb-1"
               style={{ color: stat.colour }}
@@ -225,7 +230,8 @@ export default function SalesDashboardMain({
               {stat.label}
             </p>
           </div>
-        ))}
+        );
+        })}
       </div>
 
       {data.numbers.totalActive === 0 && data.debug ? (

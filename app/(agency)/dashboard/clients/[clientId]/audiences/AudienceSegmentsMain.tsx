@@ -12,7 +12,7 @@ import {
   Radio,
 } from "lucide-react";
 import { RETARGETING_GRADUATED_KEY } from "@/lib/audience-segments";
-import type { RetargetingStatusView } from "@/lib/retargeting";
+import type { RetargetingStatusView } from "@/lib/retargeting-shared";
 
 // ============================================
 // TYPES

@@ -10,7 +10,7 @@ import {
   RECOVER_AGE_TABS,
   type RecoverAgeTier,
 } from "@/lib/lead-lanes";
-import { excludeGraduatedLeads } from "@/lib/retargeting";
+import { excludeGraduatedLeads } from "@/lib/retargeting-shared";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 import { PriorityLeadCard } from "@/components/sales/PriorityLeadCard";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";

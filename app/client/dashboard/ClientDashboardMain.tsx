@@ -23,7 +23,7 @@ import {
   retargetingStatusLabel,
   RETARGETING_PROGRESS_SHOW_RATIO,
   type RetargetingStatusView,
-} from "@/lib/retargeting";
+} from "@/lib/retargeting-shared";
 
 // ============================================
 // TYPES

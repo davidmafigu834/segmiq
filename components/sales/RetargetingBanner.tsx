@@ -8,7 +8,7 @@ import {
   canNudgeRetargeting,
   retargetingStatusLabel,
   type RetargetingStatusView,
-} from "@/lib/retargeting";
+} from "@/lib/retargeting-shared";
 
 function isDismissed(status: RetargetingStatusView): boolean {
   if (!status.bannerDismissedUntil) return false;
