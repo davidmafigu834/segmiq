@@ -17,7 +17,7 @@ const NAV = [
   { label: "Why Segmiq", href: "/why-segmiq" },
   { label: "Security", href: "/security" },
   { label: "Segmiq CRM", href: "/products/segmiq-crm" },
-  { label: "Pricing", href: "#" },
+  { label: "Pricing", href: "/#pricing" },
   { label: "Resources", href: "#" },
 ];
 
@@ -50,11 +50,11 @@ export default function MarketingHeader() {
           <Link href="#" className="hidden md:inline text-[#5b5b5b] hover:text-black">
             Support
           </Link>
-          <Link href="#" className="hidden sm:inline font-medium hover:text-black">
+          <Link href="/login" className="hidden sm:inline font-medium hover:text-black">
             Sign in
           </Link>
           <Link
-            href="#"
+            href="/login"
             className="hidden sm:inline px-4 py-2 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]"
           >
             Book a demo
@@ -87,11 +87,16 @@ export default function MarketingHeader() {
             </Link>
           ))}
           <div className="flex gap-3 pt-4">
-            <Link href="#" className="flex-1 text-center px-4 py-2.5 rounded-full border border-black/[0.08] font-semibold">
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="flex-1 text-center px-4 py-2.5 rounded-full border border-black/[0.08] font-semibold"
+            >
               Sign in
             </Link>
             <Link
-              href="#"
+              href="/login"
+              onClick={() => setOpen(false)}
               className="flex-1 text-center px-4 py-2.5 rounded-full bg-[#D4FF4F] text-black font-semibold"
             >
               Book a demo
