@@ -56,8 +56,8 @@ export default function WhySegmiqPage() {
             Most sales software was built for software teams in San Francisco. Segmiq was built for a roofing company in Harare, a solar installer in Lusaka, and an electrical contractor in Johannesburg — where the first reply still arrives on WhatsApp.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <a href="#" className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">Book a demo</a>
-            <a href="#" className="px-6 py-3 rounded-full border border-black/[0.08] font-semibold hover:border-black/30">See pricing</a>
+            <a href="/login" className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">Book a demo</a>
+            <a href="/#pricing" className="px-6 py-3 rounded-full border border-black/[0.08] font-semibold hover:border-black/30">See pricing</a>
           </div>
         </div>
       </section>
@@ -193,11 +193,11 @@ export default function WhySegmiqPage() {
               Bring a week of real enquiries. We&apos;ll show you the response times, the missed follow-ups, and the deals hiding in your pipeline.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
+              <a href="/login" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
                 Book a demo
               </a>
               <a
-                href="#"
+                href="/#pricing"
                 className="inline-flex items-center gap-1 px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5"
               >
                 See pricing <ArrowRight className="w-4 h-4" />

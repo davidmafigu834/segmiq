@@ -235,7 +235,7 @@ export default function SecurityPage() {
               Bring them to the demo. We&apos;ll walk through exactly how your pipeline is stored, accessed, and protected.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
+              <a href="/login" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
                 Book a demo
               </a>
               <a href="#" className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">

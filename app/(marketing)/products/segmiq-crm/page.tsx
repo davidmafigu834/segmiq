@@ -118,10 +118,10 @@ export default function SegmiqCrmPage() {
             Segmiq CRM runs your entire revenue motion across three connected portals: the agency that manages clients, the manager who runs a sales team, and the rep closing work on the ground.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <a href="#" className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
+            <a href="/login" className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
               Book a demo
             </a>
-            <a href="#" className="px-6 py-3 rounded-full border border-black/[0.08] font-semibold hover:border-black/30">
+            <a href="/#pricing" className="px-6 py-3 rounded-full border border-black/[0.08] font-semibold hover:border-black/30">
               See pricing
             </a>
           </div>
@@ -201,7 +201,7 @@ export default function SegmiqCrmPage() {
               The intelligence engine reads each enquiry for intent category, urgency, budget confidence, and project specificity — then turns it into a single score and a clear next action. Your reps stop guessing who&apos;s worth chasing.
             </p>
             <a
-              href="#"
+              href="/#intelligence"
               className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-full bg-white text-black font-semibold hover:bg-white/90"
             >
               See the intelligence layer <ArrowRight className="w-4 h-4" />
@@ -285,10 +285,10 @@ export default function SegmiqCrmPage() {
               We&apos;ll set up a portal, load a sample of your leads, and show you the scoring, routing, and coaching in action.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
+              <a href="/login" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
                 Book a demo
               </a>
-              <a href="#" className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">
+              <a href="/#pricing" className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">
                 See pricing
               </a>
             </div>
