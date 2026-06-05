@@ -106,22 +106,22 @@ async function fetchAssignedLeadsForSalesperson(
   };
 }
 
+type ClientDashboardLeadRow = {
+  id: string;
+  status: string;
+  assigned_to_id: string | null;
+  created_at: string;
+  follow_up_date: string | null;
+  deal_value: number | null;
+  score?: number | null;
+  is_stale?: boolean | null;
+  source: string | null;
+};
+
 async function fetchClientLeadsWithFallback(
   supabase: ReturnType<typeof createAdminClient>,
   clientId: string
-): Promise<{
-  leads: Array<{
-    id: string;
-    status: string;
-    assigned_to_id: string | null;
-    created_at: string;
-    follow_up_date: string | null;
-    deal_value: number | null;
-    score?: number | null;
-    is_stale?: boolean | null;
-    source: string | null;
-  }>;
-}> {
+): Promise<{ leads: ClientDashboardLeadRow[] }> {
   const withScoring =
     "id, status, assigned_to_id, created_at, follow_up_date, deal_value, score, is_stale, source";
   const withoutScoring =
@@ -141,7 +141,9 @@ async function fetchClientLeadsWithFallback(
     }
     const result = await q;
     if (!result.error) {
-      return { leads: result.data ?? [] };
+      return {
+        leads: (result.data as unknown as ClientDashboardLeadRow[] | null) ?? [],
+      };
     }
     const msg = String(result.error.message ?? "");
     if (!msg.includes("column leads.") || !msg.includes("does not exist")) {
@@ -641,7 +643,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       .single(),
   ]);
 
-  const leads = allLeads ?? [];
+  const leads = allLeadsData;
   const reps = salespeople ?? [];
   const todayCalls = todayCallLogs ?? [];
   const sentEvents = weekEvents ?? [];
