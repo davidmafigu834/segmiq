@@ -1,4 +1,5 @@
 import { BarChart2 } from "lucide-react";
+import { Card, CardBody } from "@/components/ui/Card";
 import { PulseBar } from "@/components/dashboard/PulseBar";
 import { buildPulseMetrics } from "@/components/dashboard/pulse-metrics";
 import { FlagAlert } from "@/components/dashboard/FlagAlert";
@@ -86,7 +87,8 @@ export async function DashboardMain() {
       <div className="ag-fade-in ag-delay-3 mt-10 grid grid-cols-1 gap-6 min-[800px]:grid-cols-2">
 
         {/* Pipeline */}
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+        <Card>
+          <CardBody>
           <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
             Pipeline
           </p>
@@ -124,10 +126,12 @@ export async function DashboardMain() {
               })}
             </div>
           )}
-        </div>
+          </CardBody>
+        </Card>
 
         {/* Lead sources */}
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+        <Card>
+          <CardBody>
           <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
             Sources
           </p>
@@ -163,7 +167,8 @@ export async function DashboardMain() {
               Lead source data will appear here
             </p>
           )}
-        </div>
+          </CardBody>
+        </Card>
 
       </div>
 

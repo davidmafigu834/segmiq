@@ -45,6 +45,7 @@ body {
   --accent-foreground: #000000;
   --accent-muted: rgba(212, 255, 79, 0.1);
   --accent-border: rgba(212, 255, 79, 0.3);
+  --shadow-accent-glow: 0 4px 16px rgba(212, 255, 79, 0.25);
 
   /* ── Status — muted dark equivalents ── */
   --success: #3dd68c;

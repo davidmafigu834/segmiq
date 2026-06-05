@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ExportCsvButton } from "@/components/reports/ExportCsvButton";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
   addDays,
   addMonths,
@@ -180,29 +182,25 @@ export function ReportsControls({ clients }: { clients: ClientOption[] }) {
         <div className="flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface-card-alt p-4">
           <label className="font-mono text-[11px] text-ink-secondary">
             From
-            <input
+            <Input
               type="date"
-              className="input-base mt-1 block h-11 text-base md:h-9 md:text-sm"
+              className="mt-1 block"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
             />
           </label>
           <label className="font-mono text-[11px] text-ink-secondary">
             To
-            <input
+            <Input
               type="date"
-              className="input-base mt-1 block h-11 text-base md:h-9 md:text-sm"
+              className="mt-1 block"
               value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
             />
           </label>
-          <button
-            type="button"
-            onClick={() => void applyCustom()}
-            className="h-11 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-accent-ink md:h-9"
-          >
+          <Button size="lg" onClick={() => void applyCustom()}>
             Apply
-          </button>
+          </Button>
         </div>
       )}
 

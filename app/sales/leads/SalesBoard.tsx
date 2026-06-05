@@ -212,7 +212,7 @@ export function SalesBoard({
             <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)]" />
           </button>
         </div>
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface-card p-2 md:p-0">
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface-card p-2 md:p-0">
           <ResponsiveTable<LeadWithClientResponseLimit>
             columns={
               [
@@ -294,7 +294,7 @@ export function SalesBoard({
           </button>
         </div>
         <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:max-w-md sm:flex-row sm:items-center sm:justify-end sm:gap-2 sm:pl-0">
-          <span className="shrink-0 self-start rounded-sm border border-border bg-surface-card-alt px-2 py-1 font-mono text-[11px] text-ink-tertiary sm:self-center">
+          <span className="shrink-0 self-start rounded-md border border-border bg-surface-card-alt px-2 py-1 font-mono text-[11px] text-ink-tertiary sm:self-center">
             Board
           </span>
           <input
@@ -315,7 +315,7 @@ export function SalesBoard({
       ) : null}
 
       {hasSearchNoMatch ? (
-        <div className="mb-6 flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface-card-alt px-4 py-10 text-center">
+        <div className="mb-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-card-alt px-4 py-10 text-center">
           <p className="text-sm text-ink-secondary">
             No leads match <span className="font-medium text-ink-primary">&quot;{searchQuery.trim()}&quot;</span>
           </p>
@@ -372,7 +372,7 @@ export function SalesBoard({
                     key={l.id}
                     type="button"
                     onClick={() => openLeadPanel(l.id)}
-                    className={`w-full border border-border bg-surface-card p-3.5 text-left active:scale-[0.98] ${
+                    className={`w-full rounded-lg border border-border bg-surface-card p-3.5 text-left active:scale-[0.98] ${
                       kanbanLeadIsSlow(l) ? "border-l-[3px] border-l-[var(--danger)]" : ""
                     }`}
                   >
@@ -430,7 +430,7 @@ export function SalesBoard({
                         <ScoreBadge score={l.score} />
                       )}
                       <span
-                        className={`rounded-sm px-2 py-0.5 font-mono text-[10px] ${
+                        className={`rounded-md px-2 py-0.5 font-mono text-[10px] ${
                           kanbanLeadIsSlow(l)
                             ? "bg-[var(--danger)] text-white"
                             : "bg-surface-card-alt text-ink-tertiary"
@@ -439,7 +439,7 @@ export function SalesBoard({
                         {formatDistanceToNow(new Date(l.created_at), { addSuffix: true })}
                       </span>
                       <FollowUpKanbanPill followUpDate={l.follow_up_date} />
-                      <span className="rounded-sm bg-surface-card-alt px-2 py-0.5 font-mono text-[10px] text-ink-secondary">
+                      <span className="rounded-md bg-surface-card-alt px-2 py-0.5 font-mono text-[10px] text-ink-secondary">
                         {l.source === "FACEBOOK" ? "FB" : l.source === "LANDING_PAGE" ? "LP" : "—"}
                       </span>
                     </div>
@@ -458,7 +458,7 @@ export function SalesBoard({
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`w-[280px] shrink-0 snap-start rounded-sm border border-border bg-transparent sm:w-[320px] ${
+                    className={`w-[280px] shrink-0 snap-start rounded-lg border border-border bg-transparent sm:w-[320px] ${
                       snapshot.isDraggingOver ? "ring-2 ring-dashed ring-[var(--accent)]" : ""
                     }`}
                   >
@@ -467,7 +467,7 @@ export function SalesBoard({
                         <span className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">
                           {col.replace("_", " ")}
                         </span>
-                        <span className="rounded-sm bg-surface-card-alt px-2 py-0.5 font-mono text-[11px] text-ink-secondary">
+                        <span className="rounded-md bg-surface-card-alt px-2 py-0.5 font-mono text-[11px] text-ink-secondary">
                           {grouped[col].length}
                         </span>
                       </div>
@@ -486,7 +486,7 @@ export function SalesBoard({
                                   ? { boxShadow: "var(--shadow-lg)", transform: "rotate(1deg) scale(1.02)" }
                                   : {}),
                               }}
-                              className={`cursor-grab border border-border bg-surface-card p-4 active:cursor-grabbing ${
+                              className={`cursor-grab rounded-lg border border-border bg-surface-card p-4 active:cursor-grabbing ${
                                 kanbanLeadIsSlow(l) ? "border-l-[3px] border-l-[var(--danger)]" : ""
                               }`}
                               onClick={() => openLeadPanel(l.id)}
@@ -547,7 +547,7 @@ export function SalesBoard({
                                   <ScoreBadge score={l.score} />
                                 )}
                                 <span
-                                  className={`rounded-sm px-2 py-0.5 font-mono text-[10px] ${
+                                  className={`rounded-md px-2 py-0.5 font-mono text-[10px] ${
                                     kanbanLeadIsSlow(l)
                                       ? "bg-[var(--danger)] text-white"
                                       : "bg-surface-card-alt text-ink-tertiary"
@@ -556,7 +556,7 @@ export function SalesBoard({
                                   {formatDistanceToNow(new Date(l.created_at), { addSuffix: true })}
                                 </span>
                                 <FollowUpKanbanPill followUpDate={l.follow_up_date} />
-                                <span className="rounded-sm bg-surface-card-alt px-2 py-0.5 font-mono text-[10px] text-ink-secondary">
+                                <span className="rounded-md bg-surface-card-alt px-2 py-0.5 font-mono text-[10px] text-ink-secondary">
                                   {l.source === "FACEBOOK" ? "FB" : l.source === "LANDING_PAGE" ? "LP" : "—"}
                                 </span>
                               </div>
@@ -585,7 +585,7 @@ function FollowUpKanbanPill({ followUpDate }: { followUpDate: string | null }) {
   const startToday = startOfDay(new Date());
   if (isBefore(d, startToday)) {
     return (
-      <span className="rounded-sm bg-[var(--danger)] px-2 py-0.5 font-mono text-[10px] uppercase text-white">
+      <span className="rounded-md bg-[var(--danger)] px-2 py-0.5 font-mono text-[10px] uppercase text-white">
         Overdue · {format(d, "MMM d")}
       </span>
     );
@@ -593,7 +593,7 @@ function FollowUpKanbanPill({ followUpDate }: { followUpDate: string | null }) {
   if (isToday(d)) {
     return (
       <span
-        className="rounded-sm px-2 py-0.5 font-mono text-[10px]"
+        className="rounded-md px-2 py-0.5 font-mono text-[10px]"
         style={{
           background: "var(--status-followup-bg)",
           color: "var(--status-followup-fg)",
@@ -605,7 +605,7 @@ function FollowUpKanbanPill({ followUpDate }: { followUpDate: string | null }) {
   }
   return (
     <span
-      className="rounded-sm px-2 py-0.5 font-mono text-[10px]"
+      className="rounded-md px-2 py-0.5 font-mono text-[10px]"
       style={{
         background: "var(--status-followup-bg)",
         color: "var(--status-followup-fg)",

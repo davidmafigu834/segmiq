@@ -46,7 +46,7 @@ function scoreDotClass(tier: string): string {
     case "performing":
       return "bg-[var(--success)]";
     case "needs_attention":
-      return "bg-amber-500";
+      return "bg-[var(--warning)]";
     default:
       return "bg-[var(--danger)]";
   }
@@ -151,13 +151,13 @@ export function ClientTeamDashboard({
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
+        <div className="rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
           {error instanceof Error ? error.message : "Error"}
         </div>
       ) : null}
 
       {isLoading && !data ? (
-        <div className="shimmer h-48 rounded-lg" />
+        <div className="shimmer h-48 rounded-xl" />
       ) : data ? (
         <>
           <PulseBar metrics={pulseMetrics} />
@@ -171,8 +171,7 @@ export function ClientTeamDashboard({
                   setModalUserId(m.userId);
                   setModalTab("performance");
                 }}
-                className="flex flex-col border border-border bg-surface-card p-6 text-left transition-colors hover:border-border-strong"
-                style={{ borderRadius: 10 }}
+                className="flex flex-col rounded-xl border border-border bg-surface-card p-6 text-left transition-colors hover:border-border-strong"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
@@ -226,7 +225,7 @@ export function ClientTeamDashboard({
                       <Line
                         type="monotone"
                         dataKey="v"
-                        stroke="#D4FF4F"
+                        stroke="var(--accent)"
                         strokeWidth={2}
                         dot={false}
                         isAnimationActive={false}
@@ -258,7 +257,7 @@ export function ClientTeamDashboard({
             if (e.target === e.currentTarget) setModalUserId(null);
           }}
         >
-          <div className="flex h-full w-full max-w-[720px] flex-col overflow-y-auto border border-border bg-surface-card p-4 shadow-lg md:max-h-[90vh] md:rounded-[10px] md:p-6">
+          <div className="flex h-full w-full max-w-[720px] flex-col overflow-y-auto border border-border bg-surface-card p-4 shadow-lg md:max-h-[90vh] md:rounded-xl md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <ClientAvatar name={selectedMember.name} size={56} />
@@ -268,7 +267,7 @@ export function ClientTeamDashboard({
               </div>
               <button
                 type="button"
-                className="rounded-sm p-2 text-ink-tertiary hover:bg-surface-card-alt hover:text-ink-primary"
+                className="rounded-md p-2 text-ink-tertiary hover:bg-surface-card-alt hover:text-ink-primary"
                 onClick={() => setModalUserId(null)}
                 aria-label="Close"
               >
@@ -315,8 +314,8 @@ export function ClientTeamDashboard({
                           fontSize: 12,
                         }}
                       />
-                      <Line type="monotone" dataKey="leads" name="Leads" stroke="#9498A1" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="wins" name="Wins" stroke="#0a0b0d" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="leads" name="Leads" stroke="var(--text-tertiary)" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="wins" name="Wins" stroke="var(--accent)" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -342,7 +341,7 @@ export function ClientTeamDashboard({
                         <p className="text-xs text-ink-tertiary">—</p>
                       ) : (
                         col.leads.map((l) => (
-                          <div key={l.id} className="border border-border bg-surface-card p-3 text-xs">
+                          <div key={l.id} className="rounded-lg border border-border bg-surface-card p-3 text-xs">
                             <div className="font-medium text-ink-primary">{l.name}</div>
                             <div className="mt-1 text-ink-tertiary">{l.phone ?? "—"}</div>
                             <div className="mt-1 font-mono tabular-nums text-ink-secondary">{l.budgetLabel}</div>

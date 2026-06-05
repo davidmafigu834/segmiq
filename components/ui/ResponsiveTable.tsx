@@ -17,6 +17,7 @@ export function ResponsiveTable<T>({
   rowKey,
   emptyState,
   rowClassName,
+  minWidthClassName,
 }: {
   columns: ResponsiveTableColumn<T>[];
   rows: T[];
@@ -24,12 +25,15 @@ export function ResponsiveTable<T>({
   rowKey: (row: T) => string;
   emptyState?: React.ReactNode;
   rowClassName?: (row: T) => string | undefined;
+  /** Tailwind min-width class for the desktop table so it scrolls instead of cramming (e.g. "min-w-[800px]"). */
+  minWidthClassName?: string;
 }) {
   if (rows.length === 0 && emptyState) return <>{emptyState}</>;
 
   return (
     <>
-      <table className="hidden w-full lg:table">
+      <div className="hidden overflow-x-auto lg:block">
+      <table className={["w-full", minWidthClassName ?? ""].filter(Boolean).join(" ")}>
         <thead>
           <tr className="border-b border-[var(--border-strong)]">
             {columns.map((col) => (
@@ -67,6 +71,7 @@ export function ResponsiveTable<T>({
           ))}
         </tbody>
       </table>
+      </div>
 
       <div className="space-y-2 lg:hidden">
         {rows.map((row) => {

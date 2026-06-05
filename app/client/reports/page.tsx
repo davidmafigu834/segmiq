@@ -26,7 +26,7 @@ export default async function ClientReportsPage({
       breadcrumbOverride={id ? `${clientName} / REPORTS` : "REPORTS"}
       pageTitle="Performance"
     >
-      <Suspense fallback={<div className="shimmer h-[min(480px,70vh)] rounded-lg" />}>
+      <Suspense fallback={<div className="shimmer h-[min(480px,70vh)] rounded-xl" />}>
         <ClientReportsPageClient clientName={clientName} />
       </Suspense>
     </ClientManagerLayout>

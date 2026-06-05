@@ -10,6 +10,7 @@ import { StatusPill } from "@/components/StatusPill";
 import type { LeadSource } from "@/types";
 import { formatTimeAgo } from "@/lib/format";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
+import { SegmentedTabs } from "@/components/ui/SegmentedTabs";
 
 type Filter = "all" | "facebook" | "landing";
 
@@ -154,25 +155,12 @@ export function RecentLeadsTable({
           <h2 className="mt-1 text-[18px] font-semibold text-[var(--text-primary)]">{title}</h2>
         </div>
         {showSourceFilters ? (
-          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide sm:flex-wrap">
-            {filters.map((f) => {
-              const active = filter === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFilter(f.id)}
-                  className={`h-7 shrink-0 rounded-md px-3 text-[12px] font-medium transition-colors ${
-                    active
-                      ? "bg-[var(--bg-quaternary)] text-[var(--text-primary)] border border-[var(--border-strong)]"
-                      : "border border-[var(--border)] bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
+          <SegmentedTabs
+            aria-label="Filter leads by source"
+            tabs={filters.map((f) => ({ value: f.id, label: f.label }))}
+            value={filter}
+            onValueChange={(v) => setFilter(v as Filter)}
+          />
         ) : null}
       </div>
 
@@ -189,6 +177,7 @@ export function RecentLeadsTable({
             rows={filtered}
             rowKey={(r) => r.id}
             onRowClick={openLead}
+            minWidthClassName="min-w-[760px]"
           />
         </div>
       )}

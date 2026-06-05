@@ -224,103 +224,39 @@ export function LeadDetailPanel({
               />
             )}
             {activeLead.score !== null && activeLead.score !== undefined && (
-              <div
-                style={{
-                  padding: "14px 16px",
-                  background: "var(--ag-surface)",
-                  border: "0.5px solid var(--ag-border)",
-                  borderRadius: 10,
-                  marginBottom: 16,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 10,
-                  }}
-                >
-                  <p
-                    style={{
-                      fontFamily: "var(--ag-font-body)",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "var(--ag-text-tertiary)",
-                      margin: 0,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                    }}
-                  >
+              <div className="mb-4 rounded-xl border border-border bg-surface-card-alt px-4 py-3.5">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-tertiary">
                     Lead score
                   </p>
                   <ScoreBadge score={activeLead.score} />
                 </div>
-                <div
-                  style={{
-                    height: 4,
-                    background: "var(--ag-surface-3)",
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    marginBottom: 12,
-                  }}
-                >
+                <div className="mb-3 h-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
                   <div
+                    className="h-1 rounded-full transition-[width] duration-700 ease-out"
                     style={{
-                      height: 4,
-                      borderRadius: 2,
                       width: `${activeLead.score}%`,
                       background:
                         activeLead.score >= 70
-                          ? "#3dd68c"
+                          ? "var(--success)"
                           : activeLead.score >= 40
-                          ? "#f5a623"
-                          : "#555555",
-                      transition: "width 0.8s ease",
+                          ? "var(--warning)"
+                          : "var(--text-tertiary)",
                     }}
                   />
                 </div>
                 {activeLead.score_breakdown && (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(3, 1fr)",
-                      gap: 6,
-                    }}
-                  >
+                  <div className="grid grid-cols-3 gap-1.5">
                     {Object.entries(activeLead.score_breakdown).map(
                       ([key, value]) => (
                         <div
                           key={key}
-                          style={{
-                            textAlign: "center",
-                            padding: "6px 4px",
-                            background: "var(--ag-surface-2)",
-                            borderRadius: 6,
-                          }}
+                          className="rounded-md bg-[var(--bg-tertiary)] px-1 py-1.5 text-center"
                         >
-                          <p
-                            style={{
-                              fontFamily: "var(--ag-font-body)",
-                              fontSize: 14,
-                              fontWeight: 700,
-                              color: "var(--ag-text-primary)",
-                              margin: "0 0 2px",
-                              lineHeight: 1,
-                            }}
-                          >
+                          <p className="mb-0.5 text-sm font-bold leading-none text-ink-primary">
                             {value}
                           </p>
-                          <p
-                            style={{
-                              fontFamily: "var(--ag-font-body)",
-                              fontSize: 9,
-                              color: "var(--ag-text-muted)",
-                              margin: 0,
-                              textTransform: "capitalize",
-                              letterSpacing: "0.04em",
-                            }}
-                          >
+                          <p className="text-[9px] capitalize tracking-[0.04em] text-ink-tertiary">
                             {key.replace(/_/g, " ")}
                           </p>
                         </div>
@@ -652,7 +588,7 @@ function CallHistoryOutcome({ outcome, notes }: { outcome: string; notes: string
     return (
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-2">
-          <span className="inline-flex h-[22px] shrink-0 items-center rounded-sm bg-[var(--status-lost-bg)] px-2.5 text-[11px] font-medium leading-none text-[var(--status-lost-fg)]">
+          <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-[var(--status-lost-bg)] px-2.5 text-[11px] font-medium leading-none text-[var(--status-lost-fg)]">
             Lost
           </span>
           {reasonPart ? <span className="text-[13px] text-ink-primary">— {reasonPart}</span> : null}

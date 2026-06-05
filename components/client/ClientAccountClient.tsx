@@ -532,7 +532,7 @@ export function ClientAccountClient({
           Need help? Your agency admin can update settings, add team members, or change integrations.
         </p>
 
-        <div className="rounded-lg border border-[--border] bg-[--surface-card] p-6">
+        <div className="rounded-xl border border-[--border] bg-[--surface-card] p-6">
           {agencyContact ? (
             <>
               <div className="mb-5 flex items-center gap-4">

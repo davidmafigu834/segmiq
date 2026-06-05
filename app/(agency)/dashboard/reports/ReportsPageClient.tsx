@@ -16,7 +16,7 @@ export function ReportsPageClient({ clients }: { clients: ClientOption[] }) {
           <ReportsControls clients={clients} />
         </Suspense>
       </div>
-      <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-surface-card-alt" />}>
+      <Suspense fallback={<div className="h-96 animate-pulse rounded-xl bg-surface-card-alt" />}>
         <ReportsDashboard />
       </Suspense>
     </div>

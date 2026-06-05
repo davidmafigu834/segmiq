@@ -204,7 +204,7 @@ export function PackagesManager({ clientId }: { clientId: string }) {
   return (
     <div className="space-y-10">
       {toast ? (
-        <div className="fixed bottom-6 right-6 z-50 rounded-lg border border-border bg-surface-card px-4 py-3 text-sm shadow-xl">
+        <div className="fixed bottom-6 right-6 z-50 rounded-md border border-border bg-surface-card px-4 py-3 text-sm shadow-xl">
           {toast}
         </div>
       ) : null}

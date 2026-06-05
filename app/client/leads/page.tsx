@@ -60,7 +60,7 @@ export default async function ClientLeadsPage() {
 
   return (
     <ClientManagerLayout breadcrumbPage="LEADS" pageTitle="Leads" hideShellHeader>
-      <Suspense fallback={<div className="shimmer h-64 rounded-lg" />}>
+      <Suspense fallback={<div className="shimmer h-64 rounded-xl" />}>
         <div className="px-0">
           <ClientLeadsTable
             clientId={clientId}

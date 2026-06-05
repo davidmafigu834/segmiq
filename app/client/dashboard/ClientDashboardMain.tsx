@@ -525,10 +525,7 @@ export default function ClientDashboardMain({
                         style={{ width: `${pct}%`, background: stage.color }}
                       />
                     </div>
-                    <span
-                      className="text-[16px] font-semibold text-[var(--text-primary)] w-7 text-right shrink-0"
-                      style={{ fontFamily: "var(--font-instrument-serif)" }}
-                    >
+                    <span className="font-display text-[16px] font-semibold text-[var(--text-primary)] w-7 text-right shrink-0">
                       {count}
                     </span>
                   </div>

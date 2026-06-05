@@ -33,7 +33,7 @@ export default async function SalesLeadsPage() {
 
   return (
     <SalesLayout breadcrumb="SALES / PIPELINE" pageTitle="My pipeline">
-      <Suspense fallback={<div className="shimmer h-96 rounded-lg" />}>
+      <Suspense fallback={<div className="shimmer h-96 rounded-xl" />}>
         <SalesBoard initialLeads={(leads ?? []) as LeadWithClientResponseLimit[]} />
       </Suspense>
     </SalesLayout>

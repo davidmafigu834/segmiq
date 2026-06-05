@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MailCheck } from "lucide-react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -405,37 +406,37 @@ export function ClientSettingsClient({
           <div className="mb-4 rounded-md border border-border bg-surface-card-alt px-3 py-2 text-sm">{toast}</div>
         ) : null}
         {inviteEmailResult?.emailSent === true ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", background: "rgba(61,214,140,0.08)", border: "0.5px solid rgba(61,214,140,0.2)", borderRadius: 10, marginBottom: 16 }}>
-            <i className="ti ti-mail-check" style={{ fontSize: 16, color: "#3dd68c" }} />
-            <p style={{ fontSize: 13, color: "#3dd68c", margin: 0, flex: 1 }}>
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--success-border)] bg-[var(--success-muted)] px-3.5 py-3 text-[13px] text-[var(--success)]">
+            <MailCheck className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+            <p className="m-0 flex-1">
               Login details sent to {inviteEmailResult.email}
             </p>
-            <button type="button" style={{ fontSize: 12, color: "#3dd68c", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }} onClick={() => setInviteEmailResult(null)}>
+            <button type="button" className="text-xs underline" onClick={() => setInviteEmailResult(null)}>
               Dismiss
             </button>
           </div>
         ) : inviteEmailResult?.emailSent === false ? (
-          <div style={{ padding: "12px 14px", background: "rgba(245,166,35,0.08)", border: "0.5px solid rgba(245,166,35,0.2)", borderRadius: 10, marginBottom: 16 }}>
-            <p style={{ fontSize: 12, color: "#f5a623", margin: "0 0 8px", fontWeight: 600 }}>
+          <div className="mb-4 rounded-xl border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3.5 py-3">
+            <p className="mb-2 text-xs font-semibold text-[var(--warning)]">
               Email failed to send. Share these credentials manually:
             </p>
-            <p style={{ fontSize: 13, color: "#ededed", margin: "0 0 4px" }}>
+            <p className="mb-1 text-[13px] text-ink-primary">
               Email: {inviteEmailResult.email}
             </p>
-            <p style={{ fontSize: 13, color: "#ededed", margin: "0 0 8px", fontFamily: "monospace" }}>
+            <p className="mb-2 font-mono text-[13px] text-ink-primary">
               Password: {tempPass}
             </p>
             <div>
-              <button type="button" style={{ fontSize: 12, textDecoration: "underline", background: "none", border: "none", cursor: "pointer", marginRight: 12 }} onClick={() => void copyTempPassword()}>
+              <button type="button" className="mr-3 text-xs underline" onClick={() => void copyTempPassword()}>
                 Copy password
               </button>
-              <button type="button" style={{ fontSize: 12, textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }} onClick={() => { setInviteEmailResult(null); setTempPass(null); }}>
+              <button type="button" className="text-xs underline" onClick={() => { setInviteEmailResult(null); setTempPass(null); }}>
                 Dismiss
               </button>
             </div>
           </div>
         ) : tempPass ? (
-          <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
+          <div className="mb-4 rounded-md border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3 py-2 text-sm">
             Temporary password: <code className="font-mono">{tempPass}</code>
             <button type="button" className="ml-2 underline" onClick={() => void copyTempPassword()}>
               Copy
@@ -532,7 +533,7 @@ export function ClientSettingsClient({
                 ) : null}
               </p>
               <input
-                className="mt-3 max-w-md rounded-md border border-border px-3 py-2 text-sm"
+                className="mt-3 max-w-md rounded-md border border-border bg-surface-card px-3 py-2 text-sm text-ink-primary placeholder:text-ink-tertiary"
                 placeholder="Client name"
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
@@ -563,7 +564,7 @@ export function ClientSettingsClient({
             <section>
               <h3 className="font-mono text-[10px] uppercase text-ink-tertiary">Manager</h3>
               {manager ? (
-                <div className="mt-2 flex flex-wrap items-center gap-4 rounded-lg border border-border bg-surface-card p-4">
+                <div className="mt-2 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-surface-card p-4">
                   <ClientAvatar name={manager.name} size="md" />
                   <div>
                     <div className="font-medium">{manager.name}</div>
@@ -647,7 +648,7 @@ export function ClientSettingsClient({
                 </div>
               ) : null}
 
-              <div className="mt-6 overflow-hidden rounded-lg border border-border">
+              <div className="mt-6 overflow-hidden rounded-xl border border-border">
                 <table className="w-full text-left text-sm">
                   <thead className="border-b border-border bg-surface-card-alt font-mono text-[10px] uppercase text-ink-tertiary">
                     <tr>
@@ -690,12 +691,12 @@ export function ClientSettingsClient({
 
             {(inviteSalesOpen || inviteMgrOpen) && (
               <div className="fixed inset-0 z-50 flex flex-col bg-[var(--surface-overlay)] p-0 md:items-center md:justify-center md:p-4">
-                <div className="flex h-full w-full max-w-md flex-col border border-border bg-surface-card p-5 shadow-lg md:h-auto md:rounded-lg md:p-6">
+                <div className="flex h-full w-full max-w-md flex-col border border-border bg-surface-card p-5 shadow-lg md:h-auto md:rounded-xl md:p-6">
                   <h3 className="font-display text-xl">{inviteSalesOpen ? "Invite salesperson" : "Invite manager"}</h3>
                   <label className="mt-3 block text-sm">
                     Name
                     <input
-                      className="mt-1 w-full rounded-md border border-border px-3 py-2 text-base md:text-sm"
+                      className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base text-ink-primary placeholder:text-ink-tertiary md:text-sm"
                       value={inviteForm.name}
                       onChange={(e) => setInviteForm((f) => ({ ...f, name: e.target.value }))}
                       autoCapitalize="words"
@@ -704,7 +705,7 @@ export function ClientSettingsClient({
                   <label className="mt-3 block text-sm">
                     Email
                     <input
-                      className="mt-1 w-full rounded-md border border-border px-3 py-2 text-base md:text-sm"
+                      className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base text-ink-primary placeholder:text-ink-tertiary md:text-sm"
                       value={inviteForm.email}
                       onChange={(e) => setInviteForm((f) => ({ ...f, email: e.target.value }))}
                       inputMode="email"
@@ -714,7 +715,7 @@ export function ClientSettingsClient({
                   <label className="mt-3 block text-sm">
                     Phone (E.164{inviteMgrOpen ? ", optional for manager" : ""})
                     <input
-                      className="mt-1 w-full rounded-md border border-border px-3 py-2 text-base md:text-sm"
+                      className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base text-ink-primary placeholder:text-ink-tertiary md:text-sm"
                       value={inviteForm.phone}
                       onChange={(e) => setInviteForm((f) => ({ ...f, phone: e.target.value }))}
                       placeholder="+15551234567"
@@ -872,7 +873,7 @@ export function ClientSettingsClient({
               </button>
               <button
                 type="button"
-                className="rounded-md border border-amber-500/40 px-4 py-2 text-sm text-amber-800"
+                className="rounded-md border border-[var(--warning-border)] px-4 py-2 text-sm text-[var(--warning)]"
                 disabled={saving || Boolean(client.is_archived)}
                 onClick={async () => {
                   if (!window.confirm("Archive this client? It will disappear from lists.")) return;

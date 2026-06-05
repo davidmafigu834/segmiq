@@ -69,7 +69,7 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
     <div
       role="link"
       tabIndex={0}
-      className="ag-card-hover group relative block cursor-pointer rounded-lg border border-[var(--border)] bg-surface-card p-5"
+      className="ag-card-hover group relative block cursor-pointer rounded-xl border border-[var(--border)] bg-surface-card p-5"
       onClick={() => router.push(`/dashboard/clients/${row.id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -86,18 +86,11 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
       ) : null}
       {recSummary && !row.hasFlag ? (
         <div
-          className="absolute right-4 top-4 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-          style={{
-            background: recSummary.hasCritical
-              ? "rgba(255,68,68,0.12)"
-              : "rgba(245,166,35,0.12)",
-            color: recSummary.hasCritical ? "var(--error)" : "var(--warning)",
-            border: `1px solid ${
-              recSummary.hasCritical
-                ? "rgba(255,68,68,0.25)"
-                : "rgba(245,166,35,0.25)"
-            }`,
-          }}
+          className={`absolute right-4 top-4 flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+            recSummary.hasCritical
+              ? "border-[var(--error-border)] bg-[var(--error-muted)] text-[var(--error)]"
+              : "border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)]"
+          }`}
           aria-label="Active recommendations"
         >
           <Lightbulb size={9} />
@@ -124,7 +117,7 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
         <div className={`relative shrink-0 ${row.hasFlag ? "absolute right-9 top-4" : ""}`} ref={menuRef}>
           <button
             type="button"
-            className="flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)] transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)] transition-colors"
             aria-label="More"
             onClick={(e) => {
               e.stopPropagation();

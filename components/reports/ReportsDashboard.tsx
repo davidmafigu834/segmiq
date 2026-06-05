@@ -80,7 +80,7 @@ function SourceTable({ report }: { report: AgencyReport }) {
     },
   ];
 
-  return <ResponsiveTable columns={columns} rows={rows} rowKey={(r) => r.s} rowClassName={(r) => (r.leads === 0 ? "opacity-60" : undefined)} />;
+  return <ResponsiveTable columns={columns} rows={rows} rowKey={(r) => r.s} minWidthClassName="min-w-[640px]" rowClassName={(r) => (r.leads === 0 ? "opacity-60" : undefined)} />;
 }
 
 function ClientLeaderboard({ rows }: { rows: AgencyReport["byClient"] }) {
@@ -121,7 +121,7 @@ function ClientLeaderboard({ rows }: { rows: AgencyReport["byClient"] }) {
     },
   ];
 
-  return <ResponsiveTable columns={columns} rows={rows} rowKey={(r) => r.clientId} />;
+  return <ResponsiveTable columns={columns} rows={rows} rowKey={(r) => r.clientId} minWidthClassName="min-w-[680px]" />;
 }
 
 function SalesLeaderboard({ rows }: { rows: AgencyReport["bySalesperson"] }) {
@@ -135,7 +135,7 @@ function SalesLeaderboard({ rows }: { rows: AgencyReport["bySalesperson"] }) {
           <ClientAvatar name={r.name} size="sm" />
           <div>
             <div className="font-medium text-ink-primary">{r.name}</div>
-            <span className="inline-block rounded-sm bg-surface-card-alt px-2 py-0.5 font-mono text-[10px] text-ink-tertiary">
+            <span className="inline-block rounded-full bg-surface-card-alt px-2.5 py-0.5 font-mono text-[10px] text-ink-tertiary">
               {r.clientName}
             </span>
           </div>
@@ -165,7 +165,7 @@ function SalesLeaderboard({ rows }: { rows: AgencyReport["bySalesperson"] }) {
     },
   ];
 
-  return <ResponsiveTable columns={columns} rows={rows} rowKey={(r) => r.userId} />;
+  return <ResponsiveTable columns={columns} rows={rows} rowKey={(r) => r.userId} minWidthClassName="min-w-[720px]" />;
 }
 
 export function ReportsDashboard() {
@@ -180,7 +180,7 @@ export function ReportsDashboard() {
   }
 
   if (isLoading && !data) {
-    return <div className="h-48 animate-pulse rounded-lg bg-surface-card-alt" />;
+    return <div className="h-48 animate-pulse rounded-xl bg-surface-card-alt" />;
   }
 
   if (error) {
@@ -195,7 +195,7 @@ export function ReportsDashboard() {
 
   if (data.totals.leads === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface-card py-20 text-center">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-surface-card py-20 text-center">
         <BarChart3 className="mx-auto h-12 w-12 text-ink-tertiary" strokeWidth={1.25} aria-hidden />
         <h2 className="mt-4 font-display text-xl text-ink-primary">No data for this period</h2>
         <p className="mt-2 max-w-sm text-sm text-ink-secondary">
@@ -211,7 +211,7 @@ export function ReportsDashboard() {
     <div className="space-y-10">
       <PulseBar metrics={pulse} />
 
-      <section className="border border-border bg-surface-card p-6">
+      <section className="rounded-xl border border-border bg-surface-card p-6">
         <div className="mb-4 flex flex-col gap-2 layout:flex-row layout:items-start layout:justify-between">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary">01 / Volume</p>
@@ -236,13 +236,13 @@ export function ReportsDashboard() {
       </section>
 
       <div className="grid grid-cols-1 gap-8 layout:grid-cols-2">
-        <section className="border border-border bg-surface-card p-6">
+        <section className="rounded-xl border border-border bg-surface-card p-6">
           <h3 className="font-display text-lg text-ink-primary">By source</h3>
           <div className="mt-4">
             <SourceTable report={data} />
           </div>
         </section>
-        <section className="border border-border bg-surface-card p-6">
+        <section className="rounded-xl border border-border bg-surface-card p-6">
           <h3 className="font-display text-lg text-ink-primary">Why deals don&apos;t close</h3>
           <p className="mt-1 text-xs text-ink-tertiary">Lost + not qualified reasons (cohort)</p>
           <div className="mt-4">
@@ -264,7 +264,7 @@ export function ReportsDashboard() {
       <section>
         <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary">02 / Portfolio</p>
         <h2 className="font-display text-[22px] text-ink-primary">Client performance</h2>
-        <div className="mt-6 border border-border bg-surface-card p-6">
+        <div className="mt-6 rounded-xl border border-border bg-surface-card p-6">
           <ClientLeaderboard rows={data.byClient} />
         </div>
       </section>
@@ -273,7 +273,7 @@ export function ReportsDashboard() {
         <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary">03 / Team</p>
         <h2 className="font-display text-[22px] text-ink-primary">Top performers</h2>
         <p className="mt-1 text-xs text-ink-tertiary">Win rate · minimum 5 contacted leads</p>
-        <div className="mt-6 border border-border bg-surface-card p-6">
+        <div className="mt-6 rounded-xl border border-border bg-surface-card p-6">
           {data.bySalesperson.length === 0 ? (
             <p className="text-sm text-ink-secondary">No salespeople meet the minimum contacted threshold.</p>
           ) : (

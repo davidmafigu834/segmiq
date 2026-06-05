@@ -3,6 +3,7 @@
 import { Info } from "lucide-react";
 import type { PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 import { EmptyValue } from "@/components/EmptyValue";
+import { Card, CardBody } from "@/components/ui/Card";
 
 export type { PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 
@@ -32,7 +33,8 @@ function normalizeMetric(m: PulseBarMetric | LegacyPulseMetric): PulseBarMetric 
 export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMetric)[] }) {
   const list = metrics.map(normalizeMetric);
   return (
-    <div className="mb-8 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+    <Card className="mb-8 w-full">
+      <CardBody>
       <div className="grid grid-cols-2 gap-6 layout:grid-cols-4">
         {list.map((m, i) => (
           <div key={`${m.eyebrow}-${i}`} className="flex flex-col gap-1">
@@ -47,7 +49,7 @@ export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMe
               ) : null}
             </div>
 
-            <p className="font-display text-[36px] font-semibold leading-none text-[var(--text-primary)]">
+            <p className="font-display text-3xl font-semibold leading-none text-[var(--text-primary)] md:text-4xl">
               {m.emptyLabel ? <EmptyValue label={m.emptyLabel} /> : m.value}
             </p>
 
@@ -67,6 +69,7 @@ export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMe
           </div>
         ))}
       </div>
-    </div>
+      </CardBody>
+    </Card>
   );
 }

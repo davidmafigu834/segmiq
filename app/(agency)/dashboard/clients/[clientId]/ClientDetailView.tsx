@@ -35,12 +35,16 @@ function StatusIndicator({
   tokenExpired?: boolean;
 }) {
   const isLive = status === "live" || status === "connected" || status === "active";
-  const color = tokenExpired ? "#DC2626" : isLive ? "#10B981" : "#9CA3AF";
+  const dotClass = tokenExpired
+    ? "bg-[var(--error)]"
+    : isLive
+      ? "bg-[var(--success)]"
+      : "bg-[var(--text-tertiary)]";
   const text = tokenExpired ? "Expired — reconnect" : isLive ? liveLabel : draftLabel;
 
   return (
     <div className="flex items-center gap-2 text-sm">
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: color }} />
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`} />
       <span className="text-ink-secondary">{label}</span>
       <span className="font-medium text-ink-primary">{text}</span>
     </div>

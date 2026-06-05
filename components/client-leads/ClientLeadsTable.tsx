@@ -13,7 +13,7 @@ import {
   subDays,
   subMonths,
 } from "date-fns";
-import { Download, Inbox, Search, CheckSquare } from "lucide-react";
+import { Download, Inbox, Search, CheckSquare, Upload } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { StatusPill } from "@/components/StatusPill";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
@@ -58,7 +58,7 @@ function FilterPill({
       onClick={onClick}
       className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
         active
-          ? "border-[var(--accent)] bg-[rgba(212,255,79,0.12)] text-ink-primary"
+          ? "border-[var(--accent)] bg-[var(--accent-muted)] text-ink-primary"
           : "border-border bg-transparent text-ink-secondary hover:border-border-strong hover:bg-surface-card-alt"
       }`}
     >
@@ -453,7 +453,7 @@ export function ClientLeadsTable({
               onClick={() => setShowImport(true)}
               className="inline-flex shrink-0 items-center gap-2 self-start rounded-md border border-border px-4 py-2 text-sm text-ink-secondary hover:bg-surface-card-alt"
             >
-              <i className="ti ti-upload" style={{ fontSize: 14 }} />
+              <Upload className="h-4 w-4" strokeWidth={1.5} />
               Import CSV
             </button>
           )}
@@ -598,7 +598,7 @@ export function ClientLeadsTable({
                 <button
                   key={l.id}
                   type="button"
-                  className="w-full border border-border bg-surface-card p-3 text-left"
+                  className="w-full rounded-lg border border-border bg-surface-card p-3 text-left"
                   onClick={() => openLeadPanel(l.id)}
                 >
                   <div className="mb-2 flex items-center justify-between">

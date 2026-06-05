@@ -123,17 +123,17 @@ export function WonLostClient({ initialLeads }: { initialLeads: LeadWithClientRe
       </div>
 
       {closedLeads.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16 text-center">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
           <Archive className="mb-4 h-10 w-10 text-ink-tertiary" strokeWidth={1.5} />
           <h2 className="font-display text-2xl text-ink-primary">No closed deals yet</h2>
           <p className="mt-2 max-w-sm text-sm text-ink-secondary">Leads you win or lose will appear here.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <p className="rounded-lg border border-border bg-surface-card py-10 text-center text-sm text-ink-tertiary">
+        <p className="rounded-xl border border-border bg-surface-card py-10 text-center text-sm text-ink-tertiary">
           No leads in this tab.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface-card p-2 md:p-0">
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface-card p-2 md:p-0">
           <ResponsiveTable
             columns={columns}
             rows={filtered}

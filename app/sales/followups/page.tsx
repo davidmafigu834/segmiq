@@ -140,7 +140,7 @@ export default async function SalesFollowupsPage() {
                               : ""}
                           </span>
                           {overdueSection ? (
-                            <span className="rounded-sm bg-[var(--danger)] px-2 py-0.5 font-mono text-[10px] uppercase text-white">
+                            <span className="rounded-md bg-[var(--danger)] px-2 py-0.5 font-mono text-[10px] uppercase text-white">
                               Overdue
                             </span>
                           ) : null}

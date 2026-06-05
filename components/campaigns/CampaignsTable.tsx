@@ -20,40 +20,40 @@ function CampaignRow({ c }: { c: CampaignWithInsights }) {
   const ins = c.insights;
 
   return (
-    <tr className="group border-b border-border/80">
-      <td className="py-3 align-top">
+    <tr className="group border-b border-[var(--border)] last:border-0 hover:bg-white/[0.02]">
+      <td className="px-3 py-3 align-top">
         <div className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-ink-primary">{c.name || "—"}</span>
           <span
-            className={`inline-flex w-fit rounded-sm px-2 py-0.5 font-mono text-[11px] ${statusPillClass(label)}`}
+            className={`inline-flex w-fit rounded-full px-2.5 py-0.5 font-mono text-[11px] ${statusPillClass(label)}`}
           >
             {label}
           </span>
         </div>
       </td>
-      <td className="py-3 align-top font-mono text-[11px] text-ink-tertiary">
+      <td className="px-3 py-3 align-top font-mono text-[11px] text-ink-tertiary">
         {(c.objective ?? "—").replace(/_/g, " ")}
       </td>
-      <td className="py-3 text-right font-mono text-sm tabular-nums text-ink-secondary">
+      <td className="px-3 py-3 text-right font-mono text-sm tabular-nums text-ink-secondary">
         {formatCampaignBudget(c.daily_budget as string | undefined, c.lifetime_budget as string | undefined)}
       </td>
-      <td className="py-3 text-right font-mono-data text-sm tabular-nums">{ins.impressions.toLocaleString()}</td>
-      <td className="py-3 text-right font-mono-data text-sm tabular-nums">{ins.clicks.toLocaleString()}</td>
-      <td className="py-3 text-right font-mono-data text-sm tabular-nums">{formatCtr(ins.ctr)}</td>
-      <td className={`py-3 text-right font-mono-data text-sm tabular-nums ${spendClass(ins.spend)}`}>
+      <td className="px-3 py-3 text-right font-mono-data text-sm tabular-nums">{ins.impressions.toLocaleString()}</td>
+      <td className="px-3 py-3 text-right font-mono-data text-sm tabular-nums">{ins.clicks.toLocaleString()}</td>
+      <td className="px-3 py-3 text-right font-mono-data text-sm tabular-nums">{formatCtr(ins.ctr)}</td>
+      <td className={`px-3 py-3 text-right font-mono-data text-sm tabular-nums ${spendClass(ins.spend)}`}>
         {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(
           ins.spend
         )}
       </td>
-      <td className="py-3 text-right font-mono-data text-sm tabular-nums">{ins.leads}</td>
-      <td className={`py-3 text-right font-mono-data text-sm tabular-nums ${cplColorClass(ins.costPerLead)}`}>
+      <td className="px-3 py-3 text-right font-mono-data text-sm tabular-nums">{ins.leads}</td>
+      <td className={`px-3 py-3 text-right font-mono-data text-sm tabular-nums ${cplColorClass(ins.costPerLead)}`}>
         {ins.costPerLead > 0
           ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(
               ins.costPerLead
             )
           : "—"}
       </td>
-      <td className="py-3 text-right">
+      <td className="px-3 py-3 text-right">
         <a
           href={metaCampaignUrl(c.id)}
           target="_blank"
@@ -83,7 +83,7 @@ export function CampaignsTable({
       {withErrors.map((g) => (
         <div
           key={`err-${g.clientId}`}
-          className="flex flex-col gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-3 rounded-md border border-[var(--warning-border)] bg-[var(--warning-muted)] px-4 py-3 text-sm text-[var(--warning)] sm:flex-row sm:items-center sm:justify-between"
         >
           <p>
             Unable to load campaigns for <strong>{g.clientName}</strong>: {g.error}. Check the Facebook connection.
@@ -122,11 +122,11 @@ export function CampaignsTable({
                     href={metaCampaignUrl(c.id)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block border border-border bg-surface-card p-3"
+                    className="block rounded-lg border border-border bg-surface-card p-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="font-medium text-ink-primary">{c.name || "—"}</div>
-                      <span className={`inline-flex rounded-sm px-2 py-0.5 font-mono text-[10px] ${statusPillClass(label)}`}>
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 font-mono text-[10px] ${statusPillClass(label)}`}>
                         {label}
                       </span>
                     </div>
@@ -140,20 +140,20 @@ export function CampaignsTable({
                 );
               })}
             </div>
-            <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
+            <div className="hidden overflow-x-auto rounded-xl border border-[var(--border)] md:block">
               <table className="w-full min-w-[1100px] text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-surface-card-alt font-mono text-[11px] uppercase text-ink-tertiary">
-                    <th className="px-3 py-2 text-left">Campaign</th>
-                    <th className="px-3 py-2 text-left">Objective</th>
-                    <th className="px-3 py-2 text-right">Budget</th>
-                    <th className="px-3 py-2 text-right">Impr.</th>
-                    <th className="px-3 py-2 text-right">Clicks</th>
-                    <th className="px-3 py-2 text-right">CTR</th>
-                    <th className="px-3 py-2 text-right">Spend</th>
-                    <th className="px-3 py-2 text-right">Leads</th>
-                    <th className="px-3 py-2 text-right">CPL</th>
-                    <th className="px-3 py-2 text-right" />
+                  <tr className="border-b border-[var(--border)] text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
+                    <th className="px-3 py-3 text-left font-medium">Campaign</th>
+                    <th className="px-3 py-3 text-left font-medium">Objective</th>
+                    <th className="px-3 py-3 text-right font-medium">Budget</th>
+                    <th className="px-3 py-3 text-right font-medium">Impr.</th>
+                    <th className="px-3 py-3 text-right font-medium">Clicks</th>
+                    <th className="px-3 py-3 text-right font-medium">CTR</th>
+                    <th className="px-3 py-3 text-right font-medium">Spend</th>
+                    <th className="px-3 py-3 text-right font-medium">Leads</th>
+                    <th className="px-3 py-3 text-right font-medium">CPL</th>
+                    <th className="px-3 py-3 text-right font-medium" />
                   </tr>
                 </thead>
                 <tbody>

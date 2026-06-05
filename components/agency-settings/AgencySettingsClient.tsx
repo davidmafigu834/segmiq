@@ -4,8 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { format, parseISO } from "date-fns";
+import { MailCheck } from "lucide-react";
 import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { ClientAvatar } from "@/components/ClientAvatar";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Card, CardBody } from "@/components/ui/Card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/Table";
 
 function passwordStrength(pw: string): "weak" | "medium" | "strong" {
   if (pw.length < 8) return "weak";
@@ -500,8 +512,8 @@ export function AgencySettingsClient() {
                 <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">
                   Shown in the top-left of the platform and on client-facing emails.
                 </p>
-                <input
-                  className="mt-2 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base md:text-sm"
+                <Input
+                  className="mt-2"
                   value={form.agency_name}
                   onChange={(e) => setForm((f) => ({ ...f, agency_name: e.target.value }))}
                 />
@@ -509,8 +521,8 @@ export function AgencySettingsClient() {
               <label className="block">
                 <span className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Logo URL</span>
                 <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">Used in emails and branded surfaces when set.</p>
-                <input
-                  className="mt-2 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base md:text-sm"
+                <Input
+                  className="mt-2"
                   value={form.logo_url}
                   onChange={(e) => setForm((f) => ({ ...f, logo_url: e.target.value }))}
                   placeholder="https://…"
@@ -523,11 +535,11 @@ export function AgencySettingsClient() {
                 <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">
                   New clients inherit this SLA. Leads not contacted within this window get flagged.
                 </p>
-                <input
+                <Input
                   type="number"
                   min={1}
                   max={168}
-                  className="mt-2 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base md:text-sm"
+                  className="mt-2"
                   value={form.default_response_time_limit_hours}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, default_response_time_limit_hours: Number(e.target.value) || 2 }))
@@ -539,8 +551,8 @@ export function AgencySettingsClient() {
                 <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">
                   Used to format deal values across reports.
                 </p>
-                <input
-                  className="mt-2 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base md:text-sm"
+                <Input
+                  className="mt-2"
                   value={form.default_currency}
                   onChange={(e) => setForm((f) => ({ ...f, default_currency: e.target.value }))}
                 />
@@ -550,8 +562,8 @@ export function AgencySettingsClient() {
                 <p className="mt-1 text-[12px] leading-snug text-[var(--text-tertiary)]">
                   Controls when daily cron jobs fire and how dates display.
                 </p>
-                <input
-                  className="mt-2 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base md:text-sm"
+                <Input
+                  className="mt-2"
                   value={form.default_timezone}
                   onChange={(e) => setForm((f) => ({ ...f, default_timezone: e.target.value }))}
                   placeholder="America/New_York"
@@ -560,9 +572,9 @@ export function AgencySettingsClient() {
             </div>
             <div className="safe-bottom sticky bottom-0 border-t border-border bg-[var(--surface-page)] pt-4">
               <div className="flex flex-wrap items-center gap-3">
-                <button type="button" className="btn-primary h-11 md:h-9" disabled={saving} onClick={() => void saveGeneral()}>
+                <Button disabled={saving} onClick={() => void saveGeneral()}>
                   {saving ? "Saving…" : "Save"}
-                </button>
+                </Button>
                 {savedGeneral ? (
                   <span className="text-[13px] font-medium text-[var(--success)]" aria-live="polite">
                     Saved ✓
@@ -591,9 +603,9 @@ export function AgencySettingsClient() {
               )}
               <label className="block">
                 <span className="font-mono text-[10px] uppercase text-ink-tertiary">New email</span>
-                <input
+                <Input
                   type="email"
-                  className="input-base mt-1"
+                  className="mt-1"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   autoComplete="email"
@@ -602,31 +614,29 @@ export function AgencySettingsClient() {
               </label>
               <label className="block">
                 <span className="font-mono text-[10px] uppercase text-ink-tertiary">Current password (to confirm)</span>
-                <input
+                <Input
                   type="password"
-                  className="input-base mt-1"
+                  className="mt-1"
                   value={emailCurrentPassword}
                   onChange={(e) => setEmailCurrentPassword(e.target.value)}
                   autoComplete="current-password"
                 />
               </label>
-              <button
-                type="button"
-                className="btn-primary h-11 md:h-9"
+              <Button
                 disabled={saving || !accountEmail}
                 onClick={() => void changeEmail()}
               >
                 {saving ? "Saving…" : "Update email"}
-              </button>
+              </Button>
             </section>
 
             <section className="space-y-4">
               <h3 className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Change password</h3>
               <label className="block">
                 <span className="font-mono text-[10px] uppercase text-ink-tertiary">Current password</span>
-                <input
+                <Input
                   type="password"
-                  className="input-base mt-1"
+                  className="mt-1"
                   value={currentPw}
                   onChange={(e) => setCurrentPw(e.target.value)}
                   autoComplete="current-password"
@@ -634,9 +644,9 @@ export function AgencySettingsClient() {
               </label>
               <label className="block">
                 <span className="font-mono text-[10px] uppercase text-ink-tertiary">New password</span>
-                <input
+                <Input
                   type="password"
-                  className="input-base mt-1"
+                  className="mt-1"
                   value={newPw}
                   onChange={(e) => setNewPw(e.target.value)}
                   autoComplete="new-password"
@@ -649,23 +659,21 @@ export function AgencySettingsClient() {
               </label>
               <label className="block">
                 <span className="font-mono text-[10px] uppercase text-ink-tertiary">Confirm new password</span>
-                <input
+                <Input
                   type="password"
-                  className="input-base mt-1"
+                  className="mt-1"
                   value={confirmPw}
                   onChange={(e) => setConfirmPw(e.target.value)}
                   autoComplete="new-password"
                 />
               </label>
               <p className="text-xs text-ink-tertiary">Use at least 8 characters and include a number or symbol.</p>
-              <button
-                type="button"
-                className="btn-primary h-11 md:h-9"
+              <Button
                 disabled={saving || !accountEmail}
                 onClick={() => void changePassword()}
               >
                 {saving ? "Updating…" : "Update password"}
-              </button>
+              </Button>
             </section>
           </div>
         ) : null}
@@ -678,55 +686,61 @@ export function AgencySettingsClient() {
               paste secrets into this UI.
             </p>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-lg border border-border bg-surface-card p-4">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-2 w-2 shrink-0 rounded-full ${
-                      data?.connections.metaWhatsApp?.configured ? "bg-emerald-500" : "bg-red-500"
-                    }`}
-                  />
-                  <div className="font-mono text-[10px] uppercase text-ink-tertiary">WhatsApp (Meta)</div>
-                </div>
-                <p className="mt-2 text-sm text-ink-primary">
-                  {data?.connections.metaWhatsApp?.configured
-                    ? "Currently sending via Meta Cloud API."
-                    : "Not configured (set Meta WhatsApp env on Vercel)."}
-                </p>
-                <p className="mt-1 font-mono text-xs text-ink-secondary">
-                  Phone number ID: {data?.connections.metaWhatsApp?.phoneNumberIdMasked ?? "—"}
-                </p>
-                <p className="mt-1 font-mono text-xs text-ink-secondary">
-                  WABA: {data?.connections.metaWhatsApp?.businessAccountIdMasked ?? "—"}
-                </p>
-                {data?.connections.twilio?.configured && data?.connections.twilio?.legacy ? (
-                  <p className="mt-2 text-xs text-ink-tertiary">
-                    Legacy Twilio creds are present; outbound WhatsApp uses Meta when `META_WHATSAPP_*` is set.
+              <Card>
+                <CardBody className="p-4">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${
+                        data?.connections.metaWhatsApp?.configured
+                          ? "bg-[var(--success)]"
+                          : "bg-[var(--error)]"
+                      }`}
+                    />
+                    <div className="font-mono text-[10px] uppercase text-ink-tertiary">WhatsApp (Meta)</div>
+                  </div>
+                  <p className="mt-2 text-sm text-ink-primary">
+                    {data?.connections.metaWhatsApp?.configured
+                      ? "Currently sending via Meta Cloud API."
+                      : "Not configured (set Meta WhatsApp env on Vercel)."}
                   </p>
-                ) : null}
-              </div>
-              <div className="rounded-lg border border-border bg-surface-card p-4">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-2 w-2 shrink-0 rounded-full ${data?.connections.resend.configured ? "bg-emerald-500" : "bg-red-500"}`}
-                  />
-                  <div className="font-mono text-[10px] uppercase text-ink-tertiary">Resend</div>
-                </div>
-                <p className="mt-2 text-sm">
-                  <span className={data?.connections.resend.configured ? "text-emerald-600" : "text-red-600"}>
-                    {data?.connections.resend.configured ? "Connected" : "Not configured"}
-                  </span>
-                </p>
-                <p className="mt-1 font-mono text-xs text-ink-secondary">
-                  From email: {data?.connections.resend.fromEmail ?? "—"}
-                </p>
-              </div>
+                  <p className="mt-1 font-mono text-xs text-ink-secondary">
+                    Phone number ID: {data?.connections.metaWhatsApp?.phoneNumberIdMasked ?? "—"}
+                  </p>
+                  <p className="mt-1 font-mono text-xs text-ink-secondary">
+                    WABA: {data?.connections.metaWhatsApp?.businessAccountIdMasked ?? "—"}
+                  </p>
+                  {data?.connections.twilio?.configured && data?.connections.twilio?.legacy ? (
+                    <p className="mt-2 text-xs text-ink-tertiary">
+                      Legacy Twilio creds are present; outbound WhatsApp uses Meta when `META_WHATSAPP_*` is set.
+                    </p>
+                  ) : null}
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody className="p-4">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${data?.connections.resend.configured ? "bg-[var(--success)]" : "bg-[var(--error)]"}`}
+                    />
+                    <div className="font-mono text-[10px] uppercase text-ink-tertiary">Resend</div>
+                  </div>
+                  <p className="mt-2 text-sm">
+                    <span className={data?.connections.resend.configured ? "text-[var(--success)]" : "text-[var(--error)]"}>
+                      {data?.connections.resend.configured ? "Connected" : "Not configured"}
+                    </span>
+                  </p>
+                  <p className="mt-1 font-mono text-xs text-ink-secondary">
+                    From email: {data?.connections.resend.fromEmail ?? "—"}
+                  </p>
+                </CardBody>
+              </Card>
             </div>
             <div className="max-w-lg space-y-2">
               <label className="block">
                 <span className="font-mono text-[10px] uppercase text-ink-tertiary">Test email recipient (optional)</span>
-                <input
+                <Input
                   type="email"
-                  className="input-base mt-1"
+                  className="mt-1"
                   placeholder="you@example.com — any inbox you want"
                   value={testNotificationEmail}
                   onChange={(e) => setTestNotificationEmail(e.target.value)}
@@ -737,9 +751,9 @@ export function AgencySettingsClient() {
                 Leave this blank to send the test to your Segmiq login email. Or enter any valid address (work,
                 personal, a colleague) to confirm Resend delivery there.
               </p>
-              <button type="button" className="btn-primary h-11 md:h-9" disabled={saving} onClick={() => void testNotification()}>
+              <Button disabled={saving} onClick={() => void testNotification()}>
                 Test notification
-              </button>
+              </Button>
             </div>
 
             <div className="mt-10">
@@ -752,37 +766,39 @@ export function AgencySettingsClient() {
                   No delivery rows yet. Apply the message_logs migration, then trigger a lead or test notification.
                 </p>
               ) : (
-                <div className="mt-4 overflow-x-auto rounded-lg border border-border">
-                  <table className="w-full min-w-[640px] text-left text-sm">
-                    <thead className="border-b border-border bg-surface-card-alt font-mono text-[10px] uppercase text-ink-tertiary">
-                      <tr>
-                        <th className="px-3 py-2">Time</th>
-                        <th className="px-3 py-2">Type</th>
-                        <th className="px-3 py-2">Channel</th>
-                        <th className="px-3 py-2">Recipient</th>
-                        <th className="px-3 py-2">Status</th>
-                        <th className="px-3 py-2">Error</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {messageLogs.map((row) => (
-                        <tr key={row.id} className="border-t border-border">
-                          <td className="whitespace-nowrap px-3 py-2 text-xs text-ink-secondary">
-                            {row.created_at ? format(parseISO(row.created_at), "MMM d, HH:mm") : "—"}
-                          </td>
-                          <td className="px-3 py-2 font-mono text-xs">{row.notification_type}</td>
-                          <td className="px-3 py-2 text-xs">{row.channel}</td>
-                          <td className="px-3 py-2 font-mono text-xs">{row.recipient_masked}</td>
-                          <td className="px-3 py-2 text-xs">{row.status}</td>
-                          <td className="max-w-[200px] truncate px-3 py-2 text-xs text-[var(--danger-fg)]" title={row.error_message ?? ""}>
-                            {row.error_code ? `${row.error_code}: ` : ""}
-                            {row.error_message ?? "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <Card className="mt-4">
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-[640px]">
+                      <TableHeader>
+                        <TableRow isHeader>
+                          <TableHead>Time</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Channel</TableHead>
+                          <TableHead>Recipient</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Error</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {messageLogs.map((row) => (
+                          <TableRow key={row.id}>
+                            <TableCell className="whitespace-nowrap text-xs text-ink-secondary">
+                              {row.created_at ? format(parseISO(row.created_at), "MMM d, HH:mm") : "—"}
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">{row.notification_type}</TableCell>
+                            <TableCell className="text-xs">{row.channel}</TableCell>
+                            <TableCell className="font-mono text-xs">{row.recipient_masked}</TableCell>
+                            <TableCell className="text-xs">{row.status}</TableCell>
+                            <TableCell className="max-w-[200px] truncate text-xs text-[var(--danger-fg)]" title={row.error_message ?? ""}>
+                              {row.error_code ? `${row.error_code}: ` : ""}
+                              {row.error_message ?? "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </Card>
               )}
             </div>
           </div>
@@ -792,26 +808,26 @@ export function AgencySettingsClient() {
           <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-display text-2xl text-ink-primary">Agency team</h2>
-              <button type="button" className="btn-ghost text-sm" onClick={() => setInviteOpen(true)}>
+              <Button variant="ghost" size="sm" onClick={() => setInviteOpen(true)}>
                 Invite admin
-              </button>
+              </Button>
             </div>
             {inviteResult?.emailSent === true ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", background: "rgba(61,214,140,0.08)", border: "0.5px solid rgba(61,214,140,0.2)", borderRadius: 10 }}>
-                <i className="ti ti-mail-check" style={{ fontSize: 16, color: "#3dd68c" }} />
-                <p style={{ fontSize: 13, color: "#3dd68c", margin: 0, flex: 1 }}>
+              <div className="flex items-center gap-2 rounded-md border border-[var(--success-border)] bg-[var(--success-muted)] px-3.5 py-3">
+                <MailCheck className="h-4 w-4 shrink-0 text-[var(--success)]" />
+                <p className="m-0 flex-1 text-[13px] text-[var(--success)]">
                   Login details sent to {inviteResult.email}
                 </p>
-                <button type="button" style={{ fontSize: 12, color: "#3dd68c", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }} onClick={() => setInviteResult(null)}>
+                <button type="button" className="text-xs text-[var(--success)] underline" onClick={() => setInviteResult(null)}>
                   Dismiss
                 </button>
               </div>
             ) : inviteResult?.emailSent === false ? (
-              <div style={{ padding: "12px 14px", background: "rgba(245,166,35,0.08)", border: "0.5px solid rgba(245,166,35,0.2)", borderRadius: 10 }}>
-                <p style={{ fontSize: 12, color: "#f5a623", margin: "0 0 4px", fontWeight: 600 }}>
+              <div className="rounded-md border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3.5 py-3">
+                <p className="mb-1 text-xs font-semibold text-[var(--warning)]">
                   Email failed to send. Credentials are shown below — share them manually.
                 </p>
-                <button type="button" style={{ fontSize: 12, color: "#f5a623", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }} onClick={() => setInviteResult(null)}>
+                <button type="button" className="text-xs text-[var(--warning)] underline" onClick={() => setInviteResult(null)}>
                   Dismiss
                 </button>
               </div>
@@ -821,7 +837,7 @@ export function AgencySettingsClient() {
                 {pendingAdminPasswords.map((p) => (
                   <div
                     key={p.userId}
-                    className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-ink-primary"
+                    className="rounded-md border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3 py-2 text-sm text-ink-primary"
                   >
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                       <span className="text-ink-secondary">Temporary password for</span>
@@ -851,49 +867,51 @@ export function AgencySettingsClient() {
                 ))}
               </div>
             ) : null}
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full min-w-[680px] text-left text-sm">
-                <thead className="border-b border-border bg-surface-card-alt font-mono text-[10px] uppercase text-ink-tertiary">
-                  <tr>
-                    <th className="px-4 py-3">User</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Joined</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {admins.map((a) => (
-                    <tr key={a.id} className="border-t border-border">
-                      <td className="px-4 py-3">
-                        <span className="flex items-center gap-2">
-                          <ClientAvatar name={a.name} size="sm" />
-                          <span className="font-medium">{a.name}</span>
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-ink-secondary">{a.email}</td>
-                      <td className="px-4 py-3 text-xs text-ink-tertiary">
-                        {a.created_at ? format(parseISO(a.created_at), "MMM d, yyyy") : "—"}
-                      </td>
-                      <td className="px-4 py-3">{a.is_active ? "Active" : "Inactive"}</td>
-                      <td className="px-4 py-3 text-right">
-                        {a.is_active ? (
-                          <button
-                            type="button"
-                            className="text-sm text-[var(--danger-fg)] hover:underline"
-                            onClick={() => void deactivateAdmin(a.id)}
-                          >
-                            Deactivate
-                          </button>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Card>
+              <div className="overflow-x-auto">
+                <Table className="min-w-[680px]">
+                  <TableHeader>
+                    <TableRow isHeader>
+                      <TableHead>User</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead align="right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {admins.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell>
+                          <span className="flex items-center gap-2">
+                            <ClientAvatar name={a.name} size="sm" />
+                            <span className="font-medium">{a.name}</span>
+                          </span>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-ink-secondary">{a.email}</TableCell>
+                        <TableCell className="text-xs text-ink-tertiary">
+                          {a.created_at ? format(parseISO(a.created_at), "MMM d, yyyy") : "—"}
+                        </TableCell>
+                        <TableCell>{a.is_active ? "Active" : "Inactive"}</TableCell>
+                        <TableCell align="right">
+                          {a.is_active ? (
+                            <button
+                              type="button"
+                              className="text-sm text-[var(--danger-fg)] hover:underline"
+                              onClick={() => void deactivateAdmin(a.id)}
+                            >
+                              Deactivate
+                            </button>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
 
             {inviteOpen ? (
               <div className="fixed inset-0 z-50 flex flex-col bg-[var(--surface-overlay)] p-0 md:items-center md:justify-center md:p-4">
@@ -901,8 +919,8 @@ export function AgencySettingsClient() {
                   <h3 className="font-display text-xl">Invite agency admin</h3>
                   <label className="mt-4 block">
                     <span className="font-mono text-[10px] uppercase text-ink-tertiary">Email</span>
-                    <input
-                      className="mt-1 w-full rounded-md border border-border px-3 py-2 text-base md:text-sm"
+                    <Input
+                      className="mt-1"
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                       type="email"
@@ -911,12 +929,12 @@ export function AgencySettingsClient() {
                     />
                   </label>
                   <div className="safe-bottom mt-auto flex justify-end gap-2 border-t border-border pt-4 md:mt-4 md:border-t-0 md:pt-0">
-                    <button type="button" className="btn-ghost h-11 flex-1 md:h-9 md:flex-none" onClick={() => setInviteOpen(false)}>
+                    <Button variant="secondary" className="flex-1 md:flex-none" onClick={() => setInviteOpen(false)}>
                       Cancel
-                    </button>
-                    <button type="button" className="btn-primary h-11 flex-1 md:h-9 md:flex-none" disabled={saving} onClick={() => void sendInvite()}>
+                    </Button>
+                    <Button className="flex-1 md:flex-none" disabled={saving} onClick={() => void sendInvite()}>
                       Send invite
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -938,25 +956,25 @@ export function AgencySettingsClient() {
             <div className="grid max-w-lg gap-4">
               <label className="block">
                 <span className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Terms of Service URL</span>
-                <input
-                  className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-sm"
+                <Input
+                  className="mt-1"
                   value={legalForm.terms_url}
                   onChange={(e) => setLegalForm((f) => ({ ...f, terms_url: e.target.value }))}
                 />
               </label>
               <label className="block">
                 <span className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Privacy Policy URL</span>
-                <input
-                  className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-sm"
+                <Input
+                  className="mt-1"
                   value={legalForm.privacy_url}
                   onChange={(e) => setLegalForm((f) => ({ ...f, privacy_url: e.target.value }))}
                 />
               </label>
             </div>
             <div className="safe-bottom sticky bottom-0 border-t border-border bg-[var(--surface-page)] pt-4">
-              <button type="button" className="btn-primary h-11 md:h-9" disabled={saving} onClick={() => void saveLegal()}>
+              <Button disabled={saving} onClick={() => void saveLegal()}>
                 {saving ? "Saving…" : "Save"}
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}

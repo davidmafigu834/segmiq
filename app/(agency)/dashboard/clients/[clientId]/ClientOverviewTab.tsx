@@ -72,7 +72,7 @@ export function ClientOverviewTab({
             <h2 className="mt-1 font-display text-2xl tracking-display text-ink-primary">Sales team</h2>
           </div>
           {team.length === 0 ? (
-            <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-[10px] border border-dashed border-border px-4 py-10 text-center">
+            <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border px-4 py-10 text-center">
               <Inbox className="h-8 w-8 text-ink-tertiary" strokeWidth={1.25} aria-hidden />
               <p className="text-[14px] text-ink-secondary">No salespeople added</p>
               <Link
@@ -83,7 +83,7 @@ export function ClientOverviewTab({
               </Link>
             </div>
           ) : (
-            <ul className="divide-y divide-border rounded-[10px] border border-border bg-surface-card">
+            <ul className="divide-y divide-border rounded-xl border border-border bg-surface-card">
               {team.map((u) => (
                 <li key={u.id} className="flex items-center gap-3 px-4 py-3">
                   <ClientAvatar name={u.name} size={32} />
@@ -141,12 +141,12 @@ export function ClientOverviewTab({
           />
           <IntegrationCard
             label="Notifications"
-            statusDotClass={notificationsConfigured ? "bg-[var(--success)]" : "bg-amber-500"}
+            statusDotClass={notificationsConfigured ? "bg-[var(--success)]" : "bg-[var(--warning)]"}
             statusText={
               notificationsConfigured ? (
                 <span>WhatsApp + Email active</span>
               ) : (
-                <span className="text-amber-700">Complete Twilio &amp; Resend in agency settings</span>
+                <span className="text-[var(--warning)]">Complete Twilio &amp; Resend in agency settings</span>
               )
             }
             href={`/dashboard/clients/${clientId}/settings?tab=notifications`}
@@ -178,7 +178,7 @@ function IntegrationCard({
   linkLabel: string;
 }) {
   return (
-    <div className="rounded-[10px] border border-border bg-surface-card p-5">
+    <div className="rounded-xl border border-border bg-surface-card p-5">
       <p className="font-mono text-[10px] font-normal uppercase tracking-[0.08em] text-ink-tertiary">{label}</p>
       <div className="mt-3 flex items-start gap-2">
         <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${statusDotClass}`} />

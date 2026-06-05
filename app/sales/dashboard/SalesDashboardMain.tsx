@@ -415,7 +415,7 @@ export default function SalesDashboardMain({
           >
             <stat.icon size={14} className="mb-2 text-[var(--text-disabled)]" />
             <p
-              className="font-display text-[32px] font-semibold leading-none mb-1"
+              className="font-display text-3xl font-semibold leading-none mb-1"
               style={{ color: stat.colour }}
             >
               {stat.value}
@@ -708,8 +708,7 @@ export default function SalesDashboardMain({
       <button
         type="button"
         onClick={() => openLogSheet("")}
-        className="fixed right-5 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 w-14 h-14 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center shadow-lg hover:bg-[var(--accent-hover)] transition-colors"
-        style={{ boxShadow: "0 4px 16px rgba(212,255,79,0.25)" }}
+        className="fixed right-5 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 w-14 h-14 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center shadow-[var(--shadow-accent-glow)] hover:bg-[var(--accent-hover)] transition-colors"
         aria-label="Log a call"
       >
         <Phone size={22} />

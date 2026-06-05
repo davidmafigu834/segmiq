@@ -154,7 +154,7 @@ function FieldInput({
   const base =
     variant === "northfield"
       ? "mt-1 w-full border-0 border-b border-white/25 bg-transparent px-0 py-2 text-sm text-white outline-none focus:border-white/60 focus:ring-0"
-      : "mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm outline-none focus:ring-2";
+      : "mt-1 w-full rounded-lg border border-border bg-surface-card px-3 py-2 text-sm text-ink-primary placeholder:text-ink-tertiary outline-none focus:ring-2";
   switch (field.type) {
     case "long_text":
       return (

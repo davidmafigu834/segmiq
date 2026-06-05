@@ -47,13 +47,13 @@ function NavRow({
         mobileExpanded ? "justify-start px-3" : "justify-center px-2 layout:justify-start layout:px-3"
       } ${
         isActive
-          ? "border-l-2 border-[var(--ag-lime)] bg-[rgba(212,255,79,0.05)] text-[var(--ag-text-primary)] font-medium"
-          : "border-l-2 border-transparent font-normal text-[var(--ag-text-tertiary)] hover:border-[rgba(212,255,79,0.3)] hover:bg-[var(--ag-surface-2)] hover:text-[var(--ag-text-secondary)]"
+          ? "border-l-2 border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--text-primary)] font-medium"
+          : "border-l-2 border-transparent font-normal text-[var(--text-tertiary)] hover:border-[var(--accent-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
       } `}
     >
       <ShellIcon
         name={item.icon}
-        className={`h-4 w-4 shrink-0 ${isActive ? "text-[var(--ag-lime)]" : "text-[var(--ag-text-tertiary)]"}`}
+        className={`h-4 w-4 shrink-0 ${isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
       />
       <span className={`min-w-0 flex-1 truncate ${mobileExpanded ? "inline" : "hidden layout:inline"}`}>{item.label}</span>
       {item.badge != null && item.badge > 0 ? (

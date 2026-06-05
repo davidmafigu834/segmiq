@@ -5,6 +5,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import { Megaphone, RefreshCw } from "lucide-react";
 import { PulseBar } from "@/components/dashboard/PulseBar";
+import { Button } from "@/components/ui/Button";
 import { CampaignsTable } from "@/components/campaigns/CampaignsTable";
 import { aggregateCampaignPulse, type CampaignClientGroup } from "@/components/campaigns/campaign-helpers";
 import type { FbCampaignsDatePreset } from "@/lib/facebook/campaigns";
@@ -69,10 +70,10 @@ export function CampaignsDashboard({ allClients }: { allClients: AllClient[] }) 
             <button
               type="button"
               onClick={() => setSelected(new Set())}
-              className={`h-8 shrink-0 rounded-sm px-3 text-[12px] font-medium transition-colors ${
+              className={`h-8 shrink-0 rounded-md px-3 text-[12px] font-medium transition-colors ${
                 selected.size === 0
-                  ? "bg-ink-primary text-white"
-                  : "border border-border bg-transparent text-ink-secondary hover:bg-surface-card-alt"
+                  ? "border border-[var(--border-strong)] bg-[var(--bg-quaternary)] text-[var(--text-primary)]"
+                  : "border border-[var(--border)] bg-transparent text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:bg-white/[0.03] hover:text-[var(--text-primary)]"
               }`}
             >
               All clients
@@ -89,10 +90,10 @@ export function CampaignsDashboard({ allClients }: { allClients: AllClient[] }) 
                     else next.add(c.id);
                     setSelected(next);
                   }}
-                  className={`h-8 shrink-0 rounded-sm px-3 text-[12px] font-medium transition-colors ${
+                  className={`h-8 shrink-0 rounded-md px-3 text-[12px] font-medium transition-colors ${
                     active
-                      ? "bg-ink-primary text-white"
-                      : "border border-border bg-transparent text-ink-secondary hover:bg-surface-card-alt"
+                      ? "border border-[var(--border-strong)] bg-[var(--bg-quaternary)] text-[var(--text-primary)]"
+                      : "border border-[var(--border)] bg-transparent text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:bg-white/[0.03] hover:text-[var(--text-primary)]"
                   }`}
                 >
                   {c.name}
@@ -111,15 +112,10 @@ export function CampaignsDashboard({ allClients }: { allClients: AllClient[] }) 
               <option value="last_30d">Last 30 days</option>
               <option value="lifetime">Lifetime</option>
             </select>
-            <button
-              type="button"
-              onClick={() => onRefresh()}
-              className="btn-ghost inline-flex items-center gap-2"
-              title="Refresh data"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} strokeWidth={1.5} />
+            <Button variant="ghost" onClick={() => onRefresh()} title="Refresh data">
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
-            </button>
+            </Button>
           </div>
           <p className="max-w-md text-right text-[11px] text-ink-tertiary">
             Select clients to filter. Empty selection shows all connected accounts.
@@ -128,15 +124,15 @@ export function CampaignsDashboard({ allClients }: { allClients: AllClient[] }) 
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
+        <div className="rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
           {error instanceof Error ? error.message : "Error"}
         </div>
       ) : null}
 
       {isLoading && !data ? (
-        <div className="shimmer h-[320px] rounded-lg" />
+        <div className="shimmer h-[320px] rounded-xl" />
       ) : noAccountsConnected ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface-card py-20 text-center">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-surface-card py-20 text-center">
           <Megaphone className="h-10 w-10 text-ink-tertiary" strokeWidth={1.5} />
           <h2 className="mt-6 font-display text-xl text-ink-primary">No ad accounts connected</h2>
           <p className="mt-2 max-w-md text-sm text-ink-secondary">

@@ -174,7 +174,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
   const strength = passwordStrength(newPw);
 
   if (loading) {
-    return <div className="shimmer mx-auto h-96 max-w-[640px] rounded-lg" />;
+    return <div className="shimmer mx-auto h-96 max-w-[640px] rounded-xl" />;
   }
 
   return (
@@ -314,7 +314,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
 
       <section>
         <h2 className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Team</h2>
-        <div className="mt-3 rounded-lg border border-border bg-surface-card p-4 text-sm">
+        <div className="mt-3 rounded-xl border border-border bg-surface-card p-4 text-sm">
           <p>
             <span className="text-ink-tertiary">Client: </span>
             {clientName ? <span className="font-medium">{clientName}</span> : "—"}

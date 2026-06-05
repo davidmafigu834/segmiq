@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Download, Inbox, ListFilter, Search, SearchX } from "lucide-react";
+import { ChevronDown, Download, Inbox, ListFilter, Search, SearchX } from "lucide-react";
 import { format } from "date-fns";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { StatusPill } from "@/components/StatusPill";
@@ -17,6 +17,7 @@ import {
 import { isLeadSlow } from "@/lib/leadStatus";
 import { formatCurrencyUsd, formatTimeAgo } from "@/lib/format";
 import { Sheet } from "@/components/ui/Sheet";
+import { Button } from "@/components/ui/Button";
 
 type SalespersonOpt = { id: string; name: string; client_id: string | null };
 
@@ -89,10 +90,13 @@ function MultiDropdown({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="btn-ghost h-9 gap-1 px-3 text-[13px]"
+        className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--border)] bg-transparent px-3 text-[13px] font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-hover)] hover:bg-white/[0.03]"
       >
         {label}
         <span className="font-mono text-[11px] text-ink-tertiary">{summary}</span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 text-ink-tertiary transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
       {open ? (
         <div className="absolute left-0 top-full z-30 mt-1 min-w-[220px] rounded-md border border-border bg-surface-card py-2 shadow-md">
@@ -356,7 +360,7 @@ export function AllLeadsView({
     const active = filters.sortBy === field;
     return (
       <th
-        className={`header-cell cursor-pointer select-none whitespace-nowrap py-3 text-[11px] font-mono uppercase tracking-wide text-ink-tertiary ${
+        className={`cursor-pointer select-none whitespace-nowrap px-3 py-3 text-xs font-medium uppercase tracking-wide text-ink-tertiary ${
           align === "right" ? "text-right" : "text-left"
         }`}
         onClick={() => toggleSort(field)}
@@ -384,22 +388,24 @@ export function AllLeadsView({
             </p>
           </div>
           <div className="flex shrink-0 gap-2 self-start sm:self-auto">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleExportCsv}
-              className="btn-secondary hidden h-9 items-center gap-2 px-3 text-[13px] md:inline-flex"
+              className="hidden md:inline-flex"
             >
-              <Download className="h-4 w-4" strokeWidth={1.5} />
+              <Download className="h-4 w-4" />
               Export CSV
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
+              size="icon"
               onClick={handleExportCsv}
-              className="btn-secondary flex h-11 w-11 items-center justify-center md:hidden"
+              className="md:hidden"
               aria-label="Export CSV"
             >
-              <Download className="h-4 w-4" strokeWidth={1.5} />
-            </button>
+              <Download className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>
@@ -576,8 +582,8 @@ export function AllLeadsView({
         </MultiDropdown>
         </div>
 
-        <div className="relative w-full min-w-0 md:ml-auto md:w-64 md:max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-tertiary" />
+        <div className="relative flex w-full min-w-0 items-center md:ml-auto md:w-64 md:max-w-xs">
+          <Search className="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-ink-tertiary" aria-hidden />
           <input
             type="search"
             inputMode="search"
@@ -806,9 +812,9 @@ export function AllLeadsView({
           <SearchX className="mb-4 h-10 w-10 text-ink-tertiary" strokeWidth={1.25} />
           <p className="font-medium text-ink-primary">No leads match your filters</p>
           <p className="mt-2 max-w-sm text-sm text-ink-secondary">Try adjusting your filters or clearing them.</p>
-          <button type="button" className="btn-secondary mt-6 text-sm" onClick={clearAllFilters}>
+          <Button variant="secondary" size="sm" className="mt-6" onClick={clearAllFilters}>
             Clear filters
-          </button>
+          </Button>
         </div>
       ) : null}
 
@@ -904,11 +910,11 @@ export function AllLeadsView({
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto lg:block">
+          <div className="hidden overflow-x-auto rounded-xl border border-border lg:block">
             <table className="w-full min-w-[960px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="w-10 py-3 pl-2">
+                  <th className="w-10 px-3 py-3 pl-3">
                     <input
                       type="checkbox"
                       className="h-4 w-4 rounded border-border"
@@ -922,10 +928,10 @@ export function AllLeadsView({
                   </th>
                   <SortableHeader field="name" label="Name" />
                   <SortableHeader field="client" label="Client" />
-                  <th className="header-cell py-3 text-[11px] font-mono uppercase tracking-wide text-ink-tertiary">Source</th>
-                  <th className="header-cell py-3 text-[11px] font-mono uppercase tracking-wide text-ink-tertiary">Budget</th>
-                  <th className="header-cell py-3 text-[11px] font-mono uppercase tracking-wide text-ink-tertiary">Status</th>
-                  <th className="header-cell py-3 text-[11px] font-mono uppercase tracking-wide text-ink-tertiary">Assigned</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-ink-tertiary">Source</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-ink-tertiary">Budget</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-ink-tertiary">Status</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-ink-tertiary">Assigned</th>
                   <SortableHeader field="last_activity" label="Last activity" />
                   <SortableHeader field="deal_value" label="Deal value" align="right" />
                   <SortableHeader field="created_at" label="Created" />
@@ -935,10 +941,10 @@ export function AllLeadsView({
                 {initialRows.map((lead) => (
                   <tr
                     key={lead.id}
-                    className="cursor-pointer border-b border-border hover:bg-surface-card-alt"
+                    className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-card-alt"
                     onClick={() => openLead(lead.id)}
                   >
-                    <td className="py-3 pl-2" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-3 py-3 pl-3" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         className="h-4 w-4 rounded border-border"
@@ -947,22 +953,22 @@ export function AllLeadsView({
                         aria-label={`Select ${lead.name ?? "lead"}`}
                       />
                     </td>
-                    <td className="py-3">
+                    <td className="px-3 py-3">
                       <div className="text-sm font-medium text-ink-primary">{lead.name || "—"}</div>
                       <div className="font-mono text-xs text-ink-tertiary">{lead.phone || "—"}</div>
                     </td>
-                    <td className="py-3">
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <ClientAvatar name={lead.clients?.name ?? "—"} size={20} src={lead.clients?.logo_url} />
                         <span className="text-sm">{lead.clients?.name ?? "—"}</span>
                       </div>
                     </td>
-                    <td className="py-3 font-mono text-xs uppercase text-ink-secondary">{sourceLabel(lead.source)}</td>
-                    <td className="py-3 font-mono text-sm text-ink-primary">{lead.budget || "—"}</td>
-                    <td className="py-3">
+                    <td className="px-3 py-3 font-mono text-xs uppercase text-ink-secondary">{sourceLabel(lead.source)}</td>
+                    <td className="px-3 py-3 font-mono text-sm text-ink-primary">{lead.budget || "—"}</td>
+                    <td className="px-3 py-3">
                       <StatusPill status={lead.status} />
                     </td>
-                    <td className="py-3">
+                    <td className="px-3 py-3">
                       {lead.assigned_to ? (
                         <div className="flex items-center gap-2">
                           <ClientAvatar name={lead.assigned_to.name} size={20} src={lead.assigned_to.avatar_url} />
@@ -972,13 +978,13 @@ export function AllLeadsView({
                         <span className="text-xs text-ink-tertiary">Unassigned</span>
                       )}
                     </td>
-                    <td className="py-3">
+                    <td className="px-3 py-3">
                       <LastActivityCell row={lead} />
                     </td>
-                    <td className="py-3 text-right font-mono text-sm tabular-nums text-ink-primary">
+                    <td className="px-3 py-3 text-right font-mono text-sm tabular-nums text-ink-primary">
                       {lead.deal_value != null ? formatCurrencyUsd(lead.deal_value) : "—"}
                     </td>
-                    <td className="py-3 text-sm text-ink-secondary">{formatTimeAgo(lead.created_at)}</td>
+                    <td className="px-3 py-3 text-sm text-ink-secondary">{formatTimeAgo(lead.created_at)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -66,7 +66,7 @@ const FUNNEL: Array<{
 
 function HeroPill({ value }: { value: number }) {
   return (
-    <span className="mt-2 inline-block rounded-full bg-[#0a0b0d] px-3 py-1 font-mono text-xs font-medium text-[var(--accent)]">
+    <span className="mt-2 inline-block rounded-full bg-surface-sidebar px-3 py-1 font-mono text-xs font-medium text-[var(--accent)]">
       {formatDeltaPct(value)} vs prior period
     </span>
   );
@@ -108,12 +108,12 @@ export function ClientReportsDashboard() {
     actualMin != null && limitMin > 0 ? Math.min(100, (actualMin / limitMin) * 100) : actualMin == null ? 0 : 100;
 
   if (!key) {
-    return <div className="rounded-lg border border-border bg-surface-card p-8 text-ink-secondary">Loading…</div>;
+    return <div className="rounded-xl border border-border bg-surface-card p-8 text-ink-secondary">Loading…</div>;
   }
 
   if (error) {
     return (
-      <div className="rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
+      <div className="rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
         {error instanceof Error ? error.message : "Could not load report."}
       </div>
     );
@@ -122,11 +122,11 @@ export function ClientReportsDashboard() {
   if (isLoading || !data) {
     return (
       <div className="space-y-6">
-        <div className="h-[180px] animate-pulse rounded-[10px] bg-surface-card-alt" />
-        <div className="h-40 animate-pulse rounded-lg bg-surface-card-alt" />
+        <div className="h-[180px] animate-pulse rounded-xl bg-surface-card-alt" />
+        <div className="h-40 animate-pulse rounded-xl bg-surface-card-alt" />
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="h-64 animate-pulse rounded-lg bg-surface-card-alt" />
-          <div className="h-64 animate-pulse rounded-lg bg-surface-card-alt" />
+          <div className="h-64 animate-pulse rounded-xl bg-surface-card-alt" />
+          <div className="h-64 animate-pulse rounded-xl bg-surface-card-alt" />
         </div>
       </div>
     );
@@ -138,8 +138,8 @@ export function ClientReportsDashboard() {
     <div className="space-y-10 pb-16">
       {/* Row 1 — Hero */}
       <section
-        className="grid min-h-[180px] grid-cols-1 overflow-hidden rounded-[10px] md:grid-cols-[2fr_1.5fr_1.5fr]"
-        style={{ background: "var(--accent)", color: "var(--text-primary)" }}
+        className="grid min-h-[180px] grid-cols-1 overflow-hidden rounded-xl md:grid-cols-[2fr_1.5fr_1.5fr]"
+        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
       >
         <div className="flex flex-col justify-center border-b border-black px-6 py-6 md:border-b-0 md:border-r md:py-8">
           <p className="font-mono text-[11px] font-normal uppercase tracking-wide opacity-90">
@@ -181,7 +181,7 @@ export function ClientReportsDashboard() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div
-                    className="flex h-12 items-center justify-end rounded-sm pr-3"
+                    className="flex h-12 items-center justify-end rounded-md pr-3"
                     style={{
                       width: `${w}%`,
                       background: `color-mix(in srgb, var(${f.barVar}) 55%, white)`,
@@ -201,7 +201,7 @@ export function ClientReportsDashboard() {
 
       {/* Row 3 — Source + Response */}
       <section className="grid gap-8 md:grid-cols-2">
-        <div className="rounded-lg border border-border bg-surface-card p-6">
+        <div className="rounded-xl border border-border bg-surface-card p-6">
           <p className="font-mono text-[11px] uppercase text-ink-tertiary">Leads by source</p>
           {donutTotal === 0 ? (
             <p className="mt-8 text-sm text-ink-secondary">No leads from tracked sources in this period.</p>
@@ -250,7 +250,7 @@ export function ClientReportsDashboard() {
           )}
         </div>
 
-        <div className="rounded-lg border border-border bg-surface-card p-6">
+        <div className="rounded-xl border border-border bg-surface-card p-6">
           <p className="font-mono text-[11px] uppercase text-ink-tertiary">Response speed</p>
           <p className="mt-4 font-display text-5xl leading-none tracking-display">
             {formatAvgResponseHero(actualMin)}
@@ -297,7 +297,7 @@ export function ClientReportsDashboard() {
         {data.team.length === 0 ? (
           <p className="mt-4 text-sm text-ink-secondary">No active salespeople for this client.</p>
         ) : (
-          <div className="mt-6 overflow-x-auto rounded-lg border border-border bg-surface-card p-2 md:border-0 md:bg-transparent md:p-0">
+          <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-surface-card p-2 md:border-0 md:bg-transparent md:p-0">
             <ResponsiveTable
               columns={[
                 {
@@ -367,7 +367,7 @@ export function ClientReportsDashboard() {
               ] as ResponsiveTableColumn<ClientReportPayload["team"][number]>[]}
               rows={data.team}
               rowKey={(row) => row.userId}
-              rowClassName={(row) => (data.team[0]?.userId === row.userId ? "bg-[rgba(212,255,79,0.08)]" : undefined)}
+              rowClassName={(row) => (data.team[0]?.userId === row.userId ? "bg-[var(--accent-muted)]" : undefined)}
             />
           </div>
         )}
@@ -435,8 +435,8 @@ export function ClientReportsDashboard() {
                 }}
                 labelFormatter={(l) => format(parseISO(String(l)), "MMM d, yyyy")}
               />
-              <Line type="monotone" dataKey="leads" stroke="#9498A1" strokeWidth={2} dot={false} name="Leads" />
-              <Line type="monotone" dataKey="won" stroke="#0a0b0d" strokeWidth={2} dot={false} name="Won" />
+              <Line type="monotone" dataKey="leads" stroke="var(--text-tertiary)" strokeWidth={2} dot={false} name="Leads" />
+              <Line type="monotone" dataKey="won" stroke="var(--accent)" strokeWidth={2} dot={false} name="Won" />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
