@@ -87,7 +87,7 @@ function LoginFormInner() {
                 autoComplete="email"
                 placeholder="you@company.com"
                 required
-                className="input-base h-11 pl-10 text-base"
+                className="input-base h-11 !pl-10 text-base"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -109,7 +109,7 @@ function LoginFormInner() {
                 autoComplete="current-password"
                 placeholder="••••••••"
                 required
-                className="input-base h-11 pl-10 pr-10 text-base"
+                className="input-base h-11 !pl-10 !pr-10 text-base"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
