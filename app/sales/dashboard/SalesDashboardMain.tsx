@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Phone,
@@ -29,6 +29,7 @@ import { type PriorityLead, timeAgo } from "@/lib/sales-priority-lead";
 import { PriorityLeadCard } from "@/components/sales/PriorityLeadCard";
 import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
+import SalesDashboardSkeleton from "./SalesDashboardSkeleton";
 
 // ============================================
 // TYPES
@@ -128,6 +129,15 @@ export default function SalesDashboardMain({
   const [now] = useState(() => new Date());
   const [nurtureOpen, setNurtureOpen] = useState(false);
 
+  // This view is entirely driven by the current time (lane classification, SLA
+  // countdowns, relative timestamps, greeting). Rendering it during SSR/first
+  // hydration would mismatch the server clock/timezone and force React to drop
+  // the server HTML. Render the skeleton until mounted, then the live dashboard.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const lanes = useMemo(() => {
     const all = data.allActiveLeads ?? [];
     const buckets: Record<LeadLane, PriorityLead[]> = {
@@ -161,6 +171,8 @@ export default function SalesDashboardMain({
     if (lane === "recover") return "/sales/recover";
     return null;
   }
+
+  if (!mounted) return <SalesDashboardSkeleton />;
 
   return (
     <div>

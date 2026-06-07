@@ -8,6 +8,7 @@ import { runOnboardingCronJobs } from "@/lib/ai/salesperson-onboarding";
 import { processUnprocessedLeads } from "@/lib/lead-intelligence";
 import { seedAllClientSegments } from "@/lib/audience-segments";
 import { runPerformanceAnalysisAllClients } from "@/lib/performance-intelligence";
+import { runBillingDailyCron } from "@/lib/billing/cron";
 
 /**
  * Single daily job for Vercel Hobby (free): cron schedules must run at most once per day.
@@ -87,8 +88,20 @@ export async function GET(req: Request) {
     errors.push(`followUp: ${e instanceof Error ? e.message : String(e)}`);
   }
 
+  let billing: Awaited<ReturnType<typeof runBillingDailyCron>> | undefined;
+  try {
+    billing = await runBillingDailyCron();
+    console.log("[cron daily] Billing cron complete", billing);
+    if (billing.errors.length > 0) {
+      errors.push(...billing.errors.map((e) => `billing: ${e}`));
+    }
+  } catch (e) {
+    console.error("[cron daily] runBillingDailyCron", e);
+    errors.push(`billing: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
   const ok = errors.length === 0;
-  const body: Record<string, unknown> = { ok, uncontacted, followUp };
+  const body: Record<string, unknown> = { ok, uncontacted, followUp, billing };
   if (errors.length > 0) body.errors = errors;
   return NextResponse.json(body, { status: ok ? 200 : 500 });
 }

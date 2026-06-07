@@ -184,10 +184,16 @@ export default function ClientDashboardMain({
           PAGE HEADER
           ============================================ */}
       <div className="mb-8">
-        <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
+        <p
+          suppressHydrationWarning
+          className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]"
+        >
           {today}
         </p>
-        <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">
+        <h1
+          suppressHydrationWarning
+          className="font-display text-3xl tracking-tight text-[var(--text-primary)]"
+        >
           Good {getGreeting()}, {firstName}
         </h1>
       </div>
@@ -764,7 +770,7 @@ export default function ClientDashboardMain({
                     <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate mb-0.5">
                       {win.leads?.[0]?.name ?? "Unknown"}
                     </p>
-                    <p className="text-[11px] text-[var(--text-tertiary)]">
+                    <p suppressHydrationWarning className="text-[11px] text-[var(--text-tertiary)]">
                       {win.salesperson_name ?? "Unknown"}
                       {" · "}
                       {win.days_to_close ?? 0}d to close

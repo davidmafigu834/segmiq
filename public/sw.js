@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'leadstaq-cloud-v1';
+const CACHE_VERSION = 'leadstaq-cloud-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 
@@ -35,8 +35,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.pathname.startsWith('/api/')) return;
 
+  // Never cache application code. Build artifacts under /_next/ (JS/CSS chunks,
+  // RSC payloads) must always come from the network — a cache-first strategy
+  // here serves stale bundles after a deploy/recompile and breaks hydration.
+  if (url.pathname.startsWith('/_next/')) return;
+
+  // Cache-first only for static media (icons/images), which are content-stable.
   if (
-    url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/icons/') ||
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.svg') ||

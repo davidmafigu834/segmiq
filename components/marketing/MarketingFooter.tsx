@@ -19,9 +19,9 @@ const COLS = [
     h: "Products & pricing",
     links: [
       { label: "Segmiq CRM", href: "/products/segmiq-crm" },
-      { label: "Segmiq Cloud", href: "#" },
-      { label: "Pricing", href: "#" },
-      { label: "Implementation", href: "#" },
+      { label: "Segmiq Cloud", href: "https://cloud.segmiq.com" },
+      { label: "Features", href: "/features" },
+      { label: "Pricing", href: "/pricing" },
     ],
   },
   {

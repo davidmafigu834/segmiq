@@ -126,7 +126,9 @@ export async function middleware(req: NextRequest) {
     path === "/" ||
     path === "/why-segmiq" ||
     path === "/security" ||
-    path === "/products/segmiq-crm";
+    path === "/products/segmiq-crm" ||
+    path === "/features" ||
+    path === "/pricing";
 
   const isPublic =
     path === "/login" ||
@@ -193,6 +195,39 @@ export async function middleware(req: NextRequest) {
   if (path.startsWith("/sales")) {
     if (role !== "SALESPERSON") {
       return NextResponse.redirect(new URL(homeForRole(role), req.url));
+    }
+  }
+
+  // Billing access gate. Agency is hard-exempt (handled above by never matching
+  // these roles). A suspended subscription locks the client's manager and
+  // salespeople out of their portals. Exempt the blocked screens themselves and
+  // the client billing page (so they can resolve the lock). API routes are not
+  // matched by middleware at all, so lead ingestion + proof upload keep working.
+  const isGatedRole = role === "CLIENT_MANAGER" || role === "SALESPERSON";
+  if (isGatedRole) {
+    const gateExempt =
+      path === "/client/blocked" ||
+      path === "/sales/blocked" ||
+      path === "/client/billing" ||
+      path.startsWith("/client/billing/");
+    const cid = (token as { clientId?: string | null }).clientId;
+    if (!gateExempt && cid) {
+      try {
+        const supabase = createAdminClient();
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("status")
+          .eq("client_id", cid)
+          .eq("product", "crm")
+          .limit(1)
+          .maybeSingle();
+        if ((sub as { status?: string } | null)?.status === "suspended") {
+          const dest = role === "CLIENT_MANAGER" ? "/client/blocked" : "/sales/blocked";
+          return NextResponse.redirect(new URL(dest, req.url));
+        }
+      } catch {
+        /* fail open — never lock users out due to a transient DB error */
+      }
     }
   }
 

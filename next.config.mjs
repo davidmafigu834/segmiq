@@ -19,7 +19,7 @@ function cloudRewrites(host) {
 const nextConfig = {
   // Avoid webpack splitting issues with Supabase in Server Components / RSC (missing vendor-chunks).
   experimental: {
-    serverComponentsExternalPackages: ["@supabase/supabase-js"],
+    serverComponentsExternalPackages: ["@supabase/supabase-js", "@react-pdf/renderer"],
   },
   async rewrites() {
     return [

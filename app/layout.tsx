@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "./providers";
+import { ServiceWorkerCleanup } from "@/components/ServiceWorkerCleanup";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -83,6 +84,7 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" />
       </head>
       <body className={`${inter.className} min-h-screen bg-surface-canvas font-sans text-sm text-ink-primary antialiased`}>
+        <ServiceWorkerCleanup />
         <Providers>{children}</Providers>
       </body>
     </html>

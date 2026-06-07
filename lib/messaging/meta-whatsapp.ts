@@ -69,6 +69,13 @@ import { logMessage, type LogMessageParams, type SendResult } from "@/lib/messag
 // segmiq_send_custom:
 //   Hi {{1}}, a message from {{2}}:
 //   {{3}}
+//
+// Billing templates (UTILITY) — see docs/meta-whatsapp-billing-templates.md
+// Gate sends with META_TEMPLATE_INVOICE_ISSUED / PAYMENT_OVERDUE / PAYMENT_CONFIRMED.
+//
+// segmiq_invoice_issued — body {{1}} invoice #, {{2}} amount, {{3}} due date; URL button → client/billing
+// segmiq_payment_overdue — body {{1}} invoice #, {{2}} amount, {{3}} days until suspension; URL button
+// segmiq_payment_confirmed — body {{1}} invoice #, {{2}} amount, {{3}} next renewal; URL button
 // ---------------------------------------------------------------------------
 
 export type TemplateKey =
@@ -87,7 +94,10 @@ export type TemplateKey =
   | "SEND_DOCUMENT"
   | "SEND_CUSTOM_MESSAGE"
   | "DAILY_COACHING"
-  | "SALESPERSON_ONBOARDING";
+  | "SALESPERSON_ONBOARDING"
+  | "INVOICE_ISSUED"
+  | "PAYMENT_OVERDUE"
+  | "PAYMENT_CONFIRMED";
 
 const TEMPLATE_NAMES: Record<TemplateKey, string> = {
   NEW_LEAD_SALESPERSON: "new_lead_salesperson",
@@ -106,6 +116,9 @@ const TEMPLATE_NAMES: Record<TemplateKey, string> = {
   SEND_CUSTOM_MESSAGE: "segmiq_send_custom",
   DAILY_COACHING: "segmiq_daily_coaching",
   SALESPERSON_ONBOARDING: "segmiq_salesperson_onboarding",
+  INVOICE_ISSUED: "segmiq_invoice_issued",
+  PAYMENT_OVERDUE: "segmiq_payment_overdue",
+  PAYMENT_CONFIRMED: "segmiq_payment_confirmed",
 };
 
 export type SendWhatsAppParams = {
@@ -114,6 +127,8 @@ export type SendWhatsAppParams = {
   template: TemplateKey;
   variables: Record<string, string>;
   fallbackBody: string;
+  /** Dynamic suffix for a URL button (index 0). Omit when the template has no button. */
+  urlButtonParam?: string | null;
   context: Omit<LogMessageParams, "channel" | "recipient" | "templateKey" | "payloadPreview"> & {
     rawRecipientForLog?: string;
   };
@@ -192,6 +207,20 @@ export async function sendWhatsAppViaMeta(
     text: params.variables[key] ?? "",
   }));
 
+  const components: Record<string, unknown>[] = [];
+  if (parameters.length > 0) {
+    components.push({ type: "body", parameters });
+  }
+  const urlSuffix = params.urlButtonParam?.trim();
+  if (urlSuffix) {
+    components.push({
+      type: "button",
+      sub_type: "url",
+      index: "0",
+      parameters: [{ type: "text", text: urlSuffix }],
+    });
+  }
+
   const payload: Record<string, unknown> = {
     messaging_product: "whatsapp",
     recipient_type: "individual",
@@ -200,9 +229,7 @@ export async function sendWhatsAppViaMeta(
     template: {
       name: templateName,
       language: { code: languageCode },
-      ...(parameters.length > 0
-        ? { components: [{ type: "body" as const, parameters }] }
-        : {}),
+      ...(components.length > 0 ? { components } : {}),
     },
   };
 
