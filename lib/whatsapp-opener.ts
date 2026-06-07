@@ -19,17 +19,26 @@ export function mapIndustryToCategory(industry: string | null | undefined): Open
   return "GENERIC";
 }
 
+/** Mid-sentence niche fragment keyed by opener category (derived from clients.industry). */
+const NICHE_PROJECT_LABELS: Record<Exclude<OpenerCategory, "GENERIC">, string> = {
+  SOLAR: "solar installation",
+  CONSTRUCTION: "construction",
+  ROOFING: "roofing",
+  ELECTRICAL: "electrical",
+  LANDSCAPING: "landscaping",
+};
+
 // Phase A templates — complete GENERIC set (fallback)
 const TEMPLATES: Record<OpenerCategory, Record<UrgencyTier, string>> = {
   GENERIC: {
     exploring:
-      "Hi {{lead_first_name}}, {{rep_name}} here from {{company_name}}. Saw your enquiry about your project{{location}} — when would be a good time to chat?",
+      "Hi {{lead_first_name}}, {{rep_intro}}. Saw your enquiry about {{project_phrase}}{{location}} — when would be a good time to chat?",
     soon:
-      "Hi {{lead_first_name}}, {{rep_name}} from {{company_name}} here. Thanks for reaching out about your project{{location}} — are you hoping to start soon? I can share options now.",
+      "Hi {{lead_first_name}}, {{rep_intro}}. Thanks for reaching out about {{project_phrase}}{{location}} — are you hoping to start soon? I can share options now.",
     urgent:
-      "Hi {{lead_first_name}}, {{rep_name}} with {{company_name}}. I got your message about your project{{location}} — I can help today. When can we talk?",
+      "Hi {{lead_first_name}}, {{rep_intro}}. I got your message about {{project_phrase}}{{location}} — I can help today. When can we talk?",
     neutral:
-      "Hi {{lead_first_name}}, it’s {{rep_name}} from {{company_name}}. Thanks for your enquiry about your project{{location}} — can I ask a couple of quick questions to help you faster?",
+      "Hi {{lead_first_name}}, {{rep_intro}}. Thanks for reaching out about {{project_phrase}}{{location}} — mind if I ask a couple of quick questions so I can help you faster?",
   },
   SOLAR: { exploring: "", soon: "", urgent: "", neutral: "" },
   CONSTRUCTION: { exploring: "", soon: "", urgent: "", neutral: "" },
@@ -37,6 +46,27 @@ const TEMPLATES: Record<OpenerCategory, Record<UrgencyTier, string>> = {
   ELECTRICAL: { exploring: "", soon: "", urgent: "", neutral: "" },
   LANDSCAPING: { exploring: "", soon: "", urgent: "", neutral: "" },
 };
+
+export function extractRepFirstName(repName: string | null | undefined): string {
+  const trimmed = (repName ?? "").trim();
+  if (!trimmed) return "";
+  return trimmed.split(/\s+/)[0] ?? "";
+}
+
+export function buildRepIntro(repFirstName: string, companyName: string): string {
+  const company = companyName.trim();
+  if (repFirstName) {
+    return company ? `this is ${repFirstName} from ${company}` : `this is ${repFirstName}`;
+  }
+  return company ? `this is the team at ${company}` : "this is our team";
+}
+
+export function nicheProjectPhrase(industry: string | null | undefined): string {
+  const cat = mapIndustryToCategory(industry);
+  if (cat === "GENERIC") return "your project";
+  const label = NICHE_PROJECT_LABELS[cat];
+  return label ? `your ${label} project` : "your project";
+}
 
 function compile(template: string, vars: Record<string, string>): string {
   return template.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_, k: string) => {
@@ -159,11 +189,13 @@ export function buildOpenerMessage(opts: {
   const candidate = TEMPLATES[cat]?.[tier];
   const base = (candidate && candidate.length > 0 ? candidate : TEMPLATES.GENERIC[tier]) as string;
   const location = city ? ` in ${city}` : "";
-  const displayRep = (opts.repName || "").trim() || companyName;
+  const repFirstName = extractRepFirstName(opts.repName);
+  const repIntro = buildRepIntro(repFirstName, companyName);
+  const projectPhrase = nicheProjectPhrase(opts.industry);
   return compile(base, {
     lead_first_name: leadFirstName,
-    rep_name: displayRep,
-    company_name: companyName,
+    rep_intro: repIntro,
+    project_phrase: projectPhrase,
     location,
   });
 }

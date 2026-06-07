@@ -227,15 +227,15 @@ export function AppShell({
                     <button
                       type="button"
                       onClick={() => setNewLeadOpen(true)}
-                      className="btn-primary hidden h-9 items-center gap-2 px-3.5 text-[13px] font-medium md:inline-flex"
+                      className="btn-primary !inline-flex !h-9 shrink-0 items-center !gap-2 whitespace-nowrap px-3.5 text-[13px] font-medium max-md:!hidden"
                     >
-                      <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      <Plus className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                       New lead
                     </button>
                     <button
                       type="button"
                       onClick={() => setNewLeadOpen(true)}
-                      className="btn-primary flex h-9 w-9 items-center justify-center md:hidden"
+                      className="btn-primary !inline-flex !h-9 w-9 shrink-0 items-center justify-center md:!hidden"
                       aria-label="New lead"
                     >
                       <Plus className="h-4 w-4" strokeWidth={1.5} />
@@ -246,14 +246,14 @@ export function AppShell({
                   <>
                     <Link
                       href={quickActionHref}
-                      className="btn-primary hidden h-9 items-center gap-2 px-3.5 text-[13px] font-medium md:inline-flex"
+                      className="btn-primary !inline-flex !h-9 shrink-0 items-center !gap-2 whitespace-nowrap px-3.5 text-[13px] font-medium max-md:!hidden"
                     >
-                      <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      <Plus className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                       + New lead
                     </Link>
                     <Link
                       href={quickActionHref}
-                      className="btn-primary flex h-9 w-9 items-center justify-center md:hidden"
+                      className="btn-primary !inline-flex !h-9 w-9 shrink-0 items-center justify-center md:!hidden"
                       aria-label="New lead"
                     >
                       <Plus className="h-4 w-4" strokeWidth={1.5} />
