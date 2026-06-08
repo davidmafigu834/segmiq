@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
-import { CloudClientsClient, type CloudClientRow } from "./CloudClientsClient";
+import { fetchCloudClientsForAdmin } from "@/lib/cloud-clients";
+import { CloudClientsClient } from "./CloudClientsClient";
 
 export const dynamic = "force-dynamic";
 
@@ -13,21 +13,7 @@ export default async function CloudClientsPage() {
     redirect("/dashboard");
   }
 
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("clients")
-    .select(`
-      id, name, plan, billing_period, payment_status, next_payment_date, payment_notes,
-      created_at, is_active,
-      users (id, name, email, role, created_at),
-      projects (id, project_media (file_size_bytes))
-    `)
-    .or("is_archived.is.null,is_archived.eq.false")
-    .order("created_at", { ascending: false });
-
-  const cloudClients = ((data ?? []) as CloudClientRow[]).filter((c) =>
-    Array.isArray(c.users) && c.users.some((u: { role: string }) => u.role === "CLIENT_MANAGER")
-  );
+  const { clients: cloudClients, queryError } = await fetchCloudClientsForAdmin();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   let projectRef = "";
@@ -43,6 +29,12 @@ export default async function CloudClientsPage() {
       breadcrumb="AGENCY / CLOUD SUBSCRIPTIONS"
       pageTitle="Cloud Subscriptions"
     >
+      {queryError ? (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">
+          Could not load cloud clients from the database. Check that migrations 020, 021, and 041 are applied.
+          <span className="mt-1 block font-mono text-[11px] opacity-80">{queryError}</span>
+        </div>
+      ) : null}
       <CloudClientsClient
         initialClients={cloudClients}
         supabaseDashboardBase={supabaseDashboardBase}

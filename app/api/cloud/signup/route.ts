@@ -78,18 +78,29 @@ export async function POST(req: Request) {
     slug = `${slug}-${randomChars(4)}`;
   }
 
-  const { data: client, error: clientErr } = await supabase
+  const clientPayload = {
+    name: businessName.trim(),
+    industry: industry.trim(),
+    slug,
+    plan: "starter",
+    is_active: true,
+    response_time_limit_hours: 24,
+  };
+
+  let clientResult = await supabase
     .from("clients")
-    .insert({
-      name: businessName.trim(),
-      industry: industry.trim(),
-      slug,
-      plan: "starter",
-      is_active: true,
-      response_time_limit_hours: 24,
-    })
+    .insert({ ...clientPayload, signup_source: "cloud" })
     .select("id")
     .single();
+
+  if (
+    clientResult.error?.message?.includes("signup_source") &&
+    clientResult.error.message.includes("does not exist")
+  ) {
+    clientResult = await supabase.from("clients").insert(clientPayload).select("id").single();
+  }
+
+  const { data: client, error: clientErr } = clientResult;
 
   if (clientErr || !client) {
     console.error("[cloud/signup] client insert:", clientErr);

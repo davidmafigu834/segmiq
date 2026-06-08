@@ -1,6 +1,5 @@
 /**
  * Shared marketing site footer. Server component (no interactivity).
- * Link hrefs are placeholders ("#") — wire to real routes as pages land.
  */
 
 import Link from "next/link";
@@ -12,6 +11,7 @@ const COLS = [
       { label: "Overview", href: "/" },
       { label: "Why Segmiq", href: "/why-segmiq" },
       { label: "Security", href: "/security" },
+      { label: "Status", href: "/status" },
       { label: "Segmiq CRM", href: "/products/segmiq-crm" },
     ],
   },
@@ -36,19 +36,19 @@ const COLS = [
   {
     h: "Resources",
     links: [
-      { label: "Docs", href: "#" },
-      { label: "Onboarding guide", href: "#" },
       { label: "Blog", href: "/blog" },
-      { label: "Support", href: "#" },
+      { label: "Status", href: "/status" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
     ],
   },
   {
     h: "Engage",
     links: [
-      { label: "Contact sales", href: "#" },
-      { label: "Become a partner", href: "#" },
-      { label: "Book a demo", href: "#" },
-      { label: "Careers", href: "#" },
+      { label: "Book a demo", href: "/contact" },
+      { label: "Contact sales", href: "/contact" },
+      { label: "Become a partner", href: "/partners" },
+      { label: "Careers", href: "/careers" },
     ],
   },
 ];
@@ -79,13 +79,13 @@ export default function MarketingFooter() {
             <span>© 2026 Segmiq · segmiq.com</span>
           </div>
           <div className="flex gap-5">
-            <Link href="/legal/privacy" className="hover:text-black">
+            <Link href="/privacy" className="hover:text-black">
               Privacy
             </Link>
-            <Link href="/legal/terms" className="hover:text-black">
+            <Link href="/terms" className="hover:text-black">
               Terms
             </Link>
-            <Link href="#" className="hover:text-black">
+            <Link href="/status" className="hover:text-black">
               Status
             </Link>
           </div>

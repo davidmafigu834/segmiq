@@ -131,7 +131,14 @@ export async function middleware(req: NextRequest) {
     path === "/pricing" ||
     path === "/blog" ||
     path.startsWith("/blog/") ||
-    path.startsWith("/solutions/");
+    path.startsWith("/solutions/") ||
+    path === "/contact" ||
+    path === "/partners" ||
+    path === "/careers" ||
+    path === "/privacy" ||
+    path === "/terms" ||
+    path === "/status" ||
+    path.startsWith("/legal/");
 
   const isPublic =
     path === "/login" ||

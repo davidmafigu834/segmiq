@@ -55,7 +55,7 @@ export default function MarketingHeader() {
             Sign in
           </Link>
           <Link
-            href="/login"
+            href="/contact"
             className="hidden sm:inline px-4 py-2 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]"
           >
             Book a demo
@@ -96,7 +96,7 @@ export default function MarketingHeader() {
               Sign in
             </Link>
             <Link
-              href="/login"
+              href="/contact"
               onClick={() => setOpen(false)}
               className="flex-1 text-center px-4 py-2.5 rounded-full bg-[#D4FF4F] text-black font-semibold"
             >

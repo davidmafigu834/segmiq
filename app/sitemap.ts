@@ -16,6 +16,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/solutions/solar`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/solutions/roofing`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/solutions/electrical-landscaping`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/contact`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE}/partners`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/careers`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE}/privacy`, changeFrequency: "yearly", priority: 0.4 },
+    { url: `${BASE}/terms`, changeFrequency: "yearly", priority: 0.4 },
+    { url: `${BASE}/status`, changeFrequency: "daily", priority: 0.5 },
   ];
 
   const blogRoutes: MetadataRoute.Sitemap = slugs.map((slug) => ({
