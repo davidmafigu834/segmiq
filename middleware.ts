@@ -254,6 +254,6 @@ export const config = {
   // Skip all Next.js internals (dev + prod), API routes, and static assets — otherwise
   // middleware can run on e.g. /_next/webpack-hmr and return HTML redirects, breaking JS chunks (MIME errors).
   matcher: [
-    "/((?!_next/|api/|favicon\\.ico|favicon/|manifest\\.json|sw\\.js|icons/|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/|api/|favicon\\.ico|favicon/|manifest\\.json|sw\\.js|icons/|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|html)$).*)",
   ],
 };
