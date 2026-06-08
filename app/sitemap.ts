@@ -12,6 +12,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/features`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/pricing`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE}/products/segmiq-crm`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/solutions/construction`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/solutions/solar`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/solutions/roofing`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE}/solutions/electrical-landscaping`, changeFrequency: "monthly", priority: 0.7 },
   ];
 
   const blogRoutes: MetadataRoute.Sitemap = slugs.map((slug) => ({
