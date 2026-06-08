@@ -9,6 +9,8 @@
 import { Layers, History, Lock, Download, Key, UserCheck, Clock, Server, Database, Eye, MessageCircle, Mail, Send, Shield, Check } from "lucide-react";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbLd, pageMetadata } from "@/lib/seo";
+import { m } from "@/components/marketing/marketingTheme";
+import { ML } from "@/lib/marketing-links";
 
 export const metadata = pageMetadata({
   title: "Security",
@@ -54,18 +56,18 @@ export default function SecurityPage() {
       {/* HERO */}
       <section className="pt-20 pb-14">
         <div className="mx-auto max-w-[820px] px-5 text-center">
-          <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">SECURITY</div>
+          <div className={m.kicker}>SECURITY</div>
           <h1 className="mt-3 text-[38px] sm:text-[50px] leading-[1.06] font-extrabold tracking-tight">
             Your leads, your data, your relationships — protected
           </h1>
-          <p className="mt-5 text-[17px] text-[#5b5b5b] max-w-[640px] mx-auto">
+          <p className={`mt-5 text-[17px] ${m.muted} max-w-[640px] mx-auto`}>
             Segmiq holds the most valuable thing a service business owns: its pipeline. We treat it that way — with scoped access, a full audit trail, official channels, and data you can take with you at any time.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <a href="#contact" className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
               Talk to us about security
             </a>
-            <a href="#" className="px-6 py-3 rounded-full border border-black/[0.08] font-semibold hover:border-black/30">
+            <a href={ML.featuresSecurity} className={`px-6 py-3 ${m.ghostBtn}`}>
               Read the docs
             </a>
           </div>
@@ -76,19 +78,19 @@ export default function SecurityPage() {
       <section className="pb-16">
         <div className="mx-auto max-w-[1100px] px-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {PRINCIPLES.map(({ Icon, t, d }) => (
-            <div key={t} className="rounded-2xl border border-black/[0.08] p-6 transition-transform duration-300 hover:-translate-y-1">
+            <div key={t} className={`${m.cardHover} p-6`}>
               <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#0C0C0C] text-[#D4FF4F] mb-4">
                 <Icon className="w-[22px] h-[22px]" />
               </span>
               <div className="font-semibold">{t}</div>
-              <p className="mt-1.5 text-sm text-[#5b5b5b]">{d}</p>
+              <p className={`mt-1.5 text-sm ${m.muted}`}>{d}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* ACCESS (dark) */}
-      <section className="py-16 bg-[#0C0C0C] text-white">
+      <section className={`py-16 ${m.sectionBand}`}>
         <div className="mx-auto max-w-[1100px] px-5">
           <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#D4FF4F] text-black mb-4">
             <Key className="w-[22px] h-[22px]" />
@@ -96,17 +98,17 @@ export default function SecurityPage() {
           <h2 className="text-[28px] sm:text-[32px] font-extrabold leading-tight max-w-[620px]">
             Access is scoped, sign-in is controlled
           </h2>
-          <p className="mt-3 text-[15px] text-white/70 max-w-[620px]">
+          <p className={`mt-3 text-[15px] ${m.muted} max-w-[620px]`}>
             A salesperson can&apos;t see another client&apos;s pipeline. A client manager can&apos;t reach into the agency&apos;s books. Access follows the role, and authentication is handled the same way across every portal.
           </p>
           <div className="mt-8 grid md:grid-cols-3 gap-4">
             {ACCESS.map(({ Icon, t, d }) => (
-              <div key={t} className="rounded-xl bg-[#181818] p-5">
+              <div key={t} className={`${m.elevated} p-5`}>
                 <span className="text-[#D4FF4F]">
                   <Icon className="w-5 h-5" />
                 </span>
                 <div className="mt-3 font-medium">{t}</div>
-                <p className="text-sm text-white/65 mt-1">{d}</p>
+                <p className={`text-sm ${m.muted} mt-1`}>{d}</p>
               </div>
             ))}
           </div>
@@ -121,18 +123,18 @@ export default function SecurityPage() {
               <Server className="w-[22px] h-[22px]" />
             </span>
             <h2 className="text-[28px] font-extrabold leading-tight">Built on infrastructure you can trust</h2>
-            <p className="mt-3 text-[15px] text-[#5b5b5b]">
+            <p className={`mt-3 text-[15px] ${m.muted}`}>
               We don&apos;t roll our own database or storage. Segmiq runs on managed, well-established providers, so your data sits behind the same protections used by thousands of production businesses.
             </p>
           </div>
           <div className="mt-8 grid md:grid-cols-3 gap-4">
             {DATA.map(({ Icon, t, d }) => (
-              <div key={t} className="rounded-xl border border-black/[0.08] p-5 transition-transform duration-300 hover:-translate-y-1">
-                <span className="grid place-items-center w-10 h-10 rounded-xl bg-[#F0EEE8] text-[#0C0C0C] mb-3">
+              <div key={t} className={`${m.cardHover} p-5`}>
+                <span className={`grid place-items-center w-10 h-10 rounded-xl ${m.cardIcon} text-white mb-3`}>
                   <Icon className="w-5 h-5" />
                 </span>
                 <div className="font-medium">{t}</div>
-                <p className="text-sm text-[#5b5b5b] mt-1">{d}</p>
+                <p className={`text-sm ${m.muted} mt-1`}>{d}</p>
               </div>
             ))}
           </div>
@@ -140,25 +142,25 @@ export default function SecurityPage() {
       </section>
 
       {/* COMMUNICATIONS */}
-      <section className="py-16 bg-[#F8F7F4]">
+      <section className={`py-16 ${m.sectionBand}`}>
         <div className="mx-auto max-w-[1100px] px-5">
           <div className="max-w-[620px]">
             <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#0C0C0C] text-[#D4FF4F] mb-4">
               <MessageCircle className="w-[22px] h-[22px]" />
             </span>
             <h2 className="text-[28px] font-extrabold leading-tight">Messaging through official channels only</h2>
-            <p className="mt-3 text-[15px] text-[#5b5b5b]">
+            <p className={`mt-3 text-[15px] ${m.muted}`}>
               Some tools cut corners with unofficial WhatsApp gateways that get numbers banned. Segmiq doesn&apos;t. Every message goes through approved, sanctioned channels — protecting your business number and your sender reputation.
             </p>
           </div>
           <div className="mt-8 grid md:grid-cols-3 gap-4">
             {COMMS.map(({ Icon, t, d }) => (
-              <div key={t} className="rounded-xl bg-white border border-black/[0.08] p-5">
-                <span className="grid place-items-center w-10 h-10 rounded-xl bg-[#F0EEE8] text-[#0C0C0C] mb-3">
+              <div key={t} className={`${m.card} p-5`}>
+                <span className={`grid place-items-center w-10 h-10 rounded-xl ${m.cardIcon} text-white mb-3`}>
                   <Icon className="w-5 h-5" />
                 </span>
                 <div className="font-medium">{t}</div>
-                <p className="text-sm text-[#5b5b5b] mt-1">{d}</p>
+                <p className={`text-sm ${m.muted} mt-1`}>{d}</p>
               </div>
             ))}
           </div>
@@ -173,7 +175,7 @@ export default function SecurityPage() {
               <Download className="w-[22px] h-[22px]" />
             </span>
             <h2 className="text-[28px] font-extrabold leading-tight">Your data stays yours</h2>
-            <p className="mt-3 text-[15px] text-[#5b5b5b]">
+            <p className={`mt-3 text-[15px] ${m.muted}`}>
               A platform that holds your pipeline hostage isn&apos;t a partner. Segmiq is built around the opposite idea: the relationship belongs to your business, and you can take it with you.
             </p>
             <ul className="mt-5 space-y-2.5 text-sm">
@@ -184,9 +186,9 @@ export default function SecurityPage() {
               ))}
             </ul>
           </div>
-          <div className="rounded-2xl bg-[#0C0C0C] text-white p-6">
+          <div className={`${m.elevated} p-6`}>
             <div className="text-[11px] tracking-widest text-[#D4FF4F] font-semibold">EXPORT PREVIEW</div>
-            <div className="mt-3 rounded-lg bg-[#181818] p-4 font-mono text-[12px] text-white/80 leading-relaxed">
+            <div className="mt-3 rounded-lg bg-[#0C0C0C] p-4 font-mono text-[12px] text-white/80 leading-relaxed">
               segment: high_intent_unconverted
               <br />
               rows: 1,248
@@ -207,13 +209,13 @@ export default function SecurityPage() {
       {/* DISCLOSURE */}
       <section id="contact" className="py-12">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className="rounded-2xl border border-black/[0.08] bg-[#F8F7F4] p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className={`${m.panel} flex flex-col md:flex-row md:items-center justify-between gap-6`}>
             <div className="max-w-[560px]">
               <span className="grid place-items-center w-10 h-10 rounded-xl bg-[#0C0C0C] text-[#D4FF4F] mb-3">
                 <Shield className="w-5 h-5" />
               </span>
               <h3 className="text-xl font-bold">Found something? Tell us.</h3>
-              <p className="mt-1.5 text-sm text-[#5b5b5b]">
+              <p className={`mt-1.5 text-sm ${m.muted}`}>
                 If you believe you&apos;ve found a security issue, we want to hear from you. Reach our team directly and we&apos;ll respond quickly.
               </p>
             </div>
@@ -238,10 +240,10 @@ export default function SecurityPage() {
               Bring them to the demo. We&apos;ll walk through exactly how your pipeline is stored, accessed, and protected.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="/login" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
+              <a href={ML.contact} className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
                 Book a demo
               </a>
-              <a href="#" className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">
+              <a href={ML.featuresSecurity} className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">
                 Read the docs
               </a>
             </div>

@@ -6,6 +6,8 @@
 import { Fragment } from "react";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbLd, pageMetadata, softwareAppLd } from "@/lib/seo";
+import { m } from "@/components/marketing/marketingTheme";
+import { ML } from "@/lib/marketing-links";
 import {
   Briefcase,
   Users,
@@ -122,18 +124,18 @@ export default function SegmiqCrmPage() {
       {/* HERO */}
       <section className="pt-20 pb-12">
         <div className="mx-auto max-w-[860px] px-5 text-center">
-          <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">SEGMIQ CRM</div>
+          <div className={m.kicker}>SEGMIQ CRM</div>
           <h1 className="mt-3 text-[38px] sm:text-[50px] leading-[1.06] font-extrabold tracking-tight">
             Capture, score, coach, and close — in one platform
           </h1>
-          <p className="mt-5 text-[17px] text-[#5b5b5b] max-w-[640px] mx-auto">
+          <p className={`mt-5 text-[17px] ${m.muted} max-w-[640px] mx-auto`}>
             Segmiq CRM runs your entire revenue motion across three connected portals: the agency that manages clients, the manager who runs a sales team, and the rep closing work on the ground.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <a href="/login" className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
+            <a href={ML.contact} className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
               Book a demo
             </a>
-            <a href="/#pricing" className="px-6 py-3 rounded-full border border-black/[0.08] font-semibold hover:border-black/30">
+            <a href={ML.pricing} className={`px-6 py-3 ${m.ghostBtn}`}>
               See pricing
             </a>
           </div>
@@ -144,18 +146,18 @@ export default function SegmiqCrmPage() {
       <section className="pb-16">
         <div className="mx-auto max-w-[1100px] px-5">
           <h2 className="text-[26px] font-extrabold text-center">One platform, three portals</h2>
-          <p className="text-center text-[15px] text-[#5b5b5b] mt-2 max-w-[560px] mx-auto">
+          <p className={`text-center text-[15px] ${m.muted} mt-2 max-w-[560px] mx-auto`}>
             Each role gets a workspace built for the job in front of them — not one bloated screen for everyone.
           </p>
           <div className="grid md:grid-cols-3 gap-4 mt-9">
             {PORTALS.map(({ Icon, k, t, d }) => (
-              <div key={k} className="rounded-2xl border border-black/[0.08] p-6 transition-transform duration-300 hover:-translate-y-1">
+              <div key={k} className={`${m.cardHover} p-6`}>
                 <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#0C0C0C] text-[#D4FF4F] mb-4">
                   <Icon className="w-[22px] h-[22px]" />
                 </span>
-                <div className="text-[11px] tracking-widest text-[#8a8a8a] font-semibold">{k}</div>
+                <div className={`text-[11px] tracking-widest ${m.faint} font-semibold`}>{k}</div>
                 <div className="mt-1 text-lg font-bold">{t}</div>
-                <p className="mt-2 text-sm text-[#5b5b5b]">{d}</p>
+                <p className={`mt-2 text-sm ${m.muted}`}>{d}</p>
               </div>
             ))}
           </div>
@@ -163,10 +165,10 @@ export default function SegmiqCrmPage() {
       </section>
 
       {/* FLOW */}
-      <section className="py-16 bg-[#F8F7F4]">
+      <section className={`py-16 ${m.sectionBand}`}>
         <div className="mx-auto max-w-[1100px] px-5">
           <h2 className="text-[26px] font-extrabold text-center">How a lead moves through Segmiq</h2>
-          <p className="text-center text-[15px] text-[#5b5b5b] mt-2 max-w-[560px] mx-auto">
+          <p className={`text-center text-[15px] ${m.muted} mt-2 max-w-[560px] mx-auto`}>
             From the moment a prospect fills the form to the moment the win is recorded.
           </p>
 
@@ -180,7 +182,7 @@ export default function SegmiqCrmPage() {
                   </div>
                   <div className="mt-2 text-[13px] font-semibold">{label}</div>
                 </div>
-                {i < FLOW.length - 1 && <div className="flex-1 h-0.5 bg-gradient-to-r from-[#D4FF4F] to-black/[0.08]" />}
+                {i < FLOW.length - 1 && <div className="flex-1 h-0.5 bg-gradient-to-r from-[#D4FF4F] to-white/10" />}
               </Fragment>
             ))}
           </div>
@@ -188,7 +190,7 @@ export default function SegmiqCrmPage() {
           {/* mobile */}
           <div className="md:hidden mt-8 grid grid-cols-3 gap-3">
             {FLOW.map(({ Icon, label }) => (
-              <div key={label} className="rounded-xl border border-black/[0.08] bg-white p-3 text-center">
+              <div key={label} className={`${m.card} p-3 text-center`}>
                 <div className="grid place-items-center w-10 h-10 mx-auto rounded-xl bg-[#0C0C0C] text-[#D4FF4F]">
                   <Icon className="w-5 h-5" />
                 </div>
@@ -200,7 +202,7 @@ export default function SegmiqCrmPage() {
       </section>
 
       {/* INTELLIGENCE BAND */}
-      <section className="py-16 bg-[#0C0C0C] text-white">
+      <section className={`py-16 ${m.sectionBand}`}>
         <div className="mx-auto max-w-[1100px] px-5 grid lg:grid-cols-2 gap-10 items-center">
           <div>
             <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#D4FF4F] text-black mb-4">
@@ -209,11 +211,11 @@ export default function SegmiqCrmPage() {
             <h2 className="text-[28px] sm:text-[32px] font-extrabold leading-tight">
               Every lead scored 0–100, the moment it lands
             </h2>
-            <p className="mt-3 text-[15px] text-white/70">
+            <p className={`mt-3 text-[15px] ${m.muted}`}>
               The intelligence engine reads each enquiry for intent category, urgency, budget confidence, and project specificity — then turns it into a single score and a clear next action. Your reps stop guessing who&apos;s worth chasing.
             </p>
             <a
-              href="/#intelligence"
+              href={ML.featuresIntelligence}
               className="inline-flex items-center gap-2 mt-5 px-5 py-2.5 rounded-full bg-white text-black font-semibold hover:bg-white/90"
             >
               See the intelligence layer <ArrowRight className="w-4 h-4" />
@@ -256,12 +258,12 @@ export default function SegmiqCrmPage() {
           <h2 className="text-[26px] font-extrabold text-center">Everything the team needs to close</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-9">
             {CAPS.map(({ Icon, t, d }) => (
-              <div key={t} className="rounded-2xl border border-black/[0.08] p-5 transition-transform duration-300 hover:-translate-y-1">
-                <span className="grid place-items-center w-10 h-10 rounded-xl bg-[#F0EEE8] text-[#0C0C0C] mb-3">
+              <div key={t} className={`${m.cardHover} p-5`}>
+                <span className={`grid place-items-center w-10 h-10 rounded-xl ${m.cardIcon} text-white mb-3`}>
                   <Icon className="w-5 h-5" />
                 </span>
                 <div className="font-semibold">{t}</div>
-                <p className="text-sm text-[#5b5b5b] mt-1">{d}</p>
+                <p className={`text-sm ${m.muted} mt-1`}>{d}</p>
               </div>
             ))}
           </div>
@@ -269,17 +271,17 @@ export default function SegmiqCrmPage() {
       </section>
 
       {/* DASHBOARDS */}
-      <section className="py-16 bg-[#F8F7F4]">
+      <section className={`py-16 ${m.sectionBand}`}>
         <div className="mx-auto max-w-[1100px] px-5">
           <h2 className="text-[26px] font-extrabold text-center">A dashboard built for each role</h2>
           <div className="grid md:grid-cols-3 gap-4 mt-9">
             {DASHBOARDS.map(({ Icon, t, d }) => (
-              <div key={t} className="rounded-2xl bg-white border border-black/[0.08] p-6">
+              <div key={t} className={`${m.card} p-6`}>
                 <span className="text-[#D4FF4F]">
                   <Icon className="w-[22px] h-[22px]" />
                 </span>
                 <div className="mt-3 font-bold">{t}</div>
-                <p className="text-sm text-[#5b5b5b] mt-1">{d}</p>
+                <p className={`text-sm ${m.muted} mt-1`}>{d}</p>
               </div>
             ))}
           </div>
@@ -297,10 +299,10 @@ export default function SegmiqCrmPage() {
               We&apos;ll set up a portal, load a sample of your leads, and show you the scoring, routing, and coaching in action.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="/login" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
+              <a href={ML.contact} className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
                 Book a demo
               </a>
-              <a href="/#pricing" className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">
+              <a href={ML.pricing} className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">
                 See pricing
               </a>
             </div>

@@ -10,6 +10,8 @@ import Image from "next/image";
 import { Route, MapPin, MessageCircle, Shield, Check, Send, Clock, Layers, History, Lock, Building2, ArrowRight } from "lucide-react";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbLd, pageMetadata } from "@/lib/seo";
+import { m } from "@/components/marketing/marketingTheme";
+import { ML } from "@/lib/marketing-links";
 
 export const metadata = pageMetadata({
   title: "Why Segmiq — Built for how service businesses in Africa win work",
@@ -53,14 +55,14 @@ export default function WhySegmiqPage() {
       {/* HERO */}
       <section className="pt-20 pb-14">
         <div className="mx-auto max-w-[820px] px-5 text-center">
-          <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">WHY SEGMIQ</div>
+          <div className={m.kicker}>WHY SEGMIQ</div>
           <h1 className="mt-3 text-[38px] sm:text-[50px] leading-[1.06] font-extrabold tracking-tight">Built for how service businesses in Africa actually win work</h1>
-          <p className="mt-5 text-[17px] text-[#5b5b5b] max-w-[640px] mx-auto">
+          <p className={`mt-5 text-[17px] ${m.muted} max-w-[640px] mx-auto`}>
             Most sales software was built for software teams in San Francisco. Segmiq was built for a roofing company in Harare, a solar installer in Lusaka, and an electrical contractor in Johannesburg — where the first reply still arrives on WhatsApp.
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-            <a href="/login" className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">Book a demo</a>
-            <a href="/#pricing" className="px-6 py-3 rounded-full border border-black/[0.08] font-semibold hover:border-black/30">See pricing</a>
+            <a href={ML.contact} className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">Book a demo</a>
+            <a href={ML.pricing} className={`px-6 py-3 ${m.ghostBtn}`}>See pricing</a>
           </div>
         </div>
       </section>
@@ -69,18 +71,18 @@ export default function WhySegmiqPage() {
       <section className="pb-16">
         <div className="mx-auto max-w-[1100px] px-5 grid sm:grid-cols-3 gap-4">
           {STATS.map((s) => (
-            <div key={s.n} className="rounded-2xl border border-black/[0.08] bg-[#F8F7F4] p-6">
+            <div key={s.n} className={m.panel}>
               <div className="text-[44px] font-extrabold leading-none">{s.n}</div>
-              <p className="mt-2 text-sm text-[#5b5b5b]">{s.t}</p>
+              <p className={`mt-2 text-sm ${m.muted}`}>{s.t}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* PILLAR 1 — service businesses */}
-      <section className="py-12 bg-[#F8F7F4]">
+      <section className={`py-12 ${m.sectionBand}`}>
         <div className="mx-auto max-w-[1100px] px-5 grid lg:grid-cols-2 gap-10 items-center">
-          <div className="relative h-[340px] rounded-2xl ring-1 ring-black/[0.08] overflow-hidden order-2 lg:order-1">
+          <div className={`relative h-[340px] rounded-2xl ring-1 ${m.ring} overflow-hidden order-2 lg:order-1`}>
             <Image src={IMG.construction} alt="Trade work on site" fill sizes="(max-width:1024px) 100vw, 50vw" className="object-cover" />
           </div>
           <div className="order-1 lg:order-2">
@@ -88,7 +90,7 @@ export default function WhySegmiqPage() {
               <Route className="w-[22px] h-[22px]" />
             </span>
             <h2 className="text-[28px] font-extrabold leading-tight">Not another generic CRM</h2>
-            <p className="mt-3 text-[15px] text-[#5b5b5b]">
+            <p className={`mt-3 text-[15px] ${m.muted}`}>
               Trades don&apos;t sell like SaaS. The work starts with a site enquiry, moves through a quote and a portfolio, and closes on trust. Segmiq follows that exact path: it captures the enquiry, scores its intent, routes it to the right rep, confirms the prospect, coaches the follow-up, and records the win — so the way you actually sell is the way the software works.
             </p>
             <ul className="mt-5 space-y-2.5 text-sm">
@@ -110,30 +112,25 @@ export default function WhySegmiqPage() {
               <MapPin className="w-[22px] h-[22px]" />
             </span>
             <h2 className="text-[28px] font-extrabold leading-tight">Built for Africa, not adapted for it</h2>
-            <p className="mt-3 text-[15px] text-[#5b5b5b]">
+            <p className={`mt-3 text-[15px] ${m.muted}`}>
               In Zimbabwe, Zambia, South Africa, and Kenya, business happens on WhatsApp — not email threads and dialler software. Segmiq runs on the Meta WhatsApp Cloud API with a Twilio fallback, so it works on the phone your rep already carries, on the network they already use. No new app for the prospect to download, no behaviour to change.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2 text-[13px] font-semibold text-[#5b5b5b]">
-              {[
-                "Harare",
-                "Lusaka",
-                "Johannesburg",
-                "Nairobi",
-              ].map((c) => (
-                <span key={c} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F0EEE8]">
+            <div className={`mt-5 flex flex-wrap gap-2 text-[13px] font-semibold ${m.muted}`}>
+              {["Harare", "Lusaka", "Johannesburg", "Nairobi"].map((c) => (
+                <span key={c} className={m.chip}>
                   <Building2 className="w-[15px] h-[15px]" /> {c}
                 </span>
               ))}
             </div>
           </div>
-          <div className="relative h-[340px] rounded-2xl ring-1 ring-black/[0.08] overflow-hidden">
+          <div className={`relative h-[340px] rounded-2xl ring-1 ${m.ring} overflow-hidden`}>
             <Image src={IMG.team} alt="Team working together" fill sizes="(max-width:1024px) 100vw, 50vw" className="object-cover" />
           </div>
         </div>
       </section>
 
       {/* PILLAR 3 — WhatsApp-first */}
-      <section className="py-16 bg-[#0C0C0C] text-white">
+      <section className={`py-16 ${m.sectionBand}`}>
         <div className="mx-auto max-w-[1100px] px-5">
           <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#D4FF4F] text-black mb-4">
             <MessageCircle className="w-[22px] h-[22px]" />
@@ -141,21 +138,21 @@ export default function WhySegmiqPage() {
           <h2 className="text-[28px] sm:text-[32px] font-extrabold leading-tight max-w-[620px]">
             WhatsApp-first, because that&apos;s where the deal already lives
           </h2>
-          <p className="mt-3 text-[15px] text-white/70 max-w-[620px]">
+          <p className={`mt-3 text-[15px] ${m.muted} max-w-[620px]`}>
             Every key moment happens on the channel the prospect already checks — not buried in an inbox they never open.
           </p>
           <div className="mt-8 grid md:grid-cols-3 gap-4">
             {WHATSAPP.map(({ Icon, t, d }) => (
-              <div key={t} className="rounded-xl bg-[#181818] p-5">
+              <div key={t} className={`${m.elevated} p-5`}>
                 <span className="text-[#D4FF4F]">
                   <Icon className="w-5 h-5" />
                 </span>
                 <div className="mt-3 font-medium">{t}</div>
-                <p className="text-sm text-white/65 mt-1">{d}</p>
+                <p className={`text-sm ${m.muted} mt-1`}>{d}</p>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-[13px] text-white/45">All templates are approved under the Segmiq brand and delivered through the official Meta WhatsApp Cloud API.</p>
+          <p className={`mt-6 text-[13px] ${m.faint}`}>All templates are approved under the Segmiq brand and delivered through the official Meta WhatsApp Cloud API.</p>
         </div>
       </section>
 
@@ -167,18 +164,18 @@ export default function WhySegmiqPage() {
               <Shield className="w-[22px] h-[22px]" />
             </span>
             <h2 className="text-[28px] font-extrabold leading-tight">Your pipeline stays yours</h2>
-            <p className="mt-3 text-[15px] text-[#5b5b5b]">
+            <p className={`mt-3 text-[15px] ${m.muted}`}>
               The biggest risk in a sales team isn&apos;t a missed lead — it&apos;s a salesperson walking out with every contact and conversation. Segmiq keeps the relationship on the business&apos;s side of the line.
             </p>
           </div>
           <div className="mt-8 grid md:grid-cols-3 gap-4">
             {SECURITY.map(({ Icon, t, d }) => (
-              <div key={t} className="rounded-xl border border-black/[0.08] p-5 transition-transform duration-300 hover:-translate-y-1">
-                <span className="grid place-items-center w-10 h-10 rounded-xl bg-[#F0EEE8] text-[#0C0C0C] mb-3">
+              <div key={t} className={`${m.cardHover} p-5`}>
+                <span className={`grid place-items-center w-10 h-10 rounded-xl ${m.cardIcon} text-white mb-3`}>
                   <Icon className="w-5 h-5" />
                 </span>
                 <div className="font-medium">{t}</div>
-                <p className="text-sm text-[#5b5b5b] mt-1">{d}</p>
+                <p className={`text-sm ${m.muted} mt-1`}>{d}</p>
               </div>
             ))}
           </div>
@@ -196,11 +193,11 @@ export default function WhySegmiqPage() {
               Bring a week of real enquiries. We&apos;ll show you the response times, the missed follow-ups, and the deals hiding in your pipeline.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="/login" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
+              <a href={ML.contact} className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">
                 Book a demo
               </a>
               <a
-                href="/#pricing"
+                href={ML.pricing}
                 className="inline-flex items-center gap-1 px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5"
               >
                 See pricing <ArrowRight className="w-4 h-4" />

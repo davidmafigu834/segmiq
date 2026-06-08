@@ -12,6 +12,8 @@ import { BlogMarkdown } from "@/components/blog/BlogMarkdown";
 import JsonLd from "@/components/seo/JsonLd";
 import { getPostBySlug, getAllSlugs } from "@/lib/blog";
 import { articleLd, pageMetadata } from "@/lib/seo";
+import { m } from "@/components/marketing/marketingTheme";
+import { ML } from "@/lib/marketing-links";
 
 export const dynamicParams = true;
 export const revalidate = 600;
@@ -53,7 +55,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         })}
       />
       <div className="mx-auto max-w-[760px] px-5">
-        <Link href="/blog" className="inline-flex items-center gap-1.5 text-sm text-[#5b5b5b] hover:text-black">
+        <Link href="/blog" className={`inline-flex items-center gap-1.5 text-sm ${m.linkMuted}`}>
           <ArrowLeft className="w-4 h-4" /> All posts
         </Link>
 
@@ -61,7 +63,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
           <span className="text-[11px] tracking-[0.08em] font-bold uppercase text-[#D4FF4F] bg-[#0C0C0C] px-2 py-1 rounded">{post.categoryLabel}</span>
         </div>
         <h1 className="mt-4 text-[34px] sm:text-[44px] leading-[1.08] font-extrabold tracking-tight">{post.title}</h1>
-        <div className="mt-4 flex items-center gap-3 text-[13px] text-[#8a8a8a]">
+        <div className={`mt-4 flex items-center gap-3 text-[13px] ${m.faint}`}>
           <span>{post.author}</span><span>·</span>
           <span>{formatDate(post.publishedAt)}</span><span>·</span>
           <span className="inline-flex items-center gap-1"><Clock className="w-[14px] h-[14px]" /> {post.readMinutes} min read</span>
@@ -69,7 +71,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
       </div>
 
       <div className="mx-auto max-w-[900px] px-5 mt-8">
-        <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden ring-1 ring-black/[0.08]">
+        <div className={`relative w-full aspect-[16/9] rounded-2xl overflow-hidden ring-1 ${m.ring}`}>
           <Image src={post.coverImage} alt="" fill sizes="(max-width:900px) 100vw, 900px" className="object-cover" priority />
         </div>
       </div>
@@ -80,7 +82,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         <div className="mt-12 rounded-2xl bg-[#D4FF4F] p-8 text-center">
           <h3 className="text-[22px] font-extrabold text-black">See it on your own leads</h3>
           <p className="mt-2 text-sm text-black/70">Book a demo and we&apos;ll show you Segmiq working on a sample of your real enquiries.</p>
-          <a href="#" className="inline-block mt-4 px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">Book a demo</a>
+          <a href={ML.contact} className="inline-block mt-4 px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">Book a demo</a>
         </div>
       </div>
     </article>

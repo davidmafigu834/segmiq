@@ -3,14 +3,13 @@
 /**
  * Shared marketing site header — nav + animated mobile menu.
  * Rendered once from app/(marketing)/layout.tsx, so every marketing page gets it.
- *
- * NAV hrefs are placeholders ("#") for sections not yet built. Wire them to real
- * routes (or dropdowns) as those pages land.
  */
 
 import { useState } from "react";
 import Link from "next/link";
 import { Search, Menu, X } from "lucide-react";
+import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
+import { ML } from "@/lib/marketing-links";
 
 const NAV = [
   { label: "Overview", href: "/" },
@@ -26,36 +25,33 @@ export default function MarketingHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/85 backdrop-blur border-b border-black/[0.08]">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 text-white backdrop-blur">
       <div className="mx-auto max-w-[1100px] px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="grid place-items-center w-[26px] h-[26px] rounded-[7px] bg-[#D4FF4F] text-black font-extrabold text-sm">S</span>
-            <span className="text-lg font-semibold tracking-tight">Segmiq</span>
-          </Link>
-          <nav className="hidden lg:flex items-center gap-6 text-sm text-[#5b5b5b]">
+          <SegmiqWordmark href="/" priority />
+          <nav className="hidden lg:flex items-center gap-6 text-sm text-white/60">
             {NAV.map((n) => (
-              <Link key={n.label} href={n.href} className="hover:text-black">
+              <Link key={n.label} href={n.href} className="hover:text-white">
                 {n.label}
               </Link>
             ))}
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <Link href="#" aria-label="Search" className="hidden sm:inline text-[#5b5b5b] hover:text-black">
+          <Link href={ML.blog} aria-label="Search" className="hidden sm:inline text-white/60 hover:text-white">
             <Search className="w-[18px] h-[18px]" />
           </Link>
-          <Link href="#" className="hidden md:inline text-[#5b5b5b] hover:text-black">
+          <Link href={ML.features} className="hidden md:inline text-white/60 hover:text-white">
             Docs
           </Link>
-          <Link href="#" className="hidden md:inline text-[#5b5b5b] hover:text-black">
+          <Link href={ML.contact} className="hidden md:inline text-white/60 hover:text-white">
             Support
           </Link>
-          <Link href="/login" className="hidden sm:inline font-medium hover:text-black">
+          <Link href={ML.login} className="hidden sm:inline font-medium hover:text-[#D4FF4F]">
             Sign in
           </Link>
           <Link
-            href="/contact"
+            href={ML.contact}
             className="hidden sm:inline px-4 py-2 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]"
           >
             Book a demo
@@ -70,9 +66,8 @@ export default function MarketingHeader() {
         </div>
       </div>
 
-      {/* mobile menu */}
       <div
-        className={`lg:hidden overflow-hidden transition-[max-height] duration-300 ease-in-out border-black/[0.08] bg-white ${
+        className={`lg:hidden overflow-hidden transition-[max-height] duration-300 ease-in-out border-white/10 bg-black ${
           open ? "max-h-96 border-t" : "max-h-0"
         }`}
       >
@@ -82,21 +77,21 @@ export default function MarketingHeader() {
               key={n.label}
               href={n.href}
               onClick={() => setOpen(false)}
-              className="py-2.5 border-b border-black/[0.08] text-[#5b5b5b] hover:text-black"
+              className="py-2.5 border-b border-white/10 font-medium text-white/65 hover:text-white"
             >
               {n.label}
             </Link>
           ))}
           <div className="flex gap-3 pt-4">
             <Link
-              href="/login"
+              href={ML.login}
               onClick={() => setOpen(false)}
-              className="flex-1 text-center px-4 py-2.5 rounded-full border border-black/[0.08] font-semibold"
+              className="flex-1 text-center px-4 py-2.5 rounded-full border border-white/20 font-semibold"
             >
               Sign in
             </Link>
             <Link
-              href="/contact"
+              href={ML.contact}
               onClick={() => setOpen(false)}
               className="flex-1 text-center px-4 py-2.5 rounded-full bg-[#D4FF4F] text-black font-semibold"
             >

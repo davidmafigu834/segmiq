@@ -1,8 +1,7 @@
-/**
- * Shared marketing site footer. Server component (no interactivity).
- */
+"use client";
 
 import Link from "next/link";
+import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
 
 const COLS = [
   {
@@ -55,16 +54,16 @@ const COLS = [
 
 export default function MarketingFooter() {
   return (
-    <footer className="border-t border-black/[0.08] pt-12 pb-8 bg-[#F8F7F4]">
+    <footer className="border-t border-white/10 bg-black/90 pt-12 pb-8 text-white">
       <div className="mx-auto max-w-[1100px] px-5">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
           {COLS.map((col) => (
             <div key={col.h}>
               <div className="font-semibold mb-3">{col.h}</div>
-              <ul className="space-y-2 text-[#5b5b5b]">
+              <ul className="space-y-2 text-white/60">
                 {col.links.map(({ label, href }) => (
                   <li key={label}>
-                    <Link href={href} className="hover:text-black">
+                    <Link href={href} className="hover:text-white">
                       {label}
                     </Link>
                   </li>
@@ -73,19 +72,19 @@ export default function MarketingFooter() {
             </div>
           ))}
         </div>
-        <div className="mt-10 pt-6 border-t border-black/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-[#8a8a8a]">
-          <div className="flex items-center gap-2">
-            <span className="grid place-items-center w-[22px] h-[22px] rounded-md bg-[#D4FF4F] text-black font-extrabold text-xs">S</span>
+        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-white/45">
+          <div className="flex items-center gap-3">
+            <SegmiqWordmark href="/" size="sm" />
             <span>© 2026 Segmiq · segmiq.com</span>
           </div>
           <div className="flex gap-5">
-            <Link href="/privacy" className="hover:text-black">
+            <Link href="/privacy" className="hover:text-white">
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-black">
+            <Link href="/terms" className="hover:text-white">
               Terms
             </Link>
-            <Link href="/status" className="hover:text-black">
+            <Link href="/status" className="hover:text-white">
               Status
             </Link>
           </div>

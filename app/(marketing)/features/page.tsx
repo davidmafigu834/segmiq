@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import JsonLd from "@/components/seo/JsonLd";
 import { breadcrumbLd, pageMetadata } from "@/lib/seo";
+import { m } from "@/components/marketing/marketingTheme";
+import { ML } from "@/lib/marketing-links";
 
 export const metadata = pageMetadata({
   title: "All features",
@@ -85,31 +87,31 @@ export default function FeaturesPage() {
       {/* HERO */}
       <section className="pt-20 pb-8">
         <div className="mx-auto max-w-[760px] px-5 text-center">
-          <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">ALL FEATURES</div>
+          <div className={m.kicker}>ALL FEATURES</div>
           <h1 className="mt-3 text-[38px] sm:text-[50px] leading-[1.06] font-extrabold tracking-tight">Everything in Segmiq, in one place</h1>
-          <p className="mt-5 text-[17px] text-[#5b5b5b] max-w-[600px] mx-auto">From the first enquiry to the recorded win — capture, conversion, intelligence, recovery, and the dashboards that hold it together.</p>
+          <p className={`mt-5 text-[17px] ${m.muted} max-w-[600px] mx-auto`}>From the first enquiry to the recorded win — capture, conversion, intelligence, recovery, and the dashboards that hold it together.</p>
         </div>
-        <div className="mx-auto max-w-[1100px] px-5 mt-7 flex flex-wrap justify-center gap-2 text-[13px] font-medium text-[#5b5b5b]">
+        <div className={`mx-auto max-w-[1100px] px-5 mt-7 flex flex-wrap justify-center gap-2 text-[13px] font-medium ${m.muted}`}>
           {GROUPS.map((g) => (
-            <a key={g.id} href={`#${g.id}`} className="rounded-full border border-black/[0.08] px-3 py-1.5 hover:border-black/30 hover:text-black">{g.title}</a>
+            <a key={g.id} href={`#${g.id}`} className={`rounded-full border ${m.border} px-3 py-1.5 hover:border-white/30 hover:text-white`}>{g.title}</a>
           ))}
         </div>
       </section>
 
       {/* GROUPS */}
       {GROUPS.map((g, i) => (
-        <section key={g.id} id={g.id} className={`py-14 scroll-mt-20 ${i % 2 ? "bg-[#F8F7F4]" : ""}`}>
+        <section key={g.id} id={g.id} className={`py-14 scroll-mt-20 ${i % 2 ? m.sectionBand : ""}`}>
           <div className="mx-auto max-w-[1100px] px-5">
             <div className="max-w-[600px]">
               <h2 className="text-[26px] font-extrabold">{g.title}</h2>
-              <p className="mt-2 text-[15px] text-[#5b5b5b]">{g.blurb}</p>
+              <p className={`mt-2 text-[15px] ${m.muted}`}>{g.blurb}</p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
               {g.items.map(({ Icon, t, d }) => (
-                <div key={t} className="rounded-2xl bg-white border border-black/[0.08] p-5 transition-transform duration-300 hover:-translate-y-1">
+                <div key={t} className={`${m.cardHover} p-5`}>
                   <span className="grid place-items-center w-11 h-11 rounded-xl bg-[#0C0C0C] text-[#D4FF4F] mb-4"><Icon className="w-[22px] h-[22px]" /></span>
                   <div className="font-semibold">{t}</div>
-                  <p className="text-sm text-[#5b5b5b] mt-1">{d}</p>
+                  <p className={`text-sm ${m.muted} mt-1`}>{d}</p>
                 </div>
               ))}
             </div>
@@ -120,11 +122,11 @@ export default function FeaturesPage() {
       {/* CLOUD NOTE */}
       <section className="py-12">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className="rounded-2xl border border-black/[0.08] bg-[#F8F7F4] p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className={`${m.panel} flex flex-col md:flex-row md:items-center justify-between gap-6`}>
             <div className="max-w-[600px]">
-              <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">RELATED PRODUCT</div>
+              <div className={m.kicker}>RELATED PRODUCT</div>
               <h3 className="text-[22px] font-bold mt-1">Looking for project documentation and portfolios?</h3>
-              <p className="mt-1.5 text-sm text-[#5b5b5b]">That lives in Segmiq Cloud — photo documentation, public profiles, and lead capture for trades. Separate product, shared login.</p>
+              <p className={`mt-1.5 text-sm ${m.muted}`}>That lives in Segmiq Cloud — photo documentation, public profiles, and lead capture for trades. Separate product, shared login.</p>
             </div>
             <a href="https://cloud.segmiq.com" className="shrink-0 inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#0C0C0C] text-white font-semibold hover:opacity-90">Explore Segmiq Cloud <ArrowRight className="w-4 h-4" /></a>
           </div>
@@ -138,8 +140,8 @@ export default function FeaturesPage() {
             <h2 className="text-[32px] md:text-[40px] font-extrabold leading-[1.08] text-black max-w-[680px] mx-auto">See the whole platform on your pipeline</h2>
             <p className="mt-3 text-[15px] text-black/70 max-w-[520px] mx-auto">Book a demo and we&apos;ll show you each piece working together on a sample of your real leads.</p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a href="#" className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">Book a demo</a>
-              <a href="#" className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">See pricing</a>
+              <a href={ML.contact} className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90">Book a demo</a>
+              <a href={ML.pricing} className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5">See pricing</a>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@
 import { useState } from "react";
 import BlogCard from "./BlogCard";
 import { FILTERS, type Post, type PostCategory } from "@/lib/blog-types";
+import { m } from "@/components/marketing/marketingTheme";
 
 export default function BlogList({ posts }: { posts: Post[] }) {
   const [active, setActive] = useState<"all" | PostCategory>("all");
@@ -21,7 +22,7 @@ export default function BlogList({ posts }: { posts: Post[] }) {
             <button
               key={f.key}
               onClick={() => setActive(f.key)}
-              className={`rounded-full px-4 py-1.5 border ${on ? "bg-[#0C0C0C] text-white border-[#0C0C0C]" : "border-black/[0.08] text-[#5b5b5b] hover:border-black/30 hover:text-black"}`}
+              className={`rounded-full px-4 py-1.5 border ${on ? m.filterOn : m.filterOff}`}
             >
               {f.label}
             </button>
@@ -32,7 +33,7 @@ export default function BlogList({ posts }: { posts: Post[] }) {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-6">
         {list.map((p) => <BlogCard key={p.slug} post={p} />)}
       </div>
-      {list.length === 0 && <p className="text-[#5b5b5b] text-sm mt-6">No posts in this category yet.</p>}
+      {list.length === 0 && <p className={`${m.muted} text-sm mt-6`}>No posts in this category yet.</p>}
     </>
   );
 }
