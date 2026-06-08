@@ -20,7 +20,7 @@ export const m = {
   cardHover: "rounded-xl border border-white/10 bg-white/[0.03] p-5 transition-transform duration-300 hover:-translate-y-1",
   cardIcon: "rounded-xl bg-white/[0.06]",
   ghostBtn: "rounded-full border border-white/20 font-semibold hover:border-white/40",
-  pill: "inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-4 py-2 text-[13px] hover:border-white/30",
+  pill: "inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 max-w-full rounded-full border border-white/15 bg-white/[0.05] px-3 sm:px-4 py-2.5 text-xs sm:text-[13px] leading-snug text-center hover:border-white/30",
   chip: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] text-white/65 text-[13px] font-semibold",
   highlight: "text-[#D4FF4F]",
   inlineLink: "text-white underline decoration-[#D4FF4F] decoration-2",
