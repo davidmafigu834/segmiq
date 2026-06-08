@@ -16,9 +16,12 @@ import {
   Link2, Milestone, Smartphone, Briefcase, User, HardDrive, Droplet,
 } from "lucide-react";
 
+import { SITE } from "@/lib/seo";
+
 export const metadata: Metadata = {
   title: "Segmiq Cloud — Document, share, and win more trade work",
   description: "Segmiq Cloud is where Africa's trade businesses document, store, and share projects professionally — and capture leads from a public portfolio.",
+  alternates: { canonical: SITE.cloudUrl },
 };
 
 const IMG = {

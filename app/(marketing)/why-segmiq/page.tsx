@@ -6,14 +6,16 @@
  * If keeping remote URLs, add images.unsplash.com to next.config remotePatterns.
  */
 
-import type { Metadata } from "next";
 import Image from "next/image";
 import { Route, MapPin, MessageCircle, Shield, Check, Send, Clock, Layers, History, Lock, Building2, ArrowRight } from "lucide-react";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Why Segmiq — Built for how service businesses in Africa win work",
   description: "Segmiq is built for service businesses across Africa — WhatsApp-first, secure, and made for how trades actually win work.",
-};
+  path: "/why-segmiq",
+});
 
 const IMG = {
   construction: "https://images.unsplash.com/photo-1646324554833-f0b6a479fa5d?q=70&w=900&h=720&fit=crop&auto=format",
@@ -47,6 +49,7 @@ const SECURITY = [
 export default function WhySegmiqPage() {
   return (
     <>
+      <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Why Segmiq", path: "/why-segmiq" }])} />
       {/* HERO */}
       <section className="pt-20 pb-14">
         <div className="mx-auto max-w-[820px] px-5 text-center">

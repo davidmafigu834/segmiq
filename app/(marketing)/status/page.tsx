@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import { CheckCircle2, AlertTriangle, XCircle, Bell } from "lucide-react";
+import JsonLd from "@/components/seo/JsonLd";
 import { getStatus, type Health } from "@/lib/status";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Status — Segmiq",
+export const metadata = pageMetadata({
+  title: "Status",
   description: "Live status of Segmiq services.",
-};
+  path: "/status",
+});
 
 export const revalidate = 60;
 
@@ -35,6 +37,7 @@ export default async function StatusPage() {
 
   return (
     <>
+      <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Status", path: "/status" }])} />
       <section className="pt-14 pb-6">
         <div className="mx-auto max-w-[1100px] px-5 max-w-[880px]">
           <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">SYSTEM STATUS</div>

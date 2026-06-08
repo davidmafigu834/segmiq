@@ -4,14 +4,16 @@
  * Server component. FAQ uses native <details> (no client JS needed).
  */
 
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Minus, ChevronDown, ArrowRight } from "lucide-react";
+import JsonLd from "@/components/seo/JsonLd";
+import { faqLd, pageMetadata, softwareAppLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Pricing — Segmiq",
+export const metadata = pageMetadata({
+  title: "Pricing",
   description: "Segmiq CRM pricing — per client company, billed monthly. Starter $99, Growth $199, Scale $349.",
-};
+  path: "/pricing",
+});
 
 const PLANS = [
   { name: "Starter", price: "$99", seats: "Up to 5 salespeople", popular: false,
@@ -57,8 +59,10 @@ function Cell({ v }: { v: string }) {
 }
 
 export default function PricingPage() {
+  const faqItems = FAQ.map(([q, a]) => ({ q, a }));
   return (
     <>
+      <JsonLd data={[softwareAppLd(), faqLd(faqItems)]} />
       {/* HERO */}
       <section className="pt-20 pb-10">
         <div className="mx-auto max-w-[760px] px-5 text-center">

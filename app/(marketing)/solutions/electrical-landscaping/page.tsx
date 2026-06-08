@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import SolutionPage, { type SolutionData } from "@/components/marketing/SolutionPage";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 import { MessageCircle, TrendingUp, Route, Send, Trophy, Milestone } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Electrical & landscaping — Segmiq",
+export const metadata = pageMetadata({
+  title: "Electrical & landscaping",
   description: "Segmiq for electrical contractors and landscapers: capture, score, and follow up every enquiry, and turn finished work into proof.",
-};
+  path: "/solutions/electrical-landscaping",
+});
 
 const data: SolutionData = {
   kicker: "SOLUTIONS · ELECTRICAL & LANDSCAPING",
@@ -43,5 +45,16 @@ const data: SolutionData = {
 };
 
 export default function Page() {
-  return <SolutionPage {...data} />;
+  return (
+    <>
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Home", path: "/" },
+          { name: "Solutions", path: "/solutions/electrical-landscaping" },
+          { name: "Electrical & landscaping", path: "/solutions/electrical-landscaping" },
+        ])}
+      />
+      <SolutionPage {...data} />
+    </>
+  );
 }

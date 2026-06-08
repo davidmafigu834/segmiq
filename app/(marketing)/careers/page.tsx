@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
 import { Rocket, Heart, Globe, Sparkles, Code, TrendingUp, Headphones, Megaphone, MapPin, ArrowRight, type LucideIcon } from "lucide-react";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Careers — Segmiq",
+export const metadata = pageMetadata({
+  title: "Careers",
   description: "Help construction, solar, roofing, electrical, and landscaping businesses across Africa win more work. Join a small team doing serious work.",
-};
+  path: "/careers",
+});
 
 const VALUES: { Icon: LucideIcon; t: string; d: string }[] = [
   { Icon: Rocket, t: "Ship and learn", d: "Small team, short feedback loops. We get things in front of real businesses fast and improve from what we see." },
@@ -31,6 +33,7 @@ const HIRE = [
 export default function CareersPage() {
   return (
     <>
+      <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Careers", path: "/careers" }])} />
       <section className="pt-16 pb-12">
         <div className="mx-auto max-w-[1100px] px-5 max-w-[760px]">
           <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">CAREERS</div>

@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ServiceWorkerCleanup } from "@/components/ServiceWorkerCleanup";
+import { getMetadataBase, ROOT_METADATA } from "@/lib/seo";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -35,9 +36,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://segmiq.com"),
-  title: "Segmiq — Lead Platform",
-  description: "Lead management for marketing agencies",
+  ...ROOT_METADATA,
+  metadataBase: getMetadataBase(),
   manifest: "/manifest.json",
   icons: {
     icon: [

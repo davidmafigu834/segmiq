@@ -6,13 +6,15 @@
  * Do NOT add compliance badges (SOC 2 / ISO / GDPR-certified) unless truly held.
  */
 
-import type { Metadata } from "next";
 import { Layers, History, Lock, Download, Key, UserCheck, Clock, Server, Database, Eye, MessageCircle, Mail, Send, Shield, Check } from "lucide-react";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Security — Segmiq",
+export const metadata = pageMetadata({
+  title: "Security",
   description: "How Segmiq protects your pipeline: scoped access, full audit trail, official messaging channels, and data you can export at any time.",
-};
+  path: "/security",
+});
 
 const PRINCIPLES = [
   { Icon: Layers, t: "Least-privilege access", d: "Three scoped portals. Everyone sees only what their role needs." },
@@ -48,6 +50,7 @@ const OWNERSHIP = [
 export default function SecurityPage() {
   return (
     <>
+      <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Security", path: "/security" }])} />
       {/* HERO */}
       <section className="pt-20 pb-14">
         <div className="mx-auto max-w-[820px] px-5 text-center">

@@ -31,7 +31,7 @@ export default async function CloudClientsPage() {
     >
       {queryError ? (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">
-          Could not load cloud clients from the database. Check that migrations 020, 021, and 041 are applied.
+          Could not load cloud clients from the database.
           <span className="mt-1 block font-mono text-[11px] opacity-80">{queryError}</span>
         </div>
       ) : null}

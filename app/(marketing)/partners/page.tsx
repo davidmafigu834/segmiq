@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import { Percent, Building2, GraduationCap, LayoutDashboard, Megaphone, Headphones, Layers, Globe, MessageCircle, type LucideIcon } from "lucide-react";
 import ContactForm from "@/components/marketing/ContactForm";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Become a partner — Segmiq",
+export const metadata = pageMetadata({
+  title: "Become a partner",
   description: "Partner with Segmiq to bring construction, solar, roofing, electrical, and landscaping businesses a system that captures and closes their leads — and earn recurring commission.",
-};
+  path: "/partners",
+});
 
 type Card = { Icon: LucideIcon; t: string; d: string };
 
@@ -41,6 +43,7 @@ const WHY: { Icon: LucideIcon; t: string }[] = [
 export default function PartnersPage() {
   return (
     <>
+      <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Partners", path: "/partners" }])} />
       <section className="pt-16 pb-12">
         <div className="mx-auto max-w-[1100px] px-5 max-w-[760px]">
           <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">PARTNER PROGRAM</div>

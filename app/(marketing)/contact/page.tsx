@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import { MessageCircle, Mail, Briefcase, ArrowRight } from "lucide-react";
 import ContactForm from "@/components/marketing/ContactForm";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Book a demo — Segmiq",
+export const metadata = pageMetadata({
+  title: "Book a demo",
   description: "See Segmiq on your own leads. Book a demo and we'll show you the response times and the contracts hiding in your pipeline.",
-};
+  path: "/contact",
+});
 
 const STEPS = [
   ["We reply on WhatsApp", "Usually within a working day — on the channel you actually check."],
@@ -16,6 +18,7 @@ const STEPS = [
 export default function ContactPage() {
   return (
     <>
+      <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Contact", path: "/contact" }])} />
       <section className="pt-16 pb-8">
         <div className="mx-auto max-w-[1100px] px-5 max-w-[760px]">
           <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">BOOK A DEMO</div>

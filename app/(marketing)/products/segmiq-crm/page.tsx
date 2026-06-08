@@ -3,8 +3,9 @@
  * Route: /products/segmiq-crm
  */
 
-import type { Metadata } from "next";
 import { Fragment } from "react";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata, softwareAppLd } from "@/lib/seo";
 import {
   Briefcase,
   Users,
@@ -27,10 +28,11 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Segmiq CRM — Capture, score, coach, and close in one platform",
   description: "Segmiq CRM runs your whole revenue motion across three connected portals: agency, manager, and salesperson.",
-};
+  path: "/products/segmiq-crm",
+});
 
 const PORTALS = [
   {
@@ -107,6 +109,16 @@ const DASHBOARDS = [
 export default function SegmiqCrmPage() {
   return (
     <>
+      <JsonLd
+        data={[
+          softwareAppLd({ name: "Segmiq CRM", description: "Segmiq CRM runs your whole revenue motion across three connected portals: agency, manager, and salesperson." }),
+          breadcrumbLd([
+            { name: "Home", path: "/" },
+            { name: "Products", path: "/products/segmiq-crm" },
+            { name: "Segmiq CRM", path: "/products/segmiq-crm" },
+          ]),
+        ]}
+      />
       {/* HERO */}
       <section className="pt-20 pb-12">
         <div className="mx-auto max-w-[860px] px-5 text-center">

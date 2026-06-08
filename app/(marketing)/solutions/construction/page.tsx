@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import SolutionPage, { type SolutionData } from "@/components/marketing/SolutionPage";
 import { MessageCircle, TrendingUp, Route, Send, Trophy, Milestone } from "lucide-react";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Construction — Segmiq",
+export const metadata = pageMetadata({
+  title: "Construction",
   description: "Segmiq for construction: capture, score, and follow up every site enquiry, and document every build to win the next contract.",
-};
+  path: "/solutions/construction",
+});
 
 const data: SolutionData = {
   kicker: "SOLUTIONS · CONSTRUCTION",
@@ -43,5 +45,16 @@ const data: SolutionData = {
 };
 
 export default function Page() {
-  return <SolutionPage {...data} />;
+  return (
+    <>
+      <JsonLd
+        data={breadcrumbLd([
+          { name: "Home", path: "/" },
+          { name: "Solutions", path: "/solutions/construction" },
+          { name: "Construction", path: "/solutions/construction" },
+        ])}
+      />
+      <SolutionPage {...data} />
+    </>
+  );
 }

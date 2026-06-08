@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SITE } from "@/lib/seo";
 import { ServiceWorkerRegistration } from "./components/ServiceWorkerRegistration";
 
 export const viewport: Viewport = {
@@ -10,13 +11,18 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_CLOUD_DOMAIN ?? "https://cloud.leadstaq.tech"),
+  metadataBase: (() => {
+    const raw = process.env.NEXT_PUBLIC_CLOUD_DOMAIN ?? SITE.cloudUrl;
+    const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    return new URL(url);
+  })(),
   title: {
     default: "Segmiq Cloud",
     template: "%s · Segmiq Cloud",
   },
   description:
     "Document your projects from the field. Upload photos, share with clients instantly.",
+  alternates: { canonical: SITE.cloudUrl },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

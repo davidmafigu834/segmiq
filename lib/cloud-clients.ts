@@ -21,22 +21,24 @@ export async function fetchCloudClientsForAdmin(): Promise<{
   clients: CloudClientRow[];
   queryError?: string;
 }> {
+  // clients↔users has two FKs (users.client_id and clients.fb_connected_by_user_id) — hint required.
+  const usersEmbed = "users!users_client_id_fkey (id, name, email, role, created_at)";
   const selects = [
     `
       id, name, plan, billing_period, payment_status, next_payment_date, payment_notes,
       created_at, is_active, signup_source,
-      users (id, name, email, role, created_at),
+      ${usersEmbed},
       projects (id, project_media (file_size_bytes))
     `,
     `
       id, name, plan, billing_period, payment_status, next_payment_date, payment_notes,
       created_at, is_active,
-      users (id, name, email, role, created_at),
+      ${usersEmbed},
       projects (id, project_media (file_size_bytes))
     `,
     `
       id, name, plan, created_at, is_active,
-      users (id, name, email, role, created_at)
+      ${usersEmbed}
     `,
   ];
 

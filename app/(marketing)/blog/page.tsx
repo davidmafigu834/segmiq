@@ -3,19 +3,21 @@
  * the client BlogList for instant category filtering. Header/footer from the marketing layout.
  */
 
-import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Clock, ArrowRight } from "lucide-react";
 import { getPublishedPosts, getFeaturedPost } from "@/lib/blog";
 import BlogList from "@/components/marketing/BlogList";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
 export const revalidate = 600;
 
-export const metadata: Metadata = {
-  title: "Blog — Segmiq",
+export const metadata = pageMetadata({
+  title: "Blog",
   description: "Specific, useful writing for owners and directors in construction, solar, roofing, electrical, and landscaping across Africa.",
-};
+  path: "/blog",
+});
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -27,6 +29,7 @@ export default async function BlogIndexPage() {
 
   return (
     <>
+      <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Blog", path: "/blog" }])} />
       <section className="pt-16 pb-8">
         <div className="mx-auto max-w-[1100px] px-5 max-w-[760px]">
           <div className="text-xs tracking-widest font-semibold text-[#8a8a8a]">BLOG</div>

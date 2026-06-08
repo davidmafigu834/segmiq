@@ -4,18 +4,20 @@
  * Server component (static content + anchor jump links).
  */
 
-import type { Metadata } from "next";
 import {
   MessageCircle, Send, History, Route, Link2, RefreshCw, Bell, Clock, GraduationCap, Mail,
   Tag, FileText, TrendingUp, Brain, Sparkles, Trophy, Gauge, ListChecks, Inbox, Filter, Target,
   Download, BarChart3, Activity, Briefcase, Users, Zap, Layers, KeyRound, Shield, ArrowRight,
   type LucideIcon,
 } from "lucide-react";
+import JsonLd from "@/components/seo/JsonLd";
+import { breadcrumbLd, pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "All features — Segmiq",
+export const metadata = pageMetadata({
+  title: "All features",
   description: "Everything in Segmiq: lead capture, WhatsApp automation, conversion tools, scoring & intelligence, recovery, segments, performance, dashboards, and security.",
-};
+  path: "/features",
+});
 
 type Item = { Icon: LucideIcon; t: string; d: string };
 type Group = { id: string; title: string; blurb: string; items: Item[] };
@@ -79,6 +81,7 @@ const GROUPS: Group[] = [
 export default function FeaturesPage() {
   return (
     <div className="scroll-smooth">
+      <JsonLd data={breadcrumbLd([{ name: "Home", path: "/" }, { name: "Features", path: "/features" }])} />
       {/* HERO */}
       <section className="pt-20 pb-8">
         <div className="mx-auto max-w-[760px] px-5 text-center">

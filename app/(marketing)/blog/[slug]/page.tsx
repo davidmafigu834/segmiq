@@ -9,7 +9,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Clock, ArrowLeft } from "lucide-react";
 import { BlogMarkdown } from "@/components/blog/BlogMarkdown";
+import JsonLd from "@/components/seo/JsonLd";
 import { getPostBySlug, getAllSlugs } from "@/lib/blog";
+import { articleLd, pageMetadata } from "@/lib/seo";
 
 export const dynamicParams = true;
 export const revalidate = 600;
@@ -22,11 +24,12 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const post = await getPostBySlug(params.slug);
   if (!post) return { title: "Post not found — Segmiq" };
-  return {
-    title: `${post.title} — Segmiq Blog`,
+  return pageMetadata({
+    title: post.title,
     description: post.excerpt,
-    openGraph: { title: post.title, description: post.excerpt, images: [post.coverImage], type: "article" },
-  };
+    path: `/blog/${params.slug}`,
+    images: [post.coverImage, `/blog/${params.slug}/opengraph-image`],
+  });
 }
 
 function formatDate(iso: string) {
@@ -39,6 +42,16 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
 
   return (
     <article className="pt-12 pb-20">
+      <JsonLd
+        data={articleLd({
+          title: post.title,
+          description: post.excerpt,
+          slug: post.slug,
+          publishedAt: post.publishedAt,
+          image: post.coverImage,
+          author: post.author,
+        })}
+      />
       <div className="mx-auto max-w-[760px] px-5">
         <Link href="/blog" className="inline-flex items-center gap-1.5 text-sm text-[#5b5b5b] hover:text-black">
           <ArrowLeft className="w-4 h-4" /> All posts
