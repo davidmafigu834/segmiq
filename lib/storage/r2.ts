@@ -57,6 +57,11 @@ export function generateOriginalMediaKey(clientId: string, projectId: string, fi
   return `clients/${clientId}/projects/${projectId}/originals/${Date.now()}.${ext}`;
 }
 
+export function generateBlogCoverKey(filename: string): string {
+  const ext = filename.split(".").pop() ?? "jpg";
+  return `blog/covers/${Date.now()}.${ext}`;
+}
+
 export function generateVideoKey(clientId: string, projectId: string, filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "mp4";
   const timestamp = Date.now();

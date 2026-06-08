@@ -109,8 +109,7 @@ async function fetchPublishedPosts(): Promise<Post[]> {
     return [...SEED_POSTS].sort(sortNewest);
   }
   try {
-    const posts = await supabaseImpl.getPublished();
-    return posts.length > 0 ? posts : [...SEED_POSTS].sort(sortNewest);
+    return await supabaseImpl.getPublished();
   } catch {
     return [...SEED_POSTS].sort(sortNewest);
   }

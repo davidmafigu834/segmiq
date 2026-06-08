@@ -8,8 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Clock, ArrowLeft } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { BlogMarkdown } from "@/components/blog/BlogMarkdown";
 import { getPostBySlug, getAllSlugs } from "@/lib/blog";
 
 export const dynamicParams = true;
@@ -63,9 +62,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
       </div>
 
       <div className="mx-auto max-w-[680px] px-5 mt-10">
-        <div className="space-y-5 text-[17px] leading-[1.7] text-[#2b2b2b] [&_h2]:text-[26px] [&_h2]:font-extrabold [&_h2]:mt-8 [&_h2]:mb-3 [&_h3]:text-[20px] [&_h3]:font-bold [&_h3]:mt-6 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-[#0C0C0C] [&_a]:underline [&_a]:underline-offset-2 [&_img]:rounded-xl [&_blockquote]:border-l-4 [&_blockquote]:border-[#D4FF4F] [&_blockquote]:pl-4 [&_blockquote]:italic">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.body}</ReactMarkdown>
-        </div>
+        <BlogMarkdown body={post.body} />
 
         <div className="mt-12 rounded-2xl bg-[#D4FF4F] p-8 text-center">
           <h3 className="text-[22px] font-extrabold text-black">See it on your own leads</h3>

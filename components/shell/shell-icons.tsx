@@ -7,6 +7,7 @@ import {
   Camera,
   Clock,
   Cloud,
+  FileText,
   Globe,
   Home,
   Inbox,
@@ -41,6 +42,7 @@ export const SHELL_ICONS: Record<string, LucideIcon> = {
   camera: Camera,
   globe: Globe,
   cloud: Cloud,
+  "file-text": FileText,
 };
 
 export function ShellIcon({
