@@ -19,6 +19,7 @@ const NAV = [
   { label: "Segmiq CRM", href: "/products/segmiq-crm" },
   { label: "Features", href: "/features" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Blog", href: "/blog" },
 ];
 
 export default function MarketingHeader() {

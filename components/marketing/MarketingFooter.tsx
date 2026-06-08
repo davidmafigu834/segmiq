@@ -27,10 +27,10 @@ const COLS = [
   {
     h: "Solutions",
     links: [
-      { label: "Construction", href: "#" },
-      { label: "Solar", href: "#" },
-      { label: "Roofing", href: "#" },
-      { label: "Electrical & landscaping", href: "#" },
+      { label: "Construction", href: "/solutions/construction" },
+      { label: "Solar", href: "/solutions/solar" },
+      { label: "Roofing", href: "/solutions/roofing" },
+      { label: "Electrical & landscaping", href: "/solutions/electrical-landscaping" },
     ],
   },
   {
@@ -38,7 +38,7 @@ const COLS = [
     links: [
       { label: "Docs", href: "#" },
       { label: "Onboarding guide", href: "#" },
-      { label: "Blog", href: "#" },
+      { label: "Blog", href: "/blog" },
       { label: "Support", href: "#" },
     ],
   },

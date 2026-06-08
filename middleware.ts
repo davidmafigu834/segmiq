@@ -128,7 +128,10 @@ export async function middleware(req: NextRequest) {
     path === "/security" ||
     path === "/products/segmiq-crm" ||
     path === "/features" ||
-    path === "/pricing";
+    path === "/pricing" ||
+    path === "/blog" ||
+    path.startsWith("/blog/") ||
+    path.startsWith("/solutions/");
 
   const isPublic =
     path === "/login" ||
