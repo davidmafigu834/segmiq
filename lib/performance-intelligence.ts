@@ -1,5 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callClaude } from "@/lib/ai/claude";
+import {
+  aggregateLossAnalysis,
+  buildTargetingRecommendations,
+} from "@/lib/loss-analysis";
 import crypto from "crypto";
 
 // ============================================
@@ -851,6 +855,21 @@ Industry: ${data.industry}.`,
       }
     }
   }
+
+  // ============================================
+  // RULE 8 — AD TARGETING MISMATCH
+  // Not-a-fit share exceeds threshold by source
+  // or overall (7-day window, read-only loss data)
+  // ============================================
+
+  const lossData = await aggregateLossAnalysis(data.clientId, 7);
+  const targetingRecs = buildTargetingRecommendations(
+    lossData,
+    data.clientId,
+    data.industry,
+    makeDedupKey
+  );
+  recommendations.push(...targetingRecs);
 
   return recommendations;
 }

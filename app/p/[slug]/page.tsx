@@ -4,6 +4,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MapPin, Calendar, ArrowRight } from "lucide-react";
 import { ConversationalForm, type ConversationalFormStep } from "@/components/profile/ConversationalForm";
+import {
+  getBudgetRangeOptions,
+  injectOptionalBudgetQuestion,
+} from "@/lib/budget-question-presets";
 import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
 
 function getInitials(name: string): string {
@@ -153,7 +157,14 @@ export default async function ProfilePage({
     }
   }
 
-  const [{ data: projects }, { data: testimonials }, { data: formSteps }, { data: formSchema }, { data: packages }] = await Promise.all([
+  const [
+    { data: projects },
+    { data: testimonials },
+    { data: formSteps },
+    { data: formSchema },
+    { data: packages },
+    { data: campaignQualifiers },
+  ] = await Promise.all([
     supabase
       .from("projects")
       .select("id, slug, title, category, location, completion_date, description, project_media(public_url, display_order)")
@@ -174,7 +185,7 @@ export default async function ProfilePage({
       .order("step_number", { ascending: true }),
     supabase
       .from("form_schemas")
-      .select("form_title, opening_message")
+      .select("form_title, opening_message, budget_question_enabled")
       .eq("client_id", clientId)
       .maybeSingle(),
     supabase
@@ -183,6 +194,11 @@ export default async function ProfilePage({
       .eq("client_id", clientId)
       .eq("is_active", true)
       .order("display_order", { ascending: true }),
+    supabase
+      .from("campaign_qualifiers")
+      .select("budget_min, budget_max")
+      .eq("client_id", clientId)
+      .maybeSingle(),
   ]);
 
   const typedProjects = (projects ?? []) as unknown as Project[];
@@ -198,7 +214,7 @@ export default async function ProfilePage({
     (formSchema?.opening_message as string | null) ??
     "Hello! Thank you for considering us. We would love to learn more about what you are looking for so that our team can reach out to you with exactly the right information.";
 
-  const conversationalSteps: ConversationalFormStep[] = typedFormSteps.length > 0
+  let conversationalSteps: ConversationalFormStep[] = typedFormSteps.length > 0
     ? typedFormSteps.map((step) => ({
         id: step.id,
         title: step.title,
@@ -226,6 +242,16 @@ export default async function ProfilePage({
           ],
         },
       ];
+
+  if (formSchema?.budget_question_enabled === true) {
+    conversationalSteps = injectOptionalBudgetQuestion(
+      conversationalSteps,
+      getBudgetRangeOptions({
+        budgetMin: (campaignQualifiers?.budget_min as number | null) ?? null,
+        budgetMax: (campaignQualifiers?.budget_max as number | null) ?? null,
+      })
+    );
+  }
 
   const portfolioUrl = (profile.is_published as boolean) && (profile.slug as string)
     ? `${process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://leadstaq.tech"}/p/${profile.slug as string}`

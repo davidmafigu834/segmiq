@@ -18,15 +18,23 @@ import { LeadBriefing } from "@/components/leads/LeadBriefing";
 import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
+import { formatCallLogHeadline } from "@/lib/call-log-display";
 
 type CallLogApiRow = {
   id: string;
   outcome: string;
+  reach_outcome: string | null;
+  result: string | null;
+  reason: string | null;
+  callback_at: string | null;
+  assets_requested: string[] | null;
   notes: string | null;
   follow_up_date: string | null;
   created_at: string;
   users: { name: string } | null;
 };
+
+type SendAssetType = "PORTFOLIO" | "PROJECT" | "PRICING_PACKAGE" | "TESTIMONIALS" | "DOCUMENT";
 
 const TERMINAL: ReadonlySet<string> = new Set(["WON", "LOST", "NOT_QUALIFIED"]);
 
@@ -61,9 +69,11 @@ export function LeadDetailPanel({
   const [timelineRefresh, setTimelineRefresh] = useState(0);
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState<"details" | "timeline" | "send">("details");
+  const [sendPreselect, setSendPreselect] = useState<SendAssetType[] | null>(null);
 
   useEffect(() => {
     setActiveTab("details");
+    setSendPreselect(null);
   }, [leadId]);
 
   useLayoutEffect(() => {
@@ -190,9 +200,12 @@ export function LeadDetailPanel({
                 leadId={activeLead.id}
                 clientId={activeLead.client_id}
                 leadPhone={activeLead.phone}
+                initialAssetTypes={sendPreselect ?? undefined}
+                onClearPreselect={() => setSendPreselect(null)}
                 onSent={() => {
                   setTimelineRefresh((k) => k + 1);
                   setActiveTab("timeline");
+                  setSendPreselect(null);
                 }}
               />
             </div>
@@ -360,6 +373,10 @@ export function LeadDetailPanel({
                     leadId={activeLead.id}
                     onLogged={() => setLogRefresh((k) => k + 1)}
                     onLeadUpdated={onLeadUpdated}
+                    onOpenSendTab={(types) => {
+                      setSendPreselect(types);
+                      setActiveTab("send");
+                    }}
                   />
                 </div>
               ) : (
@@ -553,7 +570,7 @@ function CallHistory({ leadId, refreshKey }: { leadId: string; refreshKey: numbe
                 aria-hidden
               />
               <div className="flex items-start justify-between gap-3">
-                <CallHistoryOutcome outcome={log.outcome} notes={log.notes} />
+                <CallHistoryOutcome log={log} />
                 <span className="shrink-0 font-mono text-[11px] text-ink-tertiary tabular-nums">
                   {format(new Date(log.created_at), "HH:mm")}
                 </span>
@@ -567,42 +584,34 @@ function CallHistory({ leadId, refreshKey }: { leadId: string; refreshKey: numbe
   );
 }
 
-function CallHistoryOutcome({ outcome, notes }: { outcome: string; notes: string | null }) {
-  if (outcome === "LOST") {
-    const n = notes?.trim() ?? "";
-    let reasonPart = "";
-    let extra: string | undefined;
-    if (!n) {
-      reasonPart = "";
-    } else if (n.startsWith("Reason:")) {
-      const m = n.match(/^Reason:\s*([^\n]+)(?:\n\n([\s\S]*))?$/);
-      if (m?.[1]) {
-        reasonPart = m[1].trim();
-        extra = m[2]?.trim();
-      } else {
-        reasonPart = n;
-      }
-    } else {
-      reasonPart = n;
-    }
-    return (
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-baseline gap-2">
+function CallHistoryOutcome({ log }: { log: CallLogApiRow }) {
+  const headline = formatCallLogHeadline(log);
+  const isLost = log.outcome === "LOST" || log.result === "lost";
+
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="flex flex-wrap items-baseline gap-2">
+        {isLost ? (
           <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-[var(--status-lost-bg)] px-2.5 text-[11px] font-medium leading-none text-[var(--status-lost-fg)]">
             Lost
           </span>
-          {reasonPart ? <span className="text-[13px] text-ink-primary">— {reasonPart}</span> : null}
-        </div>
-        {extra ? <p className="mt-1 text-[12px] text-ink-secondary">{extra}</p> : null}
+        ) : null}
+        <span
+          className={
+            isLost
+              ? "text-[13px] text-ink-primary"
+              : "font-mono text-[11px] font-normal uppercase tracking-wide text-ink-secondary"
+          }
+        >
+          {isLost && log.reason ? `— ${log.reason}` : headline}
+        </span>
       </div>
-    );
-  }
-
-  const label = outcome.replaceAll("_", " ");
-  return (
-    <div className="min-w-0 flex-1">
-      <span className="font-mono text-[11px] font-normal uppercase tracking-wide text-ink-secondary">{label}</span>
-      {notes ? <p className="mt-1 text-[13px] text-ink-primary">{notes}</p> : null}
+      {!isLost && log.notes ? (
+        <p className="mt-1 text-[13px] text-ink-primary">{log.notes}</p>
+      ) : null}
+      {isLost && log.notes ? (
+        <p className="mt-1 text-[12px] text-ink-secondary">{log.notes}</p>
+      ) : null}
     </div>
   );
 }

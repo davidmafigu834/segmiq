@@ -24,6 +24,7 @@ import {
   RETARGETING_PROGRESS_SHOW_RATIO,
   type RetargetingStatusView,
 } from "@/lib/retargeting-shared";
+import { LossInsightsSection } from "@/components/dashboard/LossInsightsSection";
 
 // ============================================
 // TYPES
@@ -793,6 +794,12 @@ export default function ClientDashboardMain({
           )}
         </div>
       </div>
+
+      {session?.clientId ? (
+        <div className="ag-fade-in ag-delay-3 mb-8">
+          <LossInsightsSection clientId={session.clientId as string} />
+        </div>
+      ) : null}
 
       {/* ============================================
           LEAD SOURCES

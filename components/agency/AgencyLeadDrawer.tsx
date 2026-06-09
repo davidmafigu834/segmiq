@@ -41,6 +41,8 @@ function apiLeadToRow(lead: Record<string, unknown>): LeadRow {
     score_breakdown: (lead.score_breakdown as Record<string, number> | null) ?? null,
     is_stale: (lead.is_stale as boolean | null) ?? null,
     stale_since: (lead.stale_since as string | null) ?? null,
+    is_convert_later_pick: (lead.is_convert_later_pick as boolean | null) ?? null,
+    convert_later_note: (lead.convert_later_note as string | null) ?? null,
   };
 }
 

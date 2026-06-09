@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canModifyLead } from "@/lib/auth/permissions";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logDocumentSent } from "@/lib/lead-events";
+import { persistLeadScore } from "@/lib/lead-scoring";
 
 type AssetType =
   | "PORTFOLIO"
@@ -249,6 +250,8 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     documentName,
     url: documentUrl || null,
   });
+
+  void persistLeadScore(lead.id as string);
 
   return NextResponse.json({ success: true, logged: true });
 }

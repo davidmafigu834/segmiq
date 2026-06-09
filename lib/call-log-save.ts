@@ -1,0 +1,281 @@
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyDealWon } from "@/lib/notifications";
+import { getManagerPrefs } from "@/lib/notification-prefs";
+import { logCallLogged, logFollowUpSet, logStatusChanged } from "@/lib/lead-events";
+import { recordWinAnalysis } from "@/lib/win-analysis";
+import { persistLeadScore } from "@/lib/lead-scoring";
+import {
+  deriveLegacyOutcome,
+  followUpDateFromCallbackAt,
+  LOW_BUDGET_SIGNAL_REASONS,
+  type CallResult,
+  type ReachOutcome,
+} from "@/lib/call-log-constants";
+import type { LeadRow, LeadStatus } from "@/types";
+
+export type SaveCallLogInput = {
+  leadId: string;
+  actorUserId: string;
+  actor: { id: string; name: string; role: string };
+  reachOutcome: ReachOutcome;
+  result?: CallResult | null;
+  reason?: string | null;
+  callbackAt?: string | null;
+  assetsRequested?: string[] | null;
+  notes?: string | null;
+  channel?: "call" | "whatsapp";
+  isConvertLaterPick?: boolean;
+  convertLaterNote?: string | null;
+  dealValue?: number | null;
+};
+
+export type SaveCallLogResult = {
+  lead: LeadRow;
+  legacyOutcome: string;
+  noAnswerCount: number;
+};
+
+/** Next status after a two-step log; null = no change (e.g. no_answer). */
+export function resolveNextStatus(
+  currentStatus: string,
+  reachOutcome: ReachOutcome,
+  result: CallResult | null | undefined
+): LeadStatus | null {
+  if (reachOutcome === "no_answer") return null;
+
+  if (reachOutcome === "reached") {
+    if (result === "won") return "WON";
+    if (result === "lost") return "LOST";
+    if (result === "not_qualified") return "NOT_QUALIFIED";
+    if (currentStatus === "NEW") return "CONTACTED";
+    return null;
+  }
+
+  if (reachOutcome === "call_back") {
+    if (currentStatus === "NEW") return "CONTACTED";
+    return null;
+  }
+
+  return null;
+}
+
+export async function countNoAnswerAttempts(leadId: string): Promise<number> {
+  const supabase = createAdminClient();
+  const { count, error } = await supabase
+    .from("call_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("lead_id", leadId)
+    .or("reach_outcome.eq.no_answer,outcome.eq.NO_ANSWER");
+
+  if (error) {
+    console.error("[call-log-save] no-answer count failed:", error);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+/**
+ * Shared save path for two-step call logs. Used by POST /api/leads/[id]/log-call.
+ * quick-log can adopt this in a fast-follow.
+ */
+export async function saveCallLog(input: SaveCallLogInput): Promise<SaveCallLogResult> {
+  const supabase = createAdminClient();
+  const {
+    leadId,
+    actorUserId,
+    actor,
+    reachOutcome,
+    result,
+    reason,
+    callbackAt,
+    assetsRequested,
+    notes,
+    channel,
+    isConvertLaterPick,
+    convertLaterNote,
+    dealValue,
+  } = input;
+
+  const { data: lead } = await supabase.from("leads").select("*").eq("id", leadId).maybeSingle();
+  if (!lead) throw new Error("Lead not found");
+
+  const legacyOutcome = deriveLegacyOutcome(reachOutcome, result);
+  const trimmedReason = reason?.trim() || null;
+  const trimmedNotes = notes?.trim() || null;
+
+  let followUpDateStr: string | null = null;
+  if (callbackAt) {
+    const cb = new Date(callbackAt);
+    if (!Number.isNaN(cb.getTime())) {
+      followUpDateStr = followUpDateFromCallbackAt(cb);
+    }
+  }
+
+  await supabase.from("call_logs").insert({
+    lead_id: leadId,
+    user_id: actorUserId,
+    outcome: legacyOutcome,
+    reach_outcome: reachOutcome,
+    result: result ?? null,
+    reason: trimmedReason,
+    callback_at: callbackAt ?? null,
+    assets_requested: assetsRequested?.length ? assetsRequested : null,
+    notes: trimmedNotes,
+    follow_up_date: followUpDateStr,
+  });
+
+  await logCallLogged({
+    leadId,
+    clientId: lead.client_id as string,
+    actor,
+    outcome: legacyOutcome,
+    notes: trimmedNotes,
+    followUpDate: followUpDateStr,
+    channel: channel === "whatsapp" ? "whatsapp" : "call",
+  });
+
+  const previousStatus = lead.status as string;
+  const nextStatus = resolveNextStatus(previousStatus, reachOutcome, result);
+
+  const updates: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (nextStatus) updates.status = nextStatus;
+
+  if (callbackAt && followUpDateStr) {
+    updates.follow_up_date = followUpDateStr;
+  }
+
+  if (reachOutcome === "reached" && result === "lost" && trimmedReason) {
+    updates.lost_reason = trimmedReason;
+    updates.follow_up_date = null;
+  }
+
+  if (reachOutcome === "reached" && result === "not_qualified" && trimmedReason) {
+    updates.not_qualified_reason = trimmedReason;
+    updates.follow_up_date = null;
+  }
+
+  if (reachOutcome === "reached" && result === "won" && dealValue != null) {
+    updates.deal_value = dealValue;
+  }
+
+  if (isConvertLaterPick) {
+    updates.is_convert_later_pick = true;
+    if (convertLaterNote?.trim()) {
+      updates.convert_later_note = convertLaterNote.trim();
+    }
+  }
+
+  if (
+    reachOutcome === "reached" &&
+    result === "follow_up" &&
+    trimmedReason &&
+    (LOW_BUDGET_SIGNAL_REASONS as readonly string[]).includes(trimmedReason)
+  ) {
+    const existingFormData =
+      (lead.form_data as Record<string, unknown> | null) ?? {};
+    updates.form_data = {
+      ...existingFormData,
+      budget_signal: "low",
+      budget_signal_at: new Date().toISOString(),
+      budget_signal_reason: trimmedReason,
+    };
+  }
+
+  const { data: updated } = await supabase
+    .from("leads")
+    .update(updates)
+    .eq("id", leadId)
+    .select("*")
+    .single();
+
+  if (!updated) throw new Error("Failed to update lead");
+
+  if (nextStatus && nextStatus !== previousStatus) {
+    await logStatusChanged({
+      leadId,
+      clientId: lead.client_id as string,
+      actor,
+      fromStatus: previousStatus,
+      toStatus: nextStatus,
+    });
+
+    if (nextStatus === "WON") {
+      await recordWinAnalysis(leadId);
+    }
+  }
+
+  if (callbackAt && followUpDateStr) {
+    const prevFollowUp = (lead.follow_up_date as string | null) ?? null;
+    if (followUpDateStr !== prevFollowUp) {
+      await logFollowUpSet({
+        leadId,
+        clientId: lead.client_id as string,
+        actor,
+        followUpDate: followUpDateStr,
+        notes: trimmedNotes,
+      });
+    }
+  }
+
+  if (reachOutcome === "reached" && result === "won") {
+    const { data: actorRow } = await supabase
+      .from("users")
+      .select("id, name, email, phone")
+      .eq("id", actorUserId)
+      .maybeSingle();
+
+    const { data: mgr } = await supabase
+      .from("users")
+      .select("id, name, email, phone")
+      .eq("client_id", updated.client_id as string)
+      .eq("role", "CLIENT_MANAGER")
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    const { data: clientRow } = await supabase
+      .from("clients")
+      .select("name, twilio_whatsapp_override, manager_notification_prefs")
+      .eq("id", updated.client_id as string)
+      .maybeSingle();
+
+    const spLite = {
+      id: actorUserId,
+      name: (actorRow?.name as string) || "Rep",
+      phone: (actorRow?.phone as string | null) ?? null,
+      email: (actorRow?.email as string | null) ?? null,
+    };
+
+    void notifyDealWon(
+      updated as LeadRow,
+      spLite,
+      mgr
+        ? {
+            id: mgr.id as string,
+            name: mgr.name as string,
+            phone: (mgr.phone as string | null) ?? null,
+            email: (mgr.email as string | null) ?? null,
+          }
+        : null,
+      (clientRow?.twilio_whatsapp_override as string | null) ?? null,
+      (clientRow?.name as string) ?? "Client",
+      getManagerPrefs(
+        (clientRow as { manager_notification_prefs?: unknown } | null)?.manager_notification_prefs
+      )
+    );
+  }
+
+  await persistLeadScore(leadId);
+
+  const { data: rescored } = await supabase.from("leads").select("*").eq("id", leadId).single();
+  const noAnswerCount = await countNoAnswerAttempts(leadId);
+
+  return {
+    lead: (rescored ?? updated) as LeadRow,
+    legacyOutcome,
+    noAnswerCount,
+  };
+}

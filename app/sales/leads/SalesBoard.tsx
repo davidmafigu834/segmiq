@@ -4,7 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { format, formatDistanceToNow, isBefore, isToday, startOfDay } from "date-fns";
-import { Inbox, Phone, MessageCircle } from "lucide-react";
+import { Inbox, Phone, MessageCircle, Star } from "lucide-react";
+import { ConvertLaterPickCard } from "@/components/sales/ConvertLaterPickCard";
+import {
+  isActiveConvertLaterPick,
+  sortConvertLaterPicks,
+  type PickCallLogContext,
+} from "@/lib/convert-later-picks";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import { sortKanbanLeads } from "@/lib/kanbanSort";
 import { isLeadSlow } from "@/lib/leadStatus";
@@ -67,9 +73,11 @@ function matchesSearch(l: LeadWithClientResponseLimit, q: string): boolean {
 export function SalesBoard({
   initialLeads,
   initialTab = "active",
+  pickLogContext = {},
 }: {
   initialLeads: LeadWithClientResponseLimit[];
   initialTab?: "active" | "closed";
+  pickLogContext?: Record<string, PickCallLogContext>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -83,6 +91,7 @@ export function SalesBoard({
   /** Single-column pipeline + column tabs below `lg` — full kanban from `lg` up (1024px+). */
   const isMobileKanban = useMediaQuery("(max-width: 1023px)");
   const [activeColumn, setActiveColumn] = useState<BoardColumn>("NEW");
+  const [viewMode, setViewMode] = useState<"kanban" | "picks">("kanban");
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   useEffect(() => {
@@ -95,7 +104,11 @@ export function SalesBoard({
   }, [searchQuery]);
 
   useEffect(() => {
-    if (tab === "active") setActiveColumn("NEW");
+    if (tab === "active") {
+      setActiveColumn("NEW");
+    } else {
+      setViewMode("kanban");
+    }
   }, [tab]);
 
   const activeInPipeline = useMemo(
@@ -109,6 +122,20 @@ export function SalesBoard({
   }, [activeInPipeline, debouncedQuery]);
 
   const sortedForKanban = useMemo(() => sortKanbanLeads(filteredActive), [filteredActive]);
+
+  const picksLeads = useMemo(
+    () =>
+      sortConvertLaterPicks(
+        filteredActive.filter(isActiveConvertLaterPick),
+        pickLogContext
+      ),
+    [filteredActive, pickLogContext]
+  );
+
+  const picksCount = useMemo(
+    () => activeInPipeline.filter(isActiveConvertLaterPick).length,
+    [activeInPipeline]
+  );
 
   const grouped = useMemo(() => {
     const g: Record<string, LeadWithClientResponseLimit[]> = {};
@@ -153,11 +180,15 @@ export function SalesBoard({
     openLeadPanel(leadFromUrl);
   }, [leadFromUrl, leads]);
 
-  const handleLeadUpdated = useCallback((updated: LeadRow) => {
+  const handleLeadUpdated = useCallback((updated: LeadRow | LeadWithClientResponseLimit) => {
     setLeads((prev) =>
       prev.map((l) => {
         if (l.id !== updated.id) return l;
-        return { ...updated, clients: l.clients } as LeadWithClientResponseLimit;
+        const clients =
+          "clients" in updated && updated.clients != null
+            ? updated.clients
+            : l.clients;
+        return { ...updated, clients } as LeadWithClientResponseLimit;
       })
     );
   }, []);
@@ -294,9 +325,40 @@ export function SalesBoard({
           </button>
         </div>
         <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:max-w-md sm:flex-row sm:items-center sm:justify-end sm:gap-2 sm:pl-0">
-          <span className="shrink-0 self-start rounded-md border border-border bg-surface-card-alt px-2 py-1 font-mono text-[11px] text-ink-tertiary sm:self-center">
-            Board
-          </span>
+          <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
+            <button
+              type="button"
+              onClick={() => setViewMode("kanban")}
+              className={[
+                "rounded-md border px-2 py-1 font-mono text-[11px] transition-colors",
+                viewMode === "kanban"
+                  ? "border-border bg-surface-card-alt text-ink-primary"
+                  : "border-transparent text-ink-tertiary hover:text-ink-secondary",
+              ].join(" ")}
+            >
+              Board
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("picks")}
+              className={[
+                "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[11px] transition-colors",
+                viewMode === "picks"
+                  ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
+                  : "border-transparent text-ink-tertiary hover:text-ink-secondary",
+              ].join(" ")}
+            >
+              <Star
+                className="h-3 w-3"
+                strokeWidth={1.5}
+                fill={viewMode === "picks" ? "#D4FF4F" : "none"}
+              />
+              Picks
+              {picksCount > 0 ? (
+                <span className="tabular-nums opacity-80">{picksCount}</span>
+              ) : null}
+            </button>
+          </div>
           <input
             type="search"
             placeholder="Search by name, phone…"
@@ -323,6 +385,34 @@ export function SalesBoard({
             Clear search
           </button>
         </div>
+      ) : viewMode === "picks" ? (
+        <div className="ag-fade-in">
+          <p className="mb-4 text-[13px] text-ink-secondary">
+            Leads you starred from a follow-up — your gut pile, separate from system follow-ups and
+            retargeting.
+          </p>
+          {picksLeads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-card-alt px-5 py-14 text-center">
+              <Star className="mb-3 h-8 w-8 text-ink-tertiary" strokeWidth={1.5} />
+              <p className="text-[15px] font-medium text-ink-primary">No picks yet</p>
+              <p className="mt-1 max-w-sm text-[13px] text-ink-tertiary">
+                When you log a follow-up, toggle &quot;Save to my convert-later picks&quot; to add a
+                lead here.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {picksLeads.map((l) => (
+                <ConvertLaterPickCard
+                  key={l.id}
+                  lead={l}
+                  logContext={pickLogContext[l.id]}
+                  onLeadUpdated={handleLeadUpdated}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       ) : isMobileKanban ? (
         <div>
           <div
@@ -341,7 +431,10 @@ export function SalesBoard({
                 <button
                   key={col}
                   type="button"
-                  onClick={() => setActiveColumn(col)}
+                  onClick={() => {
+                    setViewMode("kanban");
+                    setActiveColumn(col);
+                  }}
                   className={[
                     "flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs",
                     isActive
@@ -355,6 +448,17 @@ export function SalesBoard({
                 </button>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setViewMode("picks")}
+              className="flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-surface-card-alt px-3 text-xs text-ink-secondary"
+            >
+              <Star className="h-3 w-3 shrink-0" strokeWidth={1.5} />
+              <span className="uppercase tracking-wide">Picks</span>
+              {picksCount > 0 ? (
+                <span className="font-mono tabular-nums opacity-80">{picksCount}</span>
+              ) : null}
+            </button>
           </div>
           <div
             className="pt-4"

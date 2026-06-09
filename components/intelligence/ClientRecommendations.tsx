@@ -18,6 +18,7 @@ import {
   Zap,
   Phone,
   Calendar,
+  Target,
 } from "lucide-react";
 
 type Recommendation = {
@@ -49,6 +50,7 @@ const CATEGORY_CONFIG: Record<
   creative: { icon: Zap, label: "Creatives" },
   pricing: { icon: Zap, label: "Pricing" },
   segment: { icon: Users, label: "Audience" },
+  targeting: { icon: Target, label: "Targeting" },
 };
 
 const PRIORITY_CONFIG: Record<

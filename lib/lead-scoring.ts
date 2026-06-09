@@ -17,6 +17,32 @@ type ScoredLead = {
   staleSince?: string;
 };
 
+/** Pure budget factor (0–10) — same tiers as scoreLead, exported for verification. */
+export function computeBudgetScoreComponent(input: {
+  dealValue?: number | null;
+  formData?: Record<string, unknown> | null;
+}): number {
+  const formData = input.formData ?? {};
+  const budget =
+    input.dealValue ??
+    (formData.budget as string | undefined) ??
+    (formData.budget_range as string | undefined);
+
+  if (!budget) return 0;
+
+  const numBudget =
+    typeof budget === "number"
+      ? budget
+      : parseFloat(String(budget).replace(/[^0-9.]/g, ""));
+
+  if (isNaN(numBudget)) return 0;
+  if (numBudget >= 50000) return 10;
+  if (numBudget >= 20000) return 8;
+  if (numBudget >= 10000) return 6;
+  if (numBudget >= 5000) return 4;
+  return 2;
+}
+
 export async function scoreLead(leadId: string): Promise<ScoredLead> {
   const supabase = createAdminClient();
 
@@ -104,27 +130,11 @@ export async function scoreLead(leadId: string): Promise<ScoredLead> {
   const statusScore = statusScores[lead.status as string] ?? 0;
 
   // 5. BUDGET — max 10 points
-  let budgetScore = 0;
   const formData = (lead.form_data as Record<string, unknown> | null) ?? {};
-  const budget =
-    (lead.deal_value as number | null) ??
-    (formData.budget as string | undefined) ??
-    (formData.budget_range as string | undefined);
-
-  if (budget) {
-    const numBudget =
-      typeof budget === "number"
-        ? budget
-        : parseFloat(String(budget).replace(/[^0-9.]/g, ""));
-
-    if (!isNaN(numBudget)) {
-      if (numBudget >= 50000) budgetScore = 10;
-      else if (numBudget >= 20000) budgetScore = 8;
-      else if (numBudget >= 10000) budgetScore = 6;
-      else if (numBudget >= 5000) budgetScore = 4;
-      else budgetScore = 2;
-    }
-  }
+  const budgetScore = computeBudgetScoreComponent({
+    dealValue: lead.deal_value as number | null,
+    formData,
+  });
 
   // 6. SOURCE QUALITY — max 10 points
   const sourceScores: Record<string, number> = {
@@ -154,6 +164,25 @@ export async function scoreLead(leadId: string): Promise<ScoredLead> {
     : undefined;
 
   return { leadId, score, breakdown, isStale, staleSince };
+}
+
+/** Persist a single lead's score immediately (e.g. after log-call or send-asset). */
+export async function persistLeadScore(leadId: string): Promise<ScoredLead> {
+  const supabase = createAdminClient();
+  const result = await scoreLead(leadId);
+
+  await supabase
+    .from("leads")
+    .update({
+      score: result.score,
+      score_breakdown: result.breakdown,
+      score_updated_at: new Date().toISOString(),
+      is_stale: result.isStale,
+      stale_since: result.staleSince ?? null,
+    })
+    .eq("id", leadId);
+
+  return result;
 }
 
 export async function scoreAllLeadsForClient(clientId: string): Promise<void> {

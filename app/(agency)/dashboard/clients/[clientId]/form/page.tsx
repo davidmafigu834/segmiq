@@ -21,6 +21,7 @@ export default async function FormBuilderPage({ params }: { params: { clientId: 
     submit_button_text: (form?.submit_button_text as string | null) ?? "Submit",
     thank_you_message: (form?.thank_you_message as string | null) ?? "Thanks!",
     opening_message: (form?.opening_message as string | null) ?? "",
+    budget_question_enabled: (form?.budget_question_enabled as boolean | null) ?? false,
   };
 
   return (

@@ -37,6 +37,9 @@ type Props = {
   leadId: string;
   clientId: string;
   leadPhone?: string | null;
+  /** Pre-select asset types from inline log-call "Send now" */
+  initialAssetTypes?: AssetType[];
+  onClearPreselect?: () => void;
   onSent: () => void;
 };
 
@@ -54,18 +57,40 @@ const QUICK_ACTIONS: Array<{
   { type: "CUSTOM_MESSAGE", label: "Message", icon: "ti-message", color: "#71717a" },
 ];
 
-export function SendAssetPanel({ leadId, clientId, leadPhone, onSent }: Props) {
+export function SendAssetPanel({
+  leadId,
+  clientId,
+  leadPhone,
+  initialAssetTypes,
+  onClearPreselect,
+  onSent,
+}: Props) {
   const [packages, setPackages] = useState<Package[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [scopedTypes, setScopedTypes] = useState<AssetType[] | null>(null);
   const [selectedType, setSelectedType] = useState<AssetType | null>(null);
   const [selectedAssetId, setSelectedAssetId] = useState("");
   const [customMessage, setCustomMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<"success" | "error" | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (!initialAssetTypes?.length) return;
+    setScopedTypes(initialAssetTypes);
+    const first = initialAssetTypes.find((t) => t !== "CUSTOM_MESSAGE");
+    if (first) {
+      setSelectedType(first);
+      setSelectedAssetId("");
+      setCustomMessage("");
+      setResult(null);
+      setErrorMsg("");
+    }
+    onClearPreselect?.();
+  }, [initialAssetTypes, onClearPreselect]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +118,7 @@ export function SendAssetPanel({ leadId, clientId, leadPhone, onSent }: Props) {
   }, [clientId]);
 
   function selectType(type: AssetType) {
+    setScopedTypes(null);
     setSelectedType(selectedType === type ? null : type);
     setSelectedAssetId("");
     setCustomMessage("");
@@ -194,9 +220,17 @@ export function SendAssetPanel({ leadId, clientId, leadPhone, onSent }: Props) {
         Send to prospect via WhatsApp
       </p>
 
+      {scopedTypes && scopedTypes.length > 0 ? (
+        <p className="mb-3 text-[12px] text-ink-secondary">
+          Pre-selected from call log — pick a specific item where required, then send.
+        </p>
+      ) : null}
+
       {/* Quick action grid */}
       <div className="mb-4 grid grid-cols-3 gap-2">
-        {QUICK_ACTIONS.map((action) => (
+        {QUICK_ACTIONS.filter(
+          (action) => !scopedTypes?.length || scopedTypes.includes(action.type)
+        ).map((action) => (
           <button
             key={action.type}
             type="button"

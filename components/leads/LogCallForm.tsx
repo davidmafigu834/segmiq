@@ -1,17 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Check, Star } from "lucide-react";
 import type { CallOutcome, LeadRow } from "@/types";
+import {
+  ASSET_REQUEST_OPTIONS,
+  CALLBACK_SCHEDULE_LABELS,
+  CALLBACK_SCHEDULE_OPTIONS,
+  CALL_RESULT_LABELS,
+  CALL_RESULTS,
+  DIRECT_SEND_ASSET_TYPES,
+  FOLLOW_UP_HOLDUP_REASONS,
+  LOST_REASONS,
+  NOT_QUALIFIED_REASONS,
+  REACH_OUTCOME_LABELS,
+  REACH_OUTCOMES,
+  deriveLegacyOutcome,
+  resolveCallbackAt,
+  type AssetRequestKey,
+  type CallResult,
+  type CallbackScheduleOption,
+  type ReachOutcome,
+} from "@/lib/call-log-constants";
 
-const OUTCOMES: { value: CallOutcome; label: string }[] = [
-  { value: "ANSWERED", label: "Answered" },
-  { value: "NO_ANSWER", label: "No answer" },
-  { value: "FOLLOW_UP", label: "Follow-up" },
-  { value: "WON", label: "Won" },
-  { value: "LOST", label: "Lost" },
-  { value: "NOT_QUALIFIED", label: "Not qualified" },
-];
+type SendAssetType = "PORTFOLIO" | "PROJECT" | "PRICING_PACKAGE" | "TESTIMONIALS" | "DOCUMENT";
 
 function todayLocalISO(): string {
   const t = new Date();
@@ -21,10 +33,102 @@ function todayLocalISO(): string {
   return `${y}-${m}-${d}`;
 }
 
+function SegmentedControl<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  columns = 1,
+  className = "",
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  columns?: 1 | 2 | 3;
+  className?: string;
+}) {
+  const gridClass =
+    columns === 3 ? "grid-cols-3" : columns === 2 ? "grid-cols-2" : "grid-cols-1";
+
+  return (
+    <div className={className}>
+      <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+        {label}
+      </span>
+      <div
+        className={`grid ${gridClass} overflow-hidden rounded-lg border border-[rgba(255,255,255,0.07)] divide-x divide-y divide-[rgba(255,255,255,0.07)]`}
+      >
+        {options.map((opt) => {
+          const active = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value)}
+              className={[
+                "min-h-[44px] px-3 py-2.5 text-sm transition-all touch-manipulation sm:min-h-0",
+                active
+                  ? "bg-[#1a1a1a] font-medium text-[#ededed]"
+                  : "bg-[#111111] text-ink-secondary hover:text-ink-primary",
+              ].join(" ")}
+            >
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ReasonPills({
+  label,
+  options,
+  value,
+  onChange,
+  hint,
+}: {
+  label: string;
+  options: readonly string[];
+  value: string;
+  onChange: (v: string) => void;
+  hint?: string;
+}) {
+  return (
+    <div className="ag-fade-in space-y-2">
+      <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-2">
+        {options.map((opt) => {
+          const active = value === opt;
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(active ? "" : opt)}
+              className={[
+                "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                active
+                  ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
+                  : "border-[rgba(255,255,255,0.07)] text-ink-secondary hover:border-[rgba(255,255,255,0.15)] hover:text-ink-primary",
+              ].join(" ")}
+            >
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+      {hint ? <p className="text-xs text-ink-tertiary">{hint}</p> : null}
+    </div>
+  );
+}
+
 export type LogCallFormProps = {
   leadId: string;
   magicToken?: string | null;
-  /** When set, success is reported to parent instead of inline toast */
+  defaultChannel?: "call" | "whatsapp";
   onMagicSubmitSuccess?: (ctx: {
     outcome: CallOutcome;
     lead: LeadRow;
@@ -33,31 +137,48 @@ export type LogCallFormProps = {
     notes: string;
   }) => void;
   onLogged?: () => void;
+  onSubmitSuccess?: () => void;
   onLeadUpdated?: (lead: LeadRow) => void;
-  variant?: "panel" | "magic";
+  onOpenSendTab?: (assetTypes: SendAssetType[]) => void;
+  variant?: "panel" | "magic" | "compact";
 };
 
 export function LogCallForm({
   leadId,
   magicToken,
+  defaultChannel = "call",
   onMagicSubmitSuccess,
   onLogged,
+  onSubmitSuccess,
   onLeadUpdated,
+  onOpenSendTab,
   variant = "panel",
 }: LogCallFormProps) {
-  const [outcome, setOutcome] = useState<CallOutcome>("ANSWERED");
-  const [followUpDate, setFollowUpDate] = useState("");
-  const [lostReason, setLostReason] = useState("");
-  const [dealValue, setDealValue] = useState("");
-  const [followUpFieldError, setFollowUpFieldError] = useState<string | null>(null);
-  const [lostReasonFieldError, setLostReasonFieldError] = useState<string | null>(null);
-  const [dealValueFieldError, setDealValueFieldError] = useState<string | null>(null);
+  const [reachOutcome, setReachOutcome] = useState<ReachOutcome>("reached");
+  const [result, setResult] = useState<CallResult | null>(null);
+  const [reason, setReason] = useState("");
+  const [scheduleOption, setScheduleOption] = useState<CallbackScheduleOption | "">("");
+  const [customCallback, setCustomCallback] = useState("");
+  const [assetsRequested, setAssetsRequested] = useState<AssetRequestKey[]>([]);
+  const [convertLater, setConvertLater] = useState(false);
+  const [noAnswerCount, setNoAnswerCount] = useState(0);
+  const [directSending, setDirectSending] = useState(false);
+
+  const [reasonError, setReasonError] = useState<string | null>(null);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [savedToast, setSavedToast] = useState(false);
-  const [channel, setChannel] = useState<"call" | "whatsapp">("call");
+  const [channel, setChannel] = useState<"call" | "whatsapp">(defaultChannel);
+
   const isMagic = variant === "magic";
+  const isCompact = variant === "compact";
 
   useEffect(() => {
+    setChannel(defaultChannel);
+  }, [defaultChannel, leadId]);
+
+  useEffect(() => {
+    if (isCompact) return;
     try {
       const key = `log:channel:${leadId}`;
       const v = window.localStorage.getItem(key);
@@ -66,94 +187,153 @@ export function LogCallForm({
         window.localStorage.removeItem(key);
       }
     } catch {}
-    if (outcome !== "FOLLOW_UP") {
-      setFollowUpDate("");
-      setFollowUpFieldError(null);
-    } else {
-      setFollowUpDate((prev) => {
-        if (prev) return prev;
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const y = tomorrow.getFullYear();
-        const mo = String(tomorrow.getMonth() + 1).padStart(2, "0");
-        const da = String(tomorrow.getDate()).padStart(2, "0");
-        return `${y}-${mo}-${da}`;
-      });
-    }
-  }, [outcome, leadId]);
+  }, [leadId, isCompact]);
 
   useEffect(() => {
-    if (outcome !== "LOST") {
-      setLostReason("");
-      setLostReasonFieldError(null);
-    }
-  }, [outcome]);
+    if (!leadId) return;
+    let cancelled = false;
+    fetch(`/api/leads/${leadId}/call-logs`)
+      .then((r) => r.json())
+      .then((d: { noAnswerCount?: number }) => {
+        if (!cancelled) setNoAnswerCount(d.noAnswerCount ?? 0);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [leadId, savedToast]);
 
   useEffect(() => {
-    if (outcome !== "WON") {
-      setDealValue("");
-      setDealValueFieldError(null);
+    if (reachOutcome !== "reached") {
+      setResult(null);
+      setAssetsRequested([]);
     }
-  }, [outcome]);
+    if (reachOutcome !== "reached" || result !== "follow_up") {
+      setConvertLater(false);
+    }
+    if (reachOutcome === "no_answer") {
+      setReason("");
+      setScheduleOption("");
+      setCustomCallback("");
+    }
+    setReasonError(null);
+    setScheduleError(null);
+  }, [reachOutcome, result]);
 
-  const minDate = todayLocalISO();
+  const needsSchedule =
+    (reachOutcome === "reached" && result === "follow_up") || reachOutcome === "call_back";
 
-  const fieldZoomClass = isMagic
-    ? "text-base sm:text-sm"
-    : "text-[16px] sm:text-sm";
+  const callbackAtIso = useMemo(() => {
+    if (!needsSchedule || !scheduleOption) return null;
+    if (scheduleOption === "pick" && !customCallback.trim()) return null;
+    const at = resolveCallbackAt(
+      scheduleOption,
+      scheduleOption === "pick" ? customCallback : null
+    );
+    return at.toISOString();
+  }, [needsSchedule, scheduleOption, customCallback]);
+
+  const selectedSendTypes = useMemo(() => {
+    return assetsRequested
+      .map((key) => ASSET_REQUEST_OPTIONS.find((o) => o.key === key)?.sendType)
+      .filter(Boolean) as SendAssetType[];
+  }, [assetsRequested]);
+
+  const canDirectSendOnly =
+    selectedSendTypes.length > 0 &&
+    selectedSendTypes.every((t) => DIRECT_SEND_ASSET_TYPES.has(t));
+
+  const fieldZoomClass =
+    isMagic || isCompact ? "text-base sm:text-sm" : "text-[16px] sm:text-sm";
+  const formSpaceClass = isCompact ? "space-y-3" : "space-y-4";
+  const minPickDate = todayLocalISO();
+
+  function toggleAsset(key: AssetRequestKey) {
+    setAssetsRequested((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  }
+
+  async function directSendPortfolioTestimonials() {
+    if (!canDirectSendOnly || directSending) return;
+    setDirectSending(true);
+    try {
+      for (const type of selectedSendTypes) {
+        if (!DIRECT_SEND_ASSET_TYPES.has(type)) continue;
+        await fetch(`/api/leads/${leadId}/send-asset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assetType: type }),
+        });
+      }
+      const leadRes = await fetch(`/api/leads/${leadId}`);
+      if (leadRes.ok) {
+        const data = (await leadRes.json()) as { lead?: LeadRow };
+        if (data.lead) onLeadUpdated?.(data.lead);
+      }
+      onLogged?.();
+    } finally {
+      setDirectSending(false);
+    }
+  }
+
+  function validate(): boolean {
+    setReasonError(null);
+    setScheduleError(null);
+    setFormError(null);
+
+    if (reachOutcome === "reached") {
+      if (result === "lost" || result === "not_qualified" || result === "follow_up") {
+        if (!reason.trim()) {
+          setReasonError("Please select a reason");
+          return false;
+        }
+      }
+      if (result === "follow_up") {
+        if (!callbackAtIso) {
+          setScheduleError("Please schedule when to follow up");
+          return false;
+        }
+      }
+    }
+
+    if (reachOutcome === "call_back") {
+      if (!callbackAtIso) {
+        setScheduleError("Please schedule when to call back");
+        return false;
+      }
+    }
+
+    return true;
+  }
 
   return (
     <form
-      className={isMagic ? "min-w-0 max-w-full space-y-4" : "space-y-4"}
+      className={
+        isMagic
+          ? `min-w-0 max-w-full ${formSpaceClass}`
+          : `${formSpaceClass} ag-fade-in`
+      }
       onSubmit={async (e) => {
         e.preventDefault();
+        if (!validate()) return;
+
         const fd = new FormData(e.currentTarget);
         const notes = (fd.get("notes") as string) ?? "";
-        setFollowUpFieldError(null);
-        setLostReasonFieldError(null);
-        setDealValueFieldError(null);
-        setFormError(null);
-
-        if (outcome === "FOLLOW_UP") {
-          if (!followUpDate.trim()) {
-            setFollowUpFieldError("Please pick a follow-up date");
-            return;
-          }
-          if (followUpDate < minDate) {
-            setFollowUpFieldError("Follow-up date cannot be in the past");
-            return;
-          }
-        }
-
-        if (outcome === "LOST") {
-          if (!lostReason.trim()) {
-            setLostReasonFieldError("Please pick a reason the deal was lost");
-            return;
-          }
-          if (lostReason.length > 500) {
-            setLostReasonFieldError("Reason must be 500 characters or less");
-            return;
-          }
-        }
-
-        if (outcome === "WON") {
-          const n = Number(dealValue);
-          if (!dealValue.trim() || !Number.isFinite(n) || n <= 0) {
-            setDealValueFieldError("Enter the deal value");
-            return;
-          }
-        }
 
         const body: Record<string, unknown> = {
-          outcome,
+          reachOutcome,
+          result: reachOutcome === "reached" ? result : null,
+          reason: reason.trim() || null,
+          callbackAt: callbackAtIso,
+          assetsRequested: assetsRequested.length ? assetsRequested : null,
           notes,
-          followUpDate: outcome === "FOLLOW_UP" ? followUpDate : null,
-          lostReason: outcome === "LOST" ? lostReason.trim() : null,
           channel,
+          isConvertLaterPick: convertLater,
+          convertLaterNote:
+            convertLater && reason.trim() ? reason.trim() : convertLater ? notes.trim() || null : null,
         };
-        if (outcome === "WON") {
-          body.dealValue = Number(dealValue);
-        }
+
         if (magicToken?.trim()) {
           body.magicToken = magicToken.trim();
         }
@@ -166,63 +346,248 @@ export function LogCallForm({
 
         if (!res.ok) {
           const data = (await res.json().catch(() => ({}))) as { error?: string; field?: string };
-          if (data.field === "followUpDate") {
-            setFollowUpFieldError(data.error ?? "Invalid follow-up date");
-          } else if (data.field === "lostReason") {
-            setLostReasonFieldError(data.error ?? "Invalid reason");
-          } else if (data.field === "dealValue") {
-            setDealValueFieldError(data.error ?? "Invalid deal value");
-          } else {
-            setFormError(data.error ?? "Failed to log call");
-          }
+          if (data.field === "reason") setReasonError(data.error ?? "Invalid reason");
+          else if (data.field === "callbackAt") setScheduleError(data.error ?? "Invalid time");
+          else setFormError(data.error ?? "Failed to log call");
           return;
         }
-        const payload = (await res.json()) as { lead?: LeadRow };
-        if (payload.lead) {
-          onLeadUpdated?.(payload.lead);
-        }
+
+        const payload = (await res.json()) as {
+          lead?: LeadRow;
+          legacyOutcome?: string;
+          noAnswerCount?: number;
+        };
+
+        if (payload.noAnswerCount != null) setNoAnswerCount(payload.noAnswerCount);
+
+        if (payload.lead) onLeadUpdated?.(payload.lead);
         onLogged?.();
-        const fu = outcome === "FOLLOW_UP" ? followUpDate : null;
-        const dv = outcome === "WON" ? Number(dealValue) : null;
+
+        const legacy =
+          (payload.legacyOutcome as CallOutcome | undefined) ??
+          deriveLegacyOutcome(reachOutcome, result);
+
         if (onMagicSubmitSuccess && payload.lead) {
           onMagicSubmitSuccess({
-            outcome,
+            outcome: legacy,
             lead: payload.lead,
-            followUpDate: fu,
-            dealValue: Number.isFinite(dv as number) ? (dv as number) : null,
+            followUpDate: callbackAtIso ? callbackAtIso.slice(0, 10) : null,
+            dealValue: null,
             notes: notes.trim(),
           });
+        } else if (onSubmitSuccess) {
+          onSubmitSuccess();
         } else {
           setSavedToast(true);
           window.setTimeout(() => setSavedToast(false), 2000);
         }
       }}
     >
-      <div className="font-mono text-[11px] uppercase text-ink-tertiary">Log call</div>
-      <div>
-        <span className="mb-2 block font-mono text-[11px] uppercase text-ink-secondary">Outcome</span>
-        <div className="grid grid-cols-2 gap-1 rounded-md bg-surface-card-alt p-1 sm:flex sm:flex-wrap">
-          {OUTCOMES.map((opt) => (
+      {!isCompact ? (
+        <div className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary">
+          Log call
+        </div>
+      ) : null}
+
+      <SegmentedControl
+        label="Did you reach them?"
+        options={REACH_OUTCOMES.map((v) => ({ value: v, label: REACH_OUTCOME_LABELS[v] }))}
+        value={reachOutcome}
+        onChange={setReachOutcome}
+        columns={3}
+      />
+
+      {reachOutcome === "reached" ? (
+        <>
+          <div className="ag-fade-in">
+            <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+              Result
+            </span>
+            <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[rgba(255,255,255,0.07)] divide-x divide-y divide-[rgba(255,255,255,0.07)]">
+              {CALL_RESULTS.map((v) => {
+                const active = result === v;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setResult(active ? null : v)}
+                    className={[
+                      "min-h-[44px] px-3 py-2.5 text-sm transition-all touch-manipulation sm:min-h-0",
+                      active
+                        ? "bg-[#1a1a1a] font-medium text-[#ededed]"
+                        : "bg-[#111111] text-ink-secondary hover:text-ink-primary",
+                    ].join(" ")}
+                  >
+                    {CALL_RESULT_LABELS[v]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {result === "follow_up" ? (
+            <ReasonPills
+              label="What's the hold-up?"
+              options={FOLLOW_UP_HOLDUP_REASONS}
+              value={reason}
+              onChange={setReason}
+            />
+          ) : null}
+
+          {result === "lost" ? (
+            <ReasonPills
+              label="Why did it die?"
+              options={LOST_REASONS}
+              value={reason}
+              onChange={setReason}
+            />
+          ) : null}
+
+          {result === "not_qualified" ? (
+            <ReasonPills
+              label="Why not a fit?"
+              options={NOT_QUALIFIED_REASONS}
+              value={reason}
+              onChange={setReason}
+              hint='Aggregated "not a fit" reasons indicate ad-targeting mismatch, not a sales problem.'
+            />
+          ) : null}
+
+          {result === "won" ? (
+            <p className="ag-fade-in text-xs text-ink-tertiary">
+              Deal won — add any confirmation details in notes below.
+            </p>
+          ) : null}
+
+          <div className="ag-fade-in space-y-2">
+            <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+              Did they ask for anything?
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {ASSET_REQUEST_OPTIONS.map((opt) => {
+                const active = assetsRequested.includes(opt.key);
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => toggleAsset(opt.key)}
+                    className={[
+                      "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                      active
+                        ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
+                        : "border-[rgba(255,255,255,0.07)] text-ink-secondary hover:border-[rgba(255,255,255,0.15)] hover:text-ink-primary",
+                    ].join(" ")}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+            {assetsRequested.length > 0 ? (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {canDirectSendOnly ? (
+                  <button
+                    type="button"
+                    disabled={directSending}
+                    onClick={() => void directSendPortfolioTestimonials()}
+                    className="rounded-md border border-[#D4FF4F] px-3 py-1.5 text-[13px] font-medium text-[#D4FF4F] touch-manipulation hover:bg-[rgba(212,255,79,0.08)] disabled:opacity-50"
+                  >
+                    {directSending ? "Sending…" : "Send now"}
+                  </button>
+                ) : null}
+                {onOpenSendTab && selectedSendTypes.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenSendTab(selectedSendTypes)}
+                    className="rounded-md border border-[rgba(255,255,255,0.15)] px-3 py-1.5 text-[13px] text-ink-primary touch-manipulation hover:bg-surface-card-alt"
+                  >
+                    {canDirectSendOnly ? "Open send panel" : "Send now"}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </>
+      ) : null}
+
+      {reachOutcome === "no_answer" ? (
+        <p className="ag-fade-in rounded-lg border border-[rgba(255,255,255,0.07)] bg-[#111111] px-3 py-2.5 text-[13px] text-ink-secondary">
+          Attempt #{noAnswerCount + 1}. Repeated no-answers keep this lead in Call now, then
+          Recover — and feed retargeting when it graduates.
+        </p>
+      ) : null}
+
+      {needsSchedule ? (
+        <div className="ag-fade-in space-y-3">
+          <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+            When should it come back?
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {CALLBACK_SCHEDULE_OPTIONS.map((opt) => {
+              const active = scheduleOption === opt;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    setScheduleOption(active ? "" : opt);
+                    setScheduleError(null);
+                  }}
+                  className={[
+                    "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                    active
+                      ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
+                      : "border-[rgba(255,255,255,0.07)] text-ink-secondary hover:border-[rgba(255,255,255,0.15)] hover:text-ink-primary",
+                  ].join(" ")}
+                >
+                  {CALLBACK_SCHEDULE_LABELS[opt]}
+                </button>
+              );
+            })}
+          </div>
+          {scheduleOption === "pick" ? (
+            <label className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+              Date & time
+              <input
+                type="datetime-local"
+                className={`input-base mt-1 min-w-0 w-full ${fieldZoomClass}`}
+                min={`${minPickDate}T00:00`}
+                value={customCallback}
+                onChange={(e) => {
+                  setCustomCallback(e.target.value);
+                  setScheduleError(null);
+                }}
+              />
+            </label>
+          ) : null}
+          {reachOutcome === "reached" && result === "follow_up" ? (
             <button
-              key={opt.value}
               type="button"
-              onClick={() => setOutcome(opt.value)}
+              onClick={() => setConvertLater((v) => !v)}
               className={[
-                "rounded px-2 py-1.5 text-sm transition-all touch-manipulation sm:px-3",
-                isMagic
-                  ? "min-h-[44px] text-xs sm:min-h-0 sm:text-sm"
-                  : "min-h-[44px] text-[13px] sm:min-h-0 sm:py-1.5",
-                outcome === opt.value
-                  ? "bg-surface-card font-medium text-ink-primary shadow-sm"
-                  : "text-ink-secondary hover:text-ink-primary",
+                "flex items-center gap-2 rounded-md border px-3 py-2 text-[13px] transition-all touch-manipulation",
+                convertLater
+                  ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
+                  : "border-[rgba(255,255,255,0.07)] text-ink-secondary hover:text-ink-primary",
               ].join(" ")}
             >
-              {opt.label}
+              <Star
+                className="h-4 w-4"
+                strokeWidth={1.5}
+                fill={convertLater ? "#D4FF4F" : "none"}
+              />
+              Save to my convert-later picks
             </button>
-          ))}
+          ) : null}
+          {scheduleError ? (
+            <p className="font-sans text-[12px] text-[#DC2626]">{scheduleError}</p>
+          ) : null}
         </div>
-      </div>
-      <label className="block font-mono text-[11px] uppercase text-ink-secondary">
+      ) : null}
+
+      {reasonError ? <p className="font-sans text-[12px] text-[#DC2626]">{reasonError}</p> : null}
+
+      <label className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
         Notes
         <textarea
           name="notes"
@@ -230,101 +595,26 @@ export function LogCallForm({
           rows={3}
         />
       </label>
-      {outcome === "FOLLOW_UP" ? (
-        <div>
-          <label className="block font-mono text-[11px] uppercase text-ink-secondary">
-            Follow-up date <span className="text-[#DC2626]">*</span>
-            <input
-              name="followUpDate"
-              type="date"
-              className={`input-base mt-1 min-w-0 max-w-full ${fieldZoomClass}`}
-              min={minDate}
-              required={outcome === "FOLLOW_UP"}
-              value={followUpDate}
-              onChange={(e) => {
-                setFollowUpDate(e.target.value);
-                setFollowUpFieldError(null);
-              }}
-            />
-          </label>
-          {followUpFieldError ? (
-            <p className="mt-1.5 font-sans text-[12px] text-[#DC2626]">{followUpFieldError}</p>
-          ) : null}
-        </div>
-      ) : null}
-      {outcome === "WON" ? (
-        <div>
-          <label className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-            Deal value <span className="text-[var(--danger-fg)]">*</span>
-          </label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-tertiary">
-              $
-            </span>
-            <input
-              type="number"
-              min={0}
-              step={100}
-              value={dealValue}
-              onChange={(e) => {
-                setDealValue(e.target.value);
-                setDealValueFieldError(null);
-              }}
-              placeholder="80000"
-              className={`input-base mt-0 min-w-0 w-full py-2 pl-7 pr-3 ${fieldZoomClass}`}
-            />
-          </div>
-          <p className="mt-1.5 text-xs text-ink-tertiary">
-            Total contract value. Used in reporting and shown to your manager.
-          </p>
-          {dealValueFieldError ? (
-            <p className="mt-1.5 font-sans text-[12px] text-[#DC2626]">{dealValueFieldError}</p>
-          ) : null}
-        </div>
-      ) : null}
-      {outcome === "LOST" ? (
-        <div>
-          <label className="block font-mono text-[11px] uppercase tracking-wide text-ink-secondary">
-            Reason lost <span className="text-[#DC2626]">*</span>
-            <input
-              type="text"
-              className={`input-base mt-1 min-w-0 ${fieldZoomClass}`}
-              placeholder="e.g. Went with competitor, project cancelled, budget cut"
-              maxLength={500}
-              value={lostReason}
-              onChange={(e) => {
-                setLostReason(e.target.value);
-                setLostReasonFieldError(null);
-              }}
-            />
-          </label>
-          <div className="mt-1 flex justify-end font-mono text-[10px] text-ink-tertiary">{lostReason.length}/500</div>
-          {lostReasonFieldError ? (
-            <p className="mt-1.5 font-sans text-[12px] text-[#DC2626]">{lostReasonFieldError}</p>
-          ) : null}
-        </div>
-      ) : null}
+
       {formError ? <p className="font-sans text-[12px] text-[#DC2626]">{formError}</p> : null}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <button
           type="submit"
           className={
             isMagic
-              ? "btn-primary min-h-[48px] w-full touch-manipulation py-3 text-base sm:min-h-0 sm:text-[13px]"
-              : "btn-primary w-full min-h-12 touch-manipulation sm:min-w-[12rem] sm:flex-1 sm:min-h-0"
-          }
-          disabled={
-            (outcome === "FOLLOW_UP" && !followUpDate.trim()) ||
-            (outcome === "LOST" && !lostReason.trim()) ||
-            (outcome === "WON" && (!dealValue.trim() || Number(dealValue) <= 0))
+              ? "min-h-[48px] w-full touch-manipulation rounded-md bg-[#D4FF4F] py-3 text-base font-medium text-black sm:min-h-0 sm:text-[13px]"
+              : isCompact
+                ? "min-h-12 w-full touch-manipulation rounded-xl bg-[#D4FF4F] py-3 text-[15px] font-semibold text-black"
+                : "min-h-12 w-full touch-manipulation rounded-md bg-[#D4FF4F] py-3 text-[13px] font-medium text-black sm:min-h-0"
           }
         >
-          Save call log
+          {isCompact && channel === "whatsapp" ? "Log WhatsApp" : "Save call log"}
         </button>
-        {!onMagicSubmitSuccess && savedToast ? (
+        {!onMagicSubmitSuccess && !onSubmitSuccess && savedToast ? (
           <span className="flex items-center gap-1.5 text-sm text-[var(--success-fg)]">
             <Check className="h-4 w-4" strokeWidth={2} />
-            Saved ✓
+            Saved
           </span>
         ) : null}
       </div>

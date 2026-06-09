@@ -6,6 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SalesBoard } from "./SalesBoard";
 import type { LeadWithClientResponseLimit } from "@/lib/leadStatus";
+import {
+  fetchLatestFollowUpLogsByLeadId,
+  isActiveConvertLaterPick,
+} from "@/lib/convert-later-picks";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -31,10 +35,14 @@ export default async function SalesLeadsPage() {
     leads = retry.data ?? [];
   }
 
+  const leadRows = (leads ?? []) as LeadWithClientResponseLimit[];
+  const pickLeadIds = leadRows.filter(isActiveConvertLaterPick).map((l) => l.id);
+  const pickLogContext = await fetchLatestFollowUpLogsByLeadId(supabase, pickLeadIds);
+
   return (
     <SalesLayout breadcrumb="SALES / PIPELINE" pageTitle="My pipeline">
       <Suspense fallback={<div className="shimmer h-96 rounded-xl" />}>
-        <SalesBoard initialLeads={(leads ?? []) as LeadWithClientResponseLimit[]} />
+        <SalesBoard initialLeads={leadRows} pickLogContext={pickLogContext} />
       </Suspense>
     </SalesLayout>
   );

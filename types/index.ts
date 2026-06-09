@@ -92,6 +92,8 @@ export interface LeadRow {
   score_breakdown: Record<string, number> | null;
   is_stale: boolean | null;
   stale_since: string | null;
+  is_convert_later_pick: boolean | null;
+  convert_later_note: string | null;
 }
 
 export interface FormField {

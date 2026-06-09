@@ -41,6 +41,7 @@ const patchSchema = z.object({
   assigned_to_id: z.string().uuid().nullable().optional(),
   is_archived: z.boolean().optional(),
   handover_notes: z.string().max(2000).nullable().optional(),
+  is_convert_later_pick: z.boolean().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: { leadId: string } }) {
@@ -90,6 +91,9 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
   }
   if (parsed.data.is_archived !== undefined && isAgency) {
     updates.is_archived = parsed.data.is_archived;
+  }
+  if (parsed.data.is_convert_later_pick !== undefined) {
+    updates.is_convert_later_pick = parsed.data.is_convert_later_pick;
   }
 
   const { data: updated } = await supabase.from("leads").update(updates).eq("id", params.leadId).select("*").single();

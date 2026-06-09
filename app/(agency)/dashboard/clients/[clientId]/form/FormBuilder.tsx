@@ -38,13 +38,23 @@ export function FormBuilder({
 }: {
   clientId: string;
   clientIndustry: string;
-  initial: { fields: FormField[]; form_title: string | null; submit_button_text: string | null; thank_you_message: string | null; opening_message: string | null };
+  initial: {
+    fields: FormField[];
+    form_title: string | null;
+    submit_button_text: string | null;
+    thank_you_message: string | null;
+    opening_message: string | null;
+    budget_question_enabled: boolean;
+  };
 }) {
   const [fields, setFields] = useState<FormField[]>(initial.fields ?? []);
   const [formTitle, setFormTitle] = useState(initial.form_title ?? "Contact");
   const [submitText, setSubmitText] = useState(initial.submit_button_text ?? "Submit");
   const [thanks, setThanks] = useState(initial.thank_you_message ?? "Thank you!");
   const [openingMessage, setOpeningMessage] = useState(initial.opening_message ?? "");
+  const [budgetQuestionEnabled, setBudgetQuestionEnabled] = useState(
+    initial.budget_question_enabled ?? false
+  );
   const [saving, setSaving] = useState(false);
   const [modal, setModal] = useState<FormField | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -105,6 +115,7 @@ export function FormBuilder({
         submit_button_text: submitText,
         thank_you_message: thanks,
         opening_message: openingMessage,
+        budget_question_enabled: budgetQuestionEnabled,
       }),
     });
     setSaving(false);
@@ -294,6 +305,21 @@ export function FormBuilder({
               onChange={(e) => setOpeningMessage(e.target.value)}
               placeholder="Hello! Thank you for considering us…"
             />
+          </label>
+          <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm text-ink-secondary">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-border"
+              checked={budgetQuestionEnabled}
+              onChange={(e) => setBudgetQuestionEnabled(e.target.checked)}
+            />
+            <span>
+              <span className="font-medium text-ink-primary">Optional budget question</span>
+              <span className="mt-0.5 block text-[12px] text-ink-tertiary">
+                Adds a skippable budget-range step on the public lead form. Off by default — existing
+                flows are unchanged until you enable this.
+              </span>
+            </span>
           </label>
         </div>
       </div>
