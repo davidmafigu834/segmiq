@@ -74,6 +74,7 @@ export async function AgencyLayout({
 
   const secondaryNav = [
     { href: "/upload", label: "Upload", icon: "camera" as const },
+    { href: "/dashboard/whatsapp-templates", label: "WhatsApp", icon: "message-circle" as const },
     { href: "/dashboard/settings", label: "Settings", icon: "settings" as const },
   ];
 

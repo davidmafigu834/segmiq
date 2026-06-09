@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { callClaude } from "@/lib/ai/claude";
 import { sendWhatsApp } from "@/lib/messaging/provider";
+import { firstName } from "@/lib/messaging/whatsapp-vars";
 
 type SalespersonRow = {
   id: string;
@@ -19,6 +20,16 @@ type LeadForCoaching = {
   follow_up_date: string | null;
   created_at: string;
 };
+
+function startOfYesterdayUtc(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
+}
+
+function startOfTodayUtc(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
 
 export async function sendDailySalespersonCoaching(): Promise<void> {
   const supabase = createAdminClient();
@@ -46,6 +57,8 @@ export async function sendDailySalespersonCoaching(): Promise<void> {
 
 async function sendCoachingMessageToSalesperson(salesperson: SalespersonRow): Promise<void> {
   const supabase = createAdminClient();
+  const yesterdayStart = startOfYesterdayUtc();
+  const todayStart = startOfTodayUtc();
 
   const { data: leads } = await supabase
     .from("leads")
@@ -58,6 +71,27 @@ async function sendCoachingMessageToSalesperson(salesperson: SalespersonRow): Pr
   if (!leads || leads.length === 0) return;
 
   const leadIds = leads.map((l) => l.id);
+
+  const { count: callsLogged } = await supabase
+    .from("call_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", salesperson.id)
+    .gte("created_at", yesterdayStart.toISOString())
+    .lt("created_at", todayStart.toISOString());
+
+  const { data: yesterdayCalls } = await supabase
+    .from("call_logs")
+    .select("lead_id, outcome")
+    .eq("user_id", salesperson.id)
+    .gte("created_at", yesterdayStart.toISOString())
+    .lt("created_at", todayStart.toISOString());
+
+  const advancedLeadIds = new Set(
+    (yesterdayCalls ?? [])
+      .filter((c) => (c.outcome as string) !== "NO_ANSWER")
+      .map((c) => c.lead_id as string)
+  );
+
   const { data: recentCalls } = await supabase
     .from("call_logs")
     .select("lead_id, outcome, created_at")
@@ -105,38 +139,29 @@ async function sendCoachingMessageToSalesperson(salesperson: SalespersonRow): Pr
     })
     .join("\n");
 
-  const coaching = await callClaude({
-    system: `You are a sales coach sending a daily WhatsApp message to a salesperson.
-Write a brief, practical daily briefing — like a message from their manager.
-Keep it under 200 words.
-Use plain text only — no markdown, no bullet points that use hyphens or asterisks, no headers.
-Use simple line breaks between sections.
-Be encouraging but direct.
-Structure:
-1. Good morning greeting with their name and today's date
-2. Their top 2-3 priorities for today — be specific about which leads and why
-3. One practical tip based on what you see in their pipeline
-End with a short motivating sign-off.
-Do not mention scores directly — translate them into plain language about priority.`,
-    userMessage: `Write a daily coaching WhatsApp message for ${salesperson.name} at ${clientName}.
+  const todaysFocus = await callClaude({
+    system: `You are a sales coach writing one short priority line for a daily WhatsApp template variable.
+Return a single sentence only — no greeting, no bullet points, under 120 characters.
+Be specific about which leads or actions matter most today.`,
+    userMessage: `Write today's focus for ${salesperson.name} at ${clientName} (${todayStr}).
 
-Today is ${todayStr}.
-
-Their active leads (${leads.length} total):
+Active leads:
 ${leadsContext}
 
-Generate a practical daily briefing telling them their priorities for today.`,
-    maxTokens: 300,
+Yesterday: ${callsLogged ?? 0} calls logged, ${advancedLeadIds.size} leads moved forward.`,
+    maxTokens: 80,
   });
 
   await sendWhatsApp({
     to: salesperson.phone,
     template: "DAILY_COACHING",
     variables: {
-      "1": salesperson.name,
-      "2": coaching,
+      "1": firstName(salesperson.name),
+      "2": String(callsLogged ?? 0),
+      "3": String(advancedLeadIds.size),
+      "4": todaysFocus.trim(),
     },
-    fallbackBody: coaching,
+    fallbackBody: `Good morning ${firstName(salesperson.name)}. Yesterday: ${callsLogged ?? 0} calls, ${advancedLeadIds.size} leads advanced. Today: ${todaysFocus.trim()}`,
     context: {
       clientId: salesperson.client_id ?? undefined,
       notificationType: "DAILY_COACHING",

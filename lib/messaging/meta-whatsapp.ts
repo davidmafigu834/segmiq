@@ -5,120 +5,60 @@ import { fbLog } from "@/lib/facebook/log";
 import { logMessage, type LogMessageParams, type SendResult } from "@/lib/messaging/log";
 
 // ---------------------------------------------------------------------------
-// Template registry
-// ---------------------------------------------------------------------------
-// IMPORTANT: All templates must be submitted to Meta Business Manager for
-// approval before they will work in production.
+// Meta WhatsApp template registry — approved segmiq_* names (hardcoded).
+// Body placeholders are 1-indexed; URL buttons use urlButtonParam (suffix only).
 //
-// Template name: segmiq_lead_confirmation
-// Category:      UTILITY
-// Language:      English (en_US)
-// Body:
-//   Hi {{1}}, thank you for reaching out to {{2}}.
-//
-//   We have received your inquiry about {{3}} and our team will be in touch
-//   with you within {{4}} hours.
-//
-//   While you wait, you can view our completed projects and client testimonials here:
-//   {{5}}
-//
-//   We look forward to speaking with you.
-//
-// Variables:
-//   {{1}} — lead first name
-//   {{2}} — company name
-//   {{3}} — service or project type they enquired about
-//   {{4}} — response time in hours from client SLA settings
-//   {{5}} — company portfolio URL
+// URL button bases in Meta Business Manager (production):
+//   CRM (segmiq.com):  /l/{{token}}  magic links
+//                      /d/{{slug}}   manager dashboard (weekly digest)
+//                      /{{path}}     billing → client/billing
+//   Cloud:             cloud.segmiq.com/{{slug}}  send-asset templates
+// Set NEXT_PUBLIC_SITE_URL=https://segmiq.com so getPublicBaseUrl() matches.
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// Send-asset templates — UTILITY category, English (en_US)
-// Submit all to Meta Business Manager for approval before use in production.
-//
-// segmiq_send_portfolio:
-//   Hi {{1}}, here are some of our completed projects from {{2}}. You can browse our full portfolio here:
-//   {{3}}
-//   Let us know if you have any questions.
-//
-// segmiq_send_project:
-//   Hi {{1}}, {{2}} wanted to share a project with you that may be relevant to what you are looking for.
-//   {{3}}
-//   {{4}}
-//   Take a look and let us know your thoughts.
-//
-// segmiq_send_pricing:
-//   Hi {{1}}, here are the pricing details for the {{3}} package from {{2}}:
-//   Price: {{4}}
-//   What is included:
-//   {{5}}
-//   You can view our full portfolio here: {{6}}
-//   Let us know if you have any questions.
-//
-// segmiq_send_testimonials:
-//   Hi {{1}}, {{2}} wanted to share what some of our clients have said about working with us:
-//   {{3}}
-//   We look forward to speaking with you.
-//
-// segmiq_send_document:
-//   Hi {{1}}, {{2}} has shared the following document with you:
-//   {{3}}
-//   {{4}}
-//   Let us know if you need anything else.
-//
-// segmiq_send_custom:
-//   Hi {{1}}, a message from {{2}}:
-//   {{3}}
-//
-// Billing templates (UTILITY) — see docs/meta-whatsapp-billing-templates.md
-// Gate sends with META_TEMPLATE_INVOICE_ISSUED / PAYMENT_OVERDUE / PAYMENT_CONFIRMED.
-//
-// segmiq_invoice_issued — body {{1}} invoice #, {{2}} amount, {{3}} due date; URL button → client/billing
-// segmiq_payment_overdue — body {{1}} invoice #, {{2}} amount, {{3}} days until suspension; URL button
-// segmiq_payment_confirmed — body {{1}} invoice #, {{2}} amount, {{3}} next renewal; URL button
-// ---------------------------------------------------------------------------
+const TEMPLATE_LANGUAGE = "en_US";
 
 export type TemplateKey =
-  | "NEW_LEAD_SALESPERSON"
-  | "NEW_LEAD_MANAGER"
-  | "DEAL_WON"
-  | "FOLLOW_UP_REMINDER"
-  | "UNCONTACTED_LEAD_ALERT"
-  | "MAGIC_LINK_RENEWAL"
   | "LEAD_CONFIRMATION_PROSPECT"
-  | "BULK_LEADS_ASSIGNED"
+  | "MAGIC_LINK"
+  | "MAGIC_LINK_RENEWAL"
+  | "NEW_LEAD"
+  | "SLA_BREACH"
+  | "FOLLOW_UP_REMINDER"
+  | "DAILY_COACHING"
+  | "SALESPERSON_ONBOARDING"
   | "SEND_PORTFOLIO"
   | "SEND_PROJECT"
   | "SEND_PRICING_PACKAGE"
   | "SEND_TESTIMONIALS"
   | "SEND_DOCUMENT"
   | "SEND_CUSTOM_MESSAGE"
-  | "DAILY_COACHING"
-  | "SALESPERSON_ONBOARDING"
+  | "WEEKLY_DIGEST"
   | "INVOICE_ISSUED"
   | "PAYMENT_OVERDUE"
-  | "PAYMENT_CONFIRMED";
+  | "PAYMENT_CONFIRMED"
+  | "BULK_LEADS_ASSIGNED";
 
 const TEMPLATE_NAMES: Record<TemplateKey, string> = {
-  NEW_LEAD_SALESPERSON: "new_lead_salesperson",
-  NEW_LEAD_MANAGER: "new_lead_manager",
-  DEAL_WON: "deal_won",
-  FOLLOW_UP_REMINDER: "follow_up_reminder",
-  UNCONTACTED_LEAD_ALERT: "uncontacted_lead_alert",
-  MAGIC_LINK_RENEWAL: "magic_link_renewal",
   LEAD_CONFIRMATION_PROSPECT: "segmiq_lead_confirmation",
-  BULK_LEADS_ASSIGNED: "segmiq_leads_assigned",
+  MAGIC_LINK: "segmiq_magic_link",
+  MAGIC_LINK_RENEWAL: "segmiq_magic_link_renewal",
+  NEW_LEAD: "segmiq_new_lead",
+  SLA_BREACH: "segmiq_sla_breach",
+  FOLLOW_UP_REMINDER: "segmiq_follow_up_reminder",
+  DAILY_COACHING: "segmiq_daily_coaching",
+  SALESPERSON_ONBOARDING: "segmiq_salesperson_onboarding",
   SEND_PORTFOLIO: "segmiq_send_portfolio",
   SEND_PROJECT: "segmiq_send_project",
   SEND_PRICING_PACKAGE: "segmiq_send_pricing",
   SEND_TESTIMONIALS: "segmiq_send_testimonials",
   SEND_DOCUMENT: "segmiq_send_document",
   SEND_CUSTOM_MESSAGE: "segmiq_send_custom",
-  DAILY_COACHING: "segmiq_daily_coaching",
-  SALESPERSON_ONBOARDING: "segmiq_salesperson_onboarding",
+  WEEKLY_DIGEST: "segmiq_weekly_digest",
   INVOICE_ISSUED: "segmiq_invoice_issued",
   PAYMENT_OVERDUE: "segmiq_payment_overdue",
   PAYMENT_CONFIRMED: "segmiq_payment_confirmed",
+  BULK_LEADS_ASSIGNED: "segmiq_leads_assigned",
 };
 
 export type SendWhatsAppParams = {
@@ -198,8 +138,7 @@ export async function sendWhatsAppViaMeta(
   }
 
   const templateName = TEMPLATE_NAMES[params.template];
-  const languageCode = (process.env.META_TEMPLATE_LANGUAGE || "en_US").trim();
-
+  const languageCode = TEMPLATE_LANGUAGE;
 
   const orderedKeys = Object.keys(params.variables).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
   const parameters = orderedKeys.map((key) => ({
@@ -261,6 +200,7 @@ export async function sendWhatsAppViaMeta(
       const err = data.error || { code: res.status, message: `HTTP ${res.status}` };
       fbLog("fb.whatsapp.send_failed", {
         template: params.template,
+        templateName,
         recipient: normalized,
         code: err.code,
         subcode: err.error_subcode,
@@ -273,7 +213,7 @@ export async function sendWhatsAppViaMeta(
       };
     } else {
       const providerId = data.messages?.[0]?.id;
-      fbLog("fb.whatsapp.sent", { template: params.template, recipient: normalized, providerId });
+      fbLog("fb.whatsapp.sent", { template: params.template, templateName, recipient: normalized, providerId });
       out = { ok: true, providerId };
     }
   } catch (err: unknown) {

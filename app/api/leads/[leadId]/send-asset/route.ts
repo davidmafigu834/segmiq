@@ -6,6 +6,7 @@ import { canModifyLead } from "@/lib/auth/permissions";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logDocumentSent } from "@/lib/lead-events";
 import { persistLeadScore } from "@/lib/lead-scoring";
+import { firstName, regionFromDialCode } from "@/lib/messaging/whatsapp-vars";
 
 type AssetType =
   | "PORTFOLIO"
@@ -35,7 +36,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   // Fetch full lead (phone + name) — canModifyLead only returns client_id/assigned_to_id
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, client_id, phone, name")
+    .select("id, client_id, phone, name, assigned_to_id")
     .eq("id", params.leadId)
     .single();
 
@@ -50,26 +51,35 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
 
   const clientId = lead.client_id as string;
   const leadPhone = lead.phone as string;
-  const firstName = ((lead.name as string | null) ?? "there").split(" ")[0]!;
+  const prospectFirst = firstName(lead.name as string | null);
 
-  // Fetch client name
   const { data: client } = await supabase
     .from("clients")
-    .select("name")
+    .select("name, slug, dial_code")
     .eq("id", clientId)
     .single();
   const companyName = (client?.name as string | null) ?? "";
+  const clientSlug = (client?.slug as string | null) ?? "";
+  const region = regionFromDialCode(client?.dial_code as string | null);
 
-  // Fetch client profile for portfolio URL
   const { data: profile } = await supabase
     .from("client_profiles")
     .select("slug, is_published")
     .eq("client_id", clientId)
     .maybeSingle();
-  const portfolioUrl =
-    profile?.is_published && profile?.slug
-      ? `${process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://leadstaq.tech"}/p/${profile.slug as string}`
-      : null;
+  const profileSlug =
+    profile?.is_published && profile?.slug ? (profile.slug as string) : clientSlug;
+
+  let repLabel = companyName;
+  if (lead.assigned_to_id) {
+    const { data: rep } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", lead.assigned_to_id as string)
+      .maybeSingle();
+    const repName = (rep?.name as string | null)?.trim();
+    if (repName) repLabel = `${firstName(repName)} at ${companyName}`;
+  }
 
   const actor = {
     id: session.userId,
@@ -83,18 +93,19 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   try {
     switch (assetType) {
       case "PORTFOLIO": {
-        if (!portfolioUrl) {
+        if (!profileSlug) {
           return NextResponse.json({ error: "Portfolio page is not published" }, { status: 400 });
         }
         await sendWhatsApp({
           to: leadPhone,
           template: "SEND_PORTFOLIO",
-          variables: { "1": firstName, "2": companyName, "3": portfolioUrl },
-          fallbackBody: `Hi ${firstName}, here are our completed projects from ${companyName}: ${portfolioUrl}`,
+          variables: { "1": prospectFirst, "2": companyName, "3": region },
+          urlButtonParam: profileSlug,
+          fallbackBody: `Hi ${prospectFirst}, here's a look at work ${companyName} has completed across ${region}.`,
           context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = "Portfolio";
-        documentUrl = portfolioUrl;
+        documentUrl = profileSlug;
         break;
       }
 
@@ -102,27 +113,33 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
         if (!assetId) return NextResponse.json({ error: "Project ID required" }, { status: 400 });
         const { data: project } = await supabase
           .from("projects")
-          .select("id, title")
+          .select("id, title, slug, location, description")
           .eq("id", assetId)
           .eq("client_id", clientId)
           .single();
         if (!project) return NextResponse.json({ error: "Project not found" }, { status: 404 });
 
-        const projectUrl = `${process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://leadstaq.tech"}/cloud/share/${assetId}`;
+        const projectSlug = (project.slug as string | null) || (project.title as string).toLowerCase().replace(/\s+/g, "-");
+        const projectPath = profileSlug ? `${profileSlug}/projects/${projectSlug}` : projectSlug;
+        const projectDesc =
+          (project.description as string | null)?.trim() ||
+          (project.title as string);
+        const projectLocation = (project.location as string | null)?.trim() || region;
+
         await sendWhatsApp({
           to: leadPhone,
           template: "SEND_PROJECT",
           variables: {
-            "1": firstName,
-            "2": companyName,
-            "3": project.title as string,
-            "4": projectUrl,
+            "1": prospectFirst,
+            "2": projectDesc,
+            "3": projectLocation,
           },
-          fallbackBody: `Hi ${firstName}, here is a project from ${companyName}: ${project.title as string} — ${projectUrl}`,
+          urlButtonParam: projectPath,
+          fallbackBody: `Hi ${prospectFirst}, here's a project from ${companyName}: ${project.title as string}`,
           context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = project.title as string;
-        documentUrl = projectUrl;
+        documentUrl = projectPath;
         break;
       }
 
@@ -145,49 +162,47 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
           : priceFrom && priceTo
           ? `${currency} ${priceFrom.toLocaleString()} – ${priceTo.toLocaleString()}`
           : priceFrom
-          ? `From ${currency} ${priceFrom.toLocaleString()}`
+          ? `starting from ${currency} ${priceFrom.toLocaleString()} fully installed`
           : "Contact us for pricing";
 
-        const includesArr = (pkg.includes as string[] | null) ?? [];
-        const includesList = includesArr.slice(0, 5).map((item: string) => `• ${item}`).join("\n") ||
-          "See details with our team";
+        const packageSlug = (pkg.slug as string | null) || "";
+        const pricingPath =
+          profileSlug && packageSlug ? `${profileSlug}/p/${packageSlug}` : packageSlug || profileSlug;
 
         await sendWhatsApp({
           to: leadPhone,
           template: "SEND_PRICING_PACKAGE",
           variables: {
-            "1": firstName,
-            "2": companyName,
-            "3": pkg.name as string,
-            "4": priceDisplay,
-            "5": includesList,
-            "6": portfolioUrl ?? "",
+            "1": prospectFirst,
+            "2": pkg.name as string,
+            "3": (pkg.price_note as string | null)?.trim() || priceDisplay,
           },
-          fallbackBody: `Hi ${firstName}, here is pricing for ${pkg.name as string} from ${companyName}: ${priceDisplay}`,
+          urlButtonParam: pricingPath || undefined,
+          fallbackBody: `Hi ${prospectFirst}, here are the details for our ${pkg.name as string} package — ${priceDisplay}.`,
           context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = `Pricing: ${pkg.name as string}`;
-        documentUrl = portfolioUrl ?? "";
+        documentUrl = pricingPath;
         break;
       }
 
       case "TESTIMONIALS": {
-        if (!portfolioUrl) {
+        if (!profileSlug) {
           return NextResponse.json(
             { error: "Portfolio page required to share testimonials" },
             { status: 400 }
           );
         }
-        const testimonialsUrl = `${portfolioUrl}#testimonials`;
         await sendWhatsApp({
           to: leadPhone,
           template: "SEND_TESTIMONIALS",
-          variables: { "1": firstName, "2": companyName, "3": testimonialsUrl },
-          fallbackBody: `Hi ${firstName}, here is what clients say about ${companyName}: ${testimonialsUrl}`,
+          variables: { "1": prospectFirst, "2": companyName, "3": region },
+          urlButtonParam: profileSlug,
+          fallbackBody: `Hi ${prospectFirst}, here's what clients have said about working with ${companyName}.`,
           context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = "Testimonials";
-        documentUrl = testimonialsUrl;
+        documentUrl = profileSlug;
         break;
       }
 
@@ -205,12 +220,11 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
           to: leadPhone,
           template: "SEND_DOCUMENT",
           variables: {
-            "1": firstName,
-            "2": companyName,
-            "3": doc.name as string,
-            "4": doc.file_url as string,
+            "1": prospectFirst,
+            "2": doc.name as string,
+            "3": (doc.description as string | null)?.trim() || doc.name as string,
           },
-          fallbackBody: `Hi ${firstName}, ${companyName} shared a document: ${doc.name as string} — ${doc.file_url as string}`,
+          fallbackBody: `Hi ${prospectFirst}, please find the ${doc.name as string} attached above.`,
           context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = doc.name as string;
@@ -224,8 +238,8 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
         await sendWhatsApp({
           to: leadPhone,
           template: "SEND_CUSTOM_MESSAGE",
-          variables: { "1": firstName, "2": companyName, "3": msg },
-          fallbackBody: `Hi ${firstName}, a message from ${companyName}: ${msg}`,
+          variables: { "1": prospectFirst, "2": repLabel, "3": msg },
+          fallbackBody: `Hi ${prospectFirst}, a quick note from ${repLabel}: ${msg}`,
           context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = "Custom message";

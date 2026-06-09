@@ -4,6 +4,7 @@ import { requireRoles } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { sendEmailWithLog } from "@/lib/messaging/email";
+import { firstName } from "@/lib/messaging/whatsapp-vars";
 
 export const dynamic = "force-dynamic";
 
@@ -46,11 +47,13 @@ export async function POST(req: Request) {
   if (phone) {
     const wa = await sendWhatsApp({
       to: phone,
-      template: "NEW_LEAD_MANAGER",
+      template: "MAGIC_LINK",
       variables: {
-        "1": (user?.name as string) || "You",
-        "2": "Segmiq test",
+        "1": firstName((user?.name as string) || "You"),
+        "2": "Segmiq test lead",
+        "3": "a test enquiry",
       },
+      urlButtonParam: "test-token",
       fallbackBody: `Test message from Segmiq — notifications are working.`,
       context: {
         userId: g.session.userId,

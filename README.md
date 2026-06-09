@@ -67,7 +67,7 @@ Expected response: `200 OK` with JSON body containing counts of leads processed.
 | `NEXTAUTH_SECRET` | Session encryption |
 | `NEXTAUTH_URL` | Public app URL (e.g. `https://your-app.vercel.app`) |
 | `NEXT_PUBLIC_APP_DOMAIN` | Apex domain for subdomain routing (e.g. `leadstaq.com`) |
-| `META_WHATSAPP_*` / `META_TEMPLATE_*` | Meta Cloud API: WhatsApp phone number ID, access token, template names — [docs/meta-whatsapp-setup.md](docs/meta-whatsapp-setup.md) |
+| `META_WHATSAPP_*` | Meta Cloud API: WhatsApp phone number ID, access token — [docs/meta-whatsapp-setup.md](docs/meta-whatsapp-setup.md) |
 | `TWILIO_*` | **Deprecated** (rollback only); was Twilio Content API SIDs |
 | `DEFAULT_COUNTRY_CODE` | ISO country for parsing local phones (e.g. `ZW`) |
 | `RESEND_API_KEY` | Resend API key (server-only) |
@@ -97,13 +97,7 @@ For outbound email, verify the sending domain for `RESEND_FROM_EMAIL` in Resend 
 
 ## Meta WhatsApp (Cloud API) templates
 
-Business-initiated WhatsApp uses **Meta-approved** templates only. Approve the five template names in Business Manager, then set `META_TEMPLATE_*` in `.env` to match. Placeholders in code are **1–indexed** (`1`, `2`, …) and follow this mapping:
-
-- **`new_lead_salesperson`** — five: lead name, phone, budget, source, link  
-- **`new_lead_manager`** — two: salesperson name, client name  
-- **`deal_won`** — three: salesperson, lead name, deal value  
-- **`follow_up_reminder`** — four: lead name, project type, budget, link  
-- **`uncontacted_lead_alert`** — three: lead name, hours, salesperson name  
+Business-initiated WhatsApp uses **Meta-approved** templates only. Template names (`segmiq_*`) are hardcoded in `lib/messaging/meta-whatsapp.ts`. Placeholders in code are **1–indexed** (`1`, `2`, …).
 
 Setup, webhook, and WABA: **[docs/meta-whatsapp-setup.md](docs/meta-whatsapp-setup.md)**.
 

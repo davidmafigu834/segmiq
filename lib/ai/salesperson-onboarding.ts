@@ -1,61 +1,25 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/messaging/provider";
+import { firstName } from "@/lib/messaging/whatsapp-vars";
 
 const COACHING_MESSAGES: Record<
   number,
-  { getMessage: (name: string, clientName: string, loginUrl: string) => string }
+  { dayMessage: string; dayGoal: string }
 > = {
   1: {
-    getMessage: (name, clientName, loginUrl) =>
-      `Welcome to ${clientName}, ${name}!
-
-You have been added to Segmiq — the platform that keeps all your leads organised so nothing falls through the cracks.
-
-Here is what to do first:
-
-Log in at ${loginUrl} using the email and password you received.
-
-Go to My Leads to see any leads already assigned to you.
-
-When you speak to a prospect, always log the call — even a missed call counts.
-
-Use the Send panel on any lead to share the company portfolio in one tap.
-
-Your manager can see your activity. Make it count.
-
-Good luck today.`,
+    dayMessage:
+      "Today is all about getting comfortable. Open each lead, read the notes, and reply to your first conversation.",
+    dayGoal: "respond to every lead assigned to you",
   },
   3: {
-    getMessage: (name, clientName) =>
-      `Hi ${name}, it is day 3 at ${clientName}.
-
-A few things that the best salespeople on this platform do differently:
-
-They log every call — even no answers. This keeps the timeline complete so nothing is forgotten.
-
-They send the portfolio link early. Prospects who see the company's completed projects convert at a higher rate. One tap from the Send panel.
-
-They set a follow-up date on every call. If you do not schedule the next step the lead goes cold.
-
-Check your lead scores in the app. The higher the score the hotter the lead — prioritise those first.
-
-Keep going. The numbers will follow.`,
+    dayMessage:
+      "You're finding your rhythm. The fastest reps log every call right after it happens and send the portfolio early.",
+    dayGoal: "log a call note within 5 minutes of each conversation",
   },
   7: {
-    getMessage: (name, clientName) =>
-      `Hi ${name}, one week in at ${clientName}.
-
-By now you should have a feel for your leads. A few things to check:
-
-Are any leads going stale? If a lead has no activity for 7 days the app flags it in red. Use the re-engagement message to bring them back.
-
-Are you using the Send panel? You can send pricing packages, projects, testimonials — all from inside the lead. Do not hunt for documents.
-
-Follow-up dates — every lead should have one. If a lead has no follow-up date set it now.
-
-Your timeline is your proof of work. Every call, every document sent, every update is recorded. Your manager sees it all.
-
-You are building a pipeline. Keep it moving.`,
+    dayMessage:
+      "One week in. Now we focus on follow-through — most deals are won on the second or third contact.",
+    dayGoal: "set a follow-up date on every open lead",
   },
 };
 
@@ -76,27 +40,15 @@ export async function sendOnboardingCoaching(
   const coaching = COACHING_MESSAGES[dayNumber];
   if (!coaching) return;
 
-  let clientName = "your company";
-  if (user.client_id) {
-    const { data: clientRow } = await supabase
-      .from("clients")
-      .select("name")
-      .eq("id", user.client_id as string)
-      .maybeSingle();
-    if (clientRow?.name) clientName = clientRow.name as string;
-  }
-
-  const loginUrl = `${process.env.NEXTAUTH_URL ?? ""}/login`;
-  const message = coaching.getMessage(user.name as string, clientName, loginUrl);
-
   await sendWhatsApp({
     to: user.phone as string,
     template: "SALESPERSON_ONBOARDING",
     variables: {
-      "1": user.name as string,
-      "2": message,
+      "1": firstName(user.name as string),
+      "2": coaching.dayMessage,
+      "3": coaching.dayGoal,
     },
-    fallbackBody: message,
+    fallbackBody: `Welcome to the team, ${firstName(user.name as string)}. ${coaching.dayMessage} Your goal for today: ${coaching.dayGoal}.`,
     context: {
       clientId: (user.client_id as string | null) ?? undefined,
       notificationType: "SALESPERSON_ONBOARDING",

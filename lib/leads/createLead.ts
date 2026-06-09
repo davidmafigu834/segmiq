@@ -5,6 +5,7 @@ import { getManagerPrefs, parseSalesPrefs } from "@/lib/notification-prefs";
 import { background } from "@/lib/background";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logLeadCreated } from "@/lib/lead-events";
+import { firstName, formatResponseWindow } from "@/lib/messaging/whatsapp-vars";
 import type { LeadRow, LeadSource } from "@/types";
 
 export type RequestedPackageRef = {
@@ -208,40 +209,24 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       (client as { send_prospect_confirmation?: boolean }).send_prospect_confirmation !== false
     ) {
       background("sendProspectConfirmation", async () => {
-        const adminClient = createAdminClient();
-        const { data: profile } = await adminClient
-          .from("client_profiles")
-          .select("slug, is_published")
-          .eq("client_id", clientId)
-          .maybeSingle();
-
-        const rawDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || "localhost:3000";
-        const protocol = rawDomain.includes("localhost") ? "http" : "https";
-        const portfolioUrl =
-          (profile as { is_published?: boolean; slug?: string } | null)?.is_published &&
-          (profile as { slug?: string } | null)?.slug
-            ? `${protocol}://${rawDomain}/p/${(profile as { slug: string }).slug}`
-            : `${protocol}://${rawDomain}`;
-
         const serviceDescription =
           (leadRow.project_type as string | null) ||
           (leadRow.budget as string | null) ||
-          "your project";
-        const firstName = (leadRow.name as string | null)?.split(" ")[0] || "there";
+          "your enquiry";
+        const prospectFirst = firstName(leadRow.name as string | null);
         const companyName = client.name as string;
-        const responseTimeHours = (client.response_time_limit_hours as number) || 2;
+        const responseWindow = formatResponseWindow((client.response_time_limit_hours as number) || 2);
 
         await sendWhatsApp({
           to: leadRow.phone,
           template: "LEAD_CONFIRMATION_PROSPECT",
           variables: {
-            "1": firstName,
+            "1": prospectFirst,
             "2": companyName,
             "3": serviceDescription,
-            "4": String(responseTimeHours),
-            "5": portfolioUrl,
+            "4": responseWindow,
           },
-          fallbackBody: `Hi ${firstName}, thank you for reaching out to ${companyName}. We have received your inquiry about ${serviceDescription} and our team will be in touch within ${responseTimeHours} hours. Portfolio: ${portfolioUrl}`,
+          fallbackBody: `Hi ${prospectFirst}, thanks for reaching out to ${companyName}. We've received your enquiry about ${serviceDescription} and someone from our team will be in touch within ${responseWindow}.`,
           context: {
             leadId: leadRow.id,
             clientId,

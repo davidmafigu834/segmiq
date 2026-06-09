@@ -1,10 +1,10 @@
 # Meta WhatsApp — Billing templates
 
-Submit these three **UTILITY** templates in Meta Business Manager before enabling WhatsApp billing notifications. Set the matching `META_TEMPLATE_*` env var to any truthy value (e.g. `1`) once Meta approves each template — same pattern as `META_TEMPLATE_LEADS_ASSIGNED`.
+Submit these three **UTILITY** templates in Meta Business Manager before enabling WhatsApp billing notifications. Template names are hardcoded in `lib/messaging/meta-whatsapp.ts`.
 
-Base URL for all URL buttons: your app origin (e.g. `https://app.segmiq.com/`). The dynamic button suffix sent by code is `client/billing`.
+Base URL for all URL buttons: your CRM origin (`https://segmiq.com/`). The dynamic button suffix sent by code is `client/billing`.
 
-Language: **English (en_US)** — must match `META_TEMPLATE_LANGUAGE`.
+Language: **English (en_US)** — must match the approved template language in Business Manager.
 
 ---
 
@@ -26,10 +26,8 @@ Open your billing page to view payment details and upload proof once paid.
 | {{2}} | Amount + currency (e.g. USD 199.00) |
 | {{3}} | Due date (e.g. Jun 7, 2026) |
 
-**Button:** URL — `https://app.segmiq.com/{{1}}`  
+**Button:** URL — `https://segmiq.com/{{1}}`  
 **Button variable {{1}}:** `client/billing` (dynamic suffix only — no full URL in body)
-
-**Env gate:** `META_TEMPLATE_INVOICE_ISSUED=1`
 
 ---
 
@@ -51,10 +49,8 @@ Please pay and upload your proof on the billing page.
 | {{2}} | Amount + currency |
 | {{3}} | Days until suspension (from subscription grace_days) |
 
-**Button:** URL — `https://app.segmiq.com/{{1}}`  
+**Button:** URL — `https://segmiq.com/{{1}}`  
 **Button variable {{1}}:** `client/billing`
-
-**Env gate:** `META_TEMPLATE_PAYMENT_OVERDUE=1`
 
 ---
 
@@ -76,16 +72,14 @@ Your next renewal date is {{3}}.
 | {{2}} | Amount + currency |
 | {{3}} | Next renewal date |
 
-**Button:** URL — `https://app.segmiq.com/{{1}}`  
+**Button:** URL — `https://segmiq.com/{{1}}`  
 **Button variable {{1}}:** `client/billing`
-
-**Env gate:** `META_TEMPLATE_PAYMENT_CONFIRMED=1`
 
 ---
 
 ## Notes
 
 - **No trailing variables** — links use the URL button only, not body placeholders.
-- **Email always sends** regardless of WhatsApp approval flags.
+- **Email always sends** regardless of WhatsApp Meta API configuration.
 - Phone numbers are normalised using each client's `dial_code` (263 / 260 / 27 / 254) via `normalizePhoneForWhatsApp` — never a hardcoded country.
-- Until templates are approved, leave the `META_TEMPLATE_*` vars unset; billing email notifications still work.
+- WhatsApp billing sends when `META_WHATSAPP_PHONE_NUMBER_ID` and `META_WHATSAPP_ACCESS_TOKEN` are set.

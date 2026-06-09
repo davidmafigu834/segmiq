@@ -7,12 +7,12 @@ Outbound WhatsApp uses the **Graph API** (`POST /{phone-number-id}/messages`) an
 - Meta Business Verification complete for the business used for Facebook Lead Ads.
 - **WhatsApp Business Account (WABA)** created, phone number added and “Leadstaq” display name approved.
 - A **System User** with a long-lived token: scopes `whatsapp_business_messaging`, `whatsapp_business_management` (and any your org requires for token creation).
-- Five **message templates** approved, named consistently with `META_TEMPLATE_*` in `.env` (e.g. `new_lead_salesperson`, `new_lead_manager`, `deal_won`, `follow_up_reminder`, `uncontacted_lead_alert`).
+- All **segmiq_*** message templates approved in Business Manager (names hardcoded in `lib/messaging/meta-whatsapp.ts`).
 
 ## Webhook (delivery receipts and inbound)
 
 1. Meta Business Manager → your **App** → **WhatsApp** → **Configuration**.
-2. **Callback URL:** `https://<your-domain>/api/facebook/webhook` (e.g. `https://app.leadstaq.com/api/facebook/webhook`).
+2. **Callback URL:** `https://<your-domain>/api/facebook/webhook` (e.g. `https://segmiq.com/api/facebook/webhook`).
 3. **Verify token:** the value of `META_WHATSAPP_WEBHOOK_VERIFY_TOKEN` (and/or `FACEBOOK_WEBHOOK_VERIFY_TOKEN` — the GET handler accepts either).
 4. **Subscribe to field:** `messages` (required for sent/delivered/read/failed on `message_logs`).
 

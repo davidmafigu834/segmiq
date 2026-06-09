@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { sendEmail } from "@/lib/email/resend";
 import { magicLinkRenewalEmail } from "@/lib/email/templates/magic-link-renewal";
+import { firstName } from "@/lib/messaging/whatsapp-vars";
 
 export const dynamic = "force-dynamic";
 
@@ -99,11 +100,10 @@ export async function POST(
         to: salesperson.phone,
         template: "MAGIC_LINK_RENEWAL",
         variables: {
-          "1": salesperson.name || "there",
-          "2": (lead.name as string) || "Unknown",
-          "3": magicLink,
+          "1": firstName(salesperson.name),
         },
-        fallbackBody: `Hi ${salesperson.name || "there"}, your Segmiq link for ${lead.name || "your lead"} has been renewed. Open it here: ${magicLink}`,
+        urlButtonParam: newToken,
+        fallbackBody: `Hi ${firstName(salesperson.name)}, your Segmiq access link has been renewed. Open it here: ${magicLink}`,
         context: {
           userId: salesperson.id,
           leadId: lead.id as string,

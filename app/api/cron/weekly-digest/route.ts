@@ -5,6 +5,9 @@ import { sendEmail } from "@/lib/email/resend";
 import { weeklyDigestEmail } from "@/lib/email/templates/weekly-digest";
 import { buildWeeklyIntelligenceSnapshot } from "@/lib/lead-intelligence";
 import { runPerformanceAnalysisAllClients } from "@/lib/performance-intelligence";
+import { sendWhatsApp, isWhatsAppDeliveryConfigured } from "@/lib/messaging/provider";
+import { formatCurrencyUsd } from "@/lib/format";
+import { firstName } from "@/lib/messaging/whatsapp-vars";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +33,7 @@ export async function GET(req: Request) {
 
   const { data: clients } = await supabase
     .from("clients")
-    .select("id, name")
+    .select("id, name, slug")
     .eq("is_active", true)
     .eq("is_archived", false);
 
@@ -123,12 +126,19 @@ export async function GET(req: Request) {
 
       const { data: managers } = await supabase
         .from("users")
-        .select("id, name, email, notification_prefs")
+        .select("id, name, email, phone, notification_prefs")
         .eq("client_id", client.id as string)
         .eq("role", "CLIENT_MANAGER")
         .eq("is_active", true);
 
       if (!managers || managers.length === 0) continue;
+
+      const valueWon = wonLeads.reduce(
+        (sum, l) => sum + ((l.deal_value as number) || 0),
+        0
+      );
+      const valueWonLabel = formatCurrencyUsd(valueWon || null);
+      const dashboardSlug = (client.slug as string | null) ?? "";
 
       for (const manager of managers) {
         const prefs = manager.notification_prefs as Record<string, unknown> | null;
@@ -153,6 +163,31 @@ export async function GET(req: Request) {
           totalSent++;
         } else {
           errors.push(`Failed to send to ${manager.email}: ${result.error}`);
+        }
+
+        if (isWhatsAppDeliveryConfigured() && manager.phone?.trim() && dashboardSlug) {
+          const wa = await sendWhatsApp({
+            to: manager.phone as string,
+            template: "WEEKLY_DIGEST",
+            variables: {
+              "1": firstName(manager.name as string),
+              "2": weekRange,
+              "3": String(leadsReceived),
+              "4": String(leadsContacted),
+              "5": String(dealsWon),
+              "6": valueWonLabel,
+            },
+            urlButtonParam: dashboardSlug,
+            fallbackBody: `Hi ${firstName(manager.name as string)}, your Segmiq week for ${weekRange}: ${leadsReceived} new leads, ${dealsWon} deals won.`,
+            context: {
+              userId: manager.id as string,
+              clientId: client.id as string,
+              notificationType: "WEEKLY_DIGEST",
+            },
+          });
+          if (!wa.ok) {
+            errors.push(`WhatsApp digest failed for ${manager.phone}: ${wa.error}`);
+          }
         }
       }
       try {

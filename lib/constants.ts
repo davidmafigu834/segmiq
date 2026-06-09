@@ -15,6 +15,7 @@ export function getAppDomain(): string {
   return base.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
 
+/** Full magic-link URL (short `/l/` path matches Meta URL button templates). */
 export function magicLinkUrl(token: string): string {
-  return `${getPublicBaseUrl()}/lead/${token}`;
+  return `${getPublicBaseUrl()}/l/${token}`;
 }

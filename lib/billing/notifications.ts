@@ -15,16 +15,8 @@ function billingPageUrl(): string {
   return `${getPublicBaseUrl()}/client/billing`;
 }
 
-function waInvoiceIssuedEnabled(): boolean {
-  return Boolean(process.env.META_TEMPLATE_INVOICE_ISSUED) && isWhatsAppDeliveryConfigured();
-}
-
-function waPaymentOverdueEnabled(): boolean {
-  return Boolean(process.env.META_TEMPLATE_PAYMENT_OVERDUE) && isWhatsAppDeliveryConfigured();
-}
-
-function waPaymentConfirmedEnabled(): boolean {
-  return Boolean(process.env.META_TEMPLATE_PAYMENT_CONFIRMED) && isWhatsAppDeliveryConfigured();
+function waBillingWhatsAppEnabled(): boolean {
+  return isWhatsAppDeliveryConfigured();
 }
 
 type ManagerContact = {
@@ -83,7 +75,7 @@ async function sendBillingWhatsApp(params: {
   }
 }
 
-/** Invoice issued — email always; WhatsApp when META_TEMPLATE_INVOICE_ISSUED is set. */
+/** Invoice issued — email always; WhatsApp when Meta Cloud API is configured. */
 export async function notifyInvoiceIssued(params: {
   clientId: string;
   clientName: string;
@@ -126,7 +118,7 @@ export async function notifyInvoiceIssued(params: {
     emailed = result.success;
   }
 
-  if (waInvoiceIssuedEnabled()) {
+  if (waBillingWhatsAppEnabled()) {
     const [managers, dialCode] = await Promise.all([
       loadManagerContacts(params.clientId),
       loadClientDialCode(params.clientId),
@@ -176,7 +168,7 @@ export async function notifyPaymentOverdue(params: {
     await sendEmail({ to: emails, subject, html });
   }
 
-  if (waPaymentOverdueEnabled()) {
+  if (waBillingWhatsAppEnabled()) {
     const [managers, dialCode] = await Promise.all([
       loadManagerContacts(params.clientId),
       loadClientDialCode(params.clientId),
@@ -226,7 +218,7 @@ export async function notifyPaymentConfirmed(params: {
     await sendEmail({ to: emails, subject, html });
   }
 
-  if (waPaymentConfirmedEnabled()) {
+  if (waBillingWhatsAppEnabled()) {
     const [managers, dialCode] = await Promise.all([
       loadManagerContacts(params.clientId),
       loadClientDialCode(params.clientId),

@@ -146,6 +146,8 @@ export async function middleware(req: NextRequest) {
     path === "/reset-password" ||
     path.startsWith("/api/auth") ||
     path.startsWith("/lead/") ||
+    path.startsWith("/l/") ||
+    path.startsWith("/d/") ||
     path.startsWith("/p/") ||
     path === "/cloud" ||
     path === "/cloud/login" ||

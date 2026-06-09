@@ -4,7 +4,7 @@ import {
   renderManagerNewLeadEmail,
   renderManagerUncontactedLeadEmail,
 } from "@/lib/emailTemplates";
-import { APP_NAME, getPublicBaseUrl, magicLinkUrl } from "@/lib/constants";
+import { getPublicBaseUrl, magicLinkUrl } from "@/lib/constants";
 import { formatCurrencyUsd } from "@/lib/format";
 import type { LeadRow } from "@/types";
 import {
@@ -17,6 +17,11 @@ import { sendWhatsApp, isWhatsAppDeliveryConfigured } from "@/lib/messaging/prov
 import { sendEmailWithLog } from "@/lib/messaging/email";
 import { logMessage } from "@/lib/messaging/log";
 import { background } from "@/lib/background";
+import {
+  extractLeadLocation,
+  firstName,
+  formatWaitingDuration,
+} from "@/lib/messaging/whatsapp-vars";
 
 type UserLite = { id: string; name: string; phone: string | null; email: string | null };
 
@@ -94,8 +99,7 @@ export async function notifyBulkReassignment({ clientId, leadIds, actorId }: Bul
   const baseUrl = getPublicBaseUrl();
   const leadsUrl = `${baseUrl}/sales/leads`;
 
-  const whatsappTemplateAvailable = Boolean(process.env.META_TEMPLATE_LEADS_ASSIGNED);
-  const allowWhatsApp = whatsappTemplateAvailable && isWhatsAppDeliveryConfigured();
+  const allowWhatsApp = isWhatsAppDeliveryConfigured();
 
   for (const [assigneeId, info] of Array.from(leadsByAssignee.entries())) {
     const count = info.leadIds.length;
@@ -223,22 +227,25 @@ export async function notifyNewLead(
   const salesPrefs = opts?.salesPrefs ?? parseSalesPrefs(null);
   const managerPrefs = opts?.managerPrefs ?? getManagerPrefs(null);
 
-  const magic = lead.magic_token ? magicLinkUrl(lead.magic_token) : getPublicBaseUrl();
   const budget = lead.budget ?? "—";
-  const fallbackSales = `New lead assigned to you on ${APP_NAME}. Name: ${lead.name ?? "—"} | Phone: ${lead.phone ?? "—"} | Budget: ${budget} | Source: ${lead.source} | ${magic}`;
+  const magicToken = lead.magic_token ?? "";
+  const service = lead.project_type ?? formatSource(lead.source);
+  const location = extractLeadLocation(lead);
+  const fallbackSales = `New lead for ${clientName}. Name: ${lead.name ?? "—"} | Service: ${service} | Budget: ${budget} | Location: ${location}`;
 
   if (salesPrefs.whatsapp) {
     const r = await sendWhatsApp({
       to: salesperson.phone,
       toOverride: clientTwilioOverride,
-      template: "NEW_LEAD_SALESPERSON",
+      template: "NEW_LEAD",
       variables: {
-        "1": lead.name || "Unknown",
-        "2": lead.phone || "—",
-        "3": budget,
-        "4": formatSource(lead.source),
-        "5": magic,
+        "1": clientName,
+        "2": lead.name || "Unknown",
+        "3": service,
+        "4": budget,
+        "5": location,
       },
+      urlButtonParam: magicToken || undefined,
       fallbackBody: fallbackSales,
       context: {
         userId: salesperson.id,
@@ -314,7 +321,7 @@ export async function notifyNewLead(
             <li>Budget: ${escapeHtml(lead.budget)}</li>
             <li>Source: ${escapeHtml(lead.source)}</li>
           </ul>
-          <p><a href="${magic}">View Lead</a></p>
+          <p><a href="${magicToken ? magicLinkUrl(magicToken) : getPublicBaseUrl()}">View Lead</a></p>
         `,
         },
         context: {
@@ -341,25 +348,9 @@ export async function notifyNewLead(
       const hasPhone = Boolean(manager.phone?.trim());
       const hasEmail = Boolean(manager.email?.trim());
       if (mp.newLead.whatsapp && hasPhone) {
-        const fallbackMgr = `New lead assigned to ${salesperson.name} for ${clientName}. Log in to view your pipeline.`;
-        const r = await sendWhatsApp({
-          to: manager.phone,
-          toOverride: clientTwilioOverride,
-          template: "NEW_LEAD_MANAGER",
-          variables: {
-            "1": salesperson.name,
-            "2": clientName,
-          },
-          fallbackBody: fallbackMgr,
-          context: {
-            userId: manager.id,
-            leadId: lead.id,
-            clientId: lead.client_id,
-            notificationType: "NEW_LEAD",
-          },
-        });
-        if (r.ok) console.log("[notifyNewLead] WhatsApp to manager: success");
-        else console.error("[notifyNewLead] WhatsApp to manager:", r.error);
+        console.info(
+          "[notifyNewLead] manager WhatsApp skipped (no approved Meta template — email/in-app only)"
+        );
       } else if (mp.newLead.whatsapp && !hasPhone) {
         console.info("[notifyNewLead] manager WhatsApp skipped (no phone)");
       }
@@ -446,21 +437,33 @@ export async function notifyFollowUpDue(
     console.log("[notifyFollowUpDue] skipped (user preference)");
     return;
   }
-  const magic = lead.magic_token ? magicLinkUrl(lead.magic_token) : getPublicBaseUrl();
-  const proj = lead.project_type ?? "";
-  const bud = lead.budget ?? "";
-  const fallbackBody = `Follow-up reminder: Call ${lead.name ?? "lead"} today. ${proj} | ${bud} | ${magic}`;
+
+  const supabase = createAdminClient();
+  const { data: lastCall } = await supabase
+    .from("call_logs")
+    .select("notes")
+    .eq("lead_id", lead.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const topic = lead.project_type ?? lead.budget ?? "your enquiry";
+  const lastNote = (lastCall?.notes as string | null)?.trim() || "No notes logged yet";
+  const repFirst = firstName(salesperson.name);
+  const magicToken = lead.magic_token ?? "";
+  const fallbackBody = `Follow-up due with ${lead.name ?? "lead"} about ${topic}. Last note: ${lastNote}`;
 
   const r = await sendWhatsApp({
     to: salesperson.phone,
     toOverride: clientTwilioOverride,
     template: "FOLLOW_UP_REMINDER",
     variables: {
-      "1": lead.name || "lead",
-      "2": proj || "—",
-      "3": bud || "—",
-      "4": magic,
+      "1": repFirst,
+      "2": lead.name || "lead",
+      "3": topic,
+      "4": lastNote,
     },
+    urlButtonParam: magicToken || undefined,
     fallbackBody,
     context: {
       userId: salesperson.id,
@@ -489,35 +492,10 @@ export async function notifyDealWon(
     console.log("[notifyDealWon] skipped (all channels off for deal won)");
     return;
   }
-  const budget = lead.budget ?? "";
-  const dealStr =
-    lead.deal_value == null
-      ? "—"
-      : `$${lead.deal_value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-  const fallbackBody = `Deal won by ${salesperson.name} — ${lead.name ?? "Lead"}, ${budget || dealStr}. Great work!`;
-
   const hasPhone = Boolean(manager.phone?.trim());
   const hasEmail = Boolean(manager.email?.trim());
   if (mp.dealWon.whatsapp && hasPhone) {
-    const r = await sendWhatsApp({
-      to: manager.phone,
-      toOverride: clientTwilioOverride,
-      template: "DEAL_WON",
-      variables: {
-        "1": salesperson.name,
-        "2": lead.name || "Lead",
-        "3": budget || dealStr,
-      },
-      fallbackBody,
-      context: {
-        userId: manager.id,
-        leadId: lead.id,
-        clientId: lead.client_id,
-        notificationType: "DEAL_WON",
-      },
-    });
-    if (r.ok) console.log("[notifyDealWon] WhatsApp: success");
-    else console.error("[notifyDealWon] WhatsApp:", r.error);
+    console.info("[notifyDealWon] manager WhatsApp skipped (no approved Meta template — email/in-app only)");
   } else if (mp.dealWon.whatsapp && !hasPhone) {
     console.info("[notifyDealWon] manager WhatsApp skipped (no phone)");
   }
@@ -582,6 +560,7 @@ export async function notifyUncontactedLeadToManager(
   client: { id: string; name: string; response_time_limit_hours: number },
   clientTwilioOverride: string | null
 ): Promise<void> {
+  void clientTwilioOverride;
   const supabase = createAdminClient();
   const { data: manager } = await supabase
     .from("users")
@@ -632,30 +611,10 @@ export async function notifyUncontactedLeadToManager(
     leadId: lead.id,
   });
 
-  const fallbackWa = `Segmiq: Lead ${lead.name ?? "—"} has been uncontacted for ${hoursUncontacted}h. Assigned to ${salespersonName}`;
-
   if (prefs.uncontactedLead.whatsapp && manager.phone?.trim()) {
-    background("uncontactedLeadManagerWhatsApp", async () => {
-      const r = await sendWhatsApp({
-        to: manager.phone as string,
-        toOverride: clientTwilioOverride,
-        template: "UNCONTACTED_LEAD_ALERT",
-        variables: {
-          "1": lead.name || "Unknown",
-          "2": String(hoursUncontacted),
-          "3": salespersonName,
-        },
-        fallbackBody: fallbackWa,
-        context: {
-          userId: manager.id as string,
-          leadId: lead.id,
-          clientId: client.id,
-          notificationType: "UNCONTACTED_MANAGER_ALERT",
-        },
-      });
-      if (r.ok) console.log("[notifyUncontactedLeadToManager] WhatsApp: success");
-      else console.error("[notifyUncontactedLeadToManager] WhatsApp:", r.error);
-    });
+    console.info(
+      "[notifyUncontactedLeadToManager] manager WhatsApp skipped (no approved Meta template — email/in-app only)"
+    );
   }
 
   if (prefs.uncontactedLead.email && manager.email?.trim() && process.env.RESEND_FROM_EMAIL) {
@@ -688,6 +647,66 @@ export async function notifyUncontactedLeadToManager(
   }
 }
 
+/** WhatsApp SLA breach alert to the assigned salesperson (segmiq_sla_breach). Idempotent via message_logs. */
+export async function notifySlaBreachToSalesperson(
+  lead: Pick<LeadRow, "id" | "name" | "created_at" | "client_id" | "assigned_to_id" | "magic_token">,
+  clientTwilioOverride: string | null
+): Promise<void> {
+  if (!lead.assigned_to_id || !isWhatsAppDeliveryConfigured()) {
+    return;
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: prior } = await supabase
+    .from("message_logs")
+    .select("id")
+    .eq("lead_id", lead.id)
+    .eq("notification_type", "SLA_BREACH")
+    .eq("status", "sent")
+    .limit(1)
+    .maybeSingle();
+  if (prior) return;
+
+  const { data: sp } = await supabase
+    .from("users")
+    .select("id, name, phone, notification_prefs")
+    .eq("id", lead.assigned_to_id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!sp?.phone?.trim()) return;
+
+  const prefs = parseSalesPrefs((sp as { notification_prefs?: unknown }).notification_prefs);
+  if (!prefs.whatsapp) return;
+
+  const waiting = formatWaitingDuration(lead.created_at as string);
+  const magicToken = lead.magic_token ?? "";
+
+  background("slaBreachSalespersonWhatsApp", async () => {
+    const r = await sendWhatsApp({
+      to: sp.phone as string,
+      toOverride: clientTwilioOverride,
+      template: "SLA_BREACH",
+      variables: {
+        "1": firstName(sp.name as string),
+        "2": lead.name || "your lead",
+        "3": waiting,
+      },
+      urlButtonParam: magicToken || undefined,
+      fallbackBody: `Heads up ${firstName(sp.name as string)}, ${lead.name ?? "your lead"} has been waiting ${waiting} without a response.`,
+      context: {
+        userId: sp.id as string,
+        leadId: lead.id,
+        clientId: lead.client_id,
+        notificationType: "SLA_BREACH",
+      },
+    });
+    if (r.ok) console.log("[notifySlaBreachToSalesperson] WhatsApp: success");
+    else console.error("[notifySlaBreachToSalesperson] WhatsApp:", r.error);
+  });
+}
+
 export async function checkUncontactedLeads(): Promise<{ flagged: number }> {
   const supabase = createAdminClient();
   const { data: clients } = await supabase.from("clients").select("id, name, response_time_limit_hours, twilio_whatsapp_override");
@@ -710,7 +729,7 @@ export async function checkUncontactedLeads(): Promise<{ flagged: number }> {
     const twilioOverride = (c.twilio_whatsapp_override as string | null) ?? null;
     const { data: leads } = await supabase
       .from("leads")
-      .select("id, name, created_at, client_id, assigned_to_id")
+      .select("id, name, created_at, client_id, assigned_to_id, magic_token")
       .eq("client_id", c.id)
       .eq("status", "NEW");
     for (const lead of leads ?? []) {
@@ -746,6 +765,8 @@ export async function checkUncontactedLeads(): Promise<{ flagged: number }> {
         },
         twilioOverride
       );
+
+      await notifySlaBreachToSalesperson(lead as LeadRow, twilioOverride);
     }
   }
   return { flagged };
