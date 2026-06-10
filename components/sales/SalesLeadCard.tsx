@@ -148,7 +148,7 @@ export function SalesLeadCard({
   const serviceChip = serviceDisplayText(lead);
   const budgetChip = budgetDisplayText(lead);
   const hasChips = !!(serviceChip || budgetChip);
-  const contextLine = buildReasonContextLine(lead, lane, now);
+  const contextLine = buildReasonContextLine(lead, lane);
   const showContextLine = contextLine.length > 0;
 
   const isHotCallNow = lane === "call_now" && tier === "hot";

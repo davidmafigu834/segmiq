@@ -138,8 +138,7 @@ export function serviceDisplayText(lead: SalesLeadCardLead): string | null {
  */
 export function buildReasonContextLine(
   lead: SalesLeadCardLead,
-  lane?: LeadLane,
-  now: Date = new Date()
+  lane?: LeadLane
 ): string {
   const parts: string[] = [];
   const urgency = urgencyDisplayText(lead);
