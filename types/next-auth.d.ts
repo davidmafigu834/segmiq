@@ -1,11 +1,12 @@
 import type { DefaultSession } from "next-auth";
-import type { UserRole } from "@/types";
+import type { ClientMode, UserRole } from "@/types";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
     userId: string;
     role: UserRole;
     clientId: string | null;
+    clientMode: ClientMode;
     user: DefaultSession["user"] & {
       id: string;
     };
@@ -14,6 +15,7 @@ declare module "next-auth" {
     id: string;
     role: UserRole;
     clientId: string | null;
+    clientMode?: ClientMode;
     sessionVersion?: number;
   }
 }
@@ -23,6 +25,7 @@ declare module "next-auth/jwt" {
     userId: string;
     role: UserRole;
     clientId: string | null;
+    clientMode?: ClientMode;
     sessionVersion?: number;
     email?: string | null;
   }

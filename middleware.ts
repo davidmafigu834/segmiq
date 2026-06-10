@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { UserRole } from "@/types";
+import type { ClientMode, UserRole } from "@/types";
 
 export async function middleware(req: NextRequest) {
   const hostHeader = req.headers.get("host") || "";
@@ -106,7 +106,8 @@ export async function middleware(req: NextRequest) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     if (token) {
       const role = token.role as UserRole;
-      return NextResponse.redirect(new URL(homeForRole(role), req.url));
+      const clientMode = (token as { clientMode?: ClientMode }).clientMode ?? "team";
+      return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
     }
     return NextResponse.next();
   }
@@ -189,10 +190,11 @@ export async function middleware(req: NextRequest) {
   }
 
   const role = token.role as UserRole;
+  const clientMode = (token as { clientMode?: ClientMode }).clientMode ?? "team";
 
   if (path.startsWith("/dashboard")) {
     if (role !== "AGENCY_ADMIN") {
-      return NextResponse.redirect(new URL(homeForRole(role), req.url));
+      return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
     }
   }
   if (path.startsWith("/client")) {
@@ -201,27 +203,36 @@ export async function middleware(req: NextRequest) {
       (path === "/client/team" || path.startsWith("/client/team/")) &&
       req.nextUrl.searchParams.has("clientId");
     if (!isTeamPreview && role !== "CLIENT_MANAGER") {
-      return NextResponse.redirect(new URL(homeForRole(role), req.url));
+      return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
+    }
+  }
+  if (path.startsWith("/solo")) {
+    if (role !== "SALESPERSON" || clientMode !== "solo") {
+      return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
     }
   }
   if (path.startsWith("/sales")) {
     if (role !== "SALESPERSON") {
-      return NextResponse.redirect(new URL(homeForRole(role), req.url));
+      return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
+    }
+    if (clientMode === "solo" && (path === "/sales/dashboard" || path.startsWith("/sales/dashboard/"))) {
+      return NextResponse.redirect(new URL("/solo/dashboard", req.url));
     }
   }
 
-  // Billing access gate. Agency is hard-exempt (handled above by never matching
-  // these roles). A suspended subscription locks the client's manager and
-  // salespeople out of their portals. Exempt the blocked screens themselves and
-  // the client billing page (so they can resolve the lock). API routes are not
-  // matched by middleware at all, so lead ingestion + proof upload keep working.
+  // Billing access gate. A suspended subscription locks manager and salespeople
+  // out of their portals. Exempt blocked screens and billing pages so clients can
+  // pay and upload proof. API routes are not matched by middleware.
   const isGatedRole = role === "CLIENT_MANAGER" || role === "SALESPERSON";
   if (isGatedRole) {
     const gateExempt =
       path === "/client/blocked" ||
       path === "/sales/blocked" ||
+      path === "/solo/blocked" ||
       path === "/client/billing" ||
-      path.startsWith("/client/billing/");
+      path.startsWith("/client/billing/") ||
+      path === "/solo/billing" ||
+      path.startsWith("/solo/billing/");
     const cid = (token as { clientId?: string | null }).clientId;
     if (!gateExempt && cid) {
       try {
@@ -234,8 +245,13 @@ export async function middleware(req: NextRequest) {
           .limit(1)
           .maybeSingle();
         if ((sub as { status?: string } | null)?.status === "suspended") {
-          const dest = role === "CLIENT_MANAGER" ? "/client/blocked" : "/sales/blocked";
-          return NextResponse.redirect(new URL(dest, req.url));
+          if (role === "CLIENT_MANAGER") {
+            return NextResponse.redirect(new URL("/client/blocked", req.url));
+          }
+          if (role === "SALESPERSON" && clientMode === "solo") {
+            return NextResponse.redirect(new URL("/solo/blocked", req.url));
+          }
+          return NextResponse.redirect(new URL("/sales/blocked", req.url));
         }
       } catch {
         /* fail open — never lock users out due to a transient DB error */
@@ -246,9 +262,10 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-function homeForRole(role: UserRole): string {
+function homeForRole(role: UserRole, clientMode: ClientMode = "team"): string {
   if (role === "AGENCY_ADMIN") return "/dashboard";
   if (role === "CLIENT_MANAGER") return "/client/dashboard";
+  if (role === "SALESPERSON" && clientMode === "solo") return "/solo/dashboard";
   return "/sales/dashboard";
 }
 

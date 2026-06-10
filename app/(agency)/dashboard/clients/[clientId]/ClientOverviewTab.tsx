@@ -38,6 +38,7 @@ export function ClientOverviewTab({
     salespeopleCount: number;
     hasManager: boolean;
     fbConnected: boolean;
+    isSolo?: boolean;
   };
   isAgencyAdmin: boolean;
 }) {
@@ -54,6 +55,7 @@ export function ClientOverviewTab({
           salespeopleCount: onboarding.salespeopleCount,
           hasManager: onboarding.hasManager,
           fbConnected: onboarding.fbConnected,
+          isSolo: onboarding.isSolo,
         }}
       />
       <div className="flex flex-col gap-8 min-[1100px]:max-h-[min(72dvh,calc(100dvh-15rem))] min-[1100px]:min-h-0 min-[1100px]:flex-row min-[1100px]:items-stretch">

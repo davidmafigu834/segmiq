@@ -22,6 +22,10 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
   const [industry, setIndustry] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
+  const [soloOperator, setSoloOperator] = useState(false);
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerEmail, setOwnerEmail] = useState("");
+  const [ownerPhone, setOwnerPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +34,10 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
     setIndustry("");
     setSlug("");
     setSlugTouched(false);
+    setSoloOperator(false);
+    setOwnerName("");
+    setOwnerEmail("");
+    setOwnerPhone("");
     setError(null);
     setSubmitting(false);
   }, []);
@@ -57,16 +65,31 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
       setError("Slug may only contain lowercase letters, numbers, and hyphens.");
       return;
     }
+    if (soloOperator) {
+      if (!ownerName.trim() || !ownerEmail.trim() || !ownerPhone.trim()) {
+        setError("Owner name, email, and phone are required for solo clients.");
+        return;
+      }
+    }
     setSubmitting(true);
     try {
+      const body: Record<string, unknown> = {
+        name: name.trim(),
+        industry: industry.trim(),
+        slug: slugNorm,
+        mode: soloOperator ? "solo" : "team",
+      };
+      if (soloOperator) {
+        body.owner = {
+          name: ownerName.trim(),
+          email: ownerEmail.trim(),
+          phone: ownerPhone.trim(),
+        };
+      }
       const res = await fetch("/api/clients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          industry: industry.trim(),
-          slug: slugNorm,
-        }),
+        body: JSON.stringify(body),
       });
       const j = (await res.json().catch(() => ({}))) as { error?: string; client?: { id?: string } };
       if (!res.ok) {
@@ -107,10 +130,25 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
         <form onSubmit={(e) => void handleSubmit(e)} className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4 md:px-6 md:pt-2">
             <p className="mt-2 text-sm text-ink-secondary">
-              After you create the client, you will go to their overview to finish setup (landing page, form, team, and
-              optional Facebook).
+              {soloOperator
+                ? "Creates a solo-operator client with one owner account. They land on the unified dashboard — no separate manager login."
+                : "After you create the client, you will go to their overview to finish setup (landing page, form, team, and optional Facebook)."}
             </p>
             <div className="mt-6 space-y-4">
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-surface-card-alt px-4 py-3">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 accent-[var(--accent)]"
+                  checked={soloOperator}
+                  onChange={(e) => setSoloOperator(e.target.checked)}
+                />
+                <span>
+                  <span className="block text-[13px] font-semibold text-ink-primary">Solo operator</span>
+                  <span className="block text-[12px] text-ink-secondary">
+                    One owner runs the whole business — no manager or sales team.
+                  </span>
+                </span>
+              </label>
               <div>
                 <label className="mb-1 block text-[12px] font-medium text-ink-secondary">Client name *</label>
                 <input
@@ -147,6 +185,41 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
                 />
                 <p className="mt-1 text-xs text-ink-tertiary">Used in public URLs: /p/{slug || "your-slug"} …</p>
               </div>
+              {soloOperator ? (
+                <div className="space-y-4 rounded-lg border border-border bg-surface-card-alt p-4">
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-ink-secondary">Owner account</p>
+                  <div>
+                    <label className="mb-1 block text-[12px] font-medium text-ink-secondary">Owner name *</label>
+                    <input
+                      className="input-base h-11 w-full text-base md:h-10 md:text-sm"
+                      value={ownerName}
+                      onChange={(e) => setOwnerName(e.target.value)}
+                      required={soloOperator}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[12px] font-medium text-ink-secondary">Owner email *</label>
+                    <input
+                      type="email"
+                      className="input-base h-11 w-full text-base md:h-10 md:text-sm"
+                      value={ownerEmail}
+                      onChange={(e) => setOwnerEmail(e.target.value)}
+                      required={soloOperator}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[12px] font-medium text-ink-secondary">Owner phone *</label>
+                    <input
+                      type="tel"
+                      className="input-base h-11 w-full text-base md:h-10 md:text-sm"
+                      value={ownerPhone}
+                      onChange={(e) => setOwnerPhone(e.target.value)}
+                      required={soloOperator}
+                      placeholder="+263 77 123 4567"
+                    />
+                  </div>
+                </div>
+              ) : null}
               {error ? <p className="text-sm text-[var(--status-lost-fg)]">{error}</p> : null}
             </div>
           </div>
@@ -155,7 +228,7 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
               Cancel
             </button>
             <button type="submit" className="btn-primary h-11 flex-1 md:h-9 md:flex-none" disabled={submitting}>
-              {submitting ? "Creating…" : "Create client"}
+              {submitting ? "Creating…" : soloOperator ? "Create solo client" : "Create client"}
             </button>
           </div>
         </form>

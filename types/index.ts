@@ -1,5 +1,7 @@
 export type UserRole = "AGENCY_ADMIN" | "CLIENT_MANAGER" | "SALESPERSON";
 
+export type ClientMode = "team" | "solo";
+
 export type LeadSource = "LANDING_PAGE" | "FACEBOOK" | "MANUAL" | "REFERRAL";
 
 export type LeadStatus =
@@ -43,6 +45,7 @@ export interface ClientRow {
   name: string;
   industry: string;
   slug: string;
+  mode: ClientMode;
   logo_url: string | null;
   primary_color: string | null;
   response_time_limit_hours: number;

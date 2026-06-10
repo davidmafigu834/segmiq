@@ -12,6 +12,7 @@ type OnboardingClient = {
   salespeopleCount: number;
   hasManager: boolean;
   fbConnected: boolean;
+  isSolo?: boolean;
 };
 
 export function OnboardingChecklist({ client }: { client: OnboardingClient }) {
@@ -23,43 +24,74 @@ export function OnboardingChecklist({ client }: { client: OnboardingClient }) {
 
   const items = useMemo(
     () =>
-      [
-        {
-          key: "profile",
-          label: "Set up profile page",
-          done: client.profilePublished,
-          href: `profile`,
-          optional: false,
-        },
-        {
-          key: "form",
-          label: "Configure lead form",
-          done: client.formFieldCount > 0,
-          href: `form`,
-          optional: false,
-        },
-        {
-          key: "team",
-          label: "Add salespeople",
-          done: client.salespeopleCount > 0,
-          href: `team`,
-          optional: false,
-        },
-        {
-          key: "manager",
-          label: "Add manager (optional)",
-          done: client.hasManager,
-          href: `team`,
-          optional: true,
-        },
-        {
-          key: "facebook",
-          label: "Connect Facebook (optional)",
-          done: client.fbConnected,
-          href: `facebook`,
-          optional: true,
-        },
-      ] as const,
+      client.isSolo
+        ? ([
+            {
+              key: "profile",
+              label: "Set up profile page",
+              done: client.profilePublished,
+              href: `profile`,
+              optional: false,
+            },
+            {
+              key: "form",
+              label: "Configure lead form",
+              done: client.formFieldCount > 0,
+              href: `form`,
+              optional: false,
+            },
+            {
+              key: "owner",
+              label: "Owner account",
+              done: client.salespeopleCount > 0,
+              href: `team`,
+              optional: false,
+            },
+            {
+              key: "facebook",
+              label: "Connect Facebook (optional)",
+              done: client.fbConnected,
+              href: `facebook`,
+              optional: true,
+            },
+          ] as const)
+        : ([
+            {
+              key: "profile",
+              label: "Set up profile page",
+              done: client.profilePublished,
+              href: `profile`,
+              optional: false,
+            },
+            {
+              key: "form",
+              label: "Configure lead form",
+              done: client.formFieldCount > 0,
+              href: `form`,
+              optional: false,
+            },
+            {
+              key: "team",
+              label: "Add salespeople",
+              done: client.salespeopleCount > 0,
+              href: `team`,
+              optional: false,
+            },
+            {
+              key: "manager",
+              label: "Add manager (optional)",
+              done: client.hasManager,
+              href: `team`,
+              optional: true,
+            },
+            {
+              key: "facebook",
+              label: "Connect Facebook (optional)",
+              done: client.fbConnected,
+              href: `facebook`,
+              optional: true,
+            },
+          ] as const),
     [client]
   );
 

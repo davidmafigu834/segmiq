@@ -1,4 +1,4 @@
-import { formatDuration, formatThousandsK } from "@/lib/format";
+import { formatDuration, formatThousandsK, formatCompactCurrency } from "@/lib/format";
 
 export const AVG_RESPONSE_TOOLTIP =
   "Average time between lead submission and first call, across leads this month. Only leads that have been contacted are counted.";
@@ -162,4 +162,73 @@ export function buildClientAvgResponsePulseMetric(
     deltaKind,
     eyebrowTooltip: AVG_RESPONSE_TOOLTIP,
   };
+}
+
+/** Solo dashboard "Your business" strip — four owner metrics only. */
+export function buildSoloBusinessPulseMetrics(props: {
+  leadsToday: number;
+  leadsYesterday: number;
+  activePipelineValue: number;
+  wonThisMonth: number;
+  avgResponseMinutes: number | null;
+  avgResponsePrevMinutes: number | null;
+}): PulseBarMetric[] {
+  const dayDeltaPct =
+    props.leadsYesterday > 0
+      ? Math.round(((props.leadsToday - props.leadsYesterday) / props.leadsYesterday) * 100)
+      : props.leadsToday > 0
+        ? 100
+        : 0;
+  const leadsDeltaNeutral = props.leadsToday === 0 && props.leadsYesterday === 0;
+
+  let leadsDeltaLine: string;
+  if (leadsDeltaNeutral) {
+    leadsDeltaLine = "No leads today";
+  } else {
+    const arrow = dayDeltaPct > 0 ? "↗" : dayDeltaPct < 0 ? "↘" : "·";
+    const sign = dayDeltaPct > 0 ? "+" : "";
+    leadsDeltaLine = `${arrow} ${sign}${dayDeltaPct}% vs yesterday`;
+  }
+
+  const pipelineDisplay =
+    props.activePipelineValue > 0 ? formatCompactCurrency(props.activePipelineValue) : "$0";
+
+  const avgMetric = buildClientAvgResponsePulseMetric(
+    props.avgResponseMinutes,
+    props.avgResponsePrevMinutes
+  );
+
+  return [
+    {
+      eyebrow: "New leads today",
+      value: String(props.leadsToday),
+      variant: "light",
+      deltaLine: leadsDeltaLine,
+      deltaPlain: leadsDeltaNeutral,
+      deltaKind: leadsDeltaNeutral
+        ? "neutral"
+        : dayDeltaPct > 0
+          ? "positive"
+          : dayDeltaPct < 0
+            ? "negative"
+            : "neutral",
+    },
+    {
+      eyebrow: "Open pipeline",
+      value: pipelineDisplay,
+      variant: "light",
+      deltaLine: "Negotiating + proposal",
+      deltaPlain: true,
+      deltaKind: "neutral",
+    },
+    {
+      eyebrow: "Won this month",
+      value: String(props.wonThisMonth),
+      variant: "light",
+      deltaLine: "Closed deals",
+      deltaPlain: true,
+      deltaKind: "neutral",
+    },
+    avgMetric,
+  ];
 }

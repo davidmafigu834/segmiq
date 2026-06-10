@@ -32,7 +32,8 @@ function parseBudget(s: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function pipelineValue(lead: {
+/** Sum deal_value or parsed budget for open pipeline stages (negotiating / proposal). */
+export function pipelineValue(lead: {
   deal_value: unknown;
   budget: string | null;
 }): number {
@@ -40,6 +41,22 @@ function pipelineValue(lead: {
   if (Number.isFinite(dv) && dv > 0) return dv;
   const b = parseBudget(lead.budget ?? undefined);
   return b ?? 0;
+}
+
+/** Active pipeline dollar value for a client (NEGOTIATING + PROPOSAL_SENT). */
+export async function getClientActivePipelineValue(clientId: string): Promise<number> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .select("deal_value, budget, status")
+    .eq("client_id", clientId)
+    .in("status", ["NEGOTIATING", "PROPOSAL_SENT"]);
+  if (error) throw new Error(error.message);
+  let total = 0;
+  for (const row of data ?? []) {
+    total += pipelineValue(row as { deal_value: unknown; budget: string | null });
+  }
+  return total;
 }
 
 function rangeForPeriod(id: TeamPeriodId, now: Date): { from: Date; to: Date; label: string } {

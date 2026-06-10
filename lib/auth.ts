@@ -2,7 +2,14 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPassword } from "@/lib/password";
-import type { UserRole } from "@/types";
+import type { ClientMode, UserRole } from "@/types";
+
+async function resolveClientMode(clientId: string | null): Promise<ClientMode> {
+  if (!clientId) return "team";
+  const supabase = createAdminClient();
+  const { data } = await supabase.from("clients").select("mode").eq("id", clientId).maybeSingle();
+  return (data as { mode?: string } | null)?.mode === "solo" ? "solo" : "team";
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -53,12 +60,15 @@ export const authOptions: NextAuthOptions = {
         const ok = await verifyPassword(credentials.password, hash);
         if (!ok && dev) console.error("[next-auth] Password did not match stored hash for:", email);
         if (!ok) return null;
+        const clientId = (user.client_id as string | null) ?? null;
+        const clientMode = await resolveClientMode(clientId);
         return {
           id: user.id as string,
           name: user.name as string,
           email: user.email as string,
           role: user.role as UserRole,
-          clientId: (user.client_id as string | null) ?? null,
+          clientId,
+          clientMode,
           sessionVersion: Number((user as { session_version?: number }).session_version ?? 0),
         };
       },
@@ -94,6 +104,7 @@ export const authOptions: NextAuthOptions = {
         token.userId = user.id;
         token.role = user.role;
         token.clientId = user.clientId ?? null;
+        token.clientMode = (user as { clientMode?: ClientMode }).clientMode ?? "team";
         token.sessionVersion = (user as { sessionVersion?: number }).sessionVersion ?? 0;
         token.email = (user as { email?: string | null }).email ?? null;
       }
@@ -103,6 +114,7 @@ export const authOptions: NextAuthOptions = {
       session.userId = token.userId as string;
       session.role = token.role as UserRole;
       session.clientId = (token.clientId as string | null) ?? null;
+      session.clientMode = (token.clientMode as ClientMode | undefined) ?? "team";
       if (session.user) {
         session.user.id = token.userId as string;
         if (token.email) {

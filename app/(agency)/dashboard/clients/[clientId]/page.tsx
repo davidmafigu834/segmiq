@@ -73,6 +73,7 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
   const formFieldCount = Array.isArray(formFields) ? formFields.length : 0;
   const salespeopleCount = team.filter((u) => u.role === "SALESPERSON").length;
   const hasManager = team.some((u) => u.role === "CLIENT_MANAGER");
+  const isSolo = (client.mode as string | undefined) === "solo";
   const fbConnected = Boolean(client.fb_form_id as string | null);
 
   const total = wl?.length ?? 0;
@@ -109,7 +110,7 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
           fbPageName={fbPageName}
           fbPageId={fbPageId}
           notificationsConfigured={notificationsConfigured}
-          onboarding={{ formFieldCount, salespeopleCount, hasManager, fbConnected }}
+          onboarding={{ formFieldCount, salespeopleCount, hasManager, fbConnected, isSolo }}
           isAgencyAdmin={isAgencyAdmin}
         />
       </ClientDetailView>

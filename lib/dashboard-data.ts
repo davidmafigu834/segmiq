@@ -6,7 +6,16 @@ import {
   syncRetargetingForClient,
   type RetargetingStatusView,
 } from "@/lib/retargeting";
+import { isActiveConvertLaterPick } from "@/lib/convert-later-picks";
+import {
+  MIRROR_STALL_WINDOW_DAYS,
+  type SalesMirrorResult,
+} from "@/lib/mirror-nudges";
+import { countLaneMetrics, resolveSalesMirror } from "@/lib/sales-mirror";
 import { addMonths, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
+import { getClientActivePipelineValue } from "@/lib/client-team-report";
+import { buildSoloBusinessPulseMetrics, type PulseBarMetric } from "@/components/dashboard/pulse-metrics";
+import { classifyLeadLane } from "@/lib/lead-lanes";
 
 // Raw campaign_qualifiers row shape (read-only; table added in migration 037).
 type CampaignQualifierRow = {
@@ -35,6 +44,8 @@ type SalespersonLeadRow = {
   project_type?: string | null;
   timeline?: string | null;
   form_data?: Record<string, unknown> | null;
+  is_convert_later_pick?: boolean | null;
+  updated_at?: string;
 };
 
 function isMissingLeadsColumn(
@@ -45,12 +56,13 @@ function isMissingLeadsColumn(
 }
 
 const SALESPERSON_LEAD_CORE_SELECT =
-  "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, budget, project_type, timeline";
+  "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, budget, project_type, timeline, is_convert_later_pick, updated_at";
 
-function salespersonLeadSelect(includeScoring: boolean): string {
-  return includeScoring
-    ? `${SALESPERSON_LEAD_CORE_SELECT}, score, is_stale, stale_since`
-    : SALESPERSON_LEAD_CORE_SELECT;
+function salespersonLeadSelect(includeScoring: boolean, includeConvertLater: boolean): string {
+  const core = includeConvertLater
+    ? SALESPERSON_LEAD_CORE_SELECT
+    : "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, budget, project_type, timeline";
+  return includeScoring ? `${core}, score, is_stale, stale_since` : core;
 }
 
 /** Handles DBs that predate migration 032 (score/is_stale) or lack is_archived. */
@@ -65,6 +77,7 @@ async function fetchAssignedLeadsForSalesperson(
 }> {
   let archivedFilterUsed = true;
   let includeScoring = true;
+  let includeConvertLater = true;
 
   const run = (select: string, useArchived: boolean) => {
     let q = supabase
@@ -77,11 +90,36 @@ async function fetchAssignedLeadsForSalesperson(
     return q.order("created_at", { ascending: false });
   };
 
-  let result = await run(salespersonLeadSelect(includeScoring), archivedFilterUsed);
+  let result = await run(
+    salespersonLeadSelect(includeScoring, includeConvertLater),
+    archivedFilterUsed
+  );
 
   if (result.error && isMissingLeadsColumn(result.error, "is_archived")) {
     archivedFilterUsed = false;
-    result = await run(salespersonLeadSelect(includeScoring), false);
+    result = await run(
+      salespersonLeadSelect(includeScoring, includeConvertLater),
+      false
+    );
+  }
+
+  if (
+    result.error &&
+    (isMissingLeadsColumn(result.error, "is_convert_later_pick") ||
+      isMissingLeadsColumn(result.error, "updated_at"))
+  ) {
+    includeConvertLater = false;
+    result = await run(
+      salespersonLeadSelect(includeScoring, includeConvertLater),
+      archivedFilterUsed
+    );
+    if (result.error && isMissingLeadsColumn(result.error, "is_archived")) {
+      archivedFilterUsed = false;
+      result = await run(
+        salespersonLeadSelect(includeScoring, includeConvertLater),
+        false
+      );
+    }
   }
 
   if (
@@ -91,10 +129,16 @@ async function fetchAssignedLeadsForSalesperson(
       isMissingLeadsColumn(result.error, "stale_since"))
   ) {
     includeScoring = false;
-    result = await run(salespersonLeadSelect(false), archivedFilterUsed);
+    result = await run(
+      salespersonLeadSelect(includeScoring, includeConvertLater),
+      archivedFilterUsed
+    );
     if (result.error && isMissingLeadsColumn(result.error, "is_archived")) {
       archivedFilterUsed = false;
-      result = await run(salespersonLeadSelect(false), false);
+      result = await run(
+        salespersonLeadSelect(includeScoring, includeConvertLater),
+        false
+      );
     }
   }
 
@@ -805,10 +849,16 @@ export async function fetchSalespersonDashboardData(userId: string) {
     scoringColumnsAvailable,
   } = await fetchAssignedLeadsForSalesperson(supabase, userId);
 
+  const mirrorWindowStart = new Date(now);
+  mirrorWindowStart.setDate(now.getDate() - MIRROR_STALL_WINDOW_DAYS);
+  mirrorWindowStart.setHours(0, 0, 0, 0);
+
   const [
     { data: todayCallLogs },
     { data: recentEvents },
     { data: monthWins },
+    { data: repUser },
+    { data: stallCallLogs },
   ] = await Promise.all([
     supabase
       .from("call_logs")
@@ -828,6 +878,18 @@ export async function fetchSalespersonDashboardData(userId: string) {
       .select("id, deal_value, days_to_close, created_at, leads(name)")
       .eq("salesperson_id", userId)
       .gte("created_at", monthStart.toISOString()),
+
+    supabase
+      .from("users")
+      .select("client_id, clients(ai_enabled)")
+      .eq("id", userId)
+      .maybeSingle(),
+
+    supabase
+      .from("call_logs")
+      .select("reason, result")
+      .eq("user_id", userId)
+      .gte("created_at", mirrorWindowStart.toISOString()),
   ]);
 
   const leads: DBLeadRow[] = allLeadsArray;
@@ -839,10 +901,25 @@ export async function fetchSalespersonDashboardData(userId: string) {
   const calledToday = (todayCallLogs ?? []).length;
   const wonThisMonth = (monthWins ?? []).length;
 
-  const followUpToday = activeLeads.filter((l) => {
-    if (!l.follow_up_date) return false;
-    return new Date(l.follow_up_date as string) <= now;
-  }).length;
+  const convertLaterCount = activeLeads.filter((l) =>
+    isActiveConvertLaterPick(l as Parameters<typeof isActiveConvertLaterPick>[0])
+  ).length;
+
+  const repClient = repUser?.clients as { ai_enabled?: boolean | null } | null;
+  const repAiEnabled = repClient?.ai_enabled === true;
+
+  const mirror: SalesMirrorResult = resolveSalesMirror({
+    leads: activeLeads,
+    stallLogs: (stallCallLogs ?? []) as Array<{
+      reason: string | null;
+      result: string | null;
+    }>,
+    convertLaterCount,
+    aiEnabled: repAiEnabled,
+    now,
+  });
+
+  const { callNow, followUps, slipped } = countLaneMetrics(activeLeads, now);
 
   // AI enrichment scores (read-only — the AI pipeline is never modified here).
   // A lead with no intent_score row is treated as "no AI" downstream. AI is only
@@ -981,10 +1058,14 @@ export async function fetchSalespersonDashboardData(userId: string) {
       aiScore: resolveAiScore(l),
       qualifiers: resolveQualifiers(l),
     })) as PriorityLead[],
+    mirror,
     numbers: {
       totalActive,
+      callNow,
       calledToday,
-      followUpToday,
+      followUpToday: followUps,
+      slipped,
+      convertLaterCount,
       wonThisMonth,
     },
     recentActivity: recentEvents ?? [],
@@ -1035,5 +1116,80 @@ export async function fetchSalespersonDashboardData(userId: string) {
         scoringColumnsAvailable,
       };
     })()),
+  };
+}
+
+// ============================================
+// SOLO OPERATOR DASHBOARD
+// ============================================
+
+export type SoloDashboardData = {
+  sales: Awaited<ReturnType<typeof fetchSalespersonDashboardData>>;
+  clientName: string;
+  businessMetrics: PulseBarMetric[];
+  overnightNewLeads: number;
+  followUpsDueToday: number;
+};
+
+export async function fetchSoloDashboardData(
+  ownerId: string,
+  clientId: string
+): Promise<SoloDashboardData> {
+  const sales = await fetchSalespersonDashboardData(ownerId);
+  const supabase = createAdminClient();
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+  const monthStart = startOfMonth(now);
+  const nextMonthStart = startOfMonth(addMonths(now, 1));
+  const prevMonthStart = startOfMonth(subMonths(now, 1));
+
+  const [
+    { count: leadsToday },
+    { count: leadsYesterday },
+    activePipelineValue,
+    avgCurrent,
+    avgPrev,
+    { data: client },
+  ] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", clientId)
+      .gte("created_at", todayStart.toISOString()),
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", clientId)
+      .gte("created_at", yesterdayStart.toISOString())
+      .lt("created_at", todayStart.toISOString()),
+    getClientActivePipelineValue(clientId),
+    getAvgResponseMinutes(monthStart, nextMonthStart, { clientId }),
+    getAvgResponseMinutes(prevMonthStart, monthStart, { clientId }),
+    supabase.from("clients").select("name").eq("id", clientId).maybeSingle(),
+  ]);
+
+  const businessMetrics = buildSoloBusinessPulseMetrics({
+    leadsToday: leadsToday ?? 0,
+    leadsYesterday: leadsYesterday ?? 0,
+    activePipelineValue,
+    wonThisMonth: sales.numbers.wonThisMonth,
+    avgResponseMinutes: avgCurrent,
+    avgResponsePrevMinutes: avgPrev,
+  });
+
+  const overnightNewLeads = (sales.allActiveLeads ?? []).filter((lead) => {
+    if (classifyLeadLane(lead, now).lane !== "call_now") return false;
+    return new Date(lead.created_at as string) < todayStart;
+  }).length;
+
+  return {
+    sales,
+    clientName: (client?.name as string) ?? "",
+    businessMetrics,
+    overnightNewLeads,
+    followUpsDueToday: sales.numbers.followUpToday,
   };
 }
