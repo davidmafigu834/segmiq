@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import { generatePresignedUploadUrl, getPublicUrl } from "@/lib/storage/r2";
 import { findOnboardingToken } from "@/lib/onboarding/tokens";
+import { generateLogoKey, resolveImageContentType } from "@/lib/storage/logo-upload";
 
 export const dynamic = "force-dynamic";
-
-const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"];
-
-function generateLogoKey(clientId: string, filename: string): string {
-  const ext = filename.split(".").pop() ?? "png";
-  return `clients/${clientId}/logo/${Date.now()}.${ext}`;
-}
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as {
@@ -30,8 +24,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: tokenResult.reason }, { status });
   }
 
-  if (!ALLOWED.includes(contentType)) {
-    return NextResponse.json({ error: "Only JPEG, PNG, and WEBP images are supported" }, { status: 400 });
+  const resolvedType = resolveImageContentType(filename, contentType);
+  if (!resolvedType) {
+    return NextResponse.json({ error: "Only JPEG, PNG, WEBP, and HEIC images are supported" }, { status: 400 });
   }
   if (fileSize && fileSize > 10 * 1024 * 1024) {
     return NextResponse.json({ error: "Image must be under 10MB" }, { status: 400 });
@@ -39,7 +34,7 @@ export async function POST(req: Request) {
 
   try {
     const key = generateLogoKey(tokenResult.client.id, filename);
-    const uploadUrl = await generatePresignedUploadUrl(key, contentType);
+    const uploadUrl = await generatePresignedUploadUrl(key, resolvedType);
     const publicUrl = getPublicUrl(key);
     return NextResponse.json({ uploadUrl, key, publicUrl });
   } catch (err) {

@@ -241,27 +241,37 @@ export function OnboardingWizard({ token, mode, ownerEmail, initialProgress, ini
       return next;
     });
     try {
-      const presignRes = await fetch("/api/onboard/presign", {
+      const form = new FormData();
+      form.append("token", token);
+      form.append("file", file);
+
+      const uploadRes = await fetch("/api/onboard/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          filename: file.name,
-          contentType: file.type,
-          fileSize: file.size,
-        }),
+        body: form,
       });
-      if (!presignRes.ok) throw new Error("Presign failed");
-      const { uploadUrl, publicUrl } = (await presignRes.json()) as {
-        uploadUrl: string;
-        publicUrl: string;
+      const payload = (await uploadRes.json().catch(() => ({}))) as {
+        publicUrl?: string;
+        error?: string;
       };
-      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      setLogoUrl(publicUrl);
+      if (!uploadRes.ok) {
+        throw new Error(payload.error ?? "Upload failed");
+      }
+      if (!payload.publicUrl) {
+        throw new Error("Upload succeeded but no URL returned");
+      }
+
+      setLogoUrl(payload.publicUrl);
       setLogoPreview(URL.createObjectURL(file));
-      await persistStep("branding", { logoUrl: publicUrl });
-    } catch {
-      setFieldErrors((e) => ({ ...e, logo: "Upload failed. Please try again." }));
+      const saved = await persistStep("branding", { logoUrl: payload.publicUrl });
+      if (!saved) {
+        throw new Error("Uploaded but could not save progress");
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload failed. Please try again.";
+      setFieldErrors((e) => ({
+        ...e,
+        logo: message === "Upload failed" ? "Upload failed. Please try again." : message,
+      }));
     } finally {
       setUploadingLogo(false);
     }
