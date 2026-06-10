@@ -1,5 +1,33 @@
-import { parseBudgetValue, parseUrgencyLevel } from "@/lib/lead-lanes";
+import {
+  classifyLeadLane,
+  parseBudgetValue,
+  parseUrgencyLevel,
+  type LeadLane,
+} from "@/lib/lead-lanes";
 import type { CampaignQualifiers } from "@/lib/lead-lanes";
+import { isLeadSlow } from "@/lib/leadStatus";
+
+export type FreshnessState = "fresh" | "slipping" | "overdue";
+
+export type SalesLeadCardLead = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  status: string;
+  created_at: string;
+  follow_up_date: string | null;
+  client_id: string;
+  source?: string | null;
+  budget?: string | null;
+  project_type?: string | null;
+  timeline?: string | null;
+  form_data?: Record<string, unknown> | null;
+  is_stale?: boolean | null;
+  aiScore?: number | null;
+  qualifiers?: CampaignQualifiers | null;
+};
+
+const SLA_TARGET_MS = 5 * 60 * 1000;
 
 export type PriorityLead = {
   id: string;
@@ -77,7 +105,7 @@ function formatBudgetDisplay(value: number): string {
   return `$${Math.round(value)}`;
 }
 
-function budgetDisplayText(lead: PriorityLead): string | null {
+export function budgetDisplayText(lead: SalesLeadCardLead): string | null {
   const column = lead.budget?.trim();
   if (column) return column;
   const fromForm = collectFormText(lead.form_data, ["budget", "price", "value"]);
@@ -86,7 +114,7 @@ function budgetDisplayText(lead: PriorityLead): string | null {
   return parsed != null ? formatBudgetDisplay(parsed) : fromForm;
 }
 
-function urgencyDisplayText(lead: PriorityLead): string | null {
+export function urgencyDisplayText(lead: SalesLeadCardLead): string | null {
   const raw =
     lead.timeline?.trim() ||
     collectFormText(lead.form_data, ["timeline", "urgency", "when", "time frame", "timeframe"]);
@@ -98,17 +126,47 @@ function urgencyDisplayText(lead: PriorityLead): string | null {
   return null;
 }
 
-function serviceDisplayText(lead: PriorityLead): string | null {
+export function serviceDisplayText(lead: SalesLeadCardLead): string | null {
   const column = lead.project_type?.trim();
   if (column) return column;
   return collectFormText(lead.form_data, ["service", "project", "type", "category"]);
 }
 
 /**
- * Display-only reason line: budget → urgency → service → relative age.
- * Does not surface tier windows, phone presence, or scoring internals.
+ * Context line without chips or timestamp (urgency + lane hint).
+ * Used when service/budget are shown as chips and time is shown once below.
  */
-export function buildReasonLine(lead: PriorityLead): string {
+export function buildReasonContextLine(
+  lead: SalesLeadCardLead,
+  lane?: LeadLane,
+  now: Date = new Date()
+): string {
+  const parts: string[] = [];
+  const urgency = urgencyDisplayText(lead);
+  if (urgency) parts.push(urgency);
+
+  if (lane) {
+    const { tier } = classifyLeadLane(lead, now);
+    if (lane === "call_now" && tier === "same_day") {
+      parts.push("Awaiting first call");
+    } else if (lane === "recover") {
+      parts.push(`Slipped ${daysSince(lead.created_at)} days`);
+    } else if (lane === "nurture") {
+      parts.push(lead.is_stale ? "Going cold" : "Low intent");
+    }
+  }
+
+  if (parts.length === 0) {
+    const service = serviceDisplayText(lead);
+    if (service) return service;
+    return "New enquiry";
+  }
+
+  return parts.join(" · ");
+}
+
+/** @deprecated Use chips + buildReasonContextLine + formatCardTimestamp */
+export function buildReasonLine(lead: SalesLeadCardLead): string {
   const parts: string[] = [];
   const budget = budgetDisplayText(lead);
   if (budget) parts.push(budget);
@@ -118,6 +176,99 @@ export function buildReasonLine(lead: PriorityLead): string {
   if (service) parts.push(service);
   parts.push(timeAgo(lead.created_at));
   return parts.join(" · ");
+}
+
+export function isHotSlaBreached(createdAt: string, now: Date = new Date()): boolean {
+  return now.getTime() - new Date(createdAt).getTime() > SLA_TARGET_MS;
+}
+
+export function resolveFreshnessState(input: {
+  lead: SalesLeadCardLead;
+  lane?: LeadLane;
+  now?: Date;
+  clientSlaHours?: number | null;
+}): FreshnessState {
+  const now = input.now ?? new Date();
+  const { lead, lane, clientSlaHours } = input;
+
+  if (
+    lead.follow_up_date &&
+    isFollowUpOverdue(lead.follow_up_date, now)
+  ) {
+    return "overdue";
+  }
+
+  if (
+    lead.status === "NEW" &&
+    isLeadSlow(lead.status, lead.created_at, clientSlaHours)
+  ) {
+    return "overdue";
+  }
+
+  if (lane) {
+    const { tier } = classifyLeadLane(lead, now);
+    if (lane === "call_now" && tier === "hot" && isHotSlaBreached(lead.created_at, now)) {
+      return "overdue";
+    }
+    if (lane === "recover") return "slipping";
+    if (lane === "follow_ups") return "slipping";
+    if (lane === "call_now" && tier === "same_day") return "slipping";
+  } else if (lead.follow_up_date) {
+    const due = new Date(lead.follow_up_date);
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+    if (due <= endOfToday) return "slipping";
+  }
+
+  if (lead.is_stale) return "slipping";
+
+  return "fresh";
+}
+
+const FRESHNESS_DOT: Record<FreshnessState, string> = {
+  fresh: "bg-[var(--success)]",
+  slipping: "bg-[var(--warning)]",
+  overdue: "bg-[var(--error)]",
+};
+
+export function freshnessDotClass(state: FreshnessState): string {
+  return FRESHNESS_DOT[state];
+}
+
+/** Single timestamp row — relative age plus optional lane timing suffix. */
+export function formatCardTimestamp(
+  lead: SalesLeadCardLead,
+  lane: LeadLane | undefined,
+  now: Date = new Date()
+): string {
+  const parts = [timeAgo(lead.created_at)];
+
+  if (lane === "follow_ups" && lead.follow_up_date) {
+    parts.push(
+      isFollowUpOverdue(lead.follow_up_date, now)
+        ? `Overdue · ${formatFollowUpDate(lead.follow_up_date)}`
+        : `Due ${formatFollowUpDate(lead.follow_up_date).toLowerCase()}`
+    );
+  } else if (!lane && lead.follow_up_date) {
+    const due = new Date(lead.follow_up_date);
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    if (due < startOfToday) {
+      parts.push(`Overdue · ${formatFollowUpDate(lead.follow_up_date)}`);
+    } else if (due.toDateString() === now.toDateString()) {
+      parts.push("Due today");
+    }
+  }
+
+  return parts.join(" · ");
+}
+
+export function sourceLabel(source: string | null | undefined): string {
+  if (source === "FACEBOOK") return "Facebook";
+  if (source === "LANDING_PAGE") return "Profile";
+  if (source === "REFERRAL") return "Referral";
+  if (source === "MANUAL") return "Manual";
+  return "Lead";
 }
 
 /** True when the promised callback date is before today (local midnight). */

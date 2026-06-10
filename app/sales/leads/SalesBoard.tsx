@@ -3,25 +3,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { format, formatDistanceToNow, isBefore, isToday, startOfDay } from "date-fns";
-import { Inbox, Phone, MessageCircle, Star } from "lucide-react";
+import { Inbox, Star } from "lucide-react";
 import { ConvertLaterPickCard } from "@/components/sales/ConvertLaterPickCard";
+import { SalesLeadCard } from "@/components/sales/SalesLeadCard";
+import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 import {
   isActiveConvertLaterPick,
   sortConvertLaterPicks,
   type PickCallLogContext,
 } from "@/lib/convert-later-picks";
-import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import { sortKanbanLeads } from "@/lib/kanbanSort";
-import { isLeadSlow } from "@/lib/leadStatus";
 import type { LeadWithClientResponseLimit } from "@/lib/leadStatus";
-import type { LeadRow, LeadSource, LeadStatus } from "@/types";
+import type { PriorityLead } from "@/lib/sales-priority-lead";
+import type { LeadRow, LeadStatus } from "@/types";
 import { StatusPill } from "@/components/StatusPill";
 import { openLeadPanel } from "@/store/uiStore";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
 import { LeadDetailPanel } from "./LeadDetailPanel";
-import { ScoreBadge } from "@/components/ui/ScoreBadge";
 
 const COLS = ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"] as const satisfies readonly LeadStatus[];
 
@@ -48,12 +47,26 @@ const COL_ACCENT: Record<string, string> = {
   PROPOSAL_SENT: "border-t-violet-500",
 };
 
-function kanbanLeadIsSlow(l: LeadWithClientResponseLimit): boolean {
-  if (l.clients == null) {
-    console.warn("[SalesBoard] Lead missing client relation", l.id);
-    return false;
-  }
-  return isLeadSlow(l.status, l.created_at, l.clients.response_time_limit_hours);
+function toQuickLogLeads(leads: LeadWithClientResponseLimit[]): PriorityLead[] {
+  return leads.map((l) => ({
+    id: l.id,
+    name: l.name,
+    phone: l.phone,
+    status: l.status,
+    created_at: l.created_at,
+    follow_up_date: l.follow_up_date,
+    client_id: l.client_id,
+    source: l.source,
+    budget: l.budget,
+    project_type: l.project_type,
+    timeline: l.timeline,
+    form_data: l.form_data,
+    is_stale: l.is_stale,
+    priorityLabel: "",
+    priorityColor: "var(--text-disabled)",
+    priorityOrder: 6,
+    followUpDue: false,
+  }));
 }
 
 function matchesSearch(l: LeadWithClientResponseLimit, q: string): boolean {
@@ -94,6 +107,21 @@ export function SalesBoard({
   const [viewMode, setViewMode] = useState<"kanban" | "picks">("kanban");
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
+  const openLead = useCallback((id: string) => {
+    openLeadPanel(id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("lead", id);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  const openSend = useCallback((id: string) => {
+    openLeadPanel(id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("lead", id);
+    params.set("tab", "send");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [pathname, router, searchParams]);
+
   useEffect(() => {
     setLeads(initialLeads);
   }, [initialLeads]);
@@ -115,6 +143,9 @@ export function SalesBoard({
     () => leads.filter((l) => (COLS as readonly string[]).includes(l.status)),
     [leads]
   );
+
+  const { openLogSheet, logSheetProps } = useSalesLogSheet();
+  const { sheet } = logSheetProps(toQuickLogLeads(activeInPipeline));
 
   const filteredActive = useMemo(() => {
     if (!debouncedQuery) return activeInPipeline;
@@ -472,82 +503,16 @@ export function SalesBoard({
             ) : (
               <div className="space-y-3">
                 {grouped[activeColumn].map((l) => (
-                  <button
+                  <SalesLeadCard
                     key={l.id}
-                    type="button"
-                    onClick={() => openLeadPanel(l.id)}
-                    className={`w-full rounded-lg border border-border bg-surface-card p-3.5 text-left active:scale-[0.98] ${
-                      kanbanLeadIsSlow(l) ? "border-l-[3px] border-l-[var(--danger)]" : ""
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <SourceDot source={l.source} />
-                      <div className="flex items-center gap-1.5">
-                        {l.phone ? (
-                          <a
-                            href={`tel:${l.phone}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                            }}
-                            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-card-alt text-ink-tertiary hover:text-ink-primary"
-                            aria-label="Call"
-                          >
-                            <Phone size={13} />
-                          </a>
-                        ) : null}
-                        {l.phone ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              try {
-                                window.localStorage.setItem(`log:channel:${l.id}`, "whatsapp");
-                              } catch {}
-                              void openWhatsAppAndLog({
-                                leadId: l.id,
-                                clientId: l.client_id,
-                                leadName: l.name,
-                                leadPhone: l.phone,
-                                repName: "",
-                                formData: (l.form_data as Record<string, unknown> | null) ?? null,
-                                tier: "neutral",
-                              });
-                              openLeadPanel(l.id);
-                            }}
-                            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-card-alt text-ink-tertiary hover:text-ink-primary"
-                            aria-label="WhatsApp"
-                          >
-                            <MessageCircle size={13} />
-                          </button>
-                        ) : null}
-                        <span className="text-ink-tertiary">⋯</span>
-                      </div>
-                    </div>
-                    <div className="mt-2 text-sm font-medium leading-snug text-ink-primary">{l.name}</div>
-                    <div className="mt-1 font-mono text-xs text-ink-tertiary">{l.phone}</div>
-                    <div className="my-3 h-px bg-border" />
-                    <div className="text-sm text-ink-secondary">
-                      {l.budget ?? "—"} · {l.project_type ?? "Project"}
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {l.score !== null && l.score !== undefined && (
-                        <ScoreBadge score={l.score} />
-                      )}
-                      <span
-                        className={`rounded-md px-2 py-0.5 font-mono text-[10px] ${
-                          kanbanLeadIsSlow(l)
-                            ? "bg-[var(--danger)] text-white"
-                            : "bg-surface-card-alt text-ink-tertiary"
-                        }`}
-                      >
-                        {formatDistanceToNow(new Date(l.created_at), { addSuffix: true })}
-                      </span>
-                      <FollowUpKanbanPill followUpDate={l.follow_up_date} />
-                      <span className="rounded-md bg-surface-card-alt px-2 py-0.5 font-mono text-[10px] text-ink-secondary">
-                        {l.source === "FACEBOOK" ? "FB" : l.source === "LANDING_PAGE" ? "LP" : "—"}
-                      </span>
-                    </div>
-                  </button>
+                    lead={l}
+                    intentScore={l.score ?? null}
+                    clientSlaHours={l.clients?.response_time_limit_hours}
+                    repName=""
+                    onOpenLogSheet={openLogSheet}
+                    onOpenLead={openLead}
+                    onOpenSend={openSend}
+                  />
                 ))}
               </div>
             )}
@@ -590,80 +555,17 @@ export function SalesBoard({
                                   ? { boxShadow: "var(--shadow-lg)", transform: "rotate(1deg) scale(1.02)" }
                                   : {}),
                               }}
-                              className={`cursor-grab rounded-lg border border-border bg-surface-card p-4 active:cursor-grabbing ${
-                                kanbanLeadIsSlow(l) ? "border-l-[3px] border-l-[var(--danger)]" : ""
-                              }`}
-                              onClick={() => openLeadPanel(l.id)}
+                              className="cursor-grab active:cursor-grabbing"
                             >
-                              <div className="flex items-start justify-between gap-2">
-                                <SourceDot source={l.source} />
-                                <div className="flex items-center gap-1.5">
-                                  {l.phone ? (
-                                    <a
-                                      href={`tel:${l.phone}`}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                      }}
-                                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-card-alt text-ink-tertiary hover:text-ink-primary"
-                                      aria-label="Call"
-                                    >
-                                      <Phone size={13} />
-                                    </a>
-                                  ) : null}
-                                  {l.phone ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        try {
-                                          window.localStorage.setItem(`log:channel:${l.id}`, "whatsapp");
-                                        } catch {}
-                                        void openWhatsAppAndLog({
-                                          leadId: l.id,
-                                          clientId: l.client_id,
-                                          leadName: l.name,
-                                          leadPhone: l.phone,
-                                          repName: "",
-                                          formData: (l.form_data as Record<string, unknown> | null) ?? null,
-                                          tier: "neutral",
-                                        });
-                                        openLeadPanel(l.id);
-                                      }}
-                                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface-card-alt text-ink-tertiary hover:text-ink-primary"
-                                      aria-label="WhatsApp"
-                                    >
-                                      <MessageCircle size={13} />
-                                    </button>
-                                  ) : null}
-                                  <button type="button" className="text-ink-tertiary" aria-label="More">
-                                    ⋯
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="mt-2 text-sm font-medium leading-snug text-ink-primary">{l.name}</div>
-                              <div className="mt-1 font-mono text-xs text-ink-tertiary">{l.phone}</div>
-                              <div className="my-3 h-px bg-border" />
-                              <div className="text-sm text-ink-secondary">
-                                {l.budget ?? "—"} · {l.project_type ?? "Project"}
-                              </div>
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {l.score !== null && l.score !== undefined && (
-                                  <ScoreBadge score={l.score} />
-                                )}
-                                <span
-                                  className={`rounded-md px-2 py-0.5 font-mono text-[10px] ${
-                                    kanbanLeadIsSlow(l)
-                                      ? "bg-[var(--danger)] text-white"
-                                      : "bg-surface-card-alt text-ink-tertiary"
-                                  }`}
-                                >
-                                  {formatDistanceToNow(new Date(l.created_at), { addSuffix: true })}
-                                </span>
-                                <FollowUpKanbanPill followUpDate={l.follow_up_date} />
-                                <span className="rounded-md bg-surface-card-alt px-2 py-0.5 font-mono text-[10px] text-ink-secondary">
-                                  {l.source === "FACEBOOK" ? "FB" : l.source === "LANDING_PAGE" ? "LP" : "—"}
-                                </span>
-                              </div>
+                              <SalesLeadCard
+                                lead={l}
+                                intentScore={l.score ?? null}
+                                clientSlaHours={l.clients?.response_time_limit_hours}
+                                repName=""
+                                onOpenLogSheet={openLogSheet}
+                                onOpenLead={openLead}
+                                onOpenSend={openSend}
+                              />
                             </div>
                           )}
                         </Draggable>
@@ -678,50 +580,8 @@ export function SalesBoard({
         </DragDropContext>
       )}
 
+      {sheet}
       <LeadDetailPanel leads={leads} onLeadUpdated={handleLeadUpdated} onClose={handleUrlAfterPanelClose} />
     </div>
   );
-}
-
-function FollowUpKanbanPill({ followUpDate }: { followUpDate: string | null }) {
-  if (!followUpDate) return null;
-  const d = new Date(followUpDate);
-  const startToday = startOfDay(new Date());
-  if (isBefore(d, startToday)) {
-    return (
-      <span className="rounded-md bg-[var(--danger)] px-2 py-0.5 font-mono text-[10px] uppercase text-white">
-        Overdue · {format(d, "MMM d")}
-      </span>
-    );
-  }
-  if (isToday(d)) {
-    return (
-      <span
-        className="rounded-md px-2 py-0.5 font-mono text-[10px]"
-        style={{
-          background: "var(--status-followup-bg)",
-          color: "var(--status-followup-fg)",
-        }}
-      >
-        Due today
-      </span>
-    );
-  }
-  return (
-    <span
-      className="rounded-md px-2 py-0.5 font-mono text-[10px]"
-      style={{
-        background: "var(--status-followup-bg)",
-        color: "var(--status-followup-fg)",
-      }}
-    >
-      Follow-up {format(d, "MMM d")}
-    </span>
-  );
-}
-
-function SourceDot({ source }: { source: LeadSource }) {
-  if (source === "FACEBOOK") return <span className="h-2 w-2 rounded-full bg-[var(--info)]" />;
-  if (source === "LANDING_PAGE") return <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />;
-  return <span className="h-2 w-2 rounded-full bg-ink-tertiary" />;
 }
