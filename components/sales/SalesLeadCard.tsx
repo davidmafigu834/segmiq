@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import {
   Phone,
   Send,
-  Activity,
+  ClipboardList,
   MessageCircle,
 } from "lucide-react";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
@@ -147,11 +147,18 @@ export function SalesLeadCard({
 
   const serviceChip = serviceDisplayText(lead);
   const budgetChip = budgetDisplayText(lead);
+  const hasChips = !!(serviceChip || budgetChip);
   const contextLine = buildReasonContextLine(lead, lane, now);
-  const showContextLine =
-    !showIntentScore || contextLine !== "New enquiry" || (!serviceChip && !budgetChip);
+  const showContextLine = contextLine.length > 0;
 
   const isHotCallNow = lane === "call_now" && tier === "hot";
+
+  const freshnessTitle =
+    freshness === "fresh"
+      ? "Fresh"
+      : freshness === "slipping"
+        ? "Needs attention"
+        : "Overdue";
 
   return (
     <article
@@ -159,16 +166,6 @@ export function SalesLeadCard({
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span
-            className={`h-2 w-2 shrink-0 rounded-full ${freshnessDotClass(freshness)}`}
-            title={
-              freshness === "fresh"
-                ? "Fresh"
-                : freshness === "slipping"
-                ? "Needs attention"
-                : "Overdue"
-            }
-          />
           <span className="truncate font-mono text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
             {sourceLabel(lead.source)}
           </span>
@@ -203,7 +200,7 @@ export function SalesLeadCard({
         </p>
       </button>
 
-      {(serviceChip || budgetChip) && (
+      {hasChips ? (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {serviceChip ? (
             <span className="inline-flex max-w-full items-center rounded-md border border-[var(--border)] bg-[var(--bg-tertiary)] px-2 py-0.5 text-[11px] text-[var(--text-secondary)] truncate">
@@ -216,7 +213,7 @@ export function SalesLeadCard({
             </span>
           ) : null}
         </div>
-      )}
+      ) : null}
 
       {showContextLine ? (
         <p className="mb-2 text-[13px] leading-snug text-[var(--text-secondary)]">
@@ -225,15 +222,22 @@ export function SalesLeadCard({
       ) : null}
 
       <p className="mb-3 font-mono text-[11px] text-[var(--text-tertiary)]">
-        {isHotCallNow ? (
-          <span className="inline-flex flex-wrap items-center gap-x-1.5">
-            <span>{timeAgo(lead.created_at)}</span>
-            <span aria-hidden>·</span>
-            <SlaCountdown createdAt={lead.created_at} />
-          </span>
-        ) : (
-          formatCardTimestamp(lead, lane, now)
-        )}
+        <span className="inline-flex flex-wrap items-center gap-x-1.5">
+          <span
+            className={`h-2 w-2 shrink-0 rounded-full ${freshnessDotClass(freshness)}`}
+            title={freshnessTitle}
+            aria-label={freshnessTitle}
+          />
+          {isHotCallNow ? (
+            <>
+              <span>{timeAgo(lead.created_at)}</span>
+              <span aria-hidden>·</span>
+              <SlaCountdown createdAt={lead.created_at} />
+            </>
+          ) : (
+            <span>{formatCardTimestamp(lead, lane, now)}</span>
+          )}
+        </span>
       </p>
 
       <div className="flex items-center justify-end gap-1.5 sm:gap-2">
@@ -275,7 +279,7 @@ export function SalesLeadCard({
           label="Log call"
           onClick={() => onOpenLogSheet(lead.id)}
         >
-          <Activity size={14} className="text-[var(--text-secondary)]" />
+          <ClipboardList size={14} className="text-[var(--text-secondary)]" />
         </ActionButton>
       </div>
     </article>

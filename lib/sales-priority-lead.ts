@@ -145,21 +145,20 @@ export function buildReasonContextLine(
   const urgency = urgencyDisplayText(lead);
   if (urgency) parts.push(urgency);
 
-  if (lane) {
-    const { tier } = classifyLeadLane(lead, now);
-    if (lane === "call_now" && tier === "same_day") {
-      parts.push("Awaiting first call");
-    } else if (lane === "recover") {
-      parts.push(`Slipped ${daysSince(lead.created_at)} days`);
-    } else if (lane === "nurture") {
-      parts.push(lead.is_stale ? "Going cold" : "Low intent");
-    }
+  const uncontacted = lead.status === "NEW";
+
+  if (lane === "call_now") {
+    parts.push("Awaiting first call");
+  } else if (lane === "recover") {
+    parts.push(`Slipped ${daysSince(lead.created_at)} days`);
+  } else if (lane === "nurture") {
+    parts.push(lead.is_stale ? "Going cold" : "Low intent");
+  } else if (!lane && uncontacted) {
+    parts.push("Awaiting first call");
   }
 
-  if (parts.length === 0) {
-    const service = serviceDisplayText(lead);
-    if (service) return service;
-    return "New enquiry";
+  if (parts.length === 0 && uncontacted) {
+    return "Awaiting first call";
   }
 
   return parts.join(" · ");
