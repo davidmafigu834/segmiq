@@ -10,6 +10,8 @@ import type { OnboardingCountryCode, OnboardingProgress } from "@/lib/onboarding
 import { dialCodeForCountry } from "@/lib/onboarding/constants";
 import type { OnboardingTokenRow } from "@/lib/onboarding/tokens";
 
+export const ONBOARDING_ALREADY_COMPLETED = "This onboarding link has already been completed";
+
 export type FinishOnboardingInput = {
   tokenRow: OnboardingTokenRow;
   clientId: string;
@@ -29,6 +31,12 @@ export type FinishOnboardingResult =
   | { ok: false; error: string; status: number };
 
 type IsoCountry = string;
+
+type PendingTeamInvite = {
+  memberEmail: string;
+  memberName: string;
+  temporaryPassword: string;
+};
 
 function countryToIso(country: OnboardingCountryCode): IsoCountry {
   return country;
@@ -137,10 +145,27 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
   const ownerRole: "CLIENT_MANAGER" | "SALESPERSON" = mode === "solo" ? "SALESPERSON" : "CLIENT_MANAGER";
   const passwordHash = await hashPassword(password);
 
+  let clientActivated = false;
+  let tokenClaimed = false;
+
   try {
+    const { data: claimedToken, error: claimErr } = await supabase
+      .from("client_onboarding_tokens")
+      .update({ used: true })
+      .eq("id", tokenRow.id)
+      .eq("used", false)
+      .select("id")
+      .maybeSingle();
+
+    if (claimErr) throw new Error(claimErr.message);
+    if (!claimedToken) {
+      return { ok: false, error: ONBOARDING_ALREADY_COMPLETED, status: 400 };
+    }
+    tokenClaimed = true;
+
     const defaultHours = await getDefaultResponseHoursForNewClients();
 
-    const { error: clientErr } = await supabase
+    const { data: activatedClient, error: clientErr } = await supabase
       .from("clients")
       .update({
         name: company.name.trim(),
@@ -157,9 +182,15 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
         updated_at: new Date().toISOString(),
       })
       .eq("id", clientId)
-      .eq("setup_status", "pending");
+      .eq("setup_status", "pending")
+      .select("id")
+      .maybeSingle();
 
     if (clientErr) throw new Error(clientErr.message);
+    if (!activatedClient) {
+      return { ok: false, error: ONBOARDING_ALREADY_COMPLETED, status: 400 };
+    }
+    clientActivated = true;
 
     const { data: ownerUser, error: ownerErr } = await supabase
       .from("users")
@@ -211,6 +242,8 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
       await supabase.from("client_profiles").update({ slug }).eq("client_id", clientId);
     }
 
+    const pendingTeamInvites: PendingTeamInvite[] = [];
+
     if (mode === "team") {
       let rr = 0;
       const { data: maxRow } = await supabase
@@ -247,33 +280,32 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
         if (memberErr || !memberUser) throw new Error(memberErr?.message ?? "Failed to create salesperson");
 
         createdUserIds.push(memberUser.id as string);
-
-        const loginUrl = `${process.env.NEXTAUTH_URL}/login`;
-        const { subject, html } = inviteSalespersonEmail({
-          inviteeName: member.name.trim(),
-          invitedByName: account.ownerName.trim(),
-          clientName: company.name.trim(),
-          role: "SALESPERSON",
-          email: memberEmail,
-          temporaryPassword: tempPass,
-          loginUrl,
-        });
-        const emailResult = await sendEmail({ to: memberEmail, subject, html });
-        teamInviteResults.push({
-          email: memberEmail,
-          emailSent: emailResult.success,
+        pendingTeamInvites.push({
+          memberEmail,
+          memberName: member.name.trim(),
           temporaryPassword: tempPass,
         });
       }
     }
 
-    const { error: tokenErr } = await supabase
-      .from("client_onboarding_tokens")
-      .update({ used: true })
-      .eq("id", tokenRow.id)
-      .eq("used", false);
-
-    if (tokenErr) throw new Error(tokenErr.message);
+    const loginUrl = `${process.env.NEXTAUTH_URL}/login`;
+    for (const invite of pendingTeamInvites) {
+      const { subject, html } = inviteSalespersonEmail({
+        inviteeName: invite.memberName,
+        invitedByName: account.ownerName.trim(),
+        clientName: company.name.trim(),
+        role: "SALESPERSON",
+        email: invite.memberEmail,
+        temporaryPassword: invite.temporaryPassword,
+        loginUrl,
+      });
+      const emailResult = await sendEmail({ to: invite.memberEmail, subject, html });
+      teamInviteResults.push({
+        email: invite.memberEmail,
+        emailSent: emailResult.success,
+        temporaryPassword: invite.temporaryPassword,
+      });
+    }
 
     seedPredefinedSegments(clientId).catch((err) =>
       console.error("[finishOnboarding] seedPredefinedSegments failed:", err)
@@ -287,32 +319,40 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
     };
   } catch (err) {
     console.error("[finishOnboarding] rollback:", err);
-    if (createdUserIds.length > 0) {
-      await supabase.from("users").delete().in("id", createdUserIds);
+    if (clientActivated) {
+      if (createdUserIds.length > 0) {
+        await supabase.from("users").delete().in("id", createdUserIds);
+      }
+      if (createdForm) {
+        await supabase.from("form_schemas").delete().eq("client_id", clientId);
+      }
+      if (createdProfile) {
+        await supabase.from("client_profiles").delete().eq("client_id", clientId);
+      }
+      const snap = shellSnapshot as { name?: string; industry?: string; slug?: string } | null;
+      await supabase
+        .from("clients")
+        .update({
+          name: snap?.name ?? "Pending setup",
+          industry: snap?.industry ?? "Pending",
+          slug: snap?.slug ?? `pending-${clientId.replace(/-/g, "").slice(0, 12)}`,
+          country: null,
+          website: null,
+          logo_url: null,
+          dial_code: null,
+          setup_status: "pending",
+          is_active: false,
+          onboarding_progress: progress,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", clientId);
     }
-    if (createdForm) {
-      await supabase.from("form_schemas").delete().eq("client_id", clientId);
+    if (tokenClaimed) {
+      await supabase
+        .from("client_onboarding_tokens")
+        .update({ used: false })
+        .eq("id", tokenRow.id);
     }
-    if (createdProfile) {
-      await supabase.from("client_profiles").delete().eq("client_id", clientId);
-    }
-    const snap = shellSnapshot as { name?: string; industry?: string; slug?: string } | null;
-    await supabase
-      .from("clients")
-      .update({
-        name: snap?.name ?? "Pending setup",
-        industry: snap?.industry ?? "Pending",
-        slug: snap?.slug ?? `pending-${clientId.replace(/-/g, "").slice(0, 12)}`,
-        country: null,
-        website: null,
-        logo_url: null,
-        dial_code: null,
-        setup_status: "pending",
-        is_active: false,
-        onboarding_progress: progress,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", clientId);
     return {
       ok: false,
       error: err instanceof Error ? err.message : "Failed to complete onboarding",

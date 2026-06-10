@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { findOnboardingToken } from "@/lib/onboarding/tokens";
-import { finishOnboarding } from "@/lib/onboarding/finish";
+import { finishOnboarding, ONBOARDING_ALREADY_COMPLETED } from "@/lib/onboarding/finish";
 import type { OnboardingProgress } from "@/lib/onboarding/constants";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,13 @@ export async function POST(req: Request, { params }: { params: { token: string }
   const result = await findOnboardingToken(params.token);
   if (!result.ok) {
     const status = result.reason === "expired" ? 410 : result.reason === "used" ? 400 : 404;
-    return NextResponse.json({ error: result.reason }, { status });
+    const error =
+      result.reason === "used"
+        ? ONBOARDING_ALREADY_COMPLETED
+        : result.reason === "expired"
+          ? "This onboarding link has expired"
+          : "Invalid onboarding link";
+    return NextResponse.json({ error }, { status });
   }
 
   const parsed = schema.safeParse(await req.json().catch(() => ({})));
