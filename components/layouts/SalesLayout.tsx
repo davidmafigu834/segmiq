@@ -40,8 +40,11 @@ export async function SalesLayout({
       fu?.filter((l) => l.follow_up_date && isToday(new Date(l.follow_up_date as string))).length ?? 0;
   }
 
+  const isSolo = session?.clientMode === "solo";
+  const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
+
   const primaryNav = [
-    { href: "/sales/dashboard", label: "Dashboard", icon: "layout-dashboard" as const },
+    { href: dashboardHref, label: "Dashboard", icon: "layout-dashboard" as const },
     { href: "/sales/leads", label: "My leads", icon: "layout-grid" as const },
     { href: "/sales/followups", label: "Follow-ups", icon: "calendar" as const, badge: followupBadge || undefined },
     { href: "/sales/won-lost", label: "Won / Lost", icon: "trophy" as const },
@@ -54,7 +57,7 @@ export async function SalesLayout({
 
   return (
     <AppShell
-      homeHref="/sales/dashboard"
+      homeHref={dashboardHref}
       roleLabel="Sales"
       primaryNav={primaryNav}
       secondaryNav={secondaryNav}

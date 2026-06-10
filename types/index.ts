@@ -40,12 +40,18 @@ export interface UserRow {
   created_at: string;
 }
 
+export type ClientSetupStatus = "pending" | "active";
+
 export interface ClientRow {
   id: string;
   name: string;
   industry: string;
   slug: string;
   mode: ClientMode;
+  setup_status?: ClientSetupStatus;
+  owner_email?: string | null;
+  country?: string | null;
+  website?: string | null;
   logo_url: string | null;
   primary_color: string | null;
   response_time_limit_hours: number;

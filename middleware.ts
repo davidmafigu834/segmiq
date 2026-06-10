@@ -115,6 +115,7 @@ export async function middleware(req: NextRequest) {
   if (path.startsWith("/api/facebook/webhook")) return NextResponse.next();
   if (path.startsWith("/api/leads/submit")) return NextResponse.next();
   if (path.startsWith("/api/leads/magic/")) return NextResponse.next();
+  if (path.startsWith("/api/onboard/")) return NextResponse.next();
   if (path.startsWith("/api/cron/")) {
     const secret = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (secret === process.env.CRON_SECRET || process.env.NODE_ENV === "development") {
@@ -147,6 +148,7 @@ export async function middleware(req: NextRequest) {
     path === "/reset-password" ||
     path.startsWith("/api/auth") ||
     path.startsWith("/lead/") ||
+    path.startsWith("/onboard/") ||
     path.startsWith("/l/") ||
     path.startsWith("/d/") ||
     path.startsWith("/p/") ||

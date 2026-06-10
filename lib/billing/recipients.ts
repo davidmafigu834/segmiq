@@ -24,7 +24,27 @@ export async function getClientBillingContacts(clientId: string): Promise<Billin
     .eq("is_active", true)
     .order("created_at", { ascending: true });
 
-  return (data ?? []).map((u) => ({
+  const rows = data ?? [];
+
+  if (solo) {
+    if (rows.length > 1) {
+      console.warn(
+        `[getClientBillingContacts] solo client ${clientId} has ${rows.length} active salespeople; using earliest-created as owner`
+      );
+    }
+    const owner = rows[0];
+    return owner
+      ? [
+          {
+            id: owner.id as string,
+            email: (owner.email as string | null) ?? null,
+            phone: (owner.phone as string | null) ?? null,
+          },
+        ]
+      : [];
+  }
+
+  return rows.map((u) => ({
     id: u.id as string,
     email: (u.email as string | null) ?? null,
     phone: (u.phone as string | null) ?? null,

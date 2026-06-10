@@ -1,6 +1,7 @@
 export default function SalesDashboardSkeleton() {
   return (
     <div className="px-4 pt-6 pb-28 md:px-6 layout:pb-10 layout:px-8">
+      <div className="mb-6 h-[88px] rounded-xl border border-[var(--border)] border-l-4 border-l-[var(--accent)] bg-[var(--surface-card)] animate-pulse" />
       {/* Numbers strip skeleton */}
       <div className="grid grid-cols-2 min-[600px]:grid-cols-4 gap-3 mb-8">
         {[1, 2, 3, 4].map((i) => (

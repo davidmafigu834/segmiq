@@ -108,6 +108,8 @@ export const authOptions: NextAuthOptions = {
         token.sessionVersion = (user as { sessionVersion?: number }).sessionVersion ?? 0;
         token.email = (user as { email?: string | null }).email ?? null;
       }
+      const clientId = (token.clientId as string | null) ?? null;
+      token.clientMode = clientId ? await resolveClientMode(clientId) : "team";
       return token;
     },
     async session({ session, token }) {
