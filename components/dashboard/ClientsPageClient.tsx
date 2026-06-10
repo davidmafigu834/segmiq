@@ -1,23 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { ClientAvatar } from "@/components/ClientAvatar";
-import { CreateClientModal } from "@/components/dashboard/CreateClientModal";
+import { NewClientButton } from "@/components/dashboard/NewClientButton";
 
 export type ClientsPageListRow = { id: string; name: string; industry: string };
 
 export function ClientsPageClient({ clients }: { clients: ClientsPageListRow[] }) {
-  const [createOpen, setCreateOpen] = useState(false);
-
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
-        <button type="button" className="btn-primary" onClick={() => setCreateOpen(true)}>
-          New client
-        </button>
+        <NewClientButton />
       </div>
-      <CreateClientModal open={createOpen} onClose={() => setCreateOpen(false)} />
       <div className="grid gap-4 md:grid-cols-2 layout:grid-cols-3">
         {clients.map((c) => (
           <Link

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { ClientCard } from "./ClientCard";
+import { NewClientButton } from "@/components/dashboard/NewClientButton";
 import type { ClientPerfRow } from "@/lib/dashboard-data";
 
 export function ClientPerformanceGrid({ rows }: { rows: ClientPerfRow[] }) {
@@ -27,7 +28,8 @@ export function ClientPerformanceGrid({ rows }: { rows: ClientPerfRow[] }) {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Building2 className="mb-3 h-8 w-8 text-[var(--text-disabled)]" />
           <p className="mb-1 text-[14px] font-semibold text-[var(--text-secondary)]">No clients yet</p>
-          <p className="text-[12px] text-[var(--text-tertiary)]">Add your first client to start tracking leads and performance.</p>
+          <p className="mb-4 text-[12px] text-[var(--text-tertiary)]">Add your first client to start tracking leads and performance.</p>
+          <NewClientButton />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 layout:grid-cols-3">

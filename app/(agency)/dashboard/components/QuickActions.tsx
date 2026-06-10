@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Building2, Upload } from "lucide-react";
+import { UserPlus, Upload } from "lucide-react";
 import { ImportLeadsModal } from "@/components/leads/ImportLeadsModal";
 import { Button } from "@/components/ui/Button";
+import { NewClientButton } from "@/components/dashboard/NewClientButton";
 
 export function QuickActions() {
   const router = useRouter();
@@ -17,10 +18,7 @@ export function QuickActions() {
           <UserPlus className="h-4 w-4" />
           New lead
         </Button>
-        <Button variant="secondary" onClick={() => router.push("/dashboard/clients")}>
-          <Building2 className="h-4 w-4" />
-          Add client
-        </Button>
+        <NewClientButton variant="secondary" />
         <Button variant="secondary" onClick={() => setShowImport(true)}>
           <Upload className="h-4 w-4" />
           Import leads

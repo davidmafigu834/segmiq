@@ -1,6 +1,7 @@
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientsPageClient } from "@/components/dashboard/ClientsPageClient";
+import { ClientsPageHeaderAction } from "@/components/dashboard/ClientsPageHeaderAction";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,12 @@ export default async function ClientsPage() {
     })) ?? [];
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / CLIENTS" pageTitle="Clients" titleSize="hero">
+    <AgencyLayout
+      breadcrumb="AGENCY / CLIENTS"
+      pageTitle="Clients"
+      titleSize="hero"
+      actions={<ClientsPageHeaderAction />}
+    >
       <ClientsPageClient clients={rows} />
     </AgencyLayout>
   );
