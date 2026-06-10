@@ -3,42 +3,35 @@ import { sendEmail } from "@/lib/email/resend";
 import { invoiceIssuedEmail } from "@/lib/email/templates/invoice-issued";
 import { paymentOverdueEmail } from "@/lib/email/templates/payment-overdue";
 import { paymentConfirmedEmail } from "@/lib/email/templates/payment-confirmed";
-import { getClientNotificationEmails } from "@/lib/billing/recipients";
+import { getClientNotificationEmails, getClientBillingContacts } from "@/lib/billing/recipients";
+import { clientBillingPath } from "@/lib/billing/client-access";
 import { normalizeBillingPhone } from "@/lib/billing/phone";
 import { formatDate, formatMoney } from "@/lib/billing/format";
 import { getPublicBaseUrl } from "@/lib/constants";
 import { sendWhatsApp, isWhatsAppDeliveryConfigured } from "@/lib/messaging/provider";
 
-const BILLING_URL_SUFFIX = "client/billing";
+async function billingPageUrl(clientId: string): Promise<string> {
+  const path = await clientBillingPath(clientId);
+  return `${getPublicBaseUrl()}${path}`;
+}
 
-function billingPageUrl(): string {
-  return `${getPublicBaseUrl()}/client/billing`;
+async function billingUrlSuffix(clientId: string): Promise<string> {
+  const path = await clientBillingPath(clientId);
+  return path.replace(/^\//, "");
 }
 
 function waBillingWhatsAppEnabled(): boolean {
   return isWhatsAppDeliveryConfigured();
 }
 
-type ManagerContact = {
+type BillingContact = {
   id: string;
   email: string | null;
   phone: string | null;
 };
 
-async function loadManagerContacts(clientId: string): Promise<ManagerContact[]> {
-  const supabase = createAdminClient();
-  const { data } = await supabase
-    .from("users")
-    .select("id, email, phone")
-    .eq("client_id", clientId)
-    .eq("role", "CLIENT_MANAGER")
-    .eq("is_active", true)
-    .order("created_at", { ascending: true });
-  return (data ?? []).map((u) => ({
-    id: u.id as string,
-    email: (u.email as string | null) ?? null,
-    phone: (u.phone as string | null) ?? null,
-  }));
+async function loadBillingContacts(clientId: string): Promise<BillingContact[]> {
+  return getClientBillingContacts(clientId);
 }
 
 async function loadClientDialCode(clientId: string): Promise<string | null> {
@@ -49,27 +42,28 @@ async function loadClientDialCode(clientId: string): Promise<string | null> {
 
 async function sendBillingWhatsApp(params: {
   clientId: string;
-  managers: ManagerContact[];
+  contacts: BillingContact[];
   dialCode: string | null;
   template: "INVOICE_ISSUED" | "PAYMENT_OVERDUE" | "PAYMENT_CONFIRMED";
   variables: Record<string, string>;
   fallbackBody: string;
   notificationType: string;
 }): Promise<void> {
-  for (const mgr of params.managers) {
-    const phone = normalizeBillingPhone(mgr.phone, params.dialCode);
+  const urlSuffix = await billingUrlSuffix(params.clientId);
+  for (const contact of params.contacts) {
+    const phone = normalizeBillingPhone(contact.phone, params.dialCode);
     if (!phone) continue;
     await sendWhatsApp({
       to: phone,
       template: params.template,
       variables: params.variables,
       fallbackBody: params.fallbackBody,
-      urlButtonParam: BILLING_URL_SUFFIX,
+      urlButtonParam: urlSuffix,
       context: {
-        userId: mgr.id,
+        userId: contact.id,
         clientId: params.clientId,
         notificationType: params.notificationType,
-        rawRecipientForLog: mgr.phone ?? undefined,
+        rawRecipientForLog: contact.phone ?? undefined,
       },
     });
   }
@@ -119,13 +113,13 @@ export async function notifyInvoiceIssued(params: {
   }
 
   if (waBillingWhatsAppEnabled()) {
-    const [managers, dialCode] = await Promise.all([
-      loadManagerContacts(params.clientId),
+    const [contacts, dialCode] = await Promise.all([
+      loadBillingContacts(params.clientId),
       loadClientDialCode(params.clientId),
     ]);
     await sendBillingWhatsApp({
       clientId: params.clientId,
-      managers,
+      contacts,
       dialCode,
       template: "INVOICE_ISSUED",
       variables: {
@@ -154,7 +148,7 @@ export async function notifyPaymentOverdue(params: {
 }): Promise<void> {
   const emails = await getClientNotificationEmails(params.clientId);
   const amountFormatted = formatMoney(params.amount, params.currency);
-  const billingUrl = billingPageUrl();
+  const billingUrl = await billingPageUrl(params.clientId);
 
   if (emails.length > 0) {
     const { subject, html } = paymentOverdueEmail({
@@ -169,13 +163,13 @@ export async function notifyPaymentOverdue(params: {
   }
 
   if (waBillingWhatsAppEnabled()) {
-    const [managers, dialCode] = await Promise.all([
-      loadManagerContacts(params.clientId),
+    const [contacts, dialCode] = await Promise.all([
+      loadBillingContacts(params.clientId),
       loadClientDialCode(params.clientId),
     ]);
     await sendBillingWhatsApp({
       clientId: params.clientId,
-      managers,
+      contacts,
       dialCode,
       template: "PAYMENT_OVERDUE",
       variables: {
@@ -205,7 +199,7 @@ export async function notifyPaymentConfirmed(params: {
 }): Promise<void> {
   const emails = await getClientNotificationEmails(params.clientId);
   const amountFormatted = formatMoney(params.amount, params.currency);
-  const billingUrl = billingPageUrl();
+  const billingUrl = await billingPageUrl(params.clientId);
 
   if (emails.length > 0) {
     const { subject, html } = paymentConfirmedEmail({
@@ -219,13 +213,13 @@ export async function notifyPaymentConfirmed(params: {
   }
 
   if (waBillingWhatsAppEnabled()) {
-    const [managers, dialCode] = await Promise.all([
-      loadManagerContacts(params.clientId),
+    const [contacts, dialCode] = await Promise.all([
+      loadBillingContacts(params.clientId),
       loadClientDialCode(params.clientId),
     ]);
     await sendBillingWhatsApp({
       clientId: params.clientId,
-      managers,
+      contacts,
       dialCode,
       template: "PAYMENT_CONFIRMED",
       variables: {

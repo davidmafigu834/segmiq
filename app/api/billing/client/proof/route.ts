@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { putObject, getPublicUrl } from "@/lib/storage/r2";
+import { canAccessClientBilling } from "@/lib/billing/client-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,17 +15,22 @@ function sanitizeFileName(name: string): string {
 }
 
 /**
- * Client Manager submits proof of a payment they have made. This creates a
- * PENDING payment (recorded_via = 'client_upload', recorded_by = null) plus a
- * payment_proofs row — it feeds the agency review queue and is NOT applied until
- * the agency confirms it.
+ * Client submits proof of a payment they have made. Team managers and solo
+ * owner salespeople only. Creates a PENDING payment plus payment_proofs row.
  */
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.userId || session.role !== "CLIENT_MANAGER" || !session.clientId) {
+  const access = await canAccessClientBilling({
+    userId: session?.userId,
+    role: session?.role,
+    clientId: session?.clientId,
+    clientMode: session?.clientMode,
+  });
+  if (!access.ok || !session?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const clientId = session.clientId;
+  const clientId = access.clientId;
+  const userId = session.userId;
 
   const form = await req.formData();
   const invoiceId = String(form.get("invoiceId") ?? "");
@@ -94,7 +100,7 @@ export async function POST(req: Request) {
     file_url: getPublicUrl(key),
     file_name: file.name,
     file_type: file.type || null,
-    uploaded_by: session.userId,
+    uploaded_by: userId,
   });
 
   return NextResponse.json({ ok: true, paymentId }, { status: 201 });

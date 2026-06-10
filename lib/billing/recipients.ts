@@ -1,20 +1,41 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isClientSoloMode } from "@/lib/billing/client-access";
+
+export type BillingContact = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+};
 
 /**
- * The `clients` table has no contact-email column, so billing notifications go
- * to the client's active CLIENT_MANAGER user(s), earliest-created first.
+ * Billing notification recipients: active CLIENT_MANAGER(s) on team clients,
+ * or the active salesperson owner(s) on solo clients (typically one).
  */
-export async function getClientNotificationEmails(clientId: string): Promise<string[]> {
+export async function getClientBillingContacts(clientId: string): Promise<BillingContact[]> {
   const supabase = createAdminClient();
+  const solo = await isClientSoloMode(clientId);
+  const role = solo ? "SALESPERSON" : "CLIENT_MANAGER";
+
   const { data } = await supabase
     .from("users")
-    .select("email, created_at")
+    .select("id, email, phone, created_at")
     .eq("client_id", clientId)
-    .eq("role", "CLIENT_MANAGER")
+    .eq("role", role)
     .eq("is_active", true)
     .order("created_at", { ascending: true });
 
-  return (data ?? [])
-    .map((u) => (u.email as string | null)?.trim())
-    .filter((e): e is string => Boolean(e));
+  return (data ?? []).map((u) => ({
+    id: u.id as string,
+    email: (u.email as string | null) ?? null,
+    phone: (u.phone as string | null) ?? null,
+  }));
+}
+
+/**
+ * Email addresses for billing notifications — managers on team clients,
+ * owner salesperson on solo clients.
+ */
+export async function getClientNotificationEmails(clientId: string): Promise<string[]> {
+  const contacts = await getClientBillingContacts(clientId);
+  return contacts.map((c) => c.email?.trim()).filter((e): e is string => Boolean(e));
 }

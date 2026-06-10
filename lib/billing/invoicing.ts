@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { putObject, getPublicUrl } from "@/lib/storage/r2";
 import { renderInvoicePdf } from "@/lib/billing/invoice-pdf";
 import { notifyInvoiceIssued } from "@/lib/billing/notifications";
+import { getClientNotificationEmails } from "@/lib/billing/recipients";
 import { CRM_PLAN_LABELS, type CrmPlan } from "@/lib/billing/plans";
 
 export type IssueInvoiceResult = {
@@ -85,18 +86,7 @@ export async function issueInvoiceForSubscription(
     .eq("id", invoice.client_id)
     .maybeSingle();
 
-  // No client-level email column exists — notify the client's active managers.
-  const { data: managers } = await supabase
-    .from("users")
-    .select("email, created_at")
-    .eq("client_id", invoice.client_id)
-    .eq("role", "CLIENT_MANAGER")
-    .eq("is_active", true)
-    .order("created_at", { ascending: true });
-
-  const recipientEmails = (managers ?? [])
-    .map((m) => (m.email as string | null)?.trim())
-    .filter((e): e is string => Boolean(e));
+  const recipientEmails = await getClientNotificationEmails(invoice.client_id as string);
 
   const { data: settings } = await supabase
     .from("billing_settings")
@@ -159,7 +149,7 @@ export async function issueInvoiceForSubscription(
     pdfBuffer,
   });
   if (!emailed && recipientEmails.length === 0) {
-    console.warn(`Invoice ${invoiceNumber}: no active CLIENT_MANAGER recipients; email skipped.`);
+    console.warn(`Invoice ${invoiceNumber}: no billing recipients; email skipped.`);
   }
 
   return { invoiceId, invoiceNumber, alreadyExisted: false, pdfUrl, emailed };
