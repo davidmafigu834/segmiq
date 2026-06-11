@@ -60,19 +60,27 @@ export async function POST(req: Request) {
   const currentVersion =
     (userRow as { session_version?: number } | null)?.session_version ?? 0;
 
-  await supabase
+  const { error: updateErr } = await supabase
     .from("users")
     .update({
       password: hashed,
       session_version: currentVersion + 1,
-      updated_at: new Date().toISOString(),
     })
     .eq("id", typedToken.user_id);
 
-  await supabase
+  if (updateErr) {
+    console.error("[cloud/reset-password] password update failed:", updateErr);
+    return NextResponse.json({ error: "Failed to reset password" }, { status: 500 });
+  }
+
+  const { error: tokenErr } = await supabase
     .from("password_reset_tokens")
     .update({ used: true })
     .eq("token", token);
+
+  if (tokenErr) {
+    console.error("[cloud/reset-password] token mark-used failed:", tokenErr);
+  }
 
   return NextResponse.json({ success: true });
 }
