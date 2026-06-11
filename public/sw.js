@@ -1,12 +1,22 @@
-const CACHE_VERSION = 'leadstaq-cloud-v3';
+const CACHE_VERSION = 'leadstaq-cloud-v4';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 
-// Only precache static assets — auth-protected pages return redirects and break install.
+function offlineFallback() {
+  try {
+    const host = new URL(self.registration.scope).hostname;
+    return host.startsWith('cloud.') || host === 'cloud.localhost' ? '/login' : '/cloud/login';
+  } catch {
+    return '/cloud/login';
+  }
+}
+
+// Only precache static assets and public login pages.
 const PRECACHE_URLS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/cloud/login',
+  '/login',
 ];
 
 self.addEventListener('install', (event) => {
@@ -67,7 +77,7 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .catch(() =>
           caches.match(request)
-            .then((cached) => cached || caches.match('/cloud/login'))
+            .then((cached) => cached || caches.match(offlineFallback()))
         )
     );
     return;

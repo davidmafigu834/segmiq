@@ -1,4 +1,3 @@
-import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 
 function getAppDomain(): string {
@@ -8,50 +7,52 @@ function getAppDomain(): string {
     .split(":")[0];
 }
 
-function isCloudHost(host: string): boolean {
+export function isCloudHost(host: string): boolean {
   const appDomain = getAppDomain();
   return host === `cloud.${appDomain}` || host === "cloud.localhost";
 }
 
-const ICONS: MetadataRoute.Manifest["icons"] = [
+function getOrigin(hostHeader: string): string {
+  const host = hostHeader.split("/")[0];
+  const protocol = host.includes("localhost") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
+
+const ICONS = [
   { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
   { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
   { src: "/icons/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
 ];
 
-export default function manifest(): MetadataRoute.Manifest {
-  const host = (headers().get("host") ?? "").split(":")[0];
+export function buildCloudManifest() {
+  const hostHeader = headers().get("host") ?? "cloud.segmiq.com";
+  const host = hostHeader.split(":")[0];
+  const origin = getOrigin(hostHeader);
   const onCloudHost = isCloudHost(host);
   const base = onCloudHost ? "" : "/cloud";
+  const startPath = `${base}/dashboard/upload`;
+  const startUrl = `${origin}${startPath}`;
+  const scope = onCloudHost ? `${origin}/` : `${origin}/cloud/`;
 
   return {
     name: "Segmiq Cloud",
     short_name: "Cloud",
     description: "Document your projects from the field. Upload photos, share with clients.",
-    id: `${base}/dashboard/upload`,
-    start_url: `${base}/dashboard/upload`,
-    scope: onCloudHost ? "/" : "/cloud/",
+    id: startUrl,
+    start_url: startUrl,
+    scope,
     display: "standalone",
+    display_override: ["standalone", "minimal-ui"],
+    prefer_related_applications: false,
     background_color: "#0a0a0a",
     theme_color: "#D4FF4F",
     orientation: "portrait-primary",
     categories: ["business", "productivity", "photo"],
     icons: ICONS,
-    shortcuts: [
-      {
-        name: "Upload Photos",
-        short_name: "Upload",
-        description: "Upload photos to a project",
-        url: `${base}/dashboard/upload`,
-        icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
-      },
-      {
-        name: "My Projects",
-        short_name: "Projects",
-        description: "View all projects",
-        url: `${base}/dashboard/projects`,
-        icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }],
-      },
-    ],
   };
+}
+
+export function isCloudRequestHost(hostHeader: string | null): boolean {
+  if (!hostHeader) return false;
+  return isCloudHost(hostHeader.split(":")[0]);
 }

@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Instrument_Serif, DM_Sans, DM_Serif_Display, Inter } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ServiceWorkerCleanup } from "@/components/ServiceWorkerCleanup";
+import { isCloudRequestHost } from "@/lib/cloud/manifest";
 import { getMetadataBase, ROOT_METADATA } from "@/lib/seo";
 
 const dmSans = DM_Sans({
@@ -73,13 +75,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const isCloudHost = isCloudRequestHost(headers().get("host"));
+
   return (
     <html
       lang="en"
       className={`${instrumentSerif.variable} ${GeistSans.variable} ${GeistMono.variable} ${dmSans.variable} ${dmSerif.variable} ${inter.variable}`}
     >
       <head>
-        <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+        {isCloudHost ? (
+          <>
+            {/* No crossorigin — use-credentials breaks installability on some browsers */}
+            <link rel="manifest" href="/manifest.webmanifest" />
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js",{scope:"/"})}`,
+              }}
+            />
+          </>
+        ) : (
+          <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+        )}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" />
       </head>
       <body className={`${inter.className} min-h-screen bg-surface-canvas font-sans text-sm text-ink-primary antialiased`}>

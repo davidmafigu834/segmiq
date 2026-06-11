@@ -11,6 +11,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  applicationName: "Segmiq Cloud",
   metadataBase: (() => {
     const raw = process.env.NEXT_PUBLIC_CLOUD_DOMAIN ?? SITE.cloudUrl;
     const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
