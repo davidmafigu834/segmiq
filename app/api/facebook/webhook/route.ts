@@ -5,6 +5,7 @@ import { graphCall } from "@/lib/facebook/graph";
 import { verifyFacebookSignature } from "@/lib/facebook/signature";
 import { fbLog } from "@/lib/facebook/log";
 import { handleWhatsAppEvent } from "@/lib/facebook/whatsapp-events";
+import { pickClientForLeadgenWebhook } from "@/lib/facebook/resolve-webhook-client";
 
 type ClientRow = {
   id: string;
@@ -200,18 +201,37 @@ export async function POST(req: Request) {
 
         fbLog("fb.webhook.leadgen_incoming", { leadgen_id, page_id, form_id });
 
-        const { data: client, error } = await supabase
+        const { data: clientRows, error } = await supabase
           .from("clients")
-          .select("id, fb_access_token, fb_page_id, fb_form_id")
+          .select("id, fb_access_token, fb_page_id, fb_form_id, is_active, is_archived, created_at")
           .eq("fb_page_id", page_id)
           .eq("fb_form_id", form_id)
-          .not("fb_access_token", "is", null)
-          .maybeSingle();
+          .not("fb_access_token", "is", null);
 
         if (error) {
           console.error("[fb webhook] client lookup failed:", error);
           continue;
         }
+
+        const matches = clientRows ?? [];
+        if (matches.length > 1) {
+          fbLog("fb.webhook.no_client_match", {
+            page_id,
+            form_id,
+            reason: "duplicate_page_form_pair",
+            clientIds: matches.map((c) => c.id),
+          });
+        }
+
+        const client = pickClientForLeadgenWebhook(
+          matches as {
+            id: string;
+            fb_access_token: string;
+            is_active?: boolean | null;
+            is_archived?: boolean | null;
+            created_at?: string | null;
+          }[]
+        );
 
         if (!client?.fb_access_token) {
           fbLog("fb.webhook.no_client_match", { page_id, form_id });

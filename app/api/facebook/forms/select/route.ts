@@ -22,6 +22,35 @@ export async function POST(req: Request) {
   }
 
   const supabase = createAdminClient();
+
+  const { data: current } = await supabase
+    .from("clients")
+    .select("fb_page_id")
+    .eq("id", clientId)
+    .maybeSingle();
+
+  const pageId = (current as { fb_page_id?: string | null } | null)?.fb_page_id;
+  if (pageId) {
+    const { data: conflict } = await supabase
+      .from("clients")
+      .select("id, name")
+      .eq("fb_page_id", pageId)
+      .eq("fb_form_id", formId)
+      .neq("id", clientId)
+      .limit(1)
+      .maybeSingle();
+
+    if (conflict) {
+      const otherName = (conflict as { name?: string }).name ?? "another client";
+      return NextResponse.json(
+        {
+          error: `This Page + Lead Form is already connected to "${otherName}". Disconnect Facebook there first, or choose a different form.`,
+        },
+        { status: 409 }
+      );
+    }
+  }
+
   const { error } = await supabase
     .from("clients")
     .update({
