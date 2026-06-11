@@ -38,7 +38,6 @@ const inter = Inter({
 export const metadata: Metadata = {
   ...ROOT_METADATA,
   metadataBase: getMetadataBase(),
-  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },

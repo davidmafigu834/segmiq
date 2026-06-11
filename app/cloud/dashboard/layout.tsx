@@ -9,6 +9,8 @@ import {
   Bell, CreditCard, HelpCircle, BarChart2,
 } from "lucide-react";
 import { Suspense } from "react";
+import { InstallPrompt } from "@/app/cloud/components/InstallPrompt";
+import { IOSInstallBanner } from "@/app/cloud/components/IOSInstallBanner";
 
 const PRIMARY_NAV = [
   { href: "/cloud/dashboard", icon: Grid, label: "Home" },
@@ -355,6 +357,9 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
       <Suspense>
         <WelcomeToast />
       </Suspense>
+
+      <InstallPrompt />
+      <IOSInstallBanner />
     </div>
   );
 }

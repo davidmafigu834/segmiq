@@ -16,10 +16,18 @@ import { useEffect } from "react";
  */
 const CLEANUP_KEY = "sw-cleanup-v2";
 
+function isCloudContext(): boolean {
+  const host = window.location.hostname;
+  if (host === "cloud.localhost" || host.startsWith("cloud.")) return true;
+  return window.location.pathname.startsWith("/cloud");
+}
+
 export function ServiceWorkerCleanup() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
+    // Cloud PWA manages its own worker — never unregister it from the main app shell.
+    if (isCloudContext()) return;
     try {
       if (localStorage.getItem(CLEANUP_KEY)) return;
     } catch {

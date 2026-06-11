@@ -23,7 +23,6 @@ export const metadata: Metadata = {
   description:
     "Document your projects from the field. Upload photos, share with clients instantly.",
   alternates: { canonical: SITE.cloudUrl },
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

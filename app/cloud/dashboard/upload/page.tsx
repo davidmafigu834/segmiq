@@ -7,8 +7,6 @@ import {
   Camera, Check, ChevronRight, Loader2, Plus, X, ArrowRight, Folder,
 } from "lucide-react";
 import { generateVideoThumbnail, formatFileSize } from "@/app/cloud/lib/video-thumbnail";
-import { InstallPrompt } from "@/app/cloud/components/InstallPrompt";
-import { IOSInstallBanner } from "@/app/cloud/components/IOSInstallBanner";
 import { getProjectCardStyles } from "@/app/cloud/components/ProjectCard";
 
 type Project = {
@@ -71,22 +69,6 @@ export default function CloudUploadPage() {
 
   useEffect(() => {
     fetchProjects();
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
-        .then((registration) => {
-          registration.addEventListener("updatefound", () => {
-            const newWorker = registration.installing;
-            if (!newWorker) return;
-            newWorker.addEventListener("statechange", () => {
-              if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                newWorker.postMessage({ type: "SKIP_WAITING" });
-              }
-            });
-          });
-        })
-        .catch((err) => console.error("[SW] Registration failed:", err));
-    }
   }, [fetchProjects]);
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -531,8 +513,6 @@ export default function CloudUploadPage() {
           </div>
         )}
       </div>
-      <InstallPrompt />
-      <IOSInstallBanner />
     </div>
   );
 }

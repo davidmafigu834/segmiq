@@ -1,11 +1,12 @@
-const CACHE_VERSION = 'leadstaq-cloud-v2';
+const CACHE_VERSION = 'leadstaq-cloud-v3';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 
+// Only precache static assets — auth-protected pages return redirects and break install.
 const PRECACHE_URLS = [
-  '/cloud/dashboard/upload',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/cloud/login',
 ];
 
 self.addEventListener('install', (event) => {
@@ -66,7 +67,7 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .catch(() =>
           caches.match(request)
-            .then((cached) => cached || caches.match('/cloud/dashboard/upload'))
+            .then((cached) => cached || caches.match('/cloud/login'))
         )
     );
     return;
