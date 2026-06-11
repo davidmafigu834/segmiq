@@ -164,8 +164,8 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       const sp = list.find((s) => s.id === assignedId)!;
       const mgr = managers?.[0] ?? null;
       const managerPrefs = mgr ? getManagerPrefs((mgr as { notification_prefs?: unknown }).notification_prefs) : null;
-      background("notifyNewLead", () =>
-        notifyNewLead(
+      try {
+        await notifyNewLead(
           leadRow,
           {
             id: sp.id as string,
@@ -187,28 +187,29 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
             salesPrefs: parseSalesPrefs((sp as { notification_prefs?: unknown }).notification_prefs),
             managerPrefs,
           }
-        )
-      );
+        );
+      } catch (err) {
+        console.error("[createLead] notifyNewLead failed:", err);
+      }
     } else {
-      background("notifyAdminsNoSalesperson", () =>
-        notifyAdminsNoSalesperson({
+      try {
+        await notifyAdminsNoSalesperson({
           clientName: client.name as string,
           leadId: leadRow.id,
           clientId,
-        })
-      );
+        });
+      } catch (err) {
+        console.error("[createLead] notifyAdminsNoSalesperson failed:", err);
+      }
     }
 
     // Send prospect confirmation WhatsApp on public form submissions only.
-    // Not sent for MANUAL source, when phone is missing, or when client has disabled it.
-    // NOTE: Opt-out (STOP) handling should be added here once the incoming message
-    // system tracks WhatsApp opt-outs in a blocked_numbers table.
     if (
       source !== "MANUAL" &&
       leadRow.phone &&
       (client as { send_prospect_confirmation?: boolean }).send_prospect_confirmation !== false
     ) {
-      background("sendProspectConfirmation", async () => {
+      try {
         const serviceDescription =
           (leadRow.project_type as string | null) ||
           (leadRow.budget as string | null) ||
@@ -233,7 +234,9 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
             notificationType: "LEAD_CONFIRMATION_PROSPECT",
           },
         });
-      });
+      } catch (err) {
+        console.error("[createLead] prospect confirmation WhatsApp failed:", err);
+      }
     }
   }
 

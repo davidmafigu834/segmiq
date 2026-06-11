@@ -12,7 +12,7 @@ function asCountryCode(iso: string): CountryCode {
  */
 export function normalizeToE164(
   rawPhone: string | null | undefined,
-  defaultCountry: string = process.env.DEFAULT_COUNTRY_CODE || "US"
+  defaultCountry: string = process.env.DEFAULT_COUNTRY_CODE || "ZW"
 ): string | null {
   if (!rawPhone?.trim()) return null;
   const raw = rawPhone.trim().replace(/^whatsapp:/i, "");

@@ -1,5 +1,6 @@
 import type { CountryCode } from "libphonenumber-js";
 import { normalizeToE164 } from "@/lib/phone-validate";
+import { resolveWhatsAppRecipient } from "@/lib/messaging/recipient";
 import { getFacebookGraphBase } from "@/lib/facebook/graph";
 import { fbLog } from "@/lib/facebook/log";
 import { logMessage, type LogMessageParams, type SendResult } from "@/lib/messaging/log";
@@ -16,7 +17,8 @@ import { logMessage, type LogMessageParams, type SendResult } from "@/lib/messag
 // Set NEXT_PUBLIC_SITE_URL=https://segmiq.com so getPublicBaseUrl() matches.
 // ---------------------------------------------------------------------------
 
-const TEMPLATE_LANGUAGE = "en_US";
+/** Must match the language code on approved templates in Business Manager (WABA uses `en`, not `en_US`). */
+const TEMPLATE_LANGUAGE = process.env.META_WHATSAPP_TEMPLATE_LANGUAGE?.trim() || "en";
 
 export type TemplateKey =
   | "LEAD_CONFIRMATION_PROSPECT"
@@ -81,8 +83,8 @@ export type SendWhatsAppParams = {
 export async function sendWhatsAppViaMeta(
   params: SendWhatsAppParams
 ): Promise<SendResult & { channel: "whatsapp" }> {
-  const rawInput = (params.toOverride?.trim() || params.to?.trim() || "") || null;
-  const defaultCc = (process.env.DEFAULT_COUNTRY_CODE || "US").toUpperCase() as CountryCode;
+  const defaultCc = (process.env.DEFAULT_COUNTRY_CODE || "ZW").toUpperCase() as CountryCode;
+  const rawInput = resolveWhatsAppRecipient(params.to, params.toOverride, defaultCc);
   const normalized = normalizeToE164(rawInput, defaultCc);
   const logRecipient = normalized ?? params.context.rawRecipientForLog ?? rawInput ?? "(empty)";
 

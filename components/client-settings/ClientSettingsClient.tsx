@@ -766,13 +766,17 @@ export function ClientSettingsClient({
               <strong className="text-ink-primary">Account</strong> page (client portal → Account).
             </p>
             <label className="block">
-              <span className="font-mono text-[10px] uppercase text-ink-tertiary">Twilio WhatsApp override</span>
+              <span className="font-mono text-[10px] uppercase text-ink-tertiary">Test WhatsApp redirect (optional)</span>
               <input
                 className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 font-mono text-sm"
                 value={notifForm.twilio_whatsapp_override}
                 onChange={(e) => setNotifForm((f) => ({ ...f, twilio_whatsapp_override: e.target.value }))}
-                placeholder="Leave blank to use agency default"
+                placeholder="Leave blank — sends to each user's phone"
               />
+              <p className="mt-1 text-xs text-ink-secondary">
+                Legacy testing field. When set to a valid phone number, all WhatsApp alerts for this client go there
+                instead of salespeople/managers. Leave blank in production.
+              </p>
             </label>
             <label className="flex cursor-pointer items-center gap-3">
               <div className="relative inline-block">

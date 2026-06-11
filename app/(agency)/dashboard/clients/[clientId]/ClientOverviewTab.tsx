@@ -148,7 +148,7 @@ export function ClientOverviewTab({
               notificationsConfigured ? (
                 <span>WhatsApp + Email active</span>
               ) : (
-                <span className="text-[var(--warning)]">Complete Twilio &amp; Resend in agency settings</span>
+                <span className="text-[var(--warning)]">Complete Meta WhatsApp &amp; Resend in agency settings</span>
               )
             }
             href={`/dashboard/clients/${clientId}/settings?tab=notifications`}

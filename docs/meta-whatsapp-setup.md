@@ -7,7 +7,7 @@ Outbound WhatsApp uses the **Graph API** (`POST /{phone-number-id}/messages`) an
 - Meta Business Verification complete for the business used for Facebook Lead Ads.
 - **WhatsApp Business Account (WABA)** created, phone number added and “Leadstaq” display name approved.
 - A **System User** with a long-lived token: scopes `whatsapp_business_messaging`, `whatsapp_business_management` (and any your org requires for token creation).
-- All **segmiq_*** message templates approved in Business Manager (names hardcoded in `lib/messaging/meta-whatsapp.ts`).
+- All **segmiq_*** message templates approved in Business Manager (names hardcoded in `lib/messaging/meta-whatsapp.ts`), language **`en`** (`META_WHATSAPP_TEMPLATE_LANGUAGE`, not `en_US`).
 
 ## Webhook (delivery receipts and inbound)
 

@@ -234,32 +234,62 @@ export async function notifyNewLead(
   const fallbackSales = `New lead for ${clientName}. Name: ${lead.name ?? "—"} | Service: ${service} | Budget: ${budget} | Location: ${location}`;
 
   if (salesPrefs.whatsapp) {
-    const r = await sendWhatsApp({
-      to: salesperson.phone,
-      toOverride: clientTwilioOverride,
-      template: "NEW_LEAD",
-      variables: {
-        "1": clientName,
-        "2": lead.name || "Unknown",
-        "3": service,
-        "4": budget,
-        "5": location,
-      },
-      urlButtonParam: magicToken || undefined,
-      fallbackBody: fallbackSales,
-      context: {
+    if (!salesperson.phone?.trim()) {
+      await logMessage(
+        { ok: false, error: "No phone on file", errorCode: "SKIPPED_NO_PHONE" },
+        {
+          userId: salesperson.id,
+          leadId: lead.id,
+          clientId: lead.client_id,
+          channel: "whatsapp",
+          notificationType: "NEW_LEAD",
+          recipient: "(none)",
+          templateKey: "NEW_LEAD",
+          payloadPreview: fallbackSales,
+        }
+      );
+      console.log("[notifyNewLead] WhatsApp to salesperson: skipped (no phone)");
+    } else {
+      const r = await sendWhatsApp({
+        to: salesperson.phone,
+        toOverride: clientTwilioOverride,
+        template: "NEW_LEAD",
+        variables: {
+          "1": clientName,
+          "2": lead.name || "Unknown",
+          "3": service,
+          "4": budget,
+          "5": location,
+        },
+        urlButtonParam: magicToken || undefined,
+        fallbackBody: fallbackSales,
+        context: {
+          userId: salesperson.id,
+          leadId: lead.id,
+          clientId: lead.client_id,
+          notificationType: "NEW_LEAD",
+        },
+      });
+      if (r.ok) {
+        console.log("[notifyNewLead] WhatsApp to salesperson: success");
+      } else {
+        console.error("[notifyNewLead] WhatsApp to salesperson:", r.error, r.errorCode);
+      }
+    }
+  } else {
+    await logMessage(
+      { ok: false, error: "WhatsApp disabled in user preferences", errorCode: "SKIPPED_PREF" },
+      {
         userId: salesperson.id,
         leadId: lead.id,
         clientId: lead.client_id,
+        channel: "whatsapp",
         notificationType: "NEW_LEAD",
-      },
-    });
-    if (r.ok) {
-      console.log("[notifyNewLead] WhatsApp to salesperson: success");
-    } else {
-      console.error("[notifyNewLead] WhatsApp to salesperson:", r.error, r.errorCode);
-    }
-  } else {
+        recipient: salesperson.phone?.trim() || "(none)",
+        templateKey: "NEW_LEAD",
+        payloadPreview: fallbackSales,
+      }
+    );
     console.log("[notifyNewLead] WhatsApp to salesperson: skipped (user preference)");
   }
 
@@ -348,10 +378,42 @@ export async function notifyNewLead(
       const hasPhone = Boolean(manager.phone?.trim());
       const hasEmail = Boolean(manager.email?.trim());
       if (mp.newLead.whatsapp && hasPhone) {
-        console.info(
-          "[notifyNewLead] manager WhatsApp skipped (no approved Meta template — email/in-app only)"
-        );
+        const managerFallback = `New lead for ${clientName} — assigned to ${salesperson.name}. ${lead.name ?? "Lead"} · ${service}`;
+        const mr = await sendWhatsApp({
+          to: manager.phone,
+          toOverride: clientTwilioOverride,
+          template: "NEW_LEAD",
+          variables: {
+            "1": clientName,
+            "2": lead.name || "Unknown",
+            "3": service,
+            "4": budget,
+            "5": location,
+          },
+          urlButtonParam: magicToken || undefined,
+          fallbackBody: managerFallback,
+          context: {
+            userId: manager.id,
+            leadId: lead.id,
+            clientId: lead.client_id,
+            notificationType: "NEW_LEAD_MANAGER",
+          },
+        });
+        if (mr.ok) console.log("[notifyNewLead] WhatsApp to manager: success");
+        else console.error("[notifyNewLead] WhatsApp to manager:", mr.error, mr.errorCode);
       } else if (mp.newLead.whatsapp && !hasPhone) {
+        await logMessage(
+          { ok: false, error: "No phone on file", errorCode: "SKIPPED_NO_PHONE" },
+          {
+            userId: manager.id,
+            leadId: lead.id,
+            clientId: lead.client_id,
+            channel: "whatsapp",
+            notificationType: "NEW_LEAD_MANAGER",
+            recipient: "(none)",
+            templateKey: "NEW_LEAD",
+          }
+        );
         console.info("[notifyNewLead] manager WhatsApp skipped (no phone)");
       }
       if (mp.newLead.email && hasEmail) {

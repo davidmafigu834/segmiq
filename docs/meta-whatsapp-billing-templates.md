@@ -4,7 +4,7 @@ Submit these three **UTILITY** templates in Meta Business Manager before enablin
 
 Base URL for all URL buttons: your CRM origin (`https://segmiq.com/`). The dynamic button suffix sent by code is `client/billing`.
 
-Language: **English (en_US)** — must match the approved template language in Business Manager.
+Language: **English (`en`)** — must match the approved template language in Business Manager (set `META_WHATSAPP_TEMPLATE_LANGUAGE=en`).
 
 ---
 
