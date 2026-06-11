@@ -41,6 +41,7 @@ export function ProfileSettings({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [saveErrorMessage, setSaveErrorMessage] = useState("");
   const [savedIsPublished, setSavedIsPublished] = useState(initialProfile?.is_published ?? false);
   const [heroUploading, setHeroUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,12 +81,21 @@ export function ProfileSettings({
         setTimeout(() => setSaved(false), 2500);
         router.refresh();
       } else {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
         setSaveError(true);
-        setTimeout(() => setSaveError(false), 4000);
+        setSaveErrorMessage(j.error ?? "Save failed — please try again.");
+        setTimeout(() => {
+          setSaveError(false);
+          setSaveErrorMessage("");
+        }, 6000);
       }
     } catch {
       setSaveError(true);
-      setTimeout(() => setSaveError(false), 4000);
+      setSaveErrorMessage("Save failed — please try again.");
+      setTimeout(() => {
+        setSaveError(false);
+        setSaveErrorMessage("");
+      }, 6000);
     } finally {
       setSaving(false);
     }
@@ -244,7 +254,7 @@ export function ProfileSettings({
             </a>
           )}
           {saveError && (
-            <p className="text-sm text-red-500">Save failed — please try again.</p>
+            <p className="text-sm text-red-500">{saveErrorMessage || "Save failed — please try again."}</p>
           )}
         </div>
       </form>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { findOnboardingToken } from "@/lib/onboarding/tokens";
-
+import { isClientSlugAvailable } from "@/lib/clients/slug";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
@@ -23,12 +23,6 @@ export async function GET(req: Request) {
   }
 
   const supabase = createAdminClient();
-  const { data: clash } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("slug", slug)
-    .neq("id", tokenResult.client.id)
-    .maybeSingle();
+  const available = await isClientSlugAvailable(supabase, slug, tokenResult.client.id);
 
-  return NextResponse.json({ available: !clash, slug });
-}
+  return NextResponse.json({ available, slug });}

@@ -9,6 +9,7 @@ import { inviteSalespersonEmail } from "@/lib/email/templates/invite-salesperson
 import type { OnboardingCountryCode, OnboardingProgress } from "@/lib/onboarding/constants";
 import { dialCodeForCountry } from "@/lib/onboarding/constants";
 import type { OnboardingTokenRow } from "@/lib/onboarding/tokens";
+import { isClientSlugAvailable } from "@/lib/clients/slug";
 
 export const ONBOARDING_ALREADY_COMPLETED = "This onboarding link has already been completed";
 
@@ -104,13 +105,8 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
 
   const supabase = createAdminClient();
 
-  const { data: slugClash } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("slug", slug)
-    .neq("id", clientId)
-    .maybeSingle();
-  if (slugClash) {
+  const slugAvailable = await isClientSlugAvailable(supabase, slug, clientId);
+  if (!slugAvailable) {
     return { ok: false, error: "Slug already in use", status: 400 };
   }
 

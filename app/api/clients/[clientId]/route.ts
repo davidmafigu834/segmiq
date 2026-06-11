@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRoles } from "@/lib/api-guards";
+import { archiveClient } from "@/lib/clients/archive";
+import { isClientSlugAvailable } from "@/lib/clients/slug";
 
 export const dynamic = "force-dynamic";
 
@@ -54,8 +56,8 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   const body = parsed.data;
 
   if (body.slug && body.slug !== existing.slug) {
-    const { data: clash } = await supabase.from("clients").select("id").eq("slug", body.slug).neq("id", params.clientId).maybeSingle();
-    if (clash) {
+    const available = await isClientSlugAvailable(supabase, body.slug, params.clientId);
+    if (!available) {
       return NextResponse.json({ error: "Slug already in use" }, { status: 400 });
     }
   }
@@ -68,19 +70,9 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     if (body.deleteConfirmName.trim() !== savedName) {
       return NextResponse.json({ error: "Name does not match — delete cancelled" }, { status: 400 });
     }
-    const { data: archived, error } = await supabase
-      .from("clients")
-      .update({
-        is_archived: true,
-        is_active: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", params.clientId)
-      .select("id")
-      .maybeSingle();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (!archived) {
-      return NextResponse.json({ error: "Client could not be archived" }, { status: 404 });
+    const result = await archiveClient(supabase, params.clientId);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
     return NextResponse.json({ ok: true, archived: true });
   }

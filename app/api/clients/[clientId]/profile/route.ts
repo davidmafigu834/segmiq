@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isClientSlugAvailable, isProfileSlugAvailable } from "@/lib/clients/slug";
 
 export async function GET(_req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
@@ -30,6 +31,23 @@ export async function PUT(req: Request, { params }: { params: { clientId: string
   }
 
   const supabase = createAdminClient();
+
+  if (typeof patch.slug === "string" && patch.slug.trim()) {
+    const nextSlug = patch.slug.trim().toLowerCase();
+    if (!/^[a-z0-9-]+$/.test(nextSlug)) {
+      return NextResponse.json({ error: "Slug may only contain lowercase letters, numbers, and hyphens" }, { status: 400 });
+    }
+    patch.slug = nextSlug;
+
+    const clientSlugOk = await isClientSlugAvailable(supabase, nextSlug, params.clientId);
+    const profileSlugOk = await isProfileSlugAvailable(supabase, nextSlug, params.clientId);
+    if (!clientSlugOk || !profileSlugOk) {
+      return NextResponse.json(
+        { error: "This profile URL is already in use by another client. Choose a different slug." },
+        { status: 409 }
+      );
+    }
+  }
 
   const { data: existing } = await supabase
     .from("client_profiles")

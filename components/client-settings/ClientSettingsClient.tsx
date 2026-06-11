@@ -238,7 +238,7 @@ export function ClientSettingsClient({
       });
       const j = (await res.json()) as { error?: string; archived?: boolean };
       if (!res.ok) throw new Error(j.error ?? "Request failed");
-      setToast("Client archived.");
+      setToast("Client archived. Slug, public profile, and Facebook connection were released.");
       window.location.assign("/dashboard/clients");
     } catch (e) {
       setToast(e instanceof Error ? e.message : "Error");
