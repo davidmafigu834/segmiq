@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   Phone,
+  UserPlus,
   CalendarClock,
   Send,
   ChevronRight,
@@ -24,6 +25,7 @@ import { type PriorityLead, timeAgo } from "@/lib/sales-priority-lead";
 import { PriorityLanes } from "@/components/sales/PriorityLanes";
 import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
+import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import SalesDashboardSkeleton from "./SalesDashboardSkeleton";
 
 // ============================================
@@ -49,6 +51,7 @@ type RecentWin = {
 };
 
 type DashboardData = {
+  assignmentMode?: "direct" | "pool" | "round_robin";
   priorityLeads: PriorityLead[];
   allActiveLeads: PriorityLead[];
   mirror: {
@@ -118,6 +121,8 @@ export default function SalesDashboardMain({
   const repName = s?.user?.name ?? "";
   const { openLogSheet, logSheetProps } = useSalesLogSheet();
   const { sheet } = logSheetProps(data.allActiveLeads);
+  const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
+  const { hubSheet } = addHubSheetProps(data.assignmentMode ?? "direct");
 
   // Captured once on mount so lanes stay stable across incidental re-renders
   // (the per-second SLA countdown runs on its own timer).
@@ -393,6 +398,15 @@ export default function SalesDashboardMain({
         </div>
       </div>
 
+      <button
+        type="button"
+        onClick={openAddHubSheet}
+        aria-label="Add to Customer Hub"
+        className="fixed right-5 bottom-[calc(140px+env(safe-area-inset-bottom))] z-30 grid h-14 w-14 place-items-center rounded-full border border-[var(--border-hover)] bg-[var(--surface-card)] text-[var(--accent)] shadow-lg"
+      >
+        <UserPlus size={22} />
+      </button>
+
       {/* ============================================
           FLOATING LOG CALL BUTTON
           ============================================ */}
@@ -409,6 +423,7 @@ export default function SalesDashboardMain({
           QUICK LOG SHEET
           ============================================ */}
       {sheet}
+      {hubSheet}
     </div>
   );
 }

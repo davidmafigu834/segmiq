@@ -5,6 +5,18 @@ const _appDomain = (process.env.NEXT_PUBLIC_APP_DOMAIN || "leadstaq.tech")
   .split("/")[0];
 const _cloudHost = `cloud.${_appDomain}`;
 
+function r2PublicPattern() {
+  const raw = process.env.CLOUDFLARE_R2_PUBLIC_URL?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return null;
+    return { protocol: "https", hostname: url.hostname, pathname: "/**" };
+  } catch {
+    return null;
+  }
+}
+
 function cloudRewrites(host) {
   return [
     { source: "/", has: [{ type: "host", value: host }], destination: "/cloud" },
@@ -35,6 +47,7 @@ const nextConfig = {
       { protocol: "https", hostname: "*.r2.cloudflarestorage.com", pathname: "/**" },
       { protocol: "https", hostname: "*.r2.dev", pathname: "/**" },
       { protocol: "https", hostname: "images.unsplash.com", pathname: "/**" },
+      ...(r2PublicPattern() ? [r2PublicPattern()] : []),
     ],
   },
   async headers() {

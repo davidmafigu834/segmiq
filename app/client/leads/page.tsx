@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { ClientLeadsTable } from "@/components/client-leads/ClientLeadsTable";
+import { HubTabs } from "@/components/client-contacts/HubTabs";
 import type { ClientLeadListRow } from "@/components/client-leads/client-leads-types";
 
 export default async function ClientLeadsPage() {
@@ -62,6 +63,7 @@ export default async function ClientLeadsPage() {
     <ClientManagerLayout breadcrumbPage="LEADS" pageTitle="Leads" hideShellHeader>
       <Suspense fallback={<div className="shimmer h-64 rounded-xl" />}>
         <div className="px-0">
+          <HubTabs />
           <ClientLeadsTable
             clientId={clientId}
             clientName={clientName}

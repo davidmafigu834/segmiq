@@ -56,6 +56,7 @@ export interface ClientRow {
   primary_color: string | null;
   response_time_limit_hours: number;
   round_robin_index: number;
+  assignment_mode: "direct" | "pool" | "round_robin";
   twilio_whatsapp_override: string | null;
   dial_code: string | null;
   is_active: boolean;
@@ -74,10 +75,27 @@ export interface ClientRow {
   last_lead_received_at: string | null;
 }
 
+export interface ContactRow {
+  id: string;
+  client_id: string;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  location: string | null;
+  source: string | null;
+  lead_origin: "segmiq" | "client";
+  lifecycle: "lead" | "customer";
+  notes: string | null;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LeadRow {
   id: string;
   client_id: string;
   assigned_to_id: string | null;
+  contact_id: string | null;
   source: LeadSource;
   status: LeadStatus;
   form_data: Record<string, unknown>;
@@ -103,6 +121,7 @@ export interface LeadRow {
   stale_since: string | null;
   is_convert_later_pick: boolean | null;
   convert_later_note: string | null;
+  manual_priority: "hot" | "warm" | "cold" | null;
 }
 
 export interface FormField {

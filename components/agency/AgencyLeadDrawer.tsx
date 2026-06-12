@@ -18,6 +18,7 @@ function apiLeadToRow(lead: Record<string, unknown>): LeadRow {
     id: String(lead.id),
     client_id: String(lead.client_id),
     assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
+    contact_id: (lead.contact_id as string | null) ?? null,
     source: lead.source as LeadRow["source"],
     status: lead.status as LeadRow["status"],
     form_data: (lead.form_data as Record<string, unknown>) ?? {},
@@ -43,6 +44,7 @@ function apiLeadToRow(lead: Record<string, unknown>): LeadRow {
     stale_since: (lead.stale_since as string | null) ?? null,
     is_convert_later_pick: (lead.is_convert_later_pick as boolean | null) ?? null,
     convert_later_note: (lead.convert_later_note as string | null) ?? null,
+    manual_priority: (lead.manual_priority as LeadRow["manual_priority"]) ?? null,
   };
 }
 

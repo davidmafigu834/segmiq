@@ -682,7 +682,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
 
     supabase
       .from("clients")
-      .select("id, name, response_time_limit_hours")
+      .select("id, name, response_time_limit_hours, assignment_mode")
       .eq("id", clientId)
       .single(),
   ]);
@@ -799,6 +799,11 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       : null;
 
   const clientName = (client?.name as string) ?? "";
+  const rawAssignmentMode = client?.assignment_mode as string | null | undefined;
+  const assignmentMode: "direct" | "pool" | "round_robin" =
+    rawAssignmentMode === "pool" || rawAssignmentMode === "round_robin"
+      ? rawAssignmentMode
+      : "direct";
   let retargeting: RetargetingStatusView | null = null;
   try {
     retargeting = await syncRetargetingForClient(clientId, clientName);
@@ -807,6 +812,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
   }
 
   return {
+    assignmentMode,
     focus: { uncontacted, followUpToday, staleLeads },
     pipeline,
     scoreDistribution,
@@ -881,7 +887,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
 
     supabase
       .from("users")
-      .select("client_id, clients(ai_enabled)")
+      .select("client_id, clients(ai_enabled, assignment_mode)")
       .eq("id", userId)
       .maybeSingle(),
 
@@ -905,8 +911,16 @@ export async function fetchSalespersonDashboardData(userId: string) {
     isActiveConvertLaterPick(l as Parameters<typeof isActiveConvertLaterPick>[0])
   ).length;
 
-  const repClient = repUser?.clients as { ai_enabled?: boolean | null } | null;
+  const repClient = repUser?.clients as {
+    ai_enabled?: boolean | null;
+    assignment_mode?: string | null;
+  } | null;
   const repAiEnabled = repClient?.ai_enabled === true;
+  const rawAssignmentMode = repClient?.assignment_mode;
+  const assignmentMode: "direct" | "pool" | "round_robin" =
+    rawAssignmentMode === "pool" || rawAssignmentMode === "round_robin"
+      ? rawAssignmentMode
+      : "direct";
 
   const mirror: SalesMirrorResult = resolveSalesMirror({
     leads: activeLeads,
@@ -1048,6 +1062,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
   }
 
   return {
+    assignmentMode,
     priorityLeads: priorityLeads.slice(0, 20),
     allActiveLeads: activeLeads.map((l) => ({
       ...l,

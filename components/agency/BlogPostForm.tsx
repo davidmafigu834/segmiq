@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Upload } from "lucide-react";
 import { BlogMarkdown } from "@/components/blog/BlogMarkdown";
 import { CATEGORY_LABELS, FILTERS, type PostCategory } from "@/lib/blog-types";
 import { estimateReadMinutes, slugifyTitle, type BlogPostRow } from "@/lib/blog-admin";
+import { resolveImageContentType } from "@/lib/storage/logo-upload";
 
 const inputCls =
   "w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors";
@@ -47,8 +47,17 @@ export function BlogPostForm({ post }: { post?: BlogPostRow | null }) {
   const [readTouched, setReadTouched] = useState(!!post?.read_minutes);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverMessage, setCoverMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(true);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (coverPreview?.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
+    };
+  }, [coverPreview]);
 
   useEffect(() => {
     if (!readTouched && form.body) {
@@ -67,29 +76,48 @@ export function BlogPostForm({ post }: { post?: BlogPostRow | null }) {
   }
 
   async function uploadCover(file: File) {
+    const contentType = resolveImageContentType(file.name, file.type);
+    if (!contentType || !["image/jpeg", "image/png", "image/webp"].includes(contentType)) {
+      setCoverMessage({ type: "error", text: "Use a JPEG, PNG, or WEBP image." });
+      return;
+    }
+
+    if (coverPreview?.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
+    const localPreview = URL.createObjectURL(file);
+    setCoverPreview(localPreview);
     setUploading(true);
+    setCoverMessage(null);
     setError(null);
+
     try {
       const presignRes = await fetch("/api/blog/cover/presign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type, fileSize: file.size }),
+        body: JSON.stringify({ filename: file.name, contentType, fileSize: file.size }),
       });
-      const presign = await presignRes.json();
+      const presign = (await presignRes.json()) as { uploadUrl?: string; publicUrl?: string; error?: string };
       if (!presignRes.ok) throw new Error(presign.error ?? "Upload failed");
 
-      const putRes = await fetch(presign.uploadUrl, {
+      const putRes = await fetch(presign.uploadUrl!, {
         method: "PUT",
         body: file,
-        headers: { "Content-Type": file.type },
+        headers: { "Content-Type": contentType },
       });
-      if (!putRes.ok) throw new Error("Failed to upload image to storage.");
+      if (!putRes.ok) throw new Error("Failed to upload image to storage. Check R2 CORS settings.");
 
-      update("cover_image", presign.publicUrl as string);
+      update("cover_image", presign.publicUrl!);
+      setCoverPreview(null);
+      URL.revokeObjectURL(localPreview);
+      setCoverMessage({ type: "success", text: "Cover uploaded. Save the post to keep it." });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed");
+      setCoverPreview(null);
+      URL.revokeObjectURL(localPreview);
+      const message = e instanceof Error ? e.message : "Upload failed";
+      setCoverMessage({ type: "error", text: message });
+      setError(message);
     } finally {
       setUploading(false);
+      if (coverInputRef.current) coverInputRef.current.value = "";
     }
   }
 
@@ -177,25 +205,58 @@ export function BlogPostForm({ post }: { post?: BlogPostRow | null }) {
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 space-y-4">
             <label className={labelCls}>Cover image</label>
-            {form.cover_image ? (
-              <div className="relative h-40 overflow-hidden rounded-xl border border-[var(--border)]">
-                <Image src={form.cover_image} alt="" fill className="object-cover" unoptimized />
+            {(coverPreview || form.cover_image) ? (
+              <div className="relative h-40 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={coverPreview ?? form.cover_image}
+                  alt="Cover preview"
+                  className="h-full w-full object-cover"
+                />
+                {uploading ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+            {coverMessage ? (
+              <div
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[12px] ${
+                  coverMessage.type === "error"
+                    ? "border border-red-500/30 bg-red-500/10 text-red-300"
+                    : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                }`}
+              >
+                {coverMessage.type === "success" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : null}
+                {coverMessage.text}
               </div>
             ) : null}
             <div className="flex flex-col gap-3 sm:flex-row">
               <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[var(--border)] px-4 py-2.5 text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                Upload to R2
+                {uploading ? "Uploading…" : "Upload to R2"}
                 <input
+                  ref={coverInputRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                   className="hidden"
                   disabled={uploading}
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadCover(f); }}
                 />
               </label>
             </div>
-            <input className={inputCls} placeholder="Or paste image URL" value={form.cover_image} onChange={(e) => update("cover_image", e.target.value)} />
+            <input
+              className={inputCls}
+              placeholder="Or paste image URL"
+              value={form.cover_image}
+              onChange={(e) => {
+                setCoverMessage(null);
+                if (coverPreview?.startsWith("blob:")) URL.revokeObjectURL(coverPreview);
+                setCoverPreview(null);
+                update("cover_image", e.target.value);
+              }}
+            />
           </div>
 
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 space-y-4">

@@ -6,6 +6,7 @@ import { background } from "@/lib/background";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logLeadCreated } from "@/lib/lead-events";
 import { firstName, formatResponseWindow } from "@/lib/messaging/whatsapp-vars";
+import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import type { LeadRow, LeadSource } from "@/types";
 
 export type RequestedPackageRef = {
@@ -24,6 +25,9 @@ export type CreateLeadInput = {
   overrideAssigneeId?: string | null;
   /** When true, skips WhatsApp/email/in-app notifications for the new lead. */
   skipNotifications?: boolean;
+  contactId?: string;
+  forceUnassigned?: boolean;
+  manualPriority?: "hot" | "warm" | "cold";
 };
 
 export type CreateLeadResult =
@@ -35,8 +39,18 @@ export type CreateLeadResult =
     };
 
 export async function createLead(input: CreateLeadInput): Promise<CreateLeadResult> {
-  const { clientId, source, formData, facebookLeadId, requestedPackage, overrideAssigneeId, skipNotifications } =
-    input;
+  const {
+    clientId,
+    source,
+    formData,
+    facebookLeadId,
+    requestedPackage,
+    overrideAssigneeId,
+    skipNotifications,
+    contactId,
+    forceUnassigned,
+    manualPriority,
+  } = input;
   const supabase = createAdminClient();
 
   if (source === "FACEBOOK" && facebookLeadId) {
@@ -62,40 +76,110 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     return { ok: false, error: "Client not accepting leads", code: "INACTIVE" };
   }
 
-  const { data: salespeople } = await supabase
-    .from("users")
-    .select("id, name, email, phone, notification_prefs, round_robin_order")
-    .eq("client_id", clientId)
-    .eq("role", "SALESPERSON")
-    .eq("is_active", true)
-    .order("round_robin_order", { ascending: true });
-
-  const { data: managers } = await supabase
-    .from("users")
-    .select("id, name, email, phone, notification_prefs")
-    .eq("client_id", clientId)
-    .eq("role", "CLIENT_MANAGER")
-    .eq("is_active", true)
-    .limit(1);
-
-  const list = salespeople ?? [];
   let assignedId: string | null = null;
-  let rr = (client.round_robin_index as number) ?? 0;
+  let list: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string | null;
+    notification_prefs: unknown;
+    round_robin_order: number;
+  }[] = [];
+  let managers:
+    | {
+        id: string;
+        name: string;
+        email: string;
+        phone: string | null;
+        notification_prefs: unknown;
+      }[]
+    | undefined;
 
-  if (overrideAssigneeId != null && overrideAssigneeId !== "") {
-    const ok = list.some((s) => s.id === overrideAssigneeId);
-    if (!ok) {
-      return { ok: false, error: "Assignee is not an active salesperson for this client", code: "UNKNOWN" };
+  if (forceUnassigned) {
+    assignedId = null;
+  } else {
+    const { data: salespeople } = await supabase
+      .from("users")
+      .select("id, name, email, phone, notification_prefs, round_robin_order")
+      .eq("client_id", clientId)
+      .eq("role", "SALESPERSON")
+      .eq("is_active", true)
+      .order("round_robin_order", { ascending: true });
+
+    const { data: managersData } = await supabase
+      .from("users")
+      .select("id, name, email, phone, notification_prefs")
+      .eq("client_id", clientId)
+      .eq("role", "CLIENT_MANAGER")
+      .eq("is_active", true)
+      .limit(1);
+
+    list = (salespeople ?? []) as typeof list;
+    managers = managersData ?? undefined;
+
+    let rr = (client.round_robin_index as number) ?? 0;
+
+    if (overrideAssigneeId != null && overrideAssigneeId !== "") {
+      const ok = list.some((s) => s.id === overrideAssigneeId);
+      if (!ok) {
+        return { ok: false, error: "Assignee is not an active salesperson for this client", code: "UNKNOWN" };
+      }
+      assignedId = overrideAssigneeId;
+    } else if (list.length > 0) {
+      const idx = rr % list.length;
+      assignedId = list[idx].id as string;
+      rr = (rr + 1) % list.length;
+      await supabase.from("clients").update({ round_robin_index: rr, updated_at: new Date().toISOString() }).eq("id", clientId);
     }
-    assignedId = overrideAssigneeId;
-  } else if (list.length > 0) {
-    const idx = rr % list.length;
-    assignedId = list[idx].id as string;
-    rr = (rr + 1) % list.length;
-    await supabase.from("clients").update({ round_robin_index: rr, updated_at: new Date().toISOString() }).eq("id", clientId);
   }
 
   const fields = parseLeadFields(formData);
+
+  // Ensure every lead is linked to a contact. Hub callers pass contactId already; for all
+  // other paths (form, Facebook, admin), find-or-create by canonical phone within the client.
+  let resolvedContactId: string | null = contactId ?? null;
+  if (!resolvedContactId) {
+    try {
+      const wa = fields.phone
+        ? normalizePhoneForWhatsApp(fields.phone, client.dial_code || "263")
+        : null;
+      const canonicalPhone = wa ? "+" + wa : null;
+      const leadOrigin = source === "LANDING_PAGE" || source === "FACEBOOK" ? "segmiq" : "client";
+
+      if (canonicalPhone) {
+        const { data: existingContact } = await supabase
+          .from("contacts")
+          .select("id")
+          .eq("client_id", clientId)
+          .eq("phone", canonicalPhone)
+          .limit(1)
+          .maybeSingle();
+        if (existingContact) resolvedContactId = existingContact.id as string;
+      }
+
+      if (!resolvedContactId) {
+        const { data: newContact, error: contactErr } = await supabase
+          .from("contacts")
+          .insert({
+            client_id: clientId,
+            name: fields.name ?? null,
+            phone: canonicalPhone,
+            email: fields.email ?? null,
+            source,
+            lead_origin: leadOrigin,
+            lifecycle: "lead",
+          })
+          .select("id")
+          .single();
+        if (!contactErr && newContact) {
+          resolvedContactId = newContact.id as string;
+        }
+      }
+    } catch {
+      // Contact ensure must never block lead creation
+    }
+  }
+
   const { token, expires } = newMagicToken();
 
   const storedFormData = requestedPackage
@@ -117,6 +201,8 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     magic_token: token,
     magic_token_expires_at: expires,
     facebook_lead_id: facebookLeadId ?? null,
+    contact_id: resolvedContactId,
+    manual_priority: manualPriority ?? null,
   };
 
   const { data: lead, error: lErr } = await supabase.from("leads").insert(leadInsert).select("*").single();
@@ -191,7 +277,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       } catch (err) {
         console.error("[createLead] notifyNewLead failed:", err);
       }
-    } else {
+    } else if (!forceUnassigned) {
       try {
         await notifyAdminsNoSalesperson({
           clientName: client.name as string,

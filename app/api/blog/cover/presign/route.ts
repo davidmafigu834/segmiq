@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAgencyAdmin } from "@/lib/require-agency-admin";
+import { resolveImageContentType } from "@/lib/storage/logo-upload";
 import { generateBlogCoverKey, generatePresignedUploadUrl, getPublicUrl } from "@/lib/storage/r2";
 
-const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export async function POST(req: Request) {
   const guard = await requireAgencyAdmin();
@@ -10,14 +11,16 @@ export async function POST(req: Request) {
 
   const { filename, contentType, fileSize } = (await req.json()) as {
     filename: string;
-    contentType: string;
+    contentType?: string;
     fileSize?: number;
   };
 
-  if (!filename || !contentType) {
-    return NextResponse.json({ error: "filename and contentType are required." }, { status: 400 });
+  if (!filename?.trim()) {
+    return NextResponse.json({ error: "filename is required." }, { status: 400 });
   }
-  if (!ALLOWED.includes(contentType)) {
+
+  const resolvedType = resolveImageContentType(filename, contentType);
+  if (!resolvedType || !ALLOWED.has(resolvedType)) {
     return NextResponse.json({ error: "Only JPEG, PNG, and WEBP images are supported." }, { status: 400 });
   }
   if (fileSize && fileSize > 10 * 1024 * 1024) {
@@ -26,7 +29,7 @@ export async function POST(req: Request) {
 
   try {
     const key = generateBlogCoverKey(filename);
-    const uploadUrl = await generatePresignedUploadUrl(key, contentType);
+    const uploadUrl = await generatePresignedUploadUrl(key, resolvedType);
     const publicUrl = getPublicUrl(key);
     return NextResponse.json({ uploadUrl, key, publicUrl });
   } catch (err) {

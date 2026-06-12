@@ -25,6 +25,7 @@ import {
   type RetargetingStatusView,
 } from "@/lib/retargeting-shared";
 import { LossInsightsSection } from "@/components/dashboard/LossInsightsSection";
+import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 
 // ============================================
 // TYPES
@@ -53,6 +54,7 @@ type RecentWin = {
 };
 
 type DashboardData = {
+  assignmentMode?: "direct" | "pool" | "round_robin";
   focus: {
     uncontacted: number;
     followUpToday: number;
@@ -161,6 +163,11 @@ export default function ClientDashboardMain({
 }) {
   const router = useRouter();
   const [nudging, setNudging] = useState(false);
+  const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
+  const { hubSheet } = addHubSheetProps(data.assignmentMode ?? "direct", {
+    mode: "manager",
+    clientId: session.clientId as string,
+  });
   const firstName = (session?.user?.name as string | undefined)?.split(" ")[0] || "there";
   const rt = data.retargeting;
   const showRetargeting =
@@ -180,6 +187,7 @@ export default function ClientDashboardMain({
 
   return (
     <div>
+      {hubSheet}
 
       {/* ============================================
           PAGE HEADER
@@ -204,7 +212,7 @@ export default function ClientDashboardMain({
           ============================================ */}
       <div className="flex items-center gap-2 flex-wrap mb-8">
         <button
-          onClick={() => router.push("/client/leads/new")}
+          onClick={openAddHubSheet}
           className="flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] text-[13px] font-semibold hover:bg-[var(--accent-hover)] transition-colors"
         >
           <UserPlus size={14} />
