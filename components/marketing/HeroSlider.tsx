@@ -76,10 +76,10 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
     <section
       onMouseEnter={pause}
       onMouseLeave={resume}
-      className="relative flex flex-col bg-[#0C0C0C] text-white overflow-hidden min-h-[78svh] sm:min-h-[640px] lg:min-h-[640px]"
+      className="relative bg-[#0C0C0C] text-white overflow-hidden"
     >
       {/* slides */}
-      <div className="relative flex-1 min-h-0">
+      <div className="relative min-h-[360px] sm:min-h-[400px] lg:min-h-[460px]">
         {slides.map((s, i) => (
           <article
             key={i}
@@ -88,23 +88,24 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
             {/* mobile full-bleed image */}
             <div className="absolute inset-0 lg:hidden">
               <Image src={s.coverImage} alt="" fill priority={i === 0} sizes="100vw" className="object-cover" />
-              <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(12,12,12,.42) 0%,rgba(12,12,12,.7) 55%,rgba(12,12,12,.94) 100%)" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(12,12,12,.58) 0%,rgba(12,12,12,.82) 50%,rgba(12,12,12,.97) 100%)" }} />
             </div>
 
-            <div className="mx-auto max-w-[1100px] px-5 relative grid lg:grid-cols-2 gap-8 items-center h-full">
-              <div className="py-8 max-w-[560px]">
+            <div className="mx-auto max-w-[1100px] px-5 relative grid lg:grid-cols-2 gap-6 lg:gap-8 items-start lg:items-center pt-16 sm:pt-[4.25rem] lg:pt-12 pb-1 lg:pb-2">
+              <div className="max-w-[560px]">
                 <div className="text-[12px] tracking-widest font-semibold text-[#D4FF4F]">{s.category}</div>
-                <h1 className="mt-3 text-[30px] sm:text-[42px] lg:text-[50px] leading-[1.06] font-extrabold tracking-tight">{s.title}</h1>
-                <p className="mt-3.5 text-[15px] sm:text-base text-white/70 max-w-[480px]">{s.excerpt}</p>
-                <Link href={s.href} className="mt-6 inline-flex items-center gap-1.5 px-4 py-2 text-[14px] rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
+                <h1 className="mt-2.5 text-[30px] sm:text-[42px] lg:text-[50px] leading-[1.06] font-extrabold tracking-tight">{s.title}</h1>
+                <p className="mt-3 text-[15px] sm:text-base text-white/70 max-w-[480px]">{s.excerpt}</p>
+                <Link href={s.href} className="mt-5 inline-flex items-center gap-1.5 px-4 py-2 text-[14px] rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
                   Read the post <ArrowRight className="w-[14px] h-[14px]" />
                 </Link>
               </div>
 
               {/* desktop contained image */}
-              <div className="hidden lg:block relative h-[440px] rounded-2xl overflow-hidden ring-1 ring-white/10">
+              <div className="hidden lg:block relative h-[380px] rounded-2xl overflow-hidden ring-1 ring-white/10">
                 <Image src={s.coverImage} alt="" fill priority={i === 0} sizes="(max-width:1024px) 0px, 50vw" className="object-cover" />
-                <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgba(12,12,12,.55),transparent 40%)" }} />
+                <div className="absolute inset-0 bg-[#0C0C0C]/30" />
+                <div className="absolute inset-0" style={{ background: "linear-gradient(90deg,rgba(12,12,12,.78),rgba(12,12,12,.35) 42%,transparent 62%)" }} />
               </div>
             </div>
           </article>
@@ -114,7 +115,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
       {/* tab strip with the loading line */}
       <div className="relative shrink-0">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className="flex gap-5 overflow-x-auto py-5 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+          <div className="flex gap-5 overflow-x-auto pt-2 pb-3 sm:pb-4 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
             {slides.map((s, i) => (
               <button
                 key={i}

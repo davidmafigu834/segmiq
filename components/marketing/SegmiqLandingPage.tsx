@@ -121,7 +121,7 @@ export default function SegmiqLandingPage() {
   return (
     <div className={`relative antialiased font-sans ${m.page}`}>
       {/* ===== THREE FEATURE PHOTO CARDS ===== */}
-      <section className="pb-6">
+      <section className="pt-8 sm:pt-10 pb-6">
         <div className="mx-auto max-w-[1100px] px-5">
           <div className="grid md:grid-cols-3 gap-4">
             {FEATURE_CARDS.map(({ kicker, title, img }) => (
