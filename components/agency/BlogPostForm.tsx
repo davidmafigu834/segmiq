@@ -90,22 +90,17 @@ export function BlogPostForm({ post }: { post?: BlogPostRow | null }) {
     setError(null);
 
     try {
-      const presignRes = await fetch("/api/blog/cover/presign", {
+      const body = new FormData();
+      body.append("file", file);
+
+      const uploadRes = await fetch("/api/blog/cover/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType, fileSize: file.size }),
+        body,
       });
-      const presign = (await presignRes.json()) as { uploadUrl?: string; publicUrl?: string; error?: string };
-      if (!presignRes.ok) throw new Error(presign.error ?? "Upload failed");
+      const result = (await uploadRes.json()) as { publicUrl?: string; error?: string };
+      if (!uploadRes.ok) throw new Error(result.error ?? "Upload failed");
 
-      const putRes = await fetch(presign.uploadUrl!, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": contentType },
-      });
-      if (!putRes.ok) throw new Error("Failed to upload image to storage. Check R2 CORS settings.");
-
-      update("cover_image", presign.publicUrl!);
+      update("cover_image", result.publicUrl!);
       setCoverPreview(null);
       URL.revokeObjectURL(localPreview);
       setCoverMessage({ type: "success", text: "Cover uploaded. Save the post to keep it." });
