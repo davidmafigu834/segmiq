@@ -19,10 +19,10 @@
  *   <body className={inter.className}> ...
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import {
-  Sparkles, ArrowRight, ChevronLeft, ChevronRight, ChevronDown,
+  ArrowRight, ChevronLeft, ChevronRight, ChevronDown,
   MessageCircle, Link2, GraduationCap, Target, Check,
   Clock, BarChart3, Zap, Send, Play, Sun, Home, Sprout, Building2,
   BookOpen, Brain, ListChecks, type LucideIcon,
@@ -112,46 +112,14 @@ const storyCard = `group rounded-xl border ${m.border} overflow-hidden bg-white/
 
 /* ---------- component ---------- */
 export default function SegmiqLandingPage() {
-  const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState("For owners");
   const [openRow, setOpenRow] = useState(0);
   const [industry, setIndustry] = useState(0);
-
-  useEffect(() => setMounted(true), []);
-
-  const reveal = (delay: string) =>
-    `transition-all duration-700 ${delay} ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`;
 
   const ind = INDUSTRIES[industry];
 
   return (
     <div className={`relative antialiased font-sans ${m.page}`}>
-      {/* ===== HERO ===== */}
-      <section className="pt-20 pb-10 text-center">
-        <div className="mx-auto max-w-[1100px] px-5">
-          <h1 className={`text-[40px] sm:text-[54px] leading-[1.05] font-extrabold tracking-tight ${reveal("delay-75")}`}>
-            The revenue era starts here
-          </h1>
-          <p className={`mt-4 text-base max-w-[620px] mx-auto ${m.muted} ${reveal("delay-150")}`}>
-            Capture, score, coach, and close — one operating system for construction, solar, roofing, electrical, and trade businesses across Africa.
-          </p>
-          <div className={`mt-7 flex flex-wrap items-center justify-center gap-3 ${reveal("delay-300")}`}>
-            <a href={ML.contact} className="px-6 py-3 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">See it live</a>
-            <a href={ML.contact} className={`px-6 py-3 ${m.ghostBtn}`}>Book a demo</a>
-          </div>
-          <div className={`mt-6 w-full px-1 sm:px-0 flex justify-center ${reveal("delay-500")}`}>
-            <a href={ML.featuresWhatsapp} className={`${m.pill} w-full sm:w-auto sm:max-w-[min(100%,36rem)]`}>
-              <Sparkles className="w-[15px] h-[15px] text-[#D4FF4F] shrink-0" aria-hidden />
-              <span>
-                New — WhatsApp lead capture,
-                <span className="sm:whitespace-nowrap"> live for African trades</span>
-              </span>
-              <ArrowRight className="w-[15px] h-[15px] shrink-0" aria-hidden />
-            </a>
-          </div>
-        </div>
-      </section>
-
       {/* ===== THREE FEATURE PHOTO CARDS ===== */}
       <section className="pb-6">
         <div className="mx-auto max-w-[1100px] px-5">

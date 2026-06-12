@@ -1,5 +1,7 @@
+import HeroSlider from "@/components/marketing/HeroSlider";
 import SegmiqLandingPage from "@/components/marketing/SegmiqLandingPage";
 import JsonLd from "@/components/seo/JsonLd";
+import { getHeroSlides } from "@/lib/hero";
 import { organizationLd, pageMetadata, websiteLd } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -9,10 +11,13 @@ export const metadata = pageMetadata({
   path: "/",
 });
 
-export default function MarketingHomePage() {
+export default async function MarketingHomePage() {
+  const slides = await getHeroSlides();
+
   return (
     <>
       <JsonLd data={[organizationLd(), websiteLd()]} />
+      <HeroSlider slides={slides} />
       <SegmiqLandingPage />
     </>
   );
