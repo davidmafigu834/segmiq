@@ -17,7 +17,6 @@ const STATIC_PATHS: { path: string; priority: number; freq: MetadataRoute.Sitema
   { path: "/solutions/solar", priority: 0.8, freq: "monthly" },
   { path: "/solutions/roofing", priority: 0.8, freq: "monthly" },
   { path: "/solutions/electrical-landscaping", priority: 0.8, freq: "monthly" },
-  { path: "/blog", priority: 0.7, freq: "weekly" },
   { path: "/contact", priority: 0.7, freq: "yearly" },
   { path: "/partners", priority: 0.6, freq: "yearly" },
   { path: "/careers", priority: 0.5, freq: "weekly" },
@@ -29,27 +28,25 @@ const STATIC_PATHS: { path: string; priority: number; freq: MetadataRoute.Sitema
 export async function getMarketingSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  const staticEntries: MetadataRoute.Sitemap = STATIC_PATHS.map((p) => ({
+  return STATIC_PATHS.map((p) => ({
     url: new URL(p.path, SITE.url).toString(),
     lastModified: now,
     changeFrequency: p.freq,
     priority: p.priority,
   }));
+}
 
-  let blogEntries: MetadataRoute.Sitemap = [];
+export async function getBlogSitemapUrls(): Promise<string[]> {
+  const urls = [`${SITE.blogUrl}/`];
   try {
     const posts = await getPublishedPosts();
-    blogEntries = posts.map((post) => ({
-      url: `${SITE.url}/blog/${post.slug}`,
-      lastModified: new Date(post.publishedAt),
-      changeFrequency: "monthly" as const,
-      priority: 0.6,
-    }));
+    for (const post of posts) {
+      urls.push(`${SITE.blogUrl}/${post.slug}`);
+    }
   } catch {
-    // If the data source isn't reachable at build, ship the static map.
+    /* ship home URL only if data source is unreachable */
   }
-
-  return [...staticEntries, ...blogEntries];
+  return urls;
 }
 
 export function getCloudSitemapUrls(): string[] {

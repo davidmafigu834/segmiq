@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Upload } from "lucide-react";
 import { BlogMarkdown } from "@/components/blog/BlogMarkdown";
 import { CATEGORY_LABELS, FILTERS, type PostCategory } from "@/lib/blog-types";
 import { estimateReadMinutes, slugifyTitle, type BlogPostRow } from "@/lib/blog-admin";
+import { SITE } from "@/lib/seo";
 import { resolveImageContentType } from "@/lib/storage/logo-upload";
 
 const inputCls =
@@ -169,7 +170,7 @@ export function BlogPostForm({ post }: { post?: BlogPostRow | null }) {
                 onChange={(e) => { setSlugTouched(true); update("slug", slugifyTitle(e.target.value)); }}
                 required
               />
-              <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Public URL: /blog/{form.slug || "…"}</p>
+              <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Public URL: {SITE.blogUrl}/{form.slug || "…"}</p>
             </div>
             <div>
               <label className={labelCls}>Excerpt</label>

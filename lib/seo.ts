@@ -14,6 +14,7 @@ export const SITE = {
   name: "Segmiq",
   url: "https://segmiq.com",
   cloudUrl: "https://cloud.segmiq.com",
+  blogUrl: "https://blog.segmiq.com",
   tagline: "Revenue operating system for service businesses",
   description:
     "Segmiq is a revenue operating system for construction, solar, roofing, electrical, and landscaping businesses across Africa — capture, score, and close every lead.",
@@ -147,7 +148,7 @@ export function faqLd(qas: { q: string; a: string }[]) {
 }
 
 export function articleLd(opts: { title: string; description: string; slug: string; publishedAt: string; image?: string; author?: string }) {
-  const url = `${SITE.url}/blog/${opts.slug}`;
+  const url = `${SITE.blogUrl}/${opts.slug}`;
   return {
     "@context": "https://schema.org",
     "@type": "BlogPosting",

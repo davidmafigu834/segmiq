@@ -10,7 +10,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export type HeroSlide = {
@@ -96,9 +95,9 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 <div className="text-[12px] tracking-widest font-semibold text-[#D4FF4F]">{s.category}</div>
                 <h1 className="mt-2.5 text-[30px] sm:text-[42px] lg:text-[50px] leading-[1.06] font-extrabold tracking-tight">{s.title}</h1>
                 <p className="mt-3 text-[15px] sm:text-base text-white/70 max-w-[480px]">{s.excerpt}</p>
-                <Link href={s.href} className="mt-5 inline-flex items-center gap-1.5 px-4 py-2 text-[14px] rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
+                <a href={s.href} className="mt-5 inline-flex items-center gap-1.5 px-4 py-2 text-[14px] rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">
                   Read the post <ArrowRight className="w-[14px] h-[14px]" />
-                </Link>
+                </a>
               </div>
 
               {/* desktop contained image */}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Loader2, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import { CATEGORY_LABELS, FILTERS, type PostCategory } from "@/lib/blog-types";
+import { SITE } from "@/lib/seo";
 import type { BlogPostRow } from "@/lib/blog-admin";
 
 const inputCls =
@@ -150,7 +151,7 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPostRow[] }) {
                   <tr key={post.id} className="text-[var(--text-primary)]">
                     <td className="py-3 pr-4">
                       <div className="font-medium">{post.title}</div>
-                      <div className="text-[11px] text-[var(--text-tertiary)]">/blog/{post.slug}</div>
+                      <div className="text-[11px] text-[var(--text-tertiary)]">{SITE.blogUrl.replace("https://", "")}/{post.slug}</div>
                     </td>
                     <td className="py-3 pr-4 text-[var(--text-secondary)]">{CATEGORY_LABELS[post.category]}</td>
                     <td className="py-3 pr-4"><StatusBadge status={post.status} /></td>
@@ -165,7 +166,7 @@ export function BlogManager({ initialPosts }: { initialPosts: BlogPostRow[] }) {
                     <td className="py-3">
                       <div className="flex items-center justify-end gap-2">
                         {post.status === "published" ? (
-                          <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" title="View live">
+                          <a href={`${SITE.blogUrl}/${post.slug}`} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[var(--border)] p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" title="View live">
                             <ExternalLink className="h-4 w-4" />
                           </a>
                         ) : null}

@@ -35,7 +35,7 @@ const COLS = [
   {
     h: "Resources",
     links: [
-      { label: "Blog", href: "/blog" },
+      { label: "Blog", href: "https://blog.segmiq.com" },
       { label: "Status", href: "/status" },
       { label: "Privacy", href: "/privacy" },
       { label: "Terms", href: "/terms" },
@@ -63,9 +63,15 @@ export default function MarketingFooter() {
               <ul className="space-y-2 text-white/60">
                 {col.links.map(({ label, href }) => (
                   <li key={label}>
-                    <Link href={href} className="hover:text-white">
-                      {label}
-                    </Link>
+                    {href.startsWith("http") ? (
+                      <a href={href} className="hover:text-white">
+                        {label}
+                      </a>
+                    ) : (
+                      <Link href={href} className="hover:text-white">
+                        {label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

@@ -18,7 +18,7 @@ const NAV = [
   { label: "Segmiq CRM", href: "/products/segmiq-crm" },
   { label: "Features", href: "/features" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Blog", href: "/blog" },
+  { label: "Blog", href: ML.blog },
 ];
 
 export default function MarketingHeader() {
@@ -30,17 +30,23 @@ export default function MarketingHeader() {
         <div className="flex items-center gap-8">
           <SegmiqWordmark href="/" priority />
           <nav className="hidden lg:flex items-center gap-6 text-sm text-white/60">
-            {NAV.map((n) => (
-              <Link key={n.label} href={n.href} className="hover:text-white">
-                {n.label}
-              </Link>
-            ))}
+            {NAV.map((n) =>
+              n.href.startsWith("http") ? (
+                <a key={n.label} href={n.href} className="hover:text-white">
+                  {n.label}
+                </a>
+              ) : (
+                <Link key={n.label} href={n.href} className="hover:text-white">
+                  {n.label}
+                </Link>
+              )
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <Link href={ML.blog} aria-label="Search" className="hidden sm:inline text-white/60 hover:text-white">
+          <a href={ML.blog} aria-label="Search" className="hidden sm:inline text-white/60 hover:text-white">
             <Search className="w-[18px] h-[18px]" />
-          </Link>
+          </a>
           <Link href={ML.features} className="hidden md:inline text-white/60 hover:text-white">
             Docs
           </Link>
@@ -72,16 +78,27 @@ export default function MarketingHeader() {
         }`}
       >
         <nav className="mx-auto max-w-[1100px] px-5 py-4 flex flex-col text-[15px]">
-          {NAV.map((n) => (
-            <Link
-              key={n.label}
-              href={n.href}
-              onClick={() => setOpen(false)}
-              className="py-2.5 border-b border-white/10 font-medium text-white/65 hover:text-white"
-            >
-              {n.label}
-            </Link>
-          ))}
+          {NAV.map((n) =>
+            n.href.startsWith("http") ? (
+              <a
+                key={n.label}
+                href={n.href}
+                onClick={() => setOpen(false)}
+                className="py-2.5 border-b border-white/10 font-medium text-white/65 hover:text-white"
+              >
+                {n.label}
+              </a>
+            ) : (
+              <Link
+                key={n.label}
+                href={n.href}
+                onClick={() => setOpen(false)}
+                className="py-2.5 border-b border-white/10 font-medium text-white/65 hover:text-white"
+              >
+                {n.label}
+              </Link>
+            )
+          )}
           <div className="flex gap-3 pt-4">
             <Link
               href={ML.login}

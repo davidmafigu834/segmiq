@@ -11,7 +11,7 @@ export const ML = {
   security: "/security",
   partners: "/partners",
   careers: "/careers",
-  blog: "/blog",
+  blog: SITE.blogUrl,
   status: "/status",
   cloud: SITE.cloudUrl,
   cloudHelp: `${SITE.cloudUrl}/help`,

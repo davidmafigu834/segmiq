@@ -19,6 +19,34 @@ export async function middleware(req: NextRequest) {
     .split(":")[0];
 
   const isCloudSubdomain = host === `cloud.${appDomain}` || host === "cloud.localhost";
+  const isBlogSubdomain = host === "blog.segmiq.com" || host.startsWith("blog.localhost");
+
+  // Blog subdomain: rewrite to internal /blog/* (public URLs have no /blog prefix)
+  if (isBlogSubdomain) {
+    const path = req.nextUrl.pathname;
+    if (!path.startsWith("/blog")) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/blog${path === "/" ? "" : path}`;
+      return NextResponse.rewrite(url);
+    }
+    return NextResponse.next();
+  }
+
+  // Redirect old blog URLs on the main host to blog.segmiq.com
+  const isMainHost =
+    host === "segmiq.com" ||
+    host === "www.segmiq.com" ||
+    host === appDomain ||
+    host === `www.${appDomain}` ||
+    host === "localhost" ||
+    host.startsWith("localhost");
+  if (isMainHost) {
+    const path = req.nextUrl.pathname;
+    if (path === "/blog" || path.startsWith("/blog/")) {
+      const rest = path.replace(/^\/blog/, "");
+      return NextResponse.redirect(`https://blog.segmiq.com${rest || "/"}${req.nextUrl.search}`, 301);
+    }
+  }
 
   if (isCloudSubdomain) {
     const path = req.nextUrl.pathname;
@@ -131,8 +159,6 @@ export async function middleware(req: NextRequest) {
     path === "/products/segmiq-crm" ||
     path === "/features" ||
     path === "/pricing" ||
-    path === "/blog" ||
-    path.startsWith("/blog/") ||
     path.startsWith("/solutions/") ||
     path === "/contact" ||
     path === "/partners" ||
@@ -158,7 +184,9 @@ export async function middleware(req: NextRequest) {
     path === "/cloud/forgot-password" ||
     path === "/cloud/reset-password" ||
     path === "/cloud/help" ||
-    path.startsWith("/cloud/share/");
+    path.startsWith("/cloud/share/") ||
+    path === "/blog" ||
+    path.startsWith("/blog/");
 
   if (marketingPublic || isPublic) return NextResponse.next();
 
