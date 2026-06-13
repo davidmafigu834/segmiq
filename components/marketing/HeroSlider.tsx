@@ -20,7 +20,7 @@ export type HeroSlide = {
   href: string;
 };
 
-const DURATION = 6000;
+const DURATION = 10000;
 
 export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const [index, setIndex] = useState(0);
@@ -31,6 +31,7 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const reduceRef = useRef(false);
   const fillRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const tabStripRef = useRef<HTMLDivElement | null>(null);
 
   // Reset the timer + the previous fills when the active slide changes.
   useEffect(() => {
@@ -38,7 +39,13 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
     startRef.current = performance.now();
     elapsedRef.current = 0;
     fillRefs.current.forEach((f, k) => { if (f && k !== index) f.style.width = "0%"; });
-    tabRefs.current[index]?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+
+    // Scroll the tab strip horizontally only — never scrollIntoView (that yanks the page back to the hero).
+    const strip = tabStripRef.current;
+    const tab = tabRefs.current[index];
+    if (!strip || !tab) return;
+    const tabCenter = tab.offsetLeft + tab.offsetWidth / 2;
+    strip.scrollTo({ left: Math.max(0, tabCenter - strip.clientWidth / 2), behavior: "smooth" });
   }, [index]);
 
   // Animation loop + visibility pause.
@@ -117,7 +124,11 @@ export default function HeroSlider({ slides }: { slides: HeroSlide[] }) {
       {/* progress bars — mobile: bars only; desktop: bars + next-post labels */}
       <div className="relative shrink-0">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className="flex gap-1.5 lg:gap-5 lg:overflow-x-auto pt-4 pb-3 sm:pb-4 lg:pt-2 [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none" }}>
+          <div
+            ref={tabStripRef}
+            className="flex gap-1.5 lg:gap-5 lg:overflow-x-auto pt-4 pb-3 sm:pb-4 lg:pt-2 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none" }}
+          >
             {slides.map((s, i) => (
               <button
                 key={i}
