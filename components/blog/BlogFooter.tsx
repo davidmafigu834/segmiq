@@ -9,7 +9,7 @@ export default function BlogFooter() {
     <footer className="border-t border-black/[0.10] py-8">
       <div className="mx-auto max-w-[1180px] px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-[#8a8a8a]">
         <div className="flex items-center gap-3">
-          <SegmiqWordmark href="/" size="sm" />
+          <SegmiqWordmark href="/" size="sm" theme="light" />
           <span>© {new Date().getFullYear()} Segmiq Blog · blog.segmiq.com</span>
         </div>
         <div className="flex gap-5">

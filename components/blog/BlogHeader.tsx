@@ -26,7 +26,7 @@ export default function BlogHeader() {
       <div className="mx-auto max-w-[1180px] px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <SegmiqWordmark href="" size="md" />
+            <SegmiqWordmark href="" size="md" theme="light" />
             <span className="text-lg font-semibold tracking-tight text-[#5b5b5b]">Blog</span>
           </Link>
           <nav className="hidden lg:flex items-center gap-5 text-sm text-[#5b5b5b] pl-5 border-l border-black/[0.10]">
