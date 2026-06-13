@@ -123,6 +123,16 @@ export default function SegmiqLandingPage() {
       {/* ===== THREE FEATURE PHOTO CARDS ===== */}
       <section className="pt-8 sm:pt-10 pb-6">
         <div className="mx-auto max-w-[1100px] px-5">
+          <div className="max-w-[620px] mx-auto mb-10 text-center">
+            <div className="text-[12px] tracking-widest font-semibold text-[#D4FF4F]">WHAT SEGMIQ DOES</div>
+            <h2 className="mt-3 text-[30px] sm:text-[40px] leading-[1.08] font-extrabold tracking-tight text-white">
+              Everything between a lead and a contract
+            </h2>
+            <p className="mt-4 text-[15px] sm:text-base text-white/60">
+              Segmiq captures the enquiry, follows it up, and helps your team close — one system built
+              for how trade businesses in Africa actually sell.
+            </p>
+          </div>
           <div className="grid md:grid-cols-3 gap-4">
             {FEATURE_CARDS.map(({ kicker, title, img }) => (
               <a key={kicker} href={FEATURE_CARD_HREF[kicker] ?? ML.features} className={`group relative block h-[300px] overflow-hidden rounded-2xl ring-1 ${m.ring} text-white transition-transform duration-300 hover:-translate-y-1`}>

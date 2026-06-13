@@ -32,15 +32,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Redirect old blog URLs on the main host to blog.segmiq.com
-  const isMainHost =
+  // Redirect old blog URLs on the production main host to blog.segmiq.com.
+  // Local dev: use localhost:3000/blog or blog.localhost:3000 (no redirect).
+  const isProductionMain =
     host === "segmiq.com" ||
     host === "www.segmiq.com" ||
-    host === appDomain ||
-    host === `www.${appDomain}` ||
-    host === "localhost" ||
-    host.startsWith("localhost");
-  if (isMainHost) {
+    (host === appDomain && host !== "localhost" && !host.endsWith(".localhost")) ||
+    host === `www.${appDomain}`;
+  if (isProductionMain) {
     const path = req.nextUrl.pathname;
     if (path === "/blog" || path.startsWith("/blog/")) {
       const rest = path.replace(/^\/blog/, "");
