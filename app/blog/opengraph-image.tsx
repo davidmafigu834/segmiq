@@ -1,20 +1,15 @@
 /**
- * Per-post OpenGraph image at blog.segmiq.com/<slug>/opengraph-image.
+ * Blog homepage OpenGraph image at blog.segmiq.com/opengraph-image.
  */
 
 import { ImageResponse } from "next/og";
-import { getPostBySlug } from "@/lib/blog";
 import { getOgWordmarkDataUrl } from "@/lib/og-brand";
 
-export const alt = "Segmiq blog post";
+export const alt = "Segmiq Blog";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default async function BlogOgImage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const post = await getPostBySlug(slug);
-  const title = post?.title ?? "Segmiq Blog";
-  const category = post?.categoryLabel ?? "BLOG";
+export default async function BlogHomeOgImage() {
   const wordmark = await getOgWordmarkDataUrl();
 
   return new ImageResponse(
@@ -23,8 +18,9 @@ export default async function BlogOgImage({ params }: { params: Promise<{ slug: 
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={wordmark} alt="Segmiq" height={36} style={{ objectFit: "contain", objectPosition: "left" }} />
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ color: "#D4FF4F", fontSize: 22, fontWeight: 700, letterSpacing: 2, marginBottom: 18, textTransform: "uppercase" }}>{category}</div>
-          <div style={{ color: "#fff", fontSize: 56, fontWeight: 800, lineHeight: 1.12, maxWidth: 960 }}>{title}</div>
+          <div style={{ color: "#D4FF4F", fontSize: 22, fontWeight: 700, letterSpacing: 2, marginBottom: 18, textTransform: "uppercase" }}>BLOG</div>
+          <div style={{ color: "#fff", fontSize: 56, fontWeight: 800, lineHeight: 1.12, maxWidth: 960 }}>Ideas on winning trade work in Africa</div>
+          <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 26, marginTop: 20, maxWidth: 860 }}>Specific writing on capturing and closing trade leads.</div>
         </div>
         <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 24 }}>blog.segmiq.com</div>
       </div>

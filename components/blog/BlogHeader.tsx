@@ -9,6 +9,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Search, Menu, X } from "lucide-react";
+import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
 
 const NAV = [
   { label: "Insights", href: "/#insight" },
@@ -24,9 +25,8 @@ export default function BlogHeader() {
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-black/[0.10]">
       <div className="mx-auto max-w-[1180px] px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="grid place-items-center w-[26px] h-[26px] rounded-[7px] bg-[#D4FF4F] text-black font-extrabold text-sm">S</span>
-            <span className="text-lg font-semibold tracking-tight">Segmiq</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <SegmiqWordmark href="" size="md" />
             <span className="text-lg font-semibold tracking-tight text-[#5b5b5b]">Blog</span>
           </Link>
           <nav className="hidden lg:flex items-center gap-5 text-sm text-[#5b5b5b] pl-5 border-l border-black/[0.10]">

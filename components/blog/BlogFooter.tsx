@@ -2,12 +2,14 @@
  * Footer for blog.segmiq.com.
  */
 
+import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
+
 export default function BlogFooter() {
   return (
     <footer className="border-t border-black/[0.10] py-8">
       <div className="mx-auto max-w-[1180px] px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-[#8a8a8a]">
-        <div className="flex items-center gap-2">
-          <span className="grid place-items-center w-[22px] h-[22px] rounded-[6px] bg-[#D4FF4F] text-black font-extrabold text-[12px]">S</span>
+        <div className="flex items-center gap-3">
+          <SegmiqWordmark href="/" size="sm" />
           <span>© {new Date().getFullYear()} Segmiq Blog · blog.segmiq.com</span>
         </div>
         <div className="flex gap-5">
