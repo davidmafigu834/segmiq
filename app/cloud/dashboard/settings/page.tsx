@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive, Droplets, LogOut, Upload, Camera, X } from "lucide-react";
+import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
 
 type ClientData = {
   id: string;
@@ -585,6 +586,9 @@ export default function CloudSettingsPage() {
             )}
           </div>
         </section>
+
+        <AndroidAppDownload />
+
         {/* Sign out */}
         <section className="pb-4">
           <button

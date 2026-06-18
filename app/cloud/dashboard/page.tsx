@@ -7,6 +7,7 @@ import { NewProjectSlideOver } from "./projects/NewProjectSlideOver";
 import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
 import { Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink } from "lucide-react";
 import { SkeletonScrollRow } from "@/app/cloud/components/SkeletonCard";
+import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -370,6 +371,11 @@ export default function CloudDashboardHome() {
             <ArrowRight size={13} strokeWidth={2.5} />
           </button>
         </div>
+      </div>
+
+      {/* ── ANDROID FIELD APP ── */}
+      <div style={{ margin: "16px 20px 0" }}>
+        <AndroidAppDownload variant="card" />
       </div>
 
       {/* ── PUBLIC PROFILE CARD ── */}

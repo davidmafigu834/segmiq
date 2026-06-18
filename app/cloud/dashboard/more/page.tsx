@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   UserCircle, CreditCard, Users, BarChart2,
-  HelpCircle, MessageCircle, ChevronRight, LogOut,
+  HelpCircle, MessageCircle, ChevronRight, LogOut, Smartphone,
 } from "lucide-react";
+import { FIELD_APP_DOWNLOAD_PATH, FIELD_APP_NAME } from "@/lib/cloud/field-app";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -13,6 +14,7 @@ type MenuItem = {
   description: string;
   href: string;
   external?: boolean;
+  download?: boolean;
 };
 
 type MenuSection = {
@@ -58,6 +60,13 @@ const menuSections: MenuSection[] = [
   {
     label: "Support",
     items: [
+      {
+        icon: Smartphone,
+        label: FIELD_APP_NAME,
+        description: "Download the Android field app",
+        href: FIELD_APP_DOWNLOAD_PATH,
+        download: true,
+      },
       {
         icon: HelpCircle,
         label: "Help & FAQ",
@@ -136,7 +145,9 @@ export default function MorePage() {
               <button
                 key={item.label}
                 onClick={() => {
-                  if (item.external) {
+                  if (item.download) {
+                    window.location.href = item.href;
+                  } else if (item.external) {
                     window.open(item.href, "_blank");
                   } else {
                     router.push(item.href);
