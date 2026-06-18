@@ -11,15 +11,9 @@ import Link from "next/link";
 import { Search, Menu, X } from "lucide-react";
 import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
 
-const NAV = [
-  { label: "Insights", href: "/#insight" },
-  { label: "Product", href: "/#product" },
-  { label: "Customer Stories", href: "/#client" },
-  { label: "Intelligence", href: "/#intelligence" },
-  { label: "Announcements", href: "/#announcement" },
-];
+type NavItem = { label: string; href: string };
 
-export default function BlogHeader() {
+export default function BlogHeader({ available = [] }: { available?: NavItem[] }) {
   const [open, setOpen] = useState(false);
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-black/[0.10]">
@@ -29,9 +23,11 @@ export default function BlogHeader() {
             <SegmiqWordmark href="" size="md" theme="light" />
             <span className="text-lg font-semibold tracking-tight text-[#5b5b5b]">Blog</span>
           </Link>
-          <nav className="hidden lg:flex items-center gap-5 text-sm text-[#5b5b5b] pl-5 border-l border-black/[0.10]">
-            {NAV.map((n) => <Link key={n.label} href={n.href} className="hover:text-black">{n.label}</Link>)}
-          </nav>
+          {available.length > 0 && (
+            <nav className="hidden lg:flex items-center gap-5 text-sm text-[#5b5b5b] pl-5 border-l border-black/[0.10]">
+              {available.map((n) => <Link key={n.label} href={n.href} className="hover:text-black">{n.label}</Link>)}
+            </nav>
+          )}
         </div>
         <div className="flex items-center gap-3 text-sm">
           <Link href="/#subscribe" aria-label="Search" className="hidden sm:inline text-[#5b5b5b] hover:text-black"><Search className="w-[18px] h-[18px]" /></Link>
@@ -42,11 +38,13 @@ export default function BlogHeader() {
           </button>
         </div>
       </div>
-      <div className={`lg:hidden overflow-hidden transition-[max-height] duration-300 border-black/[0.10] bg-white ${open ? "max-h-80 border-t" : "max-h-0"}`}>
-        <nav className="mx-auto max-w-[1180px] px-6 py-4 flex flex-col text-[15px]">
-          {NAV.map((n) => <Link key={n.label} href={n.href} onClick={() => setOpen(false)} className="py-2.5 border-b border-black/[0.10] text-[#5b5b5b] hover:text-black">{n.label}</Link>)}
-        </nav>
-      </div>
+      {available.length > 0 && (
+        <div className={`lg:hidden overflow-hidden transition-[max-height] duration-300 border-black/[0.10] bg-white ${open ? "max-h-80 border-t" : "max-h-0"}`}>
+          <nav className="mx-auto max-w-[1180px] px-6 py-4 flex flex-col text-[15px]">
+            {available.map((n) => <Link key={n.label} href={n.href} onClick={() => setOpen(false)} className="py-2.5 border-b border-black/[0.10] text-[#5b5b5b] hover:text-black">{n.label}</Link>)}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

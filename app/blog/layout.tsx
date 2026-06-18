@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import BlogHeader from "@/components/blog/BlogHeader";
 import BlogFooter from "@/components/blog/BlogFooter";
+import { BLOG_CATEGORY_NAV, getCategoryCounts, MIN_SECTION_POSTS } from "@/lib/blog";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://blog.segmiq.com"),
@@ -24,10 +25,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogLayout({ children }: { children: React.ReactNode }) {
+export default async function BlogLayout({ children }: { children: React.ReactNode }) {
+  const counts = await getCategoryCounts();
+  const available = BLOG_CATEGORY_NAV.filter(({ category }) => counts[category] >= MIN_SECTION_POSTS).map(
+    ({ category, label }) => ({ label, href: `/#${category}` })
+  );
+
   return (
     <div className="bg-white text-[#0C0C0C] antialiased">
-      <BlogHeader />
+      <BlogHeader available={available} />
       <main>{children}</main>
       <BlogFooter />
     </div>

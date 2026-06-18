@@ -6,7 +6,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
-import { getPublishedPosts, CATEGORY_LABELS, type Post, type PostCategory } from "@/lib/blog";
+import { getPublishedPosts, CATEGORY_LABELS, MIN_SECTION_POSTS, type Post, type PostCategory } from "@/lib/blog";
 import PostCard from "@/components/blog/PostCard";
 
 export const revalidate = 300;
@@ -17,11 +17,41 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function pickRecent(others: Post[], featuredRow: Post[], cap = 5): Post[] {
+  const featuredRowSlugs = new Set(featuredRow.map((p) => p.slug));
+  const preferred = others.filter((p) => !featuredRowSlugs.has(p.slug));
+  const result = preferred.slice(0, cap);
+  if (result.length >= cap) return result;
+  const used = new Set(result.map((p) => p.slug));
+  for (const p of others) {
+    if (result.length >= cap) break;
+    if (!used.has(p.slug)) {
+      result.push(p);
+      used.add(p.slug);
+    }
+  }
+  return result;
+}
+
+function pickCategoryList(
+  posts: Post[],
+  cat: PostCategory,
+  featured: Post,
+  featuredRow: Post[]
+): Post[] | null {
+  const featuredRowSlugs = new Set(featuredRow.map((p) => p.slug));
+  const inCategory = posts.filter((p) => p.category === cat && p.slug !== featured.slug);
+  const strict = inCategory.filter((p) => !featuredRowSlugs.has(p.slug));
+  const list = strict.length >= MIN_SECTION_POSTS ? strict : inCategory;
+  if (list.length < MIN_SECTION_POSTS) return null;
+  return list.slice(0, 4);
+}
+
 function FeaturedLarge({ post }: { post: Post }) {
   return (
     <Link href={`/${post.slug}`} className="group block mt-6">
       <div className="grid sm:grid-cols-2 gap-6 items-center">
-        <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-neutral-100">
+        <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-neutral-100 border border-black/[0.06]">
           <Image src={post.coverImage} alt="" fill priority sizes="(max-width:1024px) 100vw, 560px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
         </div>
         <div>
@@ -54,7 +84,12 @@ export default async function BlogHome() {
   const featured = posts.find((p) => p.featured) ?? posts[0];
   const others = posts.filter((p) => p !== featured);
   const featuredRow = others.slice(0, 3);
-  const recent = others.slice(0, 5);
+  const recent = pickRecent(others, featuredRow, 5);
+
+  const categorySections = SECTION_ORDER.map((cat) => ({
+    cat,
+    list: pickCategoryList(posts, cat, featured, featuredRow),
+  })).filter((s): s is { cat: PostCategory; list: Post[] } => s.list !== null);
 
   return (
     <>
@@ -80,25 +115,21 @@ export default async function BlogHome() {
       <div className="mx-auto max-w-[1180px] px-6"><div className="border-t border-black/[0.10]" /></div>
 
       {/* Category sections */}
-      {SECTION_ORDER.map((cat, idx) => {
-        const list = posts.filter((p) => p.category === cat).slice(0, 4);
-        if (!list.length) return null;
-        return (
-          <section key={cat} id={cat} className={`py-12 scroll-mt-20 ${idx % 2 ? "bg-[#FAFAF8]" : ""}`}>
-            <div className="mx-auto max-w-[1180px] px-6">
-              <div className="flex items-end justify-between">
-                <h2 className="text-[26px] font-extrabold tracking-tight">{CATEGORY_LABELS[cat]}</h2>
-                <Link href={`/#${cat}`} className="text-[14px] font-semibold inline-flex items-center gap-1">
-                  View all <ChevronRight className="w-[15px] h-[15px] text-[#9bbf2e]" />
-                </Link>
-              </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-7">
-                {list.map((p) => <PostCard key={p.slug} post={p} />)}
-              </div>
+      {categorySections.map(({ cat, list }, idx) => (
+        <section key={cat} id={cat} className={`py-12 scroll-mt-20 ${idx % 2 ? "bg-[#FAFAF8]" : ""}`}>
+          <div className="mx-auto max-w-[1180px] px-6">
+            <div className="flex items-end justify-between">
+              <h2 className="text-[26px] font-extrabold tracking-tight">{CATEGORY_LABELS[cat]}</h2>
+              <Link href={`/#${cat}`} className="text-[14px] font-semibold inline-flex items-center gap-1">
+                View all <ChevronRight className="w-[15px] h-[15px] text-[#9bbf2e]" />
+              </Link>
             </div>
-          </section>
-        );
-      })}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-7">
+              {list.map((p) => <PostCard key={p.slug} post={p} />)}
+            </div>
+          </div>
+        </section>
+      ))}
 
       {/* Newsletter */}
       <section id="subscribe" className="py-16 bg-[#0C0C0C] text-white mt-6 scroll-mt-20">

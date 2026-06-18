@@ -11,6 +11,16 @@ import { CATEGORY_LABELS, type Post, type PostCategory } from "@/lib/blog-types"
 export type { Post, PostCategory } from "@/lib/blog-types";
 export { CATEGORY_LABELS, FILTERS } from "@/lib/blog-types";
 
+export const MIN_SECTION_POSTS = 3;
+
+export const BLOG_CATEGORY_NAV: { category: PostCategory; label: string }[] = [
+  { category: "insight", label: "Insights" },
+  { category: "product", label: "Product" },
+  { category: "client", label: "Customer Stories" },
+  { category: "intelligence", label: "Intelligence" },
+  { category: "announcement", label: "Announcements" },
+];
+
 const IMG = {
   solar: "https://images.unsplash.com/photo-1745187946672-2c1d8cf26a2b?q=70&w=900&h=560&fit=crop&auto=format",
   construction: "https://images.unsplash.com/photo-1646324554833-f0b6a479fa5d?q=70&w=900&h=560&fit=crop&auto=format",
@@ -117,6 +127,19 @@ async function fetchPublishedPosts(): Promise<Post[]> {
 
 export async function getPublishedPosts(): Promise<Post[]> {
   return fetchPublishedPosts();
+}
+
+export async function getCategoryCounts(): Promise<Record<PostCategory, number>> {
+  const posts = await getPublishedPosts();
+  const counts: Record<PostCategory, number> = {
+    insight: 0,
+    product: 0,
+    client: 0,
+    intelligence: 0,
+    announcement: 0,
+  };
+  for (const p of posts) counts[p.category]++;
+  return counts;
 }
 
 export async function getFeaturedPost(): Promise<Post | null> {

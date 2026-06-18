@@ -14,7 +14,7 @@ function fmtDate(iso: string) {
 export default function PostCard({ post }: { post: Post }) {
   return (
     <Link href={`/${post.slug}`} className="group block">
-      <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-neutral-100">
+      <div className="relative aspect-[16/10] rounded-xl overflow-hidden bg-neutral-100 border border-black/[0.06]">
         <Image src={post.coverImage} alt="" fill sizes="(max-width:640px) 100vw, 280px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
       </div>
       <span className="inline-block mt-3 text-[11px] font-semibold bg-[#f1f0ec] text-[#333] rounded-md px-2.5 py-[3px]">{post.categoryLabel}</span>
