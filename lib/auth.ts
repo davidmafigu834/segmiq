@@ -11,6 +11,72 @@ async function resolveClientMode(clientId: string | null): Promise<ClientMode> {
   return (data as { mode?: string } | null)?.mode === "solo" ? "solo" : "team";
 }
 
+export type VerifiedUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  clientId: string | null;
+  clientMode: ClientMode;
+  sessionVersion: number;
+};
+
+/** Shared credential check used by NextAuth and the field-app bearer token endpoint. */
+export async function verifyCredentials(
+  email: string,
+  password: string
+): Promise<VerifiedUser | null> {
+  const normalizedEmail = email.toLowerCase().trim();
+  const supabase = createAdminClient();
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("id, name, email, password, role, client_id, is_active, session_version")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+  const dev = process.env.NODE_ENV === "development";
+  const supabaseHost = (() => {
+    try {
+      return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname || "(missing NEXT_PUBLIC_SUPABASE_URL)";
+    } catch {
+      return "(invalid NEXT_PUBLIC_SUPABASE_URL)";
+    }
+  })();
+  if (error) {
+    if (dev) console.error("[auth] Supabase users lookup failed:", error.message, error);
+    return null;
+  }
+  if (!user) {
+    if (dev) {
+      console.error(
+        "[auth] No row in public.users for",
+        JSON.stringify(normalizedEmail),
+        "— app is using Supabase host:",
+        supabaseHost
+      );
+    }
+    return null;
+  }
+  if (!user.is_active) {
+    if (dev) console.warn("[auth] User inactive:", normalizedEmail);
+    return null;
+  }
+  const hash = String(user.password ?? "").trim();
+  const ok = await verifyPassword(password, hash);
+  if (!ok && dev) console.error("[auth] Password did not match stored hash for:", normalizedEmail);
+  if (!ok) return null;
+  const clientId = (user.client_id as string | null) ?? null;
+  const clientMode = await resolveClientMode(clientId);
+  return {
+    id: user.id as string,
+    name: user.name as string,
+    email: user.email as string,
+    role: user.role as UserRole,
+    clientId,
+    clientMode,
+    sessionVersion: Number((user as { session_version?: number }).session_version ?? 0),
+  };
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -21,56 +87,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        const email = credentials.email.toLowerCase().trim();
-        const supabase = createAdminClient();
-        const { data: user, error } = await supabase
-          .from("users")
-          .select("id, name, email, password, role, client_id, is_active, session_version")
-          .eq("email", email)
-          .maybeSingle();
-        const dev = process.env.NODE_ENV === "development";
-        const supabaseHost = (() => {
-          try {
-            return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname || "(missing NEXT_PUBLIC_SUPABASE_URL)";
-          } catch {
-            return "(invalid NEXT_PUBLIC_SUPABASE_URL)";
-          }
-        })();
-        if (error) {
-          if (dev) console.error("[next-auth] Supabase users lookup failed:", error.message, error);
-          return null;
-        }
-        if (!user) {
-          if (dev) {
-            console.error(
-              "[next-auth] No row in public.users for",
-              JSON.stringify(email),
-              "— app is using Supabase host:",
-              supabaseHost,
-              "(open this project in the dashboard and confirm the user exists there, or fix .env.local)"
-            );
-          }
-          return null;
-        }
-        if (!user.is_active) {
-          if (dev) console.warn("[next-auth] User inactive:", email);
-          return null;
-        }
-        const hash = String(user.password ?? "").trim();
-        const ok = await verifyPassword(credentials.password, hash);
-        if (!ok && dev) console.error("[next-auth] Password did not match stored hash for:", email);
-        if (!ok) return null;
-        const clientId = (user.client_id as string | null) ?? null;
-        const clientMode = await resolveClientMode(clientId);
-        return {
-          id: user.id as string,
-          name: user.name as string,
-          email: user.email as string,
-          role: user.role as UserRole,
-          clientId,
-          clientMode,
-          sessionVersion: Number((user as { session_version?: number }).session_version ?? 0),
-        };
+        return verifyCredentials(credentials.email, credentials.password);
       },
     }),
   ],

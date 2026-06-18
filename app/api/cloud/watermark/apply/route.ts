@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getObject, putObject, getPublicUrl } from "@/lib/storage/r2";
 import { applyWatermark } from "@/lib/watermark";
@@ -9,8 +8,8 @@ export const maxDuration = 30;
 
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) {
+  const auth = await resolveApiAuth(req);
+  if (!auth?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

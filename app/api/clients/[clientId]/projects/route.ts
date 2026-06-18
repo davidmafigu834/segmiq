@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
 
-export async function GET(_req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
+export async function GET(req: Request, { params }: { params: { clientId: string } }) {
+  const auth = await resolveApiAuth(req);
+  if (!auth?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessClient(auth.role, auth.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -23,9 +22,9 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
+  const auth = await resolveApiAuth(req);
+  if (!auth?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessClient(auth.role, auth.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
