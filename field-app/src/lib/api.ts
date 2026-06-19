@@ -15,52 +15,67 @@ export type ApiResponse<T> = {
   data: T;
 };
 
-function serializeJsonBody(body: unknown): string {
-  return typeof body === "string" ? body : JSON.stringify(body ?? {});
+/** Capacitor Android sometimes returns JSON as a string — coerce before use. */
+function normalizeResponseData<T>(data: unknown): T {
+  if (typeof data === "string") {
+    const trimmed = data.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        return JSON.parse(trimmed) as T;
+      } catch {
+        /* use raw string */
+      }
+    }
+  }
+  return data as T;
 }
 
-async function parseBody<T>(response: { status: number; data: unknown }): Promise<ApiResponse<T>> {
-  const data = response.data as T;
+async function request<T>(
+  method: "GET" | "POST",
+  path: string,
+  body?: Record<string, unknown>,
+  auth = true
+): Promise<ApiResponse<T>> {
+  const headers: Record<string, string> = { ...JSON_HEADERS };
+  if (auth) {
+    const token = await getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await CapacitorHttp.request({
+    url: `${API_BASE}${path}`,
+    method,
+    headers,
+    responseType: "json",
+    ...(body !== undefined ? { data: body } : {}),
+  });
+
   return {
     ok: response.status >= 200 && response.status < 300,
     status: response.status,
-    data,
+    data: normalizeResponseData<T>(response.data),
   };
 }
 
 export async function apiGet<T>(path: string): Promise<ApiResponse<T>> {
-  const token = await getToken();
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const response = await CapacitorHttp.get({
-    url: `${API_BASE}${path}`,
-    headers,
-  });
-  return parseBody<T>(response);
+  return request<T>("GET", path);
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
-  const token = await getToken();
-  const headers: Record<string, string> = { ...JSON_HEADERS };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  const response = await CapacitorHttp.post({
-    url: `${API_BASE}${path}`,
-    headers,
-    data: serializeJsonBody(body),
-  });
-  return parseBody<T>(response);
+  const payload =
+    body !== null && typeof body === "object" && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : { value: body };
+  return request<T>("POST", path, payload);
 }
 
 /** Unauthenticated POST — used for login before a token exists. */
 export async function apiPostPublic<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
-  const response = await CapacitorHttp.post({
-    url: `${API_BASE}${path}`,
-    headers: JSON_HEADERS,
-    data: serializeJsonBody(body),
-  });
-  return parseBody<T>(response);
+  const payload =
+    body !== null && typeof body === "object" && !Array.isArray(body)
+      ? (body as Record<string, unknown>)
+      : { value: body };
+  return request<T>("POST", path, payload, false);
 }
 
 export { API_BASE };

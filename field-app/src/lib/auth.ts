@@ -1,10 +1,12 @@
-import { apiPostPublic } from "./api";
+import { apiGet, apiPostPublic } from "./api";
 import {
   clearSession,
   getClientId,
+  getRole,
   getToken,
   getUserName,
   isLoggedIn,
+  setClientId,
   setSession,
 } from "./session";
 
@@ -12,6 +14,12 @@ export type AuthUser = {
   clientId: string | null;
   role: string;
   name: string;
+};
+
+export type CloudClient = {
+  id: string;
+  name: string;
+  slug: string;
 };
 
 type LoginResponse = {
@@ -33,12 +41,59 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   }
 
   const { token, user } = res.data as LoginResponse;
-  await setSession(token, user.clientId, user.name ?? "");
+
+  if (user.role !== "AGENCY_ADMIN" && !user.clientId) {
+    throw new Error(
+      "This account is not linked to a Cloud client. Sign in with your cloud.segmiq.com account."
+    );
+  }
+
+  await setSession(token, user.clientId, user.name ?? "", user.role);
   return user;
+}
+
+/** Agency admins have no client_id on login — pick or restore one before loading projects. */
+export async function resolveActiveClientId(): Promise<{
+  clientId: string | null;
+  clients: CloudClient[];
+  error?: string;
+}> {
+  const stored = await getClientId();
+  if (stored) return { clientId: stored, clients: [] };
+
+  const role = await getRole();
+  if (role !== "AGENCY_ADMIN") {
+    return {
+      clientId: null,
+      clients: [],
+      error: "Your account is not linked to a Cloud client. Sign in with your cloud.segmiq.com account.",
+    };
+  }
+
+  const res = await apiGet<CloudClient[] | { error?: string }>("/api/cloud/app/clients");
+  if (!res.ok) {
+    return {
+      clientId: null,
+      clients: [],
+      error: (res.data as { error?: string }).error ?? "Failed to load clients.",
+    };
+  }
+
+  const clients = Array.isArray(res.data) ? res.data : [];
+  if (clients.length === 0) {
+    return { clientId: null, clients: [], error: "No Cloud clients found for your agency." };
+  }
+
+  if (clients.length === 1) {
+    await setClientId(clients[0]!.id);
+    return { clientId: clients[0]!.id, clients };
+  }
+
+  return { clientId: null, clients };
 }
 
 export async function logout(): Promise<void> {
   await clearSession();
 }
 
-export { getToken, getClientId, getUserName, isLoggedIn };
+export { getToken, getClientId, getUserName, getRole, isLoggedIn, setClientId };
