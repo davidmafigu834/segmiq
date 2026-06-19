@@ -21,13 +21,14 @@ type LoginResponse = {
 
 export async function login(email: string, password: string): Promise<AuthUser> {
   const res = await apiPostPublic<LoginResponse | { error?: string }>("/api/cloud/app/auth", {
-    email,
+    email: email.trim(),
     password,
   });
 
   if (!res.ok || !("token" in res.data)) {
+    const apiError = (res.data as { error?: string }).error;
     throw new Error(
-      (res.data as { error?: string }).error ?? "Invalid email or password."
+      apiError === "Unauthorized" ? "Invalid email or password." : apiError ?? "Invalid email or password."
     );
   }
 
