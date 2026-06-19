@@ -4,9 +4,10 @@ import { login } from "../lib/auth";
 
 type Props = {
   onSuccess: () => void;
+  expiredMessage?: string;
 };
 
-export function Login({ onSuccess }: Props) {
+export function Login({ onSuccess, expiredMessage }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -39,6 +40,12 @@ export function Login({ onSuccess }: Props) {
       <div className="w-full max-w-sm flex-1 flex flex-col justify-center">
         <h1 className="mb-2 font-fw-body text-2xl font-semibold text-white">Welcome back</h1>
         <p className="mb-8 font-fw-body text-sm text-white/50">Sign in to your account</p>
+
+        {expiredMessage && (
+          <div className="mb-4 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 font-fw-body text-sm text-amber-100">
+            {expiredMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

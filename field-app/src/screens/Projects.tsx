@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Camera, Plus, Search } from "lucide-react";
-import { apiGet } from "../lib/api";
+import { Camera, Plus, RefreshCw, Search } from "lucide-react";
+import { AUTH_EXPIRED_EVENT } from "../lib/api";
 import {
   getUserName,
   getRole,
@@ -8,18 +8,25 @@ import {
   setClientId,
   type CloudClient,
 } from "../lib/auth";
+import { fetchProjects } from "../lib/projects";
 import { ProjectCard, type Project } from "../components/ProjectCard";
 import { TabBar } from "../components/TabBar";
 import type { TabId } from "../components/TabBar";
 import { AvatarInitials, FWButton, FWSectionLabel, getGreeting } from "../components/fw";
+import { OfflineBanner } from "../components/OfflineBanner";
+import { NewProjectSheet } from "../components/NewProjectSheet";
 
 type Props = {
   onTabChange: (tab: TabId) => void;
+  onOpenAccount: () => void;
+  onOpenProject: (project: Project) => void;
+  onAuthExpired: () => void;
 };
 
-export function Projects({ onTabChange }: Props) {
+export function Projects({ onTabChange, onOpenAccount, onOpenProject, onAuthExpired }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [userName, setUserName] = useState("");
   const [search, setSearch] = useState("");
@@ -27,30 +34,22 @@ export function Projects({ onTabChange }: Props) {
   const [activeClientId, setActiveClientId] = useState<string | null>(null);
   const [clientOptions, setClientOptions] = useState<CloudClient[]>([]);
   const [pendingClientId, setPendingClientId] = useState("");
+  const [showNewProject, setShowNewProject] = useState(false);
 
   const loadProjects = useCallback(async (clientId: string) => {
     setLoading(true);
     setError("");
 
-    const res = await apiGet<Project[] | { error?: string }>(
-      `/api/clients/${clientId}/projects`
-    );
+    const { projects: list, error: loadErr } = await fetchProjects(clientId);
 
-    if (!res.ok) {
-      setError((res.data as { error?: string }).error ?? "Failed to load projects.");
+    if (loadErr) {
+      setError(loadErr);
       setProjects([]);
       setLoading(false);
       return;
     }
 
-    if (Array.isArray(res.data)) {
-      const sorted = [...res.data].sort(
-        (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      );
-      setProjects(sorted);
-    } else {
-      setProjects([]);
-    }
+    setProjects(list);
     setLoading(false);
   }, []);
 
@@ -90,6 +89,12 @@ export function Projects({ onTabChange }: Props) {
     void bootstrap();
   }, [bootstrap]);
 
+  useEffect(() => {
+    const handler = () => onAuthExpired();
+    window.addEventListener(AUTH_EXPIRED_EVENT, handler);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handler);
+  }, [onAuthExpired]);
+
   async function confirmClientSelection() {
     if (!pendingClientId) return;
     await setClientId(pendingClientId);
@@ -105,6 +110,13 @@ export function Projects({ onTabChange }: Props) {
     await loadProjects(nextId);
   }
 
+  async function handleRefresh() {
+    if (!activeClientId) return;
+    setRefreshing(true);
+    await loadProjects(activeClientId);
+    setRefreshing(false);
+  }
+
   const filtered = projects.filter((p) =>
     p.title.toLowerCase().includes(search.toLowerCase())
   );
@@ -115,6 +127,8 @@ export function Projects({ onTabChange }: Props) {
 
   return (
     <div className="flex min-h-full flex-col bg-page font-fw-body">
+      <OfflineBanner />
+
       <div className="bg-canvas px-5 pb-6 pt-8">
         <FWSectionLabel className="mb-1.5">{getGreeting()}</FWSectionLabel>
         <div className="flex items-start justify-between gap-3">
@@ -132,7 +146,35 @@ export function Projects({ onTabChange }: Props) {
                     : "Loading your workspace…"}
             </p>
           </div>
-          {userName ? <AvatarInitials name={userName} size={36} /> : null}
+          <div className="flex flex-shrink-0 items-center gap-2">
+            {activeClientId && (
+              <button
+                type="button"
+                onClick={() => void handleRefresh()}
+                disabled={refreshing}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-black/[0.08] bg-card"
+                aria-label="Refresh projects"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 text-soil-3 ${refreshing ? "animate-spin" : ""}`}
+                  strokeWidth={2}
+                />
+              </button>
+            )}
+            {userName ? (
+              <button type="button" onClick={onOpenAccount} aria-label="Account and settings">
+                <AvatarInitials name={userName} size={36} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenAccount}
+                className="font-fw-body text-xs font-semibold text-soil-3 underline"
+              >
+                Account
+              </button>
+            )}
+          </div>
         </div>
 
         {role === "AGENCY_ADMIN" && clientOptions.length > 1 && activeClientId && (
@@ -161,7 +203,11 @@ export function Projects({ onTabChange }: Props) {
             className="pills-scroll mb-2 flex gap-2 overflow-x-auto px-5 py-1"
             style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
           >
-            <FWButton variant="secondary" style={{ height: 40, flexShrink: 0 }}>
+            <FWButton
+              variant="secondary"
+              style={{ height: 40, flexShrink: 0 }}
+              onClick={() => setShowNewProject(true)}
+            >
               <Plus size={15} strokeWidth={2.2} />
               New project
             </FWButton>
@@ -264,10 +310,14 @@ export function Projects({ onTabChange }: Props) {
             <p className="mb-6 max-w-[220px] font-fw-body text-[13px] text-warm">
               {search
                 ? "No projects match your search."
-                : "Create a project on cloud.segmiq.com, then capture photos here."}
+                : "Create a project, then capture photos in the field."}
             </p>
             {!search && (
-              <FWButton variant="primary" style={{ height: 44, borderRadius: 12, padding: "0 20px" }}>
+              <FWButton
+                variant="primary"
+                style={{ height: 44, borderRadius: 12, padding: "0 20px" }}
+                onClick={() => setShowNewProject(true)}
+              >
                 <Plus size={15} strokeWidth={2.5} />
                 Create a project
               </FWButton>
@@ -278,11 +328,20 @@ export function Projects({ onTabChange }: Props) {
         {!needsClientPick && (
           <div className="grid grid-cols-2 gap-2.5">
             {filtered.map((p) => (
-              <ProjectCard key={p.id} project={p} />
+              <ProjectCard key={p.id} project={p} onClick={() => onOpenProject(p)} />
             ))}
           </div>
         )}
       </main>
+
+      {activeClientId && (
+        <NewProjectSheet
+          clientId={activeClientId}
+          open={showNewProject}
+          onClose={() => setShowNewProject(false)}
+          onCreated={() => void loadProjects(activeClientId)}
+        />
+      )}
 
       <TabBar active="projects" onChange={onTabChange} />
     </div>

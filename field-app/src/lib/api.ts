@@ -1,5 +1,7 @@
 import { CapacitorHttp } from "@capacitor/core";
-import { getToken } from "./session";
+import { clearSession, getToken } from "./session";
+
+export const AUTH_EXPIRED_EVENT = "segmiq:auth-expired";
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "https://cloud.segmiq.com").replace(/\/$/, "");
 
@@ -49,6 +51,11 @@ async function request<T>(
     responseType: "json",
     ...(body !== undefined ? { data: body } : {}),
   });
+
+  if (response.status === 401 && auth && typeof window !== "undefined") {
+    await clearSession();
+    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+  }
 
   return {
     ok: response.status >= 200 && response.status < 300,
