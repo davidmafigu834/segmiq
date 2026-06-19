@@ -1,6 +1,6 @@
 export const FIELD_APP_NAME = "Segmiq Cloud Field";
 export const FIELD_APP_VERSION = "1.0";
-export const FIELD_APP_DOWNLOAD_PATH = "/downloads/segmiq-cloud-field.apk";
+export const FIELD_APP_DOWNLOAD_PATH = "/api/cloud/app/download";
 export const FIELD_APP_FILENAME = "segmiq-cloud-field.apk";
 
 export const FIELD_APP_INSTALL_STEPS = [

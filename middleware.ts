@@ -118,10 +118,14 @@ export async function middleware(req: NextRequest) {
     if (cloudPath) {
       const url = req.nextUrl.clone();
       url.pathname = cloudPath;
-      return NextResponse.rewrite(url);
+      const response = NextResponse.rewrite(url);
+      response.headers.set("x-pathname", path);
+      return response;
     }
 
-    return NextResponse.next();
+    const response = NextResponse.next();
+    response.headers.set("x-pathname", path);
+    return response;
   }
 
   if (!isCloudSubdomain && host && host !== appDomain && host.endsWith("." + appDomain)) {

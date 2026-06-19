@@ -35,6 +35,7 @@ const nextConfig = {
   },
   async rewrites() {
     return [
+      { source: "/downloads/segmiq-cloud-field.apk", destination: "/api/cloud/app/download" },
       ...cloudRewrites(_cloudHost),
       ...cloudRewrites("cloud.segmiq.com"),
       ...cloudRewrites("cloud.localhost:3000"),

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'leadstaq-cloud-v6';
+const CACHE_VERSION = 'leadstaq-cloud-v7';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 
