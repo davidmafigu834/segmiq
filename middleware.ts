@@ -18,7 +18,10 @@ export async function middleware(req: NextRequest) {
     .split("/")[0]
     .split(":")[0];
 
-  const isCloudSubdomain = host === `cloud.${appDomain}` || host === "cloud.localhost";
+  const isCloudSubdomain =
+    host === `cloud.${appDomain}` ||
+    host === "cloud.segmiq.com" ||
+    host === "cloud.localhost";
   const isBlogSubdomain = host === "blog.segmiq.com" || host.startsWith("blog.localhost");
 
   // Blog subdomain: rewrite to internal /blog/* (public URLs have no /blog prefix)
@@ -49,6 +52,10 @@ export async function middleware(req: NextRequest) {
 
   if (isCloudSubdomain) {
     const path = req.nextUrl.pathname;
+
+    if (path.startsWith("/downloads/") || path.endsWith(".apk")) {
+      return NextResponse.next();
+    }
 
     // Map known URL paths to internal /cloud/* paths.
     // IMPORTANT: only rewrite explicit cloud routes — do NOT catch static files

@@ -36,6 +36,7 @@ const nextConfig = {
   async rewrites() {
     return [
       ...cloudRewrites(_cloudHost),
+      ...cloudRewrites("cloud.segmiq.com"),
       ...cloudRewrites("cloud.localhost:3000"),
     ];
   },

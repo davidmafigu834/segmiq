@@ -11,6 +11,7 @@ import {
 import { Suspense } from "react";
 import { InstallPrompt } from "@/app/cloud/components/InstallPrompt";
 import { IOSInstallBanner } from "@/app/cloud/components/IOSInstallBanner";
+import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
 
 const PRIMARY_NAV = [
   { href: "/cloud/dashboard", icon: Grid, label: "Home" },
@@ -150,6 +151,9 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
 
   const displayName = businessName || "Segmiq Cloud";
   const initials = getInitials(session?.user?.name ?? "");
+  const showFieldAppBanner =
+    !pathname.startsWith("/cloud/dashboard/field-app") &&
+    !pathname.startsWith("/cloud/dashboard/onboarding");
 
   return (
     <div className="flex min-h-screen bg-[#F7F7F8] font-cloud-body">
@@ -299,7 +303,14 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
           </div>
         )}
 
-        <main className="flex-1 lg:pb-8" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>{children}</main>
+        <main className="flex-1 lg:pb-8" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
+          {showFieldAppBanner && (
+            <div className="px-5 pt-4 lg:px-8">
+              <AndroidAppDownload variant="banner" />
+            </div>
+          )}
+          {children}
+        </main>
       </div>
 
       {/* Bottom tab bar — mobile */}
