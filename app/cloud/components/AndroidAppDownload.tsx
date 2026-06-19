@@ -10,33 +10,86 @@ import {
 } from "@/lib/cloud/field-app";
 
 type AndroidAppDownloadProps = {
-  variant?: "card" | "section";
+  variant?: "banner" | "section";
 };
 
 const downloadBtnCls =
   "inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-bold transition-opacity font-cloud-body cursor-pointer bg-[var(--fw-soil)] text-[var(--fw-lime)]";
 
 export function AndroidAppDownload({ variant = "section" }: AndroidAppDownloadProps) {
-  if (variant === "card") {
+  if (variant === "banner") {
+    const F = "var(--fw-font-body), system-ui, sans-serif";
+    const S = "var(--fw-font-display), Georgia, serif";
+
     return (
-      <div className="rounded-[18px] border border-[var(--fw-border)] bg-[var(--fw-card)] p-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--fw-border-strong)] bg-[var(--fw-sunken)]">
-          <Smartphone className="h-5 w-5 text-[var(--fw-text-primary)]" strokeWidth={1.6} />
+      <div
+        style={{
+          borderRadius: 20,
+          background: "#1C1410",
+          border: "0.5px solid rgba(255,255,255,0.08)",
+          padding: "16px 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: -30,
+            right: -20,
+            width: 90,
+            height: 90,
+            borderRadius: "50%",
+            background: "rgba(212,255,79,0.08)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            background: "rgba(212,255,79,0.15)",
+            border: "0.5px solid rgba(212,255,79,0.25)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <Smartphone size={22} color="#D4FF4F" strokeWidth={1.6} />
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-cloud-display text-[15px] leading-tight text-[var(--fw-text-primary)]">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontFamily: S, fontSize: 16, color: "#FFFFFF", margin: "0 0 3px", lineHeight: 1.2 }}>
             {FIELD_APP_NAME}
           </p>
-          <p className="mt-0.5 font-cloud-body text-[11px] text-[var(--fw-text-tertiary)]">
-            Android field app · v{FIELD_APP_VERSION}
+          <p style={{ fontFamily: F, fontSize: 11, color: "rgba(255,255,255,0.55)", margin: 0 }}>
+            Download for Android · v{FIELD_APP_VERSION}
           </p>
         </div>
         <a
           href={FIELD_APP_DOWNLOAD_PATH}
           download={FIELD_APP_FILENAME}
-          className="flex h-8 shrink-0 items-center gap-1.5 rounded-[10px] border border-[var(--fw-border-strong)] bg-[var(--fw-sunken)] px-3 font-cloud-body text-[11px] font-bold text-[var(--fw-text-primary)]"
+          style={{
+            height: 36,
+            padding: "0 14px",
+            borderRadius: 12,
+            background: "#D4FF4F",
+            color: "#1C1410",
+            fontFamily: F,
+            fontSize: 12,
+            fontWeight: 700,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexShrink: 0,
+            textDecoration: "none",
+          }}
         >
-          <Download className="h-3.5 w-3.5" />
+          <Download size={14} strokeWidth={2.2} />
           Download
         </a>
       </div>

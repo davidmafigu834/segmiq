@@ -412,6 +412,8 @@ export default function CloudSettingsPage() {
           </form>
         </section>
 
+        <AndroidAppDownload />
+
         {/* Public profile */}
         {client && profile !== null && (
           <section>
@@ -586,8 +588,6 @@ export default function CloudSettingsPage() {
             )}
           </div>
         </section>
-
-        <AndroidAppDownload />
 
         {/* Sign out */}
         <section className="pb-4">

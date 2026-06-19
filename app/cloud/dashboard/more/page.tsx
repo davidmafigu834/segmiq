@@ -6,7 +6,7 @@ import {
   UserCircle, CreditCard, Users, BarChart2,
   HelpCircle, MessageCircle, ChevronRight, LogOut, Smartphone,
 } from "lucide-react";
-import { FIELD_APP_DOWNLOAD_PATH, FIELD_APP_NAME } from "@/lib/cloud/field-app";
+import { FIELD_APP_NAME } from "@/lib/cloud/field-app";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -64,8 +64,7 @@ const menuSections: MenuSection[] = [
         icon: Smartphone,
         label: FIELD_APP_NAME,
         description: "Download the Android field app",
-        href: FIELD_APP_DOWNLOAD_PATH,
-        download: true,
+        href: "/cloud/dashboard/field-app",
       },
       {
         icon: HelpCircle,

@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   Grid, Folder, Camera, Users, Settings, LayoutGrid, LogOut, CloudUpload,
-  Bell, CreditCard, HelpCircle, BarChart2,
+  Bell, CreditCard, HelpCircle, BarChart2, Smartphone,
 } from "lucide-react";
 import { Suspense } from "react";
 import { InstallPrompt } from "@/app/cloud/components/InstallPrompt";
@@ -22,6 +22,7 @@ const PRIMARY_NAV = [
 const SECONDARY_NAV = [
   { href: "/cloud/dashboard/notifications", icon: Bell, label: "Notifications" },
   { href: "/cloud/dashboard/analytics", icon: BarChart2, label: "Analytics" },
+  { href: "/cloud/dashboard/field-app", icon: Smartphone, label: "Field app" },
   { href: "/cloud/dashboard/billing", icon: CreditCard, label: "Billing" },
   { href: "/cloud/dashboard/settings", icon: Settings, label: "Settings" },
   { href: "/cloud/help", icon: HelpCircle, label: "Help" },
@@ -49,6 +50,7 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/cloud/dashboard/notifications")) return "Notifications";
   if (pathname.startsWith("/cloud/dashboard/analytics")) return "Analytics";
   if (pathname.startsWith("/cloud/dashboard/billing")) return "Billing";
+  if (pathname.startsWith("/cloud/dashboard/field-app")) return "Field app";
   if (pathname.startsWith("/cloud/dashboard/more")) return "More";
   return "Dashboard";
 }
@@ -310,6 +312,7 @@ export default function CloudDashboardLayout({ children }: { children: React.Rea
             ? (pathname === "/cloud/dashboard/more"
                 || pathname.startsWith("/cloud/dashboard/settings")
                 || pathname.startsWith("/cloud/dashboard/billing")
+                || pathname.startsWith("/cloud/dashboard/field-app")
                 || pathname.startsWith("/cloud/dashboard/team")
                 || pathname.startsWith("/cloud/dashboard/analytics"))
             : isActive(href, pathname);

@@ -213,6 +213,11 @@ export default function CloudDashboardHome() {
         </div>
       </div>
 
+      {/* ── ANDROID FIELD APP ── */}
+      <div style={{ margin: "0 20px 20px" }}>
+        <AndroidAppDownload variant="banner" />
+      </div>
+
       {/* ── RECENT PROJECTS ── */}
       <div style={{ padding: "12px 20px 8px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: 0, fontFamily: F }}>Recent projects</p>
@@ -371,11 +376,6 @@ export default function CloudDashboardHome() {
             <ArrowRight size={13} strokeWidth={2.5} />
           </button>
         </div>
-      </div>
-
-      {/* ── ANDROID FIELD APP ── */}
-      <div style={{ margin: "16px 20px 0" }}>
-        <AndroidAppDownload variant="card" />
       </div>
 
       {/* ── PUBLIC PROFILE CARD ── */}
