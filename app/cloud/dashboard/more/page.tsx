@@ -7,6 +7,7 @@ import {
   HelpCircle, MessageCircle, ChevronRight, LogOut, Smartphone,
 } from "lucide-react";
 import { FIELD_APP_NAME } from "@/lib/cloud/field-app";
+import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -131,6 +132,11 @@ export default function MorePage() {
             <ChevronRight size={14} color="rgba(255,255,255,0.5)" />
           </button>
         </div>
+      </div>
+
+      {/* Field app — first thing on More menu */}
+      <div style={{ padding: "0 20px 20px" }}>
+        <AndroidAppDownload variant="banner" />
       </div>
 
       {/* Menu sections */}

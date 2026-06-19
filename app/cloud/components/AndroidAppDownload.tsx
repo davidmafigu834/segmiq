@@ -29,7 +29,8 @@ export function AndroidAppDownload({ variant = "section" }: AndroidAppDownloadPr
           border: "0.5px solid rgba(255,255,255,0.08)",
           padding: "16px 18px",
           display: "flex",
-          alignItems: "center",
+          flexDirection: "column",
+          alignItems: "stretch",
           gap: 14,
           position: "relative",
           overflow: "hidden",
@@ -47,50 +48,53 @@ export function AndroidAppDownload({ variant = "section" }: AndroidAppDownloadPr
             pointerEvents: "none",
           }}
         />
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 14,
-            background: "rgba(212,255,79,0.15)",
-            border: "0.5px solid rgba(212,255,79,0.25)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Smartphone size={22} color="#D4FF4F" strokeWidth={1.6} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: S, fontSize: 16, color: "#FFFFFF", margin: "0 0 3px", lineHeight: 1.2 }}>
-            {FIELD_APP_NAME}
-          </p>
-          <p style={{ fontFamily: F, fontSize: 11, color: "rgba(255,255,255,0.55)", margin: 0 }}>
-            Download for Android · v{FIELD_APP_VERSION}
-          </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              background: "rgba(212,255,79,0.15)",
+              border: "0.5px solid rgba(212,255,79,0.25)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Smartphone size={22} color="#D4FF4F" strokeWidth={1.6} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontFamily: S, fontSize: 16, color: "#FFFFFF", margin: "0 0 3px", lineHeight: 1.2 }}>
+              {FIELD_APP_NAME}
+            </p>
+            <p style={{ fontFamily: F, fontSize: 11, color: "rgba(255,255,255,0.55)", margin: 0 }}>
+              Download for Android · v{FIELD_APP_VERSION}
+            </p>
+          </div>
         </div>
         <a
           href={FIELD_APP_DOWNLOAD_PATH}
           download={FIELD_APP_FILENAME}
           style={{
-            height: 36,
-            padding: "0 14px",
+            height: 44,
+            padding: "0 16px",
             borderRadius: 12,
             background: "#D4FF4F",
             color: "#1C1410",
             fontFamily: F,
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: 700,
             display: "flex",
             alignItems: "center",
-            gap: 6,
-            flexShrink: 0,
+            justifyContent: "center",
+            gap: 8,
             textDecoration: "none",
+            width: "100%",
           }}
         >
-          <Download size={14} strokeWidth={2.2} />
-          Download
+          <Download size={16} strokeWidth={2.2} />
+          Download Android app
         </a>
       </div>
     );
