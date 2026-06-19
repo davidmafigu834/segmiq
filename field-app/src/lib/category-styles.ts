@@ -5,10 +5,11 @@ export type CategoryStyle = {
   labelColor: string;
 };
 
-/** Copied from app/cloud/lib/category-styles.ts */
+/** Thumbnail overlay colours — copied from app/cloud/lib/category-styles.ts */
 const styles: Record<string, CategoryStyle> = {
   Construction: { sceneBg: "#3A2A1A", overlayFrom: "rgba(28,20,12,0.85)", badge: "rgba(255,255,255,0.18)", labelColor: "#FFFFFF" },
   "Solar Installation": { sceneBg: "#1E2C18", overlayFrom: "rgba(16,24,12,0.85)", badge: "rgba(255,255,255,0.18)", labelColor: "#FFFFFF" },
+  Solar: { sceneBg: "#1E2C18", overlayFrom: "rgba(16,24,12,0.85)", badge: "rgba(255,255,255,0.18)", labelColor: "#FFFFFF" },
   Landscaping: { sceneBg: "#1C2A1C", overlayFrom: "rgba(14,22,14,0.85)", badge: "rgba(255,255,255,0.18)", labelColor: "#FFFFFF" },
   Electrical: { sceneBg: "#2C2A14", overlayFrom: "rgba(24,22,10,0.85)", badge: "rgba(255,255,255,0.18)", labelColor: "#FFFFFF" },
   Plumbing: { sceneBg: "#1A2430", overlayFrom: "rgba(14,18,28,0.85)", badge: "rgba(255,255,255,0.18)", labelColor: "#FFFFFF" },
@@ -30,8 +31,4 @@ const fallback: CategoryStyle = {
 export function getCategoryStyle(category: string | null | undefined): CategoryStyle {
   if (!category) return fallback;
   return styles[category] ?? fallback;
-}
-
-export function getCategoryAccentColor(category: string | null | undefined): string {
-  return getCategoryStyle(category).sceneBg;
 }

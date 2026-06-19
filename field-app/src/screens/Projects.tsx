@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { Camera, Plus, Search } from "lucide-react";
 import { apiGet } from "../lib/api";
 import { getClientId, getUserName } from "../lib/auth";
 import { ProjectCard, type Project } from "../components/ProjectCard";
 import { TabBar } from "../components/TabBar";
 import type { TabId } from "../components/TabBar";
+import { AvatarInitials, FWButton, FWSectionLabel, getGreeting } from "../components/fw";
 
 type Props = {
   onTabChange: (tab: TabId) => void;
@@ -14,6 +16,7 @@ export function Projects({ onTabChange }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [userName, setUserName] = useState("");
+  const [search, setSearch] = useState("");
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -49,35 +52,87 @@ export function Projects({ onTabChange }: Props) {
     void fetchProjects();
   }, [fetchProjects]);
 
+  const filtered = projects.filter((p) =>
+    p.title.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const photoTotal = projects.reduce((n, p) => n + (p.project_media?.length ?? 0), 0);
+
   return (
-    <div className="flex min-h-full flex-col bg-cream">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-black/[0.06] bg-cream px-5 py-4">
-        <div>
-          <p className="font-display text-[22px] text-ink">Projects</p>
-          {userName && (
-            <p className="text-[12px] text-warm">Hi, {userName.split(" ")[0]}</p>
-          )}
+    <div className="flex min-h-full flex-col bg-page font-fw-body">
+      {/* Greeting hero — mirrors cloud dashboard home */}
+      <div className="bg-canvas px-5 pb-6 pt-8">
+        <FWSectionLabel className="mb-1.5">{getGreeting()}</FWSectionLabel>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="font-fw-display text-[clamp(24px,5vw,32px)] leading-tight tracking-tight text-ink">
+              {userName || "Your projects"}
+            </h1>
+            <p className="mt-1 font-fw-body text-xs text-warm">
+              {projects.length > 0
+                ? `${projects.length} project${projects.length !== 1 ? "s" : ""} · ${photoTotal} photos stored`
+                : "No projects yet · Upload your first job"}
+            </p>
+          </div>
+          {userName ? <AvatarInitials name={userName} size={36} /> : null}
         </div>
-        <button
-          type="button"
-          className="rounded-xl bg-ink px-4 py-2 text-[12px] font-bold text-lime"
-          onClick={() => {
-            /* New project — Prompt 3 */
-          }}
+      </div>
+
+      {/* Quick action pills */}
+      <div
+        className="pills-scroll mb-2 flex gap-2 overflow-x-auto px-5 py-1"
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+      >
+        <FWButton variant="secondary" style={{ height: 40, flexShrink: 0 }}>
+          <Plus size={15} strokeWidth={2.2} />
+          New project
+        </FWButton>
+        <FWButton
+          variant="primary"
+          style={{ height: 40, flexShrink: 0 }}
+          onClick={() => onTabChange("capture")}
         >
-          + New
-        </button>
-      </header>
+          <Camera size={15} strokeWidth={2.2} />
+          Capture
+        </FWButton>
+      </div>
+
+      {/* Search */}
+      <div className="relative mx-5 mb-4">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-warm-muted"
+          strokeWidth={1.8}
+        />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search projects…"
+          className="w-full rounded-xl border border-black/[0.08] bg-card py-2.5 pl-9 pr-4 font-fw-body text-[13px] text-ink placeholder:text-warm-muted outline-none focus:border-black/20"
+        />
+      </div>
 
       <main
-        className="flex-1 px-5 py-4"
+        className="flex-1 px-5"
         style={{ paddingBottom: "calc(88px + env(safe-area-inset-bottom, 0px))" }}
       >
+        <div className="mb-3 flex items-center justify-between">
+          <FWSectionLabel>All projects</FWSectionLabel>
+          {!loading && projects.length > 0 && (
+            <span className="font-fw-body text-[11px] font-semibold text-soil-3">
+              {filtered.length} shown
+            </span>
+          )}
+        </div>
+
         {loading && (
-          <p className="text-center text-sm text-warm py-8">Loading projects…</p>
+          <div className="flex justify-center py-12">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-ink" />
+          </div>
         )}
+
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 font-fw-body text-sm text-red-700">
             {error}
             <button
               type="button"
@@ -88,11 +143,31 @@ export function Projects({ onTabChange }: Props) {
             </button>
           </div>
         )}
-        {!loading && !error && projects.length === 0 && (
-          <p className="text-center text-sm text-warm py-8">No projects yet. Tap + New to create one.</p>
+
+        {!loading && !error && filtered.length === 0 && (
+          <div className="flex flex-col items-center rounded-[20px] border border-black/[0.08] bg-card px-6 py-10 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-black/[0.07] bg-sunken">
+              <Camera className="h-6 w-6 text-warm" strokeWidth={1.5} />
+            </div>
+            <p className="font-fw-display mb-2 text-xl text-ink">
+              {search ? "No results" : "No projects yet"}
+            </p>
+            <p className="mb-6 max-w-[220px] font-fw-body text-[13px] text-warm">
+              {search
+                ? "No projects match your search."
+                : "Create a project on cloud.segmiq.com, then capture photos here."}
+            </p>
+            {!search && (
+              <FWButton variant="primary" style={{ height: 44, borderRadius: 12, padding: "0 20px" }}>
+                <Plus size={15} strokeWidth={2.5} />
+                Create a project
+              </FWButton>
+            )}
+          </div>
         )}
-        <div className="space-y-3">
-          {projects.map((p) => (
+
+        <div className="grid grid-cols-2 gap-2.5">
+          {filtered.map((p) => (
             <ProjectCard key={p.id} project={p} />
           ))}
         </div>

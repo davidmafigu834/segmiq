@@ -20,8 +20,8 @@ export default function App() {
 
   if (authed === null) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-cream">
-        <p className="text-sm text-warm">Loading…</p>
+      <div className="flex min-h-full items-center justify-center bg-page font-fw-body">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-ink" />
       </div>
     );
   }
@@ -47,5 +47,4 @@ export default function App() {
   );
 }
 
-// Expose logout for future settings screen
 export { logout };
