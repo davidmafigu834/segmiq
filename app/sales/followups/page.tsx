@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
+import { resolveFollowUpDateTime } from "@/lib/call-log-constants";
+import { fetchLatestScheduledCallbacksByLeadId } from "@/lib/convert-later-picks";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -15,7 +17,10 @@ type FollowUpLead = {
   clients?: { name?: string } | null;
 };
 
-function groupFollowUps(leads: FollowUpLead[]) {
+function groupFollowUps(
+  leads: FollowUpLead[],
+  callbackAtByLeadId: Record<string, string>
+) {
   const groups: Record<"OVERDUE" | "TODAY" | "TOMORROW" | "THIS_WEEK" | "LATER", FollowUpLead[]> = {
     OVERDUE: [],
     TODAY: [],
@@ -31,13 +36,24 @@ function groupFollowUps(leads: FollowUpLead[]) {
   const startOfNextWeek = new Date(startOfToday.getTime() + 7 * 86400000);
 
   for (const lead of leads) {
-    if (!lead.follow_up_date) continue;
-    const d = new Date(lead.follow_up_date.includes("T") ? lead.follow_up_date : `${lead.follow_up_date}T12:00:00`);
+    const d = resolveFollowUpDateTime(lead.follow_up_date, callbackAtByLeadId[lead.id]);
+    if (!d) continue;
     if (d < startOfToday) groups.OVERDUE.push(lead);
     else if (d < startOfTomorrow) groups.TODAY.push(lead);
     else if (d < startOfDayAfterTomorrow) groups.TOMORROW.push(lead);
     else if (d < startOfNextWeek) groups.THIS_WEEK.push(lead);
     else groups.LATER.push(lead);
+  }
+
+  const sortByCallback = (items: FollowUpLead[]) =>
+    [...items].sort((a, b) => {
+      const aAt = resolveFollowUpDateTime(a.follow_up_date, callbackAtByLeadId[a.id])?.getTime() ?? 0;
+      const bAt = resolveFollowUpDateTime(b.follow_up_date, callbackAtByLeadId[b.id])?.getTime() ?? 0;
+      return aAt - bAt;
+    });
+
+  for (const key of Object.keys(groups) as Array<keyof typeof groups>) {
+    groups[key] = sortByCallback(groups[key]);
   }
 
   return groups;
@@ -55,7 +71,11 @@ export default async function SalesFollowupsPage() {
     .order("follow_up_date", { ascending: true });
 
   const list = (leads ?? []) as FollowUpLead[];
-  const groups = groupFollowUps(list);
+  const callbackAtByLeadId = await fetchLatestScheduledCallbacksByLeadId(
+    supabase,
+    list.map((l) => l.id)
+  );
+  const groups = groupFollowUps(list, callbackAtByLeadId);
 
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -128,16 +148,13 @@ export default async function SalesFollowupsPage() {
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <span className="font-mono text-xs text-ink-secondary">
-                            {l.follow_up_date
-                              ? format(
-                                  new Date(
-                                    l.follow_up_date.includes("T")
-                                      ? l.follow_up_date
-                                      : `${l.follow_up_date}T12:00:00`
-                                  ),
-                                  "HH:mm"
-                                )
-                              : ""}
+                            {(() => {
+                              const at = resolveFollowUpDateTime(
+                                l.follow_up_date,
+                                callbackAtByLeadId[l.id]
+                              );
+                              return at ? format(at, "HH:mm") : "";
+                            })()}
                           </span>
                           {overdueSection ? (
                             <span className="rounded-md bg-[var(--danger)] px-2 py-0.5 font-mono text-[10px] uppercase text-white">

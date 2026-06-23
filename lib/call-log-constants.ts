@@ -136,3 +136,19 @@ export function followUpDateFromCallbackAt(callbackAt: Date): string {
   const d = String(callbackAt.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+
+/** Prefer call_logs.callback_at; fall back to follow_up_date at noon when date-only. */
+export function resolveFollowUpDateTime(
+  followUpDate: string | null | undefined,
+  callbackAt?: string | null
+): Date | null {
+  if (callbackAt) {
+    const d = new Date(callbackAt);
+    if (!Number.isNaN(d.getTime())) return d;
+  }
+  if (!followUpDate) return null;
+  const d = new Date(
+    followUpDate.includes("T") ? followUpDate : `${followUpDate}T12:00:00`
+  );
+  return Number.isNaN(d.getTime()) ? null : d;
+}

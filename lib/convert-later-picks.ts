@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LeadRow } from "@/types";
+import { resolveFollowUpDateTime } from "@/lib/call-log-constants";
 
 export type PickCallLogContext = {
   reason: string | null;
@@ -13,6 +14,36 @@ export function isActiveConvertLaterPick(lead: LeadRow): boolean {
   return (
     lead.is_convert_later_pick === true && ACTIVE_STATUSES.has(lead.status)
   );
+}
+
+/** Latest scheduled callback time per lead (follow-up or call-back paths). */
+export async function fetchLatestScheduledCallbacksByLeadId(
+  supabase: SupabaseClient,
+  leadIds: string[]
+): Promise<Record<string, string>> {
+  if (leadIds.length === 0) return {};
+
+  const { data, error } = await supabase
+    .from("call_logs")
+    .select("lead_id, callback_at, created_at")
+    .in("lead_id", leadIds)
+    .not("callback_at", "is", null)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[convert-later-picks] scheduled callbacks fetch failed:", error);
+    return {};
+  }
+
+  const map: Record<string, string> = {};
+  for (const row of data ?? []) {
+    const leadId = row.lead_id as string;
+    if (map[leadId]) continue;
+    const callbackAt = row.callback_at as string | null;
+    if (callbackAt) map[leadId] = callbackAt;
+  }
+
+  return map;
 }
 
 /** Latest follow-up call log per lead (hold-up reason + callback time). */
@@ -53,14 +84,7 @@ function callbackSortKey(
   ctx: PickCallLogContext | undefined
 ): number | null {
   if (ctx?.callback_at) return new Date(ctx.callback_at).getTime();
-  if (lead.follow_up_date) {
-    return new Date(
-      lead.follow_up_date.includes("T")
-        ? lead.follow_up_date
-        : `${lead.follow_up_date}T12:00:00`
-    ).getTime();
-  }
-  return null;
+  return resolveFollowUpDateTime(lead.follow_up_date)?.getTime() ?? null;
 }
 
 /** Scheduled callbacks soonest-first; then by lead updated_at descending. */
@@ -99,10 +123,8 @@ export function formatPickCallback(
     }
   }
   if (followUpDate) {
-    const d = new Date(
-      followUpDate.includes("T") ? followUpDate : `${followUpDate}T12:00:00`
-    );
-    if (!Number.isNaN(d.getTime())) {
+    const d = resolveFollowUpDateTime(followUpDate);
+    if (d) {
       return d.toLocaleDateString(undefined, {
         weekday: "short",
         month: "short",
