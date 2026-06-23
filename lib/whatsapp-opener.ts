@@ -1,4 +1,5 @@
-// Category mapping based on clients.industry
+import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
+import { ONBOARDING_COUNTRIES } from "@/lib/onboarding/constants";
 export type OpenerCategory =
   | "SOLAR"
   | "CONSTRUCTION"
@@ -124,33 +125,56 @@ export function extractPhaseBMetadata(formData: Record<string, unknown> | null |
   return { city, tier };
 }
 
+const DIAL_TO_ISO: Record<string, CountryCode> = Object.fromEntries(
+  ONBOARDING_COUNTRIES.map((c) => [c.dialCode, c.code as CountryCode])
+);
+
+function defaultCountryFromDialCode(dialCode: string | null | undefined): CountryCode | undefined {
+  const digits = (dialCode ?? "").replace(/\D/g, "");
+  return digits ? DIAL_TO_ISO[digits] : undefined;
+}
+
+function envDefaultCountry(): CountryCode {
+  const cc = (process.env.DEFAULT_COUNTRY_CODE || "ZW").trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(cc) ? (cc as CountryCode) : "ZW";
+}
+
+function toWhatsAppDigits(parsed: ReturnType<typeof parsePhoneNumberFromString>): string | null {
+  if (!parsed?.isValid()) return null;
+  return parsed.format("E.164").replace(/^\+/, "");
+}
+
+/**
+ * Normalize a phone for wa.me / whatsapp:// links (digits only, no +).
+ * Respects explicit international input (+… / 00…) before applying the client's dial code
+ * for local numbers — never forces +263 onto numbers that already include another country code.
+ */
 export function normalizePhoneForWhatsApp(raw: string | null | undefined, clientDialCode?: string | null): string | null {
-  const dial = (clientDialCode && clientDialCode.replace(/\D+/g, "")) || "263";
-  if (!raw) return null;
-  let digits = String(raw).replace(/\D+/g, "");
-  if (!digits) return null;
-  // a) already handled by strip
-  // b) 00 prefix → strip 00 and treat as country-coded
-  if (digits.startsWith("00")) {
-    return digits.slice(2);
+  if (!raw?.trim()) return null;
+  const input = raw.trim().replace(/^whatsapp:/i, "");
+
+  if (input.startsWith("+")) {
+    return toWhatsAppDigits(parsePhoneNumberFromString(input));
   }
-  // c) starts with known country codes → keep
-  const known = ["263", "260", "27", "254"];
-  if (known.some((k) => digits.startsWith(k))) {
-    return digits;
+
+  if (/^00/.test(input)) {
+    const intl = "+" + input.replace(/\D/g, "").replace(/^00/, "");
+    return toWhatsAppDigits(parsePhoneNumberFromString(intl));
   }
-  // d) leading single 0 → replace with client dial code
-  if (digits.startsWith("0")) {
-    // collapse multiple leading zeros to single before replace, just in case
-    digits = digits.replace(/^0+/, "0");
-    return (dial + digits.slice(1)).replace(/^\+/, "");
+
+  const defaultCountry =
+    defaultCountryFromDialCode(clientDialCode) ??
+    (typeof window === "undefined" ? envDefaultCountry() : undefined);
+
+  if (defaultCountry) {
+    const local = toWhatsAppDigits(parsePhoneNumberFromString(input, defaultCountry));
+    if (local) return local;
   }
-  // e) bare national, no 0, no cc → prepend client dial code
-  if (/^\d{6,15}$/.test(digits)) {
-    return (dial + digits).replace(/^\+/, "");
-  }
-  // invalid
-  return null;
+
+  const digitsOnly = input.replace(/\D/g, "");
+  if (!digitsOnly) return null;
+
+  return toWhatsAppDigits(parsePhoneNumberFromString("+" + digitsOnly));
 }
 
 export function buildWhatsAppUrl(digits: string, message: string): string {
@@ -162,6 +186,18 @@ export function buildWhatsAppUrl(digits: string, message: string): string {
     return digits ? `whatsapp://send?phone=${digits}&text=${msg}` : `whatsapp://send?text=${msg}`;
   }
   return digits ? `https://wa.me/${digits}?text=${msg}` : `https://wa.me/?text=${msg}`;
+}
+
+/** Open a URL in a new tab without duplicate navigation (noopener makes window.open return null). */
+export function openExternalUrl(url: string): void {
+  const link = document.createElement("a");
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 export async function fetchClientWhatsAppMeta(clientId: string): Promise<{ name: string; industry: string; dial_code: string | null } | null> {
@@ -236,9 +272,5 @@ export async function openWhatsAppAndLog({
 
   if (!digits) return; // invalid — let caller render disabled if possible
 
-  const url = buildWhatsAppUrl(digits, message);
-  const win = window.open(url, "_blank", "noopener,noreferrer");
-  if (!win) {
-    window.location.href = url;
-  }
+  openExternalUrl(buildWhatsAppUrl(digits, message));
 }

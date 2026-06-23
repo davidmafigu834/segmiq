@@ -246,16 +246,26 @@ export function SalesBoard({
   }
 
   async function onDragEnd(result: DropResult) {
-    const { destination, draggableId } = result;
+    const { destination, source, draggableId } = result;
     if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
     const nextStatus = destination.droppableId as BoardColumn;
     if (!(COLS as readonly string[]).includes(nextStatus)) return;
+
+    const previousLeads = leads;
     setLeads((prev) => prev.map((l) => (l.id === draggableId ? { ...l, status: nextStatus } : l)));
-    await fetch(`/api/leads/${draggableId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: nextStatus }),
-    });
+
+    try {
+      const res = await fetch(`/api/leads/${draggableId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) throw new Error("Failed to update lead status");
+    } catch {
+      setLeads(previousLeads);
+    }
   }
 
   if (tab === "closed") {
@@ -520,28 +530,28 @@ export function SalesBoard({
         </div>
       ) : (
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="-mx-1 flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 [scrollbar-gutter:stable] sm:gap-5">
+          <div className="grid min-w-0 grid-cols-4 gap-2 pb-4 layout:gap-3">
             {COLS.map((col) => (
               <Droppable droppableId={col} key={col}>
                 {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={`w-[280px] shrink-0 snap-start rounded-lg border border-border bg-transparent sm:w-[320px] ${
+                    className={`flex min-h-[12rem] min-w-0 flex-col rounded-lg border border-border bg-transparent ${
                       snapshot.isDraggingOver ? "ring-2 ring-dashed ring-[var(--accent)]" : ""
                     }`}
                   >
                     <div className={`border-t-2 ${COL_ACCENT[col] ?? "border-t-border"} px-1 pb-2 pt-3`}>
-                      <div className="flex items-center justify-between px-2">
-                        <span className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">
-                          {col.replace("_", " ")}
+                      <div className="flex items-center justify-between gap-1 px-1.5 layout:px-2">
+                        <span className="truncate font-mono text-[10px] uppercase tracking-wide text-ink-tertiary layout:text-[11px]">
+                          {COL_LABEL[col]}
                         </span>
                         <span className="rounded-md bg-surface-card-alt px-2 py-0.5 font-mono text-[11px] text-ink-secondary">
                           {grouped[col].length}
                         </span>
                       </div>
                     </div>
-                    <div className="space-y-3 px-2 pb-3">
+                    <div className="flex min-h-[8rem] flex-1 flex-col space-y-2 px-1 pb-3 layout:space-y-3 layout:px-2">
                       {grouped[col].map((l, index) => (
                         <Draggable draggableId={l.id} index={index} key={l.id}>
                           {(p, s) => (
@@ -549,16 +559,13 @@ export function SalesBoard({
                               ref={p.innerRef}
                               {...p.draggableProps}
                               {...p.dragHandleProps}
-                              style={{
-                                ...(typeof p.draggableProps.style === "object" ? p.draggableProps.style : {}),
-                                ...(s.isDragging
-                                  ? { boxShadow: "var(--shadow-lg)", transform: "rotate(1deg) scale(1.02)" }
-                                  : {}),
-                              }}
-                              className="cursor-grab active:cursor-grabbing"
+                              className={`min-w-0 cursor-grab active:cursor-grabbing ${
+                                s.isDragging ? "relative z-50 rounded-xl shadow-lg ring-2 ring-[var(--accent)]" : ""
+                              }`}
                             >
                               <SalesLeadCard
                                 lead={l}
+                                compact
                                 intentScore={l.score ?? null}
                                 clientSlaHours={l.clients?.response_time_limit_hours}
                                 repName=""

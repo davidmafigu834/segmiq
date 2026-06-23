@@ -69,15 +69,18 @@ function ActionButton({
   href,
   disabled,
   label,
+  compact = false,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   href?: string;
   disabled?: boolean;
   label: string;
+  compact?: boolean;
 }) {
-  const className =
-    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] transition-colors hover:border-[var(--border-hover)]";
+  const className = compact
+    ? "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] transition-colors hover:border-[var(--border-hover)]"
+    : "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] transition-colors hover:border-[var(--border-hover)]";
 
   if (disabled) {
     return (
@@ -123,6 +126,7 @@ export function SalesLeadCard({
   onOpenLogSheet,
   onOpenLead,
   onOpenSend,
+  compact = false,
   className = "",
 }: {
   lead: SalesLeadCardLead;
@@ -134,6 +138,7 @@ export function SalesLeadCard({
   onOpenLogSheet: (leadId: string, channel?: "call" | "whatsapp") => void;
   onOpenLead: (leadId: string) => void;
   onOpenSend: (leadId: string) => void;
+  compact?: boolean;
   className?: string;
 }) {
   const score =
@@ -160,24 +165,31 @@ export function SalesLeadCard({
         ? "Needs attention"
         : "Overdue";
 
+  const iconSize = compact ? 13 : 15;
+  const sendIconSize = compact ? 12 : 14;
+
   return (
     <article
-      className={`rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-4 sm:p-5 ${className}`}
+      className={`min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] ${
+        compact ? "p-2.5 layout:p-3" : "p-4 sm:p-5"
+      } ${className}`}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate font-mono text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+      <div className={`flex items-center justify-between gap-1.5 ${compact ? "mb-1.5" : "mb-2 gap-2"}`}>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="truncate font-mono text-[9px] uppercase tracking-wide text-[var(--text-tertiary)] layout:text-[10px]">
             {sourceLabel(lead.source)}
           </span>
           {fit.matched ? (
-            <span className="inline-flex h-5 shrink-0 items-center rounded-md bg-[var(--accent)] px-1.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--accent-foreground)]">
+            <span className="inline-flex h-4 shrink-0 items-center rounded-md bg-[var(--accent)] px-1 text-[8px] font-semibold uppercase tracking-wide text-[var(--accent-foreground)] layout:h-5 layout:px-1.5 layout:text-[9px]">
               Fit
             </span>
           ) : null}
         </div>
         {showIntentScore ? (
           <span
-            className={`inline-flex h-7 min-w-[28px] shrink-0 items-center justify-center rounded-lg px-2 text-[15px] leading-none ${
+            className={`inline-flex shrink-0 items-center justify-center rounded-lg leading-none ${
+              compact ? "h-6 min-w-[24px] px-1.5 text-[13px]" : "h-7 min-w-[28px] px-2 text-[15px]"
+            } ${
               highScore
                 ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
                 : "border border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--text-secondary)]"
@@ -193,36 +205,36 @@ export function SalesLeadCard({
       <button
         type="button"
         onClick={() => onOpenLead(lead.id)}
-        className="mb-2 block w-full text-left"
+        className={`block w-full min-w-0 text-left ${compact ? "mb-1.5" : "mb-2"}`}
       >
-        <p className="truncate text-[15px] font-medium text-[var(--text-primary)]">
+        <p className={`truncate font-medium text-[var(--text-primary)] ${compact ? "text-[13px] layout:text-[14px]" : "text-[15px]"}`}>
           {lead.name ?? "Unknown"}
         </p>
       </button>
 
       {hasChips ? (
-        <div className="mb-2 flex flex-wrap gap-1.5">
+        <div className={`flex flex-wrap gap-1 ${compact ? "mb-1.5" : "mb-2 gap-1.5"}`}>
           {serviceChip ? (
-            <span className="inline-flex max-w-full items-center rounded-md border border-[var(--border)] bg-[var(--bg-tertiary)] px-2 py-0.5 text-[11px] text-[var(--text-secondary)] truncate">
+            <span className="inline-flex max-w-full items-center truncate rounded-md border border-[var(--border)] bg-[var(--bg-tertiary)] px-1.5 py-0.5 text-[10px] text-[var(--text-secondary)] layout:px-2 layout:text-[11px]">
               {serviceChip}
             </span>
           ) : null}
           {budgetChip ? (
-            <span className="inline-flex items-center rounded-md border border-[var(--border)] bg-[var(--bg-tertiary)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">
+            <span className="inline-flex items-center rounded-md border border-[var(--border)] bg-[var(--bg-tertiary)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-secondary)] layout:px-2 layout:text-[11px]">
               {budgetChip}
             </span>
           ) : null}
         </div>
       ) : null}
 
-      {showContextLine ? (
+      {showContextLine && !compact ? (
         <p className="mb-2 text-[13px] leading-snug text-[var(--text-secondary)]">
           {contextLine}
         </p>
       ) : null}
 
-      <p className="mb-3 font-mono text-[11px] text-[var(--text-tertiary)]">
-        <span className="inline-flex flex-wrap items-center gap-x-1.5">
+      <p className={`font-mono text-[var(--text-tertiary)] ${compact ? "mb-2 text-[10px]" : "mb-3 text-[11px]"}`}>
+        <span className="inline-flex min-w-0 flex-wrap items-center gap-x-1">
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${freshnessDotClass(freshness)}`}
             title={freshnessTitle}
@@ -230,28 +242,30 @@ export function SalesLeadCard({
           />
           {isHotCallNow ? (
             <>
-              <span>{timeAgo(lead.created_at)}</span>
+              <span className="truncate">{timeAgo(lead.created_at)}</span>
               <span aria-hidden>·</span>
               <SlaCountdown createdAt={lead.created_at} />
             </>
           ) : (
-            <span>{formatCardTimestamp(lead, lane, now)}</span>
+            <span className="truncate">{formatCardTimestamp(lead, lane, now)}</span>
           )}
         </span>
       </p>
 
-      <div className="flex items-center justify-end gap-1.5 sm:gap-2">
+      <div className={`flex items-center justify-end ${compact ? "gap-1" : "gap-1.5 sm:gap-2"}`}>
         <ActionButton
           href={lead.phone ? `tel:${lead.phone}` : undefined}
           disabled={!lead.phone}
           label="Call"
+          compact={compact}
         >
-          <Phone size={15} className="text-[var(--success)]" />
+          <Phone size={iconSize} className="text-[var(--success)]" />
         </ActionButton>
 
         <ActionButton
           disabled={!lead.phone}
           label="WhatsApp"
+          compact={compact}
           onClick={() => {
             openWhatsAppAndLog({
               leadId: lead.id,
@@ -265,21 +279,23 @@ export function SalesLeadCard({
             onOpenLogSheet(lead.id, "whatsapp");
           }}
         >
-          <MessageCircle size={15} className="text-[var(--success)]" />
+          <MessageCircle size={iconSize} className="text-[var(--success)]" />
         </ActionButton>
 
         <ActionButton
           label="Send asset"
+          compact={compact}
           onClick={() => onOpenSend(lead.id)}
         >
-          <Send size={14} className="text-[var(--text-secondary)]" />
+          <Send size={sendIconSize} className="text-[var(--text-secondary)]" />
         </ActionButton>
 
         <ActionButton
           label="Log call"
+          compact={compact}
           onClick={() => onOpenLogSheet(lead.id)}
         >
-          <ClipboardList size={14} className="text-[var(--text-secondary)]" />
+          <ClipboardList size={sendIconSize} className="text-[var(--text-secondary)]" />
         </ActionButton>
       </div>
     </article>

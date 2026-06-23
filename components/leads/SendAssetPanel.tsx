@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { openExternalUrl } from "@/lib/whatsapp-opener";
 
 type Package = {
   id: string;
@@ -160,11 +161,7 @@ export function SendAssetPanel({
           : (digits
               ? `https://wa.me/${digits}?text=${msg}`
               : `https://wa.me/?text=${msg}`);
-        const win = window.open(url, "_blank", "noopener,noreferrer");
-        if (!win) {
-          // Pop-up blocked — fallback to same-tab navigation
-          window.location.href = url;
-        }
+        openExternalUrl(url);
         // Do not show API-style success state — simply stop loading
         setSending(false);
         return;
