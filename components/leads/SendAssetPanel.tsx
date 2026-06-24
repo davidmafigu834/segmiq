@@ -372,7 +372,7 @@ export function SendAssetPanel({
             Your message
           </label>
           <textarea
-            className="input-base w-full resize-none"
+            className="textarea-base w-full resize-none"
             rows={4}
             placeholder="Type your message to the prospect…"
             value={customMessage}

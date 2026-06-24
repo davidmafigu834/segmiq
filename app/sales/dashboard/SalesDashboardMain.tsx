@@ -21,6 +21,7 @@ import {
   isRetargetingGraduated,
   type RetargetingStatusView,
 } from "@/lib/retargeting-shared";
+import { leadJoinName } from "@/lib/format";
 import { type PriorityLead, timeAgo } from "@/lib/sales-priority-lead";
 import { PriorityLanes } from "@/components/sales/PriorityLanes";
 import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
@@ -39,7 +40,7 @@ type ActivityEvent = {
   channel?: string | null;
   created_at: string;
   lead_id: string;
-  leads: { name: string | null }[] | null;
+  leads: { name: string | null } | { name: string | null }[] | null;
 };
 
 type RecentWin = {
@@ -47,7 +48,7 @@ type RecentWin = {
   deal_value: number | null;
   days_to_close: number | null;
   created_at: string;
-  leads: { name: string | null }[] | null;
+  leads: { name: string | null } | { name: string | null }[] | null;
 };
 
 type DashboardData = {
@@ -331,7 +332,7 @@ export default function SalesDashboardMain({
                         {formatEventType(event.event_type, event.event_data, (event as { channel?: string | null }).channel)}
                         {" — "}
                         <span className="text-[var(--text-primary)] font-semibold">
-                          {event.leads?.[0]?.name ?? "Unknown"}
+                          {leadJoinName(event.leads) ?? "Unknown"}
                         </span>
                       </p>
                       <p className="text-[11px] text-[var(--text-tertiary)]">
@@ -374,7 +375,7 @@ export default function SalesDashboardMain({
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate mb-0.5">
-                      {win.leads?.[0]?.name ?? "Unknown lead"}
+                      {leadJoinName(win.leads) ?? "Unknown lead"}
                     </p>
                     <p className="text-[11px] text-[var(--text-tertiary)]">
                       {win.days_to_close ?? 0}d to close

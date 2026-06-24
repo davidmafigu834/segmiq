@@ -5,6 +5,7 @@ import {
   NOT_QUALIFIED_REASONS,
 } from "@/lib/call-log-constants";
 import { parseBudgetValue } from "@/lib/lead-lanes";
+import { LOSS_MIN_REASONED_EVENTS } from "@/lib/loss-analysis-constants";
 
 // ============================================
 // CONSTANTS
@@ -22,7 +23,7 @@ export const TARGETING_NOT_FIT_REASONS = [
   "Service we don't offer",
 ] as const;
 
-export const LOSS_MIN_REASONED_EVENTS = 5;
+export { LOSS_MIN_REASONED_EVENTS } from "@/lib/loss-analysis-constants";
 
 export const TARGETING_MIN_NOT_FIT = 5;
 export const TARGETING_OVERALL_SHARE_PCT = 25;
@@ -48,6 +49,8 @@ export type LossCallLogRow = {
   reason: string | null;
   result: string | null;
   reach_outcome: string | null;
+  /** Legacy single-step outcome (pre two-step flow). */
+  outcome?: string | null;
   created_at: string;
 };
 
@@ -159,6 +162,52 @@ function topReasonFromCounts(
   return best;
 }
 
+/** Map two-step fields, or infer from legacy `outcome` + lead reason columns. */
+export function normalizeLossCallLog(
+  log: LossCallLogRow,
+  lead: LossLeadRow | undefined
+): Pick<LossCallLogRow, "result" | "reason" | "reach_outcome"> {
+  if (log.result) {
+    return {
+      result: log.result,
+      reason: log.reason?.trim() || null,
+      reach_outcome: log.reach_outcome ?? "reached",
+    };
+  }
+
+  const legacy = log.outcome?.toUpperCase();
+  if (legacy === "LOST") {
+    return {
+      result: "lost",
+      reason: log.reason?.trim() || lead?.lost_reason?.trim() || null,
+      reach_outcome: "reached",
+    };
+  }
+  if (legacy === "NOT_QUALIFIED") {
+    return {
+      result: "not_qualified",
+      reason: log.reason?.trim() || lead?.not_qualified_reason?.trim() || null,
+      reach_outcome: "reached",
+    };
+  }
+  if ((legacy === "FOLLOW_UP" || legacy === "ANSWERED") && log.reason?.trim()) {
+    return {
+      result: "follow_up",
+      reason: log.reason.trim(),
+      reach_outcome: log.reach_outcome ?? "reached",
+    };
+  }
+  if (legacy === "WON") {
+    return { result: "won", reason: null, reach_outcome: "reached" };
+  }
+
+  return {
+    result: log.result,
+    reason: log.reason?.trim() || null,
+    reach_outcome: log.reach_outcome,
+  };
+}
+
 // ============================================
 // PURE AGGREGATION — testable without DB
 // ============================================
@@ -183,23 +232,24 @@ export function aggregateLossFromData(
 
   for (const log of windowCallLogs) {
     if (!isInWindow(log.created_at, windowStart, windowEnd)) continue;
-    const reason = log.reason?.trim();
+    const norm = normalizeLossCallLog(log, leadById.get(log.lead_id));
+    const reason = norm.reason?.trim();
     if (!reason) continue;
 
     if (
-      log.reach_outcome === "reached" &&
-      ["follow_up", "lost", "not_qualified", "won"].includes(log.result ?? "")
+      norm.reach_outcome === "reached" &&
+      ["follow_up", "lost", "not_qualified", "won"].includes(norm.result ?? "")
     ) {
       contactedOutcomes++;
     }
 
     let counted = false;
-    if (log.result === "follow_up") {
+    if (norm.result === "follow_up") {
       counted = bumpReasonCount(stallReasons, reason, FOLLOW_UP_HOLDUP_REASONS);
-    } else if (log.result === "lost") {
+    } else if (norm.result === "lost") {
       counted = bumpReasonCount(lostReasons, reason, LOST_REASONS);
       terminalFromLogs.add(log.lead_id);
-    } else if (log.result === "not_qualified") {
+    } else if (norm.result === "not_qualified") {
       counted = bumpReasonCount(notFitReasons, reason, NOT_QUALIFIED_REASONS);
       terminalFromLogs.add(log.lead_id);
       if (counted) notFitOutcomes++;
@@ -251,8 +301,11 @@ export function aggregateLossFromData(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-    const latest = logs.find((l) => l.result === "follow_up" && l.reason?.trim());
-    const reason = latest?.reason?.trim();
+    const latest = logs.find((l) => {
+      const norm = normalizeLossCallLog(l, lead);
+      return norm.result === "follow_up" && norm.reason?.trim();
+    });
+    const reason = latest ? normalizeLossCallLog(latest, lead).reason?.trim() : null;
     if (
       !reason ||
       !(RECOVERABLE_STALL_REASONS as readonly string[]).includes(reason)
@@ -276,7 +329,8 @@ export function aggregateLossFromData(
 
   for (const log of windowCallLogs) {
     if (!isInWindow(log.created_at, windowStart, windowEnd)) continue;
-    if (log.result !== "not_qualified") continue;
+    const norm = normalizeLossCallLog(log, leadById.get(log.lead_id));
+    if (norm.result !== "not_qualified") continue;
     const lead = leadById.get(log.lead_id);
     if (!lead) continue;
     const src = lead.source ?? "UNKNOWN";
@@ -296,12 +350,13 @@ export function aggregateLossFromData(
 
   for (const log of windowCallLogs) {
     if (!isInWindow(log.created_at, windowStart, windowEnd)) continue;
-    if (log.result !== "not_qualified" || !log.reason?.trim()) continue;
+    const norm = normalizeLossCallLog(log, leadById.get(log.lead_id));
+    if (norm.result !== "not_qualified" || !norm.reason?.trim()) continue;
     const lead = leadById.get(log.lead_id);
     if (!lead) continue;
     const src = lead.source ?? "UNKNOWN";
     if (!notFitReasonsBySource[src]) notFitReasonsBySource[src] = {};
-    const r = log.reason.trim();
+    const r = norm.reason.trim();
     notFitReasonsBySource[src][r] = (notFitReasonsBySource[src][r] ?? 0) + 1;
   }
 
@@ -482,19 +537,18 @@ export async function aggregateLossAnalysis(
   }
 
   const leadRows = (leads ?? []) as LossLeadRow[];
-  const leadIds = leadRows.map((l) => l.id);
 
-  if (leadIds.length === 0) {
+  if (leadRows.length === 0) {
     return emptyLossResult(windowStart, windowEnd);
   }
 
   const callLogSelect =
-    "id, lead_id, reason, result, reach_outcome, created_at";
+    "id, lead_id, reason, result, reach_outcome, outcome, created_at, leads!inner(client_id)";
 
   const { data: windowLogs, error: logsError } = await supabase
     .from("call_logs")
     .select(callLogSelect)
-    .in("lead_id", leadIds)
+    .eq("leads.client_id", clientId)
     .gte("created_at", windowStart.toISOString())
     .lte("created_at", windowEnd.toISOString());
 
@@ -503,25 +557,29 @@ export async function aggregateLossAnalysis(
     return emptyLossResult(windowStart, windowEnd);
   }
 
-  const activeIds = leadRows
-    .filter((l) => !TERMINAL_STATUSES.has(l.status))
-    .map((l) => l.id);
+  const activeIds = new Set(
+    leadRows.filter((l) => !TERMINAL_STATUSES.has(l.status)).map((l) => l.id)
+  );
 
   let recoverableLogs: LossCallLogRow[] = [];
 
-  if (activeIds.length > 0) {
+  if (activeIds.size > 0) {
     const { data: followUpLogs } = await supabase
       .from("call_logs")
       .select(callLogSelect)
-      .in("lead_id", activeIds)
-      .eq("result", "follow_up")
+      .eq("leads.client_id", clientId)
+      .or("result.eq.follow_up,outcome.in.(FOLLOW_UP,ANSWERED)")
       .not("reason", "is", null);
 
-    recoverableLogs = (followUpLogs ?? []) as LossCallLogRow[];
+    recoverableLogs = ((followUpLogs ?? []) as LossCallLogRow[]).filter((l) =>
+      activeIds.has(l.lead_id)
+    );
   }
 
+  const windowLogRows = (windowLogs ?? []) as LossCallLogRow[];
+
   return aggregateLossFromData(
-    (windowLogs ?? []) as LossCallLogRow[],
+    windowLogRows,
     leadRows,
     recoverableLogs,
     windowStart,

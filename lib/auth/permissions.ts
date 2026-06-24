@@ -35,6 +35,15 @@ export function canReassignLeads(session: {
   return false;
 }
 
+/** Invite, deactivate, or remove salespeople on a client team. */
+export function canManageClientTeam(session: {
+  userId?: string | null;
+  role?: UserRole | null;
+  clientId?: string | null;
+}, clientId: string): boolean {
+  return canReassignLeads(session, clientId);
+}
+
 export async function canModifyLead(leadId: string): Promise<
   | { allowed: true; lead: LeadScope; userId: string; role: UserRole }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
@@ -85,6 +94,11 @@ export function canAccessClient(
 ): boolean {
   if (userRole === "AGENCY_ADMIN") return true;
   return userClientId === requestedClientId;
+}
+
+/** Company profile & branding: managers edit their own client; agency admin can edit any. */
+export function canManageClientProfile(role: string | null | undefined): boolean {
+  return role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER";
 }
 
 /** Read access: wrong scope returns notFound (404) to avoid leaking lead existence. */

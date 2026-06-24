@@ -382,7 +382,7 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
       </div>
       <div>
         <label className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-ink-tertiary">Terms &amp; conditions</label>
-        <textarea className="input-base w-full resize-none" rows={4} value={terms} onChange={(e) => setTerms(e.target.value)} />
+        <textarea className="textarea-base min-h-[10rem]" rows={6} value={terms} onChange={(e) => setTerms(e.target.value)} />
       </div>
 
       {error ? <p className="text-[12px] text-[var(--danger)]">{error}</p> : null}

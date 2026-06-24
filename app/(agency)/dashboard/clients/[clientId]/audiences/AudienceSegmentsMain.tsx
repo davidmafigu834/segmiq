@@ -375,7 +375,7 @@ function CreateSegmentModal({
               Description (optional)
             </label>
             <textarea
-              className="input-base h-auto min-h-[56px] py-2 resize-none"
+              className="textarea-base min-h-[3.5rem] resize-none"
               placeholder="What is this segment for?"
               value={description}
               onChange={(e) => setDescription(e.target.value)}

@@ -243,8 +243,8 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
           <div>
             <label className="mb-1 block font-mono text-[10px] uppercase tracking-wider text-ink-tertiary">Default terms &amp; conditions</label>
             <textarea
-              className="input-base w-full resize-none"
-              rows={5}
+              className="textarea-base min-h-[12rem]"
+              rows={8}
               placeholder={"1. Guarantee period: 5 years battery, 1 year inverter, 20 years panels.\nNB: Extra materials are on client's cost.\nInstallations outside the city are charged transport."}
               value={settings.default_terms ?? ""}
               onChange={(e) => setSettings({ ...settings, default_terms: e.target.value })}

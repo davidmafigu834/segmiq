@@ -252,6 +252,11 @@ body {
     font-family: var(--font-geist-sans), system-ui, sans-serif;
   }
 
+  .textarea-base {
+    @apply min-h-[5rem] w-full resize-y rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-input)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors focus:outline-none focus:border-[var(--border-focus)];
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+  }
+
   .btn-primary {
     @apply inline-flex h-8 items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--accent)] px-3.5 text-[12px] font-semibold text-[var(--accent-foreground)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
   }
@@ -389,6 +394,21 @@ body {
 
   --ag-font-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
   --ag-font-body: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+}
+
+/* ── CRM: stronger line borders (scoped — cloud/marketing use their own tokens) ── */
+html[data-crm] {
+  --border: rgba(255, 255, 255, 0.28);
+  --border-hover: rgba(255, 255, 255, 0.38);
+  --border-focus: rgba(255, 255, 255, 0.52);
+  --border-strong: rgba(255, 255, 255, 0.42);
+  --border-dark: rgba(255, 255, 255, 0.28);
+  --surface-sidebar-border: rgba(255, 255, 255, 0.28);
+  --sidebar-border: rgba(255, 255, 255, 0.28);
+  --topbar-border: rgba(255, 255, 255, 0.28);
+  --ag-border: rgba(255, 255, 255, 0.28);
+  --ag-border-hover: rgba(255, 255, 255, 0.38);
+  --ag-border-strong: rgba(255, 255, 255, 0.42);
 }
 
 /* ── Skeleton shimmer animation ── */

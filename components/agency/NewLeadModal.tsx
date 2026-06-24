@@ -176,7 +176,7 @@ export function NewLeadModal({
           </div>
           <div>
             <label className="mb-1 block text-[12px] font-medium text-ink-secondary">Notes</label>
-            <textarea className="input-base min-h-[88px] w-full py-2 text-base md:text-sm" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
+            <textarea className="textarea-base min-h-[5.5rem] resize-none text-base md:text-sm" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
           </div>
           <div>
             <span className="mb-2 block text-[12px] font-medium text-ink-secondary">Assign to *</span>

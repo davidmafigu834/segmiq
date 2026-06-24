@@ -15,6 +15,7 @@ import {
   LOST_REASONS,
   NOT_QUALIFIED_REASONS,
 } from "@/lib/call-log-constants";
+import { LOSS_MIN_REASONED_EVENTS } from "@/lib/loss-analysis-constants";
 
 type LossAnalysis = {
   windowStart: string;
@@ -114,7 +115,13 @@ export function LossInsightsSection({ clientId }: { clientId: string }) {
 
   if (!analysis) return null;
 
-  if (!analysis.hasEnoughData) {
+  const hasAnyReasons =
+    analysis.totalReasonedEvents > 0 ||
+    Object.values(analysis.stallReasons).some((n) => n > 0) ||
+    Object.values(analysis.lostReasons).some((n) => n > 0) ||
+    Object.values(analysis.notFitReasons).some((n) => n > 0);
+
+  if (!analysis.hasEnoughData && !hasAnyReasons) {
     return (
       <Card>
         <CardBody>
@@ -145,13 +152,26 @@ export function LossInsightsSection({ clientId }: { clientId: string }) {
       ? `$${pile.estimatedValue.toLocaleString()}`
       : null;
 
+  const partial = !analysis.hasEnoughData;
+
   return (
     <Card>
       <CardBody>
         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-          Loss analysis — {analysis.totalReasonedEvents} outcomes logged (30 days)
+          Loss analysis —{" "}
+          {partial
+            ? `${analysis.totalReasonedEvents} of ${LOSS_MIN_REASONED_EVENTS} outcomes logged (30 days)`
+            : `${analysis.totalReasonedEvents} outcomes logged (30 days)`}
         </p>
 
+        {partial ? (
+          <p className="mb-4 text-[12px] text-[var(--text-tertiary)]">
+            Early signal from your team&apos;s call logs — keep logging stall, lost, and
+            not-a-fit reasons for fuller patterns.
+          </p>
+        ) : null}
+
+        {partial ? null : (
         <div className="mb-5 rounded-xl border border-[rgba(96,165,250,0.2)] bg-[rgba(96,165,250,0.06)] px-4 py-4">
           <div className="flex items-start gap-3">
             <DollarSign
@@ -177,6 +197,7 @@ export function LossInsightsSection({ clientId }: { clientId: string }) {
             </div>
           </div>
         </div>
+        )}
 
         <ReasonBars
           title="Where deals pause"

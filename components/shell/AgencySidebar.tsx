@@ -43,12 +43,12 @@ function NavRow({
   return (
     <Link
       href={item.href}
-      className={`relative flex h-9 items-center gap-3 rounded-r-lg py-2 text-[13px] transition-all ${
+      className={`relative flex h-10 items-center gap-3 rounded-r-lg py-2 text-[15px] transition-all ${
         mobileExpanded ? "justify-start px-3" : "justify-center px-2 layout:justify-start layout:px-3"
       } ${
         isActive
-          ? "border-l-2 border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--text-primary)] font-medium"
-          : "border-l-2 border-transparent font-normal text-[var(--text-tertiary)] hover:border-[var(--accent-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
+          ? "border-l-2 border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--text-primary)] font-semibold"
+          : "border-l-2 border-transparent font-medium text-[var(--text-tertiary)] hover:border-[var(--accent-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
       } `}
     >
       <ShellIcon
@@ -133,7 +133,7 @@ export function AgencySidebar({
                 <Image src="/segmiq-wordmark.png" alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
               </>
             )}
-            <div className="mt-1 font-mono text-[10px] uppercase tracking-wide text-[var(--text-on-dark-dim)]">
+            <div className="mt-1 font-mono text-[12px] font-medium uppercase tracking-wide text-[var(--text-on-dark-dim)]">
               {roleLabel}
             </div>
           </div>
@@ -162,7 +162,7 @@ export function AgencySidebar({
 
         {clients && clients.length > 0 ? (
           <div className={`${mobileExpanded ? "block" : "hidden layout:block"} px-3 pb-2 pt-2`}>
-            <div className="mt-4 mb-2 px-2 font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-[var(--text-on-dark-dim)]">
+            <div className="mt-4 mb-2 px-2 font-mono text-[12px] font-medium uppercase tracking-[0.08em] text-[var(--text-on-dark-dim)]">
               Clients
             </div>
             <ul className="space-y-1 pr-1">
@@ -170,7 +170,7 @@ export function AgencySidebar({
                 <li key={c.id}>
                   <Link
                     href={`/dashboard/clients/${c.id}`}
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[12px] text-[var(--text-on-dark-dim)] transition-colors hover:bg-[var(--surface-sidebar-elevated)] hover:text-[var(--text-on-dark)]"
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] font-medium text-[var(--text-on-dark-dim)] transition-colors hover:bg-[var(--surface-sidebar-elevated)] hover:text-[var(--text-on-dark)]"
                   >
                     <span
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-[10px] font-medium ${clientTint(c.name)}`}
@@ -201,8 +201,8 @@ export function AgencySidebar({
           >
             <ClientAvatar name={userName} size="sm" />
             <div className={`${mobileExpanded ? "block" : "hidden layout:block"} min-w-0 flex-1 text-left`}>
-              <div className="truncate text-[13px] font-medium text-[var(--text-on-dark)]">{userName}</div>
-              <div className="truncate font-mono text-[11px] text-[var(--text-on-dark-dim)]">{userRoleLabel}</div>
+              <div className="truncate text-[15px] font-semibold text-[var(--text-on-dark)]">{userName}</div>
+              <div className="truncate font-mono text-[12px] font-medium text-[var(--text-on-dark-dim)]">{userRoleLabel}</div>
             </div>
             <ChevronRight
               className={`h-4 w-4 shrink-0 text-[var(--text-on-dark-dim)] transition group-open:rotate-90 ${
@@ -213,7 +213,7 @@ export function AgencySidebar({
           <div className="absolute bottom-full left-0 right-0 z-50 mb-1 rounded-md border border-[var(--border)] bg-[var(--surface-sidebar-elevated)] py-1 shadow-[var(--shadow-md)]">
             <button
               type="button"
-              className="block w-full px-3 py-2 text-left text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              className="block w-full px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
               onClick={() => signOut({ callbackUrl: "/login" })}
             >
               Sign out

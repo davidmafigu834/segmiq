@@ -56,6 +56,8 @@ export async function ClientManagerLayout({
 
   const secondaryNav = [
     { href: "/upload", label: "Upload Photos", icon: "camera" as const },
+    { href: "/client/company-profile", label: "Company", icon: "building2" as const },
+    { href: "/client/quote-settings", label: "Quotations", icon: "file-text" as const },
     { href: "/client/account", label: "Account", icon: "settings" as const },
   ];
 

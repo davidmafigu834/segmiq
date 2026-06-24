@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireRoles } from "@/lib/api-guards";
+import { canManageClientTeam } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +12,13 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string; userId: string } }) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
-  if ("error" in g) return g.error;
+  const session = await getServerSession(authOptions);
+  if (!session?.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!canManageClientTeam(session, params.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
@@ -76,8 +83,13 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
 }
 
 export async function DELETE(_req: Request, { params }: { params: { clientId: string; userId: string } }) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
-  if ("error" in g) return g.error;
+  const session = await getServerSession(authOptions);
+  if (!session?.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!canManageClientTeam(session, params.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = createAdminClient();
   const { data: u } = await supabase

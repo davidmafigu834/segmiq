@@ -404,7 +404,7 @@ export function PackagesManager({ clientId }: { clientId: string }) {
                 </span>
                 <span className="ml-1 text-[10px] text-ink-tertiary">(one item per line)</span>
                 <textarea
-                  className="input-base mt-1 h-24 w-full resize-none"
+                  className="textarea-base mt-1 min-h-[6rem] resize-none"
                   value={pkgForm.includes}
                   onChange={(e) => setPkgForm((f) => ({ ...f, includes: e.target.value }))}
                   placeholder={"Site assessment\nInstallation\n10 year warranty"}

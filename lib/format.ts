@@ -60,3 +60,12 @@ export function formatCompactCurrency(n: number): string {
   const rounded = Math.abs(k) >= 100 ? Math.round(k) : Math.round(k * 10) / 10;
   return `$${rounded}K`;
 }
+
+/** Name from a Supabase embedded `leads(...)` join (object or one-element array). */
+export function leadJoinName(
+  leads: { name?: string | null } | { name?: string | null }[] | null | undefined
+): string | null {
+  if (!leads) return null;
+  if (Array.isArray(leads)) return leads[0]?.name ?? null;
+  return leads.name ?? null;
+}

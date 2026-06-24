@@ -23,7 +23,7 @@ export function AgencyHeaderClock() {
   }, []);
 
   return (
-    <span className="hidden shrink-0 whitespace-nowrap font-mono text-[12px] text-ink-tertiary md:inline">
+    <span className="hidden shrink-0 whitespace-nowrap font-mono text-[14px] font-medium text-ink-tertiary md:inline">
       {now ? formatHeaderDate(now) : "\u00a0"}
     </span>
   );

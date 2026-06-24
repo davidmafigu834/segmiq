@@ -2,10 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireRoles } from "@/lib/api-guards";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { canReassignLeads } from "@/lib/auth/permissions";
+import { canReassignLeads, canManageClientTeam } from "@/lib/auth/permissions";
 import { hashPassword } from "@/lib/password";
 import { normalizeToE164 } from "@/lib/phone-validate";
 import { sendEmail } from "@/lib/email/resend";
@@ -13,11 +12,31 @@ import { inviteSalespersonEmail } from "@/lib/email/templates/invite-salesperson
 
 export const dynamic = "force-dynamic";
 
-/** Active salespeople for reassignment pickers (agency admin). */
-export async function GET(_req: Request, { params }: { params: { clientId: string } }) {
+/** Active salespeople for reassignment pickers; full roster when ?manage=1. */
+export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const url = new URL(req.url);
+  const manage = url.searchParams.get("manage") === "1";
+
+  if (manage) {
+    if (!canManageClientTeam(session, params.clientId)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, name, email, phone, is_active, round_robin_order")
+      .eq("client_id", params.clientId)
+      .eq("role", "SALESPERSON")
+      .order("round_robin_order", { ascending: true });
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ users: data ?? [] });
   }
 
   if (!canReassignLeads(session, params.clientId)) {
@@ -46,12 +65,21 @@ const inviteSalesSchema = z.object({
 });
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
-  if ("error" in g) return g.error;
+  const session = await getServerSession(authOptions);
+  if (!session?.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!canManageClientTeam(session, params.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const parsed = inviteSalesSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  if (session.role === "CLIENT_MANAGER" && parsed.data.role !== "SALESPERSON") {
+    return NextResponse.json({ error: "Managers can only add salespeople" }, { status: 403 });
   }
 
   const rawPhone = parsed.data.phone?.trim() ?? "";
@@ -105,7 +133,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       const loginUrl = `${process.env.NEXTAUTH_URL}/login`;
       const { subject: reactivateSubject, html: reactivateHtml } = inviteSalespersonEmail({
         inviteeName: parsed.data.name.trim(),
-        invitedByName: g.session.user?.name || "Your manager",
+        invitedByName: session.user?.name || "Your manager",
         clientName: (client as { id: string; name: string }).name,
         role: parsed.data.role,
         email,
@@ -169,7 +197,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   const loginUrl = `${process.env.NEXTAUTH_URL}/login`;
   const { subject, html } = inviteSalespersonEmail({
     inviteeName: parsed.data.name.trim(),
-    invitedByName: g.session.user?.name || "Your manager",
+    invitedByName: session.user?.name || "Your manager",
     clientName: (client as { id: string; name: string }).name,
     role: parsed.data.role,
     email,

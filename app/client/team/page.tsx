@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { ClientTeamDashboard } from "@/components/client-team/ClientTeamDashboard";
+import { TeamMembersManager } from "@/components/client-team/TeamMembersManager";
 
 export default async function ClientTeamPage({
   searchParams,
@@ -30,8 +31,13 @@ export default async function ClientTeamPage({
 
   const supabase = createAdminClient();
   const targetClientId = role === "AGENCY_ADMIN" ? previewClientId! : session.clientId!;
-  const { data: clientRow } = await supabase.from("clients").select("name").eq("id", targetClientId).maybeSingle();
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("name, round_robin_index")
+    .eq("id", targetClientId)
+    .maybeSingle();
   const clientName = (clientRow?.name as string) ?? "Your company";
+  const roundRobinIndex = Number((clientRow as { round_robin_index?: number } | null)?.round_robin_index ?? 0);
 
   return (
     <ClientManagerLayout
@@ -54,6 +60,9 @@ export default async function ClientTeamPage({
           previewClientId={role === "AGENCY_ADMIN" ? previewClientId : undefined}
         />
       </Suspense>
+      {role === "CLIENT_MANAGER" ? (
+        <TeamMembersManager clientId={targetClientId} roundRobinIndex={roundRobinIndex} />
+      ) : null}
     </ClientManagerLayout>
   );
 }

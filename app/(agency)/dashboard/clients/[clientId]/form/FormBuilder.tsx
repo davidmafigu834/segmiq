@@ -181,7 +181,7 @@ export function FormBuilder({
             onChange={(e) => setAdditionalContext(e.target.value)}
             placeholder={`Optional: describe anything specific — e.g. "residential solar only, minimum 5kW systems"`}
             rows={2}
-            className="input-base w-full resize-none text-[12px]"
+            className="textarea-base resize-none text-[12px]"
             style={{ marginBottom: 10 }}
           />
           <button
@@ -300,7 +300,7 @@ export function FormBuilder({
             Opening message
             <span className="ml-1 text-[10px] text-ink-tertiary">(shown at the start of the conversation)</span>
             <textarea
-              className="input-base mt-1 h-24 resize-none"
+              className="textarea-base mt-1 min-h-[6rem] resize-none"
               value={openingMessage}
               onChange={(e) => setOpeningMessage(e.target.value)}
               placeholder="Hello! Thank you for considering us…"

@@ -22,7 +22,7 @@ import {
   CheckCircle2,
   Percent,
 } from "lucide-react";
-import { formatCurrencyUsd } from "@/lib/format";
+import { formatCurrencyUsd, leadJoinName } from "@/lib/format";
 import {
   canNudgeRetargeting,
   retargetingStatusLabel,
@@ -55,7 +55,7 @@ type RecentWin = {
   deal_value?: number | null;
   days_to_close: number | null;
   created_at: string;
-  leads?: { name: string | null }[] | null;
+  leads?: { name: string | null } | { name: string | null }[] | null;
 };
 
 type DashboardData = {
@@ -856,7 +856,7 @@ export default function ClientDashboardMain({
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate mb-0.5">
-                      {win.leads?.[0]?.name ?? "Unknown"}
+                      {leadJoinName(win.leads) ?? "Unknown"}
                     </p>
                     <p suppressHydrationWarning className="text-[11px] text-[var(--text-tertiary)]">
                       {win.salesperson_name ?? "Unknown"}
