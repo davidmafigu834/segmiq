@@ -9,6 +9,7 @@
     "start": "node --max-http-header-size=65536 ./node_modules/next/dist/bin/next start",
     "lint": "next lint",
     "seed": "npx tsx scripts/seed.ts",
+    "seed:demo": "npx tsx scripts/seed-demo.ts",
     "seed:templates": "npx tsx scripts/seed-templates.ts",
     "check:db": "node scripts/check-supabase-user.mjs"
   },
