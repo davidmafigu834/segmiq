@@ -17,7 +17,12 @@ import {
   ChevronRight,
   Target,
   Bell,
+  FileText,
+  DollarSign,
+  CheckCircle2,
+  Percent,
 } from "lucide-react";
+import { formatCurrencyUsd } from "@/lib/format";
 import {
   canNudgeRetargeting,
   retargetingStatusLabel,
@@ -75,6 +80,13 @@ type DashboardData = {
     projects: number;
     pricing: number;
     documents: number;
+  };
+  quotationsMetrics: {
+    sentCount: number;
+    totalQuotedValue: number;
+    acceptedCount: number;
+    acceptedValue: number;
+    conversionPct: number | null;
   };
   recentWins: RecentWin[];
   pulseMetrics: {
@@ -681,6 +693,73 @@ export default function ClientDashboardMain({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ============================================
+          QUOTATIONS THIS WEEK
+          ============================================ */}
+      <div className="ag-fade-in ag-delay-3 mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
+          Quotations
+        </p>
+        <h2 className="text-[18px] font-semibold text-[var(--text-primary)] mb-5">
+          Quotes &amp; revenue this week
+        </h2>
+
+        <div className="grid grid-cols-2 gap-3 min-[700px]:grid-cols-4">
+          {(
+            [
+              {
+                label: "Quotes sent",
+                value: String(data.quotationsMetrics.sentCount),
+                icon: FileText,
+                colourClass: "text-[var(--accent)]",
+              },
+              {
+                label: "Value quoted",
+                value: formatCurrencyUsd(data.quotationsMetrics.totalQuotedValue),
+                icon: DollarSign,
+                colourClass: "text-[#60a5fa]",
+              },
+              {
+                label: "Accepted value",
+                value: formatCurrencyUsd(data.quotationsMetrics.acceptedValue),
+                icon: CheckCircle2,
+                colourClass: "text-[var(--success)]",
+              },
+              {
+                label: "Quote → win",
+                value:
+                  data.quotationsMetrics.conversionPct == null
+                    ? "—"
+                    : `${data.quotationsMetrics.conversionPct}%`,
+                icon: Percent,
+                colourClass: "text-[var(--warning)]",
+              },
+            ] as const
+          ).map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] p-4"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <stat.icon size={14} className={stat.colourClass} />
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+                  {stat.label}
+                </p>
+              </div>
+              <p className="font-display text-[24px] font-semibold text-[var(--text-primary)] leading-none">
+                {stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+        {data.quotationsMetrics.acceptedCount > 0 ? (
+          <p className="mt-3 text-[12px] text-[var(--text-tertiary)]">
+            {data.quotationsMetrics.acceptedCount} of {data.quotationsMetrics.sentCount} quotes
+            accepted this week.
+          </p>
+        ) : null}
       </div>
 
       {/* ============================================

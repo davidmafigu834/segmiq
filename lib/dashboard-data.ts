@@ -653,6 +653,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     { data: weekEvents },
     { data: recentWins },
     { data: client },
+    { data: weekQuotations },
   ] = await Promise.all([
     supabase
       .from("users")
@@ -685,6 +686,12 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       .select("id, name, response_time_limit_hours, assignment_mode")
       .eq("id", clientId)
       .single(),
+
+    supabase
+      .from("quotations")
+      .select("id, status, total, sent_at, accepted_at")
+      .eq("client_id", clientId)
+      .gte("sent_at", weekStart.toISOString()),
   ]);
 
   const leads = allLeadsData;
@@ -790,6 +797,22 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     ).length,
   };
 
+  // Quotations sent this week (graceful zero if the table isn't migrated yet).
+  type QuoteRow = { status: string; total: number | string | null };
+  const weekQuotes = (weekQuotations ?? []) as QuoteRow[];
+  const sentQuotes = weekQuotes.filter((q) => q.status !== "draft");
+  const acceptedQuotes = weekQuotes.filter((q) => q.status === "accepted");
+  const quotationsMetrics = {
+    sentCount: sentQuotes.length,
+    totalQuotedValue: sentQuotes.reduce((s, q) => s + (Number(q.total) || 0), 0),
+    acceptedCount: acceptedQuotes.length,
+    acceptedValue: acceptedQuotes.reduce((s, q) => s + (Number(q.total) || 0), 0),
+    conversionPct:
+      sentQuotes.length > 0
+        ? Math.round((acceptedQuotes.length / sentQuotes.length) * 100)
+        : null,
+  };
+
   const weekLeads = leads.filter((l) => new Date(l.created_at as string) >= weekStart);
   const weekContacted = weekLeads.filter((l) => l.status !== "NEW").length;
   const weekWon = weekLeads.filter((l) => l.status === "WON").length;
@@ -819,6 +842,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     sourceCounts,
     salespersonStats,
     assetsSent,
+    quotationsMetrics,
     recentWins: recentWins ?? [],
     pulseMetrics: {
       weekLeads: weekLeads.length,
