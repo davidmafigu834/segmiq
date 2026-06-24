@@ -162,6 +162,89 @@ export interface NotificationRow {
   created_at: string;
 }
 
+export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
+
+export interface CatalogItemRow {
+  id: string;
+  client_id: string;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  category: string | null;
+  currency: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuotationSettingsRow {
+  client_id: string;
+  company_address: string | null;
+  company_email: string | null;
+  company_website: string | null;
+  company_phone: string | null;
+  default_terms: string | null;
+  footer_note: string | null;
+  quote_prefix: string;
+  next_number: number;
+  default_tax_rate: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuotationLineItemRow {
+  id: string;
+  quotation_id: string;
+  catalog_item_id: string | null;
+  item_name: string;
+  description: string | null;
+  unit_price: number;
+  quantity: number;
+  amount: number;
+  group_label: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface QuotationRow {
+  id: string;
+  client_id: string;
+  lead_id: string;
+  quote_number: string | null;
+  status: QuotationStatus;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_email: string | null;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  other_amount: number;
+  total: number;
+  currency: string;
+  valid_until: string | null;
+  notes: string | null;
+  terms: string | null;
+  prepared_by_id: string | null;
+  prepared_by_name: string | null;
+  pdf_url: string | null;
+  pdf_key: string | null;
+  sent_at: string | null;
+  accepted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** A line item as sent from / to the quote builder UI. */
+export interface QuotationLineItemInput {
+  catalog_item_id?: string | null;
+  item_name: string;
+  description?: string | null;
+  unit_price: number;
+  quantity: number;
+  group_label?: string | null;
+}
+
 export interface SessionUser {
   id: string;
   name: string;

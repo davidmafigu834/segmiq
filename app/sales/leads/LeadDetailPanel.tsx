@@ -13,6 +13,7 @@ import { FormAnswersSection } from "@/components/leads/FormAnswersSection";
 import { LogCallForm } from "@/components/leads/LogCallForm";
 import { LeadTimeline } from "@/components/leads/LeadTimeline";
 import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
+import { QuotationsPanel } from "@/components/leads/QuotationsPanel";
 import { HandoverBanner } from "@/components/leads/HandoverBanner";
 import { LeadBriefing } from "@/components/leads/LeadBriefing";
 import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
@@ -68,7 +69,7 @@ export function LeadDetailPanel({
   const [logRefresh, setLogRefresh] = useState(0);
   const [timelineRefresh, setTimelineRefresh] = useState(0);
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
-  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "send">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "quote" | "send">("details");
   const [sendPreselect, setSendPreselect] = useState<SendAssetType[] | null>(null);
 
   useEffect(() => {
@@ -90,6 +91,10 @@ export function LeadDetailPanel({
   }, [open, lead]);
 
   const isReadOnly = readOnlyProp === true || role === "CLIENT_MANAGER";
+  // Quoting is allowed for salespeople, managers and agency admins (broader than
+  // lead editing, which keeps managers read-only).
+  const canQuote =
+    role === "SALESPERSON" || role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER";
 
   if (!open || !lead) return null;
 
@@ -176,6 +181,19 @@ export function LeadDetailPanel({
           >
             Timeline
           </button>
+          {canQuote ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab("quote")}
+              className={`flex-1 border-b-2 px-4 py-2.5 text-center font-mono text-[11px] uppercase tracking-wide transition-colors ${
+                activeTab === "quote"
+                  ? "border-[var(--info)] text-ink-primary"
+                  : "border-transparent text-ink-secondary hover:text-ink-primary"
+              }`}
+            >
+              Quote
+            </button>
+          ) : null}
           {!isReadOnly ? (
             <button
               type="button"
@@ -194,6 +212,26 @@ export function LeadDetailPanel({
           {activeTab === "timeline" ? (
             <LeadTimeline key={timelineRefresh} leadId={activeLead.id} />
           ) : null}
+          {activeTab === "quote" && canQuote ? (
+            <div className="p-4 sm:p-5">
+              <QuotationsPanel
+                leadId={activeLead.id}
+                clientId={activeLead.client_id}
+                leadPhone={activeLead.phone}
+                onChanged={() => {
+                  setTimelineRefresh((k) => k + 1);
+                  if (onLeadUpdated) {
+                    fetch(`/api/leads/${activeLead.id}`)
+                      .then((r) => r.json())
+                      .then((j: { lead?: LeadRow }) => {
+                        if (j.lead) onLeadUpdated(j.lead);
+                      })
+                      .catch(() => {});
+                  }
+                }}
+              />
+            </div>
+          ) : null}
           {activeTab === "send" && !isReadOnly ? (
             <div className="p-4 sm:p-5">
               <SendAssetPanel
@@ -210,7 +248,7 @@ export function LeadDetailPanel({
               />
             </div>
           ) : null}
-          <div className={activeTab === "timeline" || activeTab === "send" ? "hidden" : ""}>
+          <div className={activeTab !== "details" ? "hidden" : ""}>
           <div className="space-y-3 p-4 max-md:pt-3 sm:p-5">
             <LeadBriefing leadId={activeLead.id} />
             <LeadIntelligenceCard

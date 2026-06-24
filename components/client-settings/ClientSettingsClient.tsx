@@ -6,6 +6,7 @@ import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-p
 import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PackagesManager } from "@/components/client-settings/PackagesManager";
+import { QuoteSettingsManager } from "@/components/client-settings/QuoteSettingsManager";
 
 const TABS = [
   { id: "profile", label: "Profile" },
@@ -13,6 +14,7 @@ const TABS = [
   { id: "notifications", label: "Notifications" },
   { id: "branding", label: "Branding" },
   { id: "packages", label: "Packages" },
+  { id: "quotes", label: "Quotes" },
   { id: "advanced", label: "Advanced" },
 ];
 
@@ -840,6 +842,13 @@ export function ClientSettingsClient({
           <div className="max-w-2xl space-y-6">
             <h2 className="font-display text-2xl">Packages &amp; Documents</h2>
             <PackagesManager clientId={clientId} />
+          </div>
+        ) : null}
+
+        {tab === "quotes" ? (
+          <div className="space-y-6">
+            <h2 className="font-display text-2xl">Quotations</h2>
+            <QuoteSettingsManager clientId={clientId} />
           </div>
         ) : null}
 
