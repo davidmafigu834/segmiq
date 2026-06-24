@@ -6,7 +6,6 @@ import { format, parseISO, startOfMonth } from "date-fns";
 import { FollowUpsCalendar, isDateKeyToday } from "@/components/sales/FollowUpsCalendar";
 import {
   type FollowUpGroupKey,
-  type FollowUpGroups,
   type FollowUpLead,
   filterLeadsByDateKey,
   getFollowUpDateTime,
