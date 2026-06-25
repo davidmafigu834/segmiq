@@ -8,6 +8,7 @@ import { fetchSoloDashboardData } from "@/lib/dashboard-data";
 import { getClientBillingData } from "@/lib/billing/client-billing-data";
 import { deriveSoloBillingAlert } from "@/lib/billing/solo-billing-alert";
 import { SoloLayout } from "@/components/layouts/SoloLayout";
+import { SalesAppDownloadButton } from "@/components/sales/SalesAppDownloadButton";
 import SoloDashboardMain from "./SoloDashboardMain";
 import SalesDashboardSkeleton from "@/app/sales/dashboard/SalesDashboardSkeleton";
 
@@ -28,7 +29,11 @@ export default async function SoloDashboardPage() {
   const billingAlert = deriveSoloBillingAlert(billingData);
 
   return (
-    <SoloLayout breadcrumb="SOLO / DASHBOARD" pageTitle="Dashboard">
+    <SoloLayout
+      breadcrumb="SOLO / DASHBOARD"
+      pageTitle="Dashboard"
+      actions={<SalesAppDownloadButton />}
+    >
       <Suspense fallback={<SalesDashboardSkeleton />}>
         {billingAlert ? (
           <Link

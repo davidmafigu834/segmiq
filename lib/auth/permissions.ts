@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types";
 
@@ -44,11 +45,15 @@ export function canManageClientTeam(session: {
   return canReassignLeads(session, clientId);
 }
 
-export async function canModifyLead(leadId: string): Promise<
+export async function canModifyLead(
+  leadId: string,
+  req?: Request
+): Promise<
   | { allowed: true; lead: LeadScope; userId: string; role: UserRole }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
 > {
-  const session = await getServerSession(authOptions);
+  const auth = req ? await getAuthFromRequest(req) : null;
+  const session = auth ?? (await getServerSession(authOptions));
   if (!session?.userId) {
     return { allowed: false, reason: "Unauthorized", status: 401 };
   }
@@ -102,11 +107,12 @@ export function canManageClientProfile(role: string | null | undefined): boolean
 }
 
 /** Read access: wrong scope returns notFound (404) to avoid leaking lead existence. */
-export async function canReadLead(leadId: string): Promise<
-  | { ok: true }
-  | { ok: false; status: 401 | 404 }
-> {
-  const session = await getServerSession(authOptions);
+export async function canReadLead(
+  leadId: string,
+  req?: Request
+): Promise<{ ok: true } | { ok: false; status: 401 | 404 }> {
+  const auth = req ? await getAuthFromRequest(req) : null;
+  const session = auth ?? (await getServerSession(authOptions));
   if (!session?.userId) {
     return { ok: false, status: 401 };
   }

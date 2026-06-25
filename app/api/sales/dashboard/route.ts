@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireRoles } from "@/lib/api-guards";
+import { requireRolesFromRequest } from "@/lib/api-guards";
 import { fetchSalespersonDashboardData } from "@/lib/dashboard-data";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const guard = await requireRoles(["SALESPERSON"]);
+export async function GET(req: Request) {
+  const guard = await requireRolesFromRequest(req, ["SALESPERSON"]);
   if (guard.error) return guard.error;
   const { session } = guard;
 

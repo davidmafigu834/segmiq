@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { canModifyLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { saveCallLog } from "@/lib/call-log-save";
@@ -85,17 +84,23 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     actorName = (actorForLog as { name: string } | null)?.name || "Unknown";
     actorRole = (actorForLog as { role: string } | null)?.role || "SALESPERSON";
   } else {
-    const gate = await canModifyLead(leadId);
+    const gate = await canModifyLead(leadId, req);
     if (!gate.allowed) {
       return NextResponse.json({ error: gate.reason }, { status: gate.status });
     }
-    const session = await getServerSession(authOptions);
-    if (!session?.userId) {
+    const auth = await getAuthFromRequest(req);
+    if (!auth?.userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    actorUserId = session.userId;
-    actorName = session.user?.name || "Unknown";
-    actorRole = session.role || "SALESPERSON";
+    actorUserId = auth.userId;
+    actorRole = auth.role;
+
+    const { data: actorForLog } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", auth.userId)
+      .maybeSingle();
+    actorName = (actorForLog as { name: string } | null)?.name || "Unknown";
   }
 
   try {

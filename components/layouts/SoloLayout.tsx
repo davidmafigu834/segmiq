@@ -8,10 +8,12 @@ export async function SoloLayout({
   children,
   breadcrumb,
   pageTitle,
+  actions,
 }: {
   children: React.ReactNode;
   breadcrumb: string;
   pageTitle: string;
+  actions?: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
   const supabase = createAdminClient();
@@ -66,6 +68,7 @@ export async function SoloLayout({
       userRoleLabel={clientName ?? "Owner"}
       breadcrumb={breadcrumb}
       pageTitle={pageTitle}
+      actions={actions}
       unreadNotifications={unread}
       notificationRole={session?.role ?? "SALESPERSON"}
       quickActionHref="/sales/leads"

@@ -4,8 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: { leadId: string } }) {
-  const access = await canReadLead(params.leadId);
+export async function GET(req: Request, { params }: { params: { leadId: string } }) {
+  const access = await canReadLead(params.leadId, req);
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }
