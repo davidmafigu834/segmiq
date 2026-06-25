@@ -95,7 +95,8 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   void persistLeadScore(access.leadId);
 
   const total = formatMoney(Number(quote.total) || 0, (quote.currency as string) || "USD");
-  const waMessage = `Hi ${pdfData.customerName?.split(" ")[0] || "there"}, here is your quotation ${quoteNumber} from ${pdfData.companyName} — total ${total}. You can view it here: ${pdfUrl}`;
+  const firstName = pdfData.customerName?.split(" ")[0] || "there";
+  const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${pdfData.companyName} — total ${total}. Let me know if you have any questions.`;
 
   return NextResponse.json({ success: true, pdfUrl, quoteNumber, waMessage });
 }

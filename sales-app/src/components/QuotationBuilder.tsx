@@ -4,7 +4,7 @@ import { apiGet, apiPatch, apiPost, API_BASE } from "../lib/api";
 import { formatMoney } from "../lib/format";
 import { computeTotals, lineAmount } from "../lib/quotation-totals";
 import { getToken } from "../lib/session";
-import { openWhatsApp } from "../lib/whatsapp";
+import { fetchQuotationPdfBlob, shareQuotationPdf } from "../lib/share-quotation-pdf";
 import { CrmButton } from "./crm";
 
 type CatalogItem = {
@@ -248,16 +248,35 @@ export function QuotationBuilder({
       setBusy(null);
       return;
     }
-    const res = await apiPost<{ waMessage?: string; error?: string }>(
+    const res = await apiPost<{ waMessage?: string; pdfUrl?: string; quoteNumber?: string; error?: string }>(
       `/api/quotations/${quotation.id}/send`,
       {}
     );
-    setBusy(null);
-    if (!res.ok || !res.data.waMessage) {
+    if (!res.ok || !res.data.waMessage || !res.data.pdfUrl) {
+      setBusy(null);
       setError(res.data.error ?? "Send failed");
       return;
     }
-    openWhatsApp(customerPhone || leadPhone, res.data.waMessage);
+    try {
+      const token = await getToken();
+      const pdfBlob = await fetchQuotationPdfBlob(res.data.pdfUrl, token);
+      const fileName = `quotation-${res.data.quoteNumber ?? quotation.id}.pdf`;
+      const shared = await shareQuotationPdf({
+        pdfBlob,
+        fileName,
+        phone: customerPhone || leadPhone,
+        message: res.data.waMessage,
+      });
+      setBusy(null);
+      if (!shared.ok) {
+        setError(shared.error ?? "Could not share PDF via WhatsApp.");
+        return;
+      }
+    } catch {
+      setBusy(null);
+      setError("Could not prepare PDF for WhatsApp.");
+      return;
+    }
     onSent();
   }
 

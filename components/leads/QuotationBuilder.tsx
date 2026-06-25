@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2, FileText, Send, Save, Loader2 } from "lucide-react";
 import { openExternalUrl } from "@/lib/whatsapp-opener";
+import { fetchQuotationPdfBlob, shareQuotationPdf } from "@/lib/share-quotation-pdf";
 import { computeTotals, lineAmount, formatMoney } from "@/lib/quotations/totals";
 import type { CatalogItemRow, QuotationLineItemRow, QuotationRow } from "@/types";
 
@@ -177,25 +178,31 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
     const json = (await res.json().catch(() => ({}))) as {
       pdfUrl?: string;
       waMessage?: string;
+      quoteNumber?: string;
       error?: string;
     };
     setBusy(null);
-    if (!res.ok) {
+    if (!res.ok || !json.pdfUrl || !json.waMessage) {
       setError(json.error ?? "Send failed");
       return;
     }
-    // Open the rep's own WhatsApp with the quote link pre-filled.
-    const digits = String(customerPhone || leadPhone || "").replace(/\D+/g, "");
-    const text = encodeURIComponent(json.waMessage ?? `Here is your quotation: ${json.pdfUrl ?? ""}`);
-    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const url = isMobile
-      ? digits
-        ? `whatsapp://send?phone=${digits}&text=${text}`
-        : `whatsapp://send?text=${text}`
-      : digits
-        ? `https://wa.me/${digits}?text=${text}`
-        : `https://wa.me/?text=${text}`;
-    openExternalUrl(url);
+    try {
+      const pdfBlob = await fetchQuotationPdfBlob(json.pdfUrl);
+      const fileName = `quotation-${json.quoteNumber ?? quotation.id}.pdf`;
+      const shared = await shareQuotationPdf({
+        pdfBlob,
+        fileName,
+        phone: customerPhone || leadPhone,
+        message: json.waMessage,
+      });
+      if (!shared.ok) {
+        setError(shared.error ?? "Could not share PDF via WhatsApp.");
+        return;
+      }
+    } catch {
+      setError("Could not prepare PDF for WhatsApp.");
+      return;
+    }
     onSent();
   }
 
