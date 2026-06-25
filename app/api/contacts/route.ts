@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireSession } from "@/lib/api-guards";
+import { requireSessionFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
@@ -25,7 +25,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const g = await requireSession();
+  const g = await requireSessionFromRequest(req);
   if ("error" in g) return g.error;
 
   const { session } = g;

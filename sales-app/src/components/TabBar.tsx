@@ -1,17 +1,17 @@
 import {
   LayoutDashboard,
   Users,
-  Phone,
+  Plus,
   CalendarClock,
   MoreHorizontal,
 } from "lucide-react";
 
-export type TabId = "today" | "leads" | "log" | "followups" | "more";
+export type TabId = "today" | "leads" | "add" | "followups" | "more";
 
 const TABS: Array<{ id: TabId; label: string; icon: typeof LayoutDashboard; fab?: boolean }> = [
   { id: "today", label: "Today", icon: LayoutDashboard },
   { id: "leads", label: "Leads", icon: Users },
-  { id: "log", label: "Log", icon: Phone, fab: true },
+  { id: "add", label: "Add", icon: Plus, fab: true },
   { id: "followups", label: "Follow-ups", icon: CalendarClock },
   { id: "more", label: "More", icon: MoreHorizontal },
 ];
@@ -42,7 +42,7 @@ export function TabBar({ active, onChange, followUpBadge = 0, syncBadge = 0 }: P
               key={tab.id}
               type="button"
               onClick={() => onChange(tab.id)}
-              aria-label="Log call"
+              aria-label="Add lead"
               className="relative flex flex-1 flex-col items-center justify-end pb-2"
             >
               <span className="absolute -top-5 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-ink shadow-accent">

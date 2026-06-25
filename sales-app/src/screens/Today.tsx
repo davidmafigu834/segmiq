@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Phone } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { TabBar, type TabId } from "../components/TabBar";
@@ -190,15 +190,6 @@ export function Today({
           </div>
         )}
       </div>
-
-      <button
-        type="button"
-        onClick={() => onLogCall()}
-        aria-label="Log a call"
-        className="fixed right-5 bottom-[calc(88px+env(safe-area-inset-bottom))] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-ink shadow-accent"
-      >
-        <Phone size={22} />
-      </button>
 
       <TabBar
         active="today"

@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canModifyLead } from "@/lib/auth/permissions";
 import { sendWhatsApp } from "@/lib/messaging/provider";
@@ -17,10 +15,7 @@ type AssetType =
   | "CUSTOM_MESSAGE";
 
 export async function POST(req: Request, { params }: { params: { leadId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const check = await canModifyLead(params.leadId);
+  const check = await canModifyLead(params.leadId, req);
   if (!check.allowed) {
     return NextResponse.json({ error: check.reason }, { status: check.status });
   }
@@ -82,9 +77,9 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   }
 
   const actor = {
-    id: session.userId,
-    name: session.user?.name ?? "Unknown",
-    role: session.role ?? "UNKNOWN",
+    id: check.userId,
+    name: "Unknown",
+    role: check.role,
   };
 
   let documentName = "";
@@ -102,7 +97,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
           variables: { "1": prospectFirst, "2": companyName, "3": region },
           urlButtonParam: profileSlug,
           fallbackBody: `Hi ${prospectFirst}, here's a look at work ${companyName} has completed across ${region}.`,
-          context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
+          context: { userId: check.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = "Portfolio";
         documentUrl = profileSlug;
@@ -136,7 +131,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
           },
           urlButtonParam: projectPath,
           fallbackBody: `Hi ${prospectFirst}, here's a project from ${companyName}: ${project.title as string}`,
-          context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
+          context: { userId: check.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = project.title as string;
         documentUrl = projectPath;
@@ -179,7 +174,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
           },
           urlButtonParam: pricingPath || undefined,
           fallbackBody: `Hi ${prospectFirst}, here are the details for our ${pkg.name as string} package — ${priceDisplay}.`,
-          context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
+          context: { userId: check.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = `Pricing: ${pkg.name as string}`;
         documentUrl = pricingPath;
@@ -199,7 +194,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
           variables: { "1": prospectFirst, "2": companyName, "3": region },
           urlButtonParam: profileSlug,
           fallbackBody: `Hi ${prospectFirst}, here's what clients have said about working with ${companyName}.`,
-          context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
+          context: { userId: check.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = "Testimonials";
         documentUrl = profileSlug;
@@ -225,7 +220,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
             "3": (doc.description as string | null)?.trim() || doc.name as string,
           },
           fallbackBody: `Hi ${prospectFirst}, please find the ${doc.name as string} attached above.`,
-          context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
+          context: { userId: check.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = doc.name as string;
         documentUrl = doc.file_url as string;
@@ -240,7 +235,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
           template: "SEND_CUSTOM_MESSAGE",
           variables: { "1": prospectFirst, "2": repLabel, "3": msg },
           fallbackBody: `Hi ${prospectFirst}, a quick note from ${repLabel}: ${msg}`,
-          context: { userId: session.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
+          context: { userId: check.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
         });
         documentName = "Custom message";
         documentUrl = "";

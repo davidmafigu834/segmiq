@@ -49,6 +49,12 @@ export function scoreHeat(score: number | null | undefined): "hot" | "warm" | "c
   return "cold";
 }
 
+export function formatMoney(amount: number, currency = "USD"): string {
+  const n = (Number(amount) || 0).toFixed(2);
+  const withSep = n.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${currency} ${withSep}`;
+}
+
 export function getGreeting(): string {
   const h = new Date().getHours();
   if (h < 12) return "morning";

@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, MessageCircle, Phone } from "lucide-react";
 import { apiGet } from "../lib/api";
 import { CrmButton } from "../components/crm";
+import { LeadQuotations } from "../components/LeadQuotations";
+import { LeadSendPanel } from "../components/LeadSendPanel";
 import { leadDisplayName, statusLabel, timeAgo } from "../lib/format";
 import { fetchLead } from "../lib/leads";
 import type { LeadRow, TimelineEvent } from "../lib/types";
 import { buildOpenerMessage, dialPhone, openWhatsApp } from "../lib/whatsapp";
+
+type DetailTab = "details" | "timeline" | "quotes" | "send";
 
 type Props = {
   leadId: string;
@@ -17,7 +21,7 @@ type Props = {
 export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
   const [lead, setLead] = useState<LeadRow | null>(null);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
-  const [tab, setTab] = useState<"details" | "timeline">("details");
+  const [tab, setTab] = useState<DetailTab>("details");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,19 +85,26 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
         <p className="mt-1 text-[14px] text-ink-tertiary">{statusLabel(lead.status)}</p>
       </div>
 
-      <div className="flex border-b border-border px-5">
-        {(["details", "timeline"] as const).map((t) => (
+      <div className="flex overflow-x-auto border-b border-border px-5">
+        {(
+          [
+            { id: "details", label: "Details" },
+            { id: "timeline", label: "Timeline" },
+            { id: "quotes", label: "Quotes" },
+            { id: "send", label: "Send" },
+          ] as const
+        ).map((t) => (
           <button
-            key={t}
+            key={t.id}
             type="button"
-            onClick={() => setTab(t)}
-            className={`min-h-[48px] flex-1 border-b-2 text-[14px] font-semibold capitalize transition-colors ${
-              tab === t
+            onClick={() => setTab(t.id)}
+            className={`min-h-[48px] shrink-0 flex-1 border-b-2 px-2 text-[13px] font-semibold transition-colors ${
+              tab === t.id
                 ? "border-accent text-accent"
                 : "border-transparent text-ink-tertiary"
             }`}
           >
-            {t}
+            {t.label}
           </button>
         ))}
       </div>
@@ -124,7 +135,7 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
               <p className="text-[16px] text-ink-primary">{timeAgo(lead.created_at)}</p>
             </div>
           </div>
-        ) : (
+        ) : tab === "timeline" ? (
           <div className="space-y-3">
             {timeline.length === 0 ? (
               <p className="py-8 text-center text-[14px] text-ink-tertiary">No activity yet</p>
@@ -144,6 +155,10 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
                 ))
             )}
           </div>
+        ) : tab === "quotes" ? (
+          <LeadQuotations leadId={leadId} leadPhone={lead.phone} />
+        ) : (
+          <LeadSendPanel leadId={leadId} clientId={lead.client_id} leadPhone={lead.phone} />
         )}
       </div>
 

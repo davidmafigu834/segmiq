@@ -6,8 +6,8 @@ import { saveItemsAndTotals, loadQuotationWithItems } from "@/lib/quotations/per
 import type { QuotationLineItemInput } from "@/types";
 import { addDays, format } from "date-fns";
 
-export async function GET(_req: Request, { params }: { params: { leadId: string } }) {
-  const access = await canManageQuotationForLead(params.leadId);
+export async function GET(req: Request, { params }: { params: { leadId: string } }) {
+  const access = await canManageQuotationForLead(params.leadId, req);
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
 
   const supabase = createAdminClient();
@@ -21,7 +21,7 @@ export async function GET(_req: Request, { params }: { params: { leadId: string 
 }
 
 export async function POST(req: Request, { params }: { params: { leadId: string } }) {
-  const access = await canManageQuotationForLead(params.leadId);
+  const access = await canManageQuotationForLead(params.leadId, req);
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
 
   const supabase = createAdminClient();

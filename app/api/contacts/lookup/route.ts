@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/api-guards";
+import { requireSessionFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
@@ -7,7 +7,7 @@ import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const g = await requireSession();
+  const g = await requireSessionFromRequest(req);
   if ("error" in g) return g.error;
 
   const { session } = g;

@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types";
 
@@ -13,11 +14,15 @@ type LeadScope = { client_id: string; assigned_to_id: string | null };
  * intentionally broader than canModifyLead (which makes managers read-only),
  * because managers are expected to build and send quotes too.
  */
-export async function canManageQuotationForLead(leadId: string): Promise<
+export async function canManageQuotationForLead(
+  leadId: string,
+  req?: Request
+): Promise<
   | { allowed: true; lead: LeadScope; actor: Actor }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
 > {
-  const session = await getServerSession(authOptions);
+  const auth = req ? await getAuthFromRequest(req) : null;
+  const session = auth ?? (await getServerSession(authOptions));
   if (!session?.userId) return { allowed: false, reason: "Unauthorized", status: 401 };
 
   const supabase = createAdminClient();
@@ -34,7 +39,7 @@ export async function canManageQuotationForLead(leadId: string): Promise<
   };
   const actor: Actor = {
     id: session.userId,
-    name: session.user?.name ?? "Unknown",
+    name: (session as { user?: { name?: string | null } }).user?.name ?? "Unknown",
     role: (session.role ?? "SALESPERSON") as UserRole,
   };
 
@@ -51,7 +56,10 @@ export async function canManageQuotationForLead(leadId: string): Promise<
 }
 
 /** Same access rules, resolved from a quotation id. */
-export async function canManageQuotation(quotationId: string): Promise<
+export async function canManageQuotation(
+  quotationId: string,
+  req?: Request
+): Promise<
   | { allowed: true; lead: LeadScope; actor: Actor; clientId: string; leadId: string }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
 > {
@@ -63,7 +71,7 @@ export async function canManageQuotation(quotationId: string): Promise<
     .maybeSingle();
   if (!quote) return { allowed: false, reason: "Not found", status: 404 };
 
-  const inner = await canManageQuotationForLead(quote.lead_id as string);
+  const inner = await canManageQuotationForLead(quote.lead_id as string, req);
   if (!inner.allowed) return inner;
   return {
     allowed: true,

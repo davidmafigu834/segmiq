@@ -11,8 +11,8 @@ import { formatMoney } from "@/lib/quotations/totals";
 
 const ADVANCE_FROM = new Set(["NEW", "CONTACTED", "NEGOTIATING"]);
 
-export async function POST(_req: Request, { params }: { params: { quotationId: string } }) {
-  const access = await canManageQuotation(params.quotationId);
+export async function POST(req: Request, { params }: { params: { quotationId: string } }) {
+  const access = await canManageQuotation(params.quotationId, req);
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
 
   const supabase = createAdminClient();
