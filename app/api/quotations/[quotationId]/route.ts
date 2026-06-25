@@ -4,8 +4,8 @@ import { canManageQuotation } from "@/lib/quotations/quote-access";
 import { saveItemsAndTotals, loadQuotationWithItems } from "@/lib/quotations/persist";
 import type { QuotationLineItemInput, QuotationStatus } from "@/types";
 
-export async function GET(_req: Request, { params }: { params: { quotationId: string } }) {
-  const access = await canManageQuotation(params.quotationId);
+export async function GET(req: Request, { params }: { params: { quotationId: string } }) {
+  const access = await canManageQuotation(params.quotationId, req);
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
 
   const supabase = createAdminClient();
@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: { quotationId: st
 }
 
 export async function PATCH(req: Request, { params }: { params: { quotationId: string } }) {
-  const access = await canManageQuotation(params.quotationId);
+  const access = await canManageQuotation(params.quotationId, req);
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
 
   const supabase = createAdminClient();
@@ -86,8 +86,8 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
   return NextResponse.json({ quotation: full });
 }
 
-export async function DELETE(_req: Request, { params }: { params: { quotationId: string } }) {
-  const access = await canManageQuotation(params.quotationId);
+export async function DELETE(req: Request, { params }: { params: { quotationId: string } }) {
+  const access = await canManageQuotation(params.quotationId, req);
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
 
   const supabase = createAdminClient();

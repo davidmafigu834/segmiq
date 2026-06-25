@@ -2,15 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { canAccessClient } from "@/lib/auth/permissions";
 import { canManageCatalog } from "@/lib/quotations/quote-access";
+import { requireClientAccessFromRequest } from "@/lib/api-guards";
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role ?? "", session.clientId ?? null, params.clientId)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const g = await requireClientAccessFromRequest(req, params.clientId);
+  if ("error" in g) return g.error;
 
   const url = new URL(req.url);
   const includeInactive = url.searchParams.get("all") === "1";

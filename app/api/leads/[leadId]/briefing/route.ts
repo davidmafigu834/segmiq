@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canReadLead } from "@/lib/auth/permissions";
 import { callClaude } from "@/lib/ai/claude";
@@ -19,16 +17,10 @@ const STATUS_MAP: Record<string, string> = {
 };
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { leadId: string } }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // canReadLead takes leadId string — not a session user object
-  const access = await canReadLead(params.leadId);
+  const access = await canReadLead(params.leadId, req);
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }

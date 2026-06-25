@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { canModifyLead, canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { background } from "@/lib/background";
@@ -45,14 +46,15 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(req: Request, { params }: { params: { leadId: string } }) {
-  const check = await canModifyLead(params.leadId);
+  const check = await canModifyLead(params.leadId, req);
   if (!check.allowed) {
     return NextResponse.json({ error: check.reason }, { status: check.status });
   }
 
   const parsed = patchSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
-  const session = await getServerSession(authOptions);
+  const auth = await getAuthFromRequest(req);
+  const session = auth ?? (await getServerSession(authOptions));
   const isAgency = session?.role === "AGENCY_ADMIN";
 
   if ((parsed.data.assigned_to_id !== undefined || parsed.data.is_archived !== undefined) && !isAgency) {

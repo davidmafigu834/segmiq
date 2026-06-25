@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, MessageCircle, Phone } from "lucide-react";
 import { apiGet } from "../lib/api";
 import { CrmButton } from "../components/crm";
+import { LeadDetailsTab } from "../components/LeadDetailsTab";
 import { LeadQuotations } from "../components/LeadQuotations";
 import { LeadSendPanel } from "../components/LeadSendPanel";
 import { leadDisplayName, statusLabel, timeAgo } from "../lib/format";
@@ -111,30 +112,7 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
         {tab === "details" ? (
-          <div className="space-y-4">
-            {lead.phone ? (
-              <div className="rounded-xl border border-border bg-surface-card p-4">
-                <p className="eyebrow mb-1">Phone</p>
-                <p className="text-[17px] font-medium text-ink-primary">{lead.phone}</p>
-              </div>
-            ) : null}
-            {lead.project_type ? (
-              <div className="rounded-xl border border-border bg-surface-card p-4">
-                <p className="eyebrow mb-1">Project</p>
-                <p className="text-[16px] text-ink-primary">{lead.project_type}</p>
-              </div>
-            ) : null}
-            {lead.budget ? (
-              <div className="rounded-xl border border-border bg-surface-card p-4">
-                <p className="eyebrow mb-1">Budget</p>
-                <p className="text-[16px] text-ink-primary">{lead.budget}</p>
-              </div>
-            ) : null}
-            <div className="rounded-xl border border-border bg-surface-card p-4">
-              <p className="eyebrow mb-1">Created</p>
-              <p className="text-[16px] text-ink-primary">{timeAgo(lead.created_at)}</p>
-            </div>
-          </div>
+          <LeadDetailsTab lead={lead} onLeadUpdated={setLead} />
         ) : tab === "timeline" ? (
           <div className="space-y-3">
             {timeline.length === 0 ? (
@@ -156,7 +134,7 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
             )}
           </div>
         ) : tab === "quotes" ? (
-          <LeadQuotations leadId={leadId} leadPhone={lead.phone} />
+          <LeadQuotations leadId={leadId} clientId={lead.client_id} leadPhone={lead.phone} />
         ) : (
           <LeadSendPanel leadId={leadId} clientId={lead.client_id} leadPhone={lead.phone} />
         )}

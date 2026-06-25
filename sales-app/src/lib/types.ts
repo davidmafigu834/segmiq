@@ -14,7 +14,9 @@ export type LeadRow = {
   email?: string | null;
   status: LeadStatus | string;
   score?: number | null;
+  score_breakdown?: Record<string, number> | null;
   is_stale?: boolean | null;
+  stale_since?: string | null;
   budget?: string | null;
   project_type?: string | null;
   timeline?: string | null;
@@ -24,6 +26,11 @@ export type LeadRow = {
   client_id: string;
   source?: string | null;
   updated_at?: string;
+  magic_token?: string | null;
+  manual_priority?: "hot" | "warm" | "cold" | null;
+  deal_value?: number | null;
+  lost_reason?: string | null;
+  not_qualified_reason?: string | null;
   clients?: {
     name?: string | null;
     industry?: string | null;

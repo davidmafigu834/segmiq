@@ -3,8 +3,8 @@ import { canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { countNoAnswerAttempts } from "@/lib/call-log-save";
 
-export async function GET(_req: Request, { params }: { params: { leadId: string } }) {
-  const access = await canReadLead(params.leadId);
+export async function GET(req: Request, { params }: { params: { leadId: string } }) {
+  const access = await canReadLead(params.leadId, req);
   if (!access.ok) {
     return NextResponse.json({ error: "Not found" }, { status: access.status === 401 ? 401 : 404 });
   }
