@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { generatePresignedUploadUrl, generateOriginalMediaKey, generateHeroKey, generateTestimonialPhotoKey, generateVideoKey, getPublicUrl } from "@/lib/storage/r2";
-
-function generateLogoKey(clientId: string, filename: string): string {
-  const ext = filename.split(".").pop() ?? "png";
-  return `clients/${clientId}/logo/${Date.now()}.${ext}`;
-}
+import { generateLogoKey, resolveImageContentType } from "@/lib/storage/logo-upload";
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -28,7 +24,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { filename, contentType, clientId, projectId, purpose, fileSize } = await req.json() as {
+  const { filename, contentType: rawContentType, clientId, projectId, purpose, fileSize } = await req.json() as {
     filename: string;
     contentType: string;
     clientId: string;
@@ -36,6 +32,18 @@ export async function POST(req: Request) {
     purpose?: "hero" | "media" | "testimonial" | "logo";
     fileSize?: number;
   };
+
+  const contentType =
+    purpose === "logo"
+      ? resolveImageContentType(filename, rawContentType) ?? rawContentType
+      : rawContentType;
+
+  if (purpose === "logo" && !contentType) {
+    return NextResponse.json(
+      { error: "Only JPEG, PNG, WEBP, and HEIC images are supported" },
+      { status: 400 }
+    );
+  }
 
   const isVideo = contentType.startsWith("video/");
   const maxSize = isVideo ? 200 * 1024 * 1024 : 20 * 1024 * 1024;

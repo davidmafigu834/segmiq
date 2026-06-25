@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MailCheck } from "lucide-react";
+import { Loader2, MailCheck, Upload } from "lucide-react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -66,8 +66,11 @@ export function ClientSettingsClient({
   const tempPassStorageKey = `client-settings-temp-pass:${clientId}`;
   const [tab, setTab] = useState(() => normalizeSettingsTab(initialTab));
   const notificationsSectionRef = useRef<HTMLDivElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
 
   const [client, setClient] = useState(initialClient);
   const [sales, setSales] = useState(initialSalespeople);
@@ -193,6 +196,37 @@ export function ClientSettingsClient({
       setToast(e instanceof Error ? e.message : "Error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleLogoFile(file: File) {
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError("File too large. Max 5 MB.");
+      return;
+    }
+    setUploadingLogo(true);
+    setLogoError(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const uploadRes = await fetch(`/api/clients/${clientId}/logo/upload`, {
+        method: "POST",
+        body,
+      });
+      const payload = (await uploadRes.json().catch(() => ({}))) as {
+        publicUrl?: string;
+        error?: string;
+      };
+      if (!uploadRes.ok || !payload.publicUrl) {
+        throw new Error(payload.error ?? "Upload failed");
+      }
+      await patchClient({ logo_url: payload.publicUrl });
+      setProfileForm((f) => ({ ...f, logo_url: payload.publicUrl! }));
+      setToast("Logo uploaded.");
+    } catch (e) {
+      setLogoError(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploadingLogo(false);
     }
   }
 
@@ -486,6 +520,39 @@ export function ClientSettingsClient({
                   onChange={(e) => setProfileForm((f) => ({ ...f, slug: e.target.value.toLowerCase() }))}
                 />
               </label>
+              <div>
+                <span className="font-mono text-[10px] uppercase text-ink-tertiary">Logo</span>
+                <div className="mt-2 flex flex-wrap items-center gap-4">
+                  <ClientAvatar
+                    name={profileForm.name || "Client"}
+                    size={64}
+                    src={profileForm.logo_url || null}
+                  />
+                  <div className="flex flex-col gap-2">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp,image/heic"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void handleLogoFile(file);
+                        e.target.value = "";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={uploadingLogo || saving}
+                      className="inline-flex items-center gap-2 rounded-md border border-border bg-surface-card px-3 py-2 text-sm font-medium text-ink-primary hover:border-border-hover disabled:opacity-50"
+                    >
+                      {uploadingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      {uploadingLogo ? "Uploading…" : "Upload logo"}
+                    </button>
+                  </div>
+                </div>
+                {logoError ? <p className="mt-2 text-xs text-[var(--danger-fg)]">{logoError}</p> : null}
+              </div>
               <label className="block">
                 <span className="font-mono text-[10px] uppercase text-ink-tertiary">Logo URL</span>
                 <input

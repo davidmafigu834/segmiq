@@ -178,25 +178,22 @@ export function CompanyProfileManager({
     setUploadingLogo(true);
     setLogoError(null);
     try {
-      const presignRes = await fetch("/api/storage/presign", {
+      const body = new FormData();
+      body.append("file", file);
+      const uploadRes = await fetch(`/api/clients/${clientId}/logo/upload`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          clientId,
-          purpose: "logo",
-        }),
+        body,
       });
-      if (!presignRes.ok) throw new Error("Failed to get upload URL");
-      const { uploadUrl, key, publicUrl } = (await presignRes.json()) as {
-        uploadUrl: string;
-        key: string;
-        publicUrl: string;
+      const payload = (await uploadRes.json().catch(() => ({}))) as {
+        publicUrl?: string;
+        key?: string;
+        error?: string;
       };
-      await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
-      await patchProfile({ logo_url: publicUrl, logo_key: key });
-      setForm((f) => ({ ...f, logo_url: publicUrl }));
+      if (!uploadRes.ok || !payload.publicUrl || !payload.key) {
+        throw new Error(payload.error ?? "Upload failed");
+      }
+      await patchProfile({ logo_url: payload.publicUrl, logo_key: payload.key });
+      setForm((f) => ({ ...f, logo_url: payload.publicUrl! }));
       setLogoPreview(null);
       setProfileSaved(true);
     } catch (e) {
