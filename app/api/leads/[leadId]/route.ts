@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { canModifyLead, canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -54,8 +52,10 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
   const parsed = patchSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   const auth = await getAuthFromRequest(req);
-  const session = auth ?? (await getServerSession(authOptions));
-  const isAgency = session?.role === "AGENCY_ADMIN";
+  if (!auth?.userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const isAgency = auth.role === "AGENCY_ADMIN";
 
   if ((parsed.data.assigned_to_id !== undefined || parsed.data.is_archived !== undefined) && !isAgency) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -101,11 +101,16 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
   const { data: updated } = await supabase.from("leads").update(updates).eq("id", params.leadId).select("*").single();
 
   // Event logging (fire-and-forget — never blocks the response)
-  if (updated && previousLead && session?.userId) {
+  if (updated && previousLead) {
     const clientId = previousLead.client_id as string;
-    const actorId = session.userId;
-    const actorName = session.user?.name || "Unknown";
-    const actorRole = session.role || "UNKNOWN";
+    const actorId = auth.userId;
+    const actorRole = auth.role || "UNKNOWN";
+    const { data: actorUser } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", actorId)
+      .maybeSingle();
+    const actorName = (actorUser as { name: string } | null)?.name || "Unknown";
     const actor = { id: actorId, name: actorName, role: actorRole };
 
     if (parsed.data.status && parsed.data.status !== previousLead.status) {
