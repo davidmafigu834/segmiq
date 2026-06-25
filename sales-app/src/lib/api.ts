@@ -3,7 +3,19 @@ import { clearSession, getToken } from "./session";
 
 export const AUTH_EXPIRED_EVENT = "segmiq-sales:auth-expired";
 
-const API_BASE = (import.meta.env.VITE_API_BASE ?? "https://segmiq.com").replace(/\/$/, "");
+/** Apex segmiq.com 307-redirects to www; Capacitor Android drops POST bodies on redirect. */
+function normalizeApiBase(raw: string): string {
+  const trimmed = raw.replace(/\/$/, "");
+  try {
+    const url = new URL(trimmed);
+    if (url.hostname === "segmiq.com") url.hostname = "www.segmiq.com";
+    return url.origin;
+  } catch {
+    return trimmed === "https://segmiq.com" ? "https://www.segmiq.com" : trimmed;
+  }
+}
+
+const API_BASE = normalizeApiBase(import.meta.env.VITE_API_BASE ?? "https://www.segmiq.com");
 
 const JSON_HEADERS: Record<string, string> = {
   Accept: "application/json",

@@ -30,6 +30,13 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 
   if (!res.ok || !("token" in res.data)) {
     const apiError = (res.data as { error?: string }).error;
+    if (res.status === 403 && apiError) throw new Error(apiError);
+    if (res.status === 400 && apiError === "Invalid JSON") {
+      throw new Error("Could not reach the server. Try again or reinstall the latest app.");
+    }
+    if (res.status === 307 || res.status === 308) {
+      throw new Error("Server redirect blocked sign-in. Update the app and try again.");
+    }
     throw new Error(
       apiError === "Unauthorized"
         ? "Invalid email or password."

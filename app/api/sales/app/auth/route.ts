@@ -6,15 +6,25 @@ export const dynamic = "force-dynamic";
 
 const THIRTY_DAYS_SEC = 30 * 24 * 60 * 60;
 
+function parseLoginBody(parsed: unknown): { email?: string; password?: string } {
+  let body: unknown = parsed;
+  if (typeof body === "string") {
+    body = JSON.parse(body) as unknown;
+  }
+  // Capacitor Android may wrap the payload as { value: { email, password } }.
+  if (body && typeof body === "object" && "value" in body) {
+    const wrapped = (body as { value?: unknown }).value;
+    if (wrapped !== undefined) {
+      body = typeof wrapped === "string" ? (JSON.parse(wrapped) as unknown) : wrapped;
+    }
+  }
+  return body as { email?: string; password?: string };
+}
+
 export async function POST(req: Request) {
   let body: { email?: string; password?: string };
   try {
-    const parsed: unknown = await req.json();
-    if (typeof parsed === "string") {
-      body = JSON.parse(parsed) as { email?: string; password?: string };
-    } else {
-      body = parsed as { email?: string; password?: string };
-    }
+    body = parseLoginBody(await req.json());
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }

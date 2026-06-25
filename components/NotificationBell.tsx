@@ -132,7 +132,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
         <Bell className="h-4 w-4" strokeWidth={1.75} />
         {unreadCount > 0 ? (
           <span
-            className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-0.5 text-[10px] font-bold leading-none text-white ring-2 ring-surface-canvas"
+            className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-0.5 font-mono text-[10px] font-bold leading-none text-accent-ink ring-2 ring-bg-primary"
             aria-hidden
           >
             {unreadCount > 9 ? "9+" : unreadCount}
