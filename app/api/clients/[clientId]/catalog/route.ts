@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canAccessClient } from "@/lib/auth/permissions";
 import { canManageCatalog } from "@/lib/quotations/quote-access";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 
