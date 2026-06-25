@@ -61,8 +61,22 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  /* Guarantee a minimum top inset so content never tucks under the Android
+     status bar when edge-to-edge reports a 0px safe-area inset. */
   .safe-top {
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: max(env(safe-area-inset-top, 0px), 12px);
+  }
+
+  .ag-fade-in {
+    animation: ag-fade-in 0.4s ease both;
+  }
+
+  .ag-delay-1 {
+    animation-delay: 0.06s;
+  }
+
+  .ag-delay-2 {
+    animation-delay: 0.12s;
   }
 
   .font-display {
@@ -88,5 +102,16 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+}
+
+@keyframes ag-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

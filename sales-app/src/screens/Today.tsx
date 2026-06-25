@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { ScreenHeader } from "../components/ScreenHeader";
+import { StatsStrip } from "../components/StatsStrip";
+import { MirrorCard } from "../components/MirrorCard";
 import { TabBar, type TabId } from "../components/TabBar";
 import { LeadRowCard } from "../components/LeadRowCard";
 import { CrmCard } from "../components/crm";
@@ -94,17 +96,29 @@ export function Today({
   return (
     <div className="flex min-h-full flex-col bg-bg-primary pb-28">
       {!online ? <OfflineBanner /> : null}
-      <ScreenHeader
-        eyebrow={today}
-        title={`Good ${getGreeting()}, ${firstName}`}
-        subtitle={
-          data
-            ? `${data.numbers.callNow} to call · ${data.numbers.calledToday} logged today`
-            : undefined
-        }
-      />
+      <ScreenHeader eyebrow={today} title={`Good ${getGreeting()}, ${firstName}`}>
+        {data ? (
+          <StatsStrip
+            numbers={data.numbers}
+            onSelectCallNow={() => onTabChange("leads")}
+            onSelectFollowUps={() => onTabChange("followups")}
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-[58px] animate-pulse rounded-xl bg-bg-tertiary" />
+            ))}
+          </div>
+        )}
+      </ScreenHeader>
 
       <div className="flex-1 px-5 pt-5">
+        {data ? (
+          <div className="mb-6">
+            <MirrorCard mirror={data.mirror} />
+          </div>
+        ) : null}
+
         <div className="mb-4 flex items-center justify-between">
           <div>
             <p className="eyebrow mb-0.5">Today</p>
@@ -156,6 +170,7 @@ export function Today({
                             key={lead.id}
                             lead={lead}
                             repName={userName}
+                            now={now}
                             onOpen={onOpenLead}
                             onLogCall={(l, ch) => onLogCall(l.id, ch)}
                           />
@@ -179,6 +194,7 @@ export function Today({
                         key={lead.id}
                         lead={lead}
                         repName={userName}
+                        now={now}
                         onOpen={onOpenLead}
                         onLogCall={(l, ch) => onLogCall(l.id, ch)}
                       />

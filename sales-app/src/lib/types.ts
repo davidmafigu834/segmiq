@@ -36,19 +36,36 @@ export type LeadRow = {
     industry?: string | null;
     response_time_limit_hours?: number | null;
   } | null;
+  qualifiers?: CampaignQualifiers | null;
   aiScore?: number | null;
   followUpDue?: boolean;
+};
+
+export type CampaignQualifiers = {
+  budget_min?: number | null;
+  budget_max?: number | null;
+  target_service_types?: string[] | null;
+  target_locations?: string[] | null;
+  min_urgency?: string | null;
+};
+
+export type SalesMirror = {
+  mode: "rules" | "stall";
+  line: string;
+  dominantReason?: string;
 };
 
 export type DashboardData = {
   assignmentMode?: "direct" | "pool" | "round_robin";
   allActiveLeads: LeadRow[];
+  mirror?: SalesMirror;
   numbers: {
     totalActive: number;
     callNow: number;
     calledToday: number;
     followUpToday: number;
     slipped: number;
+    convertLaterCount?: number;
     wonThisMonth: number;
   };
 };

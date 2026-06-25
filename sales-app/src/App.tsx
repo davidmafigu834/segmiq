@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Phone } from "lucide-react";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
 import { AUTH_EXPIRED_EVENT } from "./lib/api";
 import { getPendingCount, subscribeCallLogQueue, syncQueue } from "./lib/call-log-queue";
 import { fetchDashboard, fetchLeads } from "./lib/leads";
@@ -72,6 +73,16 @@ export default function App() {
   useEffect(() => {
     void checkAuth();
   }, [checkAuth]);
+
+  // Tint the native status bar to match the black app background with light
+  // icons. The webview stays below the status bar (no overlay) so content can
+  // never tuck under the notification bar.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    void StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+    void StatusBar.setBackgroundColor({ color: "#000000" }).catch(() => {});
+    void StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handler = () => {
