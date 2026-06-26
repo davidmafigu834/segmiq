@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { contactIdsForHubFilter } from "@/lib/customer-hub/contact-filters";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 50;
@@ -26,9 +27,15 @@ export async function GET(req: Request) {
   const from = (page - 1) * limit;
   const to = from + limit - 1;
   const lifecycle = url.searchParams.get("lifecycle"); // 'lead' | 'customer' | null
+  const hubFilter = url.searchParams.get("hubFilter");
   const q = (url.searchParams.get("q") ?? "").trim().replace(/[,()%*\\:]/g, "");
 
   const supabase = createAdminClient();
+
+  const filterIds =
+    hubFilter && session.role === "CLIENT_MANAGER"
+      ? await contactIdsForHubFilter(supabase, requestedClientId, hubFilter)
+      : null;
 
   let query = supabase
     .from("contacts")
@@ -38,6 +45,12 @@ export async function GET(req: Request) {
     .eq("client_id", requestedClientId);
 
   if (lifecycle === "lead" || lifecycle === "customer") query = query.eq("lifecycle", lifecycle);
+  if (filterIds) {
+    if (filterIds.size === 0) {
+      return NextResponse.json({ contacts: [], total: 0, page, limit, hasMore: false });
+    }
+    query = query.in("id", Array.from(filterIds));
+  }
   if (q) query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%`);
   query = query.order("updated_at", { ascending: false }).range(from, to);
 

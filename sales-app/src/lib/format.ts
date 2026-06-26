@@ -42,6 +42,63 @@ export function statusLabel(status: string): string {
   return map[status] ?? status;
 }
 
+export type StatusTone = "new" | "active" | "proposal" | "won" | "lost" | "neutral";
+
+export function statusTone(status: string): StatusTone {
+  switch (status) {
+    case "NEW":
+      return "new";
+    case "CONTACTED":
+    case "NEGOTIATING":
+      return "active";
+    case "PROPOSAL_SENT":
+      return "proposal";
+    case "WON":
+      return "won";
+    case "LOST":
+    case "NOT_QUALIFIED":
+      return "lost";
+    default:
+      return "neutral";
+  }
+}
+
+export const STATUS_TONE_CLASSES: Record<
+  StatusTone,
+  { badge: string; ring: string; dot: string }
+> = {
+  new: {
+    badge: "bg-accent-muted text-accent border-accent-border",
+    ring: "ring-accent-border",
+    dot: "bg-accent",
+  },
+  active: {
+    badge: "bg-[rgba(61,214,140,0.12)] text-[var(--success)] border-[rgba(61,214,140,0.3)]",
+    ring: "ring-[rgba(61,214,140,0.25)]",
+    dot: "bg-[var(--success)]",
+  },
+  proposal: {
+    badge: "bg-[rgba(245,166,35,0.12)] text-[var(--warning)] border-[rgba(245,166,35,0.3)]",
+    ring: "ring-[rgba(245,166,35,0.25)]",
+    dot: "bg-[var(--warning)]",
+  },
+  won: {
+    badge: "bg-[rgba(61,214,140,0.12)] text-[var(--success)] border-[rgba(61,214,140,0.3)]",
+    ring: "ring-[rgba(61,214,140,0.25)]",
+    dot: "bg-[var(--success)]",
+  },
+  lost: {
+    badge: "bg-[rgba(255,68,68,0.12)] text-[var(--error)] border-[rgba(255,68,68,0.3)]",
+    ring: "ring-[rgba(255,68,68,0.25)]",
+    dot: "bg-[var(--error)]",
+  },
+  neutral: {
+    badge: "bg-bg-quaternary text-ink-secondary border-border",
+    ring: "ring-border",
+    dot: "bg-ink-tertiary",
+  },
+};
+
 export function scoreHeat(score: number | null | undefined): "hot" | "warm" | "cold" {
   if (typeof score !== "number") return "warm";
   if (score >= 60) return "hot";

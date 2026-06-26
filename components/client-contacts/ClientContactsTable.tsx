@@ -43,11 +43,15 @@ export function ClientContactsTable({
   showLifecycleFilter = false,
   heading,
   subheading,
+  hubFilter,
+  onClearHubFilter,
 }: {
   defaultLifecycle?: "customer";
   showLifecycleFilter?: boolean;
   heading: string;
   subheading: string;
+  hubFilter?: string | null;
+  onClearHubFilter?: () => void;
 }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [q, setQ] = useState("");
@@ -58,10 +62,12 @@ export function ClientContactsTable({
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchPage = useCallback(async (p: number, replace: boolean, query: string, life: string) => {
+  const fetchPage = useCallback(
+    async (p: number, replace: boolean, query: string, life: string, filter: string | null) => {
     const params = new URLSearchParams({ page: String(p), limit: "50" });
     if (life !== "all") params.set("lifecycle", life);
     if (query.trim()) params.set("q", query.trim());
+    if (filter) params.set("hubFilter", filter);
     const res = await fetch(`/api/contacts/list?${params}`);
     const data = (await res.json().catch(() => ({}))) as {
       contacts?: Row[];
@@ -71,22 +77,24 @@ export function ClientContactsTable({
     setRows((prev) => (replace ? (data.contacts ?? []) : [...prev, ...(data.contacts ?? [])]));
     setTotal(data.total ?? 0);
     setHasMore(!!data.hasMore);
-  }, []);
+  },
+    []
+  );
 
   useEffect(() => {
     setLoading(true);
     const t = setTimeout(async () => {
       setPage(1);
-      await fetchPage(1, true, q, lifecycle);
+      await fetchPage(1, true, q, lifecycle, hubFilter ?? null);
       setLoading(false);
     }, 250);
     return () => clearTimeout(t);
-  }, [q, lifecycle, fetchPage]);
+  }, [q, lifecycle, hubFilter, fetchPage]);
 
   async function loadMore() {
     setLoadingMore(true);
     const next = page + 1;
-    await fetchPage(next, false, q, lifecycle);
+    await fetchPage(next, false, q, lifecycle, hubFilter ?? null);
     setPage(next);
     setLoadingMore(false);
   }
@@ -103,6 +111,23 @@ export function ClientContactsTable({
           </p>
         </div>
       </div>
+
+      {hubFilter && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-[var(--accent)] bg-[rgba(212,255,79,0.06)] px-3 py-2">
+          <span className="text-[12.5px] text-[var(--text-secondary)]">
+            Filtered by intelligence observation
+          </span>
+          {onClearHubFilter && (
+            <button
+              type="button"
+              onClick={onClearHubFilter}
+              className="ml-auto text-[12px] font-medium text-[var(--accent)] hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mb-3.5 flex flex-wrap gap-2.5">
         <input

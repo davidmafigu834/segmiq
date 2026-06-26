@@ -96,7 +96,7 @@ export function Today({
   return (
     <div className="flex min-h-full flex-col bg-bg-primary pb-28">
       {!online ? <OfflineBanner /> : null}
-      <ScreenHeader eyebrow={today} title={`Good ${getGreeting()}, ${firstName}`}>
+      <ScreenHeader variant="hero" eyebrow={today} title={`Good ${getGreeting()}, ${firstName}`}>
         {data ? (
           <StatsStrip
             numbers={data.numbers}

@@ -6,6 +6,7 @@ type EventType =
   | "LEAD_REASSIGNED"
   | "STATUS_CHANGED"
   | "CALL_LOGGED"
+  | "INTAKE_LOGGED"
   | "NOTE_ADDED"
   | "DOCUMENT_SENT"
   | "FOLLOW_UP_SET";
@@ -29,7 +30,7 @@ export async function logLeadEvent({
   actor: Actor;
   eventType: EventType;
   eventData?: Record<string, unknown>;
-  channel?: "call" | "whatsapp";
+  channel?: "call" | "whatsapp" | "in_person";
 }): Promise<void> {
   const supabase = createAdminClient();
 
@@ -178,7 +179,7 @@ export async function logCallLogged({
   outcome: string;
   notes?: string | null;
   followUpDate?: string | null;
-  channel?: "call" | "whatsapp";
+  channel?: "call" | "whatsapp" | "in_person";
 }): Promise<void> {
   await logLeadEvent({
     leadId,
@@ -245,5 +246,38 @@ export async function logFollowUpSet({
       follow_up_date: followUpDate,
       notes: notes ?? null,
     },
+  });
+}
+
+export async function logWalkInIntake({
+  leadId,
+  clientId,
+  actor,
+  outcome,
+  notes,
+  followUpDate,
+  dealValue,
+}: {
+  leadId: string;
+  clientId: string;
+  actor: Actor;
+  outcome: string;
+  notes?: string | null;
+  followUpDate?: string | null;
+  dealValue?: number | null;
+}): Promise<void> {
+  await logLeadEvent({
+    leadId,
+    clientId,
+    actor,
+    eventType: "INTAKE_LOGGED",
+    eventData: {
+      channel: "in_person",
+      outcome,
+      notes: notes ?? null,
+      follow_up_date: followUpDate ?? null,
+      deal_value: dealValue ?? null,
+    },
+    channel: "in_person",
   });
 }

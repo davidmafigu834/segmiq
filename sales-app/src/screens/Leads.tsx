@@ -88,7 +88,7 @@ export function Leads({
       <ScreenHeader
         eyebrow="Pipeline"
         title="Leads"
-        subtitle={`${leads.length} active`}
+        badge={`${leads.length} active`}
       />
 
       <div className="px-5 pt-4">

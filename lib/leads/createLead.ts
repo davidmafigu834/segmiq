@@ -28,6 +28,12 @@ export type CreateLeadInput = {
   contactId?: string;
   forceUnassigned?: boolean;
   manualPriority?: "hot" | "warm" | "cold";
+  /** Hub/manual intake where the rep already spoke to the person (walk-in, phone call). */
+  initialStatus?: LeadStatus;
+  followUpDate?: string | null;
+  dealValue?: number | null;
+  hubIntake?: string;
+  hubSource?: string;
 };
 
 export type CreateLeadResult =
@@ -50,6 +56,11 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     contactId,
     forceUnassigned,
     manualPriority,
+    initialStatus,
+    followUpDate,
+    dealValue,
+    hubIntake,
+    hubSource,
   } = input;
   const supabase = createAdminClient();
 
@@ -184,13 +195,15 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
 
   const storedFormData = requestedPackage
     ? { ...formData, _requestedPackageName: requestedPackage.name }
-    : formData;
+    : { ...formData };
+  if (hubIntake) storedFormData.hub_intake = hubIntake;
+  if (hubSource) storedFormData.hub_source = hubSource;
 
   const leadInsert = {
     client_id: clientId,
     assigned_to_id: assignedId,
     source,
-    status: "NEW" as const,
+    status: initialStatus ?? ("NEW" as const),
     form_data: storedFormData,
     name: fields.name,
     phone: fields.phone,
@@ -203,6 +216,8 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     facebook_lead_id: facebookLeadId ?? null,
     contact_id: resolvedContactId,
     manual_priority: manualPriority ?? null,
+    follow_up_date: followUpDate ?? null,
+    deal_value: dealValue ?? null,
   };
 
   const { data: lead, error: lErr } = await supabase.from("leads").insert(leadInsert).select("*").single();

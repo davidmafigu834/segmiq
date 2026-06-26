@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronLeft, MessageCircle, Phone } from "lucide-react";
+import { ChevronLeft, ClipboardList, MessageCircle, Phone } from "lucide-react";
 import { apiGet } from "../lib/api";
 import { CrmButton } from "../components/crm";
 import { LeadDetailsTab } from "../components/LeadDetailsTab";
@@ -15,15 +15,18 @@ type DetailTab = "details" | "timeline" | "quotes" | "send";
 type Props = {
   leadId: string;
   userName: string;
+  online: boolean;
+  logRefreshKey?: number;
   onBack: () => void;
   onLogCall: (leadId: string, channel?: "call" | "whatsapp") => void;
 };
 
-export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
+export function LeadDetail({ leadId, userName, online, logRefreshKey = 0, onBack, onLogCall }: Props) {
   const [lead, setLead] = useState<LeadRow | null>(null);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [tab, setTab] = useState<DetailTab>("details");
   const [loading, setLoading] = useState(true);
+  const [localLogRefreshKey, setLocalLogRefreshKey] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -49,6 +52,17 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
     };
   }, [leadId]);
 
+  useEffect(() => {
+    if (logRefreshKey === 0) return;
+    let mounted = true;
+    void fetchLead(leadId).then((l) => {
+      if (mounted) setLead(l);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [leadId, logRefreshKey]);
+
   if (loading) {
     return (
       <div className="flex min-h-full items-center justify-center bg-bg-primary">
@@ -72,8 +86,15 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
   const firstName = name.split(/\s+/)[0] ?? name;
   const companyName = lead.clients?.name ?? undefined;
 
+  function handleLeadUpdated(updated: LeadRow) {
+    setLead(updated);
+    setLocalLogRefreshKey((k) => k + 1);
+  }
+
+  const combinedLogRefreshKey = logRefreshKey + localLogRefreshKey;
+
   return (
-    <div className="flex min-h-full flex-col bg-bg-primary pb-24 safe-top">
+    <div className="flex min-h-full flex-col bg-bg-primary pb-28 safe-top">
       <div className="border-b border-border px-5 pb-4 pt-4">
         <button
           type="button"
@@ -86,7 +107,7 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
         <p className="mt-1 text-[14px] text-ink-tertiary">{statusLabel(lead.status)}</p>
       </div>
 
-      <div className="flex overflow-x-auto border-b border-border px-5">
+      <div className="flex overflow-x-auto border-b border-border px-5 scrollbar-hide">
         {(
           [
             { id: "details", label: "Details" },
@@ -112,7 +133,14 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
         {tab === "details" ? (
-          <LeadDetailsTab lead={lead} onLeadUpdated={setLead} />
+          <LeadDetailsTab
+            lead={lead}
+            online={online}
+            logRefreshKey={combinedLogRefreshKey}
+            onLeadUpdated={handleLeadUpdated}
+            onLogCall={() => onLogCall(lead.id)}
+            onOpenSendTab={() => setTab("send")}
+          />
         ) : tab === "timeline" ? (
           <div className="space-y-3">
             {timeline.length === 0 ? (
@@ -141,12 +169,12 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
       </div>
 
       <div
-        className="safe-bottom fixed inset-x-0 bottom-0 flex gap-2 border-t border-border bg-bg-primary px-4 py-3"
+        className="safe-bottom fixed inset-x-0 bottom-0 flex gap-2 border-t border-border bg-bg-primary px-3 py-3"
         style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}
       >
         <CrmButton
           variant="secondary"
-          className="flex-1"
+          className="flex-1 min-w-0 px-2"
           onClick={() => {
             if (dialPhone(lead.phone)) onLogCall(lead.id, "call");
           }}
@@ -154,7 +182,7 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
           <Phone size={18} /> Call
         </CrmButton>
         <CrmButton
-          className="flex-1"
+          className="flex-1 min-w-0 px-2"
           onClick={() => {
             const msg = buildOpenerMessage({
               leadFirstName: firstName,
@@ -165,6 +193,13 @@ export function LeadDetail({ leadId, userName, onBack, onLogCall }: Props) {
           }}
         >
           <MessageCircle size={18} /> WhatsApp
+        </CrmButton>
+        <CrmButton
+          variant="secondary"
+          className="flex-1 min-w-0 px-2"
+          onClick={() => onLogCall(lead.id)}
+        >
+          <ClipboardList size={18} /> Log
         </CrmButton>
       </div>
     </div>

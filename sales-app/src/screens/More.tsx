@@ -1,7 +1,8 @@
-import { ExternalLink, LogOut, RefreshCw, User } from "lucide-react";
+import { ExternalLink, LogOut, RefreshCw } from "lucide-react";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { TabBar, type TabId } from "../components/TabBar";
-import { CrmButton, CrmCard } from "../components/crm";
+import { CrmButton, CrmCard, AvatarInitials } from "../components/crm";
+import { NotificationToneSettings } from "../components/NotificationToneSettings";
 import { API_BASE } from "../lib/api";
 import { getClientMode, getUserName } from "../lib/auth";
 import { useEffect, useState } from "react";
@@ -32,9 +33,7 @@ export function More({ onTabChange, onLogout, onOpenSync, followUpBadge, syncBad
 
       <div className="space-y-4 px-5 pt-4">
         <CrmCard className="flex items-center gap-3 p-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-bg-quaternary text-accent">
-            <User size={22} />
-          </div>
+          <AvatarInitials name={name} size="md" heat="warm" />
           <div>
             <p className="font-semibold text-ink-primary">{name || "Salesperson"}</p>
             <p className="text-[13px] capitalize text-ink-tertiary">
@@ -42,6 +41,8 @@ export function More({ onTabChange, onLogout, onOpenSync, followUpBadge, syncBad
             </p>
           </div>
         </CrmCard>
+
+        <NotificationToneSettings />
 
         <button type="button" onClick={onOpenSync} className="w-full text-left">
           <CrmCard className="flex items-center justify-between p-4">

@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Phone } from "lucide-react";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
+import { NotificationSheet } from "./components/NotificationSheet";
+import { LogCallSheet } from "./components/LogCallSheet";
+import { AddLeadSheet } from "./components/AddLeadSheet";
+import { AppHeaderProvider } from "./context/AppHeaderContext";
+import { useNotificationAlerts } from "./hooks/useNotificationAlerts";
 import { AUTH_EXPIRED_EVENT } from "./lib/api";
 import { getPendingCount, subscribeCallLogQueue, syncQueue } from "./lib/call-log-queue";
 import { fetchDashboard, fetchLeads } from "./lib/leads";
@@ -15,8 +20,6 @@ import { FollowUps } from "./screens/FollowUps";
 import { LeadDetail } from "./screens/LeadDetail";
 import { Sync } from "./screens/Sync";
 import { More } from "./screens/More";
-import { LogCallSheet } from "./components/LogCallSheet";
-import { AddLeadSheet } from "./components/AddLeadSheet";
 import type { TabId } from "./components/TabBar";
 import type { LeadRow } from "./lib/types";
 import { isToday } from "./screens/date-utils";
@@ -37,9 +40,24 @@ export default function App() {
   const [syncBadge, setSyncBadge] = useState(0);
   const [logSheetOpen, setLogSheetOpen] = useState(false);
   const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const [notificationSheetOpen, setNotificationSheetOpen] = useState(false);
   const [logLeadId, setLogLeadId] = useState<string | undefined>();
   const [logChannel, setLogChannel] = useState<"call" | "whatsapp">("call");
+  const [leadLogRefreshKey, setLeadLogRefreshKey] = useState(0);
   const [returnTab, setReturnTab] = useState<TabId>("today");
+
+  const openLeadById = useCallback((leadId: string) => {
+    setNotificationSheetOpen(false);
+    if (view.kind === "tab") setReturnTab(view.tab);
+    setView({ kind: "lead", leadId });
+  }, [view]);
+
+  const { unreadCount, refresh: refreshNotifications, poll: pollNotifications } =
+    useNotificationAlerts({
+      enabled: authed === true,
+      online,
+      onOpenLead: openLeadById,
+    });
 
   const refreshBadges = useCallback(async () => {
     setSyncBadge(await getPendingCount());
@@ -59,7 +77,8 @@ export default function App() {
         /* ignore */
       }
     }
-  }, []);
+    void refreshNotifications();
+  }, [refreshNotifications]);
 
   const checkAuth = useCallback(async () => {
     const ok = await isLoggedIn();
@@ -74,9 +93,6 @@ export default function App() {
     void checkAuth();
   }, [checkAuth]);
 
-  // Tint the native status bar to match the black app background with light
-  // icons. The webview stays below the status bar (no overlay) so content can
-  // never tuck under the notification bar.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     void StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
@@ -105,12 +121,15 @@ export default function App() {
 
   useEffect(() => {
     const sub = CapApp.addListener("appStateChange", ({ isActive }) => {
-      if (isActive && authed) void refreshBadges();
+      if (isActive && authed) {
+        void refreshBadges();
+        void pollNotifications();
+      }
     });
     return () => {
       void sub.then((h) => h.remove());
     };
-  }, [authed, refreshBadges]);
+  }, [authed, refreshBadges, pollNotifications]);
 
   function handleTabChange(tab: TabId) {
     if (tab === "add") {
@@ -132,6 +151,10 @@ export default function App() {
   }
 
   const handleHardwareBack = useCallback(() => {
+    if (notificationSheetOpen) {
+      setNotificationSheetOpen(false);
+      return;
+    }
     if (addLeadOpen) {
       setAddLeadOpen(false);
       return;
@@ -163,7 +186,7 @@ export default function App() {
         setView({ kind: "tab", tab: "today" });
       }
     }
-  }, [addLeadOpen, authed, logSheetOpen, returnTab, view]);
+  }, [addLeadOpen, authed, logSheetOpen, notificationSheetOpen, returnTab, view]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -177,6 +200,17 @@ export default function App() {
     setView({ kind: "tab", tab: "today" });
     setAuthed(false);
   }
+
+  const headerContext = useMemo(
+    () => ({
+      userName,
+      unreadCount,
+      showActions: view.kind !== "lead",
+      onOpenNotifications: () => setNotificationSheetOpen(true),
+      onOpenProfile: () => setView({ kind: "tab", tab: "more" }),
+    }),
+    [userName, unreadCount, view.kind]
+  );
 
   if (authed === null) {
     return (
@@ -198,68 +232,6 @@ export default function App() {
     );
   }
 
-  if (view.kind === "lead") {
-    return (
-      <>
-        <LeadDetail
-          leadId={view.leadId}
-          userName={userName}
-          onBack={() => setView({ kind: "tab", tab: returnTab })}
-          onLogCall={(id, ch) => openLogSheet(id, ch ?? "call")}
-        />
-        <LogCallSheet
-          open={logSheetOpen}
-          leads={activeLeads}
-          initialLeadId={logLeadId}
-          initialChannel={logChannel}
-          online={online}
-          onClose={() => setLogSheetOpen(false)}
-          onLogged={() => void refreshBadges()}
-        />
-        <AddLeadSheet
-          open={addLeadOpen}
-          online={online}
-          onClose={() => setAddLeadOpen(false)}
-          onCreated={(leadId) => {
-            void refreshBadges();
-            setView({ kind: "lead", leadId });
-          }}
-        />
-      </>
-    );
-  }
-
-  if (view.kind === "sync") {
-    return (
-      <>
-        <Sync
-          onTabChange={handleTabChange}
-          followUpBadge={followUpBadge}
-          syncBadge={syncBadge}
-          onSyncComplete={() => void refreshBadges()}
-        />
-        <LogCallSheet
-          open={logSheetOpen}
-          leads={activeLeads}
-          initialLeadId={logLeadId}
-          initialChannel={logChannel}
-          online={online}
-          onClose={() => setLogSheetOpen(false)}
-          onLogged={() => void refreshBadges()}
-        />
-        <AddLeadSheet
-          open={addLeadOpen}
-          online={online}
-          onClose={() => setAddLeadOpen(false)}
-          onCreated={(leadId) => {
-            void refreshBadges();
-            setView({ kind: "lead", leadId });
-          }}
-        />
-      </>
-    );
-  }
-
   const tabProps = {
     userName,
     onTabChange: handleTabChange,
@@ -271,40 +243,66 @@ export default function App() {
   };
 
   let screen = null;
-  switch (view.tab) {
-    case "today":
-      screen = <Today {...tabProps} />;
-      break;
-    case "leads":
-      screen = <Leads {...tabProps} />;
-      break;
-    case "followups":
-      screen = <FollowUps {...tabProps} />;
-      break;
-    case "more":
-      screen = (
-        <More
-          {...tabProps}
-          onLogout={() => void logout().then(handleLoggedOut)}
-          onOpenSync={() => setView({ kind: "sync" })}
-        />
-      );
-      break;
-    default:
-      screen = <Today {...tabProps} />;
+  if (view.kind === "lead") {
+    screen = (
+      <LeadDetail
+        leadId={view.leadId}
+        userName={userName}
+        online={online}
+        logRefreshKey={leadLogRefreshKey}
+        onBack={() => setView({ kind: "tab", tab: returnTab })}
+        onLogCall={(id, ch) => openLogSheet(id, ch ?? "call")}
+      />
+    );
+  } else if (view.kind === "sync") {
+    screen = (
+      <Sync
+        onTabChange={handleTabChange}
+        followUpBadge={followUpBadge}
+        syncBadge={syncBadge}
+        onSyncComplete={() => void refreshBadges()}
+      />
+    );
+  } else {
+    switch (view.tab) {
+      case "today":
+        screen = <Today {...tabProps} />;
+        break;
+      case "leads":
+        screen = <Leads {...tabProps} />;
+        break;
+      case "followups":
+        screen = <FollowUps {...tabProps} />;
+        break;
+      case "more":
+        screen = (
+          <More
+            {...tabProps}
+            onLogout={() => void logout().then(handleLoggedOut)}
+            onOpenSync={() => setView({ kind: "sync" })}
+          />
+        );
+        break;
+      default:
+        screen = <Today {...tabProps} />;
+    }
   }
 
+  const showLogFab = view.kind !== "lead";
+
   return (
-    <>
+    <AppHeaderProvider value={headerContext}>
       {screen}
-      <button
-        type="button"
-        onClick={() => openLogSheet()}
-        aria-label="Log a call"
-        className="fixed right-5 bottom-[calc(88px+env(safe-area-inset-bottom))] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-bg-quaternary text-accent shadow-lg ring-1 ring-border"
-      >
-        <Phone size={22} />
-      </button>
+      {showLogFab ? (
+        <button
+          type="button"
+          onClick={() => openLogSheet()}
+          aria-label="Log a call"
+          className="fixed right-5 bottom-[calc(88px+env(safe-area-inset-bottom))] z-40 flex h-14 w-14 items-center justify-center rounded-full bg-bg-quaternary text-accent shadow-lg ring-1 ring-border"
+        >
+          <Phone size={22} />
+        </button>
+      ) : null}
       <LogCallSheet
         open={logSheetOpen}
         leads={activeLeads}
@@ -312,7 +310,10 @@ export default function App() {
         initialChannel={logChannel}
         online={online}
         onClose={() => setLogSheetOpen(false)}
-        onLogged={() => void refreshBadges()}
+        onLogged={() => {
+          if (view.kind === "lead") setLeadLogRefreshKey((k) => k + 1);
+          void refreshBadges();
+        }}
       />
       <AddLeadSheet
         open={addLeadOpen}
@@ -324,6 +325,12 @@ export default function App() {
           setView({ kind: "lead", leadId });
         }}
       />
-    </>
+      <NotificationSheet
+        open={notificationSheetOpen}
+        onClose={() => setNotificationSheetOpen(false)}
+        onOpenLead={openLeadById}
+        onRefresh={() => void refreshNotifications()}
+      />
+    </AppHeaderProvider>
   );
 }

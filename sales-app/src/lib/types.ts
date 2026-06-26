@@ -81,14 +81,21 @@ export type TimelineEvent = {
   _source?: string;
 };
 
-export type ReachOutcome = "reached" | "no_answer" | "call_back";
-export type CallResult = "won" | "follow_up" | "lost" | "not_qualified";
+export type {
+  ReachOutcome,
+  CallResult,
+  AssetRequestKey,
+  CallbackScheduleOption,
+} from "./call-log-constants";
 
 export type LogCallPayload = {
-  reachOutcome: ReachOutcome;
-  result?: CallResult | null;
+  reachOutcome: import("./call-log-constants").ReachOutcome;
+  result?: import("./call-log-constants").CallResult | null;
   reason?: string | null;
   callbackAt?: string | null;
+  assetsRequested?: import("./call-log-constants").AssetRequestKey[] | null;
   notes?: string;
   channel?: "call" | "whatsapp";
+  isConvertLaterPick?: boolean;
+  convertLaterNote?: string | null;
 };

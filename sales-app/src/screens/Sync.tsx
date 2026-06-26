@@ -53,7 +53,7 @@ export function Sync({ onTabChange, followUpBadge, syncBadge, onSyncComplete }: 
       <ScreenHeader
         eyebrow="Offline queue"
         title="Sync"
-        subtitle={`${pending.length} pending`}
+        badge={`${pending.length} pending`}
         right={
           <button
             type="button"

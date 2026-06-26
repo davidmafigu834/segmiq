@@ -5,8 +5,8 @@ import { addMonths, startOfMonth } from "date-fns";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { ClientLeadsTable } from "@/components/client-leads/ClientLeadsTable";
 import { HubTabs } from "@/components/client-contacts/HubTabs";
+import { CustomerHubLeadsShell } from "@/components/customer-hub/CustomerHubLeadsShell";
 import type { ClientLeadListRow } from "@/components/client-leads/client-leads-types";
 
 export default async function ClientLeadsPage() {
@@ -27,7 +27,7 @@ export default async function ClientLeadsPage() {
       .order("created_at", { ascending: false })
       .range(0, PAGE_LIMIT - 1),
     supabase.from("users").select("id, name").eq("client_id", clientId).eq("role", "SALESPERSON").eq("is_active", true),
-    supabase.from("clients").select("name, slug").eq("id", clientId).maybeSingle(),
+    supabase.from("clients").select("name, slug, assignment_mode").eq("id", clientId).maybeSingle(),
   ]);
 
   const rows = leadsRaw ?? [];
@@ -58,15 +58,18 @@ export default async function ClientLeadsPage() {
   const totalThisMonth = initialLeads.filter((l) => l.created_at >= m0 && l.created_at < m1).length;
 
   const clientName = (clientRow?.name as string) ?? "Your company";
+  const assignmentMode =
+    (clientRow?.assignment_mode as "direct" | "pool" | "round_robin" | null) ?? "direct";
 
   return (
-    <ClientManagerLayout breadcrumbPage="LEADS" pageTitle="Leads" hideShellHeader>
+    <ClientManagerLayout breadcrumbPage="LEADS" pageTitle="Customer Hub" hideShellHeader>
       <Suspense fallback={<div className="shimmer h-64 rounded-xl" />}>
         <div className="px-0">
           <HubTabs />
-          <ClientLeadsTable
+          <CustomerHubLeadsShell
             clientId={clientId}
             clientName={clientName}
+            assignmentMode={assignmentMode}
             initialLeads={initialLeads}
             salespeople={(salespeople ?? []) as { id: string; name: string }[]}
             totalThisMonth={totalThisMonth}

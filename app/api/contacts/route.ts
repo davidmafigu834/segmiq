@@ -5,8 +5,24 @@ import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { createLead } from "@/lib/leads/createLead";
+import { IN_PERSON_HUB_SOURCES } from "@/lib/customer-hub/recent-status";
+import { logFollowUpSet, logWalkInIntake } from "@/lib/lead-events";
+import { recordWinAnalysis } from "@/lib/win-analysis";
+import {
+  isWalkInSource,
+  resolveWalkInIntake,
+  type WalkInIntakeOutcome,
+} from "@/lib/walk-in-intake";
 
 export const dynamic = "force-dynamic";
+
+const walkInOutcomeSchema = z.enum([
+  "quote_requested",
+  "follow_up_later",
+  "still_deciding",
+  "won_on_spot",
+  "just_browsing",
+]);
 
 const bodySchema = z.object({
   type: z.enum(["lead", "customer"]),
@@ -22,6 +38,9 @@ const bodySchema = z.object({
   assigneeId: z.string().uuid().optional(),
   forceNew: z.boolean().optional(),
   clientId: z.string().uuid().optional(),
+  intakeOutcome: walkInOutcomeSchema.optional(),
+  followUpDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  dealValue: z.number().nonnegative().optional(),
 });
 
 export async function POST(req: Request) {
@@ -123,6 +142,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, kind: "customer", contactId });
   }
 
+  const walkIn = isWalkInSource(b.source);
+  if (walkIn && !b.intakeOutcome) {
+    return NextResponse.json(
+      { error: "intakeOutcome required for walk-in leads", field: "intakeOutcome" },
+      { status: 400 }
+    );
+  }
+  if (walkIn && b.intakeOutcome === "follow_up_later" && !b.followUpDate) {
+    return NextResponse.json(
+      { error: "followUpDate required for follow-up walk-ins", field: "followUpDate" },
+      { status: 400 }
+    );
+  }
+
   let overrideAssigneeId: string | undefined;
   let forceUnassigned = false;
 
@@ -154,6 +187,26 @@ export async function POST(req: Request) {
   if (b.projectType?.trim()) formData["Project type"] = b.projectType.trim();
   if (b.notes?.trim()) formData.Notes = b.notes.trim();
 
+  let initialStatus = IN_PERSON_HUB_SOURCES.has(b.source) ? ("CONTACTED" as const) : undefined;
+  let manualPriority = b.priority;
+  let followUpDate: string | undefined;
+  let dealValue: number | undefined;
+  let hubIntake: WalkInIntakeOutcome | undefined;
+
+  if (walkIn && b.intakeOutcome) {
+    const resolved = resolveWalkInIntake(b.intakeOutcome, {
+      followUpDate: b.followUpDate,
+      dealValue: b.dealValue,
+    });
+    initialStatus = resolved.status;
+    manualPriority = resolved.manualPriority;
+    followUpDate = resolved.followUpDate;
+    dealValue = resolved.dealValue;
+    hubIntake = resolved.hubIntake;
+    formData.hub_intake = hubIntake;
+    formData.hub_source = b.source;
+  }
+
   const result = await createLead({
     clientId: requestedClientId,
     source: "MANUAL",
@@ -161,7 +214,12 @@ export async function POST(req: Request) {
     contactId,
     overrideAssigneeId,
     forceUnassigned,
-    manualPriority: b.priority,
+    manualPriority,
+    initialStatus,
+    followUpDate: followUpDate ?? null,
+    dealValue: dealValue ?? null,
+    hubIntake,
+    hubSource: walkIn ? b.source : undefined,
   });
 
   if (!result.ok) {
@@ -169,6 +227,48 @@ export async function POST(req: Request) {
       { error: "Contact saved, but creating the lead failed", detail: result.error },
       { status: 500 }
     );
+  }
+
+  const actor = {
+    id: session.userId,
+    name: "Unknown",
+    role: session.role,
+  };
+  const { data: actorRow } = await supabase
+    .from("users")
+    .select("name")
+    .eq("id", session.userId)
+    .maybeSingle();
+  if (actorRow?.name) actor.name = actorRow.name as string;
+
+  if (walkIn && b.intakeOutcome) {
+    await logWalkInIntake({
+      leadId: result.leadId,
+      clientId: requestedClientId,
+      actor,
+      outcome: b.intakeOutcome,
+      notes: b.notes?.trim() || null,
+      followUpDate: followUpDate ?? null,
+      dealValue: dealValue ?? null,
+    });
+
+    if (followUpDate) {
+      await logFollowUpSet({
+        leadId: result.leadId,
+        clientId: requestedClientId,
+        actor,
+        followUpDate,
+        notes: b.notes?.trim() || null,
+      });
+    }
+
+    if (b.intakeOutcome === "won_on_spot") {
+      await supabase
+        .from("contacts")
+        .update({ lifecycle: "customer", updated_at: new Date().toISOString() })
+        .eq("id", contactId);
+      await recordWinAnalysis(result.leadId);
+    }
   }
 
   return NextResponse.json({ ok: true, kind: "lead", contactId, leadId: result.leadId });

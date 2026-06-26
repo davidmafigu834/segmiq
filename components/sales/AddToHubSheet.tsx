@@ -13,6 +13,12 @@ import {
   Check,
 } from "lucide-react";
 
+import {
+  WALK_IN_OUTCOMES,
+  isWalkInSource,
+  type WalkInIntakeOutcome,
+} from "@/lib/walk-in-intake";
+
 type AssignmentMode = "direct" | "pool" | "round_robin";
 type LookupMatch = {
   id: string;
@@ -28,19 +34,25 @@ export function AddToHubSheet({
   assignmentMode,
   mode = "salesperson",
   clientId,
+  defaultSource,
+  hideSourceField = false,
+  variant = "default",
   onClose,
   onSuccess,
 }: {
   assignmentMode: AssignmentMode;
   mode?: "salesperson" | "manager";
   clientId?: string;
+  defaultSource?: string;
+  hideSourceField?: boolean;
+  variant?: "default" | "walk_in";
   onClose: () => void;
   onSuccess: () => void;
 }) {
   const [type, setType] = useState<"lead" | "customer">("lead");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [source, setSource] = useState(SOURCES[0]);
+  const [source, setSource] = useState(defaultSource ?? SOURCES[0]);
   const [priority, setPriority] = useState<"hot" | "warm" | "cold">("warm");
   const [email, setEmail] = useState("");
   const [projectType, setProjectType] = useState("");
@@ -59,9 +71,13 @@ export function AddToHubSheet({
   const [assigneeId, setAssigneeId] = useState("");
   const [salespeople, setSalespeople] = useState<{ id: string; name: string }[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
+  const [intakeOutcome, setIntakeOutcome] = useState<WalkInIntakeOutcome | "">("");
+  const [followUpDate, setFollowUpDate] = useState("");
+  const [dealValue, setDealValue] = useState("");
   const router = useRouter();
 
-  const isLead = type === "lead";
+  const isWalkInFlow = variant === "walk_in" || (type === "lead" && isWalkInSource(source));
+  const isLead = variant === "walk_in" ? true : type === "lead";
   const dupeBlocking = !!match && isLead && !forceNew;
 
   useEffect(() => {
@@ -100,6 +116,14 @@ export function AddToHubSheet({
       setError("Enter a valid phone number.");
       return;
     }
+    if (isWalkInFlow && !intakeOutcome) {
+      setError("Select what happened at the desk.");
+      return;
+    }
+    if (isWalkInFlow && intakeOutcome === "follow_up_later" && !followUpDate) {
+      setError("Pick a follow-up date.");
+      return;
+    }
     setSubmitting(true);
     try {
       const body: Record<string, unknown> = {
@@ -114,6 +138,14 @@ export function AddToHubSheet({
         forceNew: forceNew || undefined,
       };
       if (isLead) body.priority = priority;
+      if (isWalkInFlow && intakeOutcome) {
+        body.intakeOutcome = intakeOutcome;
+        if (followUpDate) body.followUpDate = followUpDate;
+        if (dealValue.trim()) {
+          const dv = parseFloat(dealValue.replace(/[^0-9.]/g, ""));
+          if (!Number.isNaN(dv)) body.dealValue = dv;
+        }
+      }
       if (isLead && mode === "manager") {
         body.assignMode = assignChoice === "auto" ? "round_robin" : assignChoice;
         if (assignChoice === "specific") body.assigneeId = assigneeId;
@@ -170,12 +202,14 @@ export function AddToHubSheet({
         <div className="flex shrink-0 items-start justify-between border-b border-[var(--border)] px-5 py-4">
           <div className="min-w-0">
             <h2 className="truncate font-display text-[18px] font-semibold text-[var(--text-primary)]">
-              Add to Customer Hub
+              {variant === "walk_in" ? "Log walk-in" : "Add to Customer Hub"}
             </h2>
             <p className="mt-0.5 text-[13px] text-[var(--text-secondary)]">
-              {isLead
-                ? "Capture someone and start working them."
-                : "File someone you've already done business with."}
+              {variant === "walk_in"
+                ? "They came to you — record what happens next."
+                : isLead
+                  ? "Capture someone and start working them."
+                  : "File someone you've already done business with."}
             </p>
           </div>
           <button
@@ -197,7 +231,7 @@ export function AddToHubSheet({
               <CheckCircle2 size={22} className="text-[var(--success)]" />
             </div>
             <p className="text-[15px] font-semibold text-[var(--success)]">
-              {isLead ? "Lead added" : "Customer saved"}
+              {variant === "walk_in" || isWalkInFlow ? "Walk-in logged" : isLead ? "Lead added" : "Customer saved"}
             </p>
           </div>
         ) : (
@@ -206,6 +240,7 @@ export function AddToHubSheet({
             style={{ paddingBottom: "calc(20px + env(safe-area-inset-bottom))" }}
           >
             <div className="ag-fade-in flex flex-col gap-4">
+              {variant !== "walk_in" && (
               <div className="flex gap-2">
                 {(["lead", "customer"] as const).map((t) => (
                   <button
@@ -242,6 +277,7 @@ export function AddToHubSheet({
                   </button>
                 ))}
               </div>
+              )}
 
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-[var(--text-secondary)]">Name</span>
@@ -318,22 +354,94 @@ export function AddToHubSheet({
                 </p>
               )}
 
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-[var(--text-secondary)]">Source</span>
-                <select
-                  className="input-base"
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                >
-                  {SOURCES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {!hideSourceField ? (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">Source</span>
+                  <select
+                    className="input-base"
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                  >
+                    {SOURCES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <input type="hidden" value={source} readOnly />
+              )}
 
-              {isLead && (
+              {isWalkInFlow && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">
+                    What happened? <span className="text-[var(--accent)]">*</span>
+                  </span>
+                  <div className="flex flex-col gap-2">
+                    {WALK_IN_OUTCOMES.map((o) => (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => setIntakeOutcome(o.value)}
+                        className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                          intakeOutcome === o.value
+                            ? "border-[var(--accent)] bg-[rgba(212,255,79,0.06)]"
+                            : "border-[var(--border)] bg-[var(--bg-quaternary)]"
+                        }`}
+                      >
+                        <span className="block text-[13px] font-semibold text-[var(--text-primary)]">
+                          {o.label}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-[var(--text-tertiary)]">
+                          {o.hint}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isWalkInFlow && intakeOutcome === "follow_up_later" && (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">
+                    Follow-up date <span className="text-[var(--accent)]">*</span>
+                  </span>
+                  <input
+                    type="date"
+                    className="input-base"
+                    value={followUpDate}
+                    onChange={(e) => setFollowUpDate(e.target.value)}
+                  />
+                </label>
+              )}
+
+              {isWalkInFlow && intakeOutcome === "won_on_spot" && (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">Deal value</span>
+                  <input
+                    className="input-base"
+                    value={dealValue}
+                    onChange={(e) => setDealValue(e.target.value)}
+                    placeholder="optional — e.g. 4500"
+                    inputMode="decimal"
+                  />
+                </label>
+              )}
+
+              {isWalkInFlow && (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">Notes</span>
+                  <input
+                    className="input-base"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="What did they ask for?"
+                  />
+                </label>
+              )}
+
+              {isLead && !isWalkInFlow && (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-medium text-[var(--text-secondary)]">Priority</span>
                   <div className="flex gap-2">
@@ -489,7 +597,12 @@ export function AddToHubSheet({
                 }
                 className="btn-primary mt-1 flex w-full items-center justify-center gap-2 disabled:opacity-50"
               >
-                <UserPlus size={15} /> {isLead ? "Add lead" : "Save customer"}
+                <UserPlus size={15} />{" "}
+                {variant === "walk_in" || isWalkInFlow
+                  ? "Save walk-in"
+                  : isLead
+                    ? "Add lead"
+                    : "Save customer"}
               </button>
             </div>
           </div>

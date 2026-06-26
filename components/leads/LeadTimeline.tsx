@@ -63,6 +63,7 @@ function dotColor(eventType: string, outcome?: string): string {
     return "bg-ink-tertiary";
   }
   if (eventType === "LEAD_CREATED") return "bg-[var(--info)]";
+  if (eventType === "INTAKE_LOGGED") return "bg-[var(--accent)]";
   if (eventType === "STATUS_CHANGED") return "bg-ink-secondary";
   if (eventType === "LEAD_REASSIGNED" || eventType === "LEAD_ASSIGNED") return "bg-ink-secondary";
   if (eventType === "FOLLOW_UP_SET") return "bg-ink-tertiary";
@@ -134,6 +135,37 @@ function EventContent({ event }: { event: TimelineEvent }) {
           <p className="mt-1 rounded bg-surface-card-alt px-2 py-1.5 text-[12px] text-ink-secondary">
             {notes}
           </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (event.event_type === "INTAKE_LOGGED") {
+    const outcome = (d.outcome as string) || "";
+    const notes = d.notes as string | null;
+    const followUp = d.follow_up_date as string | null;
+    const dealVal = d.deal_value as number | null | undefined;
+    const labels: Record<string, string> = {
+      quote_requested: "Quote requested",
+      follow_up_later: "Follow-up scheduled",
+      still_deciding: "Still deciding",
+      won_on_spot: "Won on the spot",
+      just_browsing: "Just browsing",
+    };
+    return (
+      <div>
+        <p className="text-[13px] text-ink-primary">
+          Walk-in intake —{" "}
+          <span className="font-medium">{labels[outcome] ?? outcome.replace(/_/g, " ")}</span>
+        </p>
+        {notes ? <p className="mt-1 text-[13px] text-ink-secondary">{notes}</p> : null}
+        {followUp ? (
+          <p className="mt-0.5 text-[11px] text-ink-tertiary">
+            Next step: {format(parseISO(followUp.includes("T") ? followUp : `${followUp}T12:00:00`), "MMM d, yyyy")}
+          </p>
+        ) : null}
+        {dealVal != null && dealVal > 0 ? (
+          <p className="mt-0.5 text-[11px] text-ink-tertiary">Deal value: {dealVal}</p>
         ) : null}
       </div>
     );

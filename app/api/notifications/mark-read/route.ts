@@ -1,20 +1,19 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export async function POST() {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) {
+export async function POST(req: Request) {
+  const auth = await getAuthFromRequest(req);
+  if (!auth?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { error } = await createAdminClient()
     .from("notifications")
     .update({ read: true })
-    .eq("user_id", session.userId)
+    .eq("user_id", auth.userId)
     .eq("read", false);
 
   if (error) {
