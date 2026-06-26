@@ -7,7 +7,7 @@ import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logLeadCreated } from "@/lib/lead-events";
 import { firstName, formatResponseWindow } from "@/lib/messaging/whatsapp-vars";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
-import type { LeadRow, LeadSource } from "@/types";
+import type { LeadRow, LeadSource, LeadStatus } from "@/types";
 
 export type RequestedPackageRef = {
   id: string;
@@ -193,7 +193,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
 
   const { token, expires } = newMagicToken();
 
-  const storedFormData = requestedPackage
+  const storedFormData: Record<string, unknown> = requestedPackage
     ? { ...formData, _requestedPackageName: requestedPackage.name }
     : { ...formData };
   if (hubIntake) storedFormData.hub_intake = hubIntake;

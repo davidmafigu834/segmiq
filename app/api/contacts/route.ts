@@ -13,6 +13,7 @@ import {
   resolveWalkInIntake,
   type WalkInIntakeOutcome,
 } from "@/lib/walk-in-intake";
+import type { LeadStatus } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -187,7 +188,9 @@ export async function POST(req: Request) {
   if (b.projectType?.trim()) formData["Project type"] = b.projectType.trim();
   if (b.notes?.trim()) formData.Notes = b.notes.trim();
 
-  let initialStatus = IN_PERSON_HUB_SOURCES.has(b.source) ? ("CONTACTED" as const) : undefined;
+  let initialStatus: LeadStatus | undefined = IN_PERSON_HUB_SOURCES.has(b.source)
+    ? "CONTACTED"
+    : undefined;
   let manualPriority = b.priority;
   let followUpDate: string | undefined;
   let dealValue: number | undefined;

@@ -35,7 +35,7 @@ export async function enrichRecentContactStatus(
     if (!latestLeadByContact.has(cid)) latestLeadByContact.set(cid, lead);
   }
 
-  const latestLeadIds = [...latestLeadByContact.values()].map((l) => l.id as string);
+  const latestLeadIds = Array.from(latestLeadByContact.values()).map((l) => l.id as string);
   const callLogLeadIds = new Set<string>();
   const quotedLeadIds = new Set<string>();
 
