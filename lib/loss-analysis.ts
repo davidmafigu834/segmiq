@@ -78,6 +78,8 @@ export type NotFitSourceStats = {
 export type LossAnalysisResult = {
   windowStart: string;
   windowEnd: string;
+  /** All call_logs for this client in the window (any outcome). */
+  totalCallLogsInWindow: number;
   totalReasonedEvents: number;
   stallReasons: Record<string, number>;
   lostReasons: Record<string, number>;
@@ -167,6 +169,14 @@ export function normalizeLossCallLog(
   log: LossCallLogRow,
   lead: LossLeadRow | undefined
 ): Pick<LossCallLogRow, "result" | "reason" | "reach_outcome"> {
+  if (log.reach_outcome === "call_back") {
+    return {
+      result: "follow_up",
+      reason: log.reason?.trim() || "Scheduled callback",
+      reach_outcome: "call_back",
+    };
+  }
+
   if (log.result) {
     return {
       result: log.result,
@@ -378,6 +388,7 @@ export function aggregateLossFromData(
   return {
     windowStart: windowStart.toISOString(),
     windowEnd: windowEnd.toISOString(),
+    totalCallLogsInWindow: windowCallLogs.length,
     totalReasonedEvents,
     stallReasons,
     lostReasons,
@@ -504,6 +515,7 @@ function emptyLossResult(windowStart: Date, windowEnd: Date): LossAnalysisResult
   return {
     windowStart: windowStart.toISOString(),
     windowEnd: windowEnd.toISOString(),
+    totalCallLogsInWindow: 0,
     totalReasonedEvents: 0,
     stallReasons: initReasonCounts(FOLLOW_UP_HOLDUP_REASONS),
     lostReasons: initReasonCounts(LOST_REASONS),
@@ -516,6 +528,47 @@ function emptyLossResult(windowStart: Date, windowEnd: Date): LossAnalysisResult
   };
 }
 
+const LOSS_LEAD_SELECT =
+  "id, status, source, deal_value, budget, form_data, lost_reason, not_qualified_reason, created_at, updated_at";
+
+function isMissingLeadsArchivedColumn(error: unknown): boolean {
+  const msg =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message: unknown }).message)
+        : "";
+  return msg.includes("column leads.is_archived does not exist");
+}
+
+async function fetchLossLeadRows(
+  supabase: ReturnType<typeof createAdminClient>,
+  clientId: string
+): Promise<LossLeadRow[]> {
+  let result = await supabase
+    .from("leads")
+    .select(LOSS_LEAD_SELECT)
+    .eq("client_id", clientId)
+    .eq("is_archived", false);
+
+  if (result.error && isMissingLeadsArchivedColumn(result.error)) {
+    result = await supabase
+      .from("leads")
+      .select(LOSS_LEAD_SELECT)
+      .eq("client_id", clientId);
+  }
+
+  if (result.error) {
+    console.error("aggregateLossAnalysis: leads fetch failed", result.error);
+    return [];
+  }
+
+  return (result.data ?? []) as LossLeadRow[];
+}
+
+const LOSS_CALL_LOG_SELECT =
+  "id, lead_id, reason, result, reach_outcome, outcome, created_at";
+
 export async function aggregateLossAnalysis(
   clientId: string,
   windowDays = 30
@@ -523,32 +576,18 @@ export async function aggregateLossAnalysis(
   const { windowStart, windowEnd } = lossWindowBounds(windowDays);
   const supabase = createAdminClient();
 
-  const { data: leads, error: leadsError } = await supabase
-    .from("leads")
-    .select(
-      "id, status, source, deal_value, budget, form_data, lost_reason, not_qualified_reason, created_at, updated_at"
-    )
-    .eq("client_id", clientId)
-    .eq("is_archived", false);
-
-  if (leadsError) {
-    console.error("aggregateLossAnalysis: leads fetch failed", leadsError);
-    return emptyLossResult(windowStart, windowEnd);
-  }
-
-  const leadRows = (leads ?? []) as LossLeadRow[];
+  const leadRows = await fetchLossLeadRows(supabase, clientId);
 
   if (leadRows.length === 0) {
     return emptyLossResult(windowStart, windowEnd);
   }
 
-  const callLogSelect =
-    "id, lead_id, reason, result, reach_outcome, outcome, created_at, leads!inner(client_id)";
+  const leadIds = leadRows.map((l) => l.id);
 
   const { data: windowLogs, error: logsError } = await supabase
     .from("call_logs")
-    .select(callLogSelect)
-    .eq("leads.client_id", clientId)
+    .select(LOSS_CALL_LOG_SELECT)
+    .in("lead_id", leadIds)
     .gte("created_at", windowStart.toISOString())
     .lte("created_at", windowEnd.toISOString());
 
@@ -566,14 +605,16 @@ export async function aggregateLossAnalysis(
   if (activeIds.size > 0) {
     const { data: followUpLogs } = await supabase
       .from("call_logs")
-      .select(callLogSelect)
-      .eq("leads.client_id", clientId)
-      .or("result.eq.follow_up,outcome.in.(FOLLOW_UP,ANSWERED)")
-      .not("reason", "is", null);
+      .select(LOSS_CALL_LOG_SELECT)
+      .in("lead_id", Array.from(activeIds))
+      .or(
+        "result.eq.follow_up,reach_outcome.eq.call_back,outcome.in.(FOLLOW_UP,ANSWERED)"
+      );
 
-    recoverableLogs = ((followUpLogs ?? []) as LossCallLogRow[]).filter((l) =>
-      activeIds.has(l.lead_id)
-    );
+    recoverableLogs = ((followUpLogs ?? []) as LossCallLogRow[]).filter((l) => {
+      const norm = normalizeLossCallLog(l, leadRows.find((r) => r.id === l.lead_id));
+      return norm.result === "follow_up" && Boolean(norm.reason?.trim());
+    });
   }
 
   const windowLogRows = (windowLogs ?? []) as LossCallLogRow[];

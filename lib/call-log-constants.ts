@@ -27,6 +27,8 @@ export const FOLLOW_UP_HOLDUP_REASONS = [
   "Can't afford now",
   "Waiting on money",
   "Project for later",
+  /** Inferred when a rep logs "Call me back" without picking a stall reason. */
+  "Scheduled callback",
 ] as const;
 
 /** Stall reasons that imply low budget confidence (call-log → form_data signal). */

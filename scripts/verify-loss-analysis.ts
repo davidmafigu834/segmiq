@@ -169,6 +169,26 @@ const sparse = aggregateLossFromData(
 );
 assert.equal(sparse.hasEnoughData, false);
 
+// Call-back logs count as follow-up with "Scheduled callback"
+const callBackLog: LossCallLogRow = {
+  id: "cb1",
+  lead_id: "l1",
+  reason: null,
+  result: null,
+  reach_outcome: "call_back",
+  outcome: "FOLLOW_UP",
+  created_at: "2026-05-15T10:00:00.000Z",
+};
+const callBackResult = aggregateLossFromData(
+  [callBackLog],
+  [leads[0]!],
+  [callBackLog],
+  windowStart,
+  windowEnd
+);
+assert.equal(callBackResult.stallReasons["Scheduled callback"], 1);
+assert.equal(callBackResult.totalReasonedEvents, 1);
+
 // Targeting rule: should NOT fire below threshold
 const belowThreshold = buildTargetingRecommendations(
   { ...result, notFitOutcomes: 2, hasEnoughData: true },

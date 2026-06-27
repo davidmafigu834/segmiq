@@ -20,6 +20,7 @@ import { LOSS_MIN_REASONED_EVENTS } from "@/lib/loss-analysis-constants";
 type LossAnalysis = {
   windowStart: string;
   windowEnd: string;
+  totalCallLogsInWindow: number;
   totalReasonedEvents: number;
   stallReasons: Record<string, number>;
   lostReasons: Record<string, number>;
@@ -122,6 +123,7 @@ export function LossInsightsSection({ clientId }: { clientId: string }) {
     Object.values(analysis.notFitReasons).some((n) => n > 0);
 
   if (!analysis.hasEnoughData && !hasAnyReasons) {
+    const totalCalls = analysis.totalCallLogsInWindow ?? 0;
     return (
       <Card>
         <CardBody>
@@ -134,11 +136,23 @@ export function LossInsightsSection({ clientId }: { clientId: string }) {
               aria-hidden
             />
             <p className="m-0 text-[13px] text-[var(--text-secondary)]">
-              Not enough outcome data yet
+              {totalCalls > 0
+                ? `${totalCalls} calls logged — no stall, lost, or not-a-fit reasons yet`
+                : "Not enough outcome data yet"}
             </p>
             <p className="mt-1.5 max-w-md text-[12px] text-[var(--text-tertiary)]">
-              Keep logging calls with the two-step flow — stall, lost, and not-a-fit
-              reasons will appear here as patterns emerge.
+              {totalCalls > 0 ? (
+                <>
+                  Call logs are saving, but this section needs outcomes with a reason:
+                  reached → follow-up / lost / not qualified, or &quot;Call me back&quot; with a
+                  schedule. No-answer logs don&apos;t appear here.
+                </>
+              ) : (
+                <>
+                  Keep logging calls with the two-step flow — stall, lost, and not-a-fit
+                  reasons will appear here as patterns emerge.
+                </>
+              )}
             </p>
           </div>
         </CardBody>

@@ -21,8 +21,11 @@ import {
   DollarSign,
   CheckCircle2,
   Percent,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { formatCurrencyUsd, leadJoinName } from "@/lib/format";
+import { GrowthTrendChart, type GrowthTrendPoint } from "@/components/dashboard/GrowthTrendChart";
 import {
   canNudgeRetargeting,
   retargetingStatusLabel,
@@ -95,6 +98,12 @@ type DashboardData = {
     weekWon: number;
     totalActiveLeads: number;
   };
+  deltas?: {
+    weekLeadsPct: number | null;
+    weekWonPct: number | null;
+    contactRatePts: number | null;
+  };
+  growthTrend?: GrowthTrendPoint[];
   clientName: string;
   retargeting?: RetargetingStatusView | null;
 };
@@ -159,6 +168,39 @@ function contactRateColour(rate: number | null): string {
   if (rate >= 70) return "text-[var(--success)]";
   if (rate >= 40) return "text-[var(--warning)]";
   return "text-[var(--error)]";
+}
+
+function DeltaBadge({
+  pct,
+  suffix,
+}: {
+  pct: number | null;
+  suffix: string;
+}) {
+  if (pct === null) {
+    return (
+      <p className="text-[12px] font-medium text-[var(--text-tertiary)]">
+        vs last week
+      </p>
+    );
+  }
+  const up = pct > 0;
+  const flat = pct === 0;
+  const Icon = up ? TrendingUp : TrendingDown;
+  const cls = flat
+    ? "text-[var(--text-tertiary)]"
+    : up
+      ? "text-[var(--success)]"
+      : "text-[var(--error)]";
+  return (
+    <p className={`flex items-center gap-1 text-[12px] font-semibold ${cls}`}>
+      {!flat && <Icon size={12} />}
+      {up ? "+" : ""}
+      {pct}
+      {suffix}
+      <span className="font-medium text-[var(--text-tertiary)]"> vs last week</span>
+    </p>
+  );
 }
 
 // ============================================
@@ -370,8 +412,8 @@ export default function ClientDashboardMain({
               {
                 label: "Leads this week",
                 value: String(data.pulseMetrics.weekLeads),
-                delta: null as string | null,
-                deltaKind: "neutral" as "neutral" | "negative",
+                deltaPct: data.deltas?.weekLeadsPct ?? null,
+                deltaSuffix: "%",
               },
               {
                 label: "Contact rate",
@@ -379,29 +421,20 @@ export default function ClientDashboardMain({
                   data.pulseMetrics.contactRate !== null
                     ? `${data.pulseMetrics.contactRate}%`
                     : "—",
-                delta:
-                  data.pulseMetrics.contactRate !== null &&
-                  data.pulseMetrics.contactRate < 40
-                    ? "Below target"
-                    : null,
-                deltaKind: (
-                  data.pulseMetrics.contactRate !== null &&
-                  data.pulseMetrics.contactRate < 40
-                    ? "negative"
-                    : "neutral"
-                ) as "neutral" | "negative",
+                deltaPct: data.deltas?.contactRatePts ?? null,
+                deltaSuffix: "pts",
               },
               {
                 label: "Won this week",
                 value: String(data.pulseMetrics.weekWon),
-                delta: null as string | null,
-                deltaKind: "neutral" as "neutral" | "negative",
+                deltaPct: data.deltas?.weekWonPct ?? null,
+                deltaSuffix: "%",
               },
               {
                 label: "Active leads",
                 value: String(data.pulseMetrics.totalActiveLeads),
-                delta: null as string | null,
-                deltaKind: "neutral" as "neutral" | "negative",
+                deltaPct: null as number | null,
+                deltaSuffix: "%",
               },
             ] as const
           ).map((metric) => (
@@ -414,21 +447,20 @@ export default function ClientDashboardMain({
               >
                 {metric.value}
               </p>
-              {metric.delta && (
-                <p
-                  className={`text-[12px] font-medium ${
-                    metric.deltaKind === "negative"
-                      ? "text-[var(--error)]"
-                      : "text-[var(--text-tertiary)]"
-                  }`}
-                >
-                  {metric.delta}
-                </p>
-              )}
+              <DeltaBadge pct={metric.deltaPct} suffix={metric.deltaSuffix} />
             </div>
           ))}
         </div>
       </div>
+
+      {/* ============================================
+          GROWTH TREND
+          ============================================ */}
+      {data.growthTrend && data.growthTrend.length > 0 && (
+        <div className="ag-fade-in ag-delay-1 mb-8">
+          <GrowthTrendChart data={data.growthTrend} />
+        </div>
+      )}
 
       {/* ============================================
           TEAM + PIPELINE — two column

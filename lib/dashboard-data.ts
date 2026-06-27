@@ -12,7 +12,7 @@ import {
   type SalesMirrorResult,
 } from "@/lib/mirror-nudges";
 import { countLaneMetrics, resolveSalesMirror } from "@/lib/sales-mirror";
-import { addMonths, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
+import { addMonths, format, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
 import { getClientActivePipelineValue } from "@/lib/client-team-report";
 import { buildSoloBusinessPulseMetrics, type PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 import { classifyLeadLane } from "@/lib/lead-lanes";
@@ -626,6 +626,107 @@ export async function fetchClientTeamOverview(clientId: string): Promise<ClientT
   }));
 }
 
+export type GrowthTrendPoint = {
+  /** Bucket key, e.g. "2026-01". */
+  month: string;
+  /** Short month label, e.g. "Jan". */
+  label: string;
+  leads: number;
+  won: number;
+  revenue: number;
+};
+
+export type DashboardDeltas = {
+  /** Week-over-week change in new leads, as a percentage. Null when not comparable. */
+  weekLeadsPct: number | null;
+  /** Week-over-week change in deals won, as a percentage. Null when not comparable. */
+  weekWonPct: number | null;
+  /** Week-over-week change in contact rate, in percentage points. Null when not comparable. */
+  contactRatePts: number | null;
+};
+
+function pctDeltaOrNull(cur: number, prev: number): number | null {
+  if (prev === 0 && cur === 0) return null;
+  if (prev === 0) return 100;
+  return Math.round(((cur - prev) / prev) * 100);
+}
+
+/**
+ * Trailing 6-month trend of leads created, deals won, and revenue won for a
+ * client. Won deals are attributed to `updated_at` (used as a close-date proxy,
+ * consistent with the reports + agency dashboard). Returns zero-filled buckets
+ * if the query fails so the dashboard never breaks.
+ */
+export async function fetchClientGrowthTrend(
+  clientId: string
+): Promise<GrowthTrendPoint[]> {
+  const supabase = createAdminClient();
+  const now = new Date();
+
+  const months = Array.from({ length: 6 }, (_, idx) => {
+    const i = 5 - idx;
+    const start = startOfMonth(subMonths(now, i));
+    const end = startOfMonth(subMonths(now, i - 1));
+    return {
+      start,
+      end,
+      key: format(start, "yyyy-MM"),
+      label: format(start, "MMM"),
+    };
+  });
+
+  const rangeStartIso = months[0]!.start.toISOString();
+
+  try {
+    const [createdRes, wonRes] = await Promise.all([
+      supabase
+        .from("leads")
+        .select("created_at")
+        .eq("client_id", clientId)
+        .gte("created_at", rangeStartIso),
+      supabase
+        .from("leads")
+        .select("updated_at, deal_value")
+        .eq("client_id", clientId)
+        .eq("status", "WON")
+        .gte("updated_at", rangeStartIso),
+    ]);
+
+    const created = (createdRes.data ?? []) as { created_at: string }[];
+    const won = (wonRes.data ?? []) as {
+      updated_at: string | null;
+      deal_value: number | string | null;
+    }[];
+
+    return months.map((m) => {
+      const leadsCount = created.filter((r) => {
+        const t = new Date(r.created_at);
+        return t >= m.start && t < m.end;
+      }).length;
+      const wonRows = won.filter((r) => {
+        if (!r.updated_at) return false;
+        const t = new Date(r.updated_at);
+        return t >= m.start && t < m.end;
+      });
+      return {
+        month: m.key,
+        label: m.label,
+        leads: leadsCount,
+        won: wonRows.length,
+        revenue: wonRows.reduce((s, r) => s + (Number(r.deal_value) || 0), 0),
+      };
+    });
+  } catch {
+    return months.map((m) => ({
+      month: m.key,
+      label: m.label,
+      leads: 0,
+      won: 0,
+      revenue: 0,
+    }));
+  }
+}
+
 export async function fetchClientManagerDashboardData(clientId: string) {
   const supabase = createAdminClient();
 
@@ -821,6 +922,31 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       ? Math.round((weekContacted / weekLeads.length) * 100)
       : null;
 
+  // Prior 7-day window (the week before `weekStart`) for week-over-week deltas.
+  const priorWeekStart = new Date(weekStart);
+  priorWeekStart.setDate(weekStart.getDate() - 7);
+  const priorWeekLeads = leads.filter((l) => {
+    const t = new Date(l.created_at as string);
+    return t >= priorWeekStart && t < weekStart;
+  });
+  const priorWeekContacted = priorWeekLeads.filter((l) => l.status !== "NEW").length;
+  const priorWeekWon = priorWeekLeads.filter((l) => l.status === "WON").length;
+  const priorContactRate =
+    priorWeekLeads.length > 0
+      ? Math.round((priorWeekContacted / priorWeekLeads.length) * 100)
+      : null;
+
+  const deltas: DashboardDeltas = {
+    weekLeadsPct: pctDeltaOrNull(weekLeads.length, priorWeekLeads.length),
+    weekWonPct: pctDeltaOrNull(weekWon, priorWeekWon),
+    contactRatePts:
+      contactRate != null && priorContactRate != null
+        ? contactRate - priorContactRate
+        : null,
+  };
+
+  const growthTrend = await fetchClientGrowthTrend(clientId);
+
   const clientName = (client?.name as string) ?? "";
   const rawAssignmentMode = client?.assignment_mode as string | null | undefined;
   const assignmentMode: "direct" | "pool" | "round_robin" =
@@ -850,6 +976,8 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       weekWon,
       totalActiveLeads: activeLeads.length,
     },
+    deltas,
+    growthTrend,
     clientName,
     retargeting,
   };

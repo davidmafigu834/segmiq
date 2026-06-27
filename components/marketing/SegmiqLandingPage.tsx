@@ -3,31 +3,23 @@
 /**
  * Segmiq marketing landing page — Next.js App Router (client component).
  *
- * Design system (MARKETING): dark #0C0C0C sections, lime #D4FF4F accent,
- * Inter, max-w-[1100px] centered.
- * Icons: Lucide React only. No inline styles for layout. Tailwind utilities only.
- *
- * Suggested placement: app/(marketing)/page.tsx  (or app/page.tsx)
- *
- * IMAGES: the Unsplash URLs below are PLACEHOLDERS. For production, replace with
- * real client photos served from Cloudflare R2. If you keep remote URLs, add the
- * host to next.config images.remotePatterns (see Windsurf prompt).
- *
- * FONT: load Inter once in app/layout.tsx via next/font instead of a <link>:
- *   import { Inter } from "next/font/google";
- *   const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
- *   <body className={inter.className}> ...
+ * Design system (MARKETING): dark #0A0A0A sections, lime #D4FF4F accent, Inter,
+ * max-w-[1100px] centered. Enterprise polish (ServiceNow-grade): consistent button
+ * system, gradient surface cards with hover glow, refined section headers.
+ * Shared tokens live in components/marketing/marketingTheme.ts (`m`).
+ * Icons: Lucide React only.
  */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import {
-  ArrowRight, ChevronLeft, ChevronRight, ChevronDown,
+  ArrowRight, Minus, Plus,
   MessageCircle, Link2, GraduationCap, Target, Check,
   Clock, BarChart3, Zap, Send, Play, Sun, Home, Sprout, Building2,
   BookOpen, Brain, ListChecks, type LucideIcon,
 } from "lucide-react";
 import { m } from "@/components/marketing/marketingTheme";
+import Reveal from "@/components/marketing/Reveal";
 import {
   FEATURE_CARD_HREF,
   ML,
@@ -48,6 +40,13 @@ const FEATURE_CARDS = [
   { kicker: "PLATFORM", title: "Three portals — agency, manager, and rep — on one system", img: IMG.team },
   { kicker: "WHATSAPP", title: "Every lead confirmed, every rep coached — automatically", img: IMG.electrician },
   { kicker: "INTELLIGENCE", title: "Lead scoring, win patterns, and weekly insights, built in", img: IMG.solar },
+];
+
+const STATS = [
+  { v: "60s", l: "from capture to a scored, routed lead" },
+  { v: "0–100", l: "intent score on every enquiry" },
+  { v: "7 days", l: "to fully onboard a new rep" },
+  { v: "24/7", l: "WhatsApp capture and follow-up" },
 ];
 
 const TABS: Record<string, { kicker: string; title: string; Icon: LucideIcon; href: string }[]> = {
@@ -103,12 +102,20 @@ const PLANS = [
 
 const MARKETS = ["Harare", "Lusaka", "Johannesburg", "Nairobi", "Cape Town", "Bulawayo"];
 
-const tabActive = "text-white";
-const tabIdle = "text-white/50";
-const industryList = `rounded-xl border ${m.border} p-2 text-sm`;
-const industryIdle = "text-white/55 hover:bg-white/[0.05]";
-const industryPanel = "p-6 bg-white/[0.04]";
-const storyCard = `group rounded-xl border ${m.border} overflow-hidden bg-white/[0.02]`;
+/* ---------- small building blocks ---------- */
+function SectionHeading({
+  eyebrow, title, sub, center = true, className = "",
+}: { eyebrow: string; title: ReactNode; sub?: ReactNode; center?: boolean; className?: string }) {
+  return (
+    <div className={`${center ? "mx-auto max-w-[640px] text-center" : "max-w-[620px]"} ${className}`}>
+      <span className={m.eyebrowChip}>{eyebrow}</span>
+      <h2 className="mt-4 text-[30px] sm:text-[40px] leading-[1.08] font-extrabold tracking-tight text-white">
+        {title}
+      </h2>
+      {sub && <p className="mt-4 text-[15px] sm:text-base text-white/60">{sub}</p>}
+    </div>
+  );
+}
 
 /* ---------- component ---------- */
 export default function SegmiqLandingPage() {
@@ -120,61 +127,83 @@ export default function SegmiqLandingPage() {
 
   return (
     <div className={`relative antialiased font-sans ${m.page}`}>
-      {/* ===== THREE FEATURE PHOTO CARDS ===== */}
-      <section className="pt-8 sm:pt-10 pb-6">
-        <div className="mx-auto max-w-[1100px] px-5">
-          <div className="max-w-[620px] mx-auto mb-10 text-center">
-            <div className="text-[12px] tracking-widest font-semibold text-[#D4FF4F]">WHAT SEGMIQ DOES</div>
-            <h2 className="mt-3 text-[30px] sm:text-[40px] leading-[1.08] font-extrabold tracking-tight text-white">
-              Everything between a lead and a contract
-            </h2>
-            <p className="mt-4 text-[15px] sm:text-base text-white/60">
-              Segmiq captures the enquiry, follows it up, and helps your team close — one system built
-              for how trade businesses in Africa actually sell.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {FEATURE_CARDS.map(({ kicker, title, img }) => (
-              <a key={kicker} href={FEATURE_CARD_HREF[kicker] ?? ML.features} className={`group relative block h-[300px] overflow-hidden rounded-2xl ring-1 ${m.ring} text-white transition-transform duration-300 hover:-translate-y-1`}>
-                <Image src={img} alt={kicker} fill sizes="(max-width:768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/35 to-black/90" />
-                <div className="absolute bottom-0 left-0 p-5">
-                  <div className="text-[11px] tracking-widest text-[#D4FF4F] font-semibold">{kicker}</div>
-                  <div className="mt-1 text-[17px] font-semibold leading-snug">{title}</div>
-                </div>
-              </a>
+      {/* ===== STATS BAND ===== */}
+      <section className="border-b border-white/10 bg-white/[0.015]">
+        <div className="mx-auto max-w-[1100px] px-5 py-8">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+            {STATS.map((s) => (
+              <div key={s.l} className="text-center md:text-left">
+                <div className="text-[28px] font-extrabold tracking-tight text-[#D4FF4F]">{s.v}</div>
+                <div className="mt-1 text-[13px] leading-snug text-white/55">{s.l}</div>
+              </div>
             ))}
           </div>
-          <div className="flex items-center gap-2 mt-4">
-            <button className={m.iconBtn}><ChevronLeft className="w-[18px] h-[18px]" /></button>
-            <button className={m.iconBtn}><ChevronRight className="w-[18px] h-[18px]" /></button>
+        </div>
+      </section>
+
+      {/* ===== THREE FEATURE PHOTO CARDS ===== */}
+      <section className="pt-16 pb-6 sm:pt-20">
+        <div className="mx-auto max-w-[1100px] px-5">
+          <SectionHeading
+            eyebrow="What Segmiq does"
+            title="Everything between a lead and a contract"
+            sub="Segmiq captures the enquiry, follows it up, and helps your team close — one system built for how trade businesses in Africa actually sell."
+            className="mb-12"
+          />
+          <div className="grid gap-5 md:grid-cols-3">
+            {FEATURE_CARDS.map(({ kicker, title, img }, i) => (
+              <Reveal key={kicker} delay={i * 90}>
+              <a
+                href={FEATURE_CARD_HREF[kicker] ?? ML.features}
+                className={`mk-shine group relative block h-[320px] overflow-hidden rounded-2xl border border-white/10 text-white transition-all duration-300 hover:-translate-y-1 hover:border-[#D4FF4F]/30 hover:shadow-[0_24px_60px_-28px_rgba(0,0,0,0.8)]`}
+              >
+                <Image src={img} alt={kicker} fill sizes="(max-width:768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/90" />
+                <div className="absolute inset-x-0 bottom-0 p-6">
+                  <span className={m.eyebrow}>{kicker}</span>
+                  <div className="mt-2 text-[18px] font-semibold leading-snug">{title}</div>
+                  <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#D4FF4F] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    Learn more <ArrowRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </a>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ===== TABBED ROW ===== */}
-      <section className="py-8">
+      <section className="py-12">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className={m.panel}>
-            <div className={`flex gap-6 text-sm border-b mb-5 ${m.border}`}>
+          <div className={m.glass}>
+            <div className={`mb-6 flex gap-2 ${""}`}>
               {Object.keys(TABS).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
-                  className={`relative pb-2.5 ${tab === t ? `${tabActive} after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:bg-[#D4FF4F]` : tabIdle}`}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                    tab === t ? "bg-[#D4FF4F] text-black" : "text-white/55 hover:bg-white/[0.06] hover:text-white"
+                  }`}
                 >
                   {t}
                 </button>
               ))}
             </div>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid gap-4 md:grid-cols-3">
               {TABS[tab].map(({ kicker, title, Icon, href }) => (
-                <a key={title} href={href} className={`flex items-center justify-between gap-3 transition-transform duration-300 hover:-translate-y-1 ${m.card}`}>
+                <a
+                  key={title}
+                  href={href}
+                  className="group flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D4FF4F]/30 hover:bg-white/[0.05]"
+                >
                   <div>
-                    <div className={`text-[11px] tracking-widest font-semibold ${m.faint}`}>{kicker}</div>
+                    <div className={`text-[11px] font-semibold tracking-widest ${m.faint}`}>{kicker}</div>
                     <div className="mt-1 text-sm font-medium leading-snug">{title}</div>
                   </div>
-                  <span className={`shrink-0 grid place-items-center w-11 h-11 ${m.cardIcon}`}><Icon className="w-[22px] h-[22px]" /></span>
+                  <span className={`h-11 w-11 shrink-0 ${m.iconTile} transition-colors group-hover:border-[#D4FF4F]/40`}>
+                    <Icon className="h-[22px] w-[22px]" />
+                  </span>
                 </a>
               ))}
             </div>
@@ -183,32 +212,38 @@ export default function SegmiqLandingPage() {
       </section>
 
       {/* ===== PRODUCTS ACCORDION ===== */}
-      <section id="products" className="py-12">
+      <section id="products" className="py-16">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className="grid lg:grid-cols-2 lg:gap-10 lg:items-start">
+          <div className="grid lg:grid-cols-2 lg:gap-12 lg:items-start">
             <div className="lg:sticky lg:top-24 lg:self-start lg:z-10">
-              <h2 className="text-[30px] font-extrabold leading-tight">
+              <span className={m.eyebrowChip}>The platform</span>
+              <h2 className="mt-4 text-[30px] font-extrabold leading-tight">
                 Access the full <span className={m.highlight}>revenue stack</span>, plus the intelligence layer
               </h2>
-              <p className={`mt-4 text-[15px] max-w-[420px] ${m.muted}`}>
+              <p className={`mt-4 max-w-[420px] text-[15px] ${m.muted}`}>
                 Capture leads, route them in seconds, send your portfolio in one tap, and let the platform tell you who to call next.
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <a href={ML.login} className="px-5 py-2.5 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">Open the platform</a>
-                <a href={ML.features} className={`px-5 py-2.5 ${m.ghostBtn}`}>See all features</a>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <a href={ML.login} className={m.btnPrimary}>Open the platform <ArrowRight className="h-4 w-4" /></a>
+                <a href={ML.features} className={m.btnSecondary}>See all features</a>
               </div>
             </div>
-            <div className={`mt-10 lg:mt-0 border-t ${m.border} lg:relative lg:border-t-0`}>
+            <div className={`mt-10 lg:mt-0`}>
               {ACCORDION.map((a, i) => {
                 const open = openRow === i;
                 return (
-                  <div key={a.t} className={`border-b ${m.border}`}>
-                    <button onClick={() => setOpenRow(open ? -1 : i)} className="w-full flex items-center justify-between py-4 text-[15px] font-medium text-left">
+                  <div
+                    key={a.t}
+                    className={`mb-2.5 rounded-xl border transition-colors ${open ? "border-[#D4FF4F]/30 bg-white/[0.04]" : "border-white/10 bg-white/[0.015] hover:border-white/20"}`}
+                  >
+                    <button onClick={() => setOpenRow(open ? -1 : i)} className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left text-[15px] font-medium">
                       <span>{a.t}</span>
-                      <ChevronDown className={`w-[18px] h-[18px] ${m.faint} transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+                      <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border ${open ? "border-[#D4FF4F]/40 text-[#D4FF4F]" : "border-white/15 text-white/50"}`}>
+                        {open ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                      </span>
                     </button>
                     <div className={`overflow-hidden transition-[max-height] duration-300 ${open ? "max-h-40" : "max-h-0"}`}>
-                      <p className={`pb-4 pr-8 text-sm ${m.muted}`}>{a.d}</p>
+                      <p className={`px-4 pb-4 pr-10 text-sm ${m.muted}`}>{a.d}</p>
                     </div>
                   </div>
                 );
@@ -219,24 +254,27 @@ export default function SegmiqLandingPage() {
       </section>
 
       {/* ===== DARK SHOWCASE ===== */}
-      <section className={`text-white py-16 ${m.sectionBand}`}>
+      <section className={`py-20 ${m.sectionBand} bg-gradient-to-b from-white/[0.02] to-transparent text-white`}>
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
-            <h2 className="text-[28px] sm:text-[32px] font-extrabold leading-tight">
-              Scale your sales engine with the <span className="text-[#D4FF4F]">Segmiq intelligence layer</span>
-            </h2>
+          <div className="grid items-start gap-8 lg:grid-cols-2">
+            <div>
+              <span className={m.eyebrowChip}>Intelligence layer</span>
+              <h2 className="mt-4 text-[28px] sm:text-[34px] font-extrabold leading-tight">
+                Scale your sales engine with the <span className="text-[#D4FF4F]">Segmiq intelligence layer</span>
+              </h2>
+            </div>
             <div>
               <p className="text-[15px] text-white/70">
-                <span className="text-white font-medium">The intelligence engine</span> processes every lead for intent, urgency, and budget confidence — then scores it 0–100 and tells your reps exactly where to spend their day.
+                <span className="font-medium text-white">The intelligence engine</span> processes every lead for intent, urgency, and budget confidence — then scores it 0–100 and tells your reps exactly where to spend their day.
               </p>
-              <a href={ML.login} className="inline-block mt-5 px-5 py-2.5 rounded-full bg-white text-black font-semibold hover:bg-white/90">Try it in the console</a>
+              <a href={ML.login} className={`mt-5 ${m.btnPrimary}`}>Try it in the console <ArrowRight className="h-4 w-4" /></a>
             </div>
           </div>
 
-          <div className="mt-10 grid lg:grid-cols-[1fr_1.2fr] gap-6">
+          <div className="mt-12 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
             <div className="space-y-3">
-              <div className="rounded-xl bg-[#D4FF4F] text-black p-4">
-                <div className="text-[11px] tracking-widest font-semibold opacity-70">FROM CAPTURE TO CLOSE</div>
+              <div className="rounded-xl bg-[#D4FF4F] p-4 text-black shadow-[0_18px_40px_-20px_rgba(212,255,79,0.6)]">
+                <div className="text-[11px] font-semibold tracking-widest opacity-70">FROM CAPTURE TO CLOSE</div>
                 <div className="font-semibold">Score, route, and confirm a lead in under 60 seconds</div>
               </div>
               {[
@@ -244,53 +282,53 @@ export default function SegmiqLandingPage() {
                 { Icon: Clock, k: "STALE LEAD RECOVERY", d: "Detect cold leads and trigger the recovery sequence" },
                 { Icon: BarChart3, k: "WEEKLY DIGEST", d: "A manager summary in the inbox every Monday" },
               ].map(({ Icon, k, d }) => (
-                <div key={k} className="rounded-xl bg-[#181818] p-4 flex items-start gap-3">
-                  <Icon className="w-[18px] h-[18px] mt-0.5 text-[#D4FF4F]" />
+                <div key={k} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition-colors hover:border-white/20">
+                  <span className={`h-9 w-9 shrink-0 ${m.iconTile}`}><Icon className="h-[18px] w-[18px]" /></span>
                   <div>
-                    <div className="text-[11px] tracking-widest text-[#D4FF4F] font-semibold">{k}</div>
+                    <div className="text-[11px] font-semibold tracking-widest text-[#D4FF4F]">{k}</div>
                     <div className="text-white/80">{d}</div>
                   </div>
                 </div>
               ))}
-              <a href={ML.featuresIntelligence} className="inline-flex items-center gap-1 text-[#D4FF4F] font-semibold pt-1">View more <ArrowRight className="w-4 h-4" /></a>
+              <a href={ML.featuresIntelligence} className={`pt-1 ${m.btnLink}`}>View more <ArrowRight className="h-4 w-4" /></a>
             </div>
 
             {/* mock dashboard */}
-            <div className="rounded-xl bg-[#0A0A14] border border-white/10 p-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#ff4444]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#f5a623]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#3dd68c]" />
+            <div className="mk-border-glow rounded-2xl border border-white/10 bg-[#0A0A14] p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.9)]">
+              <div className="mb-4 flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
               </div>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {[ ["92", "intent score", ""], ["18m", "avg response", "text-[#D4FF4F]"], ["7", "hot leads", ""] ].map(([v, l, c]) => (
-                  <div key={l} className="rounded-lg bg-[#181818] p-3">
+                {[ ["92", "intent score", "text-white"], ["18m", "avg response", "text-[#D4FF4F]"], ["7", "hot leads", "text-white"] ].map(([v, l, c]) => (
+                  <div key={l} className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
                     <div className={`text-2xl font-extrabold ${c}`}>{v}</div>
                     <div className="text-[11px] text-white/50">{l}</div>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 rounded-lg bg-[#181818] p-3 space-y-2">
+              <div className="mt-3 space-y-2.5 rounded-xl border border-white/10 bg-white/[0.04] p-4">
                 {[ ["Solar — Borrowdale", 88], ["Roofing — Avondale", 71], ["Electrical — Mt Pleasant", 64] ].map(([label, pct]) => (
                   <div key={label as string}>
-                    <div className="flex justify-between text-[13px]"><span className="text-white/80">{label}</span><span className="text-[#D4FF4F] font-semibold">{pct}</span></div>
-                    <div className="h-1.5 rounded bg-white/10"><div className="h-full rounded bg-[#D4FF4F]" style={{ width: `${pct}%` }} /></div>
+                    <div className="flex justify-between text-[13px]"><span className="text-white/80">{label}</span><span className="font-semibold text-[#D4FF4F]">{pct}</span></div>
+                    <div className="mt-1 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-[#9be000] to-[#D4FF4F]" style={{ width: `${pct}%` }} /></div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="mt-6 grid md:grid-cols-3 gap-4">
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
             {[
               { Icon: Link2, t: "Share your portfolio with one tap", cta: "Open send panel", href: ML.featuresConvert },
               { Icon: GraduationCap, t: "Onboard a new rep in 7 days", cta: "Start onboarding", href: ML.featuresWhatsapp },
               { Icon: Target, t: "Build a retargeting segment in minutes", cta: "View segments", href: ML.featuresSegments },
             ].map(({ Icon, t, cta, href }) => (
-              <div key={t} className="rounded-xl bg-[#181818] p-5">
-                <span className="grid place-items-center w-10 h-10 rounded-xl bg-white/5 text-[#D4FF4F] mb-3"><Icon className="w-5 h-5" /></span>
+              <div key={t} className={`${m.surface} p-5`}>
+                <span className={`mb-3 h-10 w-10 ${m.iconTile}`}><Icon className="h-5 w-5" /></span>
                 <div className="font-medium">{t}</div>
-                <a href={href} className="text-[#D4FF4F] text-sm font-semibold mt-2 inline-flex items-center gap-1">{cta} <ArrowRight className="w-[15px] h-[15px]" /></a>
+                <a href={href} className={`mt-2 ${m.btnLink}`}>{cta} <ArrowRight className="h-[15px] w-[15px]" /></a>
               </div>
             ))}
           </div>
@@ -298,48 +336,55 @@ export default function SegmiqLandingPage() {
       </section>
 
       {/* ===== CUSTOMER STORIES ===== */}
-      <section className="py-16">
+      <section className="py-20">
         <div className="mx-auto max-w-[1100px] px-5">
-          <h2 className="text-center text-[30px] font-extrabold">
-            <span className={m.highlight}>Faster closing</span> happens on Segmiq
-          </h2>
-          <p className={`text-center text-[13px] mt-2 ${m.faint}`}>Illustrative sector examples — real client stories land as onboarding completes.</p>
-          <div className="grid md:grid-cols-3 gap-5 mt-9">
-            {STORIES.map((s) => (
-              <div key={s.title} className={`${storyCard} transition-transform duration-300 hover:-translate-y-1`}>
-                <div className="p-5">
-                  <div className="font-semibold">{s.title}</div>
-                  <p className={`text-sm mt-1 ${m.muted}`}>{s.body}</p>
-                  <a href={STORY_HREF[s.tag] ?? ML.contact} className="text-[#D4FF4F] text-sm font-semibold mt-3 inline-flex items-center gap-1">Watch demo <Play className="w-3.5 h-3.5 fill-current" /></a>
-                </div>
-                <div className="relative h-44 overflow-hidden">
-                  <Image src={s.img} alt={s.tag} fill sizes="(max-width:768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/35 to-black/90" />
-                  <div className="absolute inset-0 grid place-items-center">
-                    <span className="grid place-items-center w-12 h-12 rounded-full bg-white/90 text-black"><Play className="w-5 h-5 fill-current" /></span>
+          <SectionHeading
+            eyebrow="Outcomes"
+            title={<><span className={m.highlight}>Faster closing</span> happens on Segmiq</>}
+            sub="Illustrative sector examples — real client stories land as onboarding completes."
+            className="mb-12"
+          />
+          <div className="grid gap-5 md:grid-cols-3">
+            {STORIES.map((s, i) => (
+              <Reveal key={s.title} delay={i * 90}>
+                <div className={`mk-shine ${m.surface} overflow-hidden`}>
+                  <div className="p-6">
+                    <div className="font-semibold">{s.title}</div>
+                    <p className={`mt-1.5 text-sm ${m.muted}`}>{s.body}</p>
+                    <a href={STORY_HREF[s.tag] ?? ML.contact} className={`mt-3 ${m.btnLink}`}>Watch demo <Play className="h-3.5 w-3.5 fill-current" /></a>
                   </div>
-                  <span className="absolute bottom-3 left-4 text-white text-[13px] font-medium">{s.tag}</span>
+                  <div className="relative h-44 overflow-hidden">
+                    <Image src={s.img} alt={s.tag} fill sizes="(max-width:768px) 100vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/90" />
+                    <div className="absolute inset-0 grid place-items-center">
+                      <span className="grid h-12 w-12 place-items-center rounded-full bg-white/90 text-black transition-transform duration-300 group-hover:scale-110"><Play className="h-5 w-5 fill-current" /></span>
+                    </div>
+                    <span className="absolute bottom-3 left-4 text-[13px] font-medium text-white">{s.tag}</span>
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* ===== INDUSTRY SPLIT ===== */}
-      <section id="solutions" className="py-12">
+      <section id="solutions" className="py-16">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-            <h2 className="text-[30px] font-extrabold leading-tight max-w-[460px]">
-              Solve your pipeline problem with <span className={m.highlight}>trade solutions</span>
-            </h2>
-            <div className={`text-[15px] max-w-[360px] ${m.muted}`}>
+          <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <span className={m.eyebrowChip}>Solutions</span>
+              <h2 className="mt-4 max-w-[460px] text-[30px] font-extrabold leading-tight">
+                Solve your pipeline problem with <span className={m.highlight}>trade solutions</span>
+              </h2>
+            </div>
+            <div className={`max-w-[360px] text-[15px] ${m.muted}`}>
               From missed enquiries to slow follow-up, Segmiq is built around how service businesses actually win work.{" "}
               <a href={ML.contact} className={m.inlineLink}>Request a demo</a>
             </div>
           </div>
-          <div className="grid lg:grid-cols-[260px_1fr] gap-5">
-            <div className={industryList}>
+          <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-2.5">
               {INDUSTRIES.map((x, i) => {
                 const on = industry === i;
                 const Icon = x.Icon;
@@ -347,28 +392,30 @@ export default function SegmiqLandingPage() {
                   <button
                     key={x.n}
                     onClick={() => setIndustry(i)}
-                    className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 ${on ? "bg-[#D4FF4F] font-semibold text-black" : industryIdle}`}
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-sm transition-colors ${
+                      on ? "bg-[#D4FF4F] font-semibold text-black" : "text-white/60 hover:bg-white/[0.05] hover:text-white"
+                    }`}
                   >
-                    <Icon className="w-4 h-4 opacity-80" /> {x.n}
+                    <Icon className="h-4 w-4 opacity-80" /> {x.n}
                   </button>
                 );
               })}
-              <a href={ML.homeSolutions} className={`block px-3 py-2 mt-1 underline ${m.faint}`}>See all industries</a>
+              <a href={ML.homeSolutions} className={`mt-1 block px-3.5 py-2 text-sm underline ${m.faint} hover:text-white`}>See all industries</a>
             </div>
-            <div className={`rounded-xl border overflow-hidden grid md:grid-cols-2 ${m.border}`}>
-              <div className="relative min-h-[280px]">
+            <div className={`grid overflow-hidden rounded-2xl border ${m.border} md:grid-cols-2`}>
+              <div className="relative min-h-[300px]">
                 <Image src={IMG.construction} alt="Trade work on site" fill sizes="(max-width:768px) 100vw, 50vw" className="object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/35 to-black/90" />
-                <div className="absolute bottom-4 left-4 rounded-xl bg-black/45 backdrop-blur px-5 py-4 text-white">
+                <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/90" />
+                <div className="absolute bottom-5 left-5 rounded-2xl border border-white/10 bg-black/50 px-5 py-4 backdrop-blur">
                   <div className="text-3xl font-extrabold text-[#D4FF4F]">{ind.big}</div>
-                  <div className="text-[13px] text-white/85 max-w-[180px]">{ind.lab}</div>
+                  <div className="max-w-[180px] text-[13px] text-white/85">{ind.lab}</div>
                 </div>
               </div>
-              <div className={industryPanel}>
-                <div className={`text-[11px] tracking-widest font-semibold ${m.faint}`}>{ind.k}</div>
-                <p className={`mt-2 text-[15px] ${m.muted}`}>{ind.body}</p>
-                <a href={industrySolutionHref(ind.n)} className="inline-flex items-center gap-1 mt-4 bg-[#0C0C0C] text-[#D4FF4F] font-semibold px-3 py-1.5 rounded-full text-sm">
-                  Explore {ind.n.toLowerCase()} <ArrowRight className="w-[15px] h-[15px]" />
+              <div className="bg-white/[0.03] p-7">
+                <span className={m.eyebrow}>{ind.k}</span>
+                <p className={`mt-3 text-[15px] ${m.muted}`}>{ind.body}</p>
+                <a href={industrySolutionHref(ind.n)} className={`mt-5 ${m.btnPrimary}`}>
+                  Explore {ind.n.toLowerCase()} <ArrowRight className="h-[15px] w-[15px]" />
                 </a>
               </div>
             </div>
@@ -377,72 +424,86 @@ export default function SegmiqLandingPage() {
       </section>
 
       {/* ===== MARKETS STRIP ===== */}
-      <section className="py-10">
+      <section className="py-12">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className={`flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-[15px] font-semibold ${m.muted}`}>
+          <p className={`mb-6 text-center text-[12px] font-semibold uppercase tracking-[0.14em] ${m.faint}`}>Live across Sub-Saharan markets</p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
             {MARKETS.map((city) => (
-              <span key={city} className="inline-flex items-center gap-2"><Building2 className="w-4 h-4" /> {city}</span>
+              <span key={city} className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-4 py-2 text-[14px] font-semibold text-white/70">
+                <Building2 className="h-4 w-4 text-[#D4FF4F]" /> {city}
+              </span>
             ))}
           </div>
-          <div className="text-center mt-6">
-            <a href={ML.contact} className="px-5 py-2.5 rounded-full bg-[#D4FF4F] text-black font-semibold text-sm hover:bg-[#c8f040]">See more markets</a>
+          <div className="mt-7 text-center">
+            <a href={ML.contact} className={m.btnPrimary}>See more markets <ArrowRight className="h-4 w-4" /></a>
           </div>
         </div>
       </section>
 
       {/* ===== PRICING ===== */}
-      <section id="pricing" className={`py-14 ${m.sectionBand}`}>
+      <section id="pricing" className={`py-20 ${m.sectionBand} bg-gradient-to-b from-white/[0.02] to-transparent`}>
         <div className="mx-auto max-w-[1100px] px-5">
-          <h2 className="text-center text-[30px] font-extrabold">Pricing that scales with your team</h2>
-          <p className={`text-center text-[15px] mt-2 ${m.muted}`}>Per client company, billed monthly. Cancel anytime.</p>
-          <div className="grid md:grid-cols-3 gap-5 mt-10">
-            {PLANS.map((p) => (
+          <SectionHeading
+            eyebrow="Pricing"
+            title="Pricing that scales with your team"
+            sub="Per client company, billed monthly. Cancel anytime."
+            className="mb-12"
+          />
+          <div className="grid gap-5 md:grid-cols-3 md:items-start">
+            {PLANS.map((p, i) => (
+              <Reveal key={p.name} delay={i * 90} className={p.dark ? "md:-mt-3" : ""}>
               <div
-                key={p.name}
-                className={`transition-transform duration-300 hover:-translate-y-1 ${
+                className={`relative h-full rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1 ${
                   p.dark
-                    ? "rounded-2xl p-6 bg-[#0C0C0C] text-white ring-2 ring-[#D4FF4F]"
-                    : m.pricingCard
+                    ? "mk-border-glow border border-[#D4FF4F]/40 bg-gradient-to-b from-[#1a1f0a] to-[#0c0c0c] shadow-[0_30px_70px_-30px_rgba(212,255,79,0.35)] md:pb-9"
+                    : "border border-white/10 bg-white/[0.03] hover:border-white/20"
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className={`text-[13px] font-semibold tracking-wide ${p.dark ? "text-[#D4FF4F]" : m.pricingLabel}`}>{p.name}</div>
-                  {p.dark && <span className="text-[11px] bg-[#D4FF4F] text-black px-2 py-0.5 rounded-full font-semibold">Popular</span>}
+                  <div className={`text-[13px] font-semibold tracking-widest ${p.dark ? "text-[#D4FF4F]" : m.pricingLabel}`}>{p.name}</div>
+                  {p.dark && <span className="rounded-full bg-[#D4FF4F] px-2.5 py-0.5 text-[11px] font-semibold text-black">Most popular</span>}
                 </div>
-                <div className="mt-2 text-[40px] font-extrabold">{p.price}<span className={`text-[15px] font-medium ${p.dark ? "text-white/60" : m.pricingSub}`}>/mo</span></div>
-                <div className={`text-sm ${p.dark ? "text-white/60" : m.pricingSub}`}>{p.sub}</div>
-                <ul className="mt-5 space-y-2 text-sm">
+                <div className="mt-3 text-[44px] font-extrabold leading-none">{p.price}<span className={`text-[15px] font-medium ${p.dark ? "text-white/60" : m.pricingSub}`}>/mo</span></div>
+                <div className={`mt-1.5 text-sm ${p.dark ? "text-white/60" : m.pricingSub}`}>{p.sub}</div>
+                <div className={`my-5 ${m.divider}`} />
+                <ul className="space-y-2.5 text-sm">
                   {p.feats.map((f) => (
-                    <li key={f} className="flex gap-2"><Check className="w-[18px] h-[18px] shrink-0 text-[#D4FF4F]" /> {f}</li>
+                    <li key={f} className="flex items-center gap-2.5">
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#D4FF4F]/15 text-[#D4FF4F]"><Check className="h-3.5 w-3.5" /></span>
+                      {f}
+                    </li>
                   ))}
                 </ul>
-                <a href={ML.contact} className={`block text-center mt-6 px-4 py-2.5 rounded-full font-semibold ${p.dark ? "bg-[#D4FF4F] text-black hover:bg-[#c8f040]" : m.pricingGhost}`}>
+                <a href={ML.contact} className={`mt-7 w-full ${p.dark ? m.btnPrimary : m.btnSecondary}`}>
                   Choose {p.name.charAt(0) + p.name.slice(1).toLowerCase()}
                 </a>
               </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="py-12 sm:py-16">
+      <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-[1100px] px-5">
-          <div className="rounded-3xl bg-[#D4FF4F] p-6 sm:p-10 md:p-14 text-center">
-            <h2 className="text-[28px] sm:text-[32px] md:text-[44px] font-extrabold leading-[1.08] text-black max-w-[720px] mx-auto">
-              Let&apos;s start closing more work, today
-            </h2>
-            <p className="mt-3 sm:mt-4 text-[15px] text-black/70 max-w-[540px] mx-auto px-1">
-              Open the platform or talk to sales — we&apos;ll set up a portal and show you Segmiq on a sample of your real leads.
-            </p>
-            <div className="mt-6 sm:mt-7 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-3 max-w-[320px] sm:max-w-none mx-auto">
-              <a href={ML.login} className="px-6 py-3 rounded-full bg-black text-[#D4FF4F] font-semibold hover:opacity-90 text-center">Open the platform</a>
-              <a href={ML.contact} className="px-6 py-3 rounded-full border border-black/25 text-black font-semibold hover:bg-black/5 text-center">Contact sales</a>
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#D4FF4F] to-[#a9e000] p-6 text-center sm:p-12 md:p-16">
+            <div className="mk-glow-pulse pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/30 blur-3xl" />
+            <div className="relative">
+              <h2 className="mx-auto max-w-[720px] text-[28px] font-extrabold leading-[1.08] text-black sm:text-[36px] md:text-[46px]">
+                Let&apos;s start closing more work, today
+              </h2>
+              <p className="mx-auto mt-4 max-w-[540px] px-1 text-[15px] text-black/70">
+                Open the platform or talk to sales — we&apos;ll set up a portal and show you Segmiq on a sample of your real leads.
+              </p>
+              <div className="mx-auto mt-7 flex max-w-[320px] flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:items-center">
+                <a href={ML.login} className={m.btnOnLight}>Open the platform <ArrowRight className="h-4 w-4" /></a>
+                <a href={ML.contact} className="inline-flex items-center justify-center rounded-full border border-black/25 px-5 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-black/5">Contact sales</a>
+              </div>
             </div>
           </div>
         </div>
       </section>
-
     </div>
   );
 }

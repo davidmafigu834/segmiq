@@ -571,3 +571,151 @@ label[for="photo-input"] {
 .onboard-step-enter {
   animation: onboard-step-in 150ms ease-out;
 }
+
+/* ============================================================
+   MARKETING — glow + motion utilities (mk-*)
+   Used by the (marketing) landing page for an enterprise,
+   "alive" feel: glowing buttons, animated borders, float, etc.
+   ============================================================ */
+
+/* Glowing primary button: soft pulsing halo + a shine sweep on hover. */
+.mk-btn-glow {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  animation: mk-btn-pulse 3s ease-in-out infinite;
+}
+.mk-btn-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    120deg,
+    transparent 25%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 75%
+  );
+  transform: translateX(-160%);
+  pointer-events: none;
+}
+.mk-btn-glow:hover::after {
+  animation: mk-sheen 0.85s ease;
+}
+@keyframes mk-sheen {
+  to { transform: translateX(160%); }
+}
+@keyframes mk-btn-pulse {
+  0%, 100% { box-shadow: 0 0 18px -8px rgba(212, 255, 79, 0.55); }
+  50%      { box-shadow: 0 0 30px -4px rgba(212, 255, 79, 0.9); }
+}
+
+/* Shine sweep for any surface (cards/images) on hover. Parent needs overflow-hidden. */
+.mk-shine::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.14) 50%,
+    transparent 65%
+  );
+  transform: translateX(-160%);
+  pointer-events: none;
+}
+.mk-shine:hover::before {
+  animation: mk-sheen 0.9s ease;
+}
+
+/* Animated gradient border (border-only, via mask compositing). */
+.mk-border-glow { position: relative; }
+.mk-border-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(
+    110deg,
+    rgba(212, 255, 79, 0.8) 0%,
+    rgba(212, 255, 79, 0) 28%,
+    rgba(212, 255, 79, 0) 72%,
+    rgba(212, 255, 79, 0.8) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: mk-border-move 3.2s linear infinite;
+  pointer-events: none;
+}
+@keyframes mk-border-move {
+  to { background-position: -220% 0; }
+}
+
+/* Gentle floating motion (decorative accents). */
+.mk-float { animation: mk-float 6s ease-in-out infinite; }
+@keyframes mk-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+/* Slow radial glow pulse for ambient blobs. */
+.mk-glow-pulse { animation: mk-glow-pulse 5s ease-in-out infinite; }
+@keyframes mk-glow-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 0.7;  transform: scale(1.08); }
+}
+
+/* Animated gradient text (lime sweep). */
+.mk-text-shimmer {
+  background: linear-gradient(90deg, #d4ff4f 0%, #ffffff 30%, #d4ff4f 60%, #ffffff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  animation: mk-text-shimmer 4s linear infinite;
+}
+@keyframes mk-text-shimmer {
+  to { background-position: 200% center; }
+}
+
+/* Live status dot (pulsing ring). */
+.mk-pulse-dot { position: relative; }
+.mk-pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 0 rgba(212, 255, 79, 0.6);
+  animation: mk-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes mk-ping {
+  70%, 100% { box-shadow: 0 0 0 8px rgba(212, 255, 79, 0); }
+}
+
+/* Scroll-reveal (toggled by the Reveal component). */
+.mk-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.mk-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-btn-glow,
+  .mk-float,
+  .mk-glow-pulse,
+  .mk-text-shimmer,
+  .mk-border-glow::before,
+  .mk-pulse-dot::after { animation: none !important; }
+  .mk-btn-glow::after,
+  .mk-shine::before { display: none; }
+  .mk-reveal { opacity: 1; transform: none; transition: none; }
+}
