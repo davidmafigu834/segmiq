@@ -67,6 +67,7 @@ export async function AgencyLayout({
     { href: "/dashboard/reports", label: "Reports", icon: "bar-chart-3" as const },
     { href: "/dashboard/billing", label: "Billing", icon: "receipt" as const },
     { href: "/dashboard/cloud-clients", label: "Cloud Clients", icon: "cloud" as const },
+    { href: "/dashboard/proposals", label: "Proposals", icon: "file-text" as const },
     { href: "/dashboard/blog", label: "Blog", icon: "file-text" as const },
     { href: "/dashboard/submissions", label: "Submissions", icon: "inbox" as const },
     { href: "/dashboard/status-incidents", label: "Status", icon: "globe" as const },

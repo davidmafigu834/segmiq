@@ -245,6 +245,117 @@ export interface QuotationLineItemInput {
   group_label?: string | null;
 }
 
+// ---------------------------------------------------------------------------
+// Agency sales proposals (Segmiq -> prospect companies). Distinct from
+// tenant-level quotations above. See supabase/migrations/053_agency_proposals.
+// ---------------------------------------------------------------------------
+
+export type ProposalStatus = "draft" | "sent" | "viewed" | "accepted" | "rejected" | "expired";
+export type ProposalSectionKind =
+  | "cover"
+  | "scope"
+  | "approach"
+  | "timeline"
+  | "terms"
+  | "investment"
+  | "custom";
+
+export interface ProposalSettingsRow {
+  id: string;
+  company_name: string | null;
+  company_address: string | null;
+  company_email: string | null;
+  company_phone: string | null;
+  company_website: string | null;
+  logo_url: string | null;
+  brand_color: string;
+  default_terms: string | null;
+  footer_note: string | null;
+  proposal_prefix: string;
+  next_number: number;
+  default_tax_rate: number;
+  default_validity_days: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProposalSectionRow {
+  id: string;
+  proposal_id: string;
+  kind: ProposalSectionKind;
+  heading: string | null;
+  body: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ProposalLineItemRow {
+  id: string;
+  proposal_id: string;
+  item_name: string;
+  description: string | null;
+  unit_price: number;
+  quantity: number;
+  amount: number;
+  group_label: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ProposalRow {
+  id: string;
+  proposal_number: string | null;
+  submission_id: string | null;
+  client_id: string | null;
+  company_name: string | null;
+  recipient_name: string | null;
+  recipient_email: string | null;
+  recipient_phone: string | null;
+  title: string;
+  status: ProposalStatus;
+  public_token: string | null;
+  proposed_mode: "team" | "solo";
+  proposed_plan: "starter" | "professional" | "business";
+  billing_cycle: "monthly" | "annual";
+  currency: string;
+  subtotal: number;
+  discount: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  valid_until: string | null;
+  notes: string | null;
+  terms: string | null;
+  prepared_by_id: string | null;
+  prepared_by_name: string | null;
+  pdf_url: string | null;
+  pdf_key: string | null;
+  sent_at: string | null;
+  viewed_at: string | null;
+  responded_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProposalSectionInput {
+  kind?: ProposalSectionKind;
+  heading?: string | null;
+  body?: string | null;
+}
+
+export interface ProposalLineItemInput {
+  item_name: string;
+  description?: string | null;
+  unit_price: number;
+  quantity: number;
+  group_label?: string | null;
+}
+
+export type ProposalWithDetails = ProposalRow & {
+  sections?: ProposalSectionRow[];
+  items?: ProposalLineItemRow[];
+};
+
 export interface SessionUser {
   id: string;
   name: string;

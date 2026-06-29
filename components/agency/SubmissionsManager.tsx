@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, FileText } from "lucide-react";
 import type { MarketingSubmission, SubmissionStatus, SubmissionType } from "@/lib/marketing-submissions";
 
 const inputCls =
@@ -37,6 +37,7 @@ export function SubmissionsManager({ initialSubmissions }: { initialSubmissions:
   const [statusFilter, setStatusFilter] = useState<"all" | SubmissionStatus>("all");
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [proposalBusyId, setProposalBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -66,6 +67,24 @@ export function SubmissionsManager({ initialSubmissions }: { initialSubmissions:
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function createProposal(submissionId: string) {
+    setProposalBusyId(submissionId);
+    setError(null);
+    try {
+      const res = await fetch("/api/agency/proposals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submission_id: submissionId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { proposal?: { id: string }; error?: string };
+      if (!res.ok || !data.proposal) throw new Error(data.error ?? "Could not create proposal");
+      router.push(`/dashboard/proposals?open=${data.proposal.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+      setProposalBusyId(null);
     }
   }
 
@@ -116,6 +135,21 @@ export function SubmissionsManager({ initialSubmissions }: { initialSubmissions:
                   </div>
                   <div className="shrink-0 flex items-center gap-2">
                     {busyId === r.id && <Loader2 className="w-4 h-4 animate-spin text-[var(--text-tertiary)]" />}
+                    {(r.type === "demo" || r.type === "contact") && (
+                      <button
+                        type="button"
+                        onClick={() => void createProposal(r.id)}
+                        disabled={proposalBusyId === r.id}
+                        className="flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2 text-[12px] font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] disabled:opacity-50"
+                      >
+                        {proposalBusyId === r.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <FileText className="w-3.5 h-3.5" />
+                        )}
+                        Proposal
+                      </button>
+                    )}
                     <select
                       className="rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2 text-[12px] capitalize"
                       value={r.status}

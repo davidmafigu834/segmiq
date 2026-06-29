@@ -11,6 +11,7 @@
     "seed": "npx tsx scripts/seed.ts",
     "seed:demo": "npx tsx scripts/seed-demo.ts",
     "seed:templates": "npx tsx scripts/seed-templates.ts",
+    "seed:proposal": "npx tsx scripts/seed-proposal.ts",
     "check:db": "node scripts/check-supabase-user.mjs"
   },
   "dependencies": {
