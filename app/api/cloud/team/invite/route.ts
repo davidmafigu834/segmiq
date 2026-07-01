@@ -91,7 +91,7 @@ export async function POST(req: Request) {
   if (resendKey) {
     try {
       const resend = new Resend(resendKey);
-      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@leadstaq.tech";
+      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "notifications@segmiq.com";
       await resend.emails.send({
         from: fromEmail,
         to: email.toLowerCase().trim(),

@@ -21,7 +21,6 @@ export type InstantFormConfig = {
 };
 
 type Props = {
-  clientId: string;
   clientName: string;
   clientLogo?: string;
   formName: string;
@@ -39,7 +38,6 @@ function getInitials(name: string): string {
 }
 
 export function InstantForm({
-  clientId,
   clientName,
   clientLogo,
   formName,

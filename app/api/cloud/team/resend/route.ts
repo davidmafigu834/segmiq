@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   if (resendKey) {
     try {
       const resendClient = new Resend(resendKey);
-      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@leadstaq.tech";
+      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "notifications@segmiq.com";
       await resendClient.emails.send({
         from: fromEmail,
         to: typedUser.email,

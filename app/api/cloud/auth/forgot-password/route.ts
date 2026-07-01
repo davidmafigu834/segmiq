@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     if (resendKey) {
       try {
         const resendClient = new Resend(resendKey);
-        const fromEmail = process.env.RESEND_FROM_EMAIL ?? "noreply@leadstaq.tech";
+        const fromEmail = process.env.RESEND_FROM_EMAIL ?? "notifications@segmiq.com";
         const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://leadstaq.tech").replace(/\/$/, "");
         const resetUrl = `${siteUrl}/cloud/reset-password?token=${token}`;
 

@@ -617,7 +617,6 @@ export function InstantFormBuilder({
           <div className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">Live preview</div>
           <div className="mt-3 overflow-hidden rounded-lg border border-border">
             <InstantForm
-              clientId={clientId}
               clientName={clientName}
               clientLogo={clientLogo}
               formName={name}

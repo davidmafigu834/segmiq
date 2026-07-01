@@ -11,7 +11,7 @@ const createSchema = z.object({
 });
 
 async function uniqueSlug(supabase: ReturnType<typeof createAdminClient>, base: string): Promise<string> {
-  let slug = slugifyFormName(base);
+  const slug = slugifyFormName(base);
   let attempt = 0;
   while (attempt < 20) {
     const candidate = attempt === 0 ? slug : `${slug}-${attempt + 1}`;

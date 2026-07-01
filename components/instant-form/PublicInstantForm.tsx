@@ -33,7 +33,6 @@ export function PublicInstantForm({
 
   return (
     <InstantForm
-      clientId={clientId}
       clientName={clientName}
       clientLogo={clientLogo}
       formName={formName}
