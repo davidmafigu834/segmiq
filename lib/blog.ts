@@ -156,3 +156,8 @@ export async function getAllSlugs(): Promise<string[]> {
   const posts = await getPublishedPosts();
   return posts.map((p) => p.slug);
 }
+
+export async function getPostsByCategory(category: PostCategory): Promise<Post[]> {
+  const posts = await getPublishedPosts();
+  return posts.filter((p) => p.category === category);
+}

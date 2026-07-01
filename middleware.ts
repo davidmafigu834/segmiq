@@ -35,6 +35,19 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Local dev on localhost:3000/blog — article links are root-relative (`/<slug>`) like
+  // production blog.segmiq.com, but without this rewrite they hit auth and redirect to /login.
+  const path = req.nextUrl.pathname;
+  const isLocalDevHost = host === "localhost" || host.endsWith(".localhost");
+  if (isLocalDevHost && !isCloudSubdomain && !path.startsWith("/blog")) {
+    const blogDevPath = localBlogDevRewrite(path);
+    if (blogDevPath) {
+      const url = req.nextUrl.clone();
+      url.pathname = blogDevPath;
+      return NextResponse.rewrite(url);
+    }
+  }
+
   // Redirect old blog URLs on the production main host to blog.segmiq.com.
   // Local dev: use localhost:3000/blog or blog.localhost:3000 (no redirect).
   const isProductionMain =
@@ -136,8 +149,6 @@ export async function middleware(req: NextRequest) {
       return NextResponse.rewrite(url);
     }
   }
-
-  const path = req.nextUrl.pathname;
 
   // Root route: show landing page for guests; redirect authenticated users to their dashboard
   if (path === "/") {
@@ -310,6 +321,54 @@ function homeForRole(role: UserRole, clientMode: ClientMode = "team"): string {
   if (role === "CLIENT_MANAGER") return "/client/dashboard";
   if (role === "SALESPERSON" && clientMode === "solo") return "/solo/dashboard";
   return "/sales/dashboard";
+}
+
+/** Map root-relative blog URLs to internal /blog/* when developing on localhost:3000/blog. */
+function localBlogDevRewrite(path: string): string | null {
+  if (path.startsWith("/blog")) return null;
+
+  if (path.startsWith("/category/")) {
+    return `/blog${path}`;
+  }
+
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length !== 1) return null;
+
+  const root = segments[0];
+  const appRoots = new Set([
+    "login",
+    "forgot-password",
+    "reset-password",
+    "dashboard",
+    "client",
+    "sales",
+    "solo",
+    "cloud",
+    "blog",
+    "lead",
+    "onboard",
+    "proposal",
+    "l",
+    "d",
+    "p",
+    "f",
+    "why-segmiq",
+    "security",
+    "products",
+    "features",
+    "pricing",
+    "contact",
+    "partners",
+    "careers",
+    "privacy",
+    "terms",
+    "status",
+    "legal",
+    "category",
+  ]);
+
+  if (appRoots.has(root)) return null;
+  return `/blog/${root}`;
 }
 
 export const config = {

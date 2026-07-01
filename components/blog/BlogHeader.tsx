@@ -1,47 +1,120 @@
 "use client";
 
-/**
- * Header for blog.segmiq.com. Category nav links to homepage sections; Subscribe + search.
- * Links are root-relative because the blog is served at the subdomain root (middleware maps
- * blog.segmiq.com/* -> /blog/*).
- */
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
+import BlogSearch from "@/components/blog/BlogSearch";
+import ThemeToggle from "@/components/blog/ThemeToggle";
+import { useBlogPath } from "@/components/blog/BlogPathProvider";
+import type { SearchablePost } from "@/lib/blog-utils";
 
 type NavItem = { label: string; href: string };
 
-export default function BlogHeader({ available = [] }: { available?: NavItem[] }) {
+export default function BlogHeader({
+  available = [],
+  searchPosts = [],
+}: {
+  available?: NavItem[];
+  searchPosts?: SearchablePost[];
+}) {
   const [open, setOpen] = useState(false);
+  const { home } = useBlogPath();
+  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        document.querySelector<HTMLButtonElement>('[aria-label="Search articles"]')?.click();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-black/[0.10]">
-      <div className="mx-auto max-w-[1180px] px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <SegmiqWordmark href="" size="md" theme="light" />
-            <span className="text-lg font-semibold tracking-tight text-[#5b5b5b]">Blog</span>
-          </Link>
-          {available.length > 0 && (
-            <nav className="hidden lg:flex items-center gap-5 text-sm text-[#5b5b5b] pl-5 border-l border-black/[0.10]">
-              {available.map((n) => <Link key={n.label} href={n.href} className="hover:text-black">{n.label}</Link>)}
-            </nav>
-          )}
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <Link href="/#subscribe" aria-label="Search" className="hidden sm:inline text-[#5b5b5b] hover:text-black"><Search className="w-[18px] h-[18px]" /></Link>
-          <Link href="/#subscribe" className="px-4 py-2 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]">Subscribe</Link>
-          <a href="https://segmiq.com" className="hidden md:inline text-[#5b5b5b] hover:text-black">segmiq.com</a>
-          <button aria-label={open ? "Close menu" : "Open menu"} onClick={() => setOpen((o) => !o)} className="lg:hidden w-10 h-10 -mr-2 grid place-items-center">
-            {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+    <header className="sticky top-0 z-50 bg-white dark:bg-[#0a0a0a] border-b border-black/[0.10] dark:border-white/10 transition-colors">
+      <div className="hidden sm:block border-b border-black/[0.06] dark:border-white/[0.06] bg-[#FAFAF8] dark:bg-[#111]">
+        <div className="mx-auto max-w-[1280px] px-4 sm:px-6 h-8 flex items-center justify-between text-[11px] text-[#888] dark:text-white/50">
+          <span suppressHydrationWarning>{today}</span>
+          <div className="flex items-center gap-4">
+            <a href="https://segmiq.com" className="hover:text-black dark:hover:text-white transition-colors">segmiq.com</a>
+            <Link href="/#subscribe" className="hover:text-black dark:hover:text-white transition-colors font-semibold text-[#444] dark:text-white/70">
+              Newsletter
+            </Link>
+          </div>
         </div>
       </div>
+
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-6">
+        <div className="h-[68px] flex items-center justify-between gap-4">
+          <Link href={home} className="flex items-baseline gap-2 shrink-0">
+            <SegmiqWordmark href="" size="md" theme="auto" />
+            <span className="text-[13px] font-extrabold uppercase tracking-[0.14em] text-[#0C0C0C] dark:text-white/90">Wire</span>
+          </Link>
+
+          {available.length > 0 && (
+            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+              <Link
+                href={home}
+                className="px-3 py-1.5 text-[13px] font-semibold text-[#444] dark:text-white/65 hover:text-black dark:hover:text-white rounded-md hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
+              >
+                Home
+              </Link>
+              {available.map((n) => (
+                <Link
+                  key={n.label}
+                  href={n.href}
+                  className="px-3 py-1.5 text-[13px] font-semibold text-[#444] dark:text-white/65 hover:text-black dark:hover:text-white rounded-md hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  {n.label}
+                </Link>
+              ))}
+            </nav>
+          )}
+
+          <div className="flex items-center gap-2 shrink-0">
+            <BlogSearch posts={searchPosts} />
+            <ThemeToggle />
+            <Link
+              href="/#subscribe"
+              className="hidden md:inline-flex px-4 py-2 rounded-md bg-[#0C0C0C] dark:bg-[#D4FF4F] text-white dark:text-black text-[13px] font-semibold hover:bg-black dark:hover:bg-[#c8f040] transition-colors"
+            >
+              Subscribe
+            </Link>
+            <button
+              aria-label={open ? "Close menu" : "Open menu"}
+              onClick={() => setOpen((o) => !o)}
+              className="lg:hidden w-10 h-10 -mr-2 grid place-items-center text-[#444] dark:text-white/80"
+            >
+              {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {available.length > 0 && (
-        <div className={`lg:hidden overflow-hidden transition-[max-height] duration-300 border-black/[0.10] bg-white ${open ? "max-h-80 border-t" : "max-h-0"}`}>
-          <nav className="mx-auto max-w-[1180px] px-6 py-4 flex flex-col text-[15px]">
-            {available.map((n) => <Link key={n.label} href={n.href} onClick={() => setOpen(false)} className="py-2.5 border-b border-black/[0.10] text-[#5b5b5b] hover:text-black">{n.label}</Link>)}
+        <div
+          className={`lg:hidden overflow-hidden transition-[max-height] duration-300 border-t border-black/[0.08] dark:border-white/10 bg-white dark:bg-[#0a0a0a] ${open ? "max-h-96" : "max-h-0"}`}
+        >
+          <nav className="mx-auto max-w-[1280px] px-4 sm:px-6 py-3 flex flex-col">
+            <Link href={home} onClick={() => setOpen(false)} className="py-2.5 text-[15px] font-semibold border-b border-black/[0.08] dark:border-white/10">
+              Home
+            </Link>
+            {available.map((n) => (
+              <Link
+                key={n.label}
+                href={n.href}
+                onClick={() => setOpen(false)}
+                className="py-2.5 text-[15px] font-medium border-b border-black/[0.08] dark:border-white/10 text-[#444] dark:text-white/70"
+              >
+                {n.label}
+              </Link>
+            ))}
+            <Link href="/#subscribe" onClick={() => setOpen(false)} className="py-2.5 text-[15px] font-semibold">
+              Subscribe
+            </Link>
           </nav>
         </div>
       )}

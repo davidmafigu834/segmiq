@@ -7,14 +7,14 @@ import { getPostBySlug } from "@/lib/blog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const alt = "Segmiq blog post";
+export const alt = "Segmiq Wire story";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function BlogOgImage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
-  const title = post?.title ?? "Segmiq Blog";
+  const title = post?.title ?? "Segmiq Wire";
   const category = post?.categoryLabel ?? "BLOG";
 
   return new ImageResponse(
