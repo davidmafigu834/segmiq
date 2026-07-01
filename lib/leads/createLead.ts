@@ -5,7 +5,9 @@ import { getManagerPrefs, parseSalesPrefs } from "@/lib/notification-prefs";
 import { background } from "@/lib/background";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logLeadCreated } from "@/lib/lead-events";
-import { firstName, formatResponseWindow } from "@/lib/messaging/whatsapp-vars";
+import { firstName } from "@/lib/messaging/whatsapp-vars";
+import { getPublicBaseUrl } from "@/lib/constants";
+import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import type { LeadRow, LeadSource, LeadStatus } from "@/types";
 
@@ -317,7 +319,17 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
           "your enquiry";
         const prospectFirst = firstName(leadRow.name as string | null);
         const companyName = client.name as string;
-        const responseWindow = formatResponseWindow((client.response_time_limit_hours as number) || 2);
+        const responseHours = String(Math.max(1, Math.round((client.response_time_limit_hours as number) || 2)));
+
+        const { data: profile } = await supabase
+          .from("client_profiles")
+          .select("slug, is_published")
+          .eq("client_id", clientId)
+          .maybeSingle();
+        const profileSlug = (profile as { slug?: string; is_published?: boolean } | null)?.slug;
+        const profilePublished = Boolean((profile as { is_published?: boolean } | null)?.is_published);
+        const portfolioUrl =
+          profileSlug && profilePublished ? getPublicLandingPageUrl(profileSlug) : getPublicBaseUrl();
 
         await sendWhatsApp({
           to: leadRow.phone,
@@ -326,9 +338,10 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
             "1": prospectFirst,
             "2": companyName,
             "3": serviceDescription,
-            "4": responseWindow,
+            "4": responseHours,
+            "5": portfolioUrl,
           },
-          fallbackBody: `Hi ${prospectFirst}, thanks for reaching out to ${companyName}. We've received your enquiry about ${serviceDescription} and someone from our team will be in touch within ${responseWindow}.`,
+          fallbackBody: `Hi ${prospectFirst}, thanks for reaching out to ${companyName}. We've received your enquiry about ${serviceDescription} and someone from our team will be in touch within ${responseHours} hours.`,
           context: {
             leadId: leadRow.id,
             clientId,

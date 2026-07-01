@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { sendEmailWithLog } from "@/lib/messaging/email";
 import { firstName } from "@/lib/messaging/whatsapp-vars";
+import { magicLinkUrl } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -50,10 +51,10 @@ export async function POST(req: Request) {
       template: "MAGIC_LINK",
       variables: {
         "1": firstName((user?.name as string) || "You"),
-        "2": "Segmiq test lead",
-        "3": "a test enquiry",
+        "2": "Segmiq",
+        "3": "Test lead",
+        "4": magicLinkUrl("test-token"),
       },
-      urlButtonParam: "test-token",
       fallbackBody: `Test message from Segmiq — notifications are working.`,
       context: {
         userId: g.session.userId,

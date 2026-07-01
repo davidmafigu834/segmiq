@@ -1,6 +1,6 @@
-# Leadstaq
+# Segmiq
 
-Lead management for marketing agencies and their service-business clients. Built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, **Supabase (PostgreSQL)**, **NextAuth.js**, and **Zustand**.
+Lead management for marketing agencies and their service-business clients. Segmiq brings lead capture, assignment, follow-up, quotations, billing, and performance reporting into one operating system. It is built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, **Supabase (PostgreSQL)**, **NextAuth.js**, and **Zustand**.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ Lead management for marketing agencies and their service-business clients. Built
    npm run seed
    ```
 
-   Default admin (after seed): `admin@leadstaq.com` / `admin123`.
+   The seed command prints local development credentials when it completes. Never reuse seeded credentials in a deployed environment.
 
 5. **Storage buckets (Supabase Dashboard)**
 
@@ -121,14 +121,7 @@ Implementation: `lib/messaging/provider.ts` → `sendWhatsApp` → `lib/messagin
 ## Build
 
 ```bash
+npm test
+npm run typecheck
 npm run build
 ```
-
-
-Field	Value
-Email
-admin@leadstaq.com
-Password
-admin123
-Role
-AGENCY_ADMIN

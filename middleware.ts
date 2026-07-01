@@ -190,6 +190,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/l/") ||
     path.startsWith("/d/") ||
     path.startsWith("/p/") ||
+    path.startsWith("/f/") ||
     path === "/cloud" ||
     path === "/cloud/login" ||
     path === "/cloud/signup" ||

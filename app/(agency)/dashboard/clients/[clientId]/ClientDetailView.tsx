@@ -14,6 +14,7 @@ const tabs = (id: string) =>
     { label: "Profile Page", href: `/dashboard/clients/${id}/profile` },
     { label: "Testimonials", href: `/dashboard/clients/${id}/testimonials` },
     { label: "Form", href: `/dashboard/clients/${id}/form` },
+    { label: "Instant Forms", href: `/dashboard/clients/${id}/instant-forms` },
     { label: "Team", href: `/dashboard/clients/${id}/team` },
     { label: "Facebook", href: `/dashboard/clients/${id}/facebook` },
     { label: "Campaigns", href: `/dashboard/clients/${id}/campaigns` },

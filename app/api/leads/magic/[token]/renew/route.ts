@@ -5,6 +5,7 @@ import { sendWhatsApp } from "@/lib/messaging/provider";
 import { sendEmail } from "@/lib/email/resend";
 import { magicLinkRenewalEmail } from "@/lib/email/templates/magic-link-renewal";
 import { firstName } from "@/lib/messaging/whatsapp-vars";
+import { magicLinkUrl } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -90,8 +91,7 @@ export async function POST(
 
   const salesperson = lead.users as unknown as { id: string; name: string; phone: string | null; email: string | null } | null;
 
-  const siteUrl = (process.env.NEXTAUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  const magicLink = `${siteUrl}/lead/${newToken}`;
+  const magicLink = magicLinkUrl(newToken);
 
   let whatsappSent = false;
   if (salesperson?.phone) {
@@ -101,8 +101,9 @@ export async function POST(
         template: "MAGIC_LINK_RENEWAL",
         variables: {
           "1": firstName(salesperson.name),
+          "2": (lead.name as string | null) || "your lead",
+          "3": magicLink,
         },
-        urlButtonParam: newToken,
         fallbackBody: `Hi ${firstName(salesperson.name)}, your Segmiq access link has been renewed. Open it here: ${magicLink}`,
         context: {
           userId: salesperson.id,

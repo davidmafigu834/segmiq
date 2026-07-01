@@ -152,6 +152,87 @@ export interface FormSchemaRow {
   updated_at: string;
 }
 
+export type InstantFormStatus = "draft" | "published";
+export type InstantFormType = "more_volume" | "higher_intent";
+export type InstantFormQuestionKind = "contact" | "custom";
+export type InstantFormContactFieldType =
+  | "full_name"
+  | "email"
+  | "phone"
+  | "street_address"
+  | "city"
+  | "state"
+  | "country"
+  | "zip"
+  | "company"
+  | "job_title";
+export type InstantFormCustomFieldType = "short_answer" | "multiple_choice";
+export type InstantFormCtaType = "view_website" | "call" | "download" | "none";
+
+export interface InstantFormConditionalLogic {
+  question_id: string;
+  operator: "equals" | "not_equals";
+  value: string;
+}
+
+export interface InstantFormQuestion {
+  id: string;
+  kind: InstantFormQuestionKind;
+  field_type: InstantFormContactFieldType | InstantFormCustomFieldType;
+  label: string;
+  placeholder?: string;
+  options?: string[];
+  is_required: boolean;
+  maps_to?: string;
+  conditional_logic?: InstantFormConditionalLogic;
+  sort_order: number;
+}
+
+export interface InstantFormConsent {
+  id: string;
+  label: string;
+  is_required: boolean;
+}
+
+export interface InstantFormIntro {
+  headline?: string;
+  body?: string;
+  layout?: "paragraph" | "list";
+  image_url?: string;
+  button_text?: string;
+}
+
+export interface InstantFormPrivacy {
+  policy_url?: string;
+  link_text?: string;
+  disclaimer?: string;
+}
+
+export interface InstantFormCompletion {
+  headline?: string;
+  body?: string;
+  cta_type?: InstantFormCtaType;
+  cta_text?: string;
+  cta_link?: string;
+}
+
+export interface InstantFormRow {
+  id: string;
+  client_id: string;
+  name: string;
+  slug: string;
+  status: InstantFormStatus;
+  form_type: InstantFormType;
+  intro: InstantFormIntro;
+  questions: InstantFormQuestion[];
+  consents: InstantFormConsent[];
+  privacy: InstantFormPrivacy;
+  completion: InstantFormCompletion;
+  submission_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface NotificationRow {
   id: string;
   user_id: string;

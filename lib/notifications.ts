@@ -231,7 +231,19 @@ export async function notifyNewLead(
   const magicToken = lead.magic_token ?? "";
   const service = lead.project_type ?? formatSource(lead.source);
   const location = extractLeadLocation(lead);
+  const leadLink = magicToken ? magicLinkUrl(magicToken) : getPublicBaseUrl();
   const fallbackSales = `New lead for ${clientName}. Name: ${lead.name ?? "—"} | Service: ${service} | Budget: ${budget} | Location: ${location}`;
+
+  function newLeadTemplateVars(recipientName: string): Record<string, string> {
+    return {
+      "1": firstName(recipientName),
+      "2": clientName,
+      "3": lead.name || "Unknown",
+      "4": lead.phone?.trim() || "—",
+      "5": service,
+      "6": leadLink,
+    };
+  }
 
   if (salesPrefs.whatsapp) {
     if (!salesperson.phone?.trim()) {
@@ -254,14 +266,7 @@ export async function notifyNewLead(
         to: salesperson.phone,
         toOverride: clientTwilioOverride,
         template: "NEW_LEAD",
-        variables: {
-          "1": clientName,
-          "2": lead.name || "Unknown",
-          "3": service,
-          "4": budget,
-          "5": location,
-        },
-        urlButtonParam: magicToken || undefined,
+        variables: newLeadTemplateVars(salesperson.name),
         fallbackBody: fallbackSales,
         context: {
           userId: salesperson.id,
@@ -383,14 +388,7 @@ export async function notifyNewLead(
           to: manager.phone,
           toOverride: clientTwilioOverride,
           template: "NEW_LEAD",
-          variables: {
-            "1": clientName,
-            "2": lead.name || "Unknown",
-            "3": service,
-            "4": budget,
-            "5": location,
-          },
-          urlButtonParam: magicToken || undefined,
+          variables: newLeadTemplateVars(manager.name),
           fallbackBody: managerFallback,
           context: {
             userId: manager.id,
@@ -513,6 +511,7 @@ export async function notifyFollowUpDue(
   const lastNote = (lastCall?.notes as string | null)?.trim() || "No notes logged yet";
   const repFirst = firstName(salesperson.name);
   const magicToken = lead.magic_token ?? "";
+  const leadLink = magicToken ? magicLinkUrl(magicToken) : getPublicBaseUrl();
   const fallbackBody = `Follow-up due with ${lead.name ?? "lead"} about ${topic}. Last note: ${lastNote}`;
 
   const r = await sendWhatsApp({
@@ -522,10 +521,9 @@ export async function notifyFollowUpDue(
     variables: {
       "1": repFirst,
       "2": lead.name || "lead",
-      "3": topic,
-      "4": lastNote,
+      "3": lastNote,
+      "4": leadLink,
     },
-    urlButtonParam: magicToken || undefined,
     fallbackBody,
     context: {
       userId: salesperson.id,
@@ -744,8 +742,19 @@ export async function notifySlaBreachToSalesperson(
 
   const waiting = formatWaitingDuration(lead.created_at as string);
   const magicToken = lead.magic_token ?? "";
+  const leadLink = magicToken ? magicLinkUrl(magicToken) : getPublicBaseUrl();
+  const hoursWaiting = String(
+    Math.max(1, Math.floor((Date.now() - new Date(lead.created_at as string).getTime()) / (1000 * 60 * 60)))
+  );
 
   background("slaBreachSalespersonWhatsApp", async () => {
+    const { data: clientRow } = await supabase
+      .from("clients")
+      .select("response_time_limit_hours")
+      .eq("id", lead.client_id)
+      .maybeSingle();
+    const slaHours = String(Math.max(1, Math.round((clientRow?.response_time_limit_hours as number) || 2)));
+
     const r = await sendWhatsApp({
       to: sp.phone as string,
       toOverride: clientTwilioOverride,
@@ -753,9 +762,10 @@ export async function notifySlaBreachToSalesperson(
       variables: {
         "1": firstName(sp.name as string),
         "2": lead.name || "your lead",
-        "3": waiting,
+        "3": hoursWaiting,
+        "4": slaHours,
+        "5": leadLink,
       },
-      urlButtonParam: magicToken || undefined,
       fallbackBody: `Heads up ${firstName(sp.name as string)}, ${lead.name ?? "your lead"} has been waiting ${waiting} without a response.`,
       context: {
         userId: sp.id as string,
