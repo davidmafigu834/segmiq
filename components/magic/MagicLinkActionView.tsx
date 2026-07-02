@@ -141,16 +141,16 @@ export function MagicLinkActionView({ lead, token }: { lead: MagicLeadForView; t
   const hasHistory = localLogs.length > 0;
 
   return (
-    <div className="min-h-[100dvh] w-full min-w-0 max-w-[100vw] overflow-x-hidden bg-white pb-[max(7rem,env(safe-area-inset-bottom))] text-ink-primary [-webkit-tap-highlight-color:transparent]">
-      <header className="safe-top sticky top-0 z-30 flex min-h-[52px] w-full min-w-0 max-w-[100vw] items-center justify-between gap-2 border-b border-border bg-white/95 px-3 backdrop-blur-sm sm:gap-3 sm:px-4">
-        <span className="shrink-0 font-serif text-lg tracking-tight text-ink-primary">Segmiq</span>
+    <div className="min-h-[100dvh] w-full min-w-0 max-w-[100vw] overflow-x-hidden bg-surface-canvas pb-[max(7rem,env(safe-area-inset-bottom))] text-ink-primary [-webkit-tap-highlight-color:transparent]">
+      <header className="safe-top sticky top-0 z-30 flex min-h-[52px] w-full min-w-0 max-w-[100vw] items-center justify-between gap-2 border-b border-border bg-surface-canvas/95 px-3 backdrop-blur-sm sm:gap-3 sm:px-4">
+        <span className="shrink-0 text-[15px] font-semibold tracking-tight text-accent">Segmiq</span>
         <div className="flex min-w-0 shrink justify-end pl-1 sm:pl-2">
           <StatusPill status={lead.status} />
         </div>
       </header>
 
       <div className="mx-auto w-full min-w-0 max-w-md px-3 pt-5 text-center sm:px-4 sm:pt-6">
-        <h1 className="break-words px-0.5 font-serif text-[clamp(1.25rem,5.5vw,1.75rem)] leading-tight text-ink-primary">
+        <h1 className="break-words px-0.5 font-display text-[clamp(1.25rem,5.5vw,1.75rem)] leading-tight text-ink-primary">
           {lead.name ?? "Lead"}
         </h1>
         {phone ? (
@@ -172,10 +172,10 @@ export function MagicLinkActionView({ lead, token }: { lead: MagicLeadForView; t
       </div>
 
       {phone ? (
-        <div className="sticky top-[calc(52px+env(safe-area-inset-top,0px))] z-20 w-full min-w-0 max-w-[100vw] border-b border-border bg-white px-3 py-3 sm:px-4">
+        <div className="sticky top-[calc(52px+env(safe-area-inset-top,0px))] z-20 w-full min-w-0 max-w-[100vw] border-b border-border bg-bg-secondary px-3 py-3 sm:px-4">
           <a
             href={`tel:${phone}`}
-            className="flex w-full min-w-0 touch-manipulation items-center justify-center gap-2 rounded-lg bg-accent px-3 py-3.5 text-base font-medium text-[var(--accent-ink)] transition-transform active:scale-[0.98] sm:gap-3 sm:py-4"
+            className="flex w-full min-w-0 touch-manipulation items-center justify-center gap-2 rounded-[10px] bg-accent px-3 py-3.5 text-base font-semibold text-accent-foreground transition-transform hover:bg-accent-hover active:scale-[0.98] sm:gap-3 sm:py-4"
           >
             <Phone className="h-5 w-5 shrink-0" strokeWidth={2.2} />
             <span className="min-w-0 truncate">
@@ -227,7 +227,7 @@ export function MagicLinkActionView({ lead, token }: { lead: MagicLeadForView; t
             {historyOpen ? (
               <ul className="mt-3 space-y-3">
                 {localLogs.map((log) => (
-                  <li key={log.id} className="rounded-md border border-border bg-surface-canvas p-3 text-left">
+                  <li key={log.id} className="rounded-lg border border-border bg-surface-card p-3 text-left">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <span className={`inline-flex h-[22px] shrink-0 items-center rounded-sm px-2.5 text-[10px] font-medium uppercase ${outcomePillClass(log.outcome)}`}>
                         {log.outcome.replaceAll("_", " ")}
@@ -258,12 +258,12 @@ export function MagicLinkActionView({ lead, token }: { lead: MagicLeadForView; t
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--success-bg)]">
                 <Check className="h-8 w-8 text-[var(--success-fg)]" strokeWidth={2.2} />
               </div>
-              <h2 className="mb-2 px-1 font-serif text-xl text-ink-primary sm:text-2xl">Call logged</h2>
+              <h2 className="mb-2 px-1 font-display text-xl text-ink-primary sm:text-2xl">Call logged</h2>
               <p className="mx-auto mb-8 max-w-xs px-1 text-pretty text-sm text-ink-secondary">{successMessage}</p>
               <div className="mx-auto flex w-full min-w-0 max-w-xs flex-col gap-2 px-1">
                 <Link
                   href="/login"
-                  className="rounded-md bg-surface-sidebar py-3 text-center text-sm font-medium text-[var(--text-on-dark)]"
+                  className="rounded-[10px] bg-accent py-3 text-center text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
                 >
                   Open Segmiq
                 </Link>

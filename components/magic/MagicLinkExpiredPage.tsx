@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Clock, Loader2, RefreshCw } from "lucide-react";
 
 export function MagicLinkExpiredPage({ token }: { token: string }) {
   const [renewing, setRenewing] = useState(false);
@@ -35,190 +36,48 @@ export function MagicLinkExpiredPage({ token }: { token: string }) {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#000000",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "24px 16px",
-        fontFamily: "-apple-system, BlinkMacSystemFont, Inter, sans-serif",
-      }}
-    >
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <p
-          style={{
-            textAlign: "center",
-            fontSize: 20,
-            fontWeight: 700,
-            color: "#D4FF4F",
-            margin: "0 0 32px",
-          }}
-        >
-          Segmiq
-        </p>
+    <div className="flex min-h-[100dvh] w-full min-w-0 max-w-[100vw] items-center justify-center overflow-x-hidden bg-surface-canvas px-4 py-12">
+      <div className="w-full max-w-[400px] text-center">
+        <p className="mb-8 text-[15px] font-semibold tracking-tight text-accent">Segmiq</p>
 
-        <div
-          style={{
-            background: "#0a0a0a",
-            border: "0.5px solid rgba(255,255,255,0.07)",
-            borderRadius: 16,
-            padding: "36px 32px",
-            textAlign: "center",
-          }}
-        >
+        <div className="rounded-2xl border border-border bg-bg-secondary px-8 py-10">
           {renewalSent ? (
             <>
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: "50%",
-                  background: "rgba(61,214,140,0.1)",
-                  border: "0.5px solid rgba(61,214,140,0.25)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 20px",
-                }}
-              >
-                <i className="ti ti-check" style={{ fontSize: 24, color: "#3dd68c" }} />
+              <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[var(--success-border)] bg-[var(--success-muted)]">
+                <Check className="h-6 w-6 text-[var(--success)]" strokeWidth={1.5} />
               </div>
-              <h2
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "#ededed",
-                  margin: "0 0 12px",
-                }}
-              >
-                New link sent
-              </h2>
-              <p
-                style={{
-                  fontSize: 14,
-                  color: "#71717a",
-                  lineHeight: 1.6,
-                  margin: "0 0 24px",
-                }}
-              >
-                A fresh link has been sent to your WhatsApp and email. Check both
-                and use the new link to open your lead.
+              <h1 className="mb-3 font-display text-[20px] text-ink-primary">New link sent</h1>
+              <p className="text-[14px] leading-relaxed text-ink-secondary">
+                A fresh link has been sent to your WhatsApp and email. Check both and use the new link to open
+                your lead.
               </p>
-
-              {newMagicLink && (
+              {newMagicLink ? (
                 <a
                   href={newMagicLink}
-                  style={{
-                    display: "inline-block",
-                    padding: "12px 24px",
-                    background: "#D4FF4F",
-                    color: "#000000",
-                    borderRadius: 10,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    textDecoration: "none",
-                  }}
+                  className="mt-6 inline-flex h-[42px] w-full items-center justify-center rounded-[10px] bg-accent text-[14px] font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
                 >
-                  Open lead now →
+                  Open lead now
                 </a>
-              )}
+              ) : null}
             </>
           ) : (
             <>
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: "50%",
-                  background: "rgba(245,166,35,0.1)",
-                  border: "0.5px solid rgba(245,166,35,0.25)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 20px",
-                }}
-              >
-                <i className="ti ti-clock-off" style={{ fontSize: 24, color: "#f5a623" }} />
+              <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[var(--warning-border)] bg-[var(--warning-muted)]">
+                <Clock className="h-6 w-6 text-[var(--warning)]" strokeWidth={1.5} />
               </div>
-
-              <h2
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "#ededed",
-                  margin: "0 0 12px",
-                }}
-              >
-                Link expired
-              </h2>
-
-              <p
-                style={{
-                  fontSize: 14,
-                  color: "#71717a",
-                  lineHeight: 1.6,
-                  margin: "0 0 28px",
-                }}
-              >
-                This link has expired. Tap below to get a fresh link sent to your
-                WhatsApp and email instantly.
+              <h1 className="mb-3 font-display text-[20px] text-ink-primary">Link expired</h1>
+              <p className="mb-6 text-[14px] leading-relaxed text-ink-secondary">
+                This link has expired. Tap below to get a fresh link sent to your WhatsApp and email instantly.
               </p>
-
-              {renewalError && (
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: "#ff4444",
-                    margin: "0 0 16px",
-                  }}
-                >
-                  {renewalError}
-                </p>
-              )}
-
+              {renewalError ? <p className="mb-4 text-[13px] text-[var(--error)]">{renewalError}</p> : null}
               <button
-                onClick={handleRenew}
+                type="button"
+                onClick={() => void handleRenew()}
                 disabled={renewing}
-                style={{
-                  width: "100%",
-                  height: 48,
-                  background: renewing ? "#1a1a1a" : "#D4FF4F",
-                  color: renewing ? "#555555" : "#000000",
-                  border: "none",
-                  borderRadius: 10,
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: renewing ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  transition: "all 0.15s ease",
-                }}
+                className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[10px] bg-accent text-[14px] font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-60"
               >
-                {renewing ? (
-                  <>
-                    <span
-                      className="animate-spin"
-                      style={{
-                        display: "inline-block",
-                        width: 16,
-                        height: 16,
-                        border: "2px solid #555555",
-                        borderTopColor: "transparent",
-                        borderRadius: "50%",
-                      }}
-                    />
-                    Sending new link...
-                  </>
-                ) : (
-                  <>
-                    <i className="ti ti-refresh" style={{ fontSize: 16 }} />
-                    Send me a new link
-                  </>
-                )}
+                {renewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                {renewing ? "Sending new link…" : "Send me a new link"}
               </button>
             </>
           )}

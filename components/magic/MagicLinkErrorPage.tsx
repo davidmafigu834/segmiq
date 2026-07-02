@@ -1,25 +1,32 @@
 import Link from "next/link";
-import { Link2Off } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export function MagicLinkErrorPage({ reason }: { reason: "invalid" | "expired" }) {
   const expired = reason === "expired";
   return (
-    <div className="flex min-h-[100dvh] w-full min-w-0 max-w-[100vw] flex-col items-center justify-center overflow-x-hidden bg-white px-4 py-12 text-center sm:px-6 sm:py-16">
-      <Link2Off className="h-10 w-10 text-ink-tertiary" strokeWidth={1.5} aria-hidden />
-      <h1 className="mt-6 max-w-[min(100%,20rem)] break-words font-serif text-[clamp(1.375rem,5vw,1.75rem)] leading-tight text-ink-primary">
-        {expired ? "This link has expired" : "This link is invalid"}
-      </h1>
-      <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-ink-secondary">
-        {expired
-          ? "Magic links work for 30 days after a lead arrives. Log in to Segmiq to see the latest leads."
-          : "The link you followed doesn't match any lead. It may have been mistyped."}
-      </p>
-      <Link
-        href="/login"
-        className="mt-8 inline-flex items-center justify-center rounded-md bg-surface-sidebar px-6 py-3 text-sm font-medium text-[var(--text-on-dark)] hover:opacity-95"
-      >
-        Log in to Segmiq
-      </Link>
+    <div className="flex min-h-[100dvh] w-full min-w-0 max-w-[100vw] items-center justify-center overflow-x-hidden bg-surface-canvas px-4 py-12 sm:px-6 sm:py-16">
+      <div className="w-full max-w-[400px] text-center">
+        <p className="mb-8 text-[15px] font-semibold tracking-tight text-accent">Segmiq</p>
+        <div className="rounded-2xl border border-border bg-bg-secondary px-8 py-10">
+          <div className="mx-auto mb-5 flex h-[52px] w-[52px] items-center justify-center rounded-full border border-[var(--error-border)] bg-[var(--error-muted)]">
+            <AlertCircle className="h-6 w-6 text-[var(--error)]" strokeWidth={1.5} aria-hidden />
+          </div>
+          <h1 className="mb-3 font-display text-[20px] text-ink-primary">
+            {expired ? "This link has expired" : "This link is invalid"}
+          </h1>
+          <p className="text-[14px] leading-relaxed text-ink-secondary">
+            {expired
+              ? "Magic links work for 30 days after a lead arrives. Log in to Segmiq to see the latest leads."
+              : "The link you followed doesn't match any lead. It may have been mistyped."}
+          </p>
+          <Link
+            href="/login"
+            className="mt-8 inline-flex h-[42px] w-full items-center justify-center rounded-[10px] bg-accent text-[14px] font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
+          >
+            Log in to Segmiq
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
