@@ -46,7 +46,7 @@ export const PREDEFINED_SEGMENTS: PredefinedSegment[] = [
       {
         field: "status",
         operator: "in",
-        value: ["CONTACTED", "QUALIFIED", "NEGOTIATING"],
+        value: ["CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"],
       },
     ],
     filter_logic: "and",
@@ -261,70 +261,108 @@ const INTELLIGENCE_FIELDS = new Set([
   "tags",
 ]);
 
-export async function resolveSegmentLeads(
-  clientId: string,
-  filters: SegmentFilter[],
-  filterLogic: "and" | "or",
-  options?: {
-    minScore?: number | null;
-    dateRangeDays?: number | null;
-    minAgeDays?: number | null;
-    exportFields?: string[];
-  }
-): Promise<LeadRow[]> {
+const LEAD_INTEL_SELECT = `
+  lead_intelligence (
+    intent_score,
+    urgency_level,
+    intent_category,
+    budget_estimate_usd,
+    property_type,
+    tags
+  )
+`;
+
+function isMissingLeadsColumn(error: unknown, column: string): boolean {
+  const msg =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String((error as { message: unknown }).message)
+        : "";
+  return msg.includes(`column leads.${column} does not exist`);
+}
+
+function isMissingRelationError(error: unknown, relation: string): boolean {
+  const msg =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String((error as { message: unknown }).message)
+        : "";
+  return (
+    msg.includes(relation) &&
+    (msg.includes("does not exist") ||
+      msg.includes("Could not find") ||
+      msg.includes("relationship"))
+  );
+}
+
+type LeadQueryOptions = {
+  clientId: string;
+  filters: SegmentFilter[];
+  filterLogic: "and" | "or";
+  minScore?: number | null;
+  dateRangeDays?: number | null;
+  minAgeDays?: number | null;
+  includeIntelligence: boolean;
+  includeScoring: boolean;
+  filterArchived: boolean;
+};
+
+async function fetchLeadsForSegment(
+  options: LeadQueryOptions
+): Promise<{ leads: LeadRow[]; error: unknown | null }> {
   const supabase = createAdminClient();
+  const {
+    clientId,
+    filters,
+    filterLogic,
+    minScore,
+    dateRangeDays,
+    minAgeDays,
+    includeIntelligence,
+    includeScoring,
+    filterArchived,
+  } = options;
 
-  // Base query — all active leads for this client with intelligence joined
-  let query = supabase
-    .from("leads")
-    .select(
-      `
-      id,
-      name,
-      phone,
-      email,
-      status,
-      score,
-      source,
-      created_at,
-      is_stale,
-      lead_intelligence (
-        intent_score,
-        urgency_level,
-        intent_category,
-        budget_estimate_usd,
-        property_type,
-        tags
-      )
-    `
-    )
-    .eq("client_id", clientId)
-    .eq("is_archived", false);
+  const baseFields = [
+    "id",
+    "name",
+    "phone",
+    "email",
+    "status",
+    "source",
+    "created_at",
+  ];
+  if (includeScoring) baseFields.push("score", "is_stale");
+  const select = includeIntelligence
+    ? `${baseFields.join(", ")}, ${LEAD_INTEL_SELECT}`
+    : baseFields.join(", ");
 
-  // Apply date range if set (created within last N days)
-  if (options?.dateRangeDays) {
+  let query = supabase.from("leads").select(select).eq("client_id", clientId);
+
+  if (filterArchived) {
+    query = query.or("is_archived.is.null,is_archived.eq.false");
+  }
+
+  if (dateRangeDays) {
     const since = new Date();
-    since.setDate(since.getDate() - options.dateRangeDays);
+    since.setDate(since.getDate() - dateRangeDays);
     query = query.gte("created_at", since.toISOString());
   }
 
-  // Apply minimum age if set (created at least N days ago — graduated leads)
-  if (options?.minAgeDays) {
+  if (minAgeDays) {
     const before = new Date();
-    before.setDate(before.getDate() - options.minAgeDays);
+    before.setDate(before.getDate() - minAgeDays);
     query = query.lte("created_at", before.toISOString());
   }
 
-  // Apply minimum score if set
-  if (options?.minScore != null) {
-    query = query.gte("score", options.minScore);
+  if (minScore != null) {
+    query = query.gte("score", minScore);
   }
 
-  // Apply lead-level filters that Supabase can handle directly
-  // Intelligence-level filters are applied in memory after fetch
   for (const filter of filters) {
     const { field, operator, value } = filter;
-
     if (INTELLIGENCE_FIELDS.has(field)) continue;
 
     switch (operator) {
@@ -362,8 +400,123 @@ export async function resolveSegmentLeads(
     }
   }
 
-  const { data } = await query;
-  let leads = (data ?? []) as LeadRow[];
+  const { data, error } = await query;
+  if (error) return { leads: [], error };
+
+  return {
+    leads: (data ?? []).map((row) => ({
+      ...(row as LeadRow),
+      score: (row as LeadRow).score ?? 0,
+      is_stale: (row as LeadRow).is_stale ?? false,
+    })),
+    error: null,
+  };
+}
+
+async function querySegmentLeads(
+  clientId: string,
+  filters: SegmentFilter[],
+  filterLogic: "and" | "or",
+  options?: {
+    minScore?: number | null;
+    dateRangeDays?: number | null;
+    minAgeDays?: number | null;
+  }
+): Promise<LeadRow[]> {
+  const needsIntelligence = filters.some((f) => INTELLIGENCE_FIELDS.has(f.field));
+
+  const attempts: LeadQueryOptions[] = [
+    {
+      clientId,
+      filters,
+      filterLogic,
+      minScore: options?.minScore,
+      dateRangeDays: options?.dateRangeDays,
+      minAgeDays: options?.minAgeDays,
+      includeIntelligence: needsIntelligence,
+      includeScoring: true,
+      filterArchived: true,
+    },
+    {
+      clientId,
+      filters,
+      filterLogic,
+      minScore: options?.minScore,
+      dateRangeDays: options?.dateRangeDays,
+      minAgeDays: options?.minAgeDays,
+      includeIntelligence: needsIntelligence,
+      includeScoring: true,
+      filterArchived: false,
+    },
+    {
+      clientId,
+      filters,
+      filterLogic,
+      minScore: options?.minScore,
+      dateRangeDays: options?.dateRangeDays,
+      minAgeDays: options?.minAgeDays,
+      includeIntelligence: false,
+      includeScoring: true,
+      filterArchived: false,
+    },
+    {
+      clientId,
+      filters,
+      filterLogic,
+      minScore: options?.minScore,
+      dateRangeDays: options?.dateRangeDays,
+      minAgeDays: options?.minAgeDays,
+      includeIntelligence: false,
+      includeScoring: false,
+      filterArchived: false,
+    },
+  ];
+
+  let lastError: unknown = null;
+
+  for (const attempt of attempts) {
+    const { leads, error } = await fetchLeadsForSegment(attempt);
+    if (!error) return leads;
+    lastError = error;
+
+    if (
+      attempt.filterArchived &&
+      isMissingLeadsColumn(error, "is_archived")
+    ) {
+      continue;
+    }
+    if (
+      attempt.includeIntelligence &&
+      isMissingRelationError(error, "lead_intelligence")
+    ) {
+      continue;
+    }
+    if (
+      attempt.includeScoring &&
+      (isMissingLeadsColumn(error, "score") ||
+        isMissingLeadsColumn(error, "is_stale"))
+    ) {
+      continue;
+    }
+    break;
+  }
+
+  console.error("resolveSegmentLeads: query failed:", lastError);
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
+}
+
+export async function resolveSegmentLeads(
+  clientId: string,
+  filters: SegmentFilter[],
+  filterLogic: "and" | "or",
+  options?: {
+    minScore?: number | null;
+    dateRangeDays?: number | null;
+    minAgeDays?: number | null;
+    exportFields?: string[];
+  }
+): Promise<LeadRow[]> {
+  let leads = await querySegmentLeads(clientId, filters, filterLogic, options);
 
   // Apply intelligence-level filters in memory
   const intelligenceFilters = filters.filter((f) =>

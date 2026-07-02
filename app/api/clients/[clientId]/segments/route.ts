@@ -56,7 +56,11 @@ export async function GET(
           }
         );
         return { ...segment, lead_count: leads.length };
-      } catch {
+      } catch (err) {
+        console.error(
+          `[GET /api/clients/${params.clientId}/segments] count failed for segment ${segment.id}:`,
+          err
+        );
         return { ...segment, lead_count: null };
       }
     })
