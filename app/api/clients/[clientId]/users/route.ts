@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canReassignLeads, canManageClientTeam } from "@/lib/auth/permissions";
+import { countUncontactedLeadsForUser } from "@/lib/leads/migrateUncontactedLeads";
 import { hashPassword } from "@/lib/password";
 import { normalizeToE164 } from "@/lib/phone-validate";
 import { sendEmail } from "@/lib/email/resend";
@@ -21,22 +22,44 @@ export async function GET(req: Request, { params }: { params: { clientId: string
 
   const url = new URL(req.url);
   const manage = url.searchParams.get("manage") === "1";
+  const roleFilter = url.searchParams.get("role");
 
   if (manage) {
     if (!canManageClientTeam(session, params.clientId)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    const role = roleFilter === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON";
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("users")
-      .select("id, name, email, phone, is_active, round_robin_order")
+      .select(
+        role === "CLIENT_MANAGER"
+          ? "id, name, email, phone, is_active"
+          : "id, name, email, phone, is_active, round_robin_order"
+      )
       .eq("client_id", params.clientId)
-      .eq("role", "SALESPERSON")
-      .order("round_robin_order", { ascending: true });
+      .eq("role", role)
+      .order(role === "CLIENT_MANAGER" ? "created_at" : "round_robin_order", { ascending: true });
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ users: data ?? [] });
+
+    const users = data ?? [];
+    if (role === "SALESPERSON") {
+      const withCounts = await Promise.all(
+        users.map(async (user) => ({
+          ...user,
+          uncontacted_lead_count: await countUncontactedLeadsForUser(
+            supabase,
+            params.clientId,
+            user.id as string
+          ),
+        }))
+      );
+      return NextResponse.json({ users: withCounts });
+    }
+
+    return NextResponse.json({ users });
   }
 
   if (!canReassignLeads(session, params.clientId)) {
@@ -76,10 +99,6 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   const parsed = inviteSalesSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
-  }
-
-  if (session.role === "CLIENT_MANAGER" && parsed.data.role !== "SALESPERSON") {
-    return NextResponse.json({ error: "Managers can only add salespeople" }, { status: 403 });
   }
 
   const rawPhone = parsed.data.phone?.trim() ?? "";
@@ -165,10 +184,6 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       .limit(1)
       .maybeSingle();
     rr = Number((maxRow as { round_robin_order?: number } | null)?.round_robin_order ?? -1) + 1;
-  }
-
-  if (parsed.data.role === "CLIENT_MANAGER") {
-    await supabase.from("users").update({ is_active: false }).eq("client_id", params.clientId).eq("role", "CLIENT_MANAGER");
   }
 
   const tempPass = randomBytes(12).toString("base64url").slice(0, 16);

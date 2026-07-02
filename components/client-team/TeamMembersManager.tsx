@@ -5,6 +5,14 @@ import { MailCheck } from "lucide-react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { ClientAvatar } from "@/components/ClientAvatar";
 
+type ManagerRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  is_active: boolean;
+};
+
 type UserRow = {
   id: string;
   name: string;
@@ -12,6 +20,7 @@ type UserRow = {
   phone: string | null;
   is_active: boolean;
   round_robin_order: number;
+  uncontacted_lead_count?: number;
 };
 
 export function TeamMembersManager({
@@ -23,10 +32,12 @@ export function TeamMembersManager({
   roundRobinIndex?: number;
 }) {
   const [sales, setSales] = useState<UserRow[]>([]);
+  const [managers, setManagers] = useState<ManagerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteMgrOpen, setInviteMgrOpen] = useState(false);
   const [inviteForm, setInviteForm] = useState({ name: "", email: "", phone: "" });
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [tempPass, setTempPass] = useState<string | null>(null);
@@ -40,12 +51,15 @@ export function TeamMembersManager({
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/clients/${clientId}/users?manage=1`)
-      .then((r) => r.json())
-      .then((j: { users?: UserRow[]; error?: string }) => {
+    Promise.all([
+      fetch(`/api/clients/${clientId}/users?manage=1`).then((r) => r.json()),
+      fetch(`/api/clients/${clientId}/users?manage=1&role=CLIENT_MANAGER`).then((r) => r.json()),
+    ])
+      .then(([salesJson, mgrJson]: [{ users?: UserRow[]; error?: string }, { users?: ManagerRow[] }]) => {
         if (cancelled) return;
-        if (j.users) setSales(j.users);
-        else if (j.error) setToast(j.error);
+        if (salesJson.users) setSales(salesJson.users);
+        else if (salesJson.error) setToast(salesJson.error);
+        if (mgrJson.users) setManagers(mgrJson.users);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -131,22 +145,165 @@ export function TeamMembersManager({
     }
   }
 
-  async function toggleSales(id: string, is_active: boolean) {
+  async function inviteManager() {
+    setSaving(true);
+    setInviteError(null);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "CLIENT_MANAGER",
+          name: inviteForm.name,
+          email: inviteForm.email,
+          phone: inviteForm.phone,
+        }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed");
+      const newMgr = (j as { user?: Partial<ManagerRow> }).user;
+      const emailSent = typeof (j as { emailSent?: boolean }).emailSent === "boolean" ? (j as { emailSent: boolean }).emailSent : false;
+      setInviteEmailResult({ email: inviteForm.email, emailSent });
+      if (!emailSent && (j as { temporaryPassword?: string }).temporaryPassword) {
+        setTempPass((j as { temporaryPassword: string }).temporaryPassword);
+      }
+      setInviteMgrOpen(false);
+      setInviteForm({ name: "", email: "", phone: "" });
+      if (newMgr?.id && newMgr?.name && newMgr?.email) {
+        setManagers((prev) => [
+          ...prev,
+          {
+            id: newMgr.id,
+            name: newMgr.name,
+            email: newMgr.email,
+            phone: typeof newMgr.phone === "string" ? newMgr.phone : null,
+            is_active: true,
+          },
+        ]);
+      }
+      setToast("Manager invited.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Error";
+      setInviteError(msg);
+      setToast(msg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function toggleManager(id: string, is_active: boolean) {
     const res = await fetch(`/api/clients/${clientId}/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_active }),
     });
+    const j = (await res.json()) as { error?: string };
+    if (!res.ok) {
+      setToast(j.error ?? "Failed");
+      return;
+    }
+    setManagers((prev) => prev.map((m) => (m.id === id ? { ...m, is_active } : m)));
+  }
+
+  async function removeManager(id: string) {
+    if (!window.confirm("Remove this manager? Their account will be deleted.")) return;
+    const res = await fetch(`/api/clients/${clientId}/users/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const j = await res.json();
       setToast((j as { error?: string }).error ?? "Failed");
       return;
     }
-    setSales((prev) => prev.map((u) => (u.id === id ? { ...u, is_active } : u)));
+    setManagers((prev) => prev.filter((m) => m.id !== id));
+    setToast("Manager removed.");
+  }
+
+  async function toggleSales(id: string, is_active: boolean) {
+    const rep = sales.find((s) => s.id === id);
+    if (!is_active && rep && (rep.uncontacted_lead_count ?? 0) > 0) {
+      const ok = window.confirm(
+        `${rep.name} has ${rep.uncontacted_lead_count} uncontacted lead(s). Deactivating will redistribute them to other active salespeople. Continue?`
+      );
+      if (!ok) return;
+    }
+
+    const res = await fetch(`/api/clients/${clientId}/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active }),
+    });
+    const j = (await res.json()) as {
+      error?: string;
+      migration?: { migrated: number; unassigned: number };
+    };
+    if (!res.ok) {
+      setToast(j.error ?? "Failed");
+      return;
+    }
+    setSales((prev) => prev.map((u) => (u.id === id ? { ...u, is_active, uncontacted_lead_count: 0 } : u)));
+    if (j.migration && j.migration.migrated + j.migration.unassigned > 0) {
+      setToast(
+        `Deactivated. ${j.migration.migrated} uncontacted lead(s) reassigned${j.migration.unassigned ? `, ${j.migration.unassigned} left unassigned (no active reps)` : ""}.`
+      );
+    }
+  }
+
+  async function promoteToManager(id: string) {
+    const rep = sales.find((s) => s.id === id);
+    if (!rep) return;
+
+    const leadNote =
+      (rep.uncontacted_lead_count ?? 0) > 0
+        ? ` Their ${rep.uncontacted_lead_count} uncontacted lead(s) will be redistributed to other salespeople.`
+        : "";
+    if (
+      !window.confirm(
+        `Promote ${rep.name} to manager? They will join the existing manager team.${leadNote} Continue?`
+      )
+    ) {
+      return;
+    }
+
+    const res = await fetch(`/api/clients/${clientId}/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: "CLIENT_MANAGER" }),
+    });
+    const j = (await res.json()) as {
+      error?: string;
+      migration?: { migrated: number; unassigned: number };
+      manager?: { id: string; name: string; email: string; phone: string | null };
+    };
+    if (!res.ok) {
+      setToast(j.error ?? "Failed");
+      return;
+    }
+
+    setSales((prev) => prev.filter((u) => u.id !== id));
+    if (j.manager) {
+      setManagers((prev) => [
+        ...prev,
+        {
+          id: j.manager.id,
+          name: j.manager.name,
+          email: j.manager.email,
+          phone: j.manager.phone,
+          is_active: true,
+        },
+      ]);
+    }
+    const migrated = j.migration?.migrated ?? 0;
+    setToast(
+      `${rep.name} is now a manager.${migrated > 0 ? ` ${migrated} uncontacted lead(s) were redistributed.` : ""} They should log in again to refresh their access.`
+    );
   }
 
   async function removeSales(id: string) {
-    if (!window.confirm("Remove this salesperson? Their account will be deleted.")) return;
+    const rep = sales.find((s) => s.id === id);
+    const leadNote =
+      rep && (rep.uncontacted_lead_count ?? 0) > 0
+        ? ` ${rep.uncontacted_lead_count} uncontacted lead(s) will be redistributed first.`
+        : "";
+    if (!window.confirm(`Remove this salesperson? Their account will be deleted.${leadNote}`)) return;
     const res = await fetch(`/api/clients/${clientId}/users/${id}`, { method: "DELETE" });
     if (!res.ok) {
       const j = await res.json();
@@ -208,9 +365,80 @@ export function TeamMembersManager({
         </div>
       ) : null}
 
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl text-ink-primary">Managers</h2>
+            <p className="mt-1 text-sm text-ink-secondary">Add co-managers with full team oversight.</p>
+          </div>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => {
+              setInviteError(null);
+              setInviteMgrOpen(true);
+            }}
+          >
+            Add manager
+          </button>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-border">
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-border bg-surface-card-alt font-mono text-[10px] uppercase text-ink-tertiary">
+              <tr>
+                <th className="px-3 py-2">Manager</th>
+                <th className="px-3 py-2">Email</th>
+                <th className="px-3 py-2">Phone</th>
+                <th className="px-3 py-2">Active</th>
+                <th className="px-3 py-2 text-right"> </th>
+              </tr>
+            </thead>
+            <tbody>
+              {managers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-ink-tertiary">
+                    No managers listed yet.
+                  </td>
+                </tr>
+              ) : (
+                managers.map((m) => (
+                  <tr key={m.id} className="border-t border-border">
+                    <td className="px-3 py-2">
+                      <span className="flex items-center gap-2">
+                        <ClientAvatar name={m.name} size="sm" />
+                        {m.name}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs">{m.email}</td>
+                    <td className="px-3 py-2 text-xs">{m.phone ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={m.is_active}
+                        onChange={(e) => void toggleManager(m.id, e.target.checked)}
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        type="button"
+                        className="text-xs text-[var(--danger-fg)]"
+                        onClick={() => void removeManager(m.id)}
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl text-ink-primary">Team members</h2>
+          <h2 className="font-display text-xl text-ink-primary">Salespeople</h2>
           <p className="mt-1 text-sm text-ink-secondary">Add salespeople, pause access, or adjust lead rotation.</p>
         </div>
         <button
@@ -269,6 +497,7 @@ export function TeamMembersManager({
               <th className="px-3 py-2">Rep</th>
               <th className="px-3 py-2">Email</th>
               <th className="px-3 py-2">Phone</th>
+              <th className="px-3 py-2">Uncontacted</th>
               <th className="px-3 py-2">Active</th>
               <th className="px-3 py-2 text-right"> </th>
             </tr>
@@ -276,7 +505,7 @@ export function TeamMembersManager({
           <tbody>
             {sales.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-sm text-ink-tertiary">
+                <td colSpan={6} className="px-3 py-8 text-center text-sm text-ink-tertiary">
                   No salespeople yet. Add your first team member above.
                 </td>
               </tr>
@@ -291,6 +520,13 @@ export function TeamMembersManager({
                   </td>
                   <td className="px-3 py-2 font-mono text-xs">{s.email}</td>
                   <td className="px-3 py-2 text-xs">{s.phone ?? "—"}</td>
+                  <td className="px-3 py-2 text-xs tabular-nums">
+                    {(s.uncontacted_lead_count ?? 0) > 0 ? (
+                      <span className="font-medium text-[var(--warning)]">{s.uncontacted_lead_count}</span>
+                    ) : (
+                      "0"
+                    )}
+                  </td>
                   <td className="px-3 py-2">
                     <input
                       type="checkbox"
@@ -299,6 +535,13 @@ export function TeamMembersManager({
                     />
                   </td>
                   <td className="px-3 py-2 text-right">
+                    <button
+                      type="button"
+                      className="mr-3 text-xs text-[var(--accent)]"
+                      onClick={() => void promoteToManager(s.id)}
+                    >
+                      Promote to manager
+                    </button>
                     <button
                       type="button"
                       className="text-xs text-[var(--danger-fg)]"
@@ -314,10 +557,10 @@ export function TeamMembersManager({
         </table>
       </div>
 
-      {inviteOpen ? (
+      {(inviteOpen || inviteMgrOpen) ? (
         <div className="fixed inset-0 z-50 flex flex-col bg-[var(--surface-overlay)] p-0 md:items-center md:justify-center md:p-4">
           <div className="flex h-full w-full max-w-md flex-col border border-border bg-surface-card p-5 shadow-lg md:h-auto md:rounded-xl md:p-6">
-            <h3 className="font-display text-xl">Invite salesperson</h3>
+            <h3 className="font-display text-xl">{inviteOpen ? "Invite salesperson" : "Invite manager"}</h3>
             <label className="mt-3 block text-sm">
               Name
               <input
@@ -338,7 +581,7 @@ export function TeamMembersManager({
               />
             </label>
             <label className="mt-3 block text-sm">
-              Phone (E.164)
+              Phone (E.164{inviteMgrOpen ? ", optional for manager" : ""})
               <input
                 className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base text-ink-primary placeholder:text-ink-tertiary md:text-sm"
                 value={inviteForm.phone}
@@ -359,6 +602,7 @@ export function TeamMembersManager({
                 onClick={() => {
                   setInviteError(null);
                   setInviteOpen(false);
+                  setInviteMgrOpen(false);
                 }}
               >
                 Cancel
@@ -367,7 +611,7 @@ export function TeamMembersManager({
                 type="button"
                 className="btn-primary h-11 flex-1 md:h-9 md:flex-none"
                 disabled={saving}
-                onClick={() => void inviteSalesperson()}
+                onClick={() => void (inviteOpen ? inviteSalesperson() : inviteManager())}
               >
                 Create
               </button>

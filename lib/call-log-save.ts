@@ -227,18 +227,16 @@ export async function saveCallLog(input: SaveCallLogInput): Promise<SaveCallLogR
       .eq("id", actorUserId)
       .maybeSingle();
 
-    const { data: mgr } = await supabase
+    const { data: managers } = await supabase
       .from("users")
-      .select("id, name, email, phone")
+      .select("id, name, email, phone, notification_prefs")
       .eq("client_id", updated.client_id as string)
       .eq("role", "CLIENT_MANAGER")
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
+      .eq("is_active", true);
 
     const { data: clientRow } = await supabase
       .from("clients")
-      .select("name, twilio_whatsapp_override, manager_notification_prefs")
+      .select("name, twilio_whatsapp_override")
       .eq("id", updated.client_id as string)
       .maybeSingle();
 
@@ -249,23 +247,21 @@ export async function saveCallLog(input: SaveCallLogInput): Promise<SaveCallLogR
       email: (actorRow?.email as string | null) ?? null,
     };
 
-    void notifyDealWon(
-      updated as LeadRow,
-      spLite,
-      mgr
-        ? {
-            id: mgr.id as string,
-            name: mgr.name as string,
-            phone: (mgr.phone as string | null) ?? null,
-            email: (mgr.email as string | null) ?? null,
-          }
-        : null,
-      (clientRow?.twilio_whatsapp_override as string | null) ?? null,
-      (clientRow?.name as string) ?? "Client",
-      getManagerPrefs(
-        (clientRow as { manager_notification_prefs?: unknown } | null)?.manager_notification_prefs
-      )
-    );
+    for (const mgr of managers ?? []) {
+      void notifyDealWon(
+        updated as LeadRow,
+        spLite,
+        {
+          id: mgr.id as string,
+          name: mgr.name as string,
+          phone: (mgr.phone as string | null) ?? null,
+          email: (mgr.email as string | null) ?? null,
+        },
+        (clientRow?.twilio_whatsapp_override as string | null) ?? null,
+        (clientRow?.name as string) ?? "Client",
+        getManagerPrefs((mgr as { notification_prefs?: unknown }).notification_prefs)
+      );
+    }
   }
 
   await persistLeadScore(leadId);

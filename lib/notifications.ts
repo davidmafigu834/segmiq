@@ -27,7 +27,6 @@ type UserLite = { id: string; name: string; phone: string | null; email: string 
 
 export type NotifyLeadOptions = {
   salesPrefs?: SalesNotificationPrefs | null;
-  managerPrefs?: ManagerNotificationPrefs | null;
 };
 
 function formatSource(source: string | null | undefined): string {
@@ -219,13 +218,12 @@ async function createInAppNotification(params: {
 export async function notifyNewLead(
   lead: LeadRow,
   salesperson: UserLite,
-  manager: UserLite | null,
+  managers: UserLite[],
   clientTwilioOverride?: string | null,
   clientName = "Client",
   opts?: NotifyLeadOptions
 ): Promise<void> {
   const salesPrefs = opts?.salesPrefs ?? parseSalesPrefs(null);
-  const managerPrefs = opts?.managerPrefs ?? getManagerPrefs(null);
 
   const budget = lead.budget ?? "—";
   const magicToken = lead.magic_token ?? "";
@@ -374,12 +372,15 @@ export async function notifyNewLead(
     console.log("[notifyNewLead] Email to salesperson: skipped (user preference)");
   }
 
-  if (manager) {
-    const mp = managerPrefs;
-    const wants = mp.newLead.whatsapp || mp.newLead.email;
-    if (!wants) {
-      console.log("[notifyNewLead] Manager notifications skipped (all channels off for new lead)");
-    } else {
+  if (managers.length > 0) {
+    for (const manager of managers) {
+      const mp = getManagerPrefs((manager as UserLite & { notification_prefs?: unknown }).notification_prefs);
+      const wants = mp.newLead.whatsapp || mp.newLead.email;
+      if (!wants) {
+        console.log("[notifyNewLead] Manager notifications skipped (all channels off for new lead)");
+        continue;
+      }
+
       const hasPhone = Boolean(manager.phone?.trim());
       const hasEmail = Boolean(manager.email?.trim());
       if (mp.newLead.whatsapp && hasPhone) {
@@ -466,6 +467,15 @@ export async function notifyNewLead(
       } else if (mp.newLead.email && !hasEmail) {
         console.info("[notifyNewLead] manager email skipped (no email)");
       }
+
+      if (mp.newLead.whatsapp || mp.newLead.email) {
+        await createInAppNotification({
+          userId: manager.id,
+          type: "NEW_LEAD",
+          message: `New lead for ${clientName} — assigned to ${salesperson.name}`,
+          leadId: lead.id,
+        });
+      }
     }
   }
 
@@ -475,15 +485,6 @@ export async function notifyNewLead(
     message: `New lead: ${lead.name ?? "Lead"} — ${budget}`,
     leadId: lead.id,
   });
-
-  if (manager && (managerPrefs.newLead.whatsapp || managerPrefs.newLead.email)) {
-    await createInAppNotification({
-      userId: manager.id,
-      type: "NEW_LEAD",
-      message: `New lead for ${clientName} — assigned to ${salesperson.name}`,
-      leadId: lead.id,
-    });
-  }
 }
 
 export async function notifyFollowUpDue(
@@ -613,7 +614,7 @@ export async function notifyDealWon(
 type UncontactedLeadRow = Pick<LeadRow, "id" | "name" | "created_at" | "client_id" | "assigned_to_id">;
 
 /**
- * Alerts the client manager once per lead when SLA is breached (idempotent on notifications row).
+ * Alerts each active client manager once per lead when SLA is breached (idempotent on notifications row).
  */
 export async function notifyUncontactedLeadToManager(
   lead: UncontactedLeadRow,
@@ -622,27 +623,14 @@ export async function notifyUncontactedLeadToManager(
 ): Promise<void> {
   void clientTwilioOverride;
   const supabase = createAdminClient();
-  const { data: manager } = await supabase
+  const { data: managers } = await supabase
     .from("users")
     .select("id, name, email, phone, notification_prefs")
     .eq("client_id", client.id)
     .eq("role", "CLIENT_MANAGER")
-    .eq("is_active", true)
-    .maybeSingle();
+    .eq("is_active", true);
 
-  if (!manager) return;
-
-  const prefs = getManagerPrefs(manager.notification_prefs);
-  if (!prefs.uncontactedLead.whatsapp && !prefs.uncontactedLead.email) return;
-
-  const { data: existing } = await supabase
-    .from("notifications")
-    .select("id")
-    .eq("user_id", manager.id)
-    .eq("lead_id", lead.id)
-    .eq("type", "UNCONTACTED_MANAGER_ALERT")
-    .maybeSingle();
-  if (existing) return;
+  if (!managers?.length) return;
 
   const hoursUncontacted = Math.floor(
     (Date.now() - new Date(lead.created_at as string).getTime()) / (1000 * 60 * 60)
@@ -664,46 +652,60 @@ export async function notifyUncontactedLeadToManager(
 
   const slaHours = client.response_time_limit_hours ?? 2;
 
-  await createInAppNotification({
-    userId: manager.id as string,
-    type: "UNCONTACTED_MANAGER_ALERT",
-    message: `${lead.name ?? "Lead"} uncontacted for ${hoursUncontacted}h`,
-    leadId: lead.id,
-  });
+  for (const manager of managers) {
+    const prefs = getManagerPrefs(manager.notification_prefs);
+    if (!prefs.uncontactedLead.whatsapp && !prefs.uncontactedLead.email) continue;
 
-  if (prefs.uncontactedLead.whatsapp && manager.phone?.trim()) {
-    console.info(
-      "[notifyUncontactedLeadToManager] manager WhatsApp skipped (no approved Meta template — email/in-app only)"
-    );
-  }
+    const { data: existing } = await supabase
+      .from("notifications")
+      .select("id")
+      .eq("user_id", manager.id)
+      .eq("lead_id", lead.id)
+      .eq("type", "UNCONTACTED_MANAGER_ALERT")
+      .maybeSingle();
+    if (existing) continue;
 
-  if (prefs.uncontactedLead.email && manager.email?.trim() && process.env.RESEND_FROM_EMAIL) {
-    background("uncontactedLeadManagerEmail", async () => {
-      const r = await sendEmailWithLog({
-        mail: {
-          to: manager.email as string,
-          from: process.env.RESEND_FROM_EMAIL!,
-          subject: `Uncontacted lead: ${lead.name ?? "Lead"} (${hoursUncontacted}h)`,
-          html: renderManagerUncontactedLeadEmail({
-            lead: { id: lead.id, name: lead.name },
-            client: { name: client.name },
-            hoursUncontacted,
-            salespersonName,
-            slaHours,
-            salespersonEmail: repEmail,
-            salespersonPhone: repPhone,
-          }),
-        },
-        context: {
-          userId: manager.id as string,
-          leadId: lead.id,
-          clientId: client.id,
-          notificationType: "UNCONTACTED_MANAGER_ALERT",
-        },
-      });
-      if (r.ok) console.log("[notifyUncontactedLeadToManager] Email: success");
-      else console.error("[notifyUncontactedLeadToManager] Email:", r.error);
+    await createInAppNotification({
+      userId: manager.id as string,
+      type: "UNCONTACTED_MANAGER_ALERT",
+      message: `${lead.name ?? "Lead"} uncontacted for ${hoursUncontacted}h`,
+      leadId: lead.id,
     });
+
+    if (prefs.uncontactedLead.whatsapp && manager.phone?.trim()) {
+      console.info(
+        "[notifyUncontactedLeadToManager] manager WhatsApp skipped (no approved Meta template — email/in-app only)"
+      );
+    }
+
+    if (prefs.uncontactedLead.email && manager.email?.trim() && process.env.RESEND_FROM_EMAIL) {
+      background("uncontactedLeadManagerEmail", async () => {
+        const r = await sendEmailWithLog({
+          mail: {
+            to: manager.email as string,
+            from: process.env.RESEND_FROM_EMAIL!,
+            subject: `Uncontacted lead: ${lead.name ?? "Lead"} (${hoursUncontacted}h)`,
+            html: renderManagerUncontactedLeadEmail({
+              lead: { id: lead.id, name: lead.name },
+              client: { name: client.name },
+              hoursUncontacted,
+              salespersonName,
+              slaHours,
+              salespersonEmail: repEmail,
+              salespersonPhone: repPhone,
+            }),
+          },
+          context: {
+            userId: manager.id as string,
+            leadId: lead.id,
+            clientId: client.id,
+            notificationType: "UNCONTACTED_MANAGER_ALERT",
+          },
+        });
+        if (r.ok) console.log("[notifyUncontactedLeadToManager] Email: success");
+        else console.error("[notifyUncontactedLeadToManager] Email:", r.error);
+      });
+    }
   }
 }
 

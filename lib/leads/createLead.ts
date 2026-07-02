@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { newMagicToken, parseLeadFields } from "@/lib/lead-helpers";
 import { notifyNewLead, notifyAdminsNoSalesperson } from "@/lib/notifications";
-import { getManagerPrefs, parseSalesPrefs } from "@/lib/notification-prefs";
+import { parseSalesPrefs } from "@/lib/notification-prefs";
 import { background } from "@/lib/background";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logLeadCreated } from "@/lib/lead-events";
@@ -124,8 +124,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       .select("id, name, email, phone, notification_prefs")
       .eq("client_id", clientId)
       .eq("role", "CLIENT_MANAGER")
-      .eq("is_active", true)
-      .limit(1);
+      .eq("is_active", true);
 
     list = (salespeople ?? []) as typeof list;
     managers = managersData ?? undefined;
@@ -265,8 +264,13 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
   if (!skipNotifications) {
     if (assignedId) {
       const sp = list.find((s) => s.id === assignedId)!;
-      const mgr = managers?.[0] ?? null;
-      const managerPrefs = mgr ? getManagerPrefs((mgr as { notification_prefs?: unknown }).notification_prefs) : null;
+      const managerList = (managers ?? []).map((mgr) => ({
+        id: mgr.id as string,
+        name: mgr.name as string,
+        phone: (mgr.phone as string | null) ?? null,
+        email: (mgr.email as string | null) ?? null,
+        notification_prefs: (mgr as { notification_prefs?: unknown }).notification_prefs,
+      }));
       try {
         await notifyNewLead(
           leadRow,
@@ -276,19 +280,11 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
             phone: (sp.phone as string | null) ?? null,
             email: (sp.email as string | null) ?? null,
           },
-          mgr
-            ? {
-                id: mgr.id as string,
-                name: mgr.name as string,
-                phone: (mgr.phone as string | null) ?? null,
-                email: (mgr.email as string | null) ?? null,
-              }
-            : null,
+          managerList,
           client.twilio_whatsapp_override as string | null,
           client.name as string,
           {
             salesPrefs: parseSalesPrefs((sp as { notification_prefs?: unknown }).notification_prefs),
-            managerPrefs,
           }
         );
       } catch (err) {

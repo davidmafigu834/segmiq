@@ -4,12 +4,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageClientTeam } from "@/lib/auth/permissions";
+import { migrateUncontactedLeads } from "@/lib/leads/migrateUncontactedLeads";
 
 export const dynamic = "force-dynamic";
 
-const patchSchema = z.object({
-  is_active: z.boolean(),
-});
+const patchSchema = z
+  .object({
+    is_active: z.boolean().optional(),
+    role: z.enum(["CLIENT_MANAGER"]).optional(),
+  })
+  .refine((data) => data.is_active !== undefined || data.role !== undefined, {
+    message: "Provide is_active and/or role",
+  });
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string; userId: string } }) {
   const session = await getServerSession(authOptions);
@@ -28,58 +34,77 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   const supabase = createAdminClient();
   const { data: u } = await supabase
     .from("users")
-    .select("id, role, client_id")
+    .select("id, name, role, client_id, is_active")
     .eq("id", params.userId)
     .maybeSingle();
-  if (!u || u.client_id !== params.clientId || u.role !== "SALESPERSON") {
+  if (!u || u.client_id !== params.clientId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const { error } = await supabase.from("users").update({ is_active: parsed.data.is_active }).eq("id", params.userId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  if (!parsed.data.is_active) {
-    const { data: remaining } = await supabase
-      .from("users")
-      .select("id, round_robin_order")
-      .eq("client_id", params.clientId)
-      .eq("role", "SALESPERSON")
-      .eq("is_active", true)
-      .order("round_robin_order", { ascending: true });
-
-    const active = remaining ?? [];
-
-    if (active.length > 0) {
-      const { data: newLeads } = await supabase
-        .from("leads")
-        .select("id")
-        .eq("assigned_to_id", params.userId)
-        .eq("status", "NEW");
-
-      for (let i = 0; i < (newLeads ?? []).length; i++) {
-        const lead = newLeads![i];
-        const newAssignee = active[i % active.length];
-        await supabase
-          .from("leads")
-          .update({ assigned_to_id: newAssignee.id })
-          .eq("id", lead.id as string);
-      }
-
-      for (let i = 0; i < active.length; i++) {
-        await supabase
-          .from("users")
-          .update({ round_robin_order: i })
-          .eq("id", active[i].id as string);
-      }
-    }
-
-    await supabase
-      .from("clients")
-      .update({ round_robin_index: 0 })
-      .eq("id", params.clientId);
+  const role = u.role as string;
+  if (role !== "SALESPERSON" && role !== "CLIENT_MANAGER") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true });
+  if (role === "CLIENT_MANAGER" && parsed.data.role === "CLIENT_MANAGER") {
+    return NextResponse.json({ error: "User is already a manager" }, { status: 400 });
+  }
+
+  if (role === "CLIENT_MANAGER" && parsed.data.is_active === false && params.userId === session.userId) {
+    return NextResponse.json({ error: "You cannot deactivate yourself" }, { status: 400 });
+  }
+
+  const actorName = session.user?.name ?? "Manager";
+  const actor = { id: session.userId, name: actorName, role: session.role ?? "UNKNOWN" };
+
+  let migration = { migrated: 0, unassigned: 0 };
+
+  if (role === "SALESPERSON" && parsed.data.role === "CLIENT_MANAGER") {
+    migration = await migrateUncontactedLeads(supabase, {
+      clientId: params.clientId,
+      fromUserId: params.userId,
+      actor,
+      handoverNotes: "Uncontacted leads redistributed when salesperson was promoted to manager.",
+    });
+
+    const { error } = await supabase
+      .from("users")
+      .update({ role: "CLIENT_MANAGER", round_robin_order: 0, is_active: true })
+      .eq("id", params.userId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const { data: promoted } = await supabase
+      .from("users")
+      .select("id, name, email, phone, role, is_active")
+      .eq("id", params.userId)
+      .single();
+
+    return NextResponse.json({
+      ok: true,
+      promoted: true,
+      manager: promoted,
+      migration,
+    });
+  }
+
+  if (role === "SALESPERSON" && parsed.data.is_active === false) {
+    migration = await migrateUncontactedLeads(supabase, {
+      clientId: params.clientId,
+      fromUserId: params.userId,
+      actor,
+      handoverNotes: "Uncontacted leads redistributed when salesperson was deactivated.",
+    });
+  }
+
+  if (parsed.data.is_active !== undefined) {
+    const { error } = await supabase
+      .from("users")
+      .update({ is_active: parsed.data.is_active })
+      .eq("id", params.userId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, migration });
 }
 
 export async function DELETE(_req: Request, { params }: { params: { clientId: string; userId: string } }) {
@@ -91,14 +116,35 @@ export async function DELETE(_req: Request, { params }: { params: { clientId: st
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  if (params.userId === session.userId) {
+    return NextResponse.json({ error: "You cannot remove yourself" }, { status: 400 });
+  }
+
   const supabase = createAdminClient();
   const { data: u } = await supabase
     .from("users")
     .select("id, role, client_id")
     .eq("id", params.userId)
     .maybeSingle();
-  if (!u || u.client_id !== params.clientId || u.role !== "SALESPERSON") {
+  if (!u || u.client_id !== params.clientId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const role = u.role as string;
+  if (role !== "SALESPERSON" && role !== "CLIENT_MANAGER") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const actorName = session.user?.name ?? "Manager";
+  const actor = { id: session.userId, name: actorName, role: session.role ?? "UNKNOWN" };
+
+  if (role === "SALESPERSON") {
+    await migrateUncontactedLeads(supabase, {
+      clientId: params.clientId,
+      fromUserId: params.userId,
+      actor,
+      handoverNotes: "Uncontacted leads redistributed when salesperson was removed.",
+    });
   }
 
   const { error } = await supabase.from("users").delete().eq("id", params.userId);

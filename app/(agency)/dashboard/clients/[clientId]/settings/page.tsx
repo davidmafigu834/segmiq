@@ -34,13 +34,12 @@ export default async function ClientSettingsPage({
     .eq("role", "SALESPERSON")
     .order("round_robin_order", { ascending: true });
 
-  const { data: mgrs } = await supabase
+  const { data: managers } = await supabase
     .from("users")
-    .select("id, name, email, phone")
+    .select("id, name, email, phone, is_active")
     .eq("client_id", params.clientId)
     .eq("role", "CLIENT_MANAGER")
-    .eq("is_active", true)
-    .limit(1);
+    .order("created_at", { ascending: true });
 
   const profileSlug = (clientProfile as { slug?: string } | null)?.slug ?? null;
   const profilePublished = Boolean((clientProfile as { is_published?: boolean } | null)?.is_published);
@@ -75,7 +74,7 @@ export default async function ClientSettingsPage({
           clientId={params.clientId}
           initialClient={client as Record<string, unknown>}
           initialSalespeople={(salespeople ?? []) as never}
-          initialManager={(mgrs?.[0] as never) ?? null}
+          initialManagers={(managers ?? []) as never}
           agencyDefaultHours={agency.default_response_time_limit_hours}
           initialTab={initialTab}
         />
