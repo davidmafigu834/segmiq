@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Check, Loader2, Plus, UploadCloud, X } from "lucide-react";
+import { uploadProjectMediaFile, uploadErrorMessage } from "@/app/cloud/lib/upload-project-media";
 
 type Project = {
   id: string;
@@ -149,59 +150,29 @@ export default function DesktopUploadPage() {
     setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, status: "uploading" } : f));
 
     try {
-      const presignRes = await fetch("/api/storage/presign", {
+      setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, progress: 10 } : f));
+      const { key, publicUrl } = await uploadProjectMediaFile(item.file, clientId, projectId);
+      setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, progress: 80 } : f));
+
+      const savedMedia = await fetch(`/api/clients/${clientId}/projects/${projectId}/media`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: item.file.name,
-          contentType: item.file.type || "image/jpeg",
-          clientId,
-          projectId,
-          purpose: "media",
-        }),
+        body: JSON.stringify({ storage_key: key, public_url: publicUrl, file_size_bytes: item.file.size }),
+      }).then((r) => {
+        if (!r.ok) throw new Error("Failed to register media");
+        return r.json() as Promise<{ id: string }>;
       });
-      if (!presignRes.ok) throw new Error("Presign failed");
-      const { uploadUrl, key, publicUrl } = (await presignRes.json()) as {
-        uploadUrl: string; key: string; publicUrl: string;
-      };
 
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, progress: pct } : f));
-          }
-        };
-        xhr.onload = () => {
-          if (xhr.status === 200) {
-            fetch(`/api/clients/${clientId}/projects/${projectId}/media`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ storage_key: key, public_url: publicUrl, file_size_bytes: item.file.size }),
-            })
-              .then((r) => r.json() as Promise<{ id: string }>)
-              .then((savedMedia) => fetch("/api/cloud/watermark/apply", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ mediaId: savedMedia.id, originalKey: key, clientId }),
-              }))
-              .then(() => {
-                setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, status: "done", progress: 100 } : f));
-                setCompletedCount((c) => c + 1);
-                resolve();
-              })
-              .catch(reject);
-          } else {
-            reject(new Error(`Upload failed: ${xhr.status}`));
-          }
-        };
-        xhr.onerror = () => reject(new Error("Network error"));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", item.file.type || "image/jpeg");
-        xhr.send(item.file);
+      await fetch("/api/cloud/watermark/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mediaId: savedMedia.id, originalKey: key, clientId }),
       });
-    } catch {
+
+      setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, status: "done", progress: 100 } : f));
+      setCompletedCount((c) => c + 1);
+    } catch (err) {
+      console.error("Desktop upload failed:", uploadErrorMessage(err));
       setFiles((prev) => prev.map((f) => f.id === fileId ? { ...f, status: "error" } : f));
     }
   }

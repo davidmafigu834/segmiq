@@ -2,21 +2,12 @@ import { NextResponse } from "next/server";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { generatePresignedUploadUrl, generateOriginalMediaKey, generateHeroKey, generateTestimonialPhotoKey, generateVideoKey, getPublicUrl } from "@/lib/storage/r2";
 import { generateLogoKey, resolveImageContentType } from "@/lib/storage/logo-upload";
-
-const ALLOWED_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-  "image/heic",
-  "image/heif",
-  "video/mp4",
-  "video/quicktime",
-  "video/x-msvideo",
-  "video/webm",
-  "video/3gpp",
-  "video/3gpp2",
-];
+import {
+  MEDIA_PHOTO_MAX_BYTES,
+  MEDIA_VIDEO_MAX_BYTES,
+  isAllowedMediaContentType,
+  resolveMediaContentType,
+} from "@/lib/storage/media-content-type";
 
 export async function POST(req: Request) {
   const auth = await resolveApiAuth(req);
@@ -36,7 +27,7 @@ export async function POST(req: Request) {
   const contentType =
     purpose === "logo"
       ? resolveImageContentType(filename, rawContentType) ?? rawContentType
-      : rawContentType;
+      : resolveMediaContentType(filename, rawContentType) ?? rawContentType;
 
   if (purpose === "logo" && !contentType) {
     return NextResponse.json(
@@ -45,8 +36,18 @@ export async function POST(req: Request) {
     );
   }
 
+  if (purpose !== "logo" && !contentType) {
+    return NextResponse.json(
+      {
+        error:
+          "File type not supported. Upload photos (JPEG, PNG, WEBP, HEIC) or videos (MP4, MOV, WEBM, 3GP).",
+      },
+      { status: 400 }
+    );
+  }
+
   const isVideo = contentType.startsWith("video/");
-  const maxSize = isVideo ? 200 * 1024 * 1024 : 20 * 1024 * 1024;
+  const maxSize = isVideo ? MEDIA_VIDEO_MAX_BYTES : MEDIA_PHOTO_MAX_BYTES;
   if (fileSize && fileSize > maxSize) {
     return NextResponse.json(
       {
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!ALLOWED_TYPES.includes(contentType)) {
+  if (!isAllowedMediaContentType(contentType)) {
     return NextResponse.json(
       { error: "File type not supported. Upload photos (JPEG, PNG, WEBP, HEIC) or videos (MP4, MOV, WEBM, 3GP)." },
       { status: 400 }

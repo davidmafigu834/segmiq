@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { generateVideoThumbnail, formatFileSize } from "@/app/cloud/lib/video-thumbnail";
 import { getProjectCardStyles } from "@/app/cloud/components/ProjectCard";
+import { uploadProjectMediaFile, uploadErrorMessage } from "@/app/cloud/lib/upload-project-media";
 
 type Project = {
   id: string;
@@ -125,53 +126,26 @@ export default function CloudUploadPage() {
       const isVideo = item.fileType === "video";
       setQueue((prev) => prev.map((q) => q.id === item.id ? { ...q, status: "uploading" } : q));
       try {
-        const presignRes = await fetch("/api/storage/presign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            filename: item.file.name,
-            contentType: item.file.type || "image/jpeg",
-            clientId: session.clientId,
-            projectId: selectedProject.id,
-            purpose: "media",
-            fileSize: item.file.size,
-          }),
-        });
-        if (!presignRes.ok) throw new Error("Presign failed");
-        const { uploadUrl, key, publicUrl } = (await presignRes.json()) as {
-          uploadUrl: string; key: string; publicUrl: string;
-        };
-
-        await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": item.file.type || "image/jpeg" },
-          body: item.file,
-        });
+        const { key, publicUrl } = await uploadProjectMediaFile(
+          item.file,
+          session.clientId,
+          selectedProject.id
+        );
 
         let thumbnailUrl: string | undefined;
         if (isVideo && item.thumbnailBlob) {
-          const thumbPresign = await fetch("/api/storage/presign", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              filename: `thumb_${item.file.name}.jpg`,
-              contentType: "image/jpeg",
-              clientId: session.clientId,
-              projectId: selectedProject.id,
-              purpose: "media",
-              fileSize: item.thumbnailBlob.size,
-            }),
-          });
-          if (thumbPresign.ok) {
-            const { uploadUrl: thumbUploadUrl, publicUrl: thumbPublicUrl } = (await thumbPresign.json()) as {
-              uploadUrl: string; publicUrl: string;
-            };
-            await fetch(thumbUploadUrl, {
-              method: "PUT",
-              body: item.thumbnailBlob,
-              headers: { "Content-Type": "image/jpeg" },
+          try {
+            const thumbFile = new File([item.thumbnailBlob], `thumb_${item.file.name}.jpg`, {
+              type: "image/jpeg",
             });
-            thumbnailUrl = thumbPublicUrl;
+            const thumb = await uploadProjectMediaFile(
+              thumbFile,
+              session.clientId,
+              selectedProject.id
+            );
+            thumbnailUrl = thumb.publicUrl;
+          } catch (err) {
+            console.warn("Thumbnail upload failed:", err);
           }
         }
 
@@ -201,7 +175,8 @@ export default function CloudUploadPage() {
         setQueue((prev) =>
           prev.map((q) => q.id === item.id ? { ...q, status: "done", progress: 100 } : q)
         );
-      } catch {
+      } catch (err) {
+        console.error("Upload failed:", uploadErrorMessage(err));
         setQueue((prev) =>
           prev.map((q) => q.id === item.id ? { ...q, status: "error" } : q)
         );
