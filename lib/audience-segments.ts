@@ -316,7 +316,6 @@ async function fetchLeadsForSegment(
   const {
     clientId,
     filters,
-    filterLogic,
     minScore,
     dateRangeDays,
     minAgeDays,
