@@ -402,11 +402,12 @@ async function fetchLeadsForSegment(
   const { data, error } = await query;
   if (error) return { leads: [], error };
 
+  const rows = (data ?? []) as unknown as LeadRow[];
   return {
-    leads: (data ?? []).map((row) => ({
-      ...(row as LeadRow),
-      score: (row as LeadRow).score ?? 0,
-      is_stale: (row as LeadRow).is_stale ?? false,
+    leads: rows.map((row) => ({
+      ...row,
+      score: row.score ?? 0,
+      is_stale: row.is_stale ?? false,
     })),
     error: null,
   };
