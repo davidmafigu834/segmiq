@@ -401,16 +401,14 @@ export function ClientSettingsClient({
       setInviteMgrOpen(false);
       setInviteForm({ name: "", email: "", phone: "" });
       if (newMgr?.id && newMgr?.name && newMgr?.email) {
-        setManagers((prev) => [
-          ...prev,
-          {
-            id: newMgr.id,
-            name: newMgr.name,
-            email: newMgr.email,
-            phone: typeof newMgr.phone === "string" ? newMgr.phone : null,
-            is_active: true,
-          },
-        ]);
+        const added: ManagerRow = {
+          id: newMgr.id,
+          name: newMgr.name,
+          email: newMgr.email,
+          phone: typeof newMgr.phone === "string" ? newMgr.phone : null,
+          is_active: true,
+        };
+        setManagers((prev) => [...prev, added]);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Error";
@@ -482,15 +480,16 @@ export function ClientSettingsClient({
       return;
     }
 
-    if (j.manager) {
+    const promoted = j.manager;
+    if (promoted?.id && promoted?.name && promoted?.email) {
       setManagers((prev) => [
         ...prev,
         {
-          id: j.manager.id,
-          name: j.manager.name,
-          email: j.manager.email,
-          phone: j.manager.phone,
-          is_active: j.manager.is_active ?? true,
+          id: promoted.id,
+          name: promoted.name,
+          email: promoted.email,
+          phone: promoted.phone ?? null,
+          is_active: promoted.is_active ?? true,
         },
       ]);
     }

@@ -30,36 +30,47 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     }
     const role = roleFilter === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON";
     const supabase = createAdminClient();
+
+    if (role === "CLIENT_MANAGER") {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, name, email, phone, is_active")
+        .eq("client_id", params.clientId)
+        .eq("role", "CLIENT_MANAGER")
+        .order("created_at", { ascending: true });
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json({ users: data ?? [] });
+    }
+
     const { data, error } = await supabase
       .from("users")
-      .select(
-        role === "CLIENT_MANAGER"
-          ? "id, name, email, phone, is_active"
-          : "id, name, email, phone, is_active, round_robin_order"
-      )
+      .select("id, name, email, phone, is_active, round_robin_order")
       .eq("client_id", params.clientId)
-      .eq("role", role)
-      .order(role === "CLIENT_MANAGER" ? "created_at" : "round_robin_order", { ascending: true });
+      .eq("role", "SALESPERSON")
+      .order("round_robin_order", { ascending: true });
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     const users = data ?? [];
-    if (role === "SALESPERSON") {
-      const withCounts = await Promise.all(
-        users.map(async (user) => ({
-          ...user,
-          uncontacted_lead_count: await countUncontactedLeadsForUser(
-            supabase,
-            params.clientId,
-            user.id as string
-          ),
-        }))
-      );
-      return NextResponse.json({ users: withCounts });
-    }
-
-    return NextResponse.json({ users });
+    const withCounts = await Promise.all(
+      users.map(async (user) => ({
+        id: user.id as string,
+        name: user.name as string,
+        email: user.email as string,
+        phone: (user.phone as string | null) ?? null,
+        is_active: user.is_active as boolean,
+        round_robin_order: user.round_robin_order as number,
+        uncontacted_lead_count: await countUncontactedLeadsForUser(
+          supabase,
+          params.clientId,
+          user.id as string
+        ),
+      }))
+    );
+    return NextResponse.json({ users: withCounts });
   }
 
   if (!canReassignLeads(session, params.clientId)) {

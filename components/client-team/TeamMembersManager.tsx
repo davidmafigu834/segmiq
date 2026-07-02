@@ -170,16 +170,14 @@ export function TeamMembersManager({
       setInviteMgrOpen(false);
       setInviteForm({ name: "", email: "", phone: "" });
       if (newMgr?.id && newMgr?.name && newMgr?.email) {
-        setManagers((prev) => [
-          ...prev,
-          {
-            id: newMgr.id,
-            name: newMgr.name,
-            email: newMgr.email,
-            phone: typeof newMgr.phone === "string" ? newMgr.phone : null,
-            is_active: true,
-          },
-        ]);
+        const added: ManagerRow = {
+          id: newMgr.id,
+          name: newMgr.name,
+          email: newMgr.email,
+          phone: typeof newMgr.phone === "string" ? newMgr.phone : null,
+          is_active: true,
+        };
+        setManagers((prev) => [...prev, added]);
       }
       setToast("Manager invited.");
     } catch (e) {
@@ -279,14 +277,15 @@ export function TeamMembersManager({
     }
 
     setSales((prev) => prev.filter((u) => u.id !== id));
-    if (j.manager) {
+    const promoted = j.manager;
+    if (promoted?.id && promoted?.name && promoted?.email) {
       setManagers((prev) => [
         ...prev,
         {
-          id: j.manager.id,
-          name: j.manager.name,
-          email: j.manager.email,
-          phone: j.manager.phone,
+          id: promoted.id,
+          name: promoted.name,
+          email: promoted.email,
+          phone: promoted.phone ?? null,
           is_active: true,
         },
       ]);
