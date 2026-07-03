@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { newMagicToken, parseLeadFields } from "@/lib/lead-helpers";
+import { prospectEnquiryLabel } from "@/lib/format-form-data";
 import { notifyNewLead, notifyAdminsNoSalesperson } from "@/lib/notifications";
 import { parseSalesPrefs } from "@/lib/notification-prefs";
 import { background } from "@/lib/background";
@@ -246,10 +247,11 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
 
   // Log LEAD_CREATED event (fire-and-forget — never blocks lead creation)
   const assignedSalesperson = assignedId ? (list.find((s) => s.id === assignedId) ?? null) : null;
-  const formDataSummary =
-    (leadRow.project_type as string | null) ||
-    (leadRow.budget as string | null) ||
-    null;
+  const formDataSummary = prospectEnquiryLabel({
+    project_type: leadRow.project_type as string | null,
+    form_data: leadRow.form_data as Record<string, unknown> | null,
+    requestedPackageName: requestedPackage?.name ?? null,
+  });
   background("logLeadCreated", () =>
     logLeadCreated({
       leadId: leadRow.id,
@@ -309,10 +311,11 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       (client as { send_prospect_confirmation?: boolean }).send_prospect_confirmation !== false
     ) {
       try {
-        const serviceDescription =
-          (leadRow.project_type as string | null) ||
-          (leadRow.budget as string | null) ||
-          "your enquiry";
+        const serviceDescription = prospectEnquiryLabel({
+          project_type: leadRow.project_type as string | null,
+          form_data: leadRow.form_data as Record<string, unknown> | null,
+          requestedPackageName: requestedPackage?.name ?? null,
+        });
         const prospectFirst = firstName(leadRow.name as string | null);
         const companyName = client.name as string;
         const responseHours = String(Math.max(1, Math.round((client.response_time_limit_hours as number) || 2)));
