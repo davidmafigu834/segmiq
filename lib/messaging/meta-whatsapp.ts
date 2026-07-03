@@ -25,6 +25,7 @@ export type TemplateKey =
   | "MAGIC_LINK"
   | "MAGIC_LINK_RENEWAL"
   | "NEW_LEAD"
+  | "NEW_LEAD_MANAGER"
   | "SLA_BREACH"
   | "FOLLOW_UP_REMINDER"
   | "DAILY_COACHING"
@@ -46,6 +47,7 @@ const TEMPLATE_NAMES: Record<TemplateKey, string> = {
   MAGIC_LINK: "leadstaq_magic_link",
   MAGIC_LINK_RENEWAL: "segmiq_magic_link_renewal",
   NEW_LEAD: "leadstaq_new_lead",
+  NEW_LEAD_MANAGER: "segmiq_new_lead_manager",
   SLA_BREACH: "segmiq_sla_breach",
   FOLLOW_UP_REMINDER: "segmiq_follow_up_reminder",
   DAILY_COACHING: "segmiq_daily_coaching",

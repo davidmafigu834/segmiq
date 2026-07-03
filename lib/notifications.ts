@@ -243,6 +243,17 @@ export async function notifyNewLead(
     };
   }
 
+  function managerNewLeadTemplateVars(managerName: string): Record<string, string> {
+    return {
+      "1": firstName(managerName),
+      "2": salesperson.name,
+      "3": clientName,
+      "4": lead.name || "Unknown",
+      "5": lead.phone?.trim() || "—",
+      "6": service,
+    };
+  }
+
   if (salesPrefs.whatsapp) {
     if (!salesperson.phone?.trim()) {
       await logMessage(
@@ -388,8 +399,8 @@ export async function notifyNewLead(
         const mr = await sendWhatsApp({
           to: manager.phone,
           toOverride: clientTwilioOverride,
-          template: "NEW_LEAD",
-          variables: newLeadTemplateVars(manager.name),
+          template: "NEW_LEAD_MANAGER",
+          variables: managerNewLeadTemplateVars(manager.name),
           fallbackBody: managerFallback,
           context: {
             userId: manager.id,
@@ -410,7 +421,7 @@ export async function notifyNewLead(
             channel: "whatsapp",
             notificationType: "NEW_LEAD_MANAGER",
             recipient: "(none)",
-            templateKey: "NEW_LEAD",
+            templateKey: "NEW_LEAD_MANAGER",
           }
         );
         console.info("[notifyNewLead] manager WhatsApp skipped (no phone)");
