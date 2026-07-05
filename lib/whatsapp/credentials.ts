@@ -6,6 +6,13 @@ export type WhatsAppSendConfig = {
   displayNumber: string | null;
 };
 
+/** Meta Cloud API tokens are long strings, typically starting with `EAA`. */
+export function isPlausibleMetaAccessToken(token: string | null | undefined): boolean {
+  const t = token?.trim();
+  if (!t) return false;
+  return t.length >= 50 && /^EAA[A-Za-z0-9]+$/.test(t);
+}
+
 /**
  * Resolve Meta Cloud API credentials for a client.
  * Each company connects their own WhatsApp number (Phone number ID on `clients`).
@@ -14,15 +21,15 @@ export type WhatsAppSendConfig = {
 export async function resolveWhatsAppSendConfig(
   clientId: string | null | undefined
 ): Promise<WhatsAppSendConfig | null> {
-  const accessToken =
+  const platformToken =
     process.env.META_WHATSAPP_ACCESS_TOKEN?.trim() ||
     process.env.FB_ACCESS_TOKEN?.trim() ||
     "";
 
   if (!clientId) {
     const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
-    if (!phoneNumberId || !accessToken) return null;
-    return { phoneNumberId, accessToken, displayNumber: null };
+    if (!phoneNumberId || !platformToken) return null;
+    return { phoneNumberId, accessToken: platformToken, displayNumber: null };
   }
 
   const supabase = createAdminClient();
@@ -37,14 +44,14 @@ export async function resolveWhatsAppSendConfig(
     process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim() ||
     "";
 
-  const token =
-    (client?.meta_whatsapp_access_token as string | null)?.trim() || accessToken;
+  const clientToken = (client?.meta_whatsapp_access_token as string | null)?.trim() || "";
+  const accessToken = isPlausibleMetaAccessToken(clientToken) ? clientToken : platformToken;
 
-  if (!phoneNumberId || !token) return null;
+  if (!phoneNumberId || !accessToken) return null;
 
   return {
     phoneNumberId,
-    accessToken: token,
+    accessToken,
     displayNumber: (client?.meta_whatsapp_display_number as string | null)?.trim() || null,
   };
 }

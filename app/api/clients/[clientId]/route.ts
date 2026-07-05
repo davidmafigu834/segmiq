@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRoles } from "@/lib/api-guards";
 import { archiveClient } from "@/lib/clients/archive";
 import { isClientSlugAvailable } from "@/lib/clients/slug";
+import { isPlausibleMetaAccessToken } from "@/lib/whatsapp/credentials";
 
 export const dynamic = "force-dynamic";
 
@@ -101,7 +102,17 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     update.meta_whatsapp_display_number = body.meta_whatsapp_display_number?.trim() || null;
   }
   if (body.meta_whatsapp_access_token !== undefined) {
-    update.meta_whatsapp_access_token = body.meta_whatsapp_access_token?.trim() || null;
+    const token = body.meta_whatsapp_access_token?.trim() || null;
+    if (token && !isPlausibleMetaAccessToken(token)) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid WhatsApp access token — paste the full token from Meta API Setup (starts with EAA), or leave blank to use the platform token.",
+        },
+        { status: 400 }
+      );
+    }
+    update.meta_whatsapp_access_token = token;
   }
   if (body.assignment_mode !== undefined) update.assignment_mode = body.assignment_mode;
   if (body.primary_color !== undefined) update.primary_color = body.primary_color;

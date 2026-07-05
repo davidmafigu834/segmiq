@@ -83,7 +83,16 @@ export async function sendWhatsAppSessionMessage(
     if (!res.ok || data.error) {
       const err = data.error || { code: res.status, message: `HTTP ${res.status}` };
       fbLog("fb.whatsapp.send_failed", { recipient: normalized, message: err.message });
-      out = { ok: false, error: err.message || "Send failed", errorCode: err.code };
+      const authFailed =
+        err.code === 190 ||
+        /authentication error|invalid oauth access token|cannot parse access token/i.test(err.message ?? "");
+      out = {
+        ok: false,
+        error: authFailed
+          ? "WhatsApp access token is invalid or expired — clear the token in Client Settings → WhatsApp to use the platform token, or paste a fresh token from Meta."
+          : err.message || "Send failed",
+        errorCode: err.code,
+      };
     } else {
       out = { ok: true, providerId: data.messages?.[0]?.id };
       fbLog("fb.whatsapp.sent", { recipient: normalized, providerId: out.providerId });
