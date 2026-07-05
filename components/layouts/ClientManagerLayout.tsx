@@ -10,6 +10,7 @@ export async function ClientManagerLayout({
   pageTitle,
   actions,
   hideShellHeader = false,
+  hideShellSidebar = false,
   /** When agency admin previews a client, pass that client id for sidebar brand + breadcrumb data. */
   navClientId,
 }: {
@@ -19,6 +20,7 @@ export async function ClientManagerLayout({
   pageTitle: string;
   actions?: React.ReactNode;
   hideShellHeader?: boolean;
+  hideShellSidebar?: boolean;
   navClientId?: string | null;
 }) {
   const session = await getServerSession(authOptions);
@@ -48,7 +50,8 @@ export async function ClientManagerLayout({
 
   const primaryNav = [
     { href: "/client/dashboard", label: "Dashboard", icon: "home" as const },
-    { href: "/client/leads", label: "Customer Hub", icon: "inbox" as const },
+    { href: "/client/inbox", label: "Team Inbox", icon: "inbox" as const },
+    { href: "/client/leads", label: "Customer Hub", icon: "users" as const },
     { href: "/client/team", label: "Team", icon: "users" as const },
     { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
     { href: "/client/billing", label: "Billing", icon: "receipt" as const },
@@ -76,6 +79,7 @@ export async function ClientManagerLayout({
       notificationRole={session?.role ?? "CLIENT_MANAGER"}
       sidebarBrand={clientName ? { name: clientName, logoUrl } : null}
       hideHeader={hideShellHeader}
+      hideSidebar={hideShellSidebar}
     >
       {children}
     </AppShell>

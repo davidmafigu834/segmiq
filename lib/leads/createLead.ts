@@ -130,7 +130,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     list = (salespeople ?? []) as typeof list;
     managers = managersData ?? undefined;
 
-    let rr = (client.round_robin_index as number) ?? 0;
+    const assignmentMode = (client.assignment_mode as string | null) ?? "direct";
 
     if (overrideAssigneeId != null && overrideAssigneeId !== "") {
       const ok = list.some((s) => s.id === overrideAssigneeId);
@@ -138,11 +138,14 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
         return { ok: false, error: "Assignee is not an active salesperson for this client", code: "UNKNOWN" };
       }
       assignedId = overrideAssigneeId;
-    } else if (list.length > 0) {
+    } else if (assignmentMode === "round_robin" && list.length > 0) {
+      let rr = (client.round_robin_index as number) ?? 0;
       const idx = rr % list.length;
       assignedId = list[idx].id as string;
       rr = (rr + 1) % list.length;
       await supabase.from("clients").update({ round_robin_index: rr, updated_at: new Date().toISOString() }).eq("id", clientId);
+    } else {
+      assignedId = null;
     }
   }
 

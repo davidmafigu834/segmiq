@@ -140,10 +140,24 @@ export async function canReadLead(
   }
 
   if (session.role === "SALESPERSON") {
-    if (lead.assigned_to_id !== session.userId) {
-      return { ok: false, status: 404 };
+    if (lead.assigned_to_id === session.userId) {
+      return { ok: true };
     }
-    return { ok: true };
+    if (
+      !lead.assigned_to_id &&
+      lead.client_id === session.clientId
+    ) {
+      const { data: client } = await supabase
+        .from("clients")
+        .select("assignment_mode")
+        .eq("id", lead.client_id as string)
+        .maybeSingle();
+      const mode = (client?.assignment_mode as string | null) ?? "direct";
+      if (mode === "pool" || mode === "direct") {
+        return { ok: true };
+      }
+    }
+    return { ok: false, status: 404 };
   }
 
   return { ok: false, status: 404 };

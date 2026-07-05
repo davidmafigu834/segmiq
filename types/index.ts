@@ -2,7 +2,7 @@ export type UserRole = "AGENCY_ADMIN" | "CLIENT_MANAGER" | "SALESPERSON";
 
 export type ClientMode = "team" | "solo";
 
-export type LeadSource = "LANDING_PAGE" | "FACEBOOK" | "MANUAL" | "REFERRAL";
+export type LeadSource = "LANDING_PAGE" | "FACEBOOK" | "MANUAL" | "REFERRAL" | "WHATSAPP_INBOUND";
 
 export type LeadStatus =
   | "NEW"
@@ -23,6 +23,7 @@ export type CallOutcome =
 
 export type NotificationType =
   | "NEW_LEAD"
+  | "WHATSAPP_MESSAGE"
   | "FOLLOW_UP_DUE"
   | "DEAL_WON"
   | "LEAD_FLAG"
@@ -57,6 +58,9 @@ export interface ClientRow {
   response_time_limit_hours: number;
   round_robin_index: number;
   assignment_mode: "direct" | "pool" | "round_robin";
+  meta_whatsapp_phone_number_id: string | null;
+  meta_whatsapp_display_number: string | null;
+  meta_whatsapp_access_token: string | null;
   twilio_whatsapp_override: string | null;
   dial_code: string | null;
   is_active: boolean;

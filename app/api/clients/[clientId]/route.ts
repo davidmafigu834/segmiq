@@ -21,6 +21,14 @@ const patchSchema = z
       .regex(/^[0-9]{2,4}$/)
       .optional()
       .nullable(),
+    meta_whatsapp_phone_number_id: z
+      .string()
+      .regex(/^[0-9]+$/)
+      .optional()
+      .nullable(),
+    meta_whatsapp_display_number: z.string().max(32).optional().nullable(),
+    meta_whatsapp_access_token: z.string().max(500).optional().nullable(),
+    assignment_mode: z.enum(["direct", "pool", "round_robin"]).optional(),
     primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
     /** @deprecated Manager alerts use `users.notification_prefs` (CLIENT_MANAGER). Column kept for compatibility. */
     manager_notification_prefs: z
@@ -86,6 +94,16 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   if (body.twilio_whatsapp_override !== undefined) update.twilio_whatsapp_override = body.twilio_whatsapp_override?.trim() || null;
   if (body.send_prospect_confirmation !== undefined) update.send_prospect_confirmation = body.send_prospect_confirmation;
   if (body.dial_code !== undefined) update.dial_code = body.dial_code ? body.dial_code.trim() : null;
+  if (body.meta_whatsapp_phone_number_id !== undefined) {
+    update.meta_whatsapp_phone_number_id = body.meta_whatsapp_phone_number_id?.trim() || null;
+  }
+  if (body.meta_whatsapp_display_number !== undefined) {
+    update.meta_whatsapp_display_number = body.meta_whatsapp_display_number?.trim() || null;
+  }
+  if (body.meta_whatsapp_access_token !== undefined) {
+    update.meta_whatsapp_access_token = body.meta_whatsapp_access_token?.trim() || null;
+  }
+  if (body.assignment_mode !== undefined) update.assignment_mode = body.assignment_mode;
   if (body.primary_color !== undefined) update.primary_color = body.primary_color;
   if (body.manager_notification_prefs !== undefined) update.manager_notification_prefs = body.manager_notification_prefs;
   if (body.is_active !== undefined) update.is_active = body.is_active;

@@ -191,6 +191,7 @@ export async function notifyBulkReassignment({ clientId, leadIds, actorId }: Bul
 
 type InAppNotificationType =
   | "NEW_LEAD"
+  | "WHATSAPP_MESSAGE"
   | "FOLLOW_UP_DUE"
   | "DEAL_WON"
   | "LEAD_FLAG"
@@ -495,6 +496,22 @@ export async function notifyNewLead(
     type: "NEW_LEAD",
     message: `New lead: ${lead.name ?? "Lead"} — ${budget}`,
     leadId: lead.id,
+  });
+}
+
+export async function notifyWhatsAppInboundMessage(opts: {
+  userId: string;
+  leadId: string;
+  leadName: string;
+  preview: string;
+  salesPrefs?: SalesNotificationPrefs | null;
+}): Promise<void> {
+  const preview = opts.preview.length > 120 ? `${opts.preview.slice(0, 117)}…` : opts.preview;
+  await createInAppNotification({
+    userId: opts.userId,
+    type: "WHATSAPP_MESSAGE",
+    message: `WhatsApp from ${opts.leadName}: ${preview}`,
+    leadId: opts.leadId,
   });
 }
 

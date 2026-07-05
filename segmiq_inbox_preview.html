@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Segmiq — Team Inbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg-primary:#000000;
+    --bg-tertiary:#0a0a0a;
+    --bg-quaternary:#131313;
+    --text-primary:#ededed;
+    --text-secondary:rgba(237,237,237,0.62);
+    --text-tertiary:rgba(237,237,237,0.4);
+    --text-disabled:rgba(237,237,237,0.22);
+    --surface-card:#111111;
+    --border:rgba(255,255,255,0.07);
+    --border-hover:rgba(255,255,255,0.15);
+    --accent:#D4FF4F;
+    --accent-foreground:#000000;
+    --accent-hover:#c8f040;
+    --success:#3dd68c;
+    --error:#ff4444;
+    --warning:#f5a623;
+    --font-serif:'Instrument Serif', Georgia, serif;
+    --font-sans:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg-primary);
+    color:var(--text-primary);
+    font-family:var(--font-sans);
+    margin:0;
+    overflow:hidden;
+  }
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:999px;}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2);}
+  .serif{font-family:var(--font-serif);}
+  .icon{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+  .icon-sm{width:14px;height:14px;}
+  .rail-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);cursor:pointer;transition:all .15s;}
+  .rail-btn:hover{background:var(--bg-quaternary);color:var(--text-secondary);}
+  .rail-btn.active{background:var(--surface-card);color:var(--accent);border:1px solid var(--border);}
+  .conv-row{cursor:pointer;transition:background .12s;border-left:2px solid transparent;}
+  .conv-row:hover{background:var(--bg-quaternary);}
+  .conv-row.active{background:var(--bg-quaternary);border-left:2px solid var(--accent);}
+  .filter-tab{cursor:pointer;color:var(--text-tertiary);transition:all .15s;}
+  .filter-tab.active{color:var(--accent-foreground);background:var(--accent);}
+  .filter-tab:not(.active):hover{color:var(--text-primary);}
+  .bubble-in{background:var(--surface-card);border:1px solid var(--border);border-radius:14px 14px 14px 3px;}
+  .bubble-out{background:rgba(212,255,79,0.1);border:1px solid rgba(212,255,79,0.25);border-radius:14px 14px 3px 14px;}
+  .qr-chip{cursor:pointer;transition:all .15s;}
+  .qr-chip:hover{border-color:var(--accent);color:var(--accent);}
+  .score-bar-fill{transition:width .5s ease;}
+  .pulse-dot{animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  textarea:focus, input:focus{outline:none;}
+  .fade-in{animation:fadeIn .18s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+
+  /* ---- Responsive collapse: keep the chat column usable at any width ---- */
+  .toggle-btn{display:none;}
+  #backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:35;}
+  #backdrop.open{display:block;}
+
+  @media (max-width:1180px){
+    #intelPanel{
+      position:fixed;top:64px;right:0;bottom:0;width:340px;
+      transform:translateX(100%);transition:transform .22s ease;z-index:40;
+      box-shadow:-12px 0 30px rgba(0,0,0,0.6);
+    }
+    #intelPanel.open{transform:translateX(0);}
+    .toggle-intel{display:flex;}
+  }
+  @media (max-width:860px){
+    #convPanel{
+      position:fixed;top:64px;left:0;bottom:0;width:300px;
+      transform:translateX(-100%);transition:transform .22s ease;z-index:40;
+      box-shadow:12px 0 30px rgba(0,0,0,0.6);
+    }
+    #convPanel.open{transform:translateX(0);}
+    .toggle-conv{display:flex;}
+  }
+  @media (max-width:640px){
+    header .hidden.sm\:block{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="flex flex-col h-screen">
+
+  <!-- ============ HEADER ============ -->
+  <header class="h-16 flex items-center justify-between px-5 border-b border-[var(--border)] bg-black shrink-0">
+    <div class="flex items-center gap-8">
+      <div class="flex items-center gap-3">
+        <div class="toggle-btn toggle-conv rail-btn" style="width:34px;height:34px" onclick="togglePanel('convPanel')" title="Leads">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="serif text-2xl font-normal tracking-tight" style="color:var(--text-primary)">Segmi</span>
+          <span class="serif text-2xl font-normal tracking-tight" style="color:var(--accent)">Q</span>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-2 py-1 w-80">
+        <svg class="icon icon-sm" style="color:var(--text-tertiary)" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchInput" type="text" placeholder="Search leads, phone, location..."
+          class="bg-transparent text-sm w-full py-1 px-1 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]">
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2" id="filterTabs">
+      <div class="filter-tab active text-xs font-medium px-3 py-1.5 rounded-full" data-filter="all">All <span class="opacity-60">· 8</span></div>
+      <div class="filter-tab text-xs font-medium px-3 py-1.5 rounded-full" data-filter="unassigned">Unassigned <span class="opacity-60">· 1</span></div>
+      <div class="filter-tab text-xs font-medium px-3 py-1.5 rounded-full" data-filter="mine">Mine <span class="opacity-60">· 2</span></div>
+      <div class="filter-tab text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1" data-filter="hot">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+        Hot <span class="opacity-60">· 4</span>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <div class="text-xs text-right hidden sm:block">
+        <div style="color:var(--text-primary)" class="font-medium">Kuda Marufu</div>
+        <div style="color:var(--text-tertiary)">Salesperson · Solar Div.</div>
+      </div>
+      <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold" style="background:var(--accent);color:var(--accent-foreground)">KM</div>
+    </div>
+  </header>
+
+  <!-- ============ BODY ============ -->
+  <div class="flex flex-1 min-h-0">
+
+    <!-- ICON RAIL -->
+    <div class="w-16 border-r border-[var(--border)] bg-black flex flex-col items-center py-4 gap-2 shrink-0">
+      <div class="rail-btn active" title="Inbox">
+        <svg class="icon" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+      </div>
+      <div class="rail-btn" title="Pipeline">
+        <svg class="icon" viewBox="0 0 24 24"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+      </div>
+      <div class="rail-btn" title="Team">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="rail-btn" title="Settings">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+    </div>
+
+    <!-- CONVERSATION LIST -->
+    <div id="convPanel" class="w-[360px] border-r border-[var(--border)] bg-[var(--bg-tertiary)] flex flex-col shrink-0">
+      <div class="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between">
+        <span class="text-xs font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Team Inbox</span>
+        <span class="text-xs" style="color:var(--text-tertiary)">Sorted by score</span>
+      </div>
+      <div class="px-4 py-2 text-[11px] flex items-center gap-1.5 border-b border-[var(--border)]" style="color:var(--text-tertiary)">
+        <span class="w-[10px] h-[10px] rounded-full inline-block" style="background:var(--accent)"></span>
+        Your leads
+        <span class="w-[10px] h-[10px] rounded-full inline-block ml-2" style="border:1.5px dashed var(--text-tertiary)"></span>
+        Unassigned — tap badge to claim
+      </div>
+      <div id="convList" class="flex-1 overflow-y-auto"></div>
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div class="flex-1 flex flex-col min-w-0 bg-[var(--bg-primary)]">
+      <div id="chatHeader" class="h-16 px-5 border-b border-[var(--border)] flex items-center justify-between shrink-0"></div>
+      <div id="messages" class="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-3"></div>
+      <div id="quickReplies" class="px-5 py-2.5 border-t border-[var(--border)] flex items-center gap-2 flex-wrap shrink-0"></div>
+      <div class="px-4 py-3 border-t border-[var(--border)] flex items-center gap-2 shrink-0">
+        <div class="rail-btn" style="width:34px;height:34px">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </div>
+        <input id="msgInput" type="text" placeholder="Type a message — this is a prototype, sends are simulated"
+          class="flex-1 bg-[var(--surface-card)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]">
+        <div class="rail-btn" style="width:34px;height:34px">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
+        </div>
+        <button id="sendBtn" class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background:var(--accent);color:var(--accent-foreground)">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- INTELLIGENCE PANEL -->
+    <div class="w-[360px] border-l border-[var(--border)] bg-[var(--bg-tertiary)] overflow-y-auto shrink-0" id="intelPanel"></div>
+
+  </div>
+</div>
+
+<div id="backdrop" onclick="closePanels()"></div>
+
+<script>
+const ICONS = {
+  flame: `<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>`,
+  clock: `<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16.5 14"/>`,
+  mapPin: `<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>`,
+  dollar: `<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>`,
+  zap: `<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>`,
+  target: `<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`,
+  activity: `<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>`,
+  tag: `<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>`,
+  phone: `<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.29 1.202 12.035 12.035 0 0 0 6.392 6.384"/>`,
+  more: `<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>`,
+  checkCheck: `<path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/>`,
+  chevronDown: `<path d="m6 9 6 6 6-6"/>`,
+  sparkle: `<path d="m12 3-1.9 4.9L5 9.8l4.9 1.9L12 17l1.9-5.1L19 9.8l-5.1-1.9z"/>`
+};
+function icon(name, cls="icon"){ return `<svg class="${cls}" viewBox="0 0 24 24" style="color:inherit">${ICONS[name]}</svg>`; }
+
+const REPS = ["Kuda Marufu","Panashe Chirwa","Vimbai Muzenda","Tapiwa Gono"];
+const CURRENT_REP = "Kuda Marufu";
+
+const LEADS = [
+  {
+    id:1, name:"Nomsa Dube", phone:"+263 77 234 5678", location:"Gweru", source:"Referral",
+    product:"15kW industrial solar system", stage:"New Lead", score:95,
+    breakdown:{urgency:25,budget:23,location:14,productInterest:20,engagement:13},
+    tags:["Industrial","Urgent","Referral","High-Budget"],
+    assigned:"Kuda Marufu", unread:5, lastTime:"8m ago",
+    lastMessage:"We need this urgently, our generator broke down completely.",
+    ai:"Industrial client referred by an existing customer. Generator failure is driving an immediate purchase decision — this is not early-stage research. Budget was confirmed in-chat against a competitor quote of $18,000. Fast reply times on both sides indicate high engagement. Recommend a call within the SLA window before the lead cools.",
+    nextAction:"Call now — SLA window closing in 3 minutes",
+    hotSLA:true,
+    messages:[
+      {from:"customer", time:"9:02 AM", text:"Good morning. I was given your number by Farai at Midlands Engineering. Our generator failed completely this week."},
+      {from:"customer", time:"9:03 AM", text:"We need this urgently, our generator broke down completely. We're looking at a 15kW system for the workshop in Gweru."},
+      {from:"rep", time:"9:06 AM", text:"Morning Nomsa, thanks for reaching out. Sorry to hear about the generator. Can you tell me a bit about your workshop's daily power usage?"},
+      {from:"customer", time:"9:09 AM", text:"We run welding equipment and compressors most of the day. Midlands Engineering quoted us $18,000 for a similar setup but their lead time is 6 weeks."},
+      {from:"customer", time:"9:10 AM", text:"If you can move faster than that we'd rather work with you."}
+    ]
+  },
+  {
+    id:2, name:"Tendai Moyo", phone:"+263 71 123 4567", location:"Borrowdale, Harare", source:"Facebook",
+    product:"10kW residential solar system", stage:"New Lead", score:92,
+    breakdown:{urgency:22,budget:24,location:15,productInterest:18,engagement:13},
+    tags:["Residential","Cash Buyer","Facebook","Ready-to-Buy"],
+    assigned:"Panashe Chirwa", unread:3, lastTime:"2m ago",
+    lastMessage:"Can you install by end of month? I have cash ready.",
+    ai:"Responded to the Borrowdale solar ad within minutes and immediately asked about install timelines and payment — a strong buying signal. Confirmed funds are available with no financing needed, which removes the usual approval delay. Recommend sending pricing and a site-visit slot in the same reply.",
+    nextAction:"Send pricing pack and offer a site visit this week",
+    hotSLA:true,
+    messages:[
+      {from:"customer", time:"Just now", text:"Hi, I saw your ad for the 10kW system. What's the price installed?"},
+      {from:"rep", time:"Just now", text:"Hi Tendai! Thanks for reaching out. The 10kW residential package starts at $6,800 fully installed, including the inverter and battery bank."},
+      {from:"customer", time:"1m ago", text:"Can you install by end of month? I have cash ready."}
+    ]
+  },
+  {
+    id:3, name:"Farai Ncube", phone:"+263 78 445 2210", location:"Msasa, Harare", source:"Website",
+    product:"Commercial rooftop solar — warehouse", stage:"Quoted", score:88,
+    breakdown:{urgency:18,budget:22,location:15,productInterest:18,engagement:15},
+    tags:["Commercial","Warehouse","Website","Quoted"],
+    assigned:"Vimbai Muzenda", unread:1, lastTime:"26m ago",
+    lastMessage:"Received the quote, looks reasonable. Let me run it past my partner.",
+    ai:"Warehouse operator comparing rooftop solar against rising grid costs. Reviewed the full quote without pushing back on price, which suggests budget is not the blocker — decision-making authority is shared with a business partner. Recommend a short follow-up in 2 days rather than pressing now.",
+    nextAction:"Schedule a follow-up in 2 days, not today",
+    messages:[
+      {from:"customer", time:"9:40 AM", text:"We're looking to cut our warehouse's grid bill. Roof is about 800sqm, mostly flat."},
+      {from:"rep", time:"9:52 AM", text:"That's a great footprint for commercial rooftop. Sending over a formal quote for a 60kW system now."},
+      {from:"customer", time:"10:18 AM", text:"Received the quote, looks reasonable. Let me run it past my partner."}
+    ]
+  },
+  {
+    id:4, name:"Chiedza Gumbo", phone:"+263 77 890 1122", location:"Chitungwiza", source:"Referral",
+    product:"Borehole pump + solar backup", stage:"Follow-up Due", score:45,
+    breakdown:{urgency:8,budget:12,location:10,productInterest:8,engagement:7},
+    tags:["Residential","Borehole","Follow-up"],
+    assigned:"Tapiwa Gono", unread:0, lastTime:"1h ago",
+    lastMessage:"Still thinking about it, will let you know.",
+    ai:"Interest is genuine but has stalled — no urgency signals and budget has not been discussed directly. Engagement has slowed over the last two follow-ups. This sits in nurture territory rather than active pursuit; a light-touch check-in is more appropriate than a hard push.",
+    nextAction:"Send a low-pressure check-in, no pricing yet",
+    messages:[
+      {from:"customer", time:"Yesterday", text:"Hi, my neighbour mentioned you do solar boreholes. What's involved?"},
+      {from:"rep", time:"Yesterday", text:"Hi Chiedza! Yes we do full borehole + solar pump setups. Do you have a borehole already drilled?"},
+      {from:"customer", time:"1h ago", text:"Still thinking about it, will let you know."}
+    ]
+  },
+  {
+    id:5, name:"Blessing Sibanda", phone:"+263 78 990 4433", location:"Bulawayo CBD", source:"Facebook",
+    product:"3kW shop backup power", stage:"New Lead", score:63,
+    breakdown:{urgency:15,budget:14,location:12,productInterest:12,engagement:10},
+    tags:["Small Business","Facebook","Unassigned"],
+    assigned:null, unread:2, lastTime:"3h ago",
+    lastMessage:"How much for a 3kW system for my shop?",
+    ai:"Small retail shop owner asking a direct pricing question from a Facebook ad — moderate urgency, no mention of load-shedding pain yet. Worth qualifying budget before quoting, since 3kW shop systems vary widely by battery size.",
+    nextAction:"Assign a rep and confirm battery size needed before quoting",
+    messages:[
+      {from:"customer", time:"3h ago", text:"Good day. How much for a 3kW system for my shop? We lose stock during load-shedding."}
+    ]
+  },
+  {
+    id:6, name:"Tapiwa Mutasa", phone:"+263 71 556 7788", location:"Mutare", source:"Website",
+    product:"Solar geyser inquiry", stage:"Contacted", score:22,
+    breakdown:{urgency:4,budget:5,location:6,productInterest:4,engagement:3},
+    tags:["Low Intent","Website"],
+    assigned:"Panashe Chirwa", unread:0, lastTime:"Yesterday",
+    lastMessage:"Just browsing for now, thanks.",
+    ai:"Low engagement across every signal — no urgency, no budget discussion, single short reply. Likely early-stage research rather than an active buyer. Keep in nurture and revisit with educational content rather than a sales push.",
+    nextAction:"Move to nurture — send an educational WhatsApp, not a quote",
+    messages:[
+      {from:"customer", time:"Yesterday", text:"How much are solar geysers roughly?"},
+      {from:"rep", time:"Yesterday", text:"Hi Tapiwa, our solar geyser packages start around $450 installed. Want me to send the full brochure?"},
+      {from:"customer", time:"Yesterday", text:"Just browsing for now, thanks."}
+    ]
+  },
+  {
+    id:7, name:"Simbarashe Chinaka", phone:"+263 77 321 6540", location:"Borrowdale Brooke, Harare", source:"Instagram",
+    product:"New-build home solar system", stage:"Won", score:55,
+    breakdown:{urgency:10,budget:13,location:12,productInterest:11,engagement:9},
+    tags:["Residential","New Build","Won"],
+    assigned:"Vimbai Muzenda", unread:0, lastTime:"2 days ago",
+    lastMessage:"Thank you, when do we start installation?",
+    ai:"Deal closed. Decision followed a site visit and a fixed-price quote for a new-build property, with no back-and-forth on price — the build timeline was the only open question.",
+    nextAction:"Confirm installation start date with the client",
+    messages:[
+      {from:"customer", time:"3 days ago", text:"We'd like to go ahead with the quote you sent for the new house."},
+      {from:"rep", time:"3 days ago", text:"Fantastic news Simbarashe! I'll get the contract over today and we can lock in a start date."},
+      {from:"customer", time:"2 days ago", text:"Thank you, when do we start installation?"}
+    ]
+  },
+  {
+    id:8, name:"Rutendo Chikafu", phone:"+263 77 667 8899", location:"Mount Pleasant, Harare", source:"Instagram",
+    product:"5kW residential solar system", stage:"Contacted", score:78,
+    breakdown:{urgency:14,budget:16,location:13,productInterest:17,engagement:18},
+    tags:["Residential","Instagram","Household Decision"],
+    assigned:"Kuda Marufu", unread:0, lastTime:"14m ago",
+    lastMessage:"Let me check with my husband and get back to you.",
+    ai:"Strong product-fit and engagement — asked detailed questions about panel brand and warranty. Decision involves a second household decision-maker, which is common and not a stalling signal. Recommend following up in 2–3 days rather than today.",
+    nextAction:"Follow up in 2–3 days, avoid same-day pressure",
+    messages:[
+      {from:"customer", time:"10:20 AM", text:"What panel brand do you use, and what warranty comes with it?"},
+      {from:"rep", time:"10:31 AM", text:"We install Jinko or Canadian Solar panels, both with 12-year product and 25-year performance warranties."},
+      {from:"customer", time:"10:44 AM", text:"Let me check with my husband and get back to you."}
+    ]
+  }
+];
+
+const STAGE_STYLE = {
+  "New Lead":      {bg:"rgba(212,255,79,0.12)", text:"var(--accent)", border:"rgba(212,255,79,0.3)"},
+  "Contacted":     {bg:"rgba(255,255,255,0.06)", text:"var(--text-secondary)", border:"var(--border)"},
+  "Quoted":        {bg:"rgba(245,166,35,0.12)", text:"var(--warning)", border:"rgba(245,166,35,0.3)"},
+  "Follow-up Due": {bg:"rgba(245,166,35,0.12)", text:"var(--warning)", border:"rgba(245,166,35,0.3)"},
+  "Won":           {bg:"rgba(61,214,140,0.12)", text:"var(--success)", border:"rgba(61,214,140,0.3)"},
+  "Lost":          {bg:"rgba(255,68,68,0.12)", text:"var(--error)", border:"rgba(255,68,68,0.3)"}
+};
+
+let activeId = 1;
+let activeFilter = "all";
+let searchTerm = "";
+
+function scoreColor(score){
+  if(score>=70) return "var(--accent)";
+  if(score>=45) return "var(--warning)";
+  return "var(--text-tertiary)";
+}
+function scoreLabel(score){
+  if(score>=70) return "Hot";
+  if(score>=45) return "Warm";
+  return "Cold";
+}
+function initials(name){
+  return name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
+}
+function avatarColor(name){
+  if(name===CURRENT_REP) return "var(--accent)";
+  const palette = ["#5FD3A3","#F5A623","#7C9FFF","#FF8FB3","#4FD4E8"];
+  let hash=0; for(const c of name) hash=(hash*31+c.charCodeAt(0))>>>0;
+  return palette[hash%palette.length];
+}
+function claimLead(id, evt){
+  evt.stopPropagation();
+  const l = LEADS.find(x=>x.id===id);
+  l.assigned = CURRENT_REP;
+  renderList();
+  if(id===activeId) renderIntel();
+}
+
+function filteredLeads(){
+  return LEADS.filter(l=>{
+    if(activeFilter==="unassigned" && l.assigned) return false;
+    if(activeFilter==="mine" && l.assigned!==CURRENT_REP) return false;
+    if(activeFilter==="hot" && l.score<70) return false;
+    if(searchTerm && !(l.name.toLowerCase().includes(searchTerm) || l.location.toLowerCase().includes(searchTerm) || l.phone.includes(searchTerm))) return false;
+    return true;
+  }).sort((a,b)=>b.score-a.score);
+}
+
+function renderList(){
+  const list = filteredLeads();
+  document.getElementById("convList").innerHTML = list.map(l=>{
+    const st = STAGE_STYLE[l.stage];
+    return `
+    <div class="conv-row px-4 py-3 border-b border-[var(--border)] ${l.id===activeId?'active':''}" onclick="selectLead(${l.id})">
+      <div class="flex items-start gap-3">
+        <div class="relative shrink-0">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold" style="background:var(--bg-quaternary);color:var(--text-secondary)">${initials(l.name)}</div>
+          ${l.assigned
+            ? `<div class="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[9px] font-bold" style="background:${avatarColor(l.assigned)};color:#000;border:2px solid var(--bg-tertiary)" title="Assigned to ${l.assigned}">${initials(l.assigned)}</div>`
+            : `<div class="absolute -bottom-1 -right-1 w-[18px] h-[18px] rounded-full flex items-center justify-center cursor-pointer" style="background:var(--bg-tertiary);border:1.5px dashed var(--text-tertiary)" title="Unassigned — tap to claim" onclick="claimLead(${l.id}, event)">
+                <svg class="icon" style="width:10px;height:10px;color:var(--text-tertiary)" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              </div>`
+          }
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-medium truncate" style="color:var(--text-primary)">${l.name}</span>
+            <span class="text-[11px] shrink-0" style="color:var(--text-tertiary)">${l.lastTime}</span>
+          </div>
+          <div class="text-xs truncate mt-0.5" style="color:var(--text-tertiary)">${l.lastMessage}</div>
+          <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded serif" style="background:transparent;border:1px solid ${scoreColor(l.score)};color:${scoreColor(l.score)}">${l.score}</span>
+            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded" style="background:${st.bg};color:${st.text};border:1px solid ${st.border}">${l.stage}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded" style="background:var(--bg-quaternary);color:var(--text-tertiary)">${l.source}</span>
+            ${l.unread>0?`<span class="text-[10px] font-semibold w-4 h-4 rounded-full flex items-center justify-center ml-auto" style="background:var(--accent);color:var(--accent-foreground)">${l.unread}</span>`:''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join("") || `<div class="p-6 text-center text-sm" style="color:var(--text-tertiary)">No leads match this filter.</div>`;
+}
+
+function selectLead(id){
+  activeId = id;
+  renderList();
+  renderChat();
+  renderIntel();
+  if(window.innerWidth<=860){
+    document.getElementById("convPanel").classList.remove("open");
+    document.getElementById("backdrop").classList.remove("open");
+  }
+}
+
+function togglePanel(panelId){
+  const panel = document.getElementById(panelId);
+  const isOpening = !panel.classList.contains("open");
+  document.getElementById("convPanel").classList.remove("open");
+  document.getElementById("intelPanel").classList.remove("open");
+  if(isOpening) panel.classList.add("open");
+  document.getElementById("backdrop").classList.toggle("open", isOpening);
+}
+function closePanels(){
+  document.getElementById("convPanel").classList.remove("open");
+  document.getElementById("intelPanel").classList.remove("open");
+  document.getElementById("backdrop").classList.remove("open");
+}
+
+function renderChat(){
+  const l = LEADS.find(x=>x.id===activeId);
+  const st = STAGE_STYLE[l.stage];
+
+  document.getElementById("chatHeader").innerHTML = `
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold" style="background:var(--bg-quaternary);color:var(--text-secondary)">${initials(l.name)}</div>
+      <div>
+        <div class="text-sm font-medium flex items-center gap-2" style="color:var(--text-primary)">
+          ${l.name}
+          <span class="text-[10px] font-medium px-1.5 py-0.5 rounded" style="background:${st.bg};color:${st.text};border:1px solid ${st.border}">${l.stage}</span>
+        </div>
+        <div class="text-xs" style="color:var(--text-tertiary)">${l.phone} · ${l.location}</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-1">
+      <div class="rail-btn" style="width:32px;height:32px" onclick="logCall()" title="Log call">${icon('phone','icon icon-sm')}</div>
+      <div class="rail-btn" style="width:32px;height:32px">${icon('more','icon icon-sm')}</div>
+      <div class="toggle-btn toggle-intel rail-btn" style="width:32px;height:32px" onclick="togglePanel('intelPanel')" title="Lead details">${icon('target','icon icon-sm')}</div>
+    </div>`;
+
+  document.getElementById("messages").innerHTML = `
+    <div class="text-center text-[11px] mb-1" style="color:var(--text-tertiary)">Today</div>
+    ` + l.messages.map(m=>`
+    <div class="flex ${m.from==='rep'?'justify-end':'justify-start'} fade-in">
+      <div class="max-w-[70%] px-3.5 py-2.5 text-sm ${m.from==='rep'?'bubble-out':'bubble-in'}" style="color:var(--text-primary)">
+        <div>${m.text}</div>
+        <div class="flex items-center gap-1 justify-end mt-1">
+          <span class="text-[10px]" style="color:var(--text-tertiary)">${m.time}</span>
+          ${m.from==='rep'?icon('checkCheck','icon-sm'):''}
+        </div>
+      </div>
+    </div>`).join("");
+  document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+
+  const quickReplies = ["Send Pricing","Send Portfolio","Schedule Site Visit","Send Quote","Request Photos"];
+  document.getElementById("quickReplies").innerHTML = quickReplies.map(q=>`
+    <div class="qr-chip text-xs px-3 py-1.5 rounded-full border border-[var(--border)]" style="color:var(--text-secondary)" onclick="sendQuick('${q}')">${q}</div>
+  `).join("");
+}
+
+function sendQuick(label){
+  const l = LEADS.find(x=>x.id===activeId);
+  const textMap = {
+    "Send Pricing":"Sure — here's our current pricing pack for that system. [Pricing PDF attached]",
+    "Send Portfolio":"Here's a link to recent installs in your area so you can see the finish quality. [Portfolio link]",
+    "Schedule Site Visit":"I can get a technician out for a free site visit — what day works for you this week?",
+    "Send Quote":"Attaching the formal quote now — let me know if you'd like any adjustments. [Quote PDF attached]",
+    "Request Photos":"Could you send a couple of photos of your roof/meter board so we can size the system accurately?"
+  };
+  l.messages.push({from:"rep", time:"Just now", text: textMap[label]});
+  renderChat();
+}
+
+function logCall(){
+  const l = LEADS.find(x=>x.id===activeId);
+  l.messages.push({from:"rep", time:"Just now", text:"📞 Call logged — Outcome: Reached. Notes added to lead timeline."});
+  renderChat();
+}
+
+document.getElementById("sendBtn").addEventListener("click", ()=>{
+  const input = document.getElementById("msgInput");
+  if(!input.value.trim()) return;
+  const l = LEADS.find(x=>x.id===activeId);
+  l.messages.push({from:"rep", time:"Just now", text: input.value.trim()});
+  input.value = "";
+  renderChat();
+});
+document.getElementById("msgInput").addEventListener("keydown", (e)=>{
+  if(e.key==="Enter") document.getElementById("sendBtn").click();
+});
+
+function barRow(label, value, max, ic){
+  const pct = Math.round((value/max)*100);
+  return `
+  <div>
+    <div class="flex items-center justify-between mb-1">
+      <div class="flex items-center gap-1.5 text-xs" style="color:var(--text-secondary)">${icon(ic,'icon-sm')} ${label}</div>
+      <span class="text-xs font-medium serif" style="color:var(--text-primary)">${value}/${max}</span>
+    </div>
+    <div class="h-1.5 rounded-full w-full" style="background:var(--bg-quaternary)">
+      <div class="score-bar-fill h-1.5 rounded-full" style="width:${pct}%;background:var(--accent)"></div>
+    </div>
+  </div>`;
+}
+
+function renderIntel(){
+  const l = LEADS.find(x=>x.id===activeId);
+  const color = scoreColor(l.score);
+  const label = scoreLabel(l.score);
+
+  document.getElementById("intelPanel").innerHTML = `
+  <div class="p-5 flex flex-col gap-5">
+
+    <div class="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 text-center">
+      <div class="text-xs uppercase tracking-wide mb-2" style="color:var(--text-tertiary)">Lead Intent Score</div>
+      <div class="serif text-5xl font-normal" style="color:${color}">${l.score}</div>
+      <div class="text-xs font-medium mt-1 px-2 py-0.5 rounded-full inline-block" style="background:${color}22;color:${color}">${label} Lead</div>
+      ${l.hotSLA ? `<div class="flex items-center justify-center gap-1.5 mt-3 text-xs" style="color:var(--error)"><span class="w-1.5 h-1.5 rounded-full pulse-dot" style="background:var(--error)"></span>5-min SLA active</div>` : ''}
+    </div>
+
+    <div class="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 flex flex-col gap-3">
+      <div class="text-xs font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Score Breakdown</div>
+      ${barRow("Urgency", l.breakdown.urgency, 25, "zap")}
+      ${barRow("Budget", l.breakdown.budget, 25, "dollar")}
+      ${barRow("Location", l.breakdown.location, 15, "mapPin")}
+      ${barRow("Product Interest", l.breakdown.productInterest, 20, "target")}
+      ${barRow("Engagement", l.breakdown.engagement, 15, "activity")}
+    </div>
+
+    <div class="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+      <div class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide mb-2" style="color:var(--text-tertiary)">${icon('sparkle','icon-sm')} AI Qualification</div>
+      <p class="text-sm leading-relaxed" style="color:var(--text-secondary)">${l.ai}</p>
+    </div>
+
+    <div class="rounded-xl p-5" style="background:rgba(212,255,79,0.08);border:1px solid rgba(212,255,79,0.25)">
+      <div class="text-xs font-semibold uppercase tracking-wide mb-2" style="color:var(--accent)">Suggested Next Action</div>
+      <p class="text-sm mb-3" style="color:var(--text-primary)">${l.nextAction}</p>
+      <button class="w-full py-2 rounded-lg text-sm font-medium" style="background:var(--accent);color:var(--accent-foreground)">Mark Action Complete</button>
+    </div>
+
+    <div class="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 flex flex-col gap-3">
+      <div class="text-xs font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Assignment</div>
+      <div class="flex items-center justify-between">
+        <span class="text-sm" style="color:var(--text-primary)">${l.assigned ? l.assigned : 'Unassigned'}</span>
+        <div class="flex items-center gap-1 text-xs cursor-pointer" style="color:var(--text-tertiary)">Reassign ${icon('chevronDown','icon-sm')}</div>
+      </div>
+      <button class="w-full py-2 rounded-lg text-sm font-medium border border-[var(--border)] flex items-center justify-center gap-1.5" style="color:var(--text-secondary)">${icon('clock','icon-sm')} Schedule Follow-up</button>
+    </div>
+
+    <div class="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 flex flex-col gap-3">
+      <div class="text-xs font-semibold uppercase tracking-wide" style="color:var(--text-tertiary)">Contact Details</div>
+      <div class="flex items-center gap-2 text-sm" style="color:var(--text-secondary)">${icon('phone','icon-sm')} ${l.phone}</div>
+      <div class="flex items-center gap-2 text-sm" style="color:var(--text-secondary)">${icon('mapPin','icon-sm')} ${l.location}</div>
+      <div class="flex items-center gap-2 text-sm" style="color:var(--text-secondary)">${icon('target','icon-sm')} ${l.product}</div>
+      <div class="flex items-center gap-2 text-sm" style="color:var(--text-secondary)">Source: ${l.source}</div>
+    </div>
+
+    <div class="flex flex-wrap gap-1.5">
+      ${l.tags.map(t=>`<span class="text-[11px] px-2 py-1 rounded-full flex items-center gap-1" style="background:var(--bg-quaternary);color:var(--text-secondary)">${icon('tag','icon-sm')} ${t}</span>`).join("")}
+    </div>
+
+  </div>`;
+}
+
+document.getElementById("filterTabs").addEventListener("click",(e)=>{
+  const tab = e.target.closest(".filter-tab");
+  if(!tab) return;
+  document.querySelectorAll(".filter-tab").forEach(t=>t.classList.remove("active"));
+  tab.classList.add("active");
+  activeFilter = tab.dataset.filter;
+  renderList();
+});
+
+document.getElementById("searchInput").addEventListener("input",(e)=>{
+  searchTerm = e.target.value.toLowerCase();
+  renderList();
+});
+
+renderList();
+renderChat();
+renderIntel();
+</script>
+
+</body>
+</html>

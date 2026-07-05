@@ -34,12 +34,19 @@ export async function handleWhatsAppEvent(value: WhatsAppWebhookValue | Record<s
   }
 
   if (v.messages?.length) {
+    const phoneNumberId = v.metadata?.phone_number_id ?? null;
     for (const msg of v.messages) {
-      fbLog("fb.whatsapp.inbound_message", {
-        from: msg.from,
-        messageId: msg.id,
-        type: msg.type,
-      });
+      try {
+        const { handleInboundWhatsAppMessage } = await import("@/lib/whatsapp/inbound");
+        await handleInboundWhatsAppMessage({ phoneNumberId, message: msg });
+      } catch (err) {
+        fbLog("fb.whatsapp.inbound_message", {
+          from: msg.from,
+          messageId: msg.id,
+          type: msg.type,
+          error: err instanceof Error ? err.message : "handler_failed",
+        });
+      }
     }
   }
 }

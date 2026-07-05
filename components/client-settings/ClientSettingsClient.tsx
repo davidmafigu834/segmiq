@@ -7,10 +7,13 @@ import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PackagesManager } from "@/components/client-settings/PackagesManager";
 import { QuoteSettingsManager } from "@/components/client-settings/QuoteSettingsManager";
+import { WhatsAppInboxSettings } from "@/components/client-settings/WhatsAppInboxSettings";
+import { getPublicBaseUrl } from "@/lib/constants";
 
 const TABS = [
   { id: "profile", label: "Profile" },
   { id: "team", label: "Team" },
+  { id: "whatsapp", label: "WhatsApp" },
   { id: "notifications", label: "Notifications" },
   { id: "branding", label: "Branding" },
   { id: "packages", label: "Packages" },
@@ -246,6 +249,23 @@ export function ClientSettingsClient({
       setLogoError(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setUploadingLogo(false);
+    }
+  }
+
+  async function saveWhatsAppInbox(data: {
+    meta_whatsapp_phone_number_id: string | null;
+    meta_whatsapp_display_number: string | null;
+    meta_whatsapp_access_token: string | null;
+    assignment_mode: "direct" | "pool" | "round_robin";
+  }) {
+    setSaving(true);
+    try {
+      await patchClient(data);
+      setToast("Saved WhatsApp inbox settings.");
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -991,6 +1011,22 @@ export function ClientSettingsClient({
               </div>
             )}
           </div>
+        ) : null}
+
+        {tab === "whatsapp" ? (
+          <WhatsAppInboxSettings
+            clientId={clientId}
+            clientName={String(client.name ?? "Client")}
+            initialPhoneNumberId={String(client.meta_whatsapp_phone_number_id ?? "")}
+            initialDisplayNumber={String(client.meta_whatsapp_display_number ?? "")}
+            initialAccessToken={String(client.meta_whatsapp_access_token ?? "")}
+            initialAssignmentMode={
+              (client.assignment_mode as "direct" | "pool" | "round_robin" | undefined) ?? "pool"
+            }
+            webhookBaseUrl={getPublicBaseUrl()}
+            saving={saving}
+            onSave={saveWhatsAppInbox}
+          />
         ) : null}
 
         {tab === "notifications" ? (

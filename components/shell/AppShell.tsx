@@ -35,6 +35,7 @@ export function AppShell({
   showQuickAction = true,
   showWorkspaceSearch = true,
   hideHeader = false,
+  hideSidebar = false,
   titleSize = "standard",
 }: {
   homeHref: string;
@@ -56,6 +57,7 @@ export function AppShell({
   showQuickAction?: boolean;
   showWorkspaceSearch?: boolean;
   hideHeader?: boolean;
+  hideSidebar?: boolean;
   titleSize?: "hero" | "standard";
 }) {
   const pathname = usePathname();
@@ -81,6 +83,8 @@ export function AppShell({
     if (href === "/solo/dashboard") return pathname === "/solo/dashboard";
     if (href === "/sales/dashboard") return pathname === "/sales/dashboard";
     if (href === "/sales/leads") return pathname === "/sales/leads";
+    if (href === "/sales/inbox") return pathname === "/sales/inbox";
+    if (href === "/client/inbox") return pathname === "/client/inbox";
     if (href === "/sales/won-lost") return pathname === "/sales/won-lost";
     return pathname === href || pathname.startsWith(href + "/");
   }
@@ -119,15 +123,23 @@ export function AppShell({
   );
 
   return (
-    <div className="flex min-h-screen min-h-[100svh] bg-bg-primary layout:h-[100dvh] layout:max-h-[100dvh] layout:min-h-0 layout:overflow-hidden">
+    <div
+      className={`flex bg-bg-primary ${
+        hideSidebar
+          ? "h-[100dvh] max-h-[100dvh] min-h-0 overflow-hidden"
+          : "min-h-screen min-h-[100svh] layout:h-[100dvh] layout:max-h-[100dvh] layout:min-h-0 layout:overflow-hidden"
+      }`}
+    >
+      {!hideSidebar ? (
       <aside
         className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-[var(--border)] bg-surface-sidebar layout:flex"
         aria-label="Workspace navigation"
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{sidebar}</div>
       </aside>
+      ) : null}
 
-      {mobileOpen ? (
+      {!hideSidebar && mobileOpen ? (
         <>
           <button
             type="button"
@@ -152,8 +164,14 @@ export function AppShell({
         </>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col layout:ml-60 layout:min-h-0 layout:overflow-hidden">
-        {hideHeader ? (
+      <div
+        className={`flex min-h-0 flex-1 flex-col ${
+          hideSidebar
+            ? "h-full max-h-full overflow-hidden"
+            : "layout:ml-60 layout:min-h-0 layout:overflow-hidden"
+        }`}
+      >
+        {!hideSidebar && hideHeader ? (
           <header className="safe-top sticky top-0 z-30 flex flex-col gap-2 border-b border-[var(--border)] bg-bg-primary px-4 py-2.5 layout:hidden">
             <div className="flex min-h-11 shrink-0 items-center gap-2">
               <button
@@ -199,7 +217,7 @@ export function AppShell({
               </div>
             ) : null}
           </header>
-        ) : (
+        ) : !hideSidebar ? (
           <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-bg-primary px-4 md:px-6 layout:px-10">
             <button
               type="button"
@@ -265,13 +283,21 @@ export function AppShell({
               {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
             </div>
           </header>
-        )}
+        ) : null}
 
-        <main style={{ overflowX: "clip" }} className="flex-1 px-4 pt-6 pb-28 md:px-6 md:pt-8 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-8">
+        <main
+          style={hideSidebar ? undefined : { overflowX: "clip" }}
+          className={
+            hideSidebar
+              ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+              : "flex-1 px-4 pt-6 pb-28 md:px-6 md:pt-8 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-8"
+          }
+        >
           {children}
         </main>
       </div>
 
+      {!hideSidebar ? (
       <nav
         aria-label="Bottom navigation"
         className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--border)] bg-bg-primary layout:hidden"
@@ -296,6 +322,7 @@ export function AppShell({
           </Link>
         ))}
       </nav>
+      ) : null}
     </div>
   );
 }

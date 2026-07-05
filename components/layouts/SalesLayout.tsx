@@ -10,12 +10,14 @@ export async function SalesLayout({
   pageTitle,
   actions,
   hideShellHeader = false,
+  hideShellSidebar = false,
 }: {
   children: React.ReactNode;
   breadcrumb: string;
   pageTitle: string;
   actions?: React.ReactNode;
   hideShellHeader?: boolean;
+  hideShellSidebar?: boolean;
 }) {
   const session = await getServerSession(authOptions);
   const supabase = createAdminClient();
@@ -45,6 +47,7 @@ export async function SalesLayout({
 
   const primaryNav = [
     { href: dashboardHref, label: "Dashboard", icon: "layout-dashboard" as const },
+    { href: "/sales/inbox", label: "Inbox", icon: "inbox" as const },
     { href: "/sales/leads", label: "My leads", icon: "layout-grid" as const },
     { href: "/sales/followups", label: "Follow-ups", icon: "calendar" as const, badge: followupBadge || undefined },
     { href: "/sales/won-lost", label: "Won / Lost", icon: "trophy" as const },
@@ -71,6 +74,7 @@ export async function SalesLayout({
       quickActionHref="/sales/leads"
       showQuickAction={false}
       hideHeader={hideShellHeader}
+      hideSidebar={hideShellSidebar}
     >
       {children}
     </AppShell>

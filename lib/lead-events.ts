@@ -9,7 +9,9 @@ type EventType =
   | "INTAKE_LOGGED"
   | "NOTE_ADDED"
   | "DOCUMENT_SENT"
-  | "FOLLOW_UP_SET";
+  | "FOLLOW_UP_SET"
+  | "MESSAGE_RECEIVED"
+  | "MESSAGE_SENT";
 
 type Actor = {
   id: string | null;

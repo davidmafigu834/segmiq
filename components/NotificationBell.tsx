@@ -225,6 +225,8 @@ function labelForType(type: string): string {
   switch (type) {
     case "NEW_LEAD":
       return "New lead";
+    case "WHATSAPP_MESSAGE":
+      return "WhatsApp message";
     case "FOLLOW_UP_DUE":
       return "Follow-up due";
     case "DEAL_WON":

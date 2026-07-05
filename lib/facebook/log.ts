@@ -19,6 +19,8 @@ export type FbEventType =
   | "fb.whatsapp.send_failed"
   | "fb.whatsapp.send_exception"
   | "fb.whatsapp.inbound_message"
+  | "fb.whatsapp.no_client_match"
+  | "fb.whatsapp.client_auto_linked"
   | "fb.whatsapp.status_update_failed"
   | "fb.whatsapp.status_no_matching_log"
   | "fb.whatsapp.status_updated"

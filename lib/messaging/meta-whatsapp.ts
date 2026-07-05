@@ -4,6 +4,7 @@ import { resolveWhatsAppRecipient } from "@/lib/messaging/recipient";
 import { getFacebookGraphBase } from "@/lib/facebook/graph";
 import { fbLog } from "@/lib/facebook/log";
 import { logMessage, type LogMessageParams, type SendResult } from "@/lib/messaging/log";
+import { resolveWhatsAppSendConfig } from "@/lib/whatsapp/credentials";
 
 // ---------------------------------------------------------------------------
 // Meta WhatsApp template registry — approved segmiq_* names (hardcoded).
@@ -129,17 +130,18 @@ export async function sendWhatsAppViaMeta(
     return { ...result, channel: "whatsapp" };
   }
 
-  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
-  const accessToken = process.env.META_WHATSAPP_ACCESS_TOKEN?.trim();
-  if (!phoneNumberId || !accessToken) {
+  const waConfig = await resolveWhatsAppSendConfig(params.context.clientId);
+  if (!waConfig) {
     const result: SendResult = {
       ok: false,
-      error: "Meta WhatsApp not configured",
+      error: "WhatsApp not configured for this client — add Phone number ID in client settings",
       errorCode: "NOT_CONFIGURED",
     };
     await logMessage(result, { ...baseContext, recipient: normalized });
     return { ...result, channel: "whatsapp" };
   }
+
+  const { phoneNumberId, accessToken } = waConfig;
 
   const templateName = TEMPLATE_NAMES[params.template];
   const languageCode = TEMPLATE_LANGUAGE;

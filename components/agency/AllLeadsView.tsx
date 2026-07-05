@@ -29,6 +29,7 @@ function sourceLabel(s: LeadSource): string {
   if (s === "LANDING_PAGE") return "Landing";
   if (s === "FACEBOOK") return "Facebook";
   if (s === "REFERRAL") return "Referral";
+  if (s === "WHATSAPP_INBOUND") return "WhatsApp";
   return "Manual";
 }
 
