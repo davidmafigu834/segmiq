@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Loader2 } from "lucide-react";
-import { formatMoney } from "@/lib/quotations/totals";
 import type { QuoteTemplateRow, QuotationLineItemInput } from "@/types";
 
 type TemplateItemDraft = QuotationLineItemInput & { key: string };
