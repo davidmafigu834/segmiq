@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { format } from "date-fns";
 import { ChevronLeft, X, MessageCircle } from "lucide-react";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
-import { useLeadPanel, closeLeadPanel } from "@/store/uiStore";
+import { useLeadPanel, closeLeadPanel, type LeadPanelTab } from "@/store/uiStore";
 import type { LeadRow, LeadStatus } from "@/types";
 import { MagicLinkButton } from "@/components/MagicLinkButton";
 import { FormAnswersSection } from "@/components/leads/FormAnswersSection";
@@ -62,20 +62,21 @@ export function LeadDetailPanel({
   /** When true, hide salesperson actions (log call, reassign). Client managers default to read-only. */
   readOnly?: boolean;
 }) {
-  const { open, leadId } = useLeadPanel();
+  const { open, leadId, tab: panelTab } = useLeadPanel();
   const lead = leads.find((l) => l.id === leadId) ?? null;
   const { data: session } = useSession();
   const role = session?.role;
   const [logRefresh, setLogRefresh] = useState(0);
   const [timelineRefresh, setTimelineRefresh] = useState(0);
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
-  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "quote" | "send">("details");
+  const [activeTab, setActiveTab] = useState<LeadPanelTab>("details");
   const [sendPreselect, setSendPreselect] = useState<SendAssetType[] | null>(null);
 
   useEffect(() => {
-    setActiveTab("details");
+    if (!open) return;
     setSendPreselect(null);
-  }, [leadId]);
+    setActiveTab(panelTab ?? "details");
+  }, [leadId, open, panelTab]);
 
   useLayoutEffect(() => {
     setPortalEl(document.body);

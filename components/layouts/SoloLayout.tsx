@@ -54,6 +54,7 @@ export async function SoloLayout({
     { href: "/sales/inbox", label: "Inbox", icon: "inbox" as const },
     { href: "/sales/leads", label: "My leads", icon: "layout-grid" as const },
     { href: "/sales/followups", label: "Follow-ups", icon: "calendar" as const, badge: followupBadge || undefined },
+    { href: "/sales/quotes", label: "Quotes", icon: "file-text" as const },
     { href: "/sales/won-lost", label: "Won / Lost", icon: "trophy" as const },
     { href: "/sales/profile", label: "Profile", icon: "user" as const },
   ];

@@ -96,6 +96,7 @@ export function SalesBoard({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const leadFromUrl = searchParams.get("lead");
+  const tabFromUrl = searchParams.get("tab");
 
   const [leads, setLeads] = useState<LeadWithClientResponseLimit[]>(initialLeads);
   const [tab, setTab] = useState<"active" | "closed">(initialTab);
@@ -115,7 +116,7 @@ export function SalesBoard({
   }, [pathname, router, searchParams]);
 
   const openSend = useCallback((id: string) => {
-    openLeadPanel(id);
+    openLeadPanel(id, "send");
     const params = new URLSearchParams(searchParams.toString());
     params.set("lead", id);
     params.set("tab", "send");
@@ -197,6 +198,7 @@ export function SalesBoard({
   const clearLeadQuery = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("lead");
+    params.delete("tab");
     const q = params.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
@@ -208,8 +210,12 @@ export function SalesBoard({
   useEffect(() => {
     if (!leadFromUrl) return;
     if (!leads.some((l) => l.id === leadFromUrl)) return;
-    openLeadPanel(leadFromUrl);
-  }, [leadFromUrl, leads]);
+    const tab =
+      tabFromUrl === "quote" || tabFromUrl === "send" || tabFromUrl === "timeline"
+        ? tabFromUrl
+        : undefined;
+    openLeadPanel(leadFromUrl, tab);
+  }, [leadFromUrl, tabFromUrl, leads]);
 
   const handleLeadUpdated = useCallback((updated: LeadRow | LeadWithClientResponseLimit) => {
     setLeads((prev) =>
