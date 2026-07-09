@@ -31,7 +31,7 @@ export function QuoteTemplatesManager({ clientId }: { clientId: string }) {
 
   function flash(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(null), 2000);
+    setTimeout(() => setToast(""), 2000);
   }
 
   async function loadOne(id: string) {
