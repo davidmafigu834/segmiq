@@ -34,9 +34,28 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
 
   const { data: current } = await supabase
     .from("quotations")
-    .select("tax_rate, other_amount, total")
+    .select("tax_rate, other_amount, total, status")
     .eq("id", params.quotationId)
     .single();
+
+  const isDraft = (current?.status as string | undefined) === "draft";
+  const hasContentChanges =
+    body.customer_name !== undefined ||
+    body.customer_phone !== undefined ||
+    body.customer_email !== undefined ||
+    body.valid_until !== undefined ||
+    body.notes !== undefined ||
+    body.terms !== undefined ||
+    body.tax_rate !== undefined ||
+    body.other_amount !== undefined ||
+    body.items !== undefined;
+
+  if (!isDraft && hasContentChanges) {
+    return NextResponse.json(
+      { error: "Sent quotations are locked. Create a revision to make changes." },
+      { status: 409 }
+    );
+  }
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of ["customer_name", "customer_phone", "customer_email", "valid_until", "notes", "terms"] as const) {
@@ -59,7 +78,6 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     await supabase.from("quotations").update(updates).eq("id", params.quotationId);
   }
 
-  // If items / tax / other provided, rewrite line items and recompute totals.
   if (body.items !== undefined) {
     const taxRate = body.tax_rate ?? (Number(current?.tax_rate) || 0);
     const other = body.other_amount ?? (Number(current?.other_amount) || 0);

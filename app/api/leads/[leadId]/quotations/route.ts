@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageQuotationForLead } from "@/lib/quotations/quote-access";
 import { ensureQuotationSettings } from "@/lib/quotations/quote-number";
 import { saveItemsAndTotals, loadQuotationWithItems } from "@/lib/quotations/persist";
+import { loadTemplateWithItems, templateItemsToQuotationInputs } from "@/lib/quotations/templates";
 import type { QuotationLineItemInput } from "@/types";
 import { addDays, format } from "date-fns";
 
@@ -32,6 +33,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     valid_until?: string | null;
     notes?: string | null;
     terms?: string | null;
+    templateId?: string;
   };
 
   const { data: lead } = await supabase
@@ -41,8 +43,33 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     .single();
 
   const settings = await ensureQuotationSettings(supabase, access.lead.client_id);
-  const taxRate = body.tax_rate ?? (Number(settings.default_tax_rate) || 0);
-  const validUntil = body.valid_until ?? format(addDays(new Date(), 30), "yyyy-MM-dd");
+
+  let templateItems: QuotationLineItemInput[] | undefined;
+  let templateTax: number | undefined;
+  let templateOther: number | undefined;
+  let templateNotes: string | null | undefined;
+  let templateTerms: string | null | undefined;
+  let templateValidDays: number | undefined;
+
+  if (body.templateId) {
+    const template = await loadTemplateWithItems(supabase, body.templateId);
+    if (!template || template.client_id !== access.lead.client_id) {
+      return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    }
+    templateItems = templateItemsToQuotationInputs(
+      (template.items as Record<string, unknown>[]) ?? []
+    );
+    templateTax = Number(template.tax_rate) || 0;
+    templateOther = Number(template.other_amount) || 0;
+    templateNotes = (template.notes as string | null) ?? null;
+    templateTerms = (template.terms as string | null) ?? null;
+    templateValidDays = Number(template.valid_for_days) || 30;
+  }
+
+  const taxRate = body.tax_rate ?? templateTax ?? (Number(settings.default_tax_rate) || 0);
+  const validUntil =
+    body.valid_until ??
+    format(addDays(new Date(), templateValidDays ?? 30), "yyyy-MM-dd");
 
   const { data: quote, error } = await supabase
     .from("quotations")
@@ -54,10 +81,10 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
       customer_phone: (lead?.phone as string | null) ?? null,
       customer_email: (lead?.email as string | null) ?? null,
       tax_rate: taxRate,
-      other_amount: body.other_amount ?? 0,
+      other_amount: body.other_amount ?? templateOther ?? 0,
       valid_until: validUntil,
-      notes: body.notes ?? null,
-      terms: body.terms ?? (settings.default_terms as string | null) ?? null,
+      notes: body.notes ?? templateNotes ?? null,
+      terms: body.terms ?? templateTerms ?? (settings.default_terms as string | null) ?? null,
       prepared_by_id: access.actor.id,
       prepared_by_name: access.actor.name,
     })
@@ -68,13 +95,14 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     return NextResponse.json({ error: error?.message ?? "Create failed" }, { status: 500 });
   }
 
-  if (body.items?.length) {
+  const itemsToSave = body.items?.length ? body.items : templateItems;
+  if (itemsToSave?.length) {
     await saveItemsAndTotals(
       supabase,
       quote.id as string,
-      body.items,
+      itemsToSave,
       taxRate,
-      body.other_amount ?? 0
+      body.other_amount ?? templateOther ?? 0
     );
   }
 

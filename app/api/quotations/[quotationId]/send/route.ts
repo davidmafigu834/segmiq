@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageQuotation } from "@/lib/quotations/quote-access";
 import { allocateQuoteNumber } from "@/lib/quotations/quote-number";
+import { baseQuoteNumber, revisionQuoteNumber } from "@/lib/quotations/copy-quote";
 import { buildQuotationPdfData } from "@/lib/quotations/build-pdf-data";
 import { renderQuotationPdf } from "@/lib/quotations/quotation-pdf";
 import { putObject, getPublicUrl } from "@/lib/storage/r2";
 import { logDocumentSent, logStatusChanged } from "@/lib/lead-events";
 import { persistLeadScore } from "@/lib/lead-scoring";
 import { formatMoney } from "@/lib/quotations/totals";
+import { getPublicBaseUrl } from "@/lib/constants";
 
 const ADVANCE_FROM = new Set(["NEW", "CONTACTED", "NEGOTIATING"]);
 
@@ -30,18 +32,59 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   if (!itemCount) {
     return NextResponse.json({ error: "Add at least one line item before sending" }, { status: 400 });
   }
+  if (quote.status !== "draft") {
+    return NextResponse.json({ error: "Only draft quotations can be sent" }, { status: 400 });
+  }
 
-  // Allocate a quote number on first send; keep it stable on re-sends.
+  // Allocate a quote number on first send; revisions keep the base number + suffix.
   let quoteNumber = (quote.quote_number as string | null) ?? null;
   if (!quoteNumber) {
-    quoteNumber = await allocateQuoteNumber(supabase, access.clientId);
+    const parentId = quote.parent_quotation_id as string | null;
+    if (parentId) {
+      const { data: parent } = await supabase
+        .from("quotations")
+        .select("quote_number")
+        .eq("id", parentId)
+        .maybeSingle();
+      const base = baseQuoteNumber((parent?.quote_number as string | null) ?? null);
+      const rev = Number(quote.revision_number) || 2;
+      quoteNumber = base ? revisionQuoteNumber(base, rev) : await allocateQuoteNumber(supabase, access.clientId);
+    } else {
+      quoteNumber = await allocateQuoteNumber(supabase, access.clientId);
+    }
+  }
+
+  let publicToken = (quote.public_token as string | null) ?? null;
+  if (!publicToken) {
+    const { randomBytes } = await import("crypto");
+    publicToken = randomBytes(32).toString("hex");
   }
 
   const sentAt = new Date().toISOString();
   await supabase
     .from("quotations")
-    .update({ quote_number: quoteNumber, status: "sent", sent_at: sentAt, updated_at: sentAt })
+    .update({
+      quote_number: quoteNumber,
+      public_token: publicToken,
+      status: "sent",
+      sent_at: sentAt,
+      updated_at: sentAt,
+    })
     .eq("id", params.quotationId);
+
+  // Supersede the parent revision when sending an updated quote.
+  const parentId = quote.parent_quotation_id as string | null;
+  if (parentId) {
+    await supabase
+      .from("quotations")
+      .update({
+        status: "expired",
+        superseded_by_id: params.quotationId,
+        updated_at: sentAt,
+      })
+      .eq("id", parentId)
+      .in("status", ["sent", "viewed"]);
+  }
 
   // Render branded PDF and store on R2.
   const pdfData = await buildQuotationPdfData(supabase, params.quotationId);
@@ -96,7 +139,8 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
 
   const total = formatMoney(Number(quote.total) || 0, (quote.currency as string) || "USD");
   const firstName = pdfData.customerName?.split(" ")[0] || "there";
-  const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${pdfData.companyName} — total ${total}. Let me know if you have any questions.`;
+  const link = `${getPublicBaseUrl()}/quote/${publicToken}`;
+  const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${pdfData.companyName} — total ${total}. View and respond here: ${link}`;
 
-  return NextResponse.json({ success: true, pdfUrl, quoteNumber, waMessage });
+  return NextResponse.json({ success: true, pdfUrl, quoteNumber, link, waMessage });
 }

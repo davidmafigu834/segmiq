@@ -4,7 +4,7 @@ import { apiGet, apiPost } from "../lib/api";
 import { formatMoney } from "../lib/format";
 import { QuotationBuilder } from "./QuotationBuilder";
 
-type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
+type QuotationStatus = "draft" | "sent" | "viewed" | "accepted" | "rejected" | "expired";
 
 type QuotationRow = {
   id: string;
@@ -35,6 +35,7 @@ type QuotationRow = {
 const STATUS_LABEL: Record<QuotationStatus, string> = {
   draft: "Draft",
   sent: "Sent",
+  viewed: "Viewed",
   accepted: "Accepted",
   rejected: "Rejected",
   expired: "Expired",

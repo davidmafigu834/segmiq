@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import { formatMoney } from "@/lib/quotations/totals";
 import type { CatalogItemRow } from "@/types";
+import { QuoteTemplatesManager } from "@/components/client-settings/QuoteTemplatesManager";
 
 const CATEGORIES = ["inverter", "battery", "panel", "accessory", "labour", "other"];
 
@@ -212,6 +213,8 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
           <p className="text-[11px] text-ink-tertiary">Preview: {formatMoney(newItem.unit_price)}</p>
         ) : null}
       </section>
+
+      <QuoteTemplatesManager clientId={clientId} />
 
       {/* Quote settings */}
       {settings ? (

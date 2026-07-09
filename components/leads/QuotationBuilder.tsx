@@ -23,9 +23,12 @@ type Props = {
   quotation: QuotationWithItems;
   clientId: string;
   leadPhone: string | null;
+  readOnly?: boolean;
   onSaved: (q: QuotationWithItems) => void;
   onSent: () => void;
   onClose: () => void;
+  onRevise?: () => void;
+  onDuplicate?: () => void;
 };
 
 let keySeq = 0;
@@ -50,7 +53,7 @@ function titleCase(s: string): string {
   return s.replace(/(^|\s)\w/g, (c) => c.toUpperCase());
 }
 
-export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSent, onClose }: Props) {
+export function QuotationBuilder({ quotation, clientId, leadPhone, readOnly = false, onSaved, onSent, onClose, onRevise, onDuplicate }: Props) {
   const [catalog, setCatalog] = useState<CatalogItemRow[]>([]);
   const [savedItems, setSavedItems] = useState<SavedItemRow[]>([]);
   const [items, setItems] = useState<EditorItem[]>(() => toEditorItems(quotation.items));
@@ -288,20 +291,47 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-mono text-[10px] uppercase tracking-widest text-ink-tertiary">
           {quotation.quote_number ? `Quotation ${quotation.quote_number}` : "New quotation"}
+          {quotation.revision_number > 1 ? ` · Revision ${quotation.revision_number}` : ""}
         </p>
-        <button type="button" onClick={onClose} className="text-[12px] text-ink-secondary hover:text-ink-primary">
-          ← Back to quotes
-        </button>
+        <div className="flex items-center gap-2">
+          {readOnly && onRevise ? (
+            <button
+              type="button"
+              onClick={onRevise}
+              className="rounded-lg border border-border px-2 py-1 text-[12px] font-semibold text-ink-primary hover:bg-surface-card-alt"
+            >
+              Create revision
+            </button>
+          ) : null}
+          {onDuplicate ? (
+            <button
+              type="button"
+              onClick={onDuplicate}
+              className="rounded-lg border border-border px-2 py-1 text-[12px] text-ink-secondary hover:bg-surface-card-alt"
+            >
+              Duplicate
+            </button>
+          ) : null}
+          <button type="button" onClick={onClose} className="text-[12px] text-ink-secondary hover:text-ink-primary">
+            ← Back to quotes
+          </button>
+        </div>
       </div>
+
+      {readOnly ? (
+        <p className="rounded-lg border border-border bg-surface-card-alt px-3 py-2 text-[12px] text-ink-secondary">
+          This quotation was sent and is locked. Create a revision to change pricing or items.
+        </p>
+      ) : null}
 
       {/* Customer */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <input className="input-base" placeholder="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-        <input className="input-base" placeholder="Phone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-        <input className="input-base" placeholder="Email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+        <input className="input-base" placeholder="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} readOnly={readOnly} disabled={readOnly} />
+        <input className="input-base" placeholder="Phone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} readOnly={readOnly} disabled={readOnly} />
+        <input className="input-base" placeholder="Email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} readOnly={readOnly} disabled={readOnly} />
       </div>
 
       {/* Line items */}
@@ -309,6 +339,8 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <span className="font-mono text-[10px] uppercase tracking-widest text-ink-tertiary">Line items</span>
           <div className="flex flex-wrap items-center justify-end gap-2">
+            {!readOnly ? (
+              <>
             {savedItems.length > 0 ? (
               <select
                 className="input-base h-8 max-w-[160px] text-[12px]"
@@ -356,6 +388,8 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
             >
               <Plus className="h-3.5 w-3.5" /> Row
             </button>
+              </>
+            ) : null}
           </div>
         </div>
 
@@ -373,7 +407,11 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
                     placeholder="Item name"
                     value={it.item_name}
                     onChange={(e) => updateItem(it.key, { item_name: e.target.value })}
+                    readOnly={readOnly}
+                    disabled={readOnly}
                   />
+                  {!readOnly ? (
+                  <>
                   <button
                     type="button"
                     onClick={() => void saveRowToLibrary(it)}
@@ -396,12 +434,16 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  </>
+                  ) : null}
                 </div>
                 <input
                   className="input-base w-full text-[13px]"
                   placeholder="Description (optional)"
                   value={it.description}
                   onChange={(e) => updateItem(it.key, { description: e.target.value })}
+                  readOnly={readOnly}
+                  disabled={readOnly}
                 />
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
@@ -412,6 +454,8 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
                       className="input-base w-full"
                       value={it.unit_price}
                       onChange={(e) => updateItem(it.key, { unit_price: Number(e.target.value) })}
+                      readOnly={readOnly}
+                      disabled={readOnly}
                     />
                   </div>
                   <div className="w-20">
@@ -422,6 +466,8 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
                       className="input-base w-full"
                       value={it.quantity}
                       onChange={(e) => updateItem(it.key, { quantity: Number(e.target.value) })}
+                      readOnly={readOnly}
+                      disabled={readOnly}
                     />
                   </div>
                   <div className="w-28 text-right">
@@ -436,6 +482,8 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
                   placeholder="Group (e.g. System, Accessories, Labour)"
                   value={it.group_label}
                   onChange={(e) => updateItem(it.key, { group_label: e.target.value })}
+                  readOnly={readOnly}
+                  disabled={readOnly}
                 />
               </div>
             ))}
@@ -458,6 +506,8 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
               className="input-base h-7 w-16 text-[12px]"
               value={taxRate}
               onChange={(e) => setTaxRate(Number(e.target.value))}
+              readOnly={readOnly}
+              disabled={readOnly}
             />
             %
           </span>
@@ -472,6 +522,8 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
               className="input-base h-7 w-24 text-[12px]"
               value={otherAmount}
               onChange={(e) => setOtherAmount(Number(e.target.value))}
+              readOnly={readOnly}
+              disabled={readOnly}
             />
           </span>
           <span className="text-[13px] text-ink-primary">{formatMoney(otherAmount, currency)}</span>
@@ -486,22 +538,22 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div>
           <label className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-ink-tertiary">Valid until</label>
-          <input type="date" className="input-base w-full" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+          <input type="date" className="input-base w-full" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} readOnly={readOnly} disabled={readOnly} />
         </div>
       </div>
       <div>
         <label className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-ink-tertiary">Note to customer</label>
-        <input className="input-base w-full" placeholder="e.g. Please note all prices are in USD" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <input className="input-base w-full" placeholder="e.g. Please note all prices are in USD" value={notes} onChange={(e) => setNotes(e.target.value)} readOnly={readOnly} disabled={readOnly} />
       </div>
       <div>
         <label className="mb-1 block font-mono text-[9px] uppercase tracking-wider text-ink-tertiary">Terms &amp; conditions</label>
-        <textarea className="textarea-base min-h-[10rem]" rows={6} value={terms} onChange={(e) => setTerms(e.target.value)} />
+        <textarea className="textarea-base min-h-[10rem]" rows={6} value={terms} onChange={(e) => setTerms(e.target.value)} readOnly={readOnly} disabled={readOnly} />
       </div>
 
       {saveItemToast ? <p className="text-[12px] text-[var(--accent)]">{saveItemToast}</p> : null}
       {error ? <p className="text-[12px] text-[var(--danger)]">{error}</p> : null}
 
-      {/* Actions */}
+      {!readOnly ? (
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -531,6 +583,15 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
           Send via WhatsApp
         </button>
       </div>
+      ) : quotation.pdf_url ? (
+        <button
+          type="button"
+          onClick={() => openExternalUrl(`/api/quotations/${quotation.id}/pdf`)}
+          className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-[13px] font-semibold text-ink-primary hover:bg-surface-card-alt"
+        >
+          <FileText className="h-4 w-4" /> View PDF
+        </button>
+      ) : null}
     </div>
   );
 }

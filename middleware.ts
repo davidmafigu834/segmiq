@@ -166,6 +166,7 @@ export async function middleware(req: NextRequest) {
   if (path.startsWith("/api/leads/magic/")) return NextResponse.next();
   if (path.startsWith("/api/onboard/")) return NextResponse.next();
   if (path.startsWith("/api/proposals/")) return NextResponse.next();
+  if (path.startsWith("/api/quotes/")) return NextResponse.next();
   if (path.startsWith("/api/cron/")) {
     const secret = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (secret === process.env.CRON_SECRET || process.env.NODE_ENV === "development") {
@@ -198,6 +199,7 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/lead/") ||
     path.startsWith("/onboard/") ||
     path.startsWith("/proposal/") ||
+    path.startsWith("/quote/") ||
     path.startsWith("/l/") ||
     path.startsWith("/d/") ||
     path.startsWith("/p/") ||
@@ -348,6 +350,7 @@ function localBlogDevRewrite(path: string): string | null {
     "lead",
     "onboard",
     "proposal",
+    "quote",
     "l",
     "d",
     "p",

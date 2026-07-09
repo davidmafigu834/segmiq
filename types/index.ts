@@ -247,7 +247,7 @@ export interface NotificationRow {
   created_at: string;
 }
 
-export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
+export type QuotationStatus = "draft" | "sent" | "viewed" | "accepted" | "rejected" | "expired";
 
 export interface CatalogItemRow {
   id: string;
@@ -329,10 +329,46 @@ export interface QuotationRow {
   prepared_by_name: string | null;
   pdf_url: string | null;
   pdf_key: string | null;
+  public_token: string | null;
+  viewed_at: string | null;
+  responded_at: string | null;
+  parent_quotation_id: string | null;
+  revision_number: number;
+  superseded_by_id: string | null;
   sent_at: string | null;
   accepted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface QuoteTemplateLineItemRow {
+  id: string;
+  template_id: string;
+  catalog_item_id: string | null;
+  item_name: string;
+  description: string | null;
+  unit_price: number;
+  quantity: number;
+  group_label: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface QuoteTemplateRow {
+  id: string;
+  client_id: string;
+  name: string;
+  description: string | null;
+  tax_rate: number;
+  other_amount: number;
+  notes: string | null;
+  terms: string | null;
+  valid_for_days: number;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+  items?: QuoteTemplateLineItemRow[];
 }
 
 /** A line item as sent from / to the quote builder UI. */
