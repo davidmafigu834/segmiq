@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Loader2, Plus, Save, Send, Trash2 } from "lucide-react";
+import { FileText, Loader2, Plus, Save, Send, Trash2, Bookmark } from "lucide-react";
 import { apiGet, apiPatch, apiPost, API_BASE } from "../lib/api";
 import { formatMoney } from "../lib/format";
 import { computeTotals, lineAmount } from "../lib/quotation-totals";
@@ -14,6 +14,14 @@ type CatalogItem = {
   unit_price: number;
   category: string | null;
   currency: string;
+};
+
+type SavedItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  category: string | null;
 };
 
 type QuotationLineItem = {
@@ -94,6 +102,7 @@ export function QuotationBuilder({
   onClose,
 }: Props) {
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
   const [items, setItems] = useState<EditorItem[]>(() => toEditorItems(quotation.items));
   const [customerName, setCustomerName] = useState(quotation.customer_name ?? "");
   const [customerPhone, setCustomerPhone] = useState(quotation.customer_phone ?? leadPhone ?? "");
@@ -104,7 +113,10 @@ export function QuotationBuilder({
   const [notes, setNotes] = useState(quotation.notes ?? "");
   const [terms, setTerms] = useState(quotation.terms ?? "");
   const [catalogPick, setCatalogPick] = useState("");
+  const [savedPick, setSavedPick] = useState("");
   const [busy, setBusy] = useState<null | "save" | "preview" | "send">(null);
+  const [savingItemKey, setSavingItemKey] = useState<string | null>(null);
+  const [saveItemToast, setSaveItemToast] = useState("");
   const [error, setError] = useState("");
 
   const currency = quotation.currency || "USD";
@@ -113,7 +125,16 @@ export function QuotationBuilder({
     void apiGet<{ items?: CatalogItem[] }>(`/api/clients/${clientId}/catalog`).then((res) => {
       if (res.ok) setCatalog(res.data.items ?? []);
     });
+    void apiGet<{ items?: SavedItem[] }>(`/api/clients/${clientId}/saved-items`).then((res) => {
+      if (res.ok) setSavedItems(res.data.items ?? []);
+    });
   }, [clientId]);
+
+  useEffect(() => {
+    if (!saveItemToast) return;
+    const t = window.setTimeout(() => setSaveItemToast(""), 2500);
+    return () => window.clearTimeout(t);
+  }, [saveItemToast]);
 
   const totals = useMemo(() => computeTotals(items, taxRate, otherAmount), [items, taxRate, otherAmount]);
 
@@ -125,6 +146,15 @@ export function QuotationBuilder({
     }
     return byCat;
   }, [catalog]);
+
+  const groupedSaved = useMemo(() => {
+    const byCat: Record<string, SavedItem[]> = {};
+    for (const c of savedItems) {
+      const cat = c.category ? titleCase(c.category) : "My items";
+      (byCat[cat] ??= []).push(c);
+    }
+    return byCat;
+  }, [savedItems]);
 
   function updateItem(key: string, patch: Partial<EditorItem>) {
     setItems((rows) => rows.map((r) => (r.key === key ? { ...r, ...patch } : r)));
@@ -165,6 +195,53 @@ export function QuotationBuilder({
       },
     ]);
     setCatalogPick("");
+  }
+
+  function addFromSaved(id: string) {
+    const item = savedItems.find((c) => c.id === id);
+    if (!item) return;
+    setItems((rows) => [
+      ...rows,
+      {
+        key: nextKey(),
+        catalog_item_id: null,
+        item_name: item.name,
+        description: item.description ?? "",
+        unit_price: Number(item.unit_price) || 0,
+        quantity: 1,
+        group_label: item.category ? titleCase(item.category) : "",
+      },
+    ]);
+    setSavedPick("");
+  }
+
+  async function saveRowToLibrary(row: EditorItem) {
+    if (!row.item_name.trim()) return;
+    setSavingItemKey(row.key);
+    try {
+      const res = await apiPost<{ item?: SavedItem; updated?: boolean; error?: string }>(
+        `/api/clients/${clientId}/saved-items`,
+        {
+          name: row.item_name.trim(),
+          description: row.description.trim() || null,
+          unit_price: row.unit_price,
+          category: row.group_label.trim() || null,
+        }
+      );
+      if (!res.ok || !res.data.item) {
+        setError(res.data.error ?? "Could not save item");
+        return;
+      }
+      setSavedItems((prev) => {
+        const rest = prev.filter((s) => s.id !== res.data.item!.id);
+        return [...rest, res.data.item!].sort((a, b) => a.name.localeCompare(b.name));
+      });
+      setSaveItemToast(res.data.updated ? "Item updated in your library" : "Item saved to your library");
+    } catch {
+      setError("Could not save item");
+    } finally {
+      setSavingItemKey(null);
+    }
   }
 
   function payload() {
@@ -302,6 +379,27 @@ export function QuotationBuilder({
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-3">
           <span className="eyebrow mb-0">Line items</span>
           <div className="flex flex-wrap gap-2">
+            {savedItems.length > 0 ? (
+              <select
+                className="max-w-[180px] rounded-lg border border-border bg-bg-primary px-3 py-2 text-[13px] text-ink-primary"
+                value={savedPick}
+                onChange={(e) => {
+                  setSavedPick(e.target.value);
+                  if (e.target.value) addFromSaved(e.target.value);
+                }}
+              >
+                <option value="">+ My items</option>
+                {Object.entries(groupedSaved).map(([cat, list]) => (
+                  <optgroup key={cat} label={cat}>
+                    {list.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            ) : null}
             <select
               className="max-w-[180px] rounded-lg border border-border bg-bg-primary px-3 py-2 text-[13px] text-ink-primary"
               value={catalogPick}
@@ -332,7 +430,9 @@ export function QuotationBuilder({
         </div>
 
         {items.length === 0 ? (
-          <p className="px-4 py-8 text-center text-[13px] text-ink-tertiary">Add items from catalog or a blank row.</p>
+          <p className="px-4 py-8 text-center text-[13px] text-ink-tertiary">
+            Add items from your saved library, catalog, or a blank row.
+          </p>
         ) : (
           <div className="divide-y divide-border">
             {items.map((it) => (
@@ -344,6 +444,15 @@ export function QuotationBuilder({
                     value={it.item_name}
                     onChange={(e) => updateItem(it.key, { item_name: e.target.value })}
                   />
+                  <button
+                    type="button"
+                    onClick={() => void saveRowToLibrary(it)}
+                    disabled={!it.item_name.trim() || savingItemKey === it.key}
+                    className="mt-3 text-ink-tertiary disabled:opacity-40"
+                    aria-label="Save to my items"
+                  >
+                    {savingItemKey === it.key ? <Loader2 size={18} className="animate-spin" /> : <Bookmark size={18} />}
+                  </button>
                   <button type="button" onClick={() => removeItem(it.key)} className="mt-3 text-ink-tertiary">
                     <Trash2 size={18} />
                   </button>
@@ -436,6 +545,7 @@ export function QuotationBuilder({
         <textarea className={`${inputClass} min-h-[120px] resize-none`} rows={5} value={terms} onChange={(e) => setTerms(e.target.value)} />
       </div>
 
+      {saveItemToast ? <p className="text-[13px] text-accent">{saveItemToast}</p> : null}
       {error ? <p className="text-[13px] text-[var(--error)]">{error}</p> : null}
 
       <div className="flex flex-col gap-2">

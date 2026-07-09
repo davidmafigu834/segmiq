@@ -263,6 +263,21 @@ export interface CatalogItemRow {
   updated_at: string;
 }
 
+/** Personal reusable quote items saved by a salesperson (or manager). */
+export interface SavedItemRow {
+  id: string;
+  client_id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  category: string | null;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface QuotationSettingsRow {
   client_id: string;
   company_address: string | null;

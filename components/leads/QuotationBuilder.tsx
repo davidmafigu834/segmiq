@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, FileText, Send, Save, Loader2 } from "lucide-react";
+import { Plus, Trash2, FileText, Send, Save, Loader2, Bookmark } from "lucide-react";
 import { openExternalUrl } from "@/lib/whatsapp-opener";
 import { fetchQuotationPdfBlob, shareQuotationPdf } from "@/lib/share-quotation-pdf";
 import { computeTotals, lineAmount, formatMoney } from "@/lib/quotations/totals";
-import type { CatalogItemRow, QuotationLineItemRow, QuotationRow } from "@/types";
+import type { CatalogItemRow, QuotationLineItemRow, QuotationRow, SavedItemRow } from "@/types";
 
 type EditorItem = {
   key: string;
@@ -52,6 +52,7 @@ function titleCase(s: string): string {
 
 export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSent, onClose }: Props) {
   const [catalog, setCatalog] = useState<CatalogItemRow[]>([]);
+  const [savedItems, setSavedItems] = useState<SavedItemRow[]>([]);
   const [items, setItems] = useState<EditorItem[]>(() => toEditorItems(quotation.items));
   const [customerName, setCustomerName] = useState(quotation.customer_name ?? "");
   const [customerPhone, setCustomerPhone] = useState(quotation.customer_phone ?? "");
@@ -62,7 +63,10 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
   const [notes, setNotes] = useState(quotation.notes ?? "");
   const [terms, setTerms] = useState(quotation.terms ?? "");
   const [catalogPick, setCatalogPick] = useState("");
+  const [savedPick, setSavedPick] = useState("");
   const [busy, setBusy] = useState<null | "save" | "preview" | "send">(null);
+  const [savingItemKey, setSavingItemKey] = useState<string | null>(null);
+  const [saveItemToast, setSaveItemToast] = useState("");
   const [error, setError] = useState("");
 
   const currency = quotation.currency || "USD";
@@ -72,7 +76,17 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
       .then((r) => r.json())
       .then((d: { items?: CatalogItemRow[] }) => setCatalog(d.items ?? []))
       .catch(() => {});
+    fetch(`/api/clients/${clientId}/saved-items`)
+      .then((r) => r.json())
+      .then((d: { items?: SavedItemRow[] }) => setSavedItems(d.items ?? []))
+      .catch(() => {});
   }, [clientId]);
+
+  useEffect(() => {
+    if (!saveItemToast) return;
+    const t = window.setTimeout(() => setSaveItemToast(""), 2500);
+    return () => window.clearTimeout(t);
+  }, [saveItemToast]);
 
   const totals = useMemo(
     () => computeTotals(items, taxRate, otherAmount),
@@ -107,6 +121,54 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
       },
     ]);
     setCatalogPick("");
+  }
+  function addFromSaved(id: string) {
+    const item = savedItems.find((c) => c.id === id);
+    if (!item) return;
+    setItems((rows) => [
+      ...rows,
+      {
+        key: nextKey(),
+        catalog_item_id: null,
+        item_name: item.name,
+        description: item.description ?? "",
+        unit_price: Number(item.unit_price) || 0,
+        quantity: 1,
+        group_label: item.category ? titleCase(item.category) : "",
+      },
+    ]);
+    setSavedPick("");
+  }
+
+  async function saveRowToLibrary(row: EditorItem) {
+    if (!row.item_name.trim()) return;
+    setSavingItemKey(row.key);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/saved-items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: row.item_name.trim(),
+          description: row.description.trim() || null,
+          unit_price: row.unit_price,
+          category: row.group_label.trim() || null,
+        }),
+      });
+      const json = (await res.json()) as { item?: SavedItemRow; updated?: boolean; error?: string };
+      if (!res.ok || !json.item) {
+        setError(json.error ?? "Could not save item");
+        return;
+      }
+      setSavedItems((prev) => {
+        const rest = prev.filter((s) => s.id !== json.item!.id);
+        return [...rest, json.item!].sort((a, b) => a.display_order - b.display_order || a.name.localeCompare(b.name));
+      });
+      setSaveItemToast(json.updated ? "Item updated in your library" : "Item saved to your library");
+    } catch {
+      setError("Could not save item");
+    } finally {
+      setSavingItemKey(null);
+    }
   }
 
   function payload() {
@@ -215,6 +277,15 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
     return byCat;
   }, [catalog]);
 
+  const groupedSaved = useMemo(() => {
+    const byCat: Record<string, SavedItemRow[]> = {};
+    for (const c of savedItems) {
+      const cat = c.category ? titleCase(c.category) : "My items";
+      (byCat[cat] ??= []).push(c);
+    }
+    return byCat;
+  }, [savedItems]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -237,7 +308,28 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
       <div className="rounded-xl border border-border">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <span className="font-mono text-[10px] uppercase tracking-widest text-ink-tertiary">Line items</span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {savedItems.length > 0 ? (
+              <select
+                className="input-base h-8 max-w-[160px] text-[12px]"
+                value={savedPick}
+                onChange={(e) => {
+                  setSavedPick(e.target.value);
+                  if (e.target.value) addFromSaved(e.target.value);
+                }}
+              >
+                <option value="">+ My items…</option>
+                {Object.entries(groupedSaved).map(([cat, list]) => (
+                  <optgroup key={cat} label={cat}>
+                    {list.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} — {formatMoney(c.unit_price, currency)}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            ) : null}
             <select
               className="input-base h-8 max-w-[160px] text-[12px]"
               value={catalogPick}
@@ -269,7 +361,7 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
 
         {items.length === 0 ? (
           <p className="px-3 py-6 text-center text-[12px] text-ink-tertiary">
-            No items yet — add from the catalog or a blank row.
+            No items yet — add from your saved items, the catalog, or a blank row.
           </p>
         ) : (
           <div className="divide-y divide-border">
@@ -282,6 +374,20 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
                     value={it.item_name}
                     onChange={(e) => updateItem(it.key, { item_name: e.target.value })}
                   />
+                  <button
+                    type="button"
+                    onClick={() => void saveRowToLibrary(it)}
+                    disabled={!it.item_name.trim() || savingItemKey === it.key}
+                    className="mt-1.5 shrink-0 text-ink-tertiary hover:text-[var(--accent)] disabled:opacity-40"
+                    aria-label="Save to my items"
+                    title="Save to my items"
+                  >
+                    {savingItemKey === it.key ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Bookmark className="h-4 w-4" />
+                    )}
+                  </button>
                   <button
                     type="button"
                     onClick={() => removeItem(it.key)}
@@ -392,6 +498,7 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, onSaved, onSe
         <textarea className="textarea-base min-h-[10rem]" rows={6} value={terms} onChange={(e) => setTerms(e.target.value)} />
       </div>
 
+      {saveItemToast ? <p className="text-[12px] text-[var(--accent)]">{saveItemToast}</p> : null}
       {error ? <p className="text-[12px] text-[var(--danger)]">{error}</p> : null}
 
       {/* Actions */}
