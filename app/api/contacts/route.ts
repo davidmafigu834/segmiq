@@ -159,6 +159,7 @@ export async function POST(req: Request) {
 
   let overrideAssigneeId: string | undefined;
   let forceUnassigned = false;
+  let assignmentModeOverride: "direct" | "pool" | "round_robin" | undefined;
 
   if (session.role === "SALESPERSON") {
     const mode = (client?.assignment_mode as string | null) || "direct";
@@ -176,6 +177,8 @@ export async function POST(req: Request) {
       overrideAssigneeId = b.assigneeId;
     } else if (mode === "pool") {
       forceUnassigned = true;
+    } else if (mode === "round_robin") {
+      assignmentModeOverride = "round_robin";
     }
   }
 
@@ -217,6 +220,7 @@ export async function POST(req: Request) {
     contactId,
     overrideAssigneeId,
     forceUnassigned,
+    assignmentModeOverride,
     manualPriority,
     initialStatus,
     followUpDate: followUpDate ?? null,

@@ -80,6 +80,7 @@ export async function POST(req: Request) {
     source: "MANUAL",
     formData,
     overrideAssigneeId: assignMode === "specific" ? assigneeId! : undefined,
+    assignmentModeOverride: assignMode === "round_robin" ? "round_robin" : undefined,
     skipNotifications: !sendNotifications,
   });
 

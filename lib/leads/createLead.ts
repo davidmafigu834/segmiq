@@ -37,7 +37,11 @@ export type CreateLeadInput = {
   dealValue?: number | null;
   hubIntake?: string;
   hubSource?: string;
+  /** Per-request override of the client's assignment_mode (e.g. hub "auto" pick). */
+  assignmentModeOverride?: "direct" | "pool" | "round_robin";
 };
+
+const AUTO_INBOUND_SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE"];
 
 export type CreateLeadResult =
   | { ok: true; leadId: string; duplicate: boolean }
@@ -64,6 +68,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     dealValue,
     hubIntake,
     hubSource,
+    assignmentModeOverride,
   } = input;
   const supabase = createAdminClient();
 
@@ -130,7 +135,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     list = (salespeople ?? []) as typeof list;
     managers = managersData ?? undefined;
 
-    const assignmentMode = (client.assignment_mode as string | null) ?? "direct";
+    const assignmentMode = assignmentModeOverride ?? (client.assignment_mode as string | null) ?? "direct";
 
     if (overrideAssigneeId != null && overrideAssigneeId !== "") {
       const ok = list.some((s) => s.id === overrideAssigneeId);
@@ -138,7 +143,12 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
         return { ok: false, error: "Assignee is not an active salesperson for this client", code: "UNKNOWN" };
       }
       assignedId = overrideAssigneeId;
-    } else if (assignmentMode === "round_robin" && list.length > 0) {
+    } else if (
+      list.length > 0 &&
+      assignmentMode !== "pool" &&
+      (assignmentMode === "round_robin" ||
+        (assignmentMode === "direct" && AUTO_INBOUND_SOURCES.includes(source)))
+    ) {
       let rr = (client.round_robin_index as number) ?? 0;
       const idx = rr % list.length;
       assignedId = list[idx].id as string;
@@ -295,15 +305,21 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       } catch (err) {
         console.error("[createLead] notifyNewLead failed:", err);
       }
-    } else if (!forceUnassigned) {
-      try {
-        await notifyAdminsNoSalesperson({
-          clientName: client.name as string,
-          leadId: leadRow.id,
-          clientId,
-        });
-      } catch (err) {
-        console.error("[createLead] notifyAdminsNoSalesperson failed:", err);
+    } else if (!forceUnassigned && assignmentModeOverride !== "pool" && list.length === 0) {
+      const effectiveMode = assignmentModeOverride ?? (client.assignment_mode as string | null) ?? "direct";
+      const expectsAutoAssign =
+        effectiveMode === "round_robin" ||
+        (effectiveMode === "direct" && AUTO_INBOUND_SOURCES.includes(source));
+      if (expectsAutoAssign) {
+        try {
+          await notifyAdminsNoSalesperson({
+            clientName: client.name as string,
+            leadId: leadRow.id,
+            clientId,
+          });
+        } catch (err) {
+          console.error("[createLead] notifyAdminsNoSalesperson failed:", err);
+        }
       }
     }
 

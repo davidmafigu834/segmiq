@@ -1021,7 +1021,7 @@ export function ClientSettingsClient({
             initialDisplayNumber={String(client.meta_whatsapp_display_number ?? "")}
             initialAccessToken={String(client.meta_whatsapp_access_token ?? "")}
             initialAssignmentMode={
-              (client.assignment_mode as "direct" | "pool" | "round_robin" | undefined) ?? "pool"
+              (client.assignment_mode as "direct" | "pool" | "round_robin" | undefined) ?? "round_robin"
             }
             webhookBaseUrl={getPublicBaseUrl()}
             saving={saving}
