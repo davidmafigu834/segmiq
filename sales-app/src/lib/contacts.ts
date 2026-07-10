@@ -1,4 +1,5 @@
 import { apiGet, apiPost } from "./api";
+import type { LeadStatus } from "./types";
 
 export type ContactLookupMatch = {
   id: string;
@@ -27,6 +28,8 @@ export type CreateLeadInput = {
   phone: string;
   source: string;
   priority?: "hot" | "warm" | "cold";
+  initialStatus?: LeadStatus;
+  dealValue?: number;
   email?: string;
   projectType?: string;
   budget?: string;
@@ -48,6 +51,8 @@ export async function createManualLead(input: CreateLeadInput): Promise<{ leadId
     budget: input.budget?.trim() || undefined,
     notes: input.notes?.trim() || undefined,
     priority: input.priority ?? "warm",
+    initialStatus: input.initialStatus,
+    dealValue: input.dealValue,
     forceNew: input.forceNew || undefined,
   });
 

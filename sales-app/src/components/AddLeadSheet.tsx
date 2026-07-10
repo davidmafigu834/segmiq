@@ -7,6 +7,7 @@ import {
   SOURCES,
   type ContactLookupMatch,
 } from "../lib/contacts";
+import { MANUAL_LEAD_STAGES, type LeadStatus } from "../lib/types";
 
 type Props = {
   open: boolean;
@@ -20,6 +21,8 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
   const [phone, setPhone] = useState("");
   const [source, setSource] = useState(SOURCES[0]);
   const [priority, setPriority] = useState<"hot" | "warm" | "cold">("warm");
+  const [stage, setStage] = useState<LeadStatus>("NEW");
+  const [dealValue, setDealValue] = useState("");
   const [email, setEmail] = useState("");
   const [projectType, setProjectType] = useState("");
   const [budget, setBudget] = useState("");
@@ -37,6 +40,8 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
     setPhone("");
     setSource(SOURCES[0]);
     setPriority("warm");
+    setStage("NEW");
+    setDealValue("");
     setEmail("");
     setProjectType("");
     setBudget("");
@@ -80,17 +85,23 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
     setSubmitting(true);
     setError("");
     try {
-      const { leadId } = await createManualLead({
+      const payload: Parameters<typeof createManualLead>[0] = {
         name,
         phone,
         source,
         priority,
+        initialStatus: stage,
         email,
         projectType,
         budget,
         notes,
         forceNew,
-      });
+      };
+      if (stage === "WON" && dealValue.trim()) {
+        const dv = parseFloat(dealValue.replace(/[^0-9.]/g, ""));
+        if (!Number.isNaN(dv)) payload.dealValue = dv;
+      }
+      const { leadId } = await createManualLead(payload);
       setSuccess(true);
       window.setTimeout(() => {
         onCreated(leadId);
@@ -125,7 +136,9 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
         </div>
 
         {success ? (
-          <p className="py-8 text-center text-[15px] font-medium text-accent">Lead added!</p>
+          <p className="py-8 text-center text-[15px] font-medium text-accent">
+            {stage === "WON" ? "Won deal logged!" : "Lead added!"}
+          </p>
         ) : (
           <div className="space-y-4">
             <div>
@@ -185,6 +198,42 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="mb-1 block text-[13px] font-medium text-ink-secondary">
+                Where are you with them?
+              </label>
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value as LeadStatus)}
+                className="w-full rounded-lg border border-border bg-bg-primary px-4 py-3 text-[16px] text-ink-primary outline-none"
+              >
+                {MANUAL_LEAD_STAGES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[12px] text-ink-tertiary">
+                {MANUAL_LEAD_STAGES.find((s) => s.value === stage)?.hint}
+              </p>
+            </div>
+
+            {stage === "WON" ? (
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-ink-secondary">
+                  Deal value
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={dealValue}
+                  onChange={(e) => setDealValue(e.target.value)}
+                  className="w-full rounded-lg border border-border bg-bg-primary px-4 py-3 text-[16px] text-ink-primary outline-none focus:border-border-focus"
+                  placeholder="optional — e.g. 4500"
+                />
+              </div>
+            ) : null}
 
             <div>
               <p className="mb-2 text-[13px] font-medium text-ink-secondary">Priority</p>
@@ -264,7 +313,7 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
               disabled={submitting || dupeBlocking}
               onClick={() => void handleSubmit()}
             >
-              {submitting ? "Adding…" : "Add lead"}
+              {submitting ? "Adding…" : stage === "WON" ? "Log won deal" : "Add lead"}
             </CrmButton>
           </div>
         )}

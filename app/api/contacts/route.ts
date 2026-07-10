@@ -7,7 +7,10 @@ import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { createLead } from "@/lib/leads/createLead";
 import { IN_PERSON_HUB_SOURCES } from "@/lib/customer-hub/recent-status";
 import { logFollowUpSet, logWalkInIntake } from "@/lib/lead-events";
+import { notifyDealWon } from "@/lib/notifications";
+import { getManagerPrefs } from "@/lib/notification-prefs";
 import { recordWinAnalysis } from "@/lib/win-analysis";
+import type { LeadRow } from "@/types";
 import {
   isWalkInSource,
   resolveWalkInIntake,
@@ -42,6 +45,17 @@ const bodySchema = z.object({
   intakeOutcome: walkInOutcomeSchema.optional(),
   followUpDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   dealValue: z.number().nonnegative().optional(),
+  initialStatus: z
+    .enum([
+      "NEW",
+      "CONTACTED",
+      "NEGOTIATING",
+      "PROPOSAL_SENT",
+      "WON",
+      "LOST",
+      "NOT_QUALIFIED",
+    ])
+    .optional(),
 });
 
 export async function POST(req: Request) {
@@ -191,12 +205,10 @@ export async function POST(req: Request) {
   if (b.projectType?.trim()) formData["Project type"] = b.projectType.trim();
   if (b.notes?.trim()) formData.Notes = b.notes.trim();
 
-  let initialStatus: LeadStatus | undefined = IN_PERSON_HUB_SOURCES.has(b.source)
-    ? "CONTACTED"
-    : undefined;
+  let initialStatus: LeadStatus | undefined;
   let manualPriority = b.priority;
   let followUpDate: string | undefined;
-  let dealValue: number | undefined;
+  let dealValue: number | undefined = b.dealValue;
   let hubIntake: WalkInIntakeOutcome | undefined;
 
   if (walkIn && b.intakeOutcome) {
@@ -207,10 +219,14 @@ export async function POST(req: Request) {
     initialStatus = resolved.status;
     manualPriority = resolved.manualPriority;
     followUpDate = resolved.followUpDate;
-    dealValue = resolved.dealValue;
+    dealValue = resolved.dealValue ?? dealValue;
     hubIntake = resolved.hubIntake;
     formData.hub_intake = hubIntake;
     formData.hub_source = b.source;
+  } else if (b.initialStatus) {
+    initialStatus = b.initialStatus;
+  } else if (IN_PERSON_HUB_SOURCES.has(b.source)) {
+    initialStatus = "CONTACTED";
   }
 
   const result = await createLead({
@@ -269,12 +285,63 @@ export async function POST(req: Request) {
       });
     }
 
-    if (b.intakeOutcome === "won_on_spot") {
-      await supabase
-        .from("contacts")
-        .update({ lifecycle: "customer", updated_at: new Date().toISOString() })
-        .eq("id", contactId);
-      await recordWinAnalysis(result.leadId);
+  }
+
+  if (initialStatus === "WON") {
+    await supabase
+      .from("contacts")
+      .update({ lifecycle: "customer", updated_at: new Date().toISOString() })
+      .eq("id", contactId);
+    await recordWinAnalysis(result.leadId);
+
+    const { data: leadRow } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("id", result.leadId)
+      .single();
+
+    if (leadRow) {
+      const { data: actorRow } = await supabase
+        .from("users")
+        .select("id, name, email, phone")
+        .eq("id", session.userId)
+        .maybeSingle();
+
+      const { data: managers } = await supabase
+        .from("users")
+        .select("id, name, email, phone, notification_prefs")
+        .eq("client_id", requestedClientId)
+        .eq("role", "CLIENT_MANAGER")
+        .eq("is_active", true);
+
+      const { data: clientRow } = await supabase
+        .from("clients")
+        .select("name, twilio_whatsapp_override")
+        .eq("id", requestedClientId)
+        .maybeSingle();
+
+      const spLite = {
+        id: session.userId,
+        name: (actorRow?.name as string) || actor.name,
+        phone: (actorRow?.phone as string | null) ?? null,
+        email: (actorRow?.email as string | null) ?? null,
+      };
+
+      for (const mgr of managers ?? []) {
+        void notifyDealWon(
+          leadRow as LeadRow,
+          spLite,
+          {
+            id: mgr.id as string,
+            name: mgr.name as string,
+            phone: (mgr.phone as string | null) ?? null,
+            email: (mgr.email as string | null) ?? null,
+          },
+          (clientRow?.twilio_whatsapp_override as string | null) ?? null,
+          (clientRow?.name as string) ?? "Client",
+          getManagerPrefs((mgr as { notification_prefs?: unknown }).notification_prefs)
+        );
+      }
     }
   }
 

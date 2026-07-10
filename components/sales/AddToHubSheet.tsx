@@ -18,6 +18,9 @@ import {
   isWalkInSource,
   type WalkInIntakeOutcome,
 } from "@/lib/walk-in-intake";
+import { MANUAL_LEAD_STAGES } from "@/lib/customer-hub/manual-lead-stages";
+import { IN_PERSON_HUB_SOURCES } from "@/lib/customer-hub/recent-status";
+import type { LeadStatus } from "@/types";
 
 type AssignmentMode = "direct" | "pool" | "round_robin";
 type LookupMatch = {
@@ -54,6 +57,7 @@ export function AddToHubSheet({
   const [phone, setPhone] = useState("");
   const [source, setSource] = useState(defaultSource ?? SOURCES[0]);
   const [priority, setPriority] = useState<"hot" | "warm" | "cold">("warm");
+  const [stage, setStage] = useState<LeadStatus>("NEW");
   const [email, setEmail] = useState("");
   const [projectType, setProjectType] = useState("");
   const [budget, setBudget] = useState("");
@@ -100,6 +104,13 @@ export function AddToHubSheet({
   }, [phone]);
 
   useEffect(() => {
+    if (isWalkInFlow) return;
+    if (IN_PERSON_HUB_SOURCES.has(source) && stage === "NEW") {
+      setStage("CONTACTED");
+    }
+  }, [source, isWalkInFlow, stage]);
+
+  useEffect(() => {
     if (mode !== "manager" || !clientId) return;
     setLoadingReps(true);
     fetch(`/api/clients/${clientId}/users`)
@@ -138,6 +149,13 @@ export function AddToHubSheet({
         forceNew: forceNew || undefined,
       };
       if (isLead) body.priority = priority;
+      if (isLead && !isWalkInFlow) {
+        body.initialStatus = stage;
+        if (stage === "WON" && dealValue.trim()) {
+          const dv = parseFloat(dealValue.replace(/[^0-9.]/g, ""));
+          if (!Number.isNaN(dv)) body.dealValue = dv;
+        }
+      }
       if (isWalkInFlow && intakeOutcome) {
         body.intakeOutcome = intakeOutcome;
         if (followUpDate) body.followUpDate = followUpDate;
@@ -231,7 +249,13 @@ export function AddToHubSheet({
               <CheckCircle2 size={22} className="text-[var(--success)]" />
             </div>
             <p className="text-[15px] font-semibold text-[var(--success)]">
-              {variant === "walk_in" || isWalkInFlow ? "Walk-in logged" : isLead ? "Lead added" : "Customer saved"}
+              {variant === "walk_in" || isWalkInFlow
+                ? "Walk-in logged"
+                : isLead
+                  ? stage === "WON"
+                    ? "Won deal logged"
+                    : "Lead added"
+                  : "Customer saved"}
             </p>
           </div>
         ) : (
@@ -442,6 +466,41 @@ export function AddToHubSheet({
               )}
 
               {isLead && !isWalkInFlow && (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">
+                    Where are you with them?
+                  </span>
+                  <select
+                    className="input-base"
+                    value={stage}
+                    onChange={(e) => setStage(e.target.value as LeadStatus)}
+                  >
+                    {MANUAL_LEAD_STAGES.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[11px] text-[var(--text-tertiary)]">
+                    {MANUAL_LEAD_STAGES.find((s) => s.value === stage)?.hint}
+                  </span>
+                </label>
+              )}
+
+              {isLead && !isWalkInFlow && stage === "WON" && (
+                <label className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-[var(--text-secondary)]">Deal value</span>
+                  <input
+                    className="input-base"
+                    value={dealValue}
+                    onChange={(e) => setDealValue(e.target.value)}
+                    placeholder="optional — e.g. 4500"
+                    inputMode="decimal"
+                  />
+                </label>
+              )}
+
+              {isLead && !isWalkInFlow && (
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-medium text-[var(--text-secondary)]">Priority</span>
                   <div className="flex gap-2">
@@ -601,7 +660,9 @@ export function AddToHubSheet({
                 {variant === "walk_in" || isWalkInFlow
                   ? "Save walk-in"
                   : isLead
-                    ? "Add lead"
+                    ? stage === "WON"
+                      ? "Log won deal"
+                      : "Add lead"
                     : "Save customer"}
               </button>
             </div>
