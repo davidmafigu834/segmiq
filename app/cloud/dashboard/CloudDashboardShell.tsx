@@ -6,16 +6,15 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   Grid, Folder, Camera, Users, Settings, LayoutGrid, LogOut, CloudUpload,
-  Bell, CreditCard, HelpCircle, BarChart2, Smartphone,
+  Bell, CreditCard, HelpCircle, BarChart2, Tag,
 } from "lucide-react";
 import { Suspense } from "react";
-import { InstallPrompt } from "@/app/cloud/components/InstallPrompt";
-import { IOSInstallBanner } from "@/app/cloud/components/IOSInstallBanner";
 import { matchesCloudDashboardPath, normalizeCloudDashboardPath } from "./cloud-path";
 
 const PRIMARY_NAV = [
   { href: "/cloud/dashboard", icon: Grid, label: "Home" },
   { href: "/cloud/dashboard/projects", icon: Folder, label: "Projects" },
+  { href: "/cloud/dashboard/pricing", icon: Tag, label: "Pricing" },
   { href: "/cloud/dashboard/upload", icon: Camera, label: "Upload" },
   { href: "/cloud/dashboard/team", icon: Users, label: "Team" },
 ];
@@ -23,7 +22,6 @@ const PRIMARY_NAV = [
 const SECONDARY_NAV = [
   { href: "/cloud/dashboard/notifications", icon: Bell, label: "Notifications" },
   { href: "/cloud/dashboard/analytics", icon: BarChart2, label: "Analytics" },
-  { href: "/cloud/dashboard/field-app", icon: Smartphone, label: "Field app" },
   { href: "/cloud/dashboard/billing", icon: CreditCard, label: "Billing" },
   { href: "/cloud/dashboard/settings", icon: Settings, label: "Settings" },
   { href: "/cloud/help", icon: HelpCircle, label: "Help" },
@@ -47,13 +45,13 @@ function getPageTitle(pathname: string): string {
   const p = normalizeCloudDashboardPath(pathname);
   if (p.startsWith("/cloud/dashboard/projects/")) return "Project";
   if (p.startsWith("/cloud/dashboard/projects")) return "Projects";
+  if (p.startsWith("/cloud/dashboard/pricing")) return "Pricing";
   if (p.startsWith("/cloud/dashboard/upload")) return "Upload";
   if (p.startsWith("/cloud/dashboard/team")) return "Team";
   if (p.startsWith("/cloud/dashboard/settings")) return "Settings";
   if (p.startsWith("/cloud/dashboard/notifications")) return "Notifications";
   if (p.startsWith("/cloud/dashboard/analytics")) return "Analytics";
   if (p.startsWith("/cloud/dashboard/billing")) return "Billing";
-  if (p.startsWith("/cloud/dashboard/field-app")) return "Field app";
   if (p.startsWith("/cloud/dashboard/more")) return "More";
   return "Dashboard";
 }
@@ -318,8 +316,8 @@ export default function CloudDashboardShell({
           const active = href === "/cloud/dashboard/more"
             ? (matchesCloudDashboardPath(pathname, "/more")
                 || matchesCloudDashboardPath(pathname, "/settings")
+                || matchesCloudDashboardPath(pathname, "/pricing")
                 || matchesCloudDashboardPath(pathname, "/billing")
-                || matchesCloudDashboardPath(pathname, "/field-app")
                 || matchesCloudDashboardPath(pathname, "/team")
                 || matchesCloudDashboardPath(pathname, "/analytics"))
             : isActive(href, pathname);
@@ -367,9 +365,6 @@ export default function CloudDashboardShell({
       <Suspense>
         <WelcomeToast />
       </Suspense>
-
-      <InstallPrompt />
-      <IOSInstallBanner />
     </div>
   );
 }

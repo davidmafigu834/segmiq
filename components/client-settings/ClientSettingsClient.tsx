@@ -5,8 +5,8 @@ import { Loader2, MailCheck, Upload } from "lucide-react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { ClientAvatar } from "@/components/ClientAvatar";
-import { PackagesManager } from "@/components/client-settings/PackagesManager";
 import { QuoteSettingsManager } from "@/components/client-settings/QuoteSettingsManager";
+import { DocumentsManager } from "@/components/client-settings/DocumentsManager";
 import { WhatsAppInboxSettings } from "@/components/client-settings/WhatsAppInboxSettings";
 import { getPublicBaseUrl } from "@/lib/constants";
 
@@ -16,7 +16,6 @@ const TABS = [
   { id: "whatsapp", label: "WhatsApp" },
   { id: "notifications", label: "Notifications" },
   { id: "branding", label: "Branding" },
-  { id: "packages", label: "Packages" },
   { id: "quotes", label: "Quotes" },
   { id: "advanced", label: "Advanced" },
 ];
@@ -36,6 +35,7 @@ const INDUSTRY_SUGGESTIONS = [
 
 function normalizeSettingsTab(tab: string | null | undefined): string {
   if (!tab) return "profile";
+  if (tab === "packages") return "quotes";
   return TABS.some((t) => t.id === tab) ? tab : "profile";
 }
 
@@ -1111,17 +1111,13 @@ export function ClientSettingsClient({
           </div>
         ) : null}
 
-        {tab === "packages" ? (
-          <div className="max-w-2xl space-y-6">
-            <h2 className="font-display text-2xl">Packages &amp; Documents</h2>
-            <PackagesManager clientId={clientId} />
-          </div>
-        ) : null}
-
         {tab === "quotes" ? (
-          <div className="space-y-6">
-            <h2 className="font-display text-2xl">Quotations</h2>
-            <QuoteSettingsManager clientId={clientId} />
+          <div className="space-y-10">
+            <div className="space-y-6">
+              <h2 className="font-display text-2xl">Quotations</h2>
+              <QuoteSettingsManager clientId={clientId} />
+            </div>
+            <DocumentsManager clientId={clientId} />
           </div>
         ) : null}
 

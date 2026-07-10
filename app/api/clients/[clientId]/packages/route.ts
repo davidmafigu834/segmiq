@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
+import { slugifyPackageName, uniquePackageSlug } from "@/lib/pricing/package-slug";
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const g = await requireClientAccessFromRequest(req, params.clientId);
@@ -31,16 +32,27 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   const supabase = createAdminClient();
   const body = (await req.json()) as {
     name: string;
-    description?: string;
+    description?: string | null;
+    tagline?: string | null;
     price_from?: number | null;
     price_to?: number | null;
-    price_label?: string;
+    price_label?: string | null;
+    price_note?: string | null;
     currency?: string;
     includes?: string[];
     is_featured?: boolean;
+    is_public?: boolean;
+    slug?: string | null;
     display_order?: number;
     valid_until?: string | null;
   };
+
+  const isPublic = body.is_public ?? false;
+  const slugBase = slugifyPackageName(body.slug?.trim() || body.name);
+  const slug =
+    isPublic && slugBase
+      ? await uniquePackageSlug(supabase, params.clientId, slugBase)
+      : null;
 
   const { data, error } = await supabase
     .from("pricing_packages")
@@ -48,12 +60,16 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       client_id: params.clientId,
       name: body.name,
       description: body.description ?? null,
+      tagline: body.tagline ?? null,
       price_from: body.price_from ?? null,
       price_to: body.price_to ?? null,
       price_label: body.price_label ?? null,
+      price_note: body.price_note ?? null,
       currency: body.currency ?? "USD",
       includes: body.includes ?? [],
       is_featured: body.is_featured ?? false,
+      is_public: isPublic,
+      slug,
       display_order: body.display_order ?? 0,
       valid_until: body.valid_until ?? null,
     })

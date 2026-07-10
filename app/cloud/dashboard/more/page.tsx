@@ -4,9 +4,8 @@ import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   UserCircle, CreditCard, Users, BarChart2,
-  HelpCircle, MessageCircle, ChevronRight, LogOut, Smartphone,
+  HelpCircle, MessageCircle, ChevronRight, LogOut, Tag,
 } from "lucide-react";
-import { FIELD_APP_NAME } from "@/lib/cloud/field-app";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -44,6 +43,12 @@ const menuSections: MenuSection[] = [
     label: "Business",
     items: [
       {
+        icon: Tag,
+        label: "Pricing",
+        description: "Manage packages on your public profile",
+        href: "/cloud/dashboard/pricing",
+      },
+      {
         icon: Users,
         label: "Team",
         description: "Invite and manage your team members",
@@ -60,12 +65,6 @@ const menuSections: MenuSection[] = [
   {
     label: "Support",
     items: [
-      {
-        icon: Smartphone,
-        label: FIELD_APP_NAME,
-        description: "Download the Android field app",
-        href: "/cloud/dashboard/field-app",
-      },
       {
         icon: HelpCircle,
         label: "Help & FAQ",

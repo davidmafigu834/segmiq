@@ -3,6 +3,24 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
+import { slugifyPackageName, uniquePackageSlug } from "@/lib/pricing/package-slug";
+
+const ALLOWED_FIELDS = new Set([
+  "name",
+  "description",
+  "tagline",
+  "price_from",
+  "price_to",
+  "price_label",
+  "price_note",
+  "currency",
+  "includes",
+  "is_featured",
+  "is_public",
+  "slug",
+  "display_order",
+  "valid_until",
+]);
 
 export async function PATCH(
   req: Request,
@@ -15,7 +33,38 @@ export async function PATCH(
   }
 
   const supabase = createAdminClient();
-  const body = (await req.json()) as Record<string, unknown>;
+  const raw = (await req.json()) as Record<string, unknown>;
+  const body: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (ALLOWED_FIELDS.has(key)) body[key] = value;
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("pricing_packages")
+    .select("name, slug, is_public")
+    .eq("id", params.packageId)
+    .eq("client_id", params.clientId)
+    .maybeSingle();
+
+  if (fetchError) return NextResponse.json({ error: fetchError.message }, { status: 500 });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const nextIsPublic =
+    "is_public" in body ? Boolean(body.is_public) : Boolean(existing.is_public);
+
+  if (!nextIsPublic) {
+    body.slug = null;
+  } else {
+    const name = typeof body.name === "string" ? body.name : (existing.name as string);
+    const slugSource =
+      typeof body.slug === "string" && body.slug.trim()
+        ? body.slug
+        : (existing.slug as string | null) || name;
+    const slugBase = slugifyPackageName(String(slugSource));
+    if (slugBase) {
+      body.slug = await uniquePackageSlug(supabase, params.clientId, slugBase, params.packageId);
+    }
+  }
 
   const { data, error } = await supabase
     .from("pricing_packages")

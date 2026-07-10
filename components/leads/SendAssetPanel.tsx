@@ -303,7 +303,7 @@ export function SendAssetPanel({
             <p className="text-[12px] text-ink-tertiary">Loading…</p>
           ) : packages.length === 0 ? (
             <p className="text-[12px] text-ink-tertiary">
-              No packages yet — add some in client settings.
+              No packages yet — add them in Segmiq Cloud under Pricing.
             </p>
           ) : (
             <div className="flex flex-col gap-2">
@@ -347,7 +347,7 @@ export function SendAssetPanel({
             <p className="text-[12px] text-ink-tertiary">Loading…</p>
           ) : documents.length === 0 ? (
             <p className="text-[12px] text-ink-tertiary">
-              No documents yet — add some in client settings.
+              No documents yet — add them in agency client settings under Quotes.
             </p>
           ) : (
             <select

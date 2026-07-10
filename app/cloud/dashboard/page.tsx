@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { NewProjectSlideOver } from "./projects/NewProjectSlideOver";
 import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
-import { Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink, Smartphone } from "lucide-react";
+import { Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink } from "lucide-react";
 import { SkeletonScrollRow } from "@/app/cloud/components/SkeletonCard";
 
 type MediaItem = { public_url: string; display_order: number };
@@ -198,7 +198,6 @@ export default function CloudDashboardHome() {
           { label: "New project", Icon: Plus,      bg: "var(--fw-soil)", color: "var(--fw-lime)",          border: "none",                              action: () => setShowNew(true) },
           { label: "Projects",    Icon: FolderOpen, bg: "var(--fw-card)", color: "var(--fw-text-primary)",  border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/projects" },
           { label: "Upload",      Icon: Camera,     bg: "var(--fw-lime)", color: "var(--fw-soil)",          border: "none",                              href: "/cloud/dashboard/upload" },
-          { label: "Field app",   Icon: Smartphone, bg: "var(--fw-card)", color: "var(--fw-text-primary)",  border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/field-app" },
           { label: "Invite",      Icon: UserPlus,   bg: "var(--fw-card)", color: "var(--fw-text-primary)",  border: "0.5px solid var(--fw-border-strong)", href: "/cloud/dashboard/team" },
         ] as { label: string; Icon: React.ElementType; bg: string; color: string; border: string; href?: string; action?: () => void }[]).map((a) => (
           <button
