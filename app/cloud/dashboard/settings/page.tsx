@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive, Droplets, LogOut, Upload, Camera, X } from "lucide-react";
 import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
+import { uploadClientLogoFile } from "@/lib/storage/logo-upload";
 
 type ClientData = {
   id: string;
@@ -142,26 +143,21 @@ export default function CloudSettingsPage() {
     setUploadingLogo(true);
     setLogoError("");
     try {
-      const presignRes = await fetch("/api/storage/presign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: logoFile.name, contentType: logoFile.type, clientId: session.clientId, purpose: "logo" }),
-      });
-      if (!presignRes.ok) throw new Error("Failed to get upload URL");
-      const { uploadUrl, key: logoKey, publicUrl } = (await presignRes.json()) as { uploadUrl: string; key: string; publicUrl: string };
-      await fetch(uploadUrl, { method: "PUT", body: logoFile, headers: { "Content-Type": logoFile.type } });
-      await fetch("/api/cloud/settings/client", {
+      const { publicUrl, key: logoKey } = await uploadClientLogoFile(session.clientId, logoFile);
+      const saveRes = await fetch("/api/cloud/settings/client", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ logo_url: publicUrl, logo_key: logoKey }),
       });
+      const savePayload = (await saveRes.json().catch(() => ({}))) as { error?: string };
+      if (!saveRes.ok) throw new Error(savePayload.error ?? "Failed to save logo");
       setLogoUrl(publicUrl);
       setLogoFile(null);
       setLogoPreview(null);
       setLogoSaved(true);
       setTimeout(() => setLogoSaved(false), 2000);
-    } catch {
-      setLogoError("Upload failed. Please try again.");
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : "Upload failed. Please try again.");
     } finally {
       setUploadingLogo(false);
     }
@@ -317,7 +313,7 @@ export default function CloudSettingsPage() {
             </div>
             <div>
               <label className={labelCls}>Business logo</label>
-              <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" className="hidden" onChange={handleLogoFileChange} />
+              <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleLogoFileChange} />
               {(logoPreview ?? logoUrl) ? (
                 <div className="flex items-center gap-4 rounded-xl border border-black/[0.08] bg-[#F5F5F0] px-4 py-3">
                   <div className="flex h-12 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-black/[0.06] bg-white p-1">
@@ -345,7 +341,7 @@ export default function CloudSettingsPage() {
               ) : (
                 <button onClick={() => logoInputRef.current?.click()} className="flex w-full items-center gap-3 rounded-xl border border-dashed border-black/[0.15] bg-[#F5F5F0] px-4 py-4 text-left text-[13px] text-[#999990] font-cloud-body hover:border-black/[0.25] transition-colors">
                   <Camera className="h-4 w-4 flex-shrink-0" />
-                  Upload logo (PNG, JPG, SVG — max 5 MB)
+                  Upload logo (PNG, JPG, WEBP — max 5 MB)
                 </button>
               )}
               {logoError && <p className="mt-1 text-[12px] text-red-500 font-cloud-body">{logoError}</p>}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { generatePresignedUploadUrl, generateOriginalMediaKey, generateHeroKey, generateTestimonialPhotoKey, generateVideoKey, getPublicUrl } from "@/lib/storage/r2";
-import { generateLogoKey, resolveImageContentType } from "@/lib/storage/logo-upload";
+import { generateLogoKey, isAllowedImageContentType, resolveImageContentType } from "@/lib/storage/logo-upload";
 import {
   MEDIA_PHOTO_MAX_BYTES,
   MEDIA_VIDEO_MAX_BYTES,
@@ -29,14 +29,14 @@ export async function POST(req: Request) {
       ? resolveImageContentType(filename, rawContentType) ?? rawContentType
       : resolveMediaContentType(filename, rawContentType) ?? rawContentType;
 
-  if (purpose === "logo" && !contentType) {
-    return NextResponse.json(
-      { error: "Only JPEG, PNG, WEBP, and HEIC images are supported" },
-      { status: 400 }
-    );
-  }
-
-  if (purpose !== "logo" && !contentType) {
+  if (purpose === "logo") {
+    if (!contentType || !isAllowedImageContentType(contentType)) {
+      return NextResponse.json(
+        { error: "Only JPEG, PNG, WEBP, and HEIC images are supported" },
+        { status: 400 }
+      );
+    }
+  } else if (!contentType) {
     return NextResponse.json(
       {
         error:
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!isAllowedMediaContentType(contentType)) {
+  if (purpose !== "logo" && !isAllowedMediaContentType(contentType)) {
     return NextResponse.json(
       { error: "File type not supported. Upload photos (JPEG, PNG, WEBP, HEIC) or videos (MP4, MOV, WEBM, 3GP)." },
       { status: 400 }
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
   try {
     const uploadUrl = await generatePresignedUploadUrl(key, contentType);
     const publicUrl = getPublicUrl(key);
-    return NextResponse.json({ uploadUrl, key, publicUrl });
+    return NextResponse.json({ uploadUrl, key, publicUrl, contentType });
   } catch (err) {
     console.error("[presign]", err);
     return NextResponse.json({ error: "Failed to generate upload URL. Check R2 configuration." }, { status: 500 });

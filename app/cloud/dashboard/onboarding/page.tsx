@@ -7,6 +7,7 @@ import {
   CloudUpload, Camera, Loader2, Check, ChevronRight,
   Upload, Users, Globe, X,
 } from "lucide-react";
+import { uploadClientLogoFile } from "@/lib/storage/logo-upload";
 
 type Step = 1 | 2 | 3;
 
@@ -108,30 +109,17 @@ export default function OnboardingPage() {
     setUploadingLogo(true);
     setLogoError("");
     try {
-      const presignRes = await fetch("/api/storage/presign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: logoFile.name,
-          contentType: logoFile.type,
-          clientId: session.clientId,
-          purpose: "logo",
-        }),
-      });
-      if (!presignRes.ok) throw new Error("Failed to get upload URL");
-      const { uploadUrl, publicUrl } = (await presignRes.json()) as {
-        uploadUrl: string;
-        publicUrl: string;
-      };
-      await fetch(uploadUrl, { method: "PUT", body: logoFile, headers: { "Content-Type": logoFile.type } });
-      await fetch("/api/cloud/settings/client", {
+      const { publicUrl, key } = await uploadClientLogoFile(session.clientId, logoFile);
+      const saveRes = await fetch("/api/cloud/settings/client", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ logo_url: publicUrl }),
+        body: JSON.stringify({ logo_url: publicUrl, logo_key: key }),
       });
+      const savePayload = (await saveRes.json().catch(() => ({}))) as { error?: string };
+      if (!saveRes.ok) throw new Error(savePayload.error ?? "Failed to save logo");
       setLogoUrl(publicUrl);
-    } catch {
-      setLogoError("Upload failed. Please try again.");
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : "Upload failed. Please try again.");
     } finally {
       setUploadingLogo(false);
     }
@@ -228,7 +216,7 @@ export default function OnboardingPage() {
             <input
               ref={logoInputRef}
               type="file"
-              accept="image/png,image/jpeg,image/jpg,image/svg+xml"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
               className="hidden"
               onChange={handleLogoFileChange}
             />
@@ -278,7 +266,7 @@ export default function OnboardingPage() {
               >
                 <Camera className="h-10 w-10" strokeWidth={1.5} />
                 <span className="text-[14px] font-medium">Click to upload your logo</span>
-                <span className="text-[12px]">PNG, JPG, SVG — max 5 MB</span>
+                <span className="text-[12px]">PNG, JPG, WEBP — max 5 MB</span>
               </button>
             )}
 

@@ -35,3 +35,22 @@ export function resolveImageContentType(filename: string, reported?: string): st
 export function isAllowedImageContentType(contentType: string): boolean {
   return ALLOWED_IMAGE_TYPES.has(contentType.toLowerCase());
 }
+
+/** Browser-side: upload via server route (avoids presigned PUT Content-Type / CORS issues). */
+export async function uploadClientLogoFile(
+  clientId: string,
+  file: File
+): Promise<{ publicUrl: string; key: string }> {
+  const body = new FormData();
+  body.append("file", file);
+  const res = await fetch(`/api/clients/${clientId}/logo/upload`, { method: "POST", body });
+  const payload = (await res.json().catch(() => ({}))) as {
+    publicUrl?: string;
+    key?: string;
+    error?: string;
+  };
+  if (!res.ok || !payload.publicUrl || !payload.key) {
+    throw new Error(payload.error ?? "Upload failed");
+  }
+  return { publicUrl: payload.publicUrl, key: payload.key };
+}
