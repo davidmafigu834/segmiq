@@ -233,6 +233,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     manual_priority: manualPriority ?? null,
     follow_up_date: followUpDate ?? null,
     deal_value: dealValue ?? null,
+    deal_value_source: dealValue != null && dealValue > 0 ? ("manual" as const) : null,
   };
 
   const { data: lead, error: lErr } = await supabase.from("leads").insert(leadInsert).select("*").single();

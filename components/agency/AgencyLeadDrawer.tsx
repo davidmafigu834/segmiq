@@ -33,6 +33,8 @@ function apiLeadToRow(lead: Record<string, unknown>): LeadRow {
     not_qualified_reason: (lead.not_qualified_reason as string | null) ?? null,
     lost_reason: (lead.lost_reason as string | null) ?? null,
     deal_value: lead.deal_value != null ? Number(lead.deal_value) : null,
+    deal_value_source: (lead.deal_value_source as LeadRow["deal_value_source"]) ?? null,
+    expected_close_date: (lead.expected_close_date as string | null) ?? null,
     follow_up_date: (lead.follow_up_date as string | null) ?? null,
     facebook_lead_id: (lead.facebook_lead_id as string | null) ?? null,
     created_at: String(lead.created_at),

@@ -13,6 +13,8 @@ export type LeadStatus =
   | "LOST"
   | "NOT_QUALIFIED";
 
+export type DealValueSource = "manual" | "proposal";
+
 export type CallOutcome =
   | "ANSWERED"
   | "NO_ANSWER"
@@ -114,6 +116,10 @@ export interface LeadRow {
   not_qualified_reason: string | null;
   lost_reason: string | null;
   deal_value: number | null;
+  /** manual = rep estimate; proposal = from sent/accepted quotation (locked). */
+  deal_value_source?: DealValueSource | null;
+  /** Set at quote/proposal stage for revenue forecast bucketing. */
+  expected_close_date?: string | null;
   follow_up_date: string | null;
   facebook_lead_id: string | null;
   created_at: string;

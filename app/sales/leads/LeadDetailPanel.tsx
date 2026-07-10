@@ -16,6 +16,7 @@ import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
 import { QuotationsPanel } from "@/components/leads/QuotationsPanel";
 import { HandoverBanner } from "@/components/leads/HandoverBanner";
 import { LeadBriefing } from "@/components/leads/LeadBriefing";
+import { DealValueEditor } from "@/components/leads/DealValueEditor";
 import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
@@ -259,6 +260,11 @@ export function LeadDetailPanel({
               }
             />
             <HandoverBanner leadId={activeLead.id} />
+            <DealValueEditor
+              lead={activeLead}
+              disabled={isReadOnly}
+              onUpdated={onLeadUpdated}
+            />
             {activeLead.is_stale && (
               <StaleLeadRecovery
                 leadId={activeLead.id}

@@ -7,6 +7,7 @@ import { buildQuotationPdfData } from "@/lib/quotations/build-pdf-data";
 import { renderQuotationPdf } from "@/lib/quotations/quotation-pdf";
 import { putObject, getPublicUrl } from "@/lib/storage/r2";
 import { logDocumentSent, logStatusChanged } from "@/lib/lead-events";
+import { proposalDealValueUpdate } from "@/lib/deal-value";
 import { persistLeadScore } from "@/lib/lead-scoring";
 import { formatMoney } from "@/lib/quotations/totals";
 import { getPublicBaseUrl } from "@/lib/constants";
@@ -16,6 +17,20 @@ const ADVANCE_FROM = new Set(["NEW", "CONTACTED", "NEGOTIATING"]);
 export async function POST(req: Request, { params }: { params: { quotationId: string } }) {
   const access = await canManageQuotation(params.quotationId, req);
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
+
+  let expectedCloseDate: string | null | undefined;
+  try {
+    const body = (await req.json()) as { expected_close_date?: string | null };
+    if (body.expected_close_date === null) expectedCloseDate = null;
+    else if (
+      typeof body.expected_close_date === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(body.expected_close_date)
+    ) {
+      expectedCloseDate = body.expected_close_date;
+    }
+  } catch {
+    // Empty body is fine — expected_close_date is optional.
+  }
 
   const supabase = createAdminClient();
   const { data: quote } = await supabase
@@ -116,16 +131,29 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   });
 
   // Advance the pipeline to "Proposal sent" if the lead is earlier in the funnel.
+  // Optionally capture expected_close_date (forecast input) at send time.
   const { data: lead } = await supabase
     .from("leads")
     .select("status")
     .eq("id", access.leadId)
     .single();
+
+  const leadUpdates: Record<string, unknown> = {};
+  let advancedToProposal = false;
   if (lead && ADVANCE_FROM.has(lead.status as string)) {
-    await supabase
-      .from("leads")
-      .update({ status: "PROPOSAL_SENT", updated_at: new Date().toISOString() })
-      .eq("id", access.leadId);
+    leadUpdates.status = "PROPOSAL_SENT";
+    advancedToProposal = true;
+  }
+  if (expectedCloseDate !== undefined) {
+    leadUpdates.expected_close_date = expectedCloseDate;
+  }
+  const proposalValue = proposalDealValueUpdate(Number(quote.total) || 0);
+  if (proposalValue) Object.assign(leadUpdates, proposalValue);
+  if (Object.keys(leadUpdates).length > 0) {
+    leadUpdates.updated_at = new Date().toISOString();
+    await supabase.from("leads").update(leadUpdates).eq("id", access.leadId);
+  }
+  if (advancedToProposal && lead) {
     await logStatusChanged({
       leadId: access.leadId,
       clientId: access.clientId,

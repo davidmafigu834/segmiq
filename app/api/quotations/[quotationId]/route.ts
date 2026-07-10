@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageQuotation } from "@/lib/quotations/quote-access";
+import { proposalDealValueUpdate } from "@/lib/deal-value";
 import { saveItemsAndTotals, loadQuotationWithItems } from "@/lib/quotations/persist";
 import type { QuotationLineItemInput, QuotationStatus } from "@/types";
 
@@ -66,10 +67,10 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     updates.status = body.status;
     if (body.status === "accepted") {
       updates.accepted_at = new Date().toISOString();
-      // Carry the accepted total onto the lead so a future win is pre-filled.
       const total = Number(current?.total) || 0;
-      if (total > 0) {
-        await supabase.from("leads").update({ deal_value: total }).eq("id", access.leadId);
+      const proposalValue = proposalDealValueUpdate(total);
+      if (proposalValue) {
+        await supabase.from("leads").update(proposalValue).eq("id", access.leadId);
       }
     }
   }

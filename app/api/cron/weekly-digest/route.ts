@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email/resend";
 import { weeklyDigestEmail } from "@/lib/email/templates/weekly-digest";
 import { buildWeeklyIntelligenceSnapshot } from "@/lib/lead-intelligence";
 import { runPerformanceAnalysisAllClients } from "@/lib/performance-intelligence";
+import { runForecastSnapshotsAllClients } from "@/lib/revenue-forecast";
 import { sendWhatsApp, isWhatsAppDeliveryConfigured } from "@/lib/messaging/provider";
 import { formatCurrencyUsd } from "@/lib/format";
 import { firstName } from "@/lib/messaging/whatsapp-vars";
@@ -205,6 +206,14 @@ export async function GET(req: Request) {
     console.log("[weekly-digest] Performance analysis complete");
   } catch (err) {
     errors.push(`Performance analysis failed: ${String(err)}`);
+  }
+
+  try {
+    const forecast = await runForecastSnapshotsAllClients();
+    console.log(`[weekly-digest] Forecast snapshots: ${forecast.processed} clients`);
+    errors.push(...forecast.errors);
+  } catch (err) {
+    errors.push(`Forecast snapshots failed: ${String(err)}`);
   }
 
   return NextResponse.json({

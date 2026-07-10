@@ -13,6 +13,7 @@ import {
 } from "@/lib/mirror-nudges";
 import { countLaneMetrics, resolveSalesMirror } from "@/lib/sales-mirror";
 import { addMonths, format, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
+import { getDashboardForecastCard, type DashboardForecastCard } from "@/lib/revenue-forecast";
 import { getClientActivePipelineValue } from "@/lib/client-team-report";
 import { buildSoloBusinessPulseMetrics, type PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 import { classifyLeadLane } from "@/lib/lead-lanes";
@@ -947,6 +948,13 @@ export async function fetchClientManagerDashboardData(clientId: string) {
 
   const growthTrend = await fetchClientGrowthTrend(clientId);
 
+  let forecast: DashboardForecastCard | null = null;
+  try {
+    forecast = await getDashboardForecastCard(clientId, now);
+  } catch {
+    forecast = null;
+  }
+
   const clientName = (client?.name as string) ?? "";
   const rawAssignmentMode = client?.assignment_mode as string | null | undefined;
   const assignmentMode: "direct" | "pool" | "round_robin" =
@@ -978,6 +986,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     },
     deltas,
     growthTrend,
+    forecast,
     clientName,
     retargeting,
   };

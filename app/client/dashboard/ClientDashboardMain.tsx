@@ -33,6 +33,7 @@ import {
   type RetargetingStatusView,
 } from "@/lib/retargeting-shared";
 import { LossInsightsSection } from "@/components/dashboard/LossInsightsSection";
+import { RevenueForecastCard, type ForecastCardData } from "@/components/dashboard/RevenueForecastCard";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 
 // ============================================
@@ -104,6 +105,7 @@ type DashboardData = {
     contactRatePts: number | null;
   };
   growthTrend?: GrowthTrendPoint[];
+  forecast?: ForecastCardData | null;
   clientName: string;
   retargeting?: RetargetingStatusView | null;
 };
@@ -459,6 +461,12 @@ export default function ClientDashboardMain({
       {data.growthTrend && data.growthTrend.length > 0 && (
         <div className="ag-fade-in ag-delay-1 mb-8">
           <GrowthTrendChart data={data.growthTrend} />
+        </div>
+      )}
+
+      {data.forecast && (
+        <div className="ag-fade-in ag-delay-1 mb-8">
+          <RevenueForecastCard data={data.forecast} />
         </div>
       )}
 

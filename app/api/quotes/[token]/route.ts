@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logStatusChanged } from "@/lib/lead-events";
+import { proposalDealValueUpdate } from "@/lib/deal-value";
 
 export const dynamic = "force-dynamic";
 
@@ -115,9 +116,9 @@ export async function POST(req: Request, { params }: { params: { token: string }
   await supabase.from("quotations").update(updates).eq("id", quote.id as string);
 
   if (newStatus === "accepted") {
-    const total = Number(quote.total) || 0;
-    if (total > 0) {
-      await supabase.from("leads").update({ deal_value: total }).eq("id", quote.lead_id as string);
+    const proposalValue = proposalDealValueUpdate(Number(quote.total) || 0);
+    if (proposalValue) {
+      await supabase.from("leads").update(proposalValue).eq("id", quote.lead_id as string);
     }
     const { data: lead } = await supabase
       .from("leads")

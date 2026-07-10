@@ -5,6 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { background } from "@/lib/background";
 import { logStatusChanged, logLeadReassigned, logFollowUpSet } from "@/lib/lead-events";
 import { recordWinAnalysis } from "@/lib/win-analysis";
+import {
+  canSetManualDealValue,
+  manualDealValueUpdate,
+  type DealValueSource,
+} from "@/lib/deal-value";
 import type { LeadStatus } from "@/types";
 import { z } from "zod";
 
@@ -37,6 +42,12 @@ const patchSchema = z.object({
     ])
     .optional(),
   follow_up_date: z.string().nullable().optional(),
+  expected_close_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "expected_close_date must be YYYY-MM-DD")
+    .nullable()
+    .optional(),
+  deal_value: z.number().nonnegative().nullable().optional(),
   assigned_to_id: z.string().uuid().nullable().optional(),
   is_archived: z.boolean().optional(),
   handover_notes: z.string().max(2000).nullable().optional(),
@@ -66,13 +77,29 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
   // Fetch previous lead state for event logging
   const { data: previousLead } = await supabase
     .from("leads")
-    .select("client_id, status, assigned_to_id, follow_up_date")
+    .select("client_id, status, assigned_to_id, follow_up_date, deal_value_source")
     .eq("id", params.leadId)
     .maybeSingle();
+
+  if (parsed.data.deal_value !== undefined) {
+    const source = previousLead?.deal_value_source as DealValueSource | null | undefined;
+    if (!canSetManualDealValue(source)) {
+      return NextResponse.json(
+        { error: "Deal value is locked — set from a sent quotation and cannot be overridden manually." },
+        { status: 409 }
+      );
+    }
+  }
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (parsed.data.status) updates.status = parsed.data.status as LeadStatus;
   if (parsed.data.follow_up_date !== undefined) updates.follow_up_date = parsed.data.follow_up_date;
+  if (parsed.data.expected_close_date !== undefined) {
+    updates.expected_close_date = parsed.data.expected_close_date;
+  }
+  if (parsed.data.deal_value !== undefined) {
+    Object.assign(updates, manualDealValueUpdate(parsed.data.deal_value));
+  }
   if (parsed.data.assigned_to_id !== undefined && isAgency) {
     if (parsed.data.assigned_to_id === null) {
       updates.assigned_to_id = null;
