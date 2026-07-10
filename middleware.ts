@@ -70,21 +70,25 @@ export async function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
-    // Map known URL paths to internal /cloud/* paths.
+    // Map known URL paths to internal routes.
     // IMPORTANT: only rewrite explicit cloud routes — do NOT catch static files
     // like /manifest.json, /sw.js, /icons/* (those must be served as-is).
-    let cloudPath: string | null = null;
-    if (path === "/") {
-      cloudPath = "/cloud";
-    } else if (
-      path === "/login" ||
-      path === "/signup" ||
-      path === "/forgot-password" ||
-      path === "/reset-password" ||
-      path.startsWith("/dashboard") ||
-      path.startsWith("/share/")
-    ) {
-      cloudPath = "/cloud" + path;
+    const profileRewrite = cloudPublicProfileRewrite(path);
+    let cloudPath: string | null = profileRewrite;
+    if (!cloudPath) {
+      if (path === "/") {
+        cloudPath = "/cloud";
+      } else if (
+        path === "/login" ||
+        path === "/signup" ||
+        path === "/forgot-password" ||
+        path === "/reset-password" ||
+        path === "/help" ||
+        path.startsWith("/dashboard") ||
+        path.startsWith("/share/")
+      ) {
+        cloudPath = "/cloud" + path;
+      }
     }
     // /manifest.json, /sw.js, /icons/*, /api/*, etc. pass through unchanged
 
@@ -92,14 +96,7 @@ export async function middleware(req: NextRequest) {
     const resolved = cloudPath ?? path;
 
     // Public cloud paths — no auth required
-    const isCloudPublic =
-      resolved === "/cloud" ||
-      resolved === "/cloud/login" ||
-      resolved === "/cloud/signup" ||
-      resolved === "/cloud/forgot-password" ||
-      resolved === "/cloud/reset-password" ||
-      resolved === "/cloud/help" ||
-      resolved.startsWith("/cloud/share/");
+    const isCloudPublic = isCloudPublicPath(resolved);
 
     if (!isCloudPublic) {
       const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
@@ -323,6 +320,80 @@ function homeForRole(role: UserRole, clientMode: ClientMode = "team"): string {
   if (role === "CLIENT_MANAGER") return "/client/dashboard";
   if (role === "SALESPERSON" && clientMode === "solo") return "/solo/dashboard";
   return "/sales/dashboard";
+}
+
+/** First path segment on cloud.segmiq.com that is not a client profile slug. */
+const CLOUD_RESERVED_SEGMENTS = new Set([
+  "login",
+  "signup",
+  "forgot-password",
+  "reset-password",
+  "dashboard",
+  "share",
+  "help",
+  "cloud",
+  "downloads",
+  "api",
+  "p",
+  "f",
+  "lead",
+  "quote",
+  "proposal",
+  "onboard",
+  "l",
+  "d",
+  "blog",
+  "_next",
+]);
+
+function isCloudPublicPath(resolved: string): boolean {
+  return (
+    resolved === "/cloud" ||
+    resolved === "/cloud/login" ||
+    resolved === "/cloud/signup" ||
+    resolved === "/cloud/forgot-password" ||
+    resolved === "/cloud/reset-password" ||
+    resolved === "/cloud/help" ||
+    resolved.startsWith("/cloud/share/") ||
+    resolved.startsWith("/p/") ||
+    resolved.startsWith("/f/") ||
+    resolved.startsWith("/lead/") ||
+    resolved.startsWith("/onboard/") ||
+    resolved.startsWith("/proposal/") ||
+    resolved.startsWith("/quote/") ||
+    resolved.startsWith("/l/") ||
+    resolved.startsWith("/d/")
+  );
+}
+
+/** Map cloud.segmiq.com/{slug}/… public URLs to internal /p/* routes. */
+function cloudPublicProfileRewrite(path: string): string | null {
+  if (path === "/" || !path.startsWith("/")) return null;
+
+  const segments = path.split("/").filter(Boolean);
+  if (segments.length === 0) return null;
+
+  const slug = segments[0]!;
+  if (CLOUD_RESERVED_SEGMENTS.has(slug)) return null;
+
+  if (segments.length === 1) {
+    return `/p/${slug}`;
+  }
+
+  const second = segments[1]!;
+  if (segments.length === 2 && second === "packages") {
+    return `/p/${slug}/packages`;
+  }
+
+  if (segments.length === 2 && second !== "p") {
+    return `/p/${slug}/p/${second}`;
+  }
+
+  if (segments.length === 3 && second === "p" && segments[2]) {
+    return `/p/${slug}/p/${segments[2]}`;
+  }
+
+  return null;
 }
 
 /** Map root-relative blog URLs to internal /blog/* when developing on localhost:3000/blog. */
