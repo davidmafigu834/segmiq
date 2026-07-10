@@ -39,6 +39,12 @@ function getProjectMeta(project: Project): string | null {
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
+function getHeroEyebrow(industry: string | undefined, country: string | null | undefined): string | null {
+  if (!industry) return null;
+  const locationHint = country?.split(",")[0]?.trim();
+  return locationHint ? `${industry} · ${locationHint}` : industry;
+}
+
 export const dynamic = "force-dynamic";
 
 type ProjectMedia = { public_url: string; display_order: number };
@@ -172,7 +178,7 @@ export default async function ProfilePage({
   const brandColor = client?.primary_color ?? "#0F7A4F";
   const showLogo = hasAbsoluteLogo(client?.logo_url);
   const headerSubtitle = [client?.industry, client?.country].filter(Boolean).join(" · ");
-  const eyebrowText = headerSubtitle;
+  const eyebrowText = getHeroEyebrow(client?.industry, client?.country);
 
   const pkgSlug = typeof searchParams.pkg === "string" ? searchParams.pkg.trim() : "";
   let requestedPackage: { id: string; slug: string; name: string } | undefined;
@@ -316,75 +322,91 @@ export default async function ProfilePage({
   const installCount = projectCount ?? 0;
   const packagesListHref = `/p/${params.slug}/packages`;
   const showStats = installCount > 0;
-  const showPackagesNav = packageTeaser.length > 0;
+  const showPackagesNav = publicPackages.length > 0;
+  const showWorkSection = projectsWithPhotos.length > 0;
+  const hasContentAbovePackages = showStats || showWorkSection;
+  const hasContentAboveTestimonials =
+    showStats || showWorkSection || packageTeaser.length > 0;
 
   return (
     <div
-      className="min-h-screen bg-white [font-family:var(--fw-font-body)] text-[var(--fw-text-primary)] antialiased"
+      className="w-full bg-white text-[var(--fw-text-primary)] antialiased"
       style={{ ["--brand" as string]: brandColor, ["--brand-ink" as string]: "#FFFFFF" }}
     >
-      {/* Hero — full bleed, outside .wrap */}
+      {/* Hero — full bleed photo + scrim, or dark brand-tinted fallback */}
       <section
-        className={`relative isolate flex min-h-[78vh] flex-col max-[820px]:min-h-[78vh] lg:min-h-[84vh] ${hasHeroPhoto ? "bg-cover bg-center" : "bg-[var(--brand)]"}`}
+        className={`relative isolate flex min-h-[84vh] w-full flex-col max-[820px]:min-h-[78vh] ${
+          hasHeroPhoto
+            ? "bg-cover bg-center bg-no-repeat"
+            : "bg-[color-mix(in_srgb,var(--brand)_38%,#0a0907)]"
+        }`}
         style={hasHeroPhoto ? { backgroundImage: `url(${heroImageUrl})` } : undefined}
       >
         {hasHeroPhoto && (
-          <div className="pointer-events-none absolute inset-0 z-[1]" style={{ background: HERO_SCRIM }} aria-hidden />
+          <div
+            className="pointer-events-none absolute inset-0 z-[1]"
+            style={{ background: HERO_SCRIM }}
+            aria-hidden
+          />
         )}
 
-        <header className="relative z-[2] mx-auto mt-3.5 flex w-[calc(100%-28px)] max-w-[1040px] items-center justify-between gap-2.5 rounded-[18px] border border-white/70 bg-white/[0.96] px-3 py-2.5 shadow-[0_12px_36px_rgba(10,9,7,0.22)] backdrop-blur-md sm:mt-[18px] sm:w-[calc(100%-44px)] sm:gap-3 sm:px-3.5 sm:py-[11px] sm:pl-[18px] sm:pr-3.5 max-[560px]:mt-3.5 max-[560px]:px-2.5 max-[560px]:pl-3">
-          <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+        {/* Floating header pill — matches .hero-header */}
+        <header className="relative z-[2] mx-auto mt-[18px] flex w-[calc(100%-44px)] max-w-[1040px] items-center justify-between gap-3 rounded-[18px] border border-white/70 bg-white/[0.96] py-[11px] pl-[18px] pr-3.5 shadow-[0_12px_36px_rgba(10,9,7,0.22)] backdrop-blur-[8px] max-[560px]:mt-3.5 max-[560px]:w-[calc(100%-28px)] max-[560px]:gap-2.5 max-[560px]:py-2.5 max-[560px]:pl-3 max-[560px]:pr-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-3 max-[560px]:gap-2.5">
             {showLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={client!.logo_url!}
                 alt={clientName}
-                className="h-[34px] w-[34px] shrink-0 rounded-[9px] object-contain sm:h-[38px] sm:w-[38px]"
+                className="h-[38px] w-[38px] shrink-0 rounded-[9px] object-contain max-[560px]:h-[34px] max-[560px]:w-[34px]"
               />
             ) : (
               <div
-                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] bg-[var(--brand)] text-base font-bold text-white [font-family:var(--fw-font-display)] sm:h-[38px] sm:w-[38px] sm:text-xl"
+                className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[9px] bg-[var(--brand)] text-xl font-bold text-[var(--brand-ink)] [font-family:var(--fw-font-display)] max-[560px]:h-[34px] max-[560px]:w-[34px] max-[560px]:text-lg"
                 aria-hidden
               >
                 {getInitials(clientName).slice(0, 1)}
               </div>
             )}
             <div className="min-w-0 overflow-hidden">
-              <p className="truncate text-base font-bold tracking-tight [font-family:var(--fw-font-display)] sm:text-xl">
+              <p className="truncate text-xl font-bold tracking-[-0.01em] text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)] max-[560px]:text-base">
                 {clientName}
               </p>
               {headerSubtitle && (
-                <p className="truncate text-[11px] tracking-wide text-[var(--fw-text-tertiary)] max-[560px]:hidden">
+                <p className="truncate text-[11px] tracking-[0.04em] text-[var(--fw-text-tertiary)] max-[560px]:hidden">
                   {headerSubtitle}
                 </p>
               )}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2.5 sm:gap-[18px]">
-            <a
-              href="#work"
-              className="hidden text-[13px] text-[var(--fw-text-tertiary)] no-underline transition-colors hover:text-[var(--fw-text-primary)] min-[821px]:inline"
-            >
-              Work
-            </a>
+          <div className="flex shrink-0 items-center gap-[18px] max-[560px]:gap-2.5">
+            {showWorkSection && (
+              <a
+                href="#work"
+                className="hidden text-[13px] text-[var(--fw-text-tertiary)] no-underline transition-colors hover:text-[var(--fw-text-primary)] max-[820px]:hidden min-[821px]:inline"
+              >
+                Work
+              </a>
+            )}
             {showPackagesNav && (
               <a
                 href="#packages"
-                className="hidden text-[13px] text-[var(--fw-text-tertiary)] no-underline transition-colors hover:text-[var(--fw-text-primary)] min-[821px]:inline"
+                className="hidden text-[13px] text-[var(--fw-text-tertiary)] no-underline transition-colors hover:text-[var(--fw-text-primary)] max-[820px]:hidden min-[821px]:inline"
               >
                 Packages
               </a>
             )}
             <a
               href="#contact"
-              className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[11px] bg-[var(--brand)] px-[18px] py-2.5 text-[13px] font-semibold text-[var(--brand-ink)] no-underline transition-opacity hover:opacity-90"
+              className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[11px] bg-[var(--brand)] px-[18px] py-2.5 text-[13px] font-semibold tracking-[0.01em] text-[var(--brand-ink)] no-underline transition-opacity hover:opacity-90 active:translate-y-px"
             >
               Get a quote
             </a>
           </div>
         </header>
 
-        <div className="relative z-[2] mx-auto mt-auto w-full max-w-[1040px] px-7 pb-[52px] lg:pb-[72px]">
+        {/* Hero copy — matches .hero-inner */}
+        <div className="relative z-[2] mx-auto mt-auto w-full max-w-[1040px] px-7 pb-[72px] max-[820px]:pb-[52px]">
           {eyebrowText && (
             <p className="mb-5 inline-flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white">
               <span className="inline-block h-0.5 w-[26px] bg-[var(--brand)]" aria-hidden />
@@ -402,15 +424,15 @@ export default async function ProfilePage({
           <div className="mt-8 flex flex-wrap gap-[13px]">
             <a
               href="#contact"
-              className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-[var(--brand)] px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] text-[var(--brand-ink)] no-underline transition-opacity hover:opacity-90"
+              className="inline-flex items-center justify-center gap-2 rounded-[11px] border border-transparent bg-[var(--brand)] px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] text-[var(--brand-ink)] no-underline transition-opacity hover:opacity-90 active:translate-y-px"
             >
               Request a free quote
               <ArrowRight size={15} aria-hidden />
             </a>
-            {projectsWithPhotos.length > 0 && (
+            {showWorkSection && (
               <a
                 href="#work"
-                className="inline-flex items-center justify-center rounded-[11px] border border-white/[0.32] bg-white/[0.08] px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] text-white no-underline backdrop-blur-[4px] transition-colors hover:border-white hover:bg-white/[0.14]"
+                className="inline-flex items-center justify-center rounded-[11px] border border-white/[0.32] bg-white/[0.08] px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] text-white no-underline backdrop-blur-[4px] transition-colors hover:border-white hover:bg-white/[0.14] active:translate-y-px"
               >
                 See our work
               </a>
@@ -433,7 +455,7 @@ export default async function ProfilePage({
           </div>
         )}
 
-        {projectsWithPhotos.length > 0 && (
+        {showWorkSection && (
           <section
             id="work"
             className={`py-16 ${showStats ? "border-t border-[rgba(28,20,16,0.10)]" : ""}`}
@@ -443,12 +465,12 @@ export default async function ProfilePage({
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
                   Recent work
                 </p>
-                <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
-                  Projects we&apos;re proud of
+                <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
+                  Featured installations
                 </h2>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 min-[821px]:grid-cols-3">
               {projectsWithPhotos.map(({ project, coverUrl }, index) => {
                 const meta = getProjectMeta(project);
                 const isFeatured = index === 0;
@@ -458,23 +480,23 @@ export default async function ProfilePage({
                     href={`/cloud/share/${project.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group relative overflow-hidden rounded-2xl border border-[rgba(28,20,16,0.06)] bg-gradient-to-br from-[#e9e3d8] to-[#d9d0c1] transition-transform duration-200 hover:-translate-y-0.5 ${
+                    className={`group relative overflow-hidden rounded-[16px] border border-[rgba(28,20,16,0.06)] bg-gradient-to-br from-[#e9e3d8] to-[#d9d0c1] transition-transform duration-200 hover:-translate-y-[3px] ${
                       isFeatured
-                        ? "col-span-2 aspect-[16/10] max-[820px]:row-auto lg:col-span-2 lg:row-span-2 lg:aspect-auto lg:min-h-[320px]"
+                        ? "col-span-2 aspect-[16/10] min-[821px]:col-span-2 min-[821px]:row-span-2 min-[821px]:aspect-auto min-[821px]:min-h-[320px]"
                         : "aspect-square"
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={coverUrl} alt={project.title} className="absolute inset-0 h-full w-full object-cover" />
                     <div
-                      className="absolute inset-0 bg-gradient-to-br from-[color-mix(in_srgb,var(--brand)_22%,transparent)] to-transparent"
+                      className="absolute inset-0 bg-[linear-gradient(150deg,color-mix(in_srgb,var(--brand)_22%,transparent),transparent_60%)]"
                       aria-hidden
                     />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white/95 via-white/75 to-transparent px-4 pb-3.5 pt-10">
+                    <div className="absolute bottom-3.5 left-4 text-[rgba(28,20,16,0.62)]">
                       <p className="text-base font-bold text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)]">
                         {project.title}
                       </p>
-                      {meta && <p className="text-xs text-[rgba(28,20,16,0.62)]">{meta}</p>}
+                      {meta && <p className="text-xs">{meta}</p>}
                     </div>
                   </Link>
                 );
@@ -484,25 +506,30 @@ export default async function ProfilePage({
         )}
 
         {packageTeaser.length > 0 && (
-          <section id="packages" className="border-t border-[rgba(28,20,16,0.10)] py-16">
+          <section
+            id="packages"
+            className={`py-16 ${hasContentAbovePackages ? "border-t border-[rgba(28,20,16,0.10)]" : ""}`}
+          >
             <div className="mb-[34px] flex flex-wrap items-end justify-between gap-5">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
                   Pricing
                 </p>
-                <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
-                  Our packages
+                <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
+                  Packages for every home
                 </h2>
               </div>
-              <Link
-                href={packagesListHref}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--brand)] no-underline"
-              >
-                View all packages
-                <ArrowRight size={15} aria-hidden />
-              </Link>
+              {publicPackages.length > 0 && (
+                <Link
+                  href={packagesListHref}
+                  className="inline-flex items-center gap-[6px] text-sm font-semibold text-[var(--brand)] no-underline"
+                >
+                  View all packages
+                  <ArrowRight size={15} aria-hidden />
+                </Link>
+              )}
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 min-[821px]:grid-cols-2">
               {packageTeaser.map((pkg) => {
                 const featured = pkg.is_featured;
                 const requestHref = `/p/${params.slug}?pkg=${pkg.slug}#contact`;
@@ -511,22 +538,22 @@ export default async function ProfilePage({
                 return (
                   <article
                     key={pkg.id}
-                    className={`flex flex-col rounded-[18px] border px-7 py-[26px] transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[rgba(28,20,16,0.2)] ${
+                    className={`flex flex-col rounded-[18px] border px-[28px] py-[26px] transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[rgba(28,20,16,0.2)] ${
                       featured
                         ? "border-[color-mix(in_srgb,var(--brand)_35%,rgba(28,20,16,0.10))] bg-[color-mix(in_srgb,var(--brand)_6%,#FFFFFF)]"
                         : "border-[rgba(28,20,16,0.10)] bg-white"
                     }`}
                   >
                     {featured && (
-                      <span className="mb-3.5 inline-flex self-start rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--brand-ink)]">
+                      <span className="mb-[14px] inline-flex self-start rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--brand-ink)]">
                         Most popular
                       </span>
                     )}
-                    <h3 className="mb-1.5 text-2xl tracking-[-0.01em] [font-family:var(--fw-font-display)]">{pkg.name}</h3>
+                    <h3 className="mb-[6px] text-2xl tracking-[-0.01em] [font-family:var(--fw-font-display)]">{pkg.name}</h3>
                     {subline && (
                       <p className="mb-[18px] flex-1 text-sm leading-normal text-[var(--fw-text-tertiary)]">{subline}</p>
                     )}
-                    <p className="mb-4 text-[32px] font-bold tracking-[-0.02em] text-[var(--brand)] [font-family:var(--fw-font-display)]">
+                    <p className="mb-[16px] text-[32px] font-bold tracking-[-0.02em] text-[var(--brand)] [font-family:var(--fw-font-display)]">
                       {priceParts.prefix && (
                         <span className="mr-0.5 align-top text-[0.5em] text-[var(--fw-text-tertiary)]">
                           {priceParts.prefix}
@@ -552,23 +579,25 @@ export default async function ProfilePage({
         )}
 
         {typedTestimonials.length > 0 && (
-          <section className="border-t border-[rgba(28,20,16,0.10)] py-16">
+          <section
+            className={`py-16 ${hasContentAboveTestimonials ? "border-t border-[rgba(28,20,16,0.10)]" : ""}`}
+          >
             <div className="mb-[34px]">
               <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
                 From customers
               </p>
-              <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
-                What clients say
+              <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
+                What homeowners say
               </h2>
             </div>
-            <div className="grid gap-[18px] md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-[18px] min-[821px]:grid-cols-2">
               {typedTestimonials.map((t) => (
                 <article
                   key={t.id}
-                  className="rounded-[18px] border border-[rgba(28,20,16,0.10)] bg-white px-8 py-[30px] sm:px-8"
+                  className="rounded-[18px] border border-[rgba(28,20,16,0.10)] bg-white px-8 py-[30px]"
                 >
                   {t.rating != null && (
-                    <div className="mb-4 flex gap-0.5">
+                    <div className="mb-4 flex gap-[3px]">
                       {Array.from({ length: 5 }).map((_, i) => (
                         <Star
                           key={i}
@@ -597,10 +626,10 @@ export default async function ProfilePage({
         )}
 
         <section id="contact" className="py-16">
-          <div className="relative grid items-center gap-7 overflow-hidden rounded-[22px] bg-[#1C1410] px-[26px] py-9 text-[#F7F4EF] max-[820px]:grid-cols-1 sm:gap-11 sm:px-12 sm:py-[50px] lg:grid-cols-2 lg:px-12 lg:py-[50px]">
+          <div className="relative grid items-center gap-7 overflow-hidden rounded-[22px] bg-[#1C1410] px-[26px] py-9 text-[#F7F4EF] max-[820px]:grid-cols-1 max-[820px]:gap-7 max-[820px]:py-9 min-[821px]:grid-cols-2 min-[821px]:gap-11 min-[821px]:px-12 min-[821px]:py-[50px]">
             <span className="absolute bottom-0 left-0 top-0 w-[5px] bg-[var(--brand)]" aria-hidden />
             <div>
-              <h2 className="text-[clamp(26px,3.4vw,38px)] leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
+              <h2 className="text-[clamp(26px,3.4vw,38px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
                 {conversationalFormTitle}
               </h2>
               <p className="mt-3.5 max-w-[38ch] text-[15px] leading-normal text-[rgba(247,244,239,0.6)]">
@@ -608,7 +637,7 @@ export default async function ProfilePage({
                 right information.
               </p>
             </div>
-            <div className="rounded-2xl border border-[rgba(247,244,239,0.12)] bg-[rgba(247,244,239,0.06)] p-5">
+            <div className="rounded-2xl border border-[rgba(247,244,239,0.12)] bg-[rgba(247,244,239,0.06)] p-5 [&_input::placeholder]:text-[rgba(247,244,239,0.4)] [&_textarea::placeholder]:text-[rgba(247,244,239,0.4)]">
               <ConversationalForm
                 clientId={clientId}
                 clientName={clientName}

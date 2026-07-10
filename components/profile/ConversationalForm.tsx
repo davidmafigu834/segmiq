@@ -744,17 +744,31 @@ export function ConversationalForm({
         {submitError && (
           <button
             onClick={() => { setSubmitError(false); void handleSubmit(); }}
-            style={{
-              alignSelf: "flex-end",
-              background: "none",
-              border: "0.5px solid rgba(28,20,16,0.2)",
-              borderRadius: 22,
-              padding: "8px 18px",
-              fontSize: 13,
-              color: "#1C1410",
-              cursor: "pointer",
-              fontFamily: "var(--fw-font-body, system-ui)",
-            }}
+            style={
+              embedded
+                ? {
+                    alignSelf: "flex-end",
+                    background: "none",
+                    border: "1px solid rgba(247,244,239,0.2)",
+                    borderRadius: 22,
+                    padding: "8px 18px",
+                    fontSize: 13,
+                    color: "#F7F4EF",
+                    cursor: "pointer",
+                    fontFamily: "var(--fw-font-body, system-ui)",
+                  }
+                : {
+                    alignSelf: "flex-end",
+                    background: "none",
+                    border: "0.5px solid rgba(28,20,16,0.2)",
+                    borderRadius: 22,
+                    padding: "8px 18px",
+                    fontSize: 13,
+                    color: "#1C1410",
+                    cursor: "pointer",
+                    fontFamily: "var(--fw-font-body, system-ui)",
+                  }
+            }
           >
             Try again →
           </button>
@@ -905,7 +919,7 @@ function InputBubble({
                     : embedded
                     ? "rgba(247,244,239,0.08)"
                     : "#F7F4EF",
-                  color: embedded ? "#FFFFFF" : selectedOptions.includes(opt) ? "#D4FF4F" : "#1C1410",
+                  color: embedded ? "var(--brand-ink, #FFFFFF)" : selectedOptions.includes(opt) ? "#D4FF4F" : "#1C1410",
                   border: embedded
                     ? "1px solid rgba(247,244,239,0.16)"
                     : "0.5px solid rgba(28,20,16,0.12)",
@@ -929,7 +943,7 @@ function InputBubble({
                 width: "100%",
                 height: 48,
                 background: embedded ? "var(--brand, #0F7A4F)" : "#1C1410",
-                color: embedded ? "#FFFFFF" : "#D4FF4F",
+                color: embedded ? "var(--brand-ink, #FFFFFF)" : "#D4FF4F",
                 border: "none",
                 borderRadius: 14,
                 fontSize: 15,
@@ -997,7 +1011,7 @@ function InputBubble({
                     display: "grid",
                     placeItems: "center",
                     flexShrink: 0,
-                    color: "#FFFFFF",
+                    color: "var(--brand-ink, #FFFFFF)",
                   }
                 : {
                     width: 48,
