@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { ArrowRight } from "lucide-react";
 
 export type ConversationalFormField = {
   id: string;
@@ -33,6 +34,8 @@ type Props = {
   steps: ConversationalFormStep[];
   portfolioUrl?: string;
   requestedPackage?: RequestedPackage;
+  /** Dark inline chat panel for public profile pages */
+  embedded?: boolean;
 };
 
 type Message = {
@@ -57,6 +60,7 @@ export function ConversationalForm({
   steps,
   portfolioUrl,
   requestedPackage,
+  embedded = false,
 }: Props) {
   const allFields = steps.flatMap((s) => s.fields);
 
@@ -65,7 +69,7 @@ export function ConversationalForm({
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [currentInput, setCurrentInput] = useState("");
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(embedded);
   const [, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState(false);
@@ -73,6 +77,7 @@ export function ConversationalForm({
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const embeddedKickoff = useRef(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -104,6 +109,14 @@ export function ConversationalForm({
     showTypingThenMessage(openingMessage, 300);
     setTimeout(() => moveToField(0), 1600);
   }
+
+  useEffect(() => {
+    if (!embedded || embeddedKickoff.current || submitted) return;
+    embeddedKickoff.current = true;
+    showTypingThenMessage(openingMessage, 300);
+    setTimeout(() => moveToField(0), 1600);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded]);
 
   function moveToField(index: number) {
     if (index >= allFields.length) {
@@ -174,7 +187,7 @@ export function ConversationalForm({
 
   const initials = getInitials(clientName);
 
-  if (!started) {
+  if (!started && !embedded) {
     return (
       <div
         style={{
@@ -355,15 +368,25 @@ export function ConversationalForm({
 
   return (
     <div
-      style={{
-        minHeight: "100vh",
-        background: "#F7F4EF",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "var(--fw-font-body, system-ui)",
-      }}
+      style={
+        embedded
+          ? {
+              display: "flex",
+              flexDirection: "column",
+              fontFamily: "var(--fw-font-body, system-ui)",
+              background: "transparent",
+              minHeight: 0,
+            }
+          : {
+              minHeight: "100vh",
+              background: "#F7F4EF",
+              display: "flex",
+              flexDirection: "column",
+              fontFamily: "var(--fw-font-body, system-ui)",
+            }
+      }
     >
-      {requestedPackage ? (
+      {requestedPackage && !embedded ? (
         <div
           style={{
             background: "#EDE9E3",
@@ -380,7 +403,22 @@ export function ConversationalForm({
         </div>
       ) : null}
 
+      {requestedPackage && embedded ? (
+        <p
+          style={{
+            marginBottom: 12,
+            fontFamily: "var(--fw-font-body, system-ui)",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "rgba(247,244,239,0.75)",
+          }}
+        >
+          Requesting: {requestedPackage.name}
+        </p>
+      ) : null}
+
       {/* Top bar */}
+      {!embedded ? (
       <div
         style={{
           position: "sticky",
@@ -485,21 +523,51 @@ export function ConversationalForm({
           </div>
         )}
       </div>
+      ) : null}
 
       {/* Messages area */}
       <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "24px 20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          paddingBottom: 140,
-        }}
+        style={
+          embedded
+            ? {
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                maxHeight: 420,
+                overflowY: "auto",
+              }
+            : {
+                flex: 1,
+                overflowY: "auto",
+                padding: "24px 20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                paddingBottom: 140,
+              }
+        }
       >
         {messages.map((msg) => {
           if (msg.kind === "system") {
+            if (embedded) {
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    background: "rgba(247,244,239,0.1)",
+                    borderRadius: "13px 13px 13px 4px",
+                    padding: "13px 16px",
+                    fontSize: 14,
+                    color: "#F7F4EF",
+                    lineHeight: 1.55,
+                    maxWidth: "88%",
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  {msg.text}
+                </div>
+              );
+            }
             return (
               <div
                 key={msg.id}
@@ -547,6 +615,26 @@ export function ConversationalForm({
           }
 
           if (msg.kind === "user") {
+            if (embedded) {
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    alignSelf: "flex-end",
+                    background: "rgba(247,244,239,0.06)",
+                    border: "1px solid rgba(247,244,239,0.12)",
+                    color: "#F7F4EF",
+                    borderRadius: "13px 13px 4px 13px",
+                    padding: "13px 16px",
+                    fontSize: 14,
+                    maxWidth: "88%",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {msg.text}
+                </div>
+              );
+            }
             return (
               <div
                 key={msg.id}
@@ -578,6 +666,7 @@ export function ConversationalForm({
                 onAnswer={handleAnswer}
                 onSkip={handleSkip}
                 inputRef={inputRef}
+                embedded={embedded}
               />
             );
           }
@@ -594,6 +683,7 @@ export function ConversationalForm({
               alignSelf: "flex-start",
             }}
           >
+            {!embedded && (
             <div
               style={{
                 width: 28,
@@ -611,16 +701,28 @@ export function ConversationalForm({
             >
               {initials}
             </div>
+            )}
             <div
-              style={{
-                background: "#FFFFFF",
-                border: "0.5px solid rgba(28,20,16,0.08)",
-                borderRadius: "18px 18px 18px 4px",
-                padding: "14px 18px",
-                display: "flex",
-                gap: 5,
-                alignItems: "center",
-              }}
+              style={
+                embedded
+                  ? {
+                      background: "rgba(247,244,239,0.1)",
+                      borderRadius: "13px 13px 13px 4px",
+                      padding: "14px 18px",
+                      display: "flex",
+                      gap: 5,
+                      alignItems: "center",
+                    }
+                  : {
+                      background: "#FFFFFF",
+                      border: "0.5px solid rgba(28,20,16,0.08)",
+                      borderRadius: "18px 18px 18px 4px",
+                      padding: "14px 18px",
+                      display: "flex",
+                      gap: 5,
+                      alignItems: "center",
+                    }
+              }
             >
               {([0, 1, 2] as const).map((i) => (
                 <div
@@ -629,7 +731,7 @@ export function ConversationalForm({
                     width: 7,
                     height: 7,
                     borderRadius: "50%",
-                    background: "#B4A898",
+                    background: embedded ? "rgba(247,244,239,0.45)" : "#B4A898",
                     animation: "typing-dot 1.2s infinite",
                     animationDelay: `${i * 0.2}s`,
                   }}
@@ -673,6 +775,7 @@ function InputBubble({
   onAnswer,
   onSkip,
   inputRef,
+  embedded = false,
 }: {
   field: ConversationalFormField;
   currentInput: string;
@@ -682,6 +785,7 @@ function InputBubble({
   onAnswer: (field: ConversationalFormField, answer: string | string[]) => void;
   onSkip: (field: ConversationalFormField) => void;
   inputRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
+  embedded?: boolean;
 }) {
   function handleSubmitText() {
     const val = currentInput.trim();
@@ -708,18 +812,31 @@ function InputBubble({
     );
   }
 
-  const inputBase: React.CSSProperties = {
-    width: "100%",
-    padding: "13px 16px",
-    background: "#F7F4EF",
-    border: "0.5px solid rgba(28,20,16,0.15)",
-    borderRadius: 14,
-    fontSize: 15,
-    color: "#1C1410",
-    outline: "none",
-    fontFamily: "var(--fw-font-body, system-ui)",
-    boxSizing: "border-box",
-  };
+  const inputBase: React.CSSProperties = embedded
+    ? {
+        width: "100%",
+        padding: "12px 14px",
+        background: "rgba(247,244,239,0.08)",
+        border: "1px solid rgba(247,244,239,0.16)",
+        borderRadius: 10,
+        fontSize: 14,
+        color: "#F7F4EF",
+        outline: "none",
+        fontFamily: "var(--fw-font-body, system-ui)",
+        boxSizing: "border-box",
+      }
+    : {
+        width: "100%",
+        padding: "13px 16px",
+        background: "#F7F4EF",
+        border: "0.5px solid rgba(28,20,16,0.15)",
+        borderRadius: 14,
+        fontSize: 15,
+        color: "#1C1410",
+        outline: "none",
+        fontFamily: "var(--fw-font-body, system-ui)",
+        boxSizing: "border-box",
+      };
 
   const isChoiceField =
     field.field_type === "select" ||
@@ -735,17 +852,25 @@ function InputBubble({
 
   return (
     <div
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: "#FFFFFF",
-        borderTop: "0.5px solid rgba(28,20,16,0.08)",
-        padding: "16px 20px",
-        paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
-        zIndex: 20,
-      }}
+      style={
+        embedded
+          ? {
+              position: "relative",
+              marginTop: 4,
+              padding: 0,
+            }
+          : {
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: "#FFFFFF",
+              borderTop: "0.5px solid rgba(28,20,16,0.08)",
+              padding: "16px 20px",
+              paddingBottom: "calc(16px + env(safe-area-inset-bottom))",
+              zIndex: 20,
+            }
+      }
     >
       {isChoiceField && (
         <div style={{ marginBottom: field.field_type === "multiselect" ? 0 : 0 }}>
@@ -773,9 +898,17 @@ function InputBubble({
                 style={{
                   height: 44,
                   padding: "0 18px",
-                  background: selectedOptions.includes(opt) ? "#1C1410" : "#F7F4EF",
-                  color: selectedOptions.includes(opt) ? "#D4FF4F" : "#1C1410",
-                  border: "0.5px solid rgba(28,20,16,0.12)",
+                  background: selectedOptions.includes(opt)
+                    ? embedded
+                      ? "var(--brand, #0F7A4F)"
+                      : "#1C1410"
+                    : embedded
+                    ? "rgba(247,244,239,0.08)"
+                    : "#F7F4EF",
+                  color: embedded ? "#FFFFFF" : selectedOptions.includes(opt) ? "#D4FF4F" : "#1C1410",
+                  border: embedded
+                    ? "1px solid rgba(247,244,239,0.16)"
+                    : "0.5px solid rgba(28,20,16,0.12)",
                   borderRadius: 22,
                   fontSize: 14,
                   fontWeight: 500,
@@ -795,8 +928,8 @@ function InputBubble({
               style={{
                 width: "100%",
                 height: 48,
-                background: "#1C1410",
-                color: "#D4FF4F",
+                background: embedded ? "var(--brand, #0F7A4F)" : "#1C1410",
+                color: embedded ? "#FFFFFF" : "#D4FF4F",
                 border: "none",
                 borderRadius: 14,
                 fontSize: 15,
@@ -848,30 +981,53 @@ function InputBubble({
           <button
             onClick={handleSubmitText}
             disabled={!currentInput.trim() && field.is_required}
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: "50%",
-              background:
-                !currentInput.trim() && field.is_required ? "#EDE9E3" : "#1C1410",
-              border: "none",
-              cursor:
-                !currentInput.trim() && field.is_required ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              transition: "all 0.15s ease",
-            }}
+            style={
+              embedded
+                ? {
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    background:
+                      !currentInput.trim() && field.is_required
+                        ? "rgba(247,244,239,0.12)"
+                        : "var(--brand, #0F7A4F)",
+                    border: "none",
+                    cursor:
+                      !currentInput.trim() && field.is_required ? "not-allowed" : "pointer",
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                    color: "#FFFFFF",
+                  }
+                : {
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    background:
+                      !currentInput.trim() && field.is_required ? "#EDE9E3" : "#1C1410",
+                    border: "none",
+                    cursor:
+                      !currentInput.trim() && field.is_required ? "not-allowed" : "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    transition: "all 0.15s ease",
+                  }
+            }
           >
-            <i
-              className="ti ti-arrow-up"
-              style={{
-                fontSize: 18,
-                color:
-                  !currentInput.trim() && field.is_required ? "#B4A898" : "#D4FF4F",
-              }}
-            />
+            {embedded ? (
+              <ArrowRight size={17} aria-hidden />
+            ) : (
+              <i
+                className="ti ti-arrow-up"
+                style={{
+                  fontSize: 18,
+                  color:
+                    !currentInput.trim() && field.is_required ? "#B4A898" : "#D4FF4F",
+                }}
+              />
+            )}
           </button>
         </div>
       )}

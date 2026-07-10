@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Check, Star } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { ConversationalForm, type ConversationalFormStep } from "@/components/profile/ConversationalForm";
 import {
   getBudgetRangeOptions,
@@ -19,15 +19,14 @@ function hasAbsoluteLogo(logoUrl: string | null | undefined): logoUrl is string 
   return typeof logoUrl === "string" && /^https?:\/\//.test(logoUrl);
 }
 
-function formatPackagePrice(pkg: PricingPackage): string {
-  if (pkg.price_label) return pkg.price_label;
-  if (pkg.price_from != null && pkg.price_to != null) {
-    return `${pkg.currency} ${Number(pkg.price_from).toLocaleString()} – ${Number(pkg.price_to).toLocaleString()}`;
-  }
+function formatPackagePriceParts(pkg: PricingPackage): { prefix: string | null; amount: string } {
+  if (pkg.price_label) return { prefix: null, amount: pkg.price_label };
   if (pkg.price_from != null) {
-    return `From ${pkg.currency} ${Number(pkg.price_from).toLocaleString()}`;
+    const prefix =
+      pkg.currency === "USD" || pkg.currency === "$" ? "$" : `${pkg.currency} `;
+    return { prefix, amount: Number(pkg.price_from).toLocaleString() };
   }
-  return "Get a quote";
+  return { prefix: null, amount: "Get a quote" };
 }
 
 function getProjectCover(project: Project): string | null {
@@ -316,27 +315,24 @@ export default async function ProfilePage({
 
   const installCount = projectCount ?? 0;
   const packagesListHref = `/p/${params.slug}/packages`;
+  const showStats = installCount > 0;
+  const showPackagesNav = packageTeaser.length > 0;
 
   return (
     <div
-      className="min-h-screen bg-white [font-family:var(--fw-font-body)] text-[var(--fw-text-primary)]"
-      style={{ ["--brand" as string]: brandColor }}
+      className="min-h-screen bg-white [font-family:var(--fw-font-body)] text-[var(--fw-text-primary)] antialiased"
+      style={{ ["--brand" as string]: brandColor, ["--brand-ink" as string]: "#FFFFFF" }}
     >
-      {/* Hero */}
+      {/* Hero — full bleed, outside .wrap */}
       <section
-        className={`relative isolate flex min-h-[78vh] flex-col lg:min-h-[84vh] ${hasHeroPhoto ? "bg-cover bg-center" : "bg-[var(--brand)]"}`}
+        className={`relative isolate flex min-h-[78vh] flex-col max-[820px]:min-h-[78vh] lg:min-h-[84vh] ${hasHeroPhoto ? "bg-cover bg-center" : "bg-[var(--brand)]"}`}
         style={hasHeroPhoto ? { backgroundImage: `url(${heroImageUrl})` } : undefined}
       >
         {hasHeroPhoto && (
-          <div
-            className="pointer-events-none absolute inset-0 z-[1]"
-            style={{ background: HERO_SCRIM }}
-            aria-hidden
-          />
+          <div className="pointer-events-none absolute inset-0 z-[1]" style={{ background: HERO_SCRIM }} aria-hidden />
         )}
 
-        {/* Header pill */}
-        <header className="relative z-[2] mx-auto mt-3.5 flex w-[calc(100%-28px)] max-w-[1040px] items-center justify-between gap-2.5 rounded-2xl border border-white/70 bg-white/95 px-3 py-2.5 shadow-[0_12px_36px_rgba(10,9,7,0.22)] backdrop-blur-md sm:mt-[18px] sm:w-[calc(100%-44px)] sm:gap-3 sm:px-3.5 sm:py-[11px] sm:pl-[18px] sm:pr-3.5 max-[560px]:px-2.5 max-[560px]:pl-3">
+        <header className="relative z-[2] mx-auto mt-3.5 flex w-[calc(100%-28px)] max-w-[1040px] items-center justify-between gap-2.5 rounded-[18px] border border-white/70 bg-white/[0.96] px-3 py-2.5 shadow-[0_12px_36px_rgba(10,9,7,0.22)] backdrop-blur-md sm:mt-[18px] sm:w-[calc(100%-44px)] sm:gap-3 sm:px-3.5 sm:py-[11px] sm:pl-[18px] sm:pr-3.5 max-[560px]:mt-3.5 max-[560px]:px-2.5 max-[560px]:pl-3">
           <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
             {showLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -371,41 +367,42 @@ export default async function ProfilePage({
             >
               Work
             </a>
-            <a
-              href="#packages"
-              className="hidden text-[13px] text-[var(--fw-text-tertiary)] no-underline transition-colors hover:text-[var(--fw-text-primary)] min-[821px]:inline"
-            >
-              Packages
-            </a>
+            {showPackagesNav && (
+              <a
+                href="#packages"
+                className="hidden text-[13px] text-[var(--fw-text-tertiary)] no-underline transition-colors hover:text-[var(--fw-text-primary)] min-[821px]:inline"
+              >
+                Packages
+              </a>
+            )}
             <a
               href="#contact"
-              className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[11px] bg-[var(--brand)] px-[18px] py-2.5 text-[13px] font-semibold text-white no-underline transition-opacity hover:opacity-90"
+              className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[11px] bg-[var(--brand)] px-[18px] py-2.5 text-[13px] font-semibold text-[var(--brand-ink)] no-underline transition-opacity hover:opacity-90"
             >
               Get a quote
             </a>
           </div>
         </header>
 
-        {/* Hero copy */}
-        <div className="relative z-[2] mx-auto mt-auto w-full max-w-[1040px] px-5 pb-[52px] sm:px-7 sm:pb-[72px]">
+        <div className="relative z-[2] mx-auto mt-auto w-full max-w-[1040px] px-7 pb-[52px] lg:pb-[72px]">
           {eyebrowText && (
             <p className="mb-5 inline-flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-white">
               <span className="inline-block h-0.5 w-[26px] bg-[var(--brand)]" aria-hidden />
               {eyebrowText}
             </p>
           )}
-          <h1 className="max-w-[18ch] text-[clamp(40px,6vw,68px)] leading-[1.02] tracking-[-0.02em] text-white [font-family:var(--fw-font-display)] [text-shadow:0_2px_30px_rgba(0,0,0,0.25)]">
+          <h1 className="max-w-[18ch] text-[clamp(40px,6vw,68px)] font-bold leading-[1.02] tracking-[-0.02em] text-white [font-family:var(--fw-font-display)] [text-shadow:0_2px_30px_rgba(0,0,0,0.25)]">
             {(profile.headline as string | null) ?? clientName}
           </h1>
           {profile.subheadline && (
-            <p className="mt-[22px] max-w-[50ch] text-lg leading-relaxed text-white/80">
+            <p className="mt-[22px] max-w-[50ch] text-lg leading-[1.55] text-white/[0.82]">
               {profile.subheadline as string}
             </p>
           )}
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-[13px]">
             <a
               href="#contact"
-              className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-[var(--brand)] px-[26px] py-3.5 text-sm font-semibold text-white no-underline transition-opacity hover:opacity-90"
+              className="inline-flex items-center justify-center gap-2 rounded-[11px] bg-[var(--brand)] px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] text-[var(--brand-ink)] no-underline transition-opacity hover:opacity-90"
             >
               Request a free quote
               <ArrowRight size={15} aria-hidden />
@@ -413,7 +410,7 @@ export default async function ProfilePage({
             {projectsWithPhotos.length > 0 && (
               <a
                 href="#work"
-                className="inline-flex items-center justify-center rounded-[11px] border border-white/30 bg-white/[0.08] px-[26px] py-3.5 text-sm font-semibold text-white no-underline backdrop-blur-sm transition-colors hover:border-white hover:bg-white/[0.14]"
+                className="inline-flex items-center justify-center rounded-[11px] border border-white/[0.32] bg-white/[0.08] px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] text-white no-underline backdrop-blur-[4px] transition-colors hover:border-white hover:bg-white/[0.14]"
               >
                 See our work
               </a>
@@ -422,24 +419,25 @@ export default async function ProfilePage({
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1040px] px-5 sm:px-7">
-        {/* Stats */}
-        {installCount > 0 && (
-          <div className="grid grid-cols-1 border-b border-[var(--fw-border)]">
-            <div className="px-2 py-[30px] text-center">
+      <div className="mx-auto max-w-[1040px] px-7">
+        {showStats && (
+          <div className="grid grid-cols-1 border-b border-[rgba(28,20,16,0.10)]">
+            <div className="border-r-0 px-2 py-[30px] text-center">
               <p className="text-[clamp(30px,4vw,42px)] font-bold tracking-[-0.02em] text-[var(--brand)] [font-family:var(--fw-font-display)]">
                 {installCount}+
               </p>
-              <p className="mt-1 text-[13px] tracking-wide text-[var(--fw-text-tertiary)]">
+              <p className="mt-1 text-[13px] tracking-[0.02em] text-[var(--fw-text-tertiary)]">
                 Projects completed
               </p>
             </div>
           </div>
         )}
 
-        {/* Work */}
         {projectsWithPhotos.length > 0 && (
-          <section id="work" className="border-t border-[var(--fw-border)] py-16 first:border-t-0">
+          <section
+            id="work"
+            className={`py-16 ${showStats ? "border-t border-[rgba(28,20,16,0.10)]" : ""}`}
+          >
             <div className="mb-[34px] flex flex-wrap items-end justify-between gap-5">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
@@ -460,25 +458,23 @@ export default async function ProfilePage({
                     href={`/cloud/share/${project.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group relative overflow-hidden rounded-2xl border border-[var(--fw-border)] bg-gradient-to-br from-[#e9e3d8] to-[#d9d0c1] transition-transform hover:-translate-y-0.5 ${
+                    className={`group relative overflow-hidden rounded-2xl border border-[rgba(28,20,16,0.06)] bg-gradient-to-br from-[#e9e3d8] to-[#d9d0c1] transition-transform duration-200 hover:-translate-y-0.5 ${
                       isFeatured
-                        ? "col-span-2 aspect-[16/10] lg:col-span-2 lg:row-span-2 lg:aspect-auto lg:min-h-[320px]"
+                        ? "col-span-2 aspect-[16/10] max-[820px]:row-auto lg:col-span-2 lg:row-span-2 lg:aspect-auto lg:min-h-[320px]"
                         : "aspect-square"
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={coverUrl}
-                      alt={project.title}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
+                    <img src={coverUrl} alt={project.title} className="absolute inset-0 h-full w-full object-cover" />
                     <div
                       className="absolute inset-0 bg-gradient-to-br from-[color-mix(in_srgb,var(--brand)_22%,transparent)] to-transparent"
                       aria-hidden
                     />
-                    <div className="absolute bottom-3.5 left-4 text-[var(--fw-text-primary)]">
-                      <p className="text-base font-bold [font-family:var(--fw-font-display)]">{project.title}</p>
-                      {meta && <p className="text-xs text-[var(--fw-text-tertiary)]">{meta}</p>}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-white/95 via-white/75 to-transparent px-4 pb-3.5 pt-10">
+                      <p className="text-base font-bold text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)]">
+                        {project.title}
+                      </p>
+                      {meta && <p className="text-xs text-[rgba(28,20,16,0.62)]">{meta}</p>}
                     </div>
                   </Link>
                 );
@@ -487,9 +483,8 @@ export default async function ProfilePage({
           </section>
         )}
 
-        {/* Packages teaser */}
         {packageTeaser.length > 0 && (
-          <section id="packages" className="border-t border-[var(--fw-border)] py-16">
+          <section id="packages" className="border-t border-[rgba(28,20,16,0.10)] py-16">
             <div className="mb-[34px] flex flex-wrap items-end justify-between gap-5">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
@@ -512,43 +507,39 @@ export default async function ProfilePage({
                 const featured = pkg.is_featured;
                 const requestHref = `/p/${params.slug}?pkg=${pkg.slug}#contact`;
                 const subline = pkg.tagline ?? pkg.description;
+                const priceParts = formatPackagePriceParts(pkg);
                 return (
                   <article
                     key={pkg.id}
-                    className={`flex flex-col rounded-[18px] border p-7 transition-[border-color,transform] hover:-translate-y-0.5 hover:border-[rgba(28,20,16,0.2)] ${
+                    className={`flex flex-col rounded-[18px] border px-7 py-[26px] transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-[rgba(28,20,16,0.2)] ${
                       featured
-                        ? "border-[color-mix(in_srgb,var(--brand)_35%,var(--fw-border))] bg-[color-mix(in_srgb,var(--brand)_6%,#FFFFFF)]"
-                        : "border-[var(--fw-border)] bg-[var(--fw-card)]"
+                        ? "border-[color-mix(in_srgb,var(--brand)_35%,rgba(28,20,16,0.10))] bg-[color-mix(in_srgb,var(--brand)_6%,#FFFFFF)]"
+                        : "border-[rgba(28,20,16,0.10)] bg-white"
                     }`}
                   >
                     {featured && (
-                      <span className="mb-3.5 inline-flex self-start rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+                      <span className="mb-3.5 inline-flex self-start rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--brand-ink)]">
                         Most popular
                       </span>
                     )}
-                    <h3 className="text-2xl tracking-[-0.01em] [font-family:var(--fw-font-display)]">{pkg.name}</h3>
+                    <h3 className="mb-1.5 text-2xl tracking-[-0.01em] [font-family:var(--fw-font-display)]">{pkg.name}</h3>
                     {subline && (
-                      <p className="mt-1.5 flex-1 text-sm leading-relaxed text-[var(--fw-text-tertiary)]">{subline}</p>
+                      <p className="mb-[18px] flex-1 text-sm leading-normal text-[var(--fw-text-tertiary)]">{subline}</p>
                     )}
-                    <p className="my-4 text-[32px] font-bold tracking-[-0.02em] text-[var(--brand)] [font-family:var(--fw-font-display)]">
-                      {formatPackagePrice(pkg)}
+                    <p className="mb-4 text-[32px] font-bold tracking-[-0.02em] text-[var(--brand)] [font-family:var(--fw-font-display)]">
+                      {priceParts.prefix && (
+                        <span className="mr-0.5 align-top text-[0.5em] text-[var(--fw-text-tertiary)]">
+                          {priceParts.prefix}
+                        </span>
+                      )}
+                      {priceParts.amount}
                     </p>
-                    {pkg.includes && pkg.includes.length > 0 && (
-                      <ul className="mb-5 space-y-2">
-                        {pkg.includes.slice(0, 3).map((item) => (
-                          <li key={item} className="flex items-start gap-2 text-sm leading-snug">
-                            <Check size={15} className="mt-0.5 shrink-0 text-[var(--brand)]" aria-hidden />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                     <a
                       href={requestHref}
-                      className={`mt-auto inline-flex h-11 items-center justify-center rounded-[11px] px-5 text-sm font-semibold no-underline transition-opacity hover:opacity-90 ${
+                      className={`inline-flex items-center justify-center rounded-[11px] px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] no-underline transition-opacity hover:opacity-90 ${
                         featured
-                          ? "bg-[var(--brand)] text-white"
-                          : "border border-[var(--fw-border)] bg-transparent text-[var(--fw-text-primary)]"
+                          ? "bg-[var(--brand)] text-[var(--brand-ink)]"
+                          : "border border-[rgba(28,20,16,0.10)] bg-transparent text-[var(--fw-text-primary)] hover:border-[var(--fw-text-primary)]"
                       }`}
                     >
                       Request this package
@@ -560,9 +551,8 @@ export default async function ProfilePage({
           </section>
         )}
 
-        {/* Testimonials */}
         {typedTestimonials.length > 0 && (
-          <section className="border-t border-[var(--fw-border)] py-16">
+          <section className="border-t border-[rgba(28,20,16,0.10)] py-16">
             <div className="mb-[34px]">
               <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
                 From customers
@@ -575,7 +565,7 @@ export default async function ProfilePage({
               {typedTestimonials.map((t) => (
                 <article
                   key={t.id}
-                  className="rounded-[18px] border border-[var(--fw-border)] bg-[var(--fw-card)] px-8 py-[30px]"
+                  className="rounded-[18px] border border-[rgba(28,20,16,0.10)] bg-white px-8 py-[30px] sm:px-8"
                 >
                   {t.rating != null && (
                     <div className="mb-4 flex gap-0.5">
@@ -596,7 +586,7 @@ export default async function ProfilePage({
                   <blockquote className="text-xl leading-[1.45] tracking-[-0.01em] [font-family:var(--fw-font-display)]">
                     &ldquo;{t.content}&rdquo;
                   </blockquote>
-                  <p className="mt-[18px] text-[13px] tracking-wide text-[var(--fw-text-tertiary)]">
+                  <p className="mt-[18px] text-[13px] tracking-[0.02em] text-[var(--fw-text-tertiary)]">
                     — {t.author_name}
                     {t.author_role ? `, ${t.author_role}` : ""}
                   </p>
@@ -606,20 +596,19 @@ export default async function ProfilePage({
           </section>
         )}
 
-        {/* Contact */}
-        <section id="contact" className="border-t border-[var(--fw-border)] py-16">
-          <div className="relative grid gap-7 overflow-hidden rounded-[22px] bg-[var(--fw-soil)] p-8 text-[#F7F4EF] sm:grid-cols-2 sm:gap-11 sm:p-12">
+        <section id="contact" className="py-16">
+          <div className="relative grid items-center gap-7 overflow-hidden rounded-[22px] bg-[#1C1410] px-[26px] py-9 text-[#F7F4EF] max-[820px]:grid-cols-1 sm:gap-11 sm:px-12 sm:py-[50px] lg:grid-cols-2 lg:px-12 lg:py-[50px]">
             <span className="absolute bottom-0 left-0 top-0 w-[5px] bg-[var(--brand)]" aria-hidden />
-            <div className="pl-1 sm:pl-2">
-              <h2 className="text-[clamp(26px,3.4vw,38px)] leading-[1.08] tracking-tight [font-family:var(--fw-font-display)]">
+            <div>
+              <h2 className="text-[clamp(26px,3.4vw,38px)] leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
                 {conversationalFormTitle}
               </h2>
-              <p className="mt-3.5 max-w-md text-[15px] leading-relaxed text-[#F7F4EF]/60">
+              <p className="mt-3.5 max-w-[38ch] text-[15px] leading-normal text-[rgba(247,244,239,0.6)]">
                 Answer a few quick questions and someone from {clientName} will reach out with the
                 right information.
               </p>
             </div>
-            <div className="overflow-hidden rounded-2xl border border-[#F7F4EF]/10 bg-[#F7F4EF]/[0.06]">
+            <div className="rounded-2xl border border-[rgba(247,244,239,0.12)] bg-[rgba(247,244,239,0.06)] p-5">
               <ConversationalForm
                 clientId={clientId}
                 clientName={clientName}
@@ -629,28 +618,30 @@ export default async function ProfilePage({
                 steps={conversationalSteps}
                 portfolioUrl={portfolioUrl}
                 requestedPackage={requestedPackage}
+                embedded
               />
             </div>
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="flex flex-wrap items-center justify-between gap-[18px] border-t border-[var(--fw-border)] py-10 pb-[60px]">
-          <p className="text-[13px] leading-relaxed text-[var(--fw-text-tertiary)]">
-            <span className="font-semibold text-[var(--fw-text-primary)]">{clientName}</span>
+        <footer className="flex flex-wrap items-center justify-between gap-[18px] border-t border-[rgba(28,20,16,0.10)] py-[42px] pb-[60px]">
+          <p className="text-[13px] leading-[1.7] text-[var(--fw-text-tertiary)]">
+            <strong className="font-semibold text-[var(--fw-text-primary)]">{clientName}</strong>
             {client?.country ? ` · ${client.country}` : ""}
           </p>
-          <p className="flex items-center gap-[7px] text-[11px] tracking-wide text-[var(--fw-text-tertiary)]">
+          <p className="flex items-center gap-[7px] text-[11px] tracking-[0.03em] text-[var(--fw-text-tertiary)]">
             <span className="h-[7px] w-[7px] shrink-0 rounded-[2px] bg-[#D4FF4F]" aria-hidden />
             Powered by{" "}
-            <a
-              href="https://leadstaq.tech"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-[var(--fw-text-primary)] no-underline hover:underline"
-            >
-              Segmiq
-            </a>
+            <strong className="font-semibold text-[var(--fw-text-primary)]">
+              <a
+                href="https://leadstaq.tech"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--fw-text-primary)] no-underline hover:underline"
+              >
+                Segmiq
+              </a>
+            </strong>
           </p>
         </footer>
       </div>
