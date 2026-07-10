@@ -113,7 +113,7 @@ function MilestonePhotoLayout({
         <div className="photo-card" onClick={() => onPhotoClick(media[0]!)} style={{ borderRadius: 12, overflow: "hidden", cursor: "pointer", gridRow: "span 2", position: "relative", background: "#1C1410", minHeight: 220 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={media[0]!.thumbnail_url ?? media[0]!.public_url} alt={media[0]!.caption ?? "Project photo"} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
-          <div style={{ position: "absolute", top: 10, left: 10, background: "rgba(212,255,79,0.9)", color: "#1C1410", fontFamily: F, fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 20 }}>
+          <div style={{ position: "absolute", top: 10, left: 10, background: "var(--brand, #0F7A4F)", color: "var(--brand-ink, #FFFFFF)", fontFamily: F, fontSize: 8, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 20 }}>
             Key photo
           </div>
         </div>
@@ -244,7 +244,7 @@ export function ShareViewSwitcher({ media, milestones, watermark }: Props) {
           <div style={{ height: 4, background: "rgba(28,20,16,0.08)", borderRadius: 2, overflow: "hidden" }}>
             <div
               id="progress-fill"
-              style={{ height: 4, background: "#1C1410", borderRadius: 2, width: 0, transition: "width 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
+              style={{ height: 4, background: "var(--brand, #0F7A4F)", borderRadius: 2, width: 0, transition: "width 1.2s cubic-bezier(0.4, 0, 0.2, 1)" }}
             />
           </div>
         </div>
@@ -252,7 +252,7 @@ export function ShareViewSwitcher({ media, milestones, watermark }: Props) {
 
       {/* View toggle */}
       {hasMilestones && (
-        <div style={{ display: "flex", background: "#F7F4EF", borderRadius: 12, padding: 3, marginBottom: 28 }}>
+        <div style={{ display: "flex", background: "#F5F5F0", borderRadius: 12, padding: 3, marginBottom: 28, border: "1px solid rgba(28,20,16,0.06)" }}>
           {(["gallery", "timeline"] as const).map((view) => (
             <button
               key={view}
@@ -313,8 +313,8 @@ export function ShareViewSwitcher({ media, milestones, watermark }: Props) {
 
               <div className="milestone-card" style={{ marginBottom: 16, position: "relative", zIndex: 1 }}>
                 <div style={{
-                  background: "#FFFFFF", borderRadius: 16,
-                  border: `0.5px solid ${milestone.is_completed ? "rgba(28,20,16,0.12)" : "rgba(28,20,16,0.07)"}`,
+                  background: "#FFFFFF", borderRadius: 18,
+                  border: `1px solid ${milestone.is_completed ? "rgba(28,20,16,0.10)" : "rgba(28,20,16,0.06)"}`,
                   overflow: "hidden",
                 }}>
                   {/* Header */}
@@ -324,13 +324,13 @@ export function ShareViewSwitcher({ media, milestones, watermark }: Props) {
                       className={milestone.is_completed ? "milestone-node-complete" : undefined}
                       style={{
                         width: 36, height: 36, borderRadius: "50%", flexShrink: 0, marginTop: 4,
-                        background: milestone.is_completed ? "#1C1410" : "#F7F4EF",
-                        border: `1.5px solid ${milestone.is_completed ? "#1C1410" : "rgba(28,20,16,0.15)"}`,
+                        background: milestone.is_completed ? "var(--brand, #0F7A4F)" : "#FFFFFF",
+                        border: `1.5px solid ${milestone.is_completed ? "var(--brand, #0F7A4F)" : "rgba(28,20,16,0.12)"}`,
                         display: "flex", alignItems: "center", justifyContent: "center",
                       }}
                     >
                       {milestone.is_completed
-                        ? <CheckCircle2 size={16} color="#D4FF4F" />
+                        ? <CheckCircle2 size={16} color="var(--brand-ink, #FFFFFF)" />
                         : <span style={{ fontFamily: F, fontSize: 11, fontWeight: 700, color: "#8C7B6B" }}>
                             {String(idx + 1).padStart(2, "0")}
                           </span>
@@ -371,7 +371,7 @@ export function ShareViewSwitcher({ media, milestones, watermark }: Props) {
                       {(milestone.stat_number || milestone.stat_label) && (
                         <div style={{ display: "inline-flex", alignItems: "baseline", gap: 6, padding: "6px 14px", background: "#1C1410", borderRadius: 20, marginBottom: 14, width: "fit-content" }}>
                           {milestone.stat_number && (
-                            <span style={{ fontFamily: S, fontSize: 20, color: "#D4FF4F", lineHeight: 1 }}>
+                            <span style={{ fontFamily: S, fontSize: 20, color: "var(--brand, #0F7A4F)", lineHeight: 1 }}>
                               {milestone.stat_number}
                             </span>
                           )}

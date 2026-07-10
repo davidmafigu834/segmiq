@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { MapPin, Calendar, ArrowRight, Clock, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { ViewRecorder } from "./ViewRecorder";
-import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
 import { ShareViewSwitcher } from "./ShareViewSwitcher";
 
 function getInitials(name: string): string {
@@ -13,13 +12,28 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
+function hasAbsoluteLogo(logoUrl: string | null | undefined): logoUrl is string {
+  return typeof logoUrl === "string" && /^https?:\/\//.test(logoUrl);
+}
+
 function formatDate(d: string): string {
   return new Date(d).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 export const dynamic = "force-dynamic";
 
-type MediaItem = { id: string; public_url: string; display_order: number; caption: string | null; type?: string; thumbnail_url?: string | null; duration_seconds?: number | null };
+const HERO_SCRIM =
+  "linear-gradient(to top, rgba(10,9,7,0.86) 0%, rgba(10,9,7,0.45) 42%, rgba(10,9,7,0.12) 72%, rgba(10,9,7,0.30) 100%), linear-gradient(105deg, rgba(10,9,7,0.55) 0%, rgba(10,9,7,0.10) 55%, transparent 80%)";
+
+type MediaItem = {
+  id: string;
+  public_url: string;
+  display_order: number;
+  caption: string | null;
+  type?: string;
+  thumbnail_url?: string | null;
+  duration_seconds?: number | null;
+};
 
 export async function generateMetadata({ params }: { params: { projectId: string } }): Promise<Metadata> {
   const supabase = createAdminClient();
@@ -33,8 +47,8 @@ export async function generateMetadata({ params }: { params: { projectId: string
   const cover = media.sort((a, b) => a.display_order - b.display_order)[0]?.public_url;
   const title = project.title as string;
   const description = (project.description as string | null) ?? undefined;
-  const baseUrl = process.env.NEXT_PUBLIC_CLOUD_DOMAIN ?? "https://cloud.leadstaq.tech";
-  const pageUrl = `${baseUrl}/share/${params.projectId}`;
+  const baseUrl = process.env.NEXT_PUBLIC_CLOUD_DOMAIN ?? "https://cloud.segmiq.com";
+  const pageUrl = `${baseUrl}/cloud/share/${params.projectId}`;
   return {
     title: `${title} | Segmiq Cloud`,
     description,
@@ -62,7 +76,7 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
 
   const { data: project } = await supabase
     .from("projects")
-    .select("*, clients(name, primary_color, slug, logo_url)")
+    .select("*, clients(name, primary_color, slug, logo_url, country, industry)")
     .or(`id.eq.${params.projectId},slug.eq.${params.projectId}`)
     .eq("is_public", true)
     .maybeSingle();
@@ -75,18 +89,48 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
     .eq("project_id", project.id as string)
     .order("display_order", { ascending: true });
 
-  type MilestoneMedia = { id: string; public_url: string; caption: string | null; display_order: number; thumbnail_url?: string | null; type?: string | null };
-  type MilestoneRow = { id: string; title: string; description: string | null; milestone_date: string; display_order: number; is_completed: boolean; stat_number: string | null; stat_label: string | null; phase: string | null; project_media: MilestoneMedia[] };
+  type MilestoneMedia = {
+    id: string;
+    public_url: string;
+    caption: string | null;
+    display_order: number;
+    thumbnail_url?: string | null;
+    type?: string | null;
+  };
+  type MilestoneRow = {
+    id: string;
+    title: string;
+    description: string | null;
+    milestone_date: string;
+    display_order: number;
+    is_completed: boolean;
+    stat_number: string | null;
+    stat_label: string | null;
+    phase: string | null;
+    project_media: MilestoneMedia[];
+  };
   const { data: rawMilestones } = await supabase
     .from("project_milestones")
-    .select("id, title, description, milestone_date, display_order, is_completed, stat_number, stat_label, phase, project_media(id, public_url, caption, display_order, thumbnail_url, type)")
+    .select(
+      "id, title, description, milestone_date, display_order, is_completed, stat_number, stat_label, phase, project_media(id, public_url, caption, display_order, thumbnail_url, type)"
+    )
     .eq("project_id", project.id as string)
     .order("milestone_date", { ascending: true });
   const milestones = (rawMilestones ?? []) as MilestoneRow[];
 
-  const client = project.clients as { name: string; primary_color: string | null; slug: string; logo_url: string | null } | null;
+  const client = project.clients as {
+    name: string;
+    primary_color: string | null;
+    slug: string;
+    logo_url: string | null;
+    country: string | null;
+    industry: string | null;
+  } | null;
+
   const media = (rawMedia ?? []) as MediaItem[];
   const cover = media[0]?.public_url;
+  const hasCover = Boolean(cover);
+  const isCompleted = Boolean(project.completion_date as string | null);
 
   type ClientProfileRow = {
     slug?: string;
@@ -108,372 +152,219 @@ export default async function CloudSharePage({ params }: { params: { projectId: 
 
   const profileSlug = clientProfile?.slug ?? client?.slug ?? null;
   const logoUrl = client?.logo_url ?? null;
-  const watermarkConfig = clientProfile?.watermark_enabled && logoUrl
-    ? {
-        logoUrl,
-        position: (clientProfile.watermark_position ?? "bottom-right") as "bottom-right" | "bottom-left" | "bottom-center" | "center",
-        opacity: clientProfile.watermark_opacity ?? 40,
-        size: (clientProfile.watermark_size ?? "small") as "small" | "medium" | "large",
-      }
-    : null;
+  const showLogo = hasAbsoluteLogo(logoUrl);
+  const watermarkConfig =
+    clientProfile?.watermark_enabled && logoUrl
+      ? {
+          logoUrl,
+          position: (clientProfile.watermark_position ?? "bottom-right") as
+            | "bottom-right"
+            | "bottom-left"
+            | "bottom-center"
+            | "center",
+          opacity: clientProfile.watermark_opacity ?? 40,
+          size: (clientProfile.watermark_size ?? "small") as "small" | "medium" | "large",
+        }
+      : null;
 
-  const cat = getCategoryStyle(project.category as string | null);
+  const brandColor = client?.primary_color ?? "#0F7A4F";
   const clientName = client?.name ?? "";
   const descriptionText = project.description as string | null;
   const showDescription =
     descriptionText &&
     descriptionText.trim() !== "" &&
     descriptionText.trim() !== "Everything";
-  const ctaProfileSlug = profileSlug ?? client?.slug ?? null;
-
+  const contactHref = profileSlug ? `/p/${profileSlug}#contact` : null;
+  const profileHref = profileSlug ? `/p/${profileSlug}` : null;
+  const mediaLabel = media.some((m) => m.type === "video") ? "Media" : "Photos";
 
   return (
     <div
-      style={{
-        minHeight: "100vh",
-        background: "#F7F4EF",
-        fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-      }}
+      className="w-full bg-white antialiased"
+      style={{ ["--brand" as string]: brandColor, ["--brand-ink" as string]: "#FFFFFF" }}
     >
-      <style>{`
-        .sp-nav { padding: 0 24px; }
-        .sp-nav-lc { display: inline-flex; }
-        .sp-meta { padding: 14px 24px; }
-        .sp-desc-inner { padding: 28px 24px 0; }
-        .sp-gallery { padding: 28px 20px; }
-        .sp-cta { padding: 56px 24px; }
-        .sp-footer { padding: 16px 24px; }
-        @media (max-width: 600px) {
-          .sp-nav { padding: 0 16px; }
-          .sp-nav-lc { display: none; }
-          .sp-meta { padding: 12px 16px; flex-wrap: wrap; gap: 8px !important; }
-          .sp-desc-inner { padding: 20px 16px 0; max-width: 100% !important; }
-          .sp-gallery { padding: 20px 16px; }
-          .sp-cta { padding: 40px 20px; }
-          .sp-footer { padding: 14px 16px; }
-        }
-      `}</style>
       <ViewRecorder projectId={project.id as string} />
 
-      {/* ── Section 1: Navbar ── */}
-      <nav
-        className="sp-nav"
-        style={{
-          height: 56,
-          background: "#FFFFFF",
-          borderBottom: "0.5px solid rgba(28,20,16,0.08)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
+      {/* Hero */}
+      <section
+        className={`relative isolate flex min-h-[clamp(280px,50vh,480px)] w-full flex-col ${
+          hasCover ? "bg-cover bg-center bg-no-repeat" : "bg-[color-mix(in_srgb,var(--brand)_38%,#0a0907)]"
+        }`}
+        style={hasCover ? { backgroundImage: `url(${cover})` } : undefined}
       >
-        {/* Left — logo + name */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {hasCover && (
           <div
-            style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: "#1C1410", color: "#D4FF4F",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 11, fontWeight: 700,
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-              flexShrink: 0,
-            }}
-          >
-            {getInitials(clientName || "L")}
-          </div>
-          {clientName && (
-            <span
-              style={{
-                fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-                fontSize: 13, fontWeight: 600, color: "#1C1410",
-              }}
-            >
-              {clientName}
-            </span>
-          )}
-        </div>
-
-        {/* Right — brand link + CTA */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Link
-            href="/cloud"
-            className="sp-nav-lc"
-            style={{
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-              fontSize: 11, color: "#8C7B6B", textDecoration: "none",
-            }}
-          >
-            Segmiq Cloud
-          </Link>
-          <a
-            href="#cta"
-            style={{
-              height: 36, padding: "0 18px",
-              background: "#1C1410", color: "#D4FF4F",
-              border: "none", borderRadius: 10,
-              fontSize: 12, fontWeight: 700,
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-              cursor: "pointer", textDecoration: "none",
-              display: "inline-flex", alignItems: "center",
-            }}
-          >
-            Get a Quote
-          </a>
-        </div>
-      </nav>
-
-      {/* ── Section 2: Hero ── */}
-      <div
-        style={{
-          width: "100%",
-          height: "clamp(260px, 45vw, 420px)",
-          position: "relative",
-          overflow: "hidden",
-          background: cover ? "#1C1410" : "linear-gradient(135deg, #1C1410 0%, #2E2218 100%)",
-        }}
-      >
-        {cover && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={cover}
-            alt={project.title as string}
-            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }}
+            className="pointer-events-none absolute inset-0 z-[1]"
+            style={{ background: HERO_SCRIM }}
+            aria-hidden
           />
         )}
-        <div
-          style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(to top, rgba(28,20,16,0.85) 0%, rgba(28,20,16,0.2) 50%, transparent 100%)",
-          }}
-        />
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-          <div style={{ padding: "0 28px 12px" }}>
-            <h1
-              style={{
-                fontFamily: "var(--fw-font-display), Georgia, serif",
-                fontSize: "clamp(28px, 5vw, 44px)",
-                color: "#FFFFFF", margin: 0, lineHeight: 1.1, letterSpacing: "-0.01em",
-              }}
-            >
-              {project.title as string}
-            </h1>
+
+        <header className="relative z-[2] mx-auto mt-[18px] flex w-[calc(100%-44px)] max-w-[1040px] items-center justify-between gap-3 rounded-[18px] border border-white/70 bg-white/[0.96] py-[11px] pl-[18px] pr-3.5 shadow-[0_12px_36px_rgba(10,9,7,0.22)] backdrop-blur-[8px] max-[560px]:mt-3.5 max-[560px]:w-[calc(100%-28px)] max-[560px]:gap-2.5 max-[560px]:py-2.5 max-[560px]:pl-3 max-[560px]:pr-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-3 max-[560px]:gap-2.5">
+            {showLogo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt={clientName}
+                className="h-[38px] w-[38px] shrink-0 rounded-[9px] object-contain max-[560px]:h-[34px] max-[560px]:w-[34px]"
+              />
+            ) : (
+              <div
+                className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-[9px] bg-[var(--brand)] text-xl font-bold text-[var(--brand-ink)] [font-family:var(--fw-font-display)] max-[560px]:h-[34px] max-[560px]:w-[34px] max-[560px]:text-lg"
+                aria-hidden
+              >
+                {getInitials(clientName || "P").slice(0, 1)}
+              </div>
+            )}
+            <div className="min-w-0 overflow-hidden">
+              {profileHref ? (
+                <Link
+                  href={profileHref}
+                  className="truncate text-xl font-bold tracking-[-0.01em] text-[var(--fw-text-primary)] no-underline [font-family:var(--fw-font-display)] hover:opacity-80 max-[560px]:text-base"
+                >
+                  {clientName}
+                </Link>
+              ) : (
+                <p className="truncate text-xl font-bold tracking-[-0.01em] text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)] max-[560px]:text-base">
+                  {clientName}
+                </p>
+              )}
+              {client?.industry && (
+                <p className="truncate text-[11px] tracking-[0.04em] text-[var(--fw-text-tertiary)] max-[560px]:hidden">
+                  {client.industry}
+                  {client.country ? ` · ${client.country}` : ""}
+                </p>
+              )}
+            </div>
           </div>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
-            padding: "10px 28px 22px",
-            background: "rgba(28,20,16,0.45)",
-          }}>
-            <span style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              height: 28, padding: "0 14px",
-              background: (project.completion_date as string | null) ? "rgba(46,125,94,0.25)" : "rgba(196,154,60,0.25)",
-              border: `0.5px solid ${(project.completion_date as string | null) ? "rgba(46,125,94,0.4)" : "rgba(196,154,60,0.4)"}`,
-              borderRadius: 20, fontSize: 11, fontWeight: 700,
-              letterSpacing: "0.06em", textTransform: "uppercase",
-              color: (project.completion_date as string | null) ? "#6EC87A" : "#E8D040",
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: (project.completion_date as string | null) ? "#6EC87A" : "#E8D040", flexShrink: 0 }} />
-              {(project.completion_date as string | null) ? "Completed" : "In progress"}
-            </span>
+          {contactHref && (
+            <a
+              href={contactHref}
+              className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[11px] bg-[var(--brand)] px-[18px] py-2.5 text-[13px] font-semibold tracking-[0.01em] text-[var(--brand-ink)] no-underline transition-opacity hover:opacity-90 active:translate-y-px"
+            >
+              Get a quote
+            </a>
+          )}
+        </header>
+
+        <div className="relative z-[2] mx-auto mt-auto w-full max-w-[1040px] px-7 pb-[52px] max-[820px]:pb-10">
+          <p className="mb-4 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${isCompleted ? "bg-emerald-400" : "bg-amber-300"}`}
+              aria-hidden
+            />
+            {isCompleted ? "Completed project" : "In progress"}
+          </p>
+          <h1 className="max-w-[20ch] text-[clamp(32px,5.5vw,52px)] font-bold leading-[1.05] tracking-[-0.02em] text-white [font-family:var(--fw-font-display)] [text-shadow:0_2px_30px_rgba(0,0,0,0.25)]">
+            {project.title as string}
+          </h1>
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/75">
+            {project.category && (
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-white backdrop-blur-sm">
+                {project.category as string}
+              </span>
+            )}
+            {project.location && (
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin size={14} aria-hidden />
+                {project.location as string}
+              </span>
+            )}
+            {project.completion_date && (
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar size={14} aria-hidden />
+                {formatDate(project.completion_date as string)}
+              </span>
+            )}
             {(project.duration_label as string | null) && (
-              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: "var(--fw-font-body), system-ui, sans-serif" }}>
-                <Clock size={13} />
+              <span className="inline-flex items-center gap-1.5">
+                <Clock size={14} aria-hidden />
                 {project.duration_label as string}
               </span>
             )}
             {(project.show_budget as boolean | null) && (project.budget_range as string | null) && (
-              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: "var(--fw-font-body), system-ui, sans-serif" }}>
-                <DollarSign size={13} />
+              <span className="inline-flex items-center gap-1.5">
+                <DollarSign size={14} aria-hidden />
                 {project.budget_range as string}
               </span>
             )}
+            <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/55">
+              {media.length} {mediaLabel}
+            </span>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Section 3: Metadata row ── */}
-      <div
-        className="sp-meta"
-        style={{
-          background: "#FFFFFF",
-          borderBottom: "0.5px solid rgba(28,20,16,0.06)",
-          display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-        }}
-      >
-        {project.category && (
-          <span
-            style={{
-              height: 26, padding: "0 12px",
-              background: cat.sceneBg, color: cat.labelColor,
-              borderRadius: 20, fontSize: 11, fontWeight: 700,
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-              letterSpacing: "0.04em", textTransform: "uppercase",
-              display: "inline-flex", alignItems: "center",
-            }}
-          >
-            {project.category as string}
-          </span>
-        )}
-        {project.location && (
-          <span
-            style={{
-              display: "flex", alignItems: "center", gap: 5,
-              fontSize: 13, color: "#4A3828",
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-            }}
-          >
-            <MapPin size={13} color="#8C7B6B" />
-            {project.location as string}
-          </span>
-        )}
-        {project.completion_date && (
-          <span
-            style={{
-              display: "flex", alignItems: "center", gap: 5,
-              fontSize: 13, color: "#4A3828",
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-            }}
-          >
-            <Calendar size={13} color="#8C7B6B" />
-            {formatDate(project.completion_date as string)}
-          </span>
-        )}
-        <span
-          style={{
-            marginLeft: "auto", fontSize: 11, fontWeight: 700,
-            letterSpacing: "0.08em", textTransform: "uppercase",
-            color: "#8C7B6B",
-            fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-          }}
-        >
-          {media.length} {media.some(m => m.type === "video") ? (media.length === 1 ? "Item" : "Items") : (media.length === 1 ? "Photo" : "Photos")}
-        </span>
-      </div>
-
-      {/* ── Section 4: Description (conditional) ── */}
-      {showDescription && (
-        <div style={{ background: "#FFFFFF", paddingBottom: 28 }}>
-          <div className="sp-desc-inner" style={{ maxWidth: 720, margin: "0 auto" }}>
-            <p
-              style={{
-                fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-                fontSize: 16, color: "#1C1410", lineHeight: 1.75, margin: 0,
-              }}
-            >
+      <div className="mx-auto max-w-[1040px] px-7">
+        {showDescription && (
+          <section className="border-b border-[rgba(28,20,16,0.10)] py-12">
+            <p className="max-w-[720px] text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
+              About this project
+            </p>
+            <p className="mt-3 max-w-[720px] text-lg leading-[1.75] text-[var(--fw-text-primary)]">
               {descriptionText}
             </p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Section 5: Photo gallery ── */}
-      {media.length > 0 && (
-        <div className="sp-gallery" style={{ background: "#F7F4EF" }}>
-          <p
-            style={{
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-              fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 16px",
-            }}
-          >
-            {media.some(m => m.type === "video") ? "Media" : "Photos"} · {media.length}
-          </p>
-          <div style={{ maxWidth: 960, margin: "0 auto" }}>
-            <ShareViewSwitcher media={media} milestones={milestones} watermark={watermarkConfig} />
-          </div>
-        </div>
-      )}
-
-      {/* ── Section 6: CTA ── */}
-      <div
-        id="cta"
-        className="sp-cta"
-        style={{ background: "#1C1410", textAlign: "center" }}
-      >
-        <div
-          style={{
-            width: 56, height: 56, borderRadius: "50%",
-            background: "rgba(212,255,79,0.1)",
-            border: "0.5px solid rgba(212,255,79,0.25)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 20px", overflow: "hidden",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-              fontSize: 16, fontWeight: 700, color: "#D4FF4F",
-            }}
-          >
-            {getInitials(clientName || "L")}
-          </span>
-        </div>
-
-        <h2
-          style={{
-            fontFamily: "var(--fw-font-display), Georgia, serif",
-            fontSize: "clamp(24px, 4vw, 36px)",
-            color: "#FFFFFF", margin: "0 0 12px", lineHeight: 1.2,
-          }}
-        >
-          Interested in a project like this?
-        </h2>
-
-        <p
-          style={{
-            fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-            fontSize: 15, color: "rgba(255,255,255,0.55)",
-            margin: "0 auto 32px", maxWidth: 400, lineHeight: 1.6,
-          }}
-        >
-          Get a free quote from {clientName || "us"} today.
-        </p>
-
-        {ctaProfileSlug && (
-          <a
-            href={`/p/${ctaProfileSlug}`}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              height: 52, padding: "0 28px",
-              background: "#D4FF4F", color: "#1C1410",
-              borderRadius: 14, fontSize: 15, fontWeight: 700,
-              fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-              textDecoration: "none",
-            }}
-          >
-            Get a Free Quote
-            <ArrowRight size={16} />
-          </a>
+          </section>
         )}
-      </div>
 
-      {/* ── Section 7: Footer ── */}
-      <div
-        className="sp-footer"
-        style={{
-          background: "#1C1410",
-          borderTop: "0.5px solid rgba(255,255,255,0.06)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-            fontSize: 11, color: "rgba(255,255,255,0.25)", margin: 0, textAlign: "center",
-          }}
-        >
-          {clientName} &middot; Powered by{" "}
-          <a
-            href="https://cloud.leadstaq.tech"
-            style={{ color: "rgba(212,255,79,0.5)", textDecoration: "none" }}
-          >
-            Segmiq Cloud
-          </a>
-        </p>
+        {media.length > 0 && (
+          <section className={`py-12 ${showDescription ? "" : "border-t border-[rgba(28,20,16,0.10)]"}`}>
+            <div className="mb-6">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
+                {mediaLabel}
+              </p>
+              <h2 className="mt-2.5 text-[clamp(24px,3.2vw,34px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
+                Project gallery
+              </h2>
+            </div>
+            <ShareViewSwitcher media={media} milestones={milestones} watermark={watermarkConfig} />
+          </section>
+        )}
+
+        {contactHref && (
+          <section className="py-12">
+            <div className="relative overflow-hidden rounded-[22px] bg-[#1C1410] px-[26px] py-10 text-[#F7F4EF] min-[821px]:px-12 min-[821px]:py-[50px]">
+              <span className="absolute bottom-0 left-0 top-0 w-[5px] bg-[var(--brand)]" aria-hidden />
+              <div className="mx-auto max-w-[640px] text-center">
+                <h2 className="text-[clamp(26px,3.4vw,38px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
+                  Interested in a project like this?
+                </h2>
+                <p className="mx-auto mt-3.5 max-w-[42ch] text-[15px] leading-normal text-[rgba(247,244,239,0.6)]">
+                  Get a free quote from {clientName} today.
+                </p>
+                <a
+                  href={contactHref}
+                  className="mt-8 inline-flex items-center justify-center gap-2 rounded-[11px] bg-[var(--brand)] px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] text-[var(--brand-ink)] no-underline transition-opacity hover:opacity-90 active:translate-y-px"
+                >
+                  Get a free quote
+                  <ArrowRight size={15} aria-hidden />
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
+
+        <footer className="flex flex-wrap items-center justify-between gap-[18px] border-t border-[rgba(28,20,16,0.10)] py-[42px] pb-[60px]">
+          <p className="text-[13px] leading-[1.7] text-[var(--fw-text-tertiary)]">
+            <strong className="font-semibold text-[var(--fw-text-primary)]">{clientName}</strong>
+            {client?.country ? ` · ${client.country}` : ""}
+          </p>
+          <p className="flex items-center gap-[7px] text-[11px] tracking-[0.03em] text-[var(--fw-text-tertiary)]">
+            <span className="h-[7px] w-[7px] shrink-0 rounded-[2px] bg-[#D4FF4F]" aria-hidden />
+            Powered by{" "}
+            <strong className="font-semibold text-[var(--fw-text-primary)]">
+              <a
+                href="https://segmiq.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--fw-text-primary)] no-underline hover:underline"
+              >
+                Segmiq
+              </a>
+            </strong>
+          </p>
+        </footer>
       </div>
     </div>
   );
