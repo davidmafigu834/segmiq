@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
-import { slugifyPackageName, uniquePackageSlug } from "@/lib/pricing/package-slug";
+import { resolvePublicPackageSlug } from "@/lib/pricing/public-packages";
 
 const ALLOWED_FIELDS = new Set([
   "name",
@@ -54,16 +54,21 @@ export async function PATCH(
 
   if (!nextIsPublic) {
     body.slug = null;
+    body.is_public = false;
   } else {
+    body.is_public = true;
     const name = typeof body.name === "string" ? body.name : (existing.name as string);
     const slugSource =
       typeof body.slug === "string" && body.slug.trim()
         ? body.slug
         : (existing.slug as string | null) || name;
-    const slugBase = slugifyPackageName(String(slugSource));
-    if (slugBase) {
-      body.slug = await uniquePackageSlug(supabase, params.clientId, slugBase, params.packageId);
-    }
+    body.slug = await resolvePublicPackageSlug(
+      supabase,
+      params.clientId,
+      name,
+      slugSource,
+      params.packageId
+    );
   }
 
   const { data, error } = await supabase

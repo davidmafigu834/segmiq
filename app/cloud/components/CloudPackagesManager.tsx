@@ -5,6 +5,7 @@ import {
   Loader2, Plus, MoreVertical, X, Tag, Globe, Star, ExternalLink, Trash2, Pencil,
 } from "lucide-react";
 import { slugifyPackageName } from "@/lib/pricing/package-slug";
+import { isPackagePublic } from "@/lib/pricing/public-packages";
 
 export type PricingPackage = {
   id: string;
@@ -432,11 +433,17 @@ export function CloudPackagesManager({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [field]: value }),
     });
-    const json = (await res.json()) as { package?: PricingPackage };
+    const json = (await res.json()) as { package?: PricingPackage; error?: string };
     if (res.ok && json.package) {
       setPackages((prev) => prev.map((p) => (p.id === id ? json.package! : p)));
+      setToast(field === "is_public" && value ? "Package published to profile" : "Package updated");
+    } else {
+      setToast(json.error ?? "Could not update package");
     }
+    setMenuOpen(null);
   }
+
+  const publicCount = packages.filter(isPackagePublic).length;
 
   const publicPackagesHref = profileSlug ? `/p/${profileSlug}/packages` : null;
 
@@ -465,6 +472,13 @@ export function CloudPackagesManager({
           Add package
         </button>
       </div>
+
+      {!loading && packages.length > 0 && publicCount === 0 && (
+        <div className="mb-4 rounded-[16px] border border-[#F0D090]/50 bg-[#FFFAF0] px-4 py-3 text-[13px] leading-relaxed text-[#7A3800] font-cloud-body">
+          These packages are saved but not on your public profile yet. Turn on{" "}
+          <strong>Show on profile</strong> for each package you want visitors to see.
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16">

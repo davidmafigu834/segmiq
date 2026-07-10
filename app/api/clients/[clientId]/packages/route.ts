@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
-import { slugifyPackageName, uniquePackageSlug } from "@/lib/pricing/package-slug";
+import { resolvePublicPackageSlug } from "@/lib/pricing/public-packages";
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const g = await requireClientAccessFromRequest(req, params.clientId);
@@ -47,12 +47,10 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     valid_until?: string | null;
   };
 
-  const isPublic = body.is_public ?? false;
-  const slugBase = slugifyPackageName(body.slug?.trim() || body.name);
-  const slug =
-    isPublic && slugBase
-      ? await uniquePackageSlug(supabase, params.clientId, slugBase)
-      : null;
+  const isPublic = body.is_public ?? true;
+  const slug = isPublic
+    ? await resolvePublicPackageSlug(supabase, params.clientId, body.name, body.slug)
+    : null;
 
   const { data, error } = await supabase
     .from("pricing_packages")

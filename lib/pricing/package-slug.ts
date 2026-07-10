@@ -3,12 +3,13 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 type AdminClient = ReturnType<typeof createAdminClient>;
 
 export function slugifyPackageName(name: string): string {
-  return name
+  const slug = name
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
+  return slug || "package";
 }
 
 export async function uniquePackageSlug(

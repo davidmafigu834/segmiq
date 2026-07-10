@@ -8,6 +8,7 @@ import {
   getBudgetRangeOptions,
   injectOptionalBudgetQuestion,
 } from "@/lib/budget-question-presets";
+import { buildPackageTeaser, isPackagePublic } from "@/lib/pricing/public-packages";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(" ").filter(Boolean);
@@ -236,6 +237,8 @@ export default async function ProfilePage({
       .select("*")
       .eq("client_id", clientId)
       .eq("is_active", true)
+      .eq("is_public", true)
+      .not("slug", "is", null)
       .order("display_order", { ascending: true }),
     supabase
       .from("campaign_qualifiers")
@@ -312,12 +315,8 @@ export default async function ProfilePage({
     .map((project) => ({ project, coverUrl: getProjectCover(project) }))
     .filter((entry): entry is { project: Project; coverUrl: string } => Boolean(entry.coverUrl));
 
-  const publicPackages = typedPackages.filter((pkg) => pkg.is_public && pkg.slug);
-  const featuredPublic = publicPackages.find((pkg) => pkg.is_featured);
-  const packageTeaser: PricingPackage[] = [];
-  if (featuredPublic) packageTeaser.push(featuredPublic);
-  const secondPublic = publicPackages.find((pkg) => pkg.id !== featuredPublic?.id);
-  if (secondPublic && packageTeaser.length < 2) packageTeaser.push(secondPublic);
+  const publicPackages = typedPackages.filter(isPackagePublic);
+  const packageTeaser = buildPackageTeaser(publicPackages, 2);
 
   const installCount = projectCount ?? 0;
   const packagesListHref = `/p/${params.slug}/packages`;
