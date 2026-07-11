@@ -1,11 +1,9 @@
 import chromium from "@sparticuz/chromium-min";
 import puppeteer, { type Page } from "puppeteer-core";
+import { optimizeImageToDataUrl, printImageMaxWidth } from "@/lib/cloud/optimize-print-image";
 
 const DEFAULT_CHROMIUM_PACK_URL =
   "https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar";
-
-const PRINT_IMAGE_MAX_WIDTH = 1400;
-const PRINT_IMAGE_JPEG_QUALITY = 0.82;
 
 function localChromePath(): string | null {
   if (process.env.CHROMIUM_LOCAL_EXECUTABLE) {
@@ -31,49 +29,66 @@ async function resolveExecutablePath(): Promise<string> {
 }
 
 async function waitForImages(page: Page): Promise<void> {
-  await page.evaluate(() =>
-    Promise.all(
-      Array.from(document.images).map(
-        (img) =>
-          img.complete
-            ? Promise.resolve()
-            : new Promise<void>((resolve) => {
-                img.onload = () => resolve();
-                img.onerror = () => resolve();
-              })
-      )
-    )
-  );
+  await page.evaluate(async () => {
+    await Promise.all(
+      Array.from(document.images).map(async (img) => {
+        if (img.complete && img.naturalWidth > 0) {
+          if (typeof img.decode === "function") {
+            try {
+              await img.decode();
+            } catch {
+              // Ignore decode errors; the image may still paint in PDF output.
+            }
+          }
+          return;
+        }
+
+        await new Promise<void>((resolve) => {
+          img.addEventListener("load", () => resolve(), { once: true });
+          img.addEventListener("error", () => resolve(), { once: true });
+        });
+
+        if (typeof img.decode === "function") {
+          try {
+            await img.decode();
+          } catch {
+            // Ignore decode errors; the image may still paint in PDF output.
+          }
+        }
+      })
+    );
+  });
 }
 
-async function compressPrintImages(page: Page): Promise<void> {
-  await page.evaluate(
-    async (maxWidth, quality) => {
-      async function recompress(img: HTMLImageElement) {
-        if (!img.naturalWidth || img.naturalWidth <= maxWidth) return;
-        try {
-          const scale = maxWidth / img.naturalWidth;
-          const canvas = document.createElement("canvas");
-          canvas.width = maxWidth;
-          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          img.src = canvas.toDataURL("image/jpeg", quality);
-          await new Promise<void>((resolve) => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-          });
-        } catch {
-          // Keep original source if canvas is tainted or compression fails.
-        }
-      }
-
-      await Promise.all(Array.from(document.images).map(recompress));
-    },
-    PRINT_IMAGE_MAX_WIDTH,
-    PRINT_IMAGE_JPEG_QUALITY
+async function injectOptimizedImages(page: Page): Promise<void> {
+  const images = await page.evaluate(() =>
+    Array.from(document.images).map((img, index) => ({
+      index,
+      src: img.currentSrc || img.src,
+      className: img.className,
+    }))
   );
+
+  for (const image of images) {
+    const optimized = await optimizeImageToDataUrl(
+      image.src,
+      printImageMaxWidth(image.className)
+    );
+    if (!optimized) continue;
+
+    await page.evaluate(
+      (index, dataUrl) => {
+        const img = document.images[index];
+        if (!img) return;
+        img.removeAttribute("crossorigin");
+        img.src = dataUrl;
+      },
+      image.index,
+      optimized
+    );
+  }
+
+  await waitForImages(page);
 }
 
 export async function renderProjectPdf(printUrl: string): Promise<Buffer> {
@@ -91,9 +106,9 @@ export async function renderProjectPdf(printUrl: string): Promise<Buffer> {
 
   try {
     const page = await browser.newPage();
-    await page.goto(printUrl, { waitUntil: "load", timeout: 45_000 });
+    await page.goto(printUrl, { waitUntil: "networkidle0", timeout: 60_000 });
     await waitForImages(page);
-    await compressPrintImages(page);
+    await injectOptimizedImages(page);
     await page.emulateMediaType("screen");
     const pdf = await page.pdf({
       format: "A4",

@@ -60,6 +60,7 @@ export type ProjectMagazineData = {
   client: ProjectMagazineClient;
   media: ProjectMediaRow[];
   coverUrl: string | null;
+  printCoverUrl: string | null;
   testimonial: {
     author_name: string;
     author_role: string | null;
@@ -133,6 +134,23 @@ export function resolveCoverUrl(
   }
 
   return photos[0]?.public_url ?? null;
+}
+
+export function resolvePrintCoverUrl(
+  coverMediaId: string | null,
+  media: ProjectMediaRow[]
+): string | null {
+  const photos = [...media]
+    .filter((m) => m.type !== "video" && m.type !== "video_url")
+    .sort((a, b) => a.display_order - b.display_order);
+
+  if (coverMediaId) {
+    const cover = photos.find((m) => m.id === coverMediaId);
+    if (cover) return cover.thumbnail_url ?? cover.public_url;
+  }
+
+  const first = photos[0];
+  return first ? (first.thumbnail_url ?? first.public_url) : null;
 }
 
 export function getSpecIcon(index: number, label: string): LucideIcon {
@@ -232,6 +250,7 @@ export async function fetchProjectMagazineData(
   const timelineSteps = parseTimelineSteps(project.timeline_steps);
   const specFields = parseSpecFields(project.spec_fields);
   const coverUrl = resolveCoverUrl(project.cover_media_id as string | null, media);
+  const printCoverUrl = resolvePrintCoverUrl(project.cover_media_id as string | null, media);
 
   const hasPullQuote = Boolean(
     (project.pull_quote as string | null)?.trim() ||
@@ -288,6 +307,7 @@ export async function fetchProjectMagazineData(
     client,
     media,
     coverUrl,
+    printCoverUrl,
     testimonial,
     livePageUrl,
     pdfDownloadUrl: `/api/cloud/projects/${projectId}/pdf?slug=${encodeURIComponent(slug)}`,

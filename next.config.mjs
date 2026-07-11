@@ -36,6 +36,7 @@ const nextConfig = {
       "@react-pdf/renderer",
       "puppeteer-core",
       "@sparticuz/chromium-min",
+      "sharp",
     ],
   },
   webpack: (config, { isServer }) => {

@@ -87,7 +87,7 @@ function PrintContentPage({
 }
 
 export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
-  const { project, client, coverUrl, testimonial } = data;
+  const { project, client, printCoverUrl, testimonial } = data;
   const brandColor = client.primary_color ?? "#0F7A4F";
   const clientName = client.name;
   const showLogo = hasAbsoluteLogo(client.logo_url);
@@ -109,18 +109,24 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
     >
       <section className="print-cover-page">
         <RunningHeader clientName={clientName} projectTitle={project.title} />
-        <div className={`print-cover ${coverUrl ? "" : "print-cover-fallback"}`}>
-          {coverUrl && (
+        <div className={`print-cover ${printCoverUrl ? "" : "print-cover-fallback"}`}>
+          {printCoverUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={printImageUrl(coverUrl)} alt="" className="print-cover-img" crossOrigin="anonymous" />
+            <img
+              src={printImageUrl(printCoverUrl)}
+              alt=""
+              className="print-cover-img"
+              loading="eager"
+              decoding="sync"
+            />
           )}
-          {coverUrl && (
+          {printCoverUrl && (
             <div className="print-cover-scrim" style={{ background: HERO_SCRIM }} />
           )}
           <div className="print-cover-content">
             {showLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={client.logo_url!} alt="" className="print-logo-chip" crossOrigin="anonymous" />
+              <img src={client.logo_url!} alt="" className="print-logo-chip" loading="eager" />
             ) : (
               <div className="print-logo-chip print-logo-fallback">
                 {getInitials(clientName).slice(0, 1)}
@@ -183,11 +189,11 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                 }
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
-                  alt={photo.caption ?? project.title}
-                  crossOrigin="anonymous"
-                />
+                    <img
+                      src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
+                      alt={photo.caption ?? project.title}
+                      loading="lazy"
+                    />
               </div>
             ))}
           </div>
@@ -348,7 +354,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .print-cover {
           position: relative;
           flex: 1;
-          min-height: 0;
+          min-height: 900px;
           border-radius: 12px;
           overflow: hidden;
           display: flex;
