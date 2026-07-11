@@ -9,6 +9,11 @@ type ProjectPdfDownloadButtonProps = {
   className?: string;
 };
 
+function isIosDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
 export function ProjectPdfDownloadButton({
   pdfDownloadUrl,
   fileName,
@@ -24,14 +29,15 @@ export function ProjectPdfDownloadButton({
       const res = await fetch(pdfDownloadUrl);
       if (!res.ok) throw new Error("PDF download failed");
 
-      const blob = await res.blob();
-      const file = new File([blob], fileName, { type: "application/pdf" });
-
-      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: fileName });
+      // iOS Web Share opens a sheet where Print is prominent — skip it.
+      // After the PDF is generated/cached, navigate directly so Safari handles
+      // the attachment response (Save to Files via the viewer share button).
+      if (isIosDevice()) {
+        window.location.assign(pdfDownloadUrl);
         return;
       }
 
+      const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
@@ -40,7 +46,7 @@ export function ProjectPdfDownloadButton({
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      URL.revokeObjectURL(objectUrl);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
       window.location.assign(pdfDownloadUrl);
