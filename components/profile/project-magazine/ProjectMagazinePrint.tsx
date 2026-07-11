@@ -7,139 +7,12 @@ import {
   hasAbsoluteLogo,
   HERO_SCRIM,
   type ProjectMagazineData,
-  type ProjectMediaRow,
 } from "@/lib/cloud/project-magazine";
 
 type PrintPageProps = {
   data: ProjectMagazineData;
   qrDataUrl: string;
 };
-
-type PageKind =
-  | { kind: "cover" }
-  | { kind: "story" }
-  | {
-      kind: "gallery";
-      photos: ProjectMediaRow[];
-      showHero: boolean;
-      heroHeight: number;
-      tileHeight: number;
-    }
-  | { kind: "timeline" }
-  | { kind: "cta" };
-
-const GALLERY_GRID_MAX_HEIGHT = 886;
-const GALLERY_TILE_GAP = 10;
-const GALLERY_MIN_HERO_HEIGHT = 260;
-const GALLERY_MIN_TILE_HEIGHT = 130;
-
-function measureGalleryHeight(
-  photoCount: number,
-  showHero: boolean,
-  heroHeight = GALLERY_MIN_HERO_HEIGHT,
-  tileHeight = GALLERY_MIN_TILE_HEIGHT
-): number {
-  if (photoCount === 0) return 0;
-
-  const tileCount = showHero ? photoCount - 1 : photoCount;
-  const rows = Math.ceil(tileCount / 2);
-  let height = 0;
-
-  if (showHero) {
-    height += heroHeight;
-    if (tileCount > 0) height += GALLERY_TILE_GAP;
-  }
-
-  if (rows > 0) {
-    height += rows * tileHeight + Math.max(0, rows - 1) * GALLERY_TILE_GAP;
-  }
-
-  return height;
-}
-
-function getGalleryDimensions(photoCount: number, showHero: boolean) {
-  const tileCount = showHero ? Math.max(0, photoCount - 1) : photoCount;
-  const rows = Math.ceil(tileCount / 2) || 0;
-  const gapCount = (showHero && tileCount > 0 ? 1 : 0) + Math.max(0, rows - 1);
-  const gapHeight = gapCount * GALLERY_TILE_GAP;
-
-  let heroHeight = showHero && photoCount > 0 ? GALLERY_MIN_HERO_HEIGHT : 0;
-  let tileHeight = GALLERY_MIN_TILE_HEIGHT;
-
-  if (rows > 0) {
-    const remaining = GALLERY_GRID_MAX_HEIGHT - heroHeight - gapHeight;
-    tileHeight = Math.min(200, Math.floor(remaining / rows));
-    tileHeight = Math.max(GALLERY_MIN_TILE_HEIGHT, tileHeight);
-  } else if (showHero) {
-    heroHeight = GALLERY_GRID_MAX_HEIGHT;
-  }
-
-  if (showHero && rows > 0) {
-    const used = heroHeight + gapHeight + rows * tileHeight;
-    const leftover = GALLERY_GRID_MAX_HEIGHT - used;
-    if (leftover > 0) heroHeight += leftover;
-  }
-
-  return { heroHeight, tileHeight };
-}
-
-function maxGalleryPhotosForPage(showHero: boolean): number {
-  for (let count = 50; count >= 1; count -= 1) {
-    const { heroHeight, tileHeight } = getGalleryDimensions(count, showHero);
-    if (measureGalleryHeight(count, showHero, heroHeight, tileHeight) <= GALLERY_GRID_MAX_HEIGHT) {
-      return count;
-    }
-  }
-  return 1;
-}
-
-function buildGalleryChunks(photos: ProjectMediaRow[]): PageKind[] {
-  if (photos.length === 0) return [];
-
-  const pages: PageKind[] = [];
-  let remaining = [...photos];
-  let isFirst = true;
-
-  while (remaining.length > 0) {
-    const showHero = isFirst;
-    const capacity = maxGalleryPhotosForPage(showHero);
-    const count = Math.min(remaining.length, capacity);
-    const chunk = remaining.slice(0, count);
-    const { heroHeight, tileHeight } = getGalleryDimensions(chunk.length, showHero);
-
-    pages.push({
-      kind: "gallery",
-      photos: chunk,
-      showHero,
-      heroHeight,
-      tileHeight,
-    });
-
-    remaining = remaining.slice(count);
-    isFirst = false;
-  }
-
-  return pages;
-}
-
-function buildPagePlan(data: ProjectMagazineData): PageKind[] {
-  const { project, testimonial } = data;
-  const photos = galleryPhotos(data.media);
-  const storyBrief = project.story_brief?.trim() ?? "";
-  const storyResult = project.story_result?.trim() ?? "";
-  const pullQuote = project.pull_quote?.trim() ?? "";
-  const hasStory = Boolean(storyBrief || storyResult || pullQuote);
-  const hasStoryPage = hasStory || project.spec_fields.length > 0;
-  const hasTimeline = project.timeline_steps.length > 0;
-  const hasTestimonial = Boolean(testimonial);
-
-  const plan: PageKind[] = [{ kind: "cover" }];
-  if (hasStoryPage) plan.push({ kind: "story" });
-  plan.push(...buildGalleryChunks(photos));
-  if (hasTimeline || hasTestimonial) plan.push({ kind: "timeline" });
-  plan.push({ kind: "cta" });
-  return plan;
-}
 
 function RunningHeader({
   clientName,
@@ -154,60 +27,6 @@ function RunningHeader({
       <span>Case Study</span>
       <span>{projectTitle}</span>
     </div>
-  );
-}
-
-function RunningFooter({
-  pageNumber,
-  totalPages,
-  showPoweredBy,
-}: {
-  pageNumber: number;
-  totalPages: number;
-  showPoweredBy: boolean;
-}) {
-  return (
-    <div className="print-running-footer">
-      <span>
-        Page {pageNumber} of {totalPages}
-      </span>
-      {showPoweredBy ? (
-        <span className="print-powered-by">
-          <span className="print-lime-dot" aria-hidden />
-          Powered by Segmiq
-        </span>
-      ) : (
-        <span />
-      )}
-    </div>
-  );
-}
-
-function PrintPageShell({
-  children,
-  pageNumber,
-  totalPages,
-  clientName,
-  projectTitle,
-  showPoweredBy,
-}: {
-  children: React.ReactNode;
-  pageNumber: number;
-  totalPages: number;
-  clientName: string;
-  projectTitle: string;
-  showPoweredBy: boolean;
-}) {
-  return (
-    <section className="print-page">
-      <RunningHeader clientName={clientName} projectTitle={projectTitle} />
-      <div className="print-page-body">{children}</div>
-      <RunningFooter
-        pageNumber={pageNumber}
-        totalPages={totalPages}
-        showPoweredBy={showPoweredBy}
-      />
-    </section>
   );
 }
 
@@ -231,7 +50,7 @@ function PrintSpecCard({
       {rest.length > 0 && (
         <ul className="print-spec-list">
           {rest.map((field, index) => (
-            <li key={`${field.label}-${index}`}>
+            <li key={`${field.label}-${index}`} className="print-spec-row">
               <span className="print-spec-icon" style={{ color: brandColor }}>
                 •
               </span>
@@ -258,62 +77,68 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
   const pullQuoteBy = project.pull_quote_by?.trim() ?? "";
   const metaLine = buildSpecMetaLine(project.spec_fields) ?? project.category;
   const completionLabel = formatCompletionDate(project.completion_date);
+  const photos = galleryPhotos(data.media);
+  const hasStory = Boolean(storyBrief || storyResult || pullQuote);
+  const hasStorySection = hasStory || project.spec_fields.length > 0;
   const hasTimeline = project.timeline_steps.length > 0;
-
-  const pagePlan = buildPagePlan(data);
-  const totalPages = pagePlan.length;
 
   return (
     <div
       className="print-root"
       style={{ ["--brand" as string]: brandColor, ["--brand-ink" as string]: "#FFFFFF" }}
     >
-      {pagePlan.map((page, index) => {
-        const pageNumber = index + 1;
-        const shellProps = {
-          pageNumber,
-          totalPages,
-          clientName,
-          projectTitle: project.title,
-          showPoweredBy: pageNumber === totalPages,
-        };
-
-        if (page.kind === "cover") {
-          return (
-            <PrintPageShell key="cover" {...shellProps}>
-              <div className={`print-cover ${coverUrl ? "" : "print-cover-fallback"}`}>
-                {coverUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={coverUrl} alt="" className="print-cover-img" />
-                )}
-                {coverUrl && (
-                  <div className="print-cover-scrim" style={{ background: HERO_SCRIM }} />
-                )}
-                <div className="print-cover-content">
-                  {showLogo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={client.logo_url!} alt="" className="print-logo-chip" />
-                  ) : (
-                    <div className="print-logo-chip print-logo-fallback">
-                      {getInitials(clientName).slice(0, 1)}
-                    </div>
-                  )}
-                  <p className="print-eyebrow">Case study</p>
-                  <h1>{project.title}</h1>
-                  {metaLine && <p className="print-meta">{metaLine}</p>}
-                  <div className="print-meta-row">
-                    {project.location && <span>{project.location}</span>}
-                    {completionLabel && <span>{completionLabel}</span>}
-                  </div>
-                </div>
+      <section className="print-cover-page">
+        <RunningHeader clientName={clientName} projectTitle={project.title} />
+        <div className={`print-cover ${coverUrl ? "" : "print-cover-fallback"}`}>
+          {coverUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={coverUrl} alt="" className="print-cover-img" />
+          )}
+          {coverUrl && (
+            <div className="print-cover-scrim" style={{ background: HERO_SCRIM }} />
+          )}
+          <div className="print-cover-content">
+            {showLogo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={client.logo_url!} alt="" className="print-logo-chip" />
+            ) : (
+              <div className="print-logo-chip print-logo-fallback">
+                {getInitials(clientName).slice(0, 1)}
               </div>
-            </PrintPageShell>
-          );
-        }
+            )}
+            <p className="print-eyebrow">Case study</p>
+            <h1>{project.title}</h1>
+            {metaLine && <p className="print-meta">{metaLine}</p>}
+            <div className="print-meta-row">
+              {project.location && <span>{project.location}</span>}
+              {completionLabel && <span>{completionLabel}</span>}
+            </div>
+          </div>
+        </div>
+        <div className="print-cover-footer">
+          <span className="print-footer-page">
+            Page <span className="page-num" /> of <span className="page-total" />
+          </span>
+        </div>
+      </section>
 
-        if (page.kind === "story") {
-          return (
-            <PrintPageShell key="story" {...shellProps}>
+      <div className="print-flow">
+        <div className="print-fixed-header">
+          <RunningHeader clientName={clientName} projectTitle={project.title} />
+        </div>
+        <div className="print-fixed-footer">
+          <span className="print-footer-page">
+            Page <span className="page-num" /> of <span className="page-total" />
+          </span>
+          <span className="print-powered-by">
+            <span className="print-lime-dot" aria-hidden />
+            Powered by Segmiq
+          </span>
+        </div>
+
+        <main className="print-flow-content">
+          {hasStorySection && (
+            <section className="print-story-section">
               <div className="print-story-layout">
                 <div className="print-story-main">
                   {storyBrief && <p className="print-drop-cap">{storyBrief}</p>}
@@ -330,147 +155,100 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                 </div>
                 <PrintSpecCard specFields={project.spec_fields} brandColor={brandColor} />
               </div>
-            </PrintPageShell>
-          );
-        }
+            </section>
+          )}
 
-        if (page.kind === "gallery") {
-          const gridStyle = {
-            ["--gallery-hero-height" as string]: `${page.heroHeight}px`,
-            ["--gallery-tile-height" as string]: `${page.tileHeight}px`,
-          };
-
-          if (page.showHero) {
-            const [hero, ...tiles] = page.photos;
-            return (
-              <PrintPageShell key={`gallery-${index}`} {...shellProps}>
-                <h2 className="print-section-title">Gallery</h2>
-                <div className="print-gallery-grid" style={gridStyle}>
-                  {hero && (
-                    <div className="print-gallery-hero">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={hero.public_url} alt={hero.caption ?? project.title} />
-                    </div>
-                  )}
-                  {tiles.map((photo) => (
-                    <div key={photo.id} className="print-gallery-tile">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photo.public_url} alt={photo.caption ?? project.title} />
-                    </div>
-                  ))}
-                </div>
-              </PrintPageShell>
-            );
-          }
-
-          return (
-            <PrintPageShell key={`gallery-${index}`} {...shellProps}>
+          {photos.length > 0 && (
+            <section className="print-gallery-section">
               <h2 className="print-section-title">Gallery</h2>
-              <div className="print-gallery-grid" style={gridStyle}>
-                {page.photos.map((photo) => (
-                  <div key={photo.id} className="print-gallery-tile">
+              <div className="print-gallery-grid">
+                {photos.map((photo, index) => (
+                  <div
+                    key={photo.id}
+                    className={
+                      index === 0 ? "print-gallery-hero print-gallery-tile" : "print-gallery-tile"
+                    }
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.public_url} alt={photo.caption ?? project.title} />
                   </div>
                 ))}
               </div>
-            </PrintPageShell>
-          );
-        }
+            </section>
+          )}
 
-        if (page.kind === "timeline") {
-          return (
-            <PrintPageShell key="timeline" {...shellProps}>
-              {hasTimeline && (
-                <div className="print-timeline-block">
-                  <h2 className="print-section-title">Timeline</h2>
-                  <ol className="print-timeline">
-                    {project.timeline_steps.map((step, stepIndex) => (
-                      <li key={`${step.day_label}-${stepIndex}`}>
-                        <span
-                          className="print-timeline-dot"
-                          style={{ background: brandColor }}
-                        >
-                          {stepIndex + 1}
-                        </span>
-                        <div>
-                          {step.day_label && (
-                            <p className="print-timeline-day">{step.day_label}</p>
-                          )}
-                          {step.title && (
-                            <p className="print-timeline-title">{step.title}</p>
-                          )}
-                          {step.description && (
-                            <p className="print-timeline-desc">{step.description}</p>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
+          {hasTimeline && (
+            <section className="print-timeline-section">
+              <h2 className="print-section-title">Timeline</h2>
+              <ol className="print-timeline">
+                {project.timeline_steps.map((step, stepIndex) => (
+                  <li key={`${step.day_label}-${stepIndex}`} className="print-timeline-step">
+                    <span
+                      className="print-timeline-dot"
+                      style={{ background: brandColor }}
+                    >
+                      {stepIndex + 1}
+                    </span>
+                    <div>
+                      {step.day_label && (
+                        <p className="print-timeline-day">{step.day_label}</p>
+                      )}
+                      {step.title && <p className="print-timeline-title">{step.title}</p>}
+                      {step.description && (
+                        <p className="print-timeline-desc">{step.description}</p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
-              {testimonial && (
-                <div className="print-testimonial">
-                  <p>&ldquo;{testimonial.content}&rdquo;</p>
-                  <span>
-                    — {testimonial.author_name}
-                    {testimonial.author_role ? `, ${testimonial.author_role}` : ""}
-                  </span>
-                </div>
-              )}
-            </PrintPageShell>
-          );
-        }
-
-        return (
-          <PrintPageShell key="cta" {...shellProps}>
-            <div className="print-cta-page">
-              <div className="print-cta">
-                <div>
-                  <h3>Want something like this?</h3>
-                  <p>Scan to view the live case study or request a quote.</p>
-                  <p className="print-cta-url">{data.livePageUrl}</p>
-                </div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrDataUrl}
-                  alt="QR code linking to live project page"
-                  className="print-qr"
-                />
+          {testimonial && (
+            <section className="print-testimonial-section">
+              <div className="print-testimonial">
+                <p>&ldquo;{testimonial.content}&rdquo;</p>
+                <span>
+                  — {testimonial.author_name}
+                  {testimonial.author_role ? `, ${testimonial.author_role}` : ""}
+                </span>
               </div>
+            </section>
+          )}
+
+          <section className="print-cta-section">
+            <div className="print-cta">
+              <div>
+                <h3>Want something like this?</h3>
+                <p>Scan to view the live case study or request a quote.</p>
+                <p className="print-cta-url">{data.livePageUrl}</p>
+              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={qrDataUrl}
+                alt="QR code linking to live project page"
+                className="print-qr"
+              />
             </div>
-          </PrintPageShell>
-        );
-      })}
+          </section>
+        </main>
+      </div>
 
       <style>{`
         @page { size: A4; margin: 0; }
-        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
         .print-root {
+          width: 794px;
+          margin: 0 auto;
           background: #fff;
           color: #1c1410;
           font-family: Georgia, "Times New Roman", serif;
         }
-        .print-page {
-          width: 794px;
-          height: 1123px;
-          max-height: 1123px;
-          box-sizing: border-box;
-          padding: 42px 48px 36px;
-          page-break-after: always;
-          break-after: page;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          background: #fff;
-        }
-        .print-page:last-child {
-          page-break-after: auto;
-          break-after: auto;
-        }
+        .page-num::after { content: counter(page); }
+        .page-total::after { content: counter(pages); }
         .print-running-header,
-        .print-running-footer {
+        .print-cover-footer,
+        .print-fixed-footer {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -479,24 +257,61 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           text-transform: uppercase;
           color: #8c7b6b;
           font-family: system-ui, sans-serif;
-          flex-shrink: 0;
         }
         .print-running-header {
           border-bottom: 1px solid rgba(28,20,16,0.1);
           padding-bottom: 10px;
           margin-bottom: 18px;
         }
-        .print-running-footer {
+        .print-cover-page {
+          width: 794px;
+          min-height: 1123px;
+          height: 1123px;
+          padding: 42px 48px 36px;
+          display: flex;
+          flex-direction: column;
+          background: #fff;
+          page-break-after: always;
+          break-after: page;
+        }
+        .print-cover-footer {
           border-top: 1px solid rgba(28,20,16,0.1);
           padding-top: 10px;
           margin-top: auto;
         }
-        .print-page-body {
-          flex: 1;
-          min-height: 0;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
+        .print-flow {
+          position: relative;
+          width: 794px;
+          background: #fff;
+        }
+        .print-fixed-header {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          width: 794px;
+          margin: 0 auto;
+          padding: 42px 48px 0;
+          background: #fff;
+          z-index: 20;
+        }
+        .print-fixed-header .print-running-header {
+          margin-bottom: 0;
+        }
+        .print-fixed-footer {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          width: 794px;
+          margin: 0 auto;
+          padding: 10px 48px 36px;
+          border-top: 1px solid rgba(28,20,16,0.1);
+          background: #fff;
+          z-index: 20;
+        }
+        .print-flow-content {
+          padding: 88px 48px 72px;
         }
         .print-powered-by {
           display: inline-flex;
@@ -518,6 +333,8 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           overflow: hidden;
           display: flex;
           align-items: flex-end;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-cover-fallback {
           background: #0a0907;
@@ -585,16 +402,18 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           opacity: 0.75;
           font-family: system-ui, sans-serif;
         }
+        .print-story-section,
+        .print-gallery-section,
+        .print-timeline-section,
+        .print-testimonial-section,
+        .print-cta-section {
+          margin-bottom: 28px;
+        }
         .print-story-layout {
           display: grid;
           grid-template-columns: 1fr 220px;
           gap: 24px;
           align-items: start;
-          height: 100%;
-          overflow: hidden;
-        }
-        .print-story-main {
-          overflow: hidden;
         }
         .print-drop-cap::first-letter {
           float: left;
@@ -650,13 +469,15 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           margin: 0;
           padding: 8px 14px;
         }
-        .print-spec-list li {
+        .print-spec-row {
           display: flex;
           gap: 10px;
           padding: 10px 0;
           border-top: 1px solid rgba(28,20,16,0.08);
           font-family: system-ui, sans-serif;
           font-size: 12px;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-spec-list li:first-child { border-top: none; }
         .print-spec-icon {
@@ -674,27 +495,22 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .print-section-title {
           margin: 0 0 16px;
           font-size: 24px;
-          flex-shrink: 0;
         }
         .print-gallery-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 10px;
-          flex: 1;
-          min-height: 0;
-          overflow: hidden;
-          align-content: start;
         }
         .print-gallery-hero {
           grid-column: 1 / -1;
-          height: var(--gallery-hero-height, 260px);
-          border-radius: 10px;
-          overflow: hidden;
+          height: 260px;
         }
         .print-gallery-tile {
-          height: var(--gallery-tile-height, 130px);
+          height: 130px;
           border-radius: 10px;
           overflow: hidden;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-gallery-grid img {
           width: 100%;
@@ -702,20 +518,17 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           object-fit: cover;
           display: block;
         }
-        .print-timeline-block {
-          flex: 1;
-          min-height: 0;
-          overflow: hidden;
-        }
         .print-timeline {
           list-style: none;
           margin: 0;
           padding: 0;
         }
-        .print-timeline li {
+        .print-timeline-step {
           display: flex;
           gap: 12px;
           margin-bottom: 14px;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-timeline-dot {
           width: 24px;
@@ -749,9 +562,10 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           font-family: system-ui, sans-serif;
         }
         .print-testimonial {
-          margin-top: 20px;
           padding: 16px 0 0;
           border-top: 1px solid rgba(28,20,16,0.1);
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-testimonial p {
           margin: 0;
@@ -765,12 +579,6 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           color: #8c7b6b;
           font-family: system-ui, sans-serif;
         }
-        .print-cta-page {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
         .print-cta {
           width: 100%;
           padding: 28px;
@@ -782,6 +590,8 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           align-items: center;
           gap: 20px;
           font-family: system-ui, sans-serif;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-cta h3 {
           margin: 0;
