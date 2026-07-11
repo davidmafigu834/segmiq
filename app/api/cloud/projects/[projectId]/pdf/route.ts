@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
+  buildProjectPdfFilename,
   generateProjectPdfKey,
   normalizeAppDomainUrl,
 } from "@/lib/cloud/project-magazine";
@@ -10,6 +11,27 @@ import { getPublicUrl, putObject } from "@/lib/storage/r2";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+function pdfAttachmentResponse(buffer: Buffer, filename: string): NextResponse {
+  return new NextResponse(new Uint8Array(buffer), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
+}
+
+async function fetchCachedPdfBuffer(pdfUrl: string): Promise<Buffer | null> {
+  try {
+    const res = await fetch(pdfUrl);
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(
   req: Request,
@@ -37,7 +59,7 @@ export async function GET(
 
   const { data: project, error } = await supabase
     .from("projects")
-    .select("id, client_id, pdf_url, pdf_generated_at, updated_at, is_public")
+    .select("id, client_id, title, pdf_url, pdf_generated_at, updated_at, is_public")
     .eq("id", params.projectId)
     .eq("client_id", clientId)
     .eq("is_public", true)
@@ -47,6 +69,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const filename = buildProjectPdfFilename((project.title as string) || "case-study");
   const pdfUrl = (project.pdf_url as string | null) ?? null;
   const pdfGeneratedAt = project.pdf_generated_at as string | null;
   const updatedAt = project.updated_at as string;
@@ -56,7 +79,10 @@ export async function GET(
     new Date(pdfGeneratedAt).getTime() >= new Date(updatedAt).getTime();
 
   if (isFresh && pdfUrl) {
-    return NextResponse.redirect(pdfUrl);
+    const cached = await fetchCachedPdfBuffer(pdfUrl);
+    if (cached) {
+      return pdfAttachmentResponse(cached, filename);
+    }
   }
 
   const baseUrl = normalizeAppDomainUrl();
@@ -79,7 +105,7 @@ export async function GET(
       .eq("id", params.projectId)
       .eq("client_id", clientId);
 
-    return NextResponse.redirect(publicPdfUrl);
+    return pdfAttachmentResponse(pdfBuffer, filename);
   } catch (err) {
     const message = err instanceof Error ? err.message : "PDF generation failed";
     return NextResponse.json({ error: message }, { status: 500 });

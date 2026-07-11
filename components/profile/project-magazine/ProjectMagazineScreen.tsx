@@ -1,10 +1,10 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Download,
   MapPin,
 } from "lucide-react";
 import {
+  buildProjectPdfFilename,
   buildSpecMetaLine,
   formatCompletionDate,
   galleryPhotos,
@@ -14,6 +14,7 @@ import {
   HERO_SCRIM,
   type ProjectMagazineData,
 } from "@/lib/cloud/project-magazine";
+import { ProjectPdfDownloadButton } from "@/components/profile/project-magazine/ProjectPdfDownloadButton";
 
 function SpecIcon({ index, label }: { index: number; label: string }) {
   const Icon = getSpecIcon(index, label);
@@ -119,15 +120,11 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
             >
               ← Back to projects
             </Link>
-            <a
-              href={data.pdfDownloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[12px] font-semibold text-white no-underline backdrop-blur-sm transition-colors hover:bg-white/20"
-            >
-              <Download size={13} aria-hidden />
-              Download PDF
-            </a>
+            <ProjectPdfDownloadButton
+              pdfDownloadUrl={data.pdfDownloadUrl}
+              fileName={buildProjectPdfFilename(data.project.title)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 disabled:opacity-70"
+            />
           </div>
           {showLogo ? (
             // eslint-disable-next-line @next/next/no-img-element

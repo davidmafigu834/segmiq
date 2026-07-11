@@ -293,6 +293,16 @@ export async function fetchProjectMagazineData(
   };
 }
 
+export function buildProjectPdfFilename(title: string): string {
+  const base =
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60) || "case-study";
+  return `${base}.pdf`;
+}
+
 export function generateProjectPdfKey(clientId: string, projectId: string): string {
   return `clients/${clientId}/projects/${projectId}/case-study-${Date.now()}.pdf`;
 }
