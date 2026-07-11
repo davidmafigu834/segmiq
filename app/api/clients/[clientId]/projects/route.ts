@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
+import { fetchProjectsForClient } from "@/lib/cloud/project-queries";
+import { isMissingMagazineColumnError, projectRowSelect } from "@/lib/cloud/project-columns";
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const auth = await resolveApiAuth(req);
@@ -11,11 +13,7 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   }
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*, project_media(id, public_url, display_order, caption, storage_key, milestone_id), project_milestones(id, is_completed)")
-    .eq("client_id", params.clientId)
-    .order("display_order", { ascending: true });
+  const { data, error } = await fetchProjectsForClient(supabase, params.clientId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
@@ -39,7 +37,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   };
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const { data: inserted, error } = await supabase
     .from("projects")
     .insert({
       client_id: params.clientId,
@@ -52,9 +50,27 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       is_public: body.is_public ?? true,
       display_order: 0,
     })
-    .select()
+    .select("id")
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  if (error || !inserted) return NextResponse.json({ error: error?.message ?? "Insert failed" }, { status: 500 });
+
+  let row = await supabase
+    .from("projects")
+    .select(projectRowSelect(true))
+    .eq("id", inserted.id as string)
+    .eq("client_id", params.clientId)
+    .single();
+
+  if (row.error && isMissingMagazineColumnError(row.error.message)) {
+    row = await supabase
+      .from("projects")
+      .select(projectRowSelect(false))
+      .eq("id", inserted.id as string)
+      .eq("client_id", params.clientId)
+      .single();
+  }
+
+  if (row.error) return NextResponse.json({ error: row.error.message }, { status: 500 });
+  return NextResponse.json(row.data, { status: 201 });
 }

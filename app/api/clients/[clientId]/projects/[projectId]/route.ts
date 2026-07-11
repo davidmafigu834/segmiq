@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
+import { selectProjectRow } from "@/lib/cloud/project-queries";
+import { MAGAZINE_PROJECT_COLUMNS } from "@/lib/cloud/project-columns";
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string; projectId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
+  const auth = await resolveApiAuth(req);
+  if (!auth?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessClient(auth.role, auth.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -24,22 +25,50 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   }
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("projects")
     .update(patch)
     .eq("id", params.projectId)
     .eq("client_id", params.clientId)
-    .select()
+    .select("id")
     .single();
 
+  if (error?.message?.includes("does not exist")) {
+    const magazineKeys = new Set<string>(MAGAZINE_PROJECT_COLUMNS);
+    const basePatch = Object.fromEntries(
+      Object.entries(patch).filter(([key]) => !magazineKeys.has(key))
+    );
+    const retry = await supabase
+      .from("projects")
+      .update(basePatch)
+      .eq("id", params.projectId)
+      .eq("client_id", params.clientId)
+      .select("id")
+      .single();
+    if (retry.error) {
+      return NextResponse.json(
+        {
+          error:
+            "Database migration 065_project_magazine_fields.sql is required for story, specs, and cover fields. Basic project fields were not changed.",
+        },
+        { status: 500 }
+      );
+    }
+    error = null;
+    data = retry.data;
+  }
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+
+  const row = await selectProjectRow(supabase, params.projectId, params.clientId);
+  if (row.error) return NextResponse.json({ error: row.error.message }, { status: 500 });
+  return NextResponse.json(row.data);
 }
 
-export async function DELETE(_req: Request, { params }: { params: { clientId: string; projectId: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
+export async function DELETE(req: Request, { params }: { params: { clientId: string; projectId: string } }) {
+  const auth = await resolveApiAuth(req);
+  if (!auth?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessClient(auth.role, auth.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

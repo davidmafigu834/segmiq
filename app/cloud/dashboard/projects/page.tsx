@@ -34,16 +34,27 @@ export default function CloudProjectsPage() {
   const [showNew, setShowNew] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState("");
+  const [fetchError, setFetchError] = useState("");
 
   const fetchProjects = useCallback(() => {
     if (!session?.clientId) { setLoading(false); return; }
     setLoading(true);
+    setFetchError("");
     fetch(`/api/clients/${session.clientId}/projects`)
-      .then((r) => r.json())
-      .then((data: unknown) => {
-        if (Array.isArray(data)) setProjects(data as Project[]);
+      .then(async (r) => {
+        const data = (await r.json()) as Project[] | { error?: string };
+        if (!r.ok) {
+          setFetchError((data as { error?: string }).error ?? "Could not load projects.");
+          setProjects([]);
+          return;
+        }
+        if (Array.isArray(data)) setProjects(data);
+        else setProjects([]);
       })
-      .catch(() => {})
+      .catch(() => {
+        setFetchError("Could not load projects. Check your connection and try again.");
+        setProjects([]);
+      })
       .finally(() => setLoading(false));
   }, [session?.clientId]);
 
@@ -149,6 +160,19 @@ export default function CloudProjectsPage() {
         </div>
       </div>
 
+      {fetchError && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700 font-cloud-body">
+          {fetchError}
+          <button
+            type="button"
+            onClick={() => fetchProjects()}
+            className="ml-3 font-semibold underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Category filter pills */}
       {allCategories.length > 0 && (
         <div style={{ display: 'flex', gap: 8, padding: '4px 0 12px', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', alignItems: 'center', marginBottom: 4 } as React.CSSProperties}>
@@ -189,7 +213,12 @@ export default function CloudProjectsPage() {
 
       {filtered.length === 0 && !loading ? (
         <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
-          {search || activeCategory ? (
+          {fetchError ? (
+            <>
+              <p className="font-cloud-display text-[18px] text-[#0a0a0a] mb-1">Projects unavailable</p>
+              <p className="text-[13px] text-[#999990] font-cloud-body max-w-[280px]">{fetchError}</p>
+            </>
+          ) : search || activeCategory ? (
             <>
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white border border-black/[0.07]">
                 <Search className="h-6 w-6 text-[#999990]" strokeWidth={1.5} />
