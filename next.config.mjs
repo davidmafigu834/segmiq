@@ -31,7 +31,19 @@ function cloudRewrites(host) {
 const nextConfig = {
   // Avoid webpack splitting issues with Supabase in Server Components / RSC (missing vendor-chunks).
   experimental: {
-    serverComponentsExternalPackages: ["@supabase/supabase-js", "@react-pdf/renderer"],
+    serverComponentsExternalPackages: [
+      "@supabase/supabase-js",
+      "@react-pdf/renderer",
+      "puppeteer-core",
+      "@sparticuz/chromium-min",
+    ],
+  },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      const externals = Array.isArray(config.externals) ? config.externals : [];
+      config.externals = [...externals, "puppeteer-core", "@sparticuz/chromium-min"];
+    }
+    return config;
   },
   async rewrites() {
     return [

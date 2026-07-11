@@ -1,38 +1,15 @@
 import { NextResponse } from "next/server";
-import chromium from "@sparticuz/chromium";
-import puppeteer from "puppeteer-core";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   generateProjectPdfKey,
   normalizeAppDomainUrl,
 } from "@/lib/cloud/project-magazine";
+import { renderProjectPdf } from "@/lib/cloud/render-project-pdf";
 import { getPublicUrl, putObject } from "@/lib/storage/r2";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-async function renderProjectPdf(printUrl: string): Promise<Buffer> {
-  const executablePath = await chromium.executablePath();
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: { width: 794, height: 1123 },
-    executablePath,
-    headless: true,
-  });
-
-  try {
-    const page = await browser.newPage();
-    await page.goto(printUrl, { waitUntil: "networkidle0", timeout: 45_000 });
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: 0, right: 0, bottom: 0, left: 0 },
-    });
-    return Buffer.from(pdf);
-  } finally {
-    await browser.close();
-  }
-}
 
 export async function GET(
   req: Request,

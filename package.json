@@ -22,7 +22,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1043.0",
     "@hello-pangea/dnd": "^16.6.0",
     "@react-pdf/renderer": "^4.5.1",
-    "@sparticuz/chromium": "^147.0.0",
+    "@sparticuz/chromium-min": "^147.0.0",
     "@supabase/supabase-js": "^2.49.1",
     "@vercel/functions": "^1.6.0",
     "bcryptjs": "^2.4.3",
