@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getPublicBaseUrl } from "@/lib/constants";
 import { notFound } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { Battery, Check, Clock, Shield, Sun, Zap } from "lucide-react";
@@ -92,8 +93,13 @@ export const HERO_SCRIM =
 const SPEC_ICONS: LucideIcon[] = [Zap, Battery, Sun, Shield, Clock, Check];
 
 export function normalizeAppDomainUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://segmiq.com";
-  return raw.startsWith("http") ? raw.replace(/\/$/, "") : `https://${raw.replace(/\/$/, "")}`;
+  const explicit = process.env.NEXT_PUBLIC_APP_DOMAIN?.trim();
+  if (explicit) {
+    return explicit.startsWith("http")
+      ? explicit.replace(/\/$/, "")
+      : `https://${explicit.replace(/\/$/, "")}`;
+  }
+  return getPublicBaseUrl();
 }
 
 export function hasAbsoluteLogo(logoUrl: string | null | undefined): logoUrl is string {

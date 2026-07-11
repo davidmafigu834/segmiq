@@ -83,6 +83,7 @@ export async function GET(
 
     return pdfAttachmentResponse(result.buffer, filename);
   } catch (err) {
+    console.error("[project pdf download]", err);
     const message = err instanceof Error ? err.message : "PDF generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

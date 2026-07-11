@@ -12,7 +12,7 @@ export async function optimizeImageToDataUrl(
   if (!url || url.startsWith("data:")) return null;
 
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return null;
 
     const input = Buffer.from(await res.arrayBuffer());

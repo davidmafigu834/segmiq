@@ -66,6 +66,7 @@ export async function POST(
       pdf_generated_at: result.pdfGeneratedAt,
     });
   } catch (err) {
+    console.error("[project pdf regenerate]", err);
     const message = err instanceof Error ? err.message : "PDF generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

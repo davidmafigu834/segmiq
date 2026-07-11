@@ -4,6 +4,7 @@ import {
   generateProjectPdfKey,
   normalizeAppDomainUrl,
 } from "@/lib/cloud/project-magazine";
+import { isMissingMagazineColumnError } from "@/lib/cloud/project-columns";
 import { renderProjectPdf } from "@/lib/cloud/render-project-pdf";
 import { getPublicUrl, putObject } from "@/lib/storage/r2";
 
@@ -47,7 +48,10 @@ export async function generateAndStoreProjectPdf(opts: {
     .eq("client_id", clientId);
 
   if (error) {
-    throw new Error(error.message);
+    if (!isMissingMagazineColumnError(error.message)) {
+      throw new Error(error.message);
+    }
+    console.warn("[project pdf] pdf_url columns missing — apply migration 065");
   }
 
   return {

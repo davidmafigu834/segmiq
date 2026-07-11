@@ -394,13 +394,19 @@ export default function ProjectDetailPage() {
         `/api/clients/${session.clientId}/projects/${project.id}/pdf`,
         { method: "POST" }
       );
-      const data = (await res.json()) as {
+      const raw = await res.text();
+      let data: {
         pdf_url?: string;
         pdf_generated_at?: string;
         error?: string;
-      };
+      } = {};
+      try {
+        data = JSON.parse(raw) as typeof data;
+      } catch {
+        data = {};
+      }
       if (!res.ok || !data.pdf_url) {
-        showToast(data.error ?? "PDF generation failed");
+        showToast(data.error ?? (res.status === 504 ? "PDF timed out — try again in a moment." : "PDF generation failed"));
         return;
       }
       setProject((p) =>
