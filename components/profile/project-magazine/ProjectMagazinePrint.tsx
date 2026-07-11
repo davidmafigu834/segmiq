@@ -295,6 +295,12 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
 
       <style>{`
         @page { size: A4; margin: 0; }
+        html, body {
+          margin: 0;
+          padding: 0;
+          background: #fff !important;
+          color: #1c1410 !important;
+        }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
         .print-root {
           width: 794px;
@@ -345,10 +351,27 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           background: #fff;
         }
         .print-gallery-page,
-        .print-timeline-page,
+        .print-timeline-page {
+          break-before: page;
+          page-break-before: always;
+        }
         .print-cta-page {
           break-before: page;
           page-break-before: always;
+          break-after: avoid;
+          page-break-after: avoid;
+          min-height: 1123px;
+          display: flex;
+          flex-direction: column;
+        }
+        .print-cta-page .print-content-body {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .print-cta-page .print-content-footer {
+          margin-top: auto;
         }
         .print-content-body {
           width: 100%;

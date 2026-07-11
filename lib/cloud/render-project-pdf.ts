@@ -109,6 +109,11 @@ export async function renderProjectPdf(printUrl: string): Promise<Buffer> {
     await page.goto(printUrl, { waitUntil: "networkidle0", timeout: 60_000 });
     await waitForImages(page);
     await injectOptimizedImages(page);
+    await page.evaluate(() => {
+      document.documentElement.style.setProperty("background", "#ffffff", "important");
+      document.body.style.setProperty("background", "#ffffff", "important");
+      document.body.style.setProperty("color", "#1c1410", "important");
+    });
     await page.emulateMediaType("screen");
     const pdf = await page.pdf({
       format: "A4",
