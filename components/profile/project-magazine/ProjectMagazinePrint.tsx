@@ -18,30 +18,105 @@ type PrintPageProps = {
 type PageKind =
   | { kind: "cover" }
   | { kind: "story" }
-  | { kind: "gallery"; photos: ProjectMediaRow[]; showHero: boolean }
+  | {
+      kind: "gallery";
+      photos: ProjectMediaRow[];
+      showHero: boolean;
+      heroHeight: number;
+      tileHeight: number;
+    }
   | { kind: "timeline" }
   | { kind: "cta" };
+
+const GALLERY_GRID_MAX_HEIGHT = 886;
+const GALLERY_TILE_GAP = 10;
+const GALLERY_MIN_HERO_HEIGHT = 260;
+const GALLERY_MIN_TILE_HEIGHT = 130;
+
+function measureGalleryHeight(
+  photoCount: number,
+  showHero: boolean,
+  heroHeight = GALLERY_MIN_HERO_HEIGHT,
+  tileHeight = GALLERY_MIN_TILE_HEIGHT
+): number {
+  if (photoCount === 0) return 0;
+
+  const tileCount = showHero ? photoCount - 1 : photoCount;
+  const rows = Math.ceil(tileCount / 2);
+  let height = 0;
+
+  if (showHero) {
+    height += heroHeight;
+    if (tileCount > 0) height += GALLERY_TILE_GAP;
+  }
+
+  if (rows > 0) {
+    height += rows * tileHeight + Math.max(0, rows - 1) * GALLERY_TILE_GAP;
+  }
+
+  return height;
+}
+
+function getGalleryDimensions(photoCount: number, showHero: boolean) {
+  const tileCount = showHero ? Math.max(0, photoCount - 1) : photoCount;
+  const rows = Math.ceil(tileCount / 2) || 0;
+  const gapCount = (showHero && tileCount > 0 ? 1 : 0) + Math.max(0, rows - 1);
+  const gapHeight = gapCount * GALLERY_TILE_GAP;
+
+  let heroHeight = showHero && photoCount > 0 ? GALLERY_MIN_HERO_HEIGHT : 0;
+  let tileHeight = GALLERY_MIN_TILE_HEIGHT;
+
+  if (rows > 0) {
+    const remaining = GALLERY_GRID_MAX_HEIGHT - heroHeight - gapHeight;
+    tileHeight = Math.min(200, Math.floor(remaining / rows));
+    tileHeight = Math.max(GALLERY_MIN_TILE_HEIGHT, tileHeight);
+  } else if (showHero) {
+    heroHeight = GALLERY_GRID_MAX_HEIGHT;
+  }
+
+  if (showHero && rows > 0) {
+    const used = heroHeight + gapHeight + rows * tileHeight;
+    const leftover = GALLERY_GRID_MAX_HEIGHT - used;
+    if (leftover > 0) heroHeight += leftover;
+  }
+
+  return { heroHeight, tileHeight };
+}
+
+function maxGalleryPhotosForPage(showHero: boolean): number {
+  for (let count = 50; count >= 1; count -= 1) {
+    const { heroHeight, tileHeight } = getGalleryDimensions(count, showHero);
+    if (measureGalleryHeight(count, showHero, heroHeight, tileHeight) <= GALLERY_GRID_MAX_HEIGHT) {
+      return count;
+    }
+  }
+  return 1;
+}
 
 function buildGalleryChunks(photos: ProjectMediaRow[]): PageKind[] {
   if (photos.length === 0) return [];
 
   const pages: PageKind[] = [];
-  const [hero, ...rest] = photos;
+  let remaining = [...photos];
+  let isFirst = true;
 
-  // First gallery page: hero + up to 4 secondary tiles
-  pages.push({
-    kind: "gallery",
-    photos: [hero, ...rest.slice(0, 4)],
-    showHero: true,
-  });
+  while (remaining.length > 0) {
+    const showHero = isFirst;
+    const capacity = maxGalleryPhotosForPage(showHero);
+    const count = Math.min(remaining.length, capacity);
+    const chunk = remaining.slice(0, count);
+    const { heroHeight, tileHeight } = getGalleryDimensions(chunk.length, showHero);
 
-  // Additional pages: up to 6 tiles each (3 rows × 2 columns)
-  for (let i = 4; i < rest.length; i += 6) {
     pages.push({
       kind: "gallery",
-      photos: rest.slice(i, i + 6),
-      showHero: false,
+      photos: chunk,
+      showHero,
+      heroHeight,
+      tileHeight,
     });
+
+    remaining = remaining.slice(count);
+    isFirst = false;
   }
 
   return pages;
@@ -260,12 +335,17 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         }
 
         if (page.kind === "gallery") {
+          const gridStyle = {
+            ["--gallery-hero-height" as string]: `${page.heroHeight}px`,
+            ["--gallery-tile-height" as string]: `${page.tileHeight}px`,
+          };
+
           if (page.showHero) {
             const [hero, ...tiles] = page.photos;
             return (
               <PrintPageShell key={`gallery-${index}`} {...shellProps}>
                 <h2 className="print-section-title">Gallery</h2>
-                <div className="print-gallery-grid">
+                <div className="print-gallery-grid" style={gridStyle}>
                   {hero && (
                     <div className="print-gallery-hero">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -286,7 +366,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           return (
             <PrintPageShell key={`gallery-${index}`} {...shellProps}>
               <h2 className="print-section-title">Gallery</h2>
-              <div className="print-gallery-grid">
+              <div className="print-gallery-grid" style={gridStyle}>
                 {page.photos.map((photo) => (
                   <div key={photo.id} className="print-gallery-tile">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -607,12 +687,12 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         }
         .print-gallery-hero {
           grid-column: 1 / -1;
-          height: 260px;
+          height: var(--gallery-hero-height, 260px);
           border-radius: 10px;
           overflow: hidden;
         }
         .print-gallery-tile {
-          height: 130px;
+          height: var(--gallery-tile-height, 130px);
           border-radius: 10px;
           overflow: hidden;
         }
