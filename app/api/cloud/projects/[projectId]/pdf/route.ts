@@ -2,12 +2,9 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildProjectPdfFilename,
-  generateProjectPdfKey,
   isProjectPdfCacheFresh,
-  normalizeAppDomainUrl,
 } from "@/lib/cloud/project-magazine";
-import { renderProjectPdf } from "@/lib/cloud/render-project-pdf";
-import { getPublicUrl, putObject } from "@/lib/storage/r2";
+import { generateAndStoreProjectPdf } from "@/lib/cloud/generate-project-pdf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,30 +72,16 @@ export async function GET(
     return NextResponse.redirect(pdfUrl, { status: 302 });
   }
 
-  const baseUrl = normalizeAppDomainUrl();
-  const printUrl = `${baseUrl}/p/${slug}/projects/${params.projectId}/print`;
-
   try {
-    const pdfBuffer = await renderProjectPdf(printUrl);
-    const key = generateProjectPdfKey(clientId, params.projectId);
-    await putObject(key, pdfBuffer, "application/pdf", {
-      contentDisposition: `attachment; filename="${filename}"`,
-      cacheControl: "public, max-age=31536000, immutable",
+    const result = await generateAndStoreProjectPdf({
+      clientId,
+      projectId: params.projectId,
+      slug,
+      title: (project.title as string) || "case-study",
+      updatedAt,
     });
-    const publicPdfUrl = getPublicUrl(key);
-    const now = new Date().toISOString();
 
-    await supabase
-      .from("projects")
-      .update({
-        pdf_url: publicPdfUrl,
-        pdf_generated_at: now,
-        updated_at: updatedAt,
-      })
-      .eq("id", params.projectId)
-      .eq("client_id", clientId);
-
-    return pdfAttachmentResponse(pdfBuffer, filename);
+    return pdfAttachmentResponse(result.buffer, filename);
   } catch (err) {
     const message = err instanceof Error ? err.message : "PDF generation failed";
     return NextResponse.json({ error: message }, { status: 500 });

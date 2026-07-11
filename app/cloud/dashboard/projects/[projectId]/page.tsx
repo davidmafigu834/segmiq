@@ -8,7 +8,7 @@ import {
   ArrowLeft, BarChart2, Camera, Check, ChevronLeft, ChevronRight, Copy,
   Download, MoreVertical, Pencil, Play, Trash2, Video, X,
   MapPin, Calendar, LayoutGrid, GitBranch, Plus, CheckCircle2,
-  XCircle, Paperclip, Trophy, BookOpen, Quote, ListOrdered, SlidersHorizontal, Star,
+  XCircle, Paperclip, Trophy, BookOpen, Quote, ListOrdered, SlidersHorizontal, Star, RefreshCw,
 } from "lucide-react";
 import { generateVideoThumbnail, formatDuration } from "@/app/cloud/lib/video-thumbnail";
 import { MilestoneForm } from "@/app/cloud/components/MilestoneForm";
@@ -76,6 +76,8 @@ type Project = {
   pull_quote_by?: string | null;
   timeline_steps?: TimelineStepDraft[];
   spec_fields?: SpecFieldDraft[];
+  pdf_url?: string | null;
+  pdf_generated_at?: string | null;
   project_media: MediaItem[];
 };
 
@@ -151,6 +153,7 @@ export default function ProjectDetailPage() {
   const [specFields, setSpecFields] = useState<SpecFieldDraft[]>([]);
   const [coverMediaId, setCoverMediaId] = useState<string | null>(null);
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
+  const [pdfRegenerating, setPdfRegenerating] = useState(false);
 
   function showToast(msg: string) {
     setToastMsg(msg);
@@ -348,6 +351,49 @@ export default function ProjectDetailPage() {
     void navigator.clipboard.writeText(url);
     showToast("Case study link copied!");
     setMenuOpen(false);
+  }
+
+  async function regeneratePdf() {
+    if (!project || !session?.clientId || pdfRegenerating) return;
+    if (!project.is_public) {
+      showToast("Make this project public first.");
+      return;
+    }
+    if (!profileSlug) {
+      showToast("Publish your public profile first.");
+      return;
+    }
+
+    setPdfRegenerating(true);
+    try {
+      const res = await fetch(
+        `/api/clients/${session.clientId}/projects/${project.id}/pdf`,
+        { method: "POST" }
+      );
+      const data = (await res.json()) as {
+        pdf_url?: string;
+        pdf_generated_at?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.pdf_url) {
+        showToast(data.error ?? "PDF generation failed");
+        return;
+      }
+      setProject((p) =>
+        p
+          ? {
+              ...p,
+              pdf_url: data.pdf_url ?? null,
+              pdf_generated_at: data.pdf_generated_at ?? null,
+            }
+          : p
+      );
+      showToast("PDF regenerated successfully.");
+    } catch {
+      showToast("PDF generation failed");
+    } finally {
+      setPdfRegenerating(false);
+    }
   }
 
   async function addFilesAsync(files: File[]) {
@@ -1304,6 +1350,58 @@ export default function ProjectDetailPage() {
         >
           Save specs
         </button>
+      </div>
+
+      <div className="rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 mb-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Download className="h-4 w-4 text-[#666660]" />
+            <h3 className="font-cloud-body text-[10px] font-bold tracking-[0.08em] text-[#666660] uppercase">
+              PDF case study
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => void regeneratePdf()}
+            disabled={pdfRegenerating || !project.is_public || !profileSlug}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1C1410] px-3 py-1.5 text-[11px] font-bold text-[#D4FF4F] font-cloud-body disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${pdfRegenerating ? "animate-spin" : ""}`} />
+            {pdfRegenerating ? "Generating…" : "Regenerate PDF"}
+          </button>
+        </div>
+        <p className="text-[12px] text-[#666660] font-cloud-body">
+          Use this after updating photos, story, or layout changes. Public downloads use the latest generated file.
+        </p>
+        {project.pdf_generated_at ? (
+          <p className="mt-2 text-[11px] text-[#8C7B6B] font-cloud-body">
+            Last generated{" "}
+            {new Date(project.pdf_generated_at).toLocaleString(undefined, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
+          </p>
+        ) : (
+          <p className="mt-2 text-[11px] italic text-[#999990] font-cloud-body">
+            No PDF generated yet.
+          </p>
+        )}
+        {project.pdf_url ? (
+          <a
+            href={project.pdf_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#4A3828] underline font-cloud-body"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Preview latest PDF
+          </a>
+        ) : null}
+        {(!project.is_public || !profileSlug) && (
+          <p className="mt-2 text-[11px] text-[#999990] font-cloud-body">
+            Requires a public project and published profile.
+          </p>
+        )}
       </div>
 
       {/* Description — stats SectionCard */}
