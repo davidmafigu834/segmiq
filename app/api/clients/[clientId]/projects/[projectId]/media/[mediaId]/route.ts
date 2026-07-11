@@ -56,6 +56,13 @@ export async function DELETE(_req: Request, { params }: { params: { clientId: st
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  await supabase
+    .from("projects")
+    .update({ cover_media_id: null, updated_at: new Date().toISOString() })
+    .eq("id", params.projectId)
+    .eq("client_id", params.clientId)
+    .eq("cover_media_id", params.mediaId);
+
   if (storageKey) {
     try { await deleteObject(storageKey); } catch { /* non-fatal */ }
   }

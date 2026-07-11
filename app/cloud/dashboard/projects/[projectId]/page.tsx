@@ -8,7 +8,7 @@ import {
   ArrowLeft, BarChart2, Camera, Check, ChevronLeft, ChevronRight, Copy,
   Download, MoreVertical, Pencil, Play, Trash2, Video, X,
   MapPin, Calendar, LayoutGrid, GitBranch, Plus, CheckCircle2,
-  XCircle, Paperclip, Trophy,
+  XCircle, Paperclip, Trophy, BookOpen, Quote, ListOrdered, SlidersHorizontal, Star,
 } from "lucide-react";
 import { generateVideoThumbnail, formatDuration } from "@/app/cloud/lib/video-thumbnail";
 import { MilestoneForm } from "@/app/cloud/components/MilestoneForm";
@@ -51,6 +51,9 @@ type Milestone = {
   project_media: MilestoneMedia[];
 };
 
+type TimelineStepDraft = { day_label: string; title: string; description: string };
+type SpecFieldDraft = { label: string; value: string };
+
 type Project = {
   id: string;
   title: string;
@@ -65,6 +68,13 @@ type Project = {
   duration_label?: string | null;
   budget_range?: string | null;
   show_budget?: boolean;
+  cover_media_id?: string | null;
+  story_brief?: string | null;
+  story_result?: string | null;
+  pull_quote?: string | null;
+  pull_quote_by?: string | null;
+  timeline_steps?: TimelineStepDraft[];
+  spec_fields?: SpecFieldDraft[];
   project_media: MediaItem[];
 };
 
@@ -132,6 +142,14 @@ export default function ProjectDetailPage() {
   const [budgetRange, setBudgetRange] = useState("");
   const [showBudget, setShowBudget] = useState(false);
 
+  const [storyBrief, setStoryBrief] = useState("");
+  const [storyResult, setStoryResult] = useState("");
+  const [pullQuote, setPullQuote] = useState("");
+  const [pullQuoteBy, setPullQuoteBy] = useState("");
+  const [timelineSteps, setTimelineSteps] = useState<TimelineStepDraft[]>([]);
+  const [specFields, setSpecFields] = useState<SpecFieldDraft[]>([]);
+  const [coverMediaId, setCoverMediaId] = useState<string | null>(null);
+
   function showToast(msg: string) {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(""), 2500);
@@ -151,6 +169,28 @@ export default function ProjectDetailPage() {
       setDurationLabel(found.duration_label ?? "");
       setBudgetRange(found.budget_range ?? "");
       setShowBudget(found.show_budget ?? false);
+      setStoryBrief(found.story_brief ?? "");
+      setStoryResult(found.story_result ?? "");
+      setPullQuote(found.pull_quote ?? "");
+      setPullQuoteBy(found.pull_quote_by ?? "");
+      setTimelineSteps(
+        Array.isArray(found.timeline_steps)
+          ? found.timeline_steps.map((s) => ({
+              day_label: s.day_label ?? "",
+              title: s.title ?? "",
+              description: s.description ?? "",
+            }))
+          : []
+      );
+      setSpecFields(
+        Array.isArray(found.spec_fields)
+          ? found.spec_fields.map((s) => ({
+              label: s.label ?? "",
+              value: s.value ?? "",
+            }))
+          : []
+      );
+      setCoverMediaId(found.cover_media_id ?? null);
       const sorted = [...(found.project_media ?? [])].sort((a, b) => a.display_order - b.display_order);
       setMedia(sorted);
     } finally {
@@ -183,6 +223,60 @@ export default function ProjectDetailPage() {
     });
     setProject((p) => p ? { ...p, title: titleDraft.trim() } : p);
     setEditingTitle(false);
+  }
+
+  async function saveMagazineFields() {
+    if (!project || !session?.clientId) return;
+    const cleanedTimeline = timelineSteps
+      .map((s) => ({
+        day_label: s.day_label.trim(),
+        title: s.title.trim(),
+        description: s.description.trim(),
+      }))
+      .filter((s) => s.day_label || s.title || s.description);
+    const cleanedSpecs = specFields
+      .map((s) => ({ label: s.label.trim(), value: s.value.trim() }))
+      .filter((s) => s.label || s.value);
+
+    await fetch(`/api/clients/${session.clientId}/projects/${project.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        story_brief: storyBrief.trim() || null,
+        story_result: storyResult.trim() || null,
+        pull_quote: pullQuote.trim() || null,
+        pull_quote_by: pullQuoteBy.trim() || null,
+        timeline_steps: cleanedTimeline,
+        spec_fields: cleanedSpecs,
+      }),
+    });
+    setProject((p) =>
+      p
+        ? {
+            ...p,
+            story_brief: storyBrief.trim() || null,
+            story_result: storyResult.trim() || null,
+            pull_quote: pullQuote.trim() || null,
+            pull_quote_by: pullQuoteBy.trim() || null,
+            timeline_steps: cleanedTimeline,
+            spec_fields: cleanedSpecs,
+          }
+        : p
+    );
+    showToast("Magazine content saved");
+  }
+
+  async function setCoverPhoto(mediaId: string) {
+    if (!project || !session?.clientId) return;
+    const nextId = coverMediaId === mediaId ? null : mediaId;
+    await fetch(`/api/clients/${session.clientId}/projects/${project.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cover_media_id: nextId }),
+    });
+    setCoverMediaId(nextId);
+    setProject((p) => (p ? { ...p, cover_media_id: nextId } : p));
+    showToast(nextId ? "Cover photo set" : "Cover photo cleared");
   }
 
   async function saveProjectInfo() {
@@ -747,6 +841,18 @@ export default function ProjectDetailPage() {
                               decoding="async"
                               className="h-full w-full object-cover"
                             />
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); void setCoverPhoto(m.id); }}
+                              className={`absolute left-1.5 top-1.5 flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold transition-opacity ${
+                                coverMediaId === m.id
+                                  ? "bg-[#D4FF4F] text-[#0a0a0a] opacity-100"
+                                  : "bg-white/85 text-[#666660] opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                              }`}
+                            >
+                              <Star className={`h-3 w-3 ${coverMediaId === m.id ? "fill-current" : ""}`} />
+                              {coverMediaId === m.id ? "Cover" : "Set cover"}
+                            </button>
                           </>
                         )}
                         <div className="pointer-events-none absolute inset-0 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -985,6 +1091,208 @@ export default function ProjectDetailPage() {
           ))}
         </div>
       )}
+
+      {/* Magazine story & specs */}
+      <div className="rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 mb-4">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-[#666660]" />
+            <h3 className="font-cloud-body text-[10px] font-bold tracking-[0.08em] text-[#666660] uppercase">
+              Magazine story
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => void saveMagazineFields()}
+            className="rounded-lg bg-[#1C1410] px-3 py-1.5 text-[11px] font-bold text-[#D4FF4F] font-cloud-body"
+          >
+            Save story
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-[11px] font-semibold text-[#4A3828] font-cloud-body">Brief</label>
+          <textarea
+            value={storyBrief}
+            onChange={(e) => setStoryBrief(e.target.value)}
+            rows={4}
+            placeholder="How the project started — context, goals, constraints…"
+            className="w-full resize-none rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="mb-1.5 block text-[11px] font-semibold text-[#4A3828] font-cloud-body">Result</label>
+          <textarea
+            value={storyResult}
+            onChange={(e) => setStoryResult(e.target.value)}
+            rows={4}
+            placeholder="Outcome, performance, client impact…"
+            className="w-full resize-none rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+          />
+        </div>
+
+        <div className="mb-1 flex items-center gap-2">
+          <Quote className="h-3.5 w-3.5 text-[#666660]" />
+          <p className="text-[11px] font-semibold text-[#4A3828] font-cloud-body">Pull quote</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <input
+            value={pullQuote}
+            onChange={(e) => setPullQuote(e.target.value)}
+            placeholder="Quote text"
+            className="h-10 rounded-xl border border-black/[0.1] bg-white/70 px-3 text-[13px] text-[#0a0a0a] outline-none font-cloud-body"
+          />
+          <input
+            value={pullQuoteBy}
+            onChange={(e) => setPullQuoteBy(e.target.value)}
+            placeholder="Quote author"
+            className="h-10 rounded-xl border border-black/[0.1] bg-white/70 px-3 text-[13px] text-[#0a0a0a] outline-none font-cloud-body"
+          />
+        </div>
+      </div>
+
+      <div className="rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 mb-4">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ListOrdered className="h-4 w-4 text-[#666660]" />
+            <h3 className="font-cloud-body text-[10px] font-bold tracking-[0.08em] text-[#666660] uppercase">
+              Timeline steps
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => setTimelineSteps((prev) => [...prev, { day_label: "", title: "", description: "" }])}
+            className="flex items-center gap-1 rounded-lg border border-black/[0.08] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#4A3828] font-cloud-body"
+          >
+            <Plus className="h-3 w-3" />
+            Add row
+          </button>
+        </div>
+        {timelineSteps.length === 0 ? (
+          <p className="text-[12px] italic text-[#999990] font-cloud-body">No timeline steps yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {timelineSteps.map((step, index) => (
+              <div key={index} className="rounded-xl border border-black/[0.08] bg-white/70 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[11px] font-bold text-[#8C7B6B] font-cloud-body">Step {index + 1}</p>
+                  <button
+                    type="button"
+                    onClick={() => setTimelineSteps((prev) => prev.filter((_, i) => i !== index))}
+                    className="text-[#999990] hover:text-red-500"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input
+                    value={step.day_label}
+                    onChange={(e) =>
+                      setTimelineSteps((prev) =>
+                        prev.map((row, i) => (i === index ? { ...row, day_label: e.target.value } : row))
+                      )
+                    }
+                    placeholder="Day label (e.g. Day 1)"
+                    className="h-9 rounded-lg border border-black/[0.08] px-3 text-[12px] outline-none font-cloud-body"
+                  />
+                  <input
+                    value={step.title}
+                    onChange={(e) =>
+                      setTimelineSteps((prev) =>
+                        prev.map((row, i) => (i === index ? { ...row, title: e.target.value } : row))
+                      )
+                    }
+                    placeholder="Title"
+                    className="h-9 rounded-lg border border-black/[0.08] px-3 text-[12px] outline-none font-cloud-body"
+                  />
+                </div>
+                <textarea
+                  value={step.description}
+                  onChange={(e) =>
+                    setTimelineSteps((prev) =>
+                      prev.map((row, i) => (i === index ? { ...row, description: e.target.value } : row))
+                    )
+                  }
+                  rows={2}
+                  placeholder="Description"
+                  className="mt-2 w-full resize-none rounded-lg border border-black/[0.08] px-3 py-2 text-[12px] outline-none font-cloud-body"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => void saveMagazineFields()}
+          className="mt-4 rounded-lg bg-[#1C1410] px-3 py-1.5 text-[11px] font-bold text-[#D4FF4F] font-cloud-body"
+        >
+          Save timeline
+        </button>
+      </div>
+
+      <div className="rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 mb-4">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-[#666660]" />
+            <h3 className="font-cloud-body text-[10px] font-bold tracking-[0.08em] text-[#666660] uppercase">
+              Spec fields
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSpecFields((prev) => [...prev, { label: "", value: "" }])}
+            className="flex items-center gap-1 rounded-lg border border-black/[0.08] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#4A3828] font-cloud-body"
+          >
+            <Plus className="h-3 w-3" />
+            Add row
+          </button>
+        </div>
+        {specFields.length === 0 ? (
+          <p className="text-[12px] italic text-[#999990] font-cloud-body">No spec fields yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {specFields.map((field, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <input
+                  value={field.label}
+                  onChange={(e) =>
+                    setSpecFields((prev) =>
+                      prev.map((row, i) => (i === index ? { ...row, label: e.target.value } : row))
+                    )
+                  }
+                  placeholder="Label"
+                  className="h-9 flex-1 rounded-lg border border-black/[0.08] bg-white/70 px-3 text-[12px] outline-none font-cloud-body"
+                />
+                <input
+                  value={field.value}
+                  onChange={(e) =>
+                    setSpecFields((prev) =>
+                      prev.map((row, i) => (i === index ? { ...row, value: e.target.value } : row))
+                    )
+                  }
+                  placeholder="Value"
+                  className="h-9 flex-1 rounded-lg border border-black/[0.08] bg-white/70 px-3 text-[12px] outline-none font-cloud-body"
+                />
+                <button
+                  type="button"
+                  onClick={() => setSpecFields((prev) => prev.filter((_, i) => i !== index))}
+                  className="rounded-lg p-2 text-[#999990] hover:text-red-500"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => void saveMagazineFields()}
+          className="mt-4 rounded-lg bg-[#1C1410] px-3 py-1.5 text-[11px] font-bold text-[#D4FF4F] font-cloud-body"
+        >
+          Save specs
+        </button>
+      </div>
 
       {/* Description — stats SectionCard */}
       <div className="rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 mb-4">

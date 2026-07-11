@@ -476,9 +476,7 @@ export default async function ProfilePage({
                 return (
                   <Link
                     key={project.id}
-                    href={`/cloud/share/${project.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`/p/${params.slug}/projects/${project.id}`}
                     className={`group relative overflow-hidden rounded-[16px] border border-[rgba(28,20,16,0.06)] bg-gradient-to-br from-[#e9e3d8] to-[#d9d0c1] transition-transform duration-200 hover:-translate-y-[3px] ${
                       isFeatured
                         ? "col-span-2 aspect-[16/10] min-[821px]:col-span-2 min-[821px]:row-span-2 min-[821px]:aspect-auto min-[821px]:min-h-[320px]"
