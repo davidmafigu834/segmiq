@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildProjectPdfFilename,
   generateProjectPdfKey,
+  isProjectPdfCacheFresh,
   normalizeAppDomainUrl,
 } from "@/lib/cloud/project-magazine";
 import { renderProjectPdf } from "@/lib/cloud/render-project-pdf";
@@ -18,19 +19,9 @@ function pdfAttachmentResponse(buffer: Buffer, filename: string): NextResponse {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control": "public, max-age=86400, immutable",
     },
   });
-}
-
-async function fetchCachedPdfBuffer(pdfUrl: string): Promise<Buffer | null> {
-  try {
-    const res = await fetch(pdfUrl);
-    if (!res.ok) return null;
-    return Buffer.from(await res.arrayBuffer());
-  } catch {
-    return null;
-  }
 }
 
 export async function GET(
@@ -71,18 +62,17 @@ export async function GET(
 
   const filename = buildProjectPdfFilename((project.title as string) || "case-study");
   const pdfUrl = (project.pdf_url as string | null) ?? null;
-  const pdfGeneratedAt = project.pdf_generated_at as string | null;
   const updatedAt = project.updated_at as string;
-  const isFresh =
-    pdfUrl &&
-    pdfGeneratedAt &&
-    new Date(pdfGeneratedAt).getTime() >= new Date(updatedAt).getTime();
 
-  if (isFresh && pdfUrl) {
-    const cached = await fetchCachedPdfBuffer(pdfUrl);
-    if (cached) {
-      return pdfAttachmentResponse(cached, filename);
-    }
+  if (
+    isProjectPdfCacheFresh({
+      pdf_url: pdfUrl,
+      pdf_generated_at: (project.pdf_generated_at as string | null) ?? null,
+      updated_at: updatedAt,
+    }) &&
+    pdfUrl
+  ) {
+    return NextResponse.redirect(pdfUrl, { status: 302 });
   }
 
   const baseUrl = normalizeAppDomainUrl();
@@ -91,7 +81,10 @@ export async function GET(
   try {
     const pdfBuffer = await renderProjectPdf(printUrl);
     const key = generateProjectPdfKey(clientId, params.projectId);
-    await putObject(key, pdfBuffer, "application/pdf");
+    await putObject(key, pdfBuffer, "application/pdf", {
+      contentDisposition: `attachment; filename="${filename}"`,
+      cacheControl: "public, max-age=31536000, immutable",
+    });
     const publicPdfUrl = getPublicUrl(key);
     const now = new Date().toISOString();
 

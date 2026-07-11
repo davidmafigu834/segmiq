@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 
 type ProjectPdfDownloadButtonProps = {
   pdfDownloadUrl: string;
+  pdfDirectUrl: string | null;
   fileName: string;
   className?: string;
 };
@@ -16,6 +17,7 @@ function isIosDevice(): boolean {
 
 export function ProjectPdfDownloadButton({
   pdfDownloadUrl,
+  pdfDirectUrl,
   fileName,
   className,
 }: ProjectPdfDownloadButtonProps) {
@@ -26,19 +28,23 @@ export function ProjectPdfDownloadButton({
     setLoading(true);
 
     try {
-      const res = await fetch(pdfDownloadUrl);
-      if (!res.ok) throw new Error("PDF download failed");
-
-      // iOS Web Share opens a sheet where Print is prominent — skip it.
-      // After the PDF is generated/cached, navigate directly so Safari handles
-      // the attachment response (Save to Files via the viewer share button).
-      if (isIosDevice()) {
-        window.location.assign(pdfDownloadUrl);
+      if (pdfDirectUrl) {
+        window.location.assign(pdfDirectUrl);
         return;
       }
 
+      const res = await fetch(pdfDownloadUrl);
+      if (!res.ok) throw new Error("PDF download failed");
+
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
+
+      if (isIosDevice()) {
+        window.location.assign(objectUrl);
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+        return;
+      }
+
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
       anchor.download = fileName;
@@ -49,7 +55,7 @@ export function ProjectPdfDownloadButton({
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
-      window.location.assign(pdfDownloadUrl);
+      window.location.assign(pdfDirectUrl ?? pdfDownloadUrl);
     } finally {
       setLoading(false);
     }

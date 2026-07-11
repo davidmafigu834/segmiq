@@ -122,6 +122,7 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
             </Link>
             <ProjectPdfDownloadButton
               pdfDownloadUrl={data.pdfDownloadUrl}
+              pdfDirectUrl={data.pdfDirectUrl}
               fileName={buildProjectPdfFilename(data.project.title)}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20 disabled:opacity-70"
             />

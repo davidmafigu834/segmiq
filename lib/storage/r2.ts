@@ -75,8 +75,22 @@ export async function getObject(key: string): Promise<Buffer> {
   return Buffer.from(await res.Body!.transformToByteArray());
 }
 
-export async function putObject(key: string, body: Buffer, contentType: string): Promise<void> {
+export async function putObject(
+  key: string,
+  body: Buffer,
+  contentType: string,
+  options?: { contentDisposition?: string; cacheControl?: string }
+): Promise<void> {
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
   if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");
-  await getR2Client().send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }));
+  await getR2Client().send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      ContentDisposition: options?.contentDisposition,
+      CacheControl: options?.cacheControl,
+    })
+  );
 }

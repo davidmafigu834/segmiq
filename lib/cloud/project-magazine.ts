@@ -67,6 +67,7 @@ export type ProjectMagazineData = {
   } | null;
   livePageUrl: string;
   pdfDownloadUrl: string;
+  pdfDirectUrl: string | null;
 };
 
 export const HERO_SCRIM =
@@ -290,7 +291,29 @@ export async function fetchProjectMagazineData(
     testimonial,
     livePageUrl,
     pdfDownloadUrl: `/api/cloud/projects/${projectId}/pdf?slug=${encodeURIComponent(slug)}`,
+    pdfDirectUrl: isProjectPdfCacheFresh({
+      pdf_url: (project.pdf_url as string | null) ?? null,
+      pdf_generated_at: (project.pdf_generated_at as string | null) ?? null,
+      updated_at: project.updated_at as string,
+    })
+      ? ((project.pdf_url as string | null) ?? null)
+      : null,
   };
+}
+
+export function isProjectPdfCacheFresh(project: {
+  pdf_url: string | null;
+  pdf_generated_at: string | null;
+  updated_at: string;
+}): boolean {
+  const pdfUrl = project.pdf_url;
+  const pdfGeneratedAt = project.pdf_generated_at;
+  if (!pdfUrl || !pdfGeneratedAt) return false;
+  return new Date(pdfGeneratedAt).getTime() >= new Date(project.updated_at).getTime();
+}
+
+export function printImageUrl(url: string): string {
+  return url;
 }
 
 export function buildProjectPdfFilename(title: string): string {

@@ -1,11 +1,14 @@
 import QRCode from "qrcode";
 import {
+  buildProjectPdfFilename,
   buildSpecMetaLine,
   formatCompletionDate,
   galleryPhotos,
   getInitials,
+  getSpecIcon,
   hasAbsoluteLogo,
   HERO_SCRIM,
+  printImageUrl,
   type ProjectMagazineData,
 } from "@/lib/cloud/project-magazine";
 
@@ -92,7 +95,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         <div className={`print-cover ${coverUrl ? "" : "print-cover-fallback"}`}>
           {coverUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={coverUrl} alt="" className="print-cover-img" />
+            <img src={printImageUrl(coverUrl)} alt="" className="print-cover-img" crossOrigin="anonymous" />
           )}
           {coverUrl && (
             <div className="print-cover-scrim" style={{ background: HERO_SCRIM }} />
@@ -100,7 +103,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           <div className="print-cover-content">
             {showLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={client.logo_url!} alt="" className="print-logo-chip" />
+              <img src={client.logo_url!} alt="" className="print-logo-chip" crossOrigin="anonymous" />
             ) : (
               <div className="print-logo-chip print-logo-fallback">
                 {getInitials(clientName).slice(0, 1)}
@@ -170,7 +173,11 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                     }
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photo.public_url} alt={photo.caption ?? project.title} />
+                    <img
+                      src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
+                      alt={photo.caption ?? project.title}
+                      crossOrigin="anonymous"
+                    />
                   </div>
                 ))}
               </div>
