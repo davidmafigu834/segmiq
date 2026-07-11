@@ -31,11 +31,15 @@ export const MAGAZINE_PROJECT_COLUMNS = [
   "pdf_generated_at",
 ] as const;
 
+/** Embed gallery media via project_id (not cover_media_id). */
+export const PROJECT_MEDIA_EMBED =
+  "project_media!project_media_project_id_fkey(id, public_url, display_order, caption, storage_key, milestone_id, type, thumbnail_url)";
+
 export function projectListSelect(includeMagazine: boolean): string {
   const cols = includeMagazine
     ? [...BASE_PROJECT_COLUMNS, ...MAGAZINE_PROJECT_COLUMNS].join(", ")
     : BASE_PROJECT_COLUMNS.join(", ");
-  return `${cols}, project_media(id, public_url, display_order, caption, storage_key, milestone_id, type, thumbnail_url), project_milestones(id, is_completed)`;
+  return `${cols}, ${PROJECT_MEDIA_EMBED}, project_milestones(id, is_completed)`;
 }
 
 export function projectRowSelect(includeMagazine: boolean): string {

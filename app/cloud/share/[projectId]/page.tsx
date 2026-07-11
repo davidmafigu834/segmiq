@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: { projectId: string
   const supabase = createAdminClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("title, description, project_media(public_url, display_order)")
+    .select("title, description, project_media!project_media_project_id_fkey(public_url, display_order)")
     .or(`id.eq.${params.projectId},slug.eq.${params.projectId}`)
     .maybeSingle();
   if (!project) return { title: "Project | Segmiq Cloud" };

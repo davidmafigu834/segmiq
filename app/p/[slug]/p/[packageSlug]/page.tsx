@@ -144,7 +144,7 @@ export default async function PublicPackagePage({
   const [{ data: projects }, { data: testimonials }] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, title, project_media(public_url, display_order)")
+      .select("id, title, project_media!project_media_project_id_fkey(public_url, display_order)")
       .eq("client_id", clientId)
       .eq("is_featured", true)
       .eq("is_public", true)

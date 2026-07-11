@@ -211,7 +211,7 @@ export default async function ProfilePage({
   ] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, slug, title, category, location, completion_date, description, project_media(public_url, display_order)")
+      .select("id, slug, title, category, location, completion_date, description, project_media!project_media_project_id_fkey(public_url, display_order)")
       .eq("client_id", clientId)
       .eq("is_featured", true)
       .eq("is_public", true)

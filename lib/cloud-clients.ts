@@ -28,13 +28,13 @@ export async function fetchCloudClientsForAdmin(): Promise<{
       id, name, plan, billing_period, payment_status, next_payment_date, payment_notes,
       created_at, is_active, signup_source,
       ${usersEmbed},
-      projects (id, project_media (file_size_bytes))
+      projects (id, project_media!project_media_project_id_fkey (file_size_bytes))
     `,
     `
       id, name, plan, billing_period, payment_status, next_payment_date, payment_notes,
       created_at, is_active,
       ${usersEmbed},
-      projects (id, project_media (file_size_bytes))
+      projects (id, project_media!project_media_project_id_fkey (file_size_bytes))
     `,
     `
       id, name, plan, created_at, is_active,
