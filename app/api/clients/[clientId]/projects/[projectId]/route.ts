@@ -25,7 +25,7 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   }
 
   const supabase = createAdminClient();
-  let { data, error } = await supabase
+  let { error } = await supabase
     .from("projects")
     .update(patch)
     .eq("id", params.projectId)
@@ -55,7 +55,6 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
       );
     }
     error = null;
-    data = retry.data;
   }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
