@@ -272,7 +272,7 @@ export async function fetchProjectMagazineData(
   } else if (withCapability.error || !withCapability.data) {
     notFound();
   } else {
-    clientRow = withCapability.data as Record<string, unknown>;
+    clientRow = withCapability.data as unknown as Record<string, unknown>;
     capability = parseClientCapabilityProfile(clientRow);
   }
 
@@ -297,7 +297,7 @@ export async function fetchProjectMagazineData(
     .eq("is_public", true)
     .maybeSingle();
 
-  let project = fullProjectResult.data as Record<string, unknown> | null;
+  let project = fullProjectResult.data as unknown as Record<string, unknown> | null;
   let includeCapabilitySection = false;
 
   if (fullProjectResult.error && isMissingMagazineColumnError(fullProjectResult.error.message)) {
@@ -308,7 +308,7 @@ export async function fetchProjectMagazineData(
       .eq("client_id", clientId)
       .eq("is_public", true)
       .maybeSingle();
-    project = basicProjectResult.data as Record<string, unknown> | null;
+    project = basicProjectResult.data as unknown as Record<string, unknown> | null;
   } else if (fullProjectResult.error) {
     notFound();
   } else if (project) {
