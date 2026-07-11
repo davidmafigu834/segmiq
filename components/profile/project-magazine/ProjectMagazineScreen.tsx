@@ -12,6 +12,7 @@ import {
   getSpecIcon,
   hasAbsoluteLogo,
   HERO_SCRIM,
+  resolveTimelineStepPhotos,
   type ProjectMagazineData,
 } from "@/lib/cloud/project-magazine";
 import { ProjectPdfDownloadButton } from "@/components/profile/project-magazine/ProjectPdfDownloadButton";
@@ -265,7 +266,9 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
               How it unfolded
             </h2>
             <ol className="relative mt-10 space-y-0">
-              {timelineSteps.map((step, index) => (
+              {timelineSteps.map((step, index) => {
+                const stepPhotos = resolveTimelineStepPhotos(step, data.media);
+                return (
                 <li key={`${step.day_label}-${index}`} className="relative flex gap-5 pb-10 last:pb-0">
                   {index < timelineSteps.length - 1 && (
                     <span
@@ -295,9 +298,28 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
                         {step.description}
                       </p>
                     )}
+                    {stepPhotos.length > 0 && (
+                      <div className="mt-4 grid grid-cols-2 gap-2 min-[521px]:grid-cols-3">
+                        {stepPhotos.map((photo) => (
+                          <div
+                            key={photo.id}
+                            className="aspect-[4/3] overflow-hidden rounded-xl border border-[rgba(28,20,16,0.08)] bg-[rgba(28,20,16,0.04)]"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo.thumbnail_url ?? photo.public_url}
+                              alt={photo.caption ?? step.title ?? step.day_label}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ol>
           </section>
         )}

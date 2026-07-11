@@ -7,6 +7,7 @@ export type TimelineStep = {
   day_label: string;
   title: string;
   description: string;
+  media_ids: string[];
 };
 
 export type SpecField = {
@@ -100,8 +101,11 @@ function parseTimelineSteps(raw: unknown): TimelineStep[] {
       const day_label = typeof row.day_label === "string" ? row.day_label.trim() : "";
       const title = typeof row.title === "string" ? row.title.trim() : "";
       const description = typeof row.description === "string" ? row.description.trim() : "";
-      if (!day_label && !title && !description) return null;
-      return { day_label, title, description };
+      const media_ids = Array.isArray(row.media_ids)
+        ? row.media_ids.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+        : [];
+      if (!day_label && !title && !description && media_ids.length === 0) return null;
+      return { day_label, title, description, media_ids };
     })
     .filter((row): row is TimelineStep => row !== null);
 }
@@ -181,6 +185,16 @@ export function galleryPhotos(media: ProjectMediaRow[]): ProjectMediaRow[] {
   return [...media]
     .filter((m) => m.type !== "video" && m.type !== "video_url")
     .sort((a, b) => a.display_order - b.display_order);
+}
+
+export function resolveTimelineStepPhotos(
+  step: TimelineStep,
+  media: ProjectMediaRow[]
+): ProjectMediaRow[] {
+  const ids = step.media_ids ?? [];
+  if (ids.length === 0) return [];
+  const photoMap = new Map(galleryPhotos(media).map((m) => [m.id, m]));
+  return ids.map((id) => photoMap.get(id)).filter((m): m is ProjectMediaRow => Boolean(m));
 }
 
 /** Resolve a published profile slug for a public project (by id or legacy slug). */

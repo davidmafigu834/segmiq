@@ -7,6 +7,7 @@ import {
   hasAbsoluteLogo,
   HERO_SCRIM,
   printImageUrl,
+  resolveTimelineStepPhotos,
   type ProjectMagazineData,
 } from "@/lib/cloud/project-magazine";
 
@@ -210,7 +211,9 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
             <div className="print-timeline-block">
               <h2 className="print-section-title">Timeline</h2>
               <ol className="print-timeline">
-                {project.timeline_steps.map((step, stepIndex) => (
+                {project.timeline_steps.map((step, stepIndex) => {
+                  const stepPhotos = resolveTimelineStepPhotos(step, data.media);
+                  return (
                   <li key={`${step.day_label}-${stepIndex}`} className="print-timeline-step">
                     <span
                       className="print-timeline-dot"
@@ -226,9 +229,25 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                       {step.description && (
                         <p className="print-timeline-desc">{step.description}</p>
                       )}
+                      {stepPhotos.length > 0 && (
+                        <div className="print-timeline-photos">
+                          {stepPhotos.map((photo) => (
+                            <div key={photo.id} className="print-timeline-photo">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
+                                alt={photo.caption ?? step.title ?? step.day_label}
+                                className="print-timeline-img"
+                                loading="lazy"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ol>
             </div>
           )}
@@ -587,6 +606,26 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           font-size: 13px;
           line-height: 1.55;
           font-family: system-ui, sans-serif;
+        }
+        .print-timeline-photos {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 8px;
+        }
+        .print-timeline-photo {
+          width: 118px;
+          height: 78px;
+          border-radius: 6px;
+          overflow: hidden;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .print-timeline-photo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
         }
         .print-testimonial {
           padding-top: 16px;

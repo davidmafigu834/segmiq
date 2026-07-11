@@ -52,7 +52,7 @@ type Milestone = {
   project_media: MilestoneMedia[];
 };
 
-type TimelineStepDraft = { day_label: string; title: string; description: string };
+type TimelineStepDraft = { day_label: string; title: string; description: string; media_ids: string[] };
 type SpecFieldDraft = { label: string; value: string };
 
 type Project = {
@@ -184,6 +184,9 @@ export default function ProjectDetailPage() {
               day_label: s.day_label ?? "",
               title: s.title ?? "",
               description: s.description ?? "",
+              media_ids: Array.isArray(s.media_ids)
+                ? s.media_ids.filter((id): id is string => typeof id === "string" && id.length > 0)
+                : [],
             }))
           : []
       );
@@ -240,6 +243,21 @@ export default function ProjectDetailPage() {
     setEditingTitle(false);
   }
 
+  function toggleTimelineStepPhoto(stepIndex: number, mediaId: string) {
+    setTimelineSteps((prev) =>
+      prev.map((row, i) => {
+        if (i !== stepIndex) return row;
+        const current = row.media_ids ?? [];
+        const next = current.includes(mediaId)
+          ? current.filter((id) => id !== mediaId)
+          : [...current, mediaId];
+        return { ...row, media_ids: next };
+      })
+    );
+  }
+
+  const galleryPhotoItems = media.filter((m) => m.type !== "video" && m.type !== "video_url");
+
   async function saveMagazineFields() {
     if (!project || !session?.clientId) return;
     const cleanedTimeline = timelineSteps
@@ -247,8 +265,9 @@ export default function ProjectDetailPage() {
         day_label: s.day_label.trim(),
         title: s.title.trim(),
         description: s.description.trim(),
+        media_ids: (s.media_ids ?? []).filter(Boolean),
       }))
-      .filter((s) => s.day_label || s.title || s.description);
+      .filter((s) => s.day_label || s.title || s.description || s.media_ids.length > 0);
     const cleanedSpecs = specFields
       .map((s) => ({ label: s.label.trim(), value: s.value.trim() }))
       .filter((s) => s.label || s.value);
@@ -1220,7 +1239,7 @@ export default function ProjectDetailPage() {
           </div>
           <button
             type="button"
-            onClick={() => setTimelineSteps((prev) => [...prev, { day_label: "", title: "", description: "" }])}
+            onClick={() => setTimelineSteps((prev) => [...prev, { day_label: "", title: "", description: "", media_ids: [] }])}
             className="flex items-center gap-1 rounded-lg border border-black/[0.08] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#4A3828] font-cloud-body"
           >
             <Plus className="h-3 w-3" />
@@ -1276,6 +1295,53 @@ export default function ProjectDetailPage() {
                   placeholder="Description"
                   className="mt-2 w-full resize-none rounded-lg border border-black/[0.08] bg-white/70 px-3 py-2 text-[12px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none font-cloud-body"
                 />
+                <div className="mt-3">
+                  <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6B7280] font-cloud-body">
+                    Photos for this step
+                  </p>
+                  {galleryPhotoItems.length === 0 ? (
+                    <p className="text-[11px] italic text-[#6B7280] font-cloud-body">
+                      Upload photos to the gallery first, then attach them here.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {galleryPhotoItems.map((photo) => {
+                        const selected = step.media_ids?.includes(photo.id) ?? false;
+                        return (
+                          <button
+                            key={photo.id}
+                            type="button"
+                            onClick={() => toggleTimelineStepPhoto(index, photo.id)}
+                            className={`relative h-14 w-14 overflow-hidden rounded-lg border-2 transition-colors ${
+                              selected
+                                ? "border-[#D4FF4F] ring-2 ring-[#D4FF4F]/35"
+                                : "border-black/[0.08] hover:border-black/[0.18]"
+                            }`}
+                            aria-label={selected ? "Remove photo from step" : "Add photo to step"}
+                            aria-pressed={selected}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo.thumbnail_url ?? photo.public_url}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                            {selected && (
+                              <span className="absolute inset-0 flex items-center justify-center bg-black/35">
+                                <Check className="h-4 w-4 text-white" strokeWidth={2.5} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {(step.media_ids?.length ?? 0) > 0 && (
+                    <p className="mt-2 text-[11px] text-[#6B7280] font-cloud-body">
+                      {step.media_ids!.length} photo{step.media_ids!.length === 1 ? "" : "s"} selected
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
