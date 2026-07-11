@@ -268,7 +268,7 @@ export async function fetchProjectMagazineData(
   if (withCapability.error && isMissingCapabilityColumnError(withCapability.error.message)) {
     const basic = await supabase.from("clients").select(baseClientSelect).eq("id", clientId).single();
     if (basic.error || !basic.data) notFound();
-    clientRow = basic.data as Record<string, unknown>;
+    clientRow = basic.data as unknown as Record<string, unknown>;
   } else if (withCapability.error || !withCapability.data) {
     notFound();
   } else {
