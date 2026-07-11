@@ -46,7 +46,7 @@ async function waitForImages(page: Page): Promise<void> {
   );
 }
 
-async function compressPrintImages(page: puppeteer.Page): Promise<void> {
+async function compressPrintImages(page: Page): Promise<void> {
   await page.evaluate(
     async (maxWidth, quality) => {
       async function recompress(img: HTMLImageElement) {
