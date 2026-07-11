@@ -262,8 +262,8 @@ export default function CloudUploadPage() {
           /* ── State A: no project selected ── */
           <>
             <p className="font-cloud-display text-[22px] text-[#0a0a0a] mb-1">Upload photos</p>
-            <p className="text-[13px] text-[#999990] font-cloud-body mb-1">Choose a project to add photos to.</p>
-            <p className="text-[12px] text-[#B4A898] font-cloud-body mb-5">
+            <p className="text-[13px] text-[#6B7280] font-cloud-body mb-1">Choose a project to add photos to.</p>
+            <p className="text-[12px] text-[#6B7280] font-cloud-body mb-5">
               Uploading from desktop?{" "}
               <a href="/cloud/dashboard/upload/desktop" className="font-semibold text-[#666660] underline underline-offset-2">
                 Use bulk upload →
@@ -310,9 +310,9 @@ export default function CloudUploadPage() {
                 className="flex w-full items-center gap-3 rounded-[20px] border-2 border-dashed border-[#D8D8D0] bg-[#EEEEE8] px-4 py-3.5 text-left transition-colors hover:border-[#C0C0B8] active:scale-[0.99]"
               >
                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-white">
-                  <Plus className="h-4 w-4 text-[#999990]" />
+                  <Plus className="h-4 w-4 text-[#6B7280]" />
                 </div>
-                <span className="text-[14px] text-[#999990] font-cloud-body">Create new project</span>
+                <span className="text-[14px] text-[#6B7280] font-cloud-body">Create new project</span>
               </button>
             ) : (
               <div className="rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 space-y-3">
@@ -323,7 +323,7 @@ export default function CloudUploadPage() {
                   onChange={(e) => setNewTitle(e.target.value)}
                   autoFocus
                   placeholder="Project name"
-                  className="w-full rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+                  className="w-full rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
                 />
                 <select
                   value={newCategory}
@@ -338,7 +338,7 @@ export default function CloudUploadPage() {
                   value={newLocation}
                   onChange={(e) => setNewLocation(e.target.value)}
                   placeholder="Location (optional)"
-                  className="w-full rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+                  className="w-full rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
                 />
                 <button
                   onClick={() => void handleCreateProject()}
@@ -353,7 +353,7 @@ export default function CloudUploadPage() {
                 )}
                 <button
                   onClick={() => setShowNewSheet(false)}
-                  className="w-full text-[12px] text-[#999990] font-cloud-body py-1"
+                  className="w-full text-[12px] text-[#6B7280] font-cloud-body py-1"
                 >
                   Cancel
                 </button>
@@ -366,7 +366,7 @@ export default function CloudUploadPage() {
             {/* Selected project header */}
             <button
               onClick={() => setSelectedProject(null)}
-              className="mb-5 flex items-center gap-1.5 text-[12px] text-[#999990] hover:text-[#0a0a0a] transition-colors font-cloud-body"
+              className="mb-5 flex items-center gap-1.5 text-[12px] text-[#6B7280] hover:text-[#0a0a0a] transition-colors font-cloud-body"
             >
               ← Back to projects
             </button>
@@ -405,7 +405,7 @@ export default function CloudUploadPage() {
           <div className="flex flex-col">
             <button
               onClick={() => { setSelectedProject(null); setQueue([]); }}
-              className="mb-5 flex items-center gap-1.5 text-[12px] text-[#999990] hover:text-[#0a0a0a] transition-colors font-cloud-body"
+              className="mb-5 flex items-center gap-1.5 text-[12px] text-[#6B7280] hover:text-[#0a0a0a] transition-colors font-cloud-body"
             >
               ← Back
             </button>

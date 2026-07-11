@@ -211,7 +211,7 @@ export function MediaAttachPicker({ allMedia, currentMilestoneId, onAttach, onCl
 
           {available.length === 0 && (
             <div style={{ textAlign: "center", padding: "40px 20px" }}>
-              <ImageOff size={36} color="#B4A898" style={{ display: "block", margin: "0 auto 12px" }} />
+              <ImageOff size={36} color="#6B7280" style={{ display: "block", margin: "0 auto 12px" }} />
               <p style={{
                 fontFamily: "var(--fw-font-body), system-ui, sans-serif",
                 fontSize: 13, color: "#8C7B6B", margin: 0,

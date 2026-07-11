@@ -446,7 +446,7 @@ export default function DesktopUploadPage() {
               transition: "all 0.15s ease",
             }}
           >
-            <UploadCloud style={{ width: 48, height: 48, color: isDragging ? "#1C1410" : "#B4A898", strokeWidth: 1.5 }} />
+            <UploadCloud style={{ width: 48, height: 48, color: isDragging ? "#1C1410" : "#6B7280", strokeWidth: 1.5 }} />
             <p style={{ fontFamily: "var(--fw-font-display), Georgia, serif", fontSize: 22, color: "#1C1410", margin: 0 }}>
               {files.length > 0
                 ? `${files.length} file${files.length !== 1 ? "s" : ""} selected — drop more or click to add`
@@ -455,7 +455,7 @@ export default function DesktopUploadPage() {
             <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 14, color: "#8C7B6B", margin: 0 }}>
               Or click to select files · JPG, PNG, WEBP, HEIC supported
             </p>
-            <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 12, color: "#B4A898", margin: 0 }}>
+            <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 12, color: "#6B7280", margin: 0 }}>
               Upload hundreds of photos at once · Max 20 MB per photo
             </p>
           </div>
@@ -489,7 +489,7 @@ export default function DesktopUploadPage() {
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                   width: "100%", height: 52, borderRadius: 14,
                   background: selectedProject ? "#1C1410" : "#E0DDD8",
-                  color: selectedProject ? "#D4FF4F" : "#B4A898",
+                  color: selectedProject ? "#D4FF4F" : "#6B7280",
                   fontSize: 15, fontWeight: 700, border: "none",
                   cursor: selectedProject ? "pointer" : "not-allowed",
                   marginBottom: 16, fontFamily: "var(--fw-font-body), system-ui, sans-serif",
@@ -543,7 +543,7 @@ export default function DesktopUploadPage() {
                       </td>
                       <td style={{ padding: "8px 16px" }}>
                         {f.status === "pending" && (
-                          <span style={{ color: "#B4A898", fontSize: 12 }}>Waiting</span>
+                          <span style={{ color: "#6B7280", fontSize: 12 }}>Waiting</span>
                         )}
                         {f.status === "uploading" && (
                           <div>

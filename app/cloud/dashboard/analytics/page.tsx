@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
                 return (
                   <div key={p.id} onClick={() => router.push(`/cloud/dashboard/projects/${p.id}`)}
                        style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: i < 4 ? 12 : 0, cursor: "pointer" }}>
-                    <span style={{ fontFamily: S, fontSize: 18, color: "#B4A898", width: 20, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ fontFamily: S, fontSize: 18, color: "#6B7280", width: 20, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: "#1C1410", fontFamily: F, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</span>

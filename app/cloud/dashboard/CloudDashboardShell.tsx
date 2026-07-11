@@ -159,7 +159,7 @@ export default function CloudDashboardShell({
   const initials = getInitials(session?.user?.name ?? "");
 
   return (
-    <div className="flex min-h-screen bg-[#F7F7F8] font-cloud-body">
+    <div className="cloud-dashboard flex min-h-screen bg-[#F7F7F8] font-cloud-body text-[#111111]">
       <aside className="fixed inset-y-0 left-0 hidden w-[240px] flex-col border-r border-black/[0.07] bg-white lg:flex" style={{ boxShadow: "1px 0 0 rgba(0,0,0,0.04)" }}>
         <div className="flex h-[60px] shrink-0 items-center gap-2.5 border-b border-black/[0.06] px-5">
           <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#D4FF4F]">
@@ -193,7 +193,7 @@ export default function CloudDashboardShell({
               className={`flex h-9 items-center gap-2.5 rounded-xl px-3 mb-0.5 text-[13px] transition-colors ${
                 isActive(href, pathname)
                   ? "bg-[#F5F5F0] text-[#0a0a0a] font-medium"
-                  : "text-[#999990] hover:text-[#0a0a0a] hover:bg-[#F5F5F0]"
+                  : "text-[#6B7280] hover:text-[#0a0a0a] hover:bg-[#F5F5F0]"
               }`}
             >
               <div className="relative shrink-0">
@@ -214,12 +214,12 @@ export default function CloudDashboardShell({
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13px] font-medium text-[#0a0a0a]">{session?.user?.name ?? "—"}</p>
-              <p className="text-[11px] text-[#999990] uppercase tracking-wide">{session?.role === "CLIENT_MANAGER" ? "Manager" : session?.role}</p>
+              <p className="text-[11px] text-[#6B7280] uppercase tracking-wide">{session?.role === "CLIENT_MANAGER" ? "Manager" : session?.role}</p>
             </div>
           </div>
           <button
             onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
-            className="flex w-full items-center gap-2 mt-1 px-3 py-2 text-[13px] text-[#999990] hover:text-[#0a0a0a] rounded-xl hover:bg-[#F5F5F0] transition-colors cursor-pointer"
+            className="flex w-full items-center gap-2 mt-1 px-3 py-2 text-[13px] text-[#6B7280] hover:text-[#0a0a0a] rounded-xl hover:bg-[#F5F5F0] transition-colors cursor-pointer"
           >
             <LogOut className="h-3.5 w-3.5" />
             Sign out
@@ -343,7 +343,7 @@ export default function CloudDashboardShell({
                   <div className="relative flex items-center justify-center h-[22px] w-[22px]">
                     <Icon
                       className="h-[22px] w-[22px]"
-                      style={{ color: active ? "#1C1410" : "#B4A898" }}
+                      style={{ color: active ? "#1C1410" : "#6B7280" }}
                       strokeWidth={active ? 2.2 : 1.8}
                     />
                     {href === "/cloud/dashboard/notifications" && unreadCount > 0 && (
@@ -351,7 +351,7 @@ export default function CloudDashboardShell({
                     )}
                   </div>
                   {label && (
-                    <span style={{ fontSize: 9, fontWeight: active ? 700 : 500, color: active ? "#1C1410" : "#B4A898", fontFamily: "var(--fw-font-body), system-ui, sans-serif" }}>
+                    <span style={{ fontSize: 9, fontWeight: active ? 700 : 500, color: active ? "#1C1410" : "#6B7280", fontFamily: "var(--fw-font-body), system-ui, sans-serif" }}>
                       {label}
                     </span>
                   )}

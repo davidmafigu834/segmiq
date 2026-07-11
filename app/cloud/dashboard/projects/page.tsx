@@ -141,13 +141,13 @@ export default function CloudProjectsPage() {
       {/* Top bar */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#999990]" strokeWidth={1.8} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" strokeWidth={1.8} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search projects…"
-            className="w-full rounded-xl border border-black/[0.08] bg-white py-2.5 pl-9 pr-4 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+            className="w-full rounded-xl border border-black/[0.08] bg-white py-2.5 pl-9 pr-4 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -228,21 +228,21 @@ export default function CloudProjectsPage() {
           {fetchError ? (
             <>
               <p className="font-cloud-display text-[18px] text-[#0a0a0a] mb-1">Projects unavailable</p>
-              <p className="text-[13px] text-[#999990] font-cloud-body max-w-[280px]">{fetchError}</p>
+              <p className="text-[13px] text-[#6B7280] font-cloud-body max-w-[280px]">{fetchError}</p>
             </>
           ) : search || activeCategory ? (
             <>
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white border border-black/[0.07]">
-                <Search className="h-6 w-6 text-[#999990]" strokeWidth={1.5} />
+                <Search className="h-6 w-6 text-[#6B7280]" strokeWidth={1.5} />
               </div>
               <p className="font-cloud-display text-[18px] text-[#0a0a0a] mb-1">No results</p>
-              <p className="text-[13px] text-[#999990] font-cloud-body">No projects match your search.</p>
+              <p className="text-[13px] text-[#6B7280] font-cloud-body">No projects match your search.</p>
             </>
           ) : (
             <>
               <ProjectSceneIllustration className="mb-4 opacity-80" width={200} height={148} />
               <p className="font-cloud-display text-[20px] text-[#0a0a0a] mb-2">No projects yet</p>
-              <p className="text-[13px] text-[#999990] font-cloud-body mb-6 max-w-[220px]">
+              <p className="text-[13px] text-[#6B7280] font-cloud-body mb-6 max-w-[220px]">
                 Create your first project, then upload photos straight from your phone.
               </p>
               <button

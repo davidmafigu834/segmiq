@@ -105,7 +105,7 @@ export function AndroidAppDownload({ variant = "section" }: AndroidAppDownloadPr
 
   return (
     <section>
-      <p className="mb-3 font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#999990]">
+      <p className="mb-3 font-cloud-body text-[10px] font-bold uppercase tracking-[0.08em] text-[#6B7280]">
         Android field app
       </p>
       <div className={sectionCardCls}>
@@ -115,10 +115,10 @@ export function AndroidAppDownload({ variant = "section" }: AndroidAppDownloadPr
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-cloud-body text-[14px] font-semibold text-[#0a0a0a]">{FIELD_APP_NAME}</p>
-            <p className="mt-1 font-cloud-body text-[12px] leading-relaxed text-[#999990]">
+            <p className="mt-1 font-cloud-body text-[12px] leading-relaxed text-[#6B7280]">
               Capture and upload job-site photos from Android. Uses the same login as this dashboard.
             </p>
-            <p className="mt-2 font-cloud-body text-[11px] text-[#BBBBAA]">Version {FIELD_APP_VERSION}</p>
+            <p className="mt-2 font-cloud-body text-[11px] text-[#9CA3AF]">Version {FIELD_APP_VERSION}</p>
           </div>
         </div>
 

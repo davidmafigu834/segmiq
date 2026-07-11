@@ -175,10 +175,10 @@ export default function CloudTeamPage() {
       ) : members.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white border border-black/[0.07]">
-            <UserCheck className="h-6 w-6 text-[#999990]" strokeWidth={1.5} />
+            <UserCheck className="h-6 w-6 text-[#6B7280]" strokeWidth={1.5} />
           </div>
           <p className="font-cloud-display text-[18px] text-[#0a0a0a] mb-1">No team members yet</p>
-          <p className="text-[13px] text-[#999990] font-cloud-body mb-5">Invite your first team member to get started.</p>
+          <p className="text-[13px] text-[#6B7280] font-cloud-body mb-5">Invite your first team member to get started.</p>
           <button
             onClick={() => setShowInvite(true)}
             className="rounded-xl bg-[#D4FF4F] px-5 py-3 text-[14px] font-bold text-black font-cloud-body hover:bg-[#C8F244] transition-colors"
@@ -201,7 +201,7 @@ export default function CloudTeamPage() {
                     {ROLE_LABELS[m.role] ?? m.role}
                   </span>
                   {!m.is_active && (
-                    <span className="rounded-full bg-black/5 px-2 py-0.5 text-[11px] text-[#999990] font-cloud-body border border-black/[0.06]">
+                    <span className="rounded-full bg-black/5 px-2 py-0.5 text-[11px] text-[#6B7280] font-cloud-body border border-black/[0.06]">
                       Inactive
                     </span>
                   )}
@@ -265,7 +265,7 @@ export default function CloudTeamPage() {
           <div className="relative ml-auto flex h-full w-full max-w-md flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-black/[0.07] px-6 py-4">
               <h2 className="font-cloud-display text-[18px] text-[#0a0a0a]">Invite team member</h2>
-              <button onClick={() => setShowInvite(false)} className="text-[#999990] hover:text-[#0a0a0a] transition-colors">
+              <button onClick={() => setShowInvite(false)} className="text-[#6B7280] hover:text-[#0a0a0a] transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -287,7 +287,7 @@ export default function CloudTeamPage() {
                     required
                     autoFocus
                     placeholder="Jane Smith"
-                    className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+                    className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
                   />
                 </div>
 
@@ -299,7 +299,7 @@ export default function CloudTeamPage() {
                     onChange={(e) => setInviteEmail(e.target.value)}
                     required
                     placeholder="jane@company.com"
-                    className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+                    className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
                   />
                 </div>
 
@@ -311,7 +311,7 @@ export default function CloudTeamPage() {
                     onChange={(e) => setInvitePhone(e.target.value)}
                     required
                     placeholder="+1 555 000 0000"
-                    className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+                    className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
                   />
                 </div>
 

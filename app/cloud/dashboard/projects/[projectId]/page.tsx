@@ -648,7 +648,7 @@ export default function ProjectDetailPage() {
         <div className="flex-1 min-w-0">
           <Link
             href="/cloud/dashboard/projects"
-            className="mb-3 flex items-center gap-1.5 text-[12px] text-[#999990] hover:text-[#0a0a0a] transition-colors font-cloud-body"
+            className="mb-3 flex items-center gap-1.5 text-[12px] text-[#6B7280] hover:text-[#0a0a0a] transition-colors font-cloud-body"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Projects
@@ -670,7 +670,7 @@ export default function ProjectDetailPage() {
               className="group flex items-center gap-2 text-left"
             >
               <h1 className="font-cloud-display text-[20px] text-[#0a0a0a]">{project.title}</h1>
-              <Pencil className="h-3.5 w-3.5 text-[#999990] opacity-0 transition-opacity group-hover:opacity-100" />
+              <Pencil className="h-3.5 w-3.5 text-[#6B7280] opacity-0 transition-opacity group-hover:opacity-100" />
             </button>
           )}
 
@@ -681,12 +681,12 @@ export default function ProjectDetailPage() {
               </span>
             )}
             {project.location && (
-              <span className="flex items-center gap-1 text-[12px] text-[#999990] font-cloud-body">
+              <span className="flex items-center gap-1 text-[12px] text-[#6B7280] font-cloud-body">
                 <MapPin className="h-3 w-3" />{project.location}
               </span>
             )}
             {project.completion_date && (
-              <span className="flex items-center gap-1 text-[12px] text-[#999990] font-cloud-body">
+              <span className="flex items-center gap-1 text-[12px] text-[#6B7280] font-cloud-body">
                 <Calendar className="h-3 w-3" />
                 {new Date(project.completion_date).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
               </span>
@@ -831,10 +831,10 @@ export default function ProjectDetailPage() {
       {/* Photo count bar — gallery tab only */}
       {activeTab === "gallery" && media.length > 0 && (
         <div className="mb-3 flex items-center justify-between">
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase font-cloud-body">
+          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase font-cloud-body">
             {media.length} {media.some(m => m.type === "video") ? "items" : "photos"}
           </p>
-          <p className="text-[11px] text-[#999990] font-cloud-body">drag to reorder</p>
+          <p className="text-[11px] text-[#6B7280] font-cloud-body">drag to reorder</p>
         </div>
       )}
 
@@ -992,7 +992,7 @@ export default function ProjectDetailPage() {
           {/* Empty state */}
           {!milestonesLoading && milestones.length === 0 && (
             <div style={{ textAlign: "center", padding: "40px 20px", background: "#F7F4EF", borderRadius: 18, border: "1.5px dashed rgba(28,20,16,0.14)" }}>
-              <GitBranch size={32} color="#B4A898" style={{ display: "block", margin: "0 auto 12px" }} />
+              <GitBranch size={32} color="#6B7280" style={{ display: "block", margin: "0 auto 12px" }} />
               <p style={{ fontFamily: "var(--fw-font-display), Georgia, serif", fontSize: 18, color: "#1C1410", margin: "0 0 6px" }}>No milestones yet</p>
               <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 12, color: "#8C7B6B", margin: "0 0 20px" }}>
                 Track your project progress by adding key stages
@@ -1175,7 +1175,7 @@ export default function ProjectDetailPage() {
             onChange={(e) => setStoryBrief(e.target.value)}
             rows={4}
             placeholder="How the project started — context, goals, constraints…"
-            className="w-full resize-none rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+            className="w-full resize-none rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
           />
         </div>
 
@@ -1186,7 +1186,7 @@ export default function ProjectDetailPage() {
             onChange={(e) => setStoryResult(e.target.value)}
             rows={4}
             placeholder="Outcome, performance, client impact…"
-            className="w-full resize-none rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+            className="w-full resize-none rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
           />
         </div>
 
@@ -1228,7 +1228,7 @@ export default function ProjectDetailPage() {
           </button>
         </div>
         {timelineSteps.length === 0 ? (
-          <p className="text-[12px] italic text-[#999990] font-cloud-body">No timeline steps yet.</p>
+          <p className="text-[12px] italic text-[#6B7280] font-cloud-body">No timeline steps yet.</p>
         ) : (
           <div className="space-y-3">
             {timelineSteps.map((step, index) => (
@@ -1238,7 +1238,7 @@ export default function ProjectDetailPage() {
                   <button
                     type="button"
                     onClick={() => setTimelineSteps((prev) => prev.filter((_, i) => i !== index))}
-                    className="text-[#999990] hover:text-red-500"
+                    className="text-[#6B7280] hover:text-red-500"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -1252,7 +1252,7 @@ export default function ProjectDetailPage() {
                       )
                     }
                     placeholder="Day label (e.g. Day 1)"
-                    className="h-9 rounded-lg border border-black/[0.08] px-3 text-[12px] outline-none font-cloud-body"
+                    className="h-9 rounded-lg border border-black/[0.08] bg-white/70 px-3 text-[12px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none font-cloud-body"
                   />
                   <input
                     value={step.title}
@@ -1262,7 +1262,7 @@ export default function ProjectDetailPage() {
                       )
                     }
                     placeholder="Title"
-                    className="h-9 rounded-lg border border-black/[0.08] px-3 text-[12px] outline-none font-cloud-body"
+                    className="h-9 rounded-lg border border-black/[0.08] bg-white/70 px-3 text-[12px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none font-cloud-body"
                   />
                 </div>
                 <textarea
@@ -1274,7 +1274,7 @@ export default function ProjectDetailPage() {
                   }
                   rows={2}
                   placeholder="Description"
-                  className="mt-2 w-full resize-none rounded-lg border border-black/[0.08] px-3 py-2 text-[12px] outline-none font-cloud-body"
+                  className="mt-2 w-full resize-none rounded-lg border border-black/[0.08] bg-white/70 px-3 py-2 text-[12px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none font-cloud-body"
                 />
               </div>
             ))}
@@ -1307,7 +1307,7 @@ export default function ProjectDetailPage() {
           </button>
         </div>
         {specFields.length === 0 ? (
-          <p className="text-[12px] italic text-[#999990] font-cloud-body">No spec fields yet.</p>
+          <p className="text-[12px] italic text-[#6B7280] font-cloud-body">No spec fields yet.</p>
         ) : (
           <div className="space-y-2">
             {specFields.map((field, index) => (
@@ -1320,7 +1320,7 @@ export default function ProjectDetailPage() {
                     )
                   }
                   placeholder="Label"
-                  className="h-9 flex-1 rounded-lg border border-black/[0.08] bg-white/70 px-3 text-[12px] outline-none font-cloud-body"
+                  className="h-9 flex-1 rounded-lg border border-black/[0.08] bg-white/70 px-3 text-[12px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none font-cloud-body"
                 />
                 <input
                   value={field.value}
@@ -1330,12 +1330,12 @@ export default function ProjectDetailPage() {
                     )
                   }
                   placeholder="Value"
-                  className="h-9 flex-1 rounded-lg border border-black/[0.08] bg-white/70 px-3 text-[12px] outline-none font-cloud-body"
+                  className="h-9 flex-1 rounded-lg border border-black/[0.08] bg-white/70 px-3 text-[12px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none font-cloud-body"
                 />
                 <button
                   type="button"
                   onClick={() => setSpecFields((prev) => prev.filter((_, i) => i !== index))}
-                  className="rounded-lg p-2 text-[#999990] hover:text-red-500"
+                  className="rounded-lg p-2 text-[#6B7280] hover:text-red-500"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -1382,7 +1382,7 @@ export default function ProjectDetailPage() {
             })}
           </p>
         ) : (
-          <p className="mt-2 text-[11px] italic text-[#999990] font-cloud-body">
+          <p className="mt-2 text-[11px] italic text-[#6B7280] font-cloud-body">
             No PDF generated yet.
           </p>
         )}
@@ -1398,7 +1398,7 @@ export default function ProjectDetailPage() {
           </a>
         ) : null}
         {(!project.is_public || !profileSlug) && (
-          <p className="mt-2 text-[11px] text-[#999990] font-cloud-body">
+          <p className="mt-2 text-[11px] text-[#6B7280] font-cloud-body">
             Requires a public project and published profile.
           </p>
         )}
@@ -1411,7 +1411,7 @@ export default function ProjectDetailPage() {
           {!editingDesc && (
             <button
               onClick={() => setEditingDesc(true)}
-              className="rounded p-0.5 text-[#999990] hover:text-[#0a0a0a] transition-colors"
+              className="rounded p-0.5 text-[#6B7280] hover:text-[#0a0a0a] transition-colors"
             >
               <Pencil className="h-3 w-3" />
             </button>
@@ -1425,7 +1425,7 @@ export default function ProjectDetailPage() {
             autoFocus
             rows={4}
             placeholder="Describe this project — materials used, scope of work, etc."
-            className="w-full resize-none rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body"
+            className="w-full resize-none rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
           />
         ) : (
           <p
@@ -1433,7 +1433,7 @@ export default function ProjectDetailPage() {
             onClick={() => setEditingDesc(true)}
           >
             {project.description || (
-              <span className="italic text-[#999990]">Add a description…</span>
+              <span className="italic text-[#6B7280]">Add a description…</span>
             )}
           </p>
         )}

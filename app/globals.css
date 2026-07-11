@@ -365,6 +365,27 @@ body {
   --cloud-topbar-height: 60px;
 }
 
+/* Cloud dashboard — light theme reset (overrides CRM dark body text inheritance) */
+.cloud-dashboard {
+  color: var(--cloud-text-primary);
+}
+
+.cloud-dashboard input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="hidden"]):not([type="submit"]):not([type="button"]),
+.cloud-dashboard textarea,
+.cloud-dashboard select {
+  color: var(--cloud-text-primary);
+}
+
+.cloud-dashboard input::placeholder,
+.cloud-dashboard textarea::placeholder {
+  color: var(--cloud-text-tertiary);
+}
+
+.cloud-dashboard select option {
+  color: var(--cloud-text-primary);
+  background-color: var(--cloud-surface);
+}
+
 /* ── Agency dashboard (CRM) design tokens — dark system ── */
 :root {
   --ag-bg: #000000;

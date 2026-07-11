@@ -83,7 +83,7 @@ export default function NotificationsPage() {
       <div className="mx-auto max-w-xl">
         {unread > 0 && (
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-[12px] text-[#999990] font-cloud-body">{unread} unread</p>
+            <p className="text-[12px] text-[#6B7280] font-cloud-body">{unread} unread</p>
             <button
               onClick={() => void markAllRead()}
               disabled={markingAll}
@@ -102,10 +102,10 @@ export default function NotificationsPage() {
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white border border-black/[0.07]">
-              <Bell className="h-6 w-6 text-[#999990]" strokeWidth={1.5} />
+              <Bell className="h-6 w-6 text-[#6B7280]" strokeWidth={1.5} />
             </div>
             <p className="font-cloud-display text-[18px] text-[#0a0a0a] mb-1">No notifications yet</p>
-            <p className="text-[13px] text-[#999990] font-cloud-body">We&apos;ll let you know when something happens.</p>
+            <p className="text-[13px] text-[#6B7280] font-cloud-body">We&apos;ll let you know when something happens.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -126,7 +126,7 @@ export default function NotificationsPage() {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[11px] font-semibold font-cloud-body ${n.read ? "text-[#999990]" : "text-[#7B5EA7]"}`}>
+                    <span className={`text-[11px] font-semibold font-cloud-body ${n.read ? "text-[#6B7280]" : "text-[#7B5EA7]"}`}>
                       {TYPE_LABEL[n.type] ?? n.type}
                     </span>
                     <span className="flex-shrink-0 text-[11px] font-cloud-body text-[#8C7B6B]">{timeAgo(n.created_at)}</span>

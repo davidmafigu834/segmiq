@@ -69,9 +69,9 @@ export default function BillingPage() {
           <>
             {(
               <div className="mb-6 rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5">
-                <p className="mb-0.5 text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase font-cloud-body">Current plan</p>
+                <p className="mb-0.5 text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase font-cloud-body">Current plan</p>
                 <p className="font-cloud-display text-[20px] text-[#0a0a0a] capitalize">{currentPlan}</p>
-                <p className="mt-1 text-[12px] text-[#999990] font-cloud-body">Your next billing date and invoice history will appear here.</p>
+                <p className="mt-1 text-[12px] text-[#6B7280] font-cloud-body">Your next billing date and invoice history will appear here.</p>
               </div>
             )}
 
@@ -145,7 +145,7 @@ export default function BillingPage() {
                         className={`mt-auto block w-full rounded-xl py-2.5 text-center text-[13px] font-semibold font-cloud-body transition-colors ${
                           (PLAN_ORDER[plan.id] ?? 0) > (PLAN_ORDER[currentPlan] ?? 0)
                             ? "bg-[#1C1410] text-[#D4FF4F] hover:bg-[#2C2418]"
-                            : "border border-black/[0.1] bg-white/50 text-[#999990] hover:bg-white"
+                            : "border border-black/[0.1] bg-white/50 text-[#6B7280] hover:bg-white"
                         }`}
                       >
                         {(PLAN_ORDER[plan.id] ?? 0) > (PLAN_ORDER[currentPlan] ?? 0) ? "Upgrade" : "Downgrade"} to {plan.name} · {annual ? `$${plan.annualPrice}/yr` : `$${plan.monthlyPrice}/mo`}
@@ -158,7 +158,7 @@ export default function BillingPage() {
 
             <div className="mt-6 rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5">
               <p className="text-[12px] font-bold text-[#666660] tracking-[0.06em] uppercase mb-1 font-cloud-body">Payment history</p>
-              <p className="text-[13px] text-[#999990] font-cloud-body">No payment history yet. Your invoices will appear here once billing is active.</p>
+              <p className="text-[13px] text-[#6B7280] font-cloud-body">No payment history yet. Your invoices will appear here once billing is active.</p>
             </div>
           </>
         )}

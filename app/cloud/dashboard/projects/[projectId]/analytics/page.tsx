@@ -143,14 +143,14 @@ export default function ProjectAnalyticsPage() {
             <p style={{ fontFamily: F, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 16px" }}>Daily views — last 30 days</p>
             {stats.daily.every((d) => d.views === 0) ? (
               <div style={{ height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                <BarChart2 size={24} color="#B4A898" strokeWidth={1.5} />
+                <BarChart2 size={24} color="#6B7280" strokeWidth={1.5} />
                 <p style={{ fontFamily: F, fontSize: 13, color: "#8C7B6B", margin: 0 }}>No views recorded yet</p>
               </div>
             ) : (
               <>
                 <BarChart data={stats.daily} />
                 {xLabels && (
-                  <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", fontFamily: F, fontSize: 11, color: "#B4A898" }}>
+                  <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", fontFamily: F, fontSize: 11, color: "#6B7280" }}>
                     <span>{xLabels.first}</span>
                     <span>{xLabels.last}</span>
                   </div>

@@ -164,7 +164,7 @@ export default function MorePage() {
                     {item.description}
                   </p>
                 </div>
-                <ChevronRight size={14} color="#B4A898" style={{ flexShrink: 0 }} />
+                <ChevronRight size={14} color="#6B7280" style={{ flexShrink: 0 }} />
               </button>
             ))}
           </div>
@@ -185,7 +185,7 @@ export default function MorePage() {
       </div>
 
       {/* App version */}
-      <p style={{ textAlign: "center", fontFamily: F, fontSize: 11, color: "#B4A898", margin: "0 0 20px" }}>
+      <p style={{ textAlign: "center", fontFamily: F, fontSize: 11, color: "#6B7280", margin: "0 0 20px" }}>
         Segmiq Cloud · Version 1.0
       </p>
 

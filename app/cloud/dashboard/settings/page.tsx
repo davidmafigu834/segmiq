@@ -286,7 +286,7 @@ export default function CloudSettingsPage() {
 
   const profileUrl = profile?.slug ? `/p/${profile.slug}` : null;
 
-  const inputCls = "w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#999990] outline-none focus:border-black/[0.2] font-cloud-body";
+  const inputCls = "w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body";
   const labelCls = "mb-1.5 block text-[12px] font-semibold text-[#666660] uppercase tracking-[0.06em] font-cloud-body";
   const saveBtnCls = "flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-bold disabled:opacity-60 transition-opacity font-cloud-body cursor-pointer" + " bg-[var(--fw-soil)] text-[var(--fw-lime)]";  
   const sectionCardCls = "rounded-[20px] border p-5 space-y-4 bg-white" + " border-[var(--fw-border)]";  
@@ -297,7 +297,7 @@ export default function CloudSettingsPage() {
 
         {/* Business profile */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase mb-3 font-cloud-body">Business profile</p>
+          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Business profile</p>
           <div className={sectionCardCls}>
             <div>
               <label className={labelCls}>Business name</label>
@@ -333,13 +333,13 @@ export default function CloudSettingsPage() {
                     )}
                   </div>
                   {logoFile && (
-                    <button onClick={() => { setLogoFile(null); setLogoPreview(null); }} className="text-[#BBBBAA] hover:text-[#666660]">
+                    <button onClick={() => { setLogoFile(null); setLogoPreview(null); }} className="text-[#9CA3AF] hover:text-[#666660]">
                       <X className="h-4 w-4" />
                     </button>
                   )}
                 </div>
               ) : (
-                <button onClick={() => logoInputRef.current?.click()} className="flex w-full items-center gap-3 rounded-xl border border-dashed border-black/[0.15] bg-[#F5F5F0] px-4 py-4 text-left text-[13px] text-[#999990] font-cloud-body hover:border-black/[0.25] transition-colors">
+                <button onClick={() => logoInputRef.current?.click()} className="flex w-full items-center gap-3 rounded-xl border border-dashed border-black/[0.15] bg-[#F5F5F0] px-4 py-4 text-left text-[13px] text-[#6B7280] font-cloud-body hover:border-black/[0.25] transition-colors">
                   <Camera className="h-4 w-4 flex-shrink-0" />
                   Upload logo (PNG, JPG, WEBP — max 5 MB)
                 </button>
@@ -356,7 +356,7 @@ export default function CloudSettingsPage() {
 
         {/* Your account */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase mb-3 font-cloud-body">Your account</p>
+          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Your account</p>
           <div className={sectionCardCls}>
             <div>
               <label className={labelCls}>Your name</label>
@@ -365,8 +365,8 @@ export default function CloudSettingsPage() {
             <div>
               <label className={labelCls}>Email address</label>
               <input type="email" value={session?.user?.email ?? ""} readOnly
-                className="w-full rounded-xl border border-black/[0.06] bg-black/[0.03] px-4 py-3 text-[13px] text-[#999990] outline-none cursor-not-allowed font-cloud-body" />
-              <p className="mt-1 text-[11px] text-[#BBBBAA] font-cloud-body">Contact support to change your email.</p>
+                className="w-full rounded-xl border border-black/[0.06] bg-black/[0.03] px-4 py-3 text-[13px] text-[#6B7280] outline-none cursor-not-allowed font-cloud-body" />
+              <p className="mt-1 text-[11px] text-[#9CA3AF] font-cloud-body">Contact support to change your email.</p>
             </div>
             <div>
               <label className={labelCls}>Phone number</label>
@@ -382,13 +382,13 @@ export default function CloudSettingsPage() {
 
         {/* Change password */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase mb-3 font-cloud-body">Change password</p>
+          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Change password</p>
           <form onSubmit={(e) => void savePassword(e)} className={sectionCardCls}>
             <div className="relative">
               <label className={labelCls}>Current password</label>
               <input type={showPw ? "text" : "password"} value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} required
                 className={`${inputCls} pr-10`} />
-              <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-3 bottom-3 text-[#999990] hover:text-[#0a0a0a]">
+              <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-3 bottom-3 text-[#6B7280] hover:text-[#0a0a0a]">
                 {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
@@ -413,7 +413,7 @@ export default function CloudSettingsPage() {
         {/* Public profile */}
         {client && profile !== null && (
           <section>
-            <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase mb-3 font-cloud-body">Public profile</p>
+            <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Public profile</p>
             <div className={sectionCardCls + " !space-y-3"}>
               <div>
                 <label className={labelCls}>Profile headline</label>
@@ -432,11 +432,11 @@ export default function CloudSettingsPage() {
               {profileUrl && (
                 <div className="flex items-center justify-between rounded-xl bg-white/60 border border-black/[0.06] px-4 py-3">
                   <div>
-                    <p className="text-[11px] text-[#999990] font-cloud-body">Your profile URL</p>
+                    <p className="text-[11px] text-[#6B7280] font-cloud-body">Your profile URL</p>
                     <p className="text-[13px] font-mono text-[#0a0a0a]">leadstaq.tech{profileUrl}</p>
                   </div>
                   <a href={profileUrl} target="_blank" rel="noopener noreferrer"
-                    className="rounded-lg p-2 text-[#999990] hover:text-[#0a0a0a]">
+                    className="rounded-lg p-2 text-[#6B7280] hover:text-[#0a0a0a]">
                     <ExternalLink className="h-4 w-4" />
                   </a>
                 </div>
@@ -444,7 +444,7 @@ export default function CloudSettingsPage() {
               <div className="flex items-center justify-between rounded-xl border border-black/[0.07] bg-white/60 px-4 py-3">
                 <div>
                   <p className="text-[14px] font-semibold text-[#0a0a0a] font-cloud-body">Profile published</p>
-                  <p className="text-[12px] text-[#999990] font-cloud-body">
+                  <p className="text-[12px] text-[#6B7280] font-cloud-body">
                     {profile.is_published ? "Visible to the public" : "Hidden from the public"}
                   </p>
                 </div>
@@ -459,7 +459,7 @@ export default function CloudSettingsPage() {
 
         {/* Storage */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase mb-3 font-cloud-body">Storage</p>
+          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Storage</p>
           <div className="rounded-[20px] border border-[#1a1a2e]/20 bg-gradient-to-br from-[#0a0a1a] via-[#111126] to-[#1a1a36] p-5">
             <div className="flex items-center gap-2 mb-4">
               <HardDrive className="h-4 w-4 text-white/40" />
@@ -505,12 +505,12 @@ export default function CloudSettingsPage() {
 
         {/* Watermark */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#999990] uppercase mb-3 font-cloud-body">Watermark</p>
+          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Watermark</p>
           <div className={sectionCardCls + " !space-y-5"}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[14px] font-semibold text-[#0a0a0a] font-cloud-body">Enable watermark</p>
-                <p className="text-[12px] text-[#999990] font-cloud-body">Overlay your logo on shared project photos</p>
+                <p className="text-[12px] text-[#6B7280] font-cloud-body">Overlay your logo on shared project photos</p>
               </div>
               <button onClick={() => setWatermark((w) => ({ ...w, enabled: !w.enabled }))}
                 className={`relative h-6 w-11 rounded-full transition-colors ${watermark.enabled ? "bg-[#D4FF4F]" : "bg-black/10"}`}>
@@ -541,7 +541,7 @@ export default function CloudSettingsPage() {
                   <input type="range" min={10} max={90} step={5} value={watermark.opacity}
                     onChange={(e) => setWatermark((w) => ({ ...w, opacity: Number(e.target.value) }))}
                     className="w-full accent-[#0a0a0a]" />
-                  <div className="flex justify-between text-[11px] text-[#999990] mt-1 font-cloud-body">
+                  <div className="flex justify-between text-[11px] text-[#6B7280] mt-1 font-cloud-body">
                     <span>10%</span><span>90%</span>
                   </div>
                 </div>

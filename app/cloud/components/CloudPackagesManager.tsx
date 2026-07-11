@@ -86,7 +86,7 @@ function formatPrice(pkg: PricingPackage): string {
 }
 
 const labelCls =
-  "mb-1.5 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#999990] font-cloud-body";
+  "mb-1.5 block text-[10px] font-bold uppercase tracking-[0.08em] text-[#6B7280] font-cloud-body";
 const inputCls =
   "w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] outline-none focus:border-black/25 font-cloud-body";
 
@@ -218,7 +218,7 @@ function PackageEditorSlideOver({
 
           <div>
             <label className={labelCls}>What&apos;s included</label>
-            <span className="ml-1 text-[10px] text-[#BBBBAA]">One item per line</span>
+            <span className="ml-1 text-[10px] text-[#9CA3AF]">One item per line</span>
             <textarea
               className={`${inputCls} mt-1 min-h-[96px] resize-none`}
               value={form.includes}
@@ -239,7 +239,7 @@ function PackageEditorSlideOver({
               disabled={!form.is_public}
             />
             {!form.is_public && (
-              <p className="mt-1 text-[11px] text-[#999990]">
+              <p className="mt-1 text-[11px] text-[#6B7280]">
                 Enable public profile to set a slug.
               </p>
             )}
@@ -487,10 +487,10 @@ export function CloudPackagesManager({
       ) : packages.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-[20px] border border-black/[0.07] bg-white px-6 py-16 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F5F0]">
-            <Tag className="h-6 w-6 text-[#999990]" strokeWidth={1.5} />
+            <Tag className="h-6 w-6 text-[#6B7280]" strokeWidth={1.5} />
           </div>
           <p className="mb-1 font-cloud-display text-[18px] text-[#0a0a0a]">No pricing packages yet</p>
-          <p className="mb-5 max-w-sm text-[13px] leading-relaxed text-[#999990] font-cloud-body">
+          <p className="mb-5 max-w-sm text-[13px] leading-relaxed text-[#6B7280] font-cloud-body">
             Create packages for your public profile and share them with prospects in one tap.
           </p>
           <button
@@ -529,7 +529,7 @@ export function CloudPackagesManager({
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${
                         pkg.is_public
                           ? "bg-[#E8F5EE] text-[#0F7A4F]"
-                          : "bg-[#F5F5F0] text-[#999990]"
+                          : "bg-[#F5F5F0] text-[#6B7280]"
                       }`}
                     >
                       <Globe className="h-3 w-3" />
@@ -591,7 +591,7 @@ export function CloudPackagesManager({
                   {formatPrice(pkg)}
                 </p>
                 {pkg.price_note && (
-                  <p className="-mt-2 mb-4 text-[12px] text-[#999990] font-cloud-body">{pkg.price_note}</p>
+                  <p className="-mt-2 mb-4 text-[12px] text-[#6B7280] font-cloud-body">{pkg.price_note}</p>
                 )}
 
                 <div className="mt-auto flex flex-wrap gap-2 border-t border-black/[0.06] pt-4">
