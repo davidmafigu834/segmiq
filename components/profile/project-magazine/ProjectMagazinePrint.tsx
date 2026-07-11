@@ -1,11 +1,9 @@
 import QRCode from "qrcode";
 import {
-  buildProjectPdfFilename,
   buildSpecMetaLine,
   formatCompletionDate,
   galleryPhotos,
   getInitials,
-  getSpecIcon,
   hasAbsoluteLogo,
   HERO_SCRIM,
   printImageUrl,
