@@ -9,6 +9,7 @@ import type {
   ClientCertification,
   ClientTeamMember,
 } from "@/lib/cloud/client-capability";
+import { uploadClientCapabilityFile } from "@/lib/storage/capability-upload";
 
 const inputCls =
   "w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body";
@@ -18,30 +19,6 @@ const saveBtnCls =
   "flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-bold disabled:opacity-60 transition-opacity font-cloud-body cursor-pointer bg-[var(--fw-soil)] text-[var(--fw-lime)]";
 const sectionCardCls =
   "rounded-[20px] border p-5 space-y-4 bg-white border-[var(--fw-border)]";
-
-async function uploadCapabilityImage(clientId: string, file: File): Promise<string> {
-  const res = await fetch("/api/storage/presign", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      filename: file.name,
-      contentType: file.type,
-      clientId,
-      purpose: "capability",
-      fileSize: file.size,
-    }),
-  });
-  const payload = (await res.json()) as { uploadUrl?: string; publicUrl?: string; error?: string };
-  if (!res.ok || !payload.uploadUrl || !payload.publicUrl) {
-    throw new Error(payload.error ?? "Upload failed");
-  }
-  await fetch(payload.uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": file.type },
-    body: file,
-  });
-  return payload.publicUrl;
-}
 
 export function CompanyCapabilitySettings() {
   const { data: session } = useSession();
@@ -110,8 +87,8 @@ export function CompanyCapabilitySettings() {
     setUploadingKey(key);
     setError("");
     try {
-      const url = await uploadCapabilityImage(session.clientId, file);
-      onUrl(url);
+      const { publicUrl } = await uploadClientCapabilityFile(file);
+      onUrl(publicUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
