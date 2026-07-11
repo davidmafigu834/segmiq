@@ -240,8 +240,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
       </div>
 
       <style>{`
-        @page { size: A4; margin: 90px 0 70px; }
-        @page :first { margin: 0; }
+        @page { size: A4; margin: 0; }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
         .print-root {
           width: 794px;
@@ -317,7 +316,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           z-index: 20;
         }
         .print-flow-content {
-          padding: 0 48px;
+          padding: 92px 48px 78px;
         }
         .print-powered-by {
           display: inline-flex;
@@ -413,18 +412,18 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .print-timeline-section,
         .print-testimonial-section,
         .print-cta-section {
-          margin-bottom: 20px;
+          margin-bottom: 24px;
         }
         .print-story-layout {
-          display: block;
+          display: grid;
+          grid-template-columns: 1fr 220px;
+          gap: 24px;
+          align-items: start;
         }
         .print-story-main {
-          overflow: visible;
+          min-width: 0;
         }
         .print-spec-card {
-          float: right;
-          width: 220px;
-          margin: 0 0 12px 20px;
           border: 1px solid rgba(28,20,16,0.12);
           border-radius: 14px;
           overflow: hidden;
@@ -502,28 +501,26 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           color: #8c7b6b;
         }
         .print-section-title {
-          margin: 0 0 12px;
+          margin: 0 0 14px;
           font-size: 24px;
           break-after: avoid;
           page-break-after: avoid;
         }
-        .print-gallery-section {
-          clear: both;
-        }
         .print-gallery-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
         }
         .print-gallery-hero {
-          width: 100%;
-          height: 180px;
+          grid-column: 1 / -1;
+          height: 220px;
         }
         .print-gallery-tile {
-          width: calc(50% - 4px);
-          height: 100px;
+          height: 128px;
           border-radius: 10px;
           overflow: hidden;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-gallery-grid img {
           width: 100%;
@@ -539,7 +536,9 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .print-timeline-step {
           display: flex;
           gap: 12px;
-          margin-bottom: 10px;
+          margin-bottom: 12px;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-timeline-dot {
           width: 24px;
