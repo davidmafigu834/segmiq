@@ -240,7 +240,8 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
       </div>
 
       <style>{`
-        @page { size: A4; margin: 0; }
+        @page { size: A4; margin: 90px 0 70px; }
+        @page :first { margin: 0; }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
         .print-root {
           width: 794px;
@@ -316,7 +317,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           z-index: 20;
         }
         .print-flow-content {
-          padding: 88px 48px 72px;
+          padding: 0 48px;
         }
         .print-powered-by {
           display: inline-flex;
@@ -412,13 +413,23 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .print-timeline-section,
         .print-testimonial-section,
         .print-cta-section {
-          margin-bottom: 28px;
+          margin-bottom: 20px;
         }
         .print-story-layout {
-          display: grid;
-          grid-template-columns: 1fr 220px;
-          gap: 24px;
-          align-items: start;
+          display: block;
+        }
+        .print-story-main {
+          overflow: visible;
+        }
+        .print-spec-card {
+          float: right;
+          width: 220px;
+          margin: 0 0 12px 20px;
+          border: 1px solid rgba(28,20,16,0.12);
+          border-radius: 14px;
+          overflow: hidden;
+          break-inside: avoid;
+          page-break-inside: avoid;
         }
         .print-drop-cap::first-letter {
           float: left;
@@ -447,11 +458,6 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           color: #8c7b6b;
           font-family: system-ui, sans-serif;
         }
-        .print-spec-card {
-          border: 1px solid rgba(28,20,16,0.12);
-          border-radius: 14px;
-          overflow: hidden;
-        }
         .print-spec-head {
           padding: 16px;
           color: var(--brand-ink);
@@ -477,12 +483,10 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .print-spec-row {
           display: flex;
           gap: 10px;
-          padding: 10px 0;
+          padding: 8px 0;
           border-top: 1px solid rgba(28,20,16,0.08);
           font-family: system-ui, sans-serif;
           font-size: 12px;
-          break-inside: avoid;
-          page-break-inside: avoid;
         }
         .print-spec-list li:first-child { border-top: none; }
         .print-spec-icon {
@@ -498,24 +502,28 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           color: #8c7b6b;
         }
         .print-section-title {
-          margin: 0 0 16px;
+          margin: 0 0 12px;
           font-size: 24px;
+          break-after: avoid;
+          page-break-after: avoid;
+        }
+        .print-gallery-section {
+          clear: both;
         }
         .print-gallery-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
         }
         .print-gallery-hero {
-          grid-column: 1 / -1;
-          height: 260px;
+          width: 100%;
+          height: 180px;
         }
         .print-gallery-tile {
-          height: 130px;
+          width: calc(50% - 4px);
+          height: 100px;
           border-radius: 10px;
           overflow: hidden;
-          break-inside: avoid;
-          page-break-inside: avoid;
         }
         .print-gallery-grid img {
           width: 100%;
@@ -531,9 +539,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .print-timeline-step {
           display: flex;
           gap: 12px;
-          margin-bottom: 14px;
-          break-inside: avoid;
-          page-break-inside: avoid;
+          margin-bottom: 10px;
         }
         .print-timeline-dot {
           width: 24px;
