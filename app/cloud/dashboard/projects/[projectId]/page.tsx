@@ -16,6 +16,7 @@ import { MediaAttachPicker } from "@/app/cloud/components/MediaAttachPicker";
 import Link from "next/link";
 import { getProjectCardStyles } from "@/app/cloud/components/ProjectCard";
 import { uploadProjectMediaFile, uploadErrorMessage } from "@/app/cloud/lib/upload-project-media";
+import { buildProjectShareUrl } from "@/app/cloud/lib/project-share-url";
 
 type MediaItem = {
   id: string;
@@ -149,6 +150,7 @@ export default function ProjectDetailPage() {
   const [timelineSteps, setTimelineSteps] = useState<TimelineStepDraft[]>([]);
   const [specFields, setSpecFields] = useState<SpecFieldDraft[]>([]);
   const [coverMediaId, setCoverMediaId] = useState<string | null>(null);
+  const [profileSlug, setProfileSlug] = useState<string | null>(null);
 
   function showToast(msg: string) {
     setToastMsg(msg);
@@ -199,6 +201,16 @@ export default function ProjectDetailPage() {
   }, [session?.clientId, projectId, router]);
 
   useEffect(() => { void fetchProject(); }, [fetchProject]);
+
+  useEffect(() => {
+    if (!session?.clientId) return;
+    fetch(`/api/clients/${session.clientId}/profile`)
+      .then((r) => r.json())
+      .then((data: { slug?: string | null; is_published?: boolean | null }) => {
+        if (data?.slug && data.is_published) setProfileSlug(data.slug);
+      })
+      .catch(() => {});
+  }, [session?.clientId]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -332,9 +344,9 @@ export default function ProjectDetailPage() {
   }
 
   function copyShareLink() {
-    const url = `${window.location.origin}/cloud/share/${project!.id}`;
+    const url = buildProjectShareUrl(window.location.origin, project!.id, profileSlug);
     void navigator.clipboard.writeText(url);
-    showToast("Share link copied!");
+    showToast("Case study link copied!");
     setMenuOpen(false);
   }
 

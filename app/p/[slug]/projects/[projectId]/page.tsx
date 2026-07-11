@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { fetchProjectMagazineData, normalizeAppDomainUrl } from "@/lib/cloud/project-magazine";
 import { ProjectMagazineScreen } from "@/components/profile/project-magazine/ProjectMagazineScreen";
+import { ViewRecorder } from "@/app/cloud/share/[projectId]/ViewRecorder";
 
 export const dynamic = "force-dynamic";
 
@@ -43,5 +44,10 @@ export default async function ProjectMagazinePage({
   params: { slug: string; projectId: string };
 }) {
   const data = await fetchProjectMagazineData(params.slug, params.projectId);
-  return <ProjectMagazineScreen data={data} />;
+  return (
+    <>
+      <ViewRecorder projectId={data.project.id} />
+      <ProjectMagazineScreen data={data} />
+    </>
+  );
 }

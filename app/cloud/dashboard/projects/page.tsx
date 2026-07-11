@@ -7,6 +7,7 @@ import { Plus, Folder, Star, MoreVertical, Search, Copy, Trash2, Edit2, ArrowRig
 import { NewProjectSlideOver } from "./NewProjectSlideOver";
 import { SkeletonPhotoGrid } from "@/app/cloud/components/SkeletonCard";
 import ProjectSceneIllustration from "@/app/cloud/components/ProjectSceneIllustration";
+import { buildProjectShareUrl } from "@/app/cloud/lib/project-share-url";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -35,6 +36,7 @@ export default function CloudProjectsPage() {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState("");
   const [fetchError, setFetchError] = useState("");
+  const [profileSlug, setProfileSlug] = useState<string | null>(null);
 
   const fetchProjects = useCallback(() => {
     if (!session?.clientId) { setLoading(false); return; }
@@ -59,6 +61,16 @@ export default function CloudProjectsPage() {
   }, [session?.clientId]);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
+
+  useEffect(() => {
+    if (!session?.clientId) return;
+    fetch(`/api/clients/${session.clientId}/profile`)
+      .then((r) => r.json())
+      .then((data: { slug?: string | null; is_published?: boolean | null }) => {
+        if (data?.slug && data.is_published) setProfileSlug(data.slug);
+      })
+      .catch(() => {});
+  }, [session?.clientId]);
 
   function cover(p: Project): string | null {
     const sorted = [...(p.project_media ?? [])].sort((a, b) => a.display_order - b.display_order);
@@ -107,9 +119,9 @@ export default function CloudProjectsPage() {
   }
 
   function copyShareLink(p: Project) {
-    const url = `${window.location.origin}/cloud/share/${p.id}`;
+    const url = buildProjectShareUrl(window.location.origin, p.id, profileSlug);
     void navigator.clipboard.writeText(url);
-    showToast("Share link copied!");
+    showToast("Case study link copied!");
     setMenuOpen(null);
   }
 

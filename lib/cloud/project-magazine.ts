@@ -164,6 +164,33 @@ export function galleryPhotos(media: ProjectMediaRow[]): ProjectMediaRow[] {
     .sort((a, b) => a.display_order - b.display_order);
 }
 
+/** Resolve a published profile slug for a public project (by id or legacy slug). */
+export async function resolveMagazineSlugForProject(
+  projectIdOrSlug: string
+): Promise<{ slug: string; projectId: string } | null> {
+  const supabase = createAdminClient();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("id, client_id, is_public")
+    .or(`id.eq.${projectIdOrSlug},slug.eq.${projectIdOrSlug}`)
+    .eq("is_public", true)
+    .maybeSingle();
+
+  if (!project) return null;
+
+  const { data: profile } = await supabase
+    .from("client_profiles")
+    .select("slug, is_published")
+    .eq("client_id", project.client_id as string)
+    .maybeSingle();
+
+  const slug = (profile?.slug as string | null)?.trim();
+  if (!slug || !profile?.is_published) return null;
+
+  return { slug, projectId: project.id as string };
+}
+
 export async function fetchProjectMagazineData(
   slug: string,
   projectId: string
