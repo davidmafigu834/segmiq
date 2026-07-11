@@ -43,10 +43,25 @@ export async function renderProjectPdf(printUrl: string): Promise<Buffer> {
   try {
     const page = await browser.newPage();
     await page.goto(printUrl, { waitUntil: "networkidle0", timeout: 45_000 });
+    await page.evaluate(() =>
+      Promise.all(
+        Array.from(document.images).map(
+          (img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  img.onload = () => resolve();
+                  img.onerror = () => resolve();
+                })
+        )
+      )
+    );
+    await page.emulateMediaType("screen");
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
       margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      preferCSSPageSize: true,
     });
     return Buffer.from(pdf);
   } finally {
