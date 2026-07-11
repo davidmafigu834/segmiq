@@ -194,7 +194,8 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                     <img
                       src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
                       alt={photo.caption ?? project.title}
-                      loading="lazy"
+                      loading="eager"
+                      decoding="sync"
                     />
               </div>
             ))}
@@ -239,7 +240,8 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                                 src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
                                 alt={photo.caption ?? step.title ?? step.day_label}
                                 className="print-timeline-img"
-                                loading="lazy"
+                                loading="eager"
+                                decoding="sync"
                               />
                             </div>
                           ))}

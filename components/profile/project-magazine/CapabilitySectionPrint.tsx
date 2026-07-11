@@ -75,7 +75,8 @@ export function CapabilitySectionPrint({
                     src={printImageUrl(cert.certificate_url)}
                     alt={cert.name || "Certificate"}
                     className="print-capability-cert-img"
-                    loading="lazy"
+                    loading="eager"
+                    decoding="sync"
                   />
                 )}
                 <div className="print-capability-cert-body">
@@ -104,7 +105,8 @@ export function CapabilitySectionPrint({
                     src={printImageUrl(member.photo_url)}
                     alt={member.name}
                     className="print-capability-team-photo"
-                    loading="lazy"
+                    loading="eager"
+                    decoding="sync"
                   />
                 ) : (
                   <div

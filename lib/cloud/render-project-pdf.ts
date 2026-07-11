@@ -6,7 +6,7 @@ const DEFAULT_CHROMIUM_PACK_URL =
   "https://github.com/Sparticuz/chromium/releases/download/v147.0.0/chromium-v147.0.0-pack.x64.tar";
 
 const PAGE_LOAD_TIMEOUT_MS = 45_000;
-const IMAGE_WAIT_TIMEOUT_MS = 20_000;
+const PER_IMAGE_WAIT_MS = 8_000;
 const IMAGE_OPTIMIZE_BUDGET_MS = 28_000;
 const IMAGE_OPTIMIZE_CONCURRENCY = 4;
 
@@ -47,25 +47,33 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
   }
 }
 
-async function waitForImages(page: Page): Promise<void> {
+/** Scroll the print page so below-the-fold lazy images start loading. */
+async function triggerLazyImageLoads(page: Page): Promise<void> {
   await page.evaluate(async () => {
+    const step = Math.max(window.innerHeight, 400);
+    for (let y = 0; y <= document.body.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise((resolve) => setTimeout(resolve, 80));
+    }
+    window.scrollTo(0, 0);
+  });
+}
+
+/** Best-effort wait — never blocks PDF generation on a single stuck image. */
+async function waitForImages(page: Page): Promise<void> {
+  await page.evaluate(async (perImageMs) => {
     await Promise.all(
       Array.from(document.images).map(async (img) => {
-        if (img.complete && img.naturalWidth > 0) {
-          if (typeof img.decode === "function") {
-            try {
-              await img.decode();
-            } catch {
-              // Ignore decode errors; the image may still paint in PDF output.
-            }
+        const waitForLoad = new Promise<void>((resolve) => {
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+            return;
           }
-          return;
-        }
-
-        await new Promise<void>((resolve) => {
           img.addEventListener("load", () => resolve(), { once: true });
           img.addEventListener("error", () => resolve(), { once: true });
         });
+        const timeout = new Promise<void>((resolve) => setTimeout(resolve, perImageMs));
+        await Promise.race([waitForLoad, timeout]);
 
         if (typeof img.decode === "function") {
           try {
@@ -76,7 +84,7 @@ async function waitForImages(page: Page): Promise<void> {
         }
       })
     );
-  });
+  }, PER_IMAGE_WAIT_MS);
 }
 
 async function mapWithConcurrency<T, R>(
@@ -171,8 +179,9 @@ export async function renderProjectPdf(printUrl: string): Promise<Buffer> {
       );
     }
 
-    await withTimeout(waitForImages(page), IMAGE_WAIT_TIMEOUT_MS, "Image load");
-    await withTimeout(injectOptimizedImages(page), IMAGE_OPTIMIZE_BUDGET_MS + 5_000, "Image optimization");
+    await triggerLazyImageLoads(page);
+    await waitForImages(page);
+    await injectOptimizedImages(page);
 
     await page.evaluate(() => {
       document.documentElement.style.setProperty("background", "#ffffff", "important");
