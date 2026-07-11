@@ -500,13 +500,10 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           text-transform: uppercase;
           color: #8c7b6b;
         }
-        .print-section-title {
-          margin: 0 0 14px;
-          font-size: 24px;
-          break-after: avoid;
-          page-break-after: avoid;
+        .print-gallery-section {
+          break-before: page;
+          page-break-before: always;
         }
-        .print-gallery-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 10px;
