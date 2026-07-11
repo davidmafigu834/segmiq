@@ -2,6 +2,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { Battery, Check, Clock, Shield, Sun, Zap } from "lucide-react";
+import {
+  isMissingMagazineColumnError,
+} from "@/lib/cloud/project-columns";
+import {
+  CLIENT_CAPABILITY_COLUMNS,
+  isMissingCapabilityColumnError,
+  parseClientCapabilityProfile,
+  shouldShowCapabilitySection,
+  type ClientCapabilityProfile,
+} from "@/lib/cloud/client-capability";
 
 export type TimelineStep = {
   day_label: string;
@@ -57,8 +67,12 @@ export type ProjectMagazineData = {
     duration_label: string | null;
     budget_range: string | null;
     show_budget: boolean;
+    include_capability_section: boolean;
   };
   client: ProjectMagazineClient;
+  capability: ClientCapabilityProfile;
+  publicProjectCount: number;
+  showCapabilitySection: boolean;
   media: ProjectMediaRow[];
   coverUrl: string | null;
   printCoverUrl: string | null;
@@ -232,27 +246,83 @@ export async function fetchProjectMagazineData(
 
   const { data: profile } = await supabase
     .from("client_profiles")
-    .select("client_id, slug, is_published, clients(id, name, slug, logo_url, primary_color, industry, country)")
+    .select("client_id, slug, is_published")
     .eq("slug", slug)
     .maybeSingle();
 
   if (!profile || !profile.is_published) notFound();
 
   const clientId = profile.client_id as string;
-  const client = profile.clients as unknown as ProjectMagazineClient | null;
-  if (!client) notFound();
+  const baseClientSelect = "id, name, slug, logo_url, primary_color, industry, country";
+  const capabilitySelect = CLIENT_CAPABILITY_COLUMNS.join(", ");
 
-  const { data: project } = await supabase
+  let clientRow: Record<string, unknown> | null = null;
+  let capability = parseClientCapabilityProfile({});
+
+  const withCapability = await supabase
+    .from("clients")
+    .select(`${baseClientSelect}, ${capabilitySelect}`)
+    .eq("id", clientId)
+    .single();
+
+  if (withCapability.error && isMissingCapabilityColumnError(withCapability.error.message)) {
+    const basic = await supabase.from("clients").select(baseClientSelect).eq("id", clientId).single();
+    if (basic.error || !basic.data) notFound();
+    clientRow = basic.data as Record<string, unknown>;
+  } else if (withCapability.error || !withCapability.data) {
+    notFound();
+  } else {
+    clientRow = withCapability.data as Record<string, unknown>;
+    capability = parseClientCapabilityProfile(clientRow);
+  }
+
+  const client: ProjectMagazineClient = {
+    id: clientRow.id as string,
+    name: clientRow.name as string,
+    slug: (clientRow.slug as string | null) ?? slug,
+    logo_url: (clientRow.logo_url as string | null) ?? null,
+    primary_color: (clientRow.primary_color as string | null) ?? null,
+    industry: (clientRow.industry as string | null) ?? null,
+    country: (clientRow.country as string | null) ?? null,
+  };
+
+  const baseProjectSelect =
+    "id, title, slug, category, location, completion_date, description, cover_media_id, story_brief, story_result, pull_quote, pull_quote_by, timeline_steps, spec_fields, pdf_url, pdf_generated_at, updated_at, duration_label, budget_range, show_budget, is_public";
+
+  const fullProjectResult = await supabase
     .from("projects")
-    .select(
-      "id, title, slug, category, location, completion_date, description, cover_media_id, story_brief, story_result, pull_quote, pull_quote_by, timeline_steps, spec_fields, pdf_url, pdf_generated_at, updated_at, duration_label, budget_range, show_budget, is_public"
-    )
+    .select(`${baseProjectSelect}, include_capability_section`)
     .eq("id", projectId)
     .eq("client_id", clientId)
     .eq("is_public", true)
     .maybeSingle();
 
+  let project = fullProjectResult.data as Record<string, unknown> | null;
+  let includeCapabilitySection = false;
+
+  if (fullProjectResult.error && isMissingMagazineColumnError(fullProjectResult.error.message)) {
+    const basicProjectResult = await supabase
+      .from("projects")
+      .select(baseProjectSelect)
+      .eq("id", projectId)
+      .eq("client_id", clientId)
+      .eq("is_public", true)
+      .maybeSingle();
+    project = basicProjectResult.data as Record<string, unknown> | null;
+  } else if (fullProjectResult.error) {
+    notFound();
+  } else if (project) {
+    includeCapabilitySection = Boolean(project.include_capability_section);
+  }
+
   if (!project) notFound();
+  const showCapabilitySection = shouldShowCapabilitySection(includeCapabilitySection, capability);
+
+  const { count: publicProjectCount } = await supabase
+    .from("projects")
+    .select("*", { count: "exact", head: true })
+    .eq("client_id", clientId)
+    .eq("is_public", true);
 
   const { data: rawMedia } = await supabase
     .from("project_media")
@@ -317,8 +387,12 @@ export async function fetchProjectMagazineData(
       duration_label: (project.duration_label as string | null) ?? null,
       budget_range: (project.budget_range as string | null) ?? null,
       show_budget: Boolean(project.show_budget),
+      include_capability_section: includeCapabilitySection,
     },
     client,
+    capability,
+    publicProjectCount: publicProjectCount ?? 0,
+    showCapabilitySection,
     media,
     coverUrl,
     printCoverUrl,

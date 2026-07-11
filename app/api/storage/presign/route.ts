@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
-import { generatePresignedUploadUrl, generateOriginalMediaKey, generateHeroKey, generateTestimonialPhotoKey, generateVideoKey, getPublicUrl } from "@/lib/storage/r2";
+import { generatePresignedUploadUrl, generateOriginalMediaKey, generateHeroKey, generateTestimonialPhotoKey, generateVideoKey, generateCapabilityAssetKey, getPublicUrl } from "@/lib/storage/r2";
 import { generateLogoKey, isAllowedImageContentType, resolveImageContentType } from "@/lib/storage/logo-upload";
 import {
   MEDIA_PHOTO_MAX_BYTES,
@@ -20,16 +20,16 @@ export async function POST(req: Request) {
     contentType: string;
     clientId: string;
     projectId?: string;
-    purpose?: "hero" | "media" | "testimonial" | "logo";
+    purpose?: "hero" | "media" | "testimonial" | "logo" | "capability";
     fileSize?: number;
   };
 
   const contentType =
-    purpose === "logo"
+    purpose === "logo" || purpose === "capability"
       ? resolveImageContentType(filename, rawContentType) ?? rawContentType
       : resolveMediaContentType(filename, rawContentType) ?? rawContentType;
 
-  if (purpose === "logo") {
+  if (purpose === "logo" || purpose === "capability") {
     if (!contentType || !isAllowedImageContentType(contentType)) {
       return NextResponse.json(
         { error: "Only JPEG, PNG, WEBP, and HEIC images are supported" },
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (purpose !== "logo" && !isAllowedMediaContentType(contentType)) {
+  if (purpose !== "logo" && purpose !== "capability" && !isAllowedMediaContentType(contentType)) {
     return NextResponse.json(
       { error: "File type not supported. Upload photos (JPEG, PNG, WEBP, HEIC) or videos (MP4, MOV, WEBM, 3GP)." },
       { status: 400 }
@@ -80,6 +80,8 @@ export async function POST(req: Request) {
   let key: string;
   if (purpose === "hero") {
     key = generateHeroKey(clientId, filename);
+  } else if (purpose === "capability") {
+    key = generateCapabilityAssetKey(clientId, filename);
   } else if (purpose === "testimonial") {
     key = generateTestimonialPhotoKey(clientId, filename);
   } else if (purpose === "logo") {

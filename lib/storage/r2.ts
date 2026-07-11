@@ -42,6 +42,11 @@ export function generateMediaKey(clientId: string, projectId: string, filename: 
   return `clients/${clientId}/projects/${projectId}/${Date.now()}.${ext}`;
 }
 
+export function generateCapabilityAssetKey(clientId: string, filename: string): string {
+  const ext = filename.split(".").pop() ?? "jpg";
+  return `clients/${clientId}/capability/${Date.now()}.${ext}`;
+}
+
 export function generateHeroKey(clientId: string, filename: string): string {
   const ext = filename.split(".").pop() ?? "jpg";
   return `clients/${clientId}/hero/${Date.now()}.${ext}`;

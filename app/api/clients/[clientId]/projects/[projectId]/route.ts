@@ -17,7 +17,7 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     "title", "category", "location", "completion_date", "description",
     "is_featured", "is_public", "display_order", "duration_label", "budget_range", "show_budget",
     "cover_media_id", "story_brief", "story_result", "pull_quote", "pull_quote_by",
-    "timeline_steps", "spec_fields",
+    "timeline_steps", "spec_fields", "include_capability_section",
   ];
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of allowed) {

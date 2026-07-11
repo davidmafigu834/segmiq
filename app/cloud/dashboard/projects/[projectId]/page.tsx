@@ -76,6 +76,7 @@ type Project = {
   pull_quote_by?: string | null;
   timeline_steps?: TimelineStepDraft[];
   spec_fields?: SpecFieldDraft[];
+  include_capability_section?: boolean;
   pdf_url?: string | null;
   pdf_generated_at?: string | null;
   project_media: MediaItem[];
@@ -151,6 +152,7 @@ export default function ProjectDetailPage() {
   const [pullQuoteBy, setPullQuoteBy] = useState("");
   const [timelineSteps, setTimelineSteps] = useState<TimelineStepDraft[]>([]);
   const [specFields, setSpecFields] = useState<SpecFieldDraft[]>([]);
+  const [includeCapabilitySection, setIncludeCapabilitySection] = useState(false);
   const [coverMediaId, setCoverMediaId] = useState<string | null>(null);
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
   const [pdfRegenerating, setPdfRegenerating] = useState(false);
@@ -199,6 +201,7 @@ export default function ProjectDetailPage() {
           : []
       );
       setCoverMediaId(found.cover_media_id ?? null);
+      setIncludeCapabilitySection(Boolean(found.include_capability_section));
       const sorted = [...(found.project_media ?? [])].sort((a, b) => a.display_order - b.display_order);
       setMedia(sorted);
     } finally {
@@ -282,6 +285,7 @@ export default function ProjectDetailPage() {
         pull_quote_by: pullQuoteBy.trim() || null,
         timeline_steps: cleanedTimeline,
         spec_fields: cleanedSpecs,
+        include_capability_section: includeCapabilitySection,
       }),
     });
     setProject((p) =>
@@ -294,6 +298,7 @@ export default function ProjectDetailPage() {
             pull_quote_by: pullQuoteBy.trim() || null,
             timeline_steps: cleanedTimeline,
             spec_fields: cleanedSpecs,
+            include_capability_section: includeCapabilitySection,
           }
         : p
     );
@@ -1415,6 +1420,39 @@ export default function ProjectDetailPage() {
           className="mt-4 rounded-lg bg-[#1C1410] px-3 py-1.5 text-[11px] font-bold text-[#D4FF4F] font-cloud-body"
         >
           Save specs
+        </button>
+      </div>
+
+      <div className="rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 mb-4">
+        <div className="mb-3 flex items-center gap-2">
+          <BookOpen className="h-4 w-4 text-[#666660]" />
+          <h3 className="font-cloud-body text-[10px] font-bold tracking-[0.08em] text-[#666660] uppercase">
+            Company capability
+          </h3>
+        </div>
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-black/[0.08] bg-white/70 px-4 py-3">
+          <input
+            type="checkbox"
+            checked={includeCapabilitySection}
+            onChange={(e) => setIncludeCapabilitySection(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-[#1C1410]"
+          />
+          <span>
+            <span className="block text-[13px] font-semibold text-[#0a0a0a] font-cloud-body">
+              Include company capability section on this project&apos;s magazine
+            </span>
+            <span className="mt-1 block text-[12px] leading-relaxed text-[#6B7280] font-cloud-body">
+              Shows your company profile from Settings on the public page and PDF. Edit capability
+              details under Settings → Company capability.
+            </span>
+          </span>
+        </label>
+        <button
+          type="button"
+          onClick={() => void saveMagazineFields()}
+          className="mt-4 rounded-lg bg-[#1C1410] px-3 py-1.5 text-[11px] font-bold text-[#D4FF4F] font-cloud-body"
+        >
+          Save magazine options
         </button>
       </div>
 

@@ -29,6 +29,7 @@ export const MAGAZINE_PROJECT_COLUMNS = [
   "spec_fields",
   "pdf_url",
   "pdf_generated_at",
+  "include_capability_section",
 ] as const;
 
 /** Embed gallery media via project_id (not cover_media_id). */

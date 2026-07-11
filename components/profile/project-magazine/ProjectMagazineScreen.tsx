@@ -16,6 +16,7 @@ import {
   type ProjectMagazineData,
 } from "@/lib/cloud/project-magazine";
 import { ProjectPdfDownloadButton } from "@/components/profile/project-magazine/ProjectPdfDownloadButton";
+import { CapabilitySectionScreen } from "@/components/profile/project-magazine/CapabilitySectionScreen";
 
 function SpecIcon({ index, label }: { index: number; label: string }) {
   const Icon = getSpecIcon(index, label);
@@ -337,6 +338,15 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
               {testimonial.author_role ? `, ${testimonial.author_role}` : ""}
             </p>
           </section>
+        )}
+
+        {data.showCapabilitySection && (
+          <CapabilitySectionScreen
+            clientName={clientName}
+            brandColor={brandColor}
+            capability={data.capability}
+            publicProjectCount={data.publicProjectCount}
+          />
         )}
 
         <section className="py-16">

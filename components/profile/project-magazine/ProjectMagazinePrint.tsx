@@ -10,6 +10,7 @@ import {
   resolveTimelineStepPhotos,
   type ProjectMagazineData,
 } from "@/lib/cloud/project-magazine";
+import { CapabilitySectionPrint } from "@/components/profile/project-magazine/CapabilitySectionPrint";
 
 type PrintPageProps = {
   data: ProjectMagazineData;
@@ -261,6 +262,17 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
               </span>
             </div>
           )}
+        </PrintContentPage>
+      )}
+
+      {data.showCapabilitySection && (
+        <PrintContentPage clientName={clientName} projectTitle={project.title}>
+          <CapabilitySectionPrint
+            clientName={clientName}
+            brandColor={brandColor}
+            capability={data.capability}
+            publicProjectCount={data.publicProjectCount}
+          />
         </PrintContentPage>
       )}
 
@@ -704,6 +716,169 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           padding: 6px;
           border-radius: 8px;
           flex-shrink: 0;
+        }
+        .print-capability-block {
+          margin-bottom: 8px;
+        }
+        .print-capability-client {
+          margin: 0;
+          font-size: 22px;
+          font-weight: 700;
+        }
+        .print-capability-tagline {
+          margin: 8px 0 0;
+          font-size: 14px;
+          line-height: 1.6;
+          color: #4a3828;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-subsection {
+          margin-top: 18px;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .print-capability-label {
+          margin: 0 0 8px;
+          font-size: 10px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: #8c7b6b;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-glance {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .print-capability-stat-card,
+        .print-capability-cert-card,
+        .print-capability-team-card,
+        .print-capability-stat-row {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .print-capability-stat-card {
+          border: 1px solid rgba(28,20,16,0.1);
+          border-radius: 10px;
+          padding: 10px 12px;
+          min-width: 140px;
+        }
+        .print-capability-stat-label {
+          margin: 0;
+          font-size: 9px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #8c7b6b;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-stat-value {
+          margin: 4px 0 0;
+          font-size: 20px;
+          font-weight: 700;
+        }
+        .print-capability-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 8px;
+        }
+        .print-capability-tag {
+          border: 1px solid rgba(28,20,16,0.1);
+          border-radius: 999px;
+          padding: 4px 10px;
+          font-size: 11px;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-cert-grid,
+        .print-capability-team-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .print-capability-cert-card {
+          border: 1px solid rgba(28,20,16,0.1);
+          border-radius: 10px;
+          overflow: hidden;
+        }
+        .print-capability-cert-img {
+          width: 100%;
+          height: 90px;
+          object-fit: cover;
+          display: block;
+        }
+        .print-capability-cert-body {
+          padding: 10px;
+        }
+        .print-capability-cert-name {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 700;
+        }
+        .print-capability-cert-meta {
+          margin: 4px 0 0;
+          font-size: 11px;
+          color: #8c7b6b;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-team-card {
+          display: flex;
+          gap: 10px;
+          border: 1px solid rgba(28,20,16,0.1);
+          border-radius: 10px;
+          padding: 10px;
+        }
+        .print-capability-team-photo,
+        .print-capability-team-fallback {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          object-fit: cover;
+        }
+        .print-capability-team-fallback {
+          display: grid;
+          place-items: center;
+          color: var(--brand-ink);
+          font-size: 11px;
+          font-weight: 700;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-team-name {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 700;
+        }
+        .print-capability-team-role {
+          margin: 2px 0 0;
+          font-size: 10px;
+          color: #8c7b6b;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-team-bio {
+          margin: 6px 0 0;
+          font-size: 11px;
+          line-height: 1.5;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-stats {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+        }
+        .print-capability-stat-row {
+          border: 1px solid rgba(28,20,16,0.1);
+          border-radius: 10px;
+          padding: 10px 12px;
+          margin-bottom: 8px;
+        }
+        .print-capability-stat-text {
+          margin: 4px 0 0;
+          font-size: 13px;
+          line-height: 1.5;
+          font-family: system-ui, sans-serif;
+        }
+        .print-capability-stat-date {
+          color: #8c7b6b;
         }
       `}</style>
     </div>

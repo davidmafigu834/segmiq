@@ -32,5 +32,6 @@ export function printImageMaxWidth(className: string): number {
   if (className.includes("print-cover-img")) return PRINT_COVER_MAX_WIDTH;
   if (className.includes("print-logo-chip")) return PRINT_LOGO_MAX_WIDTH;
   if (className.includes("print-timeline-img")) return 480;
+  if (className.includes("print-capability")) return 480;
   return PRINT_GALLERY_MAX_WIDTH;
 }
