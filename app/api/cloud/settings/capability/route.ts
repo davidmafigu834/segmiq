@@ -119,7 +119,11 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(parseClientCapabilityProfile(data as Record<string, unknown>));
+  if (!data) return NextResponse.json(emptyProfile());
+
+  return NextResponse.json(
+    parseClientCapabilityProfile(data as unknown as Record<string, unknown>)
+  );
 }
 
 export async function PATCH(req: Request) {
@@ -158,5 +162,9 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(parseClientCapabilityProfile(data as Record<string, unknown>));
+  if (!data) return NextResponse.json(emptyProfile());
+
+  return NextResponse.json(
+    parseClientCapabilityProfile(data as unknown as Record<string, unknown>)
+  );
 }
