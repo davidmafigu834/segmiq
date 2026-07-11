@@ -67,6 +67,25 @@ function PrintSpecCard({
   );
 }
 
+function PrintContentPage({
+  children,
+  className = "",
+  clientName,
+  projectTitle,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  clientName: string;
+  projectTitle: string;
+}) {
+  return (
+    <section className={`print-content-page ${className}`.trim()}>
+      <RunningHeader clientName={clientName} projectTitle={projectTitle} />
+      <div className="print-content-body">{children}</div>
+    </section>
+  );
+}
+
 export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
   const { project, client, coverUrl, testimonial } = data;
   const brandColor = client.primary_color ?? "#0F7A4F";
@@ -123,67 +142,66 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         </div>
       </section>
 
-      <div className="print-flow">
-        <div className="print-fixed-header">
-          <RunningHeader clientName={clientName} projectTitle={project.title} />
-        </div>
-        <div className="print-fixed-footer">
-          <span className="print-footer-page">
-            Page <span className="page-num" /> of <span className="page-total" />
-          </span>
-          <span className="print-powered-by">
-            <span className="print-lime-dot" aria-hidden />
-            Powered by Segmiq
-          </span>
-        </div>
+      {hasStorySection && (
+        <PrintContentPage
+          className="print-story-page"
+          clientName={clientName}
+          projectTitle={project.title}
+        >
+          <div className="print-story-layout">
+            <div className="print-story-main">
+              {storyBrief && <p className="print-drop-cap">{storyBrief}</p>}
+              {pullQuote && (
+                <blockquote
+                  className="print-pull-quote"
+                  style={{ borderColor: brandColor }}
+                >
+                  &ldquo;{pullQuote}&rdquo;
+                  {pullQuoteBy && <footer>— {pullQuoteBy}</footer>}
+                </blockquote>
+              )}
+              {storyResult && <p className="print-body-text">{storyResult}</p>}
+            </div>
+            <PrintSpecCard specFields={project.spec_fields} brandColor={brandColor} />
+          </div>
+        </PrintContentPage>
+      )}
 
-        <main className="print-flow-content">
-          {hasStorySection && (
-            <section className="print-story-section">
-              <div className="print-story-layout">
-                <div className="print-story-main">
-                  {storyBrief && <p className="print-drop-cap">{storyBrief}</p>}
-                  {pullQuote && (
-                    <blockquote
-                      className="print-pull-quote"
-                      style={{ borderColor: brandColor }}
-                    >
-                      &ldquo;{pullQuote}&rdquo;
-                      {pullQuoteBy && <footer>— {pullQuoteBy}</footer>}
-                    </blockquote>
-                  )}
-                  {storyResult && <p className="print-body-text">{storyResult}</p>}
-                </div>
-                <PrintSpecCard specFields={project.spec_fields} brandColor={brandColor} />
+      {photos.length > 0 && (
+        <PrintContentPage
+          className="print-gallery-page"
+          clientName={clientName}
+          projectTitle={project.title}
+        >
+          <h2 className="print-section-title">Gallery</h2>
+          <div className="print-gallery-grid">
+            {photos.map((photo, index) => (
+              <div
+                key={photo.id}
+                className={
+                  index === 0 ? "print-gallery-hero print-gallery-tile" : "print-gallery-tile"
+                }
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
+                  alt={photo.caption ?? project.title}
+                  crossOrigin="anonymous"
+                />
               </div>
-            </section>
-          )}
+            ))}
+          </div>
+        </PrintContentPage>
+      )}
 
-          {photos.length > 0 && (
-            <section className="print-gallery-section">
-              <h2 className="print-section-title">Gallery</h2>
-              <div className="print-gallery-grid">
-                {photos.map((photo, index) => (
-                  <div
-                    key={photo.id}
-                    className={
-                      index === 0 ? "print-gallery-hero print-gallery-tile" : "print-gallery-tile"
-                    }
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
-                      alt={photo.caption ?? project.title}
-                      crossOrigin="anonymous"
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
+      {(hasTimeline || testimonial) && (
+        <PrintContentPage
+          className="print-timeline-page"
+          clientName={clientName}
+          projectTitle={project.title}
+        >
           {hasTimeline && (
-            <section className="print-timeline-section">
+            <div className="print-timeline-block">
               <h2 className="print-section-title">Timeline</h2>
               <ol className="print-timeline">
                 {project.timeline_steps.map((step, stepIndex) => (
@@ -206,38 +224,49 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                   </li>
                 ))}
               </ol>
-            </section>
+            </div>
           )}
 
           {testimonial && (
-            <section className="print-testimonial-section">
-              <div className="print-testimonial">
-                <p>&ldquo;{testimonial.content}&rdquo;</p>
-                <span>
-                  — {testimonial.author_name}
-                  {testimonial.author_role ? `, ${testimonial.author_role}` : ""}
-                </span>
-              </div>
-            </section>
-          )}
-
-          <section className="print-cta-section">
-            <div className="print-cta">
-              <div>
-                <h3>Want something like this?</h3>
-                <p>Scan to view the live case study or request a quote.</p>
-                <p className="print-cta-url">{data.livePageUrl}</p>
-              </div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={qrDataUrl}
-                alt="QR code linking to live project page"
-                className="print-qr"
-              />
+            <div className="print-testimonial">
+              <p>&ldquo;{testimonial.content}&rdquo;</p>
+              <span>
+                — {testimonial.author_name}
+                {testimonial.author_role ? `, ${testimonial.author_role}` : ""}
+              </span>
             </div>
-          </section>
-        </main>
-      </div>
+          )}
+        </PrintContentPage>
+      )}
+
+      <PrintContentPage
+        className="print-cta-page"
+        clientName={clientName}
+        projectTitle={project.title}
+      >
+        <div className="print-cta">
+          <div>
+            <h3>Want something like this?</h3>
+            <p>Scan to view the live case study or request a quote.</p>
+            <p className="print-cta-url">{data.livePageUrl}</p>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={qrDataUrl}
+            alt="QR code linking to live project page"
+            className="print-qr"
+          />
+        </div>
+        <div className="print-content-footer">
+          <span className="print-footer-page">
+            Page <span className="page-num" /> of <span className="page-total" />
+          </span>
+          <span className="print-powered-by">
+            <span className="print-lime-dot" aria-hidden />
+            Powered by Segmiq
+          </span>
+        </div>
+      </PrintContentPage>
 
       <style>{`
         @page { size: A4; margin: 0; }
@@ -253,7 +282,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .page-total::after { content: counter(pages); }
         .print-running-header,
         .print-cover-footer,
-        .print-fixed-footer {
+        .print-content-footer {
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -284,39 +313,25 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           padding-top: 10px;
           margin-top: auto;
         }
-        .print-flow {
-          position: relative;
+        .print-content-page {
           width: 794px;
+          padding: 42px 48px 48px;
+          box-sizing: border-box;
           background: #fff;
         }
-        .print-fixed-header {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          width: 794px;
-          margin: 0 auto;
-          padding: 42px 48px 0;
-          background: #fff;
-          z-index: 20;
+        .print-gallery-page,
+        .print-timeline-page,
+        .print-cta-page {
+          break-before: page;
+          page-break-before: always;
         }
-        .print-fixed-header .print-running-header {
-          margin-bottom: 0;
+        .print-content-body {
+          width: 100%;
         }
-        .print-fixed-footer {
-          position: fixed;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          width: 794px;
-          margin: 0 auto;
-          padding: 10px 48px 36px;
+        .print-content-footer {
           border-top: 1px solid rgba(28,20,16,0.1);
-          background: #fff;
-          z-index: 20;
-        }
-        .print-flow-content {
-          padding: 92px 48px 78px;
+          padding-top: 10px;
+          margin-top: 24px;
         }
         .print-powered-by {
           display: inline-flex;
@@ -406,13 +421,6 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           font-size: 12px;
           opacity: 0.75;
           font-family: system-ui, sans-serif;
-        }
-        .print-story-section,
-        .print-gallery-section,
-        .print-timeline-section,
-        .print-testimonial-section,
-        .print-cta-section {
-          margin-bottom: 24px;
         }
         .print-story-layout {
           display: grid;
@@ -506,10 +514,6 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           break-after: avoid;
           page-break-after: avoid;
         }
-        .print-gallery-section {
-          break-before: page;
-          page-break-before: always;
-        }
         .print-gallery-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -531,6 +535,9 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           height: 100%;
           object-fit: cover;
           display: block;
+        }
+        .print-timeline-block {
+          margin-bottom: 24px;
         }
         .print-timeline {
           list-style: none;
@@ -576,7 +583,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           font-family: system-ui, sans-serif;
         }
         .print-testimonial {
-          padding: 16px 0 0;
+          padding-top: 16px;
           border-top: 1px solid rgba(28,20,16,0.1);
           break-inside: avoid;
           page-break-inside: avoid;
