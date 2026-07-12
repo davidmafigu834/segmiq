@@ -244,7 +244,7 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
               >
                 &ldquo;
               </span>
-              <p className="relative max-w-[54ch] text-[clamp(19px,2.4vw,26px)] font-medium leading-[1.55] tracking-[-0.015em] text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)]">
+              <p className="relative w-full text-[clamp(19px,2.4vw,26px)] font-medium leading-[1.6] tracking-[-0.01em] text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)]">
                 {storyResult}
               </p>
             </div>

@@ -628,7 +628,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           position: relative;
           margin-top: 28px;
           border-radius: 18px;
-          padding: 36px 40px 36px 48px;
+          padding: 36px 48px;
           overflow: hidden;
         }
         .print-results-accent {
@@ -640,22 +640,26 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         }
         .print-results-mark {
           position: absolute;
-          right: 28px;
-          top: 18px;
-          font-size: 96px;
+          right: 20px;
+          top: 10px;
+          font-size: 72px;
           line-height: 1;
           font-weight: 700;
-          color: color-mix(in srgb, var(--brand) 14%, transparent);
+          color: color-mix(in srgb, var(--brand) 12%, transparent);
           font-family: Georgia, serif;
+          pointer-events: none;
         }
         .print-results-text {
           position: relative;
+          z-index: 1;
           margin: 0;
-          max-width: 28ch;
-          font-size: 24px;
-          line-height: 1.55;
-          letter-spacing: -0.015em;
+          width: 100%;
+          max-width: none;
+          font-size: 22px;
+          line-height: 1.6;
+          letter-spacing: -0.01em;
           font-weight: 500;
+          text-align: left;
         }
         .print-gallery-grid {
           display: grid;
