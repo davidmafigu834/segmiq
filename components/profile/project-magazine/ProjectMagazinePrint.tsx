@@ -100,7 +100,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
   const metaLine = buildSpecMetaLine(project.spec_fields) ?? project.category;
   const completionLabel = formatCompletionDate(project.completion_date);
   const photos = galleryPhotos(data.media);
-  const hasStory = Boolean(storyBrief || storyResult || pullQuote);
+  const hasStory = Boolean(storyBrief || pullQuote);
   const hasStorySection = hasStory || project.spec_fields.length > 0;
   const hasTimeline = project.timeline_steps.length > 0;
 
@@ -168,9 +168,27 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                   {pullQuoteBy && <footer>— {pullQuoteBy}</footer>}
                 </blockquote>
               )}
-              {storyResult && <p className="print-body-text">{storyResult}</p>}
             </div>
             <PrintSpecCard specFields={project.spec_fields} brandColor={brandColor} />
+          </div>
+        </PrintContentPage>
+      )}
+
+      {storyResult && (
+        <PrintContentPage
+          className="print-results-page"
+          clientName={clientName}
+          projectTitle={project.title}
+        >
+          <p className="print-results-eyebrow">Results</p>
+          <h2 className="print-results-title">The outcome</h2>
+          <div
+            className="print-results-panel"
+            style={{ background: `color-mix(in srgb, ${brandColor} 9%, #F7F4EF)` }}
+          >
+            <span className="print-results-accent" style={{ background: brandColor }} aria-hidden />
+            <span className="print-results-mark" aria-hidden>&ldquo;</span>
+            <p className="print-results-text">{storyResult}</p>
           </div>
         </PrintContentPage>
       )}
@@ -575,6 +593,65 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           font-size: 24px;
           break-after: avoid;
           page-break-after: avoid;
+        }
+        .print-results-page {
+          display: flex;
+          flex-direction: column;
+        }
+        .print-results-eyebrow {
+          margin: 0;
+          font-size: 10px;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: #8c7b6b;
+          font-family: system-ui, sans-serif;
+        }
+        .print-results-title {
+          margin: 8px 0 0;
+          font-size: 30px;
+          line-height: 1.08;
+          letter-spacing: -0.02em;
+          break-after: avoid;
+          page-break-after: avoid;
+        }
+        .print-results-panel {
+          position: relative;
+          margin-top: 28px;
+          flex: 1;
+          min-height: 420px;
+          border-radius: 18px;
+          padding: 44px 48px 44px 56px;
+          display: flex;
+          align-items: center;
+          overflow: hidden;
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .print-results-accent {
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 5px;
+        }
+        .print-results-mark {
+          position: absolute;
+          right: 28px;
+          top: 18px;
+          font-size: 96px;
+          line-height: 1;
+          font-weight: 700;
+          color: color-mix(in srgb, var(--brand) 14%, transparent);
+          font-family: Georgia, serif;
+        }
+        .print-results-text {
+          position: relative;
+          margin: 0;
+          max-width: 28ch;
+          font-size: 24px;
+          line-height: 1.55;
+          letter-spacing: -0.015em;
+          font-weight: 500;
         }
         .print-gallery-grid {
           display: grid;

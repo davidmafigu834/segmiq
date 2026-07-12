@@ -85,8 +85,9 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
   const storyResult = project.story_result?.trim() ?? "";
   const pullQuote = project.pull_quote?.trim() ?? "";
   const pullQuoteBy = project.pull_quote_by?.trim() ?? "";
-  const hasStory = Boolean(storyBrief || storyResult);
+  const hasStory = Boolean(storyBrief);
   const showPullQuoteInStory = Boolean(pullQuote);
+  const hasStorySection = Boolean(storyBrief || pullQuote || specFields.length > 0);
   const metaLine = buildSpecMetaLine(specFields) ?? project.category;
   const completionLabel = formatCompletionDate(project.completion_date);
   const profileHref = `/p/${data.slug}`;
@@ -185,11 +186,11 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
           </section>
         )}
 
-        {(hasStory || specFields.length > 0) && (
+        {hasStorySection && (
           <section className={`py-16 ${atAGlance.length > 0 ? "border-t border-[rgba(28,20,16,0.10)]" : ""}`}>
             <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
               <div className="min-w-0 flex-1">
-                {hasStory && (
+                {(hasStory || showPullQuoteInStory) && (
                   <>
                     <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
                       The story
@@ -212,15 +213,40 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
                         )}
                       </blockquote>
                     )}
-                    {storyResult && (
-                      <p className="max-w-[62ch] text-lg leading-[1.8] text-[var(--fw-text-primary)]">
-                        {storyResult}
-                      </p>
-                    )}
                   </>
                 )}
               </div>
               <SpecSidebar specFields={specFields} brandColor={brandColor} />
+            </div>
+          </section>
+        )}
+
+        {storyResult && (
+          <section className="border-t border-[rgba(28,20,16,0.10)] py-16">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--fw-text-tertiary)]">
+              Results
+            </p>
+            <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
+              The outcome
+            </h2>
+            <div
+              className="relative mt-8 overflow-hidden rounded-[22px] px-8 py-10 min-[821px]:mt-10 min-[821px]:px-12 min-[821px]:py-[52px]"
+              style={{ background: `color-mix(in srgb, ${brandColor} 9%, #F7F4EF)` }}
+            >
+              <span
+                className="absolute bottom-0 left-0 top-0 w-[5px]"
+                style={{ background: brandColor }}
+                aria-hidden
+              />
+              <span
+                className="pointer-events-none absolute right-6 top-4 select-none text-[clamp(72px,12vw,120px)] font-bold leading-none text-[color-mix(in_srgb,var(--brand)_14%,transparent)] [font-family:var(--fw-font-display)]"
+                aria-hidden
+              >
+                &ldquo;
+              </span>
+              <p className="relative max-w-[54ch] text-[clamp(19px,2.4vw,26px)] font-medium leading-[1.55] tracking-[-0.015em] text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)]">
+                {storyResult}
+              </p>
             </div>
           </section>
         )}
