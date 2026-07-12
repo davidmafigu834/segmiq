@@ -180,8 +180,10 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           clientName={clientName}
           projectTitle={project.title}
         >
-          <p className="print-results-eyebrow">Results</p>
-          <h2 className="print-results-title">The outcome</h2>
+          <div className="print-results-header">
+            <p className="print-results-eyebrow">Results</p>
+            <h2 className="print-results-title">The outcome</h2>
+          </div>
           <div
             className="print-results-panel"
             style={{ background: `color-mix(in srgb, ${brandColor} 9%, #F7F4EF)` }}
@@ -595,8 +597,14 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           page-break-after: avoid;
         }
         .print-results-page {
-          display: flex;
-          flex-direction: column;
+          break-before: page;
+          page-break-before: always;
+        }
+        .print-results-header {
+          break-inside: avoid;
+          page-break-inside: avoid;
+          break-after: avoid;
+          page-break-after: avoid;
         }
         .print-results-eyebrow {
           margin: 0;
@@ -605,6 +613,8 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           text-transform: uppercase;
           color: #8c7b6b;
           font-family: system-ui, sans-serif;
+          break-after: avoid;
+          page-break-after: avoid;
         }
         .print-results-title {
           margin: 8px 0 0;
@@ -617,15 +627,9 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         .print-results-panel {
           position: relative;
           margin-top: 28px;
-          flex: 1;
-          min-height: 420px;
           border-radius: 18px;
-          padding: 44px 48px 44px 56px;
-          display: flex;
-          align-items: center;
+          padding: 36px 40px 36px 48px;
           overflow: hidden;
-          break-inside: avoid;
-          page-break-inside: avoid;
         }
         .print-results-accent {
           position: absolute;
