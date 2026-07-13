@@ -1,6 +1,7 @@
 "use client";
 
 import { initials } from "@/lib/inbox/assignee-colors";
+import { displayChatContactName } from "@/lib/inbox/whatsapp-display";
 
 const AVATAR_COLORS = [
   "#00A884",
@@ -63,11 +64,7 @@ export function displayContactName(conversation: {
   name?: string | null;
   whatsappProfileName?: string | null;
   phone?: string | null;
+  source?: string | null;
 }): string {
-  return (
-    conversation.name?.trim()
-    || conversation.whatsappProfileName?.trim()
-    || conversation.phone?.trim()
-    || "Unknown"
-  );
+  return displayChatContactName(conversation);
 }
