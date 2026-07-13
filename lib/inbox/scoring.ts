@@ -22,16 +22,56 @@ const SPECIFICITY_POINTS: Record<string, number> = {
   unknown: 0,
 };
 
+export const SCORE_HOT_MIN = 70;
+export const SCORE_WARM_MIN = 45;
+
 export function scoreLabel(score: number): "Hot" | "Warm" | "Cold" {
-  if (score >= 70) return "Hot";
-  if (score >= 45) return "Warm";
+  if (score >= SCORE_HOT_MIN) return "Hot";
+  if (score >= SCORE_WARM_MIN) return "Warm";
   return "Cold";
 }
 
 export function scoreColor(score: number): string {
-  if (score >= 70) return "var(--accent)";
-  if (score >= 45) return "var(--warning)";
+  if (score >= SCORE_HOT_MIN) return "var(--accent)";
+  if (score >= SCORE_WARM_MIN) return "var(--warning)";
   return "var(--text-tertiary)";
+}
+
+export function scoreIntentTitle(label: "Hot" | "Warm" | "Cold", score: number): string {
+  return `${label} lead · intent score ${score} (${label === "Hot" ? `≥${SCORE_HOT_MIN}` : label === "Warm" ? `${SCORE_WARM_MIN}–${SCORE_HOT_MIN - 1}` : `<${SCORE_WARM_MIN}`})`;
+}
+
+export function scoreIntentStyles(
+  label: "Hot" | "Warm" | "Cold",
+  variant: "list" | "header" | "default" = "list"
+): { bg: string; text: string; border: string; dot: string } {
+  if (variant === "header") {
+    if (label === "Hot") {
+      return { bg: "rgba(255,244,229,0.28)", text: "#FFF4E5", border: "rgba(255,244,229,0.35)", dot: "#FB923C" };
+    }
+    if (label === "Warm") {
+      return { bg: "rgba(255,255,255,0.18)", text: "#FEF3C7", border: "rgba(255,255,255,0.25)", dot: "#FBBF24" };
+    }
+    return { bg: "rgba(255,255,255,0.14)", text: "#E2E8F0", border: "rgba(255,255,255,0.2)", dot: "#94A3B8" };
+  }
+
+  if (variant === "default") {
+    if (label === "Hot") {
+      return { bg: "rgba(212,255,79,0.12)", text: "var(--accent)", border: "rgba(212,255,79,0.3)", dot: "var(--accent)" };
+    }
+    if (label === "Warm") {
+      return { bg: "rgba(245,166,35,0.12)", text: "var(--warning)", border: "rgba(245,166,35,0.3)", dot: "var(--warning)" };
+    }
+    return { bg: "rgba(255,255,255,0.06)", text: "var(--text-tertiary)", border: "var(--border)", dot: "var(--text-tertiary)" };
+  }
+
+  if (label === "Hot") {
+    return { bg: "#FEE2E2", text: "#DC2626", border: "#FECACA", dot: "#EF4444" };
+  }
+  if (label === "Warm") {
+    return { bg: "#FFF4E5", text: "#C2410C", border: "#FED7AA", dot: "#F97316" };
+  }
+  return { bg: "#F1F5F9", text: "#64748B", border: "#E2E8F0", dot: "#94A3B8" };
 }
 
 export function effectiveInboxScore(lead: {

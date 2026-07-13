@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Inbox, Search } from "lucide-react";
 import { initials } from "@/lib/inbox/assignee-colors";
 import { useInboxMobile } from "@/lib/inbox/use-inbox-mobile";
+import { SCORE_HOT_MIN } from "@/lib/inbox/scoring";
 import type { InboxConversation, InboxFilter } from "@/lib/inbox/types";
 import { ChatThread } from "./ChatThread";
 import { ConversationList } from "./ConversationList";
@@ -46,7 +47,7 @@ function filterCounts(
     all: base.length,
     unassigned: base.filter((l) => !l.assignedToId).length,
     mine: base.filter((l) => l.assignedToId === userId).length,
-    hot: base.filter((l) => l.score >= 70).length,
+    hot: base.filter((l) => l.score >= SCORE_HOT_MIN).length,
   };
 }
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { InboxFilter, InboxConversation } from "@/lib/inbox/types";
 import { initials } from "@/lib/inbox/assignee-colors";
+import { SCORE_HOT_MIN } from "@/lib/inbox/scoring";
 import { ConversationRow } from "./ConversationRow";
 import { FilterTabs } from "./FilterTabs";
 import { ArrowLeft, Search } from "lucide-react";
@@ -52,7 +53,7 @@ function applyFilter(
   return rows.filter((l) => {
     if (filter === "unassigned" && l.assignedToId) return false;
     if (filter === "mine" && l.assignedToId !== currentUserId) return false;
-    if (filter === "hot" && l.score < 70) return false;
+    if (filter === "hot" && l.score < SCORE_HOT_MIN) return false;
     if (!matchesSearch(l, q)) return false;
     return true;
   });

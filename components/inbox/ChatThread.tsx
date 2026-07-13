@@ -14,6 +14,7 @@ import type { InboxChatMessage, InboxConversation } from "@/lib/inbox/types";
 import { LogCallForm } from "@/components/leads/LogCallForm";
 import { groupMessagesByDay, MessageBubble } from "./MessageBubble";
 import { LeadStageBadge } from "./LeadStageBadge";
+import { LeadIntentBadge } from "./LeadIntentBadge";
 import { QuickReplyBar, type QuickReplyAction } from "./QuickReplyBar";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 
@@ -270,8 +271,14 @@ export function ChatThread({
           >
             <WhatsAppAvatar name={name} phone={conversation.phone} size="sm" />
             <div className="min-w-0">
-              <div className={`flex items-center gap-2 truncate text-[16px] font-normal ${isWhatsApp ? "text-white" : "text-[var(--text-primary)]"}`}>
+              <div className={`flex flex-wrap items-center gap-1.5 truncate text-[16px] font-normal ${isWhatsApp ? "text-white" : "text-[var(--text-primary)]"}`}>
                 <span className="truncate">{name}</span>
+                <LeadIntentBadge
+                  score={conversation.score}
+                  label={conversation.scoreLabel}
+                  variant={isWhatsApp ? "header" : "default"}
+                  showScore
+                />
                 <LeadStageBadge
                   status={conversation.status}
                   followUpDate={conversation.followUpDate}

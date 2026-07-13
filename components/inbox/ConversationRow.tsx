@@ -5,6 +5,7 @@ import type { InboxConversation } from "@/lib/inbox/types";
 import { AssigneeBadge } from "./AssigneeBadge";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 import { LeadStageBadge } from "./LeadStageBadge";
+import { LeadIntentBadge } from "./LeadIntentBadge";
 import { Image as ImageIcon, Mic } from "lucide-react";
 
 type Props = {
@@ -50,6 +51,11 @@ export function ConversationRow({
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
           <WhatsAppAvatar name={name} phone={conversation.phone} size="sm" />
+          <LeadIntentBadge
+            score={conversation.score}
+            label={conversation.scoreLabel}
+            variant="dot"
+          />
           <AssigneeBadge
             assigneeName={assigneeName}
             currentRepName={currentRepName}
@@ -59,8 +65,13 @@ export function ConversationRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-1">
               <span className="truncate text-[16px] font-normal text-[#111B21]">{name}</span>
+              <LeadIntentBadge
+                score={conversation.score}
+                label={conversation.scoreLabel}
+                variant="list"
+              />
               <LeadStageBadge
                 status={conversation.status}
                 followUpDate={conversation.followUpDate}
