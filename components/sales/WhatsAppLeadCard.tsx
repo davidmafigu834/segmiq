@@ -101,8 +101,8 @@ export function WhatsAppLeadCard({
   className?: string;
 }) {
   const router = useRouter();
-  const score = intentScore !== undefined ? intentScore : lead.aiScore ?? 0;
-  const showIntentScore = typeof score === "number";
+  const score = intentScore ?? lead.aiScore ?? 0;
+  const showIntentScore = intentScore != null || lead.aiScore != null;
   const label = scoreLabel(score);
   const displayName = whatsappLeadDisplayName(lead);
   const preview = whatsappLeadSecondaryLine(lead);
