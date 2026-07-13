@@ -15,6 +15,7 @@ import { countLaneMetrics, resolveSalesMirror } from "@/lib/sales-mirror";
 import { addMonths, format, startOfMonth, startOfWeek, subMonths, subWeeks } from "date-fns";
 import { getDashboardForecastCard, type DashboardForecastCard } from "@/lib/revenue-forecast";
 import { getClientActivePipelineValue } from "@/lib/client-team-report";
+import { computeWhatsAppHubReport, type WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
 import { buildSoloBusinessPulseMetrics, type PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 import { classifyLeadLane } from "@/lib/lead-lanes";
 
@@ -845,6 +846,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     LANDING_PAGE: 0,
     MANUAL: 0,
     REFERRAL: 0,
+    WHATSAPP_INBOUND: 0,
   };
   leads.forEach((l) => {
     const src = l.source as string;
@@ -968,6 +970,13 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     retargeting = null;
   }
 
+  let whatsappHub: WhatsAppHubReport | null = null;
+  try {
+    whatsappHub = await computeWhatsAppHubReport({ clientId, period: "this_week" });
+  } catch {
+    whatsappHub = null;
+  }
+
   return {
     assignmentMode,
     focus: { uncontacted, followUpToday, staleLeads },
@@ -989,6 +998,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     forecast,
     clientName,
     retargeting,
+    whatsappHub,
   };
 }
 

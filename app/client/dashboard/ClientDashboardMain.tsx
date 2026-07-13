@@ -34,6 +34,8 @@ import {
 } from "@/lib/retargeting-shared";
 import { LossInsightsSection } from "@/components/dashboard/LossInsightsSection";
 import { RevenueForecastCard, type ForecastCardData } from "@/components/dashboard/RevenueForecastCard";
+import { WhatsAppHubReportSection } from "@/components/reports/WhatsAppHubReportSection";
+import type { WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 
 // ============================================
@@ -108,6 +110,7 @@ type DashboardData = {
   forecast?: ForecastCardData | null;
   clientName: string;
   retargeting?: RetargetingStatusView | null;
+  whatsappHub?: WhatsAppHubReport | null;
 };
 
 // ============================================
@@ -126,6 +129,7 @@ const PIPELINE_STAGES = [
 const SOURCE_ROWS = [
   { key: "FACEBOOK", label: "Facebook" },
   { key: "LANDING_PAGE", label: "Profile page" },
+  { key: "WHATSAPP_INBOUND", label: "WhatsApp chat" },
   { key: "MANUAL", label: "Manual" },
   { key: "REFERRAL", label: "Referral" },
 ];
@@ -133,6 +137,7 @@ const SOURCE_ROWS = [
 const GHOST_WIDTHS: Record<string, number> = {
   FACEBOOK: 65,
   LANDING_PAGE: 40,
+  WHATSAPP_INBOUND: 35,
   MANUAL: 25,
   REFERRAL: 15,
 };
@@ -925,6 +930,15 @@ export default function ClientDashboardMain({
       {session?.clientId ? (
         <div className="ag-fade-in ag-delay-3 mb-8">
           <LossInsightsSection clientId={session.clientId as string} />
+        </div>
+      ) : null}
+
+      {data.whatsappHub && data.whatsappHub.summary.activeChats + data.whatsappHub.summary.newChats > 0 ? (
+        <div className="ag-fade-in ag-delay-3 mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+          <WhatsAppHubReportSection
+            report={data.whatsappHub}
+            inboxHref="/client/leads"
+          />
         </div>
       ) : null}
 
