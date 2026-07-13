@@ -460,6 +460,15 @@ export default function ClientDashboardMain({
         </div>
       </div>
 
+      {data.whatsappHub && data.whatsappHub.summary.activeChats + data.whatsappHub.summary.newChats > 0 ? (
+        <div className="ag-fade-in ag-delay-1 mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+          <WhatsAppHubReportSection
+            report={data.whatsappHub}
+            inboxHref="/client/leads"
+          />
+        </div>
+      ) : null}
+
       {/* ============================================
           GROWTH TREND
           ============================================ */}
@@ -930,15 +939,6 @@ export default function ClientDashboardMain({
       {session?.clientId ? (
         <div className="ag-fade-in ag-delay-3 mb-8">
           <LossInsightsSection clientId={session.clientId as string} />
-        </div>
-      ) : null}
-
-      {data.whatsappHub && data.whatsappHub.summary.activeChats + data.whatsappHub.summary.newChats > 0 ? (
-        <div className="ag-fade-in ag-delay-3 mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
-          <WhatsAppHubReportSection
-            report={data.whatsappHub}
-            inboxHref="/client/leads"
-          />
         </div>
       ) : null}
 
