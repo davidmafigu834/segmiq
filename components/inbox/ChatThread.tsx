@@ -351,19 +351,35 @@ export function ChatThread({
       </div>
 
       {canSend ? (
-        <>
-          <QuickReplyBar onAction={(a) => void handleQuickAction(a)} disabled={sending} />
+        <div className={`shrink-0 border-t ${isWhatsApp ? "border-[#E9EDEF] bg-[#F0F2F5]" : "border-[var(--border)] bg-[var(--bg-tertiary)]"}`}>
+          <QuickReplyBar
+            onAction={(a) => void handleQuickAction(a)}
+            disabled={sending}
+            variant={isWhatsApp ? "whatsapp" : "default"}
+          />
           {conversation.source === "WHATSAPP_INBOUND" && !sessionOpen ? (
-            <div className="border-t border-[#E9EDEF] bg-[#FFF8E6] px-4 py-2 text-center text-[11px] text-[#B45309]">
+            <div className={`border-t px-4 py-2 text-center text-[11px] leading-snug ${
+              isWhatsApp
+                ? "border-[#E9EDEF] bg-[#FFF8E6] text-[#B45309]"
+                : "border-[var(--border)] bg-[var(--accent-muted)] text-[var(--accent)]"
+            }`}
+            >
               Outside the 24-hour WhatsApp window — your message will be sent as an approved template
             </div>
           ) : null}
-          <div className="flex shrink-0 items-center gap-2 border-t border-[#E9EDEF] bg-[#F0F2F5] px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-3">
+          <div className={`flex items-center gap-2 px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:px-3 ${
+            isWhatsApp ? "" : "border-t border-[var(--border)]"
+          }`}
+          >
             <button
               type="button"
-              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full text-[#54656F] hover:bg-[#E9EDEF]"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+                isWhatsApp
+                  ? "text-[#54656F] hover:bg-[#E9EDEF]"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"
+              }`}
             >
-              <Paperclip size={16} />
+              <Paperclip size={18} />
             </button>
             <input
               type="text"
@@ -378,24 +394,34 @@ export function ChatThread({
                   : "Type a message…"
               }
               disabled={sending}
-              className="min-w-0 flex-1 rounded-lg border border-white bg-white px-3 py-2.5 text-[16px] text-[#111B21] placeholder:text-[#667781] shadow-sm"
+              className={
+                isWhatsApp
+                  ? "min-w-0 flex-1 rounded-full border border-white bg-white px-4 py-2.5 text-[16px] text-[#111B21] shadow-sm placeholder:text-[#667781] focus:outline-none focus:ring-2 focus:ring-[#00A884]/25 sm:text-[15px]"
+                  : "min-w-0 flex-1 rounded-full border border-[var(--border)] bg-[var(--surface-input)] px-4 py-2.5 text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-focus)] sm:text-[15px]"
+              }
             />
             <button
               type="button"
-              className="flex h-[34px] w-[34px] items-center justify-center rounded-full text-[#54656F] hover:bg-[#E9EDEF]"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+                isWhatsApp
+                  ? "text-[#54656F] hover:bg-[#E9EDEF]"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"
+              }`}
             >
-              <Smile size={16} />
+              <Smile size={18} />
             </button>
             <button
               type="button"
               disabled={!input.trim() || sending}
               onClick={() => void sendCustomMessage(input)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A884] text-white disabled:opacity-40"
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-40 ${
+                isWhatsApp ? "bg-[#00A884] hover:bg-[#008069]" : "bg-[var(--accent)] text-[var(--accent-foreground)]"
+              }`}
             >
-              <Send size={16} />
+              <Send size={18} />
             </button>
           </div>
-        </>
+        </div>
       ) : (
         <div className="border-t border-[#E9EDEF] bg-[#F0F2F5] px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-xs text-[#667781]">
           Read-only — assign this lead to send messages
