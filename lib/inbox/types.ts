@@ -19,6 +19,7 @@ export type InboxConversation = {
   id: string;
   contactId: string | null;
   name: string | null;
+  whatsappProfileName: string | null;
   phone: string | null;
   location: string | null;
   source: LeadSource | string | null;
@@ -31,6 +32,7 @@ export type InboxConversation = {
   scoreLabel: "Hot" | "Warm" | "Cold";
   lastMessage: string;
   lastMessageAt: string;
+  lastMessageType: string | null;
   unread: number;
   tags: string[];
   leadSummary: string | null;
@@ -45,6 +47,10 @@ export type InboxChatMessage = {
   text: string;
   createdAt: string;
   kind: "message" | "system";
+  messageType?: string | null;
+  status?: "pending" | "sent" | "delivered" | "read" | "failed" | null;
+  mediaUrl?: string | null;
+  mediaMimeType?: string | null;
 };
 
 export type InboxIntelligence = {

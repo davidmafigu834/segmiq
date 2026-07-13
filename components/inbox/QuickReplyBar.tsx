@@ -31,7 +31,7 @@ type Props = {
 
 export function QuickReplyBar({ onAction, disabled }: Props) {
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--border)] px-5 py-2.5">
+    <div className="inbox-scroll flex shrink-0 items-center gap-2 overflow-x-auto border-t border-[#E9EDEF] bg-[#F0F2F5] px-3 py-2.5 sm:flex-wrap sm:overflow-x-visible sm:px-4">
       {QUICK_REPLY_ACTIONS.map((action) => {
         const Icon = action.icon;
         return (
@@ -40,10 +40,10 @@ export function QuickReplyBar({ onAction, disabled }: Props) {
             type="button"
             disabled={disabled}
             onClick={() => onAction(action)}
-            className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs text-[var(--text-secondary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-40"
+            className="shrink-0 rounded-full border border-[#D1D7DB] bg-white px-3 py-1.5 text-xs font-medium text-[#111B21] shadow-sm transition-all hover:border-[#00A884] hover:bg-[#E7FCE3] hover:text-[#008069] disabled:opacity-40"
           >
             <span className="inline-flex items-center gap-1.5">
-              <Icon size={12} />
+              <Icon size={12} className="text-[#54656F]" />
               {action.label}
             </span>
           </button>

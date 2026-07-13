@@ -5,6 +5,7 @@ import { sendWhatsApp } from "@/lib/messaging/provider";
 import { logDocumentSent } from "@/lib/lead-events";
 import { persistLeadScore } from "@/lib/lead-scoring";
 import { firstName, regionFromDialCode } from "@/lib/messaging/whatsapp-vars";
+import { persistOutboundWhatsAppMessage } from "@/lib/whatsapp/persist-outbound";
 
 type AssetType =
   | "PORTFOLIO"
@@ -31,7 +32,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   // Fetch full lead (phone + name) — canModifyLead only returns client_id/assigned_to_id
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, client_id, phone, name, assigned_to_id")
+    .select("id, client_id, phone, name, assigned_to_id, source")
     .eq("id", params.leadId)
     .single();
 
@@ -258,7 +259,22 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     documentType: assetType,
     documentName,
     url: documentUrl || null,
+    customMessage: assetType === "CUSTOM_MESSAGE" ? (customMessage?.trim() ?? null) : null,
   });
+
+  if (lead.source === "WHATSAPP_INBOUND") {
+    const previewBody =
+      assetType === "CUSTOM_MESSAGE"
+        ? customMessage?.trim() || "Message sent"
+        : `Sent ${documentName}`;
+    await persistOutboundWhatsAppMessage({
+      clientId,
+      leadId: lead.id as string,
+      phone: leadPhone,
+      body: previewBody,
+      actorId: check.userId,
+    });
+  }
 
   void persistLeadScore(lead.id as string);
 

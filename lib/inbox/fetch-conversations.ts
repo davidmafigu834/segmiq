@@ -158,8 +158,19 @@ async function buildConversations(
     await Promise.all([
       supabase.from("lead_intelligence").select("*").in("lead_id", leadIds),
       contactIds.length
-        ? supabase.from("contacts").select("id, location").in("id", contactIds)
-        : Promise.resolve({ data: [] as { id: string; location: string | null }[] }),
+        ? supabase
+            .from("contacts")
+            .select("id, location, name, whatsapp_profile_name, whatsapp_wa_id")
+            .in("id", contactIds)
+        : Promise.resolve({
+            data: [] as {
+              id: string;
+              location: string | null;
+              name: string | null;
+              whatsapp_profile_name: string | null;
+              whatsapp_wa_id: string | null;
+            }[],
+          }),
       assigneeIds.length
         ? supabase.from("users").select("id, name").in("id", assigneeIds)
         : Promise.resolve({ data: [] as { id: string; name: string }[] }),
@@ -173,17 +184,18 @@ async function buildConversations(
 
   const { data: waMessages } = await supabase
     .from("whatsapp_messages")
-    .select("lead_id, body, created_at")
+    .select("lead_id, body, created_at, message_type")
     .in("lead_id", leadIds)
     .order("created_at", { ascending: false });
 
-  const lastWaByLead = new Map<string, { body: string; created_at: string }>();
+  const lastWaByLead = new Map<string, { body: string; created_at: string; message_type: string | null }>();
   for (const m of waMessages ?? []) {
     const lid = m.lead_id as string;
-    if (!lastWaByLead.has(lid) && (m.body as string | null)?.trim()) {
+    if (!lastWaByLead.has(lid)) {
       lastWaByLead.set(lid, {
-        body: (m.body as string).trim(),
+        body: (m.body as string | null)?.trim() || previewForType(m.message_type as string | null),
         created_at: m.created_at as string,
+        message_type: (m.message_type as string | null) ?? null,
       });
     }
   }
@@ -231,6 +243,11 @@ async function buildConversations(
         });
 
     const waLast = lastWaByLead.get(lead.id);
+    const displayName =
+      lead.name?.trim()
+      || (contact as { whatsapp_profile_name?: string | null } | null)?.whatsapp_profile_name?.trim()
+      || (contact as { name?: string | null } | null)?.name?.trim()
+      || null;
     const formSnippet =
       formMessageSnippet(lead.form_data) ||
       (typeof (lead.form_data as Record<string, unknown> | null)?.first_message === "string"
@@ -245,7 +262,9 @@ async function buildConversations(
     return {
       id: lead.id,
       contactId: lead.contact_id,
-      name: lead.name,
+      name: displayName,
+      whatsappProfileName:
+        (contact as { whatsapp_profile_name?: string | null } | null)?.whatsapp_profile_name?.trim() ?? null,
       phone: lead.phone,
       location: contactLocation(contact, intel, lead.form_data),
       source: lead.source,
@@ -260,6 +279,7 @@ async function buildConversations(
       scoreLabel: scoreLabel(score),
       lastMessage,
       lastMessageAt,
+      lastMessageType: waLast?.message_type ?? null,
       unread,
       tags: (intel?.tags as string[] | null) ?? [],
       leadSummary: (intel?.lead_summary as string | null) ?? null,
@@ -269,8 +289,19 @@ async function buildConversations(
     };
   });
 
-  conversations.sort((a, b) => b.score - a.score);
+  conversations.sort(
+    (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+  );
   return conversations;
+}
+
+function previewForType(messageType: string | null): string {
+  if (messageType === "image") return "Photo";
+  if (messageType === "audio") return "Voice message";
+  if (messageType === "video") return "Video";
+  if (messageType === "document") return "Document";
+  if (messageType === "sticker") return "Sticker";
+  return "Message";
 }
 
 export function formatInboxTime(iso: string): string {

@@ -15,11 +15,21 @@ type WhatsAppInbound = {
   timestamp: string;
   type: string;
   text?: { body: string };
+  image?: { id?: string; mime_type?: string; caption?: string };
+  audio?: { id?: string; mime_type?: string };
+  video?: { id?: string; mime_type?: string; caption?: string };
+  document?: { id?: string; mime_type?: string; caption?: string; filename?: string };
+};
+
+type WhatsAppContact = {
+  wa_id: string;
+  profile?: { name?: string };
 };
 
 export type WhatsAppWebhookValue = {
   messaging_product?: string;
   metadata?: { display_phone_number?: string; phone_number_id?: string };
+  contacts?: WhatsAppContact[];
   statuses?: WhatsAppStatusItem[];
   messages?: WhatsAppInbound[];
 };
@@ -35,10 +45,20 @@ export async function handleWhatsAppEvent(value: WhatsAppWebhookValue | Record<s
 
   if (v.messages?.length) {
     const phoneNumberId = v.metadata?.phone_number_id ?? null;
+    const contactsByWaId = new Map(
+      (v.contacts ?? []).map((c) => [
+        c.wa_id,
+        { waId: c.wa_id, name: c.profile?.name?.trim() || null },
+      ])
+    );
     for (const msg of v.messages) {
       try {
         const { handleInboundWhatsAppMessage } = await import("@/lib/whatsapp/inbound");
-        await handleInboundWhatsAppMessage({ phoneNumberId, message: msg });
+        await handleInboundWhatsAppMessage({
+          phoneNumberId,
+          message: msg,
+          contactProfile: contactsByWaId.get(msg.from) ?? { waId: msg.from, name: null },
+        });
       } catch (err) {
         fbLog("fb.whatsapp.inbound_message", {
           from: msg.from,
@@ -85,6 +105,14 @@ async function updateMessageLogStatus(status: WhatsAppStatusItem): Promise<void>
     .eq("provider_id", providerId)
     .select("id, lead_id, user_id, notification_type")
     .maybeSingle();
+
+  await supabase
+    .from("whatsapp_messages")
+    .update({
+      status: newStatus,
+      updated_at: updatePayload.updated_at,
+    })
+    .eq("provider_id", providerId);
 
   if (error) {
     fbLog("fb.whatsapp.status_update_failed", { providerId, error: error.message });

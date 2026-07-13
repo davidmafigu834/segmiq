@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canModifyLead } from "@/lib/auth/permissions";
-import { isWhatsAppSessionOpen } from "@/lib/whatsapp/inbound";
-import { sendWhatsAppSessionMessage } from "@/lib/whatsapp/session-message";
+import { sendWhatsAppTextToLead } from "@/lib/whatsapp/send-text";
 
 export const dynamic = "force-dynamic";
 
@@ -19,53 +18,27 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   }
 
   const supabase = createAdminClient();
-  const { data: lead } = await supabase
-    .from("leads")
-    .select("id, client_id, phone, source, assigned_to_id")
-    .eq("id", params.leadId)
-    .maybeSingle();
-
-  if (!lead) {
-    return NextResponse.json({ error: "Lead not found" }, { status: 404 });
-  }
-
-  if (lead.source !== "WHATSAPP_INBOUND") {
-    return NextResponse.json({ error: "Not a WhatsApp conversation" }, { status: 400 });
-  }
-
-  if (!lead.phone) {
-    return NextResponse.json({ error: "Lead has no phone number" }, { status: 400 });
-  }
-
-  const sessionOpen = await isWhatsAppSessionOpen(params.leadId);
-  if (!sessionOpen) {
-    return NextResponse.json(
-      {
-        error: "WhatsApp session expired — use a template quick reply or wait for the customer to message again",
-        code: "SESSION_EXPIRED",
-      },
-      { status: 409 }
-    );
-  }
-
   const { data: actor } = await supabase
     .from("users")
     .select("name")
     .eq("id", check.userId)
     .maybeSingle();
 
-  const result = await sendWhatsAppSessionMessage({
-    to: lead.phone as string,
-    body: text,
-    clientId: lead.client_id as string,
+  const result = await sendWhatsAppTextToLead({
     leadId: params.leadId,
+    text,
     actorId: check.userId,
     actorName: (actor?.name as string) ?? "Salesperson",
+    actorRole: check.role,
   });
 
   if (!result.ok) {
     return NextResponse.json({ error: result.error ?? "Send failed", code: result.errorCode }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true, providerId: result.providerId });
+  return NextResponse.json({
+    ok: true,
+    providerId: result.providerId,
+    mode: result.mode,
+  });
 }

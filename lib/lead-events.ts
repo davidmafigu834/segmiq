@@ -205,6 +205,7 @@ export async function logDocumentSent({
   documentType,
   documentName,
   url,
+  customMessage,
 }: {
   leadId: string;
   clientId: string;
@@ -212,6 +213,7 @@ export async function logDocumentSent({
   documentType: string;
   documentName: string;
   url?: string | null;
+  customMessage?: string | null;
 }): Promise<void> {
   await logLeadEvent({
     leadId,
@@ -222,6 +224,7 @@ export async function logDocumentSent({
       document_type: documentType,
       document_name: documentName,
       url: url ?? null,
+      ...(customMessage ? { custom_message: customMessage } : {}),
     },
   });
 }

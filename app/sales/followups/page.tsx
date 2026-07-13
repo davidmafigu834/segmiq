@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
+import { SoloLayout } from "@/components/layouts/SoloLayout";
 import { fetchLatestScheduledCallbacksByLeadId } from "@/lib/convert-later-picks";
 import { FollowUpsView } from "@/components/sales/FollowUpsView";
 import type { FollowUpLead } from "@/lib/follow-ups-view";
@@ -18,6 +19,7 @@ type DbFollowUpLead = {
 export default async function SalesFollowupsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
+  const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const supabase = createAdminClient();
   const { data: leads } = await supabase
     .from("leads")
@@ -41,8 +43,8 @@ export default async function SalesFollowupsPage() {
   }));
 
   return (
-    <SalesLayout breadcrumb="SALES / FOLLOW-UPS" pageTitle="Follow-ups">
+    <Layout breadcrumb="SALES / WHATSAPP SALES HUB / FOLLOW-UPS" pageTitle="Follow-ups">
       <FollowUpsView leads={followUpLeads} callbackAtByLeadId={callbackAtByLeadId} />
-    </SalesLayout>
+    </Layout>
   );
 }

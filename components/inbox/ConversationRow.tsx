@@ -1,10 +1,11 @@
 "use client";
 
-import { initials } from "@/lib/inbox/assignee-colors";
-import { formatInboxTime, formatSource } from "@/lib/inbox/fetch-conversations";
-import { scoreColor, stageStyle } from "@/lib/inbox/scoring";
+import { formatInboxTime } from "@/lib/inbox/fetch-conversations";
 import type { InboxConversation } from "@/lib/inbox/types";
 import { AssigneeBadge } from "./AssigneeBadge";
+import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
+import { LeadStageBadge } from "./LeadStageBadge";
+import { Image as ImageIcon, Mic } from "lucide-react";
 
 type Props = {
   conversation: InboxConversation;
@@ -16,6 +17,12 @@ type Props = {
   canClaim: boolean;
 };
 
+function previewIcon(messageType: string | null | undefined) {
+  if (messageType === "image") return <ImageIcon size={14} className="shrink-0 text-[#8696A0]" />;
+  if (messageType === "audio") return <Mic size={14} className="shrink-0 text-[#8696A0]" />;
+  return null;
+}
+
 export function ConversationRow({
   conversation,
   active,
@@ -25,8 +32,7 @@ export function ConversationRow({
   claiming,
   canClaim,
 }: Props) {
-  const st = stageStyle(conversation.status, conversation.followUpDate);
-  const name = conversation.name ?? "Unknown";
+  const name = displayContactName(conversation);
   const assigneeName = conversation.assignee?.name ?? null;
 
   return (
@@ -37,15 +43,13 @@ export function ConversationRow({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
-      className={`conv-row px-4 py-3 border-b border-[var(--border)] cursor-pointer transition-colors ${
-        active ? "bg-[var(--bg-quaternary)] border-l-2 border-l-[var(--accent)]" : "border-l-2 border-l-transparent hover:bg-[var(--bg-quaternary)]"
+      className={`cursor-pointer border-b border-[#E9EDEF] px-3 py-3 transition-colors ${
+        active ? "bg-[#F0F2F5]" : "bg-white hover:bg-[#F5F6F6]"
       }`}
     >
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-quaternary)] text-xs font-semibold text-[var(--text-secondary)]">
-            {initials(name)}
-          </div>
+          <WhatsAppAvatar name={name} phone={conversation.phone} size="sm" />
           <AssigneeBadge
             assigneeName={assigneeName}
             currentRepName={currentRepName}
@@ -55,40 +59,23 @@ export function ConversationRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <span className="truncate text-sm font-medium text-[var(--text-primary)]">{name}</span>
-            <span className="shrink-0 text-[11px] text-[var(--text-tertiary)]">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate text-[16px] font-normal text-[#111B21]">{name}</span>
+              <LeadStageBadge
+                status={conversation.status}
+                followUpDate={conversation.followUpDate}
+                variant="list"
+              />
+            </div>
+            <span className={`shrink-0 text-[12px] ${conversation.unread > 0 ? "text-[#00A884] font-medium" : "text-[#667781]"}`}>
               {formatInboxTime(conversation.lastMessageAt)}
             </span>
           </div>
-          <div className="mt-0.5 truncate text-xs text-[var(--text-tertiary)]">
-            {conversation.lastMessage}
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span
-              className="rounded px-1.5 py-0.5 text-[10px] font-semibold"
-              style={{
-                fontFamily: "var(--font-instrument-serif)",
-                border: `1px solid ${scoreColor(conversation.score)}`,
-                color: scoreColor(conversation.score),
-              }}
-            >
-              {conversation.score}
-            </span>
-            <span
-              className="rounded px-1.5 py-0.5 text-[10px] font-medium"
-              style={{
-                background: st.bg,
-                color: st.text,
-                border: `1px solid ${st.border}`,
-              }}
-            >
-              {conversation.stageLabel}
-            </span>
-            <span className="rounded bg-[var(--bg-quaternary)] px-1.5 py-0.5 text-[10px] text-[var(--text-tertiary)]">
-              {formatSource(conversation.source as string)}
-            </span>
+          <div className="mt-0.5 flex items-center gap-1 truncate text-[13px] text-[#667781]">
+            {previewIcon(conversation.lastMessageType)}
+            <span className="truncate">{conversation.lastMessage}</span>
             {conversation.unread > 0 ? (
-              <span className="ml-auto flex h-4 w-4 items-center justify-center rounded-full bg-[var(--accent)] text-[10px] font-semibold text-[var(--accent-foreground)]">
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#00A884] px-1.5 text-[11px] font-semibold text-white">
                 {conversation.unread > 9 ? "9+" : conversation.unread}
               </span>
             ) : null}

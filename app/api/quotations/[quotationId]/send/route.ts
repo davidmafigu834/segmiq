@@ -5,12 +5,13 @@ import { allocateQuoteNumber } from "@/lib/quotations/quote-number";
 import { baseQuoteNumber, revisionQuoteNumber } from "@/lib/quotations/copy-quote";
 import { buildQuotationPdfData } from "@/lib/quotations/build-pdf-data";
 import { renderQuotationPdf } from "@/lib/quotations/quotation-pdf";
-import { putObject, getPublicUrl } from "@/lib/storage/r2";
+import { putObject, getPublicUrl, isR2Configured } from "@/lib/storage/r2";
 import { logDocumentSent, logStatusChanged } from "@/lib/lead-events";
 import { proposalDealValueUpdate } from "@/lib/deal-value";
 import { persistLeadScore } from "@/lib/lead-scoring";
 import { formatMoney } from "@/lib/quotations/totals";
 import { getPublicBaseUrl } from "@/lib/constants";
+import { sendQuotationOnWhatsApp } from "@/lib/whatsapp/send-quotation";
 
 const ADVANCE_FROM = new Set(["NEW", "CONTACTED", "NEGOTIATING"]);
 
@@ -19,8 +20,13 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
 
   let expectedCloseDate: string | null | undefined;
+  let sendViaWhatsApp = false;
   try {
-    const body = (await req.json()) as { expected_close_date?: string | null };
+    const body = (await req.json()) as {
+      expected_close_date?: string | null;
+      sendViaWhatsApp?: boolean;
+    };
+    if (body.sendViaWhatsApp === true) sendViaWhatsApp = true;
     if (body.expected_close_date === null) expectedCloseDate = null;
     else if (
       typeof body.expected_close_date === "string" &&
@@ -76,13 +82,51 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   }
 
   const sentAt = new Date().toISOString();
+
+  // Persist quote number + public link before rendering so the PDF shows the final reference.
   await supabase
     .from("quotations")
     .update({
       quote_number: quoteNumber,
       public_token: publicToken,
+      updated_at: sentAt,
+    })
+    .eq("id", params.quotationId);
+
+  // Render branded PDF first — don't mark as sent until this succeeds.
+  const pdfData = await buildQuotationPdfData(supabase, params.quotationId);
+  if (!pdfData) return NextResponse.json({ error: "Failed to assemble quotation" }, { status: 500 });
+
+  let pdfBuffer: Buffer;
+  try {
+    pdfBuffer = await renderQuotationPdf(pdfData);
+  } catch (err) {
+    console.error("[quotation send] PDF render error:", err);
+    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
+  }
+
+  // Store on R2 when configured; send still succeeds if storage is unavailable.
+  let pdfUrl: string | null = null;
+  let pdfKey: string | null = null;
+  if (isR2Configured()) {
+    try {
+      pdfKey = `clients/${access.clientId}/quotations/${quoteNumber}-${Date.now()}.pdf`;
+      await putObject(pdfKey, pdfBuffer, "application/pdf");
+      pdfUrl = getPublicUrl(pdfKey);
+    } catch (err) {
+      console.error("[quotation send] R2 upload error:", err);
+      pdfKey = null;
+      pdfUrl = null;
+    }
+  }
+
+  await supabase
+    .from("quotations")
+    .update({
       status: "sent",
       sent_at: sentAt,
+      pdf_url: pdfUrl,
+      pdf_key: pdfKey,
       updated_at: sentAt,
     })
     .eq("id", params.quotationId);
@@ -101,25 +145,6 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       .in("status", ["sent", "viewed"]);
   }
 
-  // Render branded PDF and store on R2.
-  const pdfData = await buildQuotationPdfData(supabase, params.quotationId);
-  if (!pdfData) return NextResponse.json({ error: "Failed to assemble quotation" }, { status: 500 });
-
-  let pdfUrl: string;
-  try {
-    const buffer = await renderQuotationPdf(pdfData);
-    const key = `clients/${access.clientId}/quotations/${quoteNumber}-${Date.now()}.pdf`;
-    await putObject(key, buffer, "application/pdf");
-    pdfUrl = getPublicUrl(key);
-    await supabase
-      .from("quotations")
-      .update({ pdf_url: pdfUrl, pdf_key: key, updated_at: new Date().toISOString() })
-      .eq("id", params.quotationId);
-  } catch (err) {
-    console.error("[quotation send] PDF/R2 error:", err);
-    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
-  }
-
   // Timeline event.
   await logDocumentSent({
     leadId: access.leadId,
@@ -127,7 +152,7 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     actor: access.actor,
     documentType: "QUOTATION",
     documentName: `Quotation ${quoteNumber} — ${formatMoney(Number(quote.total) || 0, (quote.currency as string) || "USD")}`,
-    url: pdfUrl,
+    url: pdfUrl ?? `${getPublicBaseUrl()}/quote/${publicToken}`,
   });
 
   // Advance the pipeline to "Proposal sent" if the lead is earlier in the funnel.
@@ -170,5 +195,47 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   const link = `${getPublicBaseUrl()}/quote/${publicToken}`;
   const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${pdfData.companyName} — total ${total}. View and respond here: ${link}`;
 
-  return NextResponse.json({ success: true, pdfUrl, quoteNumber, link, waMessage });
+  let whatsappSent = false;
+  let whatsappError: string | undefined;
+  let whatsappMode: string | undefined;
+
+  const { data: leadForWhatsApp } = await supabase
+    .from("leads")
+    .select("phone, source")
+    .eq("id", access.leadId)
+    .maybeSingle();
+
+  const shouldSendWhatsApp =
+    Boolean(leadForWhatsApp?.phone) &&
+    (sendViaWhatsApp || leadForWhatsApp?.source === "WHATSAPP_INBOUND");
+
+  if (shouldSendWhatsApp && leadForWhatsApp?.phone) {
+    const waResult = await sendQuotationOnWhatsApp({
+      leadId: access.leadId,
+      clientId: access.clientId,
+      phone: leadForWhatsApp.phone as string,
+      actorId: access.actor.id,
+      actorName: access.actor.name,
+      actorRole: access.actor.role,
+      quoteNumber,
+      waMessage,
+      pdfBuffer,
+      pdfUrl,
+      publicToken,
+    });
+    whatsappSent = waResult.ok;
+    whatsappMode = waResult.mode;
+    if (!waResult.ok) whatsappError = waResult.error;
+  }
+
+  return NextResponse.json({
+    success: true,
+    pdfUrl,
+    quoteNumber,
+    link,
+    waMessage,
+    whatsappSent,
+    whatsappError,
+    whatsappMode,
+  });
 }

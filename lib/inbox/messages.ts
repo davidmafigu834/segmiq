@@ -1,4 +1,5 @@
 import type { InboxChatMessage } from "./types";
+import { isMediaPlaceholderBody } from "./media-placeholders";
 
 type TimelineEvent = {
   id: string;
@@ -16,17 +17,39 @@ export function whatsappRowsToChatMessages(
     direction: string;
     body: string | null;
     created_at: string;
+    message_type?: string | null;
+    status?: string | null;
+    media_url?: string | null;
+    media_mime_type?: string | null;
   }[]
 ): InboxChatMessage[] {
   return rows
-    .filter((r) => r.body?.trim())
-    .map((r) => ({
-      id: r.id,
-      direction: r.direction === "inbound" ? "customer" : "rep",
-      text: r.body!.trim(),
-      createdAt: r.created_at,
-      kind: "message" as const,
-    }));
+    .filter((r) => r.body?.trim() || r.media_url)
+    .map((r) => {
+      const body = r.body?.trim() ?? "";
+      const text =
+        body && !isMediaPlaceholderBody(body, r.message_type) ? body : "";
+      return {
+        id: r.id,
+        direction: r.direction === "inbound" ? "customer" : "rep",
+        text,
+        createdAt: r.created_at,
+        kind: "message" as const,
+        messageType: r.message_type ?? null,
+        status: (r.status as InboxChatMessage["status"]) ?? null,
+        mediaUrl: r.media_url ?? null,
+        mediaMimeType: r.media_mime_type ?? null,
+      };
+    });
+}
+
+function mediaLabel(messageType?: string | null, mimeType?: string | null): string {
+  if (messageType === "image" || mimeType?.startsWith("image/")) return "Photo";
+  if (messageType === "audio" || mimeType?.startsWith("audio/")) return "Voice message";
+  if (messageType === "video" || mimeType?.startsWith("video/")) return "Video";
+  if (messageType === "document") return "Document";
+  if (messageType === "sticker") return "Sticker";
+  return "Attachment";
 }
 
 export function eventsToChatMessages(events: TimelineEvent[]): InboxChatMessage[] {

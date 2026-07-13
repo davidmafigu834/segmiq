@@ -56,6 +56,7 @@ export function ClientSettingsClient({
   initialClient,
   initialSalespeople,
   initialManagers,
+  initialInstantForms = [],
   agencyDefaultHours,
   initialTab,
 }: {
@@ -63,6 +64,7 @@ export function ClientSettingsClient({
   initialClient: ClientRow;
   initialSalespeople: UserRow[];
   initialManagers: ManagerRow[];
+  initialInstantForms?: { id: string; name: string; status: string }[];
   agencyDefaultHours: number;
   initialTab?: string;
 }) {
@@ -257,10 +259,13 @@ export function ClientSettingsClient({
     meta_whatsapp_display_number: string | null;
     meta_whatsapp_access_token: string | null;
     assignment_mode: "direct" | "pool" | "round_robin";
+    whatsapp_qualification_enabled: boolean;
+    whatsapp_instant_form_id: string | null;
   }) {
     setSaving(true);
     try {
       await patchClient(data);
+      setClient((c) => ({ ...c, ...data }));
       setToast("Saved WhatsApp inbox settings.");
     } catch (e) {
       setToast(e instanceof Error ? e.message : "Error");
@@ -1023,6 +1028,9 @@ export function ClientSettingsClient({
             initialAssignmentMode={
               (client.assignment_mode as "direct" | "pool" | "round_robin" | undefined) ?? "round_robin"
             }
+            initialQualificationEnabled={client.whatsapp_qualification_enabled !== false}
+            initialInstantFormId={(client.whatsapp_instant_form_id as string | null) ?? null}
+            instantForms={initialInstantForms}
             webhookBaseUrl={getPublicBaseUrl()}
             saving={saving}
             onSave={saveWhatsAppInbox}

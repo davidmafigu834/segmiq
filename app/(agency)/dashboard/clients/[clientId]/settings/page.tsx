@@ -41,6 +41,12 @@ export default async function ClientSettingsPage({
     .eq("role", "CLIENT_MANAGER")
     .order("created_at", { ascending: true });
 
+  const { data: instantForms } = await supabase
+    .from("instant_forms")
+    .select("id, name, status")
+    .eq("client_id", params.clientId)
+    .order("updated_at", { ascending: false });
+
   const profileSlug = (clientProfile as { slug?: string } | null)?.slug ?? null;
   const profilePublished = Boolean((clientProfile as { is_published?: boolean } | null)?.is_published);
   const publicProfileUrl = profileSlug ? getPublicLandingPageUrl(profileSlug) : null;
@@ -75,6 +81,7 @@ export default async function ClientSettingsPage({
           initialClient={client as Record<string, unknown>}
           initialSalespeople={(salespeople ?? []) as never}
           initialManagers={(managers ?? []) as never}
+          initialInstantForms={(instantForms ?? []) as { id: string; name: string; status: string }[]}
           agencyDefaultHours={agency.default_response_time_limit_hours}
           initialTab={initialTab}
         />

@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { ChevronRight } from "lucide-react";
 import { ShellIcon } from "./shell-icons";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
+import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
 
 const AVATAR_TINT = [
   "bg-[#D4FF4F] text-[#0A0B0D]",
@@ -30,31 +32,50 @@ function initialsFromName(name: string): string {
   return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
 }
 
+function navItemActive(item: AppShellNavItem, pathname: string, navActive: (href: string) => boolean): boolean {
+  if (item.href === "/sales/inbox" && item.children?.length) {
+    return isWhatsAppSalesHubPath(pathname);
+  }
+  return navActive(item.href);
+}
+
 function NavRow({
   item,
   navActive,
   mobileExpanded = false,
+  nested = false,
+  pathname,
 }: {
   item: AppShellNavItem;
   navActive: (href: string) => boolean;
   mobileExpanded?: boolean;
+  nested?: boolean;
+  pathname: string;
 }) {
-  const isActive = navActive(item.href);
+  const isActive = navItemActive(item, pathname, navActive);
   return (
     <Link
       href={item.href}
-      className={`relative flex h-10 items-center gap-3 rounded-r-lg py-2 text-[15px] transition-all ${
-        mobileExpanded ? "justify-start px-3" : "justify-center px-2 layout:justify-start layout:px-3"
+      className={`relative flex h-10 items-center gap-3 rounded-r-lg py-2 transition-all ${
+        nested ? "text-[13px]" : "text-[15px]"
+      } ${
+        mobileExpanded
+          ? `justify-start ${nested ? "pl-9 pr-3" : "px-3"}`
+          : `justify-center px-2 layout:justify-start ${nested ? "layout:pl-9 layout:pr-3" : "layout:px-3"}`
       } ${
         isActive
           ? "border-l-2 border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--text-primary)] font-semibold"
           : "border-l-2 border-transparent font-medium text-[var(--text-tertiary)] hover:border-[var(--accent-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
       } `}
     >
-      <ShellIcon
-        name={item.icon}
-        className={`h-4 w-4 shrink-0 ${isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
-      />
+      {!nested ? (
+        <ShellIcon
+          name={item.icon}
+          className={`h-4 w-4 shrink-0 ${isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
+        />
+      ) : (
+        <span className="h-4 w-4 shrink-0" aria-hidden />
+      )}
       <span className={`min-w-0 flex-1 truncate ${mobileExpanded ? "inline" : "hidden layout:inline"}`}>{item.label}</span>
       {item.badge != null && item.badge > 0 ? (
         <span
@@ -66,6 +87,36 @@ function NavRow({
         </span>
       ) : null}
     </Link>
+  );
+}
+
+function NavGroup({
+  item,
+  navActive,
+  mobileExpanded = false,
+  pathname,
+}: {
+  item: AppShellNavItem;
+  navActive: (href: string) => boolean;
+  mobileExpanded?: boolean;
+  pathname: string;
+}) {
+  return (
+    <div>
+      <NavRow item={item} navActive={navActive} mobileExpanded={mobileExpanded} pathname={pathname} />
+      <div className={`${mobileExpanded ? "block" : "hidden layout:block"}`}>
+        {item.children?.map((child) => (
+          <NavRow
+            key={child.href}
+            item={child}
+            navActive={navActive}
+            mobileExpanded={mobileExpanded}
+            nested
+            pathname={pathname}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -94,6 +145,8 @@ export function AgencySidebar({
   navActive: (href: string) => boolean;
   mobileExpanded?: boolean;
 }) {
+  const pathname = usePathname();
+
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <div className="shrink-0 px-3 pb-4 pt-6 layout:px-5">
@@ -143,9 +196,25 @@ export function AgencySidebar({
 
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-1 pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
         <nav className="flex flex-col gap-0.5 px-2 layout:px-3">
-          {primaryNav.map((item) => (
-            <NavRow key={item.href} item={item} navActive={navActive} mobileExpanded={mobileExpanded} />
-          ))}
+          {primaryNav.map((item) =>
+            item.children?.length ? (
+              <NavGroup
+                key={item.href}
+                item={item}
+                navActive={navActive}
+                mobileExpanded={mobileExpanded}
+                pathname={pathname}
+              />
+            ) : (
+              <NavRow
+                key={item.href}
+                item={item}
+                navActive={navActive}
+                mobileExpanded={mobileExpanded}
+                pathname={pathname}
+              />
+            )
+          )}
         </nav>
 
         <div
@@ -156,7 +225,13 @@ export function AgencySidebar({
 
         <nav className="flex flex-col gap-0.5 px-2 pb-2 layout:px-3">
           {secondaryNav.map((item) => (
-            <NavRow key={item.href} item={item} navActive={navActive} mobileExpanded={mobileExpanded} />
+            <NavRow
+              key={item.href}
+              item={item}
+              navActive={navActive}
+              mobileExpanded={mobileExpanded}
+              pathname={pathname}
+            />
           ))}
         </nav>
 

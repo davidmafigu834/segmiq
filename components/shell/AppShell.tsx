@@ -12,6 +12,7 @@ import { AgencySidebar } from "./AgencySidebar";
 import { AgencyHeaderClock } from "./AgencyHeaderClock";
 import { ShellIcon } from "./shell-icons";
 import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
+import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
 
 export type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
 
@@ -83,7 +84,10 @@ export function AppShell({
     if (href === "/solo/dashboard") return pathname === "/solo/dashboard";
     if (href === "/sales/dashboard") return pathname === "/sales/dashboard";
     if (href === "/sales/leads") return pathname === "/sales/leads";
-    if (href === "/sales/inbox") return pathname === "/sales/inbox";
+    if (href === "/sales/inbox") return isWhatsAppSalesHubPath(pathname);
+    if (href === "/sales/inbox/hot-leads") return pathname === "/sales/inbox/hot-leads";
+    if (href === "/sales/followups") return pathname.startsWith("/sales/followups");
+    if (href === "/sales/reports") return pathname.startsWith("/sales/reports");
     if (href === "/client/inbox") return pathname === "/client/inbox";
     if (href === "/sales/won-lost") return pathname === "/sales/won-lost";
     return pathname === href || pathname.startsWith(href + "/");

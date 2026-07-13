@@ -10,6 +10,9 @@ type Props = {
   initialDisplayNumber: string;
   initialAccessToken: string;
   initialAssignmentMode: "direct" | "pool" | "round_robin";
+  initialQualificationEnabled: boolean;
+  initialInstantFormId: string | null;
+  instantForms: { id: string; name: string; status: string }[];
   webhookBaseUrl: string;
   saving: boolean;
   onSave: (data: {
@@ -17,6 +20,8 @@ type Props = {
     meta_whatsapp_display_number: string | null;
     meta_whatsapp_access_token: string | null;
     assignment_mode: "direct" | "pool" | "round_robin";
+    whatsapp_qualification_enabled: boolean;
+    whatsapp_instant_form_id: string | null;
   }) => Promise<void>;
 };
 
@@ -69,6 +74,9 @@ export function WhatsAppInboxSettings({
   initialDisplayNumber,
   initialAccessToken,
   initialAssignmentMode,
+  initialQualificationEnabled,
+  initialInstantFormId,
+  instantForms,
   webhookBaseUrl,
   saving,
   onSave,
@@ -77,6 +85,9 @@ export function WhatsAppInboxSettings({
   const [displayNumber, setDisplayNumber] = useState(initialDisplayNumber);
   const [accessToken, setAccessToken] = useState(initialAccessToken);
   const [assignmentMode, setAssignmentMode] = useState(initialAssignmentMode);
+  const [qualificationEnabled, setQualificationEnabled] = useState(initialQualificationEnabled);
+  const [instantFormId, setInstantFormId] = useState(initialInstantFormId ?? "");
+  const publishedForms = instantForms.filter((f) => f.status === "published");
   const [copied, setCopied] = useState<string | null>(null);
 
   const webhookUrl = `${webhookBaseUrl}/api/facebook/webhook`;
@@ -86,7 +97,9 @@ export function WhatsAppInboxSettings({
       phoneNumberId.trim() !== initialPhoneNumberId.trim() ||
       displayNumber.trim() !== initialDisplayNumber.trim() ||
       accessToken.trim() !== initialAccessToken.trim() ||
-      assignmentMode !== initialAssignmentMode,
+      assignmentMode !== initialAssignmentMode ||
+      qualificationEnabled !== initialQualificationEnabled ||
+      (instantFormId || null) !== (initialInstantFormId || null),
     [
       phoneNumberId,
       initialPhoneNumberId,
@@ -96,6 +109,10 @@ export function WhatsAppInboxSettings({
       initialAccessToken,
       assignmentMode,
       initialAssignmentMode,
+      qualificationEnabled,
+      initialQualificationEnabled,
+      instantFormId,
+      initialInstantFormId,
     ]
   );
 
@@ -262,6 +279,57 @@ export function WhatsAppInboxSettings({
           ))}
         </fieldset>
 
+        <fieldset className="space-y-3 rounded-lg border border-border bg-surface-card-alt/50 p-4">
+          <legend className="px-1 text-sm font-semibold text-ink-primary">Auto-qualify new WhatsApp chats</legend>
+          <p className="text-xs leading-relaxed text-ink-secondary">
+            Uses your published <strong className="text-ink-primary">Instant Form</strong> questions — the same
+            qualifying flow as Facebook Instant Forms. Name, phone, and email are skipped because Meta already
+            provides them when the customer messages on WhatsApp.
+          </p>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={qualificationEnabled}
+              onChange={(e) => setQualificationEnabled(e.target.checked)}
+            />
+            <div>
+              <p className="text-sm font-medium text-ink-primary">Send Instant Form questions on first message</p>
+              <p className="text-xs text-ink-secondary">
+                Conditional logic from your Instant Form is respected. Answers are saved to the lead like a form
+                submission.
+              </p>
+            </div>
+          </label>
+          {qualificationEnabled ? (
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase text-ink-tertiary">Instant Form</span>
+              <select
+                className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-sm"
+                value={instantFormId}
+                onChange={(e) => setInstantFormId(e.target.value)}
+              >
+                <option value="">Latest published form</option>
+                {publishedForms.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+              {publishedForms.length === 0 ? (
+                <p className="mt-1 text-xs text-ink-secondary">
+                  No published Instant Forms yet — publish one under Client → Instant Forms, or we use built-in
+                  default questions.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-ink-secondary">
+                  Pick a form or leave as latest published. Edit questions in Agency → Instant Forms.
+                </p>
+              )}
+            </label>
+          ) : null}
+        </fieldset>
+
         <button
           type="button"
           className="btn-primary"
@@ -272,6 +340,8 @@ export function WhatsAppInboxSettings({
               meta_whatsapp_display_number: displayNumber.trim() || null,
               meta_whatsapp_access_token: accessToken.trim() || null,
               assignment_mode: assignmentMode,
+              whatsapp_qualification_enabled: qualificationEnabled,
+              whatsapp_instant_form_id: instantFormId.trim() || null,
             })
           }
         >

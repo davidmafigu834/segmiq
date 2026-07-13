@@ -23,6 +23,7 @@ type Props = {
   quotation: QuotationWithItems;
   clientId: string;
   leadPhone: string | null;
+  whatsappApiSend?: boolean;
   readOnly?: boolean;
   onSaved: (q: QuotationWithItems) => void;
   onSent: () => void;
@@ -53,7 +54,7 @@ function titleCase(s: string): string {
   return s.replace(/(^|\s)\w/g, (c) => c.toUpperCase());
 }
 
-export function QuotationBuilder({ quotation, clientId, leadPhone, readOnly = false, onSaved, onSent, onClose, onRevise, onDuplicate }: Props) {
+export function QuotationBuilder({ quotation, clientId, leadPhone, whatsappApiSend = false, readOnly = false, onSaved, onSent, onClose, onRevise, onDuplicate }: Props) {
   const [catalog, setCatalog] = useState<CatalogItemRow[]>([]);
   const [savedItems, setSavedItems] = useState<SavedItemRow[]>([]);
   const [items, setItems] = useState<EditorItem[]>(() => toEditorItems(quotation.items));
@@ -71,6 +72,7 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, readOnly = fa
   const [savingItemKey, setSavingItemKey] = useState<string | null>(null);
   const [saveItemToast, setSaveItemToast] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const currency = quotation.currency || "USD";
 
@@ -90,6 +92,12 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, readOnly = fa
     const t = window.setTimeout(() => setSaveItemToast(""), 2500);
     return () => window.clearTimeout(t);
   }, [saveItemToast]);
+
+  useEffect(() => {
+    if (!successMessage) return;
+    const t = window.setTimeout(() => setSuccessMessage(""), 3000);
+    return () => window.clearTimeout(t);
+  }, [successMessage]);
 
   const totals = useMemo(
     () => computeTotals(items, taxRate, otherAmount),
@@ -239,20 +247,37 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, readOnly = fa
       setBusy(null);
       return;
     }
-    const res = await fetch(`/api/quotations/${quotation.id}/send`, { method: "POST" });
+    const res = await fetch(`/api/quotations/${quotation.id}/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sendViaWhatsApp: whatsappApiSend }),
+    });
     const json = (await res.json().catch(() => ({}))) as {
       pdfUrl?: string;
       waMessage?: string;
       quoteNumber?: string;
+      whatsappSent?: boolean;
+      whatsappError?: string;
       error?: string;
     };
     setBusy(null);
-    if (!res.ok || !json.pdfUrl || !json.waMessage) {
+    if (!res.ok || !json.waMessage) {
       setError(json.error ?? "Send failed");
       return;
     }
+
+    if (whatsappApiSend) {
+      if (json.whatsappSent) {
+        setSuccessMessage("Quotation sent on WhatsApp");
+        onSent();
+        return;
+      }
+      setError(json.whatsappError ?? "Could not send quotation on WhatsApp");
+      return;
+    }
+
     try {
-      const pdfBlob = await fetchQuotationPdfBlob(json.pdfUrl);
+      const pdfBlob = await fetchQuotationPdfBlob(quotation.id, "api");
       const fileName = `quotation-${json.quoteNumber ?? quotation.id}.pdf`;
       const shared = await shareQuotationPdf({
         pdfBlob,
@@ -264,6 +289,7 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, readOnly = fa
         setError(shared.error ?? "Could not share PDF via WhatsApp.");
         return;
       }
+      if (shared.hint) setSuccessMessage(shared.hint);
     } catch {
       setError("Could not prepare PDF for WhatsApp.");
       return;
@@ -551,6 +577,7 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, readOnly = fa
       </div>
 
       {saveItemToast ? <p className="text-[12px] text-[var(--accent)]">{saveItemToast}</p> : null}
+      {successMessage ? <p className="text-[12px] text-[var(--accent)]">{successMessage}</p> : null}
       {error ? <p className="text-[12px] text-[var(--danger)]">{error}</p> : null}
 
       {!readOnly ? (
@@ -580,7 +607,7 @@ export function QuotationBuilder({ quotation, clientId, leadPhone, readOnly = fa
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-2 text-[13px] font-bold text-[var(--accent-ink)] hover:bg-[var(--accent-hover)] disabled:opacity-50"
         >
           {busy === "send" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          Send via WhatsApp
+          {whatsappApiSend ? "Send on WhatsApp" : "Send via WhatsApp"}
         </button>
       </div>
       ) : quotation.pdf_url ? (

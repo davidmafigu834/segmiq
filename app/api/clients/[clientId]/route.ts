@@ -30,6 +30,9 @@ const patchSchema = z
     meta_whatsapp_display_number: z.string().max(32).optional().nullable(),
     meta_whatsapp_access_token: z.string().max(500).optional().nullable(),
     assignment_mode: z.enum(["direct", "pool", "round_robin"]).optional(),
+    whatsapp_qualification_enabled: z.boolean().optional(),
+    whatsapp_qualification_questions: z.array(z.record(z.unknown())).optional().nullable(),
+    whatsapp_instant_form_id: z.string().uuid().nullable().optional(),
     primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
     /** @deprecated Manager alerts use `users.notification_prefs` (CLIENT_MANAGER). Column kept for compatibility. */
     manager_notification_prefs: z
@@ -115,6 +118,15 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     update.meta_whatsapp_access_token = token;
   }
   if (body.assignment_mode !== undefined) update.assignment_mode = body.assignment_mode;
+  if (body.whatsapp_qualification_enabled !== undefined) {
+    update.whatsapp_qualification_enabled = body.whatsapp_qualification_enabled;
+  }
+  if (body.whatsapp_qualification_questions !== undefined) {
+    update.whatsapp_qualification_questions = body.whatsapp_qualification_questions;
+  }
+  if (body.whatsapp_instant_form_id !== undefined) {
+    update.whatsapp_instant_form_id = body.whatsapp_instant_form_id;
+  }
   if (body.primary_color !== undefined) update.primary_color = body.primary_color;
   if (body.manager_notification_prefs !== undefined) update.manager_notification_prefs = body.manager_notification_prefs;
   if (body.is_active !== undefined) update.is_active = body.is_active;

@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/shell/AppShell";
 import { isToday } from "date-fns";
+import { buildWhatsAppSalesHubNav } from "@/lib/sales/whatsapp-hub-nav";
 
 export async function SalesLayout({
   children,
@@ -47,9 +48,8 @@ export async function SalesLayout({
 
   const primaryNav = [
     { href: dashboardHref, label: "Dashboard", icon: "layout-dashboard" as const },
-    { href: "/sales/inbox", label: "Inbox", icon: "inbox" as const },
+    buildWhatsAppSalesHubNav(followupBadge || undefined),
     { href: "/sales/leads", label: "My leads", icon: "layout-grid" as const },
-    { href: "/sales/followups", label: "Follow-ups", icon: "calendar" as const, badge: followupBadge || undefined },
     { href: "/sales/quotes", label: "Quotes", icon: "file-text" as const },
     { href: "/sales/won-lost", label: "Won / Lost", icon: "trophy" as const },
     { href: "/sales/profile", label: "Profile", icon: "user" as const },

@@ -46,8 +46,15 @@ export async function shareQuotationPdf(opts: {
   };
 }
 
-export async function fetchQuotationPdfBlob(pdfUrl: string): Promise<Blob> {
-  const res = await fetch(pdfUrl);
+export async function fetchQuotationPdfBlob(
+  pdfUrlOrQuotationId: string,
+  source: "url" | "api" = "url"
+): Promise<Blob> {
+  const url =
+    source === "api"
+      ? `/api/quotations/${pdfUrlOrQuotationId}/pdf`
+      : pdfUrlOrQuotationId;
+  const res = await fetch(url, { credentials: "same-origin" });
   if (!res.ok) throw new Error("Could not download quotation PDF");
   return res.blob();
 }

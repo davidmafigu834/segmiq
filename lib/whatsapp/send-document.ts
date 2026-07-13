@@ -8,18 +8,60 @@ import { logLeadEvent } from "@/lib/lead-events";
 import { resolveWhatsAppSendConfig } from "@/lib/whatsapp/credentials";
 import { persistOutboundWhatsAppMessage } from "@/lib/whatsapp/persist-outbound";
 
-export type SendSessionMessageParams = {
+export type SendSessionDocumentParams = {
   to: string;
   body: string;
   clientId: string;
   leadId: string;
   actorId: string;
   actorName: string;
-  phoneNumberId?: string | null;
+  filename: string;
+  mediaId?: string | null;
+  link?: string | null;
 };
 
-export async function sendWhatsAppSessionMessage(
-  params: SendSessionMessageParams
+export async function uploadWhatsAppMedia(opts: {
+  clientId: string;
+  buffer: Buffer;
+  mimeType: string;
+  filename: string;
+}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const waConfig = await resolveWhatsAppSendConfig(opts.clientId);
+  if (!waConfig) {
+    return { ok: false, error: "WhatsApp not configured for this client" };
+  }
+
+  const { phoneNumberId, accessToken } = waConfig;
+  const form = new FormData();
+  form.append("messaging_product", "whatsapp");
+  form.append("type", opts.mimeType);
+  form.append("file", new Blob([new Uint8Array(opts.buffer)], { type: opts.mimeType }), opts.filename);
+
+  try {
+    const res = await fetch(`${getFacebookGraphBase()}/${phoneNumberId}/media`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: form,
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      id?: string;
+      error?: { message?: string; code?: number };
+    };
+    if (!res.ok || !data.id) {
+      return {
+        ok: false,
+        error: data.error?.message || "Failed to upload document to WhatsApp",
+      };
+    }
+    return { ok: true, id: data.id };
+  } catch (err: unknown) {
+    const e = err as { message?: string };
+    return { ok: false, error: e.message || "Failed to upload document to WhatsApp" };
+  }
+}
+
+export async function sendWhatsAppSessionDocument(
+  params: SendSessionDocumentParams
 ): Promise<SendResult & { channel: "whatsapp" }> {
   const defaultCc = (process.env.DEFAULT_COUNTRY_CODE || "ZW").toUpperCase() as CountryCode;
   const normalized = normalizeToE164(params.to, defaultCc);
@@ -42,7 +84,18 @@ export async function sendWhatsAppSessionMessage(
     return { ...result, channel: "whatsapp" };
   }
 
-  const supabase = createAdminClient();
+  const mediaId = params.mediaId?.trim();
+  const link = params.link?.trim();
+  if (!mediaId && !link) {
+    const result: SendResult = {
+      ok: false,
+      error: "Document media id or public link is required",
+      errorCode: "MISSING_DOCUMENT",
+    };
+    await logMessage(result, baseContext);
+    return { ...result, channel: "whatsapp" };
+  }
+
   const waConfig = await resolveWhatsAppSendConfig(params.clientId);
   if (!waConfig) {
     const result: SendResult = {
@@ -55,13 +108,16 @@ export async function sendWhatsAppSessionMessage(
   }
 
   const { phoneNumberId, accessToken } = waConfig;
+  const document = mediaId
+    ? { id: mediaId, caption: params.body, filename: params.filename }
+    : { link, caption: params.body, filename: params.filename };
 
   const payload = {
     messaging_product: "whatsapp",
     recipient_type: "individual",
     to: normalized.replace(/^\+/, ""),
-    type: "text",
-    text: { body: params.body },
+    type: "document",
+    document,
   };
 
   const url = `${getFacebookGraphBase()}/${phoneNumberId}/messages`;
@@ -83,20 +139,15 @@ export async function sendWhatsAppSessionMessage(
 
     if (!res.ok || data.error) {
       const err = data.error || { code: res.status, message: `HTTP ${res.status}` };
-      fbLog("fb.whatsapp.send_failed", { recipient: normalized, message: err.message });
-      const authFailed =
-        err.code === 190 ||
-        /authentication error|invalid oauth access token|cannot parse access token/i.test(err.message ?? "");
+      fbLog("fb.whatsapp.send_failed", { recipient: normalized, message: err.message, type: "document" });
       out = {
         ok: false,
-        error: authFailed
-          ? "WhatsApp access token is invalid or expired — clear the token in Client Settings → WhatsApp to use the platform token, or paste a fresh token from Meta."
-          : err.message || "Send failed",
+        error: err.message || "Send failed",
         errorCode: err.code,
       };
     } else {
       out = { ok: true, providerId: data.messages?.[0]?.id };
-      fbLog("fb.whatsapp.sent", { recipient: normalized, providerId: out.providerId });
+      fbLog("fb.whatsapp.sent", { recipient: normalized, providerId: out.providerId, type: "document" });
     }
   } catch (err: unknown) {
     const e = err as { message?: string };
@@ -106,6 +157,7 @@ export async function sendWhatsAppSessionMessage(
   await logMessage(out, baseContext);
 
   if (out.ok) {
+    const supabase = createAdminClient();
     const now = new Date().toISOString();
     await persistOutboundWhatsAppMessage({
       clientId: params.clientId,
@@ -114,6 +166,7 @@ export async function sendWhatsAppSessionMessage(
       body: params.body,
       actorId: params.actorId,
       providerId: out.providerId ?? null,
+      messageType: "document",
     });
 
     await logLeadEvent({
@@ -121,7 +174,12 @@ export async function sendWhatsAppSessionMessage(
       clientId: params.clientId,
       actor: { id: params.actorId, name: params.actorName, role: "SALESPERSON" },
       eventType: "MESSAGE_SENT",
-      eventData: { body: params.body, provider_id: out.providerId ?? null },
+      eventData: {
+        body: params.body,
+        provider_id: out.providerId ?? null,
+        message_type: "document",
+        filename: params.filename,
+      },
       channel: "whatsapp",
     });
 

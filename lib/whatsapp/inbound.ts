@@ -6,9 +6,18 @@ import { notifyNewLead, notifyWhatsAppInboundMessage, notifyAdminsNoSalesperson 
 import { parseSalesPrefs } from "@/lib/notification-prefs";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { pickAssigneeForInbound } from "./assignment";
+import { fetchWhatsAppMediaAsset } from "./media";
+import { processWhatsAppQualification } from "./qualification";
 import { resolveClientFromWhatsAppPhoneNumberId } from "./resolve-client";
 
 const SESSION_MS = 24 * 60 * 60 * 1000;
+
+type MediaPayload = {
+  id?: string;
+  mime_type?: string;
+  caption?: string;
+  filename?: string;
+};
 
 type InboundPayload = {
   id: string;
@@ -18,19 +27,66 @@ type InboundPayload = {
   text?: { body: string };
   button?: { text?: string; payload?: string };
   interactive?: { type?: string; button_reply?: { title?: string }; list_reply?: { title?: string } };
+  image?: MediaPayload;
+  audio?: MediaPayload;
+  video?: MediaPayload;
+  document?: MediaPayload;
+  sticker?: MediaPayload;
 };
 
-function extractBody(msg: InboundPayload): string {
+export type WhatsAppContactProfile = {
+  waId: string;
+  name: string | null;
+};
+
+function extractBody(msg: InboundPayload, caption?: string | null): string {
+  if (caption?.trim()) return caption.trim();
   if (msg.type === "text" && msg.text?.body?.trim()) return msg.text.body.trim();
   if (msg.type === "button" && msg.button?.text?.trim()) return msg.button.text.trim();
   if (msg.interactive?.button_reply?.title?.trim()) return msg.interactive.button_reply.title.trim();
   if (msg.interactive?.list_reply?.title?.trim()) return msg.interactive.list_reply.title.trim();
-  if (msg.type === "image") return "[Image]";
-  if (msg.type === "audio") return "[Voice message]";
-  if (msg.type === "video") return "[Video]";
-  if (msg.type === "document") return "[Document]";
-  if (msg.type === "location") return "[Location]";
-  return `[${msg.type || "message"}]`;
+  if (msg.type === "image") return caption?.trim() ? caption.trim() : "";
+  if (msg.type === "audio") return caption?.trim() ? caption.trim() : "";
+  if (msg.type === "video") return caption?.trim() ? caption.trim() : "";
+  if (msg.type === "document") return msg.document?.filename?.trim() || "";
+  if (msg.type === "sticker") return "";
+  if (msg.type === "location") return "Location";
+  return "";
+}
+
+function mediaPayloadForType(msg: InboundPayload): MediaPayload | undefined {
+  if (msg.type === "image") return msg.image;
+  if (msg.type === "audio") return msg.audio;
+  if (msg.type === "video") return msg.video;
+  if (msg.type === "document") return msg.document;
+  if (msg.type === "sticker") return msg.sticker;
+  return undefined;
+}
+
+async function syncWhatsAppIdentity(opts: {
+  supabase: ReturnType<typeof createAdminClient>;
+  contactId: string | null;
+  leadId: string;
+  phone: string;
+  profile?: WhatsAppContactProfile | null;
+}) {
+  const { supabase, contactId, leadId, phone, profile } = opts;
+  const profileName = profile?.name?.trim() || null;
+  const waId = profile?.waId?.trim() || phone.replace(/\D/g, "");
+  const now = new Date().toISOString();
+
+  if (contactId) {
+    const contactUpdate: Record<string, unknown> = { updated_at: now, whatsapp_wa_id: waId };
+    if (profileName) {
+      contactUpdate.whatsapp_profile_name = profileName;
+      contactUpdate.name = profileName;
+    }
+    await supabase.from("contacts").update(contactUpdate).eq("id", contactId);
+  }
+
+  const leadUpdate: Record<string, unknown> = { updated_at: now };
+  if (profileName) leadUpdate.name = profileName;
+  await supabase.from("leads").update(leadUpdate).eq("id", leadId);
 }
 
 function displayPhone(from: string, dialCode: string | null): string {
@@ -51,15 +107,48 @@ export async function isWhatsAppSessionOpen(leadId: string): Promise<boolean> {
     .limit(1)
     .maybeSingle();
 
-  if (!data?.created_at) return false;
-  return Date.now() - new Date(data.created_at as string).getTime() < SESSION_MS;
+  if (data?.created_at) {
+    return Date.now() - new Date(data.created_at as string).getTime() < SESSION_MS;
+  }
+
+  const { data: event } = await supabase
+    .from("lead_events")
+    .select("created_at")
+    .eq("lead_id", leadId)
+    .eq("event_type", "MESSAGE_RECEIVED")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (event?.created_at) {
+    return Date.now() - new Date(event.created_at as string).getTime() < SESSION_MS;
+  }
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("source, created_at, form_data")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (lead?.source === "WHATSAPP_INBOUND") {
+    const fd = lead.form_data as Record<string, unknown> | null;
+    const hasWhatsAppOrigin =
+      fd?.channel === "whatsapp" ||
+      (typeof fd?.first_message === "string" && fd.first_message.trim().length > 0);
+    if (hasWhatsAppOrigin) {
+      return Date.now() - new Date(lead.created_at as string).getTime() < SESSION_MS;
+    }
+  }
+
+  return false;
 }
 
 export async function handleInboundWhatsAppMessage(opts: {
   phoneNumberId?: string | null;
   message: InboundPayload;
+  contactProfile?: WhatsAppContactProfile | null;
 }): Promise<void> {
-  const { message } = opts;
+  const { message, contactProfile } = opts;
   const providerId = message.id?.trim();
   if (!providerId) return;
 
@@ -75,11 +164,14 @@ export async function handleInboundWhatsAppMessage(opts: {
   const client = await resolveClientFromWhatsAppPhoneNumberId(opts.phoneNumberId);
   if (!client) return;
 
-  const body = extractBody(message);
+  const mediaRef = mediaPayloadForType(message);
+  const mediaAsset = await fetchWhatsAppMediaAsset(client.id, mediaRef);
+  const body = extractBody(message, mediaAsset.caption);
   const phone = displayPhone(message.from, client.dial_code);
   const phoneDigits = phone.replace(/\D/g, "");
 
   let leadId: string | null = null;
+  let contactId: string | null = null;
   let isNewLead = false;
   let assignedToId: string | null = null;
 
@@ -102,6 +194,12 @@ export async function handleInboundWhatsAppMessage(opts: {
   if (matched) {
     leadId = matched.id as string;
     assignedToId = (matched.assigned_to_id as string | null) ?? null;
+    const { data: leadContact } = await supabase
+      .from("leads")
+      .select("contact_id")
+      .eq("id", leadId)
+      .maybeSingle();
+    contactId = (leadContact?.contact_id as string | null) ?? null;
   } else {
     isNewLead = true;
     const { assigneeId, salespeople } = await pickAssigneeForInbound({
@@ -111,7 +209,7 @@ export async function handleInboundWhatsAppMessage(opts: {
     });
     assignedToId = assigneeId;
 
-    let contactId: string | null = null;
+    const profileName = contactProfile?.name?.trim() || null;
     const { data: existingContact } = await supabase
       .from("contacts")
       .select("id, name")
@@ -126,11 +224,13 @@ export async function handleInboundWhatsAppMessage(opts: {
         .from("contacts")
         .insert({
           client_id: client.id,
-          name: null,
+          name: profileName,
           phone,
           source: "WHATSAPP_INBOUND",
           lead_origin: "client",
           lifecycle: "lead",
+          whatsapp_profile_name: profileName,
+          whatsapp_wa_id: contactProfile?.waId ?? phoneDigits,
         })
         .select("id")
         .single();
@@ -145,7 +245,7 @@ export async function handleInboundWhatsAppMessage(opts: {
         assigned_to_id: assignedToId,
         source: "WHATSAPP_INBOUND",
         status: "NEW",
-        name: (existingContact?.name as string | null) ?? null,
+        name: profileName ?? (existingContact?.name as string | null) ?? null,
         phone,
         contact_id: contactId,
         form_data: { channel: "whatsapp", first_message: body },
@@ -221,6 +321,14 @@ export async function handleInboundWhatsAppMessage(opts: {
     }
   }
 
+  await syncWhatsAppIdentity({
+    supabase,
+    contactId,
+    leadId,
+    phone,
+    profile: contactProfile ?? { waId: message.from, name: null },
+  });
+
   const now = new Date().toISOString();
   await supabase.from("whatsapp_messages").insert({
     client_id: client.id,
@@ -230,6 +338,9 @@ export async function handleInboundWhatsAppMessage(opts: {
     phone,
     body,
     message_type: message.type || "text",
+    media_url: mediaAsset.url,
+    media_mime_type: mediaAsset.mimeType,
+    media_caption: mediaAsset.caption,
     created_at: message.timestamp ? new Date(Number(message.timestamp) * 1000).toISOString() : now,
     updated_at: now,
   });
@@ -266,5 +377,18 @@ export async function handleInboundWhatsAppMessage(opts: {
         salesPrefs: parseSalesPrefs(rep.notification_prefs),
       });
     }
+  }
+
+  try {
+    await processWhatsAppQualification({
+      clientId: client.id,
+      clientName: client.name,
+      leadId,
+      phone,
+      inboundBody: body,
+      isNewLead,
+    });
+  } catch (err) {
+    console.error("[whatsapp] qualification error:", err);
   }
 }
