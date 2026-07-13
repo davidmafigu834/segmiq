@@ -232,6 +232,10 @@ export function LeadIntelligencePanel({
   const textPrimary = whatsappMode ? "text-[#111B21]" : "text-[var(--text-primary)]";
   const textSecondary = whatsappMode ? "text-[#667781]" : "text-[var(--text-secondary)]";
   const textMuted = whatsappMode ? "text-[#8696A0]" : "text-[var(--text-tertiary)]";
+  const surfaceMuted = whatsappMode ? "bg-[#F0F2F5]" : "bg-[var(--bg-quaternary)]";
+  const actionBtn = whatsappMode
+    ? "rounded-lg border border-[#E9EDEF] bg-white px-3 py-2 text-left text-xs text-[#54656F] hover:bg-[#F5F6F6]"
+    : "rounded-lg border border-[var(--border)] px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]";
 
   const intelHeader = (
     <div className={`shrink-0 border-b px-3 py-3 sm:px-4 ${whatsappMode ? "border-[#E9EDEF] bg-[#F0F2F5]" : "border-[var(--border)] bg-[var(--bg-primary)]"}`}>
@@ -295,7 +299,7 @@ export function LeadIntelligencePanel({
       className={`${panelShell} ${mobilePanelClass}`}
     >
       {intelHeader}
-      <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+      <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] ${whatsappMode ? "bg-[#F0F2F5]" : ""}`}>
       <div className="ag-fade-in flex flex-col gap-4 p-4">
         <div className={`flex items-center gap-3 p-4 ${card}`}>
           <WhatsAppAvatar
@@ -362,7 +366,7 @@ export function LeadIntelligencePanel({
                         className={`rounded-md border px-2 py-2 text-left disabled:opacity-50 ${stageButtonClass(isCurrent)}`}
                       >
                         <div className="text-[11px] font-semibold">{stage.label}</div>
-                        <div className={`mt-0.5 text-[10px] ${isCurrent ? "opacity-80" : "opacity-70"}`}>
+                        <div className={`mt-0.5 text-[10px] ${isCurrent ? "opacity-80" : textMuted}`}>
                           {busy ? "Saving…" : stage.hint}
                         </div>
                       </button>
@@ -397,8 +401,8 @@ export function LeadIntelligencePanel({
             {label} Lead
           </div>
           {slaActive ? (
-            <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[var(--error)]">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--error)]" />
+            <div className={`mt-3 flex items-center justify-center gap-1.5 text-xs ${whatsappMode ? "text-[#B91C1C]" : "text-[var(--error)]"}`}>
+              <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${whatsappMode ? "bg-[#B91C1C]" : "bg-[var(--error)]"}`} />
               5-min SLA active
             </div>
           ) : null}
@@ -408,20 +412,22 @@ export function LeadIntelligencePanel({
           <div className={sectionTitle}>
             Score Breakdown
           </div>
-          <ScoreBreakdownBar label="Urgency" value={conversation.breakdown.urgency} max={25} icon={Zap} />
-          <ScoreBreakdownBar label="Budget" value={conversation.breakdown.budget} max={25} icon={DollarSign} />
-          <ScoreBreakdownBar label="Location" value={conversation.breakdown.location} max={15} icon={MapPin} />
+          <ScoreBreakdownBar label="Urgency" value={conversation.breakdown.urgency} max={25} icon={Zap} light={whatsappMode} />
+          <ScoreBreakdownBar label="Budget" value={conversation.breakdown.budget} max={25} icon={DollarSign} light={whatsappMode} />
+          <ScoreBreakdownBar label="Location" value={conversation.breakdown.location} max={15} icon={MapPin} light={whatsappMode} />
           <ScoreBreakdownBar
             label="Product Interest"
             value={conversation.breakdown.productInterest}
             max={20}
             icon={Target}
+            light={whatsappMode}
           />
           <ScoreBreakdownBar
             label="Engagement"
             value={conversation.breakdown.engagement}
             max={15}
             icon={Activity}
+            light={whatsappMode}
           />
         </div>
 
@@ -553,7 +559,7 @@ export function LeadIntelligencePanel({
               <button
                 type="button"
                 onClick={() => setReassignOpen((v) => !v)}
-                className="flex cursor-pointer items-center gap-1 text-xs text-[var(--text-tertiary)]"
+                className={`flex cursor-pointer items-center gap-1 text-xs ${textMuted}`}
               >
                 Reassign
                 <ChevronDown size={14} />
@@ -566,7 +572,7 @@ export function LeadIntelligencePanel({
                 type="button"
                 disabled={reassigning}
                 onClick={() => void handleReassign(null)}
-                className="rounded-lg border border-[var(--border)] px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
+                className={actionBtn}
               >
                 Unassigned (pool)
               </button>
@@ -576,7 +582,7 @@ export function LeadIntelligencePanel({
                   type="button"
                   disabled={reassigning}
                   onClick={() => void handleReassign(sp.id)}
-                  className="rounded-lg border border-[var(--border)] px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
+                  className={actionBtn}
                 >
                   {sp.name}
                 </button>
@@ -590,24 +596,24 @@ export function LeadIntelligencePanel({
             Contact Details
           </div>
           {conversation.phone ? (
-            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-              <Phone size={14} />
+            <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
+              <Phone size={14} className={textMuted} />
               {conversation.phone}
             </div>
           ) : null}
           {conversation.location ? (
-            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-              <MapPin size={14} />
+            <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
+              <MapPin size={14} className={textMuted} />
               {conversation.location}
             </div>
           ) : null}
           {conversation.projectType ? (
-            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-              <Target size={14} />
+            <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
+              <Target size={14} className={textMuted} />
               {conversation.projectType}
             </div>
           ) : null}
-          <div className="text-sm text-[var(--text-secondary)]">
+          <div className={`text-sm ${textSecondary}`}>
             Source: {formatSource(conversation.source as string)}
           </div>
         </div>
@@ -617,7 +623,7 @@ export function LeadIntelligencePanel({
             {conversation.tags.map((t) => (
               <span
                 key={t}
-                className="flex items-center gap-1 rounded-full bg-[var(--bg-quaternary)] px-2 py-1 text-[11px] text-[var(--text-secondary)]"
+                className={`flex items-center gap-1 rounded-full px-2 py-1 text-[11px] ${surfaceMuted} ${textSecondary}`}
               >
                 <Tag size={10} />
                 {t.replace(/_/g, " ")}
