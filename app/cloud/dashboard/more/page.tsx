@@ -98,7 +98,7 @@ export default function MorePage() {
   const visibleSections = menuSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => {
+      items: section.items.filter(() => {
         if (isCloudAdmin) return true;
         return section.label === "Support";
       }),
