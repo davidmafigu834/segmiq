@@ -44,25 +44,58 @@ export function ChatThread({
   const [logCallOpen, setLogCallOpen] = useState(false);
   const [pricingPicker, setPricingPicker] = useState<{ id: string; name: string }[] | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
   const onMessagesChangeRef = useRef(onMessagesChange);
   onMessagesChangeRef.current = onMessagesChange;
+
+  useEffect(() => {
+    stickToBottomRef.current = true;
+  }, [conversation?.id]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    function onScroll() {
+      const threshold = 96;
+      stickToBottomRef.current =
+        el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    }
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [conversation?.id]);
 
   useEffect(() => {
     if (!conversation?.id) {
       setMessages([]);
       return;
     }
+    const conversationId = conversation.id;
+    const conversationSource = conversation.source;
     let cancelled = false;
 
     async function loadMessages(isInitial = false) {
       if (isInitial) setLoading(true);
       try {
-        const res = await fetch(`/api/inbox/conversations/${conversation!.id}/messages`);
+        const res = await fetch(`/api/inbox/conversations/${conversationId}/messages`);
         const d = (await res.json()) as { messages?: InboxChatMessage[]; sessionOpen?: boolean };
         if (!cancelled) {
-          setMessages(d.messages ?? []);
+          const next = d.messages ?? [];
+          setMessages((prev) => {
+            if (
+              prev.length === next.length
+              && prev.every((m, i) => {
+                const n = next[i];
+                return n && m.id === n.id && m.status === n.status && m.text === n.text;
+              })
+            ) {
+              return prev;
+            }
+            return next;
+          });
           setSessionOpen(d.sessionOpen === true);
-          if (isInitial) onMessagesChangeRef.current();
         }
       } finally {
         if (!cancelled && isInitial) setLoading(false);
@@ -70,7 +103,7 @@ export function ChatThread({
     }
 
     void loadMessages(true);
-    const interval = conversation.source === "WHATSAPP_INBOUND"
+    const interval = conversationSource === "WHATSAPP_INBOUND"
       ? window.setInterval(() => void loadMessages(false), 5000)
       : null;
 
@@ -78,9 +111,10 @@ export function ChatThread({
       cancelled = true;
       if (interval) window.clearInterval(interval);
     };
-  }, [conversation]);
+  }, [conversation?.id, conversation?.source]);
 
   useEffect(() => {
+    if (!stickToBottomRef.current) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, conversation?.id]);
 
@@ -104,6 +138,7 @@ export function ChatThread({
       if (res.ok) {
         const sentText = text.trim();
         setInput("");
+        stickToBottomRef.current = true;
         setMessages((prev) => [
           ...prev,
           {
@@ -284,6 +319,7 @@ export function ChatThread({
       </div>
 
       <div
+        ref={scrollRef}
         className="inbox-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4"
         style={{
           backgroundImage:
