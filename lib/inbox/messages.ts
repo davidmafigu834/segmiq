@@ -43,15 +43,6 @@ export function whatsappRowsToChatMessages(
     });
 }
 
-function mediaLabel(messageType?: string | null, mimeType?: string | null): string {
-  if (messageType === "image" || mimeType?.startsWith("image/")) return "Photo";
-  if (messageType === "audio" || mimeType?.startsWith("audio/")) return "Voice message";
-  if (messageType === "video" || mimeType?.startsWith("video/")) return "Video";
-  if (messageType === "document") return "Document";
-  if (messageType === "sticker") return "Sticker";
-  return "Attachment";
-}
-
 export function eventsToChatMessages(events: TimelineEvent[]): InboxChatMessage[] {
   const messages: InboxChatMessage[] = [];
 

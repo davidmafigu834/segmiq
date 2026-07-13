@@ -173,7 +173,6 @@ export async function processWhatsAppQualification(opts: {
   if (!pending) return;
 
   if (!answerText) {
-    const asked = new Set(qual.asked_ids);
     const total = countFlowQuestions(flow, qual.answers);
     const reask = formatQuestionMessage(pending, qual.asked_ids.length, total);
     await sendQualificationText({

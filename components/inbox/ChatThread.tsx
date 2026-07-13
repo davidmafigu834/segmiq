@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  ArrowLeft,
   MoreHorizontal,
   Paperclip,
   Phone,
@@ -77,7 +78,7 @@ export function ChatThread({
       cancelled = true;
       if (interval) window.clearInterval(interval);
     };
-  }, [conversation?.id, conversation?.source]);
+  }, [conversation]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

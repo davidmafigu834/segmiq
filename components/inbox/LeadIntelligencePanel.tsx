@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { addDays, format } from "date-fns";
 import {
   Activity,
+  ArrowLeft,
   CalendarClock,
   ChevronDown,
   DollarSign,
