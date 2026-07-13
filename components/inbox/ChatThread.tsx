@@ -58,9 +58,11 @@ export function ChatThread({
     if (!el) return;
 
     function onScroll() {
+      const node = scrollRef.current;
+      if (!node) return;
       const threshold = 96;
       stickToBottomRef.current =
-        el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+        node.scrollHeight - node.scrollTop - node.clientHeight < threshold;
     }
 
     el.addEventListener("scroll", onScroll, { passive: true });
