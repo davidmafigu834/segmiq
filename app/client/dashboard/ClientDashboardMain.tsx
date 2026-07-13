@@ -461,7 +461,7 @@ export default function ClientDashboardMain({
       </div>
 
       {data.whatsappHub && data.whatsappHub.summary.activeChats + data.whatsappHub.summary.newChats > 0 ? (
-        <div className="ag-fade-in ag-delay-1 mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+        <div className="ag-fade-in ag-delay-1 mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-4 sm:p-5">
           <WhatsAppHubReportSection
             report={data.whatsappHub}
             inboxHref="/client/leads"
