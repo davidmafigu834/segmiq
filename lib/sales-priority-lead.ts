@@ -7,8 +7,6 @@ import {
 import {
   isWhatsAppInboundLead,
   whatsappFirstMessage,
-  whatsappLeadDisplayName,
-  whatsappLeadSecondaryLine,
 } from "@/lib/leads/whatsapp-lead-display";
 import { isLeadSlow } from "@/lib/leadStatus";
 
