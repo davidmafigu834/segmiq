@@ -17,6 +17,45 @@ async function queryClients(select: string) {
     .order("created_at", { ascending: false });
 }
 
+async function fetchCloudMembershipSets(clientIds: string[]) {
+  if (clientIds.length === 0) {
+    return {
+      projectClientIds: new Set<string>(),
+      formSchemaClientIds: new Set<string>(),
+    };
+  }
+
+  const supabase = createAdminClient();
+  const [projectsResult, schemasResult] = await Promise.all([
+    supabase.from("projects").select("client_id").in("client_id", clientIds),
+    supabase.from("form_schemas").select("client_id").in("client_id", clientIds),
+  ]);
+
+  return {
+    projectClientIds: new Set(
+      (projectsResult.data ?? []).map((row) => row.client_id as string)
+    ),
+    formSchemaClientIds: new Set(
+      (schemasResult.data ?? []).map((row) => row.client_id as string)
+    ),
+  };
+}
+
+/** Cloud tenants: self-signup, project activity, or CRM-free manager accounts. */
+export function isCloudSubscriptionClient(
+  row: CloudClientDbRow,
+  projectClientIds: Set<string>,
+  formSchemaClientIds: Set<string>
+): boolean {
+  if (row.signup_source === "cloud") return true;
+  if (projectClientIds.has(row.id)) return true;
+  if (Array.isArray(row.projects) && row.projects.length > 0) return true;
+
+  const hasManager =
+    Array.isArray(row.users) && row.users.some((user) => user.role === "CLIENT_MANAGER");
+  return hasManager && !formSchemaClientIds.has(row.id);
+}
+
 export async function fetchCloudClientsForAdmin(): Promise<{
   clients: CloudClientRow[];
   queryError?: string;
@@ -43,9 +82,14 @@ export async function fetchCloudClientsForAdmin(): Promise<{
   ];
 
   let result: Awaited<ReturnType<typeof queryClients>> | null = null;
+  let hasSignupSource = false;
+
   for (const select of selects) {
     result = await queryClients(select);
-    if (!result.error) break;
+    if (!result.error) {
+      hasSignupSource = select.includes("signup_source");
+      break;
+    }
     console.error("[cloud-clients] query failed:", result.error.message);
     const recoverable =
       isMissingColumnError(result.error, "signup_source") ||
@@ -63,26 +107,22 @@ export async function fetchCloudClientsForAdmin(): Promise<{
   }
 
   const rows = (result.data ?? []) as unknown as CloudClientDbRow[];
-  const hasSignupSource = rows.some((r) => r.signup_source != null);
+  const { projectClientIds, formSchemaClientIds } = await fetchCloudMembershipSets(
+    rows.map((row) => row.id)
+  );
 
   let cloudRows: CloudClientDbRow[];
   if (hasSignupSource) {
-    cloudRows = rows.filter((r) => r.signup_source === "cloud");
+    cloudRows = rows.filter((row) =>
+      isCloudSubscriptionClient(row, projectClientIds, formSchemaClientIds)
+    );
   } else {
     cloudRows = rows.filter(
-      (r) => Array.isArray(r.users) && r.users.some((u) => u.role === "CLIENT_MANAGER")
+      (row) => Array.isArray(row.users) && row.users.some((user) => user.role === "CLIENT_MANAGER")
     );
     if (cloudRows.length > 0) {
-      const supabase = createAdminClient();
-      const { data: schemas } = await supabase
-        .from("form_schemas")
-        .select("client_id")
-        .in(
-          "client_id",
-          cloudRows.map((c) => c.id)
-        );
-      const agencyIds = new Set((schemas ?? []).map((s) => s.client_id as string));
-      cloudRows = cloudRows.filter((c) => !agencyIds.has(c.id));
+      const agencyIds = formSchemaClientIds;
+      cloudRows = cloudRows.filter((row) => !agencyIds.has(row.id));
     }
   }
 

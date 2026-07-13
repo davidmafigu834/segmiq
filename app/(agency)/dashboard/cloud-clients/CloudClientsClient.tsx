@@ -210,7 +210,9 @@ export function CloudClientsClient({
 
   return (
     <div>
-      <p className="mb-6 text-[13px] text-[var(--text-tertiary)]">Manage Segmiq Cloud client plans and billing.</p>
+      <p className="mb-6 text-[13px] text-[var(--text-tertiary)]">
+        Manage Segmiq Cloud client plans and billing for self-signup and active Cloud tenants.
+      </p>
 
       {/* Overdue warning banner */}
       {overdueClients.length > 0 && (
@@ -233,7 +235,7 @@ export function CloudClientsClient({
       {/* Table */}
       {clients.length === 0 ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-10 text-center text-[13px] text-[var(--text-tertiary)]">
-          No Cloud self-signup clients yet.
+          No Segmiq Cloud clients found yet.
         </div>
       ) : (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">
