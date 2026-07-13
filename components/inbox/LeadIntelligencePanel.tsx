@@ -16,7 +16,6 @@ import {
   Tag,
   Target,
   Zap,
-  MessageCircle,
 } from "lucide-react";
 import { formatSource } from "@/lib/inbox/fetch-conversations";
 import { scoreColor, scoreLabel, stageLabel } from "@/lib/inbox/scoring";
@@ -27,8 +26,6 @@ import type { LeadStatus, QuotationLineItemRow, QuotationRow } from "@/types";
 import { ScoreBreakdownBar } from "./ScoreBreakdownBar";
 import { LeadStageBadge } from "./LeadStageBadge";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
-import { WhatsAppChatLeadCard } from "./WhatsAppChatLeadCard";
-import { isWhatsAppChatLead } from "@/lib/inbox/whatsapp-display";
 
 type QuotationWithItems = QuotationRow & { items?: QuotationLineItemRow[] };
 
@@ -281,7 +278,6 @@ export function LeadIntelligencePanel({
   const label = scoreLabel(conversation.score);
   const summary = conversation.leadSummary || briefing;
   const nextAction = suggestion || "Create a quotation or schedule a follow-up to keep this lead moving.";
-  const isChatLead = isWhatsAppChatLead(conversation.source);
   const slaActive =
     conversation.status === "NEW" &&
     Date.now() - new Date(conversation.createdAt).getTime() < 5 * 60 * 1000;
@@ -305,30 +301,26 @@ export function LeadIntelligencePanel({
       {intelHeader}
       <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] ${whatsappMode ? "bg-[#F0F2F5]" : ""}`}>
       <div className="ag-fade-in flex flex-col gap-4 p-4">
-        {isChatLead ? (
-          <WhatsAppChatLeadCard conversation={conversation} />
-        ) : (
-          <div className={`flex items-center gap-3 p-4 ${card}`}>
-            <WhatsAppAvatar
-              name={displayContactName(conversation)}
-              phone={conversation.phone}
-              size="md"
-            />
-            <div className="min-w-0">
-              <div className={`truncate text-base font-medium ${textPrimary}`}>
-                {displayContactName(conversation)}
-              </div>
-              {conversation.whatsappProfileName && conversation.name && conversation.whatsappProfileName !== conversation.name ? (
-                <div className={`truncate text-xs ${textMuted}`}>
-                  WhatsApp: {conversation.whatsappProfileName}
-                </div>
-              ) : null}
-              {conversation.phone ? (
-                <div className={`truncate text-xs ${textMuted}`}>{conversation.phone}</div>
-              ) : null}
+        <div className={`flex items-center gap-3 p-4 ${card}`}>
+          <WhatsAppAvatar
+            name={displayContactName(conversation)}
+            phone={conversation.phone}
+            size="md"
+          />
+          <div className="min-w-0">
+            <div className={`truncate text-base font-medium ${textPrimary}`}>
+              {displayContactName(conversation)}
             </div>
+            {conversation.whatsappProfileName && conversation.name && conversation.whatsappProfileName !== conversation.name ? (
+              <div className={`truncate text-xs ${textMuted}`}>
+                WhatsApp: {conversation.whatsappProfileName}
+              </div>
+            ) : null}
+            {conversation.phone ? (
+              <div className={`truncate text-xs ${textMuted}`}>{conversation.phone}</div>
+            ) : null}
           </div>
-        )}
+        </div>
 
         <div className={`flex flex-col gap-3 p-4 ${card}`}>
           <div className="flex items-center justify-between gap-3">
@@ -443,19 +435,9 @@ export function LeadIntelligencePanel({
           <div className={`p-5 ${card}`}>
             <div className={`mb-2 flex items-center gap-1.5 ${sectionTitle}`}>
               <Sparkles size={14} />
-              {isChatLead ? "Chat qualification" : "AI Qualification"}
+              AI Qualification
             </div>
             <p className={`text-sm leading-relaxed ${textSecondary}`}>{summary}</p>
-          </div>
-        ) : isChatLead ? (
-          <div className={`p-4 ${card}`}>
-            <div className={`mb-2 flex items-center gap-1.5 ${sectionTitle}`}>
-              <Sparkles size={14} />
-              Chat qualification
-            </div>
-            <p className={`text-sm leading-relaxed ${textSecondary}`}>
-              No summary yet. Insights build as this customer replies in the WhatsApp chat and answers qualification questions.
-            </p>
           </div>
         ) : null}
 
@@ -609,68 +591,32 @@ export function LeadIntelligencePanel({
           ) : null}
         </div>
 
-        {isChatLead ? (
-          <div className={`flex flex-col gap-3 p-5 ${card}`}>
-            <div className={sectionTitle}>Chat details</div>
-            {conversation.phone ? (
-              <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
-                <Phone size={14} className={textMuted} />
-                {conversation.phone}
-              </div>
-            ) : null}
-            {conversation.whatsappProfileName ? (
-              <div className={`text-sm ${textSecondary}`}>
-                WhatsApp profile:{" "}
-                <span className={`font-medium ${textPrimary}`}>{conversation.whatsappProfileName}</span>
-              </div>
-            ) : null}
+        <div className={`flex flex-col gap-3 p-5 ${card}`}>
+          <div className={sectionTitle}>
+            Contact Details
+          </div>
+          {conversation.phone ? (
             <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
-              <MessageCircle size={14} className={textMuted} />
-              Inbound WhatsApp chat
+              <Phone size={14} className={textMuted} />
+              {conversation.phone}
             </div>
-            {conversation.location ? (
-              <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
-                <MapPin size={14} className={textMuted} />
-                {conversation.location}
-              </div>
-            ) : (
-              <p className={`text-xs ${textMuted}`}>Location not shared in chat yet</p>
-            )}
-            {conversation.projectType ? (
-              <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
-                <Target size={14} className={textMuted} />
-                {conversation.projectType}
-              </div>
-            ) : null}
+          ) : null}
+          {conversation.location ? (
+            <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
+              <MapPin size={14} className={textMuted} />
+              {conversation.location}
+            </div>
+          ) : null}
+          {conversation.projectType ? (
+            <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
+              <Target size={14} className={textMuted} />
+              {conversation.projectType}
+            </div>
+          ) : null}
+          <div className={`text-sm ${textSecondary}`}>
+            Source: {formatSource(conversation.source as string)}
           </div>
-        ) : (
-          <div className={`flex flex-col gap-3 p-5 ${card}`}>
-            <div className={sectionTitle}>
-              Contact Details
-            </div>
-            {conversation.phone ? (
-              <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
-                <Phone size={14} className={textMuted} />
-                {conversation.phone}
-              </div>
-            ) : null}
-            {conversation.location ? (
-              <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
-                <MapPin size={14} className={textMuted} />
-                {conversation.location}
-              </div>
-            ) : null}
-            {conversation.projectType ? (
-              <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
-                <Target size={14} className={textMuted} />
-                {conversation.projectType}
-              </div>
-            ) : null}
-            <div className={`text-sm ${textSecondary}`}>
-              Source: {formatSource(conversation.source as string)}
-            </div>
-          </div>
-        )}
+        </div>
 
         {conversation.tags.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">

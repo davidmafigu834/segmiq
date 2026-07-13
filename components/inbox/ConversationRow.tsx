@@ -2,9 +2,8 @@
 
 import { formatInboxTime } from "@/lib/inbox/fetch-conversations";
 import type { InboxConversation } from "@/lib/inbox/types";
-import { chatContactSubtitle, displayChatContactName, isWhatsAppChatLead } from "@/lib/inbox/whatsapp-display";
 import { AssigneeBadge } from "./AssigneeBadge";
-import { WhatsAppAvatar } from "./WhatsAppAvatar";
+import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 import { LeadStageBadge } from "./LeadStageBadge";
 import { LeadIntentBadge } from "./LeadIntentBadge";
 import { Image as ImageIcon, Mic } from "lucide-react";
@@ -34,9 +33,7 @@ export function ConversationRow({
   claiming,
   canClaim,
 }: Props) {
-  const name = displayChatContactName(conversation);
-  const subtitle = chatContactSubtitle(conversation);
-  const isChat = isWhatsAppChatLead(conversation.source);
+  const name = displayContactName(conversation);
   const assigneeName = conversation.assignee?.name ?? null;
 
   return (
@@ -80,11 +77,6 @@ export function ConversationRow({
               {formatInboxTime(conversation.lastMessageAt)}
             </span>
           </div>
-          {subtitle || isChat ? (
-            <div className="mt-0.5 truncate text-[12px] text-[#8696A0]">
-              {subtitle || "WhatsApp chat"}
-            </div>
-          ) : null}
           <div className="mt-0.5 flex items-center gap-1 truncate text-[13px] text-[#667781]">
             {previewIcon(conversation.lastMessageType)}
             <span className="truncate">{conversation.lastMessage}</span>

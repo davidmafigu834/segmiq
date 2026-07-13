@@ -103,7 +103,7 @@ function averageFirstResponseMinutes(
   }
 
   const samples: number[] = [];
-  for (const rows of byLead.values()) {
+  for (const rows of Array.from(byLead.values())) {
     const sorted = [...rows].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
@@ -137,7 +137,7 @@ function countAwaitingReply(messages: WaMessageRow[], activeLeadIds: Set<string>
     }
   }
   let count = 0;
-  for (const row of latest.values()) {
+  for (const row of Array.from(latest.values())) {
     if (row.direction === "inbound") count++;
   }
   return count;
@@ -298,7 +298,7 @@ export async function computeWhatsAppHubReport(opts: {
       contactedChats: activeLeads.filter((l) => l.status !== "NEW").length,
       avgFirstResponseMinutes: averageFirstResponseMinutes(periodMessages, activeLeadIds),
     },
-    byRep: [...byRepMap.values()]
+    byRep: Array.from(byRepMap.values())
       .filter((r) => !opts.salespersonId || r.userId === opts.salespersonId)
       .sort((a, b) => b.outboundMessages - a.outboundMessages),
     dailyVolume,

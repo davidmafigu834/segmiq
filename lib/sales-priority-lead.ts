@@ -2,6 +2,7 @@ import {
   classifyLeadLane,
   parseBudgetValue,
   parseUrgencyLevel,
+  type CampaignQualifiers,
   type LeadLane,
 } from "@/lib/lead-lanes";
 import {
