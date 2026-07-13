@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canManageClientTeam, canManageCloudSettings } from "@/lib/auth/permissions";
 import { migrateUncontactedLeads } from "@/lib/leads/migrateUncontactedLeads";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,9 @@ export async function GET(req: Request) {
     clientId = session.clientId;
   }
   if (!clientId) return NextResponse.json({ error: "No client" }, { status: 400 });
+  if (!canManageCloudSettings(session, clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -57,7 +61,7 @@ export async function PATCH(req: Request) {
   if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const targetClientId = (target as { client_id: string; role: string }).client_id;
-  if (session.role !== "AGENCY_ADMIN" && targetClientId !== session.clientId) {
+  if (!canManageClientTeam(session, targetClientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

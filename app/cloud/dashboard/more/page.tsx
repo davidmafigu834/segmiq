@@ -6,6 +6,7 @@ import {
   UserCircle, CreditCard, Users, BarChart2,
   HelpCircle, MessageCircle, ChevronRight, LogOut, Tag,
 } from "lucide-react";
+import { isCloudAdminRole } from "@/lib/auth/roles";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -92,6 +93,17 @@ function getInitials(name: string): string {
 export default function MorePage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const isCloudAdmin = isCloudAdminRole(session?.role);
+
+  const visibleSections = menuSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => {
+        if (isCloudAdmin) return true;
+        return section.label === "Support";
+      }),
+    }))
+    .filter((section) => section.items.length > 0);
 
   const F = "var(--fw-font-body), system-ui, sans-serif";
   const S = "var(--fw-font-display), Georgia, serif";
@@ -123,17 +135,19 @@ export default function MorePage() {
               {session?.role === "CLIENT_MANAGER" ? "Manager" : (session?.role?.toLowerCase().replace("_", " ") ?? "")}
             </p>
           </div>
-          <button
-            onClick={() => router.push("/cloud/dashboard/settings")}
-            style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-          >
-            <ChevronRight size={14} color="rgba(255,255,255,0.5)" />
-          </button>
+          {isCloudAdmin && (
+            <button
+              onClick={() => router.push("/cloud/dashboard/settings")}
+              style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+            >
+              <ChevronRight size={14} color="rgba(255,255,255,0.5)" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Menu sections */}
-      {menuSections.map((section) => (
+      {visibleSections.map((section) => (
         <div key={section.label} style={{ marginBottom: 24 }}>
           <p style={{ fontFamily: F, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 10px", padding: "0 20px" }}>
             {section.label}

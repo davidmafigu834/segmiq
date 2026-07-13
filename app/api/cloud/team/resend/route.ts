@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canManageCloudSettings } from "@/lib/auth/permissions";
 import { hashPassword } from "@/lib/password";
 import { Resend } from "resend";
 
@@ -23,9 +24,6 @@ export async function POST(req: Request) {
   if (!session?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (session.role !== "AGENCY_ADMIN" && session.role !== "CLIENT_MANAGER") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
 
   let body: unknown;
   try { body = await req.json(); } catch {
@@ -39,8 +37,8 @@ export async function POST(req: Request) {
 
   const { userId, clientId } = parsed.data;
 
-  if (session.role === "CLIENT_MANAGER" && session.clientId !== clientId) {
-    return NextResponse.json({ error: "Forbidden: cannot manage another client." }, { status: 403 });
+  if (!canManageCloudSettings(session, clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const supabase = createAdminClient();

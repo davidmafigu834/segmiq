@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { canManageCloudSettings } from "@/lib/auth/permissions";
 import { generateCapabilityAssetKey, getPublicUrl, putObject } from "@/lib/storage/r2";
 import { resolveImageContentType } from "@/lib/storage/logo-upload";
 
@@ -16,6 +17,9 @@ export async function POST(req: Request) {
   }
   if (!session.clientId) {
     return NextResponse.json({ error: "No client associated" }, { status: 400 });
+  }
+  if (!canManageCloudSettings(session, session.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const form = await req.formData().catch(() => null);

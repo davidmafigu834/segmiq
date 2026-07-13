@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, ExternalLink, Loader2, MoreHorizontal, X } from "lucide-react";
+import { AlertTriangle, ExternalLink, Loader2, MoreHorizontal, Users, X } from "lucide-react";
+import { CloudTeamModal } from "./CloudTeamModal";
 
 export type CloudClientRow = {
   id: string;
@@ -110,6 +111,7 @@ export function CloudClientsClient({
   const [saveError, setSaveError] = useState("");
 
   const [deactivating, setDeactivating] = useState<string | null>(null);
+  const [teamModalClient, setTeamModalClient] = useState<CloudClientRow | null>(null);
 
   function openModal(c: CloudClientRow) {
     setModalClient(c);
@@ -319,6 +321,17 @@ export function CloudClientsClient({
                                 Switch to {c.billing_period === "annual" ? "Monthly" : "Annual"}
                               </button>
                               <div className="h-px bg-[var(--border)] my-1" />
+                              <button
+                                onClick={() => {
+                                  setTeamModalClient(c);
+                                  setOpenMenuId(null);
+                                }}
+                                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[13px] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
+                              >
+                                <Users className="h-3.5 w-3.5" />
+                                Manage Cloud team
+                              </button>
+                              <div className="h-px bg-[var(--border)] my-1" />
                               <a
                                 href={`${supabaseDashboardBase}&filter=id:eq:${c.id}`}
                                 target="_blank"
@@ -349,6 +362,14 @@ export function CloudClientsClient({
             </table>
           </div>
         </div>
+      )}
+
+      {teamModalClient && (
+        <CloudTeamModal
+          clientId={teamModalClient.id}
+          clientName={teamModalClient.name}
+          onClose={() => setTeamModalClient(null)}
+        />
       )}
 
       {/* Change plan modal */}

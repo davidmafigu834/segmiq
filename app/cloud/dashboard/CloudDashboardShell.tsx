@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import { Suspense } from "react";
 import { matchesCloudDashboardPath, normalizeCloudDashboardPath } from "./cloud-path";
+import { isCloudAdminRole } from "@/lib/auth/roles";
+
+const CLOUD_ADMIN_PATH_SUFFIXES = ["/settings", "/team", "/billing", "/pricing", "/analytics", "/onboarding"];
 
 const PRIMARY_NAV = [
   { href: "/cloud/dashboard", icon: Grid, label: "Home" },
@@ -117,7 +120,7 @@ export default function CloudDashboardShell({
   }, [session?.clientId]);
 
   useEffect(() => {
-    if (!session?.userId || session.role === "AGENCY_ADMIN") return;
+    if (!session?.userId || session.role === "AGENCY_ADMIN" || !isCloudAdminRole(session.role)) return;
     if (onboardingChecked.current) return;
     if (matchesCloudDashboardPath(pathname, "/onboarding")) return;
     const cached = sessionStorage.getItem("lq_ob");
@@ -134,6 +137,15 @@ export default function CloudDashboardShell({
       })
       .catch(() => {});
   }, [session?.userId, session?.role, pathname, router]);
+
+  const isCloudAdmin = isCloudAdminRole(session?.role);
+
+  useEffect(() => {
+    if (!session?.role || isCloudAdmin) return;
+    if (CLOUD_ADMIN_PATH_SUFFIXES.some((suffix) => matchesCloudDashboardPath(pathname, suffix))) {
+      router.replace("/cloud/dashboard");
+    }
+  }, [isCloudAdmin, pathname, router, session?.role]);
 
   useEffect(() => {
     if (!session?.userId) return;
@@ -158,6 +170,18 @@ export default function CloudDashboardShell({
   const displayName = businessName || "Segmiq Cloud";
   const initials = getInitials(session?.user?.name ?? "");
 
+  const primaryNav = isCloudAdmin
+    ? PRIMARY_NAV
+    : PRIMARY_NAV.filter((item) => item.href !== "/cloud/dashboard/pricing" && item.href !== "/cloud/dashboard/team");
+  const secondaryNav = isCloudAdmin
+    ? SECONDARY_NAV
+    : SECONDARY_NAV.filter(
+        (item) =>
+          item.href !== "/cloud/dashboard/settings"
+          && item.href !== "/cloud/dashboard/billing"
+          && item.href !== "/cloud/dashboard/analytics"
+      );
+
   return (
     <div className="cloud-dashboard flex min-h-screen bg-[#F7F7F8] font-cloud-body text-[#111111]">
       <aside className="fixed inset-y-0 left-0 hidden w-[240px] flex-col border-r border-black/[0.07] bg-white lg:flex" style={{ boxShadow: "1px 0 0 rgba(0,0,0,0.04)" }}>
@@ -171,7 +195,7 @@ export default function CloudDashboardShell({
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3 px-2">
-          {PRIMARY_NAV.map(({ href, icon: Icon, label }) => (
+          {primaryNav.map(({ href, icon: Icon, label }) => (
             <Link
               key={href}
               href={href}
@@ -186,7 +210,7 @@ export default function CloudDashboardShell({
             </Link>
           ))}
           <div className="my-3 mx-1 border-t border-black/[0.06]" />
-          {SECONDARY_NAV.map(({ href, icon: Icon, label }) => (
+          {secondaryNav.map(({ href, icon: Icon, label }) => (
             <Link
               key={href}
               href={href}
@@ -250,14 +274,16 @@ export default function CloudDashboardShell({
               <Camera className="w-3.5 h-3.5" />
               Upload
             </Link>
-            <button
-              onClick={() => router.push("/cloud/dashboard/settings")}
-              className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] cursor-pointer active:scale-95 transition-transform"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
-              aria-label="Account settings"
-            >
-              {initials}
-            </button>
+            {isCloudAdmin && (
+              <button
+                onClick={() => router.push("/cloud/dashboard/settings")}
+                className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] cursor-pointer active:scale-95 transition-transform"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+                aria-label="Account settings"
+              >
+                {initials}
+              </button>
+            )}
           </div>
         </header>
 
@@ -280,17 +306,31 @@ export default function CloudDashboardShell({
                 <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#D4FF4F] border-2 border-[#F5F5F0]" />
               )}
             </button>
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => router.push("/cloud/dashboard/settings")}
-                className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] active:scale-95 transition-transform cursor-pointer"
-                aria-label="Account settings"
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
-              >
-                {initials}
-              </button>
-              <div style={{ position: "absolute", bottom: 0, right: 0, width: 10, height: 10, borderRadius: "50%", background: isOnline ? "#2E7D5E" : "#E8602C", border: "2px solid #F7F4EF", transition: "background 0.3s ease" }} />
-            </div>
+            {isCloudAdmin && (
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => router.push("/cloud/dashboard/settings")}
+                  className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] active:scale-95 transition-transform cursor-pointer"
+                  aria-label="Account settings"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  {initials}
+                </button>
+                <div style={{ position: "absolute", bottom: 0, right: 0, width: 10, height: 10, borderRadius: "50%", background: isOnline ? "#2E7D5E" : "#E8602C", border: "2px solid #F7F4EF", transition: "background 0.3s ease" }} />
+              </div>
+            )}
+            {!isCloudAdmin && (
+              <div style={{ position: "relative" }}>
+                <div
+                  className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F]"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  aria-hidden
+                >
+                  {initials}
+                </div>
+                <div style={{ position: "absolute", bottom: 0, right: 0, width: 10, height: 10, borderRadius: "50%", background: isOnline ? "#2E7D5E" : "#E8602C", border: "2px solid #F7F4EF", transition: "background 0.3s ease" }} />
+              </div>
+            )}
           </div>
         </header>
 

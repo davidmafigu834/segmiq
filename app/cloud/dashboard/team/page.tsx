@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Loader2, Plus, MoreVertical, X, Mail, Phone, UserCheck, AlertCircle, Copy, RefreshCw } from "lucide-react";
+import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
+import { isCloudAdminRole } from "@/lib/auth/roles";
 
 type TeamMember = {
   id: string;
@@ -32,6 +34,7 @@ function roleBadgeClass(role: string) {
 export default function CloudTeamPage() {
   const { data: session } = useSession();
   const isAdmin = session?.role === "AGENCY_ADMIN";
+  const canManageTeam = isCloudAdminRole(session?.role);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
@@ -88,13 +91,13 @@ export default function CloudTeamPage() {
   const [resendingId, setResendingId] = useState<string | null>(null);
 
   async function handleResendInvite(member: TeamMember) {
-    if (!session?.clientId) return;
+    if (!selectedClientId) return;
     setResendingId(member.id);
     setMenuOpen(null);
     await fetch(`/api/cloud/team/resend`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: member.id, clientId: session.clientId }),
+      body: JSON.stringify({ userId: member.id, clientId: selectedClientId }),
     });
     setResendingId(null);
   }
@@ -146,6 +149,7 @@ export default function CloudTeamPage() {
   }
 
   return (
+    <CloudAdminGate>
     <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 lg:px-8">
       <div className="mb-5 flex items-center justify-between">
         <div>
@@ -159,6 +163,7 @@ export default function CloudTeamPage() {
             </select>
           )}
         </div>
+        {canManageTeam && (
         <button
           onClick={() => setShowInvite(true)}
           className="flex items-center gap-1.5 rounded-xl bg-[#D4FF4F] px-4 py-2.5 text-[13px] font-bold text-black hover:bg-[#C8F244] transition-colors font-cloud-body"
@@ -166,6 +171,7 @@ export default function CloudTeamPage() {
           <Plus className="h-3.5 w-3.5" />
           Invite member
         </button>
+        )}
       </div>
 
       {loading ? (
@@ -179,12 +185,14 @@ export default function CloudTeamPage() {
           </div>
           <p className="font-cloud-display text-[18px] text-[#0a0a0a] mb-1">No team members yet</p>
           <p className="text-[13px] text-[#6B7280] font-cloud-body mb-5">Invite your first team member to get started.</p>
+          {canManageTeam && (
           <button
             onClick={() => setShowInvite(true)}
             className="rounded-xl bg-[#D4FF4F] px-5 py-3 text-[14px] font-bold text-black font-cloud-body hover:bg-[#C8F244] transition-colors"
           >
             Invite first member
           </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -238,7 +246,7 @@ export default function CloudTeamPage() {
                         {resendingId === m.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                         Resend invite
                       </button>
-                      {m.is_active && (
+                      {canManageTeam && m.is_active && (
                         <>
                           <hr className="my-1 border-black/[0.06]" />
                           <button
@@ -322,8 +330,8 @@ export default function CloudTeamPage() {
                     onChange={(e) => setInviteRole(e.target.value as "CLIENT_MANAGER" | "SALESPERSON")}
                     className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#666660] outline-none focus:border-black/[0.2] font-cloud-body"
                   >
-                    <option value="SALESPERSON">Salesperson</option>
-                    <option value="CLIENT_MANAGER">Manager</option>
+                    <option value="SALESPERSON">Salesperson — field uploads only</option>
+                    <option value="CLIENT_MANAGER">Manager — full Cloud settings access</option>
                   </select>
                 </div>
 
@@ -350,5 +358,6 @@ export default function CloudTeamPage() {
         </div>
       )}
     </div>
+    </CloudAdminGate>
   );
 }

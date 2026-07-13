@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Zap, Building2, Rocket, Loader2 } from "lucide-react";
+import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 
 const SUPPORT_WHATSAPP = "27000000000"; // Replace with actual Segmiq support WhatsApp number (no + prefix)
 
@@ -59,6 +60,7 @@ export default function BillingPage() {
   };
 
   return (
+    <CloudAdminGate>
     <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 lg:px-8">
       <div className="mx-auto max-w-3xl">
         {loading ? (
@@ -164,5 +166,6 @@ export default function BillingPage() {
         )}
       </div>
     </div>
+    </CloudAdminGate>
   );
 }

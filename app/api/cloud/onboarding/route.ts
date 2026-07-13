@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canManageCloudSettings } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,9 @@ export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!session.clientId || !canManageCloudSettings(session, session.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   let body: unknown;

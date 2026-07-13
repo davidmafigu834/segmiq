@@ -106,6 +106,24 @@ export function canManageClientProfile(role: string | null | undefined): boolean
   return role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER";
 }
 
+/** SegmiQ Cloud settings, billing, team invites: managers on their client; agency admin on any. */
+export function canManageCloudSettings(
+  session: {
+    userId?: string | null;
+    role?: UserRole | null;
+    clientId?: string | null;
+  },
+  clientId: string
+): boolean {
+  if (!session?.userId) return false;
+  if (session.role === "AGENCY_ADMIN") return true;
+  if (session.role === "CLIENT_MANAGER" && session.clientId === clientId) return true;
+  return false;
+}
+
+/** Client-side / role-only check for Cloud admin surfaces. */
+export { isCloudAdminRole } from "@/lib/auth/roles";
+
 /** Read access: wrong scope returns notFound (404) to avoid leaking lead existence. */
 export async function canReadLead(
   leadId: string,

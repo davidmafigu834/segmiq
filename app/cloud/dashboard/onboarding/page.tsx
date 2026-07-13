@@ -8,6 +8,7 @@ import {
   Upload, Users, Globe, X,
 } from "lucide-react";
 import { uploadClientLogoFile } from "@/lib/storage/logo-upload";
+import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 
 type Step = 1 | 2 | 3;
 
@@ -195,6 +196,7 @@ export default function OnboardingPage() {
   }
 
   return (
+    <CloudAdminGate>
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-start overflow-y-auto bg-[#0a0a0a] px-6 py-8">
       <div className="mb-8 flex flex-col items-center gap-2.5">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4FF4F]">
@@ -469,5 +471,6 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+    </CloudAdminGate>
   );
 }

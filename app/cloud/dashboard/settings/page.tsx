@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive, Droplets, LogOut, Upload, Camera, X } from "lucide-react";
 import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
+import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 import { CompanyCapabilitySettings } from "@/app/cloud/components/CompanyCapabilitySettings";
 import { uploadClientLogoFile } from "@/lib/storage/logo-upload";
 
@@ -293,6 +294,7 @@ export default function CloudSettingsPage() {
   const sectionCardCls = "rounded-[20px] border p-5 space-y-4 bg-white" + " border-[var(--fw-border)]";  
 
   return (
+    <CloudAdminGate>
     <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 pb-28 lg:px-8 lg:pb-8">
       <div className="mx-auto max-w-xl space-y-6">
 
@@ -600,5 +602,6 @@ export default function CloudSettingsPage() {
         </section>
       </div>
     </div>
+    </CloudAdminGate>
   );
 }

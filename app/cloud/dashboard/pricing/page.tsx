@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { CloudPackagesManager } from "@/app/cloud/components/CloudPackagesManager";
+import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 
 type Client = { id: string; name: string };
 
@@ -50,6 +51,7 @@ export default function CloudPricingPage() {
   }, [fetchProfile]);
 
   return (
+    <CloudAdminGate>
     <div className="min-h-screen bg-[#F5F5F0] px-5 py-4 pb-28 font-cloud-body lg:px-8 lg:pb-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6">
@@ -80,5 +82,6 @@ export default function CloudPricingPage() {
         ) : null}
       </div>
     </div>
+    </CloudAdminGate>
   );
 }

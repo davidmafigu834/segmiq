@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { canManageCloudSettings } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,9 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !session?.clientId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!canManageCloudSettings(session, session.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const supabase = createAdminClient();
@@ -47,6 +51,9 @@ export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !session?.clientId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!canManageCloudSettings(session, session.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   let body: unknown;

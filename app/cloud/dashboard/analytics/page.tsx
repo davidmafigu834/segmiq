@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -112,6 +113,7 @@ export default function AnalyticsPage() {
   };
 
   return (
+    <CloudAdminGate>
     <div style={{ minHeight: "100vh", background: "#F5F5F0", fontFamily: F, paddingBottom: 100 }}>
 
       {/* ── SUMMARY STATS ── */}
@@ -216,5 +218,6 @@ export default function AnalyticsPage() {
         </div>
       )}
     </div>
+    </CloudAdminGate>
   );
 }
