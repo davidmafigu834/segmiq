@@ -72,11 +72,6 @@ export function ConversationRow({
                 label={conversation.scoreLabel}
                 variant="list"
               />
-              <LeadStageBadge
-                status={conversation.status}
-                followUpDate={conversation.followUpDate}
-                variant="list"
-              />
             </div>
             <span className={`shrink-0 text-[12px] ${conversation.unread > 0 ? "text-[#00A884] font-medium" : "text-[#667781]"}`}>
               {formatInboxTime(conversation.lastMessageAt)}
@@ -86,10 +81,17 @@ export function ConversationRow({
             {previewIcon(conversation.lastMessageType)}
             <span className="truncate">{conversation.lastMessage}</span>
             {conversation.unread > 0 ? (
-              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-[#00A884] px-1.5 text-[11px] font-semibold text-white">
+              <span className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#00A884] px-1.5 text-[11px] font-semibold text-white">
                 {conversation.unread > 9 ? "9+" : conversation.unread}
               </span>
             ) : null}
+          </div>
+          <div className="mt-1.5">
+            <LeadStageBadge
+              status={conversation.status}
+              followUpDate={conversation.followUpDate}
+              variant="list"
+            />
           </div>
         </div>
       </div>
