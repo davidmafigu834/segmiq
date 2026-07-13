@@ -8,12 +8,9 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
-import {
-  classifyLeadLane,
-  matchesQualifiers,
-  HIGH_SCORE_THRESHOLD,
-  type LeadLane,
-} from "@/lib/lead-lanes";
+import { HIGH_SCORE_THRESHOLD, classifyLeadLane, matchesQualifiers, type LeadLane } from "@/lib/lead-lanes";
+import { isWhatsAppInboundLead, leadCardDisplayName } from "@/lib/leads/whatsapp-lead-display";
+import { WhatsAppLeadCard } from "@/components/sales/WhatsAppLeadCard";
 import {
   type SalesLeadCardLead,
   budgetDisplayText,
@@ -168,6 +165,22 @@ export function SalesLeadCard({
   const iconSize = compact ? 13 : 15;
   const sendIconSize = compact ? 12 : 14;
 
+  if (isWhatsAppInboundLead(lead.source)) {
+    return (
+      <WhatsAppLeadCard
+        lead={lead}
+        lane={lane}
+        now={now}
+        intentScore={intentScore}
+        clientSlaHours={clientSlaHours}
+        onOpenLogSheet={onOpenLogSheet}
+        onOpenLead={onOpenLead}
+        compact={compact}
+        className={className}
+      />
+    );
+  }
+
   return (
     <article
       className={`min-w-0 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] ${
@@ -208,7 +221,7 @@ export function SalesLeadCard({
         className={`block w-full min-w-0 text-left ${compact ? "mb-1.5" : "mb-2"}`}
       >
         <p className={`truncate font-medium text-[var(--text-primary)] ${compact ? "text-[13px] layout:text-[14px]" : "text-[15px]"}`}>
-          {lead.name ?? "Unknown"}
+          {leadCardDisplayName(lead)}
         </p>
       </button>
 

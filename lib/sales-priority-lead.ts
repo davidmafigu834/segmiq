@@ -4,7 +4,12 @@ import {
   parseUrgencyLevel,
   type LeadLane,
 } from "@/lib/lead-lanes";
-import type { CampaignQualifiers } from "@/lib/lead-lanes";
+import {
+  isWhatsAppInboundLead,
+  whatsappFirstMessage,
+  whatsappLeadDisplayName,
+  whatsappLeadSecondaryLine,
+} from "@/lib/leads/whatsapp-lead-display";
 import { isLeadSlow } from "@/lib/leadStatus";
 
 export type FreshnessState = "fresh" | "slipping" | "overdue";
@@ -48,6 +53,7 @@ export type PriorityLead = {
   priorityColor: string;
   priorityOrder: number;
   client_id: string;
+  source?: string | null;
   aiScore?: number | null;
   qualifiers?: CampaignQualifiers | null;
 };
@@ -140,6 +146,14 @@ export function buildReasonContextLine(
   lead: SalesLeadCardLead,
   lane?: LeadLane
 ): string {
+  if (isWhatsAppInboundLead(lead.source)) {
+    const preview = whatsappFirstMessage(lead.form_data);
+    if (preview) {
+      return preview.length > 72 ? `${preview.slice(0, 69)}…` : preview;
+    }
+    return "WhatsApp conversation";
+  }
+
   const parts: string[] = [];
   const urgency = urgencyDisplayText(lead);
   if (urgency) parts.push(urgency);
@@ -262,6 +276,7 @@ export function formatCardTimestamp(
 }
 
 export function sourceLabel(source: string | null | undefined): string {
+  if (source === "WHATSAPP_INBOUND") return "WhatsApp chat";
   if (source === "FACEBOOK") return "Facebook";
   if (source === "LANDING_PAGE") return "Profile";
   if (source === "REFERRAL") return "Referral";

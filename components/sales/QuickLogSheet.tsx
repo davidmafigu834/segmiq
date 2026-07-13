@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCircle, X } from "lucide-react";
 import { LogCallForm } from "@/components/leads/LogCallForm";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
+import { leadCardDisplayName } from "@/lib/leads/whatsapp-lead-display";
 
 export function QuickLogSheet({
   leads,
@@ -58,7 +59,7 @@ export function QuickLogSheet({
             </h3>
             {selectedLead && !needsLeadPicker ? (
               <p className="mt-0.5 truncate text-[13px] text-[var(--text-secondary)]">
-                {selectedLead.name ?? "Unknown"}
+                {leadCardDisplayName(selectedLead)}
               </p>
             ) : null}
           </div>
@@ -100,7 +101,7 @@ export function QuickLogSheet({
                     <option value="">Select lead…</option>
                     {leads.map((l) => (
                       <option key={l.id} value={l.id}>
-                        {l.name ?? "Unknown"}
+                        {leadCardDisplayName(l)}
                       </option>
                     ))}
                   </select>

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
@@ -32,19 +33,21 @@ export async function SalesInboxPageView({
       hideShellHeader
       hideShellSidebar={fullPage}
     >
-      <TeamInbox
-        userName={session.user?.name ?? "User"}
-        userId={session.userId}
-        role="SALESPERSON"
-        clientId={session.clientId}
-        roleSubtitle={isSolo ? "Owner" : "Salesperson"}
-        pipelineHref="/sales/leads"
-        settingsHref="/sales/profile"
-        inboxHref="/sales/inbox"
-        teamHref={isSolo ? undefined : dashboardHref}
-        initialFilter={initialFilter}
-        backHref={fullPage ? dashboardHref : undefined}
-      />
+      <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-[#667781]">Loading inbox…</div>}>
+        <TeamInbox
+          userName={session.user?.name ?? "User"}
+          userId={session.userId}
+          role="SALESPERSON"
+          clientId={session.clientId}
+          roleSubtitle={isSolo ? "Owner" : "Salesperson"}
+          pipelineHref="/sales/leads"
+          settingsHref="/sales/profile"
+          inboxHref="/sales/inbox"
+          teamHref={isSolo ? undefined : dashboardHref}
+          initialFilter={initialFilter}
+          backHref={fullPage ? dashboardHref : undefined}
+        />
+      </Suspense>
     </Layout>
   );
 }

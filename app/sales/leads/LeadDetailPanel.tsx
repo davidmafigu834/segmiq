@@ -5,7 +5,14 @@ import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
 import { ChevronLeft, X, MessageCircle } from "lucide-react";
+import Link from "next/link";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
+import {
+  isWhatsAppInboundLead,
+  whatsappInboxHref,
+  whatsappLeadDisplayName,
+  whatsappLeadSecondaryLine,
+} from "@/lib/leads/whatsapp-lead-display";
 import { useLeadPanel, closeLeadPanel, type LeadPanelTab } from "@/store/uiStore";
 import type { LeadRow, LeadStatus } from "@/types";
 import { MagicLinkButton } from "@/components/MagicLinkButton";
@@ -101,7 +108,9 @@ export function LeadDetailPanel({
   if (!open || !lead) return null;
 
   const activeLead = lead;
-  const first = activeLead.name?.split(/\s+/)[0] ?? "Lead";
+  const isWhatsAppChat = isWhatsAppInboundLead(activeLead.source);
+  const displayName = whatsappLeadDisplayName(activeLead);
+  const first = displayName.split(/\s+/)[0] ?? "Lead";
   const isClosed = TERMINAL.has(activeLead.status);
   const phone = activeLead.phone?.trim() ?? "";
 
@@ -148,7 +157,12 @@ export function LeadDetailPanel({
             <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
           </button>
           <div className="min-w-0 flex-1 truncate font-display text-[17px] leading-tight sm:text-lg md:text-xl">
-            {activeLead.name}
+            {displayName}
+            {isWhatsAppChat ? (
+              <span className="mt-0.5 block truncate font-sans text-[11px] font-normal text-[var(--text-on-dark-dim)]">
+                WhatsApp chat
+              </span>
+            ) : null}
           </div>
           <button
             type="button"
@@ -252,6 +266,24 @@ export function LeadDetailPanel({
           ) : null}
           <div className={activeTab !== "details" ? "hidden" : ""}>
           <div className="space-y-3 p-4 max-md:pt-3 sm:p-5">
+            {isWhatsAppChat ? (
+              <div className="rounded-xl border border-[#00A884]/25 bg-[#0a1612] p-4">
+                <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#6EE7B7]">
+                  <MessageCircle size={14} />
+                  WhatsApp conversation
+                </div>
+                <p className="mb-3 text-[14px] leading-relaxed text-[var(--text-secondary)]">
+                  {whatsappLeadSecondaryLine(activeLead)}
+                </p>
+                <Link
+                  href={whatsappInboxHref(activeLead.id)}
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#00A884] px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                >
+                  <MessageCircle size={16} />
+                  Open in Sales Hub
+                </Link>
+              </div>
+            ) : null}
             <LeadBriefing leadId={activeLead.id} />
             <LeadIntelligenceCard
               leadId={activeLead.id}
@@ -344,9 +376,9 @@ export function LeadDetailPanel({
             )}
             <div className="min-w-0 break-all text-ink-secondary">{activeLead.email}</div>
             <div className="break-words font-mono text-[11px] uppercase text-ink-tertiary">
-              Source · {activeLead.source} · {format(new Date(activeLead.created_at), "MMM d, yyyy")}
+              Source · {isWhatsAppChat ? "WhatsApp chat" : activeLead.source} · {format(new Date(activeLead.created_at), "MMM d, yyyy")}
             </div>
-            <MagicLinkButton token={activeLead.magic_token} />
+            {!isWhatsAppChat ? <MagicLinkButton token={activeLead.magic_token} /> : null}
             {!isReadOnly ? (
               <div className="flex flex-col sm:flex-row w-full gap-2">
                 <a
@@ -355,26 +387,35 @@ export function LeadDetailPanel({
                 >
                   Call {first}
                 </a>
-                <button
-                  type="button"
-                  className="btn-secondary-dark flex min-h-12 flex-1 items-center justify-center touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
-                  onClick={() => {
-                    try {
-                      window.localStorage.setItem(`log:channel:${activeLead.id}`, "whatsapp");
-                    } catch {}
-                    openWhatsAppAndLog({
-                      leadId: activeLead.id,
-                      clientId: activeLead.client_id,
-                      leadName: activeLead.name,
-                      leadPhone: activeLead.phone,
-                      repName: session?.user?.name ?? "",
-                      formData: (activeLead.form_data as Record<string, unknown> | null) ?? null,
-                      tier: "neutral",
-                    });
-                  }}
-                >
-                  <MessageCircle size={16} /> Message on WhatsApp
-                </button>
+                {isWhatsAppChat ? (
+                  <Link
+                    href={whatsappInboxHref(activeLead.id)}
+                    className="btn-secondary-dark flex min-h-12 flex-1 items-center justify-center gap-2 touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
+                  >
+                    <MessageCircle size={16} /> Open in Sales Hub
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-secondary-dark flex min-h-12 flex-1 items-center justify-center touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
+                    onClick={() => {
+                      try {
+                        window.localStorage.setItem(`log:channel:${activeLead.id}`, "whatsapp");
+                      } catch {}
+                      openWhatsAppAndLog({
+                        leadId: activeLead.id,
+                        clientId: activeLead.client_id,
+                        leadName: activeLead.name,
+                        leadPhone: activeLead.phone,
+                        repName: session?.user?.name ?? "",
+                        formData: (activeLead.form_data as Record<string, unknown> | null) ?? null,
+                        tier: "neutral",
+                      });
+                    }}
+                  >
+                    <MessageCircle size={16} /> Message on WhatsApp
+                  </button>
+                )}
               </div>
             ) : null}
           </div>
@@ -400,12 +441,14 @@ export function LeadDetailPanel({
               </div>
             </div>
           ) : null}
-          <FormAnswersSection
-            className="max-md:px-4"
-            formData={activeLead.form_data ?? {}}
-            lead={activeLead}
-            compactMobile
-          />
+          {!isWhatsAppChat ? (
+            <FormAnswersSection
+              className="max-md:px-4"
+              formData={activeLead.form_data ?? {}}
+              lead={activeLead}
+              compactMobile
+            />
+          ) : null}
           {(role === "SALESPERSON" || role === "AGENCY_ADMIN") && !isReadOnly ? (
             <>
               <div className="p-4 sm:p-5">

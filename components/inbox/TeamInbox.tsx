@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Inbox, Search } from "lucide-react";
 import { initials } from "@/lib/inbox/assignee-colors";
 import { useInboxMobile } from "@/lib/inbox/use-inbox-mobile";
@@ -76,6 +77,8 @@ export function TeamInbox({
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const isMobile = useInboxMobile();
+  const searchParams = useSearchParams();
+  const leadFromUrl = searchParams.get("lead");
 
   const loadConversations = useCallback(async (options?: { silent?: boolean }) => {
     if (!options?.silent) setLoading(true);
@@ -99,6 +102,13 @@ export function TeamInbox({
     const interval = window.setInterval(() => void loadConversations({ silent: true }), 10000);
     return () => window.clearInterval(interval);
   }, [loadConversations, backHref]);
+
+  useEffect(() => {
+    if (!leadFromUrl || conversations.length === 0) return;
+    if (!conversations.some((c) => c.id === leadFromUrl)) return;
+    setActiveId(leadFromUrl);
+    if (isMobile && backHref) setMobilePane("thread");
+  }, [leadFromUrl, conversations, isMobile, backHref]);
 
   useEffect(() => {
     if (!isMobile) {
