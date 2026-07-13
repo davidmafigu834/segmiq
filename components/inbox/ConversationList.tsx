@@ -20,6 +20,7 @@ type Props = {
   open: boolean;
   canClaim: boolean;
   whatsappMode?: boolean;
+  mobileFullScreen?: boolean;
   onSearchChange?: (value: string) => void;
   backHref?: string;
   roleSubtitle?: string;
@@ -70,6 +71,7 @@ export function ConversationList({
   open,
   canClaim,
   whatsappMode = false,
+  mobileFullScreen = false,
   onSearchChange,
   backHref,
   roleSubtitle,
