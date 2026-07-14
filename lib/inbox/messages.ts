@@ -1,6 +1,13 @@
 import type { InboxChatMessage } from "./types";
 import { isMediaPlaceholderBody } from "./media-placeholders";
 
+export function isWhatsAppRowVisibleInChat(row: {
+  body: string | null;
+  media_url?: string | null;
+}): boolean {
+  return Boolean(row.body?.trim() || row.media_url);
+}
+
 type TimelineEvent = {
   id: string;
   event_type: string;
@@ -24,7 +31,7 @@ export function whatsappRowsToChatMessages(
   }[]
 ): InboxChatMessage[] {
   return rows
-    .filter((r) => r.body?.trim() || r.media_url)
+    .filter((r) => isWhatsAppRowVisibleInChat(r))
     .map((r) => {
       const body = r.body?.trim() ?? "";
       const text =
@@ -57,9 +64,88 @@ export function eventsToChatMessages(events: TimelineEvent[]): InboxChatMessage[
 function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
   const d = event.event_data ?? {};
 
+  if (event.event_type === "NOTE_ADDED") {
+    const note = String(d.note ?? "").trim();
+    if (!note) return null;
+    const isInternal = d.internal === true || d.visibility === "internal";
+    if (isInternal) {
+      return {
+        id: event.id,
+        direction: "rep",
+        text: note,
+        createdAt: event.created_at,
+        kind: "internal",
+      };
+    }
+    return {
+      id: event.id,
+      direction: event.actor_role === "SALESPERSON" ? "rep" : "customer",
+      text: note,
+      createdAt: event.created_at,
+      kind: "message",
+    };
+  }
+
+  if (event.event_type === "STATUS_CHANGED") {
+    const from = String(d.from_status ?? "").replace(/_/g, " ");
+    const to = String(d.to_status ?? "").replace(/_/g, " ");
+    if (!to) return null;
+    return {
+      id: event.id,
+      direction: "rep",
+      text: from ? `Stage changed: ${from} → ${to}` : `Stage set to ${to}`,
+      createdAt: event.created_at,
+      kind: "system",
+    };
+  }
+
+  if (event.event_type === "LEAD_ASSIGNED") {
+    const toName = String(d.to_name ?? d.assigned_to_name ?? "a teammate");
+    return {
+      id: event.id,
+      direction: "rep",
+      text: `Lead assigned to ${toName}`,
+      createdAt: event.created_at,
+      kind: "system",
+    };
+  }
+
+  if (event.event_type === "LEAD_REASSIGNED") {
+    const fromName = String(d.from_name ?? "Unassigned");
+    const toName = String(d.to_name ?? "Unassigned");
+    const notes = d.handover_notes ? ` — ${String(d.handover_notes)}` : "";
+    return {
+      id: event.id,
+      direction: "rep",
+      text: `Transferred from ${fromName} to ${toName}${notes}`,
+      createdAt: event.created_at,
+      kind: "system",
+    };
+  }
+
+  if (event.event_type === "FOLLOW_UP_SET") {
+    const date = String(d.follow_up_date ?? d.date ?? "").trim();
+    return {
+      id: event.id,
+      direction: "rep",
+      text: date ? `Follow-up scheduled for ${date}` : "Follow-up scheduled",
+      createdAt: event.created_at,
+      kind: "system",
+    };
+  }
+
   if (event.event_type === "DOCUMENT_SENT") {
     const docName = String(d.document_name ?? d.document_type ?? "document");
     const docType = String(d.document_type ?? "");
+    if (docType === "QUOTATION") {
+      return {
+        id: event.id,
+        direction: "rep",
+        text: `Quote sent: ${docName}`,
+        createdAt: event.created_at,
+        kind: "system",
+      };
+    }
     const text =
       docType === "CUSTOM_MESSAGE"
         ? String(d.custom_message ?? d.message ?? `Message sent`)
@@ -69,19 +155,7 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
       direction: "rep",
       text,
       createdAt: event.created_at,
-      kind: "message",
-    };
-  }
-
-  if (event.event_type === "NOTE_ADDED") {
-    const note = String(d.note ?? "").trim();
-    if (!note) return null;
-    return {
-      id: event.id,
-      direction: event.actor_role === "SALESPERSON" ? "rep" : "customer",
-      text: note,
-      createdAt: event.created_at,
-      kind: "message",
+      kind: docType === "CUSTOM_MESSAGE" ? "message" : "system",
     };
   }
 
@@ -139,6 +213,27 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
   }
 
   return null;
+}
+
+export function messageLogsToChatMessages(
+  rows: {
+    id: string;
+    payload_preview: string | null;
+    created_at: string;
+    provider_id?: string | null;
+    status?: string | null;
+  }[]
+): InboxChatMessage[] {
+  return rows
+    .filter((r) => r.payload_preview?.trim())
+    .map((r) => ({
+      id: `log-${r.id}`,
+      direction: "rep" as const,
+      text: r.payload_preview!.trim(),
+      createdAt: r.created_at,
+      kind: "message" as const,
+      status: (r.status as InboxChatMessage["status"]) ?? "sent",
+    }));
 }
 
 export function snippetFromEvents(events: TimelineEvent[], formFallback?: string | null): string {

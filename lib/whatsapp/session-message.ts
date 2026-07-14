@@ -7,14 +7,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/lead-events";
 import { resolveWhatsAppSendConfig } from "@/lib/whatsapp/credentials";
 import { persistOutboundWhatsAppMessage } from "@/lib/whatsapp/persist-outbound";
+import { isValidActorUuid } from "@/lib/whatsapp/qualification-answers";
 
 export type SendSessionMessageParams = {
   to: string;
   body: string;
   clientId: string;
   leadId: string;
-  actorId: string;
+  actorId?: string | null;
   actorName: string;
+  actorRole?: string;
   phoneNumberId?: string | null;
 };
 
@@ -24,9 +26,11 @@ export async function sendWhatsAppSessionMessage(
   const defaultCc = (process.env.DEFAULT_COUNTRY_CODE || "ZW").toUpperCase() as CountryCode;
   const normalized = normalizeToE164(params.to, defaultCc);
   const logRecipient = normalized ?? params.to;
+  const actorId = isValidActorUuid(params.actorId) ? params.actorId : null;
+  const actorRole = params.actorRole ?? (actorId ? "SALESPERSON" : "SYSTEM");
 
   const baseContext: LogMessageParams = {
-    userId: params.actorId,
+    userId: actorId,
     leadId: params.leadId,
     clientId: params.clientId,
     channel: "whatsapp",
@@ -112,14 +116,14 @@ export async function sendWhatsAppSessionMessage(
       leadId: params.leadId,
       phone: normalized,
       body: params.body,
-      actorId: params.actorId,
+      actorId,
       providerId: out.providerId ?? null,
     });
 
     await logLeadEvent({
       leadId: params.leadId,
       clientId: params.clientId,
-      actor: { id: params.actorId, name: params.actorName, role: "SALESPERSON" },
+      actor: { id: actorId, name: params.actorName, role: actorRole },
       eventType: "MESSAGE_SENT",
       eventData: { body: params.body, provider_id: out.providerId ?? null },
       channel: "whatsapp",

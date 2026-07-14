@@ -31,11 +31,16 @@ export function ScoreBreakdownBar({ label, value, max, icon: Icon, light = false
         </span>
       </div>
       <div
-        className={`h-1.5 w-full rounded-full ${light ? "bg-[#E9EDEF]" : "bg-[var(--bg-quaternary)]"}`}
+        className={`h-2 w-full overflow-hidden rounded-full ${light ? "bg-[#E9EDEF]" : "bg-[var(--bg-quaternary)]"}`}
       >
         <div
-          className="h-1.5 rounded-full transition-[width] duration-500 ease-out"
-          style={{ width: `${pct}%`, background: light ? "#00A884" : "var(--accent)" }}
+          className="h-2 rounded-full transition-[width] duration-500 ease-out"
+          style={{
+            width: `${pct}%`,
+            background: light
+              ? "linear-gradient(90deg, #00A884 0%, #008069 100%)"
+              : "var(--accent)",
+          }}
         />
       </div>
     </div>

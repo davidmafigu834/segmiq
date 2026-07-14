@@ -16,23 +16,30 @@ import {
 type FollowUpsViewProps = {
   leads: FollowUpLead[];
   callbackAtByLeadId: Record<string, string>;
+  sourceByLeadId?: Record<string, string | null>;
 };
 
 function FollowUpRow({
   lead,
   callbackAtByLeadId,
   overdue,
+  source,
 }: {
   lead: FollowUpLead;
   callbackAtByLeadId: Record<string, string>;
   overdue?: boolean;
+  source?: string | null;
 }) {
   const at = getFollowUpDateTime(lead, callbackAtByLeadId);
+  const href =
+    source === "WHATSAPP_INBOUND"
+      ? `/sales/inbox?lead=${lead.id}`
+      : `/sales/leads?lead=${lead.id}`;
 
   return (
     <li className="border-b border-border last:border-b-0">
       <Link
-        href={`/sales/leads?lead=${lead.id}`}
+        href={href}
         prefetch={false}
         className={[
           "flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-card-alt",
@@ -65,11 +72,13 @@ function FollowUpList({
   callbackAtByLeadId,
   overdue,
   emptyMessage,
+  sourceByLeadId = {},
 }: {
   items: FollowUpLead[];
   callbackAtByLeadId: Record<string, string>;
   overdue?: boolean;
   emptyMessage?: string;
+  sourceByLeadId?: Record<string, string | null>;
 }) {
   if (!items.length) {
     return emptyMessage ? (
@@ -87,13 +96,14 @@ function FollowUpList({
           lead={lead}
           callbackAtByLeadId={callbackAtByLeadId}
           overdue={overdue}
+          source={sourceByLeadId[lead.id] ?? null}
         />
       ))}
     </ul>
   );
 }
 
-export function FollowUpsView({ leads, callbackAtByLeadId }: FollowUpsViewProps) {
+export function FollowUpsView({ leads, callbackAtByLeadId, sourceByLeadId = {} }: FollowUpsViewProps) {
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
 
@@ -209,6 +219,7 @@ export function FollowUpsView({ leads, callbackAtByLeadId }: FollowUpsViewProps)
                   items={items}
                   callbackAtByLeadId={callbackAtByLeadId}
                   overdue={overdueSection}
+                  sourceByLeadId={sourceByLeadId}
                 />
               </section>
             );

@@ -4,10 +4,12 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { InstantForm, type InstantFormConfig } from "@/components/instant-form/InstantForm";
+import { MultipleChoiceOptionsEditor } from "@/components/instant-form/MultipleChoiceOptionsEditor";
 import {
   CONTACT_FIELD_PRESETS,
   newQuestionId,
 } from "@/lib/instant-form-helpers";
+import { getSolarQualificationTemplate } from "@/lib/instant-form-templates/solar-qualification";
 import { getPublicInstantFormUrl } from "@/lib/public-url";
 import type {
   InstantFormCompletion,
@@ -25,6 +27,17 @@ function newConsentId() {
   return typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : `c_${Math.random().toString(36).slice(2)}`;
+}
+
+function sanitizeQuestionsForSave(qs: InstantFormQuestion[]): InstantFormQuestion[] {
+  return qs.map((q) => {
+    if (q.field_type !== "multiple_choice") return q;
+    const options = (q.options ?? []).map((o) => o.trim()).filter(Boolean);
+    return {
+      ...q,
+      options: options.length >= 2 ? options : ["Option A", "Option B"],
+    };
+  });
 }
 
 export function InstantFormBuilder({
@@ -81,7 +94,7 @@ export function InstantFormBuilder({
           status: overrides?.status ?? status,
           form_type: formType,
           intro,
-          questions,
+          questions: sanitizeQuestionsForSave(questions),
           consents,
           privacy,
           completion,
@@ -133,6 +146,28 @@ export function InstantFormBuilder({
         sort_order: qs.length,
       },
     ]);
+  }
+
+  function loadSolarQualificationTemplate() {
+    const hasExisting =
+      questions.length > 0 ||
+      Boolean(intro.headline?.trim()) ||
+      Boolean(intro.body?.trim()) ||
+      Boolean(completion.headline?.trim()) ||
+      Boolean(completion.body?.trim());
+
+    if (hasExisting) {
+      const ok = window.confirm(
+        "Load the solar WhatsApp qualification template?\n\nThis updates intro, completion, and replaces all questions with 5 qualifying questions (no contact fields — WhatsApp already has those)."
+      );
+      if (!ok) return;
+    }
+
+    const template = getSolarQualificationTemplate();
+    setIntro(template.intro);
+    setCompletion(template.completion);
+    setQuestions(template.questions);
+    setSection("questions");
   }
 
   const sections: { id: Section; label: string }[] = [
@@ -275,6 +310,22 @@ export function InstantFormBuilder({
 
           {section === "questions" && (
             <div className="space-y-4">
+              <div className="rounded-lg border border-[var(--accent-border)] bg-[var(--accent-muted)]/40 p-4">
+                <div className="text-sm font-medium text-ink-primary">WhatsApp qualification template</div>
+                <p className="mt-1 text-xs leading-relaxed text-ink-secondary">
+                  Loads 5 solar qualifying questions plus intro and completion copy. Contact fields are
+                  omitted — WhatsApp already captures name and phone. Use this form in WhatsApp Inbox
+                  Settings after publishing.
+                </p>
+                <button
+                  type="button"
+                  className="btn-primary mt-3 h-9 text-xs"
+                  onClick={loadSolarQualificationTemplate}
+                >
+                  Load solar qualification template
+                </button>
+              </div>
+
               <div className="rounded-lg border border-border bg-surface-card p-4">
                 <div className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">
                   Add contact fields
@@ -373,22 +424,15 @@ export function InstantFormBuilder({
                                 />
                               ) : null}
                               {q.field_type === "multiple_choice" ? (
-                                <textarea
-                                  className="textarea-base mt-2 min-h-[4rem] text-sm"
-                                  value={(q.options ?? []).join("\n")}
-                                  onChange={(e) =>
+                                <MultipleChoiceOptionsEditor
+                                  options={q.options ?? ["Option A", "Option B"]}
+                                  onChange={(options) =>
                                     setQuestions((qs) =>
                                       qs.map((x) =>
-                                        x.id === q.id
-                                          ? {
-                                              ...x,
-                                              options: e.target.value.split("\n").filter(Boolean),
-                                            }
-                                          : x
+                                        x.id === q.id ? { ...x, options } : x
                                       )
                                     )
                                   }
-                                  placeholder="One option per line"
                                 />
                               ) : null}
                               <label className="mt-2 flex items-center gap-2 text-xs">

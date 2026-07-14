@@ -10,6 +10,9 @@ import {
   type QualificationFlowSource,
 } from "@/lib/whatsapp/load-qualification-flow";
 import { formatQuestionMessage, type WhatsAppQualQuestion } from "@/lib/whatsapp/qualification-questions";
+import {
+  normalizeQualificationAnswer,
+} from "@/lib/whatsapp/qualification-answers";
 import { sendWhatsAppSessionMessage } from "@/lib/whatsapp/session-message";
 
 type QualificationState = {
@@ -56,11 +59,14 @@ function leadFieldUpdate(mapsTo: string, value: string): Record<string, unknown>
   if (!v) return {};
   switch (mapsTo) {
     case "project_type":
+    case "property_type":
       return { project_type: v };
     case "budget":
       return { budget: v };
     case "timeline":
       return { timeline: v };
+    case "location":
+      return {};
     default:
       return {};
   }
@@ -77,8 +83,9 @@ async function sendQualificationText(opts: {
     body: opts.text,
     clientId: opts.clientId,
     leadId: opts.leadId,
-    actorId: "system",
+    actorId: null,
     actorName: "Segmiq",
+    actorRole: "SYSTEM",
   });
   return result.ok;
 }
@@ -184,14 +191,15 @@ export async function processWhatsAppQualification(opts: {
     return;
   }
 
-  qual.answers[pending.id] = answerText;
+  const normalizedAnswer = normalizeQualificationAnswer(pending, answerText);
+  qual.answers[pending.id] = normalizedAnswer;
   qual.asked_ids = [...qual.asked_ids, pending.id];
 
-  const fieldPatch = leadFieldUpdate(String(pending.maps_to), answerText);
+  const fieldPatch = leadFieldUpdate(String(pending.maps_to), normalizedAnswer);
   const parsed = parseLeadFields({
     ...formData,
     ...qual.answers,
-    [pending.maps_to]: answerText,
+    [pending.maps_to]: normalizedAnswer,
   });
 
   const leadUpdates: Record<string, unknown> = {

@@ -13,6 +13,7 @@ type DbFollowUpLead = {
   name: string | null;
   phone: string | null;
   follow_up_date: string | null;
+  source: string | null;
   clients?: { name?: string } | null;
 };
 
@@ -42,9 +43,17 @@ export default async function SalesFollowupsPage() {
     clientName: lead.clients?.name ?? "—",
   }));
 
+  const sourceByLeadId = Object.fromEntries(
+    list.map((lead) => [lead.id, lead.source ?? null])
+  ) as Record<string, string | null>;
+
   return (
     <Layout breadcrumb="SALES / WHATSAPP SALES HUB / FOLLOW-UPS" pageTitle="Follow-ups">
-      <FollowUpsView leads={followUpLeads} callbackAtByLeadId={callbackAtByLeadId} />
+      <FollowUpsView
+        leads={followUpLeads}
+        callbackAtByLeadId={callbackAtByLeadId}
+        sourceByLeadId={sourceByLeadId}
+      />
     </Layout>
   );
 }

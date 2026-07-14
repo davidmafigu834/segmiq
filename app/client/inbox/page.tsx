@@ -37,6 +37,7 @@ export default async function ClientInboxPage() {
         teamHref="/client/team"
         settingsHref="/client/account"
         inboxHref="/client/inbox"
+        backHref="/client/dashboard"
         initialSalespeople={(salespeople ?? []) as { id: string; name: string }[]}
       />
     </ClientManagerLayout>

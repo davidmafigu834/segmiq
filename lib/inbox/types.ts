@@ -1,6 +1,14 @@
 import type { LeadSource, LeadStatus } from "@/types";
 
-export type InboxFilter = "all" | "unassigned" | "mine" | "hot";
+export type InboxFilter =
+  | "all"
+  | "unassigned"
+  | "mine"
+  | "hot"
+  | "follow_up_due"
+  | "awaiting_reply"
+  | "waiting_customer"
+  | "quotes_sent";
 
 export type InboxAssignee = {
   id: string;
@@ -39,6 +47,15 @@ export type InboxConversation = {
   breakdown: InboxScoreBreakdown;
   followUpDate: string | null;
   createdAt: string;
+  company: string | null;
+  dealValue: number | null;
+  dealCurrency: string | null;
+  sourceLabel: string;
+  lastMessageDirection: "inbound" | "outbound" | null;
+  awaitingReplyMinutes: number | null;
+  latestQuoteNumber: string | null;
+  latestQuoteStatus: string | null;
+  latestQuoteTotal: number | null;
 };
 
 export type InboxChatMessage = {
@@ -46,7 +63,7 @@ export type InboxChatMessage = {
   direction: "customer" | "rep";
   text: string;
   createdAt: string;
-  kind: "message" | "system";
+  kind: "message" | "system" | "internal";
   messageType?: string | null;
   status?: "pending" | "sent" | "delivered" | "read" | "failed" | null;
   mediaUrl?: string | null;

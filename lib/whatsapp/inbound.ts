@@ -206,6 +206,7 @@ export async function handleInboundWhatsAppMessage(opts: {
       supabase,
       clientId: client.id,
       assignmentMode: client.assignment_mode,
+      phoneDigits,
     });
     assignedToId = assigneeId;
 

@@ -9,6 +9,7 @@ import {
   SOURCE_LABELS,
   stageLabel,
 } from "./scoring";
+import { sortInboxConversations } from "./queue-filters";
 import type { InboxConversation } from "./types";
 
 type LeadRow = {
@@ -30,8 +31,26 @@ type LeadRow = {
   updated_at: string;
   budget?: string | null;
   timeline?: string | null;
+  deal_value?: number | null;
 };
 
+function extractCompany(formData: Record<string, unknown> | null): string | null {
+  if (!formData) return null;
+  for (const key of Object.keys(formData)) {
+    if (/company|business|organisation|organization/i.test(key)) {
+      const v = formData[key];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+  }
+  return null;
+}
+
+function minutesSince(iso: string | null): number | null {
+  if (!iso) return null;
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 0) return 0;
+  return Math.floor(ms / 60000);
+}
 function formMessageSnippet(formData: Record<string, unknown> | null): string | null {
   if (!formData) return null;
   for (const key of Object.keys(formData)) {
@@ -85,7 +104,7 @@ export async function fetchInboxConversations(opts: {
   }
 
   const select =
-    "id, client_id, contact_id, assigned_to_id, name, phone, email, source, status, project_type, form_data, score, score_breakdown, follow_up_date, created_at, updated_at, budget, timeline";
+    "id, client_id, contact_id, assigned_to_id, name, phone, email, source, status, project_type, form_data, score, score_breakdown, follow_up_date, created_at, updated_at, budget, timeline, deal_value";
 
   let query = supabase.from("leads").select(select);
 
@@ -184,18 +203,54 @@ async function buildConversations(
 
   const { data: waMessages } = await supabase
     .from("whatsapp_messages")
-    .select("lead_id, body, created_at, message_type")
+    .select("lead_id, body, created_at, message_type, direction")
     .in("lead_id", leadIds)
     .order("created_at", { ascending: false });
 
-  const lastWaByLead = new Map<string, { body: string; created_at: string; message_type: string | null }>();
+  const lastWaByLead = new Map<
+    string,
+    {
+      body: string;
+      created_at: string;
+      message_type: string | null;
+      direction: "inbound" | "outbound" | null;
+    }
+  >();
+  const lastInboundByLead = new Map<string, string>();
   for (const m of waMessages ?? []) {
     const lid = m.lead_id as string;
+    const direction = m.direction === "inbound" || m.direction === "outbound" ? m.direction : null;
     if (!lastWaByLead.has(lid)) {
       lastWaByLead.set(lid, {
         body: (m.body as string | null)?.trim() || previewForType(m.message_type as string | null),
         created_at: m.created_at as string,
         message_type: (m.message_type as string | null) ?? null,
+        direction,
+      });
+    }
+    if (direction === "inbound" && !lastInboundByLead.has(lid)) {
+      lastInboundByLead.set(lid, m.created_at as string);
+    }
+  }
+
+  const { data: quoteRows } = await supabase
+    .from("quotations")
+    .select("lead_id, quote_number, status, total, currency, sent_at, created_at")
+    .in("lead_id", leadIds)
+    .order("created_at", { ascending: false });
+
+  const latestQuoteByLead = new Map<
+    string,
+    { quote_number: string | null; status: string; total: number | null; currency: string | null }
+  >();
+  for (const q of quoteRows ?? []) {
+    const lid = q.lead_id as string;
+    if (!latestQuoteByLead.has(lid)) {
+      latestQuoteByLead.set(lid, {
+        quote_number: (q.quote_number as string | null) ?? null,
+        status: (q.status as string) ?? "draft",
+        total: typeof q.total === "number" ? q.total : Number(q.total) || null,
+        currency: (q.currency as string | null) ?? "USD",
       });
     }
   }
@@ -243,6 +298,18 @@ async function buildConversations(
         });
 
     const waLast = lastWaByLead.get(lead.id);
+    const latestQuote = latestQuoteByLead.get(lead.id) ?? null;
+    const lastMessageDirection = waLast?.direction ?? null;
+    const lastInboundAt = lastInboundByLead.get(lead.id) ?? null;
+    const awaitingReplyMinutes =
+      lastMessageDirection === "inbound" ? minutesSince(lastInboundAt ?? waLast?.created_at ?? null) : null;
+    const dealValue =
+      typeof lead.deal_value === "number" && lead.deal_value > 0
+        ? lead.deal_value
+        : latestQuote?.total && latestQuote.total > 0
+          ? latestQuote.total
+          : null;
+
     const displayName =
       lead.name?.trim()
       || (contact as { whatsapp_profile_name?: string | null } | null)?.whatsapp_profile_name?.trim()
@@ -286,13 +353,19 @@ async function buildConversations(
       breakdown,
       followUpDate: lead.follow_up_date,
       createdAt: lead.created_at,
+      company: extractCompany(lead.form_data),
+      dealValue,
+      dealCurrency: latestQuote?.currency ?? "USD",
+      sourceLabel: formatSource(lead.source),
+      lastMessageDirection,
+      awaitingReplyMinutes,
+      latestQuoteNumber: latestQuote?.quote_number ?? null,
+      latestQuoteStatus: latestQuote?.status ?? null,
+      latestQuoteTotal: latestQuote?.total ?? null,
     };
   });
 
-  conversations.sort(
-    (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
-  );
-  return conversations;
+  return sortInboxConversations(conversations, "all");
 }
 
 function previewForType(messageType: string | null): string {

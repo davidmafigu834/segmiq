@@ -17,8 +17,9 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { formatSource } from "@/lib/inbox/fetch-conversations";
+import { formatSource } from "@/lib/inbox/format-source";
 import { scoreColor, scoreLabel, stageLabel } from "@/lib/inbox/scoring";
+import { extractQualificationDisplayFields } from "@/lib/inbox/qualification-display";
 import { MANUAL_LEAD_STAGES } from "@/lib/customer-hub/manual-lead-stages";
 import type { InboxConversation } from "@/lib/inbox/types";
 import { QuotationBuilder } from "@/components/leads/QuotationBuilder";
@@ -75,8 +76,12 @@ export function LeadIntelligencePanel({
 }: Props) {
   const [briefing, setBriefing] = useState("");
   const [suggestion, setSuggestion] = useState("");
+  const [capturedFields, setCapturedFields] = useState<{ label: string; value: string }[]>([]);
+  const [leadBudget, setLeadBudget] = useState<string | null>(null);
+  const [leadTimeline, setLeadTimeline] = useState<string | null>(null);
   const [reassignOpen, setReassignOpen] = useState(false);
   const [reassigning, setReassigning] = useState(false);
+  const [handoverNotes, setHandoverNotes] = useState("");
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const [followUpDate, setFollowUpDate] = useState("");
   const [schedulingFollowUp, setSchedulingFollowUp] = useState(false);
@@ -105,12 +110,37 @@ export function LeadIntelligencePanel({
   }, [conversation?.id]);
 
   useEffect(() => {
+    if (!conversation?.id) {
+      setCapturedFields([]);
+      setLeadBudget(null);
+      setLeadTimeline(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/leads/${conversation.id}`)
+      .then((r) => r.json())
+      .then((d: { lead?: { form_data?: Record<string, unknown>; budget?: string | null; timeline?: string | null } }) => {
+        if (cancelled || !d.lead) return;
+        const formData = d.lead.form_data ?? null;
+        setCapturedFields(extractQualificationDisplayFields(formData));
+        setLeadBudget(typeof d.lead.budget === "string" && d.lead.budget.trim() ? d.lead.budget.trim() : null);
+        setLeadTimeline(typeof d.lead.timeline === "string" && d.lead.timeline.trim() ? d.lead.timeline.trim() : null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [conversation?.id, conversation?.lastMessageAt]);
+
+  useEffect(() => {
     setFollowUpOpen(false);
     setFollowUpDate("");
     setActionMessage("");
     setEditingQuote(null);
     setStageOpen(false);
     setUpdatingStage(null);
+    setHandoverNotes("");
+    setReassignOpen(false);
   }, [conversation?.id]);
 
   useEffect(() => {
@@ -196,10 +226,12 @@ export function LeadIntelligencePanel({
         body: JSON.stringify({
           leadIds: [conversation.id],
           assigned_to_id: assigneeId,
+          handover_notes: handoverNotes.trim() || null,
         }),
       });
       if (res.ok) {
         setReassignOpen(false);
+        setHandoverNotes("");
         onReassigned();
       }
     } finally {
@@ -208,7 +240,7 @@ export function LeadIntelligencePanel({
   }
 
   const panelShell = whatsappMode
-    ? `flex h-full min-h-0 w-[340px] shrink-0 flex-col border-l border-[#D1D7DB] bg-white shadow-[-1px_0_0_#E9EDEF] ${
+    ? `flex h-full min-h-0 w-[340px] shrink-0 flex-col border-l border-[#D1D7DB] bg-white wa-panel ${
         mobileFullScreen
           ? ""
           : `max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 ${mobileTopClass} max-[1180px]:z-40 max-[1180px]:w-[min(340px,92vw)] max-[1180px]:shadow-[-4px_0_24px_rgba(0,0,0,0.15)] max-[1180px]:transition-transform max-[1180px]:duration-200`
@@ -217,15 +249,13 @@ export function LeadIntelligencePanel({
 
   const mobilePanelClass = mobileFullScreen
     ? open
-      ? "max-[860px]:fixed max-[860px]:inset-0 max-[860px]:z-50 max-[860px]:flex max-[860px]:w-full max-[860px]:translate-x-0 max-[860px]:shadow-none"
-      : "max-[860px]:hidden"
+      ? "max-[1180px]:fixed max-[1180px]:inset-0 max-[1180px]:z-50 max-[1180px]:flex max-[1180px]:w-full max-[1180px]:translate-x-0 max-[1180px]:shadow-none"
+      : "max-[1180px]:hidden"
     : open
       ? "max-[1180px]:translate-x-0"
       : "max-[1180px]:translate-x-full";
 
-  const card = whatsappMode
-    ? "rounded-lg border border-[#E9EDEF] bg-white"
-    : "rounded-xl border border-[var(--border)] bg-[var(--surface-card)]";
+  const card = whatsappMode ? "wa-card" : "rounded-xl border border-[var(--border)] bg-[var(--surface-card)]";
   const sectionTitle = whatsappMode
     ? "text-[11px] font-semibold uppercase tracking-wide text-[#8696A0]"
     : "text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]";
@@ -238,7 +268,7 @@ export function LeadIntelligencePanel({
     : "rounded-lg border border-[var(--border)] px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]";
 
   const intelHeader = (
-    <div className={`shrink-0 border-b px-3 py-3 sm:px-4 ${whatsappMode ? "border-[#E9EDEF] bg-[#F0F2F5]" : "border-[var(--border)] bg-[var(--bg-primary)]"}`}>
+    <div className={`shrink-0 px-3 py-3 sm:px-4 max-[1180px]:pt-[max(0.75rem,env(safe-area-inset-top))] ${whatsappMode ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"}`}>
       <div className="flex items-center gap-2">
         {onMobileBack ? (
           <button
@@ -246,14 +276,14 @@ export function LeadIntelligencePanel({
             onClick={onMobileBack}
             title="Back to conversation"
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
-              whatsappMode ? "text-[#54656F] hover:bg-[#E9EDEF]" : "text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"
+              whatsappMode ? "wa-icon-btn-muted" : "text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"
             }`}
           >
             <ArrowLeft size={20} />
           </button>
         ) : null}
         <div className="min-w-0">
-          <div className={`text-[15px] font-medium ${textPrimary}`}>Lead intelligence</div>
+          <div className={`text-[15px] font-semibold tracking-tight ${textPrimary}`}>Lead intelligence</div>
           <div className={`text-[12px] ${textSecondary}`}>Score, actions & contact</div>
         </div>
       </div>
@@ -384,7 +414,11 @@ export function LeadIntelligencePanel({
           )}
         </div>
 
-        <div className={`p-5 text-center ${card}`}>
+        <div
+          className={`p-5 text-center ${card} ${
+            whatsappMode ? "bg-gradient-to-b from-white to-[#f7fbf8]" : ""
+          }`}
+        >
           <div className={`mb-2 text-xs uppercase tracking-wide ${textMuted}`}>
             Lead Intent Score
           </div>
@@ -442,7 +476,11 @@ export function LeadIntelligencePanel({
         ) : null}
 
         <div
-          className={`rounded-lg p-5 ${whatsappMode ? "border border-[#00A884]/25 bg-[#E7FCE3]" : ""}`}
+          className={`rounded-xl p-5 ${
+            whatsappMode
+              ? "border border-[#00A884]/20 bg-gradient-to-br from-[#E7FCE3] to-[#f0fdf8] shadow-sm"
+              : ""
+          }`}
           style={
             whatsappMode
               ? undefined
@@ -469,11 +507,7 @@ export function LeadIntelligencePanel({
               type="button"
               onClick={() => void handleCreateQuotation()}
               disabled={creatingQuote}
-              className={`flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50 ${
-                whatsappMode
-                  ? "bg-[#008069] text-white"
-                  : "bg-[var(--accent)] text-[var(--accent-foreground)]"
-              }`}
+              className={whatsappMode ? "wa-btn-primary" : "flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-2.5 text-sm font-medium text-[var(--accent-foreground)] transition-opacity hover:opacity-90 disabled:opacity-50"}
             >
               {creatingQuote ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
               Create a quotation
@@ -484,11 +518,7 @@ export function LeadIntelligencePanel({
                 setFollowUpOpen((v) => !v);
                 if (!followUpDate) setFollowUpDate(toDateInputValue(addDays(new Date(), 1)));
               }}
-              className={`flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-                whatsappMode
-                  ? "border-[#E9EDEF] bg-white text-[#111B21] hover:bg-[#F5F6F6]"
-                  : "border-[var(--border)] bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
-              }`}
+              className={whatsappMode ? "wa-btn-secondary" : "flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2.5 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)]"}
             >
               <CalendarClock size={16} />
               Schedule a follow-up
@@ -568,6 +598,15 @@ export function LeadIntelligencePanel({
           </div>
           {reassignOpen && canReassign ? (
             <div className="flex flex-col gap-1">
+              <textarea
+                value={handoverNotes}
+                onChange={(e) => setHandoverNotes(e.target.value)}
+                rows={2}
+                placeholder="Handover note for the new rep (optional)"
+                className={`mb-1 w-full resize-none rounded-md border px-2 py-1.5 text-xs ${
+                  whatsappMode ? "border-[#E9EDEF] bg-white text-[#111B21]" : "border-[var(--border)] bg-[var(--bg-primary)]"
+                }`}
+              />
               <button
                 type="button"
                 disabled={reassigning}
@@ -613,10 +652,34 @@ export function LeadIntelligencePanel({
               {conversation.projectType}
             </div>
           ) : null}
+          {leadBudget ? (
+            <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
+              <DollarSign size={14} className={textMuted} />
+              {leadBudget}
+            </div>
+          ) : null}
+          {leadTimeline ? (
+            <div className={`flex items-center gap-2 text-sm ${textSecondary}`}>
+              <CalendarClock size={14} className={textMuted} />
+              {leadTimeline}
+            </div>
+          ) : null}
           <div className={`text-sm ${textSecondary}`}>
             Source: {formatSource(conversation.source as string)}
           </div>
         </div>
+
+        {capturedFields.length > 0 ? (
+          <div className={`flex flex-col gap-3 p-5 ${card}`}>
+            <div className={sectionTitle}>Captured from chat</div>
+            {capturedFields.map((field) => (
+              <div key={`${field.label}-${field.value}`} className="min-w-0">
+                <div className={`text-[11px] font-medium ${textMuted}`}>{field.label}</div>
+                <div className={`mt-0.5 text-sm ${textPrimary}`}>{field.value}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {conversation.tags.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">

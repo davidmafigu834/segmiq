@@ -98,8 +98,19 @@ export function MessageBubble({ message }: Props) {
 
   if (isSystem) {
     return (
-      <div className="flex justify-center">
-        <span className="rounded-lg bg-[#FFF7CC] px-3 py-1.5 text-center text-[11px] text-[#54656F] shadow-sm">
+      <div className="flex justify-center px-2">
+        <span className="wa-system-pill max-w-[90%] text-center">{message.text}</span>
+      </div>
+    );
+  }
+
+  if (message.kind === "internal") {
+    return (
+      <div className="flex justify-center px-2">
+        <span className="max-w-[85%] rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8fafc]/95 px-3.5 py-2.5 text-center text-[11px] text-[#64748b] shadow-sm backdrop-blur-sm">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+            Internal note
+          </span>
           {message.text}
         </span>
       </div>
@@ -107,18 +118,12 @@ export function MessageBubble({ message }: Props) {
   }
 
   return (
-    <div className={`flex ${isRep ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`relative max-w-[78%] px-2.5 py-1.5 text-[14px] leading-[1.35] text-[#111B21] shadow-sm ${
-          isRep
-            ? "rounded-lg rounded-tr-none bg-[#D9FDD3]"
-            : "rounded-lg rounded-tl-none bg-white"
-        }`}
-      >
+    <div className={`flex px-1 ${isRep ? "justify-end" : "justify-start"}`}>
+      <div className={`relative max-w-[min(78%,520px)] ${isRep ? "wa-bubble-out" : "wa-bubble-in"}`}>
         <MediaBlock message={message} />
-        {showText ? <div className="whitespace-pre-wrap break-words">{message.text}</div> : null}
-        <div className="mt-1 flex items-center justify-end gap-1">
-          <span className="text-[11px] text-[#667781]">{formatTime(message.createdAt)}</span>
+        {showText ? <div className="whitespace-pre-wrap break-words pr-1">{message.text}</div> : null}
+        <div className="-mb-0.5 mt-0.5 flex items-center justify-end gap-1">
+          <span className="text-[11px] leading-none text-[#667781]">{formatTime(message.createdAt)}</span>
           {isRep ? <StatusTicks status={message.status} /> : null}
         </div>
       </div>

@@ -3,13 +3,27 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { eventsToChatMessages, whatsappRowsToChatMessages } from "@/lib/inbox/messages";
+import { eventsToChatMessages, isWhatsAppRowVisibleInChat, messageLogsToChatMessages, whatsappRowsToChatMessages } from "@/lib/inbox/messages";
 import type { InboxChatMessage } from "@/lib/inbox/types";
 import { isWhatsAppSessionOpen } from "@/lib/whatsapp/inbound";
 
 export const dynamic = "force-dynamic";
 
 const SESSION_MS = 24 * 60 * 60 * 1000;
+
+function isSessionLogAlreadyRepresented(
+  preview: string,
+  providerId: string | null,
+  coveredProviderIds: Set<string>,
+  existingBodies: Set<string>
+): boolean {
+  if (providerId && coveredProviderIds.has(providerId)) return true;
+  if (existingBodies.has(preview)) return true;
+  for (const body of Array.from(existingBodies)) {
+    if (body.startsWith(preview) || preview.startsWith(body)) return true;
+  }
+  return false;
+}
 
 export async function GET(req: Request, { params }: { params: { leadId: string } }) {
   const session = await getServerSession(authOptions);
@@ -40,7 +54,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
   let sessionOpen = false;
 
   if (isWhatsApp) {
-    const [{ data: waRows }, { data: systemEvents }, { data: templateEvents }, { data: messageEvents }] =
+    const [{ data: waRows }, { data: timelineEvents }, { data: messageEvents }, { data: sessionLogs }] =
       await Promise.all([
       supabase
         .from("whatsapp_messages")
@@ -51,13 +65,15 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
         .from("lead_events")
         .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
         .eq("lead_id", params.leadId)
-        .in("event_type", ["CALL_LOGGED", "LEAD_ASSIGNED", "LEAD_REASSIGNED", "FOLLOW_UP_SET"])
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("lead_events")
-        .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
-        .eq("lead_id", params.leadId)
-        .eq("event_type", "DOCUMENT_SENT")
+        .in("event_type", [
+          "CALL_LOGGED",
+          "LEAD_ASSIGNED",
+          "LEAD_REASSIGNED",
+          "FOLLOW_UP_SET",
+          "STATUS_CHANGED",
+          "NOTE_ADDED",
+          "DOCUMENT_SENT",
+        ])
         .order("created_at", { ascending: true }),
       supabase
         .from("lead_events")
@@ -65,10 +81,24 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
         .eq("lead_id", params.leadId)
         .in("event_type", ["MESSAGE_SENT", "MESSAGE_RECEIVED"])
         .order("created_at", { ascending: true }),
+      supabase
+        .from("message_logs")
+        .select("id, payload_preview, created_at, provider_id, status")
+        .eq("lead_id", params.leadId)
+        .eq("channel", "whatsapp")
+        .eq("notification_type", "WHATSAPP_SESSION")
+        .eq("status", "sent")
+        .order("created_at", { ascending: true }),
     ]);
 
-    const waProviderIds = new Set(
+    const visibleWaProviderIds = new Set(
       (waRows ?? [])
+        .filter((r) =>
+          isWhatsAppRowVisibleInChat({
+            body: r.body as string | null,
+            media_url: r.media_url as string | null,
+          })
+        )
         .map((r) => r.provider_id as string | null)
         .filter((id): id is string => Boolean(id))
     );
@@ -87,7 +117,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     );
 
     const system = eventsToChatMessages(
-      (systemEvents ?? []).map((e) => ({
+      (timelineEvents ?? []).map((e) => ({
         id: e.id as string,
         event_type: e.event_type as string,
         event_data: (e.event_data as Record<string, unknown>) ?? {},
@@ -105,24 +135,11 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
         .filter((body): body is string => Boolean(body))
     );
 
-    const templateAndEventMessages = eventsToChatMessages(
-      [...(templateEvents ?? []), ...(messageEvents ?? [])]
+    const legacyMessages = eventsToChatMessages(
+      (messageEvents ?? [])
         .filter((e) => {
-          if (e.event_type === "MESSAGE_SENT" || e.event_type === "MESSAGE_RECEIVED") {
-            const providerId = (e.event_data as Record<string, unknown> | null)?.provider_id;
-            if (typeof providerId === "string" && waProviderIds.has(providerId)) return false;
-            return true;
-          }
-          if (e.event_type !== "DOCUMENT_SENT") return true;
-          const d = (e.event_data as Record<string, unknown>) ?? {};
-          const docType = String(d.document_type ?? "");
-          if (docType === "CUSTOM_MESSAGE") {
-            const msg = String(d.custom_message ?? "").trim();
-            if (msg && outboundBodies.has(msg)) return false;
-          }
-          const docName = String(d.document_name ?? d.document_type ?? "document");
-          const sentLabel = `Sent ${docName}`;
-          if (outboundBodies.has(sentLabel)) return false;
+          const providerId = (e.event_data as Record<string, unknown> | null)?.provider_id;
+          if (typeof providerId === "string" && visibleWaProviderIds.has(providerId)) return false;
           return true;
         })
         .map((e) => ({
@@ -136,7 +153,35 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
         }))
     );
 
-    messages = [...chat, ...templateAndEventMessages, ...system].sort(
+    const coveredProviderIds = new Set(visibleWaProviderIds);
+    for (const e of messageEvents ?? []) {
+      const providerId = (e.event_data as Record<string, unknown> | null)?.provider_id;
+      if (typeof providerId === "string") coveredProviderIds.add(providerId);
+    }
+
+    const existingBodies = new Set(
+      [...chat, ...legacyMessages]
+        .filter((m) => m.kind === "message" && m.direction === "rep" && m.text.trim())
+        .map((m) => m.text.trim())
+    );
+
+    const logFallback = messageLogsToChatMessages(
+      (sessionLogs ?? []).filter((row) => {
+        const providerId = (row.provider_id as string | null) ?? null;
+        const preview = (row.payload_preview as string | null)?.trim();
+        if (!preview) return false;
+        return !isSessionLogAlreadyRepresented(preview, providerId, coveredProviderIds, existingBodies);
+      })
+    );
+
+    const dedupedSystem = system.filter((m) => {
+      if (m.kind !== "system" && m.kind !== "message") return true;
+      const text = m.text.trim();
+      if (text.startsWith("Sent ") && outboundBodies.has(text.replace(/^Sent /, ""))) return false;
+      return !outboundBodies.has(text);
+    });
+
+    messages = [...chat, ...dedupedSystem, ...legacyMessages, ...logFallback].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 

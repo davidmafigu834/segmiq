@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { InboxFilter, InboxConversation } from "@/lib/inbox/types";
 import { initials } from "@/lib/inbox/assignee-colors";
-import { SCORE_HOT_MIN } from "@/lib/inbox/scoring";
+import { applyInboxFilter } from "@/lib/inbox/apply-filter";
 import { ConversationRow } from "./ConversationRow";
 import { FilterTabs } from "./FilterTabs";
 import { ArrowLeft, Search } from "lucide-react";
@@ -29,36 +29,6 @@ type Props = {
   onFilterChange?: (filter: InboxFilter) => void;
 };
 
-function matchesSearch(conversation: InboxConversation, q: string): boolean {
-  if (!q) return true;
-  const haystack = [
-    conversation.name,
-    conversation.whatsappProfileName,
-    conversation.phone,
-    conversation.location,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  return haystack.includes(q);
-}
-
-function applyFilter(
-  rows: InboxConversation[],
-  filter: InboxFilter,
-  search: string,
-  currentUserId: string
-): InboxConversation[] {
-  const q = search.trim().toLowerCase();
-  return rows.filter((l) => {
-    if (filter === "unassigned" && l.assignedToId) return false;
-    if (filter === "mine" && l.assignedToId !== currentUserId) return false;
-    if (filter === "hot" && l.score < SCORE_HOT_MIN) return false;
-    if (!matchesSearch(l, q)) return false;
-    return true;
-  });
-}
-
 export function ConversationList({
   conversations,
   activeId,
@@ -79,12 +49,16 @@ export function ConversationList({
   filterCounts,
   onFilterChange,
 }: Props) {
-  const filtered = applyFilter(conversations, filter, search, currentUserId);
-  const mobileTop = whatsappMode ? "max-[860px]:top-0" : "max-[860px]:top-16";
+  const filtered = applyInboxFilter(conversations, filter, search, currentUserId);
+  const mobileTop = whatsappMode
+    ? mobileFullScreen
+      ? "max-[1180px]:top-0"
+      : "max-[860px]:top-0"
+    : "max-[860px]:top-16";
   const mobilePanelClass = mobileFullScreen
     ? open
-      ? "max-[860px]:fixed max-[860px]:inset-0 max-[860px]:z-40 max-[860px]:flex max-[860px]:w-full max-[860px]:translate-x-0 max-[860px]:shadow-none"
-      : "max-[860px]:hidden"
+      ? "max-[1180px]:fixed max-[1180px]:inset-0 max-[1180px]:z-40 max-[1180px]:flex max-[1180px]:w-full max-[1180px]:translate-x-0 max-[1180px]:shadow-none"
+      : "max-[1180px]:hidden"
     : open
       ? "max-[860px]:translate-x-0"
       : "max-[860px]:-translate-x-full";
@@ -94,7 +68,7 @@ export function ConversationList({
       id="convPanel"
       className={[
         "flex h-full min-h-0 shrink-0 flex-col",
-        whatsappMode ? "w-[340px] border-r border-[#D1D7DB] bg-white shadow-[1px_0_0_#E9EDEF]" : "w-[360px] border-r border-[var(--border)] bg-[var(--bg-tertiary)]",
+        whatsappMode ? "w-[340px] border-r border-[#D1D7DB] bg-white wa-panel max-[1180px]:w-full max-[1180px]:border-r-0" : "w-[360px] border-r border-[var(--border)] bg-[var(--bg-tertiary)]",
         mobileFullScreen
           ? ""
           : `max-[860px]:fixed max-[860px]:bottom-0 max-[860px]:left-0 ${mobileTop} max-[860px]:z-40 max-[860px]:w-[min(320px,88vw)] max-[860px]:shadow-[4px_0_24px_rgba(0,0,0,0.15)] max-[860px]:transition-transform max-[860px]:duration-200`,
@@ -102,29 +76,29 @@ export function ConversationList({
       ].join(" ")}
     >
       {whatsappMode ? (
-        <div className="shrink-0 border-b border-[#E9EDEF] bg-[#F0F2F5]">
+        <div className="shrink-0 wa-panel-header max-[1180px]:pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-2 px-3 py-3">
             {backHref ? (
               <Link
                 href={backHref}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#54656F] transition-colors hover:bg-[#E9EDEF]"
+                className="wa-icon-btn-muted !h-9 !w-9"
                 title="Back to dashboard"
               >
                 <ArrowLeft size={20} />
               </Link>
             ) : null}
             <div className="min-w-0 flex-1">
-              <div className="text-[17px] font-medium text-[#111B21]">Chats</div>
+              <div className="text-[17px] font-semibold tracking-tight text-[#111B21]">Chats</div>
               {roleSubtitle ? (
                 <div className="truncate text-[12px] text-[#667781]">{roleSubtitle}</div>
               ) : null}
             </div>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#00A884] text-xs font-semibold text-white">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#00A884] to-[#008069] text-xs font-semibold text-white shadow-sm ring-2 ring-white">
               {initials(currentRepName)}
             </div>
           </div>
           {filterCounts && onFilterChange ? (
-            <div className="overflow-x-auto border-t border-[#E9EDEF] px-3 py-2 inbox-scroll">
+            <div className="overflow-x-auto border-t border-[#E9EDEF]/80 px-3 py-2.5 inbox-scroll">
               <FilterTabs
                 filter={filter}
                 counts={filterCounts}
@@ -133,8 +107,8 @@ export function ConversationList({
               />
             </div>
           ) : null}
-          <div className="border-t border-[#E9EDEF] px-3 py-2.5">
-            <div className="flex items-center gap-2 rounded-lg border border-[#E9EDEF] bg-white px-3 py-2 shadow-sm">
+          <div className="border-t border-[#E9EDEF]/80 px-3 py-2.5">
+            <div className="wa-search">
               <Search size={16} className="shrink-0 text-[#8696A0]" />
               <input
                 type="text"

@@ -16,6 +16,8 @@ export function buildWhatsAppSalesHubNav(followupBadge?: number): AppShellNavIte
     icon: "message-circle",
     children: [
       { href: "/sales/inbox/hot-leads", label: "Hot leads", icon: "message-circle" },
+      { href: "/sales/inbox/needs-reply", label: "Needs reply", icon: "message-circle" },
+      { href: "/sales/inbox/follow-up-due", label: "Follow-up due", icon: "calendar" },
       {
         href: "/sales/followups",
         label: "Follow-ups",

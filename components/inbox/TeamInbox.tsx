@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Inbox, Search } from "lucide-react";
 import { initials } from "@/lib/inbox/assignee-colors";
-import { useInboxMobile } from "@/lib/inbox/use-inbox-mobile";
-import { SCORE_HOT_MIN } from "@/lib/inbox/scoring";
+import { useInboxCompact, useInboxMobile } from "@/lib/inbox/use-inbox-mobile";
+import { countInboxFilters } from "@/lib/inbox/queue-filters";
 import type { InboxConversation, InboxFilter } from "@/lib/inbox/types";
 import { ChatThread } from "./ChatThread";
 import { ConversationList } from "./ConversationList";
@@ -30,28 +30,6 @@ type Props = {
 
 type MobilePane = "list" | "thread" | "intel";
 
-function filterCounts(
-  rows: InboxConversation[],
-  search: string,
-  userId: string
-): Record<InboxFilter, number> {
-  const q = search.trim().toLowerCase();
-  const base = rows.filter((l) => {
-    if (!q) return true;
-    const haystack = [l.name, l.whatsappProfileName, l.phone, l.location]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(q);
-  });
-  return {
-    all: base.length,
-    unassigned: base.filter((l) => !l.assignedToId).length,
-    mine: base.filter((l) => l.assignedToId === userId).length,
-    hot: base.filter((l) => l.score >= SCORE_HOT_MIN).length,
-  };
-}
-
 export function TeamInbox({
   userName,
   userId,
@@ -75,8 +53,10 @@ export function TeamInbox({
   const [intelOpen, setIntelOpen] = useState(false);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [salespeople, setSalespeople] = useState(initialSalespeople);
+  const [companyName, setCompanyName] = useState("");
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const isMobile = useInboxMobile();
+  const isCompact = useInboxCompact();
   const searchParams = useSearchParams();
   const leadFromUrl = searchParams.get("lead");
 
@@ -107,8 +87,8 @@ export function TeamInbox({
     if (!leadFromUrl || conversations.length === 0) return;
     if (!conversations.some((c) => c.id === leadFromUrl)) return;
     setActiveId(leadFromUrl);
-    if (isMobile && backHref) setMobilePane("thread");
-  }, [leadFromUrl, conversations, isMobile, backHref]);
+    if (isCompact && backHref) setMobilePane("thread");
+  }, [leadFromUrl, conversations, isCompact, backHref]);
 
   useEffect(() => {
     if (!isMobile) {
@@ -117,7 +97,15 @@ export function TeamInbox({
   }, [isMobile]);
 
   useEffect(() => {
-    if (role !== "CLIENT_MANAGER" && role !== "AGENCY_ADMIN") return;
+    fetch(`/api/clients/${clientId}/company-profile`)
+      .then((r) => r.json())
+      .then((d: { client?: { name?: string } }) => {
+        if (d.client?.name) setCompanyName(d.client.name);
+      })
+      .catch(() => {});
+  }, [clientId]);
+
+  useEffect(() => {
     if (initialSalespeople.length) return;
     fetch(`/api/clients/${clientId}/users`)
       .then((r) => r.json())
@@ -126,7 +114,7 @@ export function TeamInbox({
         setSalespeople(reps.map((u) => ({ id: u.id, name: u.name })));
       })
       .catch(() => {});
-  }, [clientId, role, initialSalespeople.length]);
+  }, [clientId, initialSalespeople.length]);
 
   const active = useMemo(
     () => conversations.find((c) => c.id === activeId) ?? null,
@@ -134,12 +122,16 @@ export function TeamInbox({
   );
 
   const counts = useMemo(
-    () => filterCounts(conversations, search, userId),
-    [conversations, search, userId]
+    () => countInboxFilters(conversations, userId),
+    [conversations, userId]
   );
 
   const canReassign = role === "CLIENT_MANAGER" || role === "AGENCY_ADMIN";
+  const canTransfer =
+    (role === "SALESPERSON" && !!active && active.assignedToId === userId) || canReassign;
   const canSend =
+    role === "SALESPERSON" && !!active && active.assignedToId === userId;
+  const canUpdateStatus =
     role === "SALESPERSON" && !!active && active.assignedToId === userId;
 
   async function handleClaim(leadId: string) {
@@ -150,7 +142,7 @@ export function TeamInbox({
       if (res.ok) {
         await loadConversations();
         setActiveId(leadId);
-        if (isMobile && backHref) setMobilePane("thread");
+        if (isCompact && backHref) setMobilePane("thread");
       }
     } finally {
       setClaimingId(null);
@@ -161,7 +153,7 @@ export function TeamInbox({
 
   function handleSelect(id: string) {
     setActiveId(id);
-    if (isMobile && whatsappMode) {
+    if (isCompact && whatsappMode) {
       setMobilePane("thread");
       return;
     }
@@ -176,9 +168,9 @@ export function TeamInbox({
   }
 
   const mobileIntelTop = whatsappMode ? "max-[1180px]:top-0" : "max-[1180px]:top-16";
-  const mobileNav = isMobile && whatsappMode;
-  const intelOpenEffective = mobileNav ? mobilePane === "intel" : intelOpen;
-  const listOpenEffective = mobileNav ? mobilePane === "list" : convOpen;
+  const paneNav = isCompact && whatsappMode;
+  const intelOpenEffective = paneNav ? mobilePane === "intel" : intelOpen;
+  const listOpenEffective = paneNav ? mobilePane === "list" : convOpen;
 
   return (
     <div
@@ -253,7 +245,7 @@ export function TeamInbox({
         </div>
       ) : null}
 
-      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "gap-[1px] bg-[#D1D7DB]" : ""}`}>
+      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "gap-px wa-hub-shell" : ""}`}>
         {!whatsappMode ? (
           <InboxIconRail
             pipelineHref={pipelineHref}
@@ -282,7 +274,7 @@ export function TeamInbox({
               open={listOpenEffective}
               canClaim={role === "SALESPERSON"}
               whatsappMode={whatsappMode}
-              mobileFullScreen={mobileNav}
+              mobileFullScreen={paneNav}
               onSearchChange={setSearch}
               backHref={backHref}
               roleSubtitle={roleSubtitle}
@@ -290,18 +282,24 @@ export function TeamInbox({
               onFilterChange={setFilter}
             />
             <div
-              className={`flex min-h-0 min-w-0 flex-1 flex-col ${
-                whatsappMode ? "bg-white shadow-[0_0_0_1px_#E9EDEF]" : ""
-              } ${mobileNav && mobilePane !== "thread" ? "max-[860px]:hidden" : ""}`}
+              className={`flex min-h-0 min-w-0 flex-1 flex-col wa-panel ${
+                paneNav && mobilePane !== "thread" ? "max-[1180px]:hidden" : ""
+              }`}
             >
               <ChatThread
                 conversation={active}
                 clientId={clientId}
+                userId={userId}
+                userName={userName}
+                companyName={companyName}
                 canSend={canSend}
+                canTransfer={canTransfer}
+                canUpdateStatus={canUpdateStatus}
+                salespeople={salespeople}
                 showLogCall={role === "SALESPERSON" && !!active?.assignedToId && active.assignedToId === userId}
-                onBack={mobileNav ? () => setMobilePane("list") : undefined}
+                onBack={paneNav ? () => setMobilePane("list") : undefined}
                 onToggleIntel={() => {
-                  if (mobileNav) {
+                  if (paneNav) {
                     setMobilePane("intel");
                     return;
                   }
@@ -309,6 +307,7 @@ export function TeamInbox({
                   setIntelOpen((v) => !v);
                 }}
                 onMessagesChange={() => void loadConversations({ silent: true })}
+                onConversationUpdate={() => void loadConversations({ silent: true })}
               />
             </div>
             <LeadIntelligencePanel
@@ -323,8 +322,8 @@ export function TeamInbox({
               open={intelOpenEffective}
               whatsappMode={whatsappMode}
               mobileTopClass={mobileIntelTop}
-              mobileFullScreen={mobileNav}
-              onMobileBack={mobileNav ? () => setMobilePane("thread") : undefined}
+              mobileFullScreen={paneNav}
+              onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
             />
           </>
         )}
@@ -335,7 +334,7 @@ export function TeamInbox({
         role="presentation"
         onClick={closePanels}
         className={`fixed inset-0 z-[35] hidden bg-black/60 ${
-          !mobileNav && (convOpen || intelOpen) ? "min-[861px]:max-[1180px]:block" : ""
+          !paneNav && (convOpen || intelOpen) ? "min-[861px]:max-[1180px]:block" : ""
         }`}
       />
     </div>

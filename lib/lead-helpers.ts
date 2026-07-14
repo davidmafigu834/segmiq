@@ -35,7 +35,10 @@ export function parseLeadFields(formData: Record<string, unknown>) {
   const email =
     extractFromFormData(formData, ["email", "e-mail"]) ||
     (typeof formData.email === "string" ? formData.email : null);
-  const budget = extractFromFormData(formData, ["budget", "price", "value"]);
+  const budgetRaw =
+    extractFromFormData(formData, ["budget", "price", "value"]) ||
+    (typeof formData.budget === "string" ? formData.budget : null);
+  const budget = budgetRaw?.trim() ? normalizeBudgetFromText(budgetRaw) : null;
   const projectType = extractFromFormData(formData, [
     "project",
     "service",
@@ -71,4 +74,13 @@ export function sourceFromString(s: string): LeadSource {
     return s;
   }
   return "MANUAL";
+}
+
+function normalizeBudgetFromText(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  if (/^\d+([.,]\d+)?$/.test(trimmed)) return trimmed.replace(",", ".");
+  const match = trimmed.match(/(\d[\d,]*(?:\.\d+)?)/);
+  if (match) return match[1].replace(/,/g, "");
+  return trimmed;
 }
