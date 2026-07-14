@@ -27,7 +27,6 @@ import { TransferDialog } from "./TransferDialog";
 type Props = {
   conversation: InboxConversation | null;
   clientId: string;
-  userId: string;
   userName: string;
   companyName?: string;
   canSend: boolean;
@@ -44,7 +43,6 @@ type Props = {
 export function ChatThread({
   conversation,
   clientId,
-  userId,
   userName,
   companyName = "",
   canSend,

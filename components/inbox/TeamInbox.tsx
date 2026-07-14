@@ -289,7 +289,6 @@ export function TeamInbox({
               <ChatThread
                 conversation={active}
                 clientId={clientId}
-                userId={userId}
                 userName={userName}
                 companyName={companyName}
                 canSend={canSend}
