@@ -169,7 +169,7 @@ export function AppShell({
       ) : null}
 
       <div
-        className={`flex min-h-0 flex-1 flex-col ${
+        className={`flex min-h-0 min-w-0 max-w-full flex-1 flex-col ${
           hideSidebar
             ? "h-full max-h-full overflow-hidden"
             : "layout:ml-60 layout:min-h-0 layout:overflow-hidden"
@@ -238,7 +238,7 @@ export function AppShell({
               <span className="hidden md:inline shrink-0 text-[10px] text-[var(--text-tertiary)] opacity-50">·</span>
               <h1 className={`min-w-0 truncate font-semibold leading-none text-[var(--text-primary)] ${titleSize === "hero" ? "text-[15px] md:text-[18px] layout:text-[22px]" : "text-[14px] md:text-[16px] layout:text-[20px]"}`}>{pageTitle}</h1>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex min-w-0 shrink items-center gap-2">
               <div className="hidden items-center lg:flex">
                 <AgencyHeaderClock />
               </div>
@@ -284,7 +284,7 @@ export function AppShell({
                   </>
                 )
               ) : null}
-              {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+              {actions ? <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">{actions}</div> : null}
             </div>
           </header>
         ) : null}
@@ -293,8 +293,8 @@ export function AppShell({
           style={hideSidebar ? undefined : { overflowX: "clip" }}
           className={
             hideSidebar
-              ? "flex min-h-0 flex-1 flex-col overflow-hidden"
-              : "flex-1 px-4 pt-6 pb-28 md:px-6 md:pt-8 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-8"
+              ? "flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden"
+              : "min-w-0 w-full max-w-full flex-1 px-4 pt-6 pb-28 md:px-6 md:pt-8 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-8"
           }
         >
           {children}

@@ -41,7 +41,7 @@ function ActionButton({
   compact?: boolean;
 }) {
   const className = primary
-    ? `flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-[#00A884] px-3 text-white transition-opacity hover:opacity-90 disabled:opacity-40 ${
+    ? `flex min-w-0 shrink items-center justify-center gap-1.5 rounded-full bg-[#00A884] px-3 text-white transition-opacity hover:opacity-90 disabled:opacity-40 max-[359px]:w-9 max-[359px]:px-0 ${
         compact ? "h-8 text-[11px]" : "h-9 text-xs font-medium"
       }`
     : `flex shrink-0 items-center justify-center rounded-full border border-[#00A884]/25 bg-[#0a1612] transition-colors hover:border-[#00A884]/45 ${
@@ -170,7 +170,7 @@ export function WhatsAppLeadCard({
         </span>
       </p>
 
-      <div className={`flex items-center justify-end ${compact ? "gap-1" : "gap-1.5 sm:gap-2"}`}>
+      <div className={`flex min-w-0 flex-wrap items-center justify-end ${compact ? "gap-1" : "gap-1.5 sm:gap-2"}`}>
         <ActionButton
           label="Open chat"
           primary
@@ -178,7 +178,7 @@ export function WhatsAppLeadCard({
           onClick={() => router.push(whatsappInboxHref(lead.id))}
         >
           <MessageCircle size={compact ? 13 : 14} />
-          Open chat
+          <span className="max-[359px]:hidden">Open chat</span>
         </ActionButton>
 
         <ActionButton

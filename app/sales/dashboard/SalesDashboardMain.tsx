@@ -174,7 +174,7 @@ export default function SalesDashboardMain({
   if (!mounted) return <SalesDashboardSkeleton />;
 
   return (
-    <div>
+    <div className="min-w-0 w-full max-w-full overflow-x-hidden">
       {/* ============================================
           HEADER
           ============================================ */}
@@ -182,7 +182,7 @@ export default function SalesDashboardMain({
         <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
           {today}
         </p>
-        <h1 className="font-display text-3xl tracking-tight text-[var(--text-primary)]">
+        <h1 className="break-words font-display text-2xl tracking-tight text-[var(--text-primary)] sm:text-3xl">
           Good {getGreeting()}, {firstName}
         </h1>
       </div>
@@ -207,7 +207,7 @@ export default function SalesDashboardMain({
       {/* ============================================
           NUMBERS STRIP — 4 compact stat cards
           ============================================ */}
-      <div className="ag-fade-in grid grid-cols-2 min-[600px]:grid-cols-4 gap-3 mb-8">
+      <div className="ag-fade-in mb-8 grid min-w-0 grid-cols-2 gap-2.5 min-[600px]:grid-cols-4 sm:gap-3">
         {[
           {
             label: "Call now",
@@ -242,7 +242,7 @@ export default function SalesDashboardMain({
           return (
           <div
             key={stat.label}
-            className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 flex flex-col items-center"
+            className="flex min-w-0 flex-col items-center rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-3.5 sm:p-5"
           >
             <StatIcon size={14} className="mb-2 text-[var(--text-disabled)]" />
             <p
@@ -251,7 +251,7 @@ export default function SalesDashboardMain({
             >
               {stat.value}
             </p>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] text-center">
+            <p className="max-w-full break-words text-center text-[9px] font-semibold uppercase leading-tight tracking-wide text-[var(--text-tertiary)] min-[420px]:text-[10px] min-[420px]:tracking-widest">
               {stat.label}
             </p>
           </div>
@@ -403,7 +403,7 @@ export default function SalesDashboardMain({
         type="button"
         onClick={openAddHubSheet}
         aria-label="Add to Customer Hub"
-        className="fixed right-5 bottom-[calc(140px+env(safe-area-inset-bottom))] z-30 grid h-14 w-14 place-items-center rounded-full border border-[var(--border-hover)] bg-[var(--surface-card)] text-[var(--accent)] shadow-lg"
+        className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(140px+env(safe-area-inset-bottom))] z-30 grid h-14 w-14 place-items-center rounded-full border border-[var(--border-hover)] bg-[var(--surface-card)] text-[var(--accent)] shadow-lg sm:right-5"
       >
         <UserPlus size={22} />
       </button>
@@ -414,7 +414,7 @@ export default function SalesDashboardMain({
       <button
         type="button"
         onClick={() => openLogSheet("")}
-        className="fixed right-5 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 w-14 h-14 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center shadow-[var(--shadow-accent-glow)] hover:bg-[var(--accent-hover)] transition-colors"
+        className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] shadow-[var(--shadow-accent-glow)] transition-colors hover:bg-[var(--accent-hover)] sm:right-5"
         aria-label="Log a call"
       >
         <Phone size={22} />

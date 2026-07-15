@@ -47,10 +47,10 @@ export function PriorityLanes({
   const router = useRouter();
 
   return (
-    <div className="mb-8">
+    <div className="mb-8 min-w-0 max-w-full">
       {showHeader ? (
-        <div className="ag-fade-in flex items-center justify-between mb-3">
-          <div>
+        <div className="ag-fade-in mb-3 flex min-w-0 items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-0.5">
               Today
             </p>
@@ -59,7 +59,7 @@ export function PriorityLanes({
           <button
             type="button"
             onClick={() => router.push(allLeadsHref)}
-            className="flex items-center gap-1 text-[12px] font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
+            className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[var(--accent)] transition-opacity hover:opacity-80"
           >
             All leads
             <ChevronRight size={12} />
@@ -94,9 +94,9 @@ export function PriorityLanes({
                     className="w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] px-5 py-4 hover:border-[var(--border-hover)] transition-colors text-left"
                     aria-expanded={nurtureOpen}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
                       <MinusCircle size={15} className="text-[var(--text-tertiary)]" />
-                      <span className="text-[14px] font-semibold text-[var(--text-primary)]">{meta.title}</span>
+                      <span className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{meta.title}</span>
                       <span className="text-[13px] text-[var(--text-tertiary)]">{count}</span>
                     </div>
                     <ChevronDown
@@ -139,16 +139,16 @@ export function PriorityLanes({
 
             return (
               <section key={lane} className={`ag-fade-in ${delayClass}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-baseline gap-2">
-                    <h3 className="text-[14px] font-semibold text-[var(--text-primary)]">{meta.title}</h3>
+                <div className="mb-2 flex min-w-0 items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-baseline gap-2">
+                    <h3 className="truncate text-[14px] font-semibold text-[var(--text-primary)]">{meta.title}</h3>
                     <span className="text-[13px] text-[var(--text-tertiary)]">{count}</span>
                   </div>
                   {(laneSeeAll ? (lane === "recover" ? count > 0 : count > 5) : count > 5) && laneSeeAll ? (
                     <button
                       type="button"
                       onClick={() => router.push(laneSeeAll)}
-                      className="flex items-center gap-1 text-[12px] font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
+                      className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] font-semibold text-[var(--accent)] transition-opacity hover:opacity-80"
                     >
                       See all ({count})
                       <ChevronRight size={12} />
@@ -157,7 +157,7 @@ export function PriorityLanes({
                     <button
                       type="button"
                       onClick={() => router.push(allLeadsHref)}
-                      className="flex items-center gap-1 text-[12px] font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
+                      className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] font-semibold text-[var(--accent)] transition-opacity hover:opacity-80"
                     >
                       See all ({count})
                       <ChevronRight size={12} />
