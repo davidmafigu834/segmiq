@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { isCloudAdminRole } from "@/lib/auth/roles";
 
-/** Redirects salespeople away from Cloud admin pages (settings, team, billing, etc.). */
+/** Redirects users without Cloud admin access away from settings, team, billing, etc. */
 export function CloudAdminGate({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();

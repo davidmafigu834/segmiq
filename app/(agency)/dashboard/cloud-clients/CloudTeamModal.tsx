@@ -101,7 +101,7 @@ export function CloudTeamModal({
           <div>
             <p className="text-[15px] font-semibold text-[var(--text-primary)]">Cloud team — {clientName}</p>
             <p className="text-[12px] text-[var(--text-tertiary)]">
-              Invite managers (full settings access) or salespeople (field uploads only).
+              Invite managers or salespeople — both have full Cloud access.
             </p>
           </div>
           <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
@@ -182,8 +182,8 @@ export function CloudTeamModal({
                 onChange={(e) => setInviteRole(e.target.value as "CLIENT_MANAGER" | "SALESPERSON")}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 text-[13px] outline-none focus:border-[var(--accent)]"
               >
-                <option value="SALESPERSON">Salesperson — field uploads only</option>
-                <option value="CLIENT_MANAGER">Manager — full Cloud settings access</option>
+                <option value="SALESPERSON">Salesperson</option>
+                <option value="CLIENT_MANAGER">Manager</option>
               </select>
               {inviteError && (
                 <div className="flex items-start gap-2 text-[12px] text-red-500">

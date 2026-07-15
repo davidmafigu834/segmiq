@@ -101,12 +101,12 @@ export function canAccessClient(
   return userClientId === requestedClientId;
 }
 
-/** Company profile & branding: managers edit their own client; agency admin can edit any. */
+/** Company profile & branding: managers and salespeople edit their own client; agency admin can edit any. */
 export function canManageClientProfile(role: string | null | undefined): boolean {
-  return role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER";
+  return role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER" || role === "SALESPERSON";
 }
 
-/** SegmiQ Cloud settings, billing, team invites: managers on their client; agency admin on any. */
+/** SegmiQ Cloud settings, billing, team invites: managers and salespeople on their client; agency admin on any. */
 export function canManageCloudSettings(
   session: {
     userId?: string | null;
@@ -117,7 +117,12 @@ export function canManageCloudSettings(
 ): boolean {
   if (!session?.userId) return false;
   if (session.role === "AGENCY_ADMIN") return true;
-  if (session.role === "CLIENT_MANAGER" && session.clientId === clientId) return true;
+  if (
+    (session.role === "CLIENT_MANAGER" || session.role === "SALESPERSON")
+    && session.clientId === clientId
+  ) {
+    return true;
+  }
   return false;
 }
 

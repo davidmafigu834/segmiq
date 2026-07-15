@@ -35,7 +35,7 @@ export default function CloudHeader() {
         </div>
         <div className="flex items-center gap-3 text-sm">
           <a href="https://segmiq.com" className="hidden md:inline text-[#8C7B6B] hover:text-[#1C1410]">segmiq.com</a>
-          <Link href="#" className="hidden sm:inline font-medium hover:text-[#1C1410]">Sign in</Link>
+          <Link href="/cloud/login" className="hidden sm:inline font-medium hover:text-[#1C1410]">Sign in</Link>
           <Link href="#" className="hidden sm:inline px-4 py-2 rounded-full font-semibold bg-[#1C1410] text-[#D4FF4F]">Book a demo</Link>
           <button
             aria-label={open ? "Close menu" : "Open menu"}
@@ -53,7 +53,7 @@ export default function CloudHeader() {
             <a key={n.label} href={n.href} onClick={() => setOpen(false)} className="py-2.5 border-b border-[#1C1410]/10 text-[#8C7B6B] hover:text-[#1C1410]">{n.label}</a>
           ))}
           <div className="flex gap-3 pt-4">
-            <Link href="#" className="flex-1 text-center px-4 py-2.5 rounded-full border border-[#1C1410]/10 font-semibold">Sign in</Link>
+            <Link href="/cloud/login" className="flex-1 text-center px-4 py-2.5 rounded-full border border-[#1C1410]/10 font-semibold">Sign in</Link>
             <Link href="#" className="flex-1 text-center px-4 py-2.5 rounded-full font-semibold bg-[#1C1410] text-[#D4FF4F]">Book a demo</Link>
           </div>
         </nav>

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { canManageClientTeam, canManageCloudSettings } from "@/lib/auth/permissions";
+import { canManageCloudSettings } from "@/lib/auth/permissions";
 import { migrateUncontactedLeads } from "@/lib/leads/migrateUncontactedLeads";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export async function PATCH(req: Request) {
   if (!target) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const targetClientId = (target as { client_id: string; role: string }).client_id;
-  if (!canManageClientTeam(session, targetClientId)) {
+  if (!canManageCloudSettings(session, targetClientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

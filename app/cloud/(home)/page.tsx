@@ -11,11 +11,14 @@
 
 import type { Metadata } from "next";
 import Image from "next/image";
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth";
 import {
   Check, ArrowRight, MessageCircle, Route, Globe, Image as ImageIcon, UploadCloud,
   Link2, Milestone, Smartphone, Briefcase, User, HardDrive, Droplet,
 } from "lucide-react";
 
+import { authOptions } from "@/lib/auth";
 import { SITE } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -65,7 +68,12 @@ function Thumb({ src, alt, className = "" }: { src: string; alt: string; classNa
   );
 }
 
-export default function SegmiqCloudPage() {
+export default async function SegmiqCloudPage() {
+  const session = await getServerSession(authOptions);
+  if (session?.userId) {
+    redirect("/cloud/dashboard");
+  }
+
   return (
     <>
       {/* HERO */}

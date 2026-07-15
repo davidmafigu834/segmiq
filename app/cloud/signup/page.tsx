@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CloudUpload, Eye, EyeOff, Loader2, ChevronRight } from "lucide-react";
@@ -35,6 +35,7 @@ function passwordStrength(pw: string): { label: string; color: string; width: st
 
 export default function CloudSignupPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -97,6 +98,15 @@ export default function CloudSignupPage() {
       setError("Something went wrong. Please try again.");
       setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (session?.user) router.replace("/cloud/dashboard");
+  }, [router, session?.user, status]);
+
+  if (status === "loading" || session?.user) {
+    return <div className="min-h-screen bg-[#0a0a0a]" />;
   }
 
   return (

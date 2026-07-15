@@ -70,6 +70,9 @@ export async function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
+    const cloudEntryRedirect = await redirectIfAuthenticatedCloudEntry(req, path, true);
+    if (cloudEntryRedirect) return cloudEntryRedirect;
+
     // Map known URL paths to internal routes.
     // IMPORTANT: only rewrite explicit cloud routes — do NOT catch static files
     // like /manifest.json, /sw.js, /icons/* (those must be served as-is).
@@ -211,7 +214,11 @@ export async function middleware(req: NextRequest) {
     path === "/blog" ||
     path.startsWith("/blog/");
 
-  if (marketingPublic || isPublic) return NextResponse.next();
+  if (marketingPublic || isPublic) {
+    const cloudEntryRedirect = await redirectIfAuthenticatedCloudEntry(req, path, false);
+    if (cloudEntryRedirect) return cloudEntryRedirect;
+    return NextResponse.next();
+  }
 
   const token = await getToken({
     req,
@@ -345,6 +352,43 @@ const CLOUD_RESERVED_SEGMENTS = new Set([
   "blog",
   "_next",
 ]);
+
+function cloudDashboardPath(isCloudSubdomain: boolean): string {
+  return isCloudSubdomain ? "/dashboard" : "/cloud/dashboard";
+}
+
+function isCloudMarketingEntryPath(path: string, isCloudSubdomain: boolean): boolean {
+  if (isCloudSubdomain) {
+    return path === "/" || path === "/login" || path === "/signup";
+  }
+  return path === "/cloud" || path === "/cloud/login" || path === "/cloud/signup";
+}
+
+/** Skip landing/login/signup when the user already has a Cloud session. */
+async function redirectIfAuthenticatedCloudEntry(
+  req: NextRequest,
+  path: string,
+  isCloudSubdomain: boolean
+): Promise<NextResponse | null> {
+  if (!isCloudMarketingEntryPath(path, isCloudSubdomain)) return null;
+
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  if (!token) return null;
+
+  const url = req.nextUrl.clone();
+  const callback = url.searchParams.get("callbackUrl");
+  const isLogin = path === "/login" || path === "/cloud/login";
+
+  if (isLogin && callback && callback.startsWith("/") && !callback.startsWith("//")) {
+    url.pathname = callback;
+    url.searchParams.delete("callbackUrl");
+  } else {
+    url.pathname = cloudDashboardPath(isCloudSubdomain);
+    url.search = "";
+  }
+
+  return NextResponse.redirect(url);
+}
 
 function isCloudPublicPath(resolved: string): boolean {
   return (

@@ -330,8 +330,8 @@ export default function CloudTeamPage() {
                     onChange={(e) => setInviteRole(e.target.value as "CLIENT_MANAGER" | "SALESPERSON")}
                     className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#666660] outline-none focus:border-black/[0.2] font-cloud-body"
                   >
-                    <option value="SALESPERSON">Salesperson — field uploads only</option>
-                    <option value="CLIENT_MANAGER">Manager — full Cloud settings access</option>
+                    <option value="SALESPERSON">Salesperson</option>
+                    <option value="CLIENT_MANAGER">Manager</option>
                   </select>
                 </div>
 

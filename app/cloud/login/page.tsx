@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { signIn } from "next-auth/react";
+import { Suspense, useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CloudUpload, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -9,6 +9,7 @@ import { CloudUpload, Eye, EyeOff, Loader2 } from "lucide-react";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/cloud/dashboard";
 
   const [email, setEmail] = useState("");
@@ -16,6 +17,17 @@ function LoginForm() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session?.user) return;
+    const target = callbackUrl.startsWith("/cloud") ? callbackUrl : "/cloud/dashboard";
+    router.replace(target);
+  }, [callbackUrl, router, session?.user, status]);
+
+  if (status === "loading" || session?.user) {
+    return <div className="min-h-screen bg-[#0a0a0a]" />;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
