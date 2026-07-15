@@ -37,12 +37,13 @@ const nextConfig = {
       "puppeteer-core",
       "@sparticuz/chromium-min",
       "sharp",
+      "archiver",
     ],
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
       const externals = Array.isArray(config.externals) ? config.externals : [];
-      config.externals = [...externals, "puppeteer-core", "@sparticuz/chromium-min"];
+      config.externals = [...externals, "puppeteer-core", "@sparticuz/chromium-min", "archiver"];
     }
     return config;
   },
