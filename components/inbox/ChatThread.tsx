@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
+  MessageCircleMore,
   MoreHorizontal,
   Phone,
   Plus,
   Send,
-  Smile,
   StickyNote,
   Target,
   Trophy,
@@ -326,10 +326,13 @@ export function ChatThread({
 
   if (!conversation) {
     return (
-      <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center text-sm text-[#667781]">
-        <div className="wa-empty-hint text-center">
-          <div className="mb-1 text-[15px] font-medium text-[#111B21]">Your WhatsApp inbox</div>
-          Select a conversation from the list to view messages and reply
+      <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6 text-sm text-[#6B7886]">
+        <div className="wa-empty-hint max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E7F8F1] text-[#0F9F73]">
+            <MessageCircleMore size={26} />
+          </div>
+          <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-[#17212B]">Choose a conversation</div>
+          View customer context, collaborate with your team and reply from one workspace.
         </div>
       </div>
     );
@@ -344,8 +347,8 @@ export function ChatThread({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <div
-        className={`flex h-[60px] shrink-0 items-center justify-between px-2 sm:px-4 max-[1180px]:min-h-[calc(60px+env(safe-area-inset-top))] max-[1180px]:pt-[env(safe-area-inset-top)] ${
-          isWhatsApp ? "wa-header text-white" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
+        className={`flex h-[68px] shrink-0 items-center justify-between px-1.5 sm:px-4 max-[1180px]:min-h-[calc(68px+env(safe-area-inset-top))] max-[1180px]:pt-[env(safe-area-inset-top)] ${
+          isWhatsApp ? "wa-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
         }`}
       >
         <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3">
@@ -362,37 +365,48 @@ export function ChatThread({
           <button
             type="button"
             onClick={onToggleIntel}
-            className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-1 text-left transition-colors sm:gap-3 sm:px-0 ${
-              isWhatsApp ? "hover:bg-white/10" : "hover:bg-[var(--bg-quaternary)]"
+            className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1.5 py-1.5 text-left transition-colors sm:gap-3 ${
+              isWhatsApp ? "hover:bg-[#F5F9F7]" : "hover:bg-[var(--bg-quaternary)]"
             }`}
           >
-            <WhatsAppAvatar name={name} phone={conversation.phone} size="sm" />
-            <div className="min-w-0">
-              <div className={`flex flex-wrap items-center gap-1.5 truncate text-[16px] font-medium ${isWhatsApp ? "text-white" : "text-[var(--text-primary)]"}`}>
+            <WhatsAppAvatar
+              name={name}
+              phone={conversation.phone}
+              size="sm"
+              className="max-[480px]:h-9 max-[480px]:w-9"
+            />
+            <div className="min-w-0 flex-1">
+              <div className={`flex items-center gap-1.5 truncate text-[15px] font-semibold tracking-[-0.01em] ${isWhatsApp ? "text-[#17212B]" : "text-[var(--text-primary)]"}`}>
                 <span className="truncate">{name}</span>
+                {isWhatsApp ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#0F9F73]" title="WhatsApp contact" /> : null}
                 <LeadIntentBadge
                   score={conversation.score}
                   label={conversation.scoreLabel}
                   variant={isWhatsApp ? "header" : "default"}
                   showScore
+                  className="max-[520px]:hidden"
                 />
+              </div>
+              <div className={`mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] ${isWhatsApp ? "text-[#6B7886]" : "text-[var(--text-tertiary)]"}`}>
                 <LeadStageBadge
                   status={conversation.status}
                   followUpDate={conversation.followUpDate}
-                  variant={isWhatsApp ? "header" : "default"}
+                  variant={isWhatsApp ? "list" : "default"}
+                  className="max-[520px]:hidden"
                 />
-              </div>
-              <div className={`truncate text-[13px] ${isWhatsApp ? "text-[#D9FDD3]" : "text-[var(--text-tertiary)]"}`}>
-                {conversation.phone}
-                {conversation.location ? ` · ${conversation.location}` : ""}
-                {dealLabel ? ` · ${dealLabel}` : ""}
-                {waitingLabel ? ` · ${waitingLabel}` : ""}
-                {isWhatsApp ? " · tap for lead info" : ""}
+                <span className="truncate">
+                  {conversation.phone}
+                  <span className="max-[520px]:hidden">
+                    {conversation.location ? ` · ${conversation.location}` : ""}
+                    {dealLabel ? ` · ${dealLabel}` : ""}
+                    {waitingLabel ? ` · ${waitingLabel}` : ""}
+                  </span>
+                </span>
               </div>
             </div>
           </button>
         </div>
-        <div className="relative flex items-center gap-1">
+        <div className="relative flex shrink-0 items-center gap-0.5 sm:gap-1">
           {showLogCall ? (
             <button
               type="button"
@@ -408,7 +422,7 @@ export function ChatThread({
               type="button"
               onClick={() => void handleInternalNote()}
               title="Internal note"
-              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"}
+              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9 max-[640px]:hidden" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)] max-[640px]:hidden"}
             >
               <StickyNote size={16} />
             </button>
@@ -423,6 +437,30 @@ export function ChatThread({
           </button>
           {menuOpen ? (
             <div className={`absolute right-0 top-11 z-20 min-w-[200px] ${isWhatsApp ? "wa-dropdown" : "rounded-lg border border-[var(--border)] bg-[var(--surface-card)] py-1 shadow-lg"}`}>
+              {canSend ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    void handleInternalNote();
+                  }}
+                  className="hidden w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#25313C] hover:bg-[#F7F9FB] max-[640px]:flex"
+                >
+                  <StickyNote size={14} />
+                  Add internal note
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onToggleIntel();
+                }}
+                className="hidden w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#25313C] hover:bg-[#F7F9FB] max-[640px]:flex"
+              >
+                <Target size={14} />
+                View lead details
+              </button>
               {canTransfer ? (
                 <button
                   type="button"
@@ -430,7 +468,7 @@ export function ChatThread({
                     setMenuOpen(false);
                     setTransferOpen(true);
                   }}
-                  className="flex w-full px-3 py-2 text-left text-sm text-[#111B21] hover:bg-[#F5F6F6]"
+                  className="flex w-full px-3 py-2.5 text-left text-sm text-[#25313C] hover:bg-[#F7F9FB]"
                 >
                   Transfer conversation
                 </button>
@@ -441,7 +479,7 @@ export function ChatThread({
                     type="button"
                     disabled={statusUpdating}
                     onClick={() => void handleStatusUpdate("WON")}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-[#008069] hover:bg-[#F5F6F6] disabled:opacity-50"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#087B59] hover:bg-[#F1F8F5] disabled:opacity-50"
                   >
                     <Trophy size={14} />
                     Mark as won
@@ -450,7 +488,7 @@ export function ChatThread({
                     type="button"
                     disabled={statusUpdating}
                     onClick={() => void handleStatusUpdate("LOST")}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-[#F5F6F6] disabled:opacity-50"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
                   >
                     <XCircle size={14} />
                     Mark as lost
@@ -458,7 +496,7 @@ export function ChatThread({
                 </>
               ) : null}
               {!canTransfer && !canUpdateStatus ? (
-                <div className="px-3 py-2 text-xs text-[#8696A0]">No actions available</div>
+                <div className="px-3 py-2 text-xs text-[#8696A0] max-[640px]:hidden">No actions available</div>
               ) : null}
             </div>
           ) : null}
@@ -466,7 +504,7 @@ export function ChatThread({
             type="button"
             onClick={onToggleIntel}
             title="Lead details"
-            className={`toggle-intel max-[1180px]:flex min-[1181px]:hidden ${
+            className={`toggle-intel max-[1180px]:flex max-[640px]:hidden min-[1181px]:hidden ${
               isWhatsApp ? "wa-icon-btn !h-9 !w-9" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"
             }`}
           >
@@ -517,7 +555,7 @@ export function ChatThread({
           {conversation.source === "WHATSAPP_INBOUND" && !sessionOpen ? (
             <div className={`border-t px-4 py-2.5 text-center text-[11px] leading-snug ${
               isWhatsApp
-                ? "border-[#E9EDEF] bg-[#FFF8E6] text-[#B45309]"
+                ? "border-[#F1DFC5] bg-[#FFF9EF] text-[#A45A0A]"
                 : "border-[var(--border)] bg-[var(--accent-muted)] text-[var(--accent)]"
             }`}
             >
@@ -566,16 +604,6 @@ export function ChatThread({
             />
             <button
               type="button"
-              className={
-                isWhatsApp
-                  ? "wa-icon-btn-muted !h-10 !w-10"
-                  : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-quaternary)]"
-              }
-            >
-              <Smile size={18} />
-            </button>
-            <button
-              type="button"
               disabled={!input.trim() || sending}
               onClick={() => void sendCustomMessage(input)}
               className={
@@ -589,7 +617,7 @@ export function ChatThread({
           </div>
         </div>
       ) : (
-        <div className="wa-composer shrink-0 px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] text-center text-xs text-[#667781]">
+        <div className="wa-composer shrink-0 px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-[#6B7886]">
           Read-only — assign this lead to send messages
         </div>
       )}

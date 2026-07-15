@@ -60,7 +60,13 @@ export function FilterTabs({ filter, counts, onChange, whatsappMode = false, var
           <button key={tab.key} type="button" onClick={() => onChange(tab.key)} className={className}>
             {tab.icon}
             {tab.label}
-            <span className="opacity-70">· {count}</span>
+            <span
+              className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
+                active ? "bg-white/20 text-white" : "bg-[#EEF2F4] text-[#6B7886]"
+              }`}
+            >
+              {count}
+            </span>
           </button>
         );
       })}

@@ -8,6 +8,7 @@ export default function SalesHotLeadsPage() {
       breadcrumb="SALES / WHATSAPP SALES HUB / HOT LEADS"
       pageTitle="Hot leads"
       initialFilter="hot"
+      fullPage
     />
   );
 }

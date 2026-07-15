@@ -175,7 +175,7 @@ export function TeamInbox({
   return (
     <div
       className={`flex h-full min-h-0 flex-col overflow-hidden ${
-        whatsappMode ? "bg-[#D1D7DB]" : "bg-[var(--bg-primary)]"
+        whatsappMode ? "bg-[#edf1f5]" : "bg-[var(--bg-primary)]"
       }`}
     >
       {!whatsappMode ? (
@@ -245,7 +245,7 @@ export function TeamInbox({
         </div>
       ) : null}
 
-      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "gap-px wa-hub-shell" : ""}`}>
+      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "wa-hub-shell" : ""}`}>
         {!whatsappMode ? (
           <InboxIconRail
             pipelineHref={pipelineHref}

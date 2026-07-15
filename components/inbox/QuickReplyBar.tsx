@@ -83,7 +83,7 @@ export function QuickReplyBar({
     <div
       className={
         isWa
-          ? "max-h-[min(42vh,320px)] overflow-y-auto border-b border-[#E9EDEF] bg-[#F0F2F5]/90 px-3 py-3 sm:px-4 inbox-scroll backdrop-blur-sm"
+          ? "max-h-[min(42vh,320px)] overflow-y-auto border-b border-[#DFE5EB] bg-[#F7F9FB]/95 px-3 py-3.5 sm:px-4 inbox-scroll backdrop-blur-sm"
           : "max-h-[min(42vh,320px)] overflow-y-auto border-b border-[var(--border)] bg-[var(--bg-tertiary)] px-3 py-2.5 sm:px-4 inbox-scroll"
       }
     >
@@ -91,12 +91,12 @@ export function QuickReplyBar({
         <div className="flex items-center gap-1.5">
           <Zap
             size={12}
-            className={isWa ? "text-[#00A884]" : "text-[var(--accent)]"}
+            className={isWa ? "text-[#0F9F73]" : "text-[var(--accent)]"}
           />
           <span
             className={
               isWa
-                ? "text-[11px] font-semibold uppercase tracking-wide text-[#8696A0]"
+                ? "text-[11px] font-bold uppercase tracking-[0.12em] text-[#7B8996]"
                 : "text-[11px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]"
             }
           >
@@ -110,7 +110,7 @@ export function QuickReplyBar({
             title="Hide quick actions"
             className={
               isWa
-                ? "flex h-7 w-7 items-center justify-center rounded-full text-[#54656F] hover:bg-[#E9EDEF]"
+                ? "flex h-7 w-7 items-center justify-center rounded-lg text-[#61707E] hover:bg-[#E9EEF2]"
                 : "flex h-7 w-7 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"
             }
           >
@@ -134,7 +134,7 @@ export function QuickReplyBar({
                 title={reply.body}
                 className={
                   isWa
-                    ? "shrink-0 rounded-full border border-[#E9EDEF] bg-white px-3 py-1.5 text-[12px] font-medium text-[#54656F] shadow-sm transition-colors hover:border-[#00A884]/50 hover:text-[#008069] disabled:opacity-45"
+                    ? "shrink-0 rounded-lg border border-[#DFE5EB] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#53616E] shadow-sm transition-all hover:border-[#0F9F73]/45 hover:text-[#087B59] hover:shadow-md disabled:opacity-45"
                     : "shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-card)] px-3 py-1.5 text-[12px] font-medium text-[var(--text-secondary)] hover:border-[var(--accent-border)] disabled:opacity-45"
                 }
               >
@@ -162,7 +162,7 @@ export function QuickReplyBar({
               onClick={() => handleAction(action)}
               className={
                 isWa
-                  ? "group flex min-h-[52px] items-center gap-2.5 rounded-xl border border-[#E9EDEF] bg-white p-2.5 text-left shadow-[0_1px_3px_rgba(17,27,33,0.06)] transition-all active:scale-[0.98] hover:border-[#00A884]/40 hover:shadow-[0_4px_14px_rgba(0,168,132,0.12)] disabled:pointer-events-none disabled:opacity-45"
+                  ? "group flex min-h-[54px] items-center gap-2.5 rounded-xl border border-[#DFE5EB] bg-white p-2.5 text-left shadow-[0_2px_6px_rgba(34,48,61,0.05)] transition-all active:scale-[0.98] hover:-translate-y-0.5 hover:border-[#0F9F73]/35 hover:shadow-[0_7px_18px_rgba(34,48,61,0.09)] disabled:pointer-events-none disabled:opacity-45"
                   : "group flex min-h-[48px] items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-2 text-left transition-all active:scale-[0.98] hover:border-[var(--accent-border)] hover:bg-[var(--bg-tertiary)] disabled:pointer-events-none disabled:opacity-45"
               }
             >
@@ -176,7 +176,7 @@ export function QuickReplyBar({
                 <span
                   className={
                     isWa
-                      ? "block truncate text-[12px] font-semibold text-[#111B21]"
+                      ? "block truncate text-[12px] font-semibold text-[#25313C]"
                       : "block truncate text-[12px] font-semibold text-[var(--text-primary)]"
                   }
                 >

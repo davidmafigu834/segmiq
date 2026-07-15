@@ -107,8 +107,8 @@ export function MessageBubble({ message }: Props) {
   if (message.kind === "internal") {
     return (
       <div className="flex justify-center px-2">
-        <span className="max-w-[85%] rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8fafc]/95 px-3.5 py-2.5 text-center text-[11px] text-[#64748b] shadow-sm backdrop-blur-sm">
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#94a3b8]">
+        <span className="max-w-[85%] rounded-xl border border-dashed border-[#C9D4DC] bg-white/90 px-3.5 py-2.5 text-center text-[11px] text-[#61707E] shadow-[0_3px_10px_rgba(34,48,61,0.06)] backdrop-blur-sm">
+          <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#7B8996]">
             Internal note
           </span>
           {message.text}

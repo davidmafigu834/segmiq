@@ -240,10 +240,10 @@ export function LeadIntelligencePanel({
   }
 
   const panelShell = whatsappMode
-    ? `flex h-full min-h-0 w-[340px] shrink-0 flex-col border-l border-[#D1D7DB] bg-white wa-panel ${
+    ? `flex h-full min-h-0 w-[360px] shrink-0 flex-col bg-white wa-panel ${
         mobileFullScreen
           ? ""
-          : `max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 ${mobileTopClass} max-[1180px]:z-40 max-[1180px]:w-[min(340px,92vw)] max-[1180px]:shadow-[-4px_0_24px_rgba(0,0,0,0.15)] max-[1180px]:transition-transform max-[1180px]:duration-200`
+          : `max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 ${mobileTopClass} max-[1180px]:z-40 max-[1180px]:w-[min(360px,92vw)] max-[1180px]:shadow-[-4px_0_24px_rgba(0,0,0,0.15)] max-[1180px]:transition-transform max-[1180px]:duration-200`
       }`
     : `flex h-full min-h-0 w-[360px] shrink-0 flex-col border-l border-[var(--border)] bg-[var(--bg-tertiary)] max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 ${mobileTopClass} max-[1180px]:z-40 max-[1180px]:w-[340px] max-[1180px]:shadow-[-12px_0_30px_rgba(0,0,0,0.6)] max-[1180px]:transition-transform max-[1180px]:duration-200`;
 
@@ -257,14 +257,14 @@ export function LeadIntelligencePanel({
 
   const card = whatsappMode ? "wa-card" : "rounded-xl border border-[var(--border)] bg-[var(--surface-card)]";
   const sectionTitle = whatsappMode
-    ? "text-[11px] font-semibold uppercase tracking-wide text-[#8696A0]"
+    ? "text-[10px] font-bold uppercase tracking-[0.12em] text-[#7B8996]"
     : "text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]";
-  const textPrimary = whatsappMode ? "text-[#111B21]" : "text-[var(--text-primary)]";
-  const textSecondary = whatsappMode ? "text-[#667781]" : "text-[var(--text-secondary)]";
-  const textMuted = whatsappMode ? "text-[#8696A0]" : "text-[var(--text-tertiary)]";
-  const surfaceMuted = whatsappMode ? "bg-[#F0F2F5]" : "bg-[var(--bg-quaternary)]";
+  const textPrimary = whatsappMode ? "text-[#17212B]" : "text-[var(--text-primary)]";
+  const textSecondary = whatsappMode ? "text-[#61707E]" : "text-[var(--text-secondary)]";
+  const textMuted = whatsappMode ? "text-[#7B8996]" : "text-[var(--text-tertiary)]";
+  const surfaceMuted = whatsappMode ? "bg-[#EEF3F5]" : "bg-[var(--bg-quaternary)]";
   const actionBtn = whatsappMode
-    ? "rounded-lg border border-[#E9EDEF] bg-white px-3 py-2 text-left text-xs text-[#54656F] hover:bg-[#F5F6F6]"
+    ? "rounded-lg border border-[#DFE5EB] bg-white px-3 py-2 text-left text-xs font-medium text-[#53616E] hover:border-[#C9D4DC] hover:bg-[#F7F9FB]"
     : "rounded-lg border border-[var(--border)] px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]";
 
   const intelHeader = (
@@ -283,8 +283,8 @@ export function LeadIntelligencePanel({
           </button>
         ) : null}
         <div className="min-w-0">
-          <div className={`text-[15px] font-semibold tracking-tight ${textPrimary}`}>Lead intelligence</div>
-          <div className={`text-[12px] ${textSecondary}`}>Score, actions & contact</div>
+          <div className={`text-[15px] font-semibold tracking-tight ${textPrimary}`}>Lead workspace</div>
+          <div className={`mt-0.5 text-[12px] ${textSecondary}`}>Intelligence, actions and contact</div>
         </div>
       </div>
     </div>
@@ -329,7 +329,7 @@ export function LeadIntelligencePanel({
       className={`${panelShell} ${mobilePanelClass}`}
     >
       {intelHeader}
-      <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] ${whatsappMode ? "bg-[#F0F2F5]" : ""}`}>
+      <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] ${whatsappMode ? "bg-[#F7F9FB]" : ""}`}>
       <div className="ag-fade-in flex flex-col gap-4 p-4">
         <div className={`flex items-center gap-3 p-4 ${card}`}>
           <WhatsAppAvatar
