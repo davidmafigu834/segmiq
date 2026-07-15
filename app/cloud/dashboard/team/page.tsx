@@ -278,7 +278,7 @@ export default function CloudTeamPage() {
               </button>
             </div>
 
-            <form onSubmit={(e) => void handleInvite(e)} className="flex flex-1 flex-col overflow-y-auto">
+            <form onSubmit={(e) => void handleInvite(e)} className="cloud-scroll-y flex flex-1 flex-col">
               <div className="flex-1 space-y-4 px-6 py-5">
                 {inviteSuccess && (
                   <div className="rounded-xl bg-[#F0FFF8] border border-[#60E8A0]/40 px-4 py-3 text-[13px] text-[#00875A] font-cloud-body">

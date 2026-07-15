@@ -197,7 +197,7 @@ export default function OnboardingPage() {
 
   return (
     <CloudAdminGate>
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-start overflow-y-auto bg-[#0a0a0a] px-6 py-8">
+    <div className="cloud-surface-dark fixed inset-0 z-[200] flex flex-col items-center justify-start cloud-scroll-y bg-[#0a0a0a] px-6 py-8">
       <div className="mb-8 flex flex-col items-center gap-2.5">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4FF4F]">
           <CloudUpload className="h-4.5 w-4.5 text-black" strokeWidth={2.5} />

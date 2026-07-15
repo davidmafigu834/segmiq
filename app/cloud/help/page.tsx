@@ -73,7 +73,7 @@ function Accordion({ q, a }: { q: string; a: string }) {
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="cloud-surface-dark min-h-screen bg-[#0a0a0a]">
       {/* Header */}
       <header className="border-b border-white/[0.06] bg-[#0a0a0a]">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">

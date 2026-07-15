@@ -296,7 +296,7 @@ export default function CloudSettingsPage() {
   return (
     <CloudAdminGate>
     <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 pb-28 lg:px-8 lg:pb-8">
-      <div className="mx-auto max-w-xl space-y-6">
+      <div className="space-y-6">
 
         {/* Business profile */}
         <section>

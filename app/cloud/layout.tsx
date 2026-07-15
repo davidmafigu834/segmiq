@@ -51,7 +51,7 @@ export const metadata: Metadata = {
 
 export default function CloudLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div>
+    <div className="cloud-app">
       <ServiceWorkerRegistration />
       {children}
     </div>

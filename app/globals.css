@@ -653,9 +653,9 @@ body {
   }
 }
 
-/* ── Hide scrollbars on swipeable pill/scroll rows ── */
+/* ── Hide scrollbars on swipeable pill/scroll rows (except Cloud scroll-x) ── */
 .fw-pills-scroll::-webkit-scrollbar { display: none; }
-.pills-scroll::-webkit-scrollbar { display: none; }
+.pills-scroll:not(.cloud-scroll-x)::-webkit-scrollbar { display: none; }
 
 /* ── Fieldwork (fw) design tokens ── */
 :root {
@@ -726,6 +726,349 @@ body {
 .cloud-dashboard select option {
   color: var(--cloud-text-primary);
   background-color: var(--cloud-surface);
+}
+
+/* Cloud dashboard shell — sidebar & topbar */
+.cloud-shell-sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+  box-shadow: 1px 0 0 var(--cloud-border), 4px 0 24px rgba(0, 0, 0, 0.02);
+}
+
+.cloud-shell-topbar {
+  height: var(--cloud-topbar-height);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--cloud-border);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.cloud-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 12px;
+  margin-bottom: 2px;
+  border-radius: var(--cloud-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cloud-text-secondary);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.cloud-nav-link:hover {
+  color: var(--cloud-text-primary);
+  background: var(--cloud-surface-hover);
+}
+
+.cloud-nav-link--active {
+  color: var(--cloud-text-primary);
+  font-weight: 600;
+  background: var(--cloud-accent-muted);
+}
+
+.cloud-nav-link--active::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 4px 4px 0;
+  background: var(--cloud-accent);
+  box-shadow: 0 0 8px rgba(212, 255, 79, 0.5);
+}
+
+.cloud-nav-section-label {
+  padding: 0 12px;
+  margin: 16px 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cloud-text-tertiary);
+}
+
+.cloud-shell-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  border-radius: var(--cloud-radius-sm);
+  background: var(--cloud-text-primary);
+  color: var(--cloud-accent);
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.cloud-shell-upload-btn:hover {
+  background: #1a1a1a;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+.cloud-topbar-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--cloud-radius-sm);
+  border: 1px solid var(--cloud-border);
+  background: var(--cloud-surface);
+  color: var(--cloud-text-secondary);
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.cloud-topbar-icon-btn:hover {
+  border-color: var(--cloud-border-hover);
+  color: var(--cloud-text-primary);
+  background: var(--cloud-surface-hover);
+}
+
+.cloud-topbar-icon-btn:active {
+  transform: scale(0.96);
+}
+
+.cloud-user-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  min-width: 200px;
+  padding: 6px;
+  border-radius: var(--cloud-radius-md);
+  border: 1px solid var(--cloud-border);
+  background: var(--cloud-surface);
+  box-shadow: var(--cloud-shadow-elevated);
+}
+
+.cloud-user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--cloud-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cloud-text-secondary);
+  text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.cloud-user-menu-item:hover {
+  background: var(--cloud-surface-hover);
+  color: var(--cloud-text-primary);
+}
+
+.cloud-user-menu-item--danger {
+  color: #dc2626;
+}
+
+.cloud-user-menu-item--danger:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* ── SegmiQ Cloud scrollbars (light surfaces — overrides CRM white thumbs) ── */
+.cloud-app {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 17, 17, 0.28) rgba(17, 17, 17, 0.06);
+}
+
+html:has(.cloud-app:not(.cloud-theme-dark)),
+html:has(.cloud-app:not(.cloud-theme-dark)) body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 17, 17, 0.28) rgba(17, 17, 17, 0.06);
+}
+
+.cloud-app::-webkit-scrollbar,
+.cloud-app ::-webkit-scrollbar,
+html:has(.cloud-app:not(.cloud-theme-dark))::-webkit-scrollbar,
+html:has(.cloud-app:not(.cloud-theme-dark)) body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.cloud-app::-webkit-scrollbar-track,
+.cloud-app ::-webkit-scrollbar-track,
+html:has(.cloud-app:not(.cloud-theme-dark))::-webkit-scrollbar-track,
+html:has(.cloud-app:not(.cloud-theme-dark)) body::-webkit-scrollbar-track {
+  background: rgba(17, 17, 17, 0.04);
+  border-radius: 999px;
+}
+
+.cloud-app::-webkit-scrollbar-thumb,
+.cloud-app ::-webkit-scrollbar-thumb,
+html:has(.cloud-app:not(.cloud-theme-dark))::-webkit-scrollbar-thumb,
+html:has(.cloud-app:not(.cloud-theme-dark)) body::-webkit-scrollbar-thumb {
+  background: rgba(17, 17, 17, 0.22);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.cloud-app::-webkit-scrollbar-thumb:hover,
+.cloud-app ::-webkit-scrollbar-thumb:hover,
+html:has(.cloud-app:not(.cloud-theme-dark))::-webkit-scrollbar-thumb:hover,
+html:has(.cloud-app:not(.cloud-theme-dark)) body::-webkit-scrollbar-thumb:hover {
+  background: rgba(17, 17, 17, 0.36);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.cloud-app::-webkit-scrollbar-corner,
+.cloud-app ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark auth / onboarding surfaces */
+.cloud-app.cloud-theme-dark,
+.cloud-surface-dark {
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.06);
+}
+
+html:has(.cloud-app.cloud-theme-dark),
+html:has(.cloud-app.cloud-theme-dark) body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.06);
+}
+
+.cloud-app.cloud-theme-dark ::-webkit-scrollbar-track,
+.cloud-surface-dark::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.cloud-app.cloud-theme-dark ::-webkit-scrollbar-thumb,
+.cloud-surface-dark::-webkit-scrollbar-thumb,
+html:has(.cloud-app.cloud-theme-dark)::-webkit-scrollbar-thumb,
+html:has(.cloud-app.cloud-theme-dark) body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.cloud-app.cloud-theme-dark ::-webkit-scrollbar-thumb:hover,
+.cloud-surface-dark::-webkit-scrollbar-thumb:hover,
+html:has(.cloud-app.cloud-theme-dark)::-webkit-scrollbar-thumb:hover,
+html:has(.cloud-app.cloud-theme-dark) body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
+
+/* Explicit scroll regions inside Cloud */
+.cloud-scroll {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 17, 17, 0.28) rgba(17, 17, 17, 0.06);
+}
+
+.cloud-scroll-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 17, 17, 0.28) rgba(17, 17, 17, 0.06);
+}
+
+.cloud-scroll-y {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(17, 17, 17, 0.28) rgba(17, 17, 17, 0.06);
+}
+
+.cloud-scroll::-webkit-scrollbar,
+.cloud-scroll-x::-webkit-scrollbar,
+.cloud-scroll-y::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.cloud-scroll::-webkit-scrollbar-track,
+.cloud-scroll-x::-webkit-scrollbar-track,
+.cloud-scroll-y::-webkit-scrollbar-track {
+  background: rgba(17, 17, 17, 0.04);
+  border-radius: 999px;
+}
+
+.cloud-scroll::-webkit-scrollbar-thumb,
+.cloud-scroll-x::-webkit-scrollbar-thumb,
+.cloud-scroll-y::-webkit-scrollbar-thumb {
+  background: rgba(17, 17, 17, 0.22);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.cloud-scroll::-webkit-scrollbar-thumb:hover,
+.cloud-scroll-x::-webkit-scrollbar-thumb:hover,
+.cloud-scroll-y::-webkit-scrollbar-thumb:hover {
+  background: rgba(17, 17, 17, 0.36);
+}
+
+.cloud-surface-dark.cloud-scroll,
+.cloud-surface-dark.cloud-scroll-x,
+.cloud-surface-dark.cloud-scroll-y,
+.cloud-app.cloud-theme-dark .cloud-scroll,
+.cloud-app.cloud-theme-dark .cloud-scroll-x,
+.cloud-app.cloud-theme-dark .cloud-scroll-y {
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.06);
+}
+
+.cloud-surface-dark.cloud-scroll::-webkit-scrollbar-thumb,
+.cloud-surface-dark.cloud-scroll-x::-webkit-scrollbar-thumb,
+.cloud-surface-dark.cloud-scroll-y::-webkit-scrollbar-thumb,
+.cloud-app.cloud-theme-dark .cloud-scroll::-webkit-scrollbar-thumb,
+.cloud-app.cloud-theme-dark .cloud-scroll-x::-webkit-scrollbar-thumb,
+.cloud-app.cloud-theme-dark .cloud-scroll-y::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.cloud-surface-dark.cloud-scroll::-webkit-scrollbar-thumb:hover,
+.cloud-surface-dark.cloud-scroll-x::-webkit-scrollbar-thumb:hover,
+.cloud-surface-dark.cloud-scroll-y::-webkit-scrollbar-thumb:hover,
+.cloud-app.cloud-theme-dark .cloud-scroll::-webkit-scrollbar-thumb:hover,
+.cloud-app.cloud-theme-dark .cloud-scroll-x::-webkit-scrollbar-thumb:hover,
+.cloud-app.cloud-theme-dark .cloud-scroll-y::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
+
+html:has(.cloud-surface-dark),
+html:has(.cloud-surface-dark) body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.28) rgba(255, 255, 255, 0.06);
+}
+
+html:has(.cloud-surface-dark)::-webkit-scrollbar-thumb,
+html:has(.cloud-surface-dark) body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+html:has(.cloud-surface-dark)::-webkit-scrollbar-thumb:hover,
+html:has(.cloud-surface-dark) body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
+
+html:has(.cloud-surface-dark)::-webkit-scrollbar-track,
+html:has(.cloud-surface-dark) body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Hide scrollbars only when explicitly requested (e.g. snap carousels) */
+.cloud-scroll-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cloud-scroll-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Agency dashboard (CRM) design tokens — dark system ── */

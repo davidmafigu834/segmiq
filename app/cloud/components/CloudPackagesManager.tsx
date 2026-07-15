@@ -126,7 +126,7 @@ function PackageEditorSlideOver({
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+        <div className="cloud-scroll-y flex-1 space-y-4 px-5 py-5">
           <div>
             <label className={labelCls}>Package name *</label>
             <input

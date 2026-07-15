@@ -429,6 +429,14 @@ function cloudPublicProfileRewrite(path: string): string | null {
     return `/p/${slug}/packages`;
   }
 
+  if (segments.length === 2 && second === "projects") {
+    return `/p/${slug}/projects`;
+  }
+
+  if (segments.length === 3 && second === "projects" && segments[2]) {
+    return `/p/${slug}/projects/${segments[2]}`;
+  }
+
   if (segments.length === 2 && second !== "p") {
     return `/p/${slug}/p/${second}`;
   }

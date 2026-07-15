@@ -97,13 +97,14 @@ export function MilestoneForm({ projectCategory, onSave, onClose, initialData, m
       }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
+      <div
+        className="cloud-scroll-y"
+        style={{
         width: "100%",
         background: "#FFFFFF",
         borderRadius: "24px 24px 0 0",
         padding: "0 0 calc(24px + env(safe-area-inset-bottom))",
         maxHeight: "92vh",
-        overflowY: "auto",
       }}>
         <div style={{
           width: 40, height: 4,

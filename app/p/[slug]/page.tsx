@@ -57,8 +57,11 @@ type Project = {
   location: string | null;
   completion_date: string | null;
   description: string | null;
+  is_featured: boolean;
   project_media: ProjectMedia[];
 };
+
+const PROFILE_PROJECT_PREVIEW = 8;
 type Testimonial = {
   id: string;
   author_name: string;
@@ -211,12 +214,12 @@ export default async function ProfilePage({
   ] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, slug, title, category, location, completion_date, description, project_media!project_media_project_id_fkey(public_url, display_order)")
+      .select("id, slug, title, category, location, completion_date, description, is_featured, project_media!project_media_project_id_fkey(public_url, display_order)")
       .eq("client_id", clientId)
-      .eq("is_featured", true)
       .eq("is_public", true)
+      .order("is_featured", { ascending: false })
       .order("display_order", { ascending: true })
-      .limit(6),
+      .order("updated_at", { ascending: false }),
     supabase
       .from("testimonials")
       .select("id, author_name, author_role, content, rating, photo_url")
@@ -311,18 +314,24 @@ export default async function ProfilePage({
   const heroImageUrl = (profile.hero_image_url as string | null)?.trim() || null;
   const hasHeroPhoto = Boolean(heroImageUrl);
 
-  const projectsWithPhotos = typedProjects
+  const allProjectsWithPhotos = typedProjects
     .map((project) => ({ project, coverUrl: getProjectCover(project) }))
     .filter((entry): entry is { project: Project; coverUrl: string } => Boolean(entry.coverUrl));
+
+  const previewProjects = allProjectsWithPhotos.slice(0, PROFILE_PROJECT_PREVIEW);
+  const featuredPreviewCount = previewProjects.filter(({ project }) => project.is_featured).length;
+  const totalWithPhotos = allProjectsWithPhotos.length;
 
   const publicPackages = typedPackages.filter(isPackagePublic);
   const packageTeaser = buildPackageTeaser(publicPackages, 2);
 
   const installCount = projectCount ?? 0;
   const packagesListHref = `/p/${params.slug}/packages`;
+  const projectsListHref = `/p/${params.slug}/projects`;
   const showStats = installCount > 0;
   const showPackagesNav = publicPackages.length > 0;
-  const showWorkSection = projectsWithPhotos.length > 0;
+  const showWorkSection = previewProjects.length > 0;
+  const showMoreProjectsLink = totalWithPhotos > previewProjects.length;
   const hasContentAbovePackages = showStats || showWorkSection;
   const hasContentAboveTestimonials =
     showStats || showWorkSection || packageTeaser.length > 0;
@@ -465,20 +474,29 @@ export default async function ProfilePage({
                   Recent work
                 </p>
                 <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
-                  Featured installations
+                  {featuredPreviewCount > 0 ? "Featured & recent projects" : "Recent projects"}
                 </h2>
               </div>
+              {showMoreProjectsLink && (
+                <Link
+                  href={projectsListHref}
+                  className="inline-flex items-center gap-[6px] text-sm font-semibold text-[var(--brand)] no-underline"
+                >
+                  View all projects
+                  <ArrowRight size={15} aria-hidden />
+                </Link>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4 min-[821px]:grid-cols-3">
-              {projectsWithPhotos.map(({ project, coverUrl }, index) => {
+              {previewProjects.map(({ project, coverUrl }, index) => {
                 const meta = getProjectMeta(project);
-                const isFeatured = index === 0;
+                const isHeroTile = index === 0;
                 return (
                   <Link
                     key={project.id}
                     href={`/p/${params.slug}/projects/${project.id}`}
                     className={`group relative overflow-hidden rounded-[16px] border border-[rgba(28,20,16,0.06)] bg-gradient-to-br from-[#e9e3d8] to-[#d9d0c1] transition-transform duration-200 hover:-translate-y-[3px] ${
-                      isFeatured
+                      isHeroTile
                         ? "col-span-2 aspect-[16/10] min-[821px]:col-span-2 min-[821px]:row-span-2 min-[821px]:aspect-auto min-[821px]:min-h-[320px]"
                         : "aspect-square"
                     }`}
@@ -489,6 +507,11 @@ export default async function ProfilePage({
                       className="absolute inset-0 bg-[linear-gradient(150deg,color-mix(in_srgb,var(--brand)_22%,transparent),transparent_60%)]"
                       aria-hidden
                     />
+                    {project.is_featured && (
+                      <span className="absolute left-3.5 top-3.5 rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-ink)]">
+                        Featured
+                      </span>
+                    )}
                     <div className="absolute bottom-3.5 left-4 text-[rgba(28,20,16,0.62)]">
                       <p className="text-base font-bold text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)]">
                         {project.title}
@@ -499,6 +522,17 @@ export default async function ProfilePage({
                 );
               })}
             </div>
+            {showMoreProjectsLink && (
+              <div className="mt-8 flex justify-center">
+                <Link
+                  href={projectsListHref}
+                  className="inline-flex items-center gap-2 rounded-[11px] border border-[rgba(28,20,16,0.12)] px-6 py-3.5 text-sm font-semibold text-[var(--fw-text-primary)] no-underline transition-colors hover:border-[var(--fw-text-primary)]"
+                >
+                  View all {totalWithPhotos} projects
+                  <ArrowRight size={15} aria-hidden />
+                </Link>
+              </div>
+            )}
           </section>
         )}
 

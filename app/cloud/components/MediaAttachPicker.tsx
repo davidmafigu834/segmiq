@@ -107,7 +107,7 @@ export function MediaAttachPicker({ allMedia, currentMilestoneId, onAttach, onCl
           </button>
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+        <div className="cloud-scroll-y flex-1" style={{ padding: "16px 20px" }}>
           {unattached.length > 0 && (
             <>
               <p style={{

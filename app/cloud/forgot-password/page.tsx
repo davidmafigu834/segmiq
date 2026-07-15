@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-6 py-12">
+    <div className="cloud-surface-dark flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-6 py-12">
       <div className="mb-10 flex flex-col items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4FF4F]">
           <CloudUpload className="h-5 w-5 text-black" strokeWidth={2.5} />

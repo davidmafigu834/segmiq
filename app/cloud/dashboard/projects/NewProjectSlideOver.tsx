@@ -115,7 +115,7 @@ export function NewProjectSlideOver({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-y-auto">
+        <form onSubmit={handleSubmit} className="cloud-scroll-y flex flex-1 flex-col">
           <div className="flex-1 space-y-5 px-6 py-5">
             <p className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-relaxed text-white/55">
               Start with the basics here. After you create the project, you&apos;ll add photos, magazine story, specs, timeline, and cover photo on the project page.

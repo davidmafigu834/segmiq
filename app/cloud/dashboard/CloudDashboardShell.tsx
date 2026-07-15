@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   Grid, Folder, Camera, Users, Settings, LayoutGrid, LogOut, CloudUpload,
-  Bell, CreditCard, HelpCircle, BarChart2, Tag,
+  Bell, CreditCard, HelpCircle, BarChart2, Tag, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { Suspense } from "react";
 import { matchesCloudDashboardPath, normalizeCloudDashboardPath } from "./cloud-path";
@@ -14,16 +14,19 @@ import { isCloudAdminRole } from "@/lib/auth/roles";
 
 const CLOUD_ADMIN_PATH_SUFFIXES = ["/settings", "/team", "/billing", "/pricing", "/analytics", "/onboarding"];
 
-const PRIMARY_NAV = [
+const WORKSPACE_NAV = [
   { href: "/cloud/dashboard", icon: Grid, label: "Home" },
   { href: "/cloud/dashboard/projects", icon: Folder, label: "Projects" },
-  { href: "/cloud/dashboard/pricing", icon: Tag, label: "Pricing" },
   { href: "/cloud/dashboard/upload", icon: Camera, label: "Upload" },
+];
+
+const BUSINESS_NAV = [
+  { href: "/cloud/dashboard/pricing", icon: Tag, label: "Pricing" },
   { href: "/cloud/dashboard/team", icon: Users, label: "Team" },
 ];
 
-const SECONDARY_NAV = [
-  { href: "/cloud/dashboard/notifications", icon: Bell, label: "Notifications" },
+const ACCOUNT_NAV = [
+  { href: "/cloud/dashboard/notifications", icon: Bell, label: "Notifications", badge: "notifications" as const },
   { href: "/cloud/dashboard/analytics", icon: BarChart2, label: "Analytics" },
   { href: "/cloud/dashboard/billing", icon: CreditCard, label: "Billing" },
   { href: "/cloud/dashboard/settings", icon: Settings, label: "Settings" },
@@ -66,6 +69,155 @@ function getInitials(name: string): string {
   return "ME";
 }
 
+function roleLabel(role: string | undefined): string {
+  if (role === "CLIENT_MANAGER") return "Manager";
+  if (role === "SALESPERSON") return "Salesperson";
+  if (role === "AGENCY_ADMIN") return "Admin";
+  return role?.replace(/_/g, " ").toLowerCase() ?? "";
+}
+
+type NavItem = {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+  badge?: "notifications";
+};
+
+function SidebarNavLink({
+  href,
+  icon: Icon,
+  label,
+  pathname,
+  badge,
+  unreadCount,
+}: NavItem & { pathname: string; unreadCount: number }) {
+  const active = isActive(href, pathname);
+  return (
+    <Link
+      href={href}
+      className={`cloud-nav-link ${active ? "cloud-nav-link--active" : ""}`}
+    >
+      <div className="relative shrink-0">
+        <Icon className="h-[17px] w-[17px]" strokeWidth={active ? 2.2 : 1.75} />
+        {badge === "notifications" && unreadCount > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#111] px-1 text-[9px] font-bold text-[#D4FF4F]">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </div>
+      {label}
+    </Link>
+  );
+}
+
+function NavSection({
+  title,
+  items,
+  pathname,
+  unreadCount,
+}: {
+  title: string;
+  items: NavItem[];
+  pathname: string;
+  unreadCount: number;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <p className="cloud-nav-section-label">{title}</p>
+      <div className="px-2">
+        {items.map((item) => (
+          <SidebarNavLink key={item.href} {...item} pathname={pathname} unreadCount={unreadCount} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UserAvatar({
+  initials,
+  isOnline,
+  className = "",
+}: {
+  initials: string;
+  isOnline?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#111] text-[11px] font-bold text-[#D4FF4F] ${className}`}
+    >
+      {initials}
+      {isOnline !== undefined && (
+        <span
+          className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${isOnline ? "bg-[#2E7D5E]" : "bg-[#E8602C]"}`}
+        />
+      )}
+    </div>
+  );
+}
+
+function UserAvatarButton({
+  initials,
+  isOnline,
+  onClick,
+  className = "",
+}: {
+  initials: string;
+  isOnline?: boolean;
+  onClick?: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#111] text-[11px] font-bold text-[#D4FF4F] transition-transform active:scale-95 ${className}`}
+      aria-label="Account menu"
+    >
+      {initials}
+      {isOnline !== undefined && (
+        <span
+          className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${isOnline ? "bg-[#2E7D5E]" : "bg-[#E8602C]"}`}
+        />
+      )}
+    </button>
+  );
+}
+
+function UserMenuDropdown({
+  open,
+  onClose,
+  onSettings,
+  onSignOut,
+  showSettings,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSettings: () => void;
+  onSignOut: () => void;
+  showSettings: boolean;
+}) {
+  if (!open) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
+      <div className="cloud-user-menu">
+        {showSettings && (
+          <button type="button" className="cloud-user-menu-item" onClick={onSettings}>
+            <Settings className="h-4 w-4" />
+            Settings
+          </button>
+        )}
+        <button type="button" className="cloud-user-menu-item cloud-user-menu-item--danger" onClick={onSignOut}>
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </button>
+      </div>
+    </>
+  );
+}
+
 function WelcomeToast() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -102,6 +254,8 @@ export default function CloudDashboardShell({
   const [businessName, setBusinessName] = useState<string>("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
+  const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const onboardingChecked = useRef(false);
 
   useEffect(() => {
@@ -169,13 +323,13 @@ export default function CloudDashboardShell({
 
   const displayName = businessName || "Segmiq Cloud";
   const initials = getInitials(session?.user?.name ?? "");
+  const pageTitle = getPageTitle(pathname);
+  const isHome = normalizedPath === "/cloud/dashboard";
 
-  const primaryNav = isCloudAdmin
-    ? PRIMARY_NAV
-    : PRIMARY_NAV.filter((item) => item.href !== "/cloud/dashboard/pricing" && item.href !== "/cloud/dashboard/team");
-  const secondaryNav = isCloudAdmin
-    ? SECONDARY_NAV
-    : SECONDARY_NAV.filter(
+  const businessNav = isCloudAdmin ? BUSINESS_NAV : [];
+  const accountNav = isCloudAdmin
+    ? ACCOUNT_NAV
+    : ACCOUNT_NAV.filter(
         (item) =>
           item.href !== "/cloud/dashboard/settings"
           && item.href !== "/cloud/dashboard/billing"
@@ -183,174 +337,193 @@ export default function CloudDashboardShell({
       );
 
   return (
-    <div className="cloud-dashboard flex min-h-screen bg-[#F7F7F8] font-cloud-body text-[#111111]">
-      <aside className="fixed inset-y-0 left-0 hidden w-[240px] flex-col border-r border-black/[0.07] bg-white lg:flex" style={{ boxShadow: "1px 0 0 rgba(0,0,0,0.04)" }}>
-        <div className="flex h-[60px] shrink-0 items-center gap-2.5 border-b border-black/[0.06] px-5">
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-[#D4FF4F]">
-            <CloudUpload className="h-4 w-4 text-black" strokeWidth={2.5} />
+    <div className="cloud-dashboard flex h-[100dvh] min-h-screen bg-[var(--cloud-bg)] font-cloud-body text-[var(--cloud-text-primary)]">
+      {/* ── Desktop sidebar ── */}
+      <aside className="cloud-shell-sidebar fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col lg:flex">
+        {/* Brand */}
+        <div className="flex h-[var(--cloud-topbar-height)] shrink-0 items-center gap-3 border-b border-[var(--cloud-border)] px-5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#111] shadow-sm">
+            <CloudUpload className="h-[18px] w-[18px] text-[#D4FF4F]" strokeWidth={2.5} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-cloud-display text-[15px] text-[#0a0a0a] leading-tight">{displayName}</p>
+            <p className="truncate text-[14px] font-semibold leading-tight text-[#111]">{displayName}</p>
+            <p className="truncate text-[11px] text-[var(--cloud-text-tertiary)]">Segmiq Cloud</p>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-2">
-          {primaryNav.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex h-9 items-center gap-2.5 rounded-xl px-3 mb-0.5 text-[13px] font-medium transition-colors ${
-                isActive(href, pathname)
-                  ? "bg-[#F5F5F0] text-[#0a0a0a]"
-                  : "text-[#666660] hover:text-[#0a0a0a] hover:bg-[#F5F5F0]"
-              }`}
-            >
-              <Icon className="h-4 w-4 shrink-0" strokeWidth={isActive(href, pathname) ? 2.2 : 1.8} />
-              {label}
-            </Link>
-          ))}
-          <div className="my-3 mx-1 border-t border-black/[0.06]" />
-          {secondaryNav.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex h-9 items-center gap-2.5 rounded-xl px-3 mb-0.5 text-[13px] transition-colors ${
-                isActive(href, pathname)
-                  ? "bg-[#F5F5F0] text-[#0a0a0a] font-medium"
-                  : "text-[#6B7280] hover:text-[#0a0a0a] hover:bg-[#F5F5F0]"
-              }`}
-            >
-              <div className="relative shrink-0">
-                <Icon className="h-4 w-4" strokeWidth={1.8} />
-                {label === "Notifications" && unreadCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#D4FF4F]" />
-                )}
-              </div>
-              {label}
-            </Link>
-          ))}
+        {/* Quick upload */}
+        <div className="px-4 pt-4 pb-2">
+          <Link href="/cloud/dashboard/upload" className="cloud-shell-upload-btn">
+            <Camera className="h-4 w-4" strokeWidth={2.2} />
+            Upload photos
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav className="cloud-scroll-y flex-1 pb-4">
+          <NavSection title="Workspace" items={WORKSPACE_NAV} pathname={pathname} unreadCount={unreadCount} />
+          <NavSection title="Business" items={businessNav} pathname={pathname} unreadCount={unreadCount} />
+          <NavSection title="Account" items={accountNav} pathname={pathname} unreadCount={unreadCount} />
         </nav>
 
-        <div className="p-3 border-t border-black/[0.06]">
-          <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#0a0a0a] text-[10px] font-bold text-[#D4FF4F]">
-              {initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-medium text-[#0a0a0a]">{session?.user?.name ?? "—"}</p>
-              <p className="text-[11px] text-[#6B7280] uppercase tracking-wide">{session?.role === "CLIENT_MANAGER" ? "Manager" : session?.role}</p>
-            </div>
+        {/* User footer */}
+        <div className="border-t border-[var(--cloud-border)] p-3">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSidebarMenuOpen((v) => !v)}
+              className="flex w-full items-center gap-3 rounded-[var(--cloud-radius-sm)] px-2 py-2.5 text-left transition-colors hover:bg-[var(--cloud-surface-hover)]"
+            >
+              <UserAvatar initials={initials} isOnline={isOnline} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold text-[#111]">{session?.user?.name ?? "—"}</p>
+                <p className="truncate text-[11px] capitalize text-[var(--cloud-text-tertiary)]">
+                  {roleLabel(session?.role)}
+                </p>
+              </div>
+              <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--cloud-text-tertiary)] transition-transform ${sidebarMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+            <UserMenuDropdown
+              open={sidebarMenuOpen}
+              onClose={() => setSidebarMenuOpen(false)}
+              showSettings={isCloudAdmin}
+              onSettings={() => {
+                setSidebarMenuOpen(false);
+                router.push("/cloud/dashboard/settings");
+              }}
+              onSignOut={() => void signOut({ callbackUrl: "/cloud/login" })}
+            />
           </div>
-          <button
-            onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
-            className="flex w-full items-center gap-2 mt-1 px-3 py-2 text-[13px] text-[#6B7280] hover:text-[#0a0a0a] rounded-xl hover:bg-[#F5F5F0] transition-colors cursor-pointer"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            Sign out
-          </button>
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-1 flex-col lg:ml-[240px] overflow-x-hidden">
-        <header className="sticky top-0 z-10 hidden h-[56px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:flex">
-          {normalizedPath !== "/cloud/dashboard" && (
-            <p className="font-cloud-display text-[22px] text-[#111111] leading-tight">{getPageTitle(pathname)}</p>
-          )}
-          <div className="flex items-center gap-2 ml-auto">
+      {/* ── Main column ── */}
+      <div className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden lg:ml-[260px]">
+        {/* Desktop top bar */}
+        <header className="cloud-shell-topbar sticky top-0 z-20 hidden shrink-0 items-center justify-between px-6 lg:flex">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            {!isHome && (
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--cloud-text-tertiary)]">
+                <Link href="/cloud/dashboard" className="transition-colors hover:text-[var(--cloud-text-primary)]">
+                  Home
+                </Link>
+                <ChevronRight className="h-3 w-3 shrink-0 opacity-50" />
+                <span className="truncate text-[var(--cloud-text-secondary)]">{pageTitle}</span>
+              </div>
+            )}
+            <h1 className="font-cloud-display text-[20px] leading-tight text-[#111]">
+              {isHome ? `Welcome back${session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}` : pageTitle}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => router.push("/cloud/dashboard/notifications")}
-              className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white border border-black/[0.08] text-[#6B7280] transition-colors hover:border-black/[0.15] hover:text-[#111111] active:scale-95 cursor-pointer"
+              className="cloud-topbar-icon-btn relative"
               aria-label="Notifications"
             >
-              <Bell className="h-4 w-4" strokeWidth={1.8} />
+              <Bell className="h-[17px] w-[17px]" strokeWidth={1.8} />
               {unreadCount > 0 && (
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#D4FF4F] border-2 border-[#F7F7F8]" />
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#111] px-1 text-[9px] font-bold text-[#D4FF4F]">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
               )}
             </button>
+
             <Link
               href="/cloud/dashboard/upload"
-              className="flex items-center gap-1.5 h-[34px] px-4 bg-[#D4FF4F] text-[#111111] text-[12px] font-bold rounded-xl hover:bg-[#C8F244] transition-colors font-cloud-body"
+              className="flex h-9 items-center gap-2 rounded-[var(--cloud-radius-sm)] bg-[#D4FF4F] px-4 text-[12px] font-bold text-[#111] transition-all hover:bg-[#C8F244] active:scale-[0.98]"
+              style={{ boxShadow: "var(--cloud-lime-glow)" }}
             >
-              <Camera className="w-3.5 h-3.5" />
+              <Camera className="h-3.5 w-3.5" strokeWidth={2.2} />
               Upload
             </Link>
-            {isCloudAdmin && (
-              <button
-                onClick={() => router.push("/cloud/dashboard/settings")}
-                className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] cursor-pointer active:scale-95 transition-transform"
-                style={{ fontFamily: "'DM Sans', sans-serif" }}
-                aria-label="Account settings"
-              >
-                {initials}
-              </button>
-            )}
+
+            <div className="relative ml-1">
+              <UserAvatarButton
+                initials={initials}
+                onClick={() => setHeaderMenuOpen((v) => !v)}
+              />
+              <UserMenuDropdown
+                open={headerMenuOpen}
+                onClose={() => setHeaderMenuOpen(false)}
+                showSettings={isCloudAdmin}
+                onSettings={() => {
+                  setHeaderMenuOpen(false);
+                  router.push("/cloud/dashboard/settings");
+                }}
+                onSignOut={() => void signOut({ callbackUrl: "/cloud/login" })}
+              />
+            </div>
           </div>
         </header>
 
-        <header className="sticky top-0 z-10 flex h-[72px] shrink-0 items-center justify-between border-b border-black/[0.06] bg-[#F7F7F8] px-5 lg:hidden">
-          {normalizedPath === "/cloud/dashboard" ? (
-            <p style={{ fontFamily: "var(--fw-font-display), Georgia, serif", fontSize: 16, color: "#1C1410", margin: 0, lineHeight: 1 }}>
-              {displayName.split(" ")[0]}
-            </p>
-          ) : (
-            <p className="font-cloud-display text-[22px] text-[#111111] leading-tight">{getPageTitle(pathname)}</p>
-          )}
+        {/* Mobile top bar */}
+        <header className="cloud-shell-topbar sticky top-0 z-20 flex shrink-0 items-center justify-between px-5 lg:hidden">
+          <div className="min-w-0 flex-1">
+            {isHome ? (
+              <>
+                <p className="truncate text-[15px] font-semibold text-[#111]">{displayName}</p>
+                <p className="text-[11px] text-[var(--cloud-text-tertiary)]">Segmiq Cloud</p>
+              </>
+            ) : (
+              <>
+                <p className="text-[11px] font-medium text-[var(--cloud-text-tertiary)]">Segmiq Cloud</p>
+                <p className="truncate font-cloud-display text-[18px] leading-tight text-[#111]">{pageTitle}</p>
+              </>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => router.push("/cloud/dashboard/notifications")}
-              className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white border border-black/[0.08] text-[#6B7280] active:scale-95 transition-transform cursor-pointer"
+              className="cloud-topbar-icon-btn relative"
               aria-label="Notifications"
             >
-              <Bell className="h-4 w-4" strokeWidth={1.8} />
+              <Bell className="h-[17px] w-[17px]" strokeWidth={1.8} />
               {unreadCount > 0 && (
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#D4FF4F] border-2 border-[#F5F5F0]" />
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#D4FF4F] ring-2 ring-white" />
               )}
             </button>
-            {isCloudAdmin && (
-              <div style={{ position: "relative" }}>
-                <button
-                  onClick={() => router.push("/cloud/dashboard/settings")}
-                  className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F] active:scale-95 transition-transform cursor-pointer"
-                  aria-label="Account settings"
-                  style={{ fontFamily: "'DM Sans', sans-serif" }}
-                >
-                  {initials}
-                </button>
-                <div style={{ position: "absolute", bottom: 0, right: 0, width: 10, height: 10, borderRadius: "50%", background: isOnline ? "#2E7D5E" : "#E8602C", border: "2px solid #F7F4EF", transition: "background 0.3s ease" }} />
-              </div>
-            )}
-            {!isCloudAdmin && (
-              <div style={{ position: "relative" }}>
-                <div
-                  className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#111111] text-[11px] font-bold text-[#D4FF4F]"
-                  style={{ fontFamily: "'DM Sans', sans-serif" }}
-                  aria-hidden
-                >
-                  {initials}
-                </div>
-                <div style={{ position: "absolute", bottom: 0, right: 0, width: 10, height: 10, borderRadius: "50%", background: isOnline ? "#2E7D5E" : "#E8602C", border: "2px solid #F7F4EF", transition: "background 0.3s ease" }} />
-              </div>
-            )}
+            <div className="relative">
+              <UserAvatarButton
+                initials={initials}
+                isOnline={isOnline}
+                onClick={() => setHeaderMenuOpen((v) => !v)}
+              />
+              <UserMenuDropdown
+                open={headerMenuOpen}
+                onClose={() => setHeaderMenuOpen(false)}
+                showSettings={isCloudAdmin}
+                onSettings={() => {
+                  setHeaderMenuOpen(false);
+                  router.push("/cloud/dashboard/settings");
+                }}
+                onSignOut={() => void signOut({ callbackUrl: "/cloud/login" })}
+              />
+            </div>
           </div>
         </header>
 
         {!isOnline && (
-          <div style={{ position: "fixed", top: 62, left: 0, right: 0, zIndex: 50, background: "#E8602C", padding: "8px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <p style={{ fontFamily: "var(--fw-font-body), system-ui, sans-serif", fontSize: 12, fontWeight: 600, color: "#FFFFFF", margin: 0 }}>
+          <div className="fixed left-0 right-0 top-[var(--cloud-topbar-height)] z-50 flex items-center justify-center gap-2 bg-[#E8602C] px-5 py-2">
+            <p className="text-[12px] font-semibold text-white">
               No connection · Photos will upload when signal returns
             </p>
           </div>
         )}
 
-        <main className="flex-1 lg:pb-8" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
+        <main className="cloud-scroll-y min-h-0 flex-1 lg:pb-8" style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}>
           {banner}
           {children}
         </main>
       </div>
 
+      {/* Mobile bottom nav */}
       <nav
-        className="cloud-bottom-nav fixed inset-x-0 bottom-0 z-50 bg-white border-t border-black/[0.08] flex items-center justify-around px-2 lg:hidden font-cloud-body"
-        style={{ paddingTop: 8 }}
+        className="cloud-bottom-nav fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-[var(--cloud-border)] bg-white/95 px-2 backdrop-blur-lg lg:hidden font-cloud-body"
+        style={{ paddingTop: 8, paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
       >
         {MOBILE_NAV.map(({ href, icon: Icon, label }, idx) => {
           const active = href === "/cloud/dashboard/more"
@@ -366,32 +539,31 @@ export default function CloudDashboardShell({
             <Link
               key={href}
               href={href}
-              className="flex flex-1 flex-col items-center gap-[3px] relative"
+              className="relative flex flex-1 flex-col items-center gap-[3px]"
             >
               {isCenter ? (
                 <div
-                  className="flex items-center justify-center rounded-full bg-[#D4FF4F]"
-                  style={{ width: 52, height: 52, marginTop: -22, boxShadow: "0 4px 16px rgba(212,255,79,0.28)" }}
+                  className="-mt-[22px] flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#D4FF4F] shadow-[var(--cloud-lime-glow)]"
                 >
-                  <Icon className="h-[22px] w-[22px] text-[#111111]" strokeWidth={2} />
+                  <Icon className="h-[22px] w-[22px] text-[#111]" strokeWidth={2.2} />
                 </div>
               ) : (
                 <>
-                  {active && (
-                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#D4FF4F", position: "absolute", top: 6, left: "50%", transform: "translateX(-50%)" }} />
-                  )}
-                  <div className="relative flex items-center justify-center h-[22px] w-[22px]">
+                  <div className="relative flex h-[22px] w-[22px] items-center justify-center">
                     <Icon
                       className="h-[22px] w-[22px]"
-                      style={{ color: active ? "#1C1410" : "#6B7280" }}
+                      style={{ color: active ? "#111" : "#6B7280" }}
                       strokeWidth={active ? 2.2 : 1.8}
                     />
                     {href === "/cloud/dashboard/notifications" && unreadCount > 0 && (
-                      <span className="absolute right-0 top-0 h-1.5 w-1.5 rounded-full bg-[#D4FF4F]" />
+                      <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[#D4FF4F] ring-2 ring-white" />
                     )}
                   </div>
                   {label && (
-                    <span style={{ fontSize: 9, fontWeight: active ? 700 : 500, color: active ? "#1C1410" : "#6B7280", fontFamily: "var(--fw-font-body), system-ui, sans-serif" }}>
+                    <span
+                      className="text-[9px] font-medium"
+                      style={{ color: active ? "#111" : "#6B7280", fontWeight: active ? 700 : 500 }}
+                    >
                       {label}
                     </span>
                   )}

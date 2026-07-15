@@ -106,11 +106,11 @@ export default function CloudSignupPage() {
   }, [router, session?.user, status]);
 
   if (status === "loading" || session?.user) {
-    return <div className="min-h-screen bg-[#0a0a0a]" />;
+    return <div className="cloud-surface-dark min-h-screen bg-[#0a0a0a]" />;
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-6 py-12">
+    <div className="cloud-surface-dark flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-6 py-12">
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4FF4F]">

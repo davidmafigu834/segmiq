@@ -190,8 +190,8 @@ export default function CloudDashboardHome() {
 
       {/* ── QUICK ACTION PILLS ── */}
       <div
-        className="pills-scroll"
-        style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", padding: "4px 20px 16px", width: "100%", boxSizing: "border-box" } as React.CSSProperties}
+        className="cloud-scroll-x pills-scroll"
+        style={{ padding: "4px 20px 16px", width: "100%", boxSizing: "border-box" } as React.CSSProperties}
       >
         <div style={{ display: "flex", gap: 8, width: "max-content" }}>
         {([
@@ -238,8 +238,8 @@ export default function CloudDashboardHome() {
         </div>
       ) : (
         <div
-          className="pills-scroll"
-          style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", padding: "0 20px 12px", paddingRight: 48, scrollSnapType: "x mandatory", width: "100%", boxSizing: "border-box" } as React.CSSProperties}
+          className="cloud-scroll-x pills-scroll"
+          style={{ padding: "0 20px 12px", paddingRight: 48, scrollSnapType: "x mandatory", width: "100%", boxSizing: "border-box" } as React.CSSProperties}
         >
           <div style={{ display: "flex", gap: 10, width: "max-content" }}>
           {projects.slice(0, 5).map((p) => {

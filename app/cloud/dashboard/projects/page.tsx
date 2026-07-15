@@ -187,7 +187,7 @@ export default function CloudProjectsPage() {
 
       {/* Category filter pills */}
       {allCategories.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, padding: '4px 0 12px', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', alignItems: 'center', marginBottom: 4 } as React.CSSProperties}>
+        <div className="cloud-scroll-x mb-1 flex items-center gap-2" style={{ padding: "4px 0 12px" }}>
           <button
             onClick={() => setActiveCategory(null)}
             style={{
