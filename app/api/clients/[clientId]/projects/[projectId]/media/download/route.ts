@@ -65,12 +65,10 @@ export async function GET(
   const projectTitle = (project.title as string) ?? "project";
   const zipName = buildProjectPhotosZipFilename(projectTitle);
   const passThrough = new PassThrough();
-  const archiverMod = await import("archiver");
-  const createArchive = archiverMod.default as (
-    format: string,
-    options?: { zlib?: { level?: number } }
-  ) => Archiver;
-  const archive = createArchive("zip", { zlib: { level: 5 } });
+  const archiverMod = (await import("archiver")) as unknown as {
+    default: (format: string, options?: { zlib?: { level?: number } }) => Archiver;
+  };
+  const archive = archiverMod.default("zip", { zlib: { level: 5 } });
 
   archive.on("error", (err: Error) => {
     passThrough.destroy(err);
