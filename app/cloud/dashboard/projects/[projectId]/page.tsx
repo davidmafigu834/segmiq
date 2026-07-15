@@ -676,11 +676,27 @@ export default function ProjectDetailPage() {
     ? `/api/clients/${session.clientId}/projects/${projectId}/media/download`
     : null;
 
-  function downloadAllPhotos() {
-    if (!allPhotosDownloadUrl) return;
+  async function downloadAllPhotos() {
+    if (!allPhotosDownloadUrl || !project) return;
     setDownloadingAll(true);
-    window.location.href = allPhotosDownloadUrl;
-    window.setTimeout(() => setDownloadingAll(false), 4000);
+    try {
+      const res = await fetch(allPhotosDownloadUrl);
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error ?? "Download failed");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${project.title.replace(/[^\w\s.-]/g, "").trim() || "project"}-photos.zip`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not download photos.");
+    } finally {
+      setDownloadingAll(false);
+    }
   }
 
   const catStyles = project ? getProjectCardStyles(project.category) : null;

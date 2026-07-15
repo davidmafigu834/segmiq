@@ -1,4 +1,5 @@
 import { resolveMediaKeys } from "@/lib/watermark/storage-keys";
+import { getObject } from "@/lib/storage/r2";
 
 export function sanitizeDownloadFilename(name: string): string {
   return name
@@ -27,4 +28,14 @@ export function getPublishablePhotoKey(storageKey: string): string {
 
 export function buildProjectPhotosZipFilename(projectTitle: string): string {
   return `${sanitizeDownloadFilename(projectTitle)}-photos.zip`;
+}
+
+/** Watermarked/public copy, falling back to the original upload if needed. */
+export async function fetchPublishablePhotoBuffer(storageKey: string): Promise<Buffer> {
+  const { publicKey, originalKey } = resolveMediaKeys(storageKey);
+  try {
+    return await getObject(publicKey);
+  } catch {
+    return await getObject(originalKey);
+  }
 }
