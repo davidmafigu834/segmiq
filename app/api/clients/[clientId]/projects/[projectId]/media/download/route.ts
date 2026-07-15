@@ -65,9 +65,8 @@ export async function GET(
   const projectTitle = (project.title as string) ?? "project";
   const zipName = buildProjectPhotosZipFilename(projectTitle);
   const passThrough = new PassThrough();
-  // archiver is CJS; require keeps types simple in this route handler.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const createArchive = require("archiver") as (
+  const archiverMod = await import("archiver");
+  const createArchive = archiverMod.default as (
     format: string,
     options?: { zlib?: { level?: number } }
   ) => Archiver;
