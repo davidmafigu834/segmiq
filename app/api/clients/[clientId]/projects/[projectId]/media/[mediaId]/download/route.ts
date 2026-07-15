@@ -57,7 +57,7 @@ export async function GET(
     const filename = buildPhotoDownloadFilename(projectTitle, row.display_order, row.caption);
     const buffer = await fetchPublishablePhotoBuffer(row.storage_key);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "image/jpeg",
         "Content-Disposition": `attachment; filename="${filename.replace(/["\\]/g, "")}"`,

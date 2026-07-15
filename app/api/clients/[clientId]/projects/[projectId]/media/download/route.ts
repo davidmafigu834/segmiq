@@ -95,7 +95,7 @@ export async function GET(
     const zipName = buildProjectPhotosZipFilename(projectTitle);
     const zipBuffer = await buildProjectPhotosZip(projectTitle, photos);
 
-    return new NextResponse(zipBuffer, {
+    return new NextResponse(new Uint8Array(zipBuffer), {
       headers: {
         "Content-Type": "application/zip",
         "Content-Disposition": `attachment; filename="${zipName.replace(/["\\]/g, "")}"`,
