@@ -7,6 +7,11 @@ type CacheLookup = {
   promptVersion: number;
 };
 
+export type AiCacheLookupResult<T> =
+  | { status: "hit"; response: T }
+  | { status: "miss" }
+  | { status: "unavailable" };
+
 type CacheWrite<T> = CacheLookup & {
   feature: string;
   clientId?: string | null;
@@ -34,11 +39,11 @@ export function hashAiInput(input: unknown): string {
     .digest("hex");
 }
 
-export async function getCachedAiResponse<T>({
+export async function lookupCachedAiResponse<T>({
   cacheKey,
   inputHash,
   promptVersion,
-}: CacheLookup): Promise<T | null> {
+}: CacheLookup): Promise<AiCacheLookupResult<T>> {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("ai_response_cache")
@@ -48,14 +53,23 @@ export async function getCachedAiResponse<T>({
 
   if (error) {
     console.warn("[ai-cache] Cache read failed:", error.message);
-    return null;
+    return { status: "unavailable" };
   }
-  if (!data) return null;
-  if (data.input_hash !== inputHash) return null;
-  if (Number(data.prompt_version) !== promptVersion) return null;
-  if (new Date(data.expires_at as string).getTime() <= Date.now()) return null;
+  if (!data) return { status: "miss" };
+  if (data.input_hash !== inputHash) return { status: "miss" };
+  if (Number(data.prompt_version) !== promptVersion) return { status: "miss" };
+  if (new Date(data.expires_at as string).getTime() <= Date.now()) {
+    return { status: "miss" };
+  }
 
-  return data.response as T;
+  return { status: "hit", response: data.response as T };
+}
+
+export async function getCachedAiResponse<T>(
+  lookup: CacheLookup
+): Promise<T | null> {
+  const result = await lookupCachedAiResponse<T>(lookup);
+  return result.status === "hit" ? result.response : null;
 }
 
 export async function setCachedAiResponse<T>({

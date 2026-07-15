@@ -27,7 +27,7 @@ export type RulesMirrorCounts = {
 };
 
 export type SalesMirrorResult = {
-  mode: "rules" | "stall";
+  mode: "rules" | "stall" | "ai";
   line: string;
   dominantReason?: string;
 };

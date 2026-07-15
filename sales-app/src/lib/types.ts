@@ -64,7 +64,7 @@ export type CampaignQualifiers = {
 };
 
 export type SalesMirror = {
-  mode: "rules" | "stall";
+  mode: "rules" | "stall" | "ai";
   line: string;
   dominantReason?: string;
 };

@@ -18,6 +18,7 @@ import { getClientActivePipelineValue } from "@/lib/client-team-report";
 import { computeWhatsAppHubReport, type WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
 import { buildSoloBusinessPulseMetrics, type PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 import { classifyLeadLane } from "@/lib/lead-lanes";
+import { getDailyMirrorCoachingLine } from "@/lib/ai/mirror-coaching";
 
 // Raw campaign_qualifiers row shape (read-only; table added in migration 037).
 type CampaignQualifierRow = {
@@ -1093,7 +1094,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
       ? rawAssignmentMode
       : "direct";
 
-  const mirror: SalesMirrorResult = resolveSalesMirror({
+  let mirror: SalesMirrorResult = resolveSalesMirror({
     leads: activeLeads,
     stallLogs: (stallCallLogs ?? []) as Array<{
       reason: string | null;
@@ -1222,6 +1223,34 @@ export async function fetchSalespersonDashboardData(userId: string) {
       } as PriorityLead;
     })
     .sort((a, b) => a.priorityOrder - b.priorityOrder);
+
+  const repClientId = (repUser?.client_id as string | null) ?? null;
+  if (repAiEnabled && repClientId) {
+    const coachingLine = await getDailyMirrorCoachingLine({
+      userId,
+      clientId: repClientId,
+      now,
+      numbers: {
+        totalActive,
+        callNow,
+        calledToday,
+        followUpToday: followUps,
+        slipped,
+        convertLaterCount,
+        wonThisMonth,
+      },
+      leads: priorityLeads.slice(0, 5).map((lead) => ({
+        name: lead.name?.trim() || "Unnamed lead",
+        status: lead.status,
+        priorityLabel: lead.priorityLabel,
+        score: lead.aiScore ?? lead.score ?? null,
+        projectType: lead.project_type ?? null,
+      })),
+    });
+    if (coachingLine) {
+      mirror = { mode: "ai", line: coachingLine };
+    }
+  }
 
   const retargetingStatuses: RetargetingStatusView[] = [];
   for (const [cid, cname] of Array.from(clientNameById.entries())) {

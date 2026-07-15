@@ -3,8 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canReadLead } from "@/lib/auth/permissions";
 import { callClaude, getAnthropicModel } from "@/lib/ai/claude";
 import {
-  getCachedAiResponse,
   hashAiInput,
+  lookupCachedAiResponse,
   setCachedAiResponse,
 } from "@/lib/ai/response-cache";
 
@@ -122,14 +122,20 @@ ${eventSummary}
     context,
     promptVersion: BRIEFING_PROMPT_VERSION,
   });
-  const cached = await getCachedAiResponse<BriefingResponse>({
+  const cache = await lookupCachedAiResponse<BriefingResponse>({
     cacheKey,
     inputHash,
     promptVersion: BRIEFING_PROMPT_VERSION,
   });
 
-  if (cached) {
-    return NextResponse.json({ ...cached, cached: true });
+  if (cache.status === "hit") {
+    return NextResponse.json({ ...cache.response, cached: true });
+  }
+  if (cache.status === "unavailable") {
+    return NextResponse.json(
+      { error: "AI cache unavailable" },
+      { status: 503 }
+    );
   }
 
   try {

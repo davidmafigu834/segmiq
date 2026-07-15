@@ -56,7 +56,7 @@ type DashboardData = {
   priorityLeads: PriorityLead[];
   allActiveLeads: PriorityLead[];
   mirror: {
-    mode: "rules" | "stall";
+    mode: "rules" | "stall" | "ai";
     line: string;
     dominantReason?: string;
   };
@@ -192,11 +192,11 @@ export default function SalesDashboardMain({
           ============================================ */}
       <div className="ag-fade-in mb-6 rounded-xl border border-[var(--border)] border-l-4 border-l-[var(--accent)] bg-[var(--surface-card)] px-4 py-4">
         <div className="mb-2 flex items-center gap-2">
-          {data.mirror?.mode === "stall" ? (
+          {data.mirror?.mode === "stall" || data.mirror?.mode === "ai" ? (
             <Sparkles size={14} className="shrink-0 text-[var(--accent)]" aria-hidden />
           ) : null}
           <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]">
-            Your mirror
+            {data.mirror?.mode === "ai" ? "AI daily focus" : "Your mirror"}
           </p>
         </div>
         <p className="m-0 text-[14px] leading-relaxed text-[var(--text-secondary)]">

@@ -4,8 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { callClaude, getAnthropicModel } from "@/lib/ai/claude";
 import {
-  getCachedAiResponse,
   hashAiInput,
+  lookupCachedAiResponse,
   setCachedAiResponse,
 } from "@/lib/ai/response-cache";
 
@@ -55,14 +55,20 @@ export async function POST(req: Request) {
     insights,
     promptVersion: WIN_INSIGHT_PROMPT_VERSION,
   });
-  const cached = await getCachedAiResponse<{ insight: string }>({
+  const cache = await lookupCachedAiResponse<{ insight: string }>({
     cacheKey,
     inputHash,
     promptVersion: WIN_INSIGHT_PROMPT_VERSION,
   });
 
-  if (cached) {
-    return NextResponse.json({ ...cached, cached: true });
+  if (cache.status === "hit") {
+    return NextResponse.json({ ...cache.response, cached: true });
+  }
+  if (cache.status === "unavailable") {
+    return NextResponse.json(
+      { insight: "Win pattern analysis is temporarily unavailable." },
+      { status: 503 }
+    );
   }
 
   const context = `
