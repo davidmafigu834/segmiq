@@ -1059,7 +1059,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
 
     supabase
       .from("users")
-      .select("client_id, clients(ai_enabled, assignment_mode)")
+      .select("client_id, clients!users_client_id_fkey(ai_enabled, assignment_mode)")
       .eq("id", userId)
       .maybeSingle(),
 
