@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, X, Mail, AlertCircle } from "lucide-react";
+import { ImpersonateButton } from "@/components/agency/ImpersonateButton";
 
 type TeamMember = {
   id: string;
@@ -133,6 +134,9 @@ export function CloudTeamModal({
                   <span className="rounded-full bg-[var(--bg-card)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)]">
                     {ROLE_LABELS[m.role] ?? m.role}
                   </span>
+                  {m.is_active ? (
+                    <ImpersonateButton userId={m.id} userName={m.name} />
+                  ) : null}
                 </div>
               ))}
             </div>

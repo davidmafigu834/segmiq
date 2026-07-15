@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/shell/AppShell";
+import { ImpersonationBanner } from "@/components/agency/ImpersonationBanner";
 
 export async function ClientManagerLayout({
   children,
@@ -81,6 +82,13 @@ export async function ClientManagerLayout({
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
     >
+      {session?.isImpersonating ? (
+        <ImpersonationBanner
+          userName={session.user?.name ?? "User"}
+          userRole={session.role}
+          realUserName={session.realUserName}
+        />
+      ) : null}
       {children}
     </AppShell>
   );

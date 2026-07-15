@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { AgencyLayout } from "@/components/layouts/AgencyLayout";
+import { AgencyClientTeamTable } from "@/components/agency/AgencyClientTeamTable";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadClientHeroContext } from "@/lib/client-hero";
 import { ClientDetailView } from "../ClientDetailView";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
+import type { UserRole } from "@/types";
 
 export default async function ClientTeamPage({ params }: { params: { clientId: string } }) {
   const supabase = createAdminClient();
@@ -12,9 +14,19 @@ export default async function ClientTeamPage({ params }: { params: { clientId: s
   const { client, hero } = ctx;
   const { data: users } = await supabase
     .from("users")
-    .select("name, role, email")
+    .select("id, name, role, email")
     .eq("client_id", params.clientId)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .in("role", ["CLIENT_MANAGER", "SALESPERSON"])
+    .order("role", { ascending: true })
+    .order("name", { ascending: true });
+
+  const members = (users ?? []).map((u) => ({
+    id: u.id as string,
+    name: u.name as string,
+    role: u.role as UserRole,
+    email: u.email as string,
+  }));
 
   return (
     <AgencyLayout breadcrumb="AGENCY / TEAM" pageTitle={client.name as string}>
@@ -25,26 +37,10 @@ export default async function ClientTeamPage({ params }: { params: { clientId: s
         publicProfileUrl={hero.profileSlug ? getPublicLandingPageUrl(hero.profileSlug) : null}
         hero={hero}
       >
-        <div className="border border-border">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-surface-card-alt font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">
-              <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Email</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(users ?? []).map((u) => (
-                <tr key={u.email as string} className="border-t border-border hover:bg-surface-card-alt">
-                  <td className="px-4 py-3 font-medium">{u.name as string}</td>
-                  <td className="px-4 py-3 font-mono text-[11px]">{u.role as string}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-ink-secondary">{u.email as string}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p className="mb-4 font-mono text-[11px] text-ink-secondary">
+          Impersonate a team member to see their CRM portal exactly as they do.
+        </p>
+        <AgencyClientTeamTable members={members} />
       </ClientDetailView>
     </AgencyLayout>
   );

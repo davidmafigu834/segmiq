@@ -7,6 +7,10 @@ declare module "next-auth" {
     role: UserRole;
     clientId: string | null;
     clientMode: ClientMode;
+    /** Set when an agency admin is impersonating a client team member. */
+    realUserId?: string | null;
+    realUserName?: string | null;
+    isImpersonating?: boolean;
     user: DefaultSession["user"] & {
       id: string;
     };
@@ -28,5 +32,8 @@ declare module "next-auth/jwt" {
     clientMode?: ClientMode;
     sessionVersion?: number;
     email?: string | null;
+    name?: string | null;
+    realUserId?: string | null;
+    realUserName?: string | null;
   }
 }

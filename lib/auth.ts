@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPassword } from "@/lib/password";
 import type { ClientMode, UserRole } from "@/types";
 
-async function resolveClientMode(clientId: string | null): Promise<ClientMode> {
+export async function resolveClientMode(clientId: string | null): Promise<ClientMode> {
   if (!clientId) return "team";
   const supabase = createAdminClient();
   const { data } = await supabase.from("clients").select("mode").eq("id", clientId).maybeSingle();
@@ -124,6 +124,9 @@ export const authOptions: NextAuthOptions = {
         token.clientMode = (user as { clientMode?: ClientMode }).clientMode ?? "team";
         token.sessionVersion = (user as { sessionVersion?: number }).sessionVersion ?? 0;
         token.email = (user as { email?: string | null }).email ?? null;
+        token.name = (user as { name?: string | null }).name ?? null;
+        token.realUserId = null;
+        token.realUserName = null;
       }
       const clientId = (token.clientId as string | null) ?? null;
       token.clientMode = clientId ? await resolveClientMode(clientId) : "team";
@@ -134,10 +137,16 @@ export const authOptions: NextAuthOptions = {
       session.role = token.role as UserRole;
       session.clientId = (token.clientId as string | null) ?? null;
       session.clientMode = (token.clientMode as ClientMode | undefined) ?? "team";
+      session.realUserId = (token.realUserId as string | null | undefined) ?? null;
+      session.realUserName = (token.realUserName as string | null | undefined) ?? null;
+      session.isImpersonating = Boolean(token.realUserId);
       if (session.user) {
         session.user.id = token.userId as string;
         if (token.email) {
           session.user.email = token.email;
+        }
+        if (token.name) {
+          session.user.name = token.name;
         }
       }
       return session;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { homeForRole } from "@/lib/auth/impersonation";
 import type { ClientMode, UserRole } from "@/types";
 
 export async function middleware(req: NextRequest) {
@@ -110,7 +111,7 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(url);
       }
       const tokenSv = Number((token as { sessionVersion?: number }).sessionVersion ?? 0);
-      const uid = (token as { userId?: string }).userId;
+      const uid = (token as { realUserId?: string | null }).realUserId ?? (token as { userId?: string }).userId;
       if (uid) {
         try {
           const supabase = createAdminClient();
@@ -233,7 +234,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const tokenSv = Number((token as { sessionVersion?: number }).sessionVersion ?? 0);
-  const uid = (token as { userId?: string }).userId;
+  const uid = (token as { realUserId?: string | null }).realUserId ?? (token as { userId?: string }).userId;
   if (uid) {
     try {
       const supabase = createAdminClient();
@@ -251,14 +252,16 @@ export async function middleware(req: NextRequest) {
 
   const role = token.role as UserRole;
   const clientMode = (token as { clientMode?: ClientMode }).clientMode ?? "team";
+  const isImpersonating = Boolean((token as { realUserId?: string | null }).realUserId);
 
   if (path.startsWith("/dashboard")) {
-    if (role !== "AGENCY_ADMIN") {
+    if (role !== "AGENCY_ADMIN" || isImpersonating) {
       return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
     }
   }
   if (path.startsWith("/client")) {
     const isTeamPreview =
+      !isImpersonating &&
       role === "AGENCY_ADMIN" &&
       (path === "/client/team" || path.startsWith("/client/team/")) &&
       req.nextUrl.searchParams.has("clientId");
@@ -282,9 +285,9 @@ export async function middleware(req: NextRequest) {
 
   // Billing access gate. A suspended subscription locks manager and salespeople
   // out of their portals. Exempt blocked screens and billing pages so clients can
-  // pay and upload proof. API routes are not matched by middleware.
+  // pay and upload proof. Agency admins impersonating bypass the gate for support.
   const isGatedRole = role === "CLIENT_MANAGER" || role === "SALESPERSON";
-  if (isGatedRole) {
+  if (isGatedRole && !isImpersonating) {
     const gateExempt =
       path === "/client/blocked" ||
       path === "/sales/blocked" ||
@@ -320,13 +323,6 @@ export async function middleware(req: NextRequest) {
   }
 
   return NextResponse.next();
-}
-
-function homeForRole(role: UserRole, clientMode: ClientMode = "team"): string {
-  if (role === "AGENCY_ADMIN") return "/dashboard";
-  if (role === "CLIENT_MANAGER") return "/client/dashboard";
-  if (role === "SALESPERSON" && clientMode === "solo") return "/solo/dashboard";
-  return "/sales/dashboard";
 }
 
 /** First path segment on cloud.segmiq.com that is not a client profile slug. */
