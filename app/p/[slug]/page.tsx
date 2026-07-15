@@ -495,28 +495,39 @@ export default async function ProfilePage({
                   <Link
                     key={project.id}
                     href={`/p/${params.slug}/projects/${project.id}`}
-                    className={`group relative overflow-hidden rounded-[16px] border border-[rgba(28,20,16,0.06)] bg-gradient-to-br from-[#e9e3d8] to-[#d9d0c1] transition-transform duration-200 hover:-translate-y-[3px] ${
-                      isHeroTile
-                        ? "col-span-2 aspect-[16/10] min-[821px]:col-span-2 min-[821px]:row-span-2 min-[821px]:aspect-auto min-[821px]:min-h-[320px]"
-                        : "aspect-square"
+                    className={`group flex flex-col overflow-hidden rounded-[16px] border border-[rgba(28,20,16,0.08)] bg-white transition-transform duration-200 hover:-translate-y-[3px] ${
+                      isHeroTile ? "col-span-2 min-[821px]:col-span-2" : ""
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={coverUrl} alt={project.title} className="absolute inset-0 h-full w-full object-cover" />
                     <div
-                      className="absolute inset-0 bg-[linear-gradient(150deg,color-mix(in_srgb,var(--brand)_22%,transparent),transparent_60%)]"
-                      aria-hidden
-                    />
-                    {project.is_featured && (
-                      <span className="absolute left-3.5 top-3.5 rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-ink)]">
-                        Featured
-                      </span>
-                    )}
-                    <div className="absolute bottom-3.5 left-4 text-[rgba(28,20,16,0.62)]">
+                      className={`relative overflow-hidden bg-[var(--fw-sunken)] ${
+                        isHeroTile ? "aspect-[16/10]" : "aspect-square"
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={coverUrl}
+                        alt={project.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                      {project.is_featured && (
+                        <span className="absolute left-3 top-3 rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-ink)]">
+                          Featured
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-3.5 min-[821px]:p-4">
                       <p className="text-base font-bold text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)]">
                         {project.title}
                       </p>
-                      {meta && <p className="text-xs">{meta}</p>}
+                      {meta && (
+                        <p className="mt-1 text-xs text-[var(--fw-text-tertiary)]">{meta}</p>
+                      )}
+                      {project.description?.trim() && (
+                        <p className="mt-2 line-clamp-2 text-[13px] leading-snug text-[var(--fw-text-secondary)]">
+                          {project.description.trim()}
+                        </p>
+                      )}
                     </div>
                   </Link>
                 );

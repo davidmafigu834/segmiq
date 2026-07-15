@@ -319,7 +319,7 @@ export default function CloudProjectsPage() {
 
                   {/* Cover photo */}
                   <Link href={`/cloud/dashboard/projects/${p.id}`}>
-                    <div className="overflow-hidden" style={{ height: 120, background: "var(--fw-sunken)" }}>
+                    <div className="aspect-square w-full overflow-hidden bg-[var(--fw-sunken)]">
                       {cover(p) ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img

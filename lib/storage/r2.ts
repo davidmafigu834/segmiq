@@ -34,6 +34,23 @@ export async function generatePresignedUploadUrl(
   return getSignedUrl(getR2Client(), command, { expiresIn: 300 });
 }
 
+export async function generatePresignedDownloadUrl(
+  key: string,
+  filename: string,
+  contentType = "image/jpeg"
+): Promise<string> {
+  const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
+  if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");
+  const safeName = filename.replace(/["\\]/g, "");
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ResponseContentType: contentType,
+    ResponseContentDisposition: `attachment; filename="${safeName}"`,
+  });
+  return getSignedUrl(getR2Client(), command, { expiresIn: 300 });
+}
+
 export async function deleteObject(key: string): Promise<void> {
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
   if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");

@@ -203,21 +203,16 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
         >
           <h2 className="print-section-title">Gallery</h2>
           <div className="print-gallery-grid">
-            {photos.map((photo, index) => (
-              <div
-                key={photo.id}
-                className={
-                  index === 0 ? "print-gallery-hero print-gallery-tile" : "print-gallery-tile"
-                }
-              >
+            {photos.map((photo) => (
+              <figure key={photo.id} className="print-gallery-tile">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
-                      alt={photo.caption ?? project.title}
-                      loading="eager"
-                      decoding="sync"
-                    />
-              </div>
+                <img
+                  src={printImageUrl(photo.public_url)}
+                  alt={photo.caption ?? project.title}
+                  loading="eager"
+                  decoding="sync"
+                />
+              </figure>
             ))}
           </div>
         </PrintContentPage>
@@ -257,7 +252,7 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
                             <div key={photo.id} className="print-timeline-photo">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={printImageUrl(photo.thumbnail_url ?? photo.public_url)}
+                                src={printImageUrl(photo.public_url)}
                                 alt={photo.caption ?? step.title ?? step.day_label}
                                 className="print-timeline-img"
                                 loading="eager"
@@ -662,25 +657,21 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           text-align: left;
         }
         .print-gallery-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-        }
-        .print-gallery-hero {
-          grid-column: 1 / -1;
-          height: 220px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
         }
         .print-gallery-tile {
-          height: 128px;
           border-radius: 10px;
           overflow: hidden;
           break-inside: avoid;
           page-break-inside: avoid;
+          background: #e9e3d8;
         }
         .print-gallery-grid img {
           width: 100%;
-          height: 100%;
-          object-fit: cover;
+          height: auto;
+          object-fit: contain;
           display: block;
         }
         .print-timeline-block {
@@ -736,17 +727,17 @@ export function ProjectMagazinePrint({ data, qrDataUrl }: PrintPageProps) {
           margin-top: 8px;
         }
         .print-timeline-photo {
-          width: 118px;
-          height: 78px;
+          max-width: 220px;
           border-radius: 6px;
           overflow: hidden;
           break-inside: avoid;
           page-break-inside: avoid;
+          background: rgba(28, 20, 16, 0.04);
         }
         .print-timeline-photo img {
           width: 100%;
-          height: 100%;
-          object-fit: cover;
+          height: auto;
+          object-fit: contain;
           display: block;
         }
         .print-testimonial {

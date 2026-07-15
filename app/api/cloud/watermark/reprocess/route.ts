@@ -6,6 +6,12 @@ import { canManageCloudSettings } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getObject, putObject } from "@/lib/storage/r2";
 import { applyWatermark } from "@/lib/watermark";
+import {
+  isPhotoStorageKey,
+  publicUrlForStorageKey,
+  resolveClientLogoKey,
+  resolveMediaKeys,
+} from "@/lib/watermark/storage-keys";
 
 export const maxDuration = 60;
 
@@ -35,7 +41,7 @@ export async function POST() {
       .maybeSingle(),
     supabase
       .from("clients")
-      .select("logo_key")
+      .select("logo_key, logo_url")
       .eq("id", clientId)
       .maybeSingle(),
   ]);
@@ -47,7 +53,9 @@ export async function POST() {
     watermark_size?: string;
   } | null;
 
-  const logoKey = (clientResult.data as { logo_key?: string | null } | null)?.logo_key ?? null;
+  const logoKey = resolveClientLogoKey(
+    clientResult.data as { logo_key?: string | null; logo_url?: string | null } | null
+  );
   const watermarkEnabled = !!(profile?.watermark_enabled && logoKey);
 
   const { data: mediaItems } = await supabase
@@ -62,10 +70,7 @@ export async function POST() {
   }
 
   const processable = (mediaItems as MediaRow[]).filter(
-    (m) =>
-      m.storage_key &&
-      (/\/projects\/[^/]+\/photos\//.test(m.storage_key) ||
-        /\/projects\/[^/]+\/originals\//.test(m.storage_key))
+    (m) => m.storage_key && isPhotoStorageKey(m.storage_key)
   );
 
   if (!processable.length) {
@@ -91,13 +96,7 @@ export async function POST() {
     await Promise.all(
       batch.map(async (item) => {
         try {
-          const hasPhotosKey = /\/photos\//.test(item.storage_key);
-          const originalKey = hasPhotosKey
-            ? item.storage_key.replace(/\/photos\//, "/originals/")
-            : item.storage_key;
-          const publicKey = hasPhotosKey
-            ? item.storage_key
-            : item.storage_key.replace(/\/originals\//, "/photos/");
+          const { originalKey, publicKey } = resolveMediaKeys(item.storage_key);
 
           let rawBuffer: Buffer;
           try {
@@ -125,6 +124,7 @@ export async function POST() {
             .from("project_media")
             .update({
               storage_key: publicKey,
+              public_url: publicUrlForStorageKey(item.storage_key),
               watermarked: watermarkEnabled,
             })
             .eq("id", item.id);

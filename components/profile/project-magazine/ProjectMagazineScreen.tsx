@@ -259,27 +259,22 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
             <h2 className="mt-2.5 text-[clamp(28px,3.6vw,40px)] font-bold leading-[1.08] tracking-[-0.02em] [font-family:var(--fw-font-display)]">
               On site
             </h2>
-            <div className="mt-8 grid grid-cols-2 gap-3 min-[821px]:grid-cols-4 min-[821px]:auto-rows-[180px]">
-              {photos.map((photo, index) => {
-                const isHero = index === 0;
-                return (
-                  <div
-                    key={photo.id}
-                    className={`overflow-hidden rounded-[14px] bg-[#e9e3d8] ${
-                      isHero
-                        ? "col-span-2 row-span-2 aspect-[16/10] min-[821px]:aspect-auto min-[821px]:min-h-[380px]"
-                        : "aspect-square min-[821px]:aspect-auto"
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.public_url}
-                      alt={photo.caption ?? project.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                );
-              })}
+            <div className="mt-8 columns-1 gap-4 min-[821px]:columns-2 min-[821px]:gap-x-6">
+              {photos.map((photo, index) => (
+                <figure
+                  key={photo.id}
+                  className="mb-4 break-inside-avoid overflow-hidden rounded-[14px] bg-[#e9e3d8] min-[821px]:mb-6"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.public_url}
+                    alt={photo.caption ?? project.title}
+                    className="block h-auto w-full"
+                    loading={index < 2 ? "eager" : "lazy"}
+                    decoding="async"
+                  />
+                </figure>
+              ))}
             </div>
           </section>
         )}
@@ -326,17 +321,17 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
                       </p>
                     )}
                     {stepPhotos.length > 0 && (
-                      <div className="mt-4 grid grid-cols-2 gap-2 min-[521px]:grid-cols-3">
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {stepPhotos.map((photo) => (
                           <div
                             key={photo.id}
-                            className="aspect-[4/3] overflow-hidden rounded-xl border border-[rgba(28,20,16,0.08)] bg-[rgba(28,20,16,0.04)]"
+                            className="overflow-hidden rounded-xl border border-[rgba(28,20,16,0.08)] bg-[rgba(28,20,16,0.04)]"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={photo.thumbnail_url ?? photo.public_url}
+                              src={photo.public_url}
                               alt={photo.caption ?? step.title ?? step.day_label}
-                              className="h-full w-full object-cover"
+                              className="block h-auto w-full"
                               loading="lazy"
                             />
                           </div>

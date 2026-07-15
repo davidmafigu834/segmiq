@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getObject, putObject, getPublicUrl } from "@/lib/storage/r2";
+import { getObject, putObject } from "@/lib/storage/r2";
 import { applyWatermark } from "@/lib/watermark";
+import {
+  publicUrlForStorageKey,
+  resolveClientLogoKey,
+  resolveMediaKeys,
+} from "@/lib/watermark/storage-keys";
 
 export const maxDuration = 30;
 
@@ -20,13 +25,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "mediaId, originalKey, and clientId are required" }, { status: 400 });
   }
 
-  const publicKey = originalKey.replace("/originals/", "/photos/");
-  const publicUrl = getPublicUrl(publicKey);
+  const { originalKey: sourceKey, publicKey } = resolveMediaKeys(originalKey);
+  const publicUrl = publicUrlForStorageKey(originalKey);
 
   const supabase = createAdminClient();
 
   async function storeAsIs(): Promise<void> {
-    const photoBuffer = await getObject(originalKey!);
+    const photoBuffer = await getObject(sourceKey);
     await putObject(publicKey, photoBuffer, "image/jpeg");
     await supabase
       .from("project_media")
@@ -42,7 +47,7 @@ export async function POST(req: Request) {
       .maybeSingle(),
     supabase
       .from("clients")
-      .select("logo_key")
+      .select("logo_key, logo_url")
       .eq("id", clientId)
       .maybeSingle(),
   ]);
@@ -54,7 +59,19 @@ export async function POST(req: Request) {
     watermark_size?: string;
   } | null;
 
-  const logoKey = (clientResult.data as { logo_key?: string | null } | null)?.logo_key;
+  const logoKey = resolveClientLogoKey(
+    clientResult.data as { logo_key?: string | null; logo_url?: string | null } | null
+  );
+
+  if (
+    logoKey &&
+    !(clientResult.data as { logo_key?: string | null } | null)?.logo_key
+  ) {
+    await supabase
+      .from("clients")
+      .update({ logo_key: logoKey, updated_at: new Date().toISOString() })
+      .eq("id", clientId);
+  }
 
   if (!profile?.watermark_enabled || !logoKey) {
     await storeAsIs();
@@ -63,7 +80,7 @@ export async function POST(req: Request) {
 
   try {
     const [photoBuffer, logoBuffer] = await Promise.all([
-      getObject(originalKey),
+      getObject(sourceKey),
       getObject(logoKey),
     ]);
 

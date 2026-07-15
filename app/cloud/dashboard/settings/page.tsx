@@ -84,6 +84,7 @@ export default function CloudSettingsPage() {
   });
   const [savingWatermark, setSavingWatermark] = useState(false);
   const [watermarkSaved, setWatermarkSaved] = useState(false);
+  const [watermarkError, setWatermarkError] = useState("");
   const [reprocessing, setReprocessing] = useState(false);
   const [reprocessResult, setReprocessResult] = useState<{ processed: number; failed: number; total: number; firstError?: string | null } | null>(null);
 
@@ -264,25 +265,56 @@ export default function CloudSettingsPage() {
 
   async function saveWatermark() {
     setSavingWatermark(true);
+    setWatermarkError("");
     const res = await fetch("/api/cloud/watermark", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(watermark),
     });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      setWatermarkError(err.error ?? "Failed to save watermark settings.");
+      setSavingWatermark(false);
+      return;
+    }
     setSavingWatermark(false);
-    if (!res.ok) return;
     setReprocessing(true);
     setReprocessResult(null);
     try {
       const rpRes = await fetch("/api/cloud/watermark/reprocess", { method: "POST" });
-      const rpData = (await rpRes.json()) as { processed: number; failed: number; total: number };
-      setReprocessResult(rpData);
+      const rpData = (await rpRes.json()) as {
+        processed?: number;
+        failed?: number;
+        total?: number;
+        firstError?: string | null;
+        error?: string;
+      };
+      if (!rpRes.ok) {
+        setReprocessResult({
+          processed: 0,
+          failed: 0,
+          total: 0,
+          firstError: rpData.error ?? "Could not apply watermark to existing photos.",
+        });
+      } else {
+        setReprocessResult({
+          processed: rpData.processed ?? 0,
+          failed: rpData.failed ?? 0,
+          total: rpData.total ?? 0,
+          firstError: rpData.firstError ?? null,
+        });
+      }
     } catch {
-      // non-fatal
+      setReprocessResult({
+        processed: 0,
+        failed: 0,
+        total: 0,
+        firstError: "Could not apply watermark to existing photos.",
+      });
     } finally {
       setReprocessing(false);
       setWatermarkSaved(true);
-      setTimeout(() => { setWatermarkSaved(false); setReprocessResult(null); }, 5000);
+      setTimeout(() => { setWatermarkSaved(false); setReprocessResult(null); }, 8000);
     }
   }
 

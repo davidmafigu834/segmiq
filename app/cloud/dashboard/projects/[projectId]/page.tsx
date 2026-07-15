@@ -667,7 +667,22 @@ export default function ProjectDetailPage() {
   }
   if (!project) return null;
 
+  const [downloadingAll, setDownloadingAll] = useState(false);
+
   const currentMedia = lightboxIdx !== null ? media[lightboxIdx] : null;
+  const galleryPhotos = media.filter((m) => m.type !== "video");
+  const photoDownloadUrl = (mediaId: string) =>
+    `/api/clients/${session?.clientId}/projects/${projectId}/media/${mediaId}/download`;
+  const allPhotosDownloadUrl = session?.clientId
+    ? `/api/clients/${session.clientId}/projects/${projectId}/media/download`
+    : null;
+
+  function downloadAllPhotos() {
+    if (!allPhotosDownloadUrl) return;
+    setDownloadingAll(true);
+    window.location.href = allPhotosDownloadUrl;
+    window.setTimeout(() => setDownloadingAll(false), 4000);
+  }
 
   const catStyles = project ? getProjectCardStyles(project.category) : null;
 
@@ -860,11 +875,24 @@ export default function ProjectDetailPage() {
 
       {/* Photo count bar — gallery tab only */}
       {activeTab === "gallery" && media.length > 0 && (
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between gap-2">
           <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase font-cloud-body">
             {media.length} {media.some(m => m.type === "video") ? "items" : "photos"}
           </p>
-          <p className="text-[11px] text-[#6B7280] font-cloud-body">drag to reorder</p>
+          <div className="flex items-center gap-2">
+            {galleryPhotos.length > 0 && (
+              <button
+                type="button"
+                onClick={() => downloadAllPhotos()}
+                disabled={downloadingAll}
+                className="flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#4A3828] transition-colors hover:bg-[#F5F5F0] disabled:opacity-60 font-cloud-body"
+              >
+                <Download className="h-3.5 w-3.5" />
+                {downloadingAll ? "Preparing…" : "Download all for social"}
+              </button>
+            )}
+            <p className="text-[11px] text-[#6B7280] font-cloud-body">drag to reorder</p>
+          </div>
         </div>
       )}
 
@@ -927,8 +955,19 @@ export default function ProjectDetailPage() {
                               alt={m.caption ?? `Photo ${idx + 1}`}
                               loading={idx === 0 ? 'eager' : 'lazy'}
                               decoding="async"
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-contain"
                             />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.location.href = photoDownloadUrl(m.id);
+                              }}
+                              className="absolute bottom-1.5 right-1.5 rounded-full bg-white/85 p-1.5 text-[#666660] transition-opacity hover:text-[#0a0a0a] opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                              aria-label="Download watermarked photo"
+                            >
+                              <Download className="h-3 w-3" />
+                            </button>
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); void setCoverPhoto(m.id); }}
@@ -1660,17 +1699,20 @@ export default function ProjectDetailPage() {
             <X className="h-5 w-5" />
           </button>
 
-          <a
-            href={currentMedia.public_url}
-            download
-            className="absolute right-14 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Download className="h-5 w-5" />
-          </a>
+          {currentMedia.type !== "video" && (
+            <a
+              href={photoDownloadUrl(currentMedia.id)}
+              className="absolute right-14 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+              onClick={(e) => e.stopPropagation()}
+              title="Download watermarked photo"
+              aria-label="Download watermarked photo"
+            >
+              <Download className="h-5 w-5" />
+            </a>
+          )}
 
           <button
-            className="absolute right-24 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-red-500/30"
+            className={`absolute top-4 rounded-full bg-white/10 p-2 text-white hover:bg-red-500/30 ${currentMedia.type === "video" ? "right-14" : "right-24"}`}
             onClick={(e) => { e.stopPropagation(); void deleteMedia(currentMedia.id); }}
           >
             <Trash2 className="h-5 w-5" />

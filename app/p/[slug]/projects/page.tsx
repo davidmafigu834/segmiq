@@ -24,6 +24,7 @@ type ProjectRow = {
   category: string | null;
   location: string | null;
   completion_date: string | null;
+  description: string | null;
   is_featured: boolean;
   project_media: ProjectMedia[];
 };
@@ -107,7 +108,7 @@ export default async function PublicProjectsPage({ params }: { params: { slug: s
   const { data: projects } = await supabase
     .from("projects")
     .select(
-      "id, slug, title, category, location, completion_date, is_featured, project_media!project_media_project_id_fkey(public_url, display_order)"
+      "id, slug, title, category, location, completion_date, description, is_featured, project_media!project_media_project_id_fkey(public_url, display_order)"
     )
     .eq("client_id", clientId)
     .eq("is_public", true)
@@ -198,6 +199,7 @@ export default async function PublicProjectsPage({ params }: { params: { slug: s
                     title={project.title}
                     meta={meta}
                     coverUrl={coverUrl}
+                    description={project.description}
                     featured
                   />
                 );
@@ -223,6 +225,7 @@ export default async function PublicProjectsPage({ params }: { params: { slug: s
                     title={project.title}
                     meta={meta}
                     coverUrl={coverUrl}
+                    description={project.description}
                   />
                 );
               })}
@@ -276,12 +279,14 @@ function ProjectCard({
   title,
   meta,
   coverUrl,
+  description,
   featured = false,
 }: {
   href: string;
   title: string;
   meta: string | null;
   coverUrl: string;
+  description?: string | null;
   featured?: boolean;
 }) {
   return (
@@ -305,6 +310,11 @@ function ProjectCard({
       <div className="p-4">
         <p className="[font-family:var(--fw-font-display)] text-lg leading-tight">{title}</p>
         {meta && <p className="mt-1 text-sm text-[var(--fw-text-tertiary)]">{meta}</p>}
+        {description?.trim() && (
+          <p className="mt-2 line-clamp-2 text-sm leading-snug text-[var(--fw-text-secondary)]">
+            {description.trim()}
+          </p>
+        )}
       </div>
     </Link>
   );
