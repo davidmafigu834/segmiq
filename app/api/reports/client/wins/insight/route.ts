@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canAccessClient } from "@/lib/auth/permissions";
-import { callClaude } from "@/lib/ai/claude";
+import { callClaude, getAnthropicModel } from "@/lib/ai/claude";
+import {
+  getCachedAiResponse,
+  hashAiInput,
+  setCachedAiResponse,
+} from "@/lib/ai/response-cache";
+
+const WIN_INSIGHT_PROMPT_VERSION = 1;
+const WIN_INSIGHT_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 type WinInsights = {
   totalWins: number;
@@ -42,6 +50,21 @@ export async function POST(req: Request) {
     });
   }
 
+  const cacheKey = `client-win-insight:${clientId}`;
+  const inputHash = hashAiInput({
+    insights,
+    promptVersion: WIN_INSIGHT_PROMPT_VERSION,
+  });
+  const cached = await getCachedAiResponse<{ insight: string }>({
+    cacheKey,
+    inputHash,
+    promptVersion: WIN_INSIGHT_PROMPT_VERSION,
+  });
+
+  if (cached) {
+    return NextResponse.json({ ...cached, cached: true });
+  }
+
   const context = `
 Total deals analysed: ${insights.totalWins}
 Average days to close: ${insights.avgDaysToClose}
@@ -64,7 +87,19 @@ No bullet points. No headers. Just sentences.`,
       maxTokens: 200,
     });
 
-    return NextResponse.json({ insight });
+    const response = { insight };
+    await setCachedAiResponse({
+      cacheKey,
+      feature: "client_win_insight",
+      clientId,
+      inputHash,
+      response,
+      model: getAnthropicModel(),
+      promptVersion: WIN_INSIGHT_PROMPT_VERSION,
+      ttlMs: WIN_INSIGHT_CACHE_TTL_MS,
+    });
+
+    return NextResponse.json({ ...response, cached: false });
   } catch (err) {
     console.error("[wins/insight] Claude call failed:", err);
     return NextResponse.json(

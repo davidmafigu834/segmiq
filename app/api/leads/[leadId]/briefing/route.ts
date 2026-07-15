@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canReadLead } from "@/lib/auth/permissions";
-import { callClaude } from "@/lib/ai/claude";
+import { callClaude, getAnthropicModel } from "@/lib/ai/claude";
+import {
+  getCachedAiResponse,
+  hashAiInput,
+  setCachedAiResponse,
+} from "@/lib/ai/response-cache";
 
 export const dynamic = "force-dynamic";
+
+const BRIEFING_PROMPT_VERSION = 1;
+const BRIEFING_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+type BriefingResponse = {
+  briefing: string;
+  suggestion: string;
+};
 
 const STATUS_MAP: Record<string, string> = {
   NEW: "New",
@@ -104,6 +117,21 @@ Recent events:
 ${eventSummary}
   `.trim();
 
+  const cacheKey = `lead-briefing:${params.leadId}`;
+  const inputHash = hashAiInput({
+    context,
+    promptVersion: BRIEFING_PROMPT_VERSION,
+  });
+  const cached = await getCachedAiResponse<BriefingResponse>({
+    cacheKey,
+    inputHash,
+    promptVersion: BRIEFING_PROMPT_VERSION,
+  });
+
+  if (cached) {
+    return NextResponse.json({ ...cached, cached: true });
+  }
+
   try {
     const [briefing, suggestion] = await Promise.all([
       callClaude({
@@ -132,7 +160,20 @@ Examples of good suggestions:
       }),
     ]);
 
-    return NextResponse.json({ briefing, suggestion });
+    const response = { briefing, suggestion };
+    await setCachedAiResponse({
+      cacheKey,
+      feature: "lead_briefing",
+      clientId: lead.client_id as string,
+      leadId: params.leadId,
+      inputHash,
+      response,
+      model: getAnthropicModel(),
+      promptVersion: BRIEFING_PROMPT_VERSION,
+      ttlMs: BRIEFING_CACHE_TTL_MS,
+    });
+
+    return NextResponse.json({ ...response, cached: false });
   } catch (err) {
     console.error("[briefing] Claude call failed:", err);
     return NextResponse.json({ error: "AI briefing unavailable" }, { status: 503 });
