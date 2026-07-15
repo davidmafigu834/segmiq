@@ -156,6 +156,7 @@ export default function ProjectDetailPage() {
   const [coverMediaId, setCoverMediaId] = useState<string | null>(null);
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
   const [pdfRegenerating, setPdfRegenerating] = useState(false);
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   function showToast(msg: string) {
     setToastMsg(msg);
@@ -666,8 +667,6 @@ export default function ProjectDetailPage() {
     );
   }
   if (!project) return null;
-
-  const [downloadingAll, setDownloadingAll] = useState(false);
 
   const currentMedia = lightboxIdx !== null ? media[lightboxIdx] : null;
   const galleryPhotos = media.filter((m) => m.type !== "video");

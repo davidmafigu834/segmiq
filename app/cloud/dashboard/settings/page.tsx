@@ -605,6 +605,9 @@ export default function CloudSettingsPage() {
               {(savingWatermark || reprocessing) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Droplets className="h-3.5 w-3.5" />}
               {savingWatermark ? "Saving..." : reprocessing ? "Applying to all photos..." : watermarkSaved ? "Applied!" : "Save watermark"}
             </button>
+            {watermarkError && (
+              <p className="text-[12px] text-red-500 font-cloud-body">{watermarkError}</p>
+            )}
             {reprocessing && (
               <p className="text-[12px] text-[#666660] font-cloud-body">Updating your existing photos with the new watermark settings…</p>
             )}
