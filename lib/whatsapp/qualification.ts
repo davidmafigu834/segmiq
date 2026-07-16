@@ -14,6 +14,10 @@ import {
   normalizeQualificationAnswer,
 } from "@/lib/whatsapp/qualification-answers";
 import { sendWhatsAppSessionMessage } from "@/lib/whatsapp/session-message";
+import {
+  SEGMIQ_CLIENT_ACQUISITION_FORM_NAME,
+  scoreSegmiqInboundQualification,
+} from "@/lib/instant-form-templates/segmiq-client-acquisition";
 
 type QualificationState = {
   in_progress: boolean;
@@ -261,6 +265,12 @@ export async function processWhatsAppQualification(opts: {
     asked_ids: qual.asked_ids,
     pending_question_id: null,
   });
+
+  const mergedFormData = leadUpdates.form_data as Record<string, unknown>;
+  if (flow.formName === SEGMIQ_CLIENT_ACQUISITION_FORM_NAME) {
+    mergedFormData._segmiqFitScore = scoreSegmiqInboundQualification(mergedFormData);
+  }
+
   if (lead.status === "NEW") leadUpdates.status = "CONTACTED";
 
   await supabase.from("leads").update(leadUpdates).eq("id", opts.leadId);

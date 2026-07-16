@@ -279,6 +279,25 @@ export function computeRulesScore(
   qualifiers?: CampaignQualifiers | null,
   now: Date = new Date()
 ): RulesScore {
+  const segmiqFit = lead.form_data?._segmiqFitScore;
+  if (typeof segmiqFit === "number" && segmiqFit > 0) {
+    const age = ageMs(lead, now);
+    let recencyBonus = 0;
+    let recencyLabel = "older";
+    if (age < 2 * 60 * 60 * 1000) {
+      recencyBonus = 10;
+      recencyLabel = "within 2h";
+    } else if (age < 24 * 60 * 60 * 1000) {
+      recencyBonus = 5;
+      recencyLabel = "today";
+    }
+    const score = Math.min(100, segmiqFit + recencyBonus);
+    return {
+      score,
+      factors: ["Segmiq fit", recencyLabel],
+    };
+  }
+
   const q = qualifiers ?? lead.qualifiers ?? null;
   const weighted: Array<{ label: string; weight: number }> = [];
 

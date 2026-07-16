@@ -21,8 +21,33 @@ export function InstantFormsList({
   const router = useRouter();
   const [forms, setForms] = useState(initialForms);
   const [creating, setCreating] = useState(false);
+  const [creatingSegmiq, setCreatingSegmiq] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  async function handleCreateSegmiqAcquisition() {
+    setCreatingSegmiq(true);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/instant-forms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          template: "segmiq_client_acquisition",
+          publish: true,
+          linkWhatsApp: true,
+        }),
+      });
+      const data = (await res.json()) as { form?: FormListItem; error?: string };
+      if (res.ok && data.form) {
+        setForms((prev) => [data.form!, ...prev]);
+        router.push(`/dashboard/clients/${clientId}/instant-forms/${data.form.id}`);
+        return;
+      }
+      alert(data.error ?? "Could not create Segmiq qualification form.");
+    } finally {
+      setCreatingSegmiq(false);
+    }
+  }
 
   async function handleCreate() {
     setCreating(true);
@@ -72,29 +97,40 @@ export function InstantFormsList({
             Facebook-style multi-screen lead forms, each with its own public link.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => void handleCreate()}
-          disabled={creating}
-        >
-          {creating ? "Creating…" : "Create form"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => void handleCreateSegmiqAcquisition()}
+            disabled={creatingSegmiq || creating}
+          >
+            {creatingSegmiq ? "Setting up…" : "Segmiq ad qualification"}
+          </button>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => void handleCreate()}
+            disabled={creating || creatingSegmiq}
+          >
+            {creating ? "Creating…" : "Create blank form"}
+          </button>
+        </div>
       </div>
 
       {forms.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-surface-card-alt p-12 text-center">
           <p className="text-ink-secondary">No instant forms yet.</p>
           <p className="mt-2 text-sm text-ink-tertiary">
-            Create your first form to capture leads with a Facebook-style experience.
+            Use <strong className="text-ink-secondary">Segmiq ad qualification</strong> for Facebook ad leads
+            on your own WhatsApp number — publishes the form and links it to WhatsApp auto-qualification.
           </p>
           <button
             type="button"
             className="btn-primary mt-6"
-            onClick={() => void handleCreate()}
-            disabled={creating}
+            onClick={() => void handleCreateSegmiqAcquisition()}
+            disabled={creatingSegmiq}
           >
-            Create form
+            {creatingSegmiq ? "Setting up…" : "Segmiq ad qualification"}
           </button>
         </div>
       ) : (

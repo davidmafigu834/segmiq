@@ -10,6 +10,7 @@ import {
   newQuestionId,
 } from "@/lib/instant-form-helpers";
 import { getSolarQualificationTemplate } from "@/lib/instant-form-templates/solar-qualification";
+import { getSegmiqClientAcquisitionTemplate } from "@/lib/instant-form-templates/segmiq-client-acquisition";
 import { getPublicInstantFormUrl } from "@/lib/public-url";
 import type {
   InstantFormCompletion,
@@ -156,7 +157,10 @@ export function InstantFormBuilder({
     ]);
   }
 
-  function loadSolarQualificationTemplate() {
+  function loadQualificationTemplate(
+    kind: "solar" | "segmiq_client_acquisition",
+    confirmMessage: string
+  ) {
     const hasExisting =
       questions.length > 0 ||
       Boolean(intro.headline?.trim()) ||
@@ -165,17 +169,34 @@ export function InstantFormBuilder({
       Boolean(completion.body?.trim());
 
     if (hasExisting) {
-      const ok = window.confirm(
-        "Load the solar WhatsApp qualification template?\n\nThis updates intro, completion, and replaces all questions with 5 qualifying questions (no contact fields — WhatsApp already has those)."
-      );
+      const ok = window.confirm(confirmMessage);
       if (!ok) return;
     }
 
-    const template = getSolarQualificationTemplate();
+    const template =
+      kind === "solar" ? getSolarQualificationTemplate() : getSegmiqClientAcquisitionTemplate();
     setIntro(template.intro);
     setCompletion(template.completion);
     setQuestions(template.questions);
+    if (kind === "segmiq_client_acquisition") {
+      setName(template.name);
+      setFormType("higher_intent");
+    }
     setSection("questions");
+  }
+
+  function loadSolarQualificationTemplate() {
+    loadQualificationTemplate(
+      "solar",
+      "Load the solar WhatsApp qualification template?\n\nThis updates intro, completion, and replaces all questions with 5 qualifying questions (no contact fields — WhatsApp already has those)."
+    );
+  }
+
+  function loadSegmiqClientAcquisitionTemplate() {
+    loadQualificationTemplate(
+      "segmiq_client_acquisition",
+      "Load the Segmiq client acquisition template?\n\nThis updates intro, completion, and replaces all questions with 7 qualifying questions for Facebook ad leads (no contact fields — WhatsApp already has those)."
+    );
   }
 
   const sections: { id: Section; label: string }[] = [
@@ -314,19 +335,28 @@ export function InstantFormBuilder({
           {section === "questions" && (
             <div className="space-y-4">
               <div className="rounded-lg border border-[var(--accent-border)] bg-[var(--accent-muted)]/40 p-4">
-                <div className="text-sm font-medium text-ink-primary">WhatsApp qualification template</div>
+                <div className="text-sm font-medium text-ink-primary">WhatsApp qualification templates</div>
                 <p className="mt-1 text-xs leading-relaxed text-ink-secondary">
-                  Loads 5 solar qualifying questions plus intro and completion copy. Contact fields are
-                  omitted — WhatsApp already captures name and phone. Use this form in WhatsApp Inbox
-                  Settings after publishing.
+                  Pre-built qualifying flows for WhatsApp auto-qualification. Contact fields are omitted —
+                  WhatsApp already captures name and phone. Publish the form, then select it in WhatsApp Inbox
+                  Settings.
                 </p>
-                <button
-                  type="button"
-                  className="btn-primary mt-3 h-9 text-xs"
-                  onClick={loadSolarQualificationTemplate}
-                >
-                  Load solar qualification template
-                </button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="btn-primary h-9 text-xs"
+                    onClick={loadSegmiqClientAcquisitionTemplate}
+                  >
+                    Segmiq client acquisition
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost h-9 text-xs"
+                    onClick={loadSolarQualificationTemplate}
+                  >
+                    Solar installer
+                  </button>
+                </div>
               </div>
 
               <div className="rounded-lg border border-border bg-surface-card p-4">
