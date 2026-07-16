@@ -88,6 +88,8 @@ export function WhatsAppInboxSettings({
   const [qualificationEnabled, setQualificationEnabled] = useState(initialQualificationEnabled);
   const [instantFormId, setInstantFormId] = useState(initialInstantFormId ?? "");
   const publishedForms = instantForms.filter((f) => f.status === "published");
+  const selectedInstantFormId =
+    instantFormId && publishedForms.some((f) => f.id === instantFormId) ? instantFormId : "";
   const [copied, setCopied] = useState<string | null>(null);
 
   const webhookUrl = `${webhookBaseUrl}/api/facebook/webhook`;
@@ -99,7 +101,7 @@ export function WhatsAppInboxSettings({
       accessToken.trim() !== initialAccessToken.trim() ||
       assignmentMode !== initialAssignmentMode ||
       qualificationEnabled !== initialQualificationEnabled ||
-      (instantFormId || null) !== (initialInstantFormId || null),
+      (resolvedInstantFormId || null) !== (initialInstantFormId || null),
     [
       phoneNumberId,
       initialPhoneNumberId,
@@ -111,7 +113,7 @@ export function WhatsAppInboxSettings({
       initialAssignmentMode,
       qualificationEnabled,
       initialQualificationEnabled,
-      instantFormId,
+      resolvedInstantFormId,
       initialInstantFormId,
     ]
   );
@@ -306,7 +308,7 @@ export function WhatsAppInboxSettings({
               <span className="font-mono text-[10px] uppercase text-ink-tertiary">Instant Form</span>
               <select
                 className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-sm"
-                value={instantFormId}
+                value={resolvedInstantFormId}
                 onChange={(e) => setInstantFormId(e.target.value)}
               >
                 <option value="">Latest published form</option>
@@ -318,12 +320,11 @@ export function WhatsAppInboxSettings({
               </select>
               {publishedForms.length === 0 ? (
                 <p className="mt-1 text-xs text-ink-secondary">
-                  No published Instant Forms yet — publish one under Client → Instant Forms, or we use built-in
-                  default questions.
+                  No published Instant Forms — WhatsApp auto-qualification is paused until you publish a form.
                 </p>
               ) : (
                 <p className="mt-1 text-xs text-ink-secondary">
-                  Pick a form or leave as latest published. Edit questions in Agency → Instant Forms.
+                  Pick a form or leave as latest published. Unpublishing a form stops it on WhatsApp immediately.
                 </p>
               )}
             </label>
@@ -341,7 +342,7 @@ export function WhatsAppInboxSettings({
               meta_whatsapp_access_token: accessToken.trim() || null,
               assignment_mode: assignmentMode,
               whatsapp_qualification_enabled: qualificationEnabled,
-              whatsapp_instant_form_id: instantFormId.trim() || null,
+              whatsapp_instant_form_id: resolvedInstantFormId || null,
             })
           }
         >

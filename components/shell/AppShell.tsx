@@ -253,7 +253,7 @@ export function AppShell({
             </div>
           </header>
         ) : !hideSidebar ? (
-          <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-bg-primary/95 px-3 backdrop-blur-xl sm:px-4 md:px-6 layout:px-8">
+          <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-bg-primary/95 px-3 backdrop-blur-xl sm:gap-3 sm:px-4 md:px-6 layout:gap-4 layout:px-8">
             <button
               type="button"
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] layout:hidden"
@@ -263,13 +263,13 @@ export function AppShell({
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             </button>
             <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-              <span className="hidden shrink-0 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-tertiary)] md:inline">
+              <span className="hidden min-w-0 truncate font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-tertiary)] lg:inline">
                 {breadcrumb}
               </span>
-              <span className="hidden h-3 w-px shrink-0 bg-[var(--border)] md:inline" aria-hidden />
-              <h1 className={`min-w-0 truncate font-semibold tracking-[-0.01em] text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] layout:text-[18px]" : "text-[15px] layout:text-[16px]"}`}>{pageTitle}</h1>
+              <span className="hidden h-3 w-px shrink-0 bg-[var(--border)] lg:inline" aria-hidden />
+              <h1 className={`min-w-0 flex-1 truncate font-semibold tracking-[-0.01em] text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] layout:text-[18px]" : "text-[15px] layout:text-[16px]"}`}>{pageTitle}</h1>
             </div>
-            <div className="flex min-w-0 shrink flex-nowrap items-center gap-2">
+            <div className="ml-auto flex shrink-0 flex-nowrap items-center gap-1.5 sm:gap-2">
               <div className="hidden items-center xl:flex">
                 <AgencyHeaderClock />
               </div>
@@ -315,7 +315,7 @@ export function AppShell({
                   </>
                 )
               ) : null}
-              {actions ? <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">{actions}</div> : null}
+              {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
             </div>
           </header>
         ) : null}

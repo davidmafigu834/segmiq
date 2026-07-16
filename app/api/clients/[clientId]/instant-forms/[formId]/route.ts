@@ -64,6 +64,15 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (parsed.data.status === "draft") {
+    await supabase
+      .from("clients")
+      .update({ whatsapp_instant_form_id: null })
+      .eq("id", params.clientId)
+      .eq("whatsapp_instant_form_id", params.formId);
+  }
+
   return NextResponse.json({ form: data });
 }
 
@@ -81,5 +90,12 @@ export async function DELETE(_req: Request, { params }: { params: { clientId: st
     .eq("client_id", params.clientId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await supabase
+    .from("clients")
+    .update({ whatsapp_instant_form_id: null })
+    .eq("id", params.clientId)
+    .eq("whatsapp_instant_form_id", params.formId);
+
   return NextResponse.json({ success: true });
 }

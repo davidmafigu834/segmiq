@@ -63,6 +63,7 @@ export function InstantFormBuilder({
   const [section, setSection] = useState<Section>("intro");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [logicModal, setLogicModal] = useState<InstantFormQuestion | null>(null);
 
   const config: InstantFormConfig = useMemo(
@@ -81,9 +82,10 @@ export function InstantFormBuilder({
     [questions]
   );
 
-  async function save(overrides?: Partial<{ status: typeof status }>) {
+  async function save(overrides?: Partial<{ status: typeof status }>): Promise<boolean> {
     setSaving(true);
     setSaved(false);
+    setSaveError(null);
     try {
       const res = await fetch(`/api/clients/${clientId}/instant-forms/${initial.id}`, {
         method: "PATCH",
@@ -100,15 +102,21 @@ export function InstantFormBuilder({
           completion,
         }),
       });
-      if (res.ok) {
-        const data = (await res.json()) as { form: InstantFormRow };
-        if (data.form) {
-          setStatus(data.form.status);
-          setSlug(data.form.slug);
-        }
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+      const data = (await res.json()) as { form?: InstantFormRow; error?: string };
+      if (!res.ok) {
+        setSaveError(data.error ?? "Failed to save form");
+        return false;
       }
+      if (data.form) {
+        setStatus(data.form.status);
+        setSlug(data.form.slug);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      return true;
+    } catch {
+      setSaveError("Could not save. Check your connection and try again.");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -201,6 +209,7 @@ export function InstantFormBuilder({
         </div>
         <div className="flex items-center gap-2">
           {saved ? <span className="text-xs text-[var(--success)]">Saved</span> : null}
+          {saveError ? <span className="max-w-[16rem] text-xs text-[var(--danger-fg)]">{saveError}</span> : null}
           <button type="button" className="btn-ghost h-9 text-xs" onClick={() => void save()} disabled={saving}>
             {saving ? "Saving…" : "Save draft"}
           </button>
@@ -208,10 +217,7 @@ export function InstantFormBuilder({
             <button
               type="button"
               className="btn-ghost h-9 text-xs"
-              onClick={() => {
-                setStatus("draft");
-                void save({ status: "draft" });
-              }}
+              onClick={() => void save({ status: "draft" })}
               disabled={saving}
             >
               Unpublish
@@ -220,10 +226,7 @@ export function InstantFormBuilder({
             <button
               type="button"
               className="btn-primary h-9 text-xs"
-              onClick={() => {
-                setStatus("published");
-                void save({ status: "published" });
-              }}
+              onClick={() => void save({ status: "published" })}
               disabled={saving}
             >
               Publish

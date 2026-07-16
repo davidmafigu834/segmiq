@@ -2,7 +2,6 @@ import { getVisibleQuestions } from "@/lib/instant-form-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { InstantFormCompletion, InstantFormIntro, InstantFormQuestion } from "@/types";
 import {
-  DEFAULT_WHATSAPP_QUALIFICATION_QUESTIONS,
   WHATSAPP_QUAL_COMPLETE,
   WHATSAPP_QUAL_INTRO,
   normalizeClientQuestions,
@@ -75,6 +74,8 @@ async function loadInstantForm(
         questions: (data.questions as InstantFormQuestion[]) ?? [],
       };
     }
+    // Explicit form selection that is missing or unpublished — do not fall back.
+    return null;
   }
 
   const { data: published } = await supabase

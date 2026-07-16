@@ -110,7 +110,7 @@ export function GlobalSearch({ role }: { role: UserRole }) {
       <button
         type="button"
         onClick={openSearch}
-        className="hidden h-9 w-full max-w-[320px] items-center gap-3 rounded-md border border-border bg-surface-card px-3 text-left text-sm text-ink-tertiary hover:border-[var(--border-strong)] lg:flex"
+        className="hidden h-9 w-[220px] shrink-0 items-center gap-3 rounded-md border border-border bg-surface-card px-3 text-left text-sm text-ink-tertiary hover:border-[var(--border-strong)] xl:w-[280px] 2xl:w-[320px] lg:flex"
       >
         <Search className="h-4 w-4 shrink-0" strokeWidth={1.5} />
         <span className="min-w-0 flex-1 truncate">Search…</span>

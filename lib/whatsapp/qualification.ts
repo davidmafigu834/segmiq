@@ -125,9 +125,6 @@ export async function processWhatsAppQualification(opts: {
   inboundBody: string;
   isNewLead: boolean;
 }): Promise<void> {
-  const flow = await loadQualificationFlow(opts.clientId);
-  if (!flow || flow.questions.length === 0) return;
-
   const supabase = createAdminClient();
   const { data: lead } = await supabase
     .from("leads")
@@ -139,6 +136,32 @@ export async function processWhatsAppQualification(opts: {
   const formData = (lead.form_data as Record<string, unknown> | null) ?? {};
   const qual = readQualState(formData);
   if (qual?.completed) return;
+
+  const flow = await loadQualificationFlow(opts.clientId);
+  if (!flow || flow.questions.length === 0) {
+    if (qual?.in_progress) {
+      await supabase
+        .from("leads")
+        .update({
+          form_data: {
+            ...formData,
+            _qualification: {
+              in_progress: false,
+              completed: false,
+              cancelled: true,
+              source: qual.source,
+              form_id: qual.form_id ?? null,
+              answers: qual.answers,
+              asked_ids: qual.asked_ids,
+              pending_question_id: null,
+            },
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", opts.leadId);
+    }
+    return;
+  }
 
   const answerText = opts.inboundBody.trim();
 

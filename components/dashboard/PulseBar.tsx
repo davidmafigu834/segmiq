@@ -32,10 +32,23 @@ function normalizeMetric(m: PulseBarMetric | LegacyPulseMetric): PulseBarMetric 
 
 export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMetric)[] }) {
   const list = metrics.map(normalizeMetric);
+  const layoutColumnClass =
+    list.length >= 6
+      ? "layout:grid-cols-6"
+      : list.length === 5
+        ? "layout:grid-cols-5"
+        : list.length === 3
+          ? "layout:grid-cols-3"
+          : list.length === 2
+            ? "layout:grid-cols-2"
+            : "layout:grid-cols-4";
+  const mdColumnClass =
+    list.length >= 3 ? "md:grid-cols-3" : list.length === 2 ? "md:grid-cols-2" : "md:grid-cols-1";
+
   return (
     <Card className="mb-8 w-full">
       <CardBody>
-      <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 layout:grid-cols-6">
+      <div className={`grid grid-cols-2 gap-4 sm:gap-6 ${mdColumnClass} ${layoutColumnClass}`}>
         {list.map((m, i) => (
           <div key={`${m.eyebrow}-${i}`} className="flex flex-col gap-1">
             <div className="flex items-center gap-1">
