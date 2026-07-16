@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAgencySettings } from "@/lib/agency-settings";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CompanyProfileManager } from "@/components/client-settings/CompanyProfileManager";
+import { PageHeader } from "@/components/ui";
 
 export default async function ClientCompanyProfilePage() {
   const session = await getServerSession(authOptions);
@@ -20,18 +21,17 @@ export default async function ClientCompanyProfilePage() {
 
   if (!client) redirect("/login");
 
+  const clientName = client.name as string;
+
   return (
-    <ClientManagerLayout breadcrumbPage="COMPANY" pageTitle="Company profile">
+    <ClientManagerLayout breadcrumbPage="COMPANY" pageTitle="Company profile" hideShellHeader>
       <div className="min-w-0 w-full max-w-full pb-16">
-        <header className="mb-10">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">
-            {client.name as string} / Company
-          </div>
-          <h1 className="font-serif text-4xl tracking-tight text-[--text-primary]">Company profile</h1>
-          <p className="mt-2 text-sm text-[--text-secondary]">
-            Update your business details, logo, and branding — the same settings your agency manages under client profile.
-          </p>
-        </header>
+        <PageHeader
+          className="mb-8"
+          eyebrow={`${clientName} / Company`}
+          title="Company profile"
+          description="Update your business details, logo, and branding — the same settings your agency manages under client profile."
+        />
 
         <CompanyProfileManager
           clientId={session.clientId}

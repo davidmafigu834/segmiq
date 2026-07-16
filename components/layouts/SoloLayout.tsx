@@ -99,6 +99,7 @@ export async function SoloLayout({
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
       contentFlush={contentFlush}
+      showWorkspaceSearch={!contentFlush}
       profileHref="/sales/profile"
     >
       {session?.isImpersonating ? (

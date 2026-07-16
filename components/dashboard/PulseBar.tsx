@@ -35,7 +35,7 @@ export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMe
   return (
     <Card className="mb-8 w-full">
       <CardBody>
-      <div className="grid grid-cols-2 gap-6 layout:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 layout:grid-cols-6">
         {list.map((m, i) => (
           <div key={`${m.eyebrow}-${i}`} className="flex flex-col gap-1">
             <div className="flex items-center gap-1">
@@ -49,7 +49,7 @@ export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMe
               ) : null}
             </div>
 
-            <p className="font-display text-3xl font-semibold leading-none text-[var(--text-primary)] md:text-4xl">
+            <p className="font-display text-2xl font-semibold leading-none text-[var(--text-primary)] sm:text-3xl layout:text-4xl">
               {m.emptyLabel ? <EmptyValue label={m.emptyLabel} /> : m.value}
             </p>
 

@@ -88,6 +88,7 @@ export async function SalesLayout({
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
       contentFlush={contentFlush}
+      showWorkspaceSearch={!contentFlush}
       profileHref="/sales/profile"
     >
       {session?.isImpersonating ? (

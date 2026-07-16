@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { QuoteSettingsManager } from "@/components/client-settings/QuoteSettingsManager";
+import { PageHeader } from "@/components/ui";
 
 export default async function ClientQuoteSettingsPage() {
   const session = await getServerSession(authOptions);
@@ -20,18 +21,17 @@ export default async function ClientQuoteSettingsPage() {
 
   if (!client) redirect("/login");
 
+  const clientName = client.name as string;
+
   return (
-    <ClientManagerLayout breadcrumbPage="QUOTATIONS" pageTitle="Quotation settings">
+    <ClientManagerLayout breadcrumbPage="QUOTATIONS" pageTitle="Quotation settings" hideShellHeader>
       <div className="min-w-0 w-full max-w-full pb-16">
-        <header className="mb-10">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">
-            {client.name as string} / Quotations
-          </div>
-          <h1 className="font-serif text-4xl tracking-tight text-[--text-primary]">Quotation settings</h1>
-          <p className="mt-2 text-sm text-[--text-secondary]">
-            Manage your product catalog and the company details that appear on every quote PDF.
-          </p>
-        </header>
+        <PageHeader
+          className="mb-8"
+          eyebrow={`${clientName} / Quotations`}
+          title="Quotation settings"
+          description="Manage your product catalog and the company details that appear on every quote PDF."
+        />
 
         <QuoteSettingsManager clientId={session.clientId} />
       </div>

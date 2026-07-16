@@ -64,7 +64,7 @@ export type AgencyReport = {
   byNotQualifiedReason: Array<{ reason: string; count: number }>;
 };
 
-const SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"];
+const SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL", "WHATSAPP_INBOUND"];
 
 function isContacted(status: string): boolean {
   return status !== "NEW";
@@ -91,22 +91,29 @@ async function fetchLeadsInRange(
   filters: AgencyReportFilters
 ): Promise<CohortLeadRow[]> {
   const supabase = createAdminClient();
-  let q = supabase
-    .from("leads")
-    .select(
-      "id, client_id, assigned_to_id, source, status, name, phone, created_at, updated_at, deal_value, not_qualified_reason, lost_reason"
-    )
-    .gte("created_at", fromIso)
-    .lt("created_at", toIso);
-  if (filters.clientIds?.length) {
-    q = q.in("client_id", filters.clientIds);
+  const pageSize = 1000;
+  const rows: CohortLeadRow[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    let q = supabase
+      .from("leads")
+      .select(
+        "id, client_id, assigned_to_id, source, status, name, phone, created_at, updated_at, deal_value, not_qualified_reason, lost_reason"
+      )
+      .gte("created_at", fromIso)
+      .lt("created_at", toIso);
+    if (filters.clientIds?.length) {
+      q = q.in("client_id", filters.clientIds);
+    }
+    if (filters.sources?.length) {
+      q = q.in("source", filters.sources);
+    }
+    const { data, error } = await q.range(offset, offset + pageSize - 1);
+    if (error) throw new Error(`agency report leads: ${error.message}`);
+    const batch = (data ?? []) as CohortLeadRow[];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
   }
-  if (filters.sources?.length) {
-    q = q.in("source", filters.sources);
-  }
-  const { data, error } = await q;
-  if (error) throw new Error(`agency report leads: ${error.message}`);
-  return (data ?? []) as CohortLeadRow[];
+  return rows;
 }
 
 export async function fetchCallLogsForLeadIds(
@@ -114,12 +121,18 @@ export async function fetchCallLogsForLeadIds(
 ): Promise<Array<{ lead_id: string; created_at: string; outcome: string }>> {
   if (leadIds.length === 0) return [];
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("call_logs")
-    .select("lead_id, created_at, outcome")
-    .in("lead_id", leadIds);
-  if (error) throw new Error(`agency report call_logs: ${error.message}`);
-  return (data ?? []) as Array<{ lead_id: string; created_at: string; outcome: string }>;
+  const chunkSize = 200;
+  const rows: Array<{ lead_id: string; created_at: string; outcome: string }> = [];
+  for (let i = 0; i < leadIds.length; i += chunkSize) {
+    const chunk = leadIds.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from("call_logs")
+      .select("lead_id, created_at, outcome")
+      .in("lead_id", chunk);
+    if (error) throw new Error(`agency report call_logs: ${error.message}`);
+    rows.push(...((data ?? []) as Array<{ lead_id: string; created_at: string; outcome: string }>));
+  }
+  return rows;
 }
 
 function avgTimeToCloseDays(
@@ -418,7 +431,10 @@ export async function computeAgencyReport(
     .sort((a, b) => b.winRate - a.winRate);
 
   const dayEnd = subMilliseconds(to, 1);
-  const days = eachDayOfInterval({ start: from, end: dayEnd });
+  const days =
+    from.getTime() <= dayEnd.getTime()
+      ? eachDayOfInterval({ start: from, end: dayEnd })
+      : [];
   const byDay: AgencyReport["byDay"] = days.map((d) => {
     const key = format(d, "yyyy-MM-dd");
     const dayStart = new Date(d);

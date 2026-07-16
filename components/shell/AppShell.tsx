@@ -212,51 +212,45 @@ export function AppShell({
             : "layout:min-h-0 layout:overflow-hidden"
         }`}
       >
-        {!hideSidebar && hideHeader ? (
-          <header className="safe-top sticky top-0 z-30 flex flex-col gap-2 border-b border-[var(--border)] bg-bg-primary px-4 py-2.5 layout:hidden">
-            <div className="flex min-h-11 shrink-0 items-center gap-2">
-              <button
-                type="button"
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
-                onClick={() => setMobileOpen(true)}
-                aria-label="Open menu"
-              >
-                <Menu className="h-5 w-5" strokeWidth={1.5} />
-              </button>
-              <div className="min-w-0 flex-1" />
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole} />
-                {!hideQuick ? (
-                  notificationRole === "AGENCY_ADMIN" ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setNewLeadOpen(true)}
-                        className="btn-primary flex h-9 w-9 items-center justify-center"
-                        aria-label="New lead"
-                      >
-                        <Plus className="h-4 w-4" strokeWidth={1.5} />
-                      </button>
-                      <NewLeadModal open={newLeadOpen} onClose={() => setNewLeadOpen(false)} clients={clients ?? []} />
-                    </>
-                  ) : (
-                    <Link
-                      href={quickActionHref}
+        {!hideSidebar && hideHeader && !contentFlush ? (
+          <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-[var(--border)] bg-bg-primary px-4 layout:hidden">
+            <button
+              type="button"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" strokeWidth={1.5} />
+            </button>
+            <div className="min-w-0 flex-1" />
+            <div className="flex shrink-0 items-center gap-2">
+              {!hideSearch ? <GlobalSearch role={notificationRole} /> : null}
+              <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole} />
+              {!hideQuick ? (
+                notificationRole === "AGENCY_ADMIN" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setNewLeadOpen(true)}
                       className="btn-primary flex h-9 w-9 items-center justify-center"
                       aria-label="New lead"
                     >
                       <Plus className="h-4 w-4" strokeWidth={1.5} />
-                    </Link>
-                  )
-                ) : null}
-                {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
-              </div>
+                    </button>
+                    <NewLeadModal open={newLeadOpen} onClose={() => setNewLeadOpen(false)} clients={clients ?? []} />
+                  </>
+                ) : (
+                  <Link
+                    href={quickActionHref}
+                    className="btn-primary flex h-9 w-9 items-center justify-center"
+                    aria-label="New lead"
+                  >
+                    <Plus className="h-4 w-4" strokeWidth={1.5} />
+                  </Link>
+                )
+              ) : null}
+              {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
             </div>
-            {!hideSearch ? (
-              <div className="min-w-0 w-full border-t border-[var(--border)] pt-2">
-                <GlobalSearch role={notificationRole} />
-              </div>
-            ) : null}
           </header>
         ) : !hideSidebar ? (
           <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-bg-primary/95 px-3 backdrop-blur-xl sm:px-4 md:px-6 layout:px-8">
@@ -275,7 +269,7 @@ export function AppShell({
               <span className="hidden h-3 w-px shrink-0 bg-[var(--border)] md:inline" aria-hidden />
               <h1 className={`min-w-0 truncate font-semibold tracking-[-0.01em] text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] layout:text-[18px]" : "text-[15px] layout:text-[16px]"}`}>{pageTitle}</h1>
             </div>
-            <div className="flex min-w-0 shrink items-center gap-2">
+            <div className="flex min-w-0 shrink flex-nowrap items-center gap-2">
               <div className="hidden items-center xl:flex">
                 <AgencyHeaderClock />
               </div>

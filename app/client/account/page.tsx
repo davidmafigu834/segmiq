@@ -39,7 +39,7 @@ export default async function ClientAccountPage() {
   const prefs = getManagerPrefs((user as { notification_prefs?: unknown }).notification_prefs);
 
   return (
-    <ClientManagerLayout breadcrumbPage="ACCOUNT" pageTitle="Your account">
+    <ClientManagerLayout breadcrumbPage="ACCOUNT" pageTitle="Your account" hideShellHeader>
       <ClientAccountClient
         user={{
           id: user.id as string,

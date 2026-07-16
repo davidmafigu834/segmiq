@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Check, Mail, Phone } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
+import { PageHeader } from "@/components/ui";
 import { normalizeToE164 } from "@/lib/phone-validate";
 import type { ManagerNotificationPrefs } from "@/lib/notification-prefs";
 import { CrmThemeSetting } from "@/components/settings/CrmThemeSetting";
@@ -360,15 +361,12 @@ export function ClientAccountClient({
 
   return (
     <div className="min-w-0 w-full max-w-full pb-16">
-      <header className="mb-10">
-        <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">
-          {client.name} / Account
-        </div>
-        <h1 className="font-serif text-4xl tracking-tight text-[--text-primary]">Your account</h1>
-        <p className="mt-2 text-sm text-[--text-secondary]">
-          Manage your profile, password, and notification preferences.
-        </p>
-      </header>
+      <PageHeader
+        className="mb-8"
+        eyebrow={`${client.name} / Account`}
+        title="Your account"
+        description="Manage your profile, password, and notification preferences."
+      />
 
       <section>
         <h2 className="mb-1 font-serif text-2xl text-[--text-primary]">Personal info</h2>

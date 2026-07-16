@@ -41,7 +41,13 @@ export function TeamMembersManager({
   const [inviteForm, setInviteForm] = useState({ name: "", email: "", phone: "" });
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [tempPass, setTempPass] = useState<string | null>(null);
-  const [inviteEmailResult, setInviteEmailResult] = useState<{ email: string; emailSent: boolean } | null>(null);
+  const [inviteEmailResult, setInviteEmailResult] = useState<{
+    email: string;
+    emailSent: boolean;
+    userName?: string;
+    source?: "invite" | "reset";
+  } | null>(null);
+  const [resettingPasswordId, setResettingPasswordId] = useState<string | null>(null);
 
   const rrList = useMemo(
     () => [...sales].filter((s) => s.is_active).sort((a, b) => a.round_robin_order - b.round_robin_order),
@@ -315,11 +321,49 @@ export function TeamMembersManager({
 
   async function copyTempPassword() {
     if (!tempPass) return;
+    const text = inviteEmailResult?.email
+      ? `Email: ${inviteEmailResult.email}\nPassword: ${tempPass}`
+      : tempPass;
     try {
-      await navigator.clipboard.writeText(tempPass);
-      setToast("Temporary password copied.");
+      await navigator.clipboard.writeText(text);
+      setToast(inviteEmailResult?.email ? "Login details copied." : "Temporary password copied.");
     } catch {
       setToast("Could not copy automatically. Please copy manually.");
+    }
+  }
+
+  async function resetUserPassword(user: { id: string; name: string; email: string }) {
+    if (
+      !window.confirm(
+        `Generate a new temporary password for ${user.name}? They will be signed out of all devices and must use the new password to log in.`
+      )
+    ) {
+      return;
+    }
+    setResettingPasswordId(user.id);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/users/${user.id}/reset-password`, {
+        method: "POST",
+      });
+      const j = (await res.json()) as { error?: string; emailSent?: boolean; temporaryPassword?: string };
+      if (!res.ok) {
+        setToast(j.error ?? "Failed to reset password");
+        return;
+      }
+      const emailSent = j.emailSent === true;
+      setInviteEmailResult({ email: user.email, emailSent, userName: user.name, source: "reset" });
+      if (!emailSent && j.temporaryPassword) {
+        setTempPass(j.temporaryPassword);
+      } else if (emailSent) {
+        setTempPass(null);
+      }
+      setToast(
+        emailSent
+          ? `New login details emailed to ${user.email}.`
+          : `New password generated for ${user.name}. Copy and send it to them manually.`
+      );
+    } finally {
+      setResettingPasswordId(null);
     }
   }
 
@@ -336,7 +380,11 @@ export function TeamMembersManager({
       {inviteEmailResult?.emailSent === true ? (
         <div className="flex items-center gap-2 rounded-xl border border-[var(--success-border)] bg-[var(--success-muted)] px-3.5 py-3 text-[13px] text-[var(--success)]">
           <MailCheck className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-          <p className="m-0 flex-1">Login details sent to {inviteEmailResult.email}</p>
+          <p className="m-0 flex-1">
+            {inviteEmailResult.source === "reset" ? "New login details sent to" : "Login details sent to"}{" "}
+            {inviteEmailResult.email}
+            {inviteEmailResult.userName ? ` (${inviteEmailResult.userName})` : ""}
+          </p>
           <button type="button" className="text-xs underline" onClick={() => setInviteEmailResult(null)}>
             Dismiss
           </button>
@@ -344,12 +392,13 @@ export function TeamMembersManager({
       ) : inviteEmailResult?.emailSent === false ? (
         <div className="rounded-xl border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3.5 py-3">
           <p className="mb-2 text-xs font-semibold text-[var(--warning)]">
-            Email failed to send. Share these credentials manually:
+            Email failed to send. Share these credentials manually
+            {inviteEmailResult.userName ? ` with ${inviteEmailResult.userName}` : ""}:
           </p>
           <p className="mb-1 text-[13px] text-ink-primary">Email: {inviteEmailResult.email}</p>
           <p className="mb-2 font-mono text-[13px] text-ink-primary">Password: {tempPass}</p>
           <button type="button" className="mr-3 text-xs underline" onClick={() => void copyTempPassword()}>
-            Copy password
+            Copy login details
           </button>
           <button
             type="button"
@@ -419,6 +468,14 @@ export function TeamMembersManager({
                       />
                     </td>
                     <td className="px-3 py-2 text-right">
+                      <button
+                        type="button"
+                        className="mr-3 text-xs text-[var(--accent)] disabled:opacity-50"
+                        disabled={!m.is_active || resettingPasswordId === m.id}
+                        onClick={() => void resetUserPassword(m)}
+                      >
+                        {resettingPasswordId === m.id ? "Resetting…" : "Reset password"}
+                      </button>
                       <button
                         type="button"
                         className="text-xs text-[var(--danger-fg)]"
@@ -534,6 +591,14 @@ export function TeamMembersManager({
                     />
                   </td>
                   <td className="px-3 py-2 text-right">
+                    <button
+                      type="button"
+                      className="mr-3 text-xs text-[var(--accent)] disabled:opacity-50"
+                      disabled={!s.is_active || resettingPasswordId === s.id}
+                      onClick={() => void resetUserPassword(s)}
+                    >
+                      {resettingPasswordId === s.id ? "Resetting…" : "Reset password"}
+                    </button>
                     <button
                       type="button"
                       className="mr-3 text-xs text-[var(--accent)]"

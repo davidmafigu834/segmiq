@@ -350,17 +350,22 @@ export function ChatThread({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <div
-        className={`flex h-[68px] shrink-0 items-center justify-between px-1.5 sm:px-4 max-[1180px]:min-h-[calc(68px+env(safe-area-inset-top))] max-[1180px]:pt-[env(safe-area-inset-top)] ${
-          isWhatsApp ? "wa-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
+        className={`shrink-0 max-[1180px]:pt-[max(0.75rem,env(safe-area-inset-top))] ${
+          isWhatsApp ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
         }`}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-3">
+        <div className="flex items-center justify-between gap-2 px-3 py-3 sm:px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           {onBack ? (
             <button
               type="button"
               onClick={onBack}
               title="Back to chats"
-              className={isWhatsApp ? "wa-icon-btn shrink-0" : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"}
+              className={
+                isWhatsApp
+                  ? "wa-icon-btn-muted shrink-0"
+                  : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"
+              }
             >
               <ArrowLeft size={20} />
             </button>
@@ -368,8 +373,8 @@ export function ChatThread({
           <button
             type="button"
             onClick={onToggleIntel}
-            className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1.5 py-1.5 text-left transition-colors sm:gap-3 ${
-              isWhatsApp ? "hover:bg-[var(--bg-quaternary)]" : "hover:bg-[var(--bg-quaternary)]"
+            className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-1 text-left transition-colors sm:gap-3 sm:px-1.5 sm:py-1.5 ${
+              isWhatsApp ? "hover:bg-[var(--wa-surface-subtle)]" : "hover:bg-[var(--bg-quaternary)]"
             }`}
           >
             <WhatsAppAvatar
@@ -379,7 +384,11 @@ export function ChatThread({
               className="max-[480px]:h-9 max-[480px]:w-9"
             />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 truncate text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
+              <div
+                className={`flex items-center gap-1.5 truncate text-[15px] font-semibold tracking-tight ${
+                  isWhatsApp ? "text-[var(--wa-ink)]" : "text-[var(--text-primary)]"
+                }`}
+              >
                 <span className="truncate">{name}</span>
                 {isWhatsApp ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--channel-whatsapp)]" title="WhatsApp contact" /> : null}
                 <LeadIntentBadge
@@ -390,7 +399,11 @@ export function ChatThread({
                   className="max-[520px]:hidden"
                 />
               </div>
-              <div className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] text-[var(--text-tertiary)]">
+              <div
+                className={`mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] ${
+                  isWhatsApp ? "text-[var(--wa-muted)]" : "text-[var(--text-tertiary)]"
+                }`}
+              >
                 <LeadStageBadge
                   status={conversation.status}
                   followUpDate={conversation.followUpDate}
@@ -513,6 +526,7 @@ export function ChatThread({
           >
             <Target size={16} />
           </button>
+        </div>
         </div>
       </div>
 

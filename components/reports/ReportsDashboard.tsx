@@ -13,6 +13,7 @@ import { formatCurrencyUsd, formatDuration } from "@/lib/format";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import type { LeadSource } from "@/types";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
+import { effectiveReportQueryString } from "@/lib/reports/report-range";
 
 const SOURCE_LABEL: Record<LeadSource, string> = {
   FACEBOOK: "Facebook",
@@ -33,14 +34,21 @@ const SOURCE_DOT: Record<LeadSource, string> = {
 async function fetcher(url: string): Promise<AgencyReport> {
   const r = await fetch(url);
   if (!r.ok) {
-    const t = await r.text();
-    throw new Error(t || "Failed to load report");
+    let msg = "Failed to load report";
+    try {
+      const j = (await r.json()) as { error?: string };
+      if (j.error) msg = j.error;
+    } catch {
+      const t = await r.text();
+      if (t) msg = t.slice(0, 200);
+    }
+    throw new Error(msg);
   }
   return r.json();
 }
 
 function SourceTable({ report }: { report: AgencyReport }) {
-  const sources: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL"];
+  const sources: LeadSource[] = ["FACEBOOK", "LANDING_PAGE", "MANUAL", "REFERRAL", "WHATSAPP_INBOUND"];
   const rows = sources.map((s) => ({ s, ...report.bySource[s] }));
   const columns: ResponsiveTableColumn<(typeof rows)[number]>[] = [
     {
@@ -172,14 +180,10 @@ function SalesLeaderboard({ rows }: { rows: AgencyReport["bySalesperson"] }) {
 
 export function ReportsDashboard() {
   const searchParams = useSearchParams();
-  const qs = searchParams.toString();
-  const key = qs.includes("from") && qs.includes("to") ? `/api/reports/agency?${qs}` : null;
+  const qs = effectiveReportQueryString(searchParams);
+  const key = `/api/reports/agency?${qs}`;
 
-  const { data, error, isLoading } = useSWR<AgencyReport>(key, fetcher);
-
-  if (!key) {
-    return <p className="text-sm text-ink-secondary">Loading report range…</p>;
-  }
+  const { data, error, isLoading } = useSWR<AgencyReport>(key, fetcher, { revalidateOnFocus: false });
 
   if (isLoading && !data) {
     return <div className="h-48 animate-pulse rounded-xl bg-surface-card-alt" />;
@@ -210,16 +214,16 @@ export function ReportsDashboard() {
   const pulse = buildReportPulseMetrics(data);
 
   return (
-    <div className="space-y-10">
+    <div className="min-w-0 space-y-8 sm:space-y-10">
       <PulseBar metrics={pulse} />
 
-      <section className="rounded-xl border border-border bg-surface-card p-6">
-        <div className="mb-4 flex flex-col gap-2 layout:flex-row layout:items-start layout:justify-between">
-          <div>
+      <section className="min-w-0 rounded-xl border border-border bg-surface-card p-4 sm:p-6">
+        <div className="mb-4 flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
+          <div className="min-w-0">
             <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary">01 / Volume</p>
-            <h2 className="font-display text-[22px] text-ink-primary">Leads over time</h2>
+            <h2 className="font-display text-xl text-ink-primary sm:text-[22px]">Leads over time</h2>
           </div>
-          <div className="flex flex-wrap gap-4 font-mono text-[11px] text-ink-secondary">
+          <div className="flex flex-wrap gap-3 font-mono text-[11px] text-ink-secondary sm:gap-4">
             <span className="inline-flex items-center gap-2">
               <span className="h-0.5 w-6 bg-[#9498A1]" />
               Leads
@@ -237,17 +241,17 @@ export function ReportsDashboard() {
         <ReportsVolumeChart byDay={data.byDay} />
       </section>
 
-      <div className="grid grid-cols-1 gap-8 layout:grid-cols-2">
-        <section className="rounded-xl border border-border bg-surface-card p-6">
+      <div className="grid min-w-0 grid-cols-1 gap-6 layout:grid-cols-2 layout:gap-8">
+        <section className="min-w-0 rounded-xl border border-border bg-surface-card p-4 sm:p-6">
           <h3 className="font-display text-lg text-ink-primary">By source</h3>
-          <div className="mt-4">
+          <div className="mt-4 min-w-0">
             <SourceTable report={data} />
           </div>
         </section>
-        <section className="rounded-xl border border-border bg-surface-card p-6">
+        <section className="min-w-0 rounded-xl border border-border bg-surface-card p-4 sm:p-6">
           <h3 className="font-display text-lg text-ink-primary">Why deals don&apos;t close</h3>
           <p className="mt-1 text-xs text-ink-tertiary">Lost + not qualified reasons (cohort)</p>
-          <div className="mt-4">
+          <div className="mt-4 min-w-0">
             {data.byNotQualifiedReason.length === 0 ? (
               <p className="text-sm text-ink-secondary">No reasons recorded.</p>
             ) : (
@@ -263,19 +267,19 @@ export function ReportsDashboard() {
         </section>
       </div>
 
-      <section>
+      <section className="min-w-0">
         <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary">02 / Portfolio</p>
-        <h2 className="font-display text-[22px] text-ink-primary">Client performance</h2>
-        <div className="mt-6 rounded-xl border border-border bg-surface-card p-6">
+        <h2 className="font-display text-xl text-ink-primary sm:text-[22px]">Client performance</h2>
+        <div className="mt-4 min-w-0 rounded-xl border border-border bg-surface-card p-4 sm:mt-6 sm:p-6">
           <ClientLeaderboard rows={data.byClient} />
         </div>
       </section>
 
-      <section>
+      <section className="min-w-0">
         <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary">03 / Team</p>
-        <h2 className="font-display text-[22px] text-ink-primary">Top performers</h2>
+        <h2 className="font-display text-xl text-ink-primary sm:text-[22px]">Top performers</h2>
         <p className="mt-1 text-xs text-ink-tertiary">Win rate · minimum 5 contacted leads</p>
-        <div className="mt-6 rounded-xl border border-border bg-surface-card p-6">
+        <div className="mt-4 min-w-0 rounded-xl border border-border bg-surface-card p-4 sm:mt-6 sm:p-6">
           {data.bySalesperson.length === 0 ? (
             <p className="text-sm text-ink-secondary">No salespeople meet the minimum contacted threshold.</p>
           ) : (
