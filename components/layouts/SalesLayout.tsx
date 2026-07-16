@@ -85,7 +85,6 @@ export async function SalesLayout({
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
       profileHref="/sales/profile"
-      lightMode
     >
       {session?.isImpersonating ? (
         <ImpersonationBanner

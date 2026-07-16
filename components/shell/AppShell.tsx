@@ -13,6 +13,7 @@ import { AgencyHeaderClock } from "./AgencyHeaderClock";
 import { ShellIcon } from "./shell-icons";
 import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
 import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
+import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 
 export type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
 
@@ -39,7 +40,7 @@ export function AppShell({
   hideSidebar = false,
   titleSize = "standard",
   profileHref,
-  lightMode = false,
+  lightMode: lightModeProp = false,
 }: {
   homeHref: string;
   roleLabel: string;
@@ -66,6 +67,8 @@ export function AppShell({
   lightMode?: boolean;
 }) {
   const pathname = usePathname();
+  const crmTheme = useCrmThemeOptional();
+  const lightMode = crmTheme ? crmTheme.theme === "light" : lightModeProp;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
 

@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import { MailCheck } from "lucide-react";
 import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
+import { CrmThemeSetting } from "@/components/settings/CrmThemeSetting";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -119,7 +120,11 @@ const TABS = [
 
 export function AgencySettingsClient() {
   const router = useRouter();
-  const [tab, setTab] = useState("general");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [tab, setTab] = useState(
+    TABS.some((t) => t.id === initialTab) ? (initialTab as string) : "general"
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -675,6 +680,8 @@ export function AgencySettingsClient() {
                 {saving ? "Updating…" : "Update password"}
               </Button>
             </section>
+
+            <CrmThemeSetting />
           </div>
         ) : null}
 

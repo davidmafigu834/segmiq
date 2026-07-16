@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { parseSalesPrefs, type SalesNotificationPrefs } from "@/lib/notification-prefs";
+import { CrmThemeSetting } from "@/components/settings/CrmThemeSetting";
 
 function passwordStrength(pw: string): "weak" | "medium" | "strong" {
   if (pw.length < 8) return "weak";
@@ -236,6 +237,8 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
           </div>
         </div>
       </section>
+
+      <CrmThemeSetting />
 
       <section className="space-y-4">
         <h2 className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Change password</h2>

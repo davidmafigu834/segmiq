@@ -95,6 +95,7 @@ export async function AgencyLayout({
       unreadNotifications={unread}
       notificationRole={session?.role ?? "AGENCY_ADMIN"}
       hideHeader={hideShellHeader}
+      profileHref="/dashboard/settings?tab=account"
     >
       {children}
       <AgencyLeadDrawerHost />

@@ -2,13 +2,12 @@
 
 import { SessionProvider } from "next-auth/react";
 import type { ReactNode } from "react";
-import { CrmThemeScope } from "@/components/CrmThemeScope";
+import { CrmThemeProvider } from "@/components/CrmThemeProvider";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
-      <CrmThemeScope />
-      {children}
+      <CrmThemeProvider>{children}</CrmThemeProvider>
     </SessionProvider>
   );
 }

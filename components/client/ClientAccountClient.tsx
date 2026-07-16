@@ -7,6 +7,7 @@ import { Check, Mail, Phone } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { normalizeToE164 } from "@/lib/phone-validate";
 import type { ManagerNotificationPrefs } from "@/lib/notification-prefs";
+import { CrmThemeSetting } from "@/components/settings/CrmThemeSetting";
 
 function passwordStrength(pw: string): "weak" | "medium" | "strong" {
   if (pw.length < 8) return "weak";
@@ -419,6 +420,10 @@ export function ClientAccountClient({
           ) : null}
         </div>
       </section>
+
+      <SectionDivider />
+
+      <CrmThemeSetting />
 
       <SectionDivider />
 

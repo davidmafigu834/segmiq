@@ -81,6 +81,7 @@ export async function ClientManagerLayout({
       sidebarBrand={clientName ? { name: clientName, logoUrl } : null}
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
+      profileHref="/client/account"
     >
       {session?.isImpersonating ? (
         <ImpersonationBanner
