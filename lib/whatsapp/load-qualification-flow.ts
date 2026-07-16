@@ -142,44 +142,8 @@ export async function loadQualificationFlow(clientId: string): Promise<Qualifica
     };
   }
 
-  const { data: schema } = await supabase
-    .from("form_schemas")
-    .select("fields")
-    .eq("client_id", clientId)
-    .maybeSingle();
-
-  if (schema?.fields && Array.isArray(schema.fields)) {
-    const fromForm = normalizeClientQuestions(
-      (schema.fields as Record<string, unknown>[]).map((f, i) => ({
-        id: String(f.id ?? f.maps_to ?? `q${i}`),
-        label: String(f.label ?? ""),
-        maps_to: String(f.maps_to ?? "other"),
-        field_type: f.field_type,
-        options: f.options,
-      }))
-    );
-    if (fromForm?.length) {
-      return {
-        source: "form_schema",
-        formId: null,
-        formName: null,
-        intro: WHATSAPP_QUAL_INTRO,
-        completion: WHATSAPP_QUAL_COMPLETE,
-        questions: fromForm,
-        instantQuestions: null,
-      };
-    }
-  }
-
-  return {
-    source: "default",
-    formId: null,
-    formName: null,
-    intro: WHATSAPP_QUAL_INTRO,
-    completion: WHATSAPP_QUAL_COMPLETE,
-    questions: DEFAULT_WHATSAPP_QUALIFICATION_QUESTIONS,
-    instantQuestions: null,
-  };
+  // Qualification is enabled but no published Instant Form is available.
+  return null;
 }
 
 export function getNextFlowQuestion(
