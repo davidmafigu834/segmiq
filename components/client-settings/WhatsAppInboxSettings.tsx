@@ -88,7 +88,7 @@ export function WhatsAppInboxSettings({
   const [qualificationEnabled, setQualificationEnabled] = useState(initialQualificationEnabled);
   const [instantFormId, setInstantFormId] = useState(initialInstantFormId ?? "");
   const publishedForms = instantForms.filter((f) => f.status === "published");
-  const selectedInstantFormId =
+  const resolvedInstantFormId =
     instantFormId && publishedForms.some((f) => f.id === instantFormId) ? instantFormId : "";
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -101,7 +101,8 @@ export function WhatsAppInboxSettings({
       accessToken.trim() !== initialAccessToken.trim() ||
       assignmentMode !== initialAssignmentMode ||
       qualificationEnabled !== initialQualificationEnabled ||
-      (resolvedInstantFormId || null) !== (initialInstantFormId || null),
+      (instantFormId && publishedForms.some((f) => f.id === instantFormId) ? instantFormId : null) !==
+        (initialInstantFormId || null),
     [
       phoneNumberId,
       initialPhoneNumberId,
@@ -113,7 +114,8 @@ export function WhatsAppInboxSettings({
       initialAssignmentMode,
       qualificationEnabled,
       initialQualificationEnabled,
-      resolvedInstantFormId,
+      instantFormId,
+      publishedForms,
       initialInstantFormId,
     ]
   );
