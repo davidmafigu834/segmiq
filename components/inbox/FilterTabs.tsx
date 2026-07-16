@@ -60,7 +60,7 @@ export function FilterTabs({ filter, counts, onChange, whatsappMode = false, var
           resolvedVariant === "panel"
             ? active
               ? "bg-white/20 text-white"
-              : "bg-[#EEF3F5] text-[#61707E]"
+              : "bg-[var(--wa-surface-subtle)] text-[var(--wa-muted)]"
             : active
               ? "bg-[var(--bg-quaternary)] text-[var(--text-primary)]"
               : "bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]";

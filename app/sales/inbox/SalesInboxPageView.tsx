@@ -30,6 +30,8 @@ export async function SalesInboxPageView({
     <Layout
       breadcrumb={breadcrumb}
       pageTitle={pageTitle}
+      hideShellHeader={fullPage}
+      contentFlush={fullPage}
     >
       <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-[var(--text-tertiary)]">Loading inbox…</div>}>
         <TeamInbox

@@ -13,6 +13,7 @@ export async function SoloLayout({
   actions,
   hideShellHeader = false,
   hideShellSidebar = false,
+  contentFlush = false,
 }: {
   children: React.ReactNode;
   breadcrumb: string;
@@ -20,6 +21,7 @@ export async function SoloLayout({
   actions?: React.ReactNode;
   hideShellHeader?: boolean;
   hideShellSidebar?: boolean;
+  contentFlush?: boolean;
 }) {
   const session = await getServerSession(authOptions);
   const supabase = createAdminClient();
@@ -96,6 +98,7 @@ export async function SoloLayout({
       sidebarBrand={clientName ? { name: clientName, logoUrl } : null}
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
+      contentFlush={contentFlush}
       profileHref="/sales/profile"
     >
       {session?.isImpersonating ? (

@@ -5,6 +5,8 @@ import {
   type CampaignQualifiers,
   type LeadLane,
 } from "@/lib/lead-lanes";
+import { contactLeadPreviewLine } from "@/lib/leads/contact-lead-display";
+import { facebookLeadPreviewLine } from "@/lib/leads/facebook-lead-display";
 import {
   isWhatsAppInboundLead,
   whatsappFirstMessage,
@@ -151,6 +153,18 @@ export function buildReasonContextLine(
       return preview.length > 72 ? `${preview.slice(0, 69)}…` : preview;
     }
     return "WhatsApp conversation";
+  }
+
+  if (lead.source === "FACEBOOK") {
+    const preview = facebookLeadPreviewLine(lead);
+    if (lane === "call_now" && lead.status === "NEW") {
+      return `${preview} · Awaiting first call`;
+    }
+    return preview;
+  }
+
+  if (lead.source === "MANUAL" || lead.source === "REFERRAL" || lead.source === "LANDING_PAGE") {
+    return contactLeadPreviewLine(lead);
   }
 
   const parts: string[] = [];

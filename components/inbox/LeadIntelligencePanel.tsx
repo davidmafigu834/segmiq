@@ -44,6 +44,8 @@ type Props = {
   mobileTopClass?: string;
   mobileFullScreen?: boolean;
   onMobileBack?: () => void;
+  panelWidth?: number;
+  panelAnimated?: boolean;
 };
 
 const FOLLOW_UP_QUICK_OPTIONS = [
@@ -73,6 +75,8 @@ export function LeadIntelligencePanel({
   mobileTopClass = "max-[1180px]:top-16",
   mobileFullScreen = false,
   onMobileBack,
+  panelWidth,
+  panelAnimated = false,
 }: Props) {
   const [briefing, setBriefing] = useState("");
   const [suggestion, setSuggestion] = useState("");
@@ -239,13 +243,15 @@ export function LeadIntelligencePanel({
     }
   }
 
+  const panelWidthClass = panelWidth != null ? "shrink-0" : "w-[360px] shrink-0";
+
   const panelShell = whatsappMode
-    ? `flex h-full min-h-0 w-[360px] shrink-0 flex-col bg-white wa-panel ${
+    ? `flex h-full min-h-0 ${panelWidthClass} flex-col bg-[var(--wa-surface)] wa-panel ${
         mobileFullScreen
           ? ""
           : `max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 ${mobileTopClass} max-[1180px]:z-40 max-[1180px]:w-[min(360px,92vw)] max-[1180px]:shadow-[-4px_0_24px_rgba(0,0,0,0.15)] max-[1180px]:transition-transform max-[1180px]:duration-200`
       }`
-    : `flex h-full min-h-0 w-[360px] shrink-0 flex-col border-l border-[var(--border)] bg-[var(--bg-tertiary)] max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 ${mobileTopClass} max-[1180px]:z-40 max-[1180px]:w-[340px] max-[1180px]:shadow-[-12px_0_30px_rgba(0,0,0,0.6)] max-[1180px]:transition-transform max-[1180px]:duration-200`;
+    : `flex h-full min-h-0 ${panelWidthClass} flex-col border-l border-[var(--border)] bg-[var(--bg-tertiary)] max-[1180px]:fixed max-[1180px]:bottom-0 max-[1180px]:right-0 ${mobileTopClass} max-[1180px]:z-40 max-[1180px]:w-[340px] max-[1180px]:shadow-[-12px_0_30px_rgba(0,0,0,0.6)] max-[1180px]:transition-transform max-[1180px]:duration-200`;
 
   const mobilePanelClass = mobileFullScreen
     ? open
@@ -257,14 +263,14 @@ export function LeadIntelligencePanel({
 
   const card = whatsappMode ? "wa-card" : "rounded-xl border border-[var(--border)] bg-[var(--surface-card)]";
   const sectionTitle = whatsappMode
-    ? "text-[10px] font-bold uppercase tracking-[0.12em] text-[#7B8996]"
+    ? "text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--wa-muted)]"
     : "text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]";
-  const textPrimary = whatsappMode ? "text-[#17212B]" : "text-[var(--text-primary)]";
-  const textSecondary = whatsappMode ? "text-[#61707E]" : "text-[var(--text-secondary)]";
-  const textMuted = whatsappMode ? "text-[#7B8996]" : "text-[var(--text-tertiary)]";
-  const surfaceMuted = whatsappMode ? "bg-[#EEF3F5]" : "bg-[var(--bg-quaternary)]";
+  const textPrimary = whatsappMode ? "text-[var(--wa-ink)]" : "text-[var(--text-primary)]";
+  const textSecondary = whatsappMode ? "text-[var(--text-secondary)]" : "text-[var(--text-secondary)]";
+  const textMuted = whatsappMode ? "text-[var(--wa-muted)]" : "text-[var(--text-tertiary)]";
+  const surfaceMuted = whatsappMode ? "bg-[var(--wa-surface-subtle)]" : "bg-[var(--bg-quaternary)]";
   const actionBtn = whatsappMode
-    ? "rounded-lg border border-[#DFE5EB] bg-white px-3 py-2 text-left text-xs font-medium text-[#53616E] hover:border-[#C9D4DC] hover:bg-[#F7F9FB]"
+    ? "rounded-lg border border-[var(--wa-border)] bg-[var(--wa-surface)] px-3 py-2 text-left text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:bg-[var(--wa-surface-subtle)]"
     : "rounded-lg border border-[var(--border)] px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]";
 
   const intelHeader = (
@@ -290,11 +296,16 @@ export function LeadIntelligencePanel({
     </div>
   );
 
+  const panelStyle = panelWidth != null ? { width: panelWidth } : undefined;
+
+  const panelAnimatedClass = panelAnimated ? "inbox-panel-animated" : "";
+
   if (!conversation) {
     return (
       <div
         id="intelPanel"
-        className={`${panelShell} ${mobilePanelClass}`}
+        style={panelStyle}
+        className={`${panelShell} ${mobilePanelClass} ${panelAnimatedClass}`}
       >
         {whatsappMode ? intelHeader : null}
         <div className={`flex flex-1 items-center justify-center p-6 text-sm ${textMuted}`}>
@@ -317,19 +328,20 @@ export function LeadIntelligencePanel({
   const stageButtonClass = (active: boolean) =>
     active
       ? whatsappMode
-        ? "border-[#008069] bg-[#E7FCE3] text-[#008069]"
+        ? "border-[var(--channel-whatsapp)] bg-[var(--channel-whatsapp-muted)] text-[var(--channel-whatsapp)]"
         : "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--accent-fg)]"
       : whatsappMode
-        ? "border-[#E9EDEF] text-[#54656F] hover:bg-[#F5F6F6]"
+        ? "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
         : "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]";
 
   return (
     <div
       id="intelPanel"
-      className={`${panelShell} ${mobilePanelClass}`}
+      style={panelStyle}
+      className={`${panelShell} ${mobilePanelClass} ${panelAnimatedClass}`}
     >
       {intelHeader}
-      <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] ${whatsappMode ? "bg-[#F7F9FB]" : ""}`}>
+      <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] ${whatsappMode ? "bg-[var(--wa-surface-subtle)]" : ""}`}>
       <div className="ag-fade-in flex flex-col gap-4 p-4">
         <div className={`flex items-center gap-3 p-4 ${card}`}>
           <WhatsAppAvatar
@@ -374,7 +386,7 @@ export function LeadIntelligencePanel({
                 onClick={() => setStageOpen((v) => !v)}
                 className={`flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-xs font-medium ${
                   whatsappMode
-                    ? "border-[#E9EDEF] text-[#54656F] hover:bg-[#F5F6F6]"
+                    ? "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
                     : "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
                 }`}
               >
@@ -416,7 +428,7 @@ export function LeadIntelligencePanel({
 
         <div
           className={`p-5 text-center ${card} ${
-            whatsappMode ? "bg-gradient-to-b from-white to-[#f7fbf8]" : ""
+            whatsappMode ? "bg-[var(--wa-surface-subtle)]" : ""
           }`}
         >
           <div className={`mb-2 text-xs uppercase tracking-wide ${textMuted}`}>
@@ -435,8 +447,8 @@ export function LeadIntelligencePanel({
             {label} Lead
           </div>
           {slaActive ? (
-            <div className={`mt-3 flex items-center justify-center gap-1.5 text-xs ${whatsappMode ? "text-[#B91C1C]" : "text-[var(--error)]"}`}>
-              <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${whatsappMode ? "bg-[#B91C1C]" : "bg-[var(--error)]"}`} />
+            <div className={`mt-3 flex items-center justify-center gap-1.5 text-xs ${whatsappMode ? "text-[var(--error)]" : "text-[var(--error)]"}`}>
+              <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${whatsappMode ? "bg-[var(--error)]" : "bg-[var(--error)]"}`} />
               5-min SLA active
             </div>
           ) : null}
@@ -478,11 +490,11 @@ export function LeadIntelligencePanel({
         <div
           className={`rounded-xl p-5 ${
             whatsappMode
-              ? "border border-[#00A884]/20 bg-gradient-to-br from-[#E7FCE3] to-[#f0fdf8] shadow-sm"
+              ? "border border-[var(--wa-border)] bg-[var(--wa-accent-soft)]"
               : "border border-[var(--accent-border)] bg-[var(--accent-muted)]"
           }`}
         >
-          <div className={`mb-2 ${sectionTitle} ${whatsappMode ? "text-[#008069]" : "text-[var(--accent-fg)]"}`}>
+          <div className={`mb-2 ${sectionTitle} ${whatsappMode ? "text-[var(--wa-accent-strong)]" : "text-[var(--accent-fg)]"}`}>
             Suggested Next Action
           </div>
           <p className={`mb-3 text-sm ${textPrimary}`}>{nextAction}</p>
@@ -517,7 +529,7 @@ export function LeadIntelligencePanel({
             </button>
           </div>
           {followUpOpen ? (
-            <div className={`mt-3 space-y-2 rounded-lg border p-3 ${whatsappMode ? "border-[#E9EDEF] bg-white" : "border-[var(--border)] bg-[var(--surface-card)]"}`}>
+            <div className={`mt-3 space-y-2 rounded-lg border p-3 ${whatsappMode ? "border-[var(--border)] bg-[var(--wa-surface)]" : "border-[var(--border)] bg-[var(--surface-card)]"}`}>
               <div className="grid grid-cols-3 gap-1.5">
                 {FOLLOW_UP_QUICK_OPTIONS.map((opt) => (
                   <button
@@ -527,7 +539,7 @@ export function LeadIntelligencePanel({
                     onClick={() => void handleScheduleFollowUp(toDateInputValue(addDays(new Date(), opt.days)))}
                     className={`rounded-md border px-2 py-2 text-[11px] disabled:opacity-50 ${
                       whatsappMode
-                        ? "border-[#E9EDEF] text-[#54656F] hover:bg-[#F5F6F6]"
+                        ? "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
                         : "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
                     }`}
                   >
@@ -543,7 +555,7 @@ export function LeadIntelligencePanel({
                   onChange={(e) => setFollowUpDate(e.target.value)}
                   className={`flex-1 rounded-md border px-2 py-2 text-sm ${
                     whatsappMode
-                      ? "border-[#E9EDEF] bg-white text-[#111B21]"
+                      ? "border-[var(--border)] bg-[var(--wa-surface)] text-[var(--text-primary)]"
                       : "border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)]"
                   }`}
                 />
@@ -553,7 +565,7 @@ export function LeadIntelligencePanel({
                   onClick={() => void handleScheduleFollowUp(followUpDate)}
                   className={`rounded-md px-3 py-2 text-xs font-medium disabled:opacity-50 ${
                     whatsappMode
-                      ? "bg-[#008069] text-white"
+                      ? "bg-[var(--channel-whatsapp)] text-white"
                       : "bg-[var(--accent)] text-[var(--accent-foreground)]"
                   }`}
                 >
@@ -563,7 +575,7 @@ export function LeadIntelligencePanel({
             </div>
           ) : null}
           {actionMessage ? (
-            <p className={`mt-3 text-xs ${whatsappMode ? "text-[#008069]" : "text-[var(--accent-fg)]"}`}>
+            <p className={`mt-3 text-xs ${whatsappMode ? "text-[var(--wa-accent-strong)]" : "text-[var(--accent-fg)]"}`}>
               {actionMessage}
             </p>
           ) : null}
@@ -596,7 +608,7 @@ export function LeadIntelligencePanel({
                 rows={2}
                 placeholder="Handover note for the new rep (optional)"
                 className={`mb-1 w-full resize-none rounded-md border px-2 py-1.5 text-xs ${
-                  whatsappMode ? "border-[#E9EDEF] bg-white text-[#111B21]" : "border-[var(--border)] bg-[var(--bg-primary)]"
+                  whatsappMode ? "border-[var(--border)] bg-[var(--wa-surface)] text-[var(--text-primary)]" : "border-[var(--border)] bg-[var(--bg-primary)]"
                 }`}
               />
               <button

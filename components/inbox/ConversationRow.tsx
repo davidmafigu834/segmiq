@@ -92,7 +92,7 @@ export function ConversationRow({
                   </span>
                 ) : null}
                 {conversation.unread > 0 ? (
-                  <span className="flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-[#0F9F73] px-1.5 text-[10px] font-bold text-white">
+                  <span className="flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-[var(--channel-whatsapp)] px-1.5 text-[10px] font-bold text-white">
                     {conversation.unread > 9 ? "9+" : conversation.unread}
                   </span>
                 ) : null}

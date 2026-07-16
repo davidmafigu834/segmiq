@@ -329,7 +329,7 @@ export function ChatThread({
 
   if (!conversation) {
     return (
-      <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6 text-sm text-[#6B7886]">
+      <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6 text-sm text-[var(--wa-muted)]">
         <div className="wa-empty-hint max-w-sm text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--channel-whatsapp-muted)] text-[var(--channel-whatsapp)]">
             <MessageCircleMore size={26} />
@@ -381,7 +381,7 @@ export function ChatThread({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 truncate text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
                 <span className="truncate">{name}</span>
-                {isWhatsApp ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#0F9F73]" title="WhatsApp contact" /> : null}
+                {isWhatsApp ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--channel-whatsapp)]" title="WhatsApp contact" /> : null}
                 <LeadIntentBadge
                   score={conversation.score}
                   label={conversation.scoreLabel}
@@ -459,7 +459,7 @@ export function ChatThread({
                   setMenuOpen(false);
                   onToggleIntel();
                 }}
-                className="hidden w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#25313C] hover:bg-[#F7F9FB] max-[640px]:flex"
+                className="hidden w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] max-[640px]:flex"
               >
                 <Target size={14} />
                 View lead details
@@ -563,7 +563,7 @@ export function ChatThread({
           {conversation.source === "WHATSAPP_INBOUND" && !sessionOpen ? (
             <div className={`border-t px-4 py-2.5 text-center text-[11px] leading-snug ${
               isWhatsApp
-                ? "border-[#F1DFC5] bg-[#FFF9EF] text-[#A45A0A]"
+                ? "border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)]"
                 : "border-[var(--border)] bg-[var(--accent-muted)] text-[var(--accent-fg)]"
             }`}
             >
@@ -625,7 +625,7 @@ export function ChatThread({
           </div>
         </div>
       ) : (
-        <div className="wa-composer shrink-0 px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-[#6B7886]">
+        <div className="wa-composer shrink-0 px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-[var(--wa-muted)]">
           Read-only — assign this lead to send messages
         </div>
       )}

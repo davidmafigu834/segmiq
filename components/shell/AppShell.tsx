@@ -14,6 +14,8 @@ import { ShellIcon } from "./shell-icons";
 import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
 import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
+import { CrmSidebarResizeHandle } from "./CrmSidebarResizeHandle";
+import { useCrmSidebarLayout } from "@/lib/shell/use-crm-sidebar-layout";
 
 export type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
 
@@ -41,6 +43,7 @@ export function AppShell({
   titleSize = "standard",
   profileHref,
   lightMode: lightModeProp = false,
+  contentFlush = false,
 }: {
   homeHref: string;
   roleLabel: string;
@@ -65,12 +68,15 @@ export function AppShell({
   titleSize?: "hero" | "standard";
   profileHref?: string;
   lightMode?: boolean;
+  contentFlush?: boolean;
 }) {
   const pathname = usePathname();
   const crmTheme = useCrmThemeOptional();
   const lightMode = crmTheme ? crmTheme.theme === "light" : lightModeProp;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [newLeadOpen, setNewLeadOpen] = useState(false);
+  const { collapsed: sidebarCollapsed, resize: resizeSidebar, toggleCollapsed: toggleSidebarCollapsed, resizable: sidebarResizable } =
+    useCrmSidebarLayout(!hideSidebar);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -128,6 +134,7 @@ export function AppShell({
       navActive={navActive}
       profileHref={profileHref}
       lightMode={lightMode}
+      iconOnly={sidebarResizable && sidebarCollapsed}
     />
   );
   const mobileSidebar = (
@@ -157,12 +164,20 @@ export function AppShell({
       }`}
     >
       {!hideSidebar ? (
-      <aside
-        className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r border-[var(--border)] bg-surface-sidebar layout:flex"
-        aria-label="Workspace navigation"
-      >
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{sidebar}</div>
-      </aside>
+      <div className="crm-shell-sidebar-host fixed inset-y-0 left-0 z-20 hidden layout:flex">
+        <aside
+          className="crm-shell-sidebar flex min-w-0 flex-col border-r border-[var(--border)] bg-surface-sidebar"
+          aria-label="Workspace navigation"
+        >
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{sidebar}</div>
+        </aside>
+        <CrmSidebarResizeHandle
+          onResize={resizeSidebar}
+          onToggleCollapse={toggleSidebarCollapsed}
+          collapsed={sidebarCollapsed}
+          label="Resize sidebar"
+        />
+      </div>
       ) : null}
 
       {!hideSidebar && mobileOpen ? (
@@ -191,10 +206,10 @@ export function AppShell({
       ) : null}
 
       <div
-        className={`flex min-h-0 min-w-0 max-w-full flex-1 flex-col ${
+        className={`crm-shell-main flex min-h-0 min-w-0 max-w-full flex-1 flex-col ${
           hideSidebar
             ? "h-full max-h-full overflow-hidden"
-            : "layout:ml-60 layout:min-h-0 layout:overflow-hidden"
+            : "layout:min-h-0 layout:overflow-hidden"
         }`}
       >
         {!hideSidebar && hideHeader ? (
@@ -312,18 +327,20 @@ export function AppShell({
         ) : null}
 
         <main
-          style={hideSidebar ? undefined : { overflowX: "clip" }}
+          style={hideSidebar || contentFlush ? undefined : { overflowX: "clip" }}
           className={
             hideSidebar
               ? "flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden"
-              : "min-w-0 w-full max-w-full flex-1 px-4 pt-5 pb-28 sm:px-5 md:px-6 md:pt-6 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-7"
+              : contentFlush
+                ? "flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden p-0 layout:overflow-hidden"
+                : "min-w-0 w-full max-w-full flex-1 px-4 pt-5 pb-28 sm:px-5 md:px-6 md:pt-6 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-7"
           }
         >
           {children}
         </main>
       </div>
 
-      {!hideSidebar ? (
+      {!hideSidebar && !contentFlush ? (
       <nav
         aria-label="Bottom navigation"
         className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--border)] bg-bg-primary layout:hidden"

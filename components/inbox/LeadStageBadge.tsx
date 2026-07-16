@@ -1,3 +1,6 @@
+"use client";
+
+import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { stageLabel, stageStyle } from "@/lib/inbox/scoring";
 
 type Variant = "default" | "list" | "header";
@@ -33,9 +36,22 @@ export function LeadStageBadge({
   variant = "default",
   className = "",
 }: Props) {
+  const crmTheme = useCrmThemeOptional();
+  const isDarkCrm = crmTheme?.theme === "dark";
   const label = stageLabel(status, followUpDate ?? null);
 
   if (variant === "list") {
+    if (isDarkCrm) {
+      const st = stageStyle(status, followUpDate ?? null);
+      return (
+        <span
+          className={`inline-flex max-w-full items-center truncate rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none ${className}`}
+          style={{ background: st.bg, color: st.text, border: `1px solid ${st.border}` }}
+        >
+          {label}
+        </span>
+      );
+    }
     const style = LIST_STYLES[label] ?? LIST_STYLES.Contacted;
     return (
       <span
@@ -48,6 +64,17 @@ export function LeadStageBadge({
   }
 
   if (variant === "header") {
+    if (isDarkCrm) {
+      const st = stageStyle(status, followUpDate ?? null);
+      return (
+        <span
+          className={`inline-flex max-w-full shrink-0 items-center truncate rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none ${className}`}
+          style={{ background: st.bg, color: st.text, border: `1px solid ${st.border}` }}
+        >
+          {label}
+        </span>
+      );
+    }
     const style = HEADER_STYLES[label] ?? HEADER_STYLES.Contacted;
     return (
       <span

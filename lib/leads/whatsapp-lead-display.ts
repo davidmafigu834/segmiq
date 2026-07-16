@@ -1,3 +1,6 @@
+import { facebookLeadDisplayName } from "@/lib/leads/facebook-lead-display";
+import { contactLeadDisplayName } from "@/lib/leads/contact-lead-display";
+
 export function isWhatsAppInboundLead(source?: string | null): boolean {
   return source === "WHATSAPP_INBOUND";
 }
@@ -43,7 +46,9 @@ export function leadCardDisplayName(lead: {
   name?: string | null;
   phone?: string | null;
   source?: string | null;
+  form_data?: Record<string, unknown> | null;
 }): string {
   if (isWhatsAppInboundLead(lead.source)) return whatsappLeadDisplayName(lead);
-  return lead.name?.trim() || "Unknown";
+  if (lead.source === "FACEBOOK") return facebookLeadDisplayName(lead);
+  return contactLeadDisplayName(lead);
 }

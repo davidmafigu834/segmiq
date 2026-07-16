@@ -12,6 +12,8 @@ import { ConversationList } from "./ConversationList";
 import { FilterTabs } from "./FilterTabs";
 import { InboxIconRail } from "./InboxIconRail";
 import { LeadIntelligencePanel } from "./LeadIntelligencePanel";
+import { InboxPanelResizeHandle } from "./InboxPanelResizeHandle";
+import { useInboxPanelWidths } from "@/lib/inbox/use-inbox-panel-widths";
 
 type Props = {
   userName: string;
@@ -171,12 +173,23 @@ export function TeamInbox({
   const paneNav = isCompact && whatsappMode;
   const intelOpenEffective = paneNav ? mobilePane === "intel" : intelOpen;
   const listOpenEffective = paneNav ? mobilePane === "list" : convOpen;
+  const {
+    listWidth,
+    intelWidth,
+    listCollapsed,
+    intelCollapsed,
+    resizeList,
+    resizeIntel,
+    toggleListCollapsed,
+    toggleIntelCollapsed,
+    resizable,
+  } = useInboxPanelWidths(whatsappMode && !paneNav);
 
   return (
     <div
       className={
         whatsappMode
-          ? "flex h-full min-h-[calc(100dvh-11rem)] flex-col overflow-hidden layout:min-h-[calc(100dvh-7.5rem)]"
+          ? "flex h-full min-h-0 flex-1 flex-col overflow-hidden"
           : "flex h-full min-h-[calc(100dvh-11rem)] flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] layout:min-h-[calc(100dvh-7.5rem)]"
       }
     >
@@ -247,7 +260,7 @@ export function TeamInbox({
         </div>
       ) : null}
 
-      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "wa-hub-shell" : ""}`}>
+      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "wa-hub-shell wa-hub-immersive" : ""}`}>
         {!whatsappMode ? (
           <InboxIconRail
             pipelineHref={pipelineHref}
@@ -263,26 +276,38 @@ export function TeamInbox({
           </div>
         ) : (
           <>
-            <ConversationList
-              conversations={conversations}
-              activeId={activeId}
-              filter={filter}
-              search={search}
-              currentRepName={userName}
-              currentUserId={userId}
-              onSelect={handleSelect}
-              onClaim={(id) => void handleClaim(id)}
-              claimingId={claimingId}
-              open={listOpenEffective}
-              canClaim={role === "SALESPERSON"}
-              whatsappMode={whatsappMode}
-              mobileFullScreen={paneNav}
-              onSearchChange={setSearch}
-              backHref={backHref}
-              roleSubtitle={roleSubtitle}
-              filterCounts={counts}
-              onFilterChange={setFilter}
-            />
+            {!resizable || !listCollapsed ? (
+              <ConversationList
+                conversations={conversations}
+                activeId={activeId}
+                filter={filter}
+                search={search}
+                currentRepName={userName}
+                currentUserId={userId}
+                onSelect={handleSelect}
+                onClaim={(id) => void handleClaim(id)}
+                claimingId={claimingId}
+                open={listOpenEffective}
+                canClaim={role === "SALESPERSON"}
+                whatsappMode={whatsappMode}
+                mobileFullScreen={paneNav}
+                onSearchChange={setSearch}
+                roleSubtitle={roleSubtitle}
+                filterCounts={counts}
+                onFilterChange={setFilter}
+                panelWidth={resizable ? listWidth : undefined}
+                panelAnimated={resizable}
+              />
+            ) : null}
+            {resizable ? (
+              <InboxPanelResizeHandle
+                panel="list"
+                collapsed={listCollapsed}
+                onResize={resizeList}
+                onToggleCollapse={toggleListCollapsed}
+                label="Resize conversations panel"
+              />
+            ) : null}
             <div
               className={`flex min-h-0 min-w-0 flex-1 flex-col wa-panel ${
                 paneNav && mobilePane !== "thread" ? "max-[1180px]:hidden" : ""
@@ -311,21 +336,34 @@ export function TeamInbox({
                 onConversationUpdate={() => void loadConversations({ silent: true })}
               />
             </div>
-            <LeadIntelligencePanel
-              conversation={active}
-              clientId={clientId}
-              userId={userId}
-              role={role}
-              canReassign={canReassign}
-              salespeople={salespeople}
-              onReassigned={() => void loadConversations({ silent: true })}
-              onUpdated={() => void loadConversations({ silent: true })}
-              open={intelOpenEffective}
-              whatsappMode={whatsappMode}
-              mobileTopClass={mobileIntelTop}
-              mobileFullScreen={paneNav}
-              onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
-            />
+            {resizable ? (
+              <InboxPanelResizeHandle
+                panel="intel"
+                collapsed={intelCollapsed}
+                onResize={resizeIntel}
+                onToggleCollapse={toggleIntelCollapsed}
+                label="Resize lead workspace panel"
+              />
+            ) : null}
+            {!resizable || !intelCollapsed ? (
+              <LeadIntelligencePanel
+                conversation={active}
+                clientId={clientId}
+                userId={userId}
+                role={role}
+                canReassign={canReassign}
+                salespeople={salespeople}
+                onReassigned={() => void loadConversations({ silent: true })}
+                onUpdated={() => void loadConversations({ silent: true })}
+                open={intelOpenEffective}
+                whatsappMode={whatsappMode}
+                mobileTopClass={mobileIntelTop}
+                mobileFullScreen={paneNav}
+                onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                panelWidth={resizable ? intelWidth : undefined}
+                panelAnimated={resizable}
+              />
+            ) : null}
           </>
         )}
       </div>

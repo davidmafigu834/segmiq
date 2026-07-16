@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import type { InboxFilter, InboxConversation } from "@/lib/inbox/types";
-import { initials } from "@/lib/inbox/assignee-colors";
 import { applyInboxFilter } from "@/lib/inbox/apply-filter";
 import { ConversationRow } from "./ConversationRow";
 import { FilterTabs } from "./FilterTabs";
-import { ArrowLeft, MessageCircleMore, Search } from "lucide-react";
+import { MessageCircleMore, Search } from "lucide-react";
 
 type Props = {
   conversations: InboxConversation[];
@@ -23,10 +21,11 @@ type Props = {
   whatsappMode?: boolean;
   mobileFullScreen?: boolean;
   onSearchChange?: (value: string) => void;
-  backHref?: string;
   roleSubtitle?: string;
   filterCounts?: Record<InboxFilter, number>;
   onFilterChange?: (filter: InboxFilter) => void;
+  panelWidth?: number;
+  panelAnimated?: boolean;
 };
 
 export function ConversationList({
@@ -44,10 +43,11 @@ export function ConversationList({
   whatsappMode = false,
   mobileFullScreen = false,
   onSearchChange,
-  backHref,
   roleSubtitle,
   filterCounts,
   onFilterChange,
+  panelWidth,
+  panelAnimated = false,
 }: Props) {
   const filtered = applyInboxFilter(conversations, filter, search, currentUserId);
   const mobileTop = whatsappMode
@@ -63,12 +63,18 @@ export function ConversationList({
       ? "max-[860px]:translate-x-0"
       : "max-[860px]:-translate-x-full";
 
+  const listWidthClass =
+    panelWidth != null ? "shrink-0" : whatsappMode ? "w-[360px]" : "w-[360px]";
+
   return (
     <div
       id="convPanel"
+      style={panelWidth != null ? { width: panelWidth } : undefined}
       className={[
-        "flex h-full min-h-0 shrink-0 flex-col",
-        whatsappMode ? "w-[360px] bg-[var(--surface-card)] wa-panel max-[1180px]:w-full" : "w-[360px] border-r border-[var(--border)] bg-[var(--bg-tertiary)]",
+        "flex h-full min-h-0 flex-col",
+        panelAnimated ? "inbox-panel-animated" : "",
+        listWidthClass,
+        whatsappMode ? "bg-[var(--surface-card)] wa-panel max-[1180px]:w-full" : "border-r border-[var(--border)] bg-[var(--bg-tertiary)]",
         mobileFullScreen
           ? ""
           : `max-[860px]:fixed max-[860px]:bottom-0 max-[860px]:left-0 ${mobileTop} max-[860px]:z-40 max-[860px]:w-[min(320px,88vw)] max-[860px]:shadow-[4px_0_24px_rgba(0,0,0,0.15)] max-[860px]:transition-transform max-[860px]:duration-200`,
@@ -78,32 +84,20 @@ export function ConversationList({
       {whatsappMode ? (
         <div className="shrink-0 wa-panel-header max-[1180px]:pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-3 px-4 py-3.5">
-            {backHref ? (
-              <Link
-                href={backHref}
-                className="wa-icon-btn-muted !h-9 !w-9"
-                title="Back to dashboard"
-              >
-                <ArrowLeft size={20} />
-              </Link>
-            ) : null}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <div className="text-[17px] font-semibold tracking-tight text-[#17212B]">Sales conversations</div>
-                <span className="rounded-full bg-[#E7F8F1] px-2 py-0.5 text-[10px] font-semibold text-[#087B59]">
+                <div className="text-[17px] font-semibold tracking-tight text-[var(--wa-ink)]">Sales conversations</div>
+                <span className="rounded-full bg-[var(--wa-accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--wa-accent-strong)]">
                   {conversations.length}
                 </span>
               </div>
               {roleSubtitle ? (
-                <div className="mt-0.5 truncate text-[12px] text-[#6B7886]">WhatsApp Sales Hub · {roleSubtitle}</div>
+                <div className="mt-0.5 truncate text-[12px] text-[var(--wa-muted)]">WhatsApp Sales Hub · {roleSubtitle}</div>
               ) : null}
-            </div>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#12AA7B] to-[#087B59] text-xs font-semibold text-white shadow-[0_5px_14px_rgba(15,159,115,0.22)] ring-2 ring-white">
-              {initials(currentRepName)}
             </div>
           </div>
           {filterCounts && onFilterChange ? (
-            <div className="overflow-x-auto border-t border-[#E6EBEF] px-4 py-2.5 inbox-scroll">
+            <div className="overflow-x-auto border-t border-[var(--wa-border)] px-4 py-2.5 inbox-scroll">
               <FilterTabs
                 filter={filter}
                 counts={filterCounts}
@@ -112,15 +106,15 @@ export function ConversationList({
               />
             </div>
           ) : null}
-          <div className="border-t border-[#E6EBEF] px-4 py-3">
+          <div className="border-t border-[var(--wa-border)] px-4 py-3">
             <div className="wa-search">
-              <Search size={16} className="shrink-0 text-[#6B7886]" />
+              <Search size={16} className="shrink-0 text-[var(--wa-muted)]" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 placeholder="Search contacts, phone or project"
-                className="w-full bg-transparent text-[16px] text-[#17212B] placeholder:text-[#6B7886] focus:outline-none sm:text-[14px]"
+                className="w-full bg-transparent text-[16px] text-[var(--wa-ink)] placeholder:text-[var(--wa-muted)] focus:outline-none sm:text-[14px]"
               />
             </div>
           </div>
@@ -147,7 +141,7 @@ export function ConversationList({
           </div>
         </>
       )}
-      <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto py-1 ${whatsappMode ? "bg-white" : "bg-[var(--bg-secondary)]"}`}>
+      <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto py-1 ${whatsappMode ? "bg-[var(--wa-surface)]" : "bg-[var(--bg-secondary)]"}`}>
         {filtered.length === 0 ? (
           <div className="flex min-h-[260px] flex-col items-center justify-center px-8 py-10 text-center text-xs leading-relaxed text-[var(--text-tertiary)]">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--channel-whatsapp-muted)] text-[var(--channel-whatsapp)]">

@@ -13,6 +13,7 @@ export async function SalesLayout({
   actions,
   hideShellHeader = false,
   hideShellSidebar = false,
+  contentFlush = false,
 }: {
   children: React.ReactNode;
   breadcrumb: string;
@@ -20,6 +21,8 @@ export async function SalesLayout({
   actions?: React.ReactNode;
   hideShellHeader?: boolean;
   hideShellSidebar?: boolean;
+  /** Edge-to-edge main content (WhatsApp Sales Hub). Keeps sidebar; removes shell padding/header. */
+  contentFlush?: boolean;
 }) {
   const session = await getServerSession(authOptions);
   const supabase = createAdminClient();
@@ -84,6 +87,7 @@ export async function SalesLayout({
       showQuickAction={false}
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
+      contentFlush={contentFlush}
       profileHref="/sales/profile"
     >
       {session?.isImpersonating ? (
