@@ -34,7 +34,7 @@ export function InboxIconRail({ pipelineHref, teamHref, settingsHref, inboxHref 
   ];
 
   return (
-    <div className="flex w-16 shrink-0 flex-col items-center gap-2 border-r border-[var(--border)] bg-black py-4">
+    <div className="flex w-16 shrink-0 flex-col items-center gap-2 border-r border-[var(--border)] bg-[var(--surface-sidebar)] py-4">
       {items.map((item) => {
         const Icon = item.icon;
         const isActive =
@@ -46,7 +46,7 @@ export function InboxIconRail({ pipelineHref, teamHref, settingsHref, inboxHref 
             title={item.label}
             className={`flex h-10 w-10 items-center justify-center rounded-[10px] transition-all ${
               isActive
-                ? "border border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent)]"
+                ? "border border-[var(--border)] bg-[var(--surface-card)] text-[var(--accent-fg)]"
                 : "text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)] hover:text-[var(--text-secondary)]"
             }`}
           >

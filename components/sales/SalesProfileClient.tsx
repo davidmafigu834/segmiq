@@ -174,16 +174,14 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
   const strength = passwordStrength(newPw);
 
   if (loading) {
-    return <div className="shimmer mx-auto h-96 max-w-[640px] rounded-xl" />;
+    return <div className="shimmer h-96 w-full rounded-xl" />;
   }
 
   return (
-    <div className="mx-auto max-w-[640px] space-y-12 pb-16">
-      <header>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">SALES / PROFILE</p>
-        <h1 className="font-display text-[26px] leading-none tracking-display text-ink-primary sm:text-[36px]">Your profile</h1>
-        <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
-          Keep your contact info current so leads reach you fast.
+    <div className="min-w-0 w-full max-w-full space-y-10">
+      <header className="border-b border-[var(--border)] pb-5">
+        <p className="text-[14px] text-[var(--text-secondary)]">
+          Manage your contact information, sign-in security, and notification preferences.
         </p>
       </header>
 
@@ -197,7 +195,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
           <label className="relative cursor-pointer">
             <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={(e) => void onAvatarChange(e)} />
             <ClientAvatar name={name} size={80} src={avatarUrl} />
-            <span className="mt-2 block text-center text-[11px] text-[var(--accent)]">Upload</span>
+            <span className="mt-2 block text-center text-[11px] text-[var(--accent-fg)]">Upload</span>
           </label>
           <div className="min-w-0 flex-1 space-y-4">
             <label className="block">
@@ -241,7 +239,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
 
       <section className="space-y-4">
         <h2 className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Change password</h2>
-        <label className="block max-w-md">
+        <label className="block">
           <span className="font-mono text-[10px] uppercase text-ink-tertiary">Current password</span>
           <input
             type="password"
@@ -251,7 +249,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
             autoComplete="current-password"
           />
         </label>
-        <label className="block max-w-md">
+        <label className="block">
           <span className="font-mono text-[10px] uppercase text-ink-tertiary">New password</span>
           <input
             type="password"
@@ -266,7 +264,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
             </span>
           ) : null}
         </label>
-        <label className="block max-w-md">
+        <label className="block">
           <span className="font-mono text-[10px] uppercase text-ink-tertiary">Confirm new password</span>
           <input
             type="password"

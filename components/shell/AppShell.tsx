@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Menu, Plus, X } from "lucide-react";
+import { Menu, MoreHorizontal, Plus, X } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import type { UserRole } from "@/types";
 import { NewLeadModal } from "@/components/agency/NewLeadModal";
@@ -38,6 +38,8 @@ export function AppShell({
   hideHeader = false,
   hideSidebar = false,
   titleSize = "standard",
+  profileHref,
+  lightMode = false,
 }: {
   homeHref: string;
   roleLabel: string;
@@ -60,6 +62,8 @@ export function AppShell({
   hideHeader?: boolean;
   hideSidebar?: boolean;
   titleSize?: "hero" | "standard";
+  profileHref?: string;
+  lightMode?: boolean;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -85,6 +89,8 @@ export function AppShell({
     if (href === "/sales/dashboard") return pathname === "/sales/dashboard";
     if (href === "/sales/leads") return pathname === "/sales/leads";
     if (href === "/sales/inbox") return isWhatsAppSalesHubPath(pathname);
+    if (href === "/sales/call-now") return pathname === "/sales/call-now";
+    if (href === "/sales/recover") return pathname === "/sales/recover";
     if (href === "/sales/inbox/hot-leads") return pathname === "/sales/inbox/hot-leads";
     if (href === "/sales/followups") return pathname.startsWith("/sales/followups");
     if (href === "/sales/reports") return pathname.startsWith("/sales/reports");
@@ -95,6 +101,15 @@ export function AppShell({
 
   const hideQuick = showQuickAction === false || notificationRole === "CLIENT_MANAGER";
   const hideSearch = showWorkspaceSearch === false;
+  const mobileNav =
+    notificationRole === "SALESPERSON"
+      ? [
+          primaryNav.find((item) => item.href === "/sales/dashboard" || item.href === "/solo/dashboard"),
+          primaryNav.find((item) => item.href === "/sales/inbox"),
+          primaryNav.find((item) => item.href === "/sales/leads"),
+          primaryNav.find((item) => item.href === "/sales/quotes"),
+        ].filter((item): item is AppShellNavItem => Boolean(item))
+      : primaryNav.slice(0, 4);
 
   const sidebar = (
     <AgencySidebar
@@ -108,6 +123,8 @@ export function AppShell({
       coBrand={coBrand}
       sidebarBrand={sidebarBrand}
       navActive={navActive}
+      profileHref={profileHref}
+      lightMode={lightMode}
     />
   );
   const mobileSidebar = (
@@ -123,6 +140,8 @@ export function AppShell({
       sidebarBrand={sidebarBrand}
       navActive={navActive}
       mobileExpanded
+      profileHref={profileHref}
+      lightMode={lightMode}
     />
   );
 
@@ -151,7 +170,7 @@ export function AppShell({
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="fixed inset-y-0 left-0 z-[51] flex w-[85vw] max-w-[320px] flex-col overflow-y-auto border-r border-[var(--border)] bg-surface-sidebar layout:hidden">
+          <aside className="fixed inset-y-0 left-0 z-[51] flex w-[88vw] max-w-[340px] flex-col overflow-y-auto border-r border-[var(--border)] bg-surface-sidebar shadow-[var(--shadow-lg)] layout:hidden">
             <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] p-4">
               <span className="text-[13px] font-semibold text-[var(--text-primary)]">Menu</span>
               <button
@@ -222,7 +241,7 @@ export function AppShell({
             ) : null}
           </header>
         ) : !hideSidebar ? (
-          <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-bg-primary px-4 md:px-6 layout:px-10">
+          <header className="safe-top sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-[var(--border)] bg-bg-primary/95 px-3 backdrop-blur-xl sm:px-4 md:px-6 layout:px-8">
             <button
               type="button"
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] layout:hidden"
@@ -231,15 +250,15 @@ export function AppShell({
             >
               <Menu className="h-5 w-5" strokeWidth={1.5} />
             </button>
-            <div className="flex min-w-0 flex-1 items-baseline gap-1.5 overflow-hidden">
-              <span className="hidden md:inline shrink-0 whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+              <span className="hidden shrink-0 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.06em] text-[var(--text-tertiary)] md:inline">
                 {breadcrumb}
               </span>
-              <span className="hidden md:inline shrink-0 text-[10px] text-[var(--text-tertiary)] opacity-50">·</span>
-              <h1 className={`min-w-0 truncate font-semibold leading-none text-[var(--text-primary)] ${titleSize === "hero" ? "text-[15px] md:text-[18px] layout:text-[22px]" : "text-[14px] md:text-[16px] layout:text-[20px]"}`}>{pageTitle}</h1>
+              <span className="hidden h-3 w-px shrink-0 bg-[var(--border)] md:inline" aria-hidden />
+              <h1 className={`min-w-0 truncate font-semibold tracking-[-0.01em] text-[var(--text-primary)] ${titleSize === "hero" ? "text-[16px] layout:text-[18px]" : "text-[15px] layout:text-[16px]"}`}>{pageTitle}</h1>
             </div>
             <div className="flex min-w-0 shrink items-center gap-2">
-              <div className="hidden items-center lg:flex">
+              <div className="hidden items-center xl:flex">
                 <AgencyHeaderClock />
               </div>
               {!hideSearch ? <GlobalSearch role={notificationRole} /> : null}
@@ -294,7 +313,7 @@ export function AppShell({
           className={
             hideSidebar
               ? "flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden"
-              : "min-w-0 w-full max-w-full flex-1 px-4 pt-6 pb-28 md:px-6 md:pt-8 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-8"
+              : "min-w-0 w-full max-w-full flex-1 px-4 pt-5 pb-28 sm:px-5 md:px-6 md:pt-6 layout:pb-10 layout:min-h-0 layout:overflow-y-auto layout:overscroll-contain layout:px-8 layout:pt-7"
           }
         >
           {children}
@@ -306,13 +325,13 @@ export function AppShell({
         aria-label="Bottom navigation"
         className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-[var(--border)] bg-bg-primary layout:hidden"
       >
-        {primaryNav.slice(0, 5).map((item) => (
+        {mobileNav.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={`relative flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium leading-none transition-colors ${
               navActive(item.href)
-                ? "text-accent"
+                ? "text-accent-fg"
                 : "text-[var(--text-tertiary)]"
             }`}
           >
@@ -325,6 +344,15 @@ export function AppShell({
             ) : null}
           </Link>
         ))}
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="relative flex flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium leading-none text-[var(--text-tertiary)] transition-colors"
+          aria-label="Open more navigation"
+        >
+          <MoreHorizontal className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+          <span className="mt-0.5 leading-tight">More</span>
+        </button>
       </nav>
       ) : null}
     </div>

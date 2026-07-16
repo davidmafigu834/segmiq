@@ -13,6 +13,7 @@ import { excludeGraduatedLeads } from "@/lib/retargeting-shared";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 import { PriorityLeadCard } from "@/components/sales/PriorityLeadCard";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
+import { EmptyState } from "@/components/ui";
 
 type TierFilter = "all" | "hot" | "same_day";
 type FitFilter = "all" | "fit";
@@ -137,20 +138,12 @@ export function CallNowClient({
       )}
 
       {callNowLeads.length === 0 ? (
-        <div className="ag-fade-in rounded-xl border border-[var(--border)] bg-[var(--surface-card)] flex flex-col items-center justify-center py-16 text-center px-5">
-          <CheckCircle className="w-8 h-8 text-[var(--success)] mb-3" />
-          <p className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">
-            All caught up
-          </p>
-          <p className="text-[13px] text-[var(--text-tertiary)]">
-            No fresh leads waiting for a first call right now.
-          </p>
+        <div className="ag-fade-in rounded-lg border border-[var(--border)] bg-[var(--surface-card)]">
+          <EmptyState icon={CheckCircle} title="All caught up" description="No fresh leads are waiting for a first call right now." />
         </div>
       ) : displayed.length === 0 ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] py-12 text-center px-5">
-          <p className="text-[13px] text-[var(--text-tertiary)]">
-            No leads match the current filters.
-          </p>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)]">
+          <EmptyState title="No matching leads" description="Change or clear a filter to see more leads." />
         </div>
       ) : (
         <div className="ag-fade-in ag-delay-1 flex flex-col gap-2">
@@ -170,10 +163,11 @@ export function CallNowClient({
       <button
         type="button"
         onClick={() => openLogSheet("")}
-        className="fixed right-5 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 w-14 h-14 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center shadow-[var(--shadow-accent-glow)] hover:bg-[var(--accent-hover)] transition-colors"
+        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-5 z-30 flex h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-3.5 text-[var(--accent-foreground)] shadow-[var(--shadow-lg)] transition-colors hover:bg-[var(--accent-hover)] layout:bottom-6"
         aria-label="Log a call"
       >
-        <Phone size={22} />
+        <Phone size={17} />
+        <span className="hidden text-[13px] font-semibold sm:inline">Log call</span>
       </button>
       {sheet}
     </div>

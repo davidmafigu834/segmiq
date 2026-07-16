@@ -68,7 +68,7 @@ export function ConversationList({
       id="convPanel"
       className={[
         "flex h-full min-h-0 shrink-0 flex-col",
-        whatsappMode ? "w-[360px] bg-white wa-panel max-[1180px]:w-full" : "w-[360px] border-r border-[var(--border)] bg-[var(--bg-tertiary)]",
+        whatsappMode ? "w-[360px] bg-[var(--surface-card)] wa-panel max-[1180px]:w-full" : "w-[360px] border-r border-[var(--border)] bg-[var(--bg-tertiary)]",
         mobileFullScreen
           ? ""
           : `max-[860px]:fixed max-[860px]:bottom-0 max-[860px]:left-0 ${mobileTop} max-[860px]:z-40 max-[860px]:w-[min(320px,88vw)] max-[860px]:shadow-[4px_0_24px_rgba(0,0,0,0.15)] max-[860px]:transition-transform max-[860px]:duration-200`,
@@ -114,13 +114,13 @@ export function ConversationList({
           ) : null}
           <div className="border-t border-[#E6EBEF] px-4 py-3">
             <div className="wa-search">
-              <Search size={16} className="shrink-0 text-[#7B8996]" />
+              <Search size={16} className="shrink-0 text-[#6B7886]" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => onSearchChange?.(e.target.value)}
                 placeholder="Search contacts, phone or project"
-                className="w-full bg-transparent text-[16px] text-[#17212B] placeholder:text-[#7B8996] focus:outline-none sm:text-[14px]"
+                className="w-full bg-transparent text-[16px] text-[#17212B] placeholder:text-[#6B7886] focus:outline-none sm:text-[14px]"
               />
             </div>
           </div>
@@ -147,20 +147,20 @@ export function ConversationList({
           </div>
         </>
       )}
-      <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto bg-[#FBFCFD] py-1">
+      <div className={`inbox-scroll min-h-0 flex-1 overflow-y-auto py-1 ${whatsappMode ? "bg-white" : "bg-[var(--bg-secondary)]"}`}>
         {filtered.length === 0 ? (
-          <div className="flex min-h-[260px] flex-col items-center justify-center px-8 py-10 text-center text-xs leading-relaxed text-[#6B7886]">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-[#DCE5E2] bg-[#EFF8F5] text-[#0F9F73]">
+          <div className="flex min-h-[260px] flex-col items-center justify-center px-8 py-10 text-center text-xs leading-relaxed text-[var(--text-tertiary)]">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--channel-whatsapp-muted)] text-[var(--channel-whatsapp)]">
               <MessageCircleMore size={22} />
             </div>
             {conversations.length === 0 ? (
               <>
-                <p className="text-sm font-semibold text-[#17212B]">No conversations yet</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">No conversations yet</p>
                 <p className="mt-1.5 max-w-[240px]">New customer messages to your connected WhatsApp number will appear here.</p>
               </>
             ) : (
               <>
-                <p className="text-sm font-semibold text-[#17212B]">No matching conversations</p>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">No matching conversations</p>
                 <p className="mt-1.5">Try another filter or a broader search.</p>
               </>
             )}

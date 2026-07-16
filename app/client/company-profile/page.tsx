@@ -22,7 +22,7 @@ export default async function ClientCompanyProfilePage() {
 
   return (
     <ClientManagerLayout breadcrumbPage="COMPANY" pageTitle="Company profile">
-      <div className="mx-auto max-w-3xl pb-16">
+      <div className="min-w-0 w-full max-w-full pb-16">
         <header className="mb-10">
           <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">
             {client.name as string} / Company

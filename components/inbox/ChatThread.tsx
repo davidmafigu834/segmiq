@@ -67,6 +67,7 @@ export function ChatThread({
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [savedReplies, setSavedReplies] = useState<SavedQuickReply[]>([]);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
@@ -157,6 +158,7 @@ export function ChatThread({
   async function sendCustomMessage(text: string) {
     if (!conversation || !text.trim() || sending) return;
     setSending(true);
+    setSendError(null);
     try {
       const isWhatsApp = conversation.source === "WHATSAPP_INBOUND";
       const endpoint = isWhatsApp
@@ -197,7 +199,7 @@ export function ChatThread({
         setSessionOpen(data.sessionOpen === true);
       } else if (isWhatsApp) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
-        window.alert(err.error ?? "Could not send message");
+        setSendError(err.error ?? "Could not send message");
       }
     } finally {
       setSending(false);
@@ -210,6 +212,7 @@ export function ChatThread({
   ) {
     if (!conversation || sending) return;
     setSending(true);
+    setSendError(null);
     try {
       const res = await fetch(`/api/leads/${conversation.id}/send-asset`, {
         method: "POST",
@@ -224,7 +227,7 @@ export function ChatThread({
         setMessages(data.messages ?? []);
       } else {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
-        window.alert(err.error ?? "Could not send message");
+        setSendError(err.error ?? "Could not send message");
       }
     } finally {
       setSending(false);
@@ -328,10 +331,10 @@ export function ChatThread({
     return (
       <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6 text-sm text-[#6B7886]">
         <div className="wa-empty-hint max-w-sm text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E7F8F1] text-[#0F9F73]">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--channel-whatsapp-muted)] text-[var(--channel-whatsapp)]">
             <MessageCircleMore size={26} />
           </div>
-          <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-[#17212B]">Choose a conversation</div>
+          <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-[var(--text-primary)]">Choose a conversation</div>
           View customer context, collaborate with your team and reply from one workspace.
         </div>
       </div>
@@ -366,7 +369,7 @@ export function ChatThread({
             type="button"
             onClick={onToggleIntel}
             className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1.5 py-1.5 text-left transition-colors sm:gap-3 ${
-              isWhatsApp ? "hover:bg-[#F5F9F7]" : "hover:bg-[var(--bg-quaternary)]"
+              isWhatsApp ? "hover:bg-[var(--bg-quaternary)]" : "hover:bg-[var(--bg-quaternary)]"
             }`}
           >
             <WhatsAppAvatar
@@ -376,7 +379,7 @@ export function ChatThread({
               className="max-[480px]:h-9 max-[480px]:w-9"
             />
             <div className="min-w-0 flex-1">
-              <div className={`flex items-center gap-1.5 truncate text-[15px] font-semibold tracking-[-0.01em] ${isWhatsApp ? "text-[#17212B]" : "text-[var(--text-primary)]"}`}>
+              <div className="flex items-center gap-1.5 truncate text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
                 <span className="truncate">{name}</span>
                 {isWhatsApp ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#0F9F73]" title="WhatsApp contact" /> : null}
                 <LeadIntentBadge
@@ -387,7 +390,7 @@ export function ChatThread({
                   className="max-[520px]:hidden"
                 />
               </div>
-              <div className={`mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] ${isWhatsApp ? "text-[#6B7886]" : "text-[var(--text-tertiary)]"}`}>
+              <div className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] text-[var(--text-tertiary)]">
                 <LeadStageBadge
                   status={conversation.status}
                   followUpDate={conversation.followUpDate}
@@ -444,7 +447,7 @@ export function ChatThread({
                     setMenuOpen(false);
                     void handleInternalNote();
                   }}
-                  className="hidden w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#25313C] hover:bg-[#F7F9FB] max-[640px]:flex"
+                  className="hidden w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] max-[640px]:flex"
                 >
                   <StickyNote size={14} />
                   Add internal note
@@ -468,7 +471,7 @@ export function ChatThread({
                     setMenuOpen(false);
                     setTransferOpen(true);
                   }}
-                  className="flex w-full px-3 py-2.5 text-left text-sm text-[#25313C] hover:bg-[#F7F9FB]"
+                  className="flex w-full px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
                 >
                   Transfer conversation
                 </button>
@@ -479,7 +482,7 @@ export function ChatThread({
                     type="button"
                     disabled={statusUpdating}
                     onClick={() => void handleStatusUpdate("WON")}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#087B59] hover:bg-[#F1F8F5] disabled:opacity-50"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--success)] hover:bg-[var(--success-muted)] disabled:opacity-50"
                   >
                     <Trophy size={14} />
                     Mark as won
@@ -488,7 +491,7 @@ export function ChatThread({
                     type="button"
                     disabled={statusUpdating}
                     onClick={() => void handleStatusUpdate("LOST")}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--danger-fg)] hover:bg-[var(--danger-bg)] disabled:opacity-50"
                   >
                     <XCircle size={14} />
                     Mark as lost
@@ -496,7 +499,7 @@ export function ChatThread({
                 </>
               ) : null}
               {!canTransfer && !canUpdateStatus ? (
-                <div className="px-3 py-2 text-xs text-[#8696A0] max-[640px]:hidden">No actions available</div>
+                <div className="px-3 py-2 text-xs text-[var(--text-tertiary)] max-[640px]:hidden">No actions available</div>
               ) : null}
             </div>
           ) : null}
@@ -542,6 +545,11 @@ export function ChatThread({
 
       {canSend ? (
         <div className={`shrink-0 ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)] bg-[var(--bg-tertiary)]"}`}>
+          {sendError ? (
+            <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
+              {sendError}
+            </div>
+          ) : null}
           {quickActionsOpen ? (
             <QuickReplyBar
               onAction={(a) => void handleQuickAction(a)}
@@ -556,7 +564,7 @@ export function ChatThread({
             <div className={`border-t px-4 py-2.5 text-center text-[11px] leading-snug ${
               isWhatsApp
                 ? "border-[#F1DFC5] bg-[#FFF9EF] text-[#A45A0A]"
-                : "border-[var(--border)] bg-[var(--accent-muted)] text-[var(--accent)]"
+                : "border-[var(--border)] bg-[var(--accent-muted)] text-[var(--accent-fg)]"
             }`}
             >
               Outside the 24-hour WhatsApp window — your message will be sent as an approved template

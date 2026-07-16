@@ -9,7 +9,7 @@ export default async function SalesProfilePage() {
   if (!session?.user?.email) redirect("/login");
 
   return (
-    <SalesLayout hideShellHeader breadcrumb="SALES / PROFILE" pageTitle="Profile">
+    <SalesLayout breadcrumb="SALES / PROFILE" pageTitle="Profile">
       <SalesProfileClient initialEmail={session.user.email} />
     </SalesLayout>
   );

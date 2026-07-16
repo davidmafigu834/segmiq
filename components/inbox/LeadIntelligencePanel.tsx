@@ -318,7 +318,7 @@ export function LeadIntelligencePanel({
     active
       ? whatsappMode
         ? "border-[#008069] bg-[#E7FCE3] text-[#008069]"
-        : "border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--accent)]"
+        : "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--accent-fg)]"
       : whatsappMode
         ? "border-[#E9EDEF] text-[#54656F] hover:bg-[#F5F6F6]"
         : "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]";
@@ -479,18 +479,10 @@ export function LeadIntelligencePanel({
           className={`rounded-xl p-5 ${
             whatsappMode
               ? "border border-[#00A884]/20 bg-gradient-to-br from-[#E7FCE3] to-[#f0fdf8] shadow-sm"
-              : ""
+              : "border border-[var(--accent-border)] bg-[var(--accent-muted)]"
           }`}
-          style={
-            whatsappMode
-              ? undefined
-              : {
-                  background: "rgba(212,255,79,0.08)",
-                  border: "1px solid rgba(212,255,79,0.25)",
-                }
-          }
         >
-          <div className={`mb-2 ${sectionTitle} ${whatsappMode ? "text-[#008069]" : "text-[var(--accent)]"}`}>
+          <div className={`mb-2 ${sectionTitle} ${whatsappMode ? "text-[#008069]" : "text-[var(--accent-fg)]"}`}>
             Suggested Next Action
           </div>
           <p className={`mb-3 text-sm ${textPrimary}`}>{nextAction}</p>
@@ -571,7 +563,7 @@ export function LeadIntelligencePanel({
             </div>
           ) : null}
           {actionMessage ? (
-            <p className={`mt-3 text-xs ${whatsappMode ? "text-[#008069]" : "text-[var(--accent)]"}`}>
+            <p className={`mt-3 text-xs ${whatsappMode ? "text-[#008069]" : "text-[var(--accent-fg)]"}`}>
               {actionMessage}
             </p>
           ) : null}

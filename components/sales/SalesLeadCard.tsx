@@ -54,7 +54,7 @@ function SlaCountdown({ createdAt }: { createdAt: string }) {
   const secs = totalSeconds % 60;
 
   return (
-    <span className="text-[var(--accent)]">
+    <span className="text-[var(--accent-fg)]">
       SLA {mins}:{secs.toString().padStart(2, "0")} left
     </span>
   );

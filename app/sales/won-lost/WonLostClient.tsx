@@ -9,6 +9,7 @@ import { StatusPill } from "@/components/StatusPill";
 import { openLeadPanel } from "@/store/uiStore";
 import { LeadDetailPanel } from "../leads/LeadDetailPanel";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
+import { EmptyState, SegmentedTabs } from "@/components/ui";
 
 type TabFilter = "all" | "won" | "lost";
 
@@ -106,34 +107,28 @@ export function WonLostClient({ initialLeads }: { initialLeads: LeadWithClientRe
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center gap-4 border-b border-border">
-        {(["all", "won", "lost"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={`relative pb-3 text-sm font-medium capitalize ${
-              tab === t ? "text-ink-primary" : "text-ink-secondary hover:text-ink-primary"
-            }`}
-            onClick={() => setTab(t)}
-          >
-            {t === "all" ? "All" : t === "won" ? "Won" : "Lost"}
-            {tab === t ? <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)]" /> : null}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs
+        className="mb-6"
+        aria-label="Filter closed leads"
+        value={tab}
+        onValueChange={(value) => setTab(value as TabFilter)}
+        tabs={[
+          { value: "all", label: "All" },
+          { value: "won", label: "Won" },
+          { value: "lost", label: "Lost" },
+        ]}
+      />
 
       {closedLeads.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
-          <Archive className="mb-4 h-10 w-10 text-ink-tertiary" strokeWidth={1.5} />
-          <h2 className="font-display text-2xl text-ink-primary">No closed deals yet</h2>
-          <p className="mt-2 max-w-sm text-sm text-ink-secondary">Leads you win or lose will appear here.</p>
+        <div className="rounded-lg border border-dashed border-border bg-surface-card">
+          <EmptyState icon={Archive} title="No closed deals yet" description="Leads you win or lose will appear here." />
         </div>
       ) : filtered.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface-card py-10 text-center text-sm text-ink-tertiary">
-          No leads in this tab.
-        </p>
+        <div className="rounded-lg border border-border bg-surface-card">
+          <EmptyState title="No leads in this view" description="Choose another outcome to see closed leads." />
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface-card p-2 md:p-0">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface-card p-2 md:p-0">
           <ResponsiveTable
             columns={columns}
             rows={filtered}

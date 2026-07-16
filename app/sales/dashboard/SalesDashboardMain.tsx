@@ -28,6 +28,7 @@ import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import SalesDashboardSkeleton from "./SalesDashboardSkeleton";
+import { PageHeader } from "@/components/ui";
 
 // ============================================
 // TYPES
@@ -175,27 +176,22 @@ export default function SalesDashboardMain({
 
   return (
     <div className="min-w-0 w-full max-w-full overflow-x-hidden">
-      {/* ============================================
-          HEADER
-          ============================================ */}
-      <div className="mb-8">
-        <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]">
-          {today}
-        </p>
-        <h1 className="break-words font-display text-2xl tracking-tight text-[var(--text-primary)] sm:text-3xl">
-          Good {getGreeting()}, {firstName}
-        </h1>
-      </div>
+      <PageHeader
+        className="mb-6"
+        eyebrow={today}
+        title={`Good ${getGreeting()}, ${firstName}`}
+        description="Your priorities, pipeline movement, and recent results in one place."
+      />
 
       {/* ============================================
           YOUR MIRROR — briefing strip
           ============================================ */}
-      <div className="ag-fade-in mb-6 rounded-xl border border-[var(--border)] border-l-4 border-l-[var(--accent)] bg-[var(--surface-card)] px-4 py-4">
+      <div className="ag-fade-in mb-5 rounded-lg border border-[var(--accent-border)] bg-[var(--accent-muted)] px-4 py-3.5">
         <div className="mb-2 flex items-center gap-2">
           {data.mirror?.mode === "stall" || data.mirror?.mode === "ai" ? (
-            <Sparkles size={14} className="shrink-0 text-[var(--accent)]" aria-hidden />
+            <Sparkles size={14} className="shrink-0 text-[var(--accent-fg)]" aria-hidden />
           ) : null}
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--accent)]">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--status-won-fg)]">
             {data.mirror?.mode === "ai" ? "AI daily focus" : "Your mirror"}
           </p>
         </div>
@@ -207,13 +203,13 @@ export default function SalesDashboardMain({
       {/* ============================================
           NUMBERS STRIP — 4 compact stat cards
           ============================================ */}
-      <div className="ag-fade-in mb-8 grid min-w-0 grid-cols-2 gap-2.5 min-[600px]:grid-cols-4 sm:gap-3">
+      <div className="ag-fade-in mb-8 grid min-w-0 grid-cols-2 gap-2 min-[600px]:grid-cols-4">
         {[
           {
             label: "Call now",
             value: data.numbers.callNow ?? 0,
             colour:
-              (data.numbers.callNow ?? 0) > 0 ? "var(--accent)" : "var(--text-disabled)",
+              (data.numbers.callNow ?? 0) > 0 ? "var(--status-won-fg)" : "var(--text-disabled)",
             icon: Phone,
           },
           {
@@ -234,7 +230,7 @@ export default function SalesDashboardMain({
             label: "Won this month",
             value: data.numbers.wonThisMonth,
             colour:
-              data.numbers.wonThisMonth > 0 ? "var(--accent)" : "var(--text-disabled)",
+              data.numbers.wonThisMonth > 0 ? "var(--status-won-fg)" : "var(--text-disabled)",
             icon: Trophy,
           },
         ].map((stat) => {
@@ -242,17 +238,19 @@ export default function SalesDashboardMain({
           return (
           <div
             key={stat.label}
-            className="flex min-w-0 flex-col items-center rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-3.5 sm:p-5"
+            className="flex min-w-0 flex-col items-start rounded-lg border border-[var(--border)] bg-[var(--surface-card)] p-3.5 transition-colors hover:border-[var(--border-hover)] sm:p-4"
           >
-            <StatIcon size={14} className="mb-2 text-[var(--text-disabled)]" />
+            <div className="mb-3 flex w-full items-center justify-between gap-2">
+              <p className="truncate text-[10px] font-medium uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
+                {stat.label}
+              </p>
+              <StatIcon size={14} className="shrink-0 text-[var(--text-disabled)]" />
+            </div>
             <p
-              className="font-display text-3xl font-semibold leading-none mb-1"
+              className="font-mono text-2xl font-semibold leading-none tabular-nums sm:text-3xl"
               style={{ color: stat.colour }}
             >
               {stat.value}
-            </p>
-            <p className="max-w-full break-words text-center text-[9px] font-semibold uppercase leading-tight tracking-wide text-[var(--text-tertiary)] min-[420px]:text-[10px] min-[420px]:tracking-widest">
-              {stat.label}
             </p>
           </div>
         );
@@ -399,26 +397,24 @@ export default function SalesDashboardMain({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={openAddHubSheet}
-        aria-label="Add to Customer Hub"
-        className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(140px+env(safe-area-inset-bottom))] z-30 grid h-14 w-14 place-items-center rounded-full border border-[var(--border-hover)] bg-[var(--surface-card)] text-[var(--accent)] shadow-lg sm:right-5"
-      >
-        <UserPlus size={22} />
-      </button>
-
-      {/* ============================================
-          FLOATING LOG CALL BUTTON
-          ============================================ */}
-      <button
-        type="button"
-        onClick={() => openLogSheet("")}
-        className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] shadow-[var(--shadow-accent-glow)] transition-colors hover:bg-[var(--accent-hover)] sm:right-5"
-        aria-label="Log a call"
-      >
-        <Phone size={22} />
-      </button>
+      <div className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-30 flex items-center overflow-hidden rounded-lg border border-[var(--border-hover)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)] layout:bottom-6 layout:right-6">
+        <button
+          type="button"
+          onClick={openAddHubSheet}
+          className="flex h-11 items-center gap-2 border-r border-[var(--border)] px-3 text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        >
+          <UserPlus size={17} />
+          <span className="hidden text-[13px] font-medium sm:inline">Add lead</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => openLogSheet("")}
+          className="flex h-11 items-center gap-2 bg-[var(--accent)] px-3.5 text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent-hover)]"
+        >
+          <Phone size={17} />
+          <span className="hidden text-[13px] font-semibold sm:inline">Log call</span>
+        </button>
+      </div>
 
       {/* ============================================
           QUICK LOG SHEET

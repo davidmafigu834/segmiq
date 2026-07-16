@@ -91,7 +91,7 @@ export function QuickReplyBar({
         <div className="flex items-center gap-1.5">
           <Zap
             size={12}
-            className={isWa ? "text-[#0F9F73]" : "text-[var(--accent)]"}
+            className={isWa ? "text-[#0F9F73]" : "text-[var(--accent-fg)]"}
           />
           <span
             className={

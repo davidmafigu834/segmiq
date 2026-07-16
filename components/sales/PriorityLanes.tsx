@@ -5,6 +5,7 @@ import { CheckCircle, ChevronDown, ChevronRight, MinusCircle } from "lucide-reac
 import { LANE_ORDER, type LeadLane } from "@/lib/lead-lanes";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 import { PriorityLeadCard } from "@/components/sales/PriorityLeadCard";
+import { EmptyState } from "@/components/ui";
 
 const LANE_META: Record<LeadLane, { eyebrow: string; title: string }> = {
   call_now: { eyebrow: "Speed to lead", title: "Call now" },
@@ -59,7 +60,7 @@ export function PriorityLanes({
           <button
             type="button"
             onClick={() => router.push(allLeadsHref)}
-            className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[var(--accent)] transition-opacity hover:opacity-80"
+            className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[var(--status-won-fg)] transition-opacity hover:opacity-80"
           >
             All leads
             <ChevronRight size={12} />
@@ -68,12 +69,12 @@ export function PriorityLanes({
       ) : null}
 
       {!hasAnyLeads ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] flex flex-col items-center justify-center py-16 text-center px-5">
-          <CheckCircle className="w-8 h-8 text-[var(--success)] mb-3" />
-          <p className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">All caught up</p>
-          <p className="text-[13px] text-[var(--text-tertiary)]">
-            No active leads assigned to you right now.
-          </p>
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)]">
+          <EmptyState
+            icon={CheckCircle}
+            title="All caught up"
+            description="No active leads are assigned to you right now."
+          />
         </div>
       ) : (
         <div className="flex flex-col gap-6">
@@ -91,7 +92,7 @@ export function PriorityLanes({
                   <button
                     type="button"
                     onClick={() => onNurtureOpenChange(!nurtureOpen)}
-                    className="w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] px-5 py-4 hover:border-[var(--border-hover)] transition-colors text-left"
+                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-4 py-3.5 text-left transition-colors hover:border-[var(--border-hover)]"
                     aria-expanded={nurtureOpen}
                   >
                     <div className="flex min-w-0 items-center gap-2">
@@ -123,7 +124,7 @@ export function PriorityLanes({
                         <button
                           type="button"
                           onClick={() => router.push(allLeadsHref)}
-                          className="flex items-center justify-center gap-1 py-2 text-[12px] font-semibold text-[var(--accent)] hover:opacity-80 transition-opacity"
+                          className="flex items-center justify-center gap-1 py-2 text-[12px] font-semibold text-[var(--accent-fg)] hover:opacity-80 transition-opacity"
                         >
                           See all ({count})
                           <ChevronRight size={12} />
@@ -148,7 +149,7 @@ export function PriorityLanes({
                     <button
                       type="button"
                       onClick={() => router.push(laneSeeAll)}
-                      className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] font-semibold text-[var(--accent)] transition-opacity hover:opacity-80"
+                      className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-80"
                     >
                       See all ({count})
                       <ChevronRight size={12} />
@@ -157,7 +158,7 @@ export function PriorityLanes({
                     <button
                       type="button"
                       onClick={() => router.push(allLeadsHref)}
-                      className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] font-semibold text-[var(--accent)] transition-opacity hover:opacity-80"
+                      className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[12px] font-semibold text-[var(--accent-fg)] transition-opacity hover:opacity-80"
                     >
                       See all ({count})
                       <ChevronRight size={12} />

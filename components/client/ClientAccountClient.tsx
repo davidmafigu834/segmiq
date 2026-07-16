@@ -358,7 +358,7 @@ export function ClientAccountClient({
   }
 
   return (
-    <div className="mx-auto max-w-2xl pb-16">
+    <div className="min-w-0 w-full max-w-full pb-16">
       <header className="mb-10">
         <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">
           {client.name} / Account

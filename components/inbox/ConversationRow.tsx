@@ -20,8 +20,8 @@ type Props = {
 };
 
 function previewIcon(messageType: string | null | undefined) {
-  if (messageType === "image") return <ImageIcon size={14} className="shrink-0 text-[#8696A0]" />;
-  if (messageType === "audio") return <Mic size={14} className="shrink-0 text-[#8696A0]" />;
+  if (messageType === "image") return <ImageIcon size={14} className="shrink-0 text-[var(--text-tertiary)]" />;
+  if (messageType === "audio") return <Mic size={14} className="shrink-0 text-[var(--text-tertiary)]" />;
   return null;
 }
 
@@ -55,7 +55,7 @@ export function ConversationRow({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
-      className={`wa-conv-row ${active ? "wa-conv-row-active" : "bg-white"}`}
+      className={`wa-conv-row ${active ? "wa-conv-row-active" : ""}`}
     >
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
@@ -74,12 +74,12 @@ export function ConversationRow({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
-            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.01em] text-[#17212B]">{name}</span>
-            <span className={`shrink-0 text-[11px] font-medium ${conversation.unread > 0 ? "text-[#0F9F73]" : "text-[#7B8996]"}`}>
+            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">{name}</span>
+            <span className={`shrink-0 text-[11px] font-medium ${conversation.unread > 0 ? "text-[var(--channel-whatsapp)]" : "text-[var(--text-tertiary)]"}`}>
               {formatInboxTime(conversation.lastMessageAt)}
             </span>
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-[13px] text-[#61707E]">
+          <div className="mt-1 flex items-center gap-1.5 text-[13px] text-[var(--text-secondary)]">
             <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
               {previewIcon(conversation.lastMessageType)}
               <span className="truncate">{conversation.lastMessage}</span>
@@ -87,12 +87,12 @@ export function ConversationRow({
             {(waitingLabel || conversation.unread > 0) ? (
               <div className="flex shrink-0 items-center gap-1">
                 {waitingLabel ? (
-                  <span className="rounded-md border border-[#F5DEC5] bg-[#FFF8EF] px-1.5 py-0.5 text-[10px] font-semibold text-[#B45309]">
+                  <span className="rounded-md border border-[var(--warning-border)] bg-[var(--warning-muted)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--warning)]">
                     {waitingLabel}
                   </span>
                 ) : null}
                 {conversation.unread > 0 ? (
-                  <span className="flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-[#0F9F73] px-1.5 text-[10px] font-bold text-white shadow-[0_2px_6px_rgba(15,159,115,0.24)]">
+                  <span className="flex h-[20px] min-w-[20px] items-center justify-center rounded-full bg-[#0F9F73] px-1.5 text-[10px] font-bold text-white">
                     {conversation.unread > 9 ? "9+" : conversation.unread}
                   </span>
                 ) : null}
@@ -106,7 +106,7 @@ export function ConversationRow({
               variant="list"
             />
             {metaLine ? (
-              <span className="min-w-0 truncate text-[11px] text-[#87939E]" title={metaLine}>
+              <span className="min-w-0 truncate text-[11px] text-[var(--text-tertiary)]" title={metaLine}>
                 {metaLine}
               </span>
             ) : null}

@@ -16,6 +16,7 @@ import { PulseBar } from "@/components/dashboard/PulseBar";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 import type { SoloDashboardData } from "@/lib/dashboard-data";
 import SalesDashboardSkeleton from "@/app/sales/dashboard/SalesDashboardSkeleton";
+import { PageHeader } from "@/components/ui";
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -75,23 +76,12 @@ export default function SoloDashboardMain({
 
   return (
     <div>
-      <header className="mb-6 flex items-center justify-between gap-4">
-        <span className="font-display text-xl tracking-tight text-[var(--accent)]">Segmiq</span>
-        <div className="min-w-0 text-right">
-          <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{repName}</p>
-          <p className="truncate text-[12px] text-[var(--text-tertiary)]">{data.clientName}</p>
-        </div>
-      </header>
-
-      <div className="mb-6">
-        <h1
-          className="text-3xl tracking-tight text-[var(--text-primary)] mb-2"
-          style={{ fontFamily: "var(--font-instrument-serif), 'Instrument Serif', Georgia, serif" }}
-        >
-          Good {getGreeting()}, {firstName}
-        </h1>
-        <p className="text-[14px] text-[var(--text-secondary)]">{summaryLine}</p>
-      </div>
+      <PageHeader
+        className="mb-6"
+        eyebrow={data.clientName}
+        title={`Good ${getGreeting()}, ${firstName}`}
+        description={summaryLine}
+      />
 
       <div className="mb-2">
         <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)] mb-3">
@@ -117,10 +107,10 @@ export default function SoloDashboardMain({
       <button
         type="button"
         onClick={() => openLogSheet("")}
-        className="fixed right-5 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 w-14 h-14 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center shadow-[var(--shadow-accent-glow)] hover:bg-[var(--accent-hover)] transition-colors"
-        aria-label="Log a call"
+        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-30 flex h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-3.5 text-[var(--accent-foreground)] shadow-[var(--shadow-lg)] transition-colors hover:bg-[var(--accent-hover)] layout:bottom-6 layout:right-6"
       >
-        <Phone size={22} />
+        <Phone size={17} />
+        <span className="hidden text-[13px] font-semibold sm:inline">Log call</span>
       </button>
 
       {sheet}

@@ -30,10 +30,8 @@ export async function SalesInboxPageView({
     <Layout
       breadcrumb={breadcrumb}
       pageTitle={pageTitle}
-      hideShellHeader
-      hideShellSidebar={fullPage}
     >
-      <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-[#667781]">Loading inbox…</div>}>
+      <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-[var(--text-tertiary)]">Loading inbox…</div>}>
         <TeamInbox
           userName={session.user?.name ?? "User"}
           userId={session.userId}

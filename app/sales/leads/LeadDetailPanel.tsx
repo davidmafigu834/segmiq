@@ -267,8 +267,8 @@ export function LeadDetailPanel({
           <div className={activeTab !== "details" ? "hidden" : ""}>
           <div className="space-y-3 p-4 max-md:pt-3 sm:p-5">
             {isWhatsAppChat ? (
-              <div className="rounded-xl border border-[#00A884]/25 bg-[#0a1612] p-4">
-                <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#6EE7B7]">
+              <div className="rounded-lg border border-[var(--channel-whatsapp-muted)] bg-[var(--channel-whatsapp-muted)] p-4">
+                <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--channel-whatsapp)]">
                   <MessageCircle size={14} />
                   WhatsApp conversation
                 </div>
@@ -277,7 +277,7 @@ export function LeadDetailPanel({
                 </p>
                 <Link
                   href={whatsappInboxHref(activeLead.id)}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#00A884] px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--channel-whatsapp)] px-4 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90"
                 >
                   <MessageCircle size={16} />
                   Open in Sales Hub

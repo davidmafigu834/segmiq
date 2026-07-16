@@ -7,6 +7,7 @@ import { FileText } from "lucide-react";
 import { formatMoney } from "@/lib/quotations/totals";
 import type { QuotationRow, QuotationStatus } from "@/types";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
+import { EmptyState, Input, SegmentedTabs } from "@/components/ui";
 
 export type SalesQuoteListItem = QuotationRow & {
   lead_name: string | null;
@@ -17,7 +18,7 @@ type TabFilter = "all" | "draft" | "sent" | "accepted" | "closed";
 
 const STATUS_STYLE: Record<QuotationStatus, { label: string; bg: string; fg: string }> = {
   draft: { label: "Draft", bg: "var(--surface-card-alt)", fg: "var(--text-tertiary)" },
-  sent: { label: "Sent", bg: "var(--accent-muted)", fg: "var(--accent)" },
+  sent: { label: "Sent", bg: "var(--accent-muted)", fg: "var(--accent-fg)" },
   viewed: { label: "Viewed", bg: "rgba(59,130,246,0.12)", fg: "#2563eb" },
   accepted: { label: "Accepted", bg: "var(--success-bg)", fg: "var(--success-fg)" },
   rejected: { label: "Rejected", bg: "var(--danger-bg)", fg: "var(--danger-fg)" },
@@ -158,50 +159,50 @@ export function SalesQuotesClient({ initialQuotes }: { initialQuotes: SalesQuote
         <p className="text-sm text-ink-secondary">
           All quotations on your assigned leads. Tap a row to open the quote on that lead.
         </p>
-        <input
+        <Input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search quote # or lead…"
-          className="w-full rounded-xl border border-border bg-surface-card px-3 py-2 text-sm text-ink-primary placeholder:text-ink-tertiary sm:max-w-xs"
+          className="sm:max-w-xs"
         />
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-2 border-b border-border pb-1">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`relative px-3 pb-3 text-sm font-medium transition-colors ${
-              tab === t.id ? "text-ink-primary" : "text-ink-secondary hover:text-ink-primary"
-            }`}
-          >
-            {t.label}
-            {counts[t.id] > 0 ? (
-              <span className="ml-1.5 font-mono text-[11px] text-ink-tertiary">{counts[t.id]}</span>
-            ) : null}
-            {tab === t.id ? (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)]" />
-            ) : null}
-          </button>
-        ))}
+      <div className="scrollbar-hide mb-6 overflow-x-auto">
+        <SegmentedTabs
+          aria-label="Filter quotes"
+          value={tab}
+          onValueChange={(value) => setTab(value as TabFilter)}
+          tabs={TABS.map((item) => ({
+            value: item.id,
+            label: (
+              <>
+                {item.label}
+                {counts[item.id] > 0 ? (
+                  <span className="ml-1.5 font-mono text-[10px] text-[var(--text-tertiary)]">
+                    {counts[item.id]}
+                  </span>
+                ) : null}
+              </>
+            ),
+          }))}
+        />
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border px-6 py-12 text-center">
-          <FileText className="mx-auto h-6 w-6 text-ink-tertiary" />
-          <p className="mt-3 text-sm font-medium text-ink-primary">
-            {initialQuotes.length === 0 ? "No quotes yet" : "No quotes match this filter"}
-          </p>
-          <p className="mt-1 text-sm text-ink-secondary">
-            {initialQuotes.length === 0
-              ? "Open a lead from My leads and use the Quote tab to create your first quotation."
-              : "Try another tab or clear your search."}
-          </p>
+        <div className="rounded-lg border border-dashed border-border bg-surface-card">
+          <EmptyState
+            icon={FileText}
+            title={initialQuotes.length === 0 ? "No quotes yet" : "No quotes match this filter"}
+            description={
+              initialQuotes.length === 0
+                ? "Open a lead from My leads and use the Quote tab to create your first quotation."
+                : "Try another tab or clear your search."
+            }
+          />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface-card">
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface-card">
           <ResponsiveTable
             columns={columns}
             rows={filtered}

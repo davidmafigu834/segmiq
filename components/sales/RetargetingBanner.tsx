@@ -82,7 +82,7 @@ export function RetargetingBanners({
               <div className="flex items-start gap-3 min-w-0">
                 <Target
                   size={18}
-                  className="shrink-0 mt-0.5 text-[var(--accent)]"
+                  className="shrink-0 mt-0.5 text-[var(--accent-fg)]"
                 />
                 <div className="min-w-0">
                   <p className="text-[14px] font-semibold text-[var(--text-primary)] mb-1">

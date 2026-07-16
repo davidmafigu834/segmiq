@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/shell/AppShell";
 import { ImpersonationBanner } from "@/components/agency/ImpersonationBanner";
-import { isToday } from "date-fns";
+import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { buildWhatsAppSalesHubNav } from "@/lib/sales/whatsapp-hub-nav";
 
 export async function SalesLayout({
@@ -33,27 +33,34 @@ export async function SalesLayout({
     unread = count ?? 0;
   }
 
-  let followupBadge = 0;
-  if (session?.userId) {
-    const { data: fu } = await supabase
-      .from("leads")
-      .select("follow_up_date")
-      .eq("assigned_to_id", session.userId)
-      .not("follow_up_date", "is", null);
-    followupBadge =
-      fu?.filter((l) => l.follow_up_date && isToday(new Date(l.follow_up_date as string))).length ?? 0;
-  }
+  const navBadges = session?.userId
+    ? await fetchSalesNavBadges(session.userId, session.clientId ?? null)
+    : null;
 
   const isSolo = session?.clientMode === "solo";
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
 
   const primaryNav = [
     { href: dashboardHref, label: "Dashboard", icon: "layout-dashboard" as const },
-    buildWhatsAppSalesHubNav(followupBadge || undefined),
-    { href: "/sales/leads", label: "My leads", icon: "layout-grid" as const },
+    {
+      href: "/sales/call-now",
+      label: "Call now",
+      icon: "phone" as const,
+      badge: navBadges?.callNow || undefined,
+    },
+    buildWhatsAppSalesHubNav(
+      navBadges
+        ? {
+            hotLeads: navBadges.hotLeads || undefined,
+            needsReply: navBadges.needsReply || undefined,
+            followUpDue: navBadges.followUpDue || undefined,
+            followUpsToday: navBadges.followUpsToday || undefined,
+          }
+        : undefined
+    ),
+    { href: "/sales/leads", label: "My pipeline", icon: "layout-grid" as const },
     { href: "/sales/quotes", label: "Quotes", icon: "file-text" as const },
-    { href: "/sales/won-lost", label: "Won / Lost", icon: "trophy" as const },
-    { href: "/sales/profile", label: "Profile", icon: "user" as const },
+    { href: "/sales/won-lost", label: "Won & Lost", icon: "trophy" as const },
   ];
 
   const secondaryNav = [
@@ -77,6 +84,8 @@ export async function SalesLayout({
       showQuickAction={false}
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
+      profileHref="/sales/profile"
+      lightMode
     >
       {session?.isImpersonating ? (
         <ImpersonationBanner

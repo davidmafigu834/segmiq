@@ -174,12 +174,14 @@ export function TeamInbox({
 
   return (
     <div
-      className={`flex h-full min-h-0 flex-col overflow-hidden ${
-        whatsappMode ? "bg-[#edf1f5]" : "bg-[var(--bg-primary)]"
-      }`}
+      className={
+        whatsappMode
+          ? "flex h-full min-h-[calc(100dvh-11rem)] flex-col overflow-hidden layout:min-h-[calc(100dvh-7.5rem)]"
+          : "flex h-full min-h-[calc(100dvh-11rem)] flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] layout:min-h-[calc(100dvh-7.5rem)]"
+      }
     >
       {!whatsappMode ? (
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border)] bg-black px-5">
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-sidebar)] px-5">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-3">
               <button
@@ -201,7 +203,7 @@ export function TeamInbox({
                   Segmi
                 </span>
                 <span
-                  className="text-2xl font-normal tracking-tight text-[var(--accent)]"
+                  className="text-2xl font-normal tracking-tight text-[var(--accent-fg)]"
                   style={{ fontFamily: "var(--font-instrument-serif)" }}
                 >
                   Q

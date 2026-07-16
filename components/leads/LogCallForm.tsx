@@ -57,7 +57,7 @@ function SegmentedControl<T extends string>({
         {label}
       </span>
       <div
-        className={`grid ${gridClass} overflow-hidden rounded-lg border border-[rgba(255,255,255,0.07)] divide-x divide-y divide-[rgba(255,255,255,0.07)]`}
+        className={`grid ${gridClass} overflow-hidden rounded-lg border border-[var(--border)] divide-x divide-y divide-[var(--border)]`}
       >
         {options.map((opt) => {
           const active = value === opt.value;
@@ -69,8 +69,8 @@ function SegmentedControl<T extends string>({
               className={[
                 "min-h-[44px] px-3 py-2.5 text-sm transition-all touch-manipulation sm:min-h-0",
                 active
-                  ? "bg-[#1a1a1a] font-medium text-[#ededed]"
-                  : "bg-[#111111] text-ink-secondary hover:text-ink-primary",
+                  ? "bg-[var(--accent-muted)] font-medium text-[var(--text-primary)]"
+                  : "bg-[var(--surface-card)] text-ink-secondary hover:bg-[var(--bg-tertiary)] hover:text-ink-primary",
               ].join(" ")}
             >
               {opt.label}
@@ -111,8 +111,8 @@ function ReasonPills({
               className={[
                 "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
                 active
-                  ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
-                  : "border-[rgba(255,255,255,0.07)] text-ink-secondary hover:border-[rgba(255,255,255,0.15)] hover:text-ink-primary",
+                  ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
+                  : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
               ].join(" ")}
             >
               {opt}
@@ -403,7 +403,7 @@ export function LogCallForm({
             <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
               Result
             </span>
-            <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[rgba(255,255,255,0.07)] divide-x divide-y divide-[rgba(255,255,255,0.07)]">
+            <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[var(--border)] divide-x divide-y divide-[var(--border)]">
               {CALL_RESULTS.map((v) => {
                 const active = result === v;
                 return (
@@ -414,8 +414,8 @@ export function LogCallForm({
                     className={[
                       "min-h-[44px] px-3 py-2.5 text-sm transition-all touch-manipulation sm:min-h-0",
                       active
-                        ? "bg-[#1a1a1a] font-medium text-[#ededed]"
-                        : "bg-[#111111] text-ink-secondary hover:text-ink-primary",
+                        ? "bg-[var(--accent-muted)] font-medium text-[var(--text-primary)]"
+                        : "bg-[var(--surface-card)] text-ink-secondary hover:bg-[var(--bg-tertiary)] hover:text-ink-primary",
                     ].join(" ")}
                   >
                     {CALL_RESULT_LABELS[v]}
@@ -474,8 +474,8 @@ export function LogCallForm({
                     className={[
                       "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
                       active
-                        ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
-                        : "border-[rgba(255,255,255,0.07)] text-ink-secondary hover:border-[rgba(255,255,255,0.15)] hover:text-ink-primary",
+                        ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
+                        : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
                     ].join(" ")}
                   >
                     {opt.label}
@@ -490,7 +490,7 @@ export function LogCallForm({
                     type="button"
                     disabled={directSending}
                     onClick={() => void directSendPortfolioTestimonials()}
-                    className="rounded-md border border-[#D4FF4F] px-3 py-1.5 text-[13px] font-medium text-[#D4FF4F] touch-manipulation hover:bg-[rgba(212,255,79,0.08)] disabled:opacity-50"
+                    className="rounded-md border border-[var(--accent-border)] px-3 py-1.5 text-[13px] font-medium text-[var(--status-won-fg)] touch-manipulation hover:bg-[var(--accent-muted)] disabled:opacity-50"
                   >
                     {directSending ? "Sending…" : "Send now"}
                   </button>
@@ -499,7 +499,7 @@ export function LogCallForm({
                   <button
                     type="button"
                     onClick={() => onOpenSendTab(selectedSendTypes)}
-                    className="rounded-md border border-[rgba(255,255,255,0.15)] px-3 py-1.5 text-[13px] text-ink-primary touch-manipulation hover:bg-surface-card-alt"
+                    className="rounded-md border border-[var(--border)] px-3 py-1.5 text-[13px] text-ink-primary touch-manipulation hover:bg-surface-card-alt"
                   >
                     {canDirectSendOnly ? "Open send panel" : "Send now"}
                   </button>
@@ -511,7 +511,7 @@ export function LogCallForm({
       ) : null}
 
       {reachOutcome === "no_answer" ? (
-        <p className="ag-fade-in rounded-lg border border-[rgba(255,255,255,0.07)] bg-[#111111] px-3 py-2.5 text-[13px] text-ink-secondary">
+        <p className="ag-fade-in rounded-lg border border-[var(--border)] bg-[var(--surface-card-alt)] px-3 py-2.5 text-[13px] text-ink-secondary">
           Attempt #{noAnswerCount + 1}. Repeated no-answers keep this lead in Call now, then
           Recover — and feed retargeting when it graduates.
         </p>
@@ -536,8 +536,8 @@ export function LogCallForm({
                   className={[
                     "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
                     active
-                      ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
-                      : "border-[rgba(255,255,255,0.07)] text-ink-secondary hover:border-[rgba(255,255,255,0.15)] hover:text-ink-primary",
+                      ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
+                      : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
                   ].join(" ")}
                 >
                   {CALLBACK_SCHEDULE_LABELS[opt]}
@@ -567,14 +567,14 @@ export function LogCallForm({
               className={[
                 "flex items-center gap-2 rounded-md border px-3 py-2 text-[13px] transition-all touch-manipulation",
                 convertLater
-                  ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
-                  : "border-[rgba(255,255,255,0.07)] text-ink-secondary hover:text-ink-primary",
+                  ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
+                  : "border-[var(--border)] text-ink-secondary hover:text-ink-primary",
               ].join(" ")}
             >
               <Star
-                className="h-4 w-4"
+                className={`h-4 w-4 ${convertLater ? "text-[var(--accent-fg)]" : ""}`}
                 strokeWidth={1.5}
-                fill={convertLater ? "#D4FF4F" : "none"}
+                fill={convertLater ? "currentColor" : "none"}
               />
               Save to my convert-later picks
             </button>
@@ -603,10 +603,10 @@ export function LogCallForm({
           type="submit"
           className={
             isMagic
-              ? "min-h-[48px] w-full touch-manipulation rounded-md bg-[#D4FF4F] py-3 text-base font-medium text-black sm:min-h-0 sm:text-[13px]"
+              ? "min-h-[48px] w-full touch-manipulation rounded-md bg-[var(--accent)] py-3 text-base font-medium text-[var(--accent-foreground)] sm:min-h-0 sm:text-[13px]"
               : isCompact
-                ? "min-h-12 w-full touch-manipulation rounded-xl bg-[#D4FF4F] py-3 text-[15px] font-semibold text-black"
-                : "min-h-12 w-full touch-manipulation rounded-md bg-[#D4FF4F] py-3 text-[13px] font-medium text-black sm:min-h-0"
+                ? "min-h-12 w-full touch-manipulation rounded-xl bg-[var(--accent)] py-3 text-[15px] font-semibold text-[var(--accent-foreground)]"
+                : "min-h-12 w-full touch-manipulation rounded-md bg-[var(--accent)] py-3 text-[13px] font-medium text-[var(--accent-foreground)] sm:min-h-0"
           }
         >
           {isCompact && channel === "whatsapp" ? "Log WhatsApp" : "Save call log"}

@@ -3,7 +3,9 @@
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { format, parseISO, startOfMonth } from "date-fns";
+import { CalendarClock } from "lucide-react";
 import { FollowUpsCalendar, isDateKeyToday } from "@/components/sales/FollowUpsCalendar";
+import { EmptyState } from "@/components/ui";
 import {
   type FollowUpGroupKey,
   type FollowUpLead,
@@ -173,7 +175,7 @@ export function FollowUpsView({ leads, callbackAtByLeadId, sourceByLeadId = {} }
             </span>
           ) : null}
           {groups.TODAY.length > 0 ? (
-            <span className="rounded-md border border-[var(--accent-border)] bg-[var(--accent-muted)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--accent)]">
+            <span className="rounded-md border border-[var(--accent-border)] bg-[var(--accent-muted)] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--accent-fg)]">
               {groups.TODAY.length} today
             </span>
           ) : null}
@@ -225,7 +227,13 @@ export function FollowUpsView({ leads, callbackAtByLeadId, sourceByLeadId = {} }
             );
           })}
           {!leads.length ? (
-            <p className="text-sm text-ink-tertiary">No follow-ups scheduled.</p>
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)]">
+              <EmptyState
+                icon={CalendarClock}
+                title="No follow-ups scheduled"
+                description="Follow-ups you schedule on a lead will appear here."
+              />
+            </div>
           ) : null}
         </div>
       )}

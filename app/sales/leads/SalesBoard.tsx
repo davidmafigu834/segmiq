@@ -20,6 +20,7 @@ import { StatusPill } from "@/components/StatusPill";
 import { openLeadPanel } from "@/store/uiStore";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
+import { EmptyState, Input, SegmentedTabs } from "@/components/ui";
 import { LeadDetailPanel } from "./LeadDetailPanel";
 
 const COLS = ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"] as const satisfies readonly LeadStatus[];
@@ -274,23 +275,23 @@ export function SalesBoard({
     }
   }
 
+  const pipelineTabs = (
+    <SegmentedTabs
+      aria-label="Pipeline tab"
+      value={tab}
+      onValueChange={(value) => setTab(value as "active" | "closed")}
+      tabs={[
+        { value: "active", label: "Active" },
+        { value: "closed", label: "Closed" },
+      ]}
+    />
+  );
+
   if (tab === "closed") {
     return (
       <div className="w-full min-w-0 max-w-full">
-        <div className="mb-6 flex gap-6 border-b border-border">
-          <button
-            type="button"
-            className="relative pb-3 text-sm font-medium text-ink-secondary hover:text-ink-primary"
-            onClick={() => setTab("active")}
-          >
-            Active
-          </button>
-          <button type="button" className="relative pb-3 text-sm font-medium text-ink-primary">
-            Closed
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)]" />
-          </button>
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface-card p-2 md:p-0">
+        <div className="mb-6 border-b border-border pb-4">{pipelineTabs}</div>
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface-card p-2 md:p-0">
           <ResponsiveTable<LeadWithClientResponseLimit>
             columns={
               [
@@ -325,29 +326,14 @@ export function SalesBoard({
   if (showFullEmpty) {
     return (
       <div className="w-full min-w-0 max-w-full">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border">
-          <div className="flex gap-6">
-            <button type="button" className="relative pb-3 text-sm font-medium text-ink-primary">
-              Active
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)]" />
-            </button>
-            <button
-              type="button"
-              className="relative pb-3 text-sm font-medium text-ink-secondary hover:text-ink-primary"
-              onClick={() => setTab("closed")}
-            >
-              Closed
-            </button>
-          </div>
-        </div>
+        <div className="mb-6 border-b border-border pb-4">{pipelineTabs}</div>
         <div className="flex flex-1 flex-col items-center justify-center py-16">
-          <div className="max-w-sm text-center">
-            <Inbox className="mx-auto mb-4 h-10 w-10 text-ink-tertiary" strokeWidth={1.5} />
-            <h2 className="font-display text-2xl text-ink-primary">No leads yet</h2>
-            <p className="mt-2 text-sm text-ink-secondary">
-              Your new leads will appear here the moment they come in. You&apos;ll also get a WhatsApp and email for each
-              one.
-            </p>
+          <div className="max-w-sm rounded-lg border border-dashed border-border bg-surface-card">
+            <EmptyState
+              icon={Inbox}
+              title="No leads yet"
+              description="Your new leads will appear here the moment they come in. You'll also get a WhatsApp and email for each one."
+            />
           </div>
         </div>
         <LeadDetailPanel leads={leads} onLeadUpdated={handleLeadUpdated} onClose={handleUrlAfterPanelClose} />
@@ -357,61 +343,32 @@ export function SalesBoard({
 
   return (
     <div className="w-full min-w-0 max-w-full">
-      <div className="mb-6 flex flex-col gap-4 border-b border-border sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
-        <div className="flex shrink-0 gap-6">
-          <button type="button" className="relative pb-3 text-sm font-medium text-ink-primary">
-            Active
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--accent)]" />
-          </button>
-          <button
-            type="button"
-            className="relative pb-3 text-sm font-medium text-ink-secondary hover:text-ink-primary"
-            onClick={() => setTab("closed")}
-          >
-            Closed
-          </button>
-        </div>
+      <div className="mb-6 flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+        {pipelineTabs}
         <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:max-w-md sm:flex-row sm:items-center sm:justify-end sm:gap-2 sm:pl-0">
-          <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
-            <button
-              type="button"
-              onClick={() => setViewMode("kanban")}
-              className={[
-                "rounded-md border px-2 py-1 font-mono text-[11px] transition-colors",
-                viewMode === "kanban"
-                  ? "border-border bg-surface-card-alt text-ink-primary"
-                  : "border-transparent text-ink-tertiary hover:text-ink-secondary",
-              ].join(" ")}
-            >
-              Board
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("picks")}
-              className={[
-                "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-[11px] transition-colors",
-                viewMode === "picks"
-                  ? "border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] text-[#D4FF4F]"
-                  : "border-transparent text-ink-tertiary hover:text-ink-secondary",
-              ].join(" ")}
-            >
-              <Star
-                className="h-3 w-3"
-                strokeWidth={1.5}
-                fill={viewMode === "picks" ? "#D4FF4F" : "none"}
-              />
-              Picks
-              {picksCount > 0 ? (
-                <span className="tabular-nums opacity-80">{picksCount}</span>
-              ) : null}
-            </button>
-          </div>
-          <input
+          <SegmentedTabs
+            aria-label="Board view"
+            value={viewMode}
+            onValueChange={(value) => setViewMode(value as "kanban" | "picks")}
+            tabs={[
+              { value: "kanban", label: "Board" },
+              {
+                value: "picks",
+                label: (
+                  <span className="inline-flex items-center gap-1">
+                    <Star className="h-3 w-3" strokeWidth={1.5} fill={viewMode === "picks" ? "currentColor" : "none"} />
+                    Picks{picksCount > 0 ? ` · ${picksCount}` : ""}
+                  </span>
+                ),
+              },
+            ]}
+          />
+          <Input
             type="search"
             placeholder="Search by name, phone…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="input-base h-10 w-full min-w-0 text-sm sm:h-8 sm:max-w-[min(100%,20rem)] sm:text-xs"
+            className="w-full min-w-0 sm:max-w-[min(100%,20rem)]"
             aria-label="Search leads"
           />
         </div>
@@ -439,13 +396,12 @@ export function SalesBoard({
             retargeting.
           </p>
           {picksLeads.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-card-alt px-5 py-14 text-center">
-              <Star className="mb-3 h-8 w-8 text-ink-tertiary" strokeWidth={1.5} />
-              <p className="text-[15px] font-medium text-ink-primary">No picks yet</p>
-              <p className="mt-1 max-w-sm text-[13px] text-ink-tertiary">
-                When you log a follow-up, toggle &quot;Save to my convert-later picks&quot; to add a
-                lead here.
-              </p>
+            <div className="rounded-lg border border-dashed border-border bg-surface-card">
+              <EmptyState
+                icon={Star}
+                title="No picks yet"
+                description='When you log a follow-up, toggle "Save to my convert-later picks" to add a lead here.'
+              />
             </div>
           ) : (
             <div className="flex flex-col gap-3">

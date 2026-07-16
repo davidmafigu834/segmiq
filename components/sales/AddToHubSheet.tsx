@@ -273,7 +273,7 @@ export function AddToHubSheet({
                     onClick={() => setType(t)}
                     className={`flex-1 rounded-xl border px-3 py-2.5 text-left transition ${
                       type === t
-                        ? "border-[var(--accent)] bg-[rgba(212,255,79,0.06)]"
+                        ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
                         : "border-[var(--border)] bg-[var(--bg-quaternary)]"
                     }`}
                   >
@@ -282,14 +282,14 @@ export function AddToHubSheet({
                         <Send
                           size={15}
                           className={
-                            type === t ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
+                            type === t ? "text-[var(--accent-fg)]" : "text-[var(--text-tertiary)]"
                           }
                         />
                       ) : (
                         <Users
                           size={15}
                           className={
-                            type === t ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
+                            type === t ? "text-[var(--accent-fg)]" : "text-[var(--text-tertiary)]"
                           }
                         />
                       )}
@@ -315,7 +315,7 @@ export function AddToHubSheet({
 
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-medium text-[var(--text-secondary)]">
-                  Phone <span className="text-[var(--accent)]">*</span>
+                  Phone <span className="text-[var(--accent-fg)]">*</span>
                 </span>
                 <input
                   className="input-base"
@@ -400,7 +400,7 @@ export function AddToHubSheet({
               {isWalkInFlow && (
                 <div className="flex flex-col gap-2">
                   <span className="text-xs font-medium text-[var(--text-secondary)]">
-                    What happened? <span className="text-[var(--accent)]">*</span>
+                    What happened? <span className="text-[var(--accent-fg)]">*</span>
                   </span>
                   <div className="flex flex-col gap-2">
                     {WALK_IN_OUTCOMES.map((o) => (
@@ -410,7 +410,7 @@ export function AddToHubSheet({
                         onClick={() => setIntakeOutcome(o.value)}
                         className={`rounded-xl border px-3 py-2.5 text-left transition ${
                           intakeOutcome === o.value
-                            ? "border-[var(--accent)] bg-[rgba(212,255,79,0.06)]"
+                            ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
                             : "border-[var(--border)] bg-[var(--bg-quaternary)]"
                         }`}
                       >
@@ -429,7 +429,7 @@ export function AddToHubSheet({
               {isWalkInFlow && intakeOutcome === "follow_up_later" && (
                 <label className="flex flex-col gap-1.5">
                   <span className="text-xs font-medium text-[var(--text-secondary)]">
-                    Follow-up date <span className="text-[var(--accent)]">*</span>
+                    Follow-up date <span className="text-[var(--accent-fg)]">*</span>
                   </span>
                   <input
                     type="date"
@@ -511,7 +511,7 @@ export function AddToHubSheet({
                         onClick={() => setPriority(p)}
                         className={`flex-1 rounded-lg border px-3 py-2 text-[12.5px] font-medium capitalize transition ${
                           priority === p
-                            ? "border-[var(--accent)] bg-[rgba(212,255,79,0.08)] text-[var(--text-primary)]"
+                            ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--text-primary)]"
                             : "border-[var(--border)] bg-[var(--bg-quaternary)] text-[var(--text-secondary)]"
                         }`}
                       >
@@ -637,7 +637,7 @@ export function AddToHubSheet({
               )}
               {isLead && mode === "salesperson" && (
                 <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-quaternary)] px-3 py-2.5">
-                  <Check size={15} className="shrink-0 text-[var(--accent)]" />
+                  <Check size={15} className="shrink-0 text-[var(--accent-fg)]" />
                   <span className="text-[12.5px] text-[var(--text-secondary)]">
                     {noteByMode[assignmentMode]}
                   </span>

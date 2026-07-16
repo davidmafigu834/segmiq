@@ -41,10 +41,10 @@ function ActionButton({
   compact?: boolean;
 }) {
   const className = primary
-    ? `flex min-w-0 shrink items-center justify-center gap-1.5 rounded-full bg-[#00A884] px-3 text-white transition-opacity hover:opacity-90 disabled:opacity-40 max-[359px]:w-9 max-[359px]:px-0 ${
+    ? `flex min-w-0 shrink items-center justify-center gap-1.5 rounded-md bg-[var(--channel-whatsapp)] px-3 text-black transition-opacity hover:opacity-90 disabled:opacity-40 max-[359px]:w-9 max-[359px]:px-0 ${
         compact ? "h-8 text-[11px]" : "h-9 text-xs font-medium"
       }`
-    : `flex shrink-0 items-center justify-center rounded-full border border-[#00A884]/25 bg-[#0a1612] transition-colors hover:border-[#00A884]/45 ${
+    : `flex shrink-0 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--bg-tertiary)] transition-colors hover:border-[var(--border-hover)] ${
         compact ? "h-8 w-8" : "h-9 w-9"
       }`;
 
@@ -112,17 +112,17 @@ export function WhatsAppLeadCard({
 
   return (
     <article
-      className={`min-w-0 overflow-hidden rounded-xl border border-[#00A884]/25 bg-gradient-to-br from-[#0a1612] to-[var(--surface-card)] ${
+      className={`min-w-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-card)] ${
         compact ? "p-2.5 layout:p-3" : "p-4 sm:p-5"
       } ${className}`}
     >
-      <div className={`mb-3 h-0.5 w-full rounded-full bg-gradient-to-r from-[#00A884] via-[#25D366] to-transparent`} />
+      <div className="mb-3 h-px w-full bg-gradient-to-r from-[var(--channel-whatsapp)] to-transparent" />
 
       <div className={`flex items-start gap-3 ${compact ? "mb-2" : "mb-3"}`}>
         <WhatsAppAvatar name={displayName} phone={lead.phone} size={compact ? "sm" : "md"} />
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#00A884]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#6EE7B7]">
+            <span className="inline-flex items-center gap-1 rounded-md bg-[var(--channel-whatsapp-muted)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--channel-whatsapp)]">
               <MessageCircle size={11} />
               WhatsApp chat
             </span>
@@ -148,7 +148,7 @@ export function WhatsAppLeadCard({
       </div>
 
       <div
-        className={`rounded-2xl rounded-tl-md border border-[#00A884]/15 bg-[#0f1f18] px-3 py-2.5 ${
+        className={`rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-3 py-2.5 ${
           compact ? "mb-2" : "mb-3"
         }`}
       >
@@ -187,7 +187,7 @@ export function WhatsAppLeadCard({
           label="Call"
           compact={compact}
         >
-          <Phone size={compact ? 13 : 15} className="text-[#6EE7B7]" />
+          <Phone size={compact ? 13 : 15} className="text-[var(--channel-whatsapp)]" />
         </ActionButton>
 
         <ActionButton

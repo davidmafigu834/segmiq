@@ -3,22 +3,24 @@ type Props = {
 };
 
 function getScoreColors(s: number) {
-  if (s >= 70)
+  if (s >= 70) {
     return {
-      bg: "rgba(61,214,140,0.1)",
-      border: "rgba(61,214,140,0.25)",
-      text: "#3dd68c",
+      bg: "var(--success-muted)",
+      border: "var(--success-border)",
+      text: "var(--success-fg)",
     };
-  if (s >= 40)
+  }
+  if (s >= 40) {
     return {
-      bg: "rgba(245,166,35,0.1)",
-      border: "rgba(245,166,35,0.25)",
-      text: "#f5a623",
+      bg: "var(--warning-muted)",
+      border: "var(--warning-border)",
+      text: "var(--warning)",
     };
+  }
   return {
-    bg: "rgba(255,255,255,0.04)",
-    border: "rgba(255,255,255,0.1)",
-    text: "#71717a",
+    bg: "var(--bg-quaternary)",
+    border: "var(--border)",
+    text: "var(--text-tertiary)",
   };
 }
 

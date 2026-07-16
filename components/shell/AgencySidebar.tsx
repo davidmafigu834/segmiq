@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
-import { ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { ShellIcon } from "./shell-icons";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
@@ -56,22 +57,22 @@ function NavRow({
   return (
     <Link
       href={item.href}
-      className={`relative flex h-10 items-center gap-3 rounded-r-lg py-2 transition-all ${
-        nested ? "text-[13px]" : "text-[15px]"
+      className={`relative flex h-9 items-center gap-2.5 rounded-md py-2 transition-colors ${
+        nested ? "text-[12px]" : "text-[13px]"
       } ${
         mobileExpanded
           ? `justify-start ${nested ? "pl-9 pr-3" : "px-3"}`
           : `justify-center px-2 layout:justify-start ${nested ? "layout:pl-9 layout:pr-3" : "layout:px-3"}`
       } ${
         isActive
-          ? "border-l-2 border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--text-primary)] font-semibold"
-          : "border-l-2 border-transparent font-medium text-[var(--text-tertiary)] hover:border-[var(--accent-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-secondary)]"
+          ? "bg-[var(--accent-muted)] text-[var(--text-primary)] font-medium"
+          : "font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
       } `}
     >
       {!nested ? (
         <ShellIcon
           name={item.icon}
-          className={`h-4 w-4 shrink-0 ${isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`}
+          className={`h-4 w-4 shrink-0 ${isActive ? "text-[var(--accent-fg)]" : "text-[var(--text-tertiary)]"}`}
         />
       ) : (
         <span className="h-4 w-4 shrink-0" aria-hidden />
@@ -101,21 +102,75 @@ function NavGroup({
   mobileExpanded?: boolean;
   pathname: string;
 }) {
+  const hubActive = navItemActive(item, pathname, navActive);
+  const [expanded, setExpanded] = useState(() => hubActive || !item.collapsible);
+
+  useEffect(() => {
+    if (hubActive) setExpanded(true);
+  }, [hubActive]);
+
+  const showChildren = !item.collapsible || expanded;
+
   return (
     <div>
-      <NavRow item={item} navActive={navActive} mobileExpanded={mobileExpanded} pathname={pathname} />
-      <div className={`${mobileExpanded ? "block" : "hidden layout:block"}`}>
-        {item.children?.map((child) => (
-          <NavRow
-            key={child.href}
-            item={child}
-            navActive={navActive}
-            mobileExpanded={mobileExpanded}
-            nested
-            pathname={pathname}
+      <div className="flex items-center gap-0.5">
+        <Link
+          href={item.href}
+          className={`relative flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-md py-2 text-[13px] transition-colors ${
+            mobileExpanded
+              ? "justify-start px-3"
+              : "justify-center px-2 layout:justify-start layout:px-3"
+          } ${
+            hubActive
+              ? "bg-[var(--accent-muted)] text-[var(--text-primary)] font-medium"
+              : "font-medium text-[var(--text-tertiary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+          }`}
+        >
+          <ShellIcon
+            name={item.icon}
+            className={`h-4 w-4 shrink-0 ${hubActive ? "text-[var(--accent-fg)]" : "text-[var(--text-tertiary)]"}`}
           />
-        ))}
+          <span className={`min-w-0 flex-1 truncate ${mobileExpanded ? "inline" : "hidden layout:inline"}`}>
+            {item.label}
+          </span>
+          {item.badge != null && item.badge > 0 ? (
+            <span
+              className={`rounded-[var(--radius-sm)] bg-[var(--bg-quaternary)] px-1.5 py-0 font-mono text-[10px] font-medium text-[var(--text-secondary)] border border-[var(--border)] ${
+                mobileExpanded ? "inline" : "hidden layout:inline"
+              }`}
+            >
+              {item.badge > 99 ? "99+" : item.badge}
+            </span>
+          ) : null}
+        </Link>
+        {item.collapsible ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((open) => !open)}
+            className={`flex h-9 w-8 shrink-0 items-center justify-center rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] ${
+              mobileExpanded ? "inline-flex" : "hidden layout:inline-flex"
+            }`}
+            aria-expanded={expanded}
+            aria-label={expanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
+          >
+            <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} strokeWidth={1.5} />
+          </button>
+        ) : null}
       </div>
+      {showChildren ? (
+        <div className={`${mobileExpanded ? "block" : "hidden layout:block"}`}>
+          {item.children?.map((child) => (
+            <NavRow
+              key={child.href}
+              item={child}
+              navActive={navActive}
+              mobileExpanded={mobileExpanded}
+              nested
+              pathname={pathname}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -132,6 +187,8 @@ export function AgencySidebar({
   sidebarBrand,
   navActive,
   mobileExpanded = false,
+  profileHref,
+  lightMode = false,
 }: {
   homeHref: string;
   roleLabel: string;
@@ -144,12 +201,15 @@ export function AgencySidebar({
   sidebarBrand?: { name: string; logoUrl: string | null } | null;
   navActive: (href: string) => boolean;
   mobileExpanded?: boolean;
+  profileHref?: string;
+  lightMode?: boolean;
 }) {
   const pathname = usePathname();
+  const wordmarkSrc = lightMode ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div className="shrink-0 px-3 pb-4 pt-6 layout:px-5">
+      <div className="shrink-0 px-3 pb-3 pt-5 layout:px-4">
         <Link
           href={homeHref}
           className={`flex items-center gap-2 ${mobileExpanded ? "justify-start" : "justify-center layout:justify-start"}`}
@@ -173,8 +233,8 @@ export function AgencySidebar({
                     {initialsFromName(sidebarBrand.name)}
                   </div>
                 )}
-                <div className="h-3 w-px shrink-0 bg-white/20" aria-hidden />
-                <Image src="/segmiq-wordmark.png" alt="Segmiq" width={140} height={24} className="h-5 w-auto" />
+                <div className="h-3 w-px shrink-0 bg-[var(--border)]" aria-hidden />
+                <Image src={wordmarkSrc} alt="Segmiq" width={140} height={24} className="h-5 w-auto" />
               </div>
             ) : (
               <>
@@ -183,7 +243,7 @@ export function AgencySidebar({
                     {coBrand}
                   </div>
                 ) : null}
-                <Image src="/segmiq-wordmark.png" alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
+                <Image src={wordmarkSrc} alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
               </>
             )}
             <div className="mt-1 font-mono text-[12px] font-medium uppercase tracking-wide text-[var(--text-on-dark-dim)]">
@@ -191,10 +251,13 @@ export function AgencySidebar({
             </div>
           </div>
         </Link>
-        <div className={`mt-5 h-px bg-[var(--surface-sidebar-border)] ${mobileExpanded ? "block" : "hidden layout:block"}`} />
+        <div className={`mt-4 h-px bg-[var(--surface-sidebar-border)] ${mobileExpanded ? "block" : "hidden layout:block"}`} />
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-1 pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
+        <div className={`${mobileExpanded ? "block" : "hidden layout:block"} px-5 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-disabled)]`}>
+          Workspace
+        </div>
         <nav className="flex flex-col gap-0.5 px-2 layout:px-3">
           {primaryNav.map((item) =>
             item.children?.length ? (
@@ -218,11 +281,14 @@ export function AgencySidebar({
         </nav>
 
         <div
-          className={`mx-2 my-2 h-px bg-[var(--surface-sidebar-border)] ${
+          className={`mx-2 my-3 h-px bg-[var(--surface-sidebar-border)] ${
             mobileExpanded ? "block" : "hidden layout:mx-3 layout:block"
           }`}
         />
 
+        <div className={`${mobileExpanded ? "block" : "hidden layout:block"} px-5 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-disabled)]`}>
+          Tools
+        </div>
         <nav className="flex flex-col gap-0.5 px-2 pb-2 layout:px-3">
           {secondaryNav.map((item) => (
             <NavRow
@@ -276,8 +342,8 @@ export function AgencySidebar({
           >
             <ClientAvatar name={userName} size="sm" />
             <div className={`${mobileExpanded ? "block" : "hidden layout:block"} min-w-0 flex-1 text-left`}>
-              <div className="truncate text-[15px] font-semibold text-[var(--text-on-dark)]">{userName}</div>
-              <div className="truncate font-mono text-[12px] font-medium text-[var(--text-on-dark-dim)]">{userRoleLabel}</div>
+              <div className="truncate text-[13px] font-medium text-[var(--text-on-dark)]">{userName}</div>
+              <div className="truncate text-[11px] text-[var(--text-tertiary)]">{userRoleLabel}</div>
             </div>
             <ChevronRight
               className={`h-4 w-4 shrink-0 text-[var(--text-on-dark-dim)] transition group-open:rotate-90 ${
@@ -286,6 +352,14 @@ export function AgencySidebar({
             />
           </summary>
           <div className="absolute bottom-full left-0 right-0 z-50 mb-1 rounded-md border border-[var(--border)] bg-[var(--surface-sidebar-elevated)] py-1 shadow-[var(--shadow-md)]">
+            {profileHref ? (
+              <Link
+                href={profileHref}
+                className="block w-full px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              >
+                Profile
+              </Link>
+            ) : null}
             <button
               type="button"
               className="block w-full px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"

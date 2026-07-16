@@ -58,6 +58,7 @@ const config: Config = {
           hover: "var(--accent-hover)",
           ink: "var(--accent-ink)",
           foreground: "var(--accent-foreground)",
+          fg: "var(--accent-fg)",
         },
         semantic: {
           success: "var(--success)",

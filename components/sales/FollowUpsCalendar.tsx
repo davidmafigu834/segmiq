@@ -117,7 +117,7 @@ export function FollowUpsCalendar({
                 className={[
                   "font-mono text-[11px] leading-none sm:text-[12px]",
                   selected
-                    ? "font-semibold text-[var(--accent)]"
+                    ? "font-semibold text-[var(--accent-fg)]"
                     : todayCell
                       ? "font-semibold text-[var(--text-primary)]"
                       : inMonth
@@ -145,7 +145,7 @@ export function FollowUpsCalendar({
                         "rounded px-1 font-mono text-[8px] leading-none sm:text-[9px]",
                         overdue
                           ? "bg-[var(--danger-bg)] text-[var(--danger-fg)]"
-                          : "bg-[var(--accent-muted)] text-[var(--accent)]",
+                          : "bg-[var(--accent-muted)] text-[var(--accent-fg)]",
                       ].join(" ")}
                     >
                       {count}
@@ -173,7 +173,7 @@ export function FollowUpsCalendar({
           <button
             type="button"
             onClick={() => onSelectDate(null)}
-            className="ml-auto font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--accent)] hover:underline sm:text-[10px]"
+            className="ml-auto font-mono text-[9px] uppercase tracking-[0.1em] text-[var(--accent-fg)] hover:underline sm:text-[10px]"
           >
             Clear selection
           </button>

@@ -5,6 +5,7 @@ export type AppShellNavItem = {
   label: string;
   icon: keyof typeof SHELL_ICONS;
   badge?: number;
+  collapsible?: boolean;
   children?: AppShellNavItem[];
 };
 

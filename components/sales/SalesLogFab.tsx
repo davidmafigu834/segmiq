@@ -23,10 +23,11 @@ export function SalesLogFab({ leads }: { leads: PriorityLead[] }) {
       <button
         type="button"
         onClick={() => openLogSheet("")}
-        className="fixed right-5 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 w-14 h-14 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center shadow-[var(--shadow-accent-glow)] hover:bg-[var(--accent-hover)] transition-colors"
+        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-5 z-30 flex h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-3.5 text-[var(--accent-foreground)] shadow-[var(--shadow-lg)] transition-colors hover:bg-[var(--accent-hover)] layout:bottom-6"
         aria-label="Log a call"
       >
-        <Phone size={22} />
+        <Phone size={17} />
+        <span className="hidden text-[13px] font-semibold sm:inline">Log call</span>
       </button>
 
       {showLogSheet && (

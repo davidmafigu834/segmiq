@@ -22,7 +22,7 @@ export default async function SoloBlockedPage() {
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="flex items-center justify-between">
           <span
-            className="text-xl font-semibold text-[var(--accent)]"
+            className="text-xl font-semibold text-[var(--accent-fg)]"
             style={{ fontFamily: "var(--font-instrument-serif)" }}
           >
             Segmiq

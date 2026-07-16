@@ -46,14 +46,19 @@ export function ConvertLaterPickCard({
     }
   }
 
+  const actionButtonClass =
+    "inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-card)] text-[var(--success-fg)] transition-colors hover:border-[var(--border-hover)]";
+  const textButtonClass =
+    "inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--border)] px-3 text-[12px] text-ink-secondary transition-colors hover:border-[var(--border-hover)] hover:text-ink-primary";
+
   return (
-    <article className="ag-fade-in rounded-xl border border-[rgba(255,255,255,0.07)] bg-[#111111] p-4 sm:p-5">
+    <article className="ag-fade-in rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <button
             type="button"
             onClick={() => openLeadPanel(lead.id)}
-            className="text-left text-[15px] font-medium text-[#ededed] hover:underline"
+            className="text-left text-[15px] font-medium text-[var(--text-primary)] hover:underline"
           >
             {lead.name ?? "Unknown"}
           </button>
@@ -63,13 +68,13 @@ export function ConvertLaterPickCard({
             </p>
           ) : null}
         </div>
-        <span className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-[#D4FF4F] bg-[rgba(212,255,79,0.08)] px-2 font-mono text-[10px] uppercase tracking-wide text-[#D4FF4F]">
-          <Star className="h-3 w-3" fill="#D4FF4F" strokeWidth={1.5} />
+        <span className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-[var(--accent-border)] bg-[var(--accent-muted)] px-2 font-mono text-[10px] uppercase tracking-wide text-[var(--status-won-fg)]">
+          <Star className="h-3 w-3 text-[var(--accent-fg)]" fill="currentColor" strokeWidth={1.5} />
           Pick
         </span>
       </div>
 
-      <dl className="mt-3 space-y-1.5 border-t border-[rgba(255,255,255,0.07)] pt-3">
+      <dl className="mt-3 space-y-1.5 border-t border-[var(--border)] pt-3">
         {logContext?.reason?.trim() ? (
           <div className="flex flex-wrap gap-x-2 text-[12px]">
             <dt className="font-mono uppercase tracking-wide text-ink-tertiary">Hold-up</dt>
@@ -86,15 +91,11 @@ export function ConvertLaterPickCard({
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {phone ? (
-          <a
-            href={`tel:${phone}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(255,255,255,0.07)] bg-[#000000] text-[#3dd68c] transition-colors hover:border-[rgba(255,255,255,0.15)]"
-            aria-label="Call"
-          >
+          <a href={`tel:${phone}`} className={actionButtonClass} aria-label="Call">
             <Phone size={15} />
           </a>
         ) : (
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(255,255,255,0.07)] opacity-30">
+          <span className={`${actionButtonClass} opacity-30`}>
             <PhoneOff size={15} className="text-ink-tertiary" />
           </span>
         )}
@@ -116,18 +117,14 @@ export function ConvertLaterPickCard({
                 tier: "neutral",
               });
             }}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(255,255,255,0.07)] bg-[#000000] text-[#3dd68c] transition-colors hover:border-[rgba(255,255,255,0.15)]"
+            className={actionButtonClass}
             aria-label="Message on WhatsApp"
           >
             <MessageCircle size={15} />
           </button>
         ) : null}
 
-        <button
-          type="button"
-          onClick={() => openLeadPanel(lead.id)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[rgba(255,255,255,0.07)] px-3 text-[12px] text-ink-secondary transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-ink-primary"
-        >
+        <button type="button" onClick={() => openLeadPanel(lead.id)} className={textButtonClass}>
           <ExternalLink size={13} />
           Open lead
         </button>
@@ -136,7 +133,7 @@ export function ConvertLaterPickCard({
           type="button"
           disabled={unpicking}
           onClick={() => void handleUnpick()}
-          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[rgba(255,255,255,0.07)] px-3 text-[12px] text-ink-tertiary transition-colors hover:border-[rgba(255,255,255,0.15)] hover:text-ink-secondary disabled:opacity-50"
+          className={`${textButtonClass} text-ink-tertiary hover:text-ink-secondary disabled:opacity-50`}
         >
           <Star size={13} />
           {unpicking ? "Removing…" : "Remove pick"}

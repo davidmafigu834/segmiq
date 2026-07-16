@@ -14,6 +14,7 @@ import { excludeGraduatedLeads } from "@/lib/retargeting-shared";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 import { PriorityLeadCard } from "@/components/sales/PriorityLeadCard";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
+import { EmptyState, SegmentedTabs } from "@/components/ui";
 
 const DEFAULT_TAB: RecoverAgeTier = "week";
 
@@ -65,57 +66,25 @@ export function RecoverClient({
         {recoverLeads.length} slipped lead{recoverLeads.length === 1 ? "" : "s"} still uncontacted.
       </p>
 
-      <div className="ag-fade-in -mx-1 mb-6 overflow-x-auto">
-        <div className="flex gap-1 min-w-max px-1 pb-1">
-          {RECOVER_AGE_TABS.map(({ tier, label }) => {
-            const count = tabBuckets[tier].length;
-            const isActive = activeTab === tier;
-            return (
-              <button
-                key={tier}
-                type="button"
-                onClick={() => setActiveTab(tier)}
-                className={`relative flex items-center gap-1.5 px-4 py-2.5 rounded-lg border text-[13px] font-semibold whitespace-nowrap transition-colors ${
-                  isActive
-                    ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-muted)]"
-                    : "border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-hover)]"
-                }`}
-              >
-                {label}
-                <span
-                  className={`text-[12px] ${
-                    isActive ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
-                  }`}
-                >
-                  {count}
-                </span>
-                {isActive && (
-                  <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-[var(--accent)]" />
-                )}
-              </button>
-            );
-          })}
-        </div>
+      <div className="scrollbar-hide ag-fade-in mb-6 overflow-x-auto">
+        <SegmentedTabs
+          aria-label="Filter slipped leads by age"
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as RecoverAgeTier)}
+          tabs={RECOVER_AGE_TABS.map(({ tier, label }) => ({
+            value: tier,
+            label: `${label} · ${tabBuckets[tier].length}`,
+          }))}
+        />
       </div>
 
       {recoverLeads.length === 0 ? (
-        <div className="ag-fade-in rounded-xl border border-[var(--border)] bg-[var(--surface-card)] flex flex-col items-center justify-center py-16 text-center px-5">
-          <AlertTriangle className="w-8 h-8 text-[var(--warning)] mb-3" />
-          <p className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">
-            No slipped leads
-          </p>
-          <p className="text-[13px] text-[var(--text-tertiary)]">
-            Every assigned lead has been contacted or is still fresh.
-          </p>
+        <div className="ag-fade-in rounded-lg border border-[var(--border)] bg-[var(--surface-card)]">
+          <EmptyState icon={AlertTriangle} title="No slipped leads" description="Every assigned lead has been contacted or is still fresh." />
         </div>
       ) : activeLeads.length === 0 ? (
-        <div className="ag-fade-in ag-delay-1 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] flex flex-col items-center justify-center py-16 text-center px-5">
-          <p className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">
-            Nothing in this window
-          </p>
-          <p className="text-[13px] text-[var(--text-tertiary)]">
-            No slipped leads fall in this age range right now.
-          </p>
+        <div className="ag-fade-in ag-delay-1 rounded-lg border border-[var(--border)] bg-[var(--surface-card)]">
+          <EmptyState title="Nothing in this window" description="No slipped leads fall in this age range right now." />
         </div>
       ) : (
         <div className="ag-fade-in ag-delay-1 flex flex-col gap-2">
@@ -135,10 +104,11 @@ export function RecoverClient({
       <button
         type="button"
         onClick={() => openLogSheet("")}
-        className="fixed right-5 bottom-[calc(72px+env(safe-area-inset-bottom))] z-30 w-14 h-14 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center shadow-[var(--shadow-accent-glow)] hover:bg-[var(--accent-hover)] transition-colors"
+        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-5 z-30 flex h-11 items-center gap-2 rounded-lg bg-[var(--accent)] px-3.5 text-[var(--accent-foreground)] shadow-[var(--shadow-lg)] transition-colors hover:bg-[var(--accent-hover)] layout:bottom-6"
         aria-label="Log a call"
       >
-        <Phone size={22} />
+        <Phone size={17} />
+        <span className="hidden text-[13px] font-semibold sm:inline">Log call</span>
       </button>
       {sheet}
     </div>

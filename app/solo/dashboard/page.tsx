@@ -45,7 +45,7 @@ export default async function SoloDashboardPage() {
             }`}
           >
             <p className="text-[13px] text-[var(--text-secondary)]">{billingAlert.message}</p>
-            <span className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[var(--accent)]">
+            <span className="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-[var(--accent-fg)]">
               View billing
               <ChevronRight size={14} />
             </span>

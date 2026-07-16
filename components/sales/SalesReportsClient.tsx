@@ -11,6 +11,7 @@ import { BarChart3, CalendarClock, Flame, Loader2, Phone, Trophy } from "lucide-
 import { WhatsAppHubReportSection } from "@/components/reports/WhatsAppHubReportSection";
 
 import type { WhatsAppHubPeriod, WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
+import { EmptyState, SegmentedTabs } from "@/components/ui";
 
 
 
@@ -72,7 +73,7 @@ function StatCard({
 
   const content = (
 
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)] p-5 transition-colors hover:border-[var(--border-hover)]">
 
       <div className="mb-3 flex items-center gap-2 text-[var(--text-tertiary)]">
 
@@ -82,7 +83,7 @@ function StatCard({
 
       </div>
 
-      <p className="font-display text-[32px] leading-none text-[var(--text-primary)]">{value}</p>
+      <p className="font-mono text-[30px] font-semibold leading-none tabular-nums text-[var(--text-primary)]">{value}</p>
 
       {hint ? <p className="mt-2 text-[12px] text-[var(--text-tertiary)]">{hint}</p> : null}
 
@@ -124,13 +125,18 @@ export function SalesReportsClient() {
 
   const [waLoading, setWaLoading] = useState(true);
 
+  const [reportError, setReportError] = useState(false);
+
 
 
   useEffect(() => {
 
     fetch("/api/sales/dashboard")
 
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Could not load sales report");
+        return res.json();
+      })
 
       .then((data: DashboardPayload) => {
 
@@ -140,7 +146,7 @@ export function SalesReportsClient() {
 
       })
 
-      .catch(() => {})
+      .catch(() => setReportError(true))
 
       .finally(() => setLoading(false));
 
@@ -186,10 +192,12 @@ export function SalesReportsClient() {
 
     return (
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-10 text-center text-[13px] text-[var(--text-tertiary)]">
-
-        Could not load your sales report.
-
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)]">
+        <EmptyState
+          icon={BarChart3}
+          title="Could not load your sales report"
+          description={reportError ? "Refresh the page to try again." : "Report data is not available yet."}
+        />
       </div>
 
     );
@@ -202,47 +210,25 @@ export function SalesReportsClient() {
 
     <div className="space-y-8">
 
-      <div className="rounded-2xl border border-[#00A884]/25 bg-[var(--bg-card)] p-5">
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)] p-5">
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
 
-          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6EE7B7]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--channel-whatsapp)]">
 
             WhatsApp Sales Hub reporting
 
           </p>
 
-          <div className="flex gap-1 rounded-full border border-[var(--border)] p-1">
-
-            {(["this_week", "this_month"] as const).map((p) => (
-
-              <button
-
-                key={p}
-
-                type="button"
-
-                onClick={() => setWaPeriod(p)}
-
-                className={`rounded-full px-3 py-1 text-[11px] font-medium transition-colors ${
-
-                  waPeriod === p
-
-                    ? "bg-[#00A884] text-white"
-
-                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-
-                }`}
-
-              >
-
-                {p === "this_week" ? "This week" : "This month"}
-
-              </button>
-
-            ))}
-
-          </div>
+          <SegmentedTabs
+            aria-label="Report period"
+            value={waPeriod}
+            onValueChange={(value) => setWaPeriod(value as WhatsAppHubPeriod)}
+            tabs={[
+              { value: "this_week", label: "This week" },
+              { value: "this_month", label: "This month" },
+            ]}
+          />
 
         </div>
 
@@ -274,9 +260,9 @@ export function SalesReportsClient() {
 
       {mirrorLine ? (
 
-        <div className="rounded-2xl border border-[var(--border)] border-l-4 border-l-[var(--accent)] bg-[var(--bg-card)] px-5 py-4">
+        <div className="rounded-lg border border-[var(--accent-border)] bg-[var(--accent-muted)] px-5 py-4">
 
-          <p className="mb-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--accent)]">
+          <p className="mb-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--accent-fg)]">
 
             Performance insight
 

@@ -56,14 +56,21 @@ export function FilterTabs({ filter, counts, onChange, whatsappMode = false, var
           return null;
         }
 
+        const countBadgeClass =
+          resolvedVariant === "panel"
+            ? active
+              ? "bg-white/20 text-white"
+              : "bg-[#EEF3F5] text-[#61707E]"
+            : active
+              ? "bg-[var(--bg-quaternary)] text-[var(--text-primary)]"
+              : "bg-[var(--bg-tertiary)] text-[var(--text-tertiary)]";
+
         return (
           <button key={tab.key} type="button" onClick={() => onChange(tab.key)} className={className}>
             {tab.icon}
             {tab.label}
             <span
-              className={`inline-flex min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-bold ${
-                active ? "bg-white/20 text-white" : "bg-[#EEF2F4] text-[#6B7886]"
-              }`}
+              className={`inline-flex min-w-[18px] items-center justify-center rounded-md px-1 text-[9px] font-bold ${countBadgeClass}`}
             >
               {count}
             </span>

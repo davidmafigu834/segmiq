@@ -11,3 +11,5 @@ export type { StatusTone, StatusDotProps } from "./StatusDot";
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "./Table";
 export { Metric } from "./Metric";
 export type { MetricProps } from "./Metric";
+export { PageHeader } from "./PageHeader";
+export { EmptyState } from "./EmptyState";
