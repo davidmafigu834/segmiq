@@ -10,7 +10,10 @@ import {
   newQuestionId,
 } from "@/lib/instant-form-helpers";
 import { getSolarQualificationTemplate } from "@/lib/instant-form-templates/solar-qualification";
-import { getSegmiqClientAcquisitionTemplate } from "@/lib/instant-form-templates/segmiq-client-acquisition";
+import {
+  getSegmiqClientAcquisitionTemplate,
+  SEGMIQ_CLIENT_ACQUISITION_FORM_NAME,
+} from "@/lib/instant-form-templates/segmiq-client-acquisition";
 import { getPublicInstantFormUrl } from "@/lib/public-url";
 import type {
   InstantFormCompletion,
@@ -179,7 +182,7 @@ export function InstantFormBuilder({
     setCompletion(template.completion);
     setQuestions(template.questions);
     if (kind === "segmiq_client_acquisition") {
-      setName(template.name);
+      setName(SEGMIQ_CLIENT_ACQUISITION_FORM_NAME);
       setFormType("higher_intent");
     }
     setSection("questions");
