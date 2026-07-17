@@ -307,14 +307,9 @@ export default function DesktopUploadPage() {
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 32px" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 32 }}>
-          <div>
-            <p style={{ fontFamily: "var(--fw-font-display), Georgia, serif", fontSize: 26, color: "#1C1410", margin: "0 0 4px" }}>
-              Bulk Upload
-            </p>
-            <p style={{ fontSize: 13, color: "#8C7B6B", margin: 0 }}>
-              Drop hundreds of photos at once · desktop only
-            </p>
-          </div>
+          <p style={{ fontSize: 13, color: "#8C7B6B", margin: 0 }}>
+            Drop hundreds of photos at once · desktop only
+          </p>
           <a
             href="/cloud/dashboard/upload"
             style={{ fontSize: 13, color: "#8C7B6B", textDecoration: "none" }}

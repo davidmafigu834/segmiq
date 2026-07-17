@@ -111,18 +111,8 @@ export default function MorePage() {
   return (
     <div style={{ minHeight: "100vh", background: "#F7F4EF", fontFamily: F, paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}>
 
-      {/* Page header */}
-      <div style={{ padding: "24px 20px 16px", background: "#F7F4EF" }}>
-        <p style={{ fontFamily: F, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 4px" }}>
-          Menu
-        </p>
-        <h1 style={{ fontFamily: S, fontSize: 28, color: "#1C1410", margin: 0, lineHeight: 1.1 }}>
-          More
-        </h1>
-      </div>
-
       {/* User card */}
-      <div style={{ padding: "0 20px 20px" }}>
+      <div style={{ padding: "20px 20px 20px" }}>
         <div style={{ background: "#1C1410", borderRadius: 20, padding: "18px 20px", display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(212,255,79,0.15)", border: "0.5px solid rgba(212,255,79,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: F, fontSize: 14, fontWeight: 700, color: "#D4FF4F" }}>
             {getInitials(session?.user?.name ?? "")}

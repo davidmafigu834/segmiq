@@ -261,7 +261,6 @@ export default function CloudUploadPage() {
         ) : !selectedProject ? (
           /* ── State A: no project selected ── */
           <>
-            <p className="font-cloud-display text-[22px] text-[#0a0a0a] mb-1">Upload photos</p>
             <p className="text-[13px] text-[#6B7280] font-cloud-body mb-1">Choose a project to add photos to.</p>
             <p className="text-[12px] text-[#6B7280] font-cloud-body mb-5">
               Uploading from desktop?{" "}

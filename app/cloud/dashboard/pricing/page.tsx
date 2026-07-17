@@ -58,8 +58,7 @@ export default function CloudPricingPage() {
           <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6B7280]">
             Public profile
           </p>
-          <h1 className="font-cloud-display text-[26px] leading-tight text-[#0a0a0a]">Pricing</h1>
-          <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#666660]">
+          <p className="max-w-xl text-[13px] leading-relaxed text-[#666660]">
             Manage the packages shown on your public profile and send them to prospects from the CRM.
           </p>
           {isAdmin && clients.length > 0 && (

@@ -708,7 +708,7 @@ export default function ProjectDetailPage() {
         <div className="flex-1 min-w-0">
           <Link
             href="/cloud/dashboard/projects"
-            className="mb-3 flex items-center gap-1.5 text-[12px] text-[#6B7280] hover:text-[#0a0a0a] transition-colors font-cloud-body"
+            className="mb-3 flex items-center gap-1.5 text-[12px] text-[#6B7280] hover:text-[#0a0a0a] transition-colors font-cloud-body lg:hidden"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Projects

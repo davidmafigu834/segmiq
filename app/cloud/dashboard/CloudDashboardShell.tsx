@@ -47,11 +47,13 @@ function isActive(href: string, pathname: string) {
   return normalized.startsWith(href);
 }
 
-function getPageTitle(pathname: string): string {
+function getPageTitle(pathname: string): string | null {
   const p = normalizeCloudDashboardPath(pathname);
-  if (p.startsWith("/cloud/dashboard/projects/")) return "Project";
+  if (/^\/cloud\/dashboard\/projects\/[^/]+\/analytics\/?$/.test(p)) return "Analytics";
+  if (/^\/cloud\/dashboard\/projects\/[^/]+\/?$/.test(p)) return null;
   if (p.startsWith("/cloud/dashboard/projects")) return "Projects";
   if (p.startsWith("/cloud/dashboard/pricing")) return "Pricing";
+  if (p.startsWith("/cloud/dashboard/upload/desktop")) return "Bulk upload";
   if (p.startsWith("/cloud/dashboard/upload")) return "Upload";
   if (p.startsWith("/cloud/dashboard/team")) return "Team";
   if (p.startsWith("/cloud/dashboard/settings")) return "Settings";
@@ -59,7 +61,8 @@ function getPageTitle(pathname: string): string {
   if (p.startsWith("/cloud/dashboard/analytics")) return "Analytics";
   if (p.startsWith("/cloud/dashboard/billing")) return "Billing";
   if (p.startsWith("/cloud/dashboard/more")) return "More";
-  return "Dashboard";
+  if (p.startsWith("/cloud/dashboard/onboarding")) return "Setup";
+  return null;
 }
 
 function getInitials(name: string): string {
@@ -325,6 +328,7 @@ export default function CloudDashboardShell({
   const initials = getInitials(session?.user?.name ?? "");
   const pageTitle = getPageTitle(pathname);
   const isHome = normalizedPath === "/cloud/dashboard";
+  const isUploadPage = normalizedPath.startsWith("/cloud/dashboard/upload");
 
   const businessNav = isCloudAdmin ? BUSINESS_NAV : [];
   const accountNav = isCloudAdmin
@@ -351,13 +355,14 @@ export default function CloudDashboardShell({
           </div>
         </div>
 
-        {/* Quick upload */}
-        <div className="px-4 pt-4 pb-2">
-          <Link href="/cloud/dashboard/upload" className="cloud-shell-upload-btn">
-            <Camera className="h-4 w-4" strokeWidth={2.2} />
-            Upload photos
-          </Link>
-        </div>
+        {!isUploadPage && (
+          <div className="px-4 pt-4 pb-2">
+            <Link href="/cloud/dashboard/upload" className="cloud-shell-upload-btn">
+              <Camera className="h-4 w-4" strokeWidth={2.2} />
+              Upload photos
+            </Link>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="cloud-scroll-y flex-1 pb-4">
@@ -401,19 +406,41 @@ export default function CloudDashboardShell({
       <div className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden lg:ml-[260px]">
         {/* Desktop top bar */}
         <header className="cloud-shell-topbar sticky top-0 z-20 hidden shrink-0 items-center justify-between px-6 lg:flex">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            {!isHome && (
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--cloud-text-tertiary)]">
-                <Link href="/cloud/dashboard" className="transition-colors hover:text-[var(--cloud-text-primary)]">
+          <div className="min-w-0">
+            {isHome ? (
+              <h1 className="truncate font-cloud-display text-[20px] leading-tight text-[#111]">
+                {displayName}
+              </h1>
+            ) : pageTitle ? (
+              <div className="flex min-w-0 items-center gap-1.5">
+                <Link
+                  href="/cloud/dashboard"
+                  className="shrink-0 text-[11px] font-medium text-[var(--cloud-text-tertiary)] transition-colors hover:text-[var(--cloud-text-primary)]"
+                >
                   Home
                 </Link>
-                <ChevronRight className="h-3 w-3 shrink-0 opacity-50" />
-                <span className="truncate text-[var(--cloud-text-secondary)]">{pageTitle}</span>
+                <ChevronRight className="h-3 w-3 shrink-0 opacity-50 text-[var(--cloud-text-tertiary)]" />
+                <h1 className="truncate font-cloud-display text-[20px] leading-tight text-[#111]">
+                  {pageTitle}
+                </h1>
+              </div>
+            ) : (
+              <div className="flex min-w-0 items-center gap-1.5">
+                <Link
+                  href="/cloud/dashboard"
+                  className="shrink-0 text-[11px] font-medium text-[var(--cloud-text-tertiary)] transition-colors hover:text-[var(--cloud-text-primary)]"
+                >
+                  Home
+                </Link>
+                <ChevronRight className="h-3 w-3 shrink-0 opacity-50 text-[var(--cloud-text-tertiary)]" />
+                <Link
+                  href="/cloud/dashboard/projects"
+                  className="truncate font-cloud-display text-[20px] leading-tight text-[#111] transition-colors hover:text-[var(--cloud-text-secondary)]"
+                >
+                  Projects
+                </Link>
               </div>
             )}
-            <h1 className="font-cloud-display text-[20px] leading-tight text-[#111]">
-              {isHome ? `Welcome back${session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}` : pageTitle}
-            </h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -431,14 +458,16 @@ export default function CloudDashboardShell({
               )}
             </button>
 
-            <Link
-              href="/cloud/dashboard/upload"
-              className="flex h-9 items-center gap-2 rounded-[var(--cloud-radius-sm)] bg-[#D4FF4F] px-4 text-[12px] font-bold text-[#111] transition-all hover:bg-[#C8F244] active:scale-[0.98]"
-              style={{ boxShadow: "var(--cloud-lime-glow)" }}
-            >
-              <Camera className="h-3.5 w-3.5" strokeWidth={2.2} />
-              Upload
-            </Link>
+            {!isUploadPage && (
+              <Link
+                href="/cloud/dashboard/upload"
+                className="flex h-9 items-center gap-2 rounded-[var(--cloud-radius-sm)] bg-[#D4FF4F] px-4 text-[12px] font-bold text-[#111] transition-all hover:bg-[#C8F244] active:scale-[0.98]"
+                style={{ boxShadow: "var(--cloud-lime-glow)" }}
+              >
+                <Camera className="h-3.5 w-3.5" strokeWidth={2.2} />
+                Upload
+              </Link>
+            )}
 
             <div className="relative ml-1">
               <UserAvatarButton
@@ -470,7 +499,9 @@ export default function CloudDashboardShell({
             ) : (
               <>
                 <p className="text-[11px] font-medium text-[var(--cloud-text-tertiary)]">Segmiq Cloud</p>
-                <p className="truncate font-cloud-display text-[18px] leading-tight text-[#111]">{pageTitle}</p>
+                <p className="truncate font-cloud-display text-[18px] leading-tight text-[#111]">
+                  {pageTitle ?? "Projects"}
+                </p>
               </>
             )}
           </div>

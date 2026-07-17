@@ -109,7 +109,6 @@ export default function ProjectAnalyticsPage() {
           <ArrowLeft size={16} color="#1C1410" />
         </button>
         <div>
-          <p style={{ fontFamily: F, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 2px" }}>Analytics</p>
           {projectTitle && <p style={{ fontFamily: S, fontSize: 15, color: "#1C1410", margin: 0, lineHeight: 1.2 }}>{projectTitle}</p>}
         </div>
       </div>
