@@ -309,7 +309,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
             checked={prefs.followUpReminders}
             onChange={(e) => void savePrefs({ ...prefs, followUpReminders: e.target.checked })}
           />
-          Follow-up reminder WhatsApps
+          Follow-up reminder WhatsApps (day before and on the day)
         </label>
       </section>
 

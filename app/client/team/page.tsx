@@ -47,14 +47,14 @@ export default async function ClientTeamPage({
       pageTitle="Your team"
     >
       {role === "AGENCY_ADMIN" ? (
-        <p className="mb-6 rounded-md border border-border bg-surface-card-alt px-3 py-2 font-mono text-[11px] text-ink-secondary">
+        <p className="mb-6 rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-3.5 py-2.5 font-mono text-[11px] text-[var(--text-secondary)]">
           Previewing client team ·{" "}
           <Link href="/dashboard" className="text-[var(--accent)] underline-offset-2 hover:underline">
             Back to agency
           </Link>
         </p>
       ) : null}
-      <Suspense fallback={<div className="shimmer h-[min(480px,70vh)] rounded-lg" />}>
+      <Suspense fallback={<div className="shimmer h-[min(480px,70vh)] rounded-lg border border-[var(--border)]" />}>
         <ClientTeamDashboard
           clientName={clientName}
           previewClientId={role === "AGENCY_ADMIN" ? previewClientId : undefined}

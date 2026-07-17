@@ -28,6 +28,8 @@ export function notificationTypeLabel(type: string): string {
       return "New lead";
     case "FOLLOW_UP_DUE":
       return "Follow-up due";
+    case "FOLLOW_UP_PREP":
+      return "Follow-up tomorrow";
     case "DEAL_WON":
       return "Deal won";
     case "LEAD_FLAG":

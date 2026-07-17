@@ -66,7 +66,7 @@ const FUNNEL: Array<{
 
 function HeroPill({ value }: { value: number }) {
   return (
-    <span className="mt-2 inline-block rounded-full bg-surface-sidebar px-3 py-1 font-mono text-xs font-medium text-[var(--accent)]">
+    <span className="inline-block rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] px-2.5 py-0.5 font-mono text-[11px] font-medium text-[var(--text-secondary)]">
       {formatDeltaPct(value)} vs prior period
     </span>
   );
@@ -108,7 +108,7 @@ export function ClientReportsDashboard() {
     actualMin != null && limitMin > 0 ? Math.min(100, (actualMin / limitMin) * 100) : actualMin == null ? 0 : 100;
 
   if (!key) {
-    return <div className="rounded-xl border border-border bg-surface-card p-8 text-ink-secondary">Loading…</div>;
+    return <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-8 text-[var(--text-secondary)]">Loading…</div>;
   }
 
   if (error) {
@@ -122,11 +122,15 @@ export function ClientReportsDashboard() {
   if (isLoading || !data) {
     return (
       <div className="space-y-6">
-        <div className="h-[180px] animate-pulse rounded-xl bg-surface-card-alt" />
-        <div className="h-40 animate-pulse rounded-xl bg-surface-card-alt" />
+        <div className="grid grid-cols-1 gap-2 min-[600px]:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="shimmer h-[100px] rounded-lg border border-[var(--border)]" />
+          ))}
+        </div>
+        <div className="shimmer h-40 rounded-lg border border-[var(--border)]" />
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="h-64 animate-pulse rounded-xl bg-surface-card-alt" />
-          <div className="h-64 animate-pulse rounded-xl bg-surface-card-alt" />
+          <div className="shimmer h-64 rounded-lg border border-[var(--border)]" />
+          <div className="shimmer h-64 rounded-lg border border-[var(--border)]" />
         </div>
       </div>
     );
@@ -135,48 +139,44 @@ export function ClientReportsDashboard() {
   const periodEyebrow = data.period.label.toUpperCase();
 
   return (
-    <div className="space-y-10 pb-16">
-      {/* Row 1 — Hero */}
-      <section
-        className="grid min-h-[180px] grid-cols-1 overflow-hidden rounded-xl md:grid-cols-[2fr_1.5fr_1.5fr]"
-        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
-      >
-        <div className="flex flex-col justify-center border-b border-black px-6 py-6 md:border-b-0 md:border-r md:py-8">
-          <p className="font-mono text-[11px] font-normal uppercase tracking-wide opacity-90">
-            Leads · {periodEyebrow}
-          </p>
-          <p className="font-display text-[52px] font-normal leading-none tracking-display text-balance sm:text-[64px] md:text-[80px]">
-            {data.headline.leads}
-          </p>
-          <HeroPill value={data.deltas.leadsPct} />
-        </div>
-        <div className="flex flex-col justify-center border-b border-black px-6 py-6 md:border-b-0 md:border-r md:py-8">
-          <p className="font-mono text-[11px] font-normal uppercase tracking-wide opacity-90">Deals won</p>
-          <p className="font-display text-[38px] font-normal leading-none tracking-display sm:text-[44px] md:text-[48px]">
-            {data.headline.wonCount}
-          </p>
-          <HeroPill value={data.deltas.wonCountPct} />
-        </div>
-        <div className="flex flex-col justify-center px-6 py-6 md:py-8">
-          <p className="font-mono text-[11px] font-normal uppercase tracking-wide opacity-90">Revenue won</p>
-          <p className="font-display text-[38px] font-normal leading-none tracking-display sm:text-[44px] md:text-[48px]">
-            {formatCurrencyUsd(data.headline.wonValue)}
-          </p>
-          <HeroPill value={data.deltas.wonValuePct} />
-        </div>
+    <div className="ag-fade-in space-y-10 pb-16">
+      <section className="grid min-w-0 grid-cols-1 gap-2 min-[600px]:grid-cols-3">
+        {[
+          { label: `Leads · ${periodEyebrow}`, value: String(data.headline.leads), delta: data.deltas.leadsPct },
+          { label: "Deals won", value: String(data.headline.wonCount), delta: data.deltas.wonCountPct },
+          {
+            label: "Revenue won",
+            value: formatCurrencyUsd(data.headline.wonValue),
+            delta: data.deltas.wonValuePct,
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)] p-3.5 hover:border-[var(--border-hover)]"
+          >
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
+              {stat.label}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums leading-none text-[var(--text-primary)] sm:text-3xl">
+              {stat.value}
+            </p>
+            <div className="mt-2">
+              <HeroPill value={stat.delta} />
+            </div>
+          </div>
+        ))}
       </section>
 
-      {/* Row 2 — Funnel */}
       <section>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">01 / Pipeline</p>
-        <h2 className="font-display text-[22px] text-ink-primary">Where your leads are</h2>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">Pipeline</p>
+        <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">Where your leads are</h2>
         <div className="mt-6 space-y-2">
           {FUNNEL.map((f) => {
             const count = data.pipeline[f.key];
             const w = Math.max(4, (count / funnelMax) * 100);
             return (
               <div key={f.key} className="flex items-stretch gap-3">
-                <div className="flex w-24 shrink-0 items-center font-mono text-[10px] uppercase text-ink-secondary sm:w-[140px] sm:text-[11px]">
+                <div className="flex w-24 shrink-0 items-center font-mono text-[10px] uppercase text-[var(--text-secondary)] sm:w-[140px] sm:text-[11px]">
                   {f.label}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -187,24 +187,24 @@ export function ClientReportsDashboard() {
                       background: `color-mix(in srgb, var(${f.barVar}) 55%, white)`,
                     }}
                   >
-                    <span className="font-display text-[20px] tabular-nums text-ink-primary">{count}</span>
+                    <span className="text-lg font-semibold tabular-nums text-[var(--text-primary)]">{count}</span>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
-        <p className="mt-4 text-[13px] text-ink-secondary">
+        <p className="mt-4 text-[13px] text-[var(--text-secondary)]">
           {data.headline.leads === 0 ? <>No leads in this period yet.</> : data.pipelineCaption}
         </p>
       </section>
 
       {/* Row 3 — Source + Response */}
       <section className="grid gap-8 md:grid-cols-2">
-        <div className="rounded-xl border border-border bg-surface-card p-6">
-          <p className="font-mono text-[11px] uppercase text-ink-tertiary">Leads by source</p>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-6">
+          <p className="font-mono text-[11px] uppercase text-[var(--text-tertiary)]">Leads by source</p>
           {donutTotal === 0 ? (
-            <p className="mt-8 text-sm text-ink-secondary">No leads from tracked sources in this period.</p>
+            <p className="mt-8 text-sm text-[var(--text-secondary)]">No leads from tracked sources in this period.</p>
           ) : (
             <>
               <div className="mx-auto mt-4 h-[220px] w-full max-w-[280px]">
@@ -236,10 +236,10 @@ export function ClientReportsDashboard() {
                   { label: "Referral", v: data.bySource.REFERRAL.leads },
                 ].map((row) => (
                   <li key={row.label} className="flex justify-between gap-4">
-                    <span className="text-ink-secondary">{row.label}</span>
-                    <span className="font-mono-data tabular-nums text-ink-primary">
+                    <span className="text-[var(--text-secondary)]">{row.label}</span>
+                    <span className="font-mono-data tabular-nums text-[var(--text-primary)]">
                       {row.v}{" "}
-                      <span className="text-ink-tertiary">
+                      <span className="text-[var(--text-tertiary)]">
                         ({donutTotal ? Math.round((row.v / donutTotal) * 1000) / 10 : 0}%)
                       </span>
                     </span>
@@ -250,13 +250,13 @@ export function ClientReportsDashboard() {
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-surface-card p-6">
-          <p className="font-mono text-[11px] uppercase text-ink-tertiary">Response speed</p>
-          <p className="mt-4 font-display text-5xl leading-none tracking-display">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-6">
+          <p className="font-mono text-[11px] uppercase text-[var(--text-tertiary)]">Response speed</p>
+          <p className="mt-4 text-3xl font-semibold tabular-nums leading-none text-[var(--text-primary)]">
             {formatAvgResponseHero(actualMin)}
           </p>
-          <p className="mt-2 text-sm text-ink-secondary">Average time to first call on new leads in this period.</p>
-          <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full border border-border bg-transparent">
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">Average time to first call on new leads in this period.</p>
+          <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full border border-[var(--border)] bg-transparent">
             <div
               className="h-full rounded-full transition-colors"
               style={{
@@ -265,7 +265,7 @@ export function ClientReportsDashboard() {
               }}
             />
           </div>
-          <p className="mt-3 text-[13px] text-ink-secondary">
+          <p className="mt-3 text-[13px] text-[var(--text-secondary)]">
             {actualMin == null ? (
               <>Not enough call data to measure response time in this period.</>
             ) : withinSla ? (
@@ -292,12 +292,12 @@ export function ClientReportsDashboard() {
 
       {/* Row 4 — Team */}
       <section>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">02 / Team</p>
-        <h2 className="font-display text-[22px] text-ink-primary">Your sales team</h2>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">Team</p>
+        <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">Your sales team</h2>
         {data.team.length === 0 ? (
-          <p className="mt-4 text-sm text-ink-secondary">No active salespeople for this client.</p>
+          <p className="mt-4 text-sm text-[var(--text-secondary)]">No active salespeople for this client.</p>
         ) : (
-          <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-surface-card p-2 md:border-0 md:bg-transparent md:p-0">
+          <div className="mt-6 overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-2 md:border-0 md:bg-transparent md:p-0">
             <ResponsiveTable
               columns={[
                 {
@@ -307,7 +307,7 @@ export function ClientReportsDashboard() {
                   render: (row: ClientReportPayload["team"][number]) => (
                     <div className="flex items-center gap-3">
                       <ClientAvatar name={row.name} size="sm" />
-                      <span className="font-medium text-ink-primary">{row.name}</span>
+                      <span className="font-medium text-[var(--text-primary)]">{row.name}</span>
                     </div>
                   ),
                 },
@@ -344,7 +344,7 @@ export function ClientReportsDashboard() {
                   label: "Avg response",
                   align: "right",
                   render: (row: ClientReportPayload["team"][number]) => (
-                    <span className="text-ink-secondary">
+                    <span className="text-[var(--text-secondary)]">
                       {row.avgResponseMinutes != null ? `${Math.round(row.avgResponseMinutes)}m` : "—"}
                     </span>
                   ),
@@ -375,10 +375,10 @@ export function ClientReportsDashboard() {
 
       {/* Row 5 — Recent wins */}
       <section>
-        <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">03 / Recent wins</p>
-        <h2 className="font-display text-[22px] text-ink-primary">Latest closures</h2>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">Recent wins</p>
+        <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">Latest closures</h2>
         {data.recentWins.length === 0 ? (
-          <p className="mt-4 text-sm text-ink-secondary">
+          <p className="mt-4 text-sm text-[var(--text-secondary)]">
             No deals won in this period yet. Keep pushing!
           </p>
         ) : (
@@ -386,8 +386,8 @@ export function ClientReportsDashboard() {
             {data.recentWins.map((w) => (
               <div key={w.leadId} className="flex flex-wrap items-start justify-between gap-4 py-4">
                 <div>
-                  <div className="font-display text-lg text-ink-primary">{w.leadName}</div>
-                  <div className="mt-1 text-sm text-ink-secondary">
+                  <div className="text-[15px] font-semibold text-[var(--text-primary)]">{w.leadName}</div>
+                  <div className="mt-1 text-sm text-[var(--text-secondary)]">
                     {w.dealValue != null ? formatCurrencyUsd(w.dealValue) : "—"} · {w.salespersonName} ·{" "}
                     {format(parseISO(w.closedAt), "MMM d, yyyy")}
                   </div>
@@ -405,8 +405,8 @@ export function ClientReportsDashboard() {
 
       {/* Row 6 — Chart */}
       <section>
-        <p className="font-mono text-[11px] uppercase text-ink-tertiary">Trend</p>
-        <h2 className="font-display text-[22px] text-ink-primary">Leads vs won</h2>
+        <p className="font-mono text-[11px] uppercase text-[var(--text-tertiary)]">Trend</p>
+        <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">Leads vs won</h2>
         <div className="mt-4 h-[220px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data.leadsOverTime} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>

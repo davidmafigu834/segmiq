@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { requireRoles } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildObservations } from "@/lib/customer-hub/observations";
-import { enrichRecentContactStatus } from "@/lib/customer-hub/recent-status";
+import { enrichRecentContacts } from "@/lib/customer-hub/recent-status";
+import { getRelationshipCounts } from "@/lib/customer-hub/contact-filters";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +64,11 @@ export async function GET() {
   }
 
   const payload = data as RpcPayload;
-  const observations = buildObservations(payload.observation_meta);
-  const recent = await enrichRecentContactStatus(supabase, clientId, payload.recent);
+  const [observations, recent, relationship] = await Promise.all([
+    Promise.resolve(buildObservations(payload.observation_meta)),
+    enrichRecentContacts(supabase, clientId, payload.recent),
+    getRelationshipCounts(supabase, clientId),
+  ]);
 
   return NextResponse.json({
     pulse: payload.pulse,
@@ -72,5 +76,6 @@ export async function GET() {
     observations,
     trend: payload.trend,
     recent,
+    relationship,
   });
 }

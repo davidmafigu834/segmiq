@@ -128,7 +128,7 @@ export function renderManagerUncontactedLeadEmail({
   salespersonEmail?: string | null;
   salespersonPhone?: string | null;
 }): string {
-  const pipelineUrl = `${getPublicBaseUrl()}/client/leads?lead=${encodeURIComponent(lead.id)}`;
+  const pipelineUrl = `${getPublicBaseUrl()}/client/leads/pipeline?lead=${encodeURIComponent(lead.id)}`;
   const e164 = salespersonPhone?.trim()
     ? normalizeToE164(salespersonPhone.trim(), process.env.DEFAULT_COUNTRY_CODE || "US")
     : null;

@@ -142,7 +142,7 @@ export async function POST(req: Request) {
         email: emailTrim ?? null,
         source: b.source,
         lead_origin: "client",
-        lifecycle: b.type === "customer" ? "customer" : "lead",
+        lifecycle: b.type === "customer" ? "customer" : "cold",
         notes: b.notes ?? null,
       })
       .select("id")

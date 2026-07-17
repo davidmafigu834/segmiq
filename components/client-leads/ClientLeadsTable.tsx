@@ -102,6 +102,7 @@ export function ClientLeadsTable({
   totalThisMonth,
   initialHasMore = false,
   totalCount,
+  hideHeader = false,
 }: {
   clientId?: string;
   clientName: string;
@@ -110,6 +111,7 @@ export function ClientLeadsTable({
   totalThisMonth: number;
   initialHasMore?: boolean;
   totalCount?: number;
+  hideHeader?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -436,37 +438,65 @@ export function ClientLeadsTable({
           ) : null}
         </div>
       ) : null}
-      <header className="mb-8 flex flex-col gap-6 layout:flex-row layout:items-baseline layout:justify-between">
-        <div>
-          <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">
-            {clientName.toUpperCase()} / LEADS
+      {!hideHeader ? (
+        <header className="mb-8 flex flex-col gap-6 layout:flex-row layout:items-baseline layout:justify-between">
+          <div>
+            <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">
+              {clientName.toUpperCase()} / LEADS
+            </div>
+            <h1 className="font-display text-4xl tracking-tight text-ink-primary">Leads</h1>
+            <p className="mt-2 text-sm text-ink-secondary">
+              {totalThisMonth} total leads this month · {totalAll} total
+            </p>
           </div>
-          <h1 className="font-display text-4xl tracking-tight text-ink-primary">Leads</h1>
-          <p className="mt-2 text-sm text-ink-secondary">
-            {totalThisMonth} total leads this month · {totalAll} total
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {clientId && (
+          <div className="flex items-center gap-2">
+            {clientId && (
+              <button
+                type="button"
+                onClick={() => setShowImport(true)}
+                className="inline-flex shrink-0 items-center gap-2 self-start rounded-md border border-border px-4 py-2 text-sm text-ink-secondary hover:bg-surface-card-alt"
+              >
+                <Upload className="h-4 w-4" strokeWidth={1.5} />
+                Import CSV
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setShowImport(true)}
+              onClick={handleExportCsv}
               className="inline-flex shrink-0 items-center gap-2 self-start rounded-md border border-border px-4 py-2 text-sm text-ink-secondary hover:bg-surface-card-alt"
             >
-              <Upload className="h-4 w-4" strokeWidth={1.5} />
-              Import CSV
+              <Download className="h-4 w-4" strokeWidth={1.5} />
+              Export CSV
             </button>
-          )}
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="inline-flex shrink-0 items-center gap-2 self-start rounded-md border border-border px-4 py-2 text-sm text-ink-secondary hover:bg-surface-card-alt"
-          >
-            <Download className="h-4 w-4" strokeWidth={1.5} />
-            Export CSV
-          </button>
+          </div>
+        </header>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[13px] text-[var(--text-secondary)]">
+            {totalThisMonth} new this month · {totalAll} total in pipeline
+          </p>
+          <div className="flex items-center gap-2">
+            {clientId && (
+              <button
+                type="button"
+                onClick={() => setShowImport(true)}
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-1.5 text-[13px] text-[var(--text-secondary)] transition hover:bg-[var(--bg-tertiary)]"
+              >
+                <Upload className="h-4 w-4" strokeWidth={1.5} />
+                Import
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-1.5 text-[13px] text-[var(--text-secondary)] transition hover:bg-[var(--bg-tertiary)]"
+            >
+              <Download className="h-4 w-4" strokeWidth={1.5} />
+              Export
+            </button>
+          </div>
         </div>
-      </header>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         <FilterPill active={status === "all"} onClick={() => setStatus("all")}>

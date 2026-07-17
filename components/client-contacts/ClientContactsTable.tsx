@@ -1,83 +1,77 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
+import {
+  ContactMemoryCard,
+  ContactMemoryCardSkeleton,
+  type ContactListItem,
+} from "@/components/customer-hub/ContactMemoryCard";
+import {
+  CONTACT_LIFECYCLE_LABELS,
+  normalizeLegacyLifecycle,
+  type ContactLifecycle,
+} from "@/lib/customer-hub/lifecycle";
 
-type Row = {
-  id: string;
-  name: string | null;
-  phone: string | null;
-  email: string | null;
-  source: string | null;
-  lifecycle: "lead" | "customer";
-  lead_origin: "segmiq" | "client";
-  owner: string | null;
-  lastTouchedAt: string | null;
-};
+type LifecycleFilter = "all" | ContactLifecycle;
 
-function initials(n: string | null) {
-  return n
-    ? n
-        .split(" ")
-        .map((w) => w[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "?";
-}
-
-function timeAgo(iso: string | null) {
-  if (!iso) return "—";
-  const day = 86400000;
-  const d = Date.now() - new Date(iso).getTime();
-  if (d < day) return "today";
-  const days = Math.floor(d / day);
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
-}
+const FILTER_OPTIONS: LifecycleFilter[] = ["all", "cold", "aware", "pipeline", "customer"];
 
 export function ClientContactsTable({
   defaultLifecycle,
+  initialLifecycle,
   showLifecycleFilter = false,
   heading,
   subheading,
   hubFilter,
   onClearHubFilter,
+  onClearLifecycleFilter,
+  hideHeading = false,
+  compactCards = false,
+  clientDialCode,
 }: {
-  defaultLifecycle?: "customer";
+  defaultLifecycle?: ContactLifecycle;
+  initialLifecycle?: ContactLifecycle | null;
   showLifecycleFilter?: boolean;
-  heading: string;
-  subheading: string;
+  heading?: string;
+  subheading?: string;
   hubFilter?: string | null;
   onClearHubFilter?: () => void;
+  onClearLifecycleFilter?: () => void;
+  hideHeading?: boolean;
+  compactCards?: boolean;
+  clientDialCode?: string;
 }) {
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<ContactListItem[]>([]);
   const [q, setQ] = useState("");
-  const [lifecycle, setLifecycle] = useState<"all" | "lead" | "customer">(defaultLifecycle ?? "all");
+  const [lifecycle, setLifecycle] = useState<LifecycleFilter>(
+    initialLifecycle ?? defaultLifecycle ?? "all"
+  );
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  useEffect(() => {
+    if (initialLifecycle) setLifecycle(initialLifecycle);
+  }, [initialLifecycle]);
+
   const fetchPage = useCallback(
-    async (p: number, replace: boolean, query: string, life: string, filter: string | null) => {
-    const params = new URLSearchParams({ page: String(p), limit: "50" });
-    if (life !== "all") params.set("lifecycle", life);
-    if (query.trim()) params.set("q", query.trim());
-    if (filter) params.set("hubFilter", filter);
-    const res = await fetch(`/api/contacts/list?${params}`);
-    const data = (await res.json().catch(() => ({}))) as {
-      contacts?: Row[];
-      total?: number;
-      hasMore?: boolean;
-    };
-    setRows((prev) => (replace ? (data.contacts ?? []) : [...prev, ...(data.contacts ?? [])]));
-    setTotal(data.total ?? 0);
-    setHasMore(!!data.hasMore);
-  },
+    async (p: number, replace: boolean, query: string, life: LifecycleFilter, filter: string | null) => {
+      const params = new URLSearchParams({ page: String(p), limit: "50" });
+      if (life !== "all") params.set("lifecycle", life);
+      if (query.trim()) params.set("q", query.trim());
+      if (filter) params.set("hubFilter", filter);
+      const res = await fetch(`/api/contacts/list?${params}`);
+      const data = (await res.json().catch(() => ({}))) as {
+        contacts?: ContactListItem[];
+        total?: number;
+        hasMore?: boolean;
+      };
+      setRows((prev) => (replace ? (data.contacts ?? []) : [...prev, ...(data.contacts ?? [])]));
+      setTotal(data.total ?? 0);
+      setHasMore(!!data.hasMore);
+    },
     []
   );
 
@@ -99,18 +93,41 @@ export function ClientContactsTable({
     setLoadingMore(false);
   }
 
+  const activeStageFilter = lifecycle !== "all" ? lifecycle : null;
+
   return (
     <div>
-      <div className="mb-4 flex items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl" style={{ fontFamily: "var(--font-instrument-serif)" }}>
-            {heading}
-          </h1>
-          <p className="mt-1 text-[12.5px] text-[var(--text-tertiary)]">
-            {loading ? subheading : `${total} ${total === 1 ? "contact" : "contacts"} · ${subheading}`}
-          </p>
+      {!hideHeading && heading ? (
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl" style={{ fontFamily: "var(--font-instrument-serif)" }}>
+              {heading}
+            </h1>
+            <p className="mt-1 text-[12.5px] text-[var(--text-tertiary)]">
+              {loading ? subheading : `${total} ${total === 1 ? "contact" : "contacts"} · ${subheading}`}
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <p className="mb-4 text-[13px] text-[var(--text-secondary)]">
+          {loading ? "Loading contacts…" : `${total} ${total === 1 ? "contact" : "contacts"}`}
+        </p>
+      )}
+
+      {activeStageFilter && onClearLifecycleFilter && (
+        <div className="mb-3 flex items-center gap-2 rounded-lg border border-[var(--accent)] bg-[rgba(212,255,79,0.06)] px-3 py-2">
+          <span className="text-[12.5px] text-[var(--text-secondary)]">
+            Showing {CONTACT_LIFECYCLE_LABELS[activeStageFilter].toLowerCase()} contacts only
+          </span>
+          <button
+            type="button"
+            onClick={onClearLifecycleFilter}
+            className="ml-auto text-[12px] font-medium text-[var(--accent)] hover:underline"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {hubFilter && (
         <div className="mb-3 flex items-center gap-2 rounded-lg border border-[var(--accent)] bg-[rgba(212,255,79,0.06)] px-3 py-2">
@@ -137,8 +154,8 @@ export function ClientContactsTable({
           onChange={(e) => setQ(e.target.value)}
         />
         {showLifecycleFilter && (
-          <div className="flex gap-1.5">
-            {(["all", "customer", "lead"] as const).map((f) => (
+          <div className="flex flex-wrap gap-1.5">
+            {FILTER_OPTIONS.map((f) => (
               <button
                 key={f}
                 type="button"
@@ -149,59 +166,35 @@ export function ClientContactsTable({
                     : "border-[var(--border)] bg-[var(--bg-quaternary)] text-[var(--text-secondary)]"
                 }`}
               >
-                {f === "all" ? "All" : f === "customer" ? "Customers" : "Leads"}
+                {f === "all" ? "All" : CONTACT_LIFECYCLE_LABELS[f]}
               </button>
             ))}
           </div>
         )}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-card)]">
-        {loading ? (
-          <div className="p-8 text-center text-[13px] text-[var(--text-tertiary)]">Loading…</div>
-        ) : rows.length === 0 ? (
-          <div className="p-8 text-center text-[13px] text-[var(--text-tertiary)]">
-            No contacts yet. They&apos;ll appear here as leads come in.
-          </div>
-        ) : (
-          rows.map((c) => (
-            <Link
+      {loading ? (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ContactMemoryCardSkeleton key={i} compact={compactCards} />
+          ))}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-card)] p-8 text-center text-[13px] text-[var(--text-tertiary)]">
+          No contacts yet. They&apos;ll appear here as leads come in.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {rows.map((c) => (
+            <ContactMemoryCard
               key={c.id}
-              href={`/client/contacts/${c.id}`}
-              className="flex items-center gap-3 border-b border-[var(--border)] px-4 py-3 last:border-b-0 transition hover:bg-[var(--bg-tertiary)]"
-            >
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] text-[13px] font-semibold text-[var(--text-secondary)]">
-                {initials(c.name)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-semibold text-[var(--text-primary)]">
-                    {c.name || "Unnamed"}
-                  </span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase ${
-                      c.lifecycle === "customer"
-                        ? "bg-[rgba(212,255,79,0.12)] text-[var(--accent)]"
-                        : "bg-white/[0.07] text-[var(--text-secondary)]"
-                    }`}
-                  >
-                    {c.lifecycle === "customer" ? "Customer" : "Lead"}
-                  </span>
-                </div>
-                <div className="truncate text-[12.5px] text-[var(--text-tertiary)]">
-                  {c.phone || "no number"}
-                </div>
-              </div>
-              <div className="hidden shrink-0 text-right sm:block">
-                <div className="text-[12px] text-[var(--text-secondary)]">{c.source || "—"}</div>
-                <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
-                  {c.owner || "Unassigned"} · {timeAgo(c.lastTouchedAt)}
-                </div>
-              </div>
-            </Link>
-          ))
-        )}
-      </div>
+              contact={c}
+              compact={compactCards}
+              clientDialCode={clientDialCode}
+            />
+          ))}
+        </div>
+      )}
 
       {hasMore && !loading && (
         <div className="mt-4 flex justify-center">

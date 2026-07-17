@@ -17,12 +17,13 @@ export default async function ClientContactsPage() {
   const supabase = createAdminClient();
   const { data: clientRow } = await supabase
     .from("clients")
-    .select("assignment_mode")
+    .select("name, assignment_mode")
     .eq("id", session.clientId)
     .maybeSingle();
 
   const assignmentMode =
     (clientRow?.assignment_mode as "direct" | "pool" | "round_robin" | null) ?? "direct";
+  const clientName = (clientRow?.name as string) ?? undefined;
 
   return (
     <ClientManagerLayout breadcrumbPage="CONTACTS" pageTitle="Customer Hub" hideShellHeader>
@@ -31,11 +32,8 @@ export default async function ClientContactsPage() {
           <HubTabs />
           <CustomerHubContactsShell
             clientId={session.clientId}
+            clientName={clientName}
             assignmentMode={assignmentMode}
-            showDashboard={false}
-            showLifecycleFilter
-            heading="Contacts"
-            subheading="everyone you've dealt with — leads and customers"
           />
         </div>
       </Suspense>

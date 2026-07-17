@@ -193,7 +193,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
             email: fields.email ?? null,
             source,
             lead_origin: leadOrigin,
-            lifecycle: "lead",
+            lifecycle: "cold",
           })
           .select("id")
           .single();

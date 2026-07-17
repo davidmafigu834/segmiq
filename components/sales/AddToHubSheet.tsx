@@ -20,13 +20,18 @@ import {
 } from "@/lib/walk-in-intake";
 import { MANUAL_LEAD_STAGES } from "@/lib/customer-hub/manual-lead-stages";
 import { IN_PERSON_HUB_SOURCES } from "@/lib/customer-hub/recent-status";
-import type { LeadStatus } from "@/types";
+import type { ContactLifecycle, LeadStatus } from "@/types";
+import {
+  CONTACT_LIFECYCLE_LABELS,
+  lifecycleBadgeClass,
+  normalizeLegacyLifecycle,
+} from "@/lib/customer-hub/lifecycle";
 
 type AssignmentMode = "direct" | "pool" | "round_robin";
 type LookupMatch = {
   id: string;
   name: string | null;
-  lifecycle: "lead" | "customer";
+  lifecycle: ContactLifecycle | "lead";
   owner: string | null;
   lastTouchedAt: string | null;
 } | null;
@@ -40,6 +45,8 @@ export function AddToHubSheet({
   defaultSource,
   hideSourceField = false,
   variant = "default",
+  initialContact,
+  defaultForceNew = false,
   onClose,
   onSuccess,
 }: {
@@ -49,22 +56,24 @@ export function AddToHubSheet({
   defaultSource?: string;
   hideSourceField?: boolean;
   variant?: "default" | "walk_in";
+  initialContact?: { name?: string | null; phone?: string | null; email?: string | null };
+  defaultForceNew?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }) {
   const [type, setType] = useState<"lead" | "customer">("lead");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(initialContact?.name ?? "");
+  const [phone, setPhone] = useState(initialContact?.phone ?? "");
   const [source, setSource] = useState(defaultSource ?? SOURCES[0]);
   const [priority, setPriority] = useState<"hot" | "warm" | "cold">("warm");
   const [stage, setStage] = useState<LeadStatus>("NEW");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialContact?.email ?? "");
   const [projectType, setProjectType] = useState("");
   const [budget, setBudget] = useState("");
   const [notes, setNotes] = useState("");
   const [showMore, setShowMore] = useState(false);
   const [match, setMatch] = useState<LookupMatch>(null);
-  const [forceNew, setForceNew] = useState(false);
+  const [forceNew, setForceNew] = useState(defaultForceNew);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);

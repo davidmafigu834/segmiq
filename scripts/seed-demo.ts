@@ -448,7 +448,7 @@ async function seedLeadsForRep(
           email: person.email,
           source: "FACEBOOK",
           lead_origin: "segmiq",
-          lifecycle: spec.status === "WON" ? "customer" : "lead",
+          lifecycle: spec.status === "WON" ? "customer" : "cold",
           created_at: createdAt.toISOString(),
         })
         .select("id")

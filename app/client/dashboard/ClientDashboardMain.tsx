@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   PhoneOff,
@@ -37,6 +37,8 @@ import { RevenueForecastCard, type ForecastCardData } from "@/components/dashboa
 import { WhatsAppHubReportSection } from "@/components/reports/WhatsAppHubReportSection";
 import type { WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
+import { PageHeader } from "@/components/ui";
+import ClientDashboardSkeleton from "./ClientDashboardSkeleton";
 
 // ============================================
 // TYPES
@@ -223,6 +225,7 @@ export default function ClientDashboardMain({
   session: any;
 }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [nudging, setNudging] = useState(false);
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps(data.assignmentMode ?? "direct", {
@@ -242,60 +245,59 @@ export default function ClientDashboardMain({
     month: "long",
   });
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const maxPipeline = Math.max(...Object.values(data.pipeline), 1);
   const hasSourceData = Object.values(data.sourceCounts).some((v) => v > 0);
   const maxSource = Math.max(...Object.values(data.sourceCounts), 1);
 
+  if (!mounted) return <ClientDashboardSkeleton />;
+
   return (
-    <div>
+    <div className="min-w-0 w-full max-w-full overflow-x-hidden pb-20">
       {hubSheet}
 
-      {/* ============================================
-          PAGE HEADER
-          ============================================ */}
-      <div className="mb-8">
-        <p
-          suppressHydrationWarning
-          className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--text-tertiary)]"
-        >
-          {today}
-        </p>
-        <h1
-          suppressHydrationWarning
-          className="font-display text-3xl tracking-tight text-[var(--text-primary)]"
-        >
-          Good {getGreeting()}, {firstName}
-        </h1>
-      </div>
+      <PageHeader
+        className="mb-6 ag-fade-in"
+        eyebrow={`${data.clientName} · ${today}`}
+        title={`Good ${getGreeting()}, ${firstName}`}
+        description="Team performance, pipeline health, and what needs attention today."
+        actions={
+          <button
+            type="button"
+            onClick={openAddHubSheet}
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-[13px] font-semibold text-[var(--accent-foreground)] transition-colors hover:bg-[var(--accent-hover)]"
+          >
+            <UserPlus size={14} />
+            Add lead
+          </button>
+        }
+      />
 
-      {/* ============================================
-          QUICK ACTIONS
-          ============================================ */}
-      <div className="flex items-center gap-2 flex-wrap mb-8">
+      {/* Quick navigation */}
+      <div className="ag-fade-in mb-6 flex flex-wrap items-center gap-2">
         <button
-          onClick={openAddHubSheet}
-          className="flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] text-[13px] font-semibold hover:bg-[var(--accent-hover)] transition-colors"
-        >
-          <UserPlus size={14} />
-          Add lead
-        </button>
-        <button
+          type="button"
           onClick={() => router.push("/client/leads")}
-          className="flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--bg-tertiary)] text-[var(--text-secondary)] text-[13px] font-semibold border border-[var(--border)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-colors"
+          className="flex h-9 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-4 text-[13px] font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
         >
           <Users size={14} />
           All leads
         </button>
         <button
+          type="button"
           onClick={() => router.push("/client/reports")}
-          className="flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--bg-tertiary)] text-[var(--text-secondary)] text-[13px] font-semibold border border-[var(--border)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-colors"
+          className="flex h-9 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-4 text-[13px] font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
         >
           <BarChart2 size={14} />
           Reports
         </button>
         <button
+          type="button"
           onClick={() => router.push("/client/team")}
-          className="flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--bg-tertiary)] text-[var(--text-secondary)] text-[13px] font-semibold border border-[var(--border)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] transition-colors"
+          className="flex h-9 items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-4 text-[13px] font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
         >
           <Users size={14} />
           Team
@@ -357,7 +359,7 @@ export default function ClientDashboardMain({
       {/* ============================================
           TODAY'S FOCUS — 3 urgent numbers
           ============================================ */}
-      <div className="ag-fade-in grid grid-cols-1 min-[480px]:grid-cols-3 gap-3 mb-8">
+      <div className="ag-fade-in mb-8 grid min-w-0 grid-cols-1 gap-2 min-[480px]:grid-cols-3">
         {(
           [
             {
@@ -366,7 +368,8 @@ export default function ClientDashboardMain({
               description: "Never been called",
               icon: PhoneOff,
               urgent: data.focus.uncontacted > 0,
-              href: "/client/leads?status=NEW",
+              href: "/client/leads/pipeline?status=NEW",
+              colour: data.focus.uncontacted > 0 ? "var(--error)" : "var(--text-disabled)",
             },
             {
               label: "Follow-ups due",
@@ -374,7 +377,8 @@ export default function ClientDashboardMain({
               description: "Scheduled for today",
               icon: CalendarClock,
               urgent: data.focus.followUpToday > 0,
-              href: "/client/leads?followup=today",
+              href: "/client/leads/pipeline?followup=today",
+              colour: data.focus.followUpToday > 0 ? "var(--warning)" : "var(--text-disabled)",
             },
             {
               label: "Stale leads",
@@ -382,31 +386,36 @@ export default function ClientDashboardMain({
               description: "No activity 7+ days",
               icon: Clock,
               urgent: data.focus.staleLeads > 0,
-              href: "/client/leads?stale=true",
+              href: "/client/leads/pipeline?stale=true",
+              colour: data.focus.staleLeads > 0 ? "var(--error)" : "var(--text-disabled)",
             },
           ] as const
-        ).map((item) => (
-          <div
+        ).map((item) => {
+          const ItemIcon = item.icon;
+          return (
+          <button
             key={item.label}
+            type="button"
             onClick={() => router.push(item.href)}
-            className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 cursor-pointer hover:border-[var(--border-hover)] transition-colors"
+            className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)] p-3.5 text-left transition-colors hover:border-[var(--border-hover)]"
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
                 {item.label}
               </p>
-              <item.icon size={15} className="text-[var(--text-disabled)]" />
+              <ItemIcon size={14} style={{ color: item.colour }} />
             </div>
-            <p className="font-display text-[36px] font-semibold leading-none text-[var(--text-primary)] mb-2">
+            <p className="text-2xl font-semibold tabular-nums leading-none text-[var(--text-primary)]">
               {item.value}
             </p>
-            <p className={`text-[12px] font-medium ${
+            <p className={`mt-1.5 text-[12px] font-medium ${
               item.urgent ? "text-[var(--error)]" : "text-[var(--text-tertiary)]"
             }`}>
               {item.description}
             </p>
-          </div>
-        ))}
+          </button>
+        );
+        })}
       </div>
 
       {/* ============================================
@@ -450,7 +459,7 @@ export default function ClientDashboardMain({
                 {metric.label}
               </p>
               <p
-                className="font-display text-[36px] font-semibold text-[var(--text-primary)] leading-none"
+                className="text-2xl font-semibold tabular-nums leading-none text-[var(--text-primary)]"
               >
                 {metric.value}
               </p>
@@ -464,7 +473,7 @@ export default function ClientDashboardMain({
         <div className="ag-fade-in ag-delay-1 mb-8 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-4 sm:p-5">
           <WhatsAppHubReportSection
             report={data.whatsappHub}
-            inboxHref="/client/leads"
+            inboxHref="/client/leads/pipeline"
           />
         </div>
       ) : null}
@@ -990,6 +999,14 @@ export default function ClientDashboardMain({
         )}
       </div>
 
+      <button
+        type="button"
+        onClick={openAddHubSheet}
+        className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-30 flex h-11 items-center gap-2 rounded-lg border border-[var(--border-hover)] bg-[var(--accent)] px-4 text-[13px] font-semibold text-[var(--accent-foreground)] shadow-[var(--shadow-lg)] transition-colors hover:bg-[var(--accent-hover)] layout:bottom-6 layout:right-6"
+      >
+        <UserPlus size={17} />
+        <span className="hidden sm:inline">Add lead</span>
+      </button>
     </div>
   );
 }

@@ -1,4 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  CONTACT_LIFECYCLES,
+  type ContactLifecycle,
+  isContactLifecycle,
+} from "@/lib/customer-hub/lifecycle";
 
 function normalizeSource(raw: string | null): string {
   const s = (raw ?? "").trim().toLowerCase();
@@ -37,6 +42,64 @@ async function callLogCountByContact(
   return counts;
 }
 
+export type RelationshipCounts = {
+  total: number;
+  customers: number;
+  pipeline: number;
+  aware: number;
+  cold: number;
+};
+
+export async function getRelationshipCounts(
+  supabase: SupabaseClient,
+  clientId: string
+): Promise<RelationshipCounts> {
+  const { data: contacts } = await supabase
+    .from("contacts")
+    .select("lifecycle")
+    .eq("client_id", clientId);
+
+  const counts: RelationshipCounts = {
+    total: contacts?.length ?? 0,
+    customers: 0,
+    pipeline: 0,
+    aware: 0,
+    cold: 0,
+  };
+
+  for (const contact of contacts ?? []) {
+    const lifecycle = String(contact.lifecycle);
+    if (lifecycle === "customer") counts.customers++;
+    else if (lifecycle === "pipeline") counts.pipeline++;
+    else if (lifecycle === "aware") counts.aware++;
+    else counts.cold++;
+  }
+
+  return counts;
+}
+
+export async function contactIdsForLifecycleFilter(
+  supabase: SupabaseClient,
+  clientId: string,
+  lifecycle: ContactLifecycle
+): Promise<Set<string>> {
+  const { data: contacts } = await supabase
+    .from("contacts")
+    .select("id")
+    .eq("client_id", clientId)
+    .eq("lifecycle", lifecycle);
+
+  return new Set((contacts ?? []).map((c) => c.id as string));
+}
+
+export function parseLifecycleFilter(
+  raw: string | null
+): ContactLifecycle | "lead" | null {
+  if (!raw) return null;
+  if (raw === "lead") return "lead";
+  return isContactLifecycle(raw) ? raw : null;
+}
+
 export async function contactIdsForHubFilter(
   supabase: SupabaseClient,
   clientId: string,
@@ -55,7 +118,11 @@ export async function contactIdsForHubFilter(
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   if (filterKey === "never_contacted") {
-    return new Set(rows.filter((c) => (callCounts.get(c.id as string) ?? 0) === 0).map((c) => c.id as string));
+    return new Set(
+      rows
+        .filter((c) => (callCounts.get(c.id as string) ?? 0) === 0)
+        .map((c) => c.id as string)
+    );
   }
 
   if (filterKey === "walk_in_no_logs") {
@@ -118,3 +185,5 @@ export async function contactIdsForHubFilter(
 
   return null;
 }
+
+export { CONTACT_LIFECYCLES };

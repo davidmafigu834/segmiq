@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, FileText, Loader2, Upload } from "lucide-react";
+import { PageHeader } from "@/components/ui";
 import { Card, CardBody, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -115,8 +116,14 @@ export function ClientBillingView({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <div className="min-w-0 w-full max-w-full space-y-6 overflow-x-hidden pb-16">
+      <PageHeader
+        className="mb-2 ag-fade-in"
+        eyebrow="Billing"
+        title="Subscription & invoices"
+        description="Your plan, outstanding balance, and payment history."
+      />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 ag-fade-in ag-delay-1">
         <Card className="lg:col-span-2">
           <CardBody className="space-y-5">
             <div className="flex items-start justify-between gap-4">
@@ -154,10 +161,9 @@ export function ClientBillingView({
         <Card>
           <CardBody className="flex h-full flex-col justify-center">
             <p className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">Outstanding balance</p>
-            <p
-              className="mt-2 text-4xl text-[var(--text-primary)]"
-              style={{ fontFamily: "var(--font-instrument-serif)" }}
-            >
+        <p
+          className="mt-2 text-3xl font-semibold tabular-nums text-[var(--text-primary)]"
+        >
               {formatMoney(outstanding, currency)}
             </p>
           </CardBody>

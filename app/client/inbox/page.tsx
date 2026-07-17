@@ -33,7 +33,7 @@ export default async function ClientInboxPage() {
         role="CLIENT_MANAGER"
         clientId={session.clientId}
         roleSubtitle={`Client manager · ${clientName}`}
-        pipelineHref="/client/leads"
+        pipelineHref="/client/leads/pipeline"
         teamHref="/client/team"
         settingsHref="/client/account"
         inboxHref="/client/inbox"

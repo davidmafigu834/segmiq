@@ -24,6 +24,7 @@ function timeAgo(iso: string): string {
 const TYPE_LABEL: Record<string, string> = {
   NEW_LEAD: "New lead",
   FOLLOW_UP_DUE: "Follow-up due",
+  FOLLOW_UP_PREP: "Follow-up tomorrow",
   DEAL_WON: "Deal won",
   LEAD_FLAG: "Lead flagged",
   PHOTO_UPLOADED: "Photo uploaded",

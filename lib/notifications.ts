@@ -193,9 +193,17 @@ type InAppNotificationType =
   | "NEW_LEAD"
   | "WHATSAPP_MESSAGE"
   | "FOLLOW_UP_DUE"
+  | "FOLLOW_UP_PREP"
   | "DEAL_WON"
   | "LEAD_FLAG"
   | "UNCONTACTED_MANAGER_ALERT";
+
+export type FollowUpReminderKind = "due" | "overdue" | "prep";
+
+export type FollowUpNotifyResult =
+  | { ok: true; whatsappSent: true }
+  | { ok: true; whatsappSent: false; skipped: true; reason: string }
+  | { ok: false; whatsappSent: false; error: string };
 
 async function createInAppNotification(params: {
   userId: string;
@@ -515,16 +523,28 @@ export async function notifyWhatsAppInboundMessage(opts: {
   });
 }
 
-export async function notifyFollowUpDue(
+function formatFollowUpDateLabel(isoDate: string): string {
+  const d = new Date(isoDate.includes("T") ? isoDate : `${isoDate}T12:00:00Z`);
+  if (Number.isNaN(d.getTime())) return isoDate;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+}
+
+export async function notifyFollowUpReminder(
   lead: LeadRow,
   salesperson: UserLite,
+  kind: FollowUpReminderKind,
+  followUpDate: string,
   clientTwilioOverride?: string | null,
   salesPrefs?: SalesNotificationPrefs | null
-): Promise<void> {
+): Promise<FollowUpNotifyResult> {
   const prefs = salesPrefs ?? parseSalesPrefs(null);
   if (!prefs.followUpReminders) {
-    console.log("[notifyFollowUpDue] skipped (user preference)");
-    return;
+    console.log("[notifyFollowUpReminder] skipped (user preference)");
+    return { ok: true, whatsappSent: false, skipped: true, reason: "preference" };
+  }
+
+  if (!(salesperson.phone as string | null)?.trim()) {
+    return { ok: true, whatsappSent: false, skipped: true, reason: "no_phone" };
   }
 
   const supabase = createAdminClient();
@@ -537,11 +557,27 @@ export async function notifyFollowUpDue(
     .maybeSingle();
 
   const topic = lead.project_type ?? lead.budget ?? "your enquiry";
-  const lastNote = (lastCall?.notes as string | null)?.trim() || "No notes logged yet";
+  const rawNote = (lastCall?.notes as string | null)?.trim() || "No notes logged yet";
   const repFirst = firstName(salesperson.name);
   const magicToken = lead.magic_token ?? "";
   const leadLink = magicToken ? magicLinkUrl(magicToken) : getPublicBaseUrl();
-  const fallbackBody = `Follow-up due with ${lead.name ?? "lead"} about ${topic}. Last note: ${lastNote}`;
+  const dateLabel = formatFollowUpDateLabel(followUpDate);
+
+  const noteContext =
+    kind === "prep"
+      ? `Follow-up tomorrow (${dateLabel}). Last note: ${rawNote}`
+      : kind === "overdue"
+        ? `Overdue (was ${dateLabel}). Last note: ${rawNote}`
+        : rawNote;
+
+  const fallbackBody =
+    kind === "prep"
+      ? `Prepare for follow-up tomorrow with ${lead.name ?? "lead"} about ${topic}. Last note: ${rawNote}`
+      : kind === "overdue"
+        ? `Follow-up overdue with ${lead.name ?? "lead"} (was ${dateLabel}). Last note: ${rawNote}`
+        : `Follow-up due with ${lead.name ?? "lead"} about ${topic}. Last note: ${rawNote}`;
+
+  const notificationType = kind === "prep" ? "FOLLOW_UP_PREP" : "FOLLOW_UP_DUE";
 
   const r = await sendWhatsApp({
     to: salesperson.phone,
@@ -550,7 +586,7 @@ export async function notifyFollowUpDue(
     variables: {
       "1": repFirst,
       "2": lead.name || "lead",
-      "3": lastNote,
+      "3": noteContext,
       "4": leadLink,
     },
     fallbackBody,
@@ -558,11 +594,17 @@ export async function notifyFollowUpDue(
       userId: salesperson.id,
       leadId: lead.id,
       clientId: lead.client_id,
-      notificationType: "FOLLOW_UP_DUE",
+      notificationType,
     },
   });
-  if (r.ok) console.log("[notifyFollowUpDue] WhatsApp: success");
-  else console.error("[notifyFollowUpDue] WhatsApp:", r.error, r.errorCode);
+
+  if (r.ok) {
+    console.log("[notifyFollowUpReminder] WhatsApp: success", { kind, leadId: lead.id });
+    return { ok: true, whatsappSent: true };
+  }
+
+  console.error("[notifyFollowUpReminder] WhatsApp:", r.error, r.errorCode, { kind, leadId: lead.id });
+  return { ok: false, whatsappSent: false, error: r.error ?? "WhatsApp send failed" };
 }
 
 export async function notifyDealWon(

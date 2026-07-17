@@ -12,6 +12,7 @@ type NotificationRow = {
   type:
     | "NEW_LEAD"
     | "FOLLOW_UP_DUE"
+    | "FOLLOW_UP_PREP"
     | "DEAL_WON"
     | "LEAD_FLAG"
     | "UNCONTACTED_MANAGER_ALERT"
@@ -104,7 +105,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
   function leadHref(n: NotificationRow): string {
     if (n.lead_id) {
       if (role === "SALESPERSON") return `/sales/leads?lead=${n.lead_id}`;
-      if (role === "CLIENT_MANAGER") return `/client/leads?lead=${n.lead_id}`;
+      if (role === "CLIENT_MANAGER") return `/client/leads/pipeline?lead=${n.lead_id}`;
       return `/dashboard/leads?lead=${n.lead_id}`;
     }
     if (n.type === "FB_TOKEN_EXPIRED") {
@@ -229,6 +230,8 @@ function labelForType(type: string): string {
       return "WhatsApp message";
     case "FOLLOW_UP_DUE":
       return "Follow-up due";
+    case "FOLLOW_UP_PREP":
+      return "Follow-up tomorrow";
     case "DEAL_WON":
       return "Deal won";
     case "LEAD_FLAG":

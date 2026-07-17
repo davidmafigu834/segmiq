@@ -120,7 +120,7 @@ export function MagicLinkActionView({ lead, token }: { lead: MagicLeadForView; t
     let msg = "Call note saved.";
     if (outcome === "WON") msg = "Deal closed. Your manager has been notified.";
     if (outcome === "FOLLOW_UP" && followUpDate) {
-      msg = `Follow-up scheduled for ${format(new Date(followUpDate + "T12:00:00"), "MMMM d, yyyy")}. You'll get a WhatsApp reminder.`;
+      msg = `Follow-up scheduled for ${format(new Date(followUpDate + "T12:00:00"), "MMMM d, yyyy")}. You'll get WhatsApp reminders the day before and on the day.`;
     }
     if (outcome === "LOST" || outcome === "NOT_QUALIFIED") msg = "Lead archived.";
     setSuccessMessage(msg);

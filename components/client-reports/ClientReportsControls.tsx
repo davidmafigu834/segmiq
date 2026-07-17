@@ -12,16 +12,17 @@ import {
   subDays,
   subMonths,
 } from "date-fns";
+import { SegmentedTabs } from "@/components/ui";
 
 const BASE = "/client/reports";
 
 type PresetId = "this_week" | "this_month" | "last_month" | "last_90" | "custom";
 
 const PRESETS: { id: PresetId; label: string }[] = [
-  { id: "this_week", label: "This Week" },
-  { id: "this_month", label: "This Month" },
-  { id: "last_month", label: "Last Month" },
-  { id: "last_90", label: "Last 90 Days" },
+  { id: "this_week", label: "This week" },
+  { id: "this_month", label: "This month" },
+  { id: "last_month", label: "Last month" },
+  { id: "last_90", label: "90 days" },
   { id: "custom", label: "Custom" },
 ];
 
@@ -59,6 +60,12 @@ export function ClientReportsControls() {
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const urlLabel = searchParams.get("label") ?? "";
+
+  const activePreset: PresetId =
+    customOpen || urlLabel === "Custom"
+      ? "custom"
+      : PRESETS.find((p) => p.id !== "custom" && urlLabel === rangeForPreset(p.id as Exclude<PresetId, "custom">).label)?.id ??
+        "this_month";
 
   const pushParams = useCallback(
     (from: Date, to: Date, label: string) => {
@@ -106,29 +113,15 @@ export function ClientReportsControls() {
 
   return (
     <div className="flex flex-col items-start gap-3 md:items-end">
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-hide md:mx-0 md:flex-wrap md:justify-end md:overflow-visible md:px-0">
-        {PRESETS.map((p) => {
-          const active =
-            p.id === "custom" ? customOpen || urlLabel === "Custom" : urlLabel === p.label;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => onPreset(p.id)}
-              className={`shrink-0 rounded-md px-3 py-2.5 text-sm font-medium transition-colors md:py-1.5 ${
-                active
-                  ? "bg-[var(--accent)] text-accent-ink"
-                  : "border border-border bg-surface-card text-ink-secondary hover:border-border-strong"
-              }`}
-            >
-              {p.id === "last_90" ? "90 Days" : p.label}
-            </button>
-          );
-        })}
-      </div>
-      {customOpen && (
-        <div className="flex flex-wrap items-end gap-3 rounded-md border border-border bg-surface-card-alt p-4 md:justify-end">
-          <label className="font-mono text-[11px] text-ink-secondary">
+      <SegmentedTabs
+        aria-label="Report period"
+        tabs={PRESETS.map((p) => ({ value: p.id, label: p.label }))}
+        value={activePreset}
+        onValueChange={(v) => onPreset(v as PresetId)}
+      />
+      {customOpen ? (
+        <div className="flex w-full flex-wrap items-end gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-card)] p-4 md:justify-end">
+          <label className="font-mono text-[11px] text-[var(--text-secondary)]">
             From
             <input
               type="date"
@@ -137,7 +130,7 @@ export function ClientReportsControls() {
               onChange={(e) => setCustomFrom(e.target.value)}
             />
           </label>
-          <label className="font-mono text-[11px] text-ink-secondary">
+          <label className="font-mono text-[11px] text-[var(--text-secondary)]">
             To
             <input
               type="date"
@@ -149,12 +142,12 @@ export function ClientReportsControls() {
           <button
             type="button"
             onClick={() => void applyCustom()}
-            className="h-11 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-accent-ink md:h-9"
+            className="h-11 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--accent-foreground)] md:h-9"
           >
             Apply
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

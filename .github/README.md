@@ -16,7 +16,7 @@ Configure these in **Settings → Secrets and variables → Actions** for the re
 | Workflow                     | Frequency                  | Purpose                                               |
 | ---------------------------- | -------------------------- | ----------------------------------------------------- |
 | `cron-check-leads.yml`       | Every 30 minutes           | Flags uncontacted leads past SLA, notifies managers |
-| `cron-follow-up-reminders.yml` | Daily at 06:00 UTC       | Sends WhatsApp reminders for today's follow-ups       |
+| `cron-follow-up-reminders.yml` | Daily at 06:00 UTC       | Sends WhatsApp prep (tomorrow) and due/overdue follow-up reminders |
 | `cron-weekly-digest.yml`     | Mondays at 09:00 UTC     | Weekly performance summary email to managers         |
 
 ### Testing a workflow manually

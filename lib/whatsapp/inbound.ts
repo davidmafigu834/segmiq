@@ -229,7 +229,7 @@ export async function handleInboundWhatsAppMessage(opts: {
           phone,
           source: "WHATSAPP_INBOUND",
           lead_origin: "client",
-          lifecycle: "lead",
+          lifecycle: "cold",
           whatsapp_profile_name: profileName,
           whatsapp_wa_id: contactProfile?.waId ?? phoneDigits,
         })

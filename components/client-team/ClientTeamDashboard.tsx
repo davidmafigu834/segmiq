@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { PageHeader, SegmentedTabs } from "@/components/ui";
 import { PulseBar } from "@/components/dashboard/PulseBar";
 import type { LegacyPulseMetric } from "@/components/dashboard/PulseBar";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -116,53 +117,41 @@ export function ClientTeamDashboard({
     : [];
 
   return (
-    <div className="pb-16">
-      <div className="mb-8 flex flex-col gap-6 layout:flex-row layout:items-start layout:justify-between">
-        <div>
-          <p className="font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">
-            {clientName} / TEAM
-          </p>
-          <h1 className="font-display text-[26px] leading-none tracking-display text-ink-primary sm:text-[36px]">Your team</h1>
-          {data ? (
-            <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
-              {data.team.length} salespeople · {data.teamAggregate.winRate}% win rate ·{" "}
-              {formatCurrencyUsd(data.teamAggregate.totalWonValue)} won {data.period.label.toLowerCase()}
-            </p>
-          ) : (
-            <p className="mt-2 text-[14px] text-[var(--text-secondary)]">Loading team metrics…</p>
-          )}
-        </div>
-        <div className="flex flex-wrap justify-end gap-2">
-          {PERIODS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setPeriod(p.id)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                period === p.id
-                  ? "bg-[var(--accent)] text-accent-ink"
-                  : "border border-border bg-surface-card text-ink-secondary hover:border-border-strong"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="min-w-0 w-full max-w-full overflow-x-hidden pb-16">
+      <PageHeader
+        className="mb-6 ag-fade-in"
+        eyebrow={`${clientName} / Team`}
+        title="Your team"
+        description={
+          data
+            ? `${data.team.length} salespeople · ${data.teamAggregate.winRate}% win rate · ${formatCurrencyUsd(data.teamAggregate.totalWonValue)} won ${data.period.label.toLowerCase()}`
+            : "Loading team metrics…"
+        }
+        actions={
+          <SegmentedTabs
+            aria-label="Report period"
+            tabs={PERIODS.map((p) => ({ value: p.id, label: p.label }))}
+            value={period}
+            onValueChange={(v) => setPeriod(v as TeamPeriodId)}
+          />
+        }
+      />
 
       {error ? (
-        <div className="rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
+        <div className="rounded-lg border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-3 text-sm text-[var(--danger-fg)]">
           {error instanceof Error ? error.message : "Error"}
         </div>
       ) : null}
 
       {isLoading && !data ? (
-        <div className="shimmer h-48 rounded-xl" />
+        <div className="shimmer h-48 rounded-lg border border-[var(--border)]" />
       ) : data ? (
         <>
-          <PulseBar metrics={pulseMetrics} />
+          <div className="ag-fade-in ag-delay-1">
+            <PulseBar metrics={pulseMetrics} />
+          </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-2 layout:grid-cols-3">
+          <div className="ag-fade-in ag-delay-2 mt-10 grid gap-4 md:grid-cols-2 layout:grid-cols-3">
             {data.team.map((m) => (
               <button
                 key={m.userId}
@@ -171,46 +160,46 @@ export function ClientTeamDashboard({
                   setModalUserId(m.userId);
                   setModalTab("performance");
                 }}
-                className="flex flex-col rounded-xl border border-border bg-surface-card p-6 text-left transition-colors hover:border-border-strong"
+                className="flex flex-col rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 text-left transition-colors hover:border-[var(--border-hover)] hover:shadow-[var(--shadow-sm)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <ClientAvatar name={m.name} size="lg" />
                     <div>
-                      <div className="font-display text-[22px] leading-tight text-ink-primary">{m.name}</div>
-                      <div className="mt-1 font-mono text-[11px] text-ink-tertiary">
+                      <div className="text-[18px] font-semibold leading-tight text-[var(--text-primary)]">{m.name}</div>
+                      <div className="mt-1 font-mono text-[11px] text-[var(--text-tertiary)]">
                         SALES · Joined {format(parseISO(m.joinedAt), "MMM yyyy")}
                       </div>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2 text-right">
                     <span className={`h-2 w-2 rounded-full ${scoreDotClass(m.score.tier)}`} />
-                    <span className="max-w-[120px] text-[11px] font-medium text-ink-secondary">{m.score.label}</span>
+                    <span className="max-w-[120px] text-[11px] font-medium text-[var(--text-secondary)]">{m.score.label}</span>
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="mt-5 grid grid-cols-2 gap-4">
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Leads</div>
-                    <div className="mt-1 text-[20px] font-medium tabular-nums text-ink-primary">
+                    <div className="font-mono text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Leads</div>
+                    <div className="mt-1 text-[20px] font-semibold tabular-nums text-[var(--text-primary)]">
                       {m.currentStats.thisMonthLeads}
                     </div>
                   </div>
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Won</div>
-                    <div className="mt-1 text-[20px] font-medium tabular-nums text-ink-primary">
+                    <div className="font-mono text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Won</div>
+                    <div className="mt-1 text-[20px] font-semibold tabular-nums text-[var(--text-primary)]">
                       {m.currentStats.thisMonthWon}
                     </div>
                   </div>
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Won value</div>
-                    <div className="mt-1 text-[20px] font-medium tabular-nums text-ink-primary">
+                    <div className="font-mono text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Won value</div>
+                    <div className="mt-1 text-[20px] font-semibold tabular-nums text-[var(--text-primary)]">
                       {formatCurrencyUsd(m.currentStats.thisMonthWonValue)}
                     </div>
                   </div>
                   <div>
-                    <div className="font-mono text-[10px] uppercase tracking-wide text-ink-tertiary">Avg response</div>
-                    <div className="mt-1 text-[20px] font-medium tabular-nums text-ink-primary">
+                    <div className="font-mono text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">Avg response</div>
+                    <div className="mt-1 text-[20px] font-semibold tabular-nums text-[var(--text-primary)]">
                       {formatResp(m.currentStats.avgResponseMinutes)}
                     </div>
                   </div>
@@ -234,7 +223,7 @@ export function ClientTeamDashboard({
                   </ResponsiveContainer>
                 </div>
 
-                <div className="mt-3 text-[12px] text-ink-tertiary">
+                <div className="mt-3 text-[12px] text-[var(--text-tertiary)]">
                   {m.currentStats.overdueFollowUps} overdue · {m.currentStats.followUpsScheduled} upcoming
                 </div>
               </button>
@@ -242,7 +231,9 @@ export function ClientTeamDashboard({
           </div>
 
           {data.team.length === 0 ? (
-            <p className="mt-8 text-sm text-ink-secondary">No salespeople on this team yet.</p>
+            <p className="mt-8 rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
+              No salespeople on this team yet.
+            </p>
           ) : null}
         </>
       ) : null}
@@ -257,17 +248,17 @@ export function ClientTeamDashboard({
             if (e.target === e.currentTarget) setModalUserId(null);
           }}
         >
-          <div className="flex h-full w-full max-w-[720px] flex-col overflow-y-auto border border-border bg-surface-card p-4 shadow-lg md:max-h-[90vh] md:rounded-xl md:p-6">
+          <div className="flex h-full w-full max-w-[720px] flex-col overflow-y-auto border border-[var(--border)] bg-[var(--surface-card)] p-4 shadow-lg md:max-h-[90vh] md:rounded-xl md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <ClientAvatar name={selectedMember.name} size={56} />
-                <h2 id="team-modal-title" className="font-display text-[32px] leading-none text-ink-primary">
+                <h2 id="team-modal-title" className="text-2xl font-semibold leading-none text-[var(--text-primary)]">
                   {selectedMember.name}
                 </h2>
               </div>
               <button
                 type="button"
-                className="rounded-md p-2 text-ink-tertiary hover:bg-surface-card-alt hover:text-ink-primary"
+                className="rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
                 onClick={() => setModalUserId(null)}
                 aria-label="Close"
               >
@@ -275,7 +266,7 @@ export function ClientTeamDashboard({
               </button>
             </div>
 
-            <div className="-mx-1 mt-6 flex gap-2 overflow-x-auto border-b border-border px-1 pb-3 scrollbar-hide md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
+            <div className="-mx-1 mt-6 flex gap-2 overflow-x-auto border-b border-[var(--border)] px-1 pb-3 scrollbar-hide md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
               {(
                 [
                   ["performance", "Performance"],
@@ -290,7 +281,7 @@ export function ClientTeamDashboard({
                   className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                     modalTab === id
                       ? "bg-surface-sidebar text-[var(--text-on-dark)]"
-                      : "text-ink-secondary hover:bg-surface-card-alt"
+                      : "text-[var(--text-secondary)] hover:bg-[var(--surface-card)]-alt"
                   }`}
                 >
                   {label}
@@ -319,7 +310,7 @@ export function ClientTeamDashboard({
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="space-y-2 rounded-md border border-border bg-surface-card-alt p-4 text-sm text-ink-secondary">
+                <div className="space-y-2 rounded-md border border-[var(--border)] bg-[var(--surface-card)]-alt p-4 text-sm text-[var(--text-secondary)]">
                   {selectedMember.drillDown.insights.map((line, i) => (
                     <p key={i} className="leading-relaxed">
                       · {line}
@@ -333,19 +324,19 @@ export function ClientTeamDashboard({
               <div className="mt-6 flex gap-3 overflow-x-auto pb-2">
                 {selectedMember.drillDown.pipeline.map((col) => (
                   <div key={col.status} className="w-[200px] shrink-0">
-                    <div className="mb-2 font-mono text-[10px] uppercase text-ink-tertiary">
+                    <div className="mb-2 font-mono text-[10px] uppercase text-[var(--text-tertiary)]">
                       {col.status.replace("_", " ")}
                     </div>
                     <div className="space-y-2">
                       {col.leads.length === 0 ? (
-                        <p className="text-xs text-ink-tertiary">—</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">—</p>
                       ) : (
                         col.leads.map((l) => (
-                          <div key={l.id} className="rounded-lg border border-border bg-surface-card p-3 text-xs">
-                            <div className="font-medium text-ink-primary">{l.name}</div>
-                            <div className="mt-1 text-ink-tertiary">{l.phone ?? "—"}</div>
-                            <div className="mt-1 font-mono tabular-nums text-ink-secondary">{l.budgetLabel}</div>
-                            <div className="mt-2 text-[10px] text-ink-tertiary">
+                          <div key={l.id} className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)] p-3 text-xs">
+                            <div className="font-medium text-[var(--text-primary)]">{l.name}</div>
+                            <div className="mt-1 text-[var(--text-tertiary)]">{l.phone ?? "—"}</div>
+                            <div className="mt-1 font-mono tabular-nums text-[var(--text-secondary)]">{l.budgetLabel}</div>
+                            <div className="mt-2 text-[10px] text-[var(--text-tertiary)]">
                               {format(parseISO(l.lastActivity), "MMM d, h:mm a")}
                             </div>
                           </div>
@@ -359,13 +350,13 @@ export function ClientTeamDashboard({
 
             {modalTab === "activity" ? (
               <div className="relative mt-6 pl-0">
-                <div className="absolute bottom-0 left-[11px] top-0 border-l border-border" aria-hidden />
+                <div className="absolute bottom-0 left-[11px] top-0 border-l border-[var(--border)]" aria-hidden />
                 <ul className="relative m-0 list-none space-y-0 p-0">
                   {selectedMember.drillDown.timeline.length === 0 ? (
-                    <p className="py-4 text-sm text-ink-tertiary">No activity yet.</p>
+                    <p className="py-4 text-sm text-[var(--text-tertiary)]">No activity yet.</p>
                   ) : (
                     selectedMember.drillDown.timeline.map((ev) => (
-                      <li key={ev.id} className="relative border-b border-border py-3 pl-6 last:border-b-0">
+                      <li key={ev.id} className="relative border-b border-[var(--border)] py-3 pl-6 last:border-b-0">
                         <span
                           className="absolute left-[7px] top-[18px] h-2 w-2 rounded-full"
                           style={{
@@ -375,15 +366,15 @@ export function ClientTeamDashboard({
                           aria-hidden
                         />
                         <div className="flex justify-between gap-2">
-                          <span className="font-mono text-[11px] uppercase text-ink-secondary">
+                          <span className="font-mono text-[11px] uppercase text-[var(--text-secondary)]">
                             {ev.kind === "deal_won" ? "Deal won" : "Call"}
                           </span>
-                          <span className="shrink-0 font-mono text-[11px] text-ink-tertiary">
+                          <span className="shrink-0 font-mono text-[11px] text-[var(--text-tertiary)]">
                             {format(parseISO(ev.at), "MMM d, HH:mm")}
                           </span>
                         </div>
-                        <p className="mt-1 text-[13px] text-ink-primary">{ev.title}</p>
-                        {ev.detail ? <p className="mt-0.5 text-[12px] text-ink-tertiary">{ev.detail}</p> : null}
+                        <p className="mt-1 text-[13px] text-[var(--text-primary)]">{ev.title}</p>
+                        {ev.detail ? <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">{ev.detail}</p> : null}
                       </li>
                     ))
                   )}

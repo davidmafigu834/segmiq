@@ -70,7 +70,7 @@ export async function GET(req: Request) {
       role === "SALESPERSON"
         ? `/sales/leads?lead=${lead.id}`
         : role === "CLIENT_MANAGER"
-          ? `/client/leads?lead=${lead.id}`
+          ? `/client/leads/pipeline?lead=${lead.id}`
           : `/dashboard/leads?lead=${lead.id}`;
     results.push({
       type: "lead",

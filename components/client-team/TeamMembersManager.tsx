@@ -366,21 +366,21 @@ export function TeamMembersManager({
   }
 
   return (
-    <section className="mt-12 space-y-6 border-t border-border pt-10">
+    <section className="ag-fade-in mt-12 space-y-6 border-t border-[var(--border)] pt-10">
       {toast ? (
-        <div className="rounded-md border border-border bg-surface-card-alt px-3 py-2 text-sm">{toast}</div>
+        <div className="rounded-md border border-[var(--border)] bg-[var(--bg-tertiary)] px-3 py-2 text-sm">{toast}</div>
       ) : null}
 
       {tempPass && inviteEmailResult ? (
-        <div className="rounded-xl border border-border bg-surface-card-alt px-3.5 py-3">
-          <p className="mb-2 text-xs font-semibold text-ink-primary">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-tertiary)] px-3.5 py-3">
+          <p className="mb-2 text-xs font-semibold text-[var(--text-primary)]">
             {inviteEmailResult.source === "reset" ? "New login details for" : "Login details for"}{" "}
             {inviteEmailResult.userName ?? inviteEmailResult.email} — share manually (e.g. WhatsApp):
           </p>
-          <p className="mb-1 text-[13px] text-ink-primary">Email: {inviteEmailResult.email}</p>
-          <p className="mb-2 font-mono text-[13px] text-ink-primary">Password: {tempPass}</p>
+          <p className="mb-1 text-[13px] text-[var(--text-primary)]">Email: {inviteEmailResult.email}</p>
+          <p className="mb-2 font-mono text-[13px] text-[var(--text-primary)]">Password: {tempPass}</p>
           {inviteEmailResult.emailSent ? (
-            <p className="mb-2 flex items-center gap-1.5 text-xs text-ink-secondary">
+            <p className="mb-2 flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
               <MailCheck className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
               Also emailed to {inviteEmailResult.email}.
             </p>
@@ -408,12 +408,12 @@ export function TeamMembersManager({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl text-ink-primary">Managers</h2>
-            <p className="mt-1 text-sm text-ink-secondary">Add co-managers with full team oversight.</p>
+            <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">Managers</h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">Add co-managers with full team oversight.</p>
           </div>
           <button
             type="button"
-            className="btn-ghost"
+            className="inline-flex h-9 items-center rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-3.5 text-[13px] font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]"
             onClick={() => {
               setInviteError(null);
               setInviteMgrOpen(true);
@@ -423,9 +423,9 @@ export function TeamMembersManager({
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-border">
+        <div className="overflow-hidden rounded-xl border border-[var(--border)]">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-surface-card-alt font-mono text-[10px] uppercase text-ink-tertiary">
+            <thead className="border-b border-[var(--border)] bg-[var(--bg-tertiary)] font-mono text-[10px] uppercase text-[var(--text-tertiary)]">
               <tr>
                 <th className="px-3 py-2">Manager</th>
                 <th className="px-3 py-2">Email</th>
@@ -437,13 +437,13 @@ export function TeamMembersManager({
             <tbody>
               {managers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-ink-tertiary">
+                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
                     No managers listed yet.
                   </td>
                 </tr>
               ) : (
                 managers.map((m) => (
-                  <tr key={m.id} className="border-t border-border">
+                  <tr key={m.id} className="border-t border-[var(--border)]">
                     <td className="px-3 py-2">
                       <span className="flex items-center gap-2">
                         <ClientAvatar name={m.name} size="sm" />
@@ -486,8 +486,8 @@ export function TeamMembersManager({
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl text-ink-primary">Salespeople</h2>
-          <p className="mt-1 text-sm text-ink-secondary">Add salespeople, pause access, or adjust lead rotation.</p>
+          <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">Salespeople</h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">Add salespeople, pause access, or adjust lead rotation.</p>
         </div>
         <button
           type="button"
@@ -503,8 +503,8 @@ export function TeamMembersManager({
 
       {rrList.length > 0 ? (
         <div>
-          <p className="text-sm text-ink-secondary">
-            Next up: <span className="font-medium text-ink-primary">{nextUp?.name ?? "—"}</span>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Next up: <span className="font-medium text-[var(--text-primary)]">{nextUp?.name ?? "—"}</span>
           </p>
           <DragDropContext onDragEnd={(r) => void onDragEnd(r)}>
             <Droppable droppableId="rr" direction="horizontal">
@@ -521,7 +521,7 @@ export function TeamMembersManager({
                           ref={p.innerRef}
                           {...p.draggableProps}
                           {...p.dragHandleProps}
-                          className="flex items-center gap-1 rounded-full border border-border bg-surface-card px-2 py-1"
+                          className="flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface-card)] px-2 py-1"
                         >
                           <ClientAvatar name={s.name} size={28} />
                           <span className="max-w-[100px] truncate text-xs">{s.name}</span>
@@ -534,13 +534,13 @@ export function TeamMembersManager({
               )}
             </Droppable>
           </DragDropContext>
-          <p className="mt-2 text-[11px] text-ink-tertiary">Drag to reorder round-robin rotation.</p>
+          <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">Drag to reorder round-robin rotation.</p>
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-border">
+      <div className="overflow-hidden rounded-xl border border-[var(--border)]">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-border bg-surface-card-alt font-mono text-[10px] uppercase text-ink-tertiary">
+          <thead className="border-b border-[var(--border)] bg-[var(--bg-tertiary)] font-mono text-[10px] uppercase text-[var(--text-tertiary)]">
             <tr>
               <th className="px-3 py-2">Rep</th>
               <th className="px-3 py-2">Email</th>
@@ -553,13 +553,13 @@ export function TeamMembersManager({
           <tbody>
             {sales.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-sm text-ink-tertiary">
+                <td colSpan={6} className="px-3 py-8 text-center text-sm text-[var(--text-tertiary)]">
                   No salespeople yet. Add your first team member above.
                 </td>
               </tr>
             ) : (
               sales.map((s) => (
-                <tr key={s.id} className="border-t border-border">
+                <tr key={s.id} className="border-t border-[var(--border)]">
                   <td className="px-3 py-2">
                     <span className="flex items-center gap-2">
                       <ClientAvatar name={s.name} size="sm" />
@@ -615,12 +615,12 @@ export function TeamMembersManager({
 
       {(inviteOpen || inviteMgrOpen) ? (
         <div className="fixed inset-0 z-50 flex flex-col bg-[var(--surface-overlay)] p-0 md:items-center md:justify-center md:p-4">
-          <div className="flex h-full w-full max-w-md flex-col border border-border bg-surface-card p-5 shadow-lg md:h-auto md:rounded-xl md:p-6">
-            <h3 className="font-display text-xl">{inviteOpen ? "Invite salesperson" : "Invite manager"}</h3>
+          <div className="flex h-full w-full max-w-md flex-col border border-[var(--border)] bg-[var(--surface-card)] p-5 shadow-lg md:h-auto md:rounded-xl md:p-6">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)]">{inviteOpen ? "Invite salesperson" : "Invite manager"}</h3>
             <label className="mt-3 block text-sm">
               Name
               <input
-                className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base text-ink-primary placeholder:text-ink-tertiary md:text-sm"
+                className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] md:text-sm"
                 value={inviteForm.name}
                 onChange={(e) => setInviteForm((f) => ({ ...f, name: e.target.value }))}
                 autoCapitalize="words"
@@ -629,7 +629,7 @@ export function TeamMembersManager({
             <label className="mt-3 block text-sm">
               Email
               <input
-                className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base text-ink-primary placeholder:text-ink-tertiary md:text-sm"
+                className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] md:text-sm"
                 value={inviteForm.email}
                 onChange={(e) => setInviteForm((f) => ({ ...f, email: e.target.value }))}
                 inputMode="email"
@@ -639,7 +639,7 @@ export function TeamMembersManager({
             <label className="mt-3 block text-sm">
               Phone (E.164{inviteMgrOpen ? ", optional for manager" : ""})
               <input
-                className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-base text-ink-primary placeholder:text-ink-tertiary md:text-sm"
+                className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] md:text-sm"
                 value={inviteForm.phone}
                 onChange={(e) => setInviteForm((f) => ({ ...f, phone: e.target.value }))}
                 placeholder="+15551234567"
@@ -651,10 +651,10 @@ export function TeamMembersManager({
                 {inviteError}
               </p>
             ) : null}
-            <div className="safe-bottom mt-auto flex justify-end gap-2 border-t border-border pt-4 md:mt-4 md:border-t-0 md:pt-0">
+            <div className="safe-bottom mt-auto flex justify-end gap-2 border-t border-[var(--border)] pt-4 md:mt-4 md:border-t-0 md:pt-0">
               <button
                 type="button"
-                className="btn-ghost h-11 flex-1 md:h-9 md:flex-none"
+                className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-3.5 text-[13px] font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--border-hover)] hover:text-[var(--text-primary)] md:h-9 md:flex-none"
                 onClick={() => {
                   setInviteError(null);
                   setInviteOpen(false);

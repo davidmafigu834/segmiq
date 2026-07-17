@@ -27,6 +27,7 @@ export type NotificationType =
   | "NEW_LEAD"
   | "WHATSAPP_MESSAGE"
   | "FOLLOW_UP_DUE"
+  | "FOLLOW_UP_PREP"
   | "DEAL_WON"
   | "LEAD_FLAG"
   | "UNCONTACTED_MANAGER_ALERT";
@@ -81,6 +82,8 @@ export interface ClientRow {
   last_lead_received_at: string | null;
 }
 
+export type ContactLifecycle = "cold" | "aware" | "pipeline" | "customer";
+
 export interface ContactRow {
   id: string;
   client_id: string;
@@ -90,7 +93,7 @@ export interface ContactRow {
   location: string | null;
   source: string | null;
   lead_origin: "segmiq" | "client";
-  lifecycle: "lead" | "customer";
+  lifecycle: ContactLifecycle;
   notes: string | null;
   tags: string[];
   created_at: string;

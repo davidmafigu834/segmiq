@@ -53,3 +53,30 @@ export function recentStatusClass(status: string): string {
   if (status === "won") return "text-[var(--success)] bg-[rgba(61,214,140,0.12)]";
   return "text-[var(--error)] bg-[rgba(255,68,68,0.12)]";
 }
+
+export function normalizeContactSourceKey(raw: string | null): NormalizedSource {
+  const s = (raw ?? "").trim().toLowerCase();
+  if (s === "walk-in" || s === "walk_in") return "walk_in";
+  if (s === "whatsapp" || s === "whatsapp_inbound") return "whatsapp_inbound";
+  if (s === "whatsapp_saved") return "whatsapp_saved";
+  if (s === "facebook" || s === "landing_page") return "facebook";
+  if (s === "referral" || s === "manual") return "referral";
+  return "other";
+}
+
+/** Human-readable label for any raw contacts.source or leads.source value. */
+export function formatContactSourceLabel(raw: string | null): string {
+  if (!raw?.trim()) return "Unknown";
+  const t = raw.trim();
+  const u = t.toUpperCase();
+  if (u === "FACEBOOK") return "Facebook";
+  if (u === "LANDING_PAGE") return "Landing page";
+  if (u === "MANUAL") return "Manual";
+  if (u === "REFERRAL") return "Referral";
+  if (u === "WHATSAPP_INBOUND") return "WhatsApp inbound";
+  if (u === "IMPORT") return "Import";
+  const key = normalizeContactSourceKey(raw);
+  const mapped = SOURCE_DISPLAY[key]?.label;
+  if (mapped && key !== "other") return mapped;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}

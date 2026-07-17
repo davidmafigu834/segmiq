@@ -1,52 +1,33 @@
 export default function ClientDashboardSkeleton() {
   return (
-    <div className="px-4 pt-6 pb-28 md:px-6 layout:pb-10 layout:px-8">
-      {/* Page header */}
-      <div className="mb-8">
-        <div className="h-3 w-24 rounded bg-[var(--surface-card)] animate-pulse mb-2" />
-        <div className="h-8 w-56 rounded bg-[var(--surface-card)] animate-pulse" />
+    <div className="w-full pb-20">
+      <div className="mb-6 border-b border-[var(--border)] pb-5">
+        <div className="shimmer mb-2 h-3 w-40 rounded" />
+        <div className="shimmer h-7 w-64 max-w-[70vw] rounded" />
+        <div className="shimmer mt-2 h-4 w-96 max-w-[85vw] rounded" />
       </div>
-
-      {/* Quick actions */}
-      <div className="flex items-center gap-2 mb-8">
+      <div className="mb-6 flex flex-wrap gap-2">
         {[1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="h-9 w-28 rounded-lg bg-[var(--surface-card)] border border-[var(--border)] animate-pulse"
-          />
+          <div key={i} className="shimmer h-9 w-28 rounded-lg border border-[var(--border)]" />
         ))}
       </div>
-
-      {/* Focus strip */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-2 min-[480px]:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-[110px] rounded-xl bg-[var(--surface-card)] border border-[var(--border)] animate-pulse"
-          />
+          <div key={i} className="shimmer h-[90px] rounded-lg border border-[var(--border)]" />
         ))}
       </div>
-
-      {/* Pulse bar */}
-      <div className="h-[88px] rounded-xl bg-[var(--surface-card)] border border-[var(--border)] animate-pulse mb-8" />
-
-      {/* Team + pipeline */}
-      <div className="grid grid-cols-1 gap-6 min-[1000px]:grid-cols-[1fr_360px] mb-8">
-        <div className="h-[320px] rounded-xl bg-[var(--surface-card)] border border-[var(--border)] animate-pulse" />
+      <div className="shimmer mb-8 h-[88px] rounded-lg border border-[var(--border)]" />
+      <div className="mb-8 grid grid-cols-1 gap-6 min-[1000px]:grid-cols-[1fr_360px]">
+        <div className="shimmer h-[320px] rounded-lg border border-[var(--border)]" />
         <div className="flex flex-col gap-6">
-          <div className="h-[150px] rounded-xl bg-[var(--surface-card)] border border-[var(--border)] animate-pulse" />
-          <div className="h-[150px] rounded-xl bg-[var(--surface-card)] border border-[var(--border)] animate-pulse" />
+          <div className="shimmer h-[150px] rounded-lg border border-[var(--border)]" />
+          <div className="shimmer h-[150px] rounded-lg border border-[var(--border)]" />
         </div>
       </div>
-
-      {/* Assets + wins */}
-      <div className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-2 mb-8">
-        <div className="h-[220px] rounded-xl bg-[var(--surface-card)] border border-[var(--border)] animate-pulse" />
-        <div className="h-[220px] rounded-xl bg-[var(--surface-card)] border border-[var(--border)] animate-pulse" />
+      <div className="grid grid-cols-1 gap-6 min-[900px]:grid-cols-2">
+        <div className="shimmer h-[220px] rounded-lg border border-[var(--border)]" />
+        <div className="shimmer h-[220px] rounded-lg border border-[var(--border)]" />
       </div>
-
-      {/* Sources */}
-      <div className="h-[180px] rounded-xl bg-[var(--surface-card)] border border-[var(--border)] animate-pulse" />
     </div>
   );
 }
