@@ -119,8 +119,8 @@ export function TeamMembersManager({
       if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed");
       const newUser = (j as { user?: Partial<UserRow> }).user;
       const emailSent = typeof (j as { emailSent?: boolean }).emailSent === "boolean" ? (j as { emailSent: boolean }).emailSent : false;
-      setInviteEmailResult({ email: inviteForm.email, emailSent });
-      if (!emailSent && (j as { temporaryPassword?: string }).temporaryPassword) {
+      setInviteEmailResult({ email: inviteForm.email, emailSent, userName: inviteForm.name, source: "invite" });
+      if ((j as { temporaryPassword?: string }).temporaryPassword) {
         setTempPass((j as { temporaryPassword: string }).temporaryPassword);
       }
       if ((j as { message?: string }).message) setToast(String((j as { message: string }).message));
@@ -169,8 +169,8 @@ export function TeamMembersManager({
       if (!res.ok) throw new Error((j as { error?: string }).error ?? "Failed");
       const newMgr = (j as { user?: Partial<ManagerRow> }).user;
       const emailSent = typeof (j as { emailSent?: boolean }).emailSent === "boolean" ? (j as { emailSent: boolean }).emailSent : false;
-      setInviteEmailResult({ email: inviteForm.email, emailSent });
-      if (!emailSent && (j as { temporaryPassword?: string }).temporaryPassword) {
+      setInviteEmailResult({ email: inviteForm.email, emailSent, userName: inviteForm.name, source: "invite" });
+      if ((j as { temporaryPassword?: string }).temporaryPassword) {
         setTempPass((j as { temporaryPassword: string }).temporaryPassword);
       }
       setInviteMgrOpen(false);
@@ -335,7 +335,7 @@ export function TeamMembersManager({
   async function resetUserPassword(user: { id: string; name: string; email: string }) {
     if (
       !window.confirm(
-        `Generate a new temporary password for ${user.name}? They will be signed out of all devices and must use the new password to log in.`
+        `Generate a new temporary password for ${user.name}? They will be signed out of all devices. You will see the new password so you can share it with them manually.`
       )
     ) {
       return;
@@ -352,16 +352,10 @@ export function TeamMembersManager({
       }
       const emailSent = j.emailSent === true;
       setInviteEmailResult({ email: user.email, emailSent, userName: user.name, source: "reset" });
-      if (!emailSent && j.temporaryPassword) {
+      if (j.temporaryPassword) {
         setTempPass(j.temporaryPassword);
-      } else if (emailSent) {
-        setTempPass(null);
       }
-      setToast(
-        emailSent
-          ? `New login details emailed to ${user.email}.`
-          : `New password generated for ${user.name}. Copy and send it to them manually.`
-      );
+      setToast(`New password for ${user.name}. Copy and share it with them manually.`);
     } finally {
       setResettingPasswordId(null);
     }
@@ -377,26 +371,24 @@ export function TeamMembersManager({
         <div className="rounded-md border border-border bg-surface-card-alt px-3 py-2 text-sm">{toast}</div>
       ) : null}
 
-      {inviteEmailResult?.emailSent === true ? (
-        <div className="flex items-center gap-2 rounded-xl border border-[var(--success-border)] bg-[var(--success-muted)] px-3.5 py-3 text-[13px] text-[var(--success)]">
-          <MailCheck className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-          <p className="m-0 flex-1">
-            {inviteEmailResult.source === "reset" ? "New login details sent to" : "Login details sent to"}{" "}
-            {inviteEmailResult.email}
-            {inviteEmailResult.userName ? ` (${inviteEmailResult.userName})` : ""}
-          </p>
-          <button type="button" className="text-xs underline" onClick={() => setInviteEmailResult(null)}>
-            Dismiss
-          </button>
-        </div>
-      ) : inviteEmailResult?.emailSent === false ? (
-        <div className="rounded-xl border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3.5 py-3">
-          <p className="mb-2 text-xs font-semibold text-[var(--warning)]">
-            Email failed to send. Share these credentials manually
-            {inviteEmailResult.userName ? ` with ${inviteEmailResult.userName}` : ""}:
+      {tempPass && inviteEmailResult ? (
+        <div className="rounded-xl border border-border bg-surface-card-alt px-3.5 py-3">
+          <p className="mb-2 text-xs font-semibold text-ink-primary">
+            {inviteEmailResult.source === "reset" ? "New login details for" : "Login details for"}{" "}
+            {inviteEmailResult.userName ?? inviteEmailResult.email} — share manually (e.g. WhatsApp):
           </p>
           <p className="mb-1 text-[13px] text-ink-primary">Email: {inviteEmailResult.email}</p>
           <p className="mb-2 font-mono text-[13px] text-ink-primary">Password: {tempPass}</p>
+          {inviteEmailResult.emailSent ? (
+            <p className="mb-2 flex items-center gap-1.5 text-xs text-ink-secondary">
+              <MailCheck className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+              Also emailed to {inviteEmailResult.email}.
+            </p>
+          ) : (
+            <p className="mb-2 text-xs text-[var(--warning)]">
+              Email could not be sent — please share these credentials yourself.
+            </p>
+          )}
           <button type="button" className="mr-3 text-xs underline" onClick={() => void copyTempPassword()}>
             Copy login details
           </button>

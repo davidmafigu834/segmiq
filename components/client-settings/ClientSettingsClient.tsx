@@ -371,8 +371,8 @@ export function ClientSettingsClient({
       if (!res.ok) throw new Error(j.error ?? "Failed");
       const newUser = j.user as Partial<UserRow> | undefined;
       const emailSent = typeof j.emailSent === "boolean" ? j.emailSent : false;
-      setInviteEmailResult({ email: inviteForm.email, emailSent });
-      if (!emailSent && j.temporaryPassword) {
+      setInviteEmailResult({ email: inviteForm.email, emailSent, userName: inviteForm.name, source: "invite" });
+      if (j.temporaryPassword) {
         setTempPass(j.temporaryPassword as string);
         setTempPassExpiresAt(Date.now() + TEMP_PASS_TTL_MS);
       }
@@ -423,8 +423,8 @@ export function ClientSettingsClient({
       if (!res.ok) throw new Error(j.error ?? "Failed");
       const newMgr = j.user as Partial<ManagerRow> | undefined;
       const emailSent = typeof j.emailSent === "boolean" ? j.emailSent : false;
-      setInviteEmailResult({ email: inviteForm.email, emailSent });
-      if (!emailSent && j.temporaryPassword) {
+      setInviteEmailResult({ email: inviteForm.email, emailSent, userName: inviteForm.name, source: "invite" });
+      if (j.temporaryPassword) {
         setTempPass(j.temporaryPassword as string);
         setTempPassExpiresAt(Date.now() + TEMP_PASS_TTL_MS);
       }
@@ -589,7 +589,7 @@ export function ClientSettingsClient({
   async function resetUserPassword(user: { id: string; name: string; email: string }) {
     if (
       !window.confirm(
-        `Generate a new temporary password for ${user.name}? They will be signed out of all devices and must use the new password to log in.`
+        `Generate a new temporary password for ${user.name}? They will be signed out of all devices. You will see the new password so you can share it with them manually.`
       )
     ) {
       return;
@@ -606,18 +606,11 @@ export function ClientSettingsClient({
       }
       const emailSent = j.emailSent === true;
       setInviteEmailResult({ email: user.email, emailSent, userName: user.name, source: "reset" });
-      if (!emailSent && j.temporaryPassword) {
+      if (j.temporaryPassword) {
         setTempPass(j.temporaryPassword);
         setTempPassExpiresAt(Date.now() + TEMP_PASS_TTL_MS);
-      } else if (emailSent) {
-        setTempPass(null);
-        setTempPassExpiresAt(null);
       }
-      setToast(
-        emailSent
-          ? `New login details emailed to ${user.email}.`
-          : `New password generated for ${user.name}. Copy and send it to them manually.`
-      );
+      setToast(`New password for ${user.name}. Copy and share it with them manually.`);
     } finally {
       setResettingPasswordId(null);
     }
@@ -631,38 +624,38 @@ export function ClientSettingsClient({
         {toast ? (
           <div className="mb-4 rounded-md border border-border bg-surface-card-alt px-3 py-2 text-sm">{toast}</div>
         ) : null}
-        {inviteEmailResult?.emailSent === true ? (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--success-border)] bg-[var(--success-muted)] px-3.5 py-3 text-[13px] text-[var(--success)]">
-            <MailCheck className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-            <p className="m-0 flex-1">
-              {inviteEmailResult.source === "reset" ? "New login details sent to" : "Login details sent to"}{" "}
-              {inviteEmailResult.email}
-              {inviteEmailResult.userName ? ` (${inviteEmailResult.userName})` : ""}
+        {tempPass && inviteEmailResult ? (
+          <div className="mb-4 rounded-xl border border-border bg-surface-card-alt px-3.5 py-3">
+            <p className="mb-2 text-xs font-semibold text-ink-primary">
+              {inviteEmailResult.source === "reset" ? "New login details for" : "Login details for"}{" "}
+              {inviteEmailResult.userName ?? inviteEmailResult.email} — share manually (e.g. WhatsApp):
             </p>
-            <button type="button" className="text-xs underline" onClick={() => setInviteEmailResult(null)}>
+            <p className="mb-1 text-[13px] text-ink-primary">Email: {inviteEmailResult.email}</p>
+            <p className="mb-2 font-mono text-[13px] text-ink-primary">Password: {tempPass}</p>
+            {inviteEmailResult.emailSent ? (
+              <p className="mb-2 flex items-center gap-1.5 text-xs text-ink-secondary">
+                <MailCheck className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                Also emailed to {inviteEmailResult.email}.
+              </p>
+            ) : (
+              <p className="mb-2 text-xs text-[var(--warning)]">
+                Email could not be sent — please share these credentials yourself.
+              </p>
+            )}
+            <button type="button" className="mr-3 text-xs underline" onClick={() => void copyTempPassword()}>
+              Copy login details
+            </button>
+            <button
+              type="button"
+              className="text-xs underline"
+              onClick={() => {
+                setInviteEmailResult(null);
+                setTempPass(null);
+                setTempPassExpiresAt(null);
+              }}
+            >
               Dismiss
             </button>
-          </div>
-        ) : inviteEmailResult?.emailSent === false ? (
-          <div className="mb-4 rounded-xl border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3.5 py-3">
-            <p className="mb-2 text-xs font-semibold text-[var(--warning)]">
-              Email failed to send. Share these credentials manually
-              {inviteEmailResult.userName ? ` with ${inviteEmailResult.userName}` : ""}:
-            </p>
-            <p className="mb-1 text-[13px] text-ink-primary">
-              Email: {inviteEmailResult.email}
-            </p>
-            <p className="mb-2 font-mono text-[13px] text-ink-primary">
-              Password: {tempPass}
-            </p>
-            <div>
-              <button type="button" className="mr-3 text-xs underline" onClick={() => void copyTempPassword()}>
-                Copy login details
-              </button>
-              <button type="button" className="text-xs underline" onClick={() => { setInviteEmailResult(null); setTempPass(null); }}>
-                Dismiss
-              </button>
-            </div>
           </div>
         ) : tempPass ? (
           <div className="mb-4 rounded-md border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3 py-2 text-sm">
@@ -670,7 +663,14 @@ export function ClientSettingsClient({
             <button type="button" className="ml-2 underline" onClick={() => void copyTempPassword()}>
               Copy
             </button>
-            <button type="button" className="ml-2 underline" onClick={() => setTempPass(null)}>
+            <button
+              type="button"
+              className="ml-2 underline"
+              onClick={() => {
+                setTempPass(null);
+                setTempPassExpiresAt(null);
+              }}
+            >
               Dismiss
             </button>
           </div>
