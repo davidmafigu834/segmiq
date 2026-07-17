@@ -45,9 +45,9 @@ function extractBody(msg: InboundPayload, caption?: string | null): string {
   if (msg.type === "button" && msg.button?.text?.trim()) return msg.button.text.trim();
   if (msg.interactive?.button_reply?.title?.trim()) return msg.interactive.button_reply.title.trim();
   if (msg.interactive?.list_reply?.title?.trim()) return msg.interactive.list_reply.title.trim();
-  if (msg.type === "image") return caption?.trim() ? caption.trim() : "";
-  if (msg.type === "audio") return caption?.trim() ? caption.trim() : "";
-  if (msg.type === "video") return caption?.trim() ? caption.trim() : "";
+  if (msg.type === "image") return caption?.trim() ? caption.trim() : "Photo";
+  if (msg.type === "audio") return caption?.trim() ? caption.trim() : "Voice message";
+  if (msg.type === "video") return caption?.trim() ? caption.trim() : "Video";
   if (msg.type === "document") return msg.document?.filename?.trim() || "";
   if (msg.type === "sticker") return "";
   if (msg.type === "location") return "Location";
@@ -342,6 +342,7 @@ export async function handleInboundWhatsAppMessage(opts: {
     media_url: mediaAsset.url,
     media_mime_type: mediaAsset.mimeType,
     media_caption: mediaAsset.caption,
+    media_storage_key: mediaAsset.storageKey,
     created_at: message.timestamp ? new Date(Number(message.timestamp) * 1000).toISOString() : now,
     updated_at: now,
   });

@@ -58,7 +58,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       await Promise.all([
       supabase
         .from("whatsapp_messages")
-        .select("id, direction, body, created_at, message_type, status, media_url, media_mime_type, provider_id")
+        .select("id, direction, body, created_at, message_type, status, media_url, media_mime_type, media_storage_key, provider_id")
         .eq("lead_id", params.leadId)
         .order("created_at", { ascending: true }),
       supabase
@@ -97,6 +97,8 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
           isWhatsAppRowVisibleInChat({
             body: r.body as string | null,
             media_url: r.media_url as string | null,
+            message_type: r.message_type as string | null,
+            media_storage_key: r.media_storage_key as string | null,
           })
         )
         .map((r) => r.provider_id as string | null)
@@ -113,6 +115,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
         status: r.status as string | null,
         media_url: r.media_url as string | null,
         media_mime_type: r.media_mime_type as string | null,
+        media_storage_key: r.media_storage_key as string | null,
       }))
     );
 

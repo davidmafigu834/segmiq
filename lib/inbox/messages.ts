@@ -1,11 +1,19 @@
 import type { InboxChatMessage } from "./types";
-import { isMediaPlaceholderBody } from "./media-placeholders";
+import { isMediaMessageType, isMediaPlaceholderBody } from "./media-placeholders";
+import { resolveWhatsAppMediaUrl } from "@/lib/whatsapp/media";
 
 export function isWhatsAppRowVisibleInChat(row: {
   body: string | null;
   media_url?: string | null;
+  message_type?: string | null;
+  media_storage_key?: string | null;
 }): boolean {
-  return Boolean(row.body?.trim() || row.media_url);
+  return Boolean(
+    row.body?.trim() ||
+      row.media_url ||
+      row.media_storage_key ||
+      isMediaMessageType(row.message_type)
+  );
 }
 
 type TimelineEvent = {
@@ -28,6 +36,7 @@ export function whatsappRowsToChatMessages(
     status?: string | null;
     media_url?: string | null;
     media_mime_type?: string | null;
+    media_storage_key?: string | null;
   }[]
 ): InboxChatMessage[] {
   return rows
@@ -44,7 +53,7 @@ export function whatsappRowsToChatMessages(
         kind: "message" as const,
         messageType: r.message_type ?? null,
         status: (r.status as InboxChatMessage["status"]) ?? null,
-        mediaUrl: r.media_url ?? null,
+        mediaUrl: resolveWhatsAppMediaUrl(r.id, r.media_url, r.media_storage_key),
         mediaMimeType: r.media_mime_type ?? null,
       };
     });

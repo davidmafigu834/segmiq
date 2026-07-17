@@ -30,9 +30,9 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
     const type = message.messageType;
     if (type === "audio") {
       return (
-        <div className="mb-1 flex items-center gap-2 text-[#111B21]">
+        <div className="mb-1 flex items-center gap-2 text-[#667781]">
           <Mic size={16} />
-          <span className="text-[13px]">Voice message</span>
+          <span className="text-[13px]">Voice message — media unavailable</span>
         </div>
       );
     }
@@ -66,8 +66,10 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
     );
   }
 
-  if (message.mediaMimeType?.startsWith("audio/")) {
-    return <audio controls src={message.mediaUrl} className="mb-1 max-w-full" />;
+  if (message.mediaMimeType?.startsWith("audio/") || message.messageType === "audio") {
+    return (
+      <audio controls preload="metadata" src={message.mediaUrl} className="mb-1 min-w-[220px] max-w-full" />
+    );
   }
 
   if (message.mediaMimeType?.startsWith("video/")) {
