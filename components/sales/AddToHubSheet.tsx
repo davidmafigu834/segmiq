@@ -21,11 +21,6 @@ import {
 import { MANUAL_LEAD_STAGES } from "@/lib/customer-hub/manual-lead-stages";
 import { IN_PERSON_HUB_SOURCES } from "@/lib/customer-hub/recent-status";
 import type { ContactLifecycle, LeadStatus } from "@/types";
-import {
-  CONTACT_LIFECYCLE_LABELS,
-  lifecycleBadgeClass,
-  normalizeLegacyLifecycle,
-} from "@/lib/customer-hub/lifecycle";
 
 type AssignmentMode = "direct" | "pool" | "round_robin";
 type LookupMatch = {

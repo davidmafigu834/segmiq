@@ -8,7 +8,6 @@ import {
 } from "@/components/customer-hub/ContactMemoryCard";
 import {
   CONTACT_LIFECYCLE_LABELS,
-  normalizeLegacyLifecycle,
   type ContactLifecycle,
 } from "@/lib/customer-hub/lifecycle";
 
