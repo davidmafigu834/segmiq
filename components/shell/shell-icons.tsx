@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Archive,
   BarChart3,
+  Bell,
   Building2,
   Calendar,
   Camera,
@@ -33,6 +34,7 @@ export const SHELL_ICONS: Record<string, LucideIcon> = {
   phone: Phone,
   receipt: Receipt,
   "bar-chart-3": BarChart3,
+  bell: Bell,
   settings: Settings,
   users: Users,
   "layout-grid": LayoutGrid,

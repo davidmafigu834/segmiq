@@ -23,6 +23,7 @@ import {
   type ContactLifecycle,
 } from "@/lib/customer-hub/lifecycle";
 import { formatContactSourceLabel } from "@/lib/customer-hub/source-labels";
+import { ContactCommunicationPrefs } from "@/components/marketing/ContactCommunicationPrefs";
 
 export type ContactProfileLead = {
   id: string;
@@ -263,6 +264,7 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
           ) : null}
         </div>
 
+        <div className="space-y-4">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
           <h2 className="mb-1 text-sm font-semibold text-[var(--text-primary)]">Actions</h2>
           <p className="mb-4 text-[12px] text-[var(--text-tertiary)]">What you can do with this contact.</p>
@@ -313,6 +315,8 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
             {clientName} / Customer Hub ·{" "}
             {contact.leadOrigin === "segmiq" ? "Segmiq-generated" : "Added by your team"}
           </p>
+        </div>
+        <ContactCommunicationPrefs clientId={clientId} contactId={contact.id} />
         </div>
       </div>
 

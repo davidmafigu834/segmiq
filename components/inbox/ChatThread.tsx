@@ -68,6 +68,11 @@ export function ChatThread({
   const [savedReplies, setSavedReplies] = useState<SavedQuickReply[]>([]);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [campaignContext, setCampaignContext] = useState<{
+    campaignName: string;
+    sentAt: string | null;
+    responseClassification: string | null;
+  } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
@@ -109,7 +114,15 @@ export function ChatThread({
       if (isInitial) setLoading(true);
       try {
         const res = await fetch(`/api/inbox/conversations/${conversationId}/messages`);
-        const d = (await res.json()) as { messages?: InboxChatMessage[]; sessionOpen?: boolean };
+        const d = (await res.json()) as {
+          messages?: InboxChatMessage[];
+          sessionOpen?: boolean;
+          campaignContext?: {
+            campaignName: string;
+            sentAt: string | null;
+            responseClassification: string | null;
+          } | null;
+        };
         if (!cancelled) {
           const next = d.messages ?? [];
           setMessages((prev) => {
@@ -125,6 +138,7 @@ export function ChatThread({
             return next;
           });
           setSessionOpen(d.sessionOpen === true);
+          setCampaignContext(d.campaignContext ?? null);
         }
       } finally {
         if (!cancelled && isInitial) setLoading(false);
@@ -529,6 +543,19 @@ export function ChatThread({
         </div>
         </div>
       </div>
+
+      {campaignContext ? (
+        <div className="border-b border-[var(--border)] bg-[rgba(212,255,79,0.06)] px-4 py-2 text-xs text-[var(--text-secondary)]">
+          <span className="font-medium text-[var(--text-primary)]">Campaign:</span>{" "}
+          {campaignContext.campaignName}
+          {campaignContext.sentAt
+            ? ` · Sent ${new Date(campaignContext.sentAt).toLocaleDateString("en-GB")}`
+            : ""}
+          {campaignContext.responseClassification
+            ? ` · Response: ${campaignContext.responseClassification.replace(/_/g, " ")}`
+            : ""}
+        </div>
+      ) : null}
 
       <div
         ref={scrollRef}

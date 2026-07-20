@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { eventsToChatMessages, isWhatsAppRowVisibleInChat, messageLogsToChatMessages, whatsappRowsToChatMessages } from "@/lib/inbox/messages";
 import type { InboxChatMessage } from "@/lib/inbox/types";
 import { isWhatsAppSessionOpen } from "@/lib/whatsapp/inbound";
+import { getCampaignContextForLead } from "@/lib/marketing/campaign-reply";
 
 export const dynamic = "force-dynamic";
 
@@ -233,5 +234,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     }
   }
 
-  return NextResponse.json({ messages, sessionOpen, isWhatsApp });
+  const campaignContext = await getCampaignContextForLead(params.leadId);
+
+  return NextResponse.json({ messages, sessionOpen, isWhatsApp, campaignContext });
 }

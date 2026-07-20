@@ -11,7 +11,8 @@ type EventType =
   | "DOCUMENT_SENT"
   | "FOLLOW_UP_SET"
   | "MESSAGE_RECEIVED"
-  | "MESSAGE_SENT";
+  | "MESSAGE_SENT"
+  | "CAMPAIGN_RESPONSE";
 
 type Actor = {
   id: string | null;

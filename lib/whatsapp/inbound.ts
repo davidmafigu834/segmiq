@@ -9,6 +9,11 @@ import { pickAssigneeForInbound } from "./assignment";
 import { fetchWhatsAppMediaAsset } from "./media";
 import { processWhatsAppQualification } from "./qualification";
 import { resolveClientFromWhatsAppPhoneNumberId } from "./resolve-client";
+import {
+  findRecentCampaignRecipient,
+  handleCampaignReply,
+} from "@/lib/marketing/campaign-reply";
+import { isOptOutMessage, recordWhatsAppOptOut } from "@/lib/marketing/consent";
 
 const SESSION_MS = 24 * 60 * 60 * 1000;
 
@@ -175,32 +180,47 @@ export async function handleInboundWhatsAppMessage(opts: {
   let isNewLead = false;
   let assignedToId: string | null = null;
 
-  const { data: openLeads } = await supabase
-    .from("leads")
-    .select("id, assigned_to_id, name, phone, status")
-    .eq("client_id", client.id)
-    .eq("source", "WHATSAPP_INBOUND")
-    .or("is_archived.is.null,is_archived.eq.false")
-    .not("status", "in", '("WON","LOST","NOT_QUALIFIED")')
-    .order("updated_at", { ascending: false })
-    .limit(20);
+  const campaignMatch = await findRecentCampaignRecipient({
+    clientId: client.id,
+    phoneDigits,
+  });
 
-  const matched =
-    (openLeads ?? []).find((l) => {
-      const lp = String(l.phone ?? "").replace(/\D/g, "");
-      return lp === phoneDigits || lp.endsWith(phoneDigits) || phoneDigits.endsWith(lp);
-    }) ?? null;
-
-  if (matched) {
-    leadId = matched.id as string;
-    assignedToId = (matched.assigned_to_id as string | null) ?? null;
-    const { data: leadContact } = await supabase
+  if (campaignMatch?.leadId) {
+    leadId = campaignMatch.leadId;
+    contactId = campaignMatch.contactId;
+    const { data: campLead } = await supabase
       .from("leads")
-      .select("contact_id")
+      .select("assigned_to_id, contact_id")
       .eq("id", leadId)
       .maybeSingle();
-    contactId = (leadContact?.contact_id as string | null) ?? null;
-  } else {
+    assignedToId = (campLead?.assigned_to_id as string | null) ?? null;
+    if (!contactId) contactId = (campLead?.contact_id as string | null) ?? null;
+  }
+
+  if (!leadId) {
+    const { data: openLeads } = await supabase
+      .from("leads")
+      .select("id, assigned_to_id, name, phone, status, contact_id")
+      .eq("client_id", client.id)
+      .or("is_archived.is.null,is_archived.eq.false")
+      .not("status", "in", '("WON","LOST","NOT_QUALIFIED")')
+      .order("updated_at", { ascending: false })
+      .limit(50);
+
+    const matched =
+      (openLeads ?? []).find((l) => {
+        const lp = String(l.phone ?? "").replace(/\D/g, "");
+        return lp === phoneDigits || lp.endsWith(phoneDigits) || phoneDigits.endsWith(lp);
+      }) ?? null;
+
+    if (matched) {
+      leadId = matched.id as string;
+      assignedToId = (matched.assigned_to_id as string | null) ?? null;
+      contactId = (matched.contact_id as string | null) ?? null;
+    }
+  }
+
+  if (!leadId) {
     isNewLead = true;
     const { assigneeId, salespeople } = await pickAssigneeForInbound({
       supabase,
@@ -357,6 +377,28 @@ export async function handleInboundWhatsAppMessage(opts: {
   });
 
   await supabase.from("leads").update({ updated_at: now }).eq("id", leadId);
+
+  if (contactId && isOptOutMessage(body)) {
+    await recordWhatsAppOptOut({
+      contactId,
+      clientId: client.id,
+      reason: body.trim(),
+    });
+  }
+
+  if (leadId && body.trim()) {
+    try {
+      await handleCampaignReply({
+        clientId: client.id,
+        phoneDigits,
+        body,
+        leadId,
+        contactId,
+      });
+    } catch (err) {
+      console.error("[whatsapp] campaign reply handling error:", err);
+    }
+  }
 
   if (!isNewLead && assignedToId) {
     const { data: lead } = await supabase
