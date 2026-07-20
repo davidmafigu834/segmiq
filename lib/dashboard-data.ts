@@ -269,6 +269,62 @@ function slaCompliancePercent(
   return Math.round((ok / leads.length) * 100);
 }
 
+const ACTIVE_PIPELINE_STATUSES = [
+  "NEW",
+  "CONTACTED",
+  "QUALIFIED",
+  "NEGOTIATING",
+  "PROPOSAL_SENT",
+] as const;
+
+async function fetchActiveClientsForDashboard(
+  supabase: ReturnType<typeof createAdminClient>
+) {
+  const withArchived = await supabase
+    .from("clients")
+    .select("id, name, industry, response_time_limit_hours, is_active")
+    .eq("is_archived", false)
+    .order("name");
+
+  if (!withArchived.error) return withArchived;
+
+  const msg = String(withArchived.error.message ?? "");
+  if (!msg.includes("is_archived")) {
+    return withArchived;
+  }
+
+  return supabase
+    .from("clients")
+    .select("id, name, industry, response_time_limit_hours, is_active")
+    .order("name");
+}
+
+async function fetchCallLogsByLeadIds(
+  supabase: ReturnType<typeof createAdminClient>,
+  leadIds: string[]
+): Promise<{ lead_id: string; created_at: string }[]> {
+  if (leadIds.length === 0) return [];
+
+  const chunkSize = 100;
+  const rows: { lead_id: string; created_at: string }[] = [];
+
+  for (let i = 0; i < leadIds.length; i += chunkSize) {
+    const chunk = leadIds.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from("call_logs")
+      .select("lead_id, created_at")
+      .in("lead_id", chunk);
+
+    if (error) {
+      console.error("[dashboard-data] call_logs chunk failed:", error.message);
+      continue;
+    }
+    rows.push(...((data ?? []) as { lead_id: string; created_at: string }[]));
+  }
+
+  return rows;
+}
+
 export async function fetchAgencyDashboardData() {
   const supabase = createAdminClient();
   const now = new Date();
@@ -325,15 +381,11 @@ export async function fetchAgencyDashboardData() {
       .select("id, created_at, client_id")
       .gte("created_at", monthStart)
       .lt("created_at", nextMonthStartIso),
-    supabase
-      .from("clients")
-      .select("id, name, industry, response_time_limit_hours, is_active")
-      .eq("is_archived", false)
-      .order("name"),
+    fetchActiveClientsForDashboard(supabase),
     supabase
       .from("leads")
       .select("id, status")
-      .not("status", "in", "(WON,LOST)"),
+      .in("status", [...ACTIVE_PIPELINE_STATUSES]),
   ]);
 
   const batchErr =
@@ -349,31 +401,29 @@ export async function fetchAgencyDashboardData() {
     activeClientsRes.error ??
     pipelineLeadsRes.error;
   if (batchErr) {
+    console.error("[dashboard-data] batch 1 failed:", batchErr.message);
     throw new Error(`Dashboard data (batch 1): ${batchErr.message}`);
   }
 
   const monthLeadRows = monthLeadsAllRes.data ?? [];
   const monthLeadIds = monthLeadRows.map((l) => l.id as string);
 
-  const logIdSet = new Set([...monthLeadIds]);
-  const callLogsRes =
-    logIdSet.size > 0
-      ? await supabase.from("call_logs").select("lead_id, created_at").in("lead_id", Array.from(logIdSet))
-      : { data: [] as { lead_id: string; created_at: string }[], error: null };
-  if (callLogsRes.error) {
-    throw new Error(`Dashboard data (call logs): ${callLogsRes.error.message}`);
-  }
-
-  const logsAll = callLogsRes.data ?? [];
+  const logsAll = await fetchCallLogsByLeadIds(supabase, monthLeadIds);
   const logsMonth = logsAll.filter((l) => monthLeadIds.includes(l.lead_id as string));
 
   const monthStartD = startOfMonth(now);
   const nextMonthStartD = startOfMonth(addMonths(now, 1));
   const prevMonthStartD = startOfMonth(subMonths(now, 1));
-  const [avgResponseTime, avgPrevMonth] = await Promise.all([
-    getAvgResponseMinutes(monthStartD, nextMonthStartD, {}),
-    getAvgResponseMinutes(prevMonthStartD, monthStartD, {}),
-  ]);
+  let avgResponseTime: number | null = null;
+  let avgPrevMonth: number | null = null;
+  try {
+    [avgResponseTime, avgPrevMonth] = await Promise.all([
+      getAvgResponseMinutes(monthStartD, nextMonthStartD, {}),
+      getAvgResponseMinutes(prevMonthStartD, monthStartD, {}),
+    ]);
+  } catch (e) {
+    console.error("[dashboard-data] avg response metrics failed:", e);
+  }
 
   const pipelineByStatus: Record<string, number> = {
     NEW: 0,
@@ -500,15 +550,9 @@ export async function fetchAgencyDashboardData() {
   }
 
   const allWeekLeadIds = Array.from(new Set((weekByClientData ?? []).map((r) => r.id as string)));
-  const weekLogsRes =
-    allWeekLeadIds.length > 0
-      ? await supabase.from("call_logs").select("lead_id, created_at").in("lead_id", allWeekLeadIds)
-      : { data: [] as { lead_id: string; created_at: string }[], error: null };
-  if (weekLogsRes.error) {
-    throw new Error(`Dashboard data (week call logs): ${weekLogsRes.error.message}`);
-  }
+  const weekLogs = await fetchCallLogsByLeadIds(supabase, allWeekLeadIds);
   const logsByLeadWeek = new Map<string, Date[]>();
-  for (const log of weekLogsRes.data ?? []) {
+  for (const log of weekLogs) {
     const lid = log.lead_id as string;
     if (!logsByLeadWeek.has(lid)) logsByLeadWeek.set(lid, []);
     logsByLeadWeek.get(lid)!.push(new Date(log.created_at as string));

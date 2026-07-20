@@ -12,6 +12,21 @@ export async function GET(
   const g = await requireClientAccessFromRequest(req, params.clientId);
   if ("error" in g) return g.error;
 
-  const overview = await fetchMarketingOverview(params.clientId);
-  return NextResponse.json({ overview });
+  try {
+    const overview = await fetchMarketingOverview(params.clientId);
+    return NextResponse.json({ overview });
+  } catch (e) {
+    console.error("[marketing overview]", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    const missingTable = msg.includes("does not exist") || msg.includes("whatsapp_campaigns");
+    return NextResponse.json(
+      {
+        error: missingTable
+          ? "Marketing Hub tables are not migrated yet. Run migrations 075–078 on Supabase."
+          : "Failed to load marketing overview",
+        details: msg,
+      },
+      { status: missingTable ? 503 : 500 }
+    );
+  }
 }

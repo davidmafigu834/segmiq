@@ -15,10 +15,6 @@
     {
       "path": "/api/cron/whatsapp-campaigns",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/follow-up-reminders",
-      "schedule": "*/30 * * * *"
     }
   ]
 }

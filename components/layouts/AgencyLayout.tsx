@@ -21,47 +21,66 @@ export async function AgencyLayout({
   titleSize?: "hero" | "standard";
 }) {
   const session = await getServerSession(authOptions);
-  const supabase = createAdminClient();
-  const { data: clients } = await supabase
-    .from("clients")
-    .select("id, name")
-    .eq("is_active", true)
-    .eq("is_archived", false)
-    .order("name");
-  const clientIds = (clients ?? []).map((c) => c.id);
-  const counts: Record<string, number> = {};
-  if (clientIds.length) {
-    const { data: leads } = await supabase.from("leads").select("client_id").in("client_id", clientIds);
-    for (const l of leads ?? []) {
-      const id = l.client_id as string;
-      counts[id] = (counts[id] ?? 0) + 1;
-    }
-  }
+
+  let clientRows: AppShellClientRow[] = [];
   let unread = 0;
-  if (session?.userId) {
+  let newLeadsCount: number | undefined;
+
+  try {
+    const supabase = createAdminClient();
+    let clientsResult = await supabase
+      .from("clients")
+      .select("id, name")
+      .eq("is_active", true)
+      .eq("is_archived", false)
+      .order("name");
+
+    if (clientsResult.error?.message?.includes("is_archived")) {
+      clientsResult = await supabase
+        .from("clients")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+    }
+
+    const clients = clientsResult.data;
+    const clientIds = (clients ?? []).map((c) => c.id);
+    const counts: Record<string, number> = {};
+    if (clientIds.length) {
+      const { data: leads } = await supabase.from("leads").select("client_id").in("client_id", clientIds);
+      for (const l of leads ?? []) {
+        const id = l.client_id as string;
+        counts[id] = (counts[id] ?? 0) + 1;
+      }
+    }
+    if (session?.userId) {
+      const { count } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.userId)
+        .eq("read", false);
+      unread = count ?? 0;
+    }
+
     const { count } = await supabase
-      .from("notifications")
+      .from("leads")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", session.userId)
-      .eq("read", false);
-    unread = count ?? 0;
+      .eq("status", "NEW");
+    newLeadsCount = count ?? undefined;
+
+    clientRows =
+      clients?.map((c) => ({
+        id: c.id as string,
+        name: c.name as string,
+        leadCount: counts[c.id as string] ?? 0,
+      })) ?? [];
+  } catch (e) {
+    console.error("[AgencyLayout] data load failed:", e);
   }
-
-  const { count: newLeadsCount } = await supabase
-    .from("leads")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "NEW");
-
-  const clientRows: AppShellClientRow[] =
-    clients?.map((c) => ({
-      id: c.id as string,
-      name: c.name as string,
-      leadCount: counts[c.id as string] ?? 0,
-    })) ?? [];
 
   const primaryNav = [
     { href: "/dashboard", label: "Dashboard", icon: "home" as const },
-    { href: "/dashboard/leads", label: "All Leads", icon: "inbox" as const, badge: newLeadsCount ?? undefined },
+    { href: "/dashboard/leads", label: "All Leads", icon: "inbox" as const, badge: newLeadsCount },
     { href: "/dashboard/clients", label: "Clients", icon: "building2" as const },
     { href: "/dashboard/campaigns", label: "Campaigns", icon: "megaphone" as const },
     { href: "/dashboard/reports", label: "Reports", icon: "bar-chart-3" as const },
