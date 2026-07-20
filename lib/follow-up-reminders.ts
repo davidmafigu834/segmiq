@@ -186,10 +186,6 @@ async function fetchCallbackCandidates(leadIdFilter?: string): Promise<CallbackC
   return candidates;
 }
 
-function emptyBatch(): FollowUpBatchResult {
-  return { totalLeads: 0, whatsappSent: 0, whatsappFailed: 0, skipped: 0, inAppCreated: 0 };
-}
-
 async function runFollowUpBatch(opts: {
   notificationType: "FOLLOW_UP_DUE" | "FOLLOW_UP_PREP";
   resolveKind: (followUpDate: string, todayStr: string) => FollowUpReminderKind;

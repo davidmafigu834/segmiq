@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { syncTemplateStatuses, listLocalTemplates } from "@/lib/marketing/template-manager";
 

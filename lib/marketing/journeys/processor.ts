@@ -1,7 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendCampaignTemplate } from "../send-campaign-template";
 import { isWithinQuietHours } from "../compliance";
-import { canSendMarketing, getContactPrefs } from "../consent";
 import { getMarketingSettings } from "../settings";
 import type { EnrollmentRow, JourneyRow, JourneyStep, JourneyStats } from "./types";
 

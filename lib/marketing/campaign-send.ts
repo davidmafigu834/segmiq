@@ -87,7 +87,7 @@ export async function prepareCampaignRecipients(campaignId: string): Promise<{
     };
   }
 
-  const { recipients, preview } = await resolveSegmentAudience(
+  const { recipients } = await resolveSegmentAudience(
     campaign.client_id as string,
     campaign.audience_segment_id as string
   );

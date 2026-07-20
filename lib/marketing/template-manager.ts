@@ -302,5 +302,3 @@ export async function syncTemplateStatuses(clientId: string): Promise<number> {
 
   return synced;
 }
-
-import { countBodyVariables } from "./template-utils";

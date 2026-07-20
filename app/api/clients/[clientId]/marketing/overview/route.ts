@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchMarketingOverview } from "@/lib/marketing/overview";
 
 export const dynamic = "force-dynamic";
