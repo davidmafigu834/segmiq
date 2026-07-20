@@ -13,13 +13,17 @@ import { isClientSlugAvailable } from "@/lib/clients/slug";
 
 export const ONBOARDING_ALREADY_COMPLETED = "This onboarding link has already been completed";
 
-export type FinishOnboardingInput = {
-  tokenRow: OnboardingTokenRow;
+export type ActivateClientInput = {
   clientId: string;
   mode: "team" | "solo";
   ownerEmail: string;
   password: string;
   progress: OnboardingProgress;
+  tokenRow?: OnboardingTokenRow;
+};
+
+export type FinishOnboardingInput = ActivateClientInput & {
+  tokenRow: OnboardingTokenRow;
 };
 
 export type FinishOnboardingResult =
@@ -43,7 +47,7 @@ function countryToIso(country: OnboardingCountryCode): IsoCountry {
   return country;
 }
 
-export async function finishOnboarding(input: FinishOnboardingInput): Promise<FinishOnboardingResult> {
+export async function activateClientFromProgress(input: ActivateClientInput): Promise<FinishOnboardingResult> {
   const { tokenRow, clientId, mode, ownerEmail, password, progress } = input;
   const company = progress.company;
   const account = progress.account;
@@ -145,19 +149,21 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
   let tokenClaimed = false;
 
   try {
-    const { data: claimedToken, error: claimErr } = await supabase
-      .from("client_onboarding_tokens")
-      .update({ used: true })
-      .eq("id", tokenRow.id)
-      .eq("used", false)
-      .select("id")
-      .maybeSingle();
+    if (tokenRow) {
+      const { data: claimedToken, error: claimErr } = await supabase
+        .from("client_onboarding_tokens")
+        .update({ used: true })
+        .eq("id", tokenRow.id)
+        .eq("used", false)
+        .select("id")
+        .maybeSingle();
 
-    if (claimErr) throw new Error(claimErr.message);
-    if (!claimedToken) {
-      return { ok: false, error: ONBOARDING_ALREADY_COMPLETED, status: 400 };
+      if (claimErr) throw new Error(claimErr.message);
+      if (!claimedToken) {
+        return { ok: false, error: ONBOARDING_ALREADY_COMPLETED, status: 400 };
+      }
+      tokenClaimed = true;
     }
-    tokenClaimed = true;
 
     const defaultHours = await getDefaultResponseHoursForNewClients();
 
@@ -343,7 +349,7 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
         })
         .eq("id", clientId);
     }
-    if (tokenClaimed) {
+    if (tokenClaimed && tokenRow) {
       await supabase
         .from("client_onboarding_tokens")
         .update({ used: false })
@@ -355,4 +361,8 @@ export async function finishOnboarding(input: FinishOnboardingInput): Promise<Fi
       status: 500,
     };
   }
+}
+
+export async function finishOnboarding(input: FinishOnboardingInput): Promise<FinishOnboardingResult> {
+  return activateClientFromProgress(input);
 }
