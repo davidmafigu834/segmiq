@@ -107,7 +107,7 @@ function PrefRow({
   );
 }
 
-export function CommunicationPreferencesPage({ clientId: _clientId }: { clientId: string }) {
+export function CommunicationPreferencesPage() {
   return (
     <div>
       <MarketingHubTabs />

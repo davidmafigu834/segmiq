@@ -11,7 +11,7 @@ export default async function MarketingPreferencesPage() {
 
   return (
     <ClientManagerLayout breadcrumbPage="Preferences" pageTitle="Marketing Hub" hideShellHeader>
-      <CommunicationPreferencesPage clientId={session.clientId} />
+      <CommunicationPreferencesPage />
     </ClientManagerLayout>
   );
 }
