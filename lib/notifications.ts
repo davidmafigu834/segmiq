@@ -27,6 +27,8 @@ type UserLite = { id: string; name: string; phone: string | null; email: string 
 
 export type NotifyLeadOptions = {
   salesPrefs?: SalesNotificationPrefs | null;
+  /** When true, messaging reflects a repeat submission on an existing open lead. */
+  isReEnquiry?: boolean;
 };
 
 function formatSource(source: string | null | undefined): string {
@@ -239,7 +241,9 @@ export async function notifyNewLead(
   const service = lead.project_type ?? formatSource(lead.source);
   const location = extractLeadLocation(lead);
   const leadLink = magicToken ? magicLinkUrl(magicToken) : getPublicBaseUrl();
-  const fallbackSales = `New lead for ${clientName}. Name: ${lead.name ?? "—"} | Service: ${service} | Budget: ${budget} | Location: ${location}`;
+  const fallbackSales = opts?.isReEnquiry
+    ? `Re-enquiry for ${clientName}. Name: ${lead.name ?? "—"} | Service: ${service} | Budget: ${budget} | Location: ${location}`
+    : `New lead for ${clientName}. Name: ${lead.name ?? "—"} | Service: ${service} | Budget: ${budget} | Location: ${location}`;
 
   function newLeadTemplateVars(recipientName: string): Record<string, string> {
     return {

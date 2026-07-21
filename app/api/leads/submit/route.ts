@@ -50,10 +50,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    // Fire and forget — do not await, do not block response
-    processLeadIntelligence(result.leadId).catch((err) =>
-      console.error("Lead intelligence processing failed:", err)
-    );
+    if (!result.duplicate) {
+      processLeadIntelligence(result.leadId).catch((err) =>
+        console.error("Lead intelligence processing failed:", err)
+      );
+    }
 
     return NextResponse.json({
       success: true,

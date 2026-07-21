@@ -5,6 +5,7 @@ import { newMagicToken } from "@/lib/lead-helpers";
 import { notifyNewLead, notifyWhatsAppInboundMessage, notifyAdminsNoSalesperson } from "@/lib/notifications";
 import { parseSalesPrefs } from "@/lib/notification-prefs";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
+import { findOpenLeadByPhone } from "@/lib/leads/findOpenLeadByPhone";
 import { pickAssigneeForInbound } from "./assignment";
 import { fetchWhatsAppMediaAsset } from "./media";
 import { processWhatsAppQualification } from "./qualification";
@@ -198,20 +199,11 @@ export async function handleInboundWhatsAppMessage(opts: {
   }
 
   if (!leadId) {
-    const { data: openLeads } = await supabase
-      .from("leads")
-      .select("id, assigned_to_id, name, phone, status, contact_id")
-      .eq("client_id", client.id)
-      .or("is_archived.is.null,is_archived.eq.false")
-      .not("status", "in", '("WON","LOST","NOT_QUALIFIED")')
-      .order("updated_at", { ascending: false })
-      .limit(50);
-
-    const matched =
-      (openLeads ?? []).find((l) => {
-        const lp = String(l.phone ?? "").replace(/\D/g, "");
-        return lp === phoneDigits || lp.endsWith(phoneDigits) || phoneDigits.endsWith(lp);
-      }) ?? null;
+    const matched = await findOpenLeadByPhone({
+      supabase,
+      clientId: client.id,
+      phoneDigits,
+    });
 
     if (matched) {
       leadId = matched.id as string;

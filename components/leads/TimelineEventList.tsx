@@ -118,6 +118,20 @@ function EventContent({ event }: { event: TimelineEventRow }) {
     );
   }
 
+  if (event.event_type === "RE_ENQUIRY") {
+    const source = (d.source as string | null) ?? "Unknown";
+    const summary = d.form_data_summary as string | null;
+    return (
+      <div>
+        <p className="text-[13px] text-ink-primary">
+          Re-enquiry via{" "}
+          <span className="font-mono text-[11px] text-ink-secondary">{source.replace(/_/g, " ")}</span>
+        </p>
+        {summary ? <p className="mt-0.5 text-[12px] text-ink-tertiary">{summary}</p> : null}
+      </div>
+    );
+  }
+
   if (event.event_type === "INTAKE_LOGGED") {
     const outcome = d.outcome as string | null;
     return (

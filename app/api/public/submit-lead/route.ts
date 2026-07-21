@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createLead } from "@/lib/leads/createLead";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { processLeadIntelligence } from "@/lib/lead-intelligence";
 
 export async function POST(req: Request) {
   const { clientId, formData } = (await req.json()) as {
@@ -50,5 +51,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true, leadId: result.leadId });
+  if (!result.duplicate) {
+    processLeadIntelligence(result.leadId).catch((err) =>
+      console.error("Lead intelligence processing failed:", err)
+    );
+  }
+
+  return NextResponse.json({ ok: true, leadId: result.leadId, duplicate: result.duplicate });
 }

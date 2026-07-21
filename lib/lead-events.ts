@@ -12,7 +12,8 @@ type EventType =
   | "FOLLOW_UP_SET"
   | "MESSAGE_RECEIVED"
   | "MESSAGE_SENT"
-  | "CAMPAIGN_RESPONSE";
+  | "CAMPAIGN_RESPONSE"
+  | "RE_ENQUIRY";
 
 type Actor = {
   id: string | null;
@@ -79,6 +80,29 @@ export async function logLeadCreated({
       assigned_to_name: assignedToName ?? null,
       form_data_summary: formDataSummary ?? null,
       ...(requestedPackage ? { requestedPackage } : {}),
+    },
+  });
+}
+
+export async function logLeadReEnquiry({
+  leadId,
+  clientId,
+  source,
+  formDataSummary,
+}: {
+  leadId: string;
+  clientId: string;
+  source: string;
+  formDataSummary?: string;
+}): Promise<void> {
+  await logLeadEvent({
+    leadId,
+    clientId,
+    actor: { id: null, name: "System", role: "SYSTEM" },
+    eventType: "RE_ENQUIRY",
+    eventData: {
+      source,
+      form_data_summary: formDataSummary ?? null,
     },
   });
 }

@@ -5,11 +5,13 @@ import { notifyNewLead, notifyAdminsNoSalesperson } from "@/lib/notifications";
 import { parseSalesPrefs } from "@/lib/notification-prefs";
 import { background } from "@/lib/background";
 import { sendWhatsApp } from "@/lib/messaging/provider";
-import { logLeadCreated } from "@/lib/lead-events";
+import { logLeadCreated, logLeadReEnquiry } from "@/lib/lead-events";
 import { firstName } from "@/lib/messaging/whatsapp-vars";
 import { getPublicBaseUrl } from "@/lib/constants";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
+import { findOpenLeadByPhone, type OpenLeadMatch } from "@/lib/leads/findOpenLeadByPhone";
+import { findReturningAssignee } from "@/lib/whatsapp/assignment";
 import type { LeadRow, LeadSource, LeadStatus } from "@/types";
 
 export type RequestedPackageRef = {
@@ -42,6 +44,131 @@ export type CreateLeadInput = {
 };
 
 const AUTO_INBOUND_SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE"];
+const DEDUP_INBOUND_SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE"];
+
+type SalespersonRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  notification_prefs: unknown;
+  round_robin_order: number;
+};
+
+type ManagerRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  notification_prefs: unknown;
+};
+
+async function handleOpenLeadReEnquiry(opts: {
+  supabase: ReturnType<typeof createAdminClient>;
+  clientId: string;
+  source: LeadSource;
+  existingLead: OpenLeadMatch;
+  formData: Record<string, unknown>;
+  requestedPackage?: RequestedPackageRef;
+  skipNotifications?: boolean;
+  client: Record<string, unknown>;
+  salespeople: SalespersonRow[];
+  managers: ManagerRow[] | undefined;
+  fields: ReturnType<typeof parseLeadFields>;
+}): Promise<CreateLeadResult> {
+  const {
+    supabase,
+    clientId,
+    source,
+    existingLead,
+    formData,
+    requestedPackage,
+    skipNotifications,
+    client,
+    salespeople,
+    managers,
+    fields,
+  } = opts;
+
+  const existingFormData = (existingLead.form_data as Record<string, unknown> | null) ?? {};
+  const mergedFormData: Record<string, unknown> = requestedPackage
+    ? { ...existingFormData, ...formData, _requestedPackageName: requestedPackage.name }
+    : { ...existingFormData, ...formData };
+
+  const leadUpdate: Record<string, unknown> = {
+    form_data: mergedFormData,
+    updated_at: new Date().toISOString(),
+  };
+  if (fields.name) leadUpdate.name = fields.name;
+  if (fields.phone) leadUpdate.phone = fields.phone;
+  if (fields.email) leadUpdate.email = fields.email;
+  if (fields.budget) leadUpdate.budget = fields.budget;
+  if (fields.project_type) leadUpdate.project_type = fields.project_type;
+  if (fields.timeline) leadUpdate.timeline = fields.timeline;
+
+  const { data: updatedLead, error: updateErr } = await supabase
+    .from("leads")
+    .update(leadUpdate)
+    .eq("id", existingLead.id)
+    .select("*")
+    .single();
+
+  if (updateErr || !updatedLead) {
+    return { ok: false, error: updateErr?.message || "Update failed", code: "DB_ERROR" };
+  }
+
+  const leadRow = updatedLead as unknown as LeadRow;
+  const formDataSummary = prospectEnquiryLabel({
+    project_type: leadRow.project_type as string | null,
+    form_data: leadRow.form_data as Record<string, unknown> | null,
+    requestedPackageName: requestedPackage?.name ?? null,
+  });
+
+  background("logLeadReEnquiry", () =>
+    logLeadReEnquiry({
+      leadId: existingLead.id,
+      clientId,
+      source,
+      formDataSummary: formDataSummary ?? undefined,
+    })
+  );
+
+  const assignedId = existingLead.assigned_to_id;
+  if (!skipNotifications && assignedId) {
+    const sp = salespeople.find((s) => s.id === assignedId);
+    if (sp) {
+      const managerList = (managers ?? []).map((mgr) => ({
+        id: mgr.id as string,
+        name: mgr.name as string,
+        phone: (mgr.phone as string | null) ?? null,
+        email: (mgr.email as string | null) ?? null,
+        notification_prefs: mgr.notification_prefs,
+      }));
+      try {
+        await notifyNewLead(
+          leadRow,
+          {
+            id: sp.id as string,
+            name: sp.name as string,
+            phone: (sp.phone as string | null) ?? null,
+            email: (sp.email as string | null) ?? null,
+          },
+          managerList,
+          client.twilio_whatsapp_override as string | null,
+          client.name as string,
+          {
+            salesPrefs: parseSalesPrefs(sp.notification_prefs),
+            isReEnquiry: true,
+          }
+        );
+      } catch (err) {
+        console.error("[createLead] re-enquiry notifyNewLead failed:", err);
+      }
+    }
+  }
+
+  return { ok: true, leadId: existingLead.id, duplicate: true };
+}
 
 export type CreateLeadResult =
   | { ok: true; leadId: string; duplicate: boolean }
@@ -95,46 +222,66 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     return { ok: false, error: "Client not accepting leads", code: "INACTIVE" };
   }
 
+  const fields = parseLeadFields(formData);
+
+  let phoneDigits: string | null = null;
+  try {
+    phoneDigits = fields.phone
+      ? normalizePhoneForWhatsApp(fields.phone, client.dial_code || "263")
+      : null;
+  } catch {
+    phoneDigits = null;
+  }
+
   let assignedId: string | null = null;
-  let list: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string | null;
-    notification_prefs: unknown;
-    round_robin_order: number;
-  }[] = [];
-  let managers:
-    | {
-        id: string;
-        name: string;
-        email: string;
-        phone: string | null;
-        notification_prefs: unknown;
-      }[]
-    | undefined;
+  let list: SalespersonRow[] = [];
+  let managers: ManagerRow[] | undefined;
+
+  const { data: salespeople } = await supabase
+    .from("users")
+    .select("id, name, email, phone, notification_prefs, round_robin_order")
+    .eq("client_id", clientId)
+    .eq("role", "SALESPERSON")
+    .eq("is_active", true)
+    .order("round_robin_order", { ascending: true });
+
+  const { data: managersData } = await supabase
+    .from("users")
+    .select("id, name, email, phone, notification_prefs")
+    .eq("client_id", clientId)
+    .eq("role", "CLIENT_MANAGER")
+    .eq("is_active", true);
+
+  list = (salespeople ?? []) as SalespersonRow[];
+  managers = (managersData ?? undefined) as ManagerRow[] | undefined;
+
+  if (
+    DEDUP_INBOUND_SOURCES.includes(source) &&
+    phoneDigits &&
+    !overrideAssigneeId &&
+    !forceUnassigned
+  ) {
+    const existingOpen = await findOpenLeadByPhone({ supabase, clientId, phoneDigits });
+    if (existingOpen) {
+      return handleOpenLeadReEnquiry({
+        supabase,
+        clientId,
+        source,
+        existingLead: existingOpen,
+        formData,
+        requestedPackage,
+        skipNotifications,
+        client: client as Record<string, unknown>,
+        salespeople: list,
+        managers,
+        fields,
+      });
+    }
+  }
 
   if (forceUnassigned) {
     assignedId = null;
   } else {
-    const { data: salespeople } = await supabase
-      .from("users")
-      .select("id, name, email, phone, notification_prefs, round_robin_order")
-      .eq("client_id", clientId)
-      .eq("role", "SALESPERSON")
-      .eq("is_active", true)
-      .order("round_robin_order", { ascending: true });
-
-    const { data: managersData } = await supabase
-      .from("users")
-      .select("id, name, email, phone, notification_prefs")
-      .eq("client_id", clientId)
-      .eq("role", "CLIENT_MANAGER")
-      .eq("is_active", true);
-
-    list = (salespeople ?? []) as typeof list;
-    managers = managersData ?? undefined;
-
     const assignmentMode = assignmentModeOverride ?? (client.assignment_mode as string | null) ?? "direct";
 
     if (overrideAssigneeId != null && overrideAssigneeId !== "") {
@@ -149,17 +296,26 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
       (assignmentMode === "round_robin" ||
         (assignmentMode === "direct" && AUTO_INBOUND_SOURCES.includes(source)))
     ) {
-      let rr = (client.round_robin_index as number) ?? 0;
-      const idx = rr % list.length;
-      assignedId = list[idx].id as string;
-      rr = (rr + 1) % list.length;
-      await supabase.from("clients").update({ round_robin_index: rr, updated_at: new Date().toISOString() }).eq("id", clientId);
+      let pickedFromReturning = false;
+      if (DEDUP_INBOUND_SOURCES.includes(source) && phoneDigits) {
+        const returningId = await findReturningAssignee({ supabase, clientId, phoneDigits });
+        if (returningId && list.some((s) => s.id === returningId)) {
+          assignedId = returningId;
+          pickedFromReturning = true;
+        }
+      }
+
+      if (!pickedFromReturning) {
+        let rr = (client.round_robin_index as number) ?? 0;
+        const idx = rr % list.length;
+        assignedId = list[idx].id as string;
+        rr = (rr + 1) % list.length;
+        await supabase.from("clients").update({ round_robin_index: rr, updated_at: new Date().toISOString() }).eq("id", clientId);
+      }
     } else {
       assignedId = null;
     }
   }
-
-  const fields = parseLeadFields(formData);
 
   // Ensure every lead is linked to a contact. Hub callers pass contactId already; for all
   // other paths (form, Facebook, admin), find-or-create by canonical phone within the client.

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { phonesMatch } from "@/lib/leads/phone-match";
 
 type Salesperson = {
   id: string;
@@ -49,10 +50,7 @@ export async function findReturningAssignee(opts: {
     .order("updated_at", { ascending: false })
     .limit(50);
 
-  const matched = (priorLeads ?? []).find((l) => {
-    const lp = String(l.phone ?? "").replace(/\D/g, "");
-    return lp === phoneDigits || lp.endsWith(phoneDigits) || phoneDigits.endsWith(lp);
-  });
+  const matched = (priorLeads ?? []).find((l) => phonesMatch(l.phone as string | null, phoneDigits));
 
   const assigneeId = (matched?.assigned_to_id as string | null) ?? null;
   if (!assigneeId) return null;
