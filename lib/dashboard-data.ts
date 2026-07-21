@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchCallLogsByLeadIds } from "@/lib/call-logs";
 import { firstCallResponseMinutes, getAvgResponseMinutes } from "@/lib/metrics";
 import type { LeadSource, LeadStatus } from "@/types";
 import type { CampaignQualifiers } from "@/lib/lead-lanes";
@@ -269,13 +270,7 @@ function slaCompliancePercent(
   return Math.round((ok / leads.length) * 100);
 }
 
-const ACTIVE_PIPELINE_STATUSES = [
-  "NEW",
-  "CONTACTED",
-  "QUALIFIED",
-  "NEGOTIATING",
-  "PROPOSAL_SENT",
-] as const;
+const ACTIVE_PIPELINE_STATUSES = ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"] as const;
 
 async function fetchActiveClientsForDashboard(
   supabase: ReturnType<typeof createAdminClient>
@@ -297,32 +292,6 @@ async function fetchActiveClientsForDashboard(
     .from("clients")
     .select("id, name, industry, response_time_limit_hours, is_active")
     .order("name");
-}
-
-async function fetchCallLogsByLeadIds(
-  supabase: ReturnType<typeof createAdminClient>,
-  leadIds: string[]
-): Promise<{ lead_id: string; created_at: string }[]> {
-  if (leadIds.length === 0) return [];
-
-  const chunkSize = 100;
-  const rows: { lead_id: string; created_at: string }[] = [];
-
-  for (let i = 0; i < leadIds.length; i += chunkSize) {
-    const chunk = leadIds.slice(i, i + chunkSize);
-    const { data, error } = await supabase
-      .from("call_logs")
-      .select("lead_id, created_at")
-      .in("lead_id", chunk);
-
-    if (error) {
-      console.error("[dashboard-data] call_logs chunk failed:", error.message);
-      continue;
-    }
-    rows.push(...((data ?? []) as { lead_id: string; created_at: string }[]));
-  }
-
-  return rows;
 }
 
 export async function fetchAgencyDashboardData() {
@@ -402,7 +371,29 @@ export async function fetchAgencyDashboardData() {
     pipelineLeadsRes.error;
   if (batchErr) {
     console.error("[dashboard-data] batch 1 failed:", batchErr.message);
-    throw new Error(`Dashboard data (batch 1): ${batchErr.message}`);
+    return {
+      leadsToday: 0,
+      leadsYesterday: 0,
+      dayDeltaPct: 0,
+      leadsDeltaNeutral: true,
+      contactRate: 0,
+      contactRateLastWeek: 0,
+      contactRateDeltaPts: 0,
+      dealsWonMTD: { count: 0, valueSum: 0 },
+      avgResponseTime: null,
+      avgResponseDeltaMinutes: null,
+      uncontactedFlags: [],
+      recentLeads: [],
+      clientPerf: [],
+      pipelineByStatus: {
+        NEW: 0,
+        CONTACTED: 0,
+        QUALIFIED: 0,
+        NEGOTIATING: 0,
+        WON: 0,
+        LOST: 0,
+      },
+    };
   }
 
   const monthLeadRows = monthLeadsAllRes.data ?? [];
@@ -529,8 +520,9 @@ export async function fetchAgencyDashboardData() {
     supabase.from("leads").select("id, client_id").eq("status", "WON").gte("updated_at", monthStart),
   ]);
   if (weekByClientRes.error || wonClientRes.error) {
-    throw new Error(
-      `Dashboard data (batch 2): ${weekByClientRes.error?.message ?? wonClientRes.error?.message}`
+    console.error(
+      "[dashboard-data] batch 2 failed:",
+      weekByClientRes.error?.message ?? wonClientRes.error?.message
     );
   }
   const weekByClientData = weekByClientRes.data;

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchCallLogsByLeadIds } from "@/lib/call-logs";
 
 export type AvgResponseScope = { clientId?: string };
 
@@ -51,13 +52,9 @@ export async function getAvgResponseMinutes(
   if (leads.length === 0) return null;
 
   const ids = leads.map((l) => l.id);
-  const { data: logRows, error: logErr } = await supabase
-    .from("call_logs")
-    .select("lead_id, created_at")
-    .in("lead_id", ids);
-  if (logErr) throw new Error(`getAvgResponseMinutes (logs): ${logErr.message}`);
+  const logRows = await fetchCallLogsByLeadIds(supabase, ids);
 
-  return firstCallResponseMinutes(leads, (logRows ?? []) as { lead_id: string; created_at: string }[]);
+  return firstCallResponseMinutes(leads, logRows);
 }
 
 export { startOfMonth, endOfMonth } from "date-fns";
