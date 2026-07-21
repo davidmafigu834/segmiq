@@ -234,8 +234,6 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
   }
 
   let assignedId: string | null = null;
-  let list: SalespersonRow[] = [];
-  let managers: ManagerRow[] | undefined;
 
   const { data: salespeople } = await supabase
     .from("users")
@@ -252,8 +250,8 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     .eq("role", "CLIENT_MANAGER")
     .eq("is_active", true);
 
-  list = (salespeople ?? []) as SalespersonRow[];
-  managers = (managersData ?? undefined) as ManagerRow[] | undefined;
+  const list = (salespeople ?? []) as SalespersonRow[];
+  const managers = (managersData ?? undefined) as ManagerRow[] | undefined;
 
   if (
     DEDUP_INBOUND_SOURCES.includes(source) &&
