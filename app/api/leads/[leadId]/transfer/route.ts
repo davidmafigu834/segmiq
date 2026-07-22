@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadReassigned } from "@/lib/lead-events";
 import { notifyBulkReassignment } from "@/lib/notifications";
 import { background } from "@/lib/background";
+import { isRoundRobinEligibleUserId } from "@/lib/auth/sales-capabilities";
 
 const bodySchema = z.object({
   assigned_to_id: z.string().uuid(),
@@ -53,18 +54,16 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     return NextResponse.json({ error: "Already assigned to you" }, { status: 400 });
   }
 
+  const eligible = await isRoundRobinEligibleUserId(supabase, clientId, assigned_to_id);
+  if (!eligible) {
+    return NextResponse.json({ error: "Assignee not found" }, { status: 400 });
+  }
+
   const { data: assignee } = await supabase
     .from("users")
     .select("id, name")
     .eq("id", assigned_to_id)
-    .eq("client_id", clientId)
-    .eq("role", "SALESPERSON")
-    .eq("is_active", true)
     .maybeSingle();
-
-  if (!assignee) {
-    return NextResponse.json({ error: "Assignee not found" }, { status: 400 });
-  }
 
   const prevAssigneeId = (lead.assigned_to_id as string | null) ?? null;
   if (prevAssigneeId === assigned_to_id) {

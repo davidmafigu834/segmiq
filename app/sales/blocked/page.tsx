@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { Lock } from "lucide-react";
 import { authOptions } from "@/lib/auth";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function SalesBlockedPage() {
   const session = await getServerSession(authOptions);
   if (!session?.clientId) redirect("/login");
-  if (session.role !== "SALESPERSON") redirect("/login");
+  if (!canActAsSalesperson(session)) redirect("/login");
 
   const supabase = createAdminClient();
   const { data: sub } = await supabase

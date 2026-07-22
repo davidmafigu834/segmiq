@@ -18,6 +18,7 @@ export type VerifiedUser = {
   role: UserRole;
   clientId: string | null;
   clientMode: ClientMode;
+  alsoSells: boolean;
   sessionVersion: number;
 };
 
@@ -30,7 +31,7 @@ export async function verifyCredentials(
   const supabase = createAdminClient();
   const { data: user, error } = await supabase
     .from("users")
-    .select("id, name, email, password, role, client_id, is_active, session_version")
+    .select("id, name, email, password, role, client_id, is_active, session_version, also_sells")
     .eq("email", normalizedEmail)
     .maybeSingle();
   const dev = process.env.NODE_ENV === "development";
@@ -73,6 +74,7 @@ export async function verifyCredentials(
     role: user.role as UserRole,
     clientId,
     clientMode,
+    alsoSells: Boolean((user as { also_sells?: boolean }).also_sells),
     sessionVersion: Number((user as { session_version?: number }).session_version ?? 0),
   };
 }
@@ -122,6 +124,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.clientId = user.clientId ?? null;
         token.clientMode = (user as { clientMode?: ClientMode }).clientMode ?? "team";
+        token.alsoSells = Boolean((user as { alsoSells?: boolean }).alsoSells);
         token.sessionVersion = (user as { sessionVersion?: number }).sessionVersion ?? 0;
         token.email = (user as { email?: string | null }).email ?? null;
         token.name = (user as { name?: string | null }).name ?? null;
@@ -137,6 +140,7 @@ export const authOptions: NextAuthOptions = {
       session.role = token.role as UserRole;
       session.clientId = (token.clientId as string | null) ?? null;
       session.clientMode = (token.clientMode as ClientMode | undefined) ?? "team";
+      session.alsoSells = Boolean(token.alsoSells);
       session.realUserId = (token.realUserId as string | null | undefined) ?? null;
       session.realUserName = (token.realUserName as string | null | undefined) ?? null;
       session.isImpersonating = Boolean(token.realUserId);

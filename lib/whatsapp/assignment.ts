@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { phonesMatch } from "@/lib/leads/phone-match";
+import {
+  fetchRoundRobinEligibleUsers,
+  isRoundRobinEligibleUserId,
+} from "@/lib/auth/sales-capabilities";
 
 type Salesperson = {
   id: string;
@@ -55,16 +59,8 @@ export async function findReturningAssignee(opts: {
   const assigneeId = (matched?.assigned_to_id as string | null) ?? null;
   if (!assigneeId) return null;
 
-  const { data: user } = await supabase
-    .from("users")
-    .select("id")
-    .eq("id", assigneeId)
-    .eq("client_id", clientId)
-    .eq("role", "SALESPERSON")
-    .eq("is_active", true)
-    .maybeSingle();
-
-  return user?.id ? (user.id as string) : null;
+  const eligible = await isRoundRobinEligibleUserId(supabase, clientId, assigneeId);
+  return eligible ? assigneeId : null;
 }
 
 export async function pickAssigneeForInbound(opts: {
@@ -76,15 +72,9 @@ export async function pickAssigneeForInbound(opts: {
   const { supabase, clientId, assignmentMode, phoneDigits } = opts;
   const mode = assignmentMode === "pool" || assignmentMode === "round_robin" ? assignmentMode : "direct";
 
-  const { data: salespeople } = await supabase
-    .from("users")
-    .select("id, name, email, phone, notification_prefs, round_robin_order")
-    .eq("client_id", clientId)
-    .eq("role", "SALESPERSON")
-    .eq("is_active", true)
-    .order("round_robin_order", { ascending: true });
+  const { data: salespeople } = await fetchRoundRobinEligibleUsers(supabase, clientId);
 
-  const list = (salespeople ?? []) as Salesperson[];
+  const list = (salespeople ?? []) as unknown as Salesperson[];
   if (list.length === 0) {
     return { assigneeId: null, salespeople: list };
   }

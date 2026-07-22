@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageClientTeam } from "@/lib/auth/permissions";
+import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -28,16 +29,14 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   const supabase = createAdminClient();
   const ids = parsed.data.orderedUserIds;
 
-  const { data: sales } = await supabase
-    .from("users")
-    .select("id")
-    .eq("client_id", params.clientId)
-    .eq("role", "SALESPERSON")
-    .eq("is_active", true);
+  const { data: sales } = await fetchRoundRobinEligibleUsers(supabase, params.clientId);
 
-  const valid = new Set((sales ?? []).map((s) => s.id as string));
+  const valid = new Set(((sales ?? []) as unknown as Array<{ id: string }>).map((s) => s.id));
   if (ids.length !== valid.size || ids.some((id) => !valid.has(id))) {
-    return NextResponse.json({ error: "Ordered list must include each salesperson exactly once" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Ordered list must include each active salesperson exactly once" },
+      { status: 400 }
+    );
   }
 
   for (let i = 0; i < ids.length; i++) {

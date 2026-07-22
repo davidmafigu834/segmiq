@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireRoles } from "@/lib/api-guards";
+import { requireSalesActor } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { saveCallLog } from "@/lib/call-log-save";
 import { logCallBodySchema } from "@/lib/call-log-schema";
@@ -8,7 +8,7 @@ import type { CallResult, ReachOutcome } from "@/lib/call-log-constants";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const guard = await requireRoles(["SALESPERSON"]);
+  const guard = await requireSalesActor();
   if (guard.error) return guard.error;
   const { session } = guard;
 
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       actor: {
         id: session!.userId,
         name: session!.user.name ?? "Unknown",
-        role: "SALESPERSON",
+        role: session!.role,
       },
       reachOutcome: reachOutcome as ReachOutcome,
       result: (result ?? null) as CallResult | null,

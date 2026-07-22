@@ -14,5 +14,6 @@ export async function getAuthFromRequest(req?: Request): Promise<ApiAuth | null>
     userId: session.userId,
     role: session.role,
     clientId: session.clientId ?? null,
+    alsoSells: session.alsoSells,
   };
 }

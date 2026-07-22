@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import type { UserRole } from "@/types";
 
 export const CLIENT_MANAGER_READ_ONLY = "Client managers have read-only access";
@@ -23,6 +24,13 @@ export async function requireAgencyAdmin(): Promise<
 type LeadScope = {
   client_id: string;
   assigned_to_id: string | null;
+};
+
+type AuthSession = {
+  userId?: string | null;
+  role?: UserRole | null;
+  clientId?: string | null;
+  alsoSells?: boolean | null;
 };
 
 export function canReassignLeads(session: {
@@ -53,12 +61,9 @@ export async function canModifyLead(
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
 > {
   const auth = req ? await getAuthFromRequest(req) : null;
-  const session = auth ?? (await getServerSession(authOptions));
+  const session = (auth ?? (await getServerSession(authOptions))) as AuthSession | null;
   if (!session?.userId) {
     return { allowed: false, reason: "Unauthorized", status: 401 };
-  }
-  if (session.role === "CLIENT_MANAGER") {
-    return { allowed: false, reason: CLIENT_MANAGER_READ_ONLY, status: 403 };
   }
 
   const supabase = createAdminClient();
@@ -77,15 +82,19 @@ export async function canModifyLead(
     assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
   };
 
+  if (session.role === "CLIENT_MANAGER" && !canActAsSalesperson(session)) {
+    return { allowed: false, reason: CLIENT_MANAGER_READ_ONLY, status: 403 };
+  }
+
   if (session.role === "AGENCY_ADMIN") {
     return { allowed: true, lead: scope, userId: session.userId, role: session.role };
   }
 
-  if (session.role === "SALESPERSON") {
+  if (canActAsSalesperson(session)) {
     if (scope.assigned_to_id !== session.userId) {
       return { allowed: false, reason: "Forbidden", status: 403 };
     }
-    return { allowed: true, lead: scope, userId: session.userId, role: session.role };
+    return { allowed: true, lead: scope, userId: session.userId, role: session.role as UserRole };
   }
 
   return { allowed: false, reason: "Forbidden", status: 403 };
@@ -135,7 +144,7 @@ export async function canReadLead(
   req?: Request
 ): Promise<{ ok: true } | { ok: false; status: 401 | 404 }> {
   const auth = req ? await getAuthFromRequest(req) : null;
-  const session = auth ?? (await getServerSession(authOptions));
+  const session = (auth ?? (await getServerSession(authOptions))) as AuthSession | null;
   if (!session?.userId) {
     return { ok: false, status: 401 };
   }
@@ -155,14 +164,14 @@ export async function canReadLead(
     return { ok: true };
   }
 
-  if (session.role === "CLIENT_MANAGER") {
+  if (session.role === "CLIENT_MANAGER" && !canActAsSalesperson(session)) {
     if (lead.client_id !== session.clientId) {
       return { ok: false, status: 404 };
     }
     return { ok: true };
   }
 
-  if (session.role === "SALESPERSON") {
+  if (canActAsSalesperson(session)) {
     if (lead.assigned_to_id === session.userId) {
       return { ok: true };
     }

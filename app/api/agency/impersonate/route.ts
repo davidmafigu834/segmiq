@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       .maybeSingle(),
     supabase
       .from("users")
-      .select("id, name, email, role, client_id, is_active")
+      .select("id, name, email, role, client_id, is_active, also_sells")
       .eq("id", body.userId)
       .maybeSingle(),
   ]);
@@ -65,6 +65,7 @@ export async function POST(req: Request) {
     role,
     clientId,
     clientMode,
+    alsoSells: Boolean((target as { also_sells?: boolean }).also_sells),
     sessionVersion: Number((admin as { session_version?: number }).session_version ?? 0),
     email: (target.email as string | null) ?? null,
     name: target.name as string,

@@ -41,6 +41,8 @@ export interface UserRow {
   client_id: string | null;
   phone: string | null;
   is_active: boolean;
+  /** When true on CLIENT_MANAGER, user can work leads like a salesperson. */
+  also_sells: boolean;
   created_at: string;
 }
 

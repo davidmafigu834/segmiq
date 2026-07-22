@@ -46,10 +46,19 @@ type UserRow = {
   email: string;
   phone: string | null;
   is_active: boolean;
+  role?: string;
+  also_sells?: boolean;
   round_robin_order: number;
   uncontacted_lead_count?: number;
 };
-type ManagerRow = { id: string; name: string; email: string; phone: string | null; is_active: boolean };
+type ManagerRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  is_active: boolean;
+  also_sells?: boolean;
+};
 
 export function ClientSettingsClient({
   clientId,
@@ -532,6 +541,14 @@ export function ClientSettingsClient({
   }
 
   async function toggleManager(id: string, is_active: boolean) {
+    const mgr = managers.find((m) => m.id === id);
+    if (!is_active && mgr?.also_sells) {
+      const ok = window.confirm(
+        `${mgr.name} is a selling manager. Deactivating will turn off selling and redistribute their uncontacted leads. Continue?`
+      );
+      if (!ok) return;
+    }
+
     const res = await fetch(`/api/clients/${clientId}/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -543,6 +560,81 @@ export function ClientSettingsClient({
       return;
     }
     setManagers((prev) => prev.map((m) => (m.id === id ? { ...m, is_active } : m)));
+    if (mgr?.also_sells && !is_active) {
+      setSales((prev) => prev.filter((s) => s.id !== id));
+    }
+  }
+
+  async function toggleAlsoSells(manager: ManagerRow, also_sells: boolean) {
+    if (also_sells && !manager.phone) {
+      setToast("Add a phone number for this manager before enabling Also sells.");
+      return;
+    }
+
+    if (!also_sells) {
+      const count = sales.find((s) => s.id === manager.id)?.uncontacted_lead_count ?? 0;
+      if (count > 0) {
+        const ok = window.confirm(
+          `${manager.name} has ${count} uncontacted lead(s). Turning off Also sells will redistribute them. Continue?`
+        );
+        if (!ok) return;
+      }
+    }
+
+    const res = await fetch(`/api/clients/${clientId}/users/${manager.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ also_sells, phone: manager.phone ?? undefined }),
+    });
+    const j = (await res.json()) as {
+      error?: string;
+      manager?: ManagerRow & { round_robin_order?: number };
+      migration?: { migrated: number; unassigned: number };
+      requiresReauth?: boolean;
+    };
+    if (!res.ok) {
+      setToast(j.error ?? "Failed");
+      return;
+    }
+
+    const updated = j.manager ?? { ...manager, also_sells };
+    setManagers((prev) => prev.map((m) => (m.id === manager.id ? { ...m, ...updated } : m)));
+
+    if (also_sells && updated) {
+      setSales((prev) => {
+        const without = prev.filter((s) => s.id !== manager.id);
+        return [
+          ...without,
+          {
+            id: manager.id,
+            name: manager.name,
+            email: manager.email,
+            phone: manager.phone,
+            is_active: manager.is_active,
+            role: "CLIENT_MANAGER",
+            also_sells: true,
+            round_robin_order: updated.round_robin_order ?? without.length,
+            uncontacted_lead_count: 0,
+          },
+        ].sort((a, b) => a.round_robin_order - b.round_robin_order);
+      });
+    } else {
+      setSales((prev) => prev.filter((s) => s.id !== manager.id));
+    }
+
+    if (j.migration && j.migration.migrated + j.migration.unassigned > 0) {
+      setToast(
+        `Also sells off. ${j.migration.migrated} uncontacted lead(s) reassigned${j.migration.unassigned ? `, ${j.migration.unassigned} left unassigned` : ""}.`
+      );
+    } else if (also_sells) {
+      setToast(
+        j.requiresReauth
+          ? "Also sells enabled. Sign in again to open the Sales portal and mobile app."
+          : "Also sells enabled — manager can log calls and receive leads."
+      );
+    } else {
+      setToast("Also sells turned off.");
+    }
   }
 
   async function removeManager(id: string) {
@@ -840,6 +932,9 @@ export function ClientSettingsClient({
               <p className="mt-1 text-sm text-ink-secondary">
                 Clients can have multiple active managers with full team oversight.
               </p>
+              <p className="mt-1 text-xs text-ink-tertiary">
+                Turn on Also sells when a manager takes calls and closes deals like a salesperson.
+              </p>
 
               <div className="mt-4 overflow-hidden rounded-xl border border-border">
                 <table className="w-full text-left text-sm">
@@ -848,6 +943,7 @@ export function ClientSettingsClient({
                       <th className="px-3 py-2">Manager</th>
                       <th className="px-3 py-2">Email</th>
                       <th className="px-3 py-2">Phone</th>
+                      <th className="px-3 py-2">Also sells</th>
                       <th className="px-3 py-2">Active</th>
                       <th className="px-3 py-2 text-right"> </th>
                     </tr>
@@ -855,7 +951,7 @@ export function ClientSettingsClient({
                   <tbody>
                     {managers.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-3 py-8 text-center text-sm text-ink-tertiary">
+                        <td colSpan={6} className="px-3 py-8 text-center text-sm text-ink-tertiary">
                           No managers yet. Add the first manager above.
                         </td>
                       </tr>
@@ -870,6 +966,15 @@ export function ClientSettingsClient({
                           </td>
                           <td className="px-3 py-2 font-mono text-xs">{m.email}</td>
                           <td className="px-3 py-2 text-xs">{m.phone ?? "—"}</td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(m.also_sells)}
+                              disabled={!m.is_active}
+                              title={!m.phone ? "Add a phone number first" : undefined}
+                              onChange={(e) => void toggleAlsoSells(m, e.target.checked)}
+                            />
+                          </td>
                           <td className="px-3 py-2">
                             <input
                               type="checkbox"

@@ -57,6 +57,7 @@ export async function ClientManagerLayout({
     { href: "/client/team", label: "Team", icon: "users" as const },
     { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
     { href: "/client/billing", label: "Billing", icon: "receipt" as const },
+    ...(session?.alsoSells ? [{ href: "/sales/dashboard", label: "My leads", icon: "phone" as const }] : []),
   ];
 
   const secondaryNav = [

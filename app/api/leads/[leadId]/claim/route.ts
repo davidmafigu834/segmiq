@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireRoles } from "@/lib/api-guards";
+import { requireSalesActor } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadAssigned } from "@/lib/lead-events";
+import { isRoundRobinEligibleUserId } from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(_req: Request, { params }: { params: { leadId: string } }) {
-  const g = await requireRoles(["SALESPERSON"]);
+  const g = await requireSalesActor();
   if ("error" in g) return g.error;
   const { session } = g;
 
@@ -30,11 +31,20 @@ export async function POST(_req: Request, { params }: { params: { leadId: string
     return NextResponse.json({ error: "Lead is already assigned" }, { status: 409 });
   }
 
+  const eligible = await isRoundRobinEligibleUserId(
+    supabase,
+    lead.client_id as string,
+    session!.userId
+  );
+
+  if (!eligible) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { data: rep } = await supabase
     .from("users")
-    .select("id, client_id, name")
-    .eq("id", session.userId)
-    .eq("role", "SALESPERSON")
+    .select("id, client_id, name, role")
+    .eq("id", session!.userId)
     .eq("is_active", true)
     .maybeSingle();
 
@@ -59,7 +69,7 @@ export async function POST(_req: Request, { params }: { params: { leadId: string
   const now = new Date().toISOString();
   const { error: updateErr } = await supabase
     .from("leads")
-    .update({ assigned_to_id: session.userId, updated_at: now })
+    .update({ assigned_to_id: session!.userId, updated_at: now })
     .eq("id", params.leadId)
     .is("assigned_to_id", null);
 
@@ -67,12 +77,13 @@ export async function POST(_req: Request, { params }: { params: { leadId: string
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
 
-  const actorName = (rep.name as string) ?? session.user?.name ?? "Unknown";
+  const actorName = (rep.name as string) ?? session!.user?.name ?? "Unknown";
+  const actorRole = (rep.role as string) ?? session!.role;
   await logLeadAssigned({
     leadId: params.leadId,
     clientId: lead.client_id as string,
-    actor: { id: session.userId, name: actorName, role: "SALESPERSON" },
-    assignedToId: session.userId,
+    actor: { id: session!.userId, name: actorName, role: actorRole },
+    assignedToId: session!.userId,
     assignedToName: actorName,
   });
 
@@ -84,7 +95,7 @@ export async function POST(_req: Request, { params }: { params: { leadId: string
 
   return NextResponse.json({
     ok: true,
-    assignedToId: updated?.assigned_to_id ?? session.userId,
-    assignee: { id: session.userId, name: actorName },
+    assignedToId: updated?.assigned_to_id ?? session!.userId,
+    assignee: { id: session!.userId, name: actorName },
   });
 }

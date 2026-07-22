@@ -12,6 +12,7 @@ import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { findOpenLeadByPhone, type OpenLeadMatch } from "@/lib/leads/findOpenLeadByPhone";
 import { findReturningAssignee } from "@/lib/whatsapp/assignment";
+import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 import type { LeadRow, LeadSource, LeadStatus } from "@/types";
 
 export type RequestedPackageRef = {
@@ -235,13 +236,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
 
   let assignedId: string | null = null;
 
-  const { data: salespeople } = await supabase
-    .from("users")
-    .select("id, name, email, phone, notification_prefs, round_robin_order")
-    .eq("client_id", clientId)
-    .eq("role", "SALESPERSON")
-    .eq("is_active", true)
-    .order("round_robin_order", { ascending: true });
+  const { data: salespeople } = await fetchRoundRobinEligibleUsers(supabase, clientId);
 
   const { data: managersData } = await supabase
     .from("users")
@@ -250,7 +245,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     .eq("role", "CLIENT_MANAGER")
     .eq("is_active", true);
 
-  const list = (salespeople ?? []) as SalespersonRow[];
+  const list = (salespeople ?? []) as unknown as SalespersonRow[];
   const managers = (managersData ?? undefined) as ManagerRow[] | undefined;
 
   if (

@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
-import { requireRoles } from "@/lib/api-guards";
+import { requireSalesActor } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/lead-events";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request, { params }: { params: { leadId: string } }) {
-  const g = await requireRoles(["SALESPERSON"]);
+  const g = await requireSalesActor();
   if ("error" in g) return g.error;
   const { session } = g;
 
   const supabase = createAdminClient();
 
-  // Verify this lead is assigned to the current salesperson
   const { data: lead } = await supabase
     .from("leads")
     .select("id, client_id, assigned_to_id, name")
@@ -32,11 +31,10 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   }
   const note = typeof body.note === "string" && body.note.trim() ? body.note.trim() : `Opened WhatsApp to message ${(lead.name as string | null)?.split(" ")[0] ?? "Lead"}`;
 
-  // Fire-and-forget logging
   await logLeadEvent({
     leadId: params.leadId,
     clientId: lead.client_id as string,
-    actor: { id: session!.userId, name: session!.user.name ?? "Unknown", role: "SALESPERSON" },
+    actor: { id: session!.userId, name: session!.user?.name ?? "Unknown", role: session!.role },
     eventType: "NOTE_ADDED",
     eventData: { note },
   });

@@ -31,6 +31,7 @@ export type SessionTokenPayload = {
   role: UserRole;
   clientId: string | null;
   clientMode: ClientMode;
+  alsoSells?: boolean;
   sessionVersion: number;
   email: string | null;
   name: string;
@@ -48,6 +49,7 @@ export async function setSessionToken(payload: SessionTokenPayload): Promise<voi
       role: payload.role,
       clientId: payload.clientId,
       clientMode: payload.clientMode,
+      alsoSells: Boolean(payload.alsoSells),
       sessionVersion: payload.sessionVersion,
       email: payload.email,
       name: payload.name,

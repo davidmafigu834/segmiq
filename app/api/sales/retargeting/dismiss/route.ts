@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireRoles } from "@/lib/api-guards";
+import { requireSalesActor } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const guard = await requireRoles(["SALESPERSON"]);
+  const guard = await requireSalesActor();
   if (guard.error) return guard.error;
 
   const body = await req.json().catch(() => ({}));

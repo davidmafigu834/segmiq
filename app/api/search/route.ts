@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -56,22 +57,23 @@ export async function GET(req: Request) {
     .or(`name.ilike.${pattern},phone.ilike.${pattern},email.ilike.${pattern}`)
     .limit(8);
 
-  if (role === "CLIENT_MANAGER" && clientId) {
+  const salesScoped = canActAsSalesperson({ userId, role, alsoSells: session.alsoSells });
+
+  if (role === "CLIENT_MANAGER" && clientId && !salesScoped) {
     leadsQ = leadsQ.eq("client_id", clientId);
   }
-  if (role === "SALESPERSON") {
+  if (salesScoped) {
     leadsQ = leadsQ.eq("assigned_to_id", userId);
   }
 
   const { data: leads } = await leadsQ;
   for (const lead of leads ?? []) {
     const cl = (lead as { clients?: { name?: string; slug?: string } | null }).clients;
-    const href =
-      role === "SALESPERSON"
-        ? `/sales/leads?lead=${lead.id}`
-        : role === "CLIENT_MANAGER"
-          ? `/client/leads/pipeline?lead=${lead.id}`
-          : `/dashboard/leads?lead=${lead.id}`;
+    const href = salesScoped
+      ? `/sales/leads?lead=${lead.id}`
+      : role === "CLIENT_MANAGER"
+        ? `/client/leads/pipeline?lead=${lead.id}`
+        : `/dashboard/leads?lead=${lead.id}`;
     results.push({
       type: "lead",
       id: lead.id as string,

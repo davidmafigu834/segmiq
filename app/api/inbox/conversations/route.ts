@@ -31,6 +31,7 @@ export async function GET(req: Request) {
     role: session.role,
     userId: session.userId,
     clientId,
+    alsoSells: session.alsoSells,
   });
 
   return NextResponse.json({ conversations });

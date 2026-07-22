@@ -10,6 +10,11 @@ import { hashPassword } from "@/lib/password";
 import { normalizeToE164 } from "@/lib/phone-validate";
 import { sendEmail } from "@/lib/email/resend";
 import { inviteSalespersonEmail } from "@/lib/email/templates/invite-salesperson";
+import {
+  fetchRoundRobinEligibleUsers,
+  getNextRoundRobinOrder,
+  ROUND_ROBIN_ELIGIBLE_OR,
+} from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +39,7 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     if (role === "CLIENT_MANAGER") {
       const { data, error } = await supabase
         .from("users")
-        .select("id, name, email, phone, is_active")
+        .select("id, name, email, phone, is_active, also_sells")
         .eq("client_id", params.clientId)
         .eq("role", "CLIENT_MANAGER")
         .order("created_at", { ascending: true });
@@ -44,17 +49,14 @@ export async function GET(req: Request, { params }: { params: { clientId: string
       return NextResponse.json({ users: data ?? [] });
     }
 
-    const { data, error } = await supabase
-      .from("users")
-      .select("id, name, email, phone, is_active, round_robin_order")
-      .eq("client_id", params.clientId)
-      .eq("role", "SALESPERSON")
-      .order("round_robin_order", { ascending: true });
+    const { data, error } = await fetchRoundRobinEligibleUsers(supabase, params.clientId, {
+      activeOnly: false,
+    });
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const users = data ?? [];
+    const users = (data ?? []) as unknown as Array<Record<string, unknown>>;
     const withCounts = await Promise.all(
       users.map(async (user) => ({
         id: user.id as string,
@@ -62,6 +64,8 @@ export async function GET(req: Request, { params }: { params: { clientId: string
         email: user.email as string,
         phone: (user.phone as string | null) ?? null,
         is_active: user.is_active as boolean,
+        role: user.role as string,
+        also_sells: Boolean(user.also_sells),
         round_robin_order: user.round_robin_order as number,
         uncontacted_lead_count: await countUncontactedLeadsForUser(
           supabase,
@@ -82,7 +86,7 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     .from("users")
     .select("id, name")
     .eq("client_id", params.clientId)
-    .eq("role", "SALESPERSON")
+    .or(ROUND_ROBIN_ELIGIBLE_OR)
     .eq("is_active", true)
     .order("name", { ascending: true });
   if (error) {
@@ -186,15 +190,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
 
   let rr = 0;
   if (parsed.data.role === "SALESPERSON") {
-    const { data: maxRow } = await supabase
-      .from("users")
-      .select("round_robin_order")
-      .eq("client_id", params.clientId)
-      .eq("role", "SALESPERSON")
-      .order("round_robin_order", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    rr = Number((maxRow as { round_robin_order?: number } | null)?.round_robin_order ?? -1) + 1;
+    rr = await getNextRoundRobinOrder(supabase, params.clientId);
   }
 
   const tempPass = randomBytes(12).toString("base64url").slice(0, 16);

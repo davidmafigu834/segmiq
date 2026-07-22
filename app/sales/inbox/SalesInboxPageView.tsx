@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SoloLayout } from "@/components/layouts/SoloLayout";
 import { TeamInbox } from "@/components/inbox/TeamInbox";
@@ -19,7 +20,7 @@ export async function SalesInboxPageView({
   fullPage?: boolean;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session?.userId || session.role !== "SALESPERSON") redirect("/login");
+  if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
   if (!session.clientId) redirect("/login");
 
   const isSolo = session.clientMode === "solo";

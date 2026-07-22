@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { SignJWT } from "jose";
 import { verifyCredentials } from "@/lib/auth";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -40,9 +41,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (user.role !== "SALESPERSON") {
+  if (!canActAsSalesperson(user)) {
     return NextResponse.json(
-      { error: "Segmiq Sales is for salesperson accounts only." },
+      { error: "Segmiq Sales is for salesperson and selling manager accounts only." },
       { status: 403 }
     );
   }
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
     role: user.role,
     clientId: user.clientId,
     clientMode: user.clientMode,
+    alsoSells: user.alsoSells,
     name: user.name,
   })
     .setProtectedHeader({ alg: "HS256" })
@@ -79,6 +81,7 @@ export async function POST(req: Request) {
       clientId: user.clientId,
       role: user.role,
       clientMode: user.clientMode,
+      alsoSells: user.alsoSells,
     },
   });
 }

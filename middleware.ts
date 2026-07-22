@@ -252,6 +252,7 @@ export async function middleware(req: NextRequest) {
 
   const role = token.role as UserRole;
   const clientMode = (token as { clientMode?: ClientMode }).clientMode ?? "team";
+  const alsoSells = Boolean((token as { alsoSells?: boolean }).alsoSells);
   const isImpersonating = Boolean((token as { realUserId?: string | null }).realUserId);
 
   if (path.startsWith("/dashboard")) {
@@ -275,7 +276,8 @@ export async function middleware(req: NextRequest) {
     }
   }
   if (path.startsWith("/sales")) {
-    if (role !== "SALESPERSON") {
+    const canAccessSales = role === "SALESPERSON" || (role === "CLIENT_MANAGER" && alsoSells);
+    if (!canAccessSales) {
       return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
     }
     if (clientMode === "solo" && (path === "/sales/dashboard" || path.startsWith("/sales/dashboard/"))) {
@@ -309,6 +311,9 @@ export async function middleware(req: NextRequest) {
           .maybeSingle();
         if ((sub as { status?: string } | null)?.status === "suspended") {
           if (role === "CLIENT_MANAGER") {
+            if (alsoSells && path.startsWith("/sales")) {
+              return NextResponse.redirect(new URL("/sales/blocked", req.url));
+            }
             return NextResponse.redirect(new URL("/client/blocked", req.url));
           }
           if (role === "SALESPERSON" && clientMode === "solo") {

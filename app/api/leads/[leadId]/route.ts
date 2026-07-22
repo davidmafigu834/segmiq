@@ -12,6 +12,7 @@ import {
 } from "@/lib/deal-value";
 import type { LeadStatus } from "@/types";
 import { z } from "zod";
+import { isRoundRobinEligibleUserId } from "@/lib/auth/sales-capabilities";
 
 export async function GET(req: Request, { params }: { params: { leadId: string } }) {
   const access = await canReadLead(params.leadId, req);
@@ -104,15 +105,12 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
     if (parsed.data.assigned_to_id === null) {
       updates.assigned_to_id = null;
     } else {
-      const { data: assignee } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", parsed.data.assigned_to_id)
-        .eq("client_id", previousLead?.client_id as string)
-        .eq("role", "SALESPERSON")
-        .eq("is_active", true)
-        .maybeSingle();
-      if (!assignee) {
+      const eligible = await isRoundRobinEligibleUserId(
+        supabase,
+        previousLead?.client_id as string,
+        parsed.data.assigned_to_id
+      );
+      if (!eligible) {
         return NextResponse.json({ error: "Invalid assignee for this client" }, { status: 400 });
       }
       updates.assigned_to_id = parsed.data.assigned_to_id;

@@ -7,6 +7,7 @@ export type ApiAuth = {
   userId: string;
   role: UserRole;
   clientId: string | null;
+  alsoSells?: boolean;
 };
 
 function getSecret(): Uint8Array | null {
@@ -30,11 +31,13 @@ async function verifyBearerToken(req: Request): Promise<ApiAuth | null> {
     const userId = payload.userId;
     const role = payload.role;
     const clientId = payload.clientId;
+    const alsoSells = payload.alsoSells;
     if (typeof userId !== "string" || typeof role !== "string") return null;
     return {
       userId,
       role: role as UserRole,
       clientId: typeof clientId === "string" ? clientId : clientId === null ? null : null,
+      alsoSells: typeof alsoSells === "boolean" ? alsoSells : Boolean(alsoSells),
     };
   } catch {
     return null;
@@ -49,6 +52,7 @@ export async function resolveApiAuth(req: Request): Promise<ApiAuth | null> {
       userId: session.userId,
       role: session.role,
       clientId: session.clientId ?? null,
+      alsoSells: session.alsoSells,
     };
   }
   return verifyBearerToken(req);

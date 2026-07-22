@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { ROUND_ROBIN_ELIGIBLE_OR } from "@/lib/auth/sales-capabilities";
 import { fetchCallLogsByLeadIds } from "@/lib/call-logs";
 import { firstCallResponseMinutes, getAvgResponseMinutes } from "@/lib/metrics";
 import type { LeadSource, LeadStatus } from "@/types";
@@ -799,7 +800,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
       .from("users")
       .select("id, name, created_at")
       .eq("client_id", clientId)
-      .eq("role", "SALESPERSON")
+      .or(ROUND_ROBIN_ELIGIBLE_OR)
       .eq("is_active", true),
 
     supabase

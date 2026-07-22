@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SoloLayout } from "@/components/layouts/SoloLayout";
 import { SalesReportsClient } from "@/components/sales/SalesReportsClient";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SalesReportsPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.userId || session.role !== "SALESPERSON") redirect("/login");
+  if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
 

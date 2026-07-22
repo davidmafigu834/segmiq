@@ -5,6 +5,7 @@ import { normalizeToE164 } from "@/lib/phone-validate";
 import { sourceFromString } from "@/lib/lead-helpers";
 import { randomUUID } from "crypto";
 import { addDays } from "date-fns";
+import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -67,15 +68,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "CSV has no data rows" }, { status: 400 });
   }
 
-  const { data: salespeople } = await supabase
-    .from("users")
-    .select("id, name, email, round_robin_order")
-    .eq("client_id", clientId)
-    .eq("role", "SALESPERSON")
-    .eq("is_active", true)
-    .order("round_robin_order", { ascending: true });
+  const { data: salespeople } = await fetchRoundRobinEligibleUsers(supabase, clientId);
 
-  const activeSalespeople = salespeople ?? [];
+  const activeSalespeople = (salespeople ?? []) as unknown as Array<{ id: string; email?: string | null }>;
 
   const { data: existingLeads } = await supabase
     .from("leads")

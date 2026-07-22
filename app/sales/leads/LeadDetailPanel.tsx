@@ -99,7 +99,8 @@ export function LeadDetailPanel({
     };
   }, [open, lead]);
 
-  const isReadOnly = readOnlyProp === true || role === "CLIENT_MANAGER";
+  const alsoSells = session?.alsoSells;
+  const isReadOnly = readOnlyProp === true || (role === "CLIENT_MANAGER" && !alsoSells);
   // Quoting is allowed for salespeople, managers and agency admins (broader than
   // lead editing, which keeps managers read-only).
   const canQuote =

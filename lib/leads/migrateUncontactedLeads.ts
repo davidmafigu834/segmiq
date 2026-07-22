@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logLeadReassigned } from "@/lib/lead-events";
+import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 
 type ActiveRep = { id: string; name: string };
 
@@ -23,18 +24,13 @@ export async function migrateUncontactedLeads(
 ): Promise<MigrateUncontactedResult> {
   const { clientId, fromUserId, actor, handoverNotes } = options;
 
-  const { data: remaining } = await supabase
-    .from("users")
-    .select("id, name, round_robin_order")
-    .eq("client_id", clientId)
-    .eq("role", "SALESPERSON")
-    .eq("is_active", true)
-    .neq("id", fromUserId)
-    .order("round_robin_order", { ascending: true });
+  const { data: remaining } = await fetchRoundRobinEligibleUsers(supabase, clientId, {
+    excludeUserId: fromUserId,
+  });
 
-  const activeReps: ActiveRep[] = (remaining ?? []).map((r) => ({
-    id: r.id as string,
-    name: (r.name as string) ?? "Unknown",
+  const activeReps: ActiveRep[] = ((remaining ?? []) as unknown as Array<{ id: string; name?: string }>).map((r) => ({
+    id: r.id,
+    name: r.name ?? "Unknown",
   }));
 
   const { data: newLeads } = await supabase

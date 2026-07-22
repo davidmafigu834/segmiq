@@ -7,6 +7,8 @@ declare module "next-auth" {
     role: UserRole;
     clientId: string | null;
     clientMode: ClientMode;
+    /** True when a CLIENT_MANAGER has salesperson capabilities enabled. */
+    alsoSells?: boolean;
     /** Set when an agency admin is impersonating a client team member. */
     realUserId?: string | null;
     realUserName?: string | null;
@@ -20,6 +22,7 @@ declare module "next-auth" {
     role: UserRole;
     clientId: string | null;
     clientMode?: ClientMode;
+    alsoSells?: boolean;
     sessionVersion?: number;
   }
 }
@@ -30,6 +33,7 @@ declare module "next-auth/jwt" {
     role: UserRole;
     clientId: string | null;
     clientMode?: ClientMode;
+    alsoSells?: boolean;
     sessionVersion?: number;
     email?: string | null;
     name?: string | null;

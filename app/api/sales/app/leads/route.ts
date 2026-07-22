@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireRolesFromRequest } from "@/lib/api-guards";
+import { requireSalesActorFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   fetchLatestFollowUpLogsByLeadId,
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export async function GET(req: Request) {
-  const guard = await requireRolesFromRequest(req, ["SALESPERSON"]);
+  const guard = await requireSalesActorFromRequest(req);
   if (guard.error) return guard.error;
   const { session } = guard;
 

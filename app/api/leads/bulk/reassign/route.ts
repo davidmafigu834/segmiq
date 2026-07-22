@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { background } from "@/lib/background";
 import { logLeadReassigned } from "@/lib/lead-events";
 import { notifyBulkReassignment } from "@/lib/notifications";
+import { isRoundRobinEligibleUserId } from "@/lib/auth/sales-capabilities";
 
 const bodySchema = z.object({
   leadIds: z.array(z.string().uuid()).min(1).max(500),
@@ -74,15 +75,8 @@ export async function POST(req: Request) {
   }
 
   if (assigned_to_id) {
-    const { data: assignee } = await supabase
-      .from("users")
-      .select("id")
-      .eq("id", assigned_to_id)
-      .eq("client_id", enforcedClientId)
-      .eq("role", "SALESPERSON")
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!assignee) {
+    const eligible = await isRoundRobinEligibleUserId(supabase, enforcedClientId, assigned_to_id);
+    if (!eligible) {
       return NextResponse.json({ error: "Assignee is not an active salesperson for this client" }, { status: 400 });
     }
   }

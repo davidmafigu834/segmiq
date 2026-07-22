@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { redirect } from "next/navigation";
 import { fetchSalespersonDashboardData } from "@/lib/dashboard-data";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
@@ -12,7 +13,7 @@ export const fetchCache = "force-no-store";
 export default async function RecoverPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.role !== "SALESPERSON") {
+  if (!session || !canActAsSalesperson(session)) {
     redirect("/login");
   }
 

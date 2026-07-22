@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import type { UserRole } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -83,9 +84,11 @@ export async function fetchInboxConversations(opts: {
   role: UserRole;
   userId: string;
   clientId: string | null;
+  alsoSells?: boolean;
 }): Promise<InboxConversation[]> {
   const supabase = createAdminClient();
-  const { role, userId, clientId } = opts;
+  const { role, userId, clientId, alsoSells } = opts;
+  const salesScoped = canActAsSalesperson({ userId, role, alsoSells });
 
   if (!clientId && role !== "AGENCY_ADMIN") {
     return [];
@@ -108,7 +111,7 @@ export async function fetchInboxConversations(opts: {
 
   let query = supabase.from("leads").select(select);
 
-  if (role === "SALESPERSON" && clientId) {
+  if (salesScoped && clientId) {
     if (assignmentMode === "pool" || assignmentMode === "direct") {
       query = query
         .eq("client_id", clientId)
@@ -136,7 +139,7 @@ export async function fetchInboxConversations(opts: {
     const msg = String(error.message ?? "");
     if (msg.includes("is_archived") && clientId) {
       let retryQuery = supabase.from("leads").select(select);
-      if (role === "SALESPERSON") {
+      if (salesScoped) {
         if (assignmentMode === "pool" || assignmentMode === "direct") {
           retryQuery = retryQuery
             .eq("client_id", clientId)

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSession } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEFAULT_QUICK_REPLIES } from "@/lib/inbox/quick-reply-vars";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
   if ("error" in g) return g.error;
 
   const { session } = g;
-  if (!session.clientId || session.role !== "SALESPERSON") {
+  if (!session.clientId || !canActAsSalesperson(session)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

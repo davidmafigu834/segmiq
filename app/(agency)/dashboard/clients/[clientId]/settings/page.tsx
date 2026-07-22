@@ -6,6 +6,7 @@ import { buildClientDetailHero } from "@/lib/client-hero";
 import { ClientDetailView } from "../ClientDetailView";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { ClientSettingsClient } from "@/components/client-settings/ClientSettingsClient";
+import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 
 export const dynamic = "force-dynamic";
 
@@ -27,16 +28,13 @@ export default async function ClientSettingsPage({
     .eq("client_id", params.clientId)
     .maybeSingle();
 
-  const { data: salespeople } = await supabase
-    .from("users")
-    .select("id, name, email, phone, is_active, round_robin_order")
-    .eq("client_id", params.clientId)
-    .eq("role", "SALESPERSON")
-    .order("round_robin_order", { ascending: true });
+  const { data: salespeople } = await fetchRoundRobinEligibleUsers(supabase, params.clientId, {
+    activeOnly: false,
+  });
 
   const { data: managers } = await supabase
     .from("users")
-    .select("id, name, email, phone, is_active")
+    .select("id, name, email, phone, is_active, also_sells")
     .eq("client_id", params.clientId)
     .eq("role", "CLIENT_MANAGER")
     .order("created_at", { ascending: true });

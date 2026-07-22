@@ -67,6 +67,9 @@ export async function SalesLayout({
   ];
 
   const secondaryNav = [
+    ...(session?.role === "CLIENT_MANAGER" && session.alsoSells
+      ? [{ href: "/client/dashboard", label: "Manager portal", icon: "home" as const }]
+      : []),
     { href: "/upload", label: "Upload Photos", icon: "camera" as const },
   ];
 
