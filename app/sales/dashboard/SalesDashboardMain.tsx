@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import {
   Phone,
   UserPlus,
@@ -112,7 +113,7 @@ export default function SalesDashboardMain({
   data: DashboardData;
   session: unknown;
 }) {
-  const s = session as { user?: { name?: string | null } } | null;
+  const s = session as { user?: { name?: string | null }; role?: string } | null;
   const firstName = s?.user?.name?.split(" ")[0] ?? "there";
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
@@ -261,10 +262,30 @@ export default function SalesDashboardMain({
         <RetargetingBanners statuses={data.retargetingStatuses!} />
       )}
 
-      {data.numbers.totalActive === 0 && data.debug ? (
-        <div className="mb-6 rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-card)] p-4 text-[12px] text-[var(--text-secondary)]">
-          <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">Debug</div>
-          <pre className="overflow-auto whitespace-pre-wrap">{JSON.stringify(data.debug, null, 2)}</pre>
+      {data.numbers.totalActive === 0 ? (
+        <div className="mb-6 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+          <p className="text-[15px] font-medium text-[var(--text-primary)]">No leads assigned to you yet</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+            Your sales view only shows leads assigned to you. New enquiries will arrive via round-robin, or a
+            manager can assign leads from the pipeline.
+            {s?.role === "CLIENT_MANAGER" ? (
+              <>
+                {" "}
+                <Link href="/client/dashboard" className="font-medium text-[var(--accent-fg)] hover:underline">
+                  Return to the manager dashboard
+                </Link>{" "}
+                for full team visibility.
+              </>
+            ) : null}
+          </p>
+          {process.env.NODE_ENV === "development" && data.debug ? (
+            <div className="mt-4 border-t border-dashed border-[var(--border)] pt-4 text-[12px] text-[var(--text-secondary)]">
+              <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+                Debug
+              </div>
+              <pre className="overflow-auto whitespace-pre-wrap">{JSON.stringify(data.debug, null, 2)}</pre>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

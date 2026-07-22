@@ -7,6 +7,8 @@ import { canManageClientTeam } from "@/lib/auth/permissions";
 import { migrateUncontactedLeads } from "@/lib/leads/migrateUncontactedLeads";
 import { getNextRoundRobinOrder } from "@/lib/auth/sales-capabilities";
 import { normalizeToE164 } from "@/lib/phone-validate";
+import { setSessionToken } from "@/lib/auth/session-token";
+import type { ClientMode, UserRole } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,43 @@ async function bumpSessionVersion(supabase: ReturnType<typeof createAdminClient>
   const { data: row } = await supabase.from("users").select("session_version").eq("id", userId).maybeSingle();
   const next = Number((row as { session_version?: number } | null)?.session_version ?? 0) + 1;
   await supabase.from("users").update({ session_version: next }).eq("id", userId);
+}
+
+/** Refresh the active browser session when also_sells changes for the signed-in (or impersonated) user. */
+async function refreshAlsoSellsInSession(
+  session: {
+    userId: string;
+    role: UserRole;
+    clientId: string | null;
+    clientMode?: ClientMode;
+    isImpersonating?: boolean;
+    realUserId?: string | null;
+    realUserName?: string | null;
+    user?: { name?: string | null; email?: string | null };
+  },
+  alsoSells: boolean
+) {
+  const supabase = createAdminClient();
+  const versionUserId =
+    session.isImpersonating && session.realUserId ? session.realUserId : session.userId;
+  const { data: versionRow } = await supabase
+    .from("users")
+    .select("session_version")
+    .eq("id", versionUserId)
+    .maybeSingle();
+
+  await setSessionToken({
+    userId: session.userId,
+    role: session.role,
+    clientId: session.clientId,
+    clientMode: session.clientMode ?? "team",
+    alsoSells,
+    sessionVersion: Number((versionRow as { session_version?: number } | null)?.session_version ?? 0),
+    email: session.user?.email ?? null,
+    name: session.user?.name ?? "User",
+    realUserId: session.realUserId ?? null,
+    realUserName: session.realUserName ?? null,
+  });
 }
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string; userId: string } }) {
@@ -129,8 +168,12 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
       .eq("id", params.userId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    await bumpSessionVersion(supabase, params.userId);
-    requiresReauth = params.userId === session.userId;
+    if (params.userId === session.userId) {
+      await refreshAlsoSellsInSession(session, true);
+    } else {
+      await bumpSessionVersion(supabase, params.userId);
+      requiresReauth = true;
+    }
 
     const { data: updated } = await supabase
       .from("users")
@@ -155,8 +198,12 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
       .eq("id", params.userId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    await bumpSessionVersion(supabase, params.userId);
-    requiresReauth = params.userId === session.userId;
+    if (params.userId === session.userId) {
+      await refreshAlsoSellsInSession(session, false);
+    } else {
+      await bumpSessionVersion(supabase, params.userId);
+      requiresReauth = true;
+    }
 
     const { data: updated } = await supabase
       .from("users")

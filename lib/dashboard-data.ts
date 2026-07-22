@@ -1323,7 +1323,9 @@ export async function fetchSalespersonDashboardData(userId: string) {
     recentActivity: recentEvents ?? [],
     recentWins: monthWins ?? [],
     retargetingStatuses,
-    debug: (await (async () => {
+    debug:
+      process.env.NODE_ENV === "development"
+        ? await (async () => {
       const statuses: Record<string, number> = {};
       for (const r of leads) {
         const s = (r.status as string) ?? "UNKNOWN";
@@ -1367,7 +1369,8 @@ export async function fetchSalespersonDashboardData(userId: string) {
         archivedFilterUsed,
         scoringColumnsAvailable,
       };
-    })()),
+        })()
+        : undefined,
   };
 }
 

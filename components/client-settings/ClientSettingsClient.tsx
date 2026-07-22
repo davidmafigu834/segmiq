@@ -627,11 +627,7 @@ export function ClientSettingsClient({
         `Also sells off. ${j.migration.migrated} uncontacted lead(s) reassigned${j.migration.unassigned ? `, ${j.migration.unassigned} left unassigned` : ""}.`
       );
     } else if (also_sells) {
-      setToast(
-        j.requiresReauth
-          ? "Also sells enabled. Sign in again to open the Sales portal and mobile app."
-          : "Also sells enabled — manager can log calls and receive leads."
-      );
+      setToast("Also sells enabled — open My leads from the sidebar to work your assigned pipeline.");
     } else {
       setToast("Also sells turned off.");
     }
