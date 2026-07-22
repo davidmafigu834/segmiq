@@ -212,18 +212,34 @@ async function createInAppNotification(params: {
   type: InAppNotificationType;
   message: string;
   leadId?: string | null;
-}) {
+}): Promise<boolean> {
   try {
-    await createAdminClient().from("notifications").insert({
+    const { error } = await createAdminClient().from("notifications").insert({
       user_id: params.userId,
       type: params.type,
       message: params.message,
       read: false,
       lead_id: params.leadId || null,
     });
+    if (error) {
+      console.error("[notifications] inApp insert failed", error);
+      return false;
+    }
+    return true;
   } catch (err) {
     console.error("[notifications] inApp insert failed", err);
+    return false;
   }
+}
+
+/** True when any outbound attempt was already logged for this lead + notification type. */
+async function hasMessageLogForLead(leadId: string, notificationType: string): Promise<boolean> {
+  const { count } = await createAdminClient()
+    .from("message_logs")
+    .select("id", { count: "exact", head: true })
+    .eq("lead_id", leadId)
+    .eq("notification_type", notificationType);
+  return (count ?? 0) > 0;
 }
 
 export async function notifyNewLead(
@@ -689,6 +705,7 @@ type UncontactedLeadRow = Pick<LeadRow, "id" | "name" | "created_at" | "client_i
 
 /**
  * Alerts each active client manager once per lead when SLA is breached (idempotent on notifications row).
+ * Runs from the daily cron only — not the 30-minute callback cron.
  */
 export async function notifyUncontactedLeadToManager(
   lead: UncontactedLeadRow,
@@ -739,12 +756,13 @@ export async function notifyUncontactedLeadToManager(
       .maybeSingle();
     if (existing) continue;
 
-    await createInAppNotification({
+    const created = await createInAppNotification({
       userId: manager.id as string,
       type: "UNCONTACTED_MANAGER_ALERT",
       message: `${lead.name ?? "Lead"} uncontacted for ${hoursUncontacted}h`,
       leadId: lead.id,
     });
+    if (!created) continue;
 
     if (prefs.uncontactedLead.whatsapp && manager.phone?.trim()) {
       console.info(
@@ -753,6 +771,8 @@ export async function notifyUncontactedLeadToManager(
     }
 
     if (prefs.uncontactedLead.email && manager.email?.trim() && process.env.RESEND_FROM_EMAIL) {
+      if (await hasMessageLogForLead(lead.id, "UNCONTACTED_MANAGER_ALERT")) continue;
+
       background("uncontactedLeadManagerEmail", async () => {
         const r = await sendEmailWithLog({
           mail: {
@@ -783,7 +803,7 @@ export async function notifyUncontactedLeadToManager(
   }
 }
 
-/** WhatsApp SLA breach alert to the assigned salesperson (segmiq_sla_breach). Idempotent via message_logs. */
+/** WhatsApp SLA breach alert to the assigned rep (segmiq_sla_breach). Once per lead — idempotent via message_logs. */
 export async function notifySlaBreachToSalesperson(
   lead: Pick<LeadRow, "id" | "name" | "created_at" | "client_id" | "assigned_to_id" | "magic_token">,
   clientTwilioOverride: string | null
@@ -792,17 +812,9 @@ export async function notifySlaBreachToSalesperson(
     return;
   }
 
-  const supabase = createAdminClient();
+  if (await hasMessageLogForLead(lead.id, "SLA_BREACH")) return;
 
-  const { data: prior } = await supabase
-    .from("message_logs")
-    .select("id")
-    .eq("lead_id", lead.id)
-    .eq("notification_type", "SLA_BREACH")
-    .eq("status", "sent")
-    .limit(1)
-    .maybeSingle();
-  if (prior) return;
+  const supabase = createAdminClient();
 
   const { data: sp } = await supabase
     .from("users")
@@ -823,36 +835,34 @@ export async function notifySlaBreachToSalesperson(
     Math.max(1, Math.floor((Date.now() - new Date(lead.created_at as string).getTime()) / (1000 * 60 * 60)))
   );
 
-  background("slaBreachSalespersonWhatsApp", async () => {
-    const { data: clientRow } = await supabase
-      .from("clients")
-      .select("response_time_limit_hours")
-      .eq("id", lead.client_id)
-      .maybeSingle();
-    const slaHours = String(Math.max(1, Math.round((clientRow?.response_time_limit_hours as number) || 2)));
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("response_time_limit_hours")
+    .eq("id", lead.client_id)
+    .maybeSingle();
+  const slaHours = String(Math.max(1, Math.round((clientRow?.response_time_limit_hours as number) || 2)));
 
-    const r = await sendWhatsApp({
-      to: sp.phone as string,
-      toOverride: clientTwilioOverride,
-      template: "SLA_BREACH",
-      variables: {
-        "1": firstName(sp.name as string),
-        "2": lead.name || "your lead",
-        "3": hoursWaiting,
-        "4": slaHours,
-        "5": leadLink,
-      },
-      fallbackBody: `Heads up ${firstName(sp.name as string)}, ${lead.name ?? "your lead"} has been waiting ${waiting} without a response.`,
-      context: {
-        userId: sp.id as string,
-        leadId: lead.id,
-        clientId: lead.client_id,
-        notificationType: "SLA_BREACH",
-      },
-    });
-    if (r.ok) console.log("[notifySlaBreachToSalesperson] WhatsApp: success");
-    else console.error("[notifySlaBreachToSalesperson] WhatsApp:", r.error);
+  const r = await sendWhatsApp({
+    to: sp.phone as string,
+    toOverride: clientTwilioOverride,
+    template: "SLA_BREACH",
+    variables: {
+      "1": firstName(sp.name as string),
+      "2": lead.name || "your lead",
+      "3": hoursWaiting,
+      "4": slaHours,
+      "5": leadLink,
+    },
+    fallbackBody: `Heads up ${firstName(sp.name as string)}, ${lead.name ?? "your lead"} has been waiting ${waiting} without a response.`,
+    context: {
+      userId: sp.id as string,
+      leadId: lead.id,
+      clientId: lead.client_id,
+      notificationType: "SLA_BREACH",
+    },
   });
+  if (r.ok) console.log("[notifySlaBreachToSalesperson] WhatsApp: success");
+  else console.error("[notifySlaBreachToSalesperson] WhatsApp:", r.error);
 }
 
 export async function checkUncontactedLeads(): Promise<{ flagged: number }> {
