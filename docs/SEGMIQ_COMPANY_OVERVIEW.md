@@ -247,7 +247,7 @@ SegmiQ is a modern multi-tenant SaaS platform. The following overview is intende
 | Messaging | Meta WhatsApp Cloud API |
 | AI | Anthropic Claude (scoring, coaching, briefings, win insights) |
 | Deployment | Vercel |
-| Background jobs | Vercel Cron + GitHub Actions |
+| Background jobs | Vercel Cron |
 
 ### Key integrations
 

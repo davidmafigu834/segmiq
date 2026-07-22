@@ -69,6 +69,16 @@ export type FollowUpRemindersOptions = {
   force?: boolean;
   /** Limit to one lead (agency test). */
   leadId?: string;
+  /** Only process callback_at window (for ~30 min cron). Due/prep run on the daily job. */
+  callbackOnly?: boolean;
+};
+
+const EMPTY_BATCH: FollowUpBatchResult = {
+  totalLeads: 0,
+  whatsappSent: 0,
+  whatsappFailed: 0,
+  skipped: 0,
+  inAppCreated: 0,
 };
 
 export function getFollowUpTimezone(): string {
@@ -590,7 +600,9 @@ export async function previewFollowUpReminders(
  * Sends WhatsApp follow-up reminders:
  * - **Due/overdue:** leads with follow_up_date on or before today (local timezone), once per day each
  * - **Prep:** leads with follow_up_date tomorrow (local), once per day each
- * - **Callback:** leads with call_logs.callback_at in the due window (every ~30 min cron)
+ * - **Callback:** leads with call_logs.callback_at in the due window (every ~30 min via `/api/cron/check-leads`)
+ *
+ * Pass `callbackOnly: true` to skip due/prep batches (used by the 30-minute cron).
  */
 export async function executeFollowUpReminders(
   opts: FollowUpRemindersOptions = {}
@@ -599,56 +611,65 @@ export async function executeFollowUpReminders(
   const { dateStr: todayStr } = localDateParts(tz);
   const tomorrowStr = addLocalDays(todayStr, 1);
   const startOfTodayIso = startOfLocalDayIso(tz);
-  const supabase = createAdminClient();
-
-  let dueQuery = supabase
-    .from("leads")
-    .select("*, clients ( twilio_whatsapp_override )")
-    .lte("follow_up_date", todayStr)
-    .in("status", [...ACTIVE_STATUSES])
-    .not("assigned_to_id", "is", null)
-    .not("follow_up_date", "is", null);
-
-  let prepQuery = supabase
-    .from("leads")
-    .select("*, clients ( twilio_whatsapp_override )")
-    .eq("follow_up_date", tomorrowStr)
-    .in("status", [...ACTIVE_STATUSES])
-    .not("assigned_to_id", "is", null);
-
-  if (opts.leadId) {
-    dueQuery = dueQuery.eq("id", opts.leadId);
-    prepQuery = prepQuery.eq("id", opts.leadId);
-  }
-
-  const [{ data: dueRows, error: dueErr }, { data: prepRows, error: prepErr }, callbackCandidates] =
-    await Promise.all([dueQuery, prepQuery, fetchCallbackCandidates(opts.leadId)]);
-
-  if (dueErr) throw new Error(`follow-up-reminders: ${dueErr.message}`);
-  if (prepErr) throw new Error(`follow-up-reminders: ${prepErr.message}`);
-
   const batchOpts = { dryRun: opts.dryRun, force: opts.force };
 
-  const due = await runFollowUpBatch({
-    notificationType: "FOLLOW_UP_DUE",
-    todayStr,
-    startOfTodayIso,
-    leads: (dueRows ?? []) as LeadWithClient[],
-    resolveKind: (followUpDate, today) => (followUpDate < today ? "overdue" : "due"),
-    inAppMessage: (leadName, kind) =>
-      kind === "overdue" ? `Follow-up overdue: call ${leadName}` : `Follow-up due: call ${leadName}`,
-    ...batchOpts,
-  });
+  const callbackCandidates = await fetchCallbackCandidates(opts.leadId);
 
-  const prep = await runFollowUpBatch({
-    notificationType: "FOLLOW_UP_PREP",
-    todayStr,
-    startOfTodayIso,
-    leads: (prepRows ?? []) as LeadWithClient[],
-    resolveKind: () => "prep",
-    inAppMessage: (leadName) => `Follow-up tomorrow: prepare for ${leadName}`,
-    ...batchOpts,
-  });
+  let due = EMPTY_BATCH;
+  let prep = EMPTY_BATCH;
+
+  if (!opts.callbackOnly) {
+    const supabase = createAdminClient();
+
+    let dueQuery = supabase
+      .from("leads")
+      .select("*, clients ( twilio_whatsapp_override )")
+      .lte("follow_up_date", todayStr)
+      .in("status", [...ACTIVE_STATUSES])
+      .not("assigned_to_id", "is", null)
+      .not("follow_up_date", "is", null);
+
+    let prepQuery = supabase
+      .from("leads")
+      .select("*, clients ( twilio_whatsapp_override )")
+      .eq("follow_up_date", tomorrowStr)
+      .in("status", [...ACTIVE_STATUSES])
+      .not("assigned_to_id", "is", null);
+
+    if (opts.leadId) {
+      dueQuery = dueQuery.eq("id", opts.leadId);
+      prepQuery = prepQuery.eq("id", opts.leadId);
+    }
+
+    const [{ data: dueRows, error: dueErr }, { data: prepRows, error: prepErr }] = await Promise.all([
+      dueQuery,
+      prepQuery,
+    ]);
+
+    if (dueErr) throw new Error(`follow-up-reminders: ${dueErr.message}`);
+    if (prepErr) throw new Error(`follow-up-reminders: ${prepErr.message}`);
+
+    due = await runFollowUpBatch({
+      notificationType: "FOLLOW_UP_DUE",
+      todayStr,
+      startOfTodayIso,
+      leads: (dueRows ?? []) as LeadWithClient[],
+      resolveKind: (followUpDate, today) => (followUpDate < today ? "overdue" : "due"),
+      inAppMessage: (leadName, kind) =>
+        kind === "overdue" ? `Follow-up overdue: call ${leadName}` : `Follow-up due: call ${leadName}`,
+      ...batchOpts,
+    });
+
+    prep = await runFollowUpBatch({
+      notificationType: "FOLLOW_UP_PREP",
+      todayStr,
+      startOfTodayIso,
+      leads: (prepRows ?? []) as LeadWithClient[],
+      resolveKind: () => "prep",
+      inAppMessage: (leadName) => `Follow-up tomorrow: prepare for ${leadName}`,
+      ...batchOpts,
+    });
+  }
 
   const callback = await runCallbackBatch({
     candidates: callbackCandidates,

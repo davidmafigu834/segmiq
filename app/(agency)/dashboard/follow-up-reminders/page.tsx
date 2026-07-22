@@ -22,8 +22,8 @@ export default async function FollowUpRemindersAdminPage() {
           Follow-up reminder test
         </h1>
         <p className="mt-2 text-[14px] text-[var(--text-secondary)]">
-          Preview and manually trigger WhatsApp follow-up reminders for salespeople. Production cron runs
-          every 30 minutes plus once daily in the combined daily job.
+          Preview and manually trigger WhatsApp follow-up reminders for salespeople. Timed callback reminders
+          run every 30 minutes; due, overdue, and prep reminders run once daily at 08:00 Harare (06:00 UTC).
         </p>
       </div>
       <FollowUpReminderTester />

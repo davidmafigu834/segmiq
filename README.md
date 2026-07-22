@@ -107,14 +107,14 @@ Implementation: `lib/messaging/provider.ts` → `sendWhatsApp` → `lib/messagin
 
 ## Deployment
 
-**Cron & GitHub Actions:** On Vercel Hobby, arbitrary schedules are not available for Vercel Cron. Production schedules for uncontacted-lead checks (every 30 min), follow-up reminders, and the weekly-digest hook are run via **GitHub Actions** (see [`.github/README.md`](.github/README.md) for `APP_URL` / `CRON_SECRET` setup, schedule table, and manual “Run workflow” tests).
+**Cron:** Production schedules live in **`vercel.json`** (see [`.github/README.md`](.github/README.md) for the schedule table). Set **`CRON_SECRET`** on Vercel so cron invocations are authenticated.
 
 ## Deploy (Vercel)
 
 - **NextAuth (login):** In production, **`NEXTAUTH_SECRET` is required**. If it is missing, sign-in shows `/api/auth/error` — *“There is a problem with the server configuration.”* Generate one locally: `openssl rand -base64 32`, add it under Vercel → Project → Settings → Environment Variables, then redeploy.
 - Set **`NEXTAUTH_URL`** to your live site origin with **no path**, e.g. `https://leadstaq.tech` (must match how users open the app; avoid `http://` or a wrong host).
-- **Hobby (free):** Vercel only allows cron expressions that run **at most once per day**. This repo can still use a single daily job: `vercel.json` → `/api/cron/daily` at **06:00 UTC** (uncontacted-lead + follow-up in one request). If you also use **GitHub Actions** for the same work on sub-daily or different times, consider trimming `vercel.json` crons to avoid duplicate runs.
-- Set **`CRON_SECRET`** in the Vercel project environment. It must match the **`CRON_SECRET`** GitHub Actions secret; any caller (Vercel Cron, GitHub Actions) sends `Authorization: Bearer <CRON_SECRET>`.
+- **Hobby (free):** Vercel only allows cron expressions that run **at most once per day**. Sub-daily jobs in `vercel.json` (check-leads, health, WhatsApp campaigns) require **Pro** or an external scheduler hitting the same endpoints with `Authorization: Bearer <CRON_SECRET>`.
+- Set **`CRON_SECRET`** in the Vercel project environment. Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` on each invocation.
 - For ad-hoc external pings (e.g. [cron-job.org](https://cron-job.org)), `GET` **`/api/cron/check-leads`** with the same `Authorization` header and value as in production.
 - Set all other env vars in the Vercel project (including **`NEXT_PUBLIC_SUPABASE_URL`** and **`SUPABASE_SERVICE_ROLE_KEY`**).
 
