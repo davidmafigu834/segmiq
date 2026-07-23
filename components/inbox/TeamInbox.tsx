@@ -14,11 +14,13 @@ import { InboxIconRail } from "./InboxIconRail";
 import { LeadIntelligencePanel } from "./LeadIntelligencePanel";
 import { InboxPanelResizeHandle } from "./InboxPanelResizeHandle";
 import { useInboxPanelWidths } from "@/lib/inbox/use-inbox-panel-widths";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 
 type Props = {
   userName: string;
   userId: string;
   role: "SALESPERSON" | "CLIENT_MANAGER" | "AGENCY_ADMIN";
+  alsoSells?: boolean;
   clientId: string;
   roleSubtitle: string;
   pipelineHref: string;
@@ -36,6 +38,7 @@ export function TeamInbox({
   userName,
   userId,
   role,
+  alsoSells = false,
   clientId,
   roleSubtitle,
   pipelineHref,
@@ -112,7 +115,12 @@ export function TeamInbox({
     fetch(`/api/clients/${clientId}/users`)
       .then((r) => r.json())
       .then((d: { users?: { id: string; name: string; role?: string }[] }) => {
-        const reps = (d.users ?? []).filter((u) => u.role === "SALESPERSON" || !u.role);
+        const reps = (d.users ?? []).filter(
+          (u) =>
+            u.role === "SALESPERSON" ||
+            (u.role === "CLIENT_MANAGER" && Boolean((u as { also_sells?: boolean }).also_sells)) ||
+            !u.role
+        );
         setSalespeople(reps.map((u) => ({ id: u.id, name: u.name })));
       })
       .catch(() => {});
@@ -128,16 +136,15 @@ export function TeamInbox({
     [conversations, userId]
   );
 
+  const salesCapable = canActAsSalesperson({ userId, role, alsoSells });
+  const ownsActive = !!active && active.assignedToId === userId;
   const canReassign = role === "CLIENT_MANAGER" || role === "AGENCY_ADMIN";
-  const canTransfer =
-    (role === "SALESPERSON" && !!active && active.assignedToId === userId) || canReassign;
-  const canSend =
-    role === "SALESPERSON" && !!active && active.assignedToId === userId;
-  const canUpdateStatus =
-    role === "SALESPERSON" && !!active && active.assignedToId === userId;
+  const canTransfer = (salesCapable && ownsActive) || canReassign;
+  const canSend = salesCapable && ownsActive;
+  const canUpdateStatus = salesCapable && ownsActive;
 
   async function handleClaim(leadId: string) {
-    if (role !== "SALESPERSON") return;
+    if (!salesCapable) return;
     setClaimingId(leadId);
     try {
       const res = await fetch(`/api/leads/${leadId}/claim`, { method: "POST" });
@@ -288,7 +295,7 @@ export function TeamInbox({
                 onClaim={(id) => void handleClaim(id)}
                 claimingId={claimingId}
                 open={listOpenEffective}
-                canClaim={role === "SALESPERSON"}
+                canClaim={salesCapable}
                 whatsappMode={whatsappMode}
                 mobileFullScreen={paneNav}
                 onSearchChange={setSearch}
@@ -322,7 +329,7 @@ export function TeamInbox({
                 canTransfer={canTransfer}
                 canUpdateStatus={canUpdateStatus}
                 salespeople={salespeople}
-                showLogCall={role === "SALESPERSON" && !!active?.assignedToId && active.assignedToId === userId}
+                showLogCall={salesCapable && ownsActive}
                 onBack={paneNav ? () => setMobilePane("list") : undefined}
                 onToggleIntel={() => {
                   if (paneNav) {

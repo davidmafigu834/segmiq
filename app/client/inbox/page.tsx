@@ -31,6 +31,7 @@ export default async function ClientInboxPage() {
         userName={session.user?.name ?? "Manager"}
         userId={session.userId}
         role="CLIENT_MANAGER"
+        alsoSells={session.alsoSells}
         clientId={session.clientId}
         roleSubtitle={`Client manager · ${clientName}`}
         pipelineHref="/client/leads/pipeline"

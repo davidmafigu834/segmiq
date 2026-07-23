@@ -38,7 +38,8 @@ export async function SalesInboxPageView({
         <TeamInbox
           userName={session.user?.name ?? "User"}
           userId={session.userId}
-          role="SALESPERSON"
+          role={session.role === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON"}
+          alsoSells={session.alsoSells}
           clientId={session.clientId}
           roleSubtitle={isSolo ? "Owner" : "Salesperson"}
           pipelineHref="/sales/leads"

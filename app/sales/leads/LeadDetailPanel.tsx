@@ -28,6 +28,7 @@ import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { formatCallLogHeadline } from "@/lib/call-log-display";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 
 type CallLogApiRow = {
   id: string;
@@ -100,6 +101,7 @@ export function LeadDetailPanel({
   }, [open, lead]);
 
   const alsoSells = session?.alsoSells;
+  const canSell = canActAsSalesperson({ userId: session?.userId, role, alsoSells });
   const isReadOnly = readOnlyProp === true || (role === "CLIENT_MANAGER" && !alsoSells);
   // Quoting is allowed for salespeople, managers and agency admins (broader than
   // lead editing, which keeps managers read-only).
@@ -450,7 +452,7 @@ export function LeadDetailPanel({
               compactMobile
             />
           ) : null}
-          {(role === "SALESPERSON" || role === "AGENCY_ADMIN") && !isReadOnly ? (
+          {(canSell || role === "AGENCY_ADMIN") && !isReadOnly ? (
             <>
               <div className="p-4 sm:p-5">
                 <CallHistory leadId={activeLead.id} refreshKey={logRefresh} />
