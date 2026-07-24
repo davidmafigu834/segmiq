@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { executeFollowUpReminders } from "@/lib/follow-up-reminders";
 
-/** Timed callback follow-up reminders only. Schedule every ~30m. Uncontacted SLA alerts run once daily on `/api/cron/daily`. Due/prep follow-ups also run on `/api/cron/daily`. */
+/**
+ * Backwards-compatible alias for timed callback follow-up reminders.
+ * Prefer `/api/cron/check-followups` (every minute). Uncontacted SLA alerts
+ * run once daily on `/api/cron/daily` only — not here.
+ */
 export async function GET(req: Request) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ ok: false, error: "Supabase not configured" }, { status: 503 });
@@ -22,7 +26,11 @@ export async function GET(req: Request) {
   }
 
   const ok = errors.length === 0;
-  const body: Record<string, unknown> = { ok, followUpCallbacks };
+  const body: Record<string, unknown> = {
+    ok,
+    followUpCallbacks,
+    deprecated: "Prefer /api/cron/check-followups for timed follow-up reminders",
+  };
   if (errors.length > 0) body.errors = errors;
   return NextResponse.json(body, { status: ok ? 200 : 500 });
 }

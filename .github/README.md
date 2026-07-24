@@ -7,7 +7,8 @@ Scheduled background jobs are defined in **`vercel.json`** at the repo root. Ver
 | Path | Frequency | Purpose |
 | ---- | --------- | ------- |
 | `/api/cron/daily` | Daily 06:00 UTC | Lead scoring, intelligence, coaching, uncontacted checks, due/prep follow-up reminders, billing |
-| `/api/cron/check-leads` | Every 30 minutes | Uncontacted-lead SLA alerts; timed callback follow-up WhatsApp reminders |
+| `/api/cron/check-followups` | Every minute | Timed callback follow-up WhatsApp reminders |
+| `/api/cron/check-leads` | (manual / external) | Deprecated alias for timed callback follow-ups; prefer `check-followups`. Uncontacted SLA stays on daily. |
 | `/api/cron/weekly-digest` | Mondays 06:00 UTC | Weekly manager performance digest |
 | `/api/cron/health` | Every 5 minutes | Health probe |
 | `/api/cron/whatsapp-campaigns` | Every 5 minutes | Scheduled WhatsApp campaign sends |
@@ -24,6 +25,7 @@ From a shell (replace origin and secret):
 
 ```bash
 curl -sS -H "Authorization: Bearer $CRON_SECRET" "https://your-app.vercel.app/api/cron/check-leads"
+curl -sS -H "Authorization: Bearer $CRON_SECRET" "https://your-app.vercel.app/api/cron/check-followups"
 curl -sS -H "Authorization: Bearer $CRON_SECRET" "https://your-app.vercel.app/api/cron/follow-up-reminders"
 ```
 

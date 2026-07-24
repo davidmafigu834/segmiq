@@ -705,7 +705,7 @@ type UncontactedLeadRow = Pick<LeadRow, "id" | "name" | "created_at" | "client_i
 
 /**
  * Alerts each active client manager once per lead when SLA is breached (idempotent on notifications row).
- * Runs from the daily cron only — not the 30-minute callback cron.
+ * Runs from the daily cron only — not the follow-up callback cron.
  */
 export async function notifyUncontactedLeadToManager(
   lead: UncontactedLeadRow,

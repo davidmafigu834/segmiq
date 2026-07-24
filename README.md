@@ -113,9 +113,9 @@ Implementation: `lib/messaging/provider.ts` → `sendWhatsApp` → `lib/messagin
 
 - **NextAuth (login):** In production, **`NEXTAUTH_SECRET` is required**. If it is missing, sign-in shows `/api/auth/error` — *“There is a problem with the server configuration.”* Generate one locally: `openssl rand -base64 32`, add it under Vercel → Project → Settings → Environment Variables, then redeploy.
 - Set **`NEXTAUTH_URL`** to your live site origin with **no path**, e.g. `https://leadstaq.tech` (must match how users open the app; avoid `http://` or a wrong host).
-- **Hobby (free):** Vercel only allows cron expressions that run **at most once per day**. Sub-daily jobs in `vercel.json` (check-leads, health, WhatsApp campaigns) require **Pro** or an external scheduler hitting the same endpoints with `Authorization: Bearer <CRON_SECRET>`.
+- **Hobby (free):** Vercel only allows cron expressions that run **at most once per day**. Sub-daily jobs in `vercel.json` (check-followups, health, WhatsApp campaigns) require **Pro** or an external scheduler hitting the same endpoints with `Authorization: Bearer <CRON_SECRET>`.
 - Set **`CRON_SECRET`** in the Vercel project environment. Vercel Cron sends `Authorization: Bearer <CRON_SECRET>` on each invocation.
-- For ad-hoc external pings (e.g. [cron-job.org](https://cron-job.org)), `GET` **`/api/cron/check-leads`** with the same `Authorization` header and value as in production.
+- For ad-hoc external pings (e.g. [cron-job.org](https://cron-job.org)), `GET` **`/api/cron/check-followups`** with the same `Authorization` header and value as in production.
 - Set all other env vars in the Vercel project (including **`NEXT_PUBLIC_SUPABASE_URL`** and **`SUPABASE_SERVICE_ROLE_KEY`**).
 
 ## Build

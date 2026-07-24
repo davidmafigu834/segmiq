@@ -5,8 +5,8 @@
       "schedule": "0 6 * * *"
     },
     {
-      "path": "/api/cron/check-leads",
-      "schedule": "*/30 * * * *"
+      "path": "/api/cron/check-followups",
+      "schedule": "* * * * *"
     },
     {
       "path": "/api/cron/weekly-digest",

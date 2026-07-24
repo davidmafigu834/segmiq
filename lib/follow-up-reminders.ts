@@ -69,7 +69,7 @@ export type FollowUpRemindersOptions = {
   force?: boolean;
   /** Limit to one lead (agency test). */
   leadId?: string;
-  /** Only process callback_at window (for ~30 min cron). Due/prep run on the daily job. */
+  /** Only process callback_at window (for every-minute cron). Due/prep run on the daily job. */
   callbackOnly?: boolean;
 };
 
@@ -600,9 +600,9 @@ export async function previewFollowUpReminders(
  * Sends WhatsApp follow-up reminders:
  * - **Due/overdue:** leads with follow_up_date on or before today (local timezone), once per day each
  * - **Prep:** leads with follow_up_date tomorrow (local), once per day each
- * - **Callback:** leads with call_logs.callback_at in the due window (every ~30 min via `/api/cron/check-leads`)
+ * - **Callback:** leads with call_logs.callback_at in the due window (every minute via `/api/cron/check-followups`)
  *
- * Pass `callbackOnly: true` to skip due/prep batches (used by the 30-minute cron).
+ * Pass `callbackOnly: true` to skip due/prep batches (used by the every-minute cron).
  */
 export async function executeFollowUpReminders(
   opts: FollowUpRemindersOptions = {}

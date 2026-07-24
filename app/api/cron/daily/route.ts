@@ -13,7 +13,7 @@ import { runBillingDailyCron } from "@/lib/billing/cron";
 /**
  * Single daily job for Vercel Hobby (free): cron schedules must run at most once per day.
  * Includes uncontacted SLA alerts (once per lead), due/prep follow-ups, and housekeeping.
- * Callback follow-ups run every ~30m on `/api/cron/check-leads`.
+ * Timed callback follow-ups run every minute on `/api/cron/check-followups`.
  */
 export async function GET(req: Request) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
