@@ -79,6 +79,13 @@ export function effectiveInboxScore(lead: {
   aiScore?: number | null;
   aiEnabled?: boolean;
 } & RankableLead): number {
+  const fd = lead.form_data ?? {};
+  if (
+    (typeof fd._fbQualScore === "number" && fd._fbQualScore > 0) ||
+    (typeof fd._segmiqFitScore === "number" && fd._segmiqFitScore > 0)
+  ) {
+    return computeRulesScore(lead).score;
+  }
   if (lead.aiEnabled && typeof lead.aiScore === "number") return lead.aiScore;
   if (typeof lead.score === "number" && lead.score > 0) return lead.score;
   return computeRulesScore(lead).score;

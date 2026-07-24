@@ -81,6 +81,18 @@ Select the Ads account used for **Campaigns** insights (Marketing API). If only 
 - **Disconnect** — clears Facebook fields on the client.
 - **Backfill missed leads** — opens a modal; choose “since” datetime and **Run backfill** to pull recent leads from Graph for that form and insert any missing rows (deduped by `facebook_lead_id`). Rate limit: **one backfill per client per minute**. Up to **10** Graph pages of results per run.
 
+### Form intent rules (qualification)
+
+After a Lead Form is connected, the Facebook tab shows **Form intent rules**:
+
+1. **Refresh questions from Facebook** — Graph `/{form_id}?fields=questions` caches options on `clients.fb_form_questions` (also runs automatically when a form is selected).
+2. For each non-contact question, map answers to **High / Medium / Low** intent (or Ignore).
+3. **Enable scoring** + **Save** — stores `fb_qualification_enabled` and `fb_qualification_rules`.
+4. New Facebook leads (webhook + backfill) are scored in `createLead`: `form_data._fbQualScore` / `_fbQualTier` / `_fbQualReasons`, plus `leads.score` and `manual_priority`.
+5. **Cold** forced answers skip Call now (Nurture / later). Hot answers sort to the top of priority lists and show a **Form · hot** chip on Facebook lead cards.
+
+Rules are client-specific (e.g. solar: budget band + ZESA = hot; “just exploring” = cold) and take precedence over generic AI intent when present.
+
 ## Webhook behavior
 
 - **GET** `/api/facebook/webhook` — Meta subscription verification (`hub.verify_token` must match `FACEBOOK_WEBHOOK_VERIFY_TOKEN`).
@@ -107,7 +119,9 @@ The Facebook tab shows a **Connection expired** state when `fb_token_expired_at`
 | GET | `/api/facebook/pages` | Agency admin | Lists Pages |
 | POST | `/api/facebook/pages/select` | Agency admin | Saves Page + subscribes `leadgen` |
 | GET | `/api/facebook/forms` | Agency admin | Lists leadgen forms |
-| POST | `/api/facebook/forms/select` | Agency admin | Saves form |
+| POST | `/api/facebook/forms/select` | Agency admin | Saves form + syncs questions |
+| GET/POST | `/api/facebook/forms/questions` | Agency admin | Read / refresh cached form questions |
+| GET/POST | `/api/facebook/qualification-rules` | Agency admin | Read / save intent rules |
 | GET | `/api/facebook/ad-accounts` | Agency admin | Lists ad accounts |
 | POST | `/api/facebook/ad-accounts/select` | Agency admin | Saves ad account |
 | POST | `/api/facebook/disconnect` | Agency admin | Clears Facebook state |

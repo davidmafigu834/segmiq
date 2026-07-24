@@ -13,7 +13,43 @@ import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { findOpenLeadByPhone, type OpenLeadMatch } from "@/lib/leads/findOpenLeadByPhone";
 import { findReturningAssignee } from "@/lib/whatsapp/assignment";
 import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
+import {
+  applyQualificationToFormData,
+  evaluateFacebookQualification,
+} from "@/lib/facebook/qualification";
 import type { LeadRow, LeadSource, LeadStatus } from "@/types";
+
+function applyFacebookQualificationIfEnabled(
+  source: LeadSource,
+  client: Record<string, unknown>,
+  formData: Record<string, unknown>
+): {
+  formData: Record<string, unknown>;
+  score?: number;
+  scoreBreakdown?: Record<string, number>;
+  manualPriority?: "hot" | "warm" | "cold";
+} {
+  if (source !== "FACEBOOK") return { formData };
+  if (client.fb_qualification_enabled !== true) return { formData };
+  if (!client.fb_qualification_rules) return { formData };
+
+  const result = evaluateFacebookQualification(formData, client.fb_qualification_rules);
+  const enriched = applyQualificationToFormData(formData, result);
+  const breakdown: Record<string, number> = {
+    facebook_qualification: result.score,
+  };
+  for (const m of result.matched.slice(0, 8)) {
+    const key = m.label.replace(/\s+/g, "_").slice(0, 40).toLowerCase() || m.field_key;
+    breakdown[key] = m.points;
+  }
+
+  return {
+    formData: enriched,
+    score: result.score,
+    scoreBreakdown: breakdown,
+    manualPriority: result.tier,
+  };
+}
 
 export type RequestedPackageRef = {
   id: string;
@@ -92,9 +128,12 @@ async function handleOpenLeadReEnquiry(opts: {
   } = opts;
 
   const existingFormData = (existingLead.form_data as Record<string, unknown> | null) ?? {};
-  const mergedFormData: Record<string, unknown> = requestedPackage
+  let mergedFormData: Record<string, unknown> = requestedPackage
     ? { ...existingFormData, ...formData, _requestedPackageName: requestedPackage.name }
     : { ...existingFormData, ...formData };
+
+  const fbQual = applyFacebookQualificationIfEnabled(source, client, mergedFormData);
+  mergedFormData = fbQual.formData;
 
   const leadUpdate: Record<string, unknown> = {
     form_data: mergedFormData,
@@ -106,6 +145,12 @@ async function handleOpenLeadReEnquiry(opts: {
   if (fields.budget) leadUpdate.budget = fields.budget;
   if (fields.project_type) leadUpdate.project_type = fields.project_type;
   if (fields.timeline) leadUpdate.timeline = fields.timeline;
+  if (fbQual.score != null) {
+    leadUpdate.score = fbQual.score;
+    leadUpdate.score_breakdown = fbQual.scoreBreakdown ?? null;
+    leadUpdate.score_updated_at = new Date().toISOString();
+    if (fbQual.manualPriority) leadUpdate.manual_priority = fbQual.manualPriority;
+  }
 
   const { data: updatedLead, error: updateErr } = await supabase
     .from("leads")
@@ -357,11 +402,18 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
 
   const { token, expires } = newMagicToken();
 
-  const storedFormData: Record<string, unknown> = requestedPackage
+  let storedFormData: Record<string, unknown> = requestedPackage
     ? { ...formData, _requestedPackageName: requestedPackage.name }
     : { ...formData };
   if (hubIntake) storedFormData.hub_intake = hubIntake;
   if (hubSource) storedFormData.hub_source = hubSource;
+
+  const fbQual = applyFacebookQualificationIfEnabled(
+    source,
+    client as Record<string, unknown>,
+    storedFormData
+  );
+  storedFormData = fbQual.formData;
 
   const leadInsert = {
     client_id: clientId,
@@ -379,10 +431,17 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     magic_token_expires_at: expires,
     facebook_lead_id: facebookLeadId ?? null,
     contact_id: resolvedContactId,
-    manual_priority: manualPriority ?? null,
+    manual_priority: manualPriority ?? fbQual.manualPriority ?? null,
     follow_up_date: followUpDate ?? null,
     deal_value: dealValue ?? null,
     deal_value_source: dealValue != null && dealValue > 0 ? ("manual" as const) : null,
+    ...(fbQual.score != null
+      ? {
+          score: fbQual.score,
+          score_breakdown: fbQual.scoreBreakdown ?? null,
+          score_updated_at: new Date().toISOString(),
+        }
+      : {}),
   };
 
   const { data: lead, error: lErr } = await supabase.from("leads").insert(leadInsert).select("*").single();

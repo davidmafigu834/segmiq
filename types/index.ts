@@ -77,6 +77,9 @@ export interface ClientRow {
   fb_page_name: string | null;
   fb_form_id: string | null;
   fb_form_name: string | null;
+  fb_form_questions?: unknown | null;
+  fb_qualification_enabled?: boolean;
+  fb_qualification_rules?: unknown | null;
   fb_connected_by_user_id: string | null;
   fb_connected_at: string | null;
   fb_webhook_verified: boolean | null;

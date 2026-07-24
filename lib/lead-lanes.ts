@@ -23,6 +23,8 @@ export interface ClassifiableLead {
   follow_up_date: string | null;
   score?: number | null;
   is_stale?: boolean | null;
+  /** Used for Facebook Instant Form qualification tier (e.g. forced cold). */
+  form_data?: Record<string, unknown> | null;
 }
 
 // Campaign-fit qualifiers configured on a form/campaign. All fields optional —
@@ -131,12 +133,26 @@ function isLowIntent(lead: ClassifiableLead): boolean {
  * Assign a lead to exactly one lane. Rules are evaluated in order; first match
  * wins. `now` is injectable so the function stays pure and testable.
  */
+function forcedFbQualTier(
+  lead: ClassifiableLead
+): "hot" | "warm" | "cold" | null {
+  const tier = lead.form_data?._fbQualTier;
+  if (tier === "hot" || tier === "warm" || tier === "cold") return tier;
+  return null;
+}
+
 export function classifyLeadLane(
   lead: ClassifiableLead,
   now: Date = new Date()
 ): LaneAssignment {
   const uncontacted = isUncontacted(lead);
   const age = ageMs(lead, now);
+  const fbTier = forcedFbQualTier(lead);
+
+  // Business-defined Instant Form rules: "just exploring" etc. skip Call now.
+  if (fbTier === "cold" && uncontacted) {
+    return { lane: "nurture", tier: "cold" };
+  }
 
   if (uncontacted && age < HOT_WINDOW_MS) {
     return { lane: "call_now", tier: "hot" };
@@ -150,7 +166,7 @@ export function classifyLeadLane(
   if (uncontacted && age >= SAME_DAY_WINDOW_MS) {
     return { lane: "recover", tier: "slipped" };
   }
-  if (isLowIntent(lead)) {
+  if (isLowIntent(lead) || fbTier === "cold") {
     return { lane: "nurture", tier: "cold" };
   }
   return { lane: "nurture", tier: "nurture" };
@@ -274,29 +290,51 @@ function isValidPhone(lead: RankableLead): boolean {
  * calls. Returns the score plus the strongest contributing factors as short
  * labels for the reason line. Optional campaign qualifiers add a +10 fit bonus.
  */
+function fitScoreShortCircuit(
+  lead: RankableLead,
+  now: Date
+): RulesScore | null {
+  const fbQual = lead.form_data?._fbQualScore;
+  const segmiqFit = lead.form_data?._segmiqFitScore;
+  const base =
+    typeof fbQual === "number" && fbQual > 0
+      ? fbQual
+      : typeof segmiqFit === "number" && segmiqFit > 0
+        ? segmiqFit
+        : null;
+  if (base == null) return null;
+
+  const age = ageMs(lead, now);
+  let recencyBonus = 0;
+  let recencyLabel = "older";
+  if (age < 2 * 60 * 60 * 1000) {
+    recencyBonus = 10;
+    recencyLabel = "within 2h";
+  } else if (age < 24 * 60 * 60 * 1000) {
+    recencyBonus = 5;
+    recencyLabel = "today";
+  }
+  const score = Math.min(100, base + recencyBonus);
+  const label =
+    typeof fbQual === "number" && fbQual > 0 ? "Form intent" : "Segmiq fit";
+  const reasons = lead.form_data?._fbQualReasons;
+  const extra =
+    Array.isArray(reasons) && typeof reasons[0] === "string"
+      ? [String(reasons[0]).slice(0, 40)]
+      : [];
+  return {
+    score,
+    factors: [label, recencyLabel, ...extra].slice(0, 4),
+  };
+}
+
 export function computeRulesScore(
   lead: RankableLead,
   qualifiers?: CampaignQualifiers | null,
   now: Date = new Date()
 ): RulesScore {
-  const segmiqFit = lead.form_data?._segmiqFitScore;
-  if (typeof segmiqFit === "number" && segmiqFit > 0) {
-    const age = ageMs(lead, now);
-    let recencyBonus = 0;
-    let recencyLabel = "older";
-    if (age < 2 * 60 * 60 * 1000) {
-      recencyBonus = 10;
-      recencyLabel = "within 2h";
-    } else if (age < 24 * 60 * 60 * 1000) {
-      recencyBonus = 5;
-      recencyLabel = "today";
-    }
-    const score = Math.min(100, segmiqFit + recencyBonus);
-    return {
-      score,
-      factors: ["Segmiq fit", recencyLabel],
-    };
-  }
+  const short = fitScoreShortCircuit(lead, now);
+  if (short) return short;
 
   const q = qualifiers ?? lead.qualifiers ?? null;
   const weighted: Array<{ label: string; weight: number }> = [];
@@ -471,11 +509,17 @@ export function matchesQualifiers(
 }
 
 /**
- * Effective rank for sorting: the AI enrichment score when present, otherwise
- * the deterministic rules score. Qualifiers attached to the lead feed the
- * campaign-fit bonus.
+ * Effective rank for sorting: Facebook Instant Form qualification (and Segmiq
+ * fit) beat AI when present, otherwise AI enrichment, otherwise rules score.
  */
 function effectiveScore(lead: RankableLead): number {
+  const fd = lead.form_data ?? {};
+  if (
+    (typeof fd._fbQualScore === "number" && fd._fbQualScore > 0) ||
+    (typeof fd._segmiqFitScore === "number" && fd._segmiqFitScore > 0)
+  ) {
+    return computeRulesScore(lead).score;
+  }
   if (typeof lead.aiScore === "number") return lead.aiScore;
   return computeRulesScore(lead).score;
 }

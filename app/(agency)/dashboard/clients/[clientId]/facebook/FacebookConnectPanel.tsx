@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FacebookQualificationPanel } from "./FacebookQualificationPanel";
 
 export type FacebookClientSnapshot = {
   fb_access_token: string | null;
@@ -623,6 +624,10 @@ export function FacebookConnectPanel({
             ) : null}
           </div>
         )}
+
+        {fullyConfigured && !graphTokenRevoked ? (
+          <FacebookQualificationPanel clientId={clientId} />
+        ) : null}
 
         {backfillOpen ? (
           <div className="fixed inset-0 z-50 flex flex-col bg-black/40 p-0 md:items-center md:justify-center md:p-4" role="dialog">

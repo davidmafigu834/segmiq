@@ -84,6 +84,7 @@ export function facebookLeadFormHighlights(lead: {
   const fd = lead.form_data ?? {};
   const entries = Object.entries(fd)
     .filter(([key, val]) => {
+      if (key.startsWith("_")) return false;
       if (!val || typeof val !== "string" || !val.trim()) return false;
       if (SKIP_FORM_KEY.test(key)) return false;
       if (isContactFieldKey(key)) return false;

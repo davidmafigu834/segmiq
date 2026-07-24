@@ -29,6 +29,11 @@ import {
 import { WhatsAppAvatar } from "@/components/inbox/WhatsAppAvatar";
 import { LeadIntentBadge } from "@/components/inbox/LeadIntentBadge";
 import { scoreLabel } from "@/lib/inbox/scoring";
+import {
+  facebookQualReasonsFromFormData,
+  facebookQualScoreFromFormData,
+  facebookQualTierFromFormData,
+} from "@/lib/facebook/qualification";
 import { LeadCardFreshnessPill, LeadCardIconAction, LeadCardSlaCountdown } from "@/components/sales/lead-card-ui";
 
 function FacebookMark({ size = 10 }: { size?: number }) {
@@ -67,9 +72,20 @@ export function FacebookLeadCard({
   compact?: boolean;
   className?: string;
 }) {
-  const score = intentScore ?? lead.aiScore ?? 0;
-  const showIntentScore = intentScore != null || lead.aiScore != null;
-  const label = scoreLabel(score);
+  const fbQualScore = facebookQualScoreFromFormData(lead.form_data);
+  const fbQualTier = facebookQualTierFromFormData(lead.form_data);
+  const fbReasons = facebookQualReasonsFromFormData(lead.form_data);
+  const score = fbQualScore ?? intentScore ?? lead.aiScore ?? 0;
+  const showIntentScore =
+    fbQualScore != null || intentScore != null || lead.aiScore != null;
+  const label =
+    fbQualTier === "hot"
+      ? "Hot"
+      : fbQualTier === "warm"
+        ? "Warm"
+        : fbQualTier === "cold"
+          ? "Cold"
+          : scoreLabel(score);
   const displayName = facebookLeadDisplayName(lead);
   const phone = facebookLeadPhone(lead);
   const email = facebookLeadEmail(lead);
@@ -180,9 +196,20 @@ export function FacebookLeadCard({
             </div>
           )}
 
+          {fbReasons.length > 0 && !compact ? (
+            <p className="mt-2 line-clamp-2 text-[11px] leading-snug text-[var(--text-tertiary)]">
+              {fbReasons.slice(0, 2).join(" · ")}
+            </p>
+          ) : null}
+
           <div className={`flex flex-wrap items-center gap-1.5 ${compact ? "mt-2" : "mt-2.5"}`}>
             {showIntentScore ? (
               <LeadIntentBadge score={score} label={label} variant="default" showScore />
+            ) : null}
+            {fbQualTier ? (
+              <span className="inline-flex items-center rounded-full border border-[#1877F2]/35 bg-[#1877F2]/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#1877F2]">
+                Form · {fbQualTier}
+              </span>
             ) : null}
             {fit.matched ? (
               <span className="inline-flex items-center rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--accent-foreground)]">

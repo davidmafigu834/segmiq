@@ -6,6 +6,8 @@ export type FbEventType =
   | "fb.page.selected"
   | "fb.form.listed"
   | "fb.form.selected"
+  | "fb.form.questions_synced"
+  | "fb.qualification.rules_saved"
   | "fb.ad_account.listed"
   | "fb.ad_account.selected"
   | "fb.webhook.received"
