@@ -7,6 +7,7 @@ import {
   HelpCircle, MessageCircle, ChevronRight, LogOut, Tag,
 } from "lucide-react";
 import { isCloudAdminRole } from "@/lib/auth/roles";
+import { CloudPage } from "@/app/cloud/components/CloudPage";
 
 type MenuItem = {
   icon: React.ElementType;
@@ -69,7 +70,7 @@ const menuSections: MenuSection[] = [
       {
         icon: HelpCircle,
         label: "Help & FAQ",
-        description: "How to use Segmiq Cloud",
+        description: "How to use SegmiQ Cloud",
         href: "/cloud/help",
       },
       {
@@ -105,47 +106,39 @@ export default function MorePage() {
     }))
     .filter((section) => section.items.length > 0);
 
-  const F = "var(--fw-font-body), system-ui, sans-serif";
-  const S = "var(--fw-font-display), Georgia, serif";
-
   return (
-    <div style={{ minHeight: "100vh", background: "#F7F4EF", fontFamily: F, paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}>
-
-      {/* User card */}
-      <div style={{ padding: "20px 20px 20px" }}>
-        <div style={{ background: "#1C1410", borderRadius: 20, padding: "18px 20px", display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(212,255,79,0.15)", border: "0.5px solid rgba(212,255,79,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: F, fontSize: 14, fontWeight: 700, color: "#D4FF4F" }}>
-            {getInitials(session?.user?.name ?? "")}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontFamily: S, fontSize: 16, color: "#FFFFFF", margin: "0 0 2px", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {session?.user?.name ?? "—"}
-            </p>
-            <p style={{ fontFamily: F, fontSize: 11, color: "rgba(255,255,255,0.45)", margin: 0, textTransform: "capitalize" }}>
-              {session?.role === "CLIENT_MANAGER" ? "Manager" : (session?.role?.toLowerCase().replace("_", " ") ?? "")}
-            </p>
-          </div>
-          {isCloudAdmin && (
-            <button
-              onClick={() => router.push("/cloud/dashboard/settings")}
-              style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
-            >
-              <ChevronRight size={14} color="rgba(255,255,255,0.5)" />
-            </button>
-          )}
+    <CloudPage>
+      <div className="cloud-card--ink cloud-card mb-6 flex items-center gap-3.5 p-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[rgba(212,255,79,0.3)] bg-[rgba(212,255,79,0.12)] text-[13px] font-bold text-[var(--cloud-accent)]">
+          {getInitials(session?.user?.name ?? "")}
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-cloud-display text-[18px] text-white">
+            {session?.user?.name ?? "—"}
+          </p>
+          <p className="text-[11px] capitalize text-white/45">
+            {session?.role === "CLIENT_MANAGER" ? "Manager" : (session?.role?.toLowerCase().replace("_", " ") ?? "")}
+          </p>
+        </div>
+        {isCloudAdmin && (
+          <button
+            type="button"
+            onClick={() => router.push("/cloud/dashboard/settings")}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/8"
+          >
+            <ChevronRight size={14} className="text-white/50" />
+          </button>
+        )}
       </div>
 
-      {/* Menu sections */}
       {visibleSections.map((section) => (
-        <div key={section.label} style={{ marginBottom: 24 }}>
-          <p style={{ fontFamily: F, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 10px", padding: "0 20px" }}>
-            {section.label}
-          </p>
-          <div style={{ margin: "0 20px", background: "#FFFFFF", borderRadius: 18, border: "0.5px solid rgba(28,20,16,0.08)", overflow: "hidden" }}>
+        <div key={section.label} className="mb-6">
+          <p className="cloud-section-label px-0.5">{section.label}</p>
+          <div className="cloud-card overflow-hidden">
             {section.items.map((item, index) => (
               <button
                 key={item.label}
+                type="button"
                 onClick={() => {
                   if (item.download) {
                     window.location.href = item.href;
@@ -155,44 +148,40 @@ export default function MorePage() {
                     router.push(item.href);
                   }
                 }}
-                style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "none", border: "none", borderBottom: index < section.items.length - 1 ? "0.5px solid rgba(28,20,16,0.06)" : "none", cursor: "pointer", textAlign: "left" }}
+                className={`flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors hover:bg-[var(--cloud-surface-hover)] ${
+                  index < section.items.length - 1 ? "border-b border-[var(--cloud-border)]" : ""
+                }`}
               >
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: "#F7F4EF", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <item.icon size={18} color="#1C1410" strokeWidth={1.8} />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--cloud-surface-muted)]">
+                  <item.icon size={18} className="text-[var(--cloud-text-primary)]" strokeWidth={1.8} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontFamily: F, fontSize: 14, fontWeight: 600, color: "#1C1410", margin: "0 0 2px", lineHeight: 1.2 }}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-[var(--cloud-text-primary)]">
                     {item.label}
                   </p>
-                  <p style={{ fontFamily: F, fontSize: 11, color: "#8C7B6B", margin: 0, lineHeight: 1.3 }}>
+                  <p className="text-[11px] text-[var(--cloud-text-tertiary)]">
                     {item.description}
                   </p>
                 </div>
-                <ChevronRight size={14} color="#6B7280" style={{ flexShrink: 0 }} />
+                <ChevronRight size={14} className="shrink-0 text-[var(--cloud-text-tertiary)]" />
               </button>
             ))}
           </div>
         </div>
       ))}
 
-      {/* Sign out */}
-      <div style={{ padding: "0 20px 32px" }}>
-        <button
-          onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
-          style={{ width: "100%", height: 52, background: "#FFFFFF", border: "0.5px solid rgba(232,96,44,0.25)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer" }}
-        >
-          <LogOut size={16} color="#E8602C" />
-          <span style={{ fontFamily: F, fontSize: 14, fontWeight: 700, color: "#E8602C" }}>
-            Sign out
-          </span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
+        className="cloud-card mb-6 flex h-[52px] w-full items-center justify-center gap-2 border-red-200/70 text-[14px] font-bold text-[var(--cloud-danger)]"
+      >
+        <LogOut size={16} />
+        Sign out
+      </button>
 
-      {/* App version */}
-      <p style={{ textAlign: "center", fontFamily: F, fontSize: 11, color: "#6B7280", margin: "0 0 20px" }}>
-        Segmiq Cloud · Version 1.0
+      <p className="pb-2 text-center text-[11px] text-[var(--cloud-text-tertiary)]">
+        SegmiQ Cloud · Version 1.0
       </p>
-
-    </div>
+    </CloudPage>
   );
 }

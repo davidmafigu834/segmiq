@@ -98,7 +98,7 @@ export default function ProjectAnalyticsPage() {
     : null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F5F0", fontFamily: F, paddingBottom: 100 }}>
+    <div className="cloud-page" style={{ fontFamily: F }}>
 
       {/* Back + title */}
       <div style={{ padding: "16px 20px 0", display: "flex", alignItems: "center", gap: 12 }}>

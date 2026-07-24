@@ -232,7 +232,7 @@ export default function DesktopUploadPage() {
   if (allDone) {
     return (
       <div style={{
-        minHeight: "100vh", background: "#F7F4EF",
+        minHeight: "100vh", background: "var(--cloud-bg)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "var(--fw-font-body), system-ui, sans-serif",
       }}>
@@ -283,7 +283,7 @@ export default function DesktopUploadPage() {
       {uploading && (
         <div style={{
           position: "sticky", top: 0, zIndex: 10,
-          background: "#F7F4EF", borderBottom: "0.5px solid rgba(28,20,16,0.08)",
+          background: "var(--cloud-bg)", borderBottom: "1px solid var(--cloud-border)",
           padding: "12px 24px",
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>

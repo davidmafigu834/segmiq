@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { CloudPackagesManager } from "@/app/cloud/components/CloudPackagesManager";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
+import { CloudPage } from "@/app/cloud/components/CloudPage";
 
 type Client = { id: string; name: string };
 
@@ -52,20 +53,18 @@ export default function CloudPricingPage() {
 
   return (
     <CloudAdminGate>
-    <div className="min-h-screen bg-[#F5F5F0] px-5 py-4 pb-28 font-cloud-body lg:px-8 lg:pb-8">
+    <CloudPage>
       <div className="mx-auto max-w-4xl">
         <div className="mb-6">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6B7280]">
-            Public profile
-          </p>
-          <p className="max-w-xl text-[13px] leading-relaxed text-[#666660]">
+          <p className="cloud-section-label">Public profile</p>
+          <p className="max-w-xl text-[13px] leading-relaxed text-[var(--cloud-text-secondary)]">
             Manage the packages shown on your public profile and send them to prospects from the CRM.
           </p>
           {isAdmin && clients.length > 0 && (
             <select
               value={selectedClientId}
               onChange={(e) => setSelectedClientId(e.target.value)}
-              className="mt-4 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-[13px] text-[#666660] outline-none"
+              className="cloud-input mt-4 h-auto w-auto py-2"
             >
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -80,7 +79,7 @@ export default function CloudPricingPage() {
           <CloudPackagesManager clientId={selectedClientId} profileSlug={profileSlug} />
         ) : null}
       </div>
-    </div>
+    </CloudPage>
     </CloudAdminGate>
   );
 }

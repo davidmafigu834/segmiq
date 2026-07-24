@@ -8,6 +8,7 @@ import { NewProjectSlideOver } from "./NewProjectSlideOver";
 import { SkeletonPhotoGrid } from "@/app/cloud/components/SkeletonCard";
 import ProjectSceneIllustration from "@/app/cloud/components/ProjectSceneIllustration";
 import { buildProjectShareUrl } from "@/app/cloud/lib/project-share-url";
+import { CloudPage } from "@/app/cloud/components/CloudPage";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -127,45 +128,48 @@ export default function CloudProjectsPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F0] font-cloud-body pt-4">
-        <div className="px-5 mb-4">
-          <div style={{ height: 44, borderRadius: 12, background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.5s infinite', maxWidth: 360 }} />
+      <CloudPage>
+        <div className="mb-4">
+          <div
+            className="h-11 max-w-sm rounded-[12px]"
+            style={{
+              background: "linear-gradient(90deg, var(--cloud-surface-muted) 25%, #e4e6eb 50%, var(--cloud-surface-muted) 75%)",
+              backgroundSize: "200% 100%",
+              animation: "skeleton-shimmer 1.5s infinite",
+            }}
+          />
         </div>
         <SkeletonPhotoGrid />
-      </div>
+      </CloudPage>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 lg:px-8">
+    <CloudPage>
       {/* Top bar */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" strokeWidth={1.8} />
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative max-w-sm flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cloud-text-tertiary)]" strokeWidth={1.8} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search projects…"
-            className="w-full rounded-xl border border-black/[0.08] bg-white py-2.5 pl-9 pr-4 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
+            className="cloud-input pl-10"
           />
         </div>
         <div className="flex items-center gap-2">
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="rounded-xl border border-black/[0.08] bg-white text-[13px] text-[#666660] outline-none font-cloud-body"
-            style={{ height: 44, padding: '0 12px', minWidth: 120 }}
+            className="cloud-input w-auto min-w-[120px]"
           >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
             <option value="most_photos">Most photos</option>
             <option value="alpha">Alphabetical</option>
           </select>
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-[#D4FF4F] px-4 py-2.5 text-[13px] font-bold text-black transition-colors hover:bg-[#C8F244] font-cloud-body"
-          >
+          <button type="button" onClick={() => setShowNew(true)} className="cloud-btn-primary">
             <Plus className="h-3.5 w-3.5" />
             New project
           </button>
@@ -187,17 +191,15 @@ export default function CloudProjectsPage() {
 
       {/* Category filter pills */}
       {allCategories.length > 0 && (
-        <div className="cloud-scroll-x mb-1 flex items-center gap-2" style={{ padding: "4px 0 12px" }}>
+        <div className="cloud-scroll-x mb-4 flex items-center gap-2 py-1">
           <button
+            type="button"
             onClick={() => setActiveCategory(null)}
-            style={{
-              height: 44, padding: '0 16px', borderRadius: 22, fontSize: 12, fontWeight: 600,
-              fontFamily: 'var(--fw-font-body), system-ui, sans-serif', cursor: 'pointer',
-              flexShrink: 0, whiteSpace: 'nowrap',
-              background: activeCategory === null ? '#0a0a0a' : '#FFFFFF',
-              color: activeCategory === null ? '#FFFFFF' : '#666660',
-              border: activeCategory === null ? 'none' : '0.5px solid rgba(0,0,0,0.08)',
-            }}
+            className={`h-9 shrink-0 rounded-full px-4 text-[12px] font-semibold transition-colors ${
+              activeCategory === null
+                ? "bg-[var(--cloud-ink)] text-white"
+                : "cloud-card text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-hover)]"
+            }`}
           >
             All
           </button>
@@ -206,15 +208,13 @@ export default function CloudProjectsPage() {
             return (
               <button
                 key={cat}
+                type="button"
                 onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                style={{
-                  height: 44, padding: '0 16px', borderRadius: 22, fontSize: 12, fontWeight: 600,
-                  fontFamily: 'var(--fw-font-body), system-ui, sans-serif', cursor: 'pointer',
-                  flexShrink: 0, whiteSpace: 'nowrap',
-                  background: isAct ? '#1C1410' : '#FFFFFF',
-                  color: isAct ? '#FFFFFF' : '#666660',
-                  border: isAct ? 'none' : '0.5px solid rgba(0,0,0,0.08)',
-                }}
+                className={`h-9 shrink-0 rounded-full px-4 text-[12px] font-semibold transition-colors ${
+                  isAct
+                    ? "bg-[var(--cloud-ink)] text-white"
+                    : "cloud-card text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-hover)]"
+                }`}
               >
                 {cat}
               </button>
@@ -227,99 +227,97 @@ export default function CloudProjectsPage() {
         <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
           {fetchError ? (
             <>
-              <p className="font-cloud-display text-[18px] text-[#0a0a0a] mb-1">Projects unavailable</p>
-              <p className="text-[13px] text-[#6B7280] font-cloud-body max-w-[280px]">{fetchError}</p>
+              <p className="mb-1 font-cloud-display text-[18px] text-[var(--cloud-text-primary)]">Projects unavailable</p>
+              <p className="max-w-[280px] text-[13px] text-[var(--cloud-text-secondary)]">{fetchError}</p>
             </>
           ) : search || activeCategory ? (
             <>
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white border border-black/[0.07]">
-                <Search className="h-6 w-6 text-[#6B7280]" strokeWidth={1.5} />
+              <div className="cloud-card mb-4 flex h-14 w-14 items-center justify-center">
+                <Search className="h-6 w-6 text-[var(--cloud-text-secondary)]" strokeWidth={1.5} />
               </div>
-              <p className="font-cloud-display text-[18px] text-[#0a0a0a] mb-1">No results</p>
-              <p className="text-[13px] text-[#6B7280] font-cloud-body">No projects match your search.</p>
+              <p className="mb-1 font-cloud-display text-[18px] text-[var(--cloud-text-primary)]">No results</p>
+              <p className="text-[13px] text-[var(--cloud-text-secondary)]">No projects match your search.</p>
             </>
           ) : (
             <>
               <ProjectSceneIllustration className="mb-4 opacity-80" width={200} height={148} />
-              <p className="font-cloud-display text-[20px] text-[#0a0a0a] mb-2">No projects yet</p>
-              <p className="text-[13px] text-[#6B7280] font-cloud-body mb-6 max-w-[220px]">
+              <p className="mb-2 font-cloud-display text-[20px] text-[var(--cloud-text-primary)]">No projects yet</p>
+              <p className="mb-6 max-w-[220px] text-[13px] text-[var(--cloud-text-secondary)]">
                 Create your first project, then upload photos straight from your phone.
               </p>
-              <button
-                onClick={() => setShowNew(true)}
-                className="rounded-xl bg-[#D4FF4F] px-5 py-3 text-[14px] font-bold text-black font-cloud-body hover:bg-[#C8F244] transition-colors"
-              >
+              <button type="button" onClick={() => setShowNew(true)} className="cloud-btn-primary h-11 px-5">
                 Create your first project
               </button>
             </>
           )}
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 10, padding: "0 20px" }}>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((p) => {
             return (
-              <div key={p.id} style={{ minWidth: 0 }}>
-                <div style={{ borderRadius: 18, background: "var(--fw-card)", border: "0.5px solid var(--fw-border)", overflow: "hidden", cursor: "pointer", position: "relative" }}>
-                  {/* Top row: category badge left | [star + menu] right */}
-                  <div className="flex items-center justify-between px-3.5 pt-3.5 pb-1 gap-1">
+              <div key={p.id} className="min-w-0">
+                <div className="cloud-card relative overflow-hidden">
+                  <div className="flex items-center justify-between gap-1 px-3.5 pb-1 pt-3.5">
                     {p.category ? (
-                      <span className="truncate rounded-full px-2 py-0.5 text-[10px] font-semibold font-cloud-body" style={{ background: "var(--fw-sunken)", color: "var(--fw-text-secondary)", maxWidth: "60%" }}>
+                      <span className="max-w-[60%] truncate rounded-full bg-[var(--cloud-surface-muted)] px-2 py-0.5 text-[10px] font-semibold text-[var(--cloud-text-secondary)]">
                         {p.category}
                       </span>
                     ) : <span className="flex-1" />}
                     <div className="flex flex-shrink-0 items-center gap-1">
                       {p.is_featured && (
-                        <Star className="h-3.5 w-3.5 flex-shrink-0" style={{ color: "#B8860B", fill: "#B8860B" }} />
+                        <Star className="h-3.5 w-3.5 flex-shrink-0 fill-[var(--cloud-accent)] text-[var(--cloud-ink)]" />
                       )}
-                    <div className="relative">
-                      <button
-                        onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
-                        className="rounded-lg p-1.5 transition-colors"
-                        style={{ background: "var(--fw-sunken)" }}
-                      >
-                        <MoreVertical className="h-4 w-4" style={{ color: "var(--fw-text-secondary)" }} />
-                      </button>
-                      {menuOpen === p.id && (
-                        <div className="absolute right-0 top-8 z-20 w-44 rounded-xl border border-black/[0.08] bg-white py-1.5 shadow-xl">
-                          <Link
-                            href={`/cloud/dashboard/projects/${p.id}`}
-                            className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-[#666660] hover:bg-[#F5F5F0] hover:text-[#0a0a0a]"
-                            onClick={() => setMenuOpen(null)}
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                            Edit details
-                          </Link>
-                          <button
-                            onClick={() => copyShareLink(p)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-[#666660] hover:bg-[#F5F5F0] hover:text-[#0a0a0a]"
-                          >
-                            <Copy className="h-3.5 w-3.5" />
-                            Copy share link
-                          </button>
-                          <button
-                            onClick={() => void handleToggleFeatured(p)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-[#666660] hover:bg-[#F5F5F0] hover:text-[#0a0a0a]"
-                          >
-                            <Star className="h-3.5 w-3.5" />
-                            {p.is_featured ? "Unfeature" : "Set as featured"}
-                          </button>
-                          <hr className="my-1 border-black/[0.06]" />
-                          <button
-                            onClick={() => void handleDelete(p)}
-                            className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-red-500 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
+                          className="rounded-lg bg-[var(--cloud-surface-muted)] p-1.5 transition-colors"
+                        >
+                          <MoreVertical className="h-4 w-4 text-[var(--cloud-text-secondary)]" />
+                        </button>
+                        {menuOpen === p.id && (
+                          <div className="absolute right-0 top-8 z-20 w-44 rounded-xl border border-[var(--cloud-border)] bg-white py-1.5 shadow-[var(--cloud-shadow-elevated)]">
+                            <Link
+                              href={`/cloud/dashboard/projects/${p.id}`}
+                              className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
+                              onClick={() => setMenuOpen(null)}
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                              Edit details
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => copyShareLink(p)}
+                              className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                              Copy share link
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void handleToggleFeatured(p)}
+                              className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
+                            >
+                              <Star className="h-3.5 w-3.5" />
+                              {p.is_featured ? "Unfeature" : "Set as featured"}
+                            </button>
+                            <hr className="my-1 border-[var(--cloud-border)]" />
+                            <button
+                              type="button"
+                              onClick={() => void handleDelete(p)}
+                              className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-red-500 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Cover photo */}
                   <Link href={`/cloud/dashboard/projects/${p.id}`}>
-                    <div className="aspect-square w-full overflow-hidden bg-[var(--fw-sunken)]">
+                    <div className="aspect-square w-full overflow-hidden bg-[var(--cloud-surface-muted)]">
                       {cover(p) ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
@@ -327,21 +325,22 @@ export default function CloudProjectsPage() {
                           alt={p.title}
                           loading="eager"
                           decoding="async"
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center">
-                          <Folder className="h-8 w-8" style={{ color: "var(--fw-text-muted)" }} />
+                          <Folder className="h-8 w-8 text-[var(--cloud-text-disabled)]" />
                         </div>
                       )}
                     </div>
 
-                    {/* Info */}
-                    <div style={{ padding: '10px 12px 14px' }}>
-                      <p className="font-cloud-display text-[15px] leading-tight truncate" style={{ color: "var(--fw-text-primary)", margin: '0 0 6px' }}>{p.title}</p>
-                      <div className="mt-1 flex items-center gap-2 text-[11px] font-cloud-body" style={{ color: "#4A3828" }}>
+                    <div className="px-3 pb-3.5 pt-2.5">
+                      <p className="truncate font-cloud-display text-[15px] leading-tight text-[var(--cloud-text-primary)]">
+                        {p.title}
+                      </p>
+                      <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[var(--cloud-text-secondary)]">
                         {p.location && <span className="truncate">{p.location}</span>}
-                        <span className="ml-auto flex items-center gap-1">
+                        <span className="ml-auto flex items-center gap-1 font-medium">
                           {p.project_media?.length ?? 0} photos
                           <ArrowRight className="h-3 w-3" />
                         </span>
@@ -351,13 +350,21 @@ export default function CloudProjectsPage() {
                         const done = p.project_milestones.filter((m) => m.is_completed).length;
                         const pct = Math.round((done / total) * 100);
                         return (
-                          <div style={{ marginTop: 10 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                              <span style={{ fontFamily: 'var(--fw-font-body), system-ui, sans-serif', fontSize: 9, color: '#8C7B6B', fontWeight: 600 }}>{done}/{total} milestones</span>
-                              <span style={{ fontFamily: 'var(--fw-font-body), system-ui, sans-serif', fontSize: 9, color: '#8C7B6B' }}>{pct}%</span>
+                          <div className="mt-2.5">
+                            <div className="mb-1 flex justify-between">
+                              <span className="text-[10px] font-semibold text-[var(--cloud-text-tertiary)]">
+                                {done}/{total} milestones
+                              </span>
+                              <span className="text-[10px] text-[var(--cloud-text-tertiary)]">{pct}%</span>
                             </div>
-                            <div style={{ height: 4, background: 'rgba(28,20,16,0.08)', borderRadius: 2 }}>
-                              <div style={{ height: 4, borderRadius: 2, background: pct === 100 ? '#D4FF4F' : '#1C1410', width: `${pct}%`, transition: 'width 0.3s ease' }} />
+                            <div className="h-1 overflow-hidden rounded-full bg-[var(--cloud-surface-muted)]">
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{
+                                  width: `${pct}%`,
+                                  background: pct === 100 ? "var(--cloud-accent)" : "var(--cloud-ink)",
+                                }}
+                              />
                             </div>
                           </div>
                         );
@@ -369,25 +376,23 @@ export default function CloudProjectsPage() {
             );
           })}
 
-          {/* New project dashed card */}
           <button
+            type="button"
             onClick={() => setShowNew(true)}
-            style={{ borderRadius: 18, border: "1.5px dashed rgba(28,20,16,0.14)", background: "var(--fw-sunken)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", padding: "24px 12px", gridColumn: "span 2", minHeight: 80, maxHeight: 100, width: "100%" }}
+            className="col-span-2 flex min-h-[88px] flex-col items-center justify-center gap-2 rounded-[var(--cloud-radius-lg)] border border-dashed border-[var(--cloud-border-hover)] bg-[var(--cloud-surface-muted)] px-3 py-6 transition-colors hover:bg-[var(--cloud-surface-hover)] sm:col-span-1"
           >
-            <Plus className="w-4 h-4" style={{ color: "var(--fw-text-muted)" }} />
-            <span className="text-[12px] font-cloud-body" style={{ color: "var(--fw-text-tertiary)" }}>New project</span>
+            <Plus className="h-4 w-4 text-[var(--cloud-text-tertiary)]" />
+            <span className="text-[12px] font-medium text-[var(--cloud-text-tertiary)]">New project</span>
           </button>
         </div>
       )}
 
-      {/* Click outside to close menu */}
       {menuOpen && (
         <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
       )}
 
-      {/* Toast */}
       {toastMsg && (
-        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#0a0a0a]/90 px-5 py-2.5 text-[13px] text-white backdrop-blur-md font-cloud-body lg:bottom-8">
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[var(--cloud-ink)]/90 px-5 py-2.5 text-[13px] text-white backdrop-blur-md lg:bottom-8">
           {toastMsg}
         </div>
       )}
@@ -401,6 +406,6 @@ export default function CloudProjectsPage() {
           redirectOnCreate
         />
       )}
-    </div>
+    </CloudPage>
   );
 }

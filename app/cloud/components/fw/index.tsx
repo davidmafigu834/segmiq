@@ -9,16 +9,12 @@ type FWCardProps = {
 };
 
 export function FWCard({ children, className = "", style, onClick }: FWCardProps) {
-  const base: React.CSSProperties = {
-    background: "#FFFFFF",
-    border: "0.5px solid rgba(0,0,0,0.07)",
-    borderRadius: 20,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-    overflow: "hidden",
-    ...style,
-  };
   return (
-    <div style={base} className={className} onClick={onClick}>
+    <div
+      className={`cloud-card ${className}`.trim()}
+      style={style}
+      onClick={onClick}
+    >
       {children}
     </div>
   );
@@ -32,17 +28,7 @@ type FWSectionLabelProps = {
 
 export function FWSectionLabel({ children, className = "" }: FWSectionLabelProps) {
   return (
-    <p
-      className={`font-cloud-body ${className}`}
-      style={{
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: "0.09em",
-        textTransform: "uppercase",
-        color: "#6B7280",
-        margin: 0,
-      }}
-    >
+    <p className={`cloud-section-label ${className}`.trim()}>
       {children}
     </p>
   );
@@ -56,22 +42,10 @@ type FWButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   children: React.ReactNode;
 };
 
-const variantStyles: Record<FWButtonVariant, React.CSSProperties> = {
-  primary: {
-    background: "#D4FF4F",
-    color: "#111111",
-    border: "none",
-  },
-  secondary: {
-    background: "rgba(255,255,255,0.7)",
-    color: "#374151",
-    border: "0.5px solid rgba(0,0,0,0.10)",
-  },
-  ghost: {
-    background: "transparent",
-    color: "#6B7280",
-    border: "0.5px solid rgba(0,0,0,0.08)",
-  },
+const variantClass: Record<FWButtonVariant, string> = {
+  primary: "cloud-btn-primary",
+  secondary: "cloud-btn-ink",
+  ghost: "cloud-btn-ghost",
 };
 
 export function FWButton({
@@ -81,24 +55,12 @@ export function FWButton({
   className = "",
   ...rest
 }: FWButtonProps) {
-  const base: React.CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    height: 40,
-    padding: "0 18px",
-    borderRadius: 12,
-    fontSize: 13,
-    fontWeight: 700,
-    cursor: "pointer",
-    transition: "opacity 0.15s",
-    fontFamily: "var(--font-dm-sans), system-ui, sans-serif",
-    ...variantStyles[variant],
-    ...style,
-  };
   return (
-    <button style={base} className={`font-cloud-body ${className}`} {...rest}>
+    <button
+      style={style}
+      className={`${variantClass[variant]} font-cloud-body ${className}`.trim()}
+      {...rest}
+    >
       {children}
     </button>
   );

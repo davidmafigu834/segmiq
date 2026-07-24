@@ -645,7 +645,7 @@ export default function ProjectDetailPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F0]" style={{ padding: '20px 20px 0' }}>
+      <div className="cloud-page !pb-0">
         <div style={{ height: 14, width: 64, background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.5s infinite', borderRadius: 4, marginBottom: 14 }} />
         <div style={{ height: 26, width: '65%', background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.5s infinite', borderRadius: 6, marginBottom: 28 }} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -702,7 +702,7 @@ export default function ProjectDetailPage() {
   const catStyles = project ? getProjectCardStyles(project.category) : null;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 lg:px-8">
+    <div className="cloud-page font-cloud-body">
       {/* Header */}
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">

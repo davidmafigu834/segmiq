@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
+import { CloudPage } from "@/app/cloud/components/CloudPage";
+import { Folder, Camera, Link2 } from "lucide-react";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -15,9 +17,6 @@ type Project = {
   updated_at: string;
   project_media: MediaItem[];
 };
-
-const F = "var(--fw-font-body), system-ui, sans-serif";
-const S = "var(--fw-font-display), Georgia, serif";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -36,27 +35,30 @@ function ShareRow({ project, origin }: { project: Project; origin: string }) {
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "0.5px solid rgba(0,0,0,0.06)" }}>
-      {/* Folder icon */}
-      <div style={{ width: 40, height: 40, borderRadius: 12, background: "#F7F4EF", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A3828" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
+    <div className="flex items-center gap-3 border-b border-[var(--cloud-border)] py-3 last:border-b-0">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--cloud-surface-muted)]">
+        <Folder size={18} className="text-[var(--cloud-text-secondary)]" strokeWidth={1.6} />
       </div>
-      {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 15, fontWeight: 600, color: "#1C1410", margin: "0 0 2px", fontFamily: F, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{project.title}</p>
-        <p style={{ fontSize: 12, color: "#8C7B6B", margin: 0, fontFamily: F, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shareUrl.replace("https://", "")}</p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14px] font-semibold text-[var(--cloud-text-primary)]">{project.title}</p>
+        <p className="truncate text-[12px] text-[var(--cloud-text-tertiary)]">
+          {shareUrl.replace("https://", "")}
+        </p>
       </div>
-      {/* Meta */}
-      <div style={{ textAlign: "right", flexShrink: 0 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "#4A3828", margin: "0 0 2px", fontFamily: F }}>{photoCount} photo{photoCount !== 1 ? "s" : ""}</p>
-        <p style={{ fontSize: 11, color: "#8C7B6B", margin: 0, fontFamily: F }}>{formatDate(project.updated_at)}</p>
+      <div className="shrink-0 text-right">
+        <p className="text-[13px] font-semibold text-[var(--cloud-text-secondary)]">
+          {photoCount} photo{photoCount !== 1 ? "s" : ""}
+        </p>
+        <p className="text-[11px] text-[var(--cloud-text-tertiary)]">{formatDate(project.updated_at)}</p>
       </div>
-      {/* Copy button */}
       <button
+        type="button"
         onClick={copy}
-        style={{ height: 34, padding: "0 14px", background: copied ? "#D4FF4F" : "#F7F4EF", color: copied ? "#1C1410" : "#4A3828", fontSize: 13, fontWeight: 600, borderRadius: 9, border: "none", cursor: "pointer", flexShrink: 0, fontFamily: F, transition: "background 0.2s" }}
+        className={`h-9 shrink-0 rounded-[9px] px-3.5 text-[13px] font-semibold transition-colors ${
+          copied
+            ? "bg-[var(--cloud-accent)] text-[var(--cloud-ink)]"
+            : "bg-[var(--cloud-surface-muted)] text-[var(--cloud-text-secondary)]"
+        }`}
       >
         {copied ? "Copied!" : "Copy"}
       </button>
@@ -88,15 +90,14 @@ export default function AnalyticsPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-[#1C1410]" />
-      </div>
+      <CloudPage className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-[var(--cloud-ink)]" />
+      </CloudPage>
     );
   }
 
   const totalPhotos = projects.reduce((n, p) => n + (p.project_media?.length ?? 0), 0);
 
-  // Category breakdown
   const categoryMap = new Map<string, number>();
   projects.forEach((p) => {
     const cat = p.category || "Other";
@@ -105,80 +106,66 @@ export default function AnalyticsPage() {
   const categories = Array.from(categoryMap.entries()).sort((a, b) => b[1] - a[1]);
   const maxCatCount = categories[0]?.[1] ?? 1;
 
-  const catColors: Record<string, string> = {
-    Construction: "#F97316", Solar: "#FBBF24", Landscaping: "#34D399",
-    Electrical: "#60A5FA", Roofing: "#A78BFA", Plumbing: "#38BDF8",
-    "Interior Design": "#F472B6", Fencing: "#4ADE80", Events: "#FB923C",
-    Other: "#94A3B8",
-  };
+  const stats = [
+    { label: "Projects", value: String(projects.length), Icon: Folder },
+    { label: "Photos", value: String(totalPhotos), Icon: Camera },
+    { label: "Shared links", value: String(projects.length), Icon: Link2 },
+  ];
 
   return (
     <CloudAdminGate>
-    <div style={{ minHeight: "100vh", background: "#F5F5F0", fontFamily: F, paddingBottom: 100 }}>
-
-      {/* ── SUMMARY STATS ── */}
-      <div style={{ padding: "16px 20px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          {([
-            { label: "Projects", value: String(projects.length), icon: "M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z", color: "#3B82F6" },
-            { label: "Photos", value: String(totalPhotos), icon: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z M12 13 m-4 0 a4 4 0 1 0 8 0 a4 4 0 1 0-8 0", color: "#10B981" },
-            { label: "Shared links", value: String(projects.length), icon: "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71", color: "#8B5CF6" },
-          ] as { label: string; value: string; icon: string; color: string }[]).map((s) => (
-            <div key={s.label} style={{ background: "#FFFFFF", borderRadius: 18, border: "0.5px solid rgba(28,20,16,0.08)", padding: "14px 12px" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: "#F7F4EF", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A3828" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={s.icon}/>
-                </svg>
-              </div>
-              <p style={{ fontFamily: S, fontSize: 24, color: "#1C1410", margin: "0 0 2px", lineHeight: 1 }}>{s.value}</p>
-              <p style={{ fontSize: 11, color: "#8C7B6B", margin: 0, fontFamily: F }}>{s.label}</p>
+    <CloudPage>
+      <div className="grid grid-cols-3 gap-3">
+        {stats.map((s) => (
+          <div key={s.label} className="cloud-card p-4">
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--cloud-surface-muted)]">
+              <s.Icon size={16} className="text-[var(--cloud-text-secondary)]" strokeWidth={1.8} />
             </div>
-          ))}
-        </div>
+            <p className="font-cloud-display text-[24px] leading-none text-[var(--cloud-text-primary)]">
+              {s.value}
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--cloud-text-tertiary)]">{s.label}</p>
+          </div>
+        ))}
       </div>
 
-      {/* ── SHARED LINKS ── */}
-      <div style={{ padding: "20px 20px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: 0, fontFamily: F }}>Shared project links</p>
+      <div className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="cloud-section-label mb-0">Shared project links</p>
           {projects.length > 0 && (
-            <span style={{ fontSize: 12, color: "#8C7B6B", fontFamily: F }}>{projects.length} total</span>
+            <span className="text-[12px] text-[var(--cloud-text-tertiary)]">{projects.length} total</span>
           )}
         </div>
-        <div style={{ background: "#FFFFFF", borderRadius: 20, border: "0.5px solid rgba(28,20,16,0.08)", padding: "0 16px" }}>
+        <div className="cloud-card px-4">
           {projects.length === 0 ? (
-            <div style={{ padding: "32px 0", textAlign: "center" }}>
-              <p style={{ fontSize: 15, color: "#8C7B6B", margin: 0, fontFamily: F }}>No projects yet</p>
+            <div className="py-10 text-center">
+              <p className="text-[14px] text-[var(--cloud-text-secondary)]">No projects yet</p>
             </div>
           ) : (
-            projects.map((p, i) => (
-              <div key={p.id} style={{ borderBottom: i < projects.length - 1 ? undefined : "none" }}>
-                <ShareRow project={p} origin={origin} />
-              </div>
-            ))
+            projects.map((p) => <ShareRow key={p.id} project={p} origin={origin} />)
           )}
         </div>
       </div>
 
-      {/* ── CATEGORY BREAKDOWN ── */}
       {categories.length > 0 && (
-        <div style={{ padding: "20px 20px 0" }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 12px", fontFamily: F }}>Projects by category</p>
-          <div style={{ background: "#FFFFFF", borderRadius: 20, border: "0.5px solid rgba(28,20,16,0.08)", padding: "16px" }}>
+        <div className="mt-6">
+          <p className="cloud-section-label">Projects by category</p>
+          <div className="cloud-card space-y-3.5 p-4">
             {categories.map(([cat, count]) => {
-              const color = catColors[cat] ?? "#94A3B8";
               const pct = Math.round((count / projects.length) * 100);
               return (
-                <div key={cat} style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
-                      <span style={{ fontSize: 14, fontWeight: 600, color: "#1C1410", fontFamily: F }}>{cat}</span>
-                    </div>
-                    <span style={{ fontSize: 13, color: "#8C7B6B", fontFamily: F }}>{count} project{count !== 1 ? "s" : ""} · {pct}%</span>
+                <div key={cat}>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <span className="text-[14px] font-semibold text-[var(--cloud-text-primary)]">{cat}</span>
+                    <span className="text-[12px] text-[var(--cloud-text-tertiary)]">
+                      {count} · {pct}%
+                    </span>
                   </div>
-                  <div style={{ height: 6, background: "#EDE9E3", borderRadius: 3 }}>
-                    <div style={{ height: 6, background: color, borderRadius: 3, width: `${Math.round((count / maxCatCount) * 100)}%`, transition: "width 0.6s ease" }} />
+                  <div className="h-1.5 overflow-hidden rounded-full bg-[var(--cloud-surface-muted)]">
+                    <div
+                      className="h-full rounded-full bg-[var(--cloud-ink)]"
+                      style={{ width: `${Math.round((count / maxCatCount) * 100)}%` }}
+                    />
                   </div>
                 </div>
               );
@@ -187,11 +174,10 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* ── TOP PROJECTS BY PHOTOS ── */}
       {projects.length > 0 && (
-        <div style={{ padding: "20px 20px 0" }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 12px", fontFamily: F }}>Top projects by photos</p>
-          <div style={{ background: "#FFFFFF", borderRadius: 20, border: "0.5px solid rgba(28,20,16,0.08)", padding: "16px" }}>
+        <div className="mt-6">
+          <p className="cloud-section-label">Top projects by photos</p>
+          <div className="cloud-card space-y-3 p-4">
             {[...projects]
               .sort((a, b) => (b.project_media?.length ?? 0) - (a.project_media?.length ?? 0))
               .slice(0, 5)
@@ -199,25 +185,36 @@ export default function AnalyticsPage() {
                 const count = p.project_media?.length ?? 0;
                 const maxCount = projects.reduce((m, x) => Math.max(m, x.project_media?.length ?? 0), 1);
                 return (
-                  <div key={p.id} onClick={() => router.push(`/cloud/dashboard/projects/${p.id}`)}
-                       style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: i < 4 ? 12 : 0, cursor: "pointer" }}>
-                    <span style={{ fontFamily: S, fontSize: 18, color: "#6B7280", width: 20, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: "#1C1410", fontFamily: F, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</span>
-                        <span style={{ fontSize: 13, color: "#8C7B6B", fontFamily: F, flexShrink: 0, marginLeft: 8 }}>{count}</span>
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => router.push(`/cloud/dashboard/projects/${p.id}`)}
+                    className="flex w-full items-center gap-3 text-left"
+                  >
+                    <span className="w-5 shrink-0 text-right font-cloud-display text-[18px] text-[var(--cloud-text-tertiary)]">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <span className="truncate text-[14px] font-semibold text-[var(--cloud-text-primary)]">
+                          {p.title}
+                        </span>
+                        <span className="shrink-0 text-[13px] text-[var(--cloud-text-tertiary)]">{count}</span>
                       </div>
-                      <div style={{ height: 4, background: "#EDE9E3", borderRadius: 2 }}>
-                        <div style={{ height: 4, background: "#D4FF4F", borderRadius: 2, width: `${Math.round((count / maxCount) * 100)}%` }} />
+                      <div className="h-1 overflow-hidden rounded-full bg-[var(--cloud-surface-muted)]">
+                        <div
+                          className="h-full rounded-full bg-[var(--cloud-accent)]"
+                          style={{ width: `${Math.round((count / maxCount) * 100)}%` }}
+                        />
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
           </div>
         </div>
       )}
-    </div>
+    </CloudPage>
     </CloudAdminGate>
   );
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Loader2, Plus, MoreVertical, X, Mail, Phone, UserCheck, AlertCircle, Copy, RefreshCw } from "lucide-react";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
+import { CloudPage } from "@/app/cloud/components/CloudPage";
 import { isCloudAdminRole } from "@/lib/auth/roles";
 
 type TeamMember = {
@@ -26,9 +27,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 function roleBadgeClass(role: string) {
-  if (role === "CLIENT_MANAGER") return "bg-[#FFF0D0] text-[#7A3800] border border-[#F0D090]/50";
-  if (role === "AGENCY_ADMIN") return "bg-[#EDE5FF] text-[#2D1B6B] border border-[#C4A8FF]/30";
-  return "bg-[#F5F5F0] text-[#666660] border border-black/[0.07]";
+  if (role === "CLIENT_MANAGER") return "bg-[var(--cloud-accent-muted)] text-[var(--cloud-ink)] border border-[rgba(212,255,79,0.35)]";
+  if (role === "AGENCY_ADMIN") return "bg-[var(--cloud-ink)] text-[var(--cloud-accent)] border border-transparent";
+  return "bg-[var(--cloud-surface-muted)] text-[var(--cloud-text-secondary)] border border-[var(--cloud-border)]";
 }
 
 export default function CloudTeamPage() {
@@ -150,24 +151,21 @@ export default function CloudTeamPage() {
 
   return (
     <CloudAdminGate>
-    <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 lg:px-8">
+    <CloudPage>
       <div className="mb-5 flex items-center justify-between">
         <div>
           {isAdmin && clients.length > 0 && (
             <select
               value={selectedClientId}
               onChange={(e) => setSelectedClientId(e.target.value)}
-              className="mt-2 rounded-xl border border-black/[0.08] bg-white px-3 py-1.5 text-[13px] text-[#666660] outline-none font-cloud-body"
+              className="cloud-input mt-2 h-auto w-auto py-2"
             >
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           )}
         </div>
         {canManageTeam && (
-        <button
-          onClick={() => setShowInvite(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-[#D4FF4F] px-4 py-2.5 text-[13px] font-bold text-black hover:bg-[#C8F244] transition-colors font-cloud-body"
-        >
+        <button type="button" onClick={() => setShowInvite(true)} className="cloud-btn-primary">
           <Plus className="h-3.5 w-3.5" />
           Invite member
         </button>
@@ -357,7 +355,7 @@ export default function CloudTeamPage() {
           </div>
         </div>
       )}
-    </div>
+    </CloudPage>
     </CloudAdminGate>
   );
 }

@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive, Droplets, LogOut, Upload, Camera, X } from "lucide-react";
 import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
+import { CloudPage } from "@/app/cloud/components/CloudPage";
 import { CompanyCapabilitySettings } from "@/app/cloud/components/CompanyCapabilitySettings";
 import { uploadClientLogoFile } from "@/lib/storage/logo-upload";
 
@@ -320,19 +321,19 @@ export default function CloudSettingsPage() {
 
   const profileUrl = profile?.slug ? `/p/${profile.slug}` : null;
 
-  const inputCls = "w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body";
-  const labelCls = "mb-1.5 block text-[12px] font-semibold text-[#666660] uppercase tracking-[0.06em] font-cloud-body";
-  const saveBtnCls = "flex items-center gap-2 rounded-xl px-5 py-2.5 text-[13px] font-bold disabled:opacity-60 transition-opacity font-cloud-body cursor-pointer" + " bg-[var(--fw-soil)] text-[var(--fw-lime)]";  
-  const sectionCardCls = "rounded-[20px] border p-5 space-y-4 bg-white" + " border-[var(--fw-border)]";  
+  const inputCls = "cloud-input h-auto py-3";
+  const labelCls = "mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cloud-text-secondary)]";
+  const saveBtnCls = "cloud-btn-ink disabled:opacity-60";
+  const sectionCardCls = "cloud-card space-y-4 p-5";
 
   return (
     <CloudAdminGate>
-    <div className="min-h-screen bg-[#F5F5F0] font-cloud-body px-5 py-4 pb-28 lg:px-8 lg:pb-8">
+    <CloudPage narrow>
       <div className="space-y-6">
 
         {/* Business profile */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Business profile</p>
+          <p className="cloud-section-label">Business profile</p>
           <div className={sectionCardCls}>
             <div>
               <label className={labelCls}>Business name</label>
@@ -340,8 +341,11 @@ export default function CloudSettingsPage() {
             </div>
             <div>
               <label className={labelCls}>Industry</label>
-              <select value={bizIndustry} onChange={(e) => setBizIndustry(e.target.value)}
-                className="w-full rounded-xl border border-black/[0.1] bg-[#F5F5F0] px-4 py-3 text-[13px] text-[#666660] outline-none focus:border-black/[0.2] font-cloud-body">
+              <select
+                value={bizIndustry}
+                onChange={(e) => setBizIndustry(e.target.value)}
+                className="cloud-input h-auto py-3 text-[var(--cloud-text-secondary)]"
+              >
                 <option value="">Select industry…</option>
                 {INDUSTRIES.map((ind) => <option key={ind} value={ind}>{ind}</option>)}
               </select>
@@ -350,48 +354,60 @@ export default function CloudSettingsPage() {
               <label className={labelCls}>Business logo</label>
               <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" className="hidden" onChange={handleLogoFileChange} />
               {(logoPreview ?? logoUrl) ? (
-                <div className="flex items-center gap-4 rounded-xl border border-black/[0.08] bg-[#F5F5F0] px-4 py-3">
-                  <div className="flex h-12 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-black/[0.06] bg-white p-1">
+                <div className="flex items-center gap-4 rounded-[12px] border border-[var(--cloud-border)] bg-[var(--cloud-surface-muted)] px-4 py-3">
+                  <div className="flex h-12 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--cloud-border)] bg-white p-1">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={logoPreview ?? logoUrl!} alt="Logo" className="h-full w-full object-contain" />
                   </div>
                   <div className="flex flex-1 flex-col gap-1.5">
                     {logoFile ? (
-                      <button onClick={() => void uploadLogo()} disabled={uploadingLogo} className={saveBtnCls}>
+                      <button type="button" onClick={() => void uploadLogo()} disabled={uploadingLogo} className={saveBtnCls}>
                         {uploadingLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                         {logoSaved ? "Saved!" : uploadingLogo ? "Uploading…" : "Save logo"}
                       </button>
                     ) : (
-                      <button onClick={() => logoInputRef.current?.click()} className="text-left text-[12px] font-semibold text-[#666660] font-cloud-body hover:text-[#0a0a0a]">
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        className="text-left text-[12px] font-semibold text-[var(--cloud-text-secondary)] hover:text-[var(--cloud-text-primary)]"
+                      >
                         Change logo
                       </button>
                     )}
                   </div>
                   {logoFile && (
-                    <button onClick={() => { setLogoFile(null); setLogoPreview(null); }} className="text-[#9CA3AF] hover:text-[#666660]">
+                    <button
+                      type="button"
+                      onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                      className="text-[var(--cloud-text-tertiary)] hover:text-[var(--cloud-text-secondary)]"
+                    >
                       <X className="h-4 w-4" />
                     </button>
                   )}
                 </div>
               ) : (
-                <button onClick={() => logoInputRef.current?.click()} className="flex w-full items-center gap-3 rounded-xl border border-dashed border-black/[0.15] bg-[#F5F5F0] px-4 py-4 text-left text-[13px] text-[#6B7280] font-cloud-body hover:border-black/[0.25] transition-colors">
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="flex w-full items-center gap-3 rounded-[12px] border border-dashed border-[var(--cloud-border-hover)] bg-[var(--cloud-surface-muted)] px-4 py-4 text-left text-[13px] text-[var(--cloud-text-secondary)] transition-colors hover:border-[var(--cloud-text-tertiary)]"
+                >
                   <Camera className="h-4 w-4 flex-shrink-0" />
                   Upload logo (PNG, JPG, WEBP — max 5 MB)
                 </button>
               )}
-              {logoError && <p className="mt-1 text-[12px] text-red-500 font-cloud-body">{logoError}</p>}
+              {logoError && <p className="mt-1 text-[12px] text-red-500">{logoError}</p>}
             </div>
-            <button onClick={() => void saveBusiness()} disabled={savingBiz} className={saveBtnCls}>
+            <button type="button" onClick={() => void saveBusiness()} disabled={savingBiz} className={saveBtnCls}>
               {savingBiz ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               {bizSaved ? "Saved!" : "Save"}
             </button>
-            {bizError && <p className="text-[12px] text-red-500 font-cloud-body">{bizError}</p>}
+            {bizError && <p className="text-[12px] text-red-500">{bizError}</p>}
           </div>
         </section>
 
         {/* Your account */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Your account</p>
+          <p className="cloud-section-label">Your account</p>
           <div className={sectionCardCls}>
             <div>
               <label className={labelCls}>Your name</label>
@@ -417,7 +433,7 @@ export default function CloudSettingsPage() {
 
         {/* Change password */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Change password</p>
+          <p className="cloud-section-label">Change password</p>
           <form onSubmit={(e) => void savePassword(e)} className={sectionCardCls}>
             <div className="relative">
               <label className={labelCls}>Current password</label>
@@ -450,7 +466,7 @@ export default function CloudSettingsPage() {
         {/* Public profile */}
         {client && profile !== null && (
           <section>
-            <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Public profile</p>
+            <p className="cloud-section-label">Public profile</p>
             <div className={sectionCardCls + " !space-y-3"}>
               <div>
                 <label className={labelCls}>Profile headline</label>
@@ -496,7 +512,7 @@ export default function CloudSettingsPage() {
 
         {/* Storage */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Storage</p>
+          <p className="cloud-section-label">Storage</p>
           <div className="rounded-[20px] border border-[#1a1a2e]/20 bg-gradient-to-br from-[#0a0a1a] via-[#111126] to-[#1a1a36] p-5">
             <div className="flex items-center gap-2 mb-4">
               <HardDrive className="h-4 w-4 text-white/40" />
@@ -542,7 +558,7 @@ export default function CloudSettingsPage() {
 
         {/* Watermark */}
         <section>
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase mb-3 font-cloud-body">Watermark</p>
+          <p className="cloud-section-label">Watermark</p>
           <div className={sectionCardCls + " !space-y-5"}>
             <div className="flex items-center justify-between">
               <div>
@@ -628,15 +644,16 @@ export default function CloudSettingsPage() {
         {/* Sign out */}
         <section className="pb-4">
           <button
+            type="button"
             onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
-            className="flex w-full items-center justify-center gap-2 rounded-[20px] border border-red-200/60 bg-white py-4 text-[14px] font-semibold text-red-500 active:scale-[0.99] transition-transform font-cloud-body"
+            className="cloud-card flex w-full items-center justify-center gap-2 border-red-200/70 py-4 text-[14px] font-semibold text-red-500 transition-transform active:scale-[0.99]"
           >
             <LogOut className="h-4 w-4" />
             Sign out
           </button>
         </section>
       </div>
-    </div>
+    </CloudPage>
     </CloudAdminGate>
   );
 }

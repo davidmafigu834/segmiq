@@ -230,8 +230,8 @@ export default function CloudUploadPage() {
   const doneFiles = queue.filter((q) => q.status === "done");
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F0] font-cloud-body">
-      <div className="flex-1 px-5 py-5 lg:px-8">
+    <div className="cloud-page flex min-h-full flex-col !pb-8">
+      <div className="flex-1">
         {allDone ? (
           /* ── All done state ── */
           <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
