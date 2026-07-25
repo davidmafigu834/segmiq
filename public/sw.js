@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'leadstaq-cloud-v7';
+const CACHE_VERSION = 'segmiq-cloud-v8';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 
@@ -13,8 +13,10 @@ function offlineFallback() {
 
 // Only precache static assets and public login pages.
 const PRECACHE_URLS = [
+  '/brand/segmiq-q.png',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/favicon/favicon-32x32.png',
   '/cloud/login',
   '/login',
 ];
