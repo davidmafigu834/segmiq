@@ -261,7 +261,6 @@ export function AgencySidebar({
                   </div>
                 )}
                 <div className="h-3 w-px shrink-0 bg-[var(--border)]" aria-hidden />
-                <SegmiqMark size={20} />
                 <Image src={wordmarkSrc} alt="Segmiq" width={140} height={24} className="h-5 w-auto" />
               </div>
             ) : (
@@ -271,10 +270,7 @@ export function AgencySidebar({
                     {coBrand}
                   </div>
                 ) : null}
-                <div className="flex items-center gap-2">
-                  <SegmiqMark size={24} />
-                  <Image src={wordmarkSrc} alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
-                </div>
+                <Image src={wordmarkSrc} alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
               </>
             )}
             <div className="mt-1 font-mono text-[12px] font-medium uppercase tracking-wide text-[var(--text-on-dark-dim)]">

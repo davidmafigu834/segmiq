@@ -104,15 +104,7 @@ function LoginFormInner() {
   return (
     <div className="relative w-full max-w-[420px]">
       <div className="mb-8 flex flex-col items-center lg:items-start">
-        <Link href="/" className="mb-6 inline-flex items-center gap-2.5 lg:hidden">
-          <Image
-            src="/brand/segmiq-q.png"
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7 rounded-[22%] object-cover"
-            priority
-          />
+        <Link href="/" className="mb-6 inline-flex lg:hidden">
           <Image
             src="/segmiq-wordmark.png"
             alt="Segmiq"
