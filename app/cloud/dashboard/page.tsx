@@ -9,7 +9,7 @@ import { CloudPage } from "@/app/cloud/components/CloudPage";
 import {
   Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink,
 } from "lucide-react";
-import { SkeletonDashboardHome, SkeletonScrollRow } from "@/app/cloud/components/SkeletonCard";
+import { SkeletonDashboardHome } from "@/app/cloud/components/SkeletonCard";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -61,13 +61,16 @@ export default function CloudDashboardHome() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [clientName, setClientName] = useState<string>("");
 
   const fetchProjects = useCallback(() => {
-    if (!session?.clientId) { setLoading(false); return; }
+    if (!session?.clientId) {
+      if (status !== "loading") setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([
       fetch(`/api/clients/${session.clientId}/projects`).then((r) => r.json()),
@@ -81,9 +84,12 @@ export default function CloudDashboardHome() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [session?.clientId]);
+  }, [session?.clientId, status]);
 
-  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  useEffect(() => {
+    if (status === "loading") return;
+    fetchProjects();
+  }, [status, fetchProjects]);
 
   useEffect(() => {
     if (!session?.userId) return;
@@ -125,7 +131,7 @@ export default function CloudDashboardHome() {
       meta: `${p.project_media?.length ?? 0} photos · ${formatRelativeTime(p.updated_at)}`,
     }));
 
-  if (status === "loading") {
+  if (status === "loading" || loading) {
     return (
       <CloudPage>
         <SkeletonDashboardHome />
@@ -248,9 +254,7 @@ export default function CloudDashboardHome() {
         )}
       </div>
 
-      {loading ? (
-        <SkeletonScrollRow />
-      ) : projects.length === 0 ? (
+      {projects.length === 0 ? (
         <div className="cloud-card flex flex-col items-center px-6 py-10 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--cloud-surface-muted)]">
             <Camera size={24} className="text-[var(--cloud-text-secondary)]" strokeWidth={1.6} />

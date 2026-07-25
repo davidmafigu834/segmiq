@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CloudPackagesManager } from "@/app/cloud/components/CloudPackagesManager";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 import { CloudPage } from "@/app/cloud/components/CloudPage";
+import { SkeletonListRows } from "@/app/cloud/components/SkeletonCard";
 
 type Client = { id: string; name: string };
 
@@ -14,28 +15,34 @@ type ProfileData = {
 };
 
 export default function CloudPricingPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const isAdmin = session?.role === "AGENCY_ADMIN";
 
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (status === "loading") return;
     if (isAdmin) {
       fetch("/api/clients")
         .then((r) => r.json())
         .then((data: unknown) => {
-          if (Array.isArray(data)) {
+          if (Array.isArray(data) && (data as Client[]).length > 0) {
             setClients(data as Client[]);
-            if ((data as Client[]).length > 0) setSelectedClientId((data as Client[])[0]!.id);
+            setSelectedClientId((prev) => prev || (data as Client[])[0]!.id);
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setLoading(false));
     } else if (session?.clientId) {
       setSelectedClientId(session.clientId);
+      setLoading(false);
+    } else {
+      setLoading(false);
     }
-  }, [isAdmin, session?.clientId]);
+  }, [status, isAdmin, session?.clientId]);
 
   const fetchProfile = useCallback(() => {
     if (!selectedClientId) return;
@@ -50,6 +57,16 @@ export default function CloudPricingPage() {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  if (status === "loading" || loading) {
+    return (
+      <CloudAdminGate>
+        <CloudPage>
+          <SkeletonListRows count={3} />
+        </CloudPage>
+      </CloudAdminGate>
+    );
+  }
 
   return (
     <CloudAdminGate>

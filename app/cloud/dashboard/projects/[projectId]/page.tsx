@@ -117,7 +117,7 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
@@ -165,7 +165,10 @@ export default function ProjectDetailPage() {
   }
 
   const fetchProject = useCallback(async () => {
-    if (!session?.clientId) { setLoading(false); return; }
+    if (!session?.clientId) {
+      if (status !== "loading") setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/clients/${session.clientId}/projects`);
@@ -209,9 +212,12 @@ export default function ProjectDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [session?.clientId, projectId, router]);
+  }, [session?.clientId, projectId, router, status]);
 
-  useEffect(() => { void fetchProject(); }, [fetchProject]);
+  useEffect(() => {
+    if (status === "loading") return;
+    void fetchProject();
+  }, [status, fetchProject]);
 
   useEffect(() => {
     if (!session?.clientId) return;

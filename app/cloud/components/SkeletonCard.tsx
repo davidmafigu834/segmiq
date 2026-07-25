@@ -207,3 +207,32 @@ export function SkeletonBilling() {
     </>
   );
 }
+
+export function SkeletonSettings() {
+  return (
+    <div className="space-y-6">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <section key={i}>
+          <SkeletonBone className="mb-3 h-3 w-28 rounded-md" />
+          <div className="cloud-card space-y-4 p-5">
+            <div className="space-y-2">
+              <SkeletonBone className="h-3 w-20 rounded-md" />
+              <SkeletonBone className="h-11 w-full rounded-[10px]" />
+            </div>
+            <div className="space-y-2">
+              <SkeletonBone className="h-3 w-24 rounded-md" />
+              <SkeletonBone className="h-11 w-full rounded-[10px]" />
+            </div>
+            {i === 0 ? (
+              <div className="flex items-center gap-4">
+                <SkeletonBone className="h-12 w-20 rounded-lg" />
+                <SkeletonBone className="h-10 w-28 rounded-[10px]" />
+              </div>
+            ) : null}
+            <SkeletonBone className="h-10 w-24 rounded-[10px]" />
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}

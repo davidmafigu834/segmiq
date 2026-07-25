@@ -34,14 +34,15 @@ function roleBadgeClass(role: string) {
 }
 
 export default function CloudTeamPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const isAdmin = session?.role === "AGENCY_ADMIN";
   const canManageTeam = isCloudAdminRole(session?.role);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
 
@@ -54,23 +55,28 @@ export default function CloudTeamPage() {
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
   useEffect(() => {
+    if (status === "loading") return;
     if (isAdmin) {
       fetch("/api/clients")
         .then((r) => r.json())
         .then((data: unknown) => {
-          if (Array.isArray(data)) {
+          if (Array.isArray(data) && (data as Client[]).length > 0) {
             setClients(data as Client[]);
-            if ((data as Client[]).length > 0) setSelectedClientId((data as Client[])[0].id);
+            setSelectedClientId((prev) => prev || (data as Client[])[0]!.id);
+          } else {
+            setLoading(false);
           }
         })
-        .catch(() => {});
+        .catch(() => setLoading(false));
     } else if (session?.clientId) {
       setSelectedClientId(session.clientId);
+    } else {
+      setLoading(false);
     }
-  }, [isAdmin, session?.clientId]);
+  }, [status, isAdmin, session?.clientId]);
 
   const fetchMembers = useCallback(() => {
-    if (!selectedClientId) { setLoading(false); return; }
+    if (!selectedClientId) return;
     setLoading(true);
     const qs = isAdmin ? `?clientId=${selectedClientId}` : "";
     fetch(`/api/cloud/team${qs}`)
@@ -79,7 +85,10 @@ export default function CloudTeamPage() {
         if (Array.isArray(data)) setMembers(data as TeamMember[]);
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setHasLoaded(true);
+      });
   }, [selectedClientId, isAdmin]);
 
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
@@ -148,6 +157,16 @@ export default function CloudTeamPage() {
     } finally {
       setInviting(false);
     }
+  }
+
+  if (status === "loading" || (loading && !hasLoaded)) {
+    return (
+      <CloudAdminGate>
+        <CloudPage>
+          <SkeletonListRows count={5} />
+        </CloudPage>
+      </CloudAdminGate>
+    );
   }
 
   return (

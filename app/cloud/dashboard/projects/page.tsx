@@ -29,7 +29,7 @@ type SortKey = "newest" | "oldest" | "most_photos" | "alpha";
 export default function CloudProjectsPage() {
   const { data: session, status } = useSession();
   const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("newest");
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -40,7 +40,10 @@ export default function CloudProjectsPage() {
   const [profileSlug, setProfileSlug] = useState<string | null>(null);
 
   const fetchProjects = useCallback(() => {
-    if (!session?.clientId) { setLoading(false); return; }
+    if (!session?.clientId) {
+      if (status !== "loading") setLoading(false);
+      return;
+    }
     setLoading(true);
     setFetchError("");
     fetch(`/api/clients/${session.clientId}/projects`)
@@ -59,9 +62,12 @@ export default function CloudProjectsPage() {
         setProjects([]);
       })
       .finally(() => setLoading(false));
-  }, [session?.clientId]);
+  }, [session?.clientId, status]);
 
-  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  useEffect(() => {
+    if (status === "loading") return;
+    fetchProjects();
+  }, [status, fetchProjects]);
 
   useEffect(() => {
     if (!session?.clientId) return;

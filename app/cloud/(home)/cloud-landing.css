@@ -1,0 +1,134 @@
+/* Segmiq Cloud marketing landing — atmosphere & motion (scoped via .cloud-landing) */
+
+.cloud-landing {
+  --cl-cream: #f7f4ef;
+  --cl-cream-deep: #ebe6dc;
+  --cl-ink: #1c1410;
+  --cl-muted: #8c7b6b;
+  --cl-lime: #d4ff4f;
+  --cl-soil: #3d2e24;
+  position: relative;
+  isolation: isolate;
+}
+
+/* Soft warm wash behind the page — not flat cream */
+.cloud-landing::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(212, 255, 79, 0.12), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 95% 20%, rgba(140, 123, 107, 0.14), transparent 50%),
+    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(61, 46, 36, 0.06), transparent 55%),
+    linear-gradient(180deg, #f3efe7 0%, var(--cl-cream) 35%, #f0ebe3 100%);
+}
+
+/* Fine grain — atmosphere without decoration overload */
+.cloud-landing::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes cl-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cl-kenburns {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.14);
+  }
+}
+
+@keyframes cl-draw-line {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes cl-pulse-soft {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.cloud-landing .cl-reveal {
+  animation: cl-fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cloud-landing .cl-reveal-d1 {
+  animation-delay: 0.12s;
+}
+.cloud-landing .cl-reveal-d2 {
+  animation-delay: 0.28s;
+}
+.cloud-landing .cl-reveal-d3 {
+  animation-delay: 0.42s;
+}
+.cloud-landing .cl-reveal-d4 {
+  animation-delay: 0.56s;
+}
+
+.cloud-landing .cl-hero-media {
+  animation: cl-kenburns 28s ease-out forwards;
+  will-change: transform;
+}
+
+.cloud-landing .cl-timeline-rail {
+  transform-origin: top;
+  animation: cl-draw-line 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both;
+}
+
+.cloud-landing .cl-lime-glow {
+  animation: cl-pulse-soft 4.5s ease-in-out infinite;
+}
+
+.cloud-landing .cl-photo {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cloud-landing .cl-photo-wrap:hover .cl-photo {
+  transform: scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud-landing .cl-reveal,
+  .cloud-landing .cl-hero-media,
+  .cloud-landing .cl-timeline-rail,
+  .cloud-landing .cl-lime-glow {
+    animation: none !important;
+  }
+
+  .cloud-landing .cl-reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .cloud-landing .cl-photo-wrap:hover .cl-photo {
+    transform: none;
+  }
+}

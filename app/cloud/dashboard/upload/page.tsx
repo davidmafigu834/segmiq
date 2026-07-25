@@ -7,8 +7,9 @@ import {
   Camera, Check, ChevronRight, Loader2, Plus, X, ArrowRight, Folder,
 } from "lucide-react";
 import { generateVideoThumbnail, formatFileSize } from "@/app/cloud/lib/video-thumbnail";
-import { getProjectCardStyles } from "@/app/cloud/components/ProjectCard";
 import { uploadProjectMediaFile, uploadErrorMessage } from "@/app/cloud/lib/upload-project-media";
+import { CloudPage } from "@/app/cloud/components/CloudPage";
+import { SkeletonListRows } from "@/app/cloud/components/SkeletonCard";
 
 type Project = {
   id: string;
@@ -35,10 +36,11 @@ const CATEGORIES = [
 ];
 
 export default function CloudUploadPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -54,7 +56,11 @@ export default function CloudUploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchProjects = useCallback(() => {
-    if (!session?.clientId) return;
+    if (!session?.clientId) {
+      if (status !== "loading") setLoadingProjects(false);
+      return;
+    }
+    setLoadingProjects(true);
     fetch(`/api/clients/${session.clientId}/projects`)
       .then((r) => r.json())
       .then((data: unknown) => {
@@ -65,12 +71,14 @@ export default function CloudUploadPage() {
           setProjects(sorted);
         }
       })
-      .catch(() => {});
-  }, [session?.clientId]);
+      .catch(() => {})
+      .finally(() => setLoadingProjects(false));
+  }, [session?.clientId, status]);
 
   useEffect(() => {
+    if (status === "loading") return;
     fetchProjects();
-  }, [fetchProjects]);
+  }, [status, fetchProjects]);
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const rawFiles = Array.from(e.target.files ?? []).filter(
@@ -229,93 +237,111 @@ export default function CloudUploadPage() {
   const pendingCount = queue.filter((q) => q.status === "pending" || q.status === "uploading").length;
   const doneFiles = queue.filter((q) => q.status === "done");
 
+  if (status === "loading" || (loadingProjects && !selectedProject && !allDone)) {
+    return (
+      <CloudPage>
+        <SkeletonListRows count={5} />
+      </CloudPage>
+    );
+  }
+
   return (
-    <div className="cloud-page flex min-h-full flex-col !pb-8">
-      <div className="flex-1">
+    <CloudPage>
         {allDone ? (
-          /* ── All done state ── */
           <div className="flex min-h-[50vh] flex-col items-center justify-center text-center">
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#1C1410]" style={{ boxShadow: '0 8px 24px rgba(28,20,16,0.25)' }}>
-              <Check className="h-8 w-8 text-[#D4FF4F]" />
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--cloud-ink)] shadow-[var(--cloud-shadow-elevated)]">
+              <Check className="h-8 w-8 text-[var(--cloud-accent)]" strokeWidth={2.2} />
             </div>
-            <h2 className="mb-2 font-cloud-display text-[26px] text-[#0a0a0a]">Upload complete!</h2>
-            <p className="mb-8 text-[14px] text-[#666660] font-cloud-body">
-              {doneFiles.length} photo{doneFiles.length !== 1 ? "s" : ""} added to{" "}
-              <span className="font-semibold text-[#0a0a0a]">{selectedProject?.title}</span>.
+            <h2 className="mb-2 font-cloud-display text-[26px] text-[var(--cloud-text-primary)]">
+              Upload complete!
+            </h2>
+            <p className="mb-8 text-[14px] text-[var(--cloud-text-secondary)]">
+              {doneFiles.length} file{doneFiles.length !== 1 ? "s" : ""} added to{" "}
+              <span className="font-semibold text-[var(--cloud-text-primary)]">{selectedProject?.title}</span>.
             </p>
             <div className="flex w-full max-w-xs flex-col gap-3">
-              <button
-                onClick={resetUpload}
-                className="w-full rounded-xl border border-black/[0.1] bg-white py-3 text-[14px] font-semibold text-[#0a0a0a] hover:bg-[#F5F5F0] transition-colors font-cloud-body"
-              >
-                Upload more photos
+              <button type="button" onClick={resetUpload} className="cloud-btn-ghost h-12 w-full">
+                Upload more
               </button>
               <button
+                type="button"
                 onClick={() => router.push(`/cloud/dashboard/projects/${selectedProject!.id}`)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1C1410] py-3 text-[14px] font-bold text-[#D4FF4F] hover:bg-[#2E2218] transition-colors font-cloud-body"
+                className="cloud-btn-primary h-12 w-full"
               >
-                View project <ArrowRight className="h-4 w-4" />
+                View project
+                <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           </div>
         ) : !selectedProject ? (
-          /* ── State A: no project selected ── */
           <>
-            <p className="text-[13px] text-[#6B7280] font-cloud-body mb-1">Choose a project to add photos to.</p>
-            <p className="text-[12px] text-[#6B7280] font-cloud-body mb-5">
-              Uploading from desktop?{" "}
-              <a href="/cloud/dashboard/upload/desktop" className="font-semibold text-[#666660] underline underline-offset-2">
-                Use bulk upload →
-              </a>
-            </p>
+            <div className="mb-6">
+              <p className="cloud-section-label">Upload</p>
+              <h1 className="font-cloud-display text-[clamp(26px,4vw,34px)] leading-[1.1] tracking-[-0.02em] text-[var(--cloud-text-primary)]">
+                Choose a project
+              </h1>
+              <p className="mt-2 text-[13px] text-[var(--cloud-text-secondary)]">
+                Select where these photos go.{" "}
+                <a
+                  href="/cloud/dashboard/upload/desktop"
+                  className="font-semibold text-[var(--cloud-text-primary)] underline-offset-2 hover:underline"
+                >
+                  Bulk upload on desktop →
+                </a>
+              </p>
+            </div>
 
             <div className="mb-3 space-y-2">
               {recent5.map((p) => {
-                const s = getProjectCardStyles(p.category);
                 const coverUrl = [...(p.project_media ?? [])]
                   .sort((a, b) => a.display_order - b.display_order)[0]?.public_url;
                 return (
                   <button
                     key={p.id}
+                    type="button"
                     onClick={() => setSelectedProject(p)}
-                    className={`flex w-full items-center gap-4 rounded-[20px] border px-4 py-3.5 text-left transition-all active:scale-[0.99] ${s.gradient} ${s.border}`}
+                    className="cloud-card flex w-full items-center gap-4 px-4 py-3.5 text-left transition-transform active:scale-[0.99] hover:bg-[var(--cloud-surface-hover)]"
                   >
-                    <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-xl bg-white/40">
+                    <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-xl bg-[var(--cloud-surface-muted)]">
                       {coverUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={coverUrl} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
-                          <Folder className={`h-5 w-5 opacity-40 ${s.text}`} />
+                          <Folder className="h-5 w-5 text-[var(--cloud-text-tertiary)]" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`truncate text-[14px] font-semibold font-cloud-body ${s.text}`}>{p.title}</p>
-                      <p className={`text-[12px] font-cloud-body ${s.subtext}`}>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[14px] font-semibold text-[var(--cloud-text-primary)]">
+                        {p.title}
+                      </p>
+                      <p className="text-[12px] text-[var(--cloud-text-tertiary)]">
                         {p.project_media?.length ?? 0} photos{p.category ? ` · ${p.category}` : ""}
                       </p>
                     </div>
-                    <ChevronRight className={`h-4 w-4 flex-shrink-0 opacity-40 ${s.text}`} />
+                    <ChevronRight className="h-4 w-4 flex-shrink-0 text-[var(--cloud-text-tertiary)]" />
                   </button>
                 );
               })}
             </div>
 
-            {/* New project inline form toggle */}
             {!showNewSheet ? (
               <button
+                type="button"
                 onClick={() => setShowNewSheet(true)}
-                className="flex w-full items-center gap-3 rounded-[20px] border-2 border-dashed border-[#D8D8D0] bg-[#EEEEE8] px-4 py-3.5 text-left transition-colors hover:border-[#C0C0B8] active:scale-[0.99]"
+                className="flex w-full items-center gap-3 rounded-[var(--cloud-radius-lg)] border border-dashed border-[var(--cloud-border-hover)] bg-[var(--cloud-surface-muted)] px-4 py-3.5 text-left transition-colors hover:bg-[var(--cloud-surface-hover)] active:scale-[0.99]"
               >
-                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-white">
-                  <Plus className="h-4 w-4 text-[#6B7280]" />
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--cloud-surface)] border border-[var(--cloud-border)]">
+                  <Plus className="h-4 w-4 text-[var(--cloud-text-secondary)]" />
                 </div>
-                <span className="text-[14px] text-[#6B7280] font-cloud-body">Create new project</span>
+                <span className="text-[14px] font-medium text-[var(--cloud-text-secondary)]">
+                  Create new project
+                </span>
               </button>
             ) : (
-              <div className="rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-5 space-y-3">
-                <p className="text-[10px] font-bold tracking-[0.08em] text-[#666660] uppercase font-cloud-body">New project</p>
+              <div className="cloud-card space-y-3 p-5">
+                <p className="cloud-section-label mb-0">New project</p>
                 <input
                   type="text"
                   value={newTitle}
@@ -343,17 +369,18 @@ export default function CloudUploadPage() {
                   type="button"
                   onClick={() => void handleCreateProject()}
                   disabled={!newTitle.trim() || creatingProject}
-                  className="cloud-btn-primary w-full disabled:opacity-60"
+                  className="cloud-btn-primary h-12 w-full disabled:opacity-60"
                 >
                   {creatingProject ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  {creatingProject ? "Creating…" : "Create & continue →"}
+                  {creatingProject ? "Creating…" : "Create & continue"}
                 </button>
-                {createError && (
-                  <p className="text-center text-[13px] text-red-500 font-cloud-body">{createError}</p>
-                )}
+                {createError ? (
+                  <p className="text-[13px] text-red-500">{createError}</p>
+                ) : null}
                 <button
+                  type="button"
                   onClick={() => setShowNewSheet(false)}
-                  className="w-full text-[12px] text-[#6B7280] font-cloud-body py-1"
+                  className="w-full py-2 text-[12px] font-medium text-[var(--cloud-text-tertiary)]"
                 >
                   Cancel
                 </button>
@@ -361,32 +388,46 @@ export default function CloudUploadPage() {
             )}
           </>
         ) : queue.length === 0 ? (
-          /* ── State B: project selected, no photos yet ── */
           <div className="flex flex-col">
-            {/* Selected project header */}
             <button
+              type="button"
               onClick={() => setSelectedProject(null)}
-              className="mb-5 flex items-center gap-1.5 text-[12px] text-[#6B7280] hover:text-[#0a0a0a] transition-colors font-cloud-body"
+              className="mb-5 flex items-center gap-1.5 text-[12px] font-medium text-[var(--cloud-text-secondary)] transition-colors hover:text-[var(--cloud-text-primary)]"
             >
               ← Back to projects
             </button>
 
-            <div className={`mb-5 flex items-center gap-3 rounded-[20px] border px-4 py-3.5 ${getProjectCardStyles(selectedProject.category).gradient} ${getProjectCardStyles(selectedProject.category).border}`}>
-              <div>
-                <p className={`text-[15px] font-semibold font-cloud-body ${getProjectCardStyles(selectedProject.category).text}`}>{selectedProject.title}</p>
-                <p className={`text-[12px] font-cloud-body ${getProjectCardStyles(selectedProject.category).subtext}`}>{selectedProject.project_media?.length ?? 0} photos</p>
+            <div className="cloud-card mb-5 flex items-center gap-3 px-4 py-3.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--cloud-surface-muted)]">
+                <Folder className="h-5 w-5 text-[var(--cloud-text-secondary)]" />
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-[15px] font-semibold text-[var(--cloud-text-primary)]">
+                  {selectedProject.title}
+                </p>
+                <p className="text-[12px] text-[var(--cloud-text-tertiary)]">
+                  {selectedProject.project_media?.length ?? 0} photos
+                </p>
               </div>
             </div>
 
-            {/* Big upload zone */}
-            <label htmlFor="photo-input" className="flex flex-col items-center justify-center gap-4 rounded-[20px] border-2 border-dashed border-[#60E8A0]/40 bg-gradient-to-br from-[#F0FFF8] via-[#E0FFF0] to-[#C8FFE0] py-16 cursor-pointer hover:border-[#60E8A0]/70 transition-colors">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#D4FF4F]" style={{ boxShadow: 'var(--cloud-shadow-elevated)' }}>
-                <Camera className="h-8 w-8 text-[#1C1410]" strokeWidth={1.5} />
+            <label
+              htmlFor="photo-input"
+              className="flex cursor-pointer flex-col items-center justify-center gap-4 rounded-[var(--cloud-radius-lg)] border border-dashed border-[var(--cloud-border-hover)] bg-[var(--cloud-surface)] py-16 transition-colors hover:bg-[var(--cloud-surface-hover)]"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--cloud-ink)] shadow-[var(--cloud-shadow-elevated)]">
+                <Camera className="h-7 w-7 text-[var(--cloud-accent)]" strokeWidth={1.7} />
               </div>
-              <div className="text-center">
-                <p className="font-cloud-display text-[20px] text-[#004D30]">Add photos or videos</p>
-                <p className="mt-1 text-[13px] text-[#00875A] font-cloud-body">From your gallery or camera</p>
-                <p className="mt-0.5 text-[11px] text-[#4A9E7A] font-cloud-body">Photos up to 20MB · Videos up to 200MB</p>
+              <div className="text-center px-4">
+                <p className="font-cloud-display text-[22px] text-[var(--cloud-text-primary)]">
+                  Add photos or videos
+                </p>
+                <p className="mt-1 text-[13px] text-[var(--cloud-text-secondary)]">
+                  From your gallery or camera
+                </p>
+                <p className="mt-0.5 text-[11px] text-[var(--cloud-text-tertiary)]">
+                  Photos up to 20MB · Videos up to 200MB
+                </p>
               </div>
               <input
                 ref={fileInputRef}
@@ -401,54 +442,52 @@ export default function CloudUploadPage() {
             </label>
           </div>
         ) : (
-          /* ── State C: queue loaded ── */
           <div className="flex flex-col">
             <button
+              type="button"
               onClick={() => { setSelectedProject(null); setQueue([]); }}
-              className="mb-5 flex items-center gap-1.5 text-[12px] text-[#6B7280] hover:text-[#0a0a0a] transition-colors font-cloud-body"
+              className="mb-5 flex items-center gap-1.5 text-[12px] font-medium text-[var(--cloud-text-secondary)] transition-colors hover:text-[var(--cloud-text-primary)]"
             >
               ← Back
             </button>
 
-            {/* Progress / queue summary */}
-            <div className="mb-4 rounded-[20px] border border-[#D0D0C0]/40 bg-gradient-to-br from-[#F8F8F4] via-[#F0F0EA] to-[#E8E8E0] p-4">
-              <div className="flex items-center gap-3 mb-3">
+            <div className="cloud-card mb-4 p-4">
+              <div className="mb-3 flex items-center gap-3">
                 {uploading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-[#666660]" />
+                  <Loader2 className="h-5 w-5 animate-spin text-[var(--cloud-text-secondary)]" />
                 ) : (
-                  <Camera className="h-5 w-5 text-[#666660]" strokeWidth={1.8} />
+                  <Camera className="h-5 w-5 text-[var(--cloud-text-secondary)]" strokeWidth={1.8} />
                 )}
                 <div>
-                  <p className="text-[14px] font-semibold text-[#0a0a0a] font-cloud-body">
-                    {uploading ? "Uploading…" : `${queue.length} photo${queue.length !== 1 ? "s" : ""} ready`}
+                  <p className="text-[14px] font-semibold text-[var(--cloud-text-primary)]">
+                    {uploading ? "Uploading…" : `${queue.length} file${queue.length !== 1 ? "s" : ""} ready`}
                   </p>
-                  <p className="text-[12px] text-[#666660] font-cloud-body">
+                  <p className="text-[12px] text-[var(--cloud-text-tertiary)]">
                     {uploading
                       ? `${doneFiles.length} of ${queue.length} done`
                       : `To: ${selectedProject.title}`}
                   </p>
                 </div>
               </div>
-              {uploading && (
-                <div className="h-1.5 w-full rounded-full bg-black/10 overflow-hidden">
+              {uploading ? (
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--cloud-surface-muted)]">
                   <div
-                    className="h-full rounded-full bg-[#1C1410] transition-all"
+                    className="h-full rounded-full bg-[var(--cloud-ink)] transition-all"
                     style={{ width: `${queue.length ? (doneFiles.length / queue.length) * 100 : 0}%` }}
                   />
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Thumbnail grid */}
             <div className="mb-5 grid grid-cols-3 gap-2 sm:grid-cols-5">
               {queue.map((f) => (
                 <div key={f.id} className="flex flex-col gap-1">
-                  <div className="relative aspect-square overflow-hidden rounded-xl bg-black/5">
+                  <div className="relative aspect-square overflow-hidden rounded-xl bg-[var(--cloud-surface-muted)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={f.previewUrl} alt="" className="h-full w-full object-cover" />
                     {f.status === "uploading" && (
                       <div className="absolute inset-x-0 bottom-0 h-1 bg-black/10">
-                        <div className="h-full bg-[#1C1410] transition-all duration-200" style={{ width: `${f.progress}%` }} />
+                        <div className="h-full bg-[var(--cloud-ink)] transition-all duration-200" style={{ width: `${f.progress}%` }} />
                       </div>
                     )}
                     {f.status === "done" && (
@@ -462,13 +501,13 @@ export default function CloudUploadPage() {
                       </div>
                     )}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    {f.fileType === "video" && (
-                      <span style={{ fontSize: 9, fontWeight: 700, background: "#1C1410", color: "#D4FF4F", padding: "2px 5px", borderRadius: 4, fontFamily: "var(--fw-font-body), system-ui, sans-serif", letterSpacing: "0.04em", textTransform: "uppercase", flexShrink: 0 }}>
-                        VIDEO
+                  <div className="flex items-center gap-1">
+                    {f.fileType === "video" ? (
+                      <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.04em] bg-[var(--cloud-ink)] text-[var(--cloud-accent)]">
+                        Video
                       </span>
-                    )}
-                    <span style={{ fontSize: 10, color: "#8C7B6B", fontFamily: "var(--fw-font-body), system-ui, sans-serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    ) : null}
+                    <span className="truncate text-[10px] text-[var(--cloud-text-tertiary)]">
                       {formatFileSize(f.file.size)}
                     </span>
                   </div>
@@ -476,18 +515,19 @@ export default function CloudUploadPage() {
               ))}
             </div>
 
-            {!uploading && !allDone && (
+            {!uploading && !allDone ? (
               <button
+                type="button"
                 onClick={() => void uploadAll()}
                 disabled={pendingCount === 0}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1C1410] py-4 text-[14px] font-bold text-[#D4FF4F] disabled:opacity-50 hover:bg-[#2E2218] transition-colors font-cloud-body"
+                className="cloud-btn-primary h-12 w-full disabled:opacity-50"
               >
-                Upload {queue.length} {queue.some(q => q.fileType === "video") ? "file" : "photo"}{queue.length !== 1 ? "s" : ""}
+                Upload {queue.length} {queue.some((q) => q.fileType === "video") ? "file" : "photo"}
+                {queue.length !== 1 ? "s" : ""}
               </button>
-            )}
+            ) : null}
           </div>
         )}
-      </div>
-    </div>
+    </CloudPage>
   );
 }

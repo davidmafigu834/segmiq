@@ -32,11 +32,12 @@ function formatSize(bytes: number): string {
 }
 
 export default function DesktopUploadPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showNewProject, setShowNewProject] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -58,7 +59,11 @@ export default function DesktopUploadPage() {
   }, []);
 
   const fetchProjects = useCallback(() => {
-    if (!session?.clientId) return;
+    if (!session?.clientId) {
+      if (status !== "loading") setLoadingProjects(false);
+      return;
+    }
+    setLoadingProjects(true);
     fetch(`/api/clients/${session.clientId}/projects`)
       .then((r) => r.json())
       .then((data: unknown) => {
@@ -70,10 +75,14 @@ export default function DesktopUploadPage() {
           );
         }
       })
-      .catch(() => {});
-  }, [session?.clientId]);
+      .catch(() => {})
+      .finally(() => setLoadingProjects(false));
+  }, [session?.clientId, status]);
 
-  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  useEffect(() => {
+    if (status === "loading") return;
+    fetchProjects();
+  }, [status, fetchProjects]);
 
   function addFiles(rawFiles: File[]) {
     const imageFiles = rawFiles.filter(
@@ -319,10 +328,11 @@ export default function DesktopUploadPage() {
                 const p = projects.find((p) => p.id === e.target.value) ?? null;
                 setSelectedProject(p);
               }}
+              disabled={loadingProjects}
               className="cloud-select min-w-[220px]"
               aria-label="Select project"
             >
-              <option value="">Choose a project…</option>
+              <option value="">{loadingProjects ? "Loading projects…" : "Choose a project…"}</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.title}{p.category ? ` · ${p.category}` : ""}

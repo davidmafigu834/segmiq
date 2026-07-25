@@ -7,6 +7,7 @@ import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 import { CloudPage } from "@/app/cloud/components/CloudPage";
 import { CompanyCapabilitySettings } from "@/app/cloud/components/CompanyCapabilitySettings";
+import { SkeletonSettings } from "@/app/cloud/components/SkeletonCard";
 import { uploadClientLogoFile } from "@/lib/storage/logo-upload";
 
 type ClientData = {
@@ -30,8 +31,9 @@ const INDUSTRIES = [
 ];
 
 export default function CloudSettingsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
+  const [loading, setLoading] = useState(true);
   const [client, setClient] = useState<ClientData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
 
@@ -90,48 +92,59 @@ export default function CloudSettingsPage() {
   const [reprocessResult, setReprocessResult] = useState<{ processed: number; failed: number; total: number; firstError?: string | null } | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!session?.clientId) return;
-    const [clientListRes, profileRes, statsRes, watermarkRes, userRes] = await Promise.all([
-      fetch(`/api/clients`),
-      fetch(`/api/clients/${session.clientId}/profile`),
-      fetch(`/api/cloud/storage/usage`),
-      fetch(`/api/cloud/watermark`),
-      fetch(`/api/users/me`),
-    ]);
-    if (clientListRes.ok) {
-      const list = (await clientListRes.json()) as ClientData[];
-      const c = list.find((x) => x.id === session.clientId) ?? list[0] ?? null;
-      if (c) {
-        setClient(c);
-        setBizName(c.name);
-        setBizIndustry(c.industry);
-        setLogoUrl(c.logo_url ?? null);
+    if (!session?.clientId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const [clientListRes, profileRes, statsRes, watermarkRes, userRes] = await Promise.all([
+        fetch(`/api/clients`),
+        fetch(`/api/clients/${session.clientId}/profile`),
+        fetch(`/api/cloud/storage/usage`),
+        fetch(`/api/cloud/watermark`),
+        fetch(`/api/users/me`),
+      ]);
+      if (clientListRes.ok) {
+        const list = (await clientListRes.json()) as ClientData[];
+        const c = list.find((x) => x.id === session.clientId) ?? list[0] ?? null;
+        if (c) {
+          setClient(c);
+          setBizName(c.name);
+          setBizIndustry(c.industry);
+          setLogoUrl(c.logo_url ?? null);
+        }
       }
-    }
-    if (profileRes.ok) {
-      const p = (await profileRes.json()) as ProfileData;
-      setProfile(p);
-      if (p.headline) setHeadline(p.headline);
-      if (p.cta_text) setCtaText(p.cta_text);
-    }
-    if (statsRes.ok) {
-      const s = (await statsRes.json()) as typeof stats;
-      setStats(s);
-    }
-    if (watermarkRes.ok) {
-      const w = (await watermarkRes.json()) as WatermarkSettings;
-      setWatermark(w);
-    }
-    if (userRes.ok) {
-      const ud = (await userRes.json()) as { user?: { phone?: string | null; name?: string } };
-      if (ud.user?.name) setUserName(ud.user.name);
-      if (ud.user?.phone) setUserPhone(ud.user.phone);
-    } else {
-      setUserName(session.user?.name ?? "");
+      if (profileRes.ok) {
+        const p = (await profileRes.json()) as ProfileData;
+        setProfile(p);
+        if (p.headline) setHeadline(p.headline);
+        if (p.cta_text) setCtaText(p.cta_text);
+      }
+      if (statsRes.ok) {
+        const s = (await statsRes.json()) as typeof stats;
+        setStats(s);
+      }
+      if (watermarkRes.ok) {
+        const w = (await watermarkRes.json()) as WatermarkSettings;
+        setWatermark(w);
+      }
+      if (userRes.ok) {
+        const ud = (await userRes.json()) as { user?: { phone?: string | null; name?: string } };
+        if (ud.user?.name) setUserName(ud.user.name);
+        if (ud.user?.phone) setUserPhone(ud.user.phone);
+      } else {
+        setUserName(session.user?.name ?? "");
+      }
+    } finally {
+      setLoading(false);
     }
   }, [session?.clientId, session?.user?.name]);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (status === "loading") return;
+    void fetchData();
+  }, [status, fetchData]);
 
   function handleLogoFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -329,6 +342,9 @@ export default function CloudSettingsPage() {
   return (
     <CloudAdminGate>
     <CloudPage>
+      {status === "loading" || loading ? (
+        <SkeletonSettings />
+      ) : (
       <div className="space-y-6">
 
         {/* Business profile */}
@@ -653,6 +669,7 @@ export default function CloudSettingsPage() {
           </button>
         </section>
       </div>
+      )}
     </CloudPage>
     </CloudAdminGate>
   );
