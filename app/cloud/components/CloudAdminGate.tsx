@@ -20,7 +20,7 @@ export function CloudAdminGate({ children }: { children: React.ReactNode }) {
   if (status === "loading") {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-[#0a0a0a]/30" />
+        <Loader2 className="h-5 w-5 animate-spin text-[var(--cloud-text-disabled)]" />
       </div>
     );
   }

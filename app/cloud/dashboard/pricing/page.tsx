@@ -54,31 +54,30 @@ export default function CloudPricingPage() {
   return (
     <CloudAdminGate>
     <CloudPage>
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-6">
-          <p className="cloud-section-label">Public profile</p>
-          <p className="max-w-xl text-[13px] leading-relaxed text-[var(--cloud-text-secondary)]">
-            Manage the packages shown on your public profile and send them to prospects from the CRM.
-          </p>
-          {isAdmin && clients.length > 0 && (
-            <select
-              value={selectedClientId}
-              onChange={(e) => setSelectedClientId(e.target.value)}
-              className="cloud-input mt-4 h-auto w-auto py-2"
-            >
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        {selectedClientId ? (
-          <CloudPackagesManager clientId={selectedClientId} profileSlug={profileSlug} />
-        ) : null}
+      <div className="mb-6">
+        <p className="cloud-section-label">Public profile</p>
+        <p className="max-w-xl text-[13px] leading-relaxed text-[var(--cloud-text-secondary)]">
+          Manage the packages shown on your public profile and send them to prospects from the CRM.
+        </p>
+        {isAdmin && clients.length > 0 && (
+          <select
+            value={selectedClientId}
+            onChange={(e) => setSelectedClientId(e.target.value)}
+            className="cloud-select mt-4 min-w-[180px]"
+            aria-label="Select workspace"
+          >
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
+
+      {selectedClientId ? (
+        <CloudPackagesManager clientId={selectedClientId} profileSlug={profileSlug} />
+      ) : null}
     </CloudPage>
     </CloudAdminGate>
   );

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { CloudPage } from "@/app/cloud/components/CloudPage";
+import { SkeletonListRows } from "@/app/cloud/components/SkeletonCard";
 
 type Notification = {
   id: string;
@@ -81,8 +82,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <CloudPage narrow>
-      <div className="mx-auto max-w-xl">
+    <CloudPage>
         {unread > 0 && (
           <div className="mb-4 flex items-center justify-between">
             <p className="text-[12px] text-[var(--cloud-text-secondary)]">{unread} unread</p>
@@ -90,7 +90,7 @@ export default function NotificationsPage() {
               type="button"
               onClick={() => void markAllRead()}
               disabled={markingAll}
-              className="cloud-btn-ghost h-8 px-3 text-[12px] disabled:opacity-50"
+              className="cloud-btn-ghost !h-10 px-3 text-[12px] disabled:opacity-50"
             >
               {markingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
               Mark all read
@@ -99,9 +99,7 @@ export default function NotificationsPage() {
         )}
 
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-5 w-5 animate-spin text-[var(--cloud-text-disabled)]" />
-          </div>
+          <SkeletonListRows count={5} />
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="cloud-card mb-4 flex h-14 w-14 items-center justify-center">
@@ -144,7 +142,6 @@ export default function NotificationsPage() {
             ))}
           </div>
         )}
-      </div>
     </CloudPage>
   );
 }

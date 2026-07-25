@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 import { CloudPage } from "@/app/cloud/components/CloudPage";
+import { SkeletonAnalytics } from "@/app/cloud/components/SkeletonCard";
 import { Folder, Camera, Link2 } from "lucide-react";
 
 type MediaItem = { public_url: string; display_order: number };
@@ -90,8 +91,8 @@ export default function AnalyticsPage() {
 
   if (status === "loading" || loading) {
     return (
-      <CloudPage className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-[var(--cloud-ink)]" />
+      <CloudPage>
+        <SkeletonAnalytics />
       </CloudPage>
     );
   }
@@ -115,7 +116,7 @@ export default function AnalyticsPage() {
   return (
     <CloudAdminGate>
     <CloudPage>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-3">
         {stats.map((s) => (
           <div key={s.label} className="cloud-card p-4">
             <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--cloud-surface-muted)]">

@@ -328,7 +328,7 @@ export default function CloudSettingsPage() {
 
   return (
     <CloudAdminGate>
-    <CloudPage narrow>
+    <CloudPage>
       <div className="space-y-6">
 
         {/* Business profile */}
@@ -344,7 +344,7 @@ export default function CloudSettingsPage() {
               <select
                 value={bizIndustry}
                 onChange={(e) => setBizIndustry(e.target.value)}
-                className="cloud-input h-auto py-3 text-[var(--cloud-text-secondary)]"
+                className="cloud-select cloud-select--lg w-full"
               >
                 <option value="">Select industry…</option>
                 {INDUSTRIES.map((ind) => <option key={ind} value={ind}>{ind}</option>)}

@@ -9,7 +9,7 @@ import { CloudPage } from "@/app/cloud/components/CloudPage";
 import {
   Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink,
 } from "lucide-react";
-import { SkeletonScrollRow } from "@/app/cloud/components/SkeletonCard";
+import { SkeletonDashboardHome, SkeletonScrollRow } from "@/app/cloud/components/SkeletonCard";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -116,15 +116,19 @@ export default function CloudDashboardHome() {
   const planLabel = stats?.plan
     ? stats.plan.charAt(0).toUpperCase() + stats.plan.slice(1)
     : "Starter";
-  const recentActivity = projects.slice(0, 3).map((p) => ({
-    message: `Updated ${p.title}`,
-    meta: `${p.project_media?.length ?? 0} photos · ${formatRelativeTime(p.updated_at)}`,
-  }));
+  const recentActivity = [...projects]
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .slice(0, 3)
+    .map((p) => ({
+      id: p.id,
+      message: `Updated ${p.title}`,
+      meta: `${p.project_media?.length ?? 0} photos · ${formatRelativeTime(p.updated_at)}`,
+    }));
 
   if (status === "loading") {
     return (
-      <CloudPage className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-[var(--cloud-ink)]" />
+      <CloudPage>
+        <SkeletonDashboardHome />
       </CloudPage>
     );
   }
@@ -132,39 +136,18 @@ export default function CloudDashboardHome() {
   return (
     <CloudPage className="overflow-x-hidden">
       {/* Hero */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--cloud-text-tertiary)]">
-            {getGreeting()}
-          </p>
-          <h1 className="font-cloud-display text-[clamp(26px,4vw,34px)] leading-[1.1] tracking-[-0.02em] text-[var(--cloud-text-primary)]">
-            {clientName || session?.user?.name || "Your workspace"}
-          </h1>
-          <p className="mt-2 text-[13px] text-[var(--cloud-text-secondary)]">
-            {projectCount > 0
-              ? `${projectCount} project${projectCount !== 1 ? "s" : ""} · ${photoCount} photos in the cloud`
-              : "Create a project and upload your first job photos"}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setShowNew(true)} className="cloud-btn-ink">
-            <Plus size={15} strokeWidth={2.5} />
-            New project
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/cloud/dashboard/upload")}
-            className="cloud-btn-primary"
-          >
-            <Camera size={15} strokeWidth={2.2} />
-            Upload
-          </button>
-        </div>
+      <div className="mb-6 min-w-0">
+        <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--cloud-text-tertiary)]">
+          {getGreeting()}
+        </p>
+        <h1 className="font-cloud-display text-[clamp(26px,4vw,34px)] leading-[1.1] tracking-[-0.02em] text-[var(--cloud-text-primary)]">
+          {clientName || session?.user?.name || "Your workspace"}
+        </h1>
       </div>
 
       {/* Stats */}
       <div className="cloud-stat-grid mb-6">
-        <div className="cloud-card--ink cloud-card relative overflow-hidden p-5 sm:col-span-2">
+        <div className="cloud-card--ink cloud-card relative overflow-hidden p-5">
           <div
             className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full"
             style={{ background: "rgba(212,255,79,0.08)" }}
@@ -363,7 +346,7 @@ export default function CloudDashboardHome() {
       )}
 
       {/* Team + activity */}
-      <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="mt-8 grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div className="cloud-card flex flex-col p-5">
           <div className="mb-4 flex items-center justify-between">
             <p className="cloud-section-label mb-0">Team</p>
@@ -423,7 +406,12 @@ export default function CloudDashboardHome() {
           </div>
           <div className="mb-5 flex flex-1 flex-col gap-3">
             {recentActivity.length > 0 ? recentActivity.map((item, i) => (
-              <div key={i} className="flex items-start gap-3">
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => router.push(`/cloud/dashboard/projects/${item.id}`)}
+                className="flex items-start gap-3 rounded-lg text-left transition-colors hover:bg-[var(--cloud-surface-muted)] -mx-2 px-2 py-1.5"
+              >
                 <div
                   className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
                   style={{ background: i === 0 ? "var(--cloud-accent)" : "var(--cloud-text-disabled)" }}
@@ -434,7 +422,7 @@ export default function CloudDashboardHome() {
                   </p>
                   <p className="text-[11px] text-[var(--cloud-text-tertiary)]">{item.meta}</p>
                 </div>
-              </div>
+              </button>
             )) : (
               <p className="text-[13px] text-[var(--cloud-text-secondary)]">
                 No activity yet. Upload photos to get started.
@@ -443,7 +431,7 @@ export default function CloudDashboardHome() {
           </div>
           <button
             type="button"
-            onClick={() => router.push("/cloud/dashboard/notifications")}
+            onClick={() => router.push("/cloud/dashboard/activity")}
             className="cloud-btn-ghost mt-auto h-[38px] w-full"
           >
             View activity

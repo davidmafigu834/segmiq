@@ -71,7 +71,7 @@ const menuSections: MenuSection[] = [
         icon: HelpCircle,
         label: "Help & FAQ",
         description: "How to use SegmiQ Cloud",
-        href: "/cloud/help",
+        href: "/cloud/dashboard/help",
       },
       {
         icon: MessageCircle,

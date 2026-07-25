@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Zap, Building2, Rocket, Loader2 } from "lucide-react";
+import { Check, Zap, Building2, Rocket } from "lucide-react";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
 import { CloudPage } from "@/app/cloud/components/CloudPage";
+import { SkeletonBilling } from "@/app/cloud/components/SkeletonCard";
 
 const SUPPORT_WHATSAPP = "27000000000"; // Replace with actual Segmiq support WhatsApp number (no + prefix)
 
@@ -56,11 +57,9 @@ export default function BillingPage() {
 
   return (
     <CloudAdminGate>
-    <CloudPage narrow>
+    <CloudPage>
         {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-5 w-5 animate-spin text-[var(--cloud-text-disabled)]" />
-          </div>
+          <SkeletonBilling />
         ) : (
           <>
             <div className="cloud-card--ink cloud-card mb-6 p-5">

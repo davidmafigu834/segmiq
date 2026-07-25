@@ -322,12 +322,12 @@ export default function CloudUploadPage() {
                   onChange={(e) => setNewTitle(e.target.value)}
                   autoFocus
                   placeholder="Project name"
-                  className="w-full rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
+                  className="cloud-input cloud-input--lg"
                 />
                 <select
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#666660] outline-none focus:border-black/[0.2] font-cloud-body"
+                  className="cloud-select cloud-select--lg w-full"
                 >
                   <option value="">Category (optional)</option>
                   {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -337,12 +337,13 @@ export default function CloudUploadPage() {
                   value={newLocation}
                   onChange={(e) => setNewLocation(e.target.value)}
                   placeholder="Location (optional)"
-                  className="w-full rounded-xl border border-black/[0.1] bg-white/70 px-4 py-3 text-[13px] text-[#0a0a0a] placeholder-[#9CA3AF] outline-none focus:border-black/[0.2] font-cloud-body"
+                  className="cloud-input cloud-input--lg"
                 />
                 <button
+                  type="button"
                   onClick={() => void handleCreateProject()}
                   disabled={!newTitle.trim() || creatingProject}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1C1410] py-3 text-[13px] font-bold text-[#D4FF4F] disabled:opacity-60 hover:bg-[#2E2218] transition-colors font-cloud-body"
+                  className="cloud-btn-primary w-full disabled:opacity-60"
                 >
                   {creatingProject ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   {creatingProject ? "Creating…" : "Create & continue →"}
@@ -439,7 +440,7 @@ export default function CloudUploadPage() {
             </div>
 
             {/* Thumbnail grid */}
-            <div className="mb-5 grid grid-cols-4 gap-2 sm:grid-cols-5">
+            <div className="mb-5 grid grid-cols-3 gap-2 sm:grid-cols-5">
               {queue.map((f) => (
                 <div key={f.id} className="flex flex-col gap-1">
                   <div className="relative aspect-square overflow-hidden rounded-xl bg-black/5">

@@ -5,9 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, Eye, TrendingUp, BarChart2 } from "lucide-react";
 import Link from "next/link";
-
-const F = "var(--fw-font-body), system-ui, sans-serif";
-const S = "var(--fw-font-display), Georgia, serif";
+import { SkeletonAnalytics } from "@/app/cloud/components/SkeletonCard";
 
 type DailyView = { date: string; views: number };
 type ViewStats = {
@@ -98,58 +96,63 @@ export default function ProjectAnalyticsPage() {
     : null;
 
   return (
-    <div className="cloud-page" style={{ fontFamily: F }}>
+    <div className="cloud-page">
 
       {/* Back + title */}
-      <div style={{ padding: "16px 20px 0", display: "flex", alignItems: "center", gap: 12 }}>
+      <div className="mb-4 flex items-center gap-3">
         <button
+          type="button"
           onClick={() => router.back()}
-          style={{ width: 36, height: 36, borderRadius: 10, background: "#FFFFFF", border: "0.5px solid rgba(28,20,16,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer" }}
+          className="cloud-icon-btn cloud-card !h-11 !w-11 shrink-0"
+          aria-label="Back"
         >
-          <ArrowLeft size={16} color="#1C1410" />
+          <ArrowLeft size={16} />
         </button>
-        <div>
-          {projectTitle && <p style={{ fontFamily: S, fontSize: 15, color: "#1C1410", margin: 0, lineHeight: 1.2 }}>{projectTitle}</p>}
+        <div className="min-w-0">
+          {projectTitle && (
+            <p className="truncate font-cloud-display text-[18px] leading-tight text-[var(--cloud-text-primary)]">
+              {projectTitle}
+            </p>
+          )}
+          <p className="text-[12px] text-[var(--cloud-text-tertiary)]">Analytics</p>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-[#1C1410]" />
-        </div>
+        <SkeletonAnalytics />
       ) : stats ? (
-        <div style={{ padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="flex flex-col gap-3">
 
           {/* Stat cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-3">
             {([
               { label: "Total views",  value: stats.total.toLocaleString(),           Icon: Eye },
               { label: "Last 30 days", value: stats.last_30_days.toLocaleString(),    Icon: TrendingUp },
               { label: "Avg / day",    value: (stats.last_30_days / 30).toFixed(1),   Icon: BarChart2 },
             ] as { label: string; value: string; Icon: React.ElementType }[]).map((s) => (
-              <div key={s.label} style={{ background: "#FFFFFF", borderRadius: 18, border: "0.5px solid rgba(28,20,16,0.08)", padding: "14px 12px" }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: "#F7F4EF", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                  <s.Icon size={14} color="#4A3828" strokeWidth={1.8} />
+              <div key={s.label} className="cloud-card p-4">
+                <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--cloud-surface-muted)]">
+                  <s.Icon size={14} className="text-[var(--cloud-text-secondary)]" strokeWidth={1.8} />
                 </div>
-                <p style={{ fontFamily: S, fontSize: 22, color: "#1C1410", margin: "0 0 2px", lineHeight: 1 }}>{s.value}</p>
-                <p style={{ fontFamily: F, fontSize: 10, color: "#8C7B6B", margin: 0 }}>{s.label}</p>
+                <p className="font-cloud-display text-[22px] leading-none text-[var(--cloud-text-primary)]">{s.value}</p>
+                <p className="mt-1 text-[10px] text-[var(--cloud-text-tertiary)]">{s.label}</p>
               </div>
             ))}
           </div>
 
           {/* Daily chart */}
-          <div style={{ background: "#FFFFFF", borderRadius: 20, border: "0.5px solid rgba(28,20,16,0.08)", padding: 20 }}>
-            <p style={{ fontFamily: F, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 16px" }}>Daily views — last 30 days</p>
+          <div className="cloud-card p-5">
+            <p className="cloud-section-label">Daily views — last 30 days</p>
             {stats.daily.every((d) => d.views === 0) ? (
-              <div style={{ height: 120, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                <BarChart2 size={24} color="#6B7280" strokeWidth={1.5} />
-                <p style={{ fontFamily: F, fontSize: 13, color: "#8C7B6B", margin: 0 }}>No views recorded yet</p>
+              <div className="flex h-[120px] flex-col items-center justify-center gap-2">
+                <BarChart2 size={24} className="text-[var(--cloud-text-secondary)]" strokeWidth={1.5} />
+                <p className="text-[13px] text-[var(--cloud-text-tertiary)]">No views recorded yet</p>
               </div>
             ) : (
               <>
                 <BarChart data={stats.daily} />
                 {xLabels && (
-                  <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", fontFamily: F, fontSize: 11, color: "#6B7280" }}>
+                  <div className="mt-2 flex justify-between text-[11px] text-[var(--cloud-text-tertiary)]">
                     <span>{xLabels.first}</span>
                     <span>{xLabels.last}</span>
                   </div>
@@ -159,16 +162,16 @@ export default function ProjectAnalyticsPage() {
           </div>
 
           {/* Share link */}
-          <div style={{ background: "#FFFFFF", borderRadius: 20, border: "0.5px solid rgba(28,20,16,0.08)", padding: 20 }}>
-            <p style={{ fontFamily: F, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#8C7B6B", margin: "0 0 12px" }}>Share link</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#F7F4EF", borderRadius: 12, padding: "12px 16px" }}>
-              <p style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: F, fontSize: 12, color: "#4A3828", margin: 0 }}>
+          <div className="cloud-card p-5">
+            <p className="cloud-section-label">Share link</p>
+            <div className="flex items-center gap-3 rounded-[12px] bg-[var(--cloud-surface-muted)] px-4 py-3">
+              <p className="min-w-0 flex-1 truncate text-[12px] text-[var(--cloud-text-secondary)]">
                 leadstaq.tech/cloud/share/{params.projectId}
               </p>
               <Link
                 href={`/cloud/share/${params.projectId}`}
                 target="_blank"
-                style={{ fontFamily: F, fontSize: 12, fontWeight: 700, color: "#1C1410", textDecoration: "none", flexShrink: 0 }}
+                className="shrink-0 text-[12px] font-semibold text-[var(--cloud-text-primary)]"
               >
                 Open →
               </Link>
@@ -177,7 +180,7 @@ export default function ProjectAnalyticsPage() {
 
         </div>
       ) : (
-        <p style={{ fontFamily: F, fontSize: 13, color: "#8C7B6B", textAlign: "center", padding: "80px 20px" }}>
+        <p className="px-5 py-20 text-center text-[13px] text-[var(--cloud-text-tertiary)]">
           Could not load analytics. Ensure this project exists.
         </p>
       )}

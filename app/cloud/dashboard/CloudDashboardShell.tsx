@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   Grid, Folder, Camera, Users, Settings, LayoutGrid, LogOut, CloudUpload,
-  Bell, CreditCard, HelpCircle, BarChart2, Tag, ChevronDown, ChevronRight,
+  Bell, CreditCard, HelpCircle, BarChart2, Tag, ChevronsUpDown,
 } from "lucide-react";
 import { Suspense } from "react";
 import { matchesCloudDashboardPath, normalizeCloudDashboardPath } from "./cloud-path";
@@ -30,7 +30,7 @@ const ACCOUNT_NAV = [
   { href: "/cloud/dashboard/analytics", icon: BarChart2, label: "Analytics" },
   { href: "/cloud/dashboard/billing", icon: CreditCard, label: "Billing" },
   { href: "/cloud/dashboard/settings", icon: Settings, label: "Settings" },
-  { href: "/cloud/help", icon: HelpCircle, label: "Help" },
+  { href: "/cloud/dashboard/help", icon: HelpCircle, label: "Help" },
 ];
 
 const MOBILE_NAV = [
@@ -58,9 +58,11 @@ function getPageTitle(pathname: string): string | null {
   if (p.startsWith("/cloud/dashboard/team")) return "Team";
   if (p.startsWith("/cloud/dashboard/settings")) return "Settings";
   if (p.startsWith("/cloud/dashboard/notifications")) return "Notifications";
+  if (p.startsWith("/cloud/dashboard/activity")) return "Activity";
   if (p.startsWith("/cloud/dashboard/analytics")) return "Analytics";
   if (p.startsWith("/cloud/dashboard/billing")) return "Billing";
   if (p.startsWith("/cloud/dashboard/more")) return "More";
+  if (p.startsWith("/cloud/dashboard/help")) return "Help";
   if (p.startsWith("/cloud/dashboard/onboarding")) return "Setup";
   return null;
 }
@@ -95,20 +97,17 @@ function SidebarNavLink({
   unreadCount,
 }: NavItem & { pathname: string; unreadCount: number }) {
   const active = isActive(href, pathname);
+  const showBadge = badge === "notifications" && unreadCount > 0;
   return (
     <Link
       href={href}
       className={`cloud-nav-link ${active ? "cloud-nav-link--active" : ""}`}
     >
-      <div className="relative shrink-0">
-        <Icon className="h-[17px] w-[17px]" strokeWidth={active ? 2.2 : 1.75} />
-        {badge === "notifications" && unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--cloud-ink)] px-1 text-[9px] font-bold text-[var(--cloud-accent)]">
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
-      </div>
-      {label}
+      <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.1 : 1.7} />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {showBadge ? (
+        <span className="cloud-nav-link-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>
+      ) : null}
     </Link>
   );
 }
@@ -128,7 +127,7 @@ function NavSection({
   return (
     <div>
       <p className="cloud-nav-section-label">{title}</p>
-      <div className="px-2">
+      <div className="flex flex-col">
         {items.map((item) => (
           <SidebarNavLink key={item.href} {...item} pathname={pathname} unreadCount={unreadCount} />
         ))}
@@ -194,18 +193,20 @@ function UserMenuDropdown({
   onSettings,
   onSignOut,
   showSettings,
+  placement = "down",
 }: {
   open: boolean;
   onClose: () => void;
   onSettings: () => void;
   onSignOut: () => void;
   showSettings: boolean;
+  placement?: "up" | "down";
 }) {
   if (!open) return null;
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} aria-hidden />
-      <div className="cloud-user-menu">
+      <div className={`cloud-user-menu ${placement === "up" ? "cloud-user-menu--up" : ""}`}>
         {showSettings && (
           <button type="button" className="cloud-user-menu-item" onClick={onSettings}>
             <Settings className="h-4 w-4" />
@@ -344,59 +345,60 @@ export default function CloudDashboardShell({
     <div className="cloud-dashboard flex h-[100dvh] min-h-screen bg-[var(--cloud-bg)] font-cloud-body text-[var(--cloud-text-primary)]">
       {/* ── Desktop sidebar ── */}
       <aside className="cloud-shell-sidebar fixed inset-y-0 left-0 z-30 hidden flex-col lg:flex">
-        {/* Brand */}
-        <div className="flex h-[var(--cloud-topbar-height)] shrink-0 items-center gap-3 border-b border-[var(--cloud-border)] px-5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[var(--cloud-ink)] shadow-[0_2px_8px_rgba(11,13,18,0.18)]">
-            <CloudUpload className="h-[17px] w-[17px] text-[var(--cloud-accent)]" strokeWidth={2.4} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold leading-tight tracking-[-0.01em] text-[var(--cloud-text-primary)]">
-              {displayName}
-            </p>
-            <p className="truncate text-[11px] font-medium text-[var(--cloud-text-tertiary)]">
-              SegmiQ Cloud
-            </p>
-          </div>
+        <div className="shrink-0 px-3 pt-3">
+          <Link href="/cloud/dashboard" className="cloud-shell-workspace">
+            <span className="cloud-shell-workspace-mark">
+              <CloudUpload className="h-3.5 w-3.5 text-[var(--cloud-accent)]" strokeWidth={2.4} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[13px] font-semibold leading-tight tracking-[-0.01em] text-[var(--cloud-text-primary)]">
+                {displayName}
+              </span>
+              <span className="mt-0.5 block truncate text-[11px] text-[var(--cloud-text-tertiary)]">
+                SegmiQ Cloud
+              </span>
+            </span>
+            <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-[var(--cloud-text-tertiary)]" strokeWidth={1.8} />
+          </Link>
         </div>
 
         {!isUploadPage && (
-          <div className="px-4 pt-4 pb-1">
+          <div className="shrink-0 px-3 pt-3">
             <Link href="/cloud/dashboard/upload" className="cloud-shell-upload-btn">
-              <Camera className="h-4 w-4" strokeWidth={2.2} />
+              <Camera className="h-3.5 w-3.5" strokeWidth={2.2} />
               Upload photos
             </Link>
           </div>
         )}
 
-        {/* Navigation */}
-        <nav className="cloud-scroll-y flex-1 px-1 pb-4 pt-1">
+        <nav className="cloud-shell-nav cloud-scroll-y flex-1 px-3 pb-3 pt-3">
           <NavSection title="Workspace" items={WORKSPACE_NAV} pathname={pathname} unreadCount={unreadCount} />
           <NavSection title="Business" items={businessNav} pathname={pathname} unreadCount={unreadCount} />
           <NavSection title="Account" items={accountNav} pathname={pathname} unreadCount={unreadCount} />
         </nav>
 
-        {/* User footer */}
-        <div className="border-t border-[var(--cloud-border)] p-3">
+        <div className="shrink-0 border-t border-[var(--cloud-border)] p-3">
           <div className="relative">
             <button
               type="button"
               onClick={() => setSidebarMenuOpen((v) => !v)}
-              className="flex w-full items-center gap-3 rounded-[var(--cloud-radius-sm)] px-2 py-2.5 text-left transition-colors hover:bg-[var(--cloud-surface-muted)]"
+              className="cloud-shell-account"
             >
-              <UserAvatar initials={initials} isOnline={isOnline} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] font-semibold text-[var(--cloud-text-primary)]">
+              <UserAvatar initials={initials} isOnline={isOnline} className="!h-8 !w-8 text-[10px]" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-semibold tracking-[-0.01em] text-[var(--cloud-text-primary)]">
                   {session?.user?.name ?? "—"}
-                </p>
-                <p className="truncate text-[11px] capitalize text-[var(--cloud-text-tertiary)]">
+                </span>
+                <span className="mt-0.5 block truncate text-[11px] capitalize text-[var(--cloud-text-tertiary)]">
                   {roleLabel(session?.role)}
-                </p>
-              </div>
-              <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--cloud-text-tertiary)] transition-transform ${sidebarMenuOpen ? "rotate-180" : ""}`} />
+                </span>
+              </span>
+              <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-[var(--cloud-text-tertiary)]" strokeWidth={1.8} />
             </button>
             <UserMenuDropdown
               open={sidebarMenuOpen}
               onClose={() => setSidebarMenuOpen(false)}
+              placement="up"
               showSettings={isCloudAdmin}
               onSettings={() => {
                 setSidebarMenuOpen(false);
@@ -408,146 +410,64 @@ export default function CloudDashboardShell({
         </div>
       </aside>
 
-      {/* ── Main column ── */}
+      {/* ── Main column (no desktop top bar — chrome lives in the sidebar) ── */}
       <div className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden lg:ml-[var(--cloud-sidebar-width)]">
-        {/* Desktop top bar */}
-        <header className="cloud-shell-topbar sticky top-0 z-20 hidden shrink-0 items-center justify-between px-8 lg:flex">
-          <div className="min-w-0">
-            {isHome ? (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--cloud-text-tertiary)]">
-                  Workspace
-                </p>
-                <h1 className="truncate font-cloud-display text-[22px] leading-tight tracking-[-0.02em] text-[var(--cloud-text-primary)]">
-                  {displayName}
-                </h1>
-              </div>
-            ) : pageTitle ? (
-              <div className="flex min-w-0 items-center gap-1.5">
-                <Link
-                  href="/cloud/dashboard"
-                  className="shrink-0 text-[12px] font-medium text-[var(--cloud-text-tertiary)] transition-colors hover:text-[var(--cloud-text-primary)]"
-                >
-                  Home
-                </Link>
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--cloud-text-disabled)]" />
-                <h1 className="truncate font-cloud-display text-[22px] leading-tight tracking-[-0.02em] text-[var(--cloud-text-primary)]">
-                  {pageTitle}
-                </h1>
-              </div>
-            ) : (
-              <div className="flex min-w-0 items-center gap-1.5">
-                <Link
-                  href="/cloud/dashboard"
-                  className="shrink-0 text-[12px] font-medium text-[var(--cloud-text-tertiary)] transition-colors hover:text-[var(--cloud-text-primary)]"
-                >
-                  Home
-                </Link>
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--cloud-text-disabled)]" />
-                <Link
-                  href="/cloud/dashboard/projects"
-                  className="truncate font-cloud-display text-[22px] leading-tight tracking-[-0.02em] text-[var(--cloud-text-primary)] transition-colors hover:text-[var(--cloud-text-secondary)]"
-                >
-                  Projects
-                </Link>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/cloud/dashboard/notifications")}
-              className="cloud-topbar-icon-btn relative"
-              aria-label="Notifications"
-            >
-              <Bell className="h-[17px] w-[17px]" strokeWidth={1.8} />
-              {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--cloud-ink)] px-1 text-[9px] font-bold text-[var(--cloud-accent)]">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
+        {/* Mobile top bar only */}
+        <header className="cloud-shell-topbar sticky top-0 z-20 shrink-0 px-4 lg:hidden">
+          <div className="cloud-shell-topbar-inner">
+            <div className="min-w-0 flex-1">
+              {isHome ? (
+                <>
+                  <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-[var(--cloud-text-primary)]">
+                    {displayName}
+                  </p>
+                  <p className="text-[11px] font-medium text-[var(--cloud-text-tertiary)]">SegmiQ Cloud</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] font-medium text-[var(--cloud-text-tertiary)]">SegmiQ Cloud</p>
+                  <p className="truncate font-cloud-display text-[18px] leading-tight tracking-[-0.02em] text-[var(--cloud-text-primary)]">
+                    {pageTitle ?? "Projects"}
+                  </p>
+                </>
               )}
-            </button>
-
-            {!isUploadPage && (
-              <Link href="/cloud/dashboard/upload" className="cloud-btn-primary h-9 px-4 text-[12px]">
-                <Camera className="h-3.5 w-3.5" strokeWidth={2.2} />
-                Upload
-              </Link>
-            )}
-
-            <div className="relative ml-1">
-              <UserAvatarButton
-                initials={initials}
-                onClick={() => setHeaderMenuOpen((v) => !v)}
-              />
-              <UserMenuDropdown
-                open={headerMenuOpen}
-                onClose={() => setHeaderMenuOpen(false)}
-                showSettings={isCloudAdmin}
-                onSettings={() => {
-                  setHeaderMenuOpen(false);
-                  router.push("/cloud/dashboard/settings");
-                }}
-                onSignOut={() => void signOut({ callbackUrl: "/cloud/login" })}
-              />
             </div>
-          </div>
-        </header>
-
-        {/* Mobile top bar */}
-        <header className="cloud-shell-topbar sticky top-0 z-20 flex shrink-0 items-center justify-between px-5 lg:hidden">
-          <div className="min-w-0 flex-1">
-            {isHome ? (
-              <>
-                <p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-[var(--cloud-text-primary)]">
-                  {displayName}
-                </p>
-                <p className="text-[11px] font-medium text-[var(--cloud-text-tertiary)]">SegmiQ Cloud</p>
-              </>
-            ) : (
-              <>
-                <p className="text-[11px] font-medium text-[var(--cloud-text-tertiary)]">SegmiQ Cloud</p>
-                <p className="truncate font-cloud-display text-[18px] leading-tight tracking-[-0.02em] text-[var(--cloud-text-primary)]">
-                  {pageTitle ?? "Projects"}
-                </p>
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/cloud/dashboard/notifications")}
-              className="cloud-topbar-icon-btn relative"
-              aria-label="Notifications"
-            >
-              <Bell className="h-[17px] w-[17px]" strokeWidth={1.8} />
-              {unreadCount > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--cloud-accent)] ring-2 ring-white" />
-              )}
-            </button>
-            <div className="relative">
-              <UserAvatarButton
-                initials={initials}
-                isOnline={isOnline}
-                onClick={() => setHeaderMenuOpen((v) => !v)}
-              />
-              <UserMenuDropdown
-                open={headerMenuOpen}
-                onClose={() => setHeaderMenuOpen(false)}
-                showSettings={isCloudAdmin}
-                onSettings={() => {
-                  setHeaderMenuOpen(false);
-                  router.push("/cloud/dashboard/settings");
-                }}
-                onSignOut={() => void signOut({ callbackUrl: "/cloud/login" })}
-              />
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => router.push("/cloud/dashboard/notifications")}
+                className="cloud-topbar-icon-btn relative !h-11 !w-11"
+                aria-label="Notifications"
+              >
+                <Bell className="h-[18px] w-[18px]" strokeWidth={1.8} />
+                {unreadCount > 0 && (
+                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--cloud-accent)] ring-2 ring-white" />
+                )}
+              </button>
+              <div className="relative">
+                <UserAvatarButton
+                  initials={initials}
+                  isOnline={isOnline}
+                  onClick={() => setHeaderMenuOpen((v) => !v)}
+                  className="!h-11 !w-11 text-[12px]"
+                />
+                <UserMenuDropdown
+                  open={headerMenuOpen}
+                  onClose={() => setHeaderMenuOpen(false)}
+                  showSettings={isCloudAdmin}
+                  onSettings={() => {
+                    setHeaderMenuOpen(false);
+                    router.push("/cloud/dashboard/settings");
+                  }}
+                  onSignOut={() => void signOut({ callbackUrl: "/cloud/login" })}
+                />
+              </div>
             </div>
           </div>
         </header>
 
         {!isOnline && (
-          <div className="fixed left-0 right-0 top-[var(--cloud-topbar-height)] z-50 flex items-center justify-center gap-2 bg-[var(--cloud-danger)] px-5 py-2">
+          <div className="fixed left-0 right-0 top-[calc(var(--cloud-topbar-height)+env(safe-area-inset-top,0px))] z-50 flex items-center justify-center gap-2 bg-[var(--cloud-danger)] px-5 py-2 lg:left-[var(--cloud-sidebar-width)] lg:top-0">
             <p className="text-[12px] font-semibold text-white">
               No connection · Photos will upload when signal returns
             </p>
@@ -555,8 +475,8 @@ export default function CloudDashboardShell({
         )}
 
         <main
-          className="cloud-scroll-y min-h-0 flex-1 lg:pb-0"
-          style={{ paddingBottom: "calc(76px + env(safe-area-inset-bottom, 0px))" }}
+          className="cloud-scroll-y min-h-0 flex-1 overflow-x-clip lg:!pb-0"
+          style={{ paddingBottom: "var(--cloud-main-pad-bottom)" }}
         >
           {banner}
           {children}
@@ -565,8 +485,8 @@ export default function CloudDashboardShell({
 
       {/* Mobile bottom nav */}
       <nav
-        className="cloud-bottom-nav fixed inset-x-0 bottom-0 z-50 flex items-center justify-around border-t border-[var(--cloud-border)] bg-white/92 px-2 backdrop-blur-xl lg:hidden font-cloud-body"
-        style={{ paddingTop: 8, paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
+        className="cloud-bottom-nav fixed inset-x-0 bottom-0 z-50 flex items-stretch border-t border-[var(--cloud-border)] px-1 backdrop-blur-xl lg:hidden font-cloud-body"
+        aria-label="Primary"
       >
         {MOBILE_NAV.map(({ href, icon: Icon, label }, idx) => {
           const active = href === "/cloud/dashboard/more"
@@ -575,38 +495,42 @@ export default function CloudDashboardShell({
                 || matchesCloudDashboardPath(pathname, "/pricing")
                 || matchesCloudDashboardPath(pathname, "/billing")
                 || matchesCloudDashboardPath(pathname, "/team")
-                || matchesCloudDashboardPath(pathname, "/analytics"))
+                || matchesCloudDashboardPath(pathname, "/analytics")
+                || matchesCloudDashboardPath(pathname, "/help")
+                || matchesCloudDashboardPath(pathname, "/activity"))
             : isActive(href, pathname);
           const isCenter = idx === 2;
           return (
             <Link
               key={href}
               href={href}
-              className="relative flex flex-1 flex-col items-center gap-1"
+              className="cloud-bottom-nav-item"
+              aria-label={label || "Upload"}
+              aria-current={active ? "page" : undefined}
             >
               {isCenter ? (
-                <div className="-mt-[20px] flex h-[50px] w-[50px] items-center justify-center rounded-[16px] bg-[var(--cloud-ink)] shadow-[0_6px_20px_rgba(11,13,18,0.28)] transition-transform active:scale-95">
-                  <Icon className="h-[20px] w-[20px] text-[var(--cloud-accent)]" strokeWidth={2.2} />
+                <div className="cloud-bottom-nav-fab">
+                  <Icon className="h-5 w-5 text-[var(--cloud-accent)]" strokeWidth={2.2} />
                 </div>
               ) : (
                 <>
                   <div
-                    className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                    className={`relative flex h-9 w-9 items-center justify-center rounded-[10px] transition-colors ${
                       active ? "bg-[var(--cloud-accent-muted)]" : ""
                     }`}
                   >
                     <Icon
-                      className="h-[20px] w-[20px]"
+                      className="h-5 w-5"
                       style={{ color: active ? "var(--cloud-text-primary)" : "var(--cloud-text-secondary)" }}
                       strokeWidth={active ? 2.2 : 1.8}
                     />
                     {href === "/cloud/dashboard/notifications" && unreadCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-[var(--cloud-accent)] ring-2 ring-white" />
+                      <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[var(--cloud-accent)] ring-2 ring-white" />
                     )}
                   </div>
-                  {label && (
+                  {label ? (
                     <span
-                      className="text-[10px] tracking-[-0.01em]"
+                      className="max-w-full truncate px-0.5 text-[10px] tracking-[-0.01em]"
                       style={{
                         color: active ? "var(--cloud-text-primary)" : "var(--cloud-text-secondary)",
                         fontWeight: active ? 700 : 500,
@@ -614,7 +538,7 @@ export default function CloudDashboardShell({
                     >
                       {label}
                     </span>
-                  )}
+                  ) : null}
                 </>
               )}
             </Link>

@@ -330,7 +330,8 @@ export default function DesktopUploadPage() {
                 const p = projects.find((p) => p.id === e.target.value) ?? null;
                 setSelectedProject(p);
               }}
-              style={{ ...inputSt, width: 300 }}
+              className="cloud-select min-w-[220px]"
+              aria-label="Select project"
             >
               <option value="">Choose a project…</option>
               {projects.map((p) => (
@@ -340,12 +341,11 @@ export default function DesktopUploadPage() {
               ))}
             </select>
             <button
+              type="button"
               onClick={() => setShowNewProject(!showNewProject)}
+              className="cloud-btn-ghost"
               style={{
                 display: "flex", alignItems: "center", gap: 6,
-                height: 38, padding: "0 16px", borderRadius: 10,
-                border: "0.5px solid rgba(28,20,16,0.15)", background: "#FFFFFF",
-                color: "#1C1410", fontSize: 13, fontWeight: 600, cursor: "pointer",
               }}
             >
               <Plus style={{ width: 14, height: 14 }} /> New project
@@ -372,7 +372,8 @@ export default function DesktopUploadPage() {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   placeholder="e.g. Smith residence solar"
-                  style={{ ...inputSt, width: 240 }}
+                  className="cloud-input"
+                  style={{ width: 240 }}
                   onKeyDown={(e) => e.key === "Enter" && void createProject()}
                 />
               </div>
@@ -380,33 +381,29 @@ export default function DesktopUploadPage() {
                 <label style={{ fontSize: 11, fontWeight: 700, color: "#8C7B6B", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Category
                 </label>
-                <select value={newCategory} onChange={(e) => setNewCategory(e.target.value)} style={{ ...inputSt, width: 180 }}>
+                <select
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  className="cloud-select"
+                  style={{ width: 180 }}
+                >
                   <option value="">Optional</option>
                   {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <button
+                type="button"
                 onClick={() => void createProject()}
                 disabled={!newTitle.trim() || creating}
-                style={{
-                  height: 38, padding: "0 18px", borderRadius: 10,
-                  background: "#1C1410", color: "#D4FF4F",
-                  fontSize: 13, fontWeight: 700, border: "none",
-                  cursor: !newTitle.trim() || creating ? "not-allowed" : "pointer",
-                  display: "flex", alignItems: "center", gap: 6,
-                  opacity: !newTitle.trim() || creating ? 0.6 : 1,
-                }}
+                className="cloud-btn-primary disabled:opacity-60"
               >
-                {creating && <Loader2 className="animate-spin" style={{ width: 14, height: 14 }} />}
+                {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 {creating ? "Creating…" : "Create & select"}
               </button>
               <button
+                type="button"
                 onClick={() => setShowNewProject(false)}
-                style={{
-                  height: 38, padding: "0 14px", borderRadius: 10,
-                  border: "0.5px solid rgba(28,20,16,0.15)", background: "#F7F4EF",
-                  color: "#8C7B6B", fontSize: 13, cursor: "pointer",
-                }}
+                className="cloud-btn-ghost"
               >
                 Cancel
               </button>
@@ -496,8 +493,8 @@ export default function DesktopUploadPage() {
               </button>
             )}
 
-            <div style={{ border: "0.5px solid rgba(28,20,16,0.1)", borderRadius: 14, overflow: "hidden", background: "#FFFFFF" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <div style={{ border: "0.5px solid rgba(28,20,16,0.1)", borderRadius: 14, overflowX: "auto", WebkitOverflowScrolling: "touch", background: "#FFFFFF" }}>
+              <table style={{ width: "100%", minWidth: 520, borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: "0.5px solid rgba(28,20,16,0.08)", background: "#F7F4EF" }}>
                     <th style={{ padding: "10px 16px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#8C7B6B", textTransform: "uppercase", letterSpacing: "0.06em", width: 56 }}>

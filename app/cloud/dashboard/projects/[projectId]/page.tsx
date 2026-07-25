@@ -17,6 +17,7 @@ import Link from "next/link";
 import { getProjectCardStyles } from "@/app/cloud/components/ProjectCard";
 import { uploadProjectMediaFile, uploadErrorMessage } from "@/app/cloud/lib/upload-project-media";
 import { buildProjectShareUrl } from "@/app/cloud/lib/project-share-url";
+import { SkeletonMilestoneList, SkeletonProjectDetail } from "@/app/cloud/components/SkeletonCard";
 
 type MediaItem = {
   id: string;
@@ -644,27 +645,7 @@ export default function ProjectDetailPage() {
   }
 
   if (status === "loading" || loading) {
-    return (
-      <div className="cloud-page !pb-0">
-        <div style={{ height: 14, width: 64, background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.5s infinite', borderRadius: 4, marginBottom: 14 }} />
-        <div style={{ height: 26, width: '65%', background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)', backgroundSize: '200% 100%', animation: 'skeleton-shimmer 1.5s infinite', borderRadius: 6, marginBottom: 28 }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                aspectRatio: '1',
-                borderRadius: 12,
-                background: 'linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'skeleton-shimmer 1.5s infinite',
-                animationDelay: `${i * 0.1}s`,
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    );
+    return <SkeletonProjectDetail />;
   }
   if (!project) return null;
 
@@ -863,7 +844,7 @@ export default function ProjectDetailPage() {
 
       {/* Upload queue */}
       {uploadFiles.length > 0 && (
-        <div className="mb-5 grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+        <div className="mb-5 grid grid-cols-3 gap-2 sm:grid-cols-6 lg:grid-cols-8">
           {uploadFiles.map((f) => (
             <div key={f.id} className="relative aspect-square overflow-hidden rounded-xl bg-black/5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -890,23 +871,26 @@ export default function ProjectDetailPage() {
 
       {/* Photo count bar — gallery tab only */}
       {activeTab === "gallery" && media.length > 0 && (
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-[10px] font-bold tracking-[0.08em] text-[#6B7280] uppercase font-cloud-body">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[10px] font-bold tracking-[0.08em] text-[var(--cloud-text-tertiary)] uppercase font-cloud-body">
             {media.length} {media.some(m => m.type === "video") ? "items" : "photos"}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {galleryPhotos.length > 0 && (
               <button
                 type="button"
                 onClick={() => downloadAllPhotos()}
                 disabled={downloadingAll}
-                className="flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#4A3828] transition-colors hover:bg-[#F5F5F0] disabled:opacity-60 font-cloud-body"
+                className="cloud-btn-ghost !h-9 px-3 text-[12px] disabled:opacity-60"
               >
                 <Download className="h-3.5 w-3.5" />
-                {downloadingAll ? "Preparing…" : "Download all for social"}
+                <span className="sm:hidden">{downloadingAll ? "Preparing…" : "Download all"}</span>
+                <span className="hidden sm:inline">{downloadingAll ? "Preparing…" : "Download all for social"}</span>
               </button>
             )}
-            <p className="text-[11px] text-[#6B7280] font-cloud-body">drag to reorder</p>
+            <p className="hidden text-[11px] text-[var(--cloud-text-tertiary)] font-cloud-body md:block">
+              drag to reorder
+            </p>
           </div>
         </div>
       )}
@@ -1064,14 +1048,7 @@ export default function ProjectDetailPage() {
             </div>
           )}
 
-          {/* Loading skeleton */}
-          {milestonesLoading && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[0, 1, 2].map((i) => (
-                <div key={i} style={{ height: 80, borderRadius: 14, background: "linear-gradient(90deg, #EDE9E3 25%, #E4E0D8 50%, #EDE9E3 75%)", backgroundSize: "200% 100%", animation: "skeleton-shimmer 1.5s infinite", animationDelay: `${i * 0.1}s` }} />
-              ))}
-            </div>
-          )}
+          {milestonesLoading && <SkeletonMilestoneList />}
 
           {/* Empty state */}
           {!milestonesLoading && milestones.length === 0 && (

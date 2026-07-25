@@ -210,7 +210,6 @@ export async function middleware(req: NextRequest) {
     path === "/cloud/signup" ||
     path === "/cloud/forgot-password" ||
     path === "/cloud/reset-password" ||
-    path === "/cloud/help" ||
     path.startsWith("/cloud/share/") ||
     path === "/blog" ||
     path.startsWith("/blog/");
@@ -398,7 +397,6 @@ function isCloudPublicPath(resolved: string): boolean {
     resolved === "/cloud/signup" ||
     resolved === "/cloud/forgot-password" ||
     resolved === "/cloud/reset-password" ||
-    resolved === "/cloud/help" ||
     resolved.startsWith("/cloud/share/") ||
     resolved.startsWith("/p/") ||
     resolved.startsWith("/f/") ||

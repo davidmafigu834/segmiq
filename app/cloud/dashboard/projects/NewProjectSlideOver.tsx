@@ -96,20 +96,23 @@ export function NewProjectSlideOver({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex">
+    <div className="fixed inset-0 z-[60] flex items-end md:items-stretch">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Panel — slides in from right (desktop) / bottom (mobile) */}
-      <div className="relative ml-auto flex h-full w-full max-w-md flex-col bg-[#111111] shadow-2xl animate-in slide-in-from-right-full duration-300 md:h-full md:max-h-full">
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+      {/* Panel — bottom sheet on mobile, right drawer on desktop */}
+      <div className="cloud-sheet relative z-10 bg-[#111111] animate-in slide-in-from-bottom duration-300 md:slide-in-from-right-full">
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-white/15 md:hidden" aria-hidden />
+        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold text-white">New project</h2>
           <button
+            type="button"
             onClick={handleClose}
-            className="rounded-lg p-1.5 text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+            className="flex h-11 w-11 items-center justify-center rounded-xl text-white/40 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
@@ -141,7 +144,11 @@ export function NewProjectSlideOver({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#1a1a1a] px-4 py-3 text-sm text-white outline-none transition-colors focus:border-[#D4FF4F]"
+                className="w-full appearance-none rounded-xl border border-white/10 bg-[#1a1a1a] bg-[length:14px] bg-[right_12px_center] bg-no-repeat px-4 py-3 pr-10 text-sm text-white outline-none transition-colors focus:border-[#D4FF4F]"
+                style={{
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238B93A1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")",
+                }}
               >
                 <option value="">Select category…</option>
                 {CATEGORIES.map((c) => (
@@ -207,11 +214,11 @@ export function NewProjectSlideOver({
             )}
           </div>
 
-          <div className="border-t border-white/10 px-6 py-4 pb-24 lg:pb-4">
+          <div className="cloud-sheet-footer border-t border-white/10 px-5 pt-4 sm:px-6">
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4FF4F] py-3 text-sm font-semibold text-black transition-colors hover:bg-[#c4ef3f] disabled:opacity-60"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#D4FF4F] text-sm font-semibold text-black transition-colors hover:bg-[#c4ef3f] disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {loading ? "Creating…" : "Create project"}

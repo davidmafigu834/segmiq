@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { slugifyPackageName } from "@/lib/pricing/package-slug";
 import { isPackagePublic } from "@/lib/pricing/public-packages";
+import { SkeletonListRows } from "@/app/cloud/components/SkeletonCard";
 
 export type PricingPackage = {
   id: string;
@@ -110,16 +111,18 @@ function PackageEditorSlideOver({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex justify-end bg-black/40">
-      <div className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl font-cloud-body">
-        <div className="flex items-center justify-between border-b border-black/[0.06] px-5 py-4">
-          <h2 className="font-cloud-display text-[20px] text-[#0a0a0a]">
+    <div className="fixed inset-0 z-[80] flex items-end bg-black/40 md:items-stretch md:justify-end">
+      <button type="button" className="absolute inset-0 md:hidden" aria-label="Close" onClick={onClose} />
+      <div className="cloud-sheet relative z-10 bg-white font-cloud-body">
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-black/10 md:hidden" aria-hidden />
+        <div className="flex items-center justify-between border-b border-[var(--cloud-border)] px-5 py-4">
+          <h2 className="font-cloud-display text-[20px] text-[var(--cloud-text-primary)]">
             {editing ? "Edit package" : "New package"}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F5F0] text-[#666660]"
+            className="cloud-icon-btn"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -164,7 +167,7 @@ function PackageEditorSlideOver({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label className={labelCls}>From</label>
               <input
@@ -283,12 +286,12 @@ function PackageEditorSlideOver({
           </div>
         </div>
 
-        <div className="border-t border-black/[0.06] px-5 py-4">
+        <div className="cloud-sheet-footer border-t border-[var(--cloud-border)] px-5 pt-4">
           <button
             type="button"
             disabled={saving || !form.name.trim()}
             onClick={onSave}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#D4FF4F] text-[14px] font-bold text-black transition-colors hover:bg-[#C8F244] disabled:opacity-50 font-cloud-body"
+            className="cloud-btn-primary h-12 w-full disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {editing ? "Save changes" : "Create package"}
@@ -481,9 +484,7 @@ export function CloudPackagesManager({
       )}
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-[#0a0a0a]/30" />
-        </div>
+        <SkeletonListRows count={3} />
       ) : packages.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-[20px] border border-black/[0.07] bg-white px-6 py-16 text-center">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F5F0]">

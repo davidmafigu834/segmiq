@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Plus, Folder, Star, MoreVertical, Search, Copy, Trash2, Edit2, ArrowRight } from "lucide-react";
 import { NewProjectSlideOver } from "./NewProjectSlideOver";
-import { SkeletonPhotoGrid } from "@/app/cloud/components/SkeletonCard";
+import { SkeletonPhotoGrid, SkeletonProjectsToolbar } from "@/app/cloud/components/SkeletonCard";
 import ProjectSceneIllustration from "@/app/cloud/components/ProjectSceneIllustration";
 import { buildProjectShareUrl } from "@/app/cloud/lib/project-share-url";
 import { CloudPage } from "@/app/cloud/components/CloudPage";
@@ -129,16 +129,7 @@ export default function CloudProjectsPage() {
   if (status === "loading" || loading) {
     return (
       <CloudPage>
-        <div className="mb-4">
-          <div
-            className="h-11 max-w-sm rounded-[12px]"
-            style={{
-              background: "linear-gradient(90deg, var(--cloud-surface-muted) 25%, #e4e6eb 50%, var(--cloud-surface-muted) 75%)",
-              backgroundSize: "200% 100%",
-              animation: "skeleton-shimmer 1.5s infinite",
-            }}
-          />
-        </div>
+        <SkeletonProjectsToolbar />
         <SkeletonPhotoGrid />
       </CloudPage>
     );
@@ -146,23 +137,27 @@ export default function CloudProjectsPage() {
 
   return (
     <CloudPage>
-      {/* Top bar */}
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-sm flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cloud-text-tertiary)]" strokeWidth={1.8} />
+      <div className="cloud-toolbar mb-5">
+        <div className="cloud-toolbar-search">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--cloud-text-tertiary)]"
+            strokeWidth={1.8}
+          />
           <input
-            type="text"
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search projects…"
-            className="cloud-input pl-10"
+            className="cloud-input"
+            aria-label="Search projects"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="cloud-toolbar-actions">
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="cloud-input w-auto min-w-[120px]"
+            className="cloud-select"
+            aria-label="Sort projects"
           >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
@@ -170,7 +165,7 @@ export default function CloudProjectsPage() {
             <option value="alpha">Alphabetical</option>
           </select>
           <button type="button" onClick={() => setShowNew(true)} className="cloud-btn-primary">
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
             New project
           </button>
         </div>
@@ -271,9 +266,10 @@ export default function CloudProjectsPage() {
                         <button
                           type="button"
                           onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
-                          className="rounded-lg bg-[var(--cloud-surface-muted)] p-1.5 transition-colors"
+                          className="cloud-icon-btn !h-9 !w-9 bg-[var(--cloud-surface-muted)]"
+                          aria-label="Project actions"
                         >
-                          <MoreVertical className="h-4 w-4 text-[var(--cloud-text-secondary)]" />
+                          <MoreVertical className="h-4 w-4" />
                         </button>
                         {menuOpen === p.id && (
                           <div className="absolute right-0 top-8 z-20 w-44 rounded-xl border border-[var(--cloud-border)] bg-white py-1.5 shadow-[var(--cloud-shadow-elevated)]">
