@@ -31,17 +31,6 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const inputSt: React.CSSProperties = {
-  borderRadius: 10,
-  border: "0.5px solid rgba(28,20,16,0.15)",
-  background: "#FFFFFF",
-  padding: "10px 14px",
-  fontSize: 13,
-  fontFamily: "var(--fw-font-body), system-ui, sans-serif",
-  outline: "none",
-  color: "#1C1410",
-};
-
 export default function DesktopUploadPage() {
   const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
