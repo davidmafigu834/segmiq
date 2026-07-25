@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { MapPin, Phone } from "lucide-react";
 import type { ReactNode } from "react";
+import SegmiqMark from "@/components/brand/SegmiqMark";
 
 const COLS = [
   {
@@ -119,9 +120,7 @@ export default function CloudFooter() {
         <div className="mb-12 grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:items-start">
           <div>
             <div className="flex items-center gap-2.5">
-              <span className="grid h-8 w-8 place-items-center bg-[#D4FF4F] text-[15px] font-extrabold text-[#1C1410]">
-                S
-              </span>
+              <SegmiqMark size={32} />
               <span className="text-lg font-semibold tracking-tight">
                 Segmiq{" "}
                 <span className="font-serif text-[1.05em] font-normal italic text-[#D4FF4F]">

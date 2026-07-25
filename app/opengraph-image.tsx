@@ -4,13 +4,15 @@
  */
 
 import { ImageResponse } from "next/og";
+import { getOgMarkDataUrl } from "@/lib/og-brand";
 
-export const runtime = "edge";
 export const alt = "Segmiq — Revenue operating system for service businesses";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function OgImage() {
+  const mark = await getOgMarkDataUrl();
+
   return new ImageResponse(
     (
       <div
@@ -26,7 +28,8 @@ export default async function OgImage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#D4FF4F", color: "#000", fontSize: 30, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>S</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={mark} width={48} height={48} alt="" style={{ borderRadius: 12 }} />
           <div style={{ color: "#fff", fontSize: 30, fontWeight: 700 }}>Segmiq</div>
         </div>
 

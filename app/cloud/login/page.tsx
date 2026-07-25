@@ -4,7 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Camera, CloudUpload, Eye, EyeOff, FolderOpen, Loader2, Share2 } from "lucide-react";
+import Image from "next/image";
+import { Camera, Eye, EyeOff, FolderOpen, Loader2, Share2 } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -58,9 +59,14 @@ function LoginForm() {
         <div className="cloud-auth-brand-grid" aria-hidden />
 
         <Link href="/cloud" className="relative z-10 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[var(--cloud-ink)] shadow-[0_8px_24px_rgba(11,13,18,0.28)]">
-            <CloudUpload className="h-[18px] w-[18px] text-[var(--cloud-accent)]" strokeWidth={2.4} />
-          </span>
+          <Image
+            src="/brand/segmiq-q.png"
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-[12px] object-cover shadow-[0_8px_24px_rgba(11,13,18,0.28)]"
+            priority
+          />
           <span className="text-[15px] font-semibold tracking-[-0.02em] text-white">
             SegmiQ Cloud
           </span>
@@ -108,9 +114,14 @@ function LoginForm() {
           {/* Mobile brand */}
           <div className="mb-8 flex items-center justify-between lg:mb-0 lg:justify-end">
             <Link href="/cloud" className="flex items-center gap-2.5 lg:hidden">
-              <span className="flex h-9 w-9 items-center justify-center rounded-[11px] bg-[var(--cloud-ink)]">
-                <CloudUpload className="h-4 w-4 text-[var(--cloud-accent)]" strokeWidth={2.4} />
-              </span>
+              <Image
+                src="/brand/segmiq-q.png"
+                alt=""
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-[11px] object-cover"
+                priority
+              />
               <span className="text-[14px] font-semibold tracking-[-0.01em]">SegmiQ Cloud</span>
             </Link>
             <Link

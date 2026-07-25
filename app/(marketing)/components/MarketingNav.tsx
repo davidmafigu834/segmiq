@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import SegmiqMark from '@/components/brand/SegmiqMark';
 
 export function MarketingNav() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -38,8 +39,9 @@ export function MarketingNav() {
             {/* Logo */}
             <Link
               href="/"
-              className="text-[#D4FF4F] font-extrabold text-[20px] lg:text-[22px] tracking-tight flex-shrink-0"
+              className="flex shrink-0 items-center gap-2 text-[#D4FF4F] font-extrabold text-[20px] lg:text-[22px] tracking-tight"
             >
+              <SegmiqMark size={28} priority />
               Segmiq
             </Link>
 

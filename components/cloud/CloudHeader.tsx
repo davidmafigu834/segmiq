@@ -8,6 +8,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import SegmiqMark from "@/components/brand/SegmiqMark";
 
 const NAV = [
   { label: "Features", href: "#features" },
@@ -24,9 +25,7 @@ export default function CloudHeader() {
       <div className="mx-auto flex h-16 max-w-[1100px] items-center justify-between px-5">
         <div className="flex items-center gap-8">
           <Link href="/cloud" className="group flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center bg-[#D4FF4F] text-[15px] font-extrabold text-[#1C1410] transition group-hover:brightness-105">
-              S
-            </span>
+            <SegmiqMark size={32} priority className="transition group-hover:brightness-110" />
             <span className="text-lg font-semibold tracking-tight">
               Segmiq{" "}
               <span className="font-serif text-[1.05em] font-normal italic">Cloud</span>

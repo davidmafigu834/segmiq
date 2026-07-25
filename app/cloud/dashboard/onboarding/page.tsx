@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
-  CloudUpload, Camera, Loader2, Check, ChevronRight,
+  Camera, Loader2, Check, ChevronRight,
   Upload, Users, Globe, X,
 } from "lucide-react";
 import { uploadClientLogoFile } from "@/lib/storage/logo-upload";
@@ -199,9 +200,14 @@ export default function OnboardingPage() {
     <CloudAdminGate>
     <div className="cloud-surface-dark fixed inset-0 z-[200] flex flex-col items-center justify-start cloud-scroll-y bg-[#0a0a0a] px-6 py-8">
       <div className="mb-8 flex flex-col items-center gap-2.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#D4FF4F]">
-          <CloudUpload className="h-4.5 w-4.5 text-black" strokeWidth={2.5} />
-        </div>
+        <Image
+          src="/brand/segmiq-q.png"
+          alt=""
+          width={36}
+          height={36}
+          className="h-9 w-9 rounded-xl object-cover"
+          priority
+        />
         <span className="text-[13px] font-semibold text-white">Segmiq Cloud</span>
       </div>
 

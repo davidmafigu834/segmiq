@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
-  Grid, Folder, Camera, Users, Settings, LayoutGrid, LogOut, CloudUpload,
+  Grid, Folder, Camera, Users, Settings, LayoutGrid, LogOut,
   Bell, CreditCard, HelpCircle, BarChart2, Tag, ChevronsUpDown,
 } from "lucide-react";
 import { Suspense } from "react";
@@ -347,8 +348,14 @@ export default function CloudDashboardShell({
       <aside className="cloud-shell-sidebar fixed inset-y-0 left-0 z-30 hidden flex-col lg:flex">
         <div className="shrink-0 px-3 pt-3">
           <Link href="/cloud/dashboard" className="cloud-shell-workspace">
-            <span className="cloud-shell-workspace-mark">
-              <CloudUpload className="h-3.5 w-3.5 text-[var(--cloud-accent)]" strokeWidth={2.4} />
+            <span className="cloud-shell-workspace-mark overflow-hidden p-0">
+              <Image
+                src="/brand/segmiq-q.png"
+                alt=""
+                width={28}
+                height={28}
+                className="h-full w-full object-cover"
+              />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[13px] font-semibold leading-tight tracking-[-0.01em] text-[var(--cloud-text-primary)]">

@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
-import { CloudUpload, Eye, EyeOff, Loader2, ChevronRight } from "lucide-react";
+import { Eye, EyeOff, Loader2, ChevronRight } from "lucide-react";
 
 const INDUSTRIES = [
   "Construction",
@@ -113,9 +114,14 @@ export default function CloudSignupPage() {
     <div className="cloud-surface-dark flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-6 py-12">
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4FF4F]">
-          <CloudUpload className="h-5 w-5 text-black" strokeWidth={2.5} />
-        </div>
+        <Image
+          src="/brand/segmiq-q.png"
+          alt=""
+          width={40}
+          height={40}
+          className="h-10 w-10 rounded-xl object-cover"
+          priority
+        />
         <span className="text-sm font-semibold text-white">Segmiq Cloud</span>
       </div>
 

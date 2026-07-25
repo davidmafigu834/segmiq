@@ -8,6 +8,7 @@ import { signOut } from "next-auth/react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { ShellIcon } from "./shell-icons";
 import { ClientAvatar } from "@/components/ClientAvatar";
+import SegmiqMark from "@/components/brand/SegmiqMark";
 import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
 import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
 
@@ -239,9 +240,10 @@ export function AgencySidebar({
             mobileExpanded ? "justify-start" : iconOnly ? "justify-center" : "justify-center layout:justify-start"
           }`}
         >
-          <span
-            className={`mt-1 h-1.5 w-1.5 shrink-0 bg-[var(--accent)] ${showBrandDetails ? "hidden" : "block"}`}
-            aria-hidden
+          <SegmiqMark
+            size={28}
+            className={showBrandDetails ? "hidden" : "block"}
+            alt="Segmiq"
           />
           <div className={`${showBrandDetails ? "block" : "hidden"} text-left`}>
             {sidebarBrand ? (
@@ -259,6 +261,7 @@ export function AgencySidebar({
                   </div>
                 )}
                 <div className="h-3 w-px shrink-0 bg-[var(--border)]" aria-hidden />
+                <SegmiqMark size={20} />
                 <Image src={wordmarkSrc} alt="Segmiq" width={140} height={24} className="h-5 w-auto" />
               </div>
             ) : (
@@ -268,7 +271,10 @@ export function AgencySidebar({
                     {coBrand}
                   </div>
                 ) : null}
-                <Image src={wordmarkSrc} alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
+                <div className="flex items-center gap-2">
+                  <SegmiqMark size={24} />
+                  <Image src={wordmarkSrc} alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
+                </div>
               </>
             )}
             <div className="mt-1 font-mono text-[12px] font-medium uppercase tracking-wide text-[var(--text-on-dark-dim)]">

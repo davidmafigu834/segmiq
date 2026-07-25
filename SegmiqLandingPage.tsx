@@ -120,7 +120,7 @@ export default function SegmiqLandingPage() {
         <div className="mx-auto max-w-[1100px] px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <a href="#" className="flex items-center gap-2">
-              <span className="grid place-items-center w-[26px] h-[26px] rounded-[7px] bg-[#D4FF4F] text-black font-extrabold text-sm">S</span>
+              <img src="/brand/segmiq-q.png" alt="" width={26} height={26} className="h-[26px] w-[26px] rounded-[7px] object-cover" />
               <span className="text-lg font-semibold tracking-tight">Segmiq</span>
             </a>
             <nav className="hidden lg:flex items-center gap-6 text-sm text-[#5b5b5b]">
@@ -530,7 +530,7 @@ export default function SegmiqLandingPage() {
           </div>
           <div className="mt-10 pt-6 border-t border-black/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-[#8a8a8a]">
             <div className="flex items-center gap-2">
-              <span className="grid place-items-center w-[22px] h-[22px] rounded-md bg-[#D4FF4F] text-black font-extrabold text-xs">S</span>
+              <img src="/brand/segmiq-q.png" alt="" width={22} height={22} className="h-[22px] w-[22px] rounded-md object-cover" />
               <span>© 2026 Segmiq · segmiq.com</span>
             </div>
             <div className="flex gap-5">

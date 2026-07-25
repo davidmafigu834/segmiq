@@ -46,7 +46,15 @@ export default async function LoginPage() {
         />
 
         <div className="relative flex items-center justify-between gap-4">
-          <Link href="/" className="inline-flex transition-opacity hover:opacity-85">
+          <Link href="/" className="inline-flex items-center gap-2.5 transition-opacity hover:opacity-85">
+            <Image
+              src="/brand/segmiq-q.png"
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-[22%] object-cover"
+              priority
+            />
             <Image
               src="/segmiq-wordmark.png"
               alt="Segmiq"

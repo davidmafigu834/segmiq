@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { CloudUpload, Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -31,9 +32,14 @@ export default function ForgotPasswordPage() {
   return (
     <div className="cloud-surface-dark flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-6 py-12">
       <div className="mb-10 flex flex-col items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4FF4F]">
-          <CloudUpload className="h-5 w-5 text-black" strokeWidth={2.5} />
-        </div>
+        <Image
+          src="/brand/segmiq-q.png"
+          alt=""
+          width={40}
+          height={40}
+          className="h-10 w-10 rounded-xl object-cover"
+          priority
+        />
         <span className="text-sm font-semibold text-white">Segmiq Cloud</span>
       </div>
 
