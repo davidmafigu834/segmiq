@@ -120,6 +120,19 @@ export async function POST(req: Request) {
         .eq("id", existing.id);
     }
     if (b.type === "lead" && !b.forceNew) {
+      const { data: latestLead } = await supabase
+        .from("leads")
+        .select("id, status, assigned_to_id, assigned_to:users!assigned_to_id ( id, name )")
+        .eq("contact_id", existing.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const a = latestLead?.assigned_to as
+        | { id?: string; name?: string }
+        | { id?: string; name?: string }[]
+        | null
+        | undefined;
+      const assignee = Array.isArray(a) ? a[0] ?? null : a;
       return NextResponse.json(
         {
           error: "duplicate",
@@ -127,6 +140,13 @@ export async function POST(req: Request) {
             id: existing.id,
             name: existing.name,
             lifecycle: existing.lifecycle,
+            leadId: latestLead?.id ?? null,
+            leadStatus: latestLead?.status ?? null,
+            assignedToId: assignee?.id ?? latestLead?.assigned_to_id ?? null,
+            owner: assignee?.name ?? null,
+            ownedByYou: Boolean(
+              assignee?.id && session.userId && assignee.id === session.userId
+            ),
           },
         },
         { status: 409 }
@@ -176,9 +196,10 @@ export async function POST(req: Request) {
   let assignmentModeOverride: "direct" | "pool" | "round_robin" | undefined;
 
   if (session.role === "SALESPERSON") {
-    const mode = (client?.assignment_mode as string | null) || "direct";
-    if (mode === "direct") overrideAssigneeId = session.userId;
-    else if (mode === "pool") forceUnassigned = true;
+    // Manual hub / walk-in / won-deal entry must always stay with the creator.
+    // Round-robin and pool only apply to inbound ads/forms/WhatsApp — never to
+    // "I just logged this customer myself."
+    overrideAssigneeId = session.userId;
   } else {
     const mode = b.assignMode || (client?.assignment_mode as string | null) || "direct";
     if (mode === "specific") {

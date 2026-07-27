@@ -56,14 +56,20 @@ export async function GET(req: Request) {
 
   const { data: latestLead } = await supabase
     .from("leads")
-    .select("updated_at, assigned_to:users!assigned_to_id ( id, name )")
+    .select("id, status, updated_at, assigned_to_id, assigned_to:users!assigned_to_id ( id, name )")
     .eq("contact_id", contact.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  const a = latestLead?.assigned_to as { name?: string } | { name?: string }[] | null | undefined;
-  const owner = Array.isArray(a) ? (a[0]?.name ?? null) : (a?.name ?? null);
+  const a = latestLead?.assigned_to as
+    | { id?: string; name?: string }
+    | { id?: string; name?: string }[]
+    | null
+    | undefined;
+  const assignee = Array.isArray(a) ? a[0] ?? null : a;
+  const ownerId = assignee?.id ?? latestLead?.assigned_to_id ?? null;
+  const owner = assignee?.name ?? null;
 
   return NextResponse.json({
     match: {
@@ -71,6 +77,10 @@ export async function GET(req: Request) {
       name: contact.name,
       lifecycle: contact.lifecycle,
       owner,
+      ownerId,
+      ownedByYou: Boolean(ownerId && session.userId && ownerId === session.userId),
+      leadId: latestLead?.id ?? null,
+      leadStatus: latestLead?.status ?? null,
       lastTouchedAt: latestLead?.updated_at ?? null,
     },
   });

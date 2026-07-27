@@ -28,6 +28,10 @@ type LookupMatch = {
   name: string | null;
   lifecycle: ContactLifecycle | "lead";
   owner: string | null;
+  ownerId?: string | null;
+  ownedByYou?: boolean;
+  leadId?: string | null;
+  leadStatus?: string | null;
   lastTouchedAt: string | null;
 } | null;
 
@@ -203,11 +207,7 @@ export function AddToHubSheet({
     }
   }
 
-  const noteByMode: Record<AssignmentMode, string> = {
-    direct: "Assigned to you — you added it, so it's yours.",
-    pool: "Goes to the team pool — anyone can claim it.",
-    round_robin: "Auto-assigned by round-robin to whoever's next.",
-  };
+  const salespersonNote = "Assigned to you — you added it, so it's yours.";
 
   return (
     <div
@@ -342,7 +342,9 @@ export function AddToHubSheet({
                           as <b>{match.name}</b>
                         </>
                       ) : null}
-                      {match?.owner ? (
+                      {match?.ownedByYou ? (
+                        <span className="text-[var(--text-tertiary)]"> · owned by you</span>
+                      ) : match?.owner ? (
                         <span className="text-[var(--text-tertiary)]"> · owned by {match.owner}</span>
                       ) : (
                         <span className="text-[var(--text-tertiary)]"> · unassigned</span>
@@ -643,7 +645,7 @@ export function AddToHubSheet({
                 <div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-quaternary)] px-3 py-2.5">
                   <Check size={15} className="shrink-0 text-[var(--accent-fg)]" />
                   <span className="text-[12.5px] text-[var(--text-secondary)]">
-                    {noteByMode[assignmentMode]}
+                    {salespersonNote}
                   </span>
                 </div>
               )}
