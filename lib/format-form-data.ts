@@ -10,18 +10,18 @@ export function formatFormKey(key: string): string {
     .trim();
 }
 
-export function formatFormValue(value: string | string[]): string {
+export function formatFormValue(value: unknown): string {
   if (Array.isArray(value)) {
-    return value
-      .map(v => formatSingleValue(v))
-      .join(', ');
+    return value.map((v) => formatSingleValue(v)).join(", ");
   }
   return formatSingleValue(value);
 }
 
-function formatSingleValue(value: string): string {
-  if (!value) return "";
-  return value
+function formatSingleValue(value: unknown): string {
+  if (value == null) return "";
+  const text = typeof value === "string" ? value : String(value);
+  if (!text) return "";
+  return text
     .replace(/_/g, " ")
     .replace(/—/g, "—")
     .trim()
@@ -111,13 +111,14 @@ export function formatFormData(
 
   return Object.entries(formData)
     .filter(([key, value]) => {
-      if (!value) return false;
+      if (key.startsWith("_")) return false; // internal metadata (e.g. _fbQualScore)
+      if (value == null || value === "") return false;
       if (Array.isArray(value) && value.length === 0) return false;
-      const skip = ['utm_source', 'utm_medium', 'utm_campaign', 'id', 'created_time'];
+      const skip = ["utm_source", "utm_medium", "utm_campaign", "id", "created_time"];
       return !skip.includes(key);
     })
     .map(([key, value]) => ({
       label: formatFormKey(key),
-      value: formatFormValue(value as string | string[]),
+      value: formatFormValue(value),
     }));
 }
