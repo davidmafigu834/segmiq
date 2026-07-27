@@ -30,6 +30,7 @@ import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { formatCallLogHeadline } from "@/lib/call-log-display";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
+import { ManagerReassignLeadButton } from "@/components/customer-hub/ManagerReassignLeadButton";
 
 type CallLogApiRow = {
   id: string;
@@ -481,6 +482,27 @@ export function LeadDetailPanel({
           ) : null}
           {role === "AGENCY_ADMIN" && !isReadOnly ? (
             <AgencyLeadAdminSection lead={activeLead} onLeadUpdated={onLeadUpdated} onAfterArchive={handleClose} />
+          ) : null}
+          {(role === "CLIENT_MANAGER" || (role === "AGENCY_ADMIN" && isReadOnly)) ? (
+            <div className="space-y-3 border-t border-border p-4 sm:p-5 max-md:pb-6">
+              <div className="font-mono text-[11px] uppercase text-ink-tertiary">Assignment</div>
+              <p className="text-[13px] text-ink-secondary">
+                {activeLead.assigned_to_id
+                  ? "Move this lead to another salesperson on your team."
+                  : "Assign this lead to a salesperson on your team."}
+              </p>
+              <ManagerReassignLeadButton
+                clientId={activeLead.client_id}
+                leadId={activeLead.id}
+                currentAssigneeId={activeLead.assigned_to_id}
+                onReassigned={({ assigneeId }) => {
+                  onLeadUpdated?.({
+                    ...activeLead,
+                    assigned_to_id: assigneeId,
+                  });
+                }}
+              />
+            </div>
           ) : null}
           {isReadOnly ? (
             <div className="p-4 sm:p-5">

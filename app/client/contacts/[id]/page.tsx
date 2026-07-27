@@ -35,6 +35,7 @@ function unwrapAssignee(
 }
 
 function mapLead(row: LeadRow): ContactProfileLead {
+  const assignee = unwrapAssignee(row.assigned_to);
   return {
     id: row.id,
     status: row.status,
@@ -43,7 +44,8 @@ function mapLead(row: LeadRow): ContactProfileLead {
     project_type: row.project_type,
     follow_up_date: row.follow_up_date,
     created_at: row.created_at,
-    assigneeName: unwrapAssignee(row.assigned_to)?.name ?? null,
+    assigneeId: assignee?.id ?? null,
+    assigneeName: assignee?.name ?? null,
   };
 }
 

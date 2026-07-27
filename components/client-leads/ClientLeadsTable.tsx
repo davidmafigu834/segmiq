@@ -810,7 +810,33 @@ export function ClientLeadsTable({
         </>
       )}
 
-      <LeadDetailPanel leads={panelLeads} readOnly onClose={() => clearLeadQuery()} />
+      <LeadDetailPanel
+        leads={panelLeads}
+        readOnly
+        onClose={() => clearLeadQuery()}
+        onLeadUpdated={(updated) => {
+          const nextAssignee = updated.assigned_to_id
+            ? bulkSalespeople.find((s) => s.id === updated.assigned_to_id)
+            : null;
+          setLeads((prev) =>
+            prev.map((row) =>
+              row.id === updated.id
+                ? {
+                    ...row,
+                    assigned_to_id: updated.assigned_to_id,
+                    assigned_to: nextAssignee
+                      ? { id: nextAssignee.id, name: nextAssignee.name, avatar_url: null }
+                      : updated.assigned_to_id
+                        ? row.assigned_to
+                        : null,
+                    status: updated.status,
+                    deal_value: updated.deal_value,
+                  }
+                : row
+            )
+          );
+        }}
+      />
 
       {showImport && clientId && (
         <ImportLeadsModal

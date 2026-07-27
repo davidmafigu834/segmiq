@@ -56,7 +56,7 @@ export function TransferDialog({
       >
         <div className="mb-3 flex items-center justify-between">
           <h3 className={`text-base font-semibold ${whatsappMode ? "text-[#111B21]" : "text-[var(--text-primary)]"}`}>
-            Transfer conversation
+            {whatsappMode ? "Transfer conversation" : "Reassign lead"}
           </h3>
           <button
             type="button"
@@ -115,7 +115,7 @@ export function TransferDialog({
             className="wa-btn-primary !w-auto px-5 py-2.5"
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
-            Transfer
+            {whatsappMode ? "Transfer" : "Reassign"}
           </button>
         </div>
       </div>

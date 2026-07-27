@@ -24,6 +24,7 @@ import {
 } from "@/lib/customer-hub/lifecycle";
 import { formatContactSourceLabel } from "@/lib/customer-hub/source-labels";
 import { ContactCommunicationPrefs } from "@/components/marketing/ContactCommunicationPrefs";
+import { ManagerReassignLeadButton } from "@/components/customer-hub/ManagerReassignLeadButton";
 
 export type ContactProfileLead = {
   id: string;
@@ -33,6 +34,7 @@ export type ContactProfileLead = {
   project_type: string | null;
   follow_up_date: string | null;
   created_at: string;
+  assigneeId: string | null;
   assigneeName: string | null;
 };
 
@@ -248,11 +250,21 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
                 }`}
               />
             ) : null}
-            {activeLead?.assigneeName ? (
+            {activeLead ? (
               <DetailRow
                 icon={UserPlus}
                 label="Active rep"
-                value={activeLead.assigneeName}
+                value={activeLead.assigneeName || "Unassigned"}
+                action={
+                  <ManagerReassignLeadButton
+                    variant="link"
+                    clientId={clientId}
+                    leadId={activeLead.id}
+                    currentAssigneeId={activeLead.assigneeId}
+                    currentAssigneeName={activeLead.assigneeName}
+                    onReassigned={() => router.refresh()}
+                  />
+                }
               />
             ) : null}
           </div>
@@ -292,6 +304,15 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
                 <Briefcase className="h-4 w-4" strokeWidth={1.5} />
                 Open active deal
               </Link>
+            ) : null}
+            {activeLead ? (
+              <ManagerReassignLeadButton
+                clientId={clientId}
+                leadId={activeLead.id}
+                currentAssigneeId={activeLead.assigneeId}
+                currentAssigneeName={activeLead.assigneeName}
+                onReassigned={() => router.refresh()}
+              />
             ) : null}
             <button
               type="button"
@@ -338,12 +359,22 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
                   : ""}
               </p>
             </div>
-            <Link
-              href={`/client/leads/pipeline?lead=${activeLead.id}`}
-              className="inline-flex h-9 items-center rounded-lg bg-[var(--accent)] px-4 text-[13px] font-semibold text-[var(--accent-foreground)]"
-            >
-              Work this deal
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <ManagerReassignLeadButton
+                variant="row"
+                clientId={clientId}
+                leadId={activeLead.id}
+                currentAssigneeId={activeLead.assigneeId}
+                currentAssigneeName={activeLead.assigneeName}
+                onReassigned={() => router.refresh()}
+              />
+              <Link
+                href={`/client/leads/pipeline?lead=${activeLead.id}`}
+                className="inline-flex h-9 items-center rounded-lg bg-[var(--accent)] px-4 text-[13px] font-semibold text-[var(--accent-foreground)]"
+              >
+                Work this deal
+              </Link>
+            </div>
           </div>
         </div>
       ) : null}
@@ -366,24 +397,31 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
           </div>
         ) : (
           leads.map((lead, i) => (
-            <Link
+            <div
               key={lead.id}
-              href={`/client/leads/pipeline?lead=${lead.id}`}
               className={`flex items-center justify-between gap-4 px-4 py-3 transition hover:bg-[var(--bg-tertiary)] ${
                 i < leads.length - 1 ? "border-b border-[var(--border)]" : ""
               }`}
             >
-              <div className="min-w-0 flex-1">
+              <Link href={`/client/leads/pipeline?lead=${lead.id}`} className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
                   {lead.project_type || "Deal"}
                 </p>
                 <p className="mt-0.5 text-[12px] text-[var(--text-tertiary)]">
                   {formatContactSourceLabel(lead.source)} ·{" "}
                   {new Date(lead.created_at).toLocaleDateString("en-GB")}
-                  {lead.assigneeName ? ` · ${lead.assigneeName}` : ""}
+                  {lead.assigneeName ? ` · ${lead.assigneeName}` : " · Unassigned"}
                 </p>
-              </div>
+              </Link>
               <div className="flex shrink-0 items-center gap-2">
+                <ManagerReassignLeadButton
+                  variant="row"
+                  clientId={clientId}
+                  leadId={lead.id}
+                  currentAssigneeId={lead.assigneeId}
+                  currentAssigneeName={lead.assigneeName}
+                  onReassigned={() => router.refresh()}
+                />
                 <span
                   className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold uppercase ${statusPillClass(lead.status)}`}
                 >
@@ -395,7 +433,7 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
                   </span>
                 ) : null}
               </div>
-            </Link>
+            </div>
           ))
         )}
       </div>
