@@ -15,11 +15,11 @@ export type Post = {
 };
 
 export const CATEGORY_LABELS: Record<PostCategory, string> = {
-  insight: "INSIGHT",
-  product: "PRODUCT",
-  client: "CLIENT OUTCOME",
-  intelligence: "INTELLIGENCE",
-  announcement: "ANNOUNCEMENT",
+  insight: "Insight",
+  product: "Product",
+  client: "Customer Story",
+  intelligence: "Intelligence",
+  announcement: "Announcement",
 };
 
 export const FILTERS: { key: "all" | PostCategory; label: string }[] = [

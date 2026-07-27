@@ -3,7 +3,7 @@ export const BLOG_THEME_STORAGE_KEY = "segmiq-wire-theme";
 export type BlogTheme = "light" | "dark";
 
 export function parseBlogTheme(value: string | undefined | null): BlogTheme {
-  return value === "light" ? "light" : "dark";
+  return value === "dark" ? "dark" : "light";
 }
 
 export function persistBlogTheme(theme: BlogTheme) {

@@ -6,7 +6,6 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import BlogHeader from "@/components/blog/BlogHeader";
 import BlogFooter from "@/components/blog/BlogFooter";
-import BreakingTicker from "@/components/blog/BreakingTicker";
 import { BlogThemeProvider } from "@/components/blog/BlogThemeProvider";
 import { BlogPathProvider } from "@/components/blog/BlogPathProvider";
 import { BLOG_THEME_STORAGE_KEY, parseBlogTheme } from "@/lib/blog-theme";
@@ -41,7 +40,6 @@ export default async function BlogLayout({ children }: { children: React.ReactNo
     ({ category, label }) => ({ label, href: blogCategoryHref(category, pathPrefix) })
   );
 
-  const tickerItems = posts.slice(0, 8).map((p) => ({ slug: p.slug, title: p.title }));
   const searchPosts = posts.map((p) => ({
     slug: p.slug,
     title: p.title,
@@ -53,8 +51,7 @@ export default async function BlogLayout({ children }: { children: React.ReactNo
   return (
     <BlogThemeProvider initialTheme={initialTheme}>
       <BlogPathProvider prefix={pathPrefix}>
-        <div className="bg-white dark:bg-[#0a0a0a] text-[#0C0C0C] dark:text-white antialiased min-h-screen flex flex-col transition-colors">
-          <BreakingTicker items={tickerItems} pathPrefix={pathPrefix} />
+        <div className="bg-white dark:bg-[#0a0a0a] text-[#0C0C0C] dark:text-white antialiased min-h-screen flex flex-col transition-colors font-[family-name:var(--font-dm-sans)]">
           <BlogHeader available={available} searchPosts={searchPosts} />
           <main className="flex-1">{children}</main>
           <BlogFooter pathPrefix={pathPrefix} />

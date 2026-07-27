@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { PostCategory } from "@/lib/blog-types";
-import { CATEGORY_STYLES } from "@/lib/blog-utils";
 
 type Props = {
   category: PostCategory;
@@ -9,25 +8,18 @@ type Props = {
   size?: "sm" | "md";
 };
 
-export default function CategoryBadge({ category, label, href, size = "sm" }: Props) {
-  const s = CATEGORY_STYLES[category];
-  const cls = `inline-flex items-center gap-1.5 font-bold uppercase tracking-wider rounded ${s.bg} ${s.text} ${
-    size === "sm" ? "text-[10px] px-2 py-0.5" : "text-[11px] px-2.5 py-1"
+/** Editorial section label — text-forward, not a colorful chip. */
+export default function CategoryBadge({ label, href, size = "sm" }: Props) {
+  const cls = `inline-block font-bold uppercase tracking-[0.12em] text-[#76B900] dark:text-[#D4FF4F] ${
+    size === "sm" ? "text-[11px]" : "text-[12px]"
   }`;
-
-  const inner = (
-    <>
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      {label}
-    </>
-  );
 
   if (href) {
     return (
-      <Link href={href} className={`${cls} hover:opacity-80 transition-opacity`}>
-        {inner}
+      <Link href={href} className={`${cls} hover:underline underline-offset-2`}>
+        {label}
       </Link>
     );
   }
-  return <span className={cls}>{inner}</span>;
+  return <span className={cls}>{label}</span>;
 }

@@ -11,7 +11,7 @@ import { CATEGORY_LABELS, type Post, type PostCategory } from "@/lib/blog-types"
 export type { Post, PostCategory } from "@/lib/blog-types";
 export { CATEGORY_LABELS, FILTERS } from "@/lib/blog-types";
 
-export const MIN_SECTION_POSTS = 3;
+export const MIN_SECTION_POSTS = 2;
 
 export const BLOG_CATEGORY_NAV: { category: PostCategory; label: string }[] = [
   { category: "insight", label: "Insights" },

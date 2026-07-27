@@ -60,34 +60,48 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
   }));
 
   const navLabel = BLOG_CATEGORY_NAV.find((n) => n.category === cat)?.label ?? CATEGORY_LABELS[cat];
+  const [lead, ...rest] = posts;
 
   return (
     <>
-      <section className="border-b border-black/[0.08] dark:border-white/10 bg-[#FAFAF8] dark:bg-[#111]">
-        <div className="mx-auto max-w-[1280px] px-4 sm:px-6 py-8">
-          <Link href={homeHref} className="inline-flex items-center gap-1.5 text-[13px] text-[#666] dark:text-white/55 hover:text-black dark:hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" /> All stories
+      <section className="border-b border-black/[0.08] dark:border-white/10">
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-8 sm:py-10">
+          <Link
+            href={homeHref}
+            className="inline-flex items-center gap-1.5 text-[13px] text-[#666] dark:text-white/50 hover:text-black dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> All stories
           </Link>
-          <span className="block text-[11px] font-bold uppercase tracking-wider text-[#888] dark:text-white/45 mt-6">Section</span>
-          <h1 className="text-[36px] sm:text-[42px] font-extrabold tracking-tight mt-1">{navLabel}</h1>
-          <p className="mt-2 text-[15px] text-[#666] dark:text-white/55">{posts.length} {posts.length === 1 ? "story" : "stories"}</p>
+          <h1 className="text-[32px] sm:text-[40px] font-bold tracking-tight mt-6">{navLabel}</h1>
+          <p className="mt-2 text-[15px] text-[#666] dark:text-white/50">
+            {posts.length} {posts.length === 1 ? "story" : "stories"}
+          </p>
         </div>
       </section>
 
-      <section className="py-10">
-        <div className="mx-auto max-w-[1280px] px-4 sm:px-6 grid lg:grid-cols-[1fr_320px] gap-10 xl:gap-14">
+      <section className="py-10 sm:py-12">
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-6 grid lg:grid-cols-[minmax(0,1fr)_280px] gap-12 xl:gap-16">
           <div>
             {posts.length === 0 ? (
               <p className="text-[15px] text-[#888] dark:text-white/45 py-12 text-center">No stories in this section yet.</p>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-x-6 gap-y-8">
-                {posts.map((p) => (
-                  <PostCard key={p.slug} post={p} />
-                ))}
-              </div>
+              <>
+                {lead ? (
+                  <div className="mb-10 pb-10 border-b border-black/[0.08] dark:border-white/10">
+                    <PostCard post={lead} variant="lead" />
+                  </div>
+                ) : null}
+                {rest.length > 0 && (
+                  <div className="grid sm:grid-cols-2 gap-x-8 gap-y-10">
+                    {rest.map((p) => (
+                      <PostCard key={p.slug} post={p} />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
-          <div className="lg:sticky lg:top-[120px] lg:self-start">
+          <div className="lg:sticky lg:top-[88px] lg:self-start">
             <NewsSidebar trending={trending} categories={sidebarCategories} />
           </div>
         </div>

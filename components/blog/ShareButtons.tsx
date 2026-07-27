@@ -34,7 +34,7 @@ export default function ShareButtons({ url, title }: { url: string; title: strin
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on X"
-        className="w-8 h-8 rounded-full border border-black/10 dark:border-white/15 grid place-items-center text-[#666] dark:text-white/60 hover:border-black/20 dark:hover:border-white/25 hover:text-black dark:hover:text-white transition-colors"
+        className="w-8 h-8 grid place-items-center text-[#666] dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
       >
         <X className="w-3.5 h-3.5" />
       </a>
@@ -43,7 +43,7 @@ export default function ShareButtons({ url, title }: { url: string; title: strin
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on LinkedIn"
-        className="w-8 h-8 rounded-full border border-black/10 dark:border-white/15 grid place-items-center text-[#666] dark:text-white/60 hover:border-black/20 dark:hover:border-white/25 hover:text-black dark:hover:text-white transition-colors"
+        className="w-8 h-8 grid place-items-center text-[#666] dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
       >
         <LinkedInIcon className="w-3.5 h-3.5" />
       </a>
@@ -51,7 +51,7 @@ export default function ShareButtons({ url, title }: { url: string; title: strin
         type="button"
         onClick={copyLink}
         aria-label="Copy link"
-        className="w-8 h-8 rounded-full border border-black/10 dark:border-white/15 grid place-items-center text-[#666] dark:text-white/60 hover:border-black/20 dark:hover:border-white/25 hover:text-black dark:hover:text-white transition-colors"
+        className="w-8 h-8 grid place-items-center text-[#666] dark:text-white/60 hover:text-black dark:hover:text-white transition-colors"
       >
         {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Link2 className="w-3.5 h-3.5" />}
       </button>

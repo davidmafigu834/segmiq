@@ -12,7 +12,7 @@ const BlogThemeContext = createContext<BlogThemeContextValue | null>(null);
 
 export function BlogThemeProvider({
   children,
-  initialTheme = "dark",
+  initialTheme = "light",
 }: {
   children: React.ReactNode;
   initialTheme?: BlogTheme;
