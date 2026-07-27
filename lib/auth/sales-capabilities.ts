@@ -24,7 +24,7 @@ export type RoundRobinEligibleUser = {
 };
 
 const DEFAULT_ROUND_ROBIN_SELECT =
-  "id, name, email, phone, notification_prefs, round_robin_order, role, also_sells";
+  "id, name, email, phone, notification_prefs, round_robin_order, role, also_sells, is_active";
 
 /** True when the user can perform salesperson actions (portal, calls, assigned leads). */
 export function canActAsSalesperson(session: SalesCapableSession): boolean {

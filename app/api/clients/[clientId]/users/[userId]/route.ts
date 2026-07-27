@@ -245,6 +245,12 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
       .update({ is_active: parsed.data.is_active })
       .eq("id", params.userId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Invalidate existing sessions when deactivating so the user can't keep working.
+    if (parsed.data.is_active === false && params.userId !== session.userId) {
+      await bumpSessionVersion(supabase, params.userId);
+      requiresReauth = true;
+    }
   }
 
   return NextResponse.json({ ok: true, migration, requiresReauth });

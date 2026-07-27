@@ -63,7 +63,7 @@ export async function GET(req: Request, { params }: { params: { clientId: string
         name: user.name as string,
         email: user.email as string,
         phone: (user.phone as string | null) ?? null,
-        is_active: user.is_active as boolean,
+        is_active: user.is_active !== false,
         role: user.role as string,
         also_sells: Boolean(user.also_sells),
         round_robin_order: user.round_robin_order as number,
