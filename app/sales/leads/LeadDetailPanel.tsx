@@ -17,6 +17,7 @@ import { useLeadPanel, closeLeadPanel, type LeadPanelTab } from "@/store/uiStore
 import type { LeadRow, LeadStatus } from "@/types";
 import { MagicLinkButton } from "@/components/MagicLinkButton";
 import { FormAnswersSection } from "@/components/leads/FormAnswersSection";
+import { FacebookFormIntentSection } from "@/components/leads/FacebookFormIntentSection";
 import { LogCallForm } from "@/components/leads/LogCallForm";
 import { LeadTimeline } from "@/components/leads/LeadTimeline";
 import { SendAssetPanel } from "@/components/leads/SendAssetPanel";
@@ -359,6 +360,9 @@ export function LeadDetailPanel({
                 )}
               </div>
             )}
+            {!isWhatsAppChat ? (
+              <FacebookFormIntentSection formData={activeLead.form_data} />
+            ) : null}
             {isReadOnly ? (
               <div className="min-w-0 break-words text-[13px] text-ink-secondary">
                 {phone ? (

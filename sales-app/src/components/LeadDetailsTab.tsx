@@ -394,6 +394,61 @@ export function LeadDetailsTab({
         </div>
       ) : null}
 
+      {(() => {
+        const fd = lead.form_data ?? {};
+        const score = typeof fd._fbQualScore === "number" ? fd._fbQualScore : null;
+        const tier =
+          fd._fbQualTier === "hot" || fd._fbQualTier === "warm" || fd._fbQualTier === "cold"
+            ? fd._fbQualTier
+            : null;
+        const reasons = Array.isArray(fd._fbQualReasons)
+          ? fd._fbQualReasons.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+          : [];
+        if (score == null && !tier) return null;
+        const displayScore = score ?? 0;
+        const heatLabel =
+          tier === "hot" || tier === "warm" || tier === "cold" ? tier : scoreHeat(displayScore);
+        const title =
+          heatLabel === "hot" ? "Hot" : heatLabel === "warm" ? "Warm" : "Cold";
+        return (
+          <div className="rounded-2xl border border-border bg-surface-card p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">Form intent</p>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase ${
+                  heatLabel === "hot"
+                    ? "bg-[var(--warning)]/20 text-[var(--warning)]"
+                    : heatLabel === "warm"
+                      ? "bg-accent-muted text-accent"
+                      : "bg-bg-quaternary text-ink-tertiary"
+                }`}
+              >
+                {title} · {displayScore}
+              </span>
+            </div>
+            <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-bg-quaternary">
+              <div
+                className="h-full rounded-full bg-[#1877F2] transition-all"
+                style={{ width: `${Math.max(Math.min(100, displayScore), 2)}%` }}
+              />
+            </div>
+            {reasons.length > 0 ? (
+              <ul className="space-y-1.5">
+                {reasons.map((reason) => (
+                  <li key={reason} className="text-[13px] leading-snug text-ink-secondary">
+                    · {reason}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[13px] text-ink-tertiary">
+                Scored from Instant Form answers using your hot / warm / cold rules.
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
       <StatusCard lead={lead} />
 
       <div className="space-y-3">
