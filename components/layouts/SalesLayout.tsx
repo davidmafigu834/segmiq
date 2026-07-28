@@ -62,6 +62,7 @@ export async function SalesLayout({
         : undefined
     ),
     { href: "/sales/leads", label: "My pipeline", icon: "layout-grid" as const },
+    { href: "/sales/event-capture", label: "Event Capture", icon: "calendar" as const },
     { href: "/sales/quotes", label: "Quotes", icon: "file-text" as const },
     { href: "/sales/won-lost", label: "Won & Lost", icon: "trophy" as const },
   ];

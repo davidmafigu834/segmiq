@@ -53,6 +53,7 @@ export async function ClientManagerLayout({
     { href: "/client/dashboard", label: "Dashboard", icon: "home" as const },
     { href: "/client/inbox", label: "Team Inbox", icon: "inbox" as const },
     { href: "/client/leads", label: "Customer Hub", icon: "users" as const },
+    { href: "/client/event-capture", label: "Event Capture", icon: "calendar" as const },
     { href: "/client/marketing", label: "Marketing", icon: "megaphone" as const },
     { href: "/client/team", label: "Team", icon: "users" as const },
     { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },

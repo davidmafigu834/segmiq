@@ -101,6 +101,8 @@ export interface ContactRow {
   lifecycle: ContactLifecycle;
   notes: string | null;
   tags: string[];
+  /** Trade-show / exhibition name when captured via Event Capture (nullable). */
+  event_name?: string | null;
   created_at: string;
   updated_at: string;
 }
