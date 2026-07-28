@@ -10,20 +10,18 @@ export function SkeletonBone({
   return <div className={`cloud-skeleton ${className}`.trim()} style={style} aria-hidden />;
 }
 
-export function SkeletonCard({ height = 200, square = false }: { height?: number; square?: boolean }) {
+export function SkeletonFolderCard() {
   return (
-    <div className="cloud-card overflow-hidden">
-      <div className="flex items-center justify-between gap-2 px-3.5 pb-1 pt-3.5">
-        <SkeletonBone className="h-5 w-16 rounded-full" />
-        <SkeletonBone className="h-7 w-7 rounded-lg" />
+    <div className="cloud-folder-card">
+      <div className="cloud-folder-tab-row">
+        <SkeletonBone className="h-[22px] w-16 rounded-t-[10px]" />
       </div>
-      <SkeletonBone
-        className={square ? "aspect-square w-full rounded-none" : "w-full rounded-none"}
-        style={square ? undefined : { height }}
-      />
-      <div className="space-y-2 px-3 pb-3.5 pt-2.5">
-        <SkeletonBone className="h-3.5 w-[70%] rounded-md" />
-        <SkeletonBone className="h-2.5 w-[45%] rounded-md" />
+      <div className="cloud-folder-body overflow-hidden">
+        <SkeletonBone className="cloud-folder-preview w-full rounded-none" />
+        <div className="space-y-2 border-t border-[var(--cloud-border)] px-3 py-3">
+          <SkeletonBone className="h-3.5 w-[70%] rounded-md" />
+          <SkeletonBone className="h-2.5 w-[45%] rounded-md" />
+        </div>
       </div>
     </div>
   );
@@ -33,7 +31,7 @@ export function SkeletonPhotoGrid() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
-        <SkeletonCard key={i} square />
+        <SkeletonFolderCard key={i} />
       ))}
     </div>
   );
@@ -41,15 +39,9 @@ export function SkeletonPhotoGrid() {
 
 export function SkeletonScrollRow() {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="cloud-card overflow-hidden">
-          <SkeletonBone className="h-[140px] w-full rounded-none" />
-          <div className="space-y-2 p-4">
-            <SkeletonBone className="h-3.5 w-[65%] rounded-md" />
-            <SkeletonBone className="h-2.5 w-[40%] rounded-md" />
-          </div>
-        </div>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <SkeletonFolderCard key={i} />
       ))}
     </div>
   );
@@ -77,11 +69,17 @@ export function SkeletonDashboardHome() {
         <SkeletonBone className="h-9 w-56 max-w-full rounded-md" />
       </div>
       <div className="cloud-stat-grid mb-6">
-        <div className="cloud-card p-5">
-          <SkeletonBone className="mb-3 h-3 w-24 rounded-md" />
+        <div className="cloud-storage-card cloud-card p-5">
+          <div className="mb-3 flex items-center gap-2.5">
+            <SkeletonBone className="h-7 w-7 rounded-lg" />
+            <SkeletonBone className="h-3 w-24 rounded-md" />
+          </div>
           <SkeletonBone className="mb-2 h-9 w-32 rounded-md" />
           <SkeletonBone className="h-2.5 w-40 rounded-md" />
-          <SkeletonBone className="mt-4 h-1.5 w-full rounded-full" />
+          <div className="mt-5">
+            <SkeletonBone className="mb-2 h-2.5 w-full rounded-md" />
+            <SkeletonBone className="h-2 w-full rounded-full" />
+          </div>
         </div>
         <div className="cloud-card p-5">
           <SkeletonBone className="mb-3 h-3 w-16 rounded-md" />

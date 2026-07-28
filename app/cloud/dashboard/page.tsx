@@ -4,12 +4,15 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { NewProjectSlideOver } from "./projects/NewProjectSlideOver";
-import { getCategoryStyle } from "@/app/cloud/lib/category-styles";
 import { CloudPage } from "@/app/cloud/components/CloudPage";
 import {
-  Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink,
+  Plus, FolderOpen, Camera, Users, UserPlus, Activity, ArrowRight, Globe, ExternalLink, Cloud,
 } from "lucide-react";
 import { SkeletonDashboardHome } from "@/app/cloud/components/SkeletonCard";
+import {
+  CloudProjectFolderCard,
+  CLOUD_PROJECT_FOLDER_GRID,
+} from "@/app/cloud/components/CloudProjectFolderCard";
 
 type MediaItem = { public_url: string; display_order: number };
 type Project = {
@@ -153,46 +156,41 @@ export default function CloudDashboardHome() {
 
       {/* Stats */}
       <div className="cloud-stat-grid mb-6">
-        <div className="cloud-card--ink cloud-card relative overflow-hidden p-5">
-          <div
-            className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full"
-            style={{ background: "rgba(212,255,79,0.08)" }}
-          />
-          <div className="relative flex items-start justify-between gap-4">
-            <div>
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.1em] text-white/45">
+        <div className="cloud-card cloud-storage-card relative overflow-hidden p-5">
+          <div className="cloud-storage-card__glow" aria-hidden />
+          <Cloud className="cloud-storage-card__bg-cloud" strokeWidth={1.2} aria-hidden />
+
+          <div className="relative">
+            <div className="mb-3 flex items-center gap-2.5">
+              <span className="cloud-storage-card__icon-wrap">
+                <Cloud size={15} strokeWidth={2} />
+              </span>
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/50">
                 Cloud storage
               </p>
-              <p className="font-cloud-display text-[34px] leading-none text-white">
-                {formatBytes(storageUsed)}
-              </p>
-              <p className="mt-2 text-[12px] text-white/55">
-                of {formatBytes(storageLimit)} · {planLabel} plan
-              </p>
             </div>
-            <div className="relative h-14 w-14 shrink-0">
-              <svg width="56" height="56" viewBox="0 0 56 56">
-                <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
-                <circle
-                  cx="28" cy="28" r="22" fill="none" stroke="var(--cloud-accent)" strokeWidth="5"
-                  strokeLinecap="round"
-                  strokeDasharray={`${2 * Math.PI * 22}`}
-                  strokeDashoffset={`${2 * Math.PI * 22 * (1 - Math.min(percentUsed / 100, 1))}`}
-                  transform="rotate(-90 28 28)"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[11px] font-bold text-white">
+
+            <p className="font-cloud-display text-[34px] leading-none text-white">
+              {formatBytes(storageUsed)}
+            </p>
+            <p className="mt-2 text-[12px] text-white/55">
+              of {formatBytes(storageLimit)} · {planLabel} plan
+            </p>
+
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[11px] font-medium text-white/40">Storage used</span>
+                <span className="text-[11px] font-bold text-[var(--cloud-accent)]">
                   {percentUsed < 1 ? "<1" : Math.round(percentUsed)}%
                 </span>
               </div>
+              <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="cloud-storage-card__bar h-full rounded-full"
+                  style={{ width: `${Math.max(Math.min(percentUsed, 100), 0.5)}%` }}
+                />
+              </div>
             </div>
-          </div>
-          <div className="relative mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full bg-[var(--cloud-accent)]"
-              style={{ width: `${Math.max(Math.min(percentUsed, 100), 0.5)}%` }}
-            />
           </div>
         </div>
 
@@ -271,81 +269,16 @@ export default function CloudDashboardHome() {
           </button>
         </div>
       ) : (
-        <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.slice(0, 6).map((p) => {
-            const cat = getCategoryStyle(p.category);
-            const coverPhoto = [...(p.project_media ?? [])].sort((a, b) => a.display_order - b.display_order)[0];
-            const pCount = p.project_media?.length ?? 0;
-            const milestones = p.project_milestones ?? [];
-            const done = milestones.filter((m) => m.is_completed).length;
-            const pct = milestones.length ? Math.round((done / milestones.length) * 100) : null;
-
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => router.push(`/cloud/dashboard/projects/${p.id}`)}
-                className="cloud-card overflow-hidden text-left transition-transform hover:-translate-y-0.5"
-              >
-                <div
-                  className="relative h-[140px] overflow-hidden"
-                  style={{ background: cat.sceneBg }}
-                >
-                  {coverPhoto && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={coverPhoto.public_url}
-                      alt={p.title}
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                  <div
-                    className="absolute inset-0"
-                    style={{ background: `linear-gradient(to top, ${cat.overlayFrom} 0%, transparent 55%)` }}
-                  />
-                  <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[var(--cloud-text-primary)]">
-                    {p.category || "Project"}
-                  </span>
-                  <span className="absolute right-3 top-3 rounded-full bg-[var(--cloud-ink)] px-2 py-1 text-[10px] font-bold text-white">
-                    {pCount}
-                  </span>
-                </div>
-                <div className="p-4">
-                  <p className="font-cloud-display text-[16px] leading-snug text-[var(--cloud-text-primary)] line-clamp-2">
-                    {p.title}
-                  </p>
-                  {pct !== null ? (
-                    <div className="mt-3">
-                      <div className="mb-1.5 h-1 overflow-hidden rounded-full bg-[var(--cloud-surface-muted)]">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${pct}%`,
-                            background: pct === 100 ? "var(--cloud-accent)" : "var(--cloud-ink)",
-                          }}
-                        />
-                      </div>
-                      <p className="text-[11px] text-[var(--cloud-text-tertiary)]">
-                        {done}/{milestones.length} milestones
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-[12px] text-[var(--cloud-text-secondary)]">
-                      {pCount} photos · {formatRelativeTime(p.updated_at)}
-                    </p>
-                  )}
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-[12px] font-semibold text-[var(--cloud-text-secondary)]">
-                      Open project
-                    </span>
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--cloud-surface-muted)]">
-                      <ArrowRight size={13} className="text-[var(--cloud-text-secondary)]" />
-                    </span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+        <div className={`mb-8 ${CLOUD_PROJECT_FOLDER_GRID}`}>
+          {projects.slice(0, 6).map((p) => (
+            <CloudProjectFolderCard
+              key={p.id}
+              project={p}
+              href={`/cloud/dashboard/projects/${p.id}`}
+              showOpenHint
+              relativeTime={formatRelativeTime(p.updated_at)}
+            />
+          ))}
         </div>
       )}
 
