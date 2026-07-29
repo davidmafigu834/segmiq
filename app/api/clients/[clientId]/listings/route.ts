@@ -1,0 +1,152 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { requireClientAccessFromRequest } from "@/lib/api-guards";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { canAccessClient } from "@/lib/auth/permissions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import {
+  contactMatchesListing,
+  type BuyerMatchContact,
+} from "@/lib/real-estate/helpers";
+import { notifyPropertyMatch } from "@/lib/real-estate/notifications";
+import { background } from "@/lib/background";
+
+export const dynamic = "force-dynamic";
+
+const listingBodySchema = z.object({
+  agent_id: z.string().uuid().nullable().optional(),
+  development_id: z.string().uuid().nullable().optional(),
+  transaction_type: z.enum(["sale", "rental", "new_development"]),
+  status: z.enum(["available", "under_offer", "reserved", "sold", "let"]).optional(),
+  price: z.number().nullable().optional(),
+  bedrooms: z.number().int().nullable().optional(),
+  bathrooms: z.number().int().nullable().optional(),
+  size_sqm: z.number().nullable().optional(),
+  address: z.string().max(500).nullable().optional(),
+  suburb: z.string().max(200).nullable().optional(),
+  description: z.string().max(5000).nullable().optional(),
+  photos: z.array(z.string()).max(50).optional(),
+  mandate_type: z.enum(["sole", "joint", "open"]).nullable().optional(),
+  mandate_expiry_date: z.string().nullable().optional(),
+  lease_term_months: z.number().int().nullable().optional(),
+  external_reference: z.string().max(200).nullable().optional(),
+});
+
+export async function GET(req: Request, { params }: { params: { clientId: string } }) {
+  const g = await requireClientAccessFromRequest(req, params.clientId);
+  if ("error" in g) return g.error;
+
+  const url = new URL(req.url);
+  const status = url.searchParams.get("status");
+  const developmentId = url.searchParams.get("development_id");
+
+  const supabase = createAdminClient();
+  let q = supabase
+    .from("listings")
+    .select("*, agent:users!listings_agent_id_fkey(id, name), development:developments(id, name)")
+    .eq("client_id", params.clientId)
+    .order("created_at", { ascending: false });
+
+  if (status) q = q.eq("status", status);
+  if (developmentId) q = q.eq("development_id", developmentId);
+
+  const { data, error } = await q;
+  if (error) {
+    // Fallback without FK embed aliases if PostgREST naming differs
+    const fallback = await supabase
+      .from("listings")
+      .select("*")
+      .eq("client_id", params.clientId)
+      .order("created_at", { ascending: false });
+    if (fallback.error) {
+      return NextResponse.json({ error: fallback.error.message }, { status: 500 });
+    }
+    return NextResponse.json({ listings: fallback.data ?? [] });
+  }
+
+  return NextResponse.json({ listings: data ?? [] });
+}
+
+export async function POST(req: Request, { params }: { params: { clientId: string } }) {
+  const session = await getServerSession(authOptions);
+  if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const parsed = listingBodySchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid body", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const supabase = createAdminClient();
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id, business_type")
+    .eq("id", params.clientId)
+    .maybeSingle();
+  if (!client) return NextResponse.json({ error: "Client not found" }, { status: 404 });
+  if (client.business_type !== "real_estate") {
+    return NextResponse.json({ error: "Listings are only available for real estate clients" }, { status: 403 });
+  }
+
+  const body = parsed.data;
+  const status = body.status ?? "available";
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("listings")
+    .insert({
+      client_id: params.clientId,
+      agent_id: body.agent_id ?? null,
+      development_id: body.development_id ?? null,
+      transaction_type: body.transaction_type,
+      status,
+      price: body.price ?? null,
+      bedrooms: body.bedrooms ?? null,
+      bathrooms: body.bathrooms ?? null,
+      size_sqm: body.size_sqm ?? null,
+      address: body.address?.trim() || null,
+      suburb: body.suburb?.trim() || null,
+      description: body.description?.trim() || null,
+      photos: body.photos ?? [],
+      mandate_type: body.mandate_type ?? null,
+      mandate_expiry_date: body.mandate_expiry_date || null,
+      lease_term_months: body.lease_term_months ?? null,
+      external_reference: body.external_reference?.trim() || null,
+      created_at: now,
+      updated_at: now,
+    })
+    .select("*")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Property matching when new available listing is created
+  if (data && status === "available") {
+    background("listing-property-match", async () => {
+      const { data: contacts } = await supabase
+        .from("contacts")
+        .select(
+          "id, name, phone, email, buyer_budget_min, buyer_budget_max, buyer_bedrooms_wanted, buyer_area_preference"
+        )
+        .eq("client_id", params.clientId);
+
+      const matches = ((contacts ?? []) as BuyerMatchContact[]).filter((c) =>
+        contactMatchesListing(c, data)
+      );
+
+      for (const match of matches.slice(0, 25)) {
+        await notifyPropertyMatch({
+          clientId: params.clientId,
+          to: match.phone,
+          contactName: match.name,
+          listing: data,
+        });
+      }
+    });
+  }
+
+  return NextResponse.json({ listing: data }, { status: 201 });
+}

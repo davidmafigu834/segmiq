@@ -59,7 +59,7 @@ export default async function ContactProfilePage({ params }: { params: { id: str
   const [{ data: contact }] = await Promise.all([
     supabase
       .from("contacts")
-      .select("id, client_id, name, phone, email, source, lifecycle, lead_origin, notes, created_at, updated_at")
+      .select("id, client_id, name, phone, email, source, lifecycle, lead_origin, notes, created_at, updated_at, interested_listing_ids, buyer_budget_min, buyer_budget_max, buyer_bedrooms_wanted, buyer_area_preference, buyer_timeline")
       .eq("id", params.id)
       .maybeSingle(),
   ]);
@@ -71,7 +71,7 @@ export default async function ContactProfilePage({ params }: { params: { id: str
 
   const { data: clientRow } = await supabase
     .from("clients")
-    .select("name, assignment_mode, dial_code")
+    .select("name, assignment_mode, dial_code, business_type")
     .eq("id", contactClientId)
     .maybeSingle();
 
@@ -134,6 +134,15 @@ export default async function ContactProfilePage({ params }: { params: { id: str
       lifecycle: normalizeLegacyLifecycle(contact.lifecycle as string),
       leadOrigin: contact.lead_origin as string,
       createdAt: contact.created_at as string,
+      interestedListingIds: Array.isArray(contact.interested_listing_ids)
+        ? (contact.interested_listing_ids as string[])
+        : [],
+      buyerBudgetMin: contact.buyer_budget_min != null ? Number(contact.buyer_budget_min) : null,
+      buyerBudgetMax: contact.buyer_budget_max != null ? Number(contact.buyer_budget_max) : null,
+      buyerBedroomsWanted:
+        contact.buyer_bedrooms_wanted != null ? Number(contact.buyer_bedrooms_wanted) : null,
+      buyerAreaPreference: (contact.buyer_area_preference as string | null) ?? null,
+      buyerTimeline: (contact.buyer_timeline as string | null) ?? null,
     },
     stats: {
       totalDeals: leads.length,
@@ -150,6 +159,7 @@ export default async function ContactProfilePage({ params }: { params: { id: str
     clientDialCode: (clientRow?.dial_code as string) ?? "263",
     assignmentMode:
       (clientRow?.assignment_mode as "direct" | "pool" | "round_robin" | null) ?? "direct",
+    businessType: (clientRow?.business_type as "trades" | "real_estate" | null) ?? "trades",
   };
 
   return (

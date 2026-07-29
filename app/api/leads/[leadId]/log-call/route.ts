@@ -51,6 +51,34 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     dealValue,
   } = parsed.data;
 
+  // Real-estate optional listing fields (validated by zod when present)
+  const listingId =
+    typeof parsed.data.listingId === "string" ? parsed.data.listingId : null;
+  const addListingId =
+    typeof parsed.data.addListingId === "string" ? parsed.data.addListingId : null;
+
+  // Enforce property selection for real-estate clients (before save)
+  {
+    const { data: leadMeta } = await supabase
+      .from("leads")
+      .select("client_id")
+      .eq("id", leadId)
+      .maybeSingle();
+    if (leadMeta?.client_id) {
+      const { data: clientMeta } = await supabase
+        .from("clients")
+        .select("business_type")
+        .eq("id", leadMeta.client_id)
+        .maybeSingle();
+      if (clientMeta?.business_type === "real_estate" && !listingId && !addListingId) {
+        return NextResponse.json(
+          { error: "Please select which property this call was about", field: "listingId" },
+          { status: 400 }
+        );
+      }
+    }
+  }
+
   let actorUserId: string;
   let actorName = "Unknown";
   let actorRole = "SALESPERSON";
@@ -118,6 +146,8 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
       isConvertLaterPick,
       convertLaterNote: convertLaterNote ?? null,
       dealValue: dealValue ?? null,
+      listingId,
+      addListingId,
     });
 
     return NextResponse.json({

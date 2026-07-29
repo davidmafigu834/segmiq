@@ -2,7 +2,24 @@ export type UserRole = "AGENCY_ADMIN" | "CLIENT_MANAGER" | "SALESPERSON";
 
 export type ClientMode = "team" | "solo";
 
-export type LeadSource = "LANDING_PAGE" | "FACEBOOK" | "MANUAL" | "REFERRAL" | "WHATSAPP_INBOUND";
+export type LeadSource =
+  | "LANDING_PAGE"
+  | "FACEBOOK"
+  | "MANUAL"
+  | "REFERRAL"
+  | "WHATSAPP_INBOUND"
+  | "WEBSITE"
+  | "FACEBOOK_AD";
+
+export type BusinessType = "trades" | "real_estate";
+
+export type ListingTransactionType = "sale" | "rental" | "new_development";
+export type ListingStatus = "available" | "under_offer" | "reserved" | "sold" | "let";
+export type MandateType = "sole" | "joint" | "open";
+export type DealSide = "buy_side" | "sell_side" | "landlord_side" | "tenant_side";
+export type OfferStatus = "submitted" | "countered" | "accepted" | "rejected";
+export type ViewingStatus = "scheduled" | "completed" | "cancelled" | "no_show";
+export type FeedbackSentiment = "positive" | "neutral" | "negative";
 
 export type LeadStatus =
   | "NEW"
@@ -54,6 +71,8 @@ export interface ClientRow {
   industry: string;
   slug: string;
   mode: ClientMode;
+  business_type: BusinessType;
+  website_integration_api_key?: string | null;
   setup_status?: ClientSetupStatus;
   owner_email?: string | null;
   country?: string | null;
@@ -103,6 +122,14 @@ export interface ContactRow {
   tags: string[];
   /** Trade-show / exhibition name when captured via Event Capture (nullable). */
   event_name?: string | null;
+  /** Real-estate buyer prefs (nullable; unused for trades). */
+  buyer_budget_min?: number | null;
+  buyer_budget_max?: number | null;
+  buyer_bedrooms_wanted?: number | null;
+  buyer_area_preference?: string | null;
+  buyer_timeline?: string | null;
+  /** Append-only list of listing UUIDs this contact has shown interest in. */
+  interested_listing_ids?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -142,6 +169,60 @@ export interface LeadRow {
   is_convert_later_pick: boolean | null;
   convert_later_note: string | null;
   manual_priority: "hot" | "warm" | "cold" | null;
+  /** Real-estate deal fields (nullable; unused for trades). */
+  deal_side?: DealSide | null;
+  linked_listing_id?: string | null;
+  offer_amount?: number | null;
+  offer_status?: OfferStatus | null;
+  listing_agent_commission_pct?: number | null;
+  selling_agent_commission_pct?: number | null;
+}
+
+export interface DevelopmentRow {
+  id: string;
+  client_id: string;
+  name: string;
+  description: string | null;
+  total_units: number | null;
+  completion_date: string | null;
+  location: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ListingRow {
+  id: string;
+  client_id: string;
+  agent_id: string | null;
+  development_id: string | null;
+  transaction_type: ListingTransactionType;
+  status: ListingStatus;
+  price: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  size_sqm: number | null;
+  address: string | null;
+  suburb: string | null;
+  description: string | null;
+  photos: string[];
+  mandate_type: MandateType | null;
+  mandate_expiry_date: string | null;
+  lease_term_months: number | null;
+  external_reference: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ViewingRow {
+  id: string;
+  contact_id: string;
+  listing_id: string;
+  agent_id: string | null;
+  scheduled_at: string;
+  status: ViewingStatus;
+  feedback_text: string | null;
+  feedback_sentiment: FeedbackSentiment | null;
+  created_at: string;
 }
 
 export interface FormField {

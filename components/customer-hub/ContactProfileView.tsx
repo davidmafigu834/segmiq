@@ -25,6 +25,8 @@ import {
 import { formatContactSourceLabel } from "@/lib/customer-hub/source-labels";
 import { ContactCommunicationPrefs } from "@/components/marketing/ContactCommunicationPrefs";
 import { ManagerReassignLeadButton } from "@/components/customer-hub/ManagerReassignLeadButton";
+import { ScheduleViewingPanel } from "@/components/real-estate/ScheduleViewingPanel";
+import { isRealEstate } from "@/lib/terminology";
 
 export type ContactProfileLead = {
   id: string;
@@ -49,6 +51,12 @@ export type ContactProfileData = {
     lifecycle: ContactLifecycle;
     leadOrigin: string;
     createdAt: string;
+    interestedListingIds?: string[];
+    buyerBudgetMin?: number | null;
+    buyerBudgetMax?: number | null;
+    buyerBedroomsWanted?: number | null;
+    buyerAreaPreference?: string | null;
+    buyerTimeline?: string | null;
   };
   stats: {
     totalDeals: number;
@@ -64,6 +72,7 @@ export type ContactProfileData = {
   clientName: string;
   clientDialCode: string;
   assignmentMode: "direct" | "pool" | "round_robin";
+  businessType?: "trades" | "real_estate";
 };
 
 function initials(name: string | null) {
@@ -124,11 +133,12 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
   const [addOpen, setAddOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const { contact, stats, activeLead, leads, clientId, clientName, clientDialCode, assignmentMode } = data;
+  const { contact, stats, activeLead, leads, clientId, clientName, clientDialCode, assignmentMode, businessType } = data;
   const stage = contact.lifecycle;
   const displayName = contact.name || "Unnamed contact";
   const waDigits = contact.phone ? normalizePhoneForWhatsApp(contact.phone, clientDialCode) : null;
   const whatsappUrl = waDigits ? buildWhatsAppUrl(waDigits, "") : null;
+  const showRealEstate = isRealEstate(businessType);
   const addedDate = new Date(contact.createdAt).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
@@ -376,6 +386,35 @@ export function ContactProfileView({ data }: { data: ContactProfileData }) {
               </Link>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {showRealEstate ? (
+        <div className="mb-8 space-y-4">
+          {(contact.buyerBudgetMin != null ||
+            contact.buyerBudgetMax != null ||
+            contact.buyerBedroomsWanted != null ||
+            contact.buyerAreaPreference) && (
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
+              <h3 className="font-display text-xl">Buyer preferences</h3>
+              <p className="mt-2 text-sm text-ink-secondary">
+                Budget{" "}
+                {contact.buyerBudgetMin != null || contact.buyerBudgetMax != null
+                  ? `${contact.buyerBudgetMin ?? "—"}–${contact.buyerBudgetMax ?? "—"}`
+                  : "—"}
+                {contact.buyerBedroomsWanted != null
+                  ? ` · ${contact.buyerBedroomsWanted}+ beds`
+                  : ""}
+                {contact.buyerAreaPreference ? ` · ${contact.buyerAreaPreference}` : ""}
+                {contact.buyerTimeline ? ` · ${contact.buyerTimeline}` : ""}
+              </p>
+            </div>
+          )}
+          <ScheduleViewingPanel
+            clientId={clientId}
+            contactId={contact.id}
+            interestedListingIds={contact.interestedListingIds ?? []}
+          />
         </div>
       ) : null}
 

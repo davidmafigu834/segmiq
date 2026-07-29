@@ -39,26 +39,42 @@ export async function ClientManagerLayout({
   const cid = navClientId ?? session?.clientId ?? null;
   let clientName: string | null = null;
   let logoUrl: string | null = null;
+  let businessType: string = "trades";
   if (cid) {
-    const { data: c } = await supabase.from("clients").select("name, logo_url").eq("id", cid).maybeSingle();
+    const { data: c } = await supabase
+      .from("clients")
+      .select("name, logo_url, business_type")
+      .eq("id", cid)
+      .maybeSingle();
     clientName = (c?.name as string) ?? null;
     logoUrl = (c?.logo_url as string | null) ?? null;
+    businessType = (c?.business_type as string) ?? "trades";
   }
 
   const breadcrumb =
     breadcrumbOverride ??
     (breadcrumbPage && clientName ? `${clientName} / ${breadcrumbPage}` : breadcrumbPage ?? clientName ?? "CLIENT");
 
+  const isRE = businessType === "real_estate";
+
   const primaryNav = [
     { href: "/client/dashboard", label: "Dashboard", icon: "home" as const },
     { href: "/client/inbox", label: "Team Inbox", icon: "inbox" as const },
     { href: "/client/leads", label: "Customer Hub", icon: "users" as const },
+    ...(isRE
+      ? [
+          { href: "/client/listings", label: "Listings", icon: "building2" as const },
+          { href: "/client/developments", label: "Developments", icon: "building2" as const },
+        ]
+      : []),
     { href: "/client/event-capture", label: "Event Capture", icon: "calendar" as const },
     { href: "/client/marketing", label: "Marketing", icon: "megaphone" as const },
-    { href: "/client/team", label: "Team", icon: "users" as const },
+    { href: "/client/team", label: isRE ? "Agents" : "Team", icon: "users" as const },
     { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
     { href: "/client/billing", label: "Billing", icon: "receipt" as const },
-    ...(session?.alsoSells ? [{ href: "/sales/dashboard", label: "My leads", icon: "phone" as const }] : []),
+    ...(session?.alsoSells
+      ? [{ href: "/sales/dashboard", label: isRE ? "My inquiries" : "My leads", icon: "phone" as const }]
+      : []),
   ];
 
   const secondaryNav = [

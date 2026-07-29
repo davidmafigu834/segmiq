@@ -13,6 +13,10 @@ export const logCallBodySchema = z
     isConvertLaterPick: z.boolean().optional(),
     convertLaterNote: z.string().max(2000).nullable().optional(),
     dealValue: z.number().nullable().optional(),
+    /** Real estate: which property was discussed (required when client is real_estate). */
+    listingId: z.string().uuid().nullable().optional(),
+    /** Real estate: add a new property id to interested_listing_ids. */
+    addListingId: z.string().uuid().nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.reachOutcome === "reached") {

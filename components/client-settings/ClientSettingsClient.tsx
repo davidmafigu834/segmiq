@@ -8,6 +8,7 @@ import { ClientAvatar } from "@/components/ClientAvatar";
 import { QuoteSettingsManager } from "@/components/client-settings/QuoteSettingsManager";
 import { DocumentsManager } from "@/components/client-settings/DocumentsManager";
 import { WhatsAppInboxSettings } from "@/components/client-settings/WhatsAppInboxSettings";
+import { WebsiteIntegrationPanel } from "@/components/real-estate/WebsiteIntegrationPanel";
 import { getPublicBaseUrl } from "@/lib/constants";
 
 const TABS = [
@@ -17,6 +18,7 @@ const TABS = [
   { id: "notifications", label: "Notifications" },
   { id: "branding", label: "Branding" },
   { id: "quotes", label: "Quotes" },
+  { id: "integration", label: "Website" },
   { id: "advanced", label: "Advanced" },
 ];
 
@@ -94,6 +96,9 @@ export function ClientSettingsClient({
   const [profileForm, setProfileForm] = useState({
     name: String(initialClient.name ?? ""),
     industry: String(initialClient.industry ?? ""),
+    business_type: (initialClient.business_type === "real_estate" ? "real_estate" : "trades") as
+      | "trades"
+      | "real_estate",
     slug: String(initialClient.slug ?? ""),
     logo_url: String(initialClient.logo_url ?? ""),
     response_time_limit_hours: Number(initialClient.response_time_limit_hours ?? agencyDefaultHours),
@@ -225,6 +230,7 @@ export function ClientSettingsClient({
       await patchClient({
         name: profileForm.name.trim(),
         industry: profileForm.industry.trim(),
+        business_type: profileForm.business_type,
         slug: profileForm.slug.trim(),
         logo_url: profileForm.logo_url.trim() || null,
         response_time_limit_hours: profileForm.response_time_limit_hours,
@@ -794,6 +800,25 @@ export function ClientSettingsClient({
                 </datalist>
               </label>
               <label className="block">
+                <span className="font-mono text-[10px] uppercase text-ink-tertiary">Business type</span>
+                <select
+                  className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-sm"
+                  value={profileForm.business_type}
+                  onChange={(e) =>
+                    setProfileForm((f) => ({
+                      ...f,
+                      business_type: e.target.value as "trades" | "real_estate",
+                    }))
+                  }
+                >
+                  <option value="trades">Trades (default)</option>
+                  <option value="real_estate">Real estate</option>
+                </select>
+                <p className="mt-1 text-xs text-ink-tertiary">
+                  Real estate unlocks Listings, Viewings, and Agent terminology. Trades clients are unchanged.
+                </p>
+              </label>
+              <label className="block">
                 <span className="font-mono text-[10px] uppercase text-ink-tertiary">Subdomain slug</span>
                 <input
                   className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 font-mono text-sm"
@@ -1292,6 +1317,13 @@ export function ClientSettingsClient({
               <QuoteSettingsManager clientId={clientId} />
             </div>
             <DocumentsManager clientId={clientId} />
+          </div>
+        ) : null}
+
+        {tab === "integration" ? (
+          <div className="space-y-6">
+            <h2 className="font-display text-2xl">Website Integration</h2>
+            <WebsiteIntegrationPanel clientId={clientId} />
           </div>
         ) : null}
 

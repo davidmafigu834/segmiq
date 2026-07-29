@@ -78,6 +78,7 @@ export function LeadDetailPanel({
   const { data: session } = useSession();
   const role = session?.role;
   const [logRefresh, setLogRefresh] = useState(0);
+  const [businessType, setBusinessType] = useState<"trades" | "real_estate">("trades");
   const [timelineRefresh, setTimelineRefresh] = useState(0);
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState<LeadPanelTab>("details");
@@ -101,6 +102,24 @@ export function LeadDetailPanel({
       document.body.style.overflow = prev;
     };
   }, [open, lead]);
+
+  useEffect(() => {
+    if (!open || !lead?.client_id) return;
+    let cancelled = false;
+    fetch(`/api/clients/${lead.client_id}/website-integration`)
+      .then((r) => r.json())
+      .then((j: { business_type?: string }) => {
+        if (!cancelled) {
+          setBusinessType(j.business_type === "real_estate" ? "real_estate" : "trades");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setBusinessType("trades");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, lead?.id, lead?.client_id]);
 
   const alsoSells = session?.alsoSells;
   const canSell = canActAsSalesperson({ userId: session?.userId, role, alsoSells });
@@ -467,6 +486,8 @@ export function LeadDetailPanel({
                   <div id="log-call-form-anchor" />
                   <LogCallForm
                     leadId={activeLead.id}
+                    businessType={businessType}
+                    clientId={activeLead.client_id}
                     onLogged={() => setLogRefresh((k) => k + 1)}
                     onLeadUpdated={onLeadUpdated}
                     onOpenSendTab={(types) => {

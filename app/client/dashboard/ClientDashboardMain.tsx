@@ -38,6 +38,7 @@ import { WhatsAppHubReportSection } from "@/components/reports/WhatsAppHubReport
 import type { WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { PageHeader } from "@/components/ui";
+import { RealEstateDashboardWidgets } from "@/components/real-estate/RealEstateDashboardWidgets";
 import ClientDashboardSkeleton from "./ClientDashboardSkeleton";
 
 // ============================================
@@ -67,6 +68,8 @@ type RecentWin = {
 };
 
 type DashboardData = {
+  clientId?: string;
+  businessType?: "trades" | "real_estate";
   assignmentMode?: "direct" | "pool" | "round_robin";
   focus: {
     uncontacted: number;
@@ -275,6 +278,10 @@ export default function ClientDashboardMain({
           </button>
         }
       />
+
+      {data.businessType === "real_estate" && (data.clientId || session.clientId) ? (
+        <RealEstateDashboardWidgets clientId={(data.clientId || session.clientId) as string} />
+      ) : null}
 
       {/* Quick navigation */}
       <div className="ag-fade-in mb-6 flex flex-wrap items-center gap-2">

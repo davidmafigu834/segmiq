@@ -41,7 +41,16 @@ export type TemplateKey =
   | "INVOICE_ISSUED"
   | "PAYMENT_OVERDUE"
   | "PAYMENT_CONFIRMED"
-  | "BULK_LEADS_ASSIGNED";
+  | "BULK_LEADS_ASSIGNED"
+  // Real estate (config/plumbing — Meta approval required before production sends)
+  | "PROPERTY_MATCH_ALERT"
+  | "VIEWING_CONFIRMATION"
+  | "VIEWING_REMINDER"
+  | "VIEWING_FEEDBACK_REQUEST"
+  | "OFFER_UPDATE"
+  | "MANDATE_EXPIRY_REMINDER"
+  | "NEW_LISTING_ALERT"
+  | "RENTAL_RENEWAL_REMINDER";
 
 const TEMPLATE_NAMES: Record<TemplateKey, string> = {
   LEAD_CONFIRMATION_PROSPECT: "segmiq_lead_confirmation",
@@ -64,6 +73,14 @@ const TEMPLATE_NAMES: Record<TemplateKey, string> = {
   PAYMENT_OVERDUE: "segmiq_payment_overdue",
   PAYMENT_CONFIRMED: "segmiq_payment_confirmed",
   BULK_LEADS_ASSIGNED: "segmiq_leads_assigned",
+  PROPERTY_MATCH_ALERT: "segmiq_property_match_alert",
+  VIEWING_CONFIRMATION: "segmiq_viewing_confirmation",
+  VIEWING_REMINDER: "segmiq_viewing_reminder",
+  VIEWING_FEEDBACK_REQUEST: "segmiq_viewing_feedback_request",
+  OFFER_UPDATE: "segmiq_offer_update",
+  MANDATE_EXPIRY_REMINDER: "segmiq_mandate_expiry_reminder",
+  NEW_LISTING_ALERT: "segmiq_new_listing_alert",
+  RENTAL_RENEWAL_REMINDER: "segmiq_rental_renewal_reminder",
 };
 
 export type SendWhatsAppParams = {

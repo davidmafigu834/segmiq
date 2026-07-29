@@ -1,0 +1,463 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import type { ListingRow, ListingStatus, ListingTransactionType } from "@/types";
+
+type AgentOption = { id: string; name: string };
+type DevelopmentOption = { id: string; name: string };
+
+type ListingForm = {
+  transaction_type: ListingTransactionType;
+  status: ListingStatus;
+  price: string;
+  bedrooms: string;
+  bathrooms: string;
+  size_sqm: string;
+  address: string;
+  suburb: string;
+  description: string;
+  agent_id: string;
+  development_id: string;
+  mandate_type: "" | "sole" | "joint" | "open";
+  mandate_expiry_date: string;
+  lease_term_months: string;
+  external_reference: string;
+  photos: string;
+};
+
+const EMPTY: ListingForm = {
+  transaction_type: "sale",
+  status: "available",
+  price: "",
+  bedrooms: "",
+  bathrooms: "",
+  size_sqm: "",
+  address: "",
+  suburb: "",
+  description: "",
+  agent_id: "",
+  development_id: "",
+  mandate_type: "",
+  mandate_expiry_date: "",
+  lease_term_months: "",
+  external_reference: "",
+  photos: "",
+};
+
+function numOrNull(v: string): number | null {
+  const t = v.trim();
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function ListingsManager({ clientId }: { clientId: string }) {
+  const [listings, setListings] = useState<ListingRow[]>([]);
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [developments, setDevelopments] = useState<DevelopmentOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ListingForm>(EMPTY);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [listRes, teamRes, devRes] = await Promise.all([
+        fetch(`/api/clients/${clientId}/listings`),
+        fetch(`/api/clients/${clientId}/users`),
+        fetch(`/api/clients/${clientId}/developments`),
+      ]);
+      const listJson = (await listRes.json()) as { listings?: ListingRow[] };
+      const teamJson = (await teamRes.json().catch(() => ({}))) as {
+        users?: { id: string; name: string; role: string; also_sells?: boolean }[];
+      };
+      const members = teamJson.users ?? [];
+      setAgents(
+        members
+          .filter((m) => m.role === "SALESPERSON" || m.also_sells)
+          .map((m) => ({ id: m.id, name: m.name }))
+      );
+      const devJson = (await devRes.json()) as { developments?: DevelopmentOption[] };
+      setDevelopments((devJson.developments ?? []).map((d) => ({ id: d.id, name: d.name })));
+      setListings(listJson.listings ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, [clientId]);
+
+  function openCreate() {
+    setEditingId(null);
+    setForm(EMPTY);
+    setShowForm(true);
+  }
+
+  function openEdit(listing: ListingRow) {
+    setEditingId(listing.id);
+    setForm({
+      transaction_type: listing.transaction_type,
+      status: listing.status,
+      price: listing.price != null ? String(listing.price) : "",
+      bedrooms: listing.bedrooms != null ? String(listing.bedrooms) : "",
+      bathrooms: listing.bathrooms != null ? String(listing.bathrooms) : "",
+      size_sqm: listing.size_sqm != null ? String(listing.size_sqm) : "",
+      address: listing.address ?? "",
+      suburb: listing.suburb ?? "",
+      description: listing.description ?? "",
+      agent_id: listing.agent_id ?? "",
+      development_id: listing.development_id ?? "",
+      mandate_type: listing.mandate_type ?? "",
+      mandate_expiry_date: listing.mandate_expiry_date ?? "",
+      lease_term_months: listing.lease_term_months != null ? String(listing.lease_term_months) : "",
+      external_reference: listing.external_reference ?? "",
+      photos: Array.isArray(listing.photos) ? listing.photos.join("\n") : "",
+    });
+    setShowForm(true);
+  }
+
+  function buildPayload() {
+    return {
+      transaction_type: form.transaction_type,
+      status: form.status,
+      price: numOrNull(form.price),
+      bedrooms: numOrNull(form.bedrooms),
+      bathrooms: numOrNull(form.bathrooms),
+      size_sqm: numOrNull(form.size_sqm),
+      address: form.address.trim() || null,
+      suburb: form.suburb.trim() || null,
+      description: form.description.trim() || null,
+      agent_id: form.agent_id || null,
+      development_id: form.development_id || null,
+      mandate_type: form.mandate_type || null,
+      mandate_expiry_date: form.mandate_expiry_date || null,
+      lease_term_months: numOrNull(form.lease_term_months),
+      external_reference: form.external_reference.trim() || null,
+      photos: form.photos
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    };
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const payload = buildPayload();
+      if (editingId) {
+        const res = await fetch(`/api/clients/${clientId}/listings/${editingId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          setToast(j.error ?? "Save failed");
+          return;
+        }
+        setToast("Listing updated");
+      } else {
+        const res = await fetch(`/api/clients/${clientId}/listings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          setToast(j.error ?? "Create failed");
+          return;
+        }
+        setToast("Listing created");
+      }
+      setShowForm(false);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove(id: string) {
+    if (!window.confirm("Delete this listing?")) return;
+    await fetch(`/api/clients/${clientId}/listings/${id}`, { method: "DELETE" });
+    setToast("Listing deleted");
+    await load();
+  }
+
+  if (loading) {
+    return <p className="text-sm text-ink-tertiary">Loading listings…</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {toast ? (
+        <p className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-4 py-2 text-sm">
+          {toast}
+        </p>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-ink-secondary">{listings.length} properties</p>
+        <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add listing
+        </button>
+      </div>
+
+      {showForm ? (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 space-y-4">
+          <h3 className="font-display text-xl">{editingId ? "Edit listing" : "New listing"}</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Type</span>
+              <select
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.transaction_type}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    transaction_type: e.target.value as ListingTransactionType,
+                  }))
+                }
+              >
+                <option value="sale">Sale</option>
+                <option value="rental">Rental</option>
+                <option value="new_development">New development</option>
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Status</span>
+              <select
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.status}
+                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ListingStatus }))}
+              >
+                <option value="available">Available</option>
+                <option value="under_offer">Under offer</option>
+                <option value="reserved">Reserved</option>
+                <option value="sold">Sold</option>
+                <option value="let">Let</option>
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Address</span>
+              <input
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.address}
+                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Suburb</span>
+              <input
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.suburb}
+                onChange={(e) => setForm((f) => ({ ...f, suburb: e.target.value }))}
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Price</span>
+              <input
+                type="number"
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Beds / Baths / Size m²</span>
+              <div className="mt-1 flex gap-2">
+                <input
+                  type="number"
+                  placeholder="Beds"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                  value={form.bedrooms}
+                  onChange={(e) => setForm((f) => ({ ...f, bedrooms: e.target.value }))}
+                />
+                <input
+                  type="number"
+                  placeholder="Baths"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                  value={form.bathrooms}
+                  onChange={(e) => setForm((f) => ({ ...f, bathrooms: e.target.value }))}
+                />
+                <input
+                  type="number"
+                  placeholder="m²"
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                  value={form.size_sqm}
+                  onChange={(e) => setForm((f) => ({ ...f, size_sqm: e.target.value }))}
+                />
+              </div>
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Agent</span>
+              <select
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.agent_id}
+                onChange={(e) => setForm((f) => ({ ...f, agent_id: e.target.value }))}
+              >
+                <option value="">Unassigned</option>
+                {agents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Development</span>
+              <select
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.development_id}
+                onChange={(e) => setForm((f) => ({ ...f, development_id: e.target.value }))}
+              >
+                <option value="">None</option>
+                {developments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Mandate</span>
+              <select
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.mandate_type}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    mandate_type: e.target.value as ListingForm["mandate_type"],
+                  }))
+                }
+              >
+                <option value="">—</option>
+                <option value="sole">Sole</option>
+                <option value="joint">Joint</option>
+                <option value="open">Open</option>
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className="text-ink-secondary">Mandate expiry</span>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.mandate_expiry_date}
+                onChange={(e) => setForm((f) => ({ ...f, mandate_expiry_date: e.target.value }))}
+              />
+            </label>
+            {form.transaction_type === "rental" ? (
+              <label className="block text-sm">
+                <span className="text-ink-secondary">Lease term (months)</span>
+                <input
+                  type="number"
+                  className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                  value={form.lease_term_months}
+                  onChange={(e) => setForm((f) => ({ ...f, lease_term_months: e.target.value }))}
+                />
+              </label>
+            ) : null}
+            <label className="block text-sm">
+              <span className="text-ink-secondary">External reference</span>
+              <input
+                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                value={form.external_reference}
+                onChange={(e) => setForm((f) => ({ ...f, external_reference: e.target.value }))}
+              />
+            </label>
+          </div>
+          <label className="block text-sm">
+            <span className="text-ink-secondary">Description</span>
+            <textarea
+              rows={3}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="text-ink-secondary">Photo URLs (one per line)</span>
+            <textarea
+              rows={3}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2 font-mono text-xs"
+              value={form.photos}
+              onChange={(e) => setForm((f) => ({ ...f, photos: e.target.value }))}
+            />
+          </label>
+          <div className="flex gap-2">
+            <button type="button" className="btn-primary" disabled={saving} onClick={() => void save()}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost border border-[var(--border)]"
+              onClick={() => setShowForm(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-3">
+        {listings.length === 0 ? (
+          <p className="text-sm text-ink-tertiary">No listings yet. Add your first property.</p>
+        ) : (
+          listings.map((listing) => (
+            <div
+              key={listing.id}
+              className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5"
+            >
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`/client/listings/${listing.id}`}
+                  className="font-display text-lg text-ink-primary hover:underline"
+                >
+                  {listing.address || listing.external_reference || "Untitled listing"}
+                </Link>
+                <p className="mt-1 text-sm text-ink-secondary">
+                  {[listing.suburb, listing.transaction_type, listing.status]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  {listing.price != null ? ` · $${Number(listing.price).toLocaleString()}` : ""}
+                  {listing.bedrooms != null ? ` · ${listing.bedrooms} bed` : ""}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-[var(--border)] p-2 text-ink-secondary hover:text-ink-primary"
+                  onClick={() => openEdit(listing)}
+                  aria-label="Edit"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-[var(--border)] p-2 text-ink-secondary hover:text-red-400"
+                  onClick={() => void remove(listing.id)}
+                  aria-label="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

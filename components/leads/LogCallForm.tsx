@@ -141,6 +141,11 @@ export type LogCallFormProps = {
   onLeadUpdated?: (lead: LeadRow) => void;
   onOpenSendTab?: (assetTypes: SendAssetType[]) => void;
   variant?: "panel" | "magic" | "compact";
+  /** When real_estate, require which property was discussed. */
+  businessType?: "trades" | "real_estate";
+  clientId?: string | null;
+  /** Preloaded interested listing ids for the contact (optional). */
+  interestedListingIds?: string[];
 };
 
 export function LogCallForm({
@@ -153,6 +158,9 @@ export function LogCallForm({
   onLeadUpdated,
   onOpenSendTab,
   variant = "panel",
+  businessType = "trades",
+  clientId = null,
+  interestedListingIds = [],
 }: LogCallFormProps) {
   const [reachOutcome, setReachOutcome] = useState<ReachOutcome>("reached");
   const [result, setResult] = useState<CallResult | null>(null);
@@ -163,6 +171,15 @@ export function LogCallForm({
   const [convertLater, setConvertLater] = useState(false);
   const [noAnswerCount, setNoAnswerCount] = useState(0);
   const [directSending, setDirectSending] = useState(false);
+  const [listingId, setListingId] = useState("");
+  const [listings, setListings] = useState<
+    { id: string; address: string | null; suburb: string | null }[]
+  >([]);
+  const [propertyError, setPropertyError] = useState<string | null>(null);
+  const [addingProperty, setAddingProperty] = useState(false);
+  const [newListingId, setNewListingId] = useState("");
+
+  const isRealEstate = businessType === "real_estate";
 
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
@@ -176,6 +193,25 @@ export function LogCallForm({
   useEffect(() => {
     setChannel(defaultChannel);
   }, [defaultChannel, leadId]);
+
+  useEffect(() => {
+    if (!isRealEstate || !clientId) return;
+    let cancelled = false;
+    fetch(`/api/clients/${clientId}/listings`)
+      .then((r) => r.json())
+      .then((j: { listings?: { id: string; address: string | null; suburb: string | null }[] }) => {
+        if (cancelled) return;
+        const all = j.listings ?? [];
+        setListings(all);
+        const interested = interestedListingIds.filter((id) => all.some((l) => l.id === id));
+        if (interested.length === 1) setListingId(interested[0]);
+        else if (all.length === 1) setListingId(all[0].id);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isRealEstate, clientId, leadId, interestedListingIds.join(",")]);
 
   useEffect(() => {
     if (isCompact) return;
@@ -281,6 +317,15 @@ export function LogCallForm({
     setReasonError(null);
     setScheduleError(null);
     setFormError(null);
+    setPropertyError(null);
+
+    if (isRealEstate) {
+      const effective = addingProperty ? newListingId : listingId;
+      if (!effective) {
+        setPropertyError("Please select which property this call was about");
+        return false;
+      }
+    }
 
     if (reachOutcome === "reached") {
       if (result === "lost" || result === "not_qualified" || result === "follow_up") {
@@ -333,6 +378,12 @@ export function LogCallForm({
           convertLaterNote:
             convertLater && reason.trim() ? reason.trim() : convertLater ? notes.trim() || null : null,
         };
+
+        if (isRealEstate) {
+          const effective = addingProperty ? newListingId : listingId;
+          body.listingId = effective || null;
+          if (addingProperty && newListingId) body.addListingId = newListingId;
+        }
 
         if (magicToken?.trim()) {
           body.magicToken = magicToken.trim();
@@ -396,6 +447,52 @@ export function LogCallForm({
         onChange={setReachOutcome}
         columns={3}
       />
+
+      {isRealEstate ? (
+        <div className="ag-fade-in space-y-2">
+          <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+            Which property?
+          </span>
+          <select
+            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-sm"
+            value={addingProperty ? "__add__" : listingId}
+            onChange={(e) => {
+              if (e.target.value === "__add__") {
+                setAddingProperty(true);
+                setNewListingId("");
+              } else {
+                setAddingProperty(false);
+                setListingId(e.target.value);
+              }
+            }}
+          >
+            <option value="">Select property…</option>
+            {listings.map((l) => (
+              <option key={l.id} value={l.id}>
+                {[l.address, l.suburb].filter(Boolean).join(", ") || l.id.slice(0, 8)}
+              </option>
+            ))}
+            <option value="__add__">Add another property…</option>
+          </select>
+          {addingProperty ? (
+            <select
+              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-sm"
+              value={newListingId}
+              onChange={(e) => setNewListingId(e.target.value)}
+            >
+              <option value="">Choose listing to add…</option>
+              {listings
+                .filter((l) => !interestedListingIds.includes(l.id))
+                .map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {[l.address, l.suburb].filter(Boolean).join(", ") || l.id.slice(0, 8)}
+                  </option>
+                ))}
+            </select>
+          ) : null}
+          {propertyError ? <p className="text-xs text-red-400">{propertyError}</p> : null}
+        </div>
+      ) : null}
 
       {reachOutcome === "reached" ? (
         <>

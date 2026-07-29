@@ -30,6 +30,7 @@ const patchSchema = z
     meta_whatsapp_display_number: z.string().max(32).optional().nullable(),
     meta_whatsapp_access_token: z.string().max(500).optional().nullable(),
     assignment_mode: z.enum(["direct", "pool", "round_robin"]).optional(),
+    business_type: z.enum(["trades", "real_estate"]).optional(),
     whatsapp_qualification_enabled: z.boolean().optional(),
     whatsapp_qualification_questions: z.array(z.record(z.unknown())).optional().nullable(),
     whatsapp_instant_form_id: z.string().uuid().nullable().optional(),
@@ -118,6 +119,7 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     update.meta_whatsapp_access_token = token;
   }
   if (body.assignment_mode !== undefined) update.assignment_mode = body.assignment_mode;
+  if (body.business_type !== undefined) update.business_type = body.business_type;
   if (body.whatsapp_qualification_enabled !== undefined) {
     update.whatsapp_qualification_enabled = body.whatsapp_qualification_enabled;
   }

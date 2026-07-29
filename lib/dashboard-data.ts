@@ -824,7 +824,7 @@ export async function fetchClientManagerDashboardData(clientId: string) {
 
     supabase
       .from("clients")
-      .select("id, name, response_time_limit_hours, assignment_mode")
+      .select("id, name, response_time_limit_hours, assignment_mode, business_type")
       .eq("id", clientId)
       .single(),
 
@@ -1001,6 +1001,8 @@ export async function fetchClientManagerDashboardData(clientId: string) {
     rawAssignmentMode === "pool" || rawAssignmentMode === "round_robin"
       ? rawAssignmentMode
       : "direct";
+  const businessType =
+    client?.business_type === "real_estate" ? ("real_estate" as const) : ("trades" as const);
   let retargeting: RetargetingStatusView | null = null;
   try {
     retargeting = await syncRetargetingForClient(clientId, clientName);
@@ -1016,6 +1018,8 @@ export async function fetchClientManagerDashboardData(clientId: string) {
   }
 
   return {
+    clientId,
+    businessType,
     assignmentMode,
     focus: { uncontacted, followUpToday, staleLeads },
     pipeline,

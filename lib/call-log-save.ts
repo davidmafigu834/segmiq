@@ -12,6 +12,7 @@ import {
   type ReachOutcome,
 } from "@/lib/call-log-constants";
 import type { LeadRow, LeadStatus } from "@/types";
+import { appendInterestedListingIds } from "@/lib/real-estate/helpers";
 
 export type SaveCallLogInput = {
   leadId: string;
@@ -27,6 +28,8 @@ export type SaveCallLogInput = {
   isConvertLaterPick?: boolean;
   convertLaterNote?: string | null;
   dealValue?: number | null;
+  listingId?: string | null;
+  addListingId?: string | null;
 };
 
 export type SaveCallLogResult = {
@@ -94,6 +97,8 @@ export async function saveCallLog(input: SaveCallLogInput): Promise<SaveCallLogR
     isConvertLaterPick,
     convertLaterNote,
     dealValue,
+    listingId,
+    addListingId,
   } = input;
 
   const { data: lead } = await supabase.from("leads").select("*").eq("id", leadId).maybeSingle();
@@ -161,6 +166,11 @@ export async function saveCallLog(input: SaveCallLogInput): Promise<SaveCallLogR
     updates.deal_value = dealValue;
   }
 
+  const effectiveListingId = addListingId || listingId || null;
+  if (effectiveListingId) {
+    updates.linked_listing_id = effectiveListingId;
+  }
+
   if (isConvertLaterPick) {
     updates.is_convert_later_pick = true;
     if (convertLaterNote?.trim()) {
@@ -192,6 +202,24 @@ export async function saveCallLog(input: SaveCallLogInput): Promise<SaveCallLogR
     .single();
 
   if (!updated) throw new Error("Failed to update lead");
+
+  if (effectiveListingId) {
+    const contactId = (updated.contact_id as string | null) ?? (lead.contact_id as string | null);
+    if (contactId) {
+      const { data: contact } = await supabase
+        .from("contacts")
+        .select("interested_listing_ids")
+        .eq("id", contactId)
+        .maybeSingle();
+      if (contact) {
+        const next = appendInterestedListingIds(contact.interested_listing_ids, effectiveListingId);
+        await supabase
+          .from("contacts")
+          .update({ interested_listing_ids: next, updated_at: new Date().toISOString() })
+          .eq("id", contactId);
+      }
+    }
+  }
 
   if (nextStatus && nextStatus !== previousStatus) {
     await logStatusChanged({
