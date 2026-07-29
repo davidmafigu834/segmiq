@@ -21,6 +21,7 @@ export function QuickLogSheet({
 }) {
   const [selectedLeadId, setSelectedLeadId] = useState(preselectedLeadId);
   const [success, setSuccess] = useState(false);
+  const [businessType, setBusinessType] = useState<"trades" | "real_estate">("trades");
 
   useEffect(() => {
     setSelectedLeadId(preselectedLeadId);
@@ -31,6 +32,27 @@ export function QuickLogSheet({
     () => leads.find((l) => l.id === selectedLeadId) ?? null,
     [leads, selectedLeadId]
   );
+
+  useEffect(() => {
+    if (!selectedLead?.client_id) {
+      setBusinessType("trades");
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/clients/${selectedLead.client_id}/website-integration`)
+      .then((r) => r.json())
+      .then((j: { business_type?: string }) => {
+        if (!cancelled) {
+          setBusinessType(j.business_type === "real_estate" ? "real_estate" : "trades");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setBusinessType("trades");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedLead?.client_id]);
 
   const needsLeadPicker = !preselectedLeadId;
 
@@ -114,6 +136,8 @@ export function QuickLogSheet({
                   leadId={selectedLeadId}
                   variant="compact"
                   defaultChannel={defaultChannel}
+                  businessType={businessType}
+                  clientId={selectedLead?.client_id ?? null}
                   onSubmitSuccess={handleSubmitSuccess}
                 />
               ) : needsLeadPicker ? (

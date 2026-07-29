@@ -1,4 +1,4 @@
-import { FOLLOW_UP_HOLDUP_REASONS } from "@/lib/call-log-constants";
+import { ALL_FOLLOW_UP_HOLDUP_REASONS } from "@/lib/call-log-constants";
 import {
   classifyLeadLane,
   type ClassifiableLead,
@@ -38,14 +38,14 @@ export function aggregateStallReasons(
   logs: StallCallLogRow[]
 ): { counts: Record<string, number>; total: number } {
   const counts: Record<string, number> = {};
-  for (const r of FOLLOW_UP_HOLDUP_REASONS) counts[r] = 0;
+  for (const r of ALL_FOLLOW_UP_HOLDUP_REASONS) counts[r] = 0;
 
   let total = 0;
   for (const log of logs) {
     if (log.result !== "follow_up") continue;
     const reason = log.reason?.trim();
     if (!reason) continue;
-    if (!(FOLLOW_UP_HOLDUP_REASONS as readonly string[]).includes(reason)) continue;
+    if (!(ALL_FOLLOW_UP_HOLDUP_REASONS as readonly string[]).includes(reason)) continue;
     counts[reason] = (counts[reason] ?? 0) + 1;
     total++;
   }

@@ -954,7 +954,10 @@ export default function ClientDashboardMain({
 
       {session?.clientId ? (
         <div className="ag-fade-in ag-delay-3 mb-8">
-          <LossInsightsSection clientId={session.clientId as string} />
+          <LossInsightsSection
+            clientId={session.clientId as string}
+            businessType={data.businessType === "real_estate" ? "real_estate" : "trades"}
+          />
         </div>
       ) : null}
 

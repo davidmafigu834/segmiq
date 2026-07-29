@@ -1,8 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
-  FOLLOW_UP_HOLDUP_REASONS,
-  LOST_REASONS,
-  NOT_QUALIFIED_REASONS,
+  ALL_FOLLOW_UP_HOLDUP_REASONS,
+  ALL_LOST_REASONS,
+  ALL_NOT_QUALIFIED_REASONS,
 } from "@/lib/call-log-constants";
 import { parseBudgetValue } from "@/lib/lead-lanes";
 import { LOSS_MIN_REASONED_EVENTS } from "@/lib/loss-analysis-constants";
@@ -229,9 +229,9 @@ export function aggregateLossFromData(
   windowStart: Date,
   windowEnd: Date
 ): LossAnalysisResult {
-  const stallReasons = initReasonCounts(FOLLOW_UP_HOLDUP_REASONS);
-  const lostReasons = initReasonCounts(LOST_REASONS);
-  const notFitReasons = initReasonCounts(NOT_QUALIFIED_REASONS);
+  const stallReasons = initReasonCounts(ALL_FOLLOW_UP_HOLDUP_REASONS);
+  const lostReasons = initReasonCounts(ALL_LOST_REASONS);
+  const notFitReasons = initReasonCounts(ALL_NOT_QUALIFIED_REASONS);
 
   const leadById = new Map(leads.map((l) => [l.id, l]));
   const terminalFromLogs = new Set<string>();
@@ -255,12 +255,12 @@ export function aggregateLossFromData(
 
     let counted = false;
     if (norm.result === "follow_up") {
-      counted = bumpReasonCount(stallReasons, reason, FOLLOW_UP_HOLDUP_REASONS);
+      counted = bumpReasonCount(stallReasons, reason, ALL_FOLLOW_UP_HOLDUP_REASONS);
     } else if (norm.result === "lost") {
-      counted = bumpReasonCount(lostReasons, reason, LOST_REASONS);
+      counted = bumpReasonCount(lostReasons, reason, ALL_LOST_REASONS);
       terminalFromLogs.add(log.lead_id);
     } else if (norm.result === "not_qualified") {
-      counted = bumpReasonCount(notFitReasons, reason, NOT_QUALIFIED_REASONS);
+      counted = bumpReasonCount(notFitReasons, reason, ALL_NOT_QUALIFIED_REASONS);
       terminalFromLogs.add(log.lead_id);
       if (counted) notFitOutcomes++;
     }
@@ -273,7 +273,7 @@ export function aggregateLossFromData(
     if (terminalFromLogs.has(lead.id)) continue;
 
     if (lead.status === "LOST" && lead.lost_reason) {
-      if (bumpReasonCount(lostReasons, lead.lost_reason, LOST_REASONS)) {
+      if (bumpReasonCount(lostReasons, lead.lost_reason, ALL_LOST_REASONS)) {
         totalReasonedEvents++;
         contactedOutcomes++;
       }
@@ -284,7 +284,7 @@ export function aggregateLossFromData(
         bumpReasonCount(
           notFitReasons,
           lead.not_qualified_reason,
-          NOT_QUALIFIED_REASONS
+          ALL_NOT_QUALIFIED_REASONS
         )
       ) {
         totalReasonedEvents++;
@@ -375,7 +375,7 @@ export function aggregateLossFromData(
   for (const [src, total] of Object.entries(leadsInWindowBySource)) {
     const notFit = notFitLeadIdsBySource[src]?.size ?? 0;
     const reasonCounts = notFitReasonsBySource[src] ?? {};
-    const top = topReasonFromCounts(reasonCounts, NOT_QUALIFIED_REASONS);
+    const top = topReasonFromCounts(reasonCounts, ALL_NOT_QUALIFIED_REASONS);
     notFitBySource[src] = {
       total,
       notFit,
@@ -517,9 +517,9 @@ function emptyLossResult(windowStart: Date, windowEnd: Date): LossAnalysisResult
     windowEnd: windowEnd.toISOString(),
     totalCallLogsInWindow: 0,
     totalReasonedEvents: 0,
-    stallReasons: initReasonCounts(FOLLOW_UP_HOLDUP_REASONS),
-    lostReasons: initReasonCounts(LOST_REASONS),
-    notFitReasons: initReasonCounts(NOT_QUALIFIED_REASONS),
+    stallReasons: initReasonCounts(ALL_FOLLOW_UP_HOLDUP_REASONS),
+    lostReasons: initReasonCounts(ALL_LOST_REASONS),
+    notFitReasons: initReasonCounts(ALL_NOT_QUALIFIED_REASONS),
     recoverablePile: { count: 0, estimatedValue: null, leadIds: [] },
     notFitBySource: {},
     contactedOutcomes: 0,

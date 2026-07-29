@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
 import {
-  FOLLOW_UP_HOLDUP_REASONS,
-  LOST_REASONS,
-  NOT_QUALIFIED_REASONS,
+  getFollowUpHoldupReasons,
+  getLostReasons,
+  getNotQualifiedReasons,
 } from "@/lib/call-log-constants";
 import { LOSS_MIN_REASONED_EVENTS } from "@/lib/loss-analysis-constants";
 
@@ -89,7 +89,16 @@ function ReasonBars({
   );
 }
 
-export function LossInsightsSection({ clientId }: { clientId: string }) {
+export function LossInsightsSection({
+  clientId,
+  businessType = "trades",
+}: {
+  clientId: string;
+  businessType?: "trades" | "real_estate";
+}) {
+  const stallLabels = getFollowUpHoldupReasons(businessType);
+  const lostLabels = getLostReasons(businessType);
+  const notFitLabels = getNotQualifiedReasons(businessType);
   const [analysis, setAnalysis] = useState<LossAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -215,7 +224,7 @@ export function LossInsightsSection({ clientId }: { clientId: string }) {
 
         <ReasonBars
           title="Where deals pause"
-          reasons={FOLLOW_UP_HOLDUP_REASONS}
+          reasons={stallLabels}
           counts={analysis.stallReasons}
           Icon={Pause}
           iconColor="#f5a623"
@@ -223,7 +232,7 @@ export function LossInsightsSection({ clientId }: { clientId: string }) {
 
         <ReasonBars
           title="Where deals ended"
-          reasons={LOST_REASONS}
+          reasons={lostLabels}
           counts={analysis.lostReasons}
           Icon={XCircle}
           iconColor="var(--error)"
@@ -231,7 +240,7 @@ export function LossInsightsSection({ clientId }: { clientId: string }) {
 
         <ReasonBars
           title="Not a fit"
-          reasons={NOT_QUALIFIED_REASONS}
+          reasons={notFitLabels}
           counts={analysis.notFitReasons}
           hint="Signals ad targeting — not a sales execution issue."
           Icon={Filter}

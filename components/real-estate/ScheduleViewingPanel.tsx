@@ -34,20 +34,34 @@ function todayLocalISO(): string {
 
 /**
  * Schedule viewing — reuses the same schedule presets as LogCallForm follow-ups.
+ * Pass `embedded` + `defaultOpen` to mount inline inside Log Call without the
+ * full Viewings list chrome.
  */
 export function ScheduleViewingPanel({
   clientId,
   contactId,
   interestedListingIds = [],
+  defaultListingId,
+  embedded = false,
+  defaultOpen = false,
+  onScheduled,
+  onCancel,
 }: {
   clientId: string;
   contactId: string;
   interestedListingIds?: string[];
+  /** Prefill listing (e.g. from Log Call "Which property?"). */
+  defaultListingId?: string | null;
+  /** Compact form only — no heading / viewing history. */
+  embedded?: boolean;
+  defaultOpen?: boolean;
+  onScheduled?: (info: { scheduledAt: string; listingId: string }) => void;
+  onCancel?: () => void;
 }) {
   const [listings, setListings] = useState<ListingOption[]>([]);
   const [viewings, setViewings] = useState<ViewingRow[]>([]);
-  const [open, setOpen] = useState(false);
-  const [listingId, setListingId] = useState("");
+  const [open, setOpen] = useState(defaultOpen || embedded);
+  const [listingId, setListingId] = useState(defaultListingId ?? "");
   const [scheduleOption, setScheduleOption] = useState<CallbackScheduleOption | "">("");
   const [customCallback, setCustomCallback] = useState("");
   const [saving, setSaving] = useState(false);
@@ -74,13 +88,26 @@ export function ScheduleViewingPanel({
     setViewings(viewJson.viewings ?? []);
 
     const interested = interestedListingIds.filter((id) => all.some((l) => l.id === id));
-    if (interested.length === 1) setListingId(interested[0]);
-    else if (all.length === 1) setListingId(all[0].id);
+    if (defaultListingId && all.some((l) => l.id === defaultListingId)) {
+      setListingId(defaultListingId);
+    } else if (interested.length === 1) {
+      setListingId(interested[0]);
+    } else if (all.length === 1) {
+      setListingId(all[0].id);
+    }
   }
 
   useEffect(() => {
     void load();
-  }, [clientId, contactId]);
+  }, [clientId, contactId, defaultListingId]);
+
+  useEffect(() => {
+    if (defaultListingId) setListingId(defaultListingId);
+  }, [defaultListingId]);
+
+  useEffect(() => {
+    if (embedded || defaultOpen) setOpen(true);
+  }, [embedded, defaultOpen]);
 
   async function schedule() {
     if (!listingId || !scheduledAt) {
@@ -107,7 +134,8 @@ export function ScheduleViewingPanel({
       setScheduleOption("");
       setCustomCallback("");
       setToast("Viewing scheduled");
-      await load();
+      onScheduled?.({ scheduledAt, listingId });
+      if (!embedded) await load();
     } finally {
       setSaving(false);
     }
@@ -151,6 +179,83 @@ export function ScheduleViewingPanel({
       : listings;
   const dropdownListings = listingChoices.length > 0 ? listingChoices : listings;
 
+  const formBlock = open ? (
+    <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] p-4">
+      <label className="block text-sm">
+        <span className="text-ink-secondary">Property</span>
+        <select
+          className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2"
+          value={listingId}
+          onChange={(e) => setListingId(e.target.value)}
+        >
+          <option value="">Select…</option>
+          {dropdownListings.map((l) => (
+            <option key={l.id} value={l.id}>
+              {listingLabel(l)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div>
+        <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+          When
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {CALLBACK_SCHEDULE_OPTIONS.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setScheduleOption(opt)}
+              className={[
+                "rounded-full border px-3 py-1.5 text-[13px]",
+                scheduleOption === opt
+                  ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
+                  : "border-[var(--border)] text-ink-secondary",
+              ].join(" ")}
+            >
+              {CALLBACK_SCHEDULE_LABELS[opt]}
+            </button>
+          ))}
+        </div>
+        {scheduleOption === "pick" ? (
+          <input
+            type="datetime-local"
+            min={`${todayLocalISO()}T00:00`}
+            className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2"
+            value={customCallback}
+            onChange={(e) => setCustomCallback(e.target.value)}
+          />
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={saving || !listingId || !scheduledAt}
+          onClick={() => void schedule()}
+        >
+          {saving ? "Saving…" : "Confirm viewing"}
+        </button>
+        {embedded && onCancel ? (
+          <button
+            type="button"
+            className="rounded-md border border-[var(--border)] px-3 py-2 text-[13px] text-ink-secondary"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+        ) : null}
+      </div>
+      {toast ? <p className="text-sm text-ink-secondary">{toast}</p> : null}
+    </div>
+  ) : null;
+
+  if (embedded) {
+    return <div className="ag-fade-in space-y-2">{formBlock}</div>;
+  }
+
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 space-y-4">
       <div className="flex items-center justify-between gap-3">
@@ -165,68 +270,9 @@ export function ScheduleViewingPanel({
         </button>
       </div>
 
-      {toast ? <p className="text-sm text-ink-secondary">{toast}</p> : null}
+      {toast && !open ? <p className="text-sm text-ink-secondary">{toast}</p> : null}
 
-      {open ? (
-        <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] p-4">
-          <label className="block text-sm">
-            <span className="text-ink-secondary">Property</span>
-            <select
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2"
-              value={listingId}
-              onChange={(e) => setListingId(e.target.value)}
-            >
-              <option value="">Select…</option>
-              {dropdownListings.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {listingLabel(l)}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div>
-            <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-              When
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {CALLBACK_SCHEDULE_OPTIONS.map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setScheduleOption(opt)}
-                  className={[
-                    "rounded-full border px-3 py-1.5 text-[13px]",
-                    scheduleOption === opt
-                      ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
-                      : "border-[var(--border)] text-ink-secondary",
-                  ].join(" ")}
-                >
-                  {CALLBACK_SCHEDULE_LABELS[opt]}
-                </button>
-              ))}
-            </div>
-            {scheduleOption === "pick" ? (
-              <input
-                type="datetime-local"
-                min={`${todayLocalISO()}T00:00`}
-                className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2"
-                value={customCallback}
-                onChange={(e) => setCustomCallback(e.target.value)}
-              />
-            ) : null}
-          </div>
-
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={saving || !listingId || !scheduledAt}
-            onClick={() => void schedule()}
-          >
-            {saving ? "Saving…" : "Confirm viewing"}
-          </button>
-        </div>
-      ) : null}
+      {formBlock}
 
       <ul className="space-y-2">
         {viewings.length === 0 ? (

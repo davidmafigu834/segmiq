@@ -1,4 +1,6 @@
 import type { CallOutcome } from "@/types";
+import type { BusinessType } from "@/lib/terminology";
+import { normalizeBusinessType } from "@/lib/terminology";
 
 /** Step 1 — did you reach them? */
 export const REACH_OUTCOMES = ["reached", "no_answer", "call_back"] as const;
@@ -21,6 +23,7 @@ export const CALL_RESULT_LABELS: Record<CallResult, string> = {
   not_qualified: "Not qualified",
 };
 
+/** Trades stall reasons — default / historical values (must stay identical). */
 export const FOLLOW_UP_HOLDUP_REASONS = [
   "Comparing quotes",
   "Still deciding",
@@ -28,6 +31,15 @@ export const FOLLOW_UP_HOLDUP_REASONS = [
   "Waiting on money",
   "Project for later",
   /** Inferred when a rep logs "Call me back" without picking a stall reason. */
+  "Scheduled callback",
+] as const;
+
+export const REAL_ESTATE_FOLLOW_UP_HOLDUP_REASONS = [
+  "Bond/financing pending",
+  "Comparing other properties",
+  "Waiting to sell current home",
+  "Still deciding on area",
+  "Seller/landlord hasn't responded",
   "Scheduled callback",
 ] as const;
 
@@ -44,11 +56,26 @@ export const LOST_REASONS = [
   "Never serious",
 ] as const;
 
+export const REAL_ESTATE_LOST_REASONS = [
+  "Bought/rented elsewhere",
+  "Seller rejected offer",
+  "Deal fell through (bond declined / chain collapsed)",
+  "Went cold",
+  "Never serious",
+] as const;
+
 export const NOT_QUALIFIED_REASONS = [
   "Budget too small",
   "Out of area",
   "Service we don't offer",
   "Just price-checking",
+] as const;
+
+export const REAL_ESTATE_NOT_QUALIFIED_REASONS = [
+  "Budget doesn't match available stock",
+  "Out of area",
+  "Looking to rent, we only sell (or vice versa)",
+  "Just browsing / no timeline",
 ] as const;
 
 export const CALLBACK_SCHEDULE_OPTIONS = [
@@ -66,18 +93,88 @@ export const CALLBACK_SCHEDULE_LABELS: Record<CallbackScheduleOption, string> = 
   pick: "Pick a date/time",
 };
 
+/** Trades send-panel asset types (SendAssetPanel). */
+export type SendAssetType =
+  | "PORTFOLIO"
+  | "PROJECT"
+  | "PRICING_PACKAGE"
+  | "TESTIMONIALS"
+  | "DOCUMENT";
+
 /** Inline "did they ask for anything?" — stored in assets_requested */
 export const ASSET_REQUEST_OPTIONS = [
-  { key: "pricing", label: "Pricing", sendType: "PRICING_PACKAGE" },
-  { key: "recent_work", label: "Recent work", sendType: "PROJECT" },
-  { key: "portfolio", label: "Portfolio", sendType: "PORTFOLIO" },
-  { key: "testimonials", label: "Testimonials", sendType: "TESTIMONIALS" },
-  { key: "documents", label: "Documents", sendType: "DOCUMENT" },
+  { key: "pricing", label: "Pricing", sendType: "PRICING_PACKAGE" as const },
+  { key: "recent_work", label: "Recent work", sendType: "PROJECT" as const },
+  { key: "portfolio", label: "Portfolio", sendType: "PORTFOLIO" as const },
+  { key: "testimonials", label: "Testimonials", sendType: "TESTIMONIALS" as const },
+  { key: "documents", label: "Documents", sendType: "DOCUMENT" as const },
 ] as const;
 
-export type AssetRequestKey = (typeof ASSET_REQUEST_OPTIONS)[number]["key"];
+export const REAL_ESTATE_ASSET_REQUEST_OPTIONS = [
+  { key: "pricing", label: "Pricing", sendType: "PRICING_PACKAGE" as const },
+  /** Routes to listing send-match, not SendAssetPanel. */
+  { key: "similar_listings", label: "Similar listings", sendType: "SIMILAR_LISTINGS" as const },
+  { key: "floor_plan", label: "Floor plan", sendType: "DOCUMENT" as const },
+  { key: "virtual_tour", label: "Virtual tour", sendType: "DOCUMENT" as const },
+  { key: "documents", label: "Documents", sendType: "DOCUMENT" as const },
+] as const;
 
-export const DIRECT_SEND_ASSET_TYPES = new Set(["PORTFOLIO", "TESTIMONIALS"]);
+export type AssetRequestKey =
+  | (typeof ASSET_REQUEST_OPTIONS)[number]["key"]
+  | (typeof REAL_ESTATE_ASSET_REQUEST_OPTIONS)[number]["key"];
+
+export type AssetRequestOption = {
+  key: AssetRequestKey;
+  label: string;
+  sendType: SendAssetType | "SIMILAR_LISTINGS";
+};
+
+export const DIRECT_SEND_ASSET_TYPES = new Set<string>(["PORTFOLIO", "TESTIMONIALS"]);
+
+export function getFollowUpHoldupReasons(
+  businessType: BusinessType | string | null | undefined
+): readonly string[] {
+  return normalizeBusinessType(businessType) === "real_estate"
+    ? REAL_ESTATE_FOLLOW_UP_HOLDUP_REASONS
+    : FOLLOW_UP_HOLDUP_REASONS;
+}
+
+export function getLostReasons(
+  businessType: BusinessType | string | null | undefined
+): readonly string[] {
+  return normalizeBusinessType(businessType) === "real_estate"
+    ? REAL_ESTATE_LOST_REASONS
+    : LOST_REASONS;
+}
+
+export function getNotQualifiedReasons(
+  businessType: BusinessType | string | null | undefined
+): readonly string[] {
+  return normalizeBusinessType(businessType) === "real_estate"
+    ? REAL_ESTATE_NOT_QUALIFIED_REASONS
+    : NOT_QUALIFIED_REASONS;
+}
+
+export function getAssetRequestOptions(
+  businessType: BusinessType | string | null | undefined
+): readonly AssetRequestOption[] {
+  return normalizeBusinessType(businessType) === "real_estate"
+    ? REAL_ESTATE_ASSET_REQUEST_OPTIONS
+    : ASSET_REQUEST_OPTIONS;
+}
+
+/** Union allowlists so loss aggregation counts either vertical's reasons. */
+export const ALL_FOLLOW_UP_HOLDUP_REASONS: readonly string[] = Array.from(
+  new Set([...FOLLOW_UP_HOLDUP_REASONS, ...REAL_ESTATE_FOLLOW_UP_HOLDUP_REASONS])
+);
+
+export const ALL_LOST_REASONS: readonly string[] = Array.from(
+  new Set([...LOST_REASONS, ...REAL_ESTATE_LOST_REASONS])
+);
+
+export const ALL_NOT_QUALIFIED_REASONS: readonly string[] = Array.from(
+  new Set([...NOT_QUALIFIED_REASONS, ...REAL_ESTATE_NOT_QUALIFIED_REASONS])
+);
 
 /** Derive legacy call_logs.outcome for scoring + timeline back-compat. */
 export function deriveLegacyOutcome(

@@ -488,6 +488,7 @@ export function LeadDetailPanel({
                     leadId={activeLead.id}
                     businessType={businessType}
                     clientId={activeLead.client_id}
+                    contactId={activeLead.contact_id}
                     onLogged={() => setLogRefresh((k) => k + 1)}
                     onLeadUpdated={onLeadUpdated}
                     onOpenSendTab={(types) => {

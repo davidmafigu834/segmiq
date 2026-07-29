@@ -1,29 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Star } from "lucide-react";
+import { CalendarPlus, Check, Star } from "lucide-react";
 import type { CallOutcome, LeadRow } from "@/types";
 import {
-  ASSET_REQUEST_OPTIONS,
   CALLBACK_SCHEDULE_LABELS,
   CALLBACK_SCHEDULE_OPTIONS,
   CALL_RESULT_LABELS,
   CALL_RESULTS,
   DIRECT_SEND_ASSET_TYPES,
-  FOLLOW_UP_HOLDUP_REASONS,
-  LOST_REASONS,
-  NOT_QUALIFIED_REASONS,
   REACH_OUTCOME_LABELS,
   REACH_OUTCOMES,
   deriveLegacyOutcome,
+  getAssetRequestOptions,
+  getFollowUpHoldupReasons,
+  getLostReasons,
+  getNotQualifiedReasons,
   resolveCallbackAt,
   type AssetRequestKey,
   type CallResult,
   type CallbackScheduleOption,
   type ReachOutcome,
+  type SendAssetType,
 } from "@/lib/call-log-constants";
-
-type SendAssetType = "PORTFOLIO" | "PROJECT" | "PRICING_PACKAGE" | "TESTIMONIALS" | "DOCUMENT";
+import { ScheduleViewingPanel } from "@/components/real-estate/ScheduleViewingPanel";
 
 function todayLocalISO(): string {
   const t = new Date();
@@ -144,6 +144,8 @@ export type LogCallFormProps = {
   /** When real_estate, require which property was discussed. */
   businessType?: "trades" | "real_estate";
   clientId?: string | null;
+  /** Contact for RE viewing schedule / similar-listings send. */
+  contactId?: string | null;
   /** Preloaded interested listing ids for the contact (optional). */
   interestedListingIds?: string[];
 };
@@ -160,6 +162,7 @@ export function LogCallForm({
   variant = "panel",
   businessType = "trades",
   clientId = null,
+  contactId: contactIdProp = null,
   interestedListingIds = [],
 }: LogCallFormProps) {
   const [reachOutcome, setReachOutcome] = useState<ReachOutcome>("reached");
@@ -178,8 +181,15 @@ export function LogCallForm({
   const [propertyError, setPropertyError] = useState<string | null>(null);
   const [addingProperty, setAddingProperty] = useState(false);
   const [newListingId, setNewListingId] = useState("");
+  const [resolvedContactId, setResolvedContactId] = useState<string | null>(contactIdProp);
+  const [viewingOpen, setViewingOpen] = useState(false);
+  const [viewingBookedLabel, setViewingBookedLabel] = useState<string | null>(null);
 
   const isRealEstate = businessType === "real_estate";
+  const stallReasons = useMemo(() => getFollowUpHoldupReasons(businessType), [businessType]);
+  const lostReasons = useMemo(() => getLostReasons(businessType), [businessType]);
+  const notQualifiedReasons = useMemo(() => getNotQualifiedReasons(businessType), [businessType]);
+  const assetOptions = useMemo(() => getAssetRequestOptions(businessType), [businessType]);
 
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
@@ -193,6 +203,32 @@ export function LogCallForm({
   useEffect(() => {
     setChannel(defaultChannel);
   }, [defaultChannel, leadId]);
+
+  useEffect(() => {
+    setResolvedContactId(contactIdProp);
+  }, [contactIdProp, leadId]);
+
+  useEffect(() => {
+    if (contactIdProp || !leadId) return;
+    let cancelled = false;
+    fetch(`/api/leads/${leadId}`)
+      .then((r) => r.json())
+      .then((d: { lead?: { contact_id?: string | null } }) => {
+        if (!cancelled && d.lead?.contact_id) {
+          setResolvedContactId(d.lead.contact_id);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [leadId, contactIdProp]);
+
+  useEffect(() => {
+    setAssetsRequested([]);
+    setViewingOpen(false);
+    setViewingBookedLabel(null);
+  }, [businessType, leadId]);
 
   useEffect(() => {
     if (!isRealEstate || !clientId) return;
@@ -243,9 +279,13 @@ export function LogCallForm({
     if (reachOutcome !== "reached") {
       setResult(null);
       setAssetsRequested([]);
+      setViewingOpen(false);
     }
     if (reachOutcome !== "reached" || result !== "follow_up") {
       setConvertLater(false);
+    }
+    if (reachOutcome === "reached" && result !== "follow_up" && result !== "won") {
+      setViewingOpen(false);
     }
     if (reachOutcome === "no_answer") {
       setReason("");
@@ -270,14 +310,35 @@ export function LogCallForm({
   }, [needsSchedule, scheduleOption, customCallback]);
 
   const selectedSendTypes = useMemo(() => {
-    return assetsRequested
-      .map((key) => ASSET_REQUEST_OPTIONS.find((o) => o.key === key)?.sendType)
-      .filter(Boolean) as SendAssetType[];
-  }, [assetsRequested]);
+    const types: SendAssetType[] = [];
+    for (const key of assetsRequested) {
+      const sendType = assetOptions.find((o) => o.key === key)?.sendType;
+      if (
+        sendType === "PORTFOLIO" ||
+        sendType === "PROJECT" ||
+        sendType === "PRICING_PACKAGE" ||
+        sendType === "TESTIMONIALS" ||
+        sendType === "DOCUMENT"
+      ) {
+        if (!types.includes(sendType)) types.push(sendType);
+      }
+    }
+    return types;
+  }, [assetsRequested, assetOptions]);
+
+  const wantsSimilarListings = assetsRequested.includes("similar_listings");
 
   const canDirectSendOnly =
+    !wantsSimilarListings &&
     selectedSendTypes.length > 0 &&
     selectedSendTypes.every((t) => DIRECT_SEND_ASSET_TYPES.has(t));
+
+  const effectiveListingId = addingProperty ? newListingId : listingId;
+  const showScheduleViewing =
+    isRealEstate &&
+    reachOutcome === "reached" &&
+    (result === "follow_up" || result === "won") &&
+    Boolean(clientId && resolvedContactId);
 
   const fieldZoomClass =
     isMagic || isCompact ? "text-base sm:text-sm" : "text-[16px] sm:text-sm";
@@ -307,6 +368,21 @@ export function LogCallForm({
         const data = (await leadRes.json()) as { lead?: LeadRow };
         if (data.lead) onLeadUpdated?.(data.lead);
       }
+      onLogged?.();
+    } finally {
+      setDirectSending(false);
+    }
+  }
+
+  async function sendSimilarListings() {
+    if (!clientId || !resolvedContactId || !effectiveListingId || directSending) return;
+    setDirectSending(true);
+    try {
+      await fetch(`/api/clients/${clientId}/listings/${effectiveListingId}/send-match`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact_id: resolvedContactId }),
+      });
       onLogged?.();
     } finally {
       setDirectSending(false);
@@ -525,7 +601,7 @@ export function LogCallForm({
           {result === "follow_up" ? (
             <ReasonPills
               label="What's the hold-up?"
-              options={FOLLOW_UP_HOLDUP_REASONS}
+              options={stallReasons}
               value={reason}
               onChange={setReason}
             />
@@ -534,7 +610,7 @@ export function LogCallForm({
           {result === "lost" ? (
             <ReasonPills
               label="Why did it die?"
-              options={LOST_REASONS}
+              options={lostReasons}
               value={reason}
               onChange={setReason}
             />
@@ -543,7 +619,7 @@ export function LogCallForm({
           {result === "not_qualified" ? (
             <ReasonPills
               label="Why not a fit?"
-              options={NOT_QUALIFIED_REASONS}
+              options={notQualifiedReasons}
               value={reason}
               onChange={setReason}
               hint='Aggregated "not a fit" reasons indicate ad-targeting mismatch, not a sales problem.'
@@ -561,7 +637,7 @@ export function LogCallForm({
               Did they ask for anything?
             </span>
             <div className="flex flex-wrap gap-2">
-              {ASSET_REQUEST_OPTIONS.map((opt) => {
+              {assetOptions.map((opt) => {
                 const active = assetsRequested.includes(opt.key);
                 return (
                   <button
@@ -592,6 +668,16 @@ export function LogCallForm({
                     {directSending ? "Sending…" : "Send now"}
                   </button>
                 ) : null}
+                {wantsSimilarListings && clientId && resolvedContactId && effectiveListingId ? (
+                  <button
+                    type="button"
+                    disabled={directSending}
+                    onClick={() => void sendSimilarListings()}
+                    className="rounded-md border border-[var(--accent-border)] px-3 py-1.5 text-[13px] font-medium text-[var(--status-won-fg)] touch-manipulation hover:bg-[var(--accent-muted)] disabled:opacity-50"
+                  >
+                    {directSending ? "Sending…" : "Send similar listings"}
+                  </button>
+                ) : null}
                 {onOpenSendTab && selectedSendTypes.length > 0 ? (
                   <button
                     type="button"
@@ -604,6 +690,51 @@ export function LogCallForm({
               </div>
             ) : null}
           </div>
+
+          {showScheduleViewing ? (
+            <div className="ag-fade-in space-y-2">
+              <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+                Quick action
+              </span>
+              {viewingBookedLabel ? (
+                <p className="rounded-lg border border-[var(--accent-border)] bg-[var(--accent-muted)] px-3 py-2 text-[13px] text-[var(--status-won-fg)]">
+                  Viewing booked for {viewingBookedLabel}
+                </p>
+              ) : null}
+              {!viewingOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setViewingOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-3 py-1.5 text-[13px] text-ink-secondary transition-all touch-manipulation hover:border-[var(--border-hover)] hover:text-ink-primary"
+                >
+                  <CalendarPlus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  Schedule a viewing
+                </button>
+              ) : clientId && resolvedContactId ? (
+                <ScheduleViewingPanel
+                  clientId={clientId}
+                  contactId={resolvedContactId}
+                  interestedListingIds={
+                    effectiveListingId
+                      ? Array.from(new Set([...interestedListingIds, effectiveListingId]))
+                      : interestedListingIds
+                  }
+                  defaultListingId={effectiveListingId || null}
+                  embedded
+                  defaultOpen
+                  onCancel={() => setViewingOpen(false)}
+                  onScheduled={({ scheduledAt }) => {
+                    const label = new Date(scheduledAt).toLocaleString("en-GB", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    });
+                    setViewingBookedLabel(label);
+                    setViewingOpen(false);
+                  }}
+                />
+              ) : null}
+            </div>
+          ) : null}
         </>
       ) : null}
 
