@@ -115,7 +115,9 @@ export async function POST(req: Request) {
         activeOnly: true,
         select: "id, name, phone, role, also_sells, is_active",
       });
-      const match = (agents ?? []).find((a) => phonesMatchLoose(a.phone, agentReference));
+      // Dynamic select string makes Supabase return GenericStringError; cast the shape we asked for.
+      const agentRows = (agents ?? []) as Array<{ id: string; phone: string | null }>;
+      const match = agentRows.find((a) => phonesMatchLoose(a.phone, agentReference));
       if (match) overrideAssigneeId = match.id;
     }
 
