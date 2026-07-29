@@ -17,17 +17,21 @@ import { effectiveReportQueryString } from "@/lib/reports/report-range";
 
 const SOURCE_LABEL: Record<LeadSource, string> = {
   FACEBOOK: "Facebook",
+  FACEBOOK_AD: "Facebook Ad",
   LANDING_PAGE: "Landing page",
   MANUAL: "Manual",
   REFERRAL: "Referral",
+  WEBSITE: "Website",
   WHATSAPP_INBOUND: "WhatsApp",
 };
 
 const SOURCE_DOT: Record<LeadSource, string> = {
   FACEBOOK: "bg-blue-500",
+  FACEBOOK_AD: "bg-blue-600",
   LANDING_PAGE: "bg-[var(--accent)]",
   MANUAL: "bg-ink-tertiary",
   REFERRAL: "bg-purple-500",
+  WEBSITE: "bg-cyan-500",
   WHATSAPP_INBOUND: "bg-emerald-500",
 };
 
