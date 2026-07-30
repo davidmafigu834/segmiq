@@ -125,7 +125,7 @@ async function fetchAlreadySentLeadIds(
     .select("lead_id")
     .in("lead_id", leadIds)
     .in("notification_type", notificationTypes)
-    .eq("status", "sent")
+    .in("status", ["sent", "pending"])
     .eq("channel", "whatsapp")
     .gte("created_at", sinceIso);
 
@@ -139,11 +139,43 @@ async function fetchCallbackSentSince(leadId: string, sinceIso: string): Promise
     .select("id", { count: "exact", head: true })
     .eq("lead_id", leadId)
     .eq("notification_type", "FOLLOW_UP_DUE")
-    .eq("status", "sent")
     .eq("channel", "whatsapp")
+    .in("status", ["sent", "pending"])
     .gte("created_at", sinceIso);
 
   return (count ?? 0) > 0;
+}
+
+/** Returns true if this process owns the send; false if another cron already claimed it. */
+async function claimFollowUpSend(
+  leadId: string,
+  kind: "due" | "prep" | "callback",
+  periodKey: string
+): Promise<boolean> {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("follow_up_reminder_claims").insert({
+    lead_id: leadId,
+    kind,
+    period_key: periodKey,
+  });
+
+  if (!error) return true;
+
+  // Unique violation = already claimed
+  if (error.code === "23505") return false;
+
+  // Table missing (migration not applied yet) — fall back to message_logs dedupe only
+  if (
+    error.message?.includes("follow_up_reminder_claims") ||
+    error.message?.includes("does not exist")
+  ) {
+    console.warn("[follow-up-reminders] claims table missing; relying on message_logs dedupe");
+    return true;
+  }
+
+  console.error("[follow-up-reminders] claim failed", error);
+  // Fail closed for unknown errors to avoid spam storms
+  return false;
 }
 
 type CallbackCandidate = {
@@ -255,6 +287,17 @@ async function runFollowUpBatch(opts: {
     const followUpDate = String(lead.follow_up_date ?? "");
     const kind = opts.resolveKind(followUpDate, opts.todayStr);
     const leadName = lead.name ?? "lead";
+    const claimKind = opts.notificationType === "FOLLOW_UP_PREP" ? "prep" : "due";
+    const periodKey =
+      opts.notificationType === "FOLLOW_UP_PREP" ? followUpDate : opts.todayStr;
+
+    if (!opts.force && !opts.dryRun) {
+      const claimed = await claimFollowUpSend(lead.id as string, claimKind, periodKey);
+      if (!claimed) {
+        results.skipped++;
+        continue;
+      }
+    }
 
     if (opts.dryRun) {
       results.whatsappSent++;
@@ -373,6 +416,14 @@ async function runCallbackBatch(opts: {
 
     const followUpDate = String(lead.follow_up_date ?? callbackAt.slice(0, 10));
     const leadName = lead.name ?? "lead";
+
+    if (!opts.force && !opts.dryRun) {
+      const claimed = await claimFollowUpSend(lead.id as string, "callback", callbackAt);
+      if (!claimed) {
+        results.skipped++;
+        continue;
+      }
+    }
 
     if (opts.dryRun) {
       results.whatsappSent++;
