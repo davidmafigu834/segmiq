@@ -69,7 +69,12 @@ export function ProjectsManager({
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this project and all its photos?")) return;
-    await fetch(`/api/clients/${clientId}/projects/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/clients/${clientId}/projects/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null) as { error?: string } | null;
+      alert(body?.error || "Could not delete project");
+      return;
+    }
     setProjects((p) => p.filter((x) => x.id !== id));
     setMenuOpenId(null);
   }

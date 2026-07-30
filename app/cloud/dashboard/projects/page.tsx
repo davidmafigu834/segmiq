@@ -110,9 +110,14 @@ export default function CloudProjectsPage() {
 
   async function handleDelete(p: Project) {
     if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
-    await fetch(`/api/clients/${session!.clientId!}/projects/${p.id}`, { method: "DELETE" });
-    setProjects((prev) => prev.filter((x) => x.id !== p.id));
     setMenuOpen(null);
+    const res = await fetch(`/api/clients/${session!.clientId!}/projects/${p.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null) as { error?: string } | null;
+      showToast(body?.error || "Could not delete project");
+      return;
+    }
+    setProjects((prev) => prev.filter((x) => x.id !== p.id));
   }
 
   async function handleToggleFeatured(p: Project) {
@@ -260,7 +265,7 @@ export default function CloudProjectsPage() {
               project={p}
               href={`/cloud/dashboard/projects/${p.id}`}
               menu={
-                <div className="relative">
+                <div className={`relative ${menuOpen === p.id ? "z-30" : ""}`}>
                   <button
                     type="button"
                     onClick={() => setMenuOpen(menuOpen === p.id ? null : p.id)}
@@ -270,41 +275,44 @@ export default function CloudProjectsPage() {
                     <MoreVertical className="h-4 w-4" />
                   </button>
                   {menuOpen === p.id && (
-                    <div className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-[var(--cloud-border)] bg-white py-1.5 shadow-[var(--cloud-shadow-elevated)]">
-                      <Link
-                        href={`/cloud/dashboard/projects/${p.id}`}
-                        className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
-                        onClick={() => setMenuOpen(null)}
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        Edit details
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => copyShareLink(p)}
-                        className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        Copy share link
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void handleToggleFeatured(p)}
-                        className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
-                      >
-                        <Star className="h-3.5 w-3.5" />
-                        {p.is_featured ? "Unfeature" : "Set as featured"}
-                      </button>
-                      <hr className="my-1 border-[var(--cloud-border)]" />
-                      <button
-                        type="button"
-                        onClick={() => void handleDelete(p)}
-                        className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-red-500 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Delete
-                      </button>
-                    </div>
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
+                      <div className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-[var(--cloud-border)] bg-white py-1.5 shadow-[var(--cloud-shadow-elevated)]">
+                        <Link
+                          href={`/cloud/dashboard/projects/${p.id}`}
+                          className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
+                          onClick={() => setMenuOpen(null)}
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          Edit details
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => copyShareLink(p)}
+                          className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Copy share link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleToggleFeatured(p)}
+                          className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-[var(--cloud-text-secondary)] hover:bg-[var(--cloud-surface-muted)] hover:text-[var(--cloud-text-primary)]"
+                        >
+                          <Star className="h-3.5 w-3.5" />
+                          {p.is_featured ? "Unfeature" : "Set as featured"}
+                        </button>
+                        <hr className="my-1 border-[var(--cloud-border)]" />
+                        <button
+                          type="button"
+                          onClick={() => void handleDelete(p)}
+                          className="flex w-full items-center gap-2.5 px-4 py-2 text-[13px] text-red-500 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Delete
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
               }
@@ -313,10 +321,6 @@ export default function CloudProjectsPage() {
 
           <CloudProjectFolderNewCard onClick={() => setShowNew(true)} />
         </div>
-      )}
-
-      {menuOpen && (
-        <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
       )}
 
       {toastMsg && (

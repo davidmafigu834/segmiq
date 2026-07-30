@@ -72,6 +72,14 @@ export async function DELETE(req: Request, { params }: { params: { clientId: str
   }
 
   const supabase = createAdminClient();
+
+  // Break circular FK: projects.cover_media_id → project_media ← projects (cascade)
+  await supabase
+    .from("projects")
+    .update({ cover_media_id: null, updated_at: new Date().toISOString() })
+    .eq("id", params.projectId)
+    .eq("client_id", params.clientId);
+
   const { error } = await supabase
     .from("projects")
     .delete()

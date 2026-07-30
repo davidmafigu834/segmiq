@@ -374,7 +374,13 @@ export default function ProjectDetailPage() {
   async function handleDeleteProject() {
     if (!project || !session?.clientId) return;
     if (!confirm(`Delete "${project.title}"? This cannot be undone.`)) return;
-    await fetch(`/api/clients/${session.clientId}/projects/${project.id}`, { method: "DELETE" });
+    setMenuOpen(false);
+    const res = await fetch(`/api/clients/${session.clientId}/projects/${project.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null) as { error?: string } | null;
+      showToast(body?.error || "Could not delete project");
+      return;
+    }
     router.push("/cloud/dashboard/projects");
   }
 
