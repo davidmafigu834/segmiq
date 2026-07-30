@@ -28,23 +28,29 @@ export async function AgencyLayout({
 
   try {
     const supabase = createAdminClient();
-    let clientsResult = await supabase
+    let clients: { id: string; name: string }[] | null = null;
+
+    const managedResult = await supabase
       .from("clients")
-      .select("id, name, agency_managed")
+      .select("id, name")
       .eq("is_active", true)
       .eq("is_archived", false)
       .eq("agency_managed", true)
       .order("name");
 
-    if (clientsResult.error?.message?.includes("is_archived") || clientsResult.error?.message?.includes("agency_managed")) {
-      clientsResult = await supabase
+    if (
+      managedResult.error?.message?.includes("is_archived") ||
+      managedResult.error?.message?.includes("agency_managed")
+    ) {
+      const fallback = await supabase
         .from("clients")
         .select("id, name")
         .eq("is_active", true)
         .order("name");
+      clients = (fallback.data as { id: string; name: string }[] | null) ?? null;
+    } else {
+      clients = (managedResult.data as { id: string; name: string }[] | null) ?? null;
     }
-
-    const clients = clientsResult.data;
     const clientIds = (clients ?? []).map((c) => c.id);
     const counts: Record<string, number> = {};
     if (clientIds.length) {
