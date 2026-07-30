@@ -9,6 +9,7 @@ import {
   injectOptionalBudgetQuestion,
 } from "@/lib/budget-question-presets";
 import { buildPackageTeaser, isPackagePublic } from "@/lib/pricing/public-packages";
+import { HERO_SCRIM } from "@/lib/cloud/project-magazine";
 
 function getInitials(name: string): string {
   const parts = name.trim().split(" ").filter(Boolean);
@@ -96,9 +97,6 @@ type PricingPackage = {
   is_public: boolean;
   valid_until: string | null;
 };
-
-const HERO_SCRIM =
-  "linear-gradient(to top, rgba(10,9,7,0.86) 0%, rgba(10,9,7,0.45) 42%, rgba(10,9,7,0.12) 72%, rgba(10,9,7,0.30) 100%), linear-gradient(105deg, rgba(10,9,7,0.55) 0%, rgba(10,9,7,0.10) 55%, transparent 80%)";
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const supabase = createAdminClient();
@@ -311,9 +309,6 @@ export default async function ProfilePage({
     ? `${process.env.NEXT_PUBLIC_APP_DOMAIN ?? "https://leadstaq.tech"}/p/${profile.slug as string}`
     : undefined;
 
-  const heroImageUrl = (profile.hero_image_url as string | null)?.trim() || null;
-  const hasHeroPhoto = Boolean(heroImageUrl);
-
   const allProjectsWithPhotos = typedProjects
     .map((project) => ({ project, coverUrl: getProjectCover(project) }))
     .filter((entry): entry is { project: Project; coverUrl: string } => Boolean(entry.coverUrl));
@@ -321,6 +316,15 @@ export default async function ProfilePage({
   const previewProjects = allProjectsWithPhotos.slice(0, PROFILE_PROJECT_PREVIEW);
   const featuredPreviewCount = previewProjects.filter(({ project }) => project.is_featured).length;
   const totalWithPhotos = allProjectsWithPhotos.length;
+
+  // Prefer uploaded hero; otherwise use a featured/project cover so the hero is never flat/light
+  const uploadedHero = (profile.hero_image_url as string | null)?.trim() || null;
+  const fallbackHero =
+    allProjectsWithPhotos.find(({ project }) => project.is_featured)?.coverUrl ??
+    allProjectsWithPhotos[0]?.coverUrl ??
+    null;
+  const heroImageUrl = uploadedHero || fallbackHero;
+  const hasHeroPhoto = Boolean(heroImageUrl);
 
   const publicPackages = typedPackages.filter(isPackagePublic);
   const packageTeaser = buildPackageTeaser(publicPackages, 2);
@@ -487,7 +491,7 @@ export default async function ProfilePage({
                 </Link>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-4 min-[821px]:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 min-[821px]:grid-cols-3 min-[821px]:gap-4">
               {previewProjects.map(({ project, coverUrl }, index) => {
                 const meta = getProjectMeta(project);
                 const isHeroTile = index === 0;
@@ -495,39 +499,53 @@ export default async function ProfilePage({
                   <Link
                     key={project.id}
                     href={`/p/${params.slug}/projects/${project.id}`}
-                    className={`group flex flex-col overflow-hidden rounded-[16px] border border-[rgba(28,20,16,0.08)] bg-white transition-transform duration-200 hover:-translate-y-[3px] ${
+                    className={`group relative isolate overflow-hidden rounded-[18px] bg-[#1C1410] transition-transform duration-300 hover:-translate-y-1 ${
                       isHeroTile ? "col-span-2 min-[821px]:col-span-2" : ""
                     }`}
                   >
                     <div
-                      className={`relative overflow-hidden bg-[var(--fw-sunken)] ${
-                        isHeroTile ? "aspect-[16/10]" : "aspect-square"
+                      className={`relative overflow-hidden ${
+                        isHeroTile ? "aspect-[16/10]" : "aspect-[4/5]"
                       }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={coverUrl}
                         alt={project.title}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      />
+                      <div
+                        className="pointer-events-none absolute inset-0"
+                        style={{
+                          background:
+                            "linear-gradient(to top, rgba(8,7,6,0.88) 0%, rgba(8,7,6,0.35) 45%, rgba(8,7,6,0.12) 100%)",
+                        }}
+                        aria-hidden
                       />
                       {project.is_featured && (
                         <span className="absolute left-3 top-3 rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-ink)]">
                           Featured
                         </span>
                       )}
-                    </div>
-                    <div className="p-3.5 min-[821px]:p-4">
-                      <p className="text-base font-bold text-[var(--fw-text-primary)] [font-family:var(--fw-font-display)]">
-                        {project.title}
-                      </p>
-                      {meta && (
-                        <p className="mt-1 text-xs text-[var(--fw-text-tertiary)]">{meta}</p>
-                      )}
-                      {project.description?.trim() && (
-                        <p className="mt-2 line-clamp-2 text-[13px] leading-snug text-[var(--fw-text-secondary)]">
-                          {project.description.trim()}
+                      <div className="absolute inset-x-0 bottom-0 p-3.5 min-[821px]:p-5">
+                        <p
+                          className={`font-bold leading-tight tracking-[-0.01em] text-white [font-family:var(--fw-font-display)] ${
+                            isHeroTile ? "text-[clamp(18px,2.4vw,26px)]" : "text-[15px] min-[821px]:text-base"
+                          }`}
+                        >
+                          {project.title}
                         </p>
-                      )}
+                        {meta && (
+                          <p className="mt-1 text-[11px] tracking-[0.02em] text-white/65 min-[821px]:text-xs">
+                            {meta}
+                          </p>
+                        )}
+                        {isHeroTile && project.description?.trim() && (
+                          <p className="mt-2 line-clamp-2 max-w-[42ch] text-[13px] leading-snug text-white/70">
+                            {project.description.trim()}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 );

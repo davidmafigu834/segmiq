@@ -23,6 +23,7 @@ type ProfileData = {
   is_published: boolean;
   headline: string | null;
   cta_text: string | null;
+  hero_image_url: string | null;
 };
 
 const INDUSTRIES = [
@@ -68,6 +69,10 @@ export default function CloudSettingsPage() {
   const [togglingPublish, setTogglingPublish] = useState(false);
   const [headline, setHeadline] = useState("");
   const [ctaText, setCtaText] = useState("");
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
+  const [heroUploading, setHeroUploading] = useState(false);
+  const [heroError, setHeroError] = useState("");
+  const heroInputRef = useRef<HTMLInputElement>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -120,6 +125,7 @@ export default function CloudSettingsPage() {
         setProfile(p);
         if (p.headline) setHeadline(p.headline);
         if (p.cta_text) setCtaText(p.cta_text);
+        setHeroImageUrl(p.hero_image_url ?? null);
       }
       if (statsRes.ok) {
         const s = (await statsRes.json()) as typeof stats;
@@ -187,7 +193,11 @@ export default function CloudSettingsPage() {
     const res = await fetch(`/api/clients/${session.clientId}/profile`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ headline: headline.trim(), cta_text: ctaText.trim() }),
+      body: JSON.stringify({
+        headline: headline.trim(),
+        cta_text: ctaText.trim(),
+        hero_image_url: heroImageUrl,
+      }),
     });
     setSavingProfile(false);
     if (!res.ok) {
@@ -195,8 +205,69 @@ export default function CloudSettingsPage() {
       setProfileError(d.error ?? "Failed to save.");
       return;
     }
+    setProfile((prev) => (prev ? { ...prev, headline: headline.trim(), cta_text: ctaText.trim(), hero_image_url: heroImageUrl } : prev));
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 2000);
+  }
+
+  async function handleHeroUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !session?.clientId) return;
+    if (file.size > 8 * 1024 * 1024) {
+      setHeroError("File too large. Max 8 MB.");
+      return;
+    }
+    setHeroError("");
+    setHeroUploading(true);
+    try {
+      const res = await fetch("/api/storage/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          clientId: session.clientId,
+          purpose: "hero",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to get upload URL");
+      const { uploadUrl, publicUrl } = (await res.json()) as { uploadUrl: string; publicUrl: string };
+      const putRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!putRes.ok) throw new Error("Upload failed");
+      setHeroImageUrl(publicUrl);
+      const saveRes = await fetch(`/api/clients/${session.clientId}/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hero_image_url: publicUrl }),
+      });
+      if (!saveRes.ok) throw new Error("Saved upload but failed to update profile");
+      setProfile((prev) => (prev ? { ...prev, hero_image_url: publicUrl } : prev));
+    } catch (err) {
+      setHeroError(err instanceof Error ? err.message : "Upload failed. Please try again.");
+    } finally {
+      setHeroUploading(false);
+      if (heroInputRef.current) heroInputRef.current.value = "";
+    }
+  }
+
+  async function clearHeroImage() {
+    if (!session?.clientId) return;
+    setHeroError("");
+    setHeroImageUrl(null);
+    const res = await fetch(`/api/clients/${session.clientId}/profile`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hero_image_url: null }),
+    });
+    if (!res.ok) {
+      setHeroError("Could not remove hero image.");
+      return;
+    }
+    setProfile((prev) => (prev ? { ...prev, hero_image_url: null } : prev));
   }
 
   async function saveBusiness() {
@@ -491,6 +562,51 @@ export default function CloudSettingsPage() {
               <div>
                 <label className={labelCls}>CTA button text</label>
                 <input type="text" value={ctaText} onChange={(e) => setCtaText(e.target.value)} placeholder="Get a Free Quote" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Hero background photo</label>
+                <p className="mb-2 text-[12px] text-[#6B7280] font-cloud-body">
+                  One wide photo behind your headline. A dark overlay is applied automatically so text stays readable.
+                </p>
+                {heroImageUrl && (
+                  <div className="relative mb-3 overflow-hidden rounded-xl border border-black/[0.08]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={heroImageUrl} alt="Hero background" className="h-36 w-full object-cover" />
+                    <div
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background:
+                          "linear-gradient(to top, rgba(8,7,6,0.75) 0%, rgba(8,7,6,0.35) 55%, rgba(8,7,6,0.45) 100%)",
+                      }}
+                      aria-hidden
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void clearHeroImage()}
+                      className="absolute right-2 top-2 rounded-lg bg-black/55 p-1.5 text-white backdrop-blur-sm hover:bg-black/70"
+                      aria-label="Remove hero photo"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                <input
+                  ref={heroInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => void handleHeroUpload(e)}
+                />
+                <button
+                  type="button"
+                  onClick={() => heroInputRef.current?.click()}
+                  disabled={heroUploading}
+                  className="flex items-center gap-2 rounded-xl border border-black/[0.08] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0a0a0a] hover:bg-black/[0.03] disabled:opacity-60 font-cloud-body"
+                >
+                  {heroUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                  {heroUploading ? "Uploading…" : heroImageUrl ? "Replace photo" : "Choose photo"}
+                </button>
+                {heroError && <p className="mt-2 text-[12px] text-red-500 font-cloud-body">{heroError}</p>}
               </div>
               <button onClick={() => void saveProfile()} disabled={savingProfile} className={saveBtnCls}>
                 {savingProfile ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}

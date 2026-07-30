@@ -117,70 +117,72 @@ export default async function PublicProjectsPage({ params }: { params: { slug: s
     .order("updated_at", { ascending: false });
 
   const typedProjects = (projects ?? []) as unknown as ProjectRow[];
-  const projectsWithPhotos = typedProjects
-    .map((project) => ({ project, coverUrl: getProjectCover(project) }))
-    .filter((entry): entry is { project: ProjectRow; coverUrl: string } => Boolean(entry.coverUrl));
+  const projectsWithCovers = typedProjects.map((project) => ({
+    project,
+    coverUrl: getProjectCover(project),
+  }));
 
-  if (projectsWithPhotos.length === 0) notFound();
+  if (projectsWithCovers.length === 0) notFound();
 
-  const featuredProjects = projectsWithPhotos.filter(({ project }) => project.is_featured);
-  const otherProjects = projectsWithPhotos.filter(({ project }) => !project.is_featured);
+  const featuredProjects = projectsWithCovers.filter(({ project }) => project.is_featured);
+  const otherProjects = projectsWithCovers.filter(({ project }) => !project.is_featured);
 
   return (
     <div
-      className="min-h-screen bg-[var(--fw-canvas)] [font-family:var(--fw-font-body)] text-[var(--fw-text-primary)]"
+      className="min-h-screen bg-white [font-family:var(--fw-font-body)] text-[var(--fw-text-primary)]"
       style={{ ["--brand" as string]: brandColor }}
     >
-      <header className="border-b border-[var(--fw-border)] bg-[var(--fw-card)]">
-        <div className="mx-auto flex max-w-5xl items-center gap-4 px-5 py-5 sm:px-8">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0f0e0c]/88 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center gap-4 px-5 py-4 sm:px-8">
           {showLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={client.logo_url!}
               alt={clientName}
-              className="h-12 w-12 shrink-0 rounded-xl object-contain"
+              className="h-10 w-10 shrink-0 rounded-[10px] object-contain bg-white/95 p-0.5"
             />
           ) : (
             <div
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--fw-soil)] text-sm font-bold text-[var(--fw-card)]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--brand)] text-sm font-bold text-white"
               aria-hidden
             >
               {getInitials(clientName)}
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate [font-family:var(--fw-font-display)] text-xl leading-tight">
+            <p className="truncate [font-family:var(--fw-font-display)] text-lg leading-tight text-white">
               {clientName}
             </p>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--fw-text-tertiary)]">
-              <ShieldCheck size={14} className="shrink-0 text-[var(--brand)]" aria-hidden />
-              Verified business
+            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/55">
+              <ShieldCheck size={13} className="shrink-0 text-[var(--brand)]" aria-hidden />
+              All projects
             </p>
           </div>
           <Link
             href={profileHref}
-            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-[var(--brand)] no-underline"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[12px] font-semibold text-white/90 no-underline backdrop-blur-sm transition-colors hover:bg-white/20"
           >
-            <ArrowLeft size={15} aria-hidden />
+            <ArrowLeft size={14} aria-hidden />
             Profile
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8 sm:py-14">
-        <section className="mb-12">
-          <div className="mb-4 flex items-center gap-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--brand)]">
+        <section className="mb-10">
+          <div className="mb-3 flex items-center gap-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand)]">
               Portfolio
             </p>
             <span className="h-px w-8 bg-[var(--brand)]" aria-hidden />
           </div>
-          <h1 className="mb-3 [font-family:var(--fw-font-display)] text-[clamp(28px,5vw,42px)] leading-[1.1] tracking-[-0.01em]">
+          <h1 className="mb-3 [font-family:var(--fw-font-display)] text-[clamp(32px,5vw,48px)] leading-[1.05] tracking-[-0.02em]">
             All projects
           </h1>
-          <p className="max-w-2xl text-base leading-relaxed text-[var(--fw-text-tertiary)]">
-            Explore {projectsWithPhotos.length} completed project{projectsWithPhotos.length === 1 ? "" : "s"} from{" "}
-            {clientName}. Featured work appears first.
+          <p className="max-w-2xl text-[15px] leading-relaxed text-[var(--fw-text-tertiary)]">
+            {projectsWithCovers.length} project{projectsWithCovers.length === 1 ? "" : "s"} from{" "}
+            {clientName}
+            {featuredProjects.length > 0 ? " · featured work first" : ""}.
           </p>
         </section>
 
@@ -189,7 +191,7 @@ export default async function PublicProjectsPage({ params }: { params: { slug: s
             <h2 className="mb-5 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--fw-text-tertiary)]">
               Featured
             </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
               {featuredProjects.map(({ project, coverUrl }) => {
                 const meta = getProjectMeta(project);
                 return (
@@ -199,7 +201,6 @@ export default async function PublicProjectsPage({ params }: { params: { slug: s
                     title={project.title}
                     meta={meta}
                     coverUrl={coverUrl}
-                    description={project.description}
                     featured
                   />
                 );
@@ -215,7 +216,7 @@ export default async function PublicProjectsPage({ params }: { params: { slug: s
                 More projects
               </h2>
             )}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
               {otherProjects.map(({ project, coverUrl }) => {
                 const meta = getProjectMeta(project);
                 return (
@@ -225,7 +226,6 @@ export default async function PublicProjectsPage({ params }: { params: { slug: s
                     title={project.title}
                     meta={meta}
                     coverUrl={coverUrl}
-                    description={project.description}
                   />
                 );
               })}
@@ -279,42 +279,53 @@ function ProjectCard({
   title,
   meta,
   coverUrl,
-  description,
   featured = false,
 }: {
   href: string;
   title: string;
   meta: string | null;
-  coverUrl: string;
-  description?: string | null;
+  coverUrl: string | null;
   featured?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="group relative overflow-hidden rounded-2xl border border-[var(--fw-border)] bg-[var(--fw-card)] transition-transform duration-200 hover:-translate-y-0.5"
+      className="group relative isolate overflow-hidden rounded-[18px] bg-[#1C1410] transition-transform duration-300 hover:-translate-y-1"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-[var(--fw-sunken)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={coverUrl}
-          alt={title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+      <div className="relative aspect-[4/5] overflow-hidden sm:aspect-[4/3]">
+        {coverUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={coverUrl}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-[color-mix(in_srgb,var(--brand)_28%,#1C1410)]">
+            <span className="text-sm font-semibold tracking-[0.04em] text-white/50 [font-family:var(--fw-font-display)]">
+              Project
+            </span>
+          </div>
+        )}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(8,7,6,0.90) 0%, rgba(8,7,6,0.32) 48%, rgba(8,7,6,0.10) 100%)",
+          }}
+          aria-hidden
         />
         {featured && (
           <span className="absolute left-3 top-3 rounded-full bg-[var(--brand)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--fw-text-primary)]">
             Featured
           </span>
         )}
-      </div>
-      <div className="p-4">
-        <p className="[font-family:var(--fw-font-display)] text-lg leading-tight">{title}</p>
-        {meta && <p className="mt-1 text-sm text-[var(--fw-text-tertiary)]">{meta}</p>}
-        {description?.trim() && (
-          <p className="mt-2 line-clamp-2 text-sm leading-snug text-[var(--fw-text-secondary)]">
-            {description.trim()}
+        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+          <p className="[font-family:var(--fw-font-display)] text-lg leading-tight tracking-[-0.01em] text-white">
+            {title}
           </p>
-        )}
+          {meta && <p className="mt-1 text-sm text-white/65">{meta}</p>}
+        </div>
       </div>
     </Link>
   );

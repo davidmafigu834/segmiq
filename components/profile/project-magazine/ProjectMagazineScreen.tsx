@@ -91,6 +91,7 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
   const metaLine = buildSpecMetaLine(specFields) ?? project.category;
   const completionLabel = formatCompletionDate(project.completion_date);
   const profileHref = `/p/${data.slug}`;
+  const projectsListHref = `/p/${data.slug}/projects`;
   const timelineSteps = project.timeline_steps;
 
   return (
@@ -118,7 +119,7 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
         <header className="relative z-[2] mx-auto mt-[18px] flex w-[calc(100%-44px)] max-w-[1040px] items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
-              href={`${profileHref}#work`}
+              href={projectsListHref}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/25 px-3.5 py-1.5 text-[12px] font-semibold text-white/90 no-underline backdrop-blur-sm transition-colors hover:bg-black/40"
             >
               ← Back to projects
@@ -386,7 +387,7 @@ export function ProjectMagazineScreen({ data }: { data: ProjectMagazineData }) {
                   <ArrowRight size={15} aria-hidden />
                 </a>
                 <a
-                  href={`${profileHref}#work`}
+                  href={projectsListHref}
                   className="inline-flex items-center justify-center rounded-[11px] border border-[rgba(247,244,239,0.28)] bg-transparent px-[26px] py-3.5 text-sm font-semibold tracking-[0.01em] text-[#F7F4EF] no-underline transition-colors hover:border-[#F7F4EF]"
                 >
                   See more projects

@@ -87,8 +87,9 @@ export type ProjectMagazineData = {
   pdfDirectUrl: string | null;
 };
 
+/** Dark enough that light/busy hero photos stay readable. */
 export const HERO_SCRIM =
-  "linear-gradient(to top, rgba(10,9,7,0.86) 0%, rgba(10,9,7,0.45) 42%, rgba(10,9,7,0.12) 72%, rgba(10,9,7,0.30) 100%), linear-gradient(105deg, rgba(10,9,7,0.55) 0%, rgba(10,9,7,0.10) 55%, transparent 80%)";
+  "linear-gradient(to top, rgba(8,7,6,0.94) 0%, rgba(8,7,6,0.72) 38%, rgba(8,7,6,0.48) 68%, rgba(8,7,6,0.58) 100%), linear-gradient(115deg, rgba(8,7,6,0.72) 0%, rgba(8,7,6,0.38) 48%, rgba(8,7,6,0.28) 100%)";
 
 const SPEC_ICONS: LucideIcon[] = [Zap, Battery, Sun, Shield, Clock, Check];
 
