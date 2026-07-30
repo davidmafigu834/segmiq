@@ -293,7 +293,7 @@ async function runMorningDigest(opts: {
 
   const userById = Object.fromEntries((users ?? []).map((u) => [u.id as string, u]));
 
-  for (const [uid, items] of byAssignee) {
+  for (const [uid, items] of Array.from(byAssignee.entries())) {
     const u = userById[uid];
     if (!u) {
       results.skipped += items.length;
@@ -594,7 +594,7 @@ export async function previewFollowUpReminders(
     if (!morningAssignees.has(uid)) morningAssignees.set(uid, []);
     morningAssignees.get(uid)!.push(item);
   }
-  for (const [uid, items] of morningAssignees) {
+  for (const [uid, items] of Array.from(morningAssignees.entries())) {
     const u = userById[uid];
     const prefs = parseSalesPrefs(u?.notification_prefs);
     let skip: string | null = null;
