@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   let followUpCallbacks: Awaited<ReturnType<typeof executeFollowUpReminders>> | undefined;
 
   try {
-    followUpCallbacks = await executeFollowUpReminders({ callbackOnly: true });
+    followUpCallbacks = await executeFollowUpReminders({ t30Only: true });
   } catch (e) {
     console.error("[cron check-leads] executeFollowUpReminders", e);
     errors.push(`followUpCallbacks: ${e instanceof Error ? e.message : String(e)}`);

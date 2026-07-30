@@ -1,18 +1,19 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notifyFollowUpReminder, type FollowUpReminderKind } from "@/lib/notifications";
 import { parseSalesPrefs } from "@/lib/notification-prefs";
-import type { LeadRow } from "@/types";
+import { sendWhatsApp } from "@/lib/messaging/provider";
+import { firstName } from "@/lib/messaging/whatsapp-vars";
+import { getPublicBaseUrl, magicLinkUrl } from "@/lib/constants";
 
 const ACTIVE_STATUSES = ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"] as const;
 
-/** How far ahead/behind callback_at we consider a lead due for a reminder. */
-const CALLBACK_WINDOW_MS = {
-  before: 15 * 60 * 1000,
-  after: 30 * 60 * 1000,
+/** Catch the T-30 mark once with the every-minute cron (28–32 minutes before). */
+const T30_WINDOW_MS = {
+  minUntil: 28 * 60 * 1000,
+  maxUntil: 32 * 60 * 1000,
 };
 
 type LeadWithClient = LeadRow & {
-  clients?: { twilio_whatsapp_override: string | null } | null;
+  clients?: { name?: string | null; twilio_whatsapp_override?: string | null } | null;
 };
 
 export type FollowUpBatchResult = {
@@ -27,16 +28,18 @@ export type FollowUpReminderResult = {
   ok: boolean;
   date: string;
   timezone: string;
+  morning: FollowUpBatchResult;
+  t30Rep: FollowUpBatchResult;
+  t30Lead: FollowUpBatchResult;
+  /** @deprecated alias of morning */
   due: FollowUpBatchResult;
+  /** @deprecated unused — empty */
   prep: FollowUpBatchResult;
+  /** @deprecated alias of t30Rep */
   callback: FollowUpBatchResult;
-  /** @deprecated Use due.whatsappSent + prep.whatsappSent + callback.whatsappSent */
   sent: number;
-  /** @deprecated Use due.whatsappFailed + prep.whatsappFailed + callback.whatsappFailed */
   failed: number;
-  /** @deprecated Use due.skipped + prep.skipped + callback.skipped */
   skipped: number;
-  /** @deprecated Use due.totalLeads + prep.totalLeads + callback.totalLeads */
   totalLeads: number;
   dryRun?: boolean;
 };
@@ -46,8 +49,8 @@ export type FollowUpPreviewLead = {
   leadName: string | null;
   followUpDate: string | null;
   callbackAt: string | null;
-  kind: FollowUpReminderKind | "callback";
-  batch: "due" | "prep" | "callback";
+  kind: "morning" | "t30_rep" | "t30_lead";
+  batch: "morning" | "t30_rep" | "t30_lead";
   assigneeId: string;
   assigneeName: string | null;
   assigneePhone: string | null;
@@ -59,18 +62,18 @@ export type FollowUpPreviewResult = {
   today: string;
   tomorrow: string;
   leads: FollowUpPreviewLead[];
-  counts: { due: number; prep: number; callback: number };
+  counts: { morning: number; t30Rep: number; t30Lead: number; due: number; prep: number; callback: number };
 };
 
 export type FollowUpRemindersOptions = {
-  /** List matches only — no WhatsApp or in-app writes. */
   dryRun?: boolean;
-  /** Ignore dedup (agency test). */
   force?: boolean;
-  /** Limit to one lead (agency test). */
   leadId?: string;
-  /** Only process callback_at window (for every-minute cron). Due/prep run on the daily job. */
+  /** Every-minute cron: only T-30 reminders. Daily cron runs morning digest. */
+  t30Only?: boolean;
+  /** @deprecated use t30Only */
   callbackOnly?: boolean;
+  morningOnly?: boolean;
 };
 
 const EMPTY_BATCH: FollowUpBatchResult = {
@@ -85,10 +88,9 @@ export function getFollowUpTimezone(): string {
   return process.env.DEFAULT_TIMEZONE?.trim() || "Africa/Harare";
 }
 
-function localDateParts(tz: string, now = new Date()): { y: number; mo: number; day: number; dateStr: string } {
+function localDateParts(tz: string, now = new Date()): { dateStr: string } {
   const dateStr = now.toLocaleDateString("en-CA", { timeZone: tz });
-  const [y, mo, day] = dateStr.split("-").map((n) => parseInt(n, 10));
-  return { y, mo: mo - 1, day, dateStr };
+  return { dateStr };
 }
 
 function addLocalDays(dateStr: string, delta: number): string {
@@ -113,188 +115,198 @@ function startOfLocalDayIso(tz: string, now = new Date()): string {
   return new Date(probe.getTime() - msIntoDay).toISOString();
 }
 
-async function fetchAlreadySentLeadIds(
-  leadIds: string[],
-  notificationTypes: string[],
-  sinceIso: string
-): Promise<Set<string>> {
-  if (leadIds.length === 0) return new Set();
-  const supabase = createAdminClient();
-  const { data: rows } = await supabase
-    .from("message_logs")
-    .select("lead_id")
-    .in("lead_id", leadIds)
-    .in("notification_type", notificationTypes)
-    .in("status", ["sent", "pending"])
-    .eq("channel", "whatsapp")
-    .gte("created_at", sinceIso);
-
-  return new Set((rows ?? []).map((r) => r.lead_id as string));
+function endOfLocalDayIso(tz: string, now = new Date()): string {
+  const start = new Date(startOfLocalDayIso(tz, now)).getTime();
+  return new Date(start + 24 * 60 * 60 * 1000).toISOString();
 }
 
-async function fetchCallbackSentSince(leadId: string, sinceIso: string): Promise<boolean> {
-  const supabase = createAdminClient();
-  const { count } = await supabase
-    .from("message_logs")
-    .select("id", { count: "exact", head: true })
-    .eq("lead_id", leadId)
-    .eq("notification_type", "FOLLOW_UP_DUE")
-    .eq("channel", "whatsapp")
-    .in("status", ["sent", "pending"])
-    .gte("created_at", sinceIso);
-
-  return (count ?? 0) > 0;
-}
-
-/** Returns true if this process owns the send; false if another cron already claimed it. */
-async function claimFollowUpSend(
-  leadId: string,
-  kind: "due" | "prep" | "callback",
-  periodKey: string
-): Promise<boolean> {
-  const supabase = createAdminClient();
-  const { error } = await supabase.from("follow_up_reminder_claims").insert({
-    lead_id: leadId,
-    kind,
-    period_key: periodKey,
+function formatLocalTime(iso: string, tz: string): string {
+  return new Date(iso).toLocaleTimeString("en-GB", {
+    timeZone: tz,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   });
+}
+
+/** Returns true if this process owns the send. */
+async function claimReminderSend(claimKey: string): Promise<boolean> {
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("reminder_send_claims").insert({ claim_key: claimKey });
 
   if (!error) return true;
-
-  // Unique violation = already claimed
   if (error.code === "23505") return false;
 
-  // Table missing (migration not applied yet) — fall back to message_logs dedupe only
-  if (
-    error.message?.includes("follow_up_reminder_claims") ||
-    error.message?.includes("does not exist")
-  ) {
-    console.warn("[follow-up-reminders] claims table missing; relying on message_logs dedupe");
+  // Fallback if 085 not applied — allow send (message_logs + narrow T-30 window limit spam)
+  if (error.message?.includes("reminder_send_claims") || error.message?.includes("does not exist")) {
+    console.warn("[follow-up-reminders] reminder_send_claims missing; apply migration 085");
     return true;
   }
 
   console.error("[follow-up-reminders] claim failed", error);
-  // Fail closed for unknown errors to avoid spam storms
   return false;
 }
 
-type CallbackCandidate = {
+type ScheduledFollowUp = {
   lead: LeadWithClient;
-  callbackAt: string;
+  callbackAt: string | null;
+  timeLabel: string;
 };
 
-async function fetchCallbackCandidates(leadIdFilter?: string): Promise<CallbackCandidate[]> {
+async function fetchTodaysFollowUps(
+  tz: string,
+  todayStr: string,
+  leadIdFilter?: string
+): Promise<ScheduledFollowUp[]> {
+  const supabase = createAdminClient();
+  const dayStart = startOfLocalDayIso(tz);
+  const dayEnd = endOfLocalDayIso(tz);
+
+  let byDateQuery = supabase
+    .from("leads")
+    .select("*, clients ( name, twilio_whatsapp_override )")
+    .eq("follow_up_date", todayStr)
+    .in("status", [...ACTIVE_STATUSES])
+    .not("assigned_to_id", "is", null);
+
+  if (leadIdFilter) byDateQuery = byDateQuery.eq("id", leadIdFilter);
+
+  let callbackQuery = supabase
+    .from("call_logs")
+    .select(
+      "id, lead_id, callback_at, created_at, leads!inner ( *, clients ( name, twilio_whatsapp_override ) )"
+    )
+    .not("callback_at", "is", null)
+    .gte("callback_at", dayStart)
+    .lt("callback_at", dayEnd)
+    .order("created_at", { ascending: false });
+
+  if (leadIdFilter) callbackQuery = callbackQuery.eq("lead_id", leadIdFilter);
+
+  const [{ data: byDateRows }, { data: callbackRows, error: cbErr }] = await Promise.all([
+    byDateQuery,
+    callbackQuery,
+  ]);
+
+  if (cbErr) throw new Error(`follow-up today callbacks: ${cbErr.message}`);
+
+  const byLead = new Map<string, ScheduledFollowUp>();
+
+  for (const row of callbackRows ?? []) {
+    const lid = row.lead_id as string;
+    if (byLead.has(lid)) continue;
+    const leadRaw = (row as { leads: LeadWithClient | LeadWithClient[] }).leads;
+    const lead = Array.isArray(leadRaw) ? leadRaw[0] : leadRaw;
+    if (!lead?.assigned_to_id) continue;
+    if (!(ACTIVE_STATUSES as readonly string[]).includes(lead.status as string)) continue;
+    const callbackAt = row.callback_at as string;
+    byLead.set(lid, {
+      lead,
+      callbackAt,
+      timeLabel: formatLocalTime(callbackAt, tz),
+    });
+  }
+
+  for (const lead of (byDateRows ?? []) as LeadWithClient[]) {
+    const lid = lead.id as string;
+    if (byLead.has(lid)) continue;
+    byLead.set(lid, {
+      lead,
+      callbackAt: null,
+      timeLabel: "time TBD",
+    });
+  }
+
+  return Array.from(byLead.values()).sort((a, b) => {
+    const at = a.callbackAt ? new Date(a.callbackAt).getTime() : Number.MAX_SAFE_INTEGER;
+    const bt = b.callbackAt ? new Date(b.callbackAt).getTime() : Number.MAX_SAFE_INTEGER;
+    return at - bt;
+  });
+}
+
+async function fetchT30Candidates(leadIdFilter?: string): Promise<
+  { lead: LeadWithClient; callbackAt: string }[]
+> {
   const supabase = createAdminClient();
   const now = Date.now();
-  const windowStart = new Date(now - CALLBACK_WINDOW_MS.after).toISOString();
-  const windowEnd = new Date(now + CALLBACK_WINDOW_MS.before).toISOString();
+  const windowStart = new Date(now + T30_WINDOW_MS.minUntil).toISOString();
+  const windowEnd = new Date(now + T30_WINDOW_MS.maxUntil).toISOString();
 
   let query = supabase
     .from("call_logs")
     .select(
-      "id, lead_id, callback_at, created_at, leads!inner ( *, clients ( twilio_whatsapp_override ) )"
+      "id, lead_id, callback_at, created_at, leads!inner ( *, clients ( name, twilio_whatsapp_override ) )"
     )
     .not("callback_at", "is", null)
     .gte("callback_at", windowStart)
     .lte("callback_at", windowEnd)
     .order("created_at", { ascending: false });
 
-  if (leadIdFilter) {
-    query = query.eq("lead_id", leadIdFilter);
-  }
+  if (leadIdFilter) query = query.eq("lead_id", leadIdFilter);
 
   const { data: logs, error } = await query;
-  if (error) throw new Error(`follow-up-reminders callback query: ${error.message}`);
+  if (error) throw new Error(`follow-up T-30 query: ${error.message}`);
 
   const seen = new Set<string>();
-  const candidates: CallbackCandidate[] = [];
+  const out: { lead: LeadWithClient; callbackAt: string }[] = [];
 
   for (const row of logs ?? []) {
     const lid = row.lead_id as string;
     if (seen.has(lid)) continue;
     seen.add(lid);
-
     const leadRaw = (row as { leads: LeadWithClient | LeadWithClient[] }).leads;
     const lead = Array.isArray(leadRaw) ? leadRaw[0] : leadRaw;
     if (!lead?.assigned_to_id) continue;
     if (!(ACTIVE_STATUSES as readonly string[]).includes(lead.status as string)) continue;
-
-    candidates.push({
-      lead,
-      callbackAt: row.callback_at as string,
-    });
+    out.push({ lead, callbackAt: row.callback_at as string });
   }
 
-  return candidates;
+  return out;
 }
 
-async function runFollowUpBatch(opts: {
-  notificationType: "FOLLOW_UP_DUE" | "FOLLOW_UP_PREP";
-  resolveKind: (followUpDate: string, todayStr: string) => FollowUpReminderKind;
-  inAppMessage: (leadName: string, kind: FollowUpReminderKind) => string;
-  leads: LeadWithClient[];
+async function runMorningDigest(opts: {
+  items: ScheduledFollowUp[];
   todayStr: string;
-  startOfTodayIso: string;
+  tz: string;
   dryRun?: boolean;
   force?: boolean;
 }): Promise<FollowUpBatchResult> {
+  const results: FollowUpBatchResult = { ...EMPTY_BATCH };
+  const byAssignee = new Map<string, ScheduledFollowUp[]>();
+
+  for (const item of opts.items) {
+    const uid = item.lead.assigned_to_id as string;
+    if (!byAssignee.has(uid)) byAssignee.set(uid, []);
+    byAssignee.get(uid)!.push(item);
+  }
+
+  results.totalLeads = opts.items.length;
+  if (byAssignee.size === 0) return results;
+
   const supabase = createAdminClient();
-  const results: FollowUpBatchResult = {
-    totalLeads: 0,
-    whatsappSent: 0,
-    whatsappFailed: 0,
-    skipped: 0,
-    inAppCreated: 0,
-  };
-
-  const leads = opts.leads;
-  results.totalLeads = leads.length;
-  if (leads.length === 0) return results;
-
-  const assigneeIds = Array.from(new Set(leads.map((l) => l.assigned_to_id as string)));
   const { data: users } = await supabase
     .from("users")
     .select("id, name, email, phone, notification_prefs, is_active")
-    .in("id", assigneeIds)
+    .in("id", Array.from(byAssignee.keys()))
     .eq("is_active", true);
 
   const userById = Object.fromEntries((users ?? []).map((u) => [u.id as string, u]));
-  const leadIds = leads.map((l) => l.id as string);
 
-  const alreadySentIds = opts.force
-    ? new Set<string>()
-    : await fetchAlreadySentLeadIds(leadIds, [opts.notificationType], opts.startOfTodayIso);
-
-  for (const lead of leads) {
-    if (alreadySentIds.has(lead.id as string)) {
-      results.skipped++;
-      continue;
-    }
-
-    const uid = lead.assigned_to_id as string;
+  for (const [uid, items] of byAssignee) {
     const u = userById[uid];
     if (!u) {
-      results.skipped++;
+      results.skipped += items.length;
       continue;
     }
-
-    const spPrefs = parseSalesPrefs((u as { notification_prefs?: unknown }).notification_prefs);
-    if (!spPrefs.followUpReminders) {
-      results.skipped++;
+    const prefs = parseSalesPrefs((u as { notification_prefs?: unknown }).notification_prefs);
+    if (!prefs.followUpReminders) {
+      results.skipped += items.length;
       continue;
     }
-
-    const followUpDate = String(lead.follow_up_date ?? "");
-    const kind = opts.resolveKind(followUpDate, opts.todayStr);
-    const leadName = lead.name ?? "lead";
-    const claimKind = opts.notificationType === "FOLLOW_UP_PREP" ? "prep" : "due";
-    const periodKey =
-      opts.notificationType === "FOLLOW_UP_PREP" ? followUpDate : opts.todayStr;
-
     if (!opts.force && !opts.dryRun) {
-      const claimed = await claimFollowUpSend(lead.id as string, claimKind, periodKey);
+      const claimed = await claimReminderSend(`morning:${uid}:${opts.todayStr}`);
       if (!claimed) {
-        results.skipped++;
+        results.skipped += items.length;
         continue;
       }
     }
@@ -304,72 +316,65 @@ async function runFollowUpBatch(opts: {
       continue;
     }
 
-    const salesperson = {
-      id: u.id as string,
-      name: u.name as string,
-      phone: (u.phone as string | null) ?? null,
-      email: (u.email as string | null) ?? null,
-    };
-    const override = lead.clients?.twilio_whatsapp_override ?? null;
+    const lines = items
+      .slice(0, 8)
+      .map((i) => `${i.lead.name ?? "Lead"} at ${i.timeLabel}`)
+      .join("; ");
+    const extra = items.length > 8 ? ` (+${items.length - 8} more)` : "";
+    const scheduleText = `${items.length} follow-up(s) today: ${lines}${extra}`;
+    const followUpsUrl = `${getPublicBaseUrl()}/sales/followups`;
+    const firstLead = items[0]!.lead;
+    const override = firstLead.clients?.twilio_whatsapp_override ?? null;
 
     try {
-      const notifyResult = await notifyFollowUpReminder(
-        lead as LeadRow,
-        salesperson,
-        kind,
-        followUpDate,
-        override,
-        spPrefs
-      );
-
-      if (notifyResult.ok && notifyResult.whatsappSent) {
-        results.whatsappSent++;
-      } else if ("skipped" in notifyResult && notifyResult.skipped) {
-        results.skipped++;
-        if (notifyResult.reason === "no_phone") {
-          const { error: insErr } = await supabase.from("notifications").insert({
-            user_id: uid,
-            type: opts.notificationType,
-            message: opts.inAppMessage(leadName, kind),
-            read: false,
-            lead_id: lead.id,
-          });
-          if (!insErr) results.inAppCreated++;
-        }
-        continue;
-      } else {
-        results.whatsappFailed++;
-        continue;
-      }
-
-      const { error: insErr } = await supabase.from("notifications").insert({
-        user_id: uid,
-        type: opts.notificationType,
-        message: opts.inAppMessage(leadName, kind),
-        read: false,
-        lead_id: lead.id,
+      const r = await sendWhatsApp({
+        to: (u.phone as string | null) ?? null,
+        toOverride: override,
+        template: "FOLLOW_UP_REMINDER",
+        variables: {
+          "1": firstName(u.name as string),
+          "2": `${items.length} meeting(s)`,
+          "3": scheduleText,
+          "4": followUpsUrl,
+        },
+        fallbackBody: `Good morning ${firstName(u.name as string)}. ${scheduleText}`,
+        context: {
+          userId: uid,
+          leadId: firstLead.id,
+          clientId: firstLead.client_id,
+          notificationType: "FOLLOW_UP_DUE",
+        },
       });
 
-      if (insErr) {
-        console.error("[follow-up-reminders] notification insert failed", insErr);
-      } else {
+      if (r.ok) {
+        results.whatsappSent++;
+        await supabase.from("notifications").insert({
+          user_id: uid,
+          type: "FOLLOW_UP_DUE",
+          message: `Today: ${scheduleText}`,
+          read: false,
+          lead_id: firstLead.id,
+        });
         results.inAppCreated++;
+      } else {
+        results.whatsappFailed++;
+        console.error("[follow-up-reminders] morning digest failed", r.error, { userId: uid });
       }
     } catch (e) {
-      console.error(`[follow-up-reminders] lead ${lead.id}:`, e);
       results.whatsappFailed++;
+      console.error("[follow-up-reminders] morning digest", e);
     }
   }
 
   return results;
 }
 
-async function runCallbackBatch(opts: {
-  candidates: CallbackCandidate[];
+async function runT30Rep(opts: {
+  candidates: { lead: LeadWithClient; callbackAt: string }[];
+  tz: string;
   dryRun?: boolean;
   force?: boolean;
 }): Promise<FollowUpBatchResult> {
-  const supabase = createAdminClient();
   const results: FollowUpBatchResult = {
     totalLeads: opts.candidates.length,
     whatsappSent: 0,
@@ -377,18 +382,15 @@ async function runCallbackBatch(opts: {
     skipped: 0,
     inAppCreated: 0,
   };
-
   if (opts.candidates.length === 0) return results;
 
-  const assigneeIds = Array.from(
-    new Set(opts.candidates.map((c) => c.lead.assigned_to_id as string))
-  );
+  const supabase = createAdminClient();
+  const assigneeIds = Array.from(new Set(opts.candidates.map((c) => c.lead.assigned_to_id as string)));
   const { data: users } = await supabase
     .from("users")
     .select("id, name, email, phone, notification_prefs, is_active")
     .in("id", assigneeIds)
     .eq("is_active", true);
-
   const userById = Object.fromEntries((users ?? []).map((u) => [u.id as string, u]));
 
   for (const { lead, callbackAt } of opts.candidates) {
@@ -398,27 +400,14 @@ async function runCallbackBatch(opts: {
       results.skipped++;
       continue;
     }
-
-    const spPrefs = parseSalesPrefs((u as { notification_prefs?: unknown }).notification_prefs);
-    if (!spPrefs.followUpReminders) {
+    const prefs = parseSalesPrefs((u as { notification_prefs?: unknown }).notification_prefs);
+    if (!prefs.followUpReminders) {
       results.skipped++;
       continue;
     }
 
-    if (!opts.force) {
-      const dedupeSince = new Date(new Date(callbackAt).getTime() - 60 * 60 * 1000).toISOString();
-      const alreadySent = await fetchCallbackSentSince(lead.id as string, dedupeSince);
-      if (alreadySent) {
-        results.skipped++;
-        continue;
-      }
-    }
-
-    const followUpDate = String(lead.follow_up_date ?? callbackAt.slice(0, 10));
-    const leadName = lead.name ?? "lead";
-
     if (!opts.force && !opts.dryRun) {
-      const claimed = await claimFollowUpSend(lead.id as string, "callback", callbackAt);
+      const claimed = await claimReminderSend(`t30_rep:${lead.id}:${callbackAt}`);
       if (!claimed) {
         results.skipped++;
         continue;
@@ -430,81 +419,145 @@ async function runCallbackBatch(opts: {
       continue;
     }
 
-    const salesperson = {
-      id: u.id as string,
-      name: u.name as string,
-      phone: (u.phone as string | null) ?? null,
-      email: (u.email as string | null) ?? null,
-    };
+    const timeLabel = formatLocalTime(callbackAt, opts.tz);
     const override = lead.clients?.twilio_whatsapp_override ?? null;
+    const magicToken = lead.magic_token ?? "";
+    const leadLink = magicToken ? magicLinkUrl(magicToken) : getPublicBaseUrl();
 
     try {
-      const notifyResult = await notifyFollowUpReminder(
-        lead as LeadRow,
-        salesperson,
-        "due",
-        followUpDate,
-        override,
-        spPrefs
-      );
-
-      if (notifyResult.ok && notifyResult.whatsappSent) {
-        results.whatsappSent++;
-      } else if ("skipped" in notifyResult && notifyResult.skipped) {
-        results.skipped++;
-        if (notifyResult.reason === "no_phone") {
-          const { error: insErr } = await supabase.from("notifications").insert({
-            user_id: uid,
-            type: "FOLLOW_UP_DUE",
-            message: `Callback due: call ${leadName}`,
-            read: false,
-            lead_id: lead.id,
-          });
-          if (!insErr) results.inAppCreated++;
-        }
-        continue;
-      } else {
-        results.whatsappFailed++;
-        continue;
-      }
-
-      const { error: insErr } = await supabase.from("notifications").insert({
-        user_id: uid,
-        type: "FOLLOW_UP_DUE",
-        message: `Callback due: call ${leadName}`,
-        read: false,
-        lead_id: lead.id,
+      const r = await sendWhatsApp({
+        to: (u.phone as string | null) ?? null,
+        toOverride: override,
+        template: "FOLLOW_UP_REMINDER",
+        variables: {
+          "1": firstName(u.name as string),
+          "2": lead.name || "lead",
+          "3": `Meeting in 30 minutes (at ${timeLabel}).`,
+          "4": leadLink,
+        },
+        fallbackBody: `${firstName(u.name as string)}, meeting with ${lead.name ?? "lead"} in 30 minutes (${timeLabel}).`,
+        context: {
+          userId: uid,
+          leadId: lead.id,
+          clientId: lead.client_id,
+          notificationType: "FOLLOW_UP_DUE",
+        },
       });
 
-      if (!insErr) results.inAppCreated++;
+      if (r.ok) {
+        results.whatsappSent++;
+        await supabase.from("notifications").insert({
+          user_id: uid,
+          type: "FOLLOW_UP_DUE",
+          message: `In 30 min (${timeLabel}): call ${lead.name ?? "lead"}`,
+          read: false,
+          lead_id: lead.id,
+        });
+        results.inAppCreated++;
+      } else if (r.errorCode === "SKIPPED_NO_PHONE") {
+        results.skipped++;
+      } else {
+        results.whatsappFailed++;
+      }
     } catch (e) {
-      console.error(`[follow-up-reminders] callback lead ${lead.id}:`, e);
       results.whatsappFailed++;
+      console.error(`[follow-up-reminders] t30_rep ${lead.id}:`, e);
     }
   }
 
   return results;
 }
 
-function skipReasonForLead(
-  lead: LeadWithClient,
-  userById: Record<string, { phone?: string | null; notification_prefs?: unknown; is_active?: boolean }>,
-  alreadySent: boolean,
-  batch: "due" | "prep" | "callback"
-): string | null {
-  if (alreadySent) return `Already sent ${batch} reminder today`;
-  const uid = lead.assigned_to_id as string | null;
-  if (!uid) return "No assignee";
-  const u = userById[uid];
-  if (!u) return "Assignee inactive or missing";
-  const prefs = parseSalesPrefs(u.notification_prefs);
-  if (!prefs.followUpReminders) return "Follow-up reminders disabled in rep preferences";
-  if (!u.phone?.trim()) return "Rep has no phone number";
-  return null;
+async function runT30Lead(opts: {
+  candidates: { lead: LeadWithClient; callbackAt: string }[];
+  tz: string;
+  dryRun?: boolean;
+  force?: boolean;
+}): Promise<FollowUpBatchResult> {
+  const results: FollowUpBatchResult = {
+    totalLeads: opts.candidates.length,
+    whatsappSent: 0,
+    whatsappFailed: 0,
+    skipped: 0,
+    inAppCreated: 0,
+  };
+  if (opts.candidates.length === 0) return results;
+
+  const supabase = createAdminClient();
+
+  for (const { lead, callbackAt } of opts.candidates) {
+    if (!lead.phone?.trim()) {
+      results.skipped++;
+      continue;
+    }
+
+    if (!opts.force && !opts.dryRun) {
+      const claimed = await claimReminderSend(`t30_lead:${lead.id}:${callbackAt}`);
+      if (!claimed) {
+        results.skipped++;
+        continue;
+      }
+    }
+
+    if (opts.dryRun) {
+      results.whatsappSent++;
+      continue;
+    }
+
+    const timeLabel = formatLocalTime(callbackAt, opts.tz);
+    const company = (lead.clients?.name as string | null)?.trim() || "us";
+    let repLabel = company;
+    if (lead.assigned_to_id) {
+      const { data: rep } = await supabase
+        .from("users")
+        .select("name")
+        .eq("id", lead.assigned_to_id)
+        .maybeSingle();
+      const repName = (rep?.name as string | null)?.trim();
+      if (repName) repLabel = `${firstName(repName)} at ${company}`;
+    }
+
+    const prospectFirst = firstName(lead.name);
+    const body = `Reminder: we have a meeting at ${timeLabel} today. Looking forward to speaking with you.`;
+    const magicToken = lead.magic_token ?? "";
+    const leadLink = magicToken ? magicLinkUrl(magicToken) : getPublicBaseUrl();
+
+    try {
+      const r = await sendWhatsApp({
+        to: lead.phone,
+        toOverride: lead.clients?.twilio_whatsapp_override ?? null,
+        template: "SEND_CUSTOM_MESSAGE",
+        variables: {
+          "1": prospectFirst,
+          "2": repLabel,
+          "3": body,
+        },
+        fallbackBody: `Hi ${prospectFirst}, a quick note from ${repLabel}: ${body}`,
+        context: {
+          userId: lead.assigned_to_id,
+          leadId: lead.id,
+          clientId: lead.client_id,
+          notificationType: "FOLLOW_UP_PREP",
+        },
+      });
+
+      if (r.ok) {
+        results.whatsappSent++;
+      } else {
+        results.whatsappFailed++;
+        console.error("[follow-up-reminders] t30_lead failed", r.error, { leadId: lead.id, leadLink });
+      }
+    } catch (e) {
+      results.whatsappFailed++;
+      console.error(`[follow-up-reminders] t30_lead ${lead.id}:`, e);
+    }
+  }
+
+  return results;
 }
 
 /**
- * Preview which leads would receive reminders (no sends).
+ * Preview which reminders would fire (no sends).
  */
 export async function previewFollowUpReminders(
   opts: FollowUpRemindersOptions = {}
@@ -512,125 +565,88 @@ export async function previewFollowUpReminders(
   const tz = getFollowUpTimezone();
   const { dateStr: todayStr } = localDateParts(tz);
   const tomorrowStr = addLocalDays(todayStr, 1);
-  const startOfTodayIso = startOfLocalDayIso(tz);
-  const supabase = createAdminClient();
 
-  let dueQuery = supabase
-    .from("leads")
-    .select("*, clients ( twilio_whatsapp_override )")
-    .lte("follow_up_date", todayStr)
-    .in("status", [...ACTIVE_STATUSES])
-    .not("assigned_to_id", "is", null)
-    .not("follow_up_date", "is", null);
-
-  let prepQuery = supabase
-    .from("leads")
-    .select("*, clients ( twilio_whatsapp_override )")
-    .eq("follow_up_date", tomorrowStr)
-    .in("status", [...ACTIVE_STATUSES])
-    .not("assigned_to_id", "is", null);
-
-  if (opts.leadId) {
-    dueQuery = dueQuery.eq("id", opts.leadId);
-    prepQuery = prepQuery.eq("id", opts.leadId);
-  }
-
-  const [{ data: dueRows }, { data: prepRows }, callbackCandidates] = await Promise.all([
-    dueQuery,
-    prepQuery,
-    fetchCallbackCandidates(opts.leadId),
+  const [todayItems, t30] = await Promise.all([
+    fetchTodaysFollowUps(tz, todayStr, opts.leadId),
+    fetchT30Candidates(opts.leadId),
   ]);
 
-  const dueLeads = (dueRows ?? []) as LeadWithClient[];
-  const prepLeads = (prepRows ?? []) as LeadWithClient[];
-
-  const allAssigneeIds = Array.from(
+  const supabase = createAdminClient();
+  const assigneeIds = Array.from(
     new Set([
-      ...dueLeads.map((l) => l.assigned_to_id as string),
-      ...prepLeads.map((l) => l.assigned_to_id as string),
-      ...callbackCandidates.map((c) => c.lead.assigned_to_id as string),
+      ...todayItems.map((i) => i.lead.assigned_to_id as string),
+      ...t30.map((c) => c.lead.assigned_to_id as string),
     ])
   );
-
   const { data: users } = await supabase
     .from("users")
     .select("id, name, phone, notification_prefs, is_active")
-    .in("id", allAssigneeIds.length ? allAssigneeIds : ["00000000-0000-0000-0000-000000000000"]);
-
+    .in("id", assigneeIds.length ? assigneeIds : ["00000000-0000-0000-0000-000000000000"]);
   const userById = Object.fromEntries((users ?? []).map((u) => [u.id as string, u]));
-
-  const dueSentIds = await fetchAlreadySentLeadIds(
-    dueLeads.map((l) => l.id as string),
-    ["FOLLOW_UP_DUE"],
-    startOfTodayIso
-  );
-  const prepSentIds = await fetchAlreadySentLeadIds(
-    prepLeads.map((l) => l.id as string),
-    ["FOLLOW_UP_PREP"],
-    startOfTodayIso
-  );
 
   const leads: FollowUpPreviewLead[] = [];
 
-  for (const lead of dueLeads) {
-    const uid = lead.assigned_to_id as string;
+  // One preview row per assignee for morning digest
+  const morningAssignees = new Map<string, ScheduledFollowUp[]>();
+  for (const item of todayItems) {
+    const uid = item.lead.assigned_to_id as string;
+    if (!morningAssignees.has(uid)) morningAssignees.set(uid, []);
+    morningAssignees.get(uid)!.push(item);
+  }
+  for (const [uid, items] of morningAssignees) {
     const u = userById[uid];
-    const followUpDate = String(lead.follow_up_date ?? "");
-    const kind: FollowUpReminderKind = followUpDate < todayStr ? "overdue" : "due";
+    const prefs = parseSalesPrefs(u?.notification_prefs);
+    let skip: string | null = null;
+    if (!u) skip = "Assignee inactive or missing";
+    else if (!prefs.followUpReminders) skip = "Follow-up reminders disabled";
+    else if (!u.phone?.trim()) skip = "Rep has no phone number";
     leads.push({
-      leadId: lead.id as string,
-      leadName: lead.name,
-      followUpDate,
+      leadId: items[0]!.lead.id as string,
+      leadName: `${items.length} follow-up(s)`,
+      followUpDate: todayStr,
       callbackAt: null,
-      kind,
-      batch: "due",
+      kind: "morning",
+      batch: "morning",
       assigneeId: uid,
       assigneeName: (u?.name as string | null) ?? null,
       assigneePhone: (u?.phone as string | null) ?? null,
-      wouldSkipReason: skipReasonForLead(lead, userById, dueSentIds.has(lead.id as string), "due"),
+      wouldSkipReason: skip,
     });
   }
 
-  for (const lead of prepLeads) {
+  for (const { lead, callbackAt } of t30) {
     const uid = lead.assigned_to_id as string;
     const u = userById[uid];
-    leads.push({
-      leadId: lead.id as string,
-      leadName: lead.name,
-      followUpDate: String(lead.follow_up_date ?? ""),
-      callbackAt: null,
-      kind: "prep",
-      batch: "prep",
-      assigneeId: uid,
-      assigneeName: (u?.name as string | null) ?? null,
-      assigneePhone: (u?.phone as string | null) ?? null,
-      wouldSkipReason: skipReasonForLead(lead, userById, prepSentIds.has(lead.id as string), "prep"),
-    });
-  }
+    const prefs = parseSalesPrefs(u?.notification_prefs);
+    let skipRep: string | null = null;
+    if (!u) skipRep = "Assignee inactive or missing";
+    else if (!prefs.followUpReminders) skipRep = "Follow-up reminders disabled";
+    else if (!u.phone?.trim()) skipRep = "Rep has no phone number";
 
-  for (const { lead, callbackAt } of callbackCandidates) {
-    const uid = lead.assigned_to_id as string;
-    const u = userById[uid];
-    let wouldSkip: string | null = null;
-    if (!opts.force) {
-      const dedupeSince = new Date(new Date(callbackAt).getTime() - 60 * 60 * 1000).toISOString();
-      const alreadySent = await fetchCallbackSentSince(lead.id as string, dedupeSince);
-      if (alreadySent) wouldSkip = "Callback reminder already sent for this schedule";
-    }
-    if (!wouldSkip) {
-      wouldSkip = skipReasonForLead(lead, userById, false, "callback");
-    }
     leads.push({
       leadId: lead.id as string,
       leadName: lead.name,
       followUpDate: lead.follow_up_date,
       callbackAt,
-      kind: "callback",
-      batch: "callback",
+      kind: "t30_rep",
+      batch: "t30_rep",
       assigneeId: uid,
       assigneeName: (u?.name as string | null) ?? null,
       assigneePhone: (u?.phone as string | null) ?? null,
-      wouldSkipReason: wouldSkip,
+      wouldSkipReason: skipRep,
+    });
+
+    leads.push({
+      leadId: lead.id as string,
+      leadName: lead.name,
+      followUpDate: lead.follow_up_date,
+      callbackAt,
+      kind: "t30_lead",
+      batch: "t30_lead",
+      assigneeId: uid,
+      assigneeName: (u?.name as string | null) ?? null,
+      assigneePhone: lead.phone,
+      wouldSkipReason: lead.phone?.trim() ? null : "Lead has no phone number",
     });
   }
 
@@ -640,104 +656,75 @@ export async function previewFollowUpReminders(
     tomorrow: tomorrowStr,
     leads,
     counts: {
-      due: dueLeads.length,
-      prep: prepLeads.length,
-      callback: callbackCandidates.length,
+      morning: morningAssignees.size,
+      t30Rep: t30.length,
+      t30Lead: t30.length,
+      due: morningAssignees.size,
+      prep: 0,
+      callback: t30.length,
     },
   };
 }
 
 /**
- * Sends WhatsApp follow-up reminders:
- * - **Due/overdue:** leads with follow_up_date on or before today (local timezone), once per day each
- * - **Prep:** leads with follow_up_date tomorrow (local), once per day each
- * - **Callback:** leads with call_logs.callback_at in the due window (every minute via `/api/cron/check-followups`)
- *
- * Pass `callbackOnly: true` to skip due/prep batches (used by the every-minute cron).
+ * Follow-up WhatsApp schedule:
+ * - **Morning (daily 06:00):** one digest per rep listing today's follow-ups
+ * - **T-30 (every minute):** once to the rep and once to the lead, ~30 minutes before callback_at
  */
 export async function executeFollowUpReminders(
   opts: FollowUpRemindersOptions = {}
 ): Promise<FollowUpReminderResult> {
   const tz = getFollowUpTimezone();
   const { dateStr: todayStr } = localDateParts(tz);
-  const tomorrowStr = addLocalDays(todayStr, 1);
   const startOfTodayIso = startOfLocalDayIso(tz);
-  const batchOpts = { dryRun: opts.dryRun, force: opts.force };
+  const t30Only = opts.t30Only ?? opts.callbackOnly ?? false;
+  const morningOnly = opts.morningOnly ?? false;
 
-  const callbackCandidates = await fetchCallbackCandidates(opts.leadId);
+  let morning = EMPTY_BATCH;
+  let t30Rep = EMPTY_BATCH;
+  let t30Lead = EMPTY_BATCH;
 
-  let due = EMPTY_BATCH;
-  let prep = EMPTY_BATCH;
-
-  if (!opts.callbackOnly) {
-    const supabase = createAdminClient();
-
-    let dueQuery = supabase
-      .from("leads")
-      .select("*, clients ( twilio_whatsapp_override )")
-      .lte("follow_up_date", todayStr)
-      .in("status", [...ACTIVE_STATUSES])
-      .not("assigned_to_id", "is", null)
-      .not("follow_up_date", "is", null);
-
-    let prepQuery = supabase
-      .from("leads")
-      .select("*, clients ( twilio_whatsapp_override )")
-      .eq("follow_up_date", tomorrowStr)
-      .in("status", [...ACTIVE_STATUSES])
-      .not("assigned_to_id", "is", null);
-
-    if (opts.leadId) {
-      dueQuery = dueQuery.eq("id", opts.leadId);
-      prepQuery = prepQuery.eq("id", opts.leadId);
-    }
-
-    const [{ data: dueRows, error: dueErr }, { data: prepRows, error: prepErr }] = await Promise.all([
-      dueQuery,
-      prepQuery,
-    ]);
-
-    if (dueErr) throw new Error(`follow-up-reminders: ${dueErr.message}`);
-    if (prepErr) throw new Error(`follow-up-reminders: ${prepErr.message}`);
-
-    due = await runFollowUpBatch({
-      notificationType: "FOLLOW_UP_DUE",
+  if (!t30Only) {
+    const todayItems = await fetchTodaysFollowUps(tz, todayStr, opts.leadId);
+    morning = await runMorningDigest({
+      items: todayItems,
       todayStr,
-      startOfTodayIso,
-      leads: (dueRows ?? []) as LeadWithClient[],
-      resolveKind: (followUpDate, today) => (followUpDate < today ? "overdue" : "due"),
-      inAppMessage: (leadName, kind) =>
-        kind === "overdue" ? `Follow-up overdue: call ${leadName}` : `Follow-up due: call ${leadName}`,
-      ...batchOpts,
-    });
-
-    prep = await runFollowUpBatch({
-      notificationType: "FOLLOW_UP_PREP",
-      todayStr,
-      startOfTodayIso,
-      leads: (prepRows ?? []) as LeadWithClient[],
-      resolveKind: () => "prep",
-      inAppMessage: (leadName) => `Follow-up tomorrow: prepare for ${leadName}`,
-      ...batchOpts,
+      tz,
+      dryRun: opts.dryRun,
+      force: opts.force,
     });
   }
 
-  const callback = await runCallbackBatch({
-    candidates: callbackCandidates,
-    ...batchOpts,
-  });
+  if (!morningOnly) {
+    const t30 = await fetchT30Candidates(opts.leadId);
+    t30Rep = await runT30Rep({
+      candidates: t30,
+      tz,
+      dryRun: opts.dryRun,
+      force: opts.force,
+    });
+    t30Lead = await runT30Lead({
+      candidates: t30,
+      tz,
+      dryRun: opts.dryRun,
+      force: opts.force,
+    });
+  }
 
   return {
     ok: true,
     date: startOfTodayIso,
     timezone: tz,
-    due,
-    prep,
-    callback,
-    sent: due.whatsappSent + prep.whatsappSent + callback.whatsappSent,
-    failed: due.whatsappFailed + prep.whatsappFailed + callback.whatsappFailed,
-    skipped: due.skipped + prep.skipped + callback.skipped,
-    totalLeads: due.totalLeads + prep.totalLeads + callback.totalLeads,
+    morning,
+    t30Rep,
+    t30Lead,
+    due: morning,
+    prep: EMPTY_BATCH,
+    callback: t30Rep,
+    sent: morning.whatsappSent + t30Rep.whatsappSent + t30Lead.whatsappSent,
+    failed: morning.whatsappFailed + t30Rep.whatsappFailed + t30Lead.whatsappFailed,
+    skipped: morning.skipped + t30Rep.skipped + t30Lead.skipped,
+    totalLeads: morning.totalLeads + t30Rep.totalLeads + t30Lead.totalLeads,
     dryRun: opts.dryRun,
   };
 }

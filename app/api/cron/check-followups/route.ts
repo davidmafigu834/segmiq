@@ -3,10 +3,8 @@ import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { executeFollowUpReminders } from "@/lib/follow-up-reminders";
 
 /**
- * Timed callback follow-up WhatsApp reminders only.
- * Schedule every minute so `callback_at` is caught near the scheduled time.
- * Day-before / day-of (date) batches run on `/api/cron/daily`.
- * Uncontacted SLA alerts run on `/api/cron/daily` (not here).
+ * Timed T-30 follow-up WhatsApp reminders (rep + lead), once each.
+ * Morning digests run on `/api/cron/daily` at 06:00.
  */
 export async function GET(req: Request) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -17,7 +15,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const followUpCallbacks = await executeFollowUpReminders({ callbackOnly: true });
+    const followUpCallbacks = await executeFollowUpReminders({ t30Only: true });
     return NextResponse.json({ ok: true, followUpCallbacks });
   } catch (e) {
     console.error("[cron check-followups] executeFollowUpReminders", e);

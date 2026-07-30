@@ -18,31 +18,31 @@ const inputCls =
 
 function batchLabel(batch: FollowUpPreviewLead["batch"]): string {
   switch (batch) {
-    case "due":
-      return "Due / overdue";
-    case "prep":
-      return "Prep (tomorrow)";
-    case "callback":
-      return "Scheduled callback";
+    case "morning":
+      return "Morning digest";
+    case "t30_rep":
+      return "T-30 (rep)";
+    case "t30_lead":
+      return "T-30 (lead)";
   }
 }
 
 function batchBadgeStyle(batch: FollowUpPreviewLead["batch"]): string {
   switch (batch) {
-    case "due":
-      return "bg-red-500/15 text-red-400";
-    case "prep":
+    case "morning":
       return "bg-amber-500/15 text-amber-400";
-    case "callback":
+    case "t30_rep":
       return "bg-blue-500/15 text-blue-400";
+    case "t30_lead":
+      return "bg-emerald-500/15 text-emerald-400";
   }
 }
 
 function summarizeResult(result: FollowUpReminderResult): string {
   const parts = [
-    `Due: ${result.due.whatsappSent} sent, ${result.due.skipped} skipped, ${result.due.whatsappFailed} failed`,
-    `Prep: ${result.prep.whatsappSent} sent, ${result.prep.skipped} skipped, ${result.prep.whatsappFailed} failed`,
-    `Callback: ${result.callback.whatsappSent} sent, ${result.callback.skipped} skipped, ${result.callback.whatsappFailed} failed`,
+    `Morning: ${result.morning.whatsappSent} sent, ${result.morning.skipped} skipped, ${result.morning.whatsappFailed} failed`,
+    `T-30 rep: ${result.t30Rep.whatsappSent} sent, ${result.t30Rep.skipped} skipped, ${result.t30Rep.whatsappFailed} failed`,
+    `T-30 lead: ${result.t30Lead.whatsappSent} sent, ${result.t30Lead.skipped} skipped, ${result.t30Lead.whatsappFailed} failed`,
   ];
   return parts.join(" · ");
 }
@@ -125,9 +125,9 @@ export function FollowUpReminderTester() {
             <span>Timezone: {preview.timezone}</span>
             <span>Today: {preview.today}</span>
             <span>Tomorrow: {preview.tomorrow}</span>
-            <span>Due: {preview.counts.due}</span>
-            <span>Prep: {preview.counts.prep}</span>
-            <span>Callbacks: {preview.counts.callback}</span>
+            <span>Morning digests: {preview.counts.morning}</span>
+            <span>T-30 rep: {preview.counts.t30Rep}</span>
+            <span>T-30 lead: {preview.counts.t30Lead}</span>
           </div>
         )}
 
