@@ -161,7 +161,7 @@ export async function notifyStaffOfProposalResponse(
   const { data: admins } = await supabase
     .from("users")
     .select("email")
-    .eq("role", "AGENCY_ADMIN")
+    .eq("role", "SUPER_ADMIN")
     .eq("is_active", true);
   const recipients = (admins ?? [])
     .map((a) => a.email as string | null)

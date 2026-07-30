@@ -42,7 +42,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 
   const { token, user } = res.data as LoginResponse;
 
-  if (user.role !== "AGENCY_ADMIN" && !user.clientId) {
+  if (user.role !== "SUPER_ADMIN" && !user.clientId) {
     throw new Error(
       "This account is not linked to a Cloud client. Sign in with your cloud.segmiq.com account."
     );
@@ -52,7 +52,7 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   return user;
 }
 
-/** Agency admins have no client_id on login — pick or restore one before loading projects. */
+/** Super admins have no client_id on login — pick or restore one before loading projects. */
 export async function resolveActiveClientId(): Promise<{
   clientId: string | null;
   clients: CloudClient[];
@@ -62,7 +62,7 @@ export async function resolveActiveClientId(): Promise<{
   if (stored) return { clientId: stored, clients: [] };
 
   const role = await getRole();
-  if (role !== "AGENCY_ADMIN") {
+  if (role !== "SUPER_ADMIN") {
     return {
       clientId: null,
       clients: [],
@@ -81,7 +81,7 @@ export async function resolveActiveClientId(): Promise<{
 
   const clients = Array.isArray(res.data) ? res.data : [];
   if (clients.length === 0) {
-    return { clientId: null, clients: [], error: "No Cloud clients found for your agency." };
+    return { clientId: null, clients: [], error: "No Cloud clients found." };
   }
 
   if (clients.length === 1) {

@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   let clientId = searchParams.get("clientId") ?? session.clientId;
 
-  if (session.role !== "AGENCY_ADMIN") {
+  if (session.role !== "SUPER_ADMIN") {
     clientId = session.clientId;
   }
   if (!clientId) return NextResponse.json({ error: "No client" }, { status: 400 });

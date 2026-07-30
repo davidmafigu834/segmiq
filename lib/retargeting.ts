@@ -225,7 +225,7 @@ export async function recordRetargetingNudge(
   const { data: admins } = await supabase
     .from("users")
     .select("id")
-    .eq("role", "AGENCY_ADMIN")
+    .eq("role", "SUPER_ADMIN")
     .eq("is_active", true);
 
   const { data: client } = await supabase

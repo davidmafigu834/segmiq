@@ -32,13 +32,14 @@ export default async function ProfilePage({ params }: { params: { clientId: stri
 
   return (
     <AgencyLayout
-      breadcrumb={`AGENCY / CLIENTS / ${(client.name as string).toUpperCase()} / PROFILE PAGE`}
+      breadcrumb={`PLATFORM / CLIENTS / ${(client.name as string).toUpperCase()} / PROFILE PAGE`}
       pageTitle="Profile Page"
     >
       <ClientDetailView
         clientId={params.clientId}
         name={client.name as string}
         industry={client.industry as string}
+        agencyManaged={Boolean((client as { agency_managed?: boolean | null }).agency_managed ?? true)}
         publicProfileUrl={publicProfileUrl}
         hero={hero}
       >

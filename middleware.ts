@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { homeForRole } from "@/lib/auth/impersonation";
+import { isSuperAdminRole, normalizeUserRole } from "@/lib/auth/roles";
 import type { ClientMode, UserRole } from "@/types";
 
 export async function middleware(req: NextRequest) {
@@ -155,7 +156,7 @@ export async function middleware(req: NextRequest) {
   if (path === "/") {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     if (token) {
-      const role = token.role as UserRole;
+      const role = (normalizeUserRole(token.role as string) ?? (token.role as UserRole)) as UserRole;
       const clientMode = (token as { clientMode?: ClientMode }).clientMode ?? "team";
       return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
     }
@@ -249,20 +250,20 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  const role = token.role as UserRole;
+  const role = (normalizeUserRole(token.role as string) ?? (token.role as UserRole)) as UserRole;
   const clientMode = (token as { clientMode?: ClientMode }).clientMode ?? "team";
   const alsoSells = Boolean((token as { alsoSells?: boolean }).alsoSells);
   const isImpersonating = Boolean((token as { realUserId?: string | null }).realUserId);
 
   if (path.startsWith("/dashboard")) {
-    if (role !== "AGENCY_ADMIN" || isImpersonating) {
+    if (!isSuperAdminRole(role) || isImpersonating) {
       return NextResponse.redirect(new URL(homeForRole(role, clientMode), req.url));
     }
   }
   if (path.startsWith("/client")) {
     const isTeamPreview =
       !isImpersonating &&
-      role === "AGENCY_ADMIN" &&
+      isSuperAdminRole(role) &&
       (path === "/client/team" || path.startsWith("/client/team/")) &&
       req.nextUrl.searchParams.has("clientId");
     if (!isTeamPreview && role !== "CLIENT_MANAGER") {

@@ -9,7 +9,7 @@ export default async function ClientsPage() {
   const supabase = createAdminClient();
   const { data: clients } = await supabase
     .from("clients")
-    .select("id, name, industry")
+    .select("id, name, industry, agency_managed")
     .or("is_archived.is.null,is_archived.eq.false")
     .order("name");
 
@@ -18,11 +18,12 @@ export default async function ClientsPage() {
       id: c.id as string,
       name: c.name as string,
       industry: (c.industry as string) ?? "",
+      agency_managed: Boolean((c as { agency_managed?: boolean | null }).agency_managed ?? true),
     })) ?? [];
 
   return (
     <AgencyLayout
-      breadcrumb="AGENCY / CLIENTS"
+      breadcrumb="PLATFORM / CLIENTS"
       pageTitle="Clients"
       titleSize="hero"
       actions={<ClientsPageHeaderAction />}

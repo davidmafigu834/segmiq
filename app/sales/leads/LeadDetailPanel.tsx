@@ -127,7 +127,7 @@ export function LeadDetailPanel({
   // Quoting is allowed for salespeople, managers and agency admins (broader than
   // lead editing, which keeps managers read-only).
   const canQuote =
-    role === "SALESPERSON" || role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER";
+    role === "SALESPERSON" || role === "SUPER_ADMIN" || role === "CLIENT_MANAGER";
 
   if (!open || !lead) return null;
 
@@ -312,7 +312,7 @@ export function LeadDetailPanel({
             <LeadIntelligenceCard
               leadId={activeLead.id}
               canReprocess={
-                role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER"
+                role === "SUPER_ADMIN" || role === "CLIENT_MANAGER"
               }
             />
             <HandoverBanner leadId={activeLead.id} />
@@ -476,7 +476,7 @@ export function LeadDetailPanel({
               compactMobile
             />
           ) : null}
-          {(canSell || role === "AGENCY_ADMIN") && !isReadOnly ? (
+          {(canSell || role === "SUPER_ADMIN") && !isReadOnly ? (
             <>
               <div className="p-4 sm:p-5">
                 <CallHistory leadId={activeLead.id} refreshKey={logRefresh} />
@@ -502,10 +502,10 @@ export function LeadDetailPanel({
               )}
             </>
           ) : null}
-          {role === "AGENCY_ADMIN" && !isReadOnly ? (
+          {role === "SUPER_ADMIN" && !isReadOnly ? (
             <AgencyLeadAdminSection lead={activeLead} onLeadUpdated={onLeadUpdated} onAfterArchive={handleClose} />
           ) : null}
-          {(role === "CLIENT_MANAGER" || (role === "AGENCY_ADMIN" && isReadOnly)) ? (
+          {(role === "CLIENT_MANAGER" || (role === "SUPER_ADMIN" && isReadOnly)) ? (
             <div className="space-y-3 border-t border-border p-4 sm:p-5 max-md:pb-6">
               <div className="font-mono text-[11px] uppercase text-ink-tertiary">Assignment</div>
               <p className="text-[13px] text-ink-secondary">

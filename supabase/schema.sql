@@ -42,7 +42,9 @@ alter table public.clients
   add column if not exists fb_form_id text,
   add column if not exists fb_form_name text,
   add column if not exists fb_webhook_verified boolean default false,
-  add column if not exists last_lead_received_at timestamptz;
+  add column if not exists last_lead_received_at timestamptz,
+  add column if not exists agency_managed boolean not null default true,
+  add column if not exists agency_managed_changed_at timestamptz;
 
 -- ---------------------------------------------------------------------------
 -- users (references clients; clients.fb_connected_by_user_id added after)
@@ -52,7 +54,7 @@ create table if not exists public.users (
   name text not null,
   email text not null unique,
   password text not null,
-  role text not null check (role in ('AGENCY_ADMIN', 'CLIENT_MANAGER', 'SALESPERSON')),
+  role text not null check (role in ('SUPER_ADMIN', 'CLIENT_MANAGER', 'SALESPERSON')),
   client_id uuid references public.clients(id) on delete set null,
   phone text,
   is_active boolean not null default true,
@@ -68,6 +70,9 @@ alter table public.clients
   add column if not exists fb_connected_at timestamptz;
 
 alter table public.clients
+  add column if not exists agency_managed_changed_by uuid references public.users(id) on delete set null;
+
+alter table public.clients
   add column if not exists fb_ad_account_id text;
 
 alter table public.clients
@@ -78,7 +83,7 @@ alter table public.clients
 
 comment on column public.clients.fb_access_token_expires_at is 'Long-lived user or page token expiry (from Graph expires_in)';
 comment on column public.clients.fb_page_name is 'Selected Facebook Page name';
-comment on column public.clients.fb_connected_by_user_id is 'Agency admin who completed OAuth';
+comment on column public.clients.fb_connected_by_user_id is 'Super admin who completed OAuth';
 comment on column public.clients.fb_connected_at is 'When Facebook OAuth completed';
 
 comment on column public.clients.fb_ad_account_id is 'Facebook Ads account id, e.g. act_123456789';

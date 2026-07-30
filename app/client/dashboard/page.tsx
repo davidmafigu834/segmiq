@@ -11,7 +11,7 @@ export default async function ClientDashboardPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.clientId) redirect("/login");
-  if (!["CLIENT_MANAGER", "AGENCY_ADMIN"].includes(session.role)) redirect("/login");
+  if (!["CLIENT_MANAGER", "SUPER_ADMIN"].includes(session.role)) redirect("/login");
 
   const clientId = session.clientId;
   const data = await fetchClientManagerDashboardData(clientId);

@@ -15,7 +15,7 @@ export default async function ProposalsPage({
   searchParams: { open?: string };
 }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
@@ -27,7 +27,7 @@ export default async function ProposalsPage({
 
   return (
     <AgencyLayout
-      breadcrumb="AGENCY / PROPOSALS"
+      breadcrumb="PLATFORM / PROPOSALS"
       pageTitle="Sales proposals"
       actions={
         <Link

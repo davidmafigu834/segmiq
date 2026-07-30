@@ -28,7 +28,7 @@ export type SendTemplateTestResult =
 
 async function requireAgencyAdminSession() {
   const session = await getServerSession(authOptions);
-  if (!session?.userId || session.role !== "AGENCY_ADMIN") {
+  if (!session?.userId || session.role !== "SUPER_ADMIN") {
     return null;
   }
   return session;

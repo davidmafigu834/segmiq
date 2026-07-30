@@ -68,7 +68,7 @@ const TABS: Record<string, { kicker: string; title: string; Icon: LucideIcon; hr
 };
 
 const ACCORDION = [
-  { t: "CRM portals", d: "Agency admin, client manager, and salesperson — one login each, scoped to what they need." },
+  { t: "CRM portals", d: "Super admin, client manager, and salesperson — one login each, scoped to what they need." },
   { t: "WhatsApp automation", d: "Confirmations, magic links, SLA warnings, follow-up reminders, and digests via Meta Cloud API." },
   { t: "Conversational lead capture", d: "A chat-style form on every Segmiq Cloud profile that captures intent as it talks." },
   { t: "Pricing & document library", d: "Reusable pricing packages and a document library you send in one tap." },

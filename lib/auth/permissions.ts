@@ -7,19 +7,22 @@ import type { UserRole } from "@/types";
 
 export const CLIENT_MANAGER_READ_ONLY = "Client managers have read-only access";
 
-/** API routes: require signed-in agency admin. */
-export async function requireAgencyAdmin(): Promise<
+/** API routes: require signed-in platform super admin. */
+export async function requireSuperAdmin(): Promise<
   { ok: true; userId: string } | { error: string; status: number }
 > {
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
     return { error: "Unauthorized", status: 401 };
   }
-  if (session.role !== "AGENCY_ADMIN") {
+  if (session.role !== "SUPER_ADMIN") {
     return { error: "Forbidden", status: 403 };
   }
   return { ok: true, userId: session.userId };
 }
+
+/** @deprecated Use requireSuperAdmin */
+export const requireAgencyAdmin = requireSuperAdmin;
 
 type LeadScope = {
   client_id: string;
@@ -39,7 +42,7 @@ export function canReassignLeads(session: {
   clientId?: string | null;
 }, clientId: string): boolean {
   if (!session?.userId) return false;
-  if (session.role === "AGENCY_ADMIN") return true;
+  if (session.role === "SUPER_ADMIN") return true;
   if (session.role === "CLIENT_MANAGER" && session.clientId === clientId) return true;
   return false;
 }
@@ -86,7 +89,7 @@ export async function canModifyLead(
     return { allowed: false, reason: CLIENT_MANAGER_READ_ONLY, status: 403 };
   }
 
-  if (session.role === "AGENCY_ADMIN") {
+  if (session.role === "SUPER_ADMIN") {
     return { allowed: true, lead: scope, userId: session.userId, role: session.role };
   }
 
@@ -100,22 +103,22 @@ export async function canModifyLead(
   return { allowed: false, reason: "Forbidden", status: 403 };
 }
 
-/** Client-scoped resource access: agency admin can touch any client; everyone else only their own. */
+/** Client-scoped resource access: super admin can touch any client; everyone else only their own. */
 export function canAccessClient(
   userRole: string,
   userClientId: string | null,
   requestedClientId: string
 ): boolean {
-  if (userRole === "AGENCY_ADMIN") return true;
+  if (userRole === "SUPER_ADMIN") return true;
   return userClientId === requestedClientId;
 }
 
-/** Company profile & branding: managers and salespeople edit their own client; agency admin can edit any. */
+/** Company profile & branding: managers and salespeople edit their own client; super admin can edit any. */
 export function canManageClientProfile(role: string | null | undefined): boolean {
-  return role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER" || role === "SALESPERSON";
+  return role === "SUPER_ADMIN" || role === "CLIENT_MANAGER" || role === "SALESPERSON";
 }
 
-/** SegmiQ Cloud settings, billing, team invites: managers and salespeople on their client; agency admin on any. */
+/** SegmiQ Cloud settings, billing, team invites: managers and salespeople on their client; super admin on any. */
 export function canManageCloudSettings(
   session: {
     userId?: string | null;
@@ -125,7 +128,7 @@ export function canManageCloudSettings(
   clientId: string
 ): boolean {
   if (!session?.userId) return false;
-  if (session.role === "AGENCY_ADMIN") return true;
+  if (session.role === "SUPER_ADMIN") return true;
   if (
     (session.role === "CLIENT_MANAGER" || session.role === "SALESPERSON")
     && session.clientId === clientId
@@ -160,7 +163,7 @@ export async function canReadLead(
     return { ok: false, status: 404 };
   }
 
-  if (session.role === "AGENCY_ADMIN") {
+  if (session.role === "SUPER_ADMIN") {
     return { ok: true };
   }
 

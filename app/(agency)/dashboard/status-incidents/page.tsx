@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function StatusIncidentsPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
@@ -21,7 +21,7 @@ export default async function StatusIncidentsPage() {
   }
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / STATUS" pageTitle="Status incidents">
+    <AgencyLayout breadcrumb="PLATFORM / STATUS" pageTitle="Status incidents">
       <StatusIncidentsManager initialIncidents={incidents} />
     </AgencyLayout>
   );

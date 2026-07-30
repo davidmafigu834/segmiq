@@ -25,14 +25,14 @@ export default async function ClientAccountPage() {
 
   const { data: client } = await supabase
     .from("clients")
-    .select("id, name, industry, logo_url")
+    .select("id, name, industry, logo_url, agency_managed")
     .eq("id", session.clientId)
     .single();
 
   const { data: agencyAdmins } = await supabase
     .from("users")
     .select("name, email, phone")
-    .eq("role", "AGENCY_ADMIN")
+    .eq("role", "SUPER_ADMIN")
     .eq("is_active", true)
     .limit(1);
 
@@ -51,12 +51,21 @@ export default async function ClientAccountPage() {
         }}
         agencyContact={(agencyAdmins?.[0] as { name: string; email: string; phone: string | null } | null) ?? null}
         client={
-          client ?? {
-            id: session.clientId,
-            name: "Client",
-            industry: null,
-            logo_url: null,
-          }
+          client
+            ? {
+                id: client.id as string,
+                name: client.name as string,
+                industry: (client.industry as string | null) ?? null,
+                logo_url: (client.logo_url as string | null) ?? null,
+                agency_managed: Boolean(client.agency_managed ?? true),
+              }
+            : {
+                id: session.clientId,
+                name: "Client",
+                industry: null,
+                logo_url: null,
+                agency_managed: true,
+              }
         }
       />
     </ClientManagerLayout>

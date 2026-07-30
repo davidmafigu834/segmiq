@@ -17,7 +17,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: { clientId: string } }
 ) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
 
   const body = await req.json().catch(() => ({}));

@@ -19,7 +19,7 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 type Props = {
   userName: string;
   userId: string;
-  role: "SALESPERSON" | "CLIENT_MANAGER" | "AGENCY_ADMIN";
+  role: "SALESPERSON" | "CLIENT_MANAGER" | "SUPER_ADMIN";
   alsoSells?: boolean;
   clientId: string;
   roleSubtitle: string;
@@ -138,7 +138,7 @@ export function TeamInbox({
 
   const salesCapable = canActAsSalesperson({ userId, role, alsoSells });
   const ownsActive = !!active && active.assignedToId === userId;
-  const canReassign = role === "CLIENT_MANAGER" || role === "AGENCY_ADMIN";
+  const canReassign = role === "CLIENT_MANAGER" || role === "SUPER_ADMIN";
   const canTransfer = (salesCapable && ownsActive) || canReassign;
   const canSend = salesCapable && ownsActive;
   const canUpdateStatus = salesCapable && ownsActive;

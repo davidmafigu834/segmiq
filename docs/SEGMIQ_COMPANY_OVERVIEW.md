@@ -104,7 +104,7 @@ The core revenue operating system. Three role-scoped portals:
 
 | Portal | Who uses it | Purpose |
 |--------|-------------|---------|
-| **Agency Admin** | Marketing agencies, SegmiQ operators | Multi-client management, proposals, billing, health dashboards |
+| **Super Admin** | SegmiQ platform operators | All tenants, Meta/billing ops, proposals, platform settings; optional managed-agency service per client |
 | **Client Manager** | Business owners, sales managers | Pipeline, reports, team management, marketing hub, inbox |
 | **Salesperson** | Field reps | Today's leads, follow-ups, call logging, one-tap send |
 
@@ -129,7 +129,7 @@ The core revenue operating system. Three role-scoped portals:
 | **Growth** | $199 | Up to 15 | AI intent scoring, daily coaching, win analysis, stale-lead recovery |
 | **Scale** | $349 | Unlimited | Full intelligence engine, audience segments, CSV export, priority support |
 
-Managers and agency admins are not counted against salesperson seat limits.
+Managers and super admins are not counted against salesperson seat limits.
 
 ---
 
@@ -262,8 +262,8 @@ SegmiQ is a modern multi-tenant SaaS platform. The following overview is intende
 ### Multi-tenancy
 
 - Each **client** (service business) is an isolated tenant
-- **Users** belong to a client with roles: Agency Admin, Client Manager, Salesperson
-- Agency admins can manage and support multiple client tenants
+- **Users** belong to a client with roles: Super Admin, Client Manager, Salesperson
+- Super admins can manage and support multiple client tenants; clients may optionally use Segmiq as a managed marketing partner (`agency_managed`)
 - Subdomain routing serves public portfolio profiles per business
 - Billing suspension gates access automatically when subscriptions lapse
 

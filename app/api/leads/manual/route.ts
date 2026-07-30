@@ -20,7 +20,7 @@ const manualLeadSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const check = await requireRoles(["AGENCY_ADMIN", "CLIENT_MANAGER"]);
+  const check = await requireRoles(["SUPER_ADMIN", "CLIENT_MANAGER"]);
   if ("error" in check) return check.error;
 
   const parsed = manualLeadSchema.safeParse(await req.json());

@@ -109,7 +109,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
       return `/dashboard/leads?lead=${n.lead_id}`;
     }
     if (n.type === "FB_TOKEN_EXPIRED") {
-      if (n.client_id && role === "AGENCY_ADMIN") {
+      if (n.client_id && role === "SUPER_ADMIN") {
         return `/dashboard/clients/${n.client_id}/facebook`;
       }
       return "/dashboard/clients";

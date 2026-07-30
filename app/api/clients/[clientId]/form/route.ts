@@ -15,7 +15,7 @@ const patchSchema = z.object({
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const parsed = patchSchema.safeParse(await req.json());

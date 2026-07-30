@@ -21,7 +21,7 @@ export function DashboardPageHeader() {
           className="font-mono text-[11px] font-normal uppercase tracking-[0.08em] text-ink-tertiary"
           style={{ letterSpacing: "0.08em" }}
         >
-          AGENCY / DASHBOARD
+          PLATFORM / DASHBOARD
         </p>
         <h1 className="mt-1 font-display text-3xl tracking-display text-ink-primary min-[720px]:text-[40px]">
           Overview

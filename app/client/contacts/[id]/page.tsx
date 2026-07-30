@@ -52,7 +52,7 @@ function mapLead(row: LeadRow): ContactProfileLead {
 export default async function ContactProfilePage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.clientId) redirect("/login");
-  if (session.role !== "CLIENT_MANAGER" && session.role !== "AGENCY_ADMIN") redirect("/login");
+  if (session.role !== "CLIENT_MANAGER" && session.role !== "SUPER_ADMIN") redirect("/login");
 
   const supabase = createAdminClient();
 
@@ -65,7 +65,7 @@ export default async function ContactProfilePage({ params }: { params: { id: str
   ]);
 
   if (!contact) notFound();
-  if (session.role !== "AGENCY_ADMIN" && contact.client_id !== session.clientId) notFound();
+  if (session.role !== "SUPER_ADMIN" && contact.client_id !== session.clientId) notFound();
 
   const contactClientId = contact.client_id as string;
 

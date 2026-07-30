@@ -26,13 +26,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
 
-  const g = await requireRoles(["AGENCY_ADMIN", "CLIENT_MANAGER", "SALESPERSON"]);
+  const g = await requireRoles(["SUPER_ADMIN", "CLIENT_MANAGER", "SALESPERSON"]);
 
   if ("error" in g) return g.error;
 
   const supabase = createAdminClient();
 
-  if (g.session.role !== "AGENCY_ADMIN") {
+  if (g.session.role !== "SUPER_ADMIN") {
 
     if (!g.session.clientId) return NextResponse.json([], { status: 200 });
 
@@ -94,7 +94,7 @@ function placeholderSlug(): string {
 
 export async function POST(req: Request) {
 
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
 
   if ("error" in g) return g.error;
 

@@ -131,13 +131,18 @@ export const authOptions: NextAuthOptions = {
         token.realUserId = null;
         token.realUserName = null;
       }
+      // Heal legacy AGENCY_ADMIN cookies after SUPER_ADMIN rename.
+      if ((token.role as string) === "AGENCY_ADMIN") {
+        token.role = "SUPER_ADMIN";
+      }
       const clientId = (token.clientId as string | null) ?? null;
       token.clientMode = clientId ? await resolveClientMode(clientId) : "team";
       return token;
     },
     async session({ session, token }) {
       session.userId = token.userId as string;
-      session.role = token.role as UserRole;
+      session.role =
+        ((token.role as string) === "AGENCY_ADMIN" ? "SUPER_ADMIN" : token.role) as UserRole;
       session.clientId = (token.clientId as string | null) ?? null;
       session.clientMode = (token.clientMode as ClientMode | undefined) ?? "team";
       session.alsoSells = Boolean(token.alsoSells);

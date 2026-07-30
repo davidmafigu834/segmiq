@@ -11,7 +11,7 @@ export default async function CampaignsPage() {
     .order("name");
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / CAMPAIGNS" pageTitle="Campaigns" hideShellHeader>
+    <AgencyLayout breadcrumb="PLATFORM / CAMPAIGNS" pageTitle="Campaigns" hideShellHeader>
       <CampaignsDashboard allClients={(clients ?? []) as { id: string; name: string }[]} />
     </AgencyLayout>
   );

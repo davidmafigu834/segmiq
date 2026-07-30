@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (auth.role !== "AGENCY_ADMIN" && auth.clientId !== clientId) {
+  if (auth.role !== "SUPER_ADMIN" && auth.clientId !== clientId) {
     return NextResponse.json(
       { error: "You do not have permission to upload to this client." },
       { status: 403 }

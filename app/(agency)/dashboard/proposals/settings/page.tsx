@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ProposalSettingsPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
@@ -19,7 +19,7 @@ export default async function ProposalSettingsPage() {
   const settings = (await ensureProposalSettings(supabase)) as unknown as ProposalSettingsRow;
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / PROPOSALS / SETTINGS" pageTitle="Proposal settings">
+    <AgencyLayout breadcrumb="PLATFORM / PROPOSALS / SETTINGS" pageTitle="Proposal settings">
       <ProposalSettingsManager initialSettings={settings} />
     </AgencyLayout>
   );

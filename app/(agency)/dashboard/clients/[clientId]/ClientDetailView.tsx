@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PublicSlugCopy } from "@/components/clients/PublicSlugCopy";
+import { AgencyManagedToggle } from "@/components/clients/AgencyManagedToggle";
 import type { ClientDetailHeroProps } from "@/lib/client-hero";
 
 const tabs = (id: string) =>
@@ -58,6 +59,7 @@ export function ClientDetailView({
   industry,
   publicProfileUrl,
   hero,
+  agencyManaged = true,
   children,
 }: {
   clientId: string;
@@ -65,6 +67,7 @@ export function ClientDetailView({
   industry: string;
   publicProfileUrl: string | null;
   hero: ClientDetailHeroProps;
+  agencyManaged?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -97,6 +100,9 @@ export function ClientDetailView({
             <h1 className="mb-1 min-w-0 truncate font-display text-2xl tracking-display text-ink-primary md:text-3xl layout:text-4xl">{name}</h1>
             <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">
               {industry || "No industry set"}
+            </div>
+            <div className="mt-2">
+              <AgencyManagedToggle clientId={clientId} agencyManaged={agencyManaged} />
             </div>
             {publicProfileUrl && <PublicSlugCopy url={publicProfileUrl} />}
           </div>

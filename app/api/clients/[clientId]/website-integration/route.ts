@@ -14,7 +14,7 @@ export async function GET(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId) && session.role !== "AGENCY_ADMIN") {
+  if (!canAccessClient(session.role, session.clientId, params.clientId) && session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -34,7 +34,7 @@ export async function GET(
   return NextResponse.json({
     has_key: Boolean(key),
     api_key_masked: masked,
-    api_key: session.role === "AGENCY_ADMIN" || session.role === "CLIENT_MANAGER" ? key : masked,
+    api_key: session.role === "SUPER_ADMIN" || session.role === "CLIENT_MANAGER" ? key : masked,
     business_type: client.business_type ?? "trades",
   });
 }
@@ -46,7 +46,7 @@ export async function POST(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canAccessClient(session.role, session.clientId, params.clientId) && session.role !== "AGENCY_ADMIN") {
+  if (!canAccessClient(session.role, session.clientId, params.clientId) && session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

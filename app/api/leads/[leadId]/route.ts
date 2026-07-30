@@ -67,7 +67,7 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
   if (!auth?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const isAgency = auth.role === "AGENCY_ADMIN";
+  const isAgency = auth.role === "SUPER_ADMIN";
 
   if ((parsed.data.assigned_to_id !== undefined || parsed.data.is_archived !== undefined) && !isAgency) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

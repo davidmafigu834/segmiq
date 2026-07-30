@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const requestedClientId =
-    session.role === "AGENCY_ADMIN" ? url.searchParams.get("clientId") : session.clientId;
+    session.role === "SUPER_ADMIN" ? url.searchParams.get("clientId") : session.clientId;
   if (!requestedClientId) {
     return NextResponse.json({ error: "Missing client context" }, { status: 400 });
   }

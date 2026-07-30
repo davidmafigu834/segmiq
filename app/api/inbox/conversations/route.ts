@@ -12,14 +12,14 @@ export async function GET(req: Request) {
   if (
     session.role !== "SALESPERSON" &&
     session.role !== "CLIENT_MANAGER" &&
-    session.role !== "AGENCY_ADMIN"
+    session.role !== "SUPER_ADMIN"
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const url = new URL(req.url);
   const clientId =
-    session.role === "AGENCY_ADMIN"
+    session.role === "SUPER_ADMIN"
       ? url.searchParams.get("clientId") ?? session.clientId
       : session.clientId;
 

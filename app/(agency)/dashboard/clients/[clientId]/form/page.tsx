@@ -25,11 +25,12 @@ export default async function FormBuilderPage({ params }: { params: { clientId: 
   };
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / FORM BUILDER" pageTitle={client.name as string}>
+    <AgencyLayout breadcrumb="PLATFORM / FORM BUILDER" pageTitle={client.name as string}>
       <ClientDetailView
         clientId={params.clientId}
         name={client.name as string}
         industry={client.industry as string}
+        agencyManaged={Boolean((client as { agency_managed?: boolean | null }).agency_managed ?? true)}
         publicProfileUrl={hero.profileSlug ? getPublicLandingPageUrl(hero.profileSlug) : null}
         hero={hero}
       >

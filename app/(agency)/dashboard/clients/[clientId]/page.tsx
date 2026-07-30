@@ -22,7 +22,7 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
   ]);
   if (!client) notFound();
 
-  const isAgencyAdmin = session?.role === "AGENCY_ADMIN";
+  const isAgencyAdmin = session?.role === "SUPER_ADMIN";
 
   const now = new Date();
   const monthStart = startOfMonth(now);
@@ -89,7 +89,7 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
 
   return (
     <AgencyLayout
-      breadcrumb={`AGENCY / CLIENTS / ${(client.name as string).toUpperCase()}`}
+      breadcrumb={`PLATFORM / CLIENTS / ${(client.name as string).toUpperCase()}`}
       pageTitle={client.name as string}
     >
       <ClientDetailView
@@ -98,6 +98,7 @@ export default async function ClientDetailPage({ params }: { params: { clientId:
         industry={client.industry as string}
         publicProfileUrl={publicProfileUrl}
         hero={hero}
+        agencyManaged={Boolean(client.agency_managed ?? true)}
       >
         <PulseBar metrics={pulseMetrics} />
         <ClientOverviewTab

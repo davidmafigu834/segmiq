@@ -43,7 +43,7 @@ export async function POST(
   }
 
   // Only agency admins and client managers can trigger reprocessing
-  if (!["AGENCY_ADMIN", "CLIENT_MANAGER"].includes(session.role)) {
+  if (!["SUPER_ADMIN", "CLIENT_MANAGER"].includes(session.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

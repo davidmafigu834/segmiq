@@ -84,7 +84,7 @@ export async function GET(req: Request) {
     });
   }
 
-  if (role === "AGENCY_ADMIN") {
+  if (role === "SUPER_ADMIN") {
     const { data: clients } = await supabase
       .from("clients")
       .select("id, name, slug, industry")
@@ -102,7 +102,7 @@ export async function GET(req: Request) {
     }
   }
 
-  if (role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER") {
+  if (role === "SUPER_ADMIN" || role === "CLIENT_MANAGER") {
     let usersQ = supabase
       .from("users")
       .select("id, name, email, role, client_id, clients(name)")
@@ -118,7 +118,7 @@ export async function GET(req: Request) {
       const u = user as { id: string; name: string; email: string; role: string; client_id: string | null; clients?: { name?: string } | null };
       const clientName = u.clients?.name;
       const href =
-        role === "AGENCY_ADMIN" && u.client_id
+        role === "SUPER_ADMIN" && u.client_id
           ? `/dashboard/clients/${u.client_id}/team`
           : "/client/team";
       results.push({

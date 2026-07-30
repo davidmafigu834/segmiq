@@ -11,11 +11,12 @@ export default async function ClientCampaignsPage({ params }: { params: { client
   const { client, hero } = ctx;
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / CAMPAIGNS" pageTitle={client.name as string}>
+    <AgencyLayout breadcrumb="PLATFORM / CAMPAIGNS" pageTitle={client.name as string}>
       <ClientDetailView
         clientId={params.clientId}
         name={client.name as string}
         industry={client.industry as string}
+        agencyManaged={Boolean((client as { agency_managed?: boolean | null }).agency_managed ?? true)}
         publicProfileUrl={hero.profileSlug ? getPublicLandingPageUrl(hero.profileSlug) : null}
         hero={hero}
       >

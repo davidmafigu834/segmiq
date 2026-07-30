@@ -90,7 +90,7 @@ export async function fetchInboxConversations(opts: {
   const { role, userId, clientId, alsoSells } = opts;
   const salesScoped = canActAsSalesperson({ userId, role, alsoSells });
 
-  if (!clientId && role !== "AGENCY_ADMIN") {
+  if (!clientId && role !== "SUPER_ADMIN") {
     return [];
   }
 
@@ -121,9 +121,9 @@ export async function fetchInboxConversations(opts: {
     }
   } else if (role === "CLIENT_MANAGER" && clientId) {
     query = query.eq("client_id", clientId);
-  } else if (role === "AGENCY_ADMIN" && clientId) {
+  } else if (role === "SUPER_ADMIN" && clientId) {
     query = query.eq("client_id", clientId);
-  } else if (role === "AGENCY_ADMIN") {
+  } else if (role === "SUPER_ADMIN") {
     // No client scope — empty unless clientId passed via query param at API layer
     return [];
   } else {

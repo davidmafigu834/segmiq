@@ -63,7 +63,7 @@ export default async function PendingPaymentsPage() {
   }));
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / BILLING / PAYMENTS" pageTitle="Pending payments" titleSize="hero">
+    <AgencyLayout breadcrumb="PLATFORM / BILLING / PAYMENTS" pageTitle="Pending payments" titleSize="hero">
       <PendingPaymentsClient rows={rows} />
     </AgencyLayout>
   );

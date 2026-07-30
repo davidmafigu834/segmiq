@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   if (session.isImpersonating) {
     return NextResponse.json({ error: "Already impersonating — stop first" }, { status: 400 });
   }
-  if (session.role !== "AGENCY_ADMIN") {
+  if (session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       .maybeSingle(),
   ]);
 
-  if (!admin || admin.role !== "AGENCY_ADMIN") {
+  if (!admin || admin.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (!target) {

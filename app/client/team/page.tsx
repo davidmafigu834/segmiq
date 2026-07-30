@@ -19,7 +19,7 @@ export default async function ClientTeamPage({
   const role = session.role;
   const previewClientId = searchParams.clientId;
 
-  if (role === "AGENCY_ADMIN") {
+  if (role === "SUPER_ADMIN") {
     if (!previewClientId) {
       redirect("/dashboard");
     }
@@ -30,7 +30,7 @@ export default async function ClientTeamPage({
   }
 
   const supabase = createAdminClient();
-  const targetClientId = role === "AGENCY_ADMIN" ? previewClientId! : session.clientId!;
+  const targetClientId = role === "SUPER_ADMIN" ? previewClientId! : session.clientId!;
   const { data: clientRow } = await supabase
     .from("clients")
     .select("name, round_robin_index")
@@ -46,7 +46,7 @@ export default async function ClientTeamPage({
       breadcrumbOverride={`${clientName} / TEAM`}
       pageTitle="Your team"
     >
-      {role === "AGENCY_ADMIN" ? (
+      {role === "SUPER_ADMIN" ? (
         <p className="mb-6 rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-3.5 py-2.5 font-mono text-[11px] text-[var(--text-secondary)]">
           Previewing client team ·{" "}
           <Link href="/dashboard" className="text-[var(--accent)] underline-offset-2 hover:underline">
@@ -57,7 +57,7 @@ export default async function ClientTeamPage({
       <Suspense fallback={<div className="shimmer h-[min(480px,70vh)] rounded-lg border border-[var(--border)]" />}>
         <ClientTeamDashboard
           clientName={clientName}
-          previewClientId={role === "AGENCY_ADMIN" ? previewClientId : undefined}
+          previewClientId={role === "SUPER_ADMIN" ? previewClientId : undefined}
         />
       </Suspense>
       {role === "CLIENT_MANAGER" ? (

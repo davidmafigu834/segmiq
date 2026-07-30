@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function SubmissionsPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
@@ -21,7 +21,7 @@ export default async function SubmissionsPage() {
   }
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / SUBMISSIONS" pageTitle="Marketing submissions">
+    <AgencyLayout breadcrumb="PLATFORM / SUBMISSIONS" pageTitle="Marketing submissions">
       <SubmissionsManager initialSubmissions={submissions} />
     </AgencyLayout>
   );

@@ -82,7 +82,7 @@ For outbound email, verify the sending domain for `RESEND_FROM_EMAIL` in Resend 
 
 ## Add a new client
 
-1. Sign in as agency admin.
+1. Sign in as super admin.
 2. Insert or create a **Client** row (via seed or Supabase) with a unique `slug`.
 3. Configure **Form** (`/dashboard/clients/[clientId]/form`) and **Landing** (`/dashboard/clients/[clientId]/landing-page`).
 4. Assign **Client manager** and **Salespeople** users with `client_id` set.
@@ -93,7 +93,7 @@ For outbound email, verify the sending domain for `RESEND_FROM_EMAIL` in Resend 
 2. In the app’s **Facebook Login** settings, add **Valid OAuth Redirect URIs**: the same value as `FACEBOOK_REDIRECT_URI` (for production, e.g. `https://app.leadstaq.com/api/facebook/oauth/callback`).
 3. Set `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, `FACEBOOK_REDIRECT_URI`, `FACEBOOK_WEBHOOK_VERIFY_TOKEN`, and optionally `FACEBOOK_API_VERSION` in your environment.
 4. Configure the **Webhooks** product: callback `https://your-domain/api/facebook/webhook`, verify token = `FACEBOOK_WEBHOOK_VERIFY_TOKEN`, subscribe to `leadgen` at the **Page** level (the in-app flow subscribes the app when you select a Page).
-5. As agency admin, open **Dashboard → Client → Facebook** and run **Connect with Facebook**, then pick the Page and Lead Form. No manual database edits are required.
+5. As super admin, open **Dashboard → Client → Facebook** and run **Connect with Facebook**, then pick the Page and Lead Form. No manual database edits are required.
 
 ## Meta WhatsApp (Cloud API) templates
 

@@ -3,7 +3,7 @@ import { requireRoles } from "@/lib/api-guards";
 import { fetchClientManagerDashboardData } from "@/lib/dashboard-data";
 
 export async function GET(req: Request) {
-  const guard = await requireRoles(["CLIENT_MANAGER", "AGENCY_ADMIN"]);
+  const guard = await requireRoles(["CLIENT_MANAGER", "SUPER_ADMIN"]);
   if (guard.error) return guard.error;
   const { session } = guard;
 

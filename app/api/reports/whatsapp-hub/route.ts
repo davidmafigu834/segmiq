@@ -15,7 +15,7 @@ function resolveClient(
 ): { clientId: string; salespersonId?: string } | { error: string; status: number } {
   const qClient = url.searchParams.get("clientId");
 
-  if (session.role === "AGENCY_ADMIN") {
+  if (session.role === "SUPER_ADMIN") {
     if (!qClient) return { error: "clientId query param required", status: 400 };
     return { clientId: qClient };
   }

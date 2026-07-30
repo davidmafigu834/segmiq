@@ -11,7 +11,7 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
 
   // Salespeople and client managers can only read their own client; agency can read any
   const supabase = createAdminClient();
-  if (session.role !== "AGENCY_ADMIN") {
+  if (session.role !== "SUPER_ADMIN") {
     if (!session.clientId || session.clientId !== params.clientId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

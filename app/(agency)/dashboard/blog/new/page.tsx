@@ -8,12 +8,12 @@ export const dynamic = "force-dynamic";
 
 export default async function NewBlogPostPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / BLOG / NEW" pageTitle="New post">
+    <AgencyLayout breadcrumb="PLATFORM / BLOG / NEW" pageTitle="New post">
       <BlogPostForm />
     </AgencyLayout>
   );

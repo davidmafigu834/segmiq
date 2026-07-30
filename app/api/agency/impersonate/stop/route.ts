@@ -23,7 +23,7 @@ export async function POST() {
     .eq("id", session.realUserId)
     .maybeSingle();
 
-  if (!admin || admin.role !== "AGENCY_ADMIN" || !admin.is_active) {
+  if (!admin || admin.role !== "SUPER_ADMIN" || !admin.is_active) {
     return NextResponse.json({ error: "Admin session invalid" }, { status: 403 });
   }
 

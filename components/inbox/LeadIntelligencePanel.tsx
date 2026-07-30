@@ -34,7 +34,7 @@ type Props = {
   conversation: InboxConversation | null;
   clientId: string;
   userId: string;
-  role: "SALESPERSON" | "CLIENT_MANAGER" | "AGENCY_ADMIN";
+  role: "SALESPERSON" | "CLIENT_MANAGER" | "SUPER_ADMIN";
   canReassign: boolean;
   salespeople: { id: string; name: string }[];
   onReassigned: () => void;
@@ -324,7 +324,7 @@ export function LeadIntelligencePanel({
     Date.now() - new Date(conversation.createdAt).getTime() < 5 * 60 * 1000;
   const canChangeStage =
     role !== "CLIENT_MANAGER" &&
-    (role === "AGENCY_ADMIN" || conversation.assignedToId === userId);
+    (role === "SUPER_ADMIN" || conversation.assignedToId === userId);
   const stageButtonClass = (active: boolean) =>
     active
       ? whatsappMode

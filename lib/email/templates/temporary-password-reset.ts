@@ -81,7 +81,7 @@ export function temporaryPasswordResetEmail({
           <tr>
             <td style="padding:24px 40px;border-top:1px solid #f4f4f5;">
               <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
-                If you did not expect this reset, contact ${escapeHtml(resetByName)} or your agency admin.
+                If you did not expect this reset, contact ${escapeHtml(resetByName)} or Segmiq support.
               </p>
             </td>
           </tr>

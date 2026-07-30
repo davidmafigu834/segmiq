@@ -7,7 +7,7 @@ This guide describes how Leadstaq connects to Meta (Facebook) Lead Ads, what to 
 ## Overview
 
 - **Source:** When someone submits a Lead Ad form on a connected Page, Meta sends a webhook to Leadstaq. The app fetches the full lead from the Graph API and creates a **Lead** with `source: FACEBOOK`, same pipeline as landing-page leads (round-robin, notifications).
-- **Who connects:** Only **agency admins** (`AGENCY_ADMIN`). Client managers and salespeople cannot use the Facebook setup UI or APIs.
+- **Who connects:** Only **super admins** (`SUPER_ADMIN`). Client managers and salespeople cannot use the Facebook setup UI or APIs.
 - **Architecture:** The client’s Business Manager adds the agency’s Meta app as a partner; the agency completes OAuth in Leadstaq and selects Page + Lead Form (and an Ad account for the Campaigns feature).
 
 ## Prerequisites

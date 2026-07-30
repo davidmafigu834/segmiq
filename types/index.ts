@@ -1,4 +1,4 @@
-export type UserRole = "AGENCY_ADMIN" | "CLIENT_MANAGER" | "SALESPERSON";
+export type UserRole = "SUPER_ADMIN" | "CLIENT_MANAGER" | "SALESPERSON";
 
 export type ClientMode = "team" | "solo";
 
@@ -88,6 +88,10 @@ export interface ClientRow {
   twilio_whatsapp_override: string | null;
   dial_code: string | null;
   is_active: boolean;
+  /** When true, Segmiq is the client's managed marketing partner. */
+  agency_managed?: boolean;
+  agency_managed_changed_at?: string | null;
+  agency_managed_changed_by?: string | null;
   created_at: string;
   updated_at: string;
   fb_access_token: string | null;

@@ -22,7 +22,7 @@ c as (
   returning id, slug
 )
 insert into public.users (name, email, password, role, client_id, phone, is_active)
-select 'Agency Admin', 'admin@leadstaq.com', pwd.h, 'AGENCY_ADMIN', null, '+10000000000', true
+select 'Super Admin', 'admin@leadstaq.com', pwd.h, 'SUPER_ADMIN', null, '+10000000000', true
 from pwd
 on conflict (email) do update set
   name = excluded.name,

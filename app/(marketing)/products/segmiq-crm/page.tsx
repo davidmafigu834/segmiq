@@ -32,16 +32,16 @@ import {
 
 export const metadata = pageMetadata({
   title: "Segmiq CRM — Capture, score, coach, and close in one platform",
-  description: "Segmiq CRM runs your whole revenue motion across three connected portals: agency, manager, and salesperson.",
+  description: "Segmiq CRM runs your whole revenue motion across three connected portals: platform, manager, and salesperson.",
   path: "/products/segmiq-crm",
 });
 
 const PORTALS = [
   {
     Icon: Briefcase,
-    k: "AGENCY ADMIN",
-    t: "Run every client from one place",
-    d: "A health grid across all clients, a pulse strip, alerts, and an activity feed. The agency sees which accounts are thriving and which need a call today.",
+    k: "SUPER ADMIN",
+    t: "Run the platform from one place",
+    d: "A health grid across all clients, a pulse strip, alerts, and an activity feed. See which accounts are thriving and which need a call today — with optional managed marketing per client.",
   },
   {
     Icon: Users,

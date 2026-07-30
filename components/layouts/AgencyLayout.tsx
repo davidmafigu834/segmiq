@@ -30,12 +30,13 @@ export async function AgencyLayout({
     const supabase = createAdminClient();
     let clientsResult = await supabase
       .from("clients")
-      .select("id, name")
+      .select("id, name, agency_managed")
       .eq("is_active", true)
       .eq("is_archived", false)
+      .eq("agency_managed", true)
       .order("name");
 
-    if (clientsResult.error?.message?.includes("is_archived")) {
+    if (clientsResult.error?.message?.includes("is_archived") || clientsResult.error?.message?.includes("agency_managed")) {
       clientsResult = await supabase
         .from("clients")
         .select("id, name")
@@ -78,21 +79,23 @@ export async function AgencyLayout({
     console.error("[AgencyLayout] data load failed:", e);
   }
 
+  // Portfolio: day-to-day client ops
   const primaryNav = [
     { href: "/dashboard", label: "Dashboard", icon: "home" as const },
     { href: "/dashboard/leads", label: "All Leads", icon: "inbox" as const, badge: newLeadsCount },
     { href: "/dashboard/clients", label: "Clients", icon: "building2" as const },
     { href: "/dashboard/campaigns", label: "Campaigns", icon: "megaphone" as const },
     { href: "/dashboard/reports", label: "Reports", icon: "bar-chart-3" as const },
+  ];
+
+  // Platform + Ops
+  const secondaryNav = [
     { href: "/dashboard/billing", label: "Billing", icon: "receipt" as const },
     { href: "/dashboard/cloud-clients", label: "Cloud Clients", icon: "cloud" as const },
     { href: "/dashboard/proposals", label: "Proposals", icon: "file-text" as const },
     { href: "/dashboard/blog", label: "Blog", icon: "file-text" as const },
     { href: "/dashboard/submissions", label: "Submissions", icon: "inbox" as const },
     { href: "/dashboard/status-incidents", label: "Status", icon: "globe" as const },
-  ];
-
-  const secondaryNav = [
     { href: "/upload", label: "Upload", icon: "camera" as const },
     { href: "/dashboard/whatsapp-templates", label: "WhatsApp", icon: "message-circle" as const },
     { href: "/dashboard/follow-up-reminders", label: "Follow-ups", icon: "bell" as const },
@@ -102,18 +105,20 @@ export async function AgencyLayout({
   return (
     <AppShell
       homeHref="/dashboard"
-      roleLabel="Agency"
+      roleLabel="Platform"
+      primarySectionLabel="Portfolio"
+      secondarySectionLabel="Platform"
       primaryNav={primaryNav}
       secondaryNav={secondaryNav}
       clients={clientRows}
       userName={session?.user?.name ?? "User"}
-      userRoleLabel="Agency admin"
+      userRoleLabel="Super Admin"
       breadcrumb={breadcrumb}
       pageTitle={pageTitle}
       titleSize={titleSize}
       actions={actions}
       unreadNotifications={unread}
-      notificationRole={session?.role ?? "AGENCY_ADMIN"}
+      notificationRole={session?.role ?? "SUPER_ADMIN"}
       hideHeader={hideShellHeader}
       profileHref="/dashboard/settings?tab=account"
     >

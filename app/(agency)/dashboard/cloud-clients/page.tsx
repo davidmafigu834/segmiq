@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CloudClientsPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     redirect("/dashboard");
   }
 
@@ -26,7 +26,7 @@ export default async function CloudClientsPage() {
 
   return (
     <AgencyLayout
-      breadcrumb="AGENCY / CLOUD SUBSCRIPTIONS"
+      breadcrumb="PLATFORM / CLOUD SUBSCRIPTIONS"
       pageTitle="Cloud Subscriptions"
     >
       {queryError ? (

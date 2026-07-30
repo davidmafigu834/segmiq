@@ -873,7 +873,7 @@ export async function checkUncontactedLeads(): Promise<{ flagged: number }> {
   const { data: admins } = await supabase
     .from("users")
     .select("id")
-    .eq("role", "AGENCY_ADMIN")
+    .eq("role", "SUPER_ADMIN")
     .eq("is_active", true);
   const adminIds = (admins ?? []).map((a) => a.id as string);
   if (!adminIds.length) return { flagged: 0 };
@@ -938,7 +938,7 @@ export async function notifyAdminsNoSalesperson(params: {
   const { data: admins } = await createAdminClient()
     .from("users")
     .select("id, email")
-    .eq("role", "AGENCY_ADMIN")
+    .eq("role", "SUPER_ADMIN")
     .eq("is_active", true);
   const key = process.env.RESEND_API_KEY;
   if (!key || !admins?.length) {
@@ -979,7 +979,7 @@ export async function sendTokenExpiryAlert(clientId: string): Promise<void> {
   const { data: admins } = await supabase
     .from("users")
     .select("id, email, name")
-    .eq("role", "AGENCY_ADMIN")
+    .eq("role", "SUPER_ADMIN")
     .eq("is_active", true);
 
   if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) {

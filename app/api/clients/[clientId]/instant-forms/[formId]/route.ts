@@ -19,7 +19,7 @@ const patchSchema = z.object({
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string; formId: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -78,7 +78,7 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
 
 export async function DELETE(_req: Request, { params }: { params: { clientId: string; formId: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

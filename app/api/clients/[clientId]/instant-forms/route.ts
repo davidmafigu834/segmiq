@@ -28,7 +28,7 @@ async function uniqueSlug(supabase: ReturnType<typeof createAdminClient>, base: 
 
 export async function GET(_req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -45,7 +45,7 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

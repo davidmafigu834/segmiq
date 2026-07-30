@@ -13,7 +13,7 @@ export async function GET(req: Request) {
 
   const supabase = createAdminClient();
 
-  if (auth.role === "AGENCY_ADMIN") {
+  if (auth.role === "SUPER_ADMIN") {
     const { data, error } = await supabase
       .from("clients")
       .select("id, name, slug")

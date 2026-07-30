@@ -17,7 +17,7 @@ const postBodySchema = z
   .strict();
 
 export async function POST(req: Request) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
 
   const raw = await req.json().catch(() => ({}));

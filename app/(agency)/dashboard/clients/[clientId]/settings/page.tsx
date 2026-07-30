@@ -64,13 +64,14 @@ export default async function ClientSettingsPage({
   return (
     <AgencyLayout
       hideShellHeader
-      breadcrumb={`AGENCY / ${(client.name as string).toUpperCase()} / SETTINGS`}
+      breadcrumb={`PLATFORM / ${(client.name as string).toUpperCase()} / SETTINGS`}
       pageTitle={client.name as string}
     >
       <ClientDetailView
         clientId={params.clientId}
         name={client.name as string}
         industry={client.industry as string}
+        agencyManaged={Boolean((client as { agency_managed?: boolean | null }).agency_managed ?? true)}
         publicProfileUrl={publicProfileUrl}
         hero={hero}
       >

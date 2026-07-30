@@ -38,11 +38,12 @@ export default async function FacebookPage({ params }: { params: { clientId: str
   };
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / FACEBOOK" pageTitle={client.name as string}>
+    <AgencyLayout breadcrumb="PLATFORM / FACEBOOK" pageTitle={client.name as string}>
       <ClientDetailView
         clientId={params.clientId}
         name={client.name as string}
         industry={client.industry as string}
+        agencyManaged={Boolean((client as { agency_managed?: boolean | null }).agency_managed ?? true)}
         publicProfileUrl={hero.profileSlug ? getPublicLandingPageUrl(hero.profileSlug) : null}
         hero={hero}
       >

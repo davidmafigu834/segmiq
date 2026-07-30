@@ -16,7 +16,7 @@ type ProfileData = {
 
 export default function CloudPricingPage() {
   const { data: session, status } = useSession();
-  const isAdmin = session?.role === "AGENCY_ADMIN";
+  const isAdmin = session?.role === "SUPER_ADMIN";
 
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState("");

@@ -26,7 +26,7 @@ export default async function AllLeadsPage({
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session?.userId || session.role !== "AGENCY_ADMIN") {
+  if (!session?.userId || session.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
@@ -46,7 +46,7 @@ export default async function AllLeadsPage({
   const filterDescription = buildFilterDescription(filters, clientNames);
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / LEADS" pageTitle="All leads" hideShellHeader>
+    <AgencyLayout breadcrumb="PLATFORM / LEADS" pageTitle="All leads" hideShellHeader>
       <AllLeadsView
         initialRows={leadsResult.rows}
         totalCount={leadsResult.totalCount}

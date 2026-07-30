@@ -29,11 +29,12 @@ export default async function ClientTeamPage({ params }: { params: { clientId: s
   }));
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / TEAM" pageTitle={client.name as string}>
+    <AgencyLayout breadcrumb="PLATFORM / TEAM" pageTitle={client.name as string}>
       <ClientDetailView
         clientId={params.clientId}
         name={client.name as string}
         industry={client.industry as string}
+        agencyManaged={Boolean((client as { agency_managed?: boolean | null }).agency_managed ?? true)}
         publicProfileUrl={hero.profileSlug ? getPublicLandingPageUrl(hero.profileSlug) : null}
         hero={hero}
       >

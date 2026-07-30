@@ -141,7 +141,7 @@ export function Projects({ onTabChange, onOpenAccount, onOpenProject, onAuthExpi
                 ? `${projects.length} project${projects.length !== 1 ? "s" : ""} · ${photoTotal} photos stored`
                 : activeClientId
                   ? "No projects yet · Upload your first job"
-                  : role === "AGENCY_ADMIN"
+                  : role === "SUPER_ADMIN"
                     ? "Choose a client to view their field projects"
                     : "Loading your workspace…"}
             </p>
@@ -177,7 +177,7 @@ export function Projects({ onTabChange, onOpenAccount, onOpenProject, onAuthExpi
           </div>
         </div>
 
-        {role === "AGENCY_ADMIN" && clientOptions.length > 1 && activeClientId && (
+        {role === "SUPER_ADMIN" && clientOptions.length > 1 && activeClientId && (
           <div className="mt-4">
             <label className="mb-1.5 block font-fw-body text-[10px] font-bold uppercase tracking-wider text-warm">
               Client

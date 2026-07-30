@@ -89,7 +89,7 @@ export async function POST(req: Request) {
 
   let clientResult = await supabase
     .from("clients")
-    .insert({ ...clientPayload, signup_source: "cloud" })
+    .insert({ ...clientPayload, signup_source: "cloud", agency_managed: false })
     .select("id")
     .single();
 
@@ -97,7 +97,19 @@ export async function POST(req: Request) {
     clientResult.error?.message?.includes("signup_source") &&
     clientResult.error.message.includes("does not exist")
   ) {
-    clientResult = await supabase.from("clients").insert(clientPayload).select("id").single();
+    clientResult = await supabase
+      .from("clients")
+      .insert({ ...clientPayload, agency_managed: false })
+      .select("id")
+      .single();
+  }
+
+  if (clientResult.error?.message?.includes("agency_managed")) {
+    clientResult = await supabase
+      .from("clients")
+      .insert({ ...clientPayload, signup_source: "cloud" })
+      .select("id")
+      .single();
   }
 
   const { data: client, error: clientErr } = clientResult;

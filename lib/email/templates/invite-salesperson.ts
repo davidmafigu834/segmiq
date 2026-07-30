@@ -20,8 +20,8 @@ export function inviteSalespersonEmail({
       ? "Sales Manager"
       : role === "SALESPERSON"
         ? "Salesperson"
-        : role === "AGENCY_ADMIN"
-          ? "Agency Admin"
+        : role === "SUPER_ADMIN"
+          ? "Super Admin"
           : role;
 
   const subject = `You have been invited to Segmiq — ${clientName}`;

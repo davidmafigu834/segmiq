@@ -38,13 +38,14 @@ export default async function TestimonialsPage({ params }: { params: { clientId:
 
   return (
     <AgencyLayout
-      breadcrumb={`AGENCY / CLIENTS / ${(client.name as string).toUpperCase()} / TESTIMONIALS`}
+      breadcrumb={`PLATFORM / CLIENTS / ${(client.name as string).toUpperCase()} / TESTIMONIALS`}
       pageTitle="Testimonials"
     >
       <ClientDetailView
         clientId={params.clientId}
         name={client.name as string}
         industry={client.industry as string}
+        agencyManaged={Boolean((client as { agency_managed?: boolean | null }).agency_managed ?? true)}
         publicProfileUrl={publicProfileUrl}
         hero={hero}
       >

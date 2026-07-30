@@ -220,7 +220,7 @@ function LoginForm() {
                   </Link>
                 </p>
                 <p className="text-[12px] text-[var(--cloud-text-tertiary)]">
-                  Agency admin?{" "}
+                  Super admin?{" "}
                   <Link href="/login" className="font-medium text-[var(--cloud-text-secondary)] transition-colors hover:text-[var(--cloud-text-primary)]">
                     Agency login
                   </Link>

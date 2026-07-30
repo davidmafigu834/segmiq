@@ -816,7 +816,7 @@ export function AgencySettingsClient() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-display text-2xl text-ink-primary">Agency team</h2>
               <Button variant="ghost" size="sm" onClick={() => setInviteOpen(true)}>
-                Invite admin
+                Invite super admin
               </Button>
             </div>
             {inviteResult?.emailSent === true ? (
@@ -923,7 +923,7 @@ export function AgencySettingsClient() {
             {inviteOpen ? (
               <div className="fixed inset-0 z-50 flex flex-col bg-[var(--surface-overlay)] p-0 md:items-center md:justify-center md:p-4">
                 <div className="flex h-full w-full flex-col border border-border bg-surface-card p-5 shadow-lg md:h-auto md:max-w-md md:rounded-lg md:p-6">
-                  <h3 className="font-display text-xl">Invite agency admin</h3>
+                  <h3 className="font-display text-xl">Invite super admin</h3>
                   <label className="mt-4 block">
                     <span className="font-mono text-[10px] uppercase text-ink-tertiary">Email</span>
                     <Input

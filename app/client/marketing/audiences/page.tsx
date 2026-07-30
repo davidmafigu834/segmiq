@@ -47,7 +47,7 @@ export default async function MarketingAudiencesPage() {
         ))}
       </div>
       <p className="mt-4 text-xs text-[var(--text-tertiary)]">
-        Custom segments can be created by your agency admin. Use these audiences when creating a{" "}
+        Custom segments can be created by Segmiq. Use these audiences when creating a{" "}
         <Link href="/client/marketing/campaigns/new" className="text-[var(--accent)] hover:underline">
           new campaign
         </Link>

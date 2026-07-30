@@ -6,7 +6,7 @@ import { maskRecipient } from "@/lib/messaging/mask";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
 
   const supabase = createAdminClient();

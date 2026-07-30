@@ -33,7 +33,7 @@ export default async function ClientCompanyProfilePage() {
           className="mb-8"
           eyebrow={`${clientName} / Company`}
           title="Company profile"
-          description="Update your business details, logo, and branding — the same settings your agency manages under client profile."
+          description="Update your business details, logo, and branding — the same settings available under company profile."
         />
 
         <CompanyProfileManager

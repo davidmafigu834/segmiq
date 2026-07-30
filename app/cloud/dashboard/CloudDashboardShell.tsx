@@ -78,7 +78,7 @@ function getInitials(name: string): string {
 function roleLabel(role: string | undefined): string {
   if (role === "CLIENT_MANAGER") return "Manager";
   if (role === "SALESPERSON") return "Salesperson";
-  if (role === "AGENCY_ADMIN") return "Admin";
+  if (role === "SUPER_ADMIN") return "Admin";
   return role?.replace(/_/g, " ").toLowerCase() ?? "";
 }
 
@@ -279,7 +279,7 @@ export default function CloudDashboardShell({
   }, [session?.clientId]);
 
   useEffect(() => {
-    if (!session?.userId || session.role === "AGENCY_ADMIN" || !isCloudAdminRole(session.role)) return;
+    if (!session?.userId || session.role === "SUPER_ADMIN" || !isCloudAdminRole(session.role)) return;
     if (onboardingChecked.current) return;
     if (matchesCloudDashboardPath(pathname, "/onboarding")) return;
     const cached = sessionStorage.getItem("lq_ob");

@@ -19,7 +19,7 @@ type Props = {
 };
 
 function roleLabel(role: string | null): string {
-  if (role === "AGENCY_ADMIN") return "Agency admin";
+  if (role === "SUPER_ADMIN") return "Super Admin";
   if (role === "CLIENT_MANAGER") return "Client manager";
   if (role === "SALESPERSON") return "Field team";
   return "Cloud user";

@@ -10,7 +10,7 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(req: Request, { params }: { params: { userId: string } }) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
 
   if (params.userId === g.session.userId) {
@@ -24,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: { userId: string
 
   const supabase = createAdminClient();
   const { data: target } = await supabase.from("users").select("id, role").eq("id", params.userId).maybeSingle();
-  if (!target || target.role !== "AGENCY_ADMIN") {
+  if (!target || target.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

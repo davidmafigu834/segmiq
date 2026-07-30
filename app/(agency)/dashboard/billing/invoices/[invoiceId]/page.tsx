@@ -94,7 +94,7 @@ export default async function InvoiceDetailPage({ params }: { params: { invoiceI
   }));
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / BILLING / INVOICE" pageTitle={detail.invoiceNumber}>
+    <AgencyLayout breadcrumb="PLATFORM / BILLING / INVOICE" pageTitle={detail.invoiceNumber}>
       <InvoiceDetailClient detail={detail} payments={paymentRows} />
     </AgencyLayout>
   );

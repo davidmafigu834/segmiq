@@ -24,18 +24,18 @@ type Client = { id: string; name: string };
 const ROLE_LABELS: Record<string, string> = {
   CLIENT_MANAGER: "Manager",
   SALESPERSON: "Salesperson",
-  AGENCY_ADMIN: "Admin",
+  SUPER_ADMIN: "Admin",
 };
 
 function roleBadgeClass(role: string) {
   if (role === "CLIENT_MANAGER") return "bg-[var(--cloud-accent-muted)] text-[var(--cloud-ink)] border border-[rgba(212,255,79,0.35)]";
-  if (role === "AGENCY_ADMIN") return "bg-[var(--cloud-ink)] text-[var(--cloud-accent)] border border-transparent";
+  if (role === "SUPER_ADMIN") return "bg-[var(--cloud-ink)] text-[var(--cloud-accent)] border border-transparent";
   return "bg-[var(--cloud-surface-muted)] text-[var(--cloud-text-secondary)] border border-[var(--cloud-border)]";
 }
 
 export default function CloudTeamPage() {
   const { data: session, status } = useSession();
-  const isAdmin = session?.role === "AGENCY_ADMIN";
+  const isAdmin = session?.role === "SUPER_ADMIN";
   const canManageTeam = isCloudAdminRole(session?.role);
 
   const [clients, setClients] = useState<Client[]>([]);

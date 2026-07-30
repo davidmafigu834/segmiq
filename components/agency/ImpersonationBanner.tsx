@@ -40,7 +40,7 @@ export function ImpersonationBanner({
           {realUserName ? (
             <>
               {" "}
-              as agency admin <span className="font-semibold">{realUserName}</span>
+              as super admin <span className="font-semibold">{realUserName}</span>
             </>
           ) : null}
           . You see exactly what this team member sees.

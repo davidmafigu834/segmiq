@@ -26,12 +26,12 @@ export async function POST(req: Request) {
   });
 
   // Look up the user — only main portal users, not Cloud-only accounts
-  // Main portal users are AGENCY_ADMIN, CLIENT_MANAGER, SALESPERSON
+  // Main portal users are SUPER_ADMIN, CLIENT_MANAGER, SALESPERSON
   const { data: user } = await supabase
     .from('users')
     .select('id, name, email, role, is_active')
     .eq('email', email.toLowerCase().trim())
-    .in('role', ['AGENCY_ADMIN', 'CLIENT_MANAGER', 'SALESPERSON'])
+    .in('role', ['SUPER_ADMIN', 'CLIENT_MANAGER', 'SALESPERSON'])
     .eq('is_active', true)
     .maybeSingle();
 

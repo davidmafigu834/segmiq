@@ -24,6 +24,8 @@ export function AppShell({
   roleLabel,
   primaryNav,
   secondaryNav,
+  primarySectionLabel = "Workspace",
+  secondarySectionLabel = "Tools",
   clients,
   userName,
   userRoleLabel,
@@ -49,6 +51,8 @@ export function AppShell({
   roleLabel: string;
   primaryNav: AppShellNavItem[];
   secondaryNav: AppShellNavItem[];
+  primarySectionLabel?: string;
+  secondarySectionLabel?: string;
   clients?: AppShellClientRow[];
   userName: string;
   userRoleLabel: string;
@@ -126,6 +130,8 @@ export function AppShell({
       roleLabel={roleLabel}
       primaryNav={primaryNav}
       secondaryNav={secondaryNav}
+      primarySectionLabel={primarySectionLabel}
+      secondarySectionLabel={secondarySectionLabel}
       clients={clients}
       userName={userName}
       userRoleLabel={userRoleLabel}
@@ -143,6 +149,8 @@ export function AppShell({
       roleLabel={roleLabel}
       primaryNav={primaryNav}
       secondaryNav={secondaryNav}
+      primarySectionLabel={primarySectionLabel}
+      secondarySectionLabel={secondarySectionLabel}
       clients={clients}
       userName={userName}
       userRoleLabel={userRoleLabel}
@@ -227,7 +235,7 @@ export function AppShell({
               {!hideSearch ? <GlobalSearch role={notificationRole} /> : null}
               <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole} />
               {!hideQuick ? (
-                notificationRole === "AGENCY_ADMIN" ? (
+                notificationRole === "SUPER_ADMIN" ? (
                   <>
                     <button
                       type="button"
@@ -276,7 +284,7 @@ export function AppShell({
               {!hideSearch ? <GlobalSearch role={notificationRole} /> : null}
               <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole} />
               {!hideQuick ? (
-                notificationRole === "AGENCY_ADMIN" ? (
+                notificationRole === "SUPER_ADMIN" ? (
                   <>
                     <button
                       type="button"

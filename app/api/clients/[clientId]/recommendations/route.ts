@@ -46,7 +46,7 @@ export async function GET(
   return NextResponse.json({ recommendations: sorted });
 }
 
-// POST — trigger fresh analysis on demand (AGENCY_ADMIN only)
+// POST — trigger fresh analysis on demand (SUPER_ADMIN only)
 export async function POST(
   req: Request,
   { params }: { params: { clientId: string } }
@@ -56,7 +56,7 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.role !== "AGENCY_ADMIN") {
+  if (session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

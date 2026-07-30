@@ -9,7 +9,7 @@ declare module "next-auth" {
     clientMode: ClientMode;
     /** True when a CLIENT_MANAGER has salesperson capabilities enabled. */
     alsoSells?: boolean;
-    /** Set when an agency admin is impersonating a client team member. */
+    /** Set when a super admin is impersonating a client team member. */
     realUserId?: string | null;
     realUserName?: string | null;
     isImpersonating?: boolean;

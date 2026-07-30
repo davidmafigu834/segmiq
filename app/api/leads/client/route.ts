@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   if ("error" in g) return g.error;
 
   const { session } = g;
-  if (session.role !== "CLIENT_MANAGER" && session.role !== "AGENCY_ADMIN") {
+  if (session.role !== "CLIENT_MANAGER" && session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

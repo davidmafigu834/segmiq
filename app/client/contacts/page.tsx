@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function ClientContactsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.clientId) redirect("/login");
-  if (session.role !== "CLIENT_MANAGER" && session.role !== "AGENCY_ADMIN") redirect("/login");
+  if (session.role !== "CLIENT_MANAGER" && session.role !== "SUPER_ADMIN") redirect("/login");
 
   const supabase = createAdminClient();
   const { data: clientRow } = await supabase

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if ("error" in g) return g.error;
 
   const { session } = g;
-  if (session.role !== "AGENCY_ADMIN" && session.role !== "CLIENT_MANAGER") {
+  if (session.role !== "SUPER_ADMIN" && session.role !== "CLIENT_MANAGER") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

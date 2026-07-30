@@ -63,7 +63,7 @@ export async function GET() {
   const { data: agencyAdmins } = await supabase
     .from("users")
     .select("name, email, phone")
-    .eq("role", "AGENCY_ADMIN")
+    .eq("role", "SUPER_ADMIN")
     .eq("is_active", true)
     .limit(1);
 

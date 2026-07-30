@@ -25,7 +25,7 @@ export async function GET(_req: Request, { params }: { params: { contactId: stri
   }
 
   if (
-    session.role !== "AGENCY_ADMIN" &&
+    session.role !== "SUPER_ADMIN" &&
     !canAccessClient(session.role, session.clientId, contact.client_id as string)
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

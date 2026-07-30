@@ -74,7 +74,7 @@ export async function POST(req: Request) {
   }
   const b = parsed.data;
 
-  const requestedClientId = session.role === "AGENCY_ADMIN" ? b.clientId : session.clientId;
+  const requestedClientId = session.role === "SUPER_ADMIN" ? b.clientId : session.clientId;
   if (!requestedClientId) {
     return NextResponse.json({ error: "Missing client context" }, { status: 400 });
   }

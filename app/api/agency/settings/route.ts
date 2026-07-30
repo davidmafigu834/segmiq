@@ -18,7 +18,7 @@ const patchSchema = z.object({
 });
 
 export async function GET() {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
 
   const settings = await getAgencySettings();
@@ -63,7 +63,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
 
   const json = await req.json().catch(() => ({}));

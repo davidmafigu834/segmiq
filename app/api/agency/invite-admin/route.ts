@@ -15,7 +15,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => ({})));
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       name: parsed.data.name?.trim() || email.split("@")[0],
       email,
       password: hash,
-      role: "AGENCY_ADMIN",
+      role: "SUPER_ADMIN",
       client_id: null,
       is_active: true,
     })
@@ -56,8 +56,8 @@ export async function POST(req: Request) {
   const { subject, html } = inviteSalespersonEmail({
     inviteeName: name,
     invitedByName: g.session.user?.name || "Segmiq",
-    clientName: "Segmiq Agency",
-    role: "AGENCY_ADMIN",
+    clientName: "Segmiq",
+    role: "SUPER_ADMIN",
     email,
     temporaryPassword: tempPass,
     loginUrl,

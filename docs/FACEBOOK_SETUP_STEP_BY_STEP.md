@@ -1,6 +1,6 @@
 # Facebook Lead Ads — step-by-step setup
 
-This guide is for **agency admins** who need to finish Facebook integration end-to-end: Meta (Facebook) developer settings first, then **Leadstaq** per client. Meta’s UI changes occasionally; if a label differs slightly, use the **intent** described in each step.
+This guide is for **super admins** who need to finish Facebook integration end-to-end: Meta (Facebook) developer settings first, then **Segmiq** per client. Meta’s UI changes occasionally; if a label differs slightly, use the **intent** described in each step.
 
 **Quick path in Leadstaq (after Meta is ready):**  
 **Dashboard → Clients → [choose client] → Facebook**  
@@ -12,7 +12,7 @@ URL shape: `/dashboard/clients/{clientId}/facebook`
 
 | Requirement | Why |
 |-------------|-----|
-| **Agency admin** account in Leadstaq | Only `AGENCY_ADMIN` can open the Facebook tab and call Facebook APIs. |
+| **Super admin** account in Segmiq | Only `SUPER_ADMIN` can open the Facebook tab and call Facebook APIs. |
 | A **Meta (Facebook) account** that can manage the **Facebook Page** receiving leads | You will log in with this account during “Connect with Facebook”. |
 | That same person (or Business) can access **Meta Business Suite** / **Ads Manager** if you run Lead Ads | The Page and Lead Form must exist in Meta before Leadstaq can attach to them. |
 | **HTTPS** production URL (or localhost for dev) | OAuth redirect and webhooks must use URLs Meta accepts. |

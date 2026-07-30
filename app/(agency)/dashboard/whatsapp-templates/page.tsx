@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function WhatsAppTemplatesPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
@@ -17,10 +17,10 @@ export default async function WhatsAppTemplatesPage() {
   const sampleOgUrl = defaultSampleOgImageUrl();
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / WHATSAPP TEMPLATES" pageTitle="WhatsApp templates">
+    <AgencyLayout breadcrumb="PLATFORM / WHATSAPP TEMPLATES" pageTitle="WhatsApp templates">
       <div className="ag-fade-in mb-8">
         <p className="font-mono text-[11px] uppercase tracking-wide text-[var(--text-tertiary)]">
-          AGENCY / WHATSAPP TEMPLATES
+          PLATFORM / WHATSAPP TEMPLATES
         </p>
         <h1 className="mt-1 font-display text-[28px] leading-none tracking-display text-[var(--text-primary)] md:text-[40px]">
           Template tester

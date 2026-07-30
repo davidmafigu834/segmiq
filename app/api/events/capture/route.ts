@@ -65,7 +65,7 @@ export async function GET(req: Request) {
   if (
     session.role !== "CLIENT_MANAGER" &&
     session.role !== "SALESPERSON" &&
-    session.role !== "AGENCY_ADMIN"
+    session.role !== "SUPER_ADMIN"
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -77,7 +77,7 @@ export async function GET(req: Request) {
   }
 
   const clientId =
-    session.role === "AGENCY_ADMIN"
+    session.role === "SUPER_ADMIN"
       ? url.searchParams.get("clientId")
       : session.clientId;
   if (!clientId) {
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
   if (
     session.role !== "CLIENT_MANAGER" &&
     session.role !== "SALESPERSON" &&
-    session.role !== "AGENCY_ADMIN"
+    session.role !== "SUPER_ADMIN"
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -114,7 +114,7 @@ export async function POST(req: Request) {
   }
   const b = parsed.data;
 
-  const clientId = session.role === "AGENCY_ADMIN" ? b.clientId : session.clientId;
+  const clientId = session.role === "SUPER_ADMIN" ? b.clientId : session.clientId;
   if (!clientId) {
     return NextResponse.json({ error: "Missing client context" }, { status: 400 });
   }

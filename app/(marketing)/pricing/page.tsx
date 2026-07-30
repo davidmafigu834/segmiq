@@ -47,7 +47,7 @@ const ROWS: [string, string, string, string][] = [
 
 const FAQ = [
   ["Is Segmiq CRM priced per user or per company?", "Per client company, billed monthly. Each plan includes a number of salesperson seats — 5 on Starter, 15 on Growth, unlimited on Scale."],
-  ["What counts as a salesperson?", "An active rep with their own login to the salesperson portal. Managers and the agency admin are not counted against the salesperson limit."],
+  ["What counts as a salesperson?", "An active rep with their own login to the salesperson portal. Managers and the super admin are not counted against the salesperson limit."],
   ["Can I change plans later?", "Yes. You can upgrade or downgrade at any time as your team and lead volume change."],
   ["Do I need Segmiq Cloud as well?", "No — they are separate products. Segmiq CRM manages leads and sales; Segmiq Cloud documents projects and builds your public portfolio. They share one login and database and work well together, but each is billed on its own plan."],
   ["Is lead scoring only on the AI plans?", "No. Scoring runs on every plan. Starter uses a deterministic, rules-based engine (recency, budget, urgency, completeness, campaign fit). Growth and Scale add an AI intent score on top."],

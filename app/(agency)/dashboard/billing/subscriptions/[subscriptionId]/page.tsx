@@ -65,7 +65,7 @@ export default async function SubscriptionDetailPage({
   }));
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / BILLING / SUBSCRIPTION" pageTitle={detail.clientName}>
+    <AgencyLayout breadcrumb="PLATFORM / BILLING / SUBSCRIPTION" pageTitle={detail.clientName}>
       <SubscriptionDetailClient detail={detail} history={history} />
     </AgencyLayout>
   );

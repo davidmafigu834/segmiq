@@ -94,10 +94,10 @@ async function main() {
     .from("users")
     .upsert(
       {
-        name: "Agency Admin",
+        name: "Super Admin",
         email: "admin@leadstaq.com",
         password: adminHash,
-        role: "AGENCY_ADMIN",
+        role: "SUPER_ADMIN",
         client_id: null,
         phone: "+10000000000",
         is_active: true,

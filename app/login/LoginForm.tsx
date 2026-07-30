@@ -14,7 +14,7 @@ function reasonBanner(reason: string | null): { message: string; tone: "warning"
   }
   if (reason === "no_client") {
     return {
-      message: "Your account is not linked to a client workspace. Ask your manager or agency admin to fix your user setup.",
+      message: "Your account is not linked to a client workspace. Ask your manager or Segmiq support to fix your user setup.",
       tone: "danger",
     };
   }
@@ -234,7 +234,7 @@ function LoginFormInner() {
       </div>
 
       <p className="mt-6 text-center text-[13px] leading-relaxed text-[var(--text-tertiary)] lg:text-left">
-        Accounts are provisioned by your agency admin.{" "}
+        Accounts are provisioned by Segmiq.{" "}
         <Link href="/contact" className="font-medium text-[var(--accent-fg)] hover:underline">
           Need access?
         </Link>

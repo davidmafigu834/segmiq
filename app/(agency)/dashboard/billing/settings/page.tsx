@@ -37,7 +37,7 @@ export default async function BillingSettingsPage() {
   };
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / BILLING / SETTINGS" pageTitle="Billing settings" titleSize="hero">
+    <AgencyLayout breadcrumb="PLATFORM / BILLING / SETTINGS" pageTitle="Billing settings" titleSize="hero">
       <BillingSettingsClient initial={data ? values : EMPTY} />
     </AgencyLayout>
   );

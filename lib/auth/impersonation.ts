@@ -1,16 +1,21 @@
 import type { ClientMode, UserRole } from "@/types";
+import { isSuperAdminRole, normalizeUserRole } from "@/lib/auth/roles";
 
-export function homeForRole(role: UserRole, clientMode: ClientMode = "team"): string {
-  if (role === "AGENCY_ADMIN") return "/dashboard";
-  if (role === "CLIENT_MANAGER") return "/client/dashboard";
-  if (role === "SALESPERSON" && clientMode === "solo") return "/solo/dashboard";
-  return "/sales/dashboard";
+export function homeForRole(role: UserRole | string, clientMode: ClientMode = "team"): string {
+  const normalized = normalizeUserRole(role) ?? role;
+  if (isSuperAdminRole(normalized)) return "/dashboard";
+  if (normalized === "CLIENT_MANAGER") return "/client/dashboard";
+  if (normalized === "SALESPERSON" && clientMode === "solo") return "/solo/dashboard";
+  if (normalized === "SALESPERSON") return "/sales/dashboard";
+  // Unknown / legacy roles: never default to /sales (causes redirect loops).
+  return "/login";
 }
 
-export function roleLabel(role: UserRole): string {
+export function roleLabel(role: UserRole | string): string {
+  if (isSuperAdminRole(role)) return "Super Admin";
   if (role === "CLIENT_MANAGER") return "Manager";
   if (role === "SALESPERSON") return "Salesperson";
-  return role;
+  return String(role);
 }
 
 export function canBeImpersonated(user: {

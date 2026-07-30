@@ -20,7 +20,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   if (!canAccessClient(session.role ?? "", session.clientId ?? null, clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (session.role !== "AGENCY_ADMIN" && !canManageClientProfile(session.role)) {
+  if (session.role !== "SUPER_ADMIN" && !canManageClientProfile(session.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

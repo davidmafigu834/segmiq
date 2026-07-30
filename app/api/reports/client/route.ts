@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 function resolveTargetClientId(session: Session, url: URL): { clientId: string } | { error: string; status: number } {
   const q = url.searchParams.get("clientId");
-  if (session.role === "AGENCY_ADMIN") {
+  if (session.role === "SUPER_ADMIN") {
     if (!q) {
       return { error: "clientId query param required for agency admin", status: 400 };
     }

@@ -85,7 +85,7 @@ async function handleTokenExpiry(clientId: string, err: GraphError): Promise<voi
   const { data: admins } = await supabase
     .from("users")
     .select("id")
-    .eq("role", "AGENCY_ADMIN")
+    .eq("role", "SUPER_ADMIN")
     .eq("is_active", true);
 
   const recentCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();

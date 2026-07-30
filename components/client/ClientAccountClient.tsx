@@ -163,10 +163,19 @@ export function ClientAccountClient({
 }: {
   user: ClientAccountUser;
   agencyContact: AgencyContactRow | null;
-  client: { id: string; name: string; industry: string | null; logo_url: string | null };
+  client: {
+    id: string;
+    name: string;
+    industry: string | null;
+    logo_url: string | null;
+    agency_managed: boolean;
+  };
 }) {
   const router = useRouter();
   const [user, setUser] = useState(initialUser);
+  const [agencyManaged, setAgencyManaged] = useState(client.agency_managed);
+  const [agencyBusy, setAgencyBusy] = useState(false);
+  const [agencyError, setAgencyError] = useState<string | null>(null);
   const [name, setName] = useState(initialUser.name);
   const [phone, setPhone] = useState(initialUser.phone ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialUser.avatar_url);
@@ -176,6 +185,35 @@ export function ClientAccountClient({
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+
+  async function toggleAgencyManaged(next: boolean) {
+    if (agencyBusy) return;
+    const confirmMsg = next
+      ? "Enable Segmiq managed marketing for this account? Segmiq will appear as your marketing partner again."
+      : "Remove managed agency service? Your CRM data stays. Segmiq support can still help with Meta and billing if needed.";
+    if (!window.confirm(confirmMsg)) return;
+
+    setAgencyBusy(true);
+    setAgencyError(null);
+    try {
+      const res = await fetch(`/api/clients/${client.id}/agency-managed`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agency_managed: next }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; agency_managed?: boolean };
+      if (!res.ok) {
+        setAgencyError(data.error ?? "Could not update managed service");
+        return;
+      }
+      setAgencyManaged(Boolean(data.agency_managed));
+      router.refresh();
+    } catch {
+      setAgencyError("Could not update managed service");
+    } finally {
+      setAgencyBusy(false);
+    }
+  }
 
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -383,7 +421,7 @@ export function ClientAccountClient({
               <Field label="Name">
                 <TextInput value={name} onChange={(e) => setName(e.target.value)} />
               </Field>
-              <Field label="Email" caption="Contact your agency to change your email.">
+              <Field label="Email" caption="Contact Segmiq support to change your email.">
                 <TextInput value={user.email} disabled />
               </Field>
               <Field
@@ -523,50 +561,102 @@ export function ClientAccountClient({
         </table>
 
         <p className="mt-6 text-xs text-[--text-tertiary]">
-          Your agency admin may send system-level alerts that can&apos;t be disabled.
+          {agencyManaged
+            ? "Segmiq may send system-level alerts that can\u2019t be disabled."
+            : "Segmiq support may send system-level alerts that can\u2019t be disabled."}
         </p>
       </section>
 
       <SectionDivider />
 
       <section>
-        <h2 className="mb-1 font-serif text-2xl text-[--text-primary]">Your agency</h2>
+        <h2 className="mb-1 font-serif text-2xl text-[--text-primary]">
+          {agencyManaged ? "Managed by Segmiq" : "Self-serve account"}
+        </h2>
         <p className="mb-6 text-sm text-[--text-secondary]">
-          Need help? Your agency admin can update settings, add team members, or change integrations.
+          {agencyManaged
+            ? "Segmiq is your managed marketing partner for Meta, campaigns, and related setup. You can remove this service anytime — your CRM data stays on your account."
+            : "You run sales operations on Segmiq without a managed marketing partner. You can enable managed service if you want Segmiq to operate Meta and campaigns for you."}
         </p>
 
-        <div className="rounded-xl border border-[--border] bg-[--surface-card] p-6">
-          {agencyContact ? (
-            <>
-              <div className="mb-5 flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[--surface-card-alt] font-serif text-lg text-[--text-primary]">
-                  {initials(agencyContact.name)}
-                </div>
-                <div>
-                  <div className="font-serif text-lg text-[--text-primary]">{agencyContact.name}</div>
-                  <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">Agency admin</div>
-                </div>
+        <div className="mb-6 rounded-xl border border-[--border] bg-[--surface-card] p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="text-sm font-medium text-[--text-primary]">
+                {agencyManaged ? "Managed marketing service" : "No managed agency"}
               </div>
-              <div className="space-y-2 text-sm">
-                <a
-                  href={`mailto:${agencyContact.email}`}
-                  className="flex items-center gap-2 text-[--text-primary] hover:text-[--accent-ink]"
-                >
-                  <Mail className="h-4 w-4 text-[--text-tertiary]" />
+              <div className="mt-0.5 text-xs text-[--text-secondary]">
+                {agencyManaged
+                  ? "Active — Segmiq operates Meta and marketing for this account."
+                  : "Self-serve — Meta and billing support remain available from Segmiq when needed."}
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={agencyBusy}
+              onClick={() => void toggleAgencyManaged(!agencyManaged)}
+              className="rounded-md border border-[--border-strong] bg-[--surface-card-alt] px-3 py-2 text-sm font-medium text-[--text-primary] transition-colors hover:bg-[--surface-card] disabled:opacity-60"
+            >
+              {agencyBusy
+                ? "Updating…"
+                : agencyManaged
+                  ? "Remove managed service"
+                  : "Enable managed service"}
+            </button>
+          </div>
+          {agencyError ? <p className="mt-3 text-xs text-[--danger]">{agencyError}</p> : null}
+        </div>
+
+        {agencyManaged ? (
+          <div className="rounded-xl border border-[--border] bg-[--surface-card] p-6">
+            {agencyContact ? (
+              <>
+                <div className="mb-5 flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[--surface-card-alt] font-serif text-lg text-[--text-primary]">
+                    {initials(agencyContact.name)}
+                  </div>
+                  <div>
+                    <div className="font-serif text-lg text-[--text-primary]">{agencyContact.name}</div>
+                    <div className="font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">
+                      Segmiq contact
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <a
+                    href={`mailto:${agencyContact.email}`}
+                    className="flex items-center gap-2 text-[--text-primary] hover:text-[--accent-ink]"
+                  >
+                    <Mail className="h-4 w-4 text-[--text-tertiary]" />
+                    {agencyContact.email}
+                  </a>
+                  {agencyContact.phone ? (
+                    <a href={`tel:${agencyContact.phone}`} className="flex items-center gap-2 text-[--text-primary]">
+                      <Phone className="h-4 w-4 text-[--text-tertiary]" />
+                      {agencyContact.phone}
+                    </a>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-[--text-secondary]">Segmiq contact info unavailable.</div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-[--border] bg-[--surface-card] p-6 text-sm text-[--text-secondary]">
+            Need help with Meta, billing, or account setup? Contact Segmiq support
+            {agencyContact?.email ? (
+              <>
+                {" "}
+                at{" "}
+                <a href={`mailto:${agencyContact.email}`} className="text-[--text-primary] underline-offset-2 hover:underline">
                   {agencyContact.email}
                 </a>
-                {agencyContact.phone ? (
-                  <a href={`tel:${agencyContact.phone}`} className="flex items-center gap-2 text-[--text-primary]">
-                    <Phone className="h-4 w-4 text-[--text-tertiary]" />
-                    {agencyContact.phone}
-                  </a>
-                ) : null}
-              </div>
-            </>
-          ) : (
-            <div className="text-sm text-[--text-secondary]">Agency admin info unavailable.</div>
-          )}
-        </div>
+              </>
+            ) : null}
+            .
+          </div>
+        )}
       </section>
     </div>
   );

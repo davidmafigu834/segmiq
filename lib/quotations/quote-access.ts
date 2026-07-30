@@ -43,7 +43,7 @@ export async function canManageQuotationForLead(
     role: (session.role ?? "SALESPERSON") as UserRole,
   };
 
-  if (session.role === "AGENCY_ADMIN") return { allowed: true, lead: scope, actor };
+  if (session.role === "SUPER_ADMIN") return { allowed: true, lead: scope, actor };
   if (session.role === "CLIENT_MANAGER") {
     if (session.clientId !== scope.client_id) return { allowed: false, reason: "Forbidden", status: 403 };
     return { allowed: true, lead: scope, actor };
@@ -84,5 +84,5 @@ export async function canManageQuotation(
 
 /** Catalog & quote settings: writes restricted to manager/admin. */
 export function canManageCatalog(role: string | null | undefined): boolean {
-  return role === "AGENCY_ADMIN" || role === "CLIENT_MANAGER";
+  return role === "SUPER_ADMIN" || role === "CLIENT_MANAGER";
 }

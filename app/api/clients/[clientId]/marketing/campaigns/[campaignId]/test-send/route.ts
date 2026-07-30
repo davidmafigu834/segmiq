@@ -16,7 +16,7 @@ export async function POST(
   const g = await requireClientAccessFromRequest(req, params.clientId);
   if ("error" in g) return g.error;
 
-  if (g.session.role !== "CLIENT_MANAGER" && g.session.role !== "AGENCY_ADMIN") {
+  if (g.session.role !== "CLIENT_MANAGER" && g.session.role !== "SUPER_ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

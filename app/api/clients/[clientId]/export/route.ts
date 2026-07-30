@@ -11,7 +11,7 @@ function csvEscape(s: string | number | null | undefined): string {
 }
 
 export async function GET(_req: Request, { params }: { params: { clientId: string } }) {
-  const g = await requireRoles(["AGENCY_ADMIN"]);
+  const g = await requireRoles(["SUPER_ADMIN"]);
   if ("error" in g) return g.error;
 
   const supabase = createAdminClient();

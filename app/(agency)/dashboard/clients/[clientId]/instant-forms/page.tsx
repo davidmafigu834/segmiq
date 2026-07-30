@@ -21,11 +21,12 @@ export default async function InstantFormsPage({ params }: { params: { clientId:
     .order("created_at", { ascending: false });
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / INSTANT FORMS" pageTitle={client.name as string}>
+    <AgencyLayout breadcrumb="PLATFORM / INSTANT FORMS" pageTitle={client.name as string}>
       <ClientDetailView
         clientId={params.clientId}
         name={client.name as string}
         industry={client.industry as string}
+        agencyManaged={Boolean((client as { agency_managed?: boolean | null }).agency_managed ?? true)}
         publicProfileUrl={hero.profileSlug ? getPublicLandingPageUrl(hero.profileSlug) : null}
         hero={hero}
       >

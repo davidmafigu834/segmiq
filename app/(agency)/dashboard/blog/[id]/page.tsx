@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export default async function EditBlogPostPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.role !== "AGENCY_ADMIN") {
+  if (!session || session.role !== "SUPER_ADMIN") {
     redirect("/login");
   }
 
@@ -17,7 +17,7 @@ export default async function EditBlogPostPage({ params }: { params: { id: strin
   if (!post) notFound();
 
   return (
-    <AgencyLayout breadcrumb="AGENCY / BLOG / EDIT" pageTitle="Edit post">
+    <AgencyLayout breadcrumb="PLATFORM / BLOG / EDIT" pageTitle="Edit post">
       <BlogPostForm post={post} />
     </AgencyLayout>
   );

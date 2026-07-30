@@ -198,6 +198,8 @@ export function AgencySidebar({
   roleLabel,
   primaryNav,
   secondaryNav,
+  primarySectionLabel = "Workspace",
+  secondarySectionLabel = "Tools",
   clients,
   userName,
   userRoleLabel,
@@ -213,6 +215,8 @@ export function AgencySidebar({
   roleLabel: string;
   primaryNav: AppShellNavItem[];
   secondaryNav: AppShellNavItem[];
+  primarySectionLabel?: string;
+  secondarySectionLabel?: string;
   clients?: AppShellClientRow[];
   userName: string;
   userRoleLabel: string;
@@ -283,7 +287,7 @@ export function AgencySidebar({
 
       <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-1 pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent]">
         <div className={`${sectionLabelClass} px-5 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-disabled)]`}>
-          Workspace
+          {primarySectionLabel}
         </div>
         <nav className={`flex flex-col gap-0.5 ${iconOnly && !mobileExpanded ? "px-1" : "px-2 layout:px-3"}`}>
           {primaryNav.map((item) =>
@@ -316,7 +320,7 @@ export function AgencySidebar({
         />
 
         <div className={`${sectionLabelClass} px-5 pb-2 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--text-disabled)]`}>
-          Tools
+          {secondarySectionLabel}
         </div>
         <nav className={`flex flex-col gap-0.5 pb-2 ${iconOnly && !mobileExpanded ? "px-1" : "px-2 layout:px-3"}`}>
           {secondaryNav.map((item) => (
@@ -334,7 +338,7 @@ export function AgencySidebar({
         {clients && clients.length > 0 && !iconOnly ? (
           <div className={`${mobileExpanded ? "block" : "hidden layout:block"} px-3 pb-2 pt-2`}>
             <div className="mt-4 mb-2 px-2 font-mono text-[12px] font-medium uppercase tracking-[0.08em] text-[var(--text-on-dark-dim)]">
-              Clients
+              Managed clients
             </div>
             <ul className="space-y-1 pr-1">
               {clients.slice(0, 8).map((c) => (
