@@ -3,6 +3,7 @@ import { parseSalesPrefs } from "@/lib/notification-prefs";
 import { sendWhatsApp } from "@/lib/messaging/provider";
 import { firstName } from "@/lib/messaging/whatsapp-vars";
 import { getPublicBaseUrl, magicLinkUrl } from "@/lib/constants";
+import type { LeadRow } from "@/types";
 
 const ACTIVE_STATUSES = ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"] as const;
 
