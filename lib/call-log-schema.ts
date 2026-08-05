@@ -20,6 +20,13 @@ export const logCallBodySchema = z
   })
   .superRefine((data, ctx) => {
     if (data.reachOutcome === "reached") {
+      if (!data.result) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["result"],
+          message: "Please select the call result",
+        });
+      }
       if (
         data.result === "lost" ||
         data.result === "not_qualified" ||

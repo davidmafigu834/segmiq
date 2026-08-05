@@ -16,6 +16,15 @@ describe("call log validation", () => {
     assert.equal(result.success, true);
   });
 
+  it("requires a result when the person was reached", () => {
+    const result = logCallBodySchema.safeParse({
+      reachOutcome: "reached",
+    });
+
+    assert.equal(result.success, false);
+    assert.equal(result.error?.issues.some((issue) => issue.path[0] === "result"), true);
+  });
+
   it("requires a reason when a reached lead is lost", () => {
     const result = logCallBodySchema.safeParse({
       reachOutcome: "reached",

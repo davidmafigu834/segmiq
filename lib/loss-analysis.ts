@@ -49,6 +49,9 @@ export type LossCallLogRow = {
   reason: string | null;
   result: string | null;
   reach_outcome: string | null;
+  callback_at?: string | null;
+  assets_requested?: unknown;
+  notes?: string | null;
   /** Legacy single-step outcome (pre two-step flow). */
   outcome?: string | null;
   created_at: string;
@@ -92,6 +95,14 @@ export type LossAnalysisResult = {
   notFitBySource: Record<string, NotFitSourceStats>;
   contactedOutcomes: number;
   notFitOutcomes: number;
+  uniqueLeadsCalled: number;
+  reachOutcomes: Record<string, number>;
+  results: Record<string, number>;
+  callbacksScheduled: number;
+  notesLogged: number;
+  noteThemes: Record<string, number>;
+  assetRequests: Record<string, number>;
+  incompleteReachedLogs: number;
   hasEnoughData: boolean;
 };
 
@@ -239,12 +250,64 @@ export function aggregateLossFromData(
   let totalReasonedEvents = 0;
   let contactedOutcomes = 0;
   let notFitOutcomes = 0;
+  const uniqueLeadIds = new Set<string>();
+  const reachOutcomes: Record<string, number> = {
+    reached: 0,
+    no_answer: 0,
+    call_back: 0,
+  };
+  const results: Record<string, number> = {
+    won: 0,
+    follow_up: 0,
+    lost: 0,
+    not_qualified: 0,
+  };
+  const assetRequests: Record<string, number> = {};
+  const noteThemes: Record<string, number> = {};
+  let callbacksScheduled = 0;
+  let notesLogged = 0;
+  let incompleteReachedLogs = 0;
 
   for (const log of windowCallLogs) {
     if (!isInWindow(log.created_at, windowStart, windowEnd)) continue;
     const norm = normalizeLossCallLog(log, leadById.get(log.lead_id));
-    const reason = norm.reason?.trim();
-    if (!reason) continue;
+    uniqueLeadIds.add(log.lead_id);
+
+    if (norm.reach_outcome && norm.reach_outcome in reachOutcomes) {
+      reachOutcomes[norm.reach_outcome] =
+        (reachOutcomes[norm.reach_outcome] ?? 0) + 1;
+    }
+    if (norm.result && norm.result in results) {
+      results[norm.result] = (results[norm.result] ?? 0) + 1;
+    }
+    if (norm.reach_outcome === "reached" && !norm.result) {
+      incompleteReachedLogs++;
+    }
+    if (log.callback_at) callbacksScheduled++;
+    if (log.notes?.trim()) {
+      notesLogged++;
+      const note = log.notes.toLowerCase();
+      const themes: Array<[string, readonly string[]]> = [
+        ["Pricing / quotes", ["price", "pricing", "quote", "quotation", "cost"]],
+        ["Financing / affordability", ["finance", "financing", "loan", "afford", "budget", "money"]],
+        ["Solar equipment", ["solar", "panel", "battery", "inverter", "system", "kwh"]],
+        ["Installation / site", ["roof", "install", "site", "property", "inspection"]],
+        ["Timing / follow-up", ["later", "callback", "call back", "tomorrow", "week", "month", "follow up", "follow-up"]],
+        ["Competition", ["competitor", "other company", "another quote"]],
+      ];
+      for (const [theme, keywords] of themes) {
+        if (keywords.some((keyword) => note.includes(keyword))) {
+          noteThemes[theme] = (noteThemes[theme] ?? 0) + 1;
+        }
+      }
+    }
+    if (Array.isArray(log.assets_requested)) {
+      for (const asset of log.assets_requested) {
+        if (typeof asset !== "string" || !asset.trim()) continue;
+        const key = asset.trim();
+        assetRequests[key] = (assetRequests[key] ?? 0) + 1;
+      }
+    }
 
     if (
       norm.reach_outcome === "reached" &&
@@ -252,6 +315,9 @@ export function aggregateLossFromData(
     ) {
       contactedOutcomes++;
     }
+
+    const reason = norm.reason?.trim();
+    if (!reason) continue;
 
     let counted = false;
     if (norm.result === "follow_up") {
@@ -401,6 +467,14 @@ export function aggregateLossFromData(
     notFitBySource,
     contactedOutcomes,
     notFitOutcomes,
+    uniqueLeadsCalled: uniqueLeadIds.size,
+    reachOutcomes,
+    results,
+    callbacksScheduled,
+    notesLogged,
+    noteThemes,
+    assetRequests,
+    incompleteReachedLogs,
     hasEnoughData: totalReasonedEvents >= LOSS_MIN_REASONED_EVENTS,
   };
 }
@@ -524,6 +598,14 @@ function emptyLossResult(windowStart: Date, windowEnd: Date): LossAnalysisResult
     notFitBySource: {},
     contactedOutcomes: 0,
     notFitOutcomes: 0,
+    uniqueLeadsCalled: 0,
+    reachOutcomes: { reached: 0, no_answer: 0, call_back: 0 },
+    results: { won: 0, follow_up: 0, lost: 0, not_qualified: 0 },
+    callbacksScheduled: 0,
+    notesLogged: 0,
+    noteThemes: {},
+    assetRequests: {},
+    incompleteReachedLogs: 0,
     hasEnoughData: false,
   };
 }
@@ -545,29 +627,126 @@ async function fetchLossLeadRows(
   supabase: ReturnType<typeof createAdminClient>,
   clientId: string
 ): Promise<LossLeadRow[]> {
-  let result = await supabase
-    .from("leads")
-    .select(LOSS_LEAD_SELECT)
-    .eq("client_id", clientId)
-    .eq("is_archived", false);
+  const pageSize = 500;
+  const rows: LossLeadRow[] = [];
+  let includeArchivedFilter = true;
 
-  if (result.error && isMissingLeadsArchivedColumn(result.error)) {
-    result = await supabase
-      .from("leads")
-      .select(LOSS_LEAD_SELECT)
-      .eq("client_id", clientId);
+  for (let from = 0; ; from += pageSize) {
+    let result = includeArchivedFilter
+      ? await supabase
+          .from("leads")
+          .select(LOSS_LEAD_SELECT)
+          .eq("client_id", clientId)
+          .eq("is_archived", false)
+          .order("id")
+          .range(from, from + pageSize - 1)
+      : await supabase
+          .from("leads")
+          .select(LOSS_LEAD_SELECT)
+          .eq("client_id", clientId)
+          .order("id")
+          .range(from, from + pageSize - 1);
+
+    if (
+      from === 0 &&
+      includeArchivedFilter &&
+      result.error &&
+      isMissingLeadsArchivedColumn(result.error)
+    ) {
+      includeArchivedFilter = false;
+      result = await supabase
+        .from("leads")
+        .select(LOSS_LEAD_SELECT)
+        .eq("client_id", clientId)
+        .order("id")
+        .range(0, pageSize - 1);
+    }
+
+    if (result.error) {
+      console.error("aggregateLossAnalysis: leads fetch failed", result.error);
+      return [];
+    }
+
+    const page = (result.data ?? []) as LossLeadRow[];
+    rows.push(...page);
+    if (page.length < pageSize) break;
   }
 
-  if (result.error) {
-    console.error("aggregateLossAnalysis: leads fetch failed", result.error);
-    return [];
-  }
-
-  return (result.data ?? []) as LossLeadRow[];
+  return rows;
 }
 
 const LOSS_CALL_LOG_SELECT =
-  "id, lead_id, reason, result, reach_outcome, outcome, created_at";
+  "id, lead_id, reason, result, reach_outcome, outcome, callback_at, assets_requested, notes, created_at";
+
+const LOSS_QUERY_CHUNK_SIZE = 100;
+const LOSS_QUERY_PAGE_SIZE = 500;
+
+async function fetchWindowCallLogs(
+  supabase: ReturnType<typeof createAdminClient>,
+  leadIds: string[],
+  windowStart: Date,
+  windowEnd: Date
+): Promise<LossCallLogRow[] | null> {
+  const rows: LossCallLogRow[] = [];
+
+  for (let i = 0; i < leadIds.length; i += LOSS_QUERY_CHUNK_SIZE) {
+    const chunk = leadIds.slice(i, i + LOSS_QUERY_CHUNK_SIZE);
+    for (let from = 0; ; from += LOSS_QUERY_PAGE_SIZE) {
+      const { data, error } = await supabase
+        .from("call_logs")
+        .select(LOSS_CALL_LOG_SELECT)
+        .in("lead_id", chunk)
+        .gte("created_at", windowStart.toISOString())
+        .lte("created_at", windowEnd.toISOString())
+        .order("id")
+        .range(from, from + LOSS_QUERY_PAGE_SIZE - 1);
+
+      if (error) {
+        console.error("aggregateLossAnalysis: call_logs fetch failed", error);
+        return null;
+      }
+
+      const page = (data ?? []) as LossCallLogRow[];
+      rows.push(...page);
+      if (page.length < LOSS_QUERY_PAGE_SIZE) break;
+    }
+  }
+
+  return rows;
+}
+
+async function fetchRecoverableCallLogs(
+  supabase: ReturnType<typeof createAdminClient>,
+  activeLeadIds: string[]
+): Promise<LossCallLogRow[]> {
+  const rows: LossCallLogRow[] = [];
+
+  for (let i = 0; i < activeLeadIds.length; i += LOSS_QUERY_CHUNK_SIZE) {
+    const chunk = activeLeadIds.slice(i, i + LOSS_QUERY_CHUNK_SIZE);
+    for (let from = 0; ; from += LOSS_QUERY_PAGE_SIZE) {
+      const { data, error } = await supabase
+        .from("call_logs")
+        .select(LOSS_CALL_LOG_SELECT)
+        .in("lead_id", chunk)
+        .or(
+          "result.eq.follow_up,reach_outcome.eq.call_back,outcome.in.(FOLLOW_UP,ANSWERED)"
+        )
+        .order("id")
+        .range(from, from + LOSS_QUERY_PAGE_SIZE - 1);
+
+      if (error) {
+        console.error("aggregateLossAnalysis: recoverable logs fetch failed", error);
+        break;
+      }
+
+      const page = (data ?? []) as LossCallLogRow[];
+      rows.push(...page);
+      if (page.length < LOSS_QUERY_PAGE_SIZE) break;
+    }
+  }
+
+  return rows;
+}
 
 export async function aggregateLossAnalysis(
   clientId: string,
@@ -583,16 +762,14 @@ export async function aggregateLossAnalysis(
   }
 
   const leadIds = leadRows.map((l) => l.id);
+  const windowLogs = await fetchWindowCallLogs(
+    supabase,
+    leadIds,
+    windowStart,
+    windowEnd
+  );
 
-  const { data: windowLogs, error: logsError } = await supabase
-    .from("call_logs")
-    .select(LOSS_CALL_LOG_SELECT)
-    .in("lead_id", leadIds)
-    .gte("created_at", windowStart.toISOString())
-    .lte("created_at", windowEnd.toISOString());
-
-  if (logsError) {
-    console.error("aggregateLossAnalysis: call_logs fetch failed", logsError);
+  if (!windowLogs) {
     return emptyLossResult(windowStart, windowEnd);
   }
 
@@ -603,24 +780,19 @@ export async function aggregateLossAnalysis(
   let recoverableLogs: LossCallLogRow[] = [];
 
   if (activeIds.size > 0) {
-    const { data: followUpLogs } = await supabase
-      .from("call_logs")
-      .select(LOSS_CALL_LOG_SELECT)
-      .in("lead_id", Array.from(activeIds))
-      .or(
-        "result.eq.follow_up,reach_outcome.eq.call_back,outcome.in.(FOLLOW_UP,ANSWERED)"
-      );
+    const followUpLogs = await fetchRecoverableCallLogs(
+      supabase,
+      Array.from(activeIds)
+    );
 
-    recoverableLogs = ((followUpLogs ?? []) as LossCallLogRow[]).filter((l) => {
+    recoverableLogs = followUpLogs.filter((l) => {
       const norm = normalizeLossCallLog(l, leadRows.find((r) => r.id === l.lead_id));
       return norm.result === "follow_up" && Boolean(norm.reason?.trim());
     });
   }
 
-  const windowLogRows = (windowLogs ?? []) as LossCallLogRow[];
-
   return aggregateLossFromData(
-    windowLogRows,
+    windowLogs,
     leadRows,
     recoverableLogs,
     windowStart,

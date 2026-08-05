@@ -200,6 +200,10 @@ export function LogCallForm({
     setFormError(null);
 
     if (reachOutcome === "reached") {
+      if (!result) {
+        setFormError("Please select the call result");
+        return false;
+      }
       if (result === "lost" || result === "not_qualified" || result === "follow_up") {
         if (!reason.trim()) {
           setReasonError("Please select a reason");

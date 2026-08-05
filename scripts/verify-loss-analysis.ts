@@ -158,6 +158,12 @@ assert.equal(leadEstimatedValue(leads[1]!), 12000);
 
 assert.equal(result.totalReasonedEvents, 5);
 assert.equal(result.hasEnoughData, result.totalReasonedEvents >= LOSS_MIN_REASONED_EVENTS);
+assert.equal(result.uniqueLeadsCalled, 4);
+assert.equal(result.reachOutcomes.reached, 5);
+assert.equal(result.results.follow_up, 3);
+assert.equal(result.results.lost, 1);
+assert.equal(result.results.not_qualified, 1);
+assert.equal(result.incompleteReachedLogs, 0);
 
 // Sparse data → no panel-worthy signal
 const sparse = aggregateLossFromData(

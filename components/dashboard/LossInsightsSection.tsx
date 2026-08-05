@@ -7,6 +7,10 @@ import {
   XCircle,
   Filter,
   TrendingDown,
+  PhoneCall,
+  CalendarClock,
+  FileText,
+  AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -30,8 +34,31 @@ type LossAnalysis = {
     estimatedValue: number | null;
     leadIds: string[];
   };
+  uniqueLeadsCalled: number;
+  reachOutcomes: Record<string, number>;
+  results: Record<string, number>;
+  callbacksScheduled: number;
+  notesLogged: number;
+  noteThemes: Record<string, number>;
+  assetRequests: Record<string, number>;
+  incompleteReachedLogs: number;
   hasEnoughData: boolean;
 };
+
+const ASSET_LABELS: Record<string, string> = {
+  pricing: "Pricing",
+  recent_work: "Recent work",
+  portfolio: "Portfolio",
+  testimonials: "Testimonials",
+  documents: "Documents",
+  floor_plan: "Floor plans",
+  virtual_tour: "Virtual tours",
+  similar_listings: "Similar listings",
+};
+
+function percentage(value: number, total: number): number {
+  return total > 0 ? Math.round((value / total) * 100) : 0;
+}
 
 function ReasonBars({
   title,
@@ -176,6 +203,14 @@ export function LossInsightsSection({
       : null;
 
   const partial = !analysis.hasEnoughData;
+  const reached = analysis.reachOutcomes?.reached ?? 0;
+  const reachRate = percentage(reached, analysis.totalCallLogsInWindow);
+  const assetEntries = Object.entries(analysis.assetRequests ?? {})
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const noteThemeEntries = Object.entries(analysis.noteThemes ?? {})
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
 
   return (
     <Card>
@@ -221,6 +256,104 @@ export function LossInsightsSection({
           </div>
         </div>
         )}
+
+        <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-tertiary)] p-3">
+            <div className="mb-2 flex items-center gap-2 text-[var(--text-tertiary)]">
+              <PhoneCall className="h-4 w-4" aria-hidden />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.06em]">
+                Call activity
+              </span>
+            </div>
+            <p className="m-0 text-[20px] font-semibold text-[var(--text-primary)]">
+              {analysis.totalCallLogsInWindow.toLocaleString()}
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+              {analysis.uniqueLeadsCalled.toLocaleString()} leads · {reachRate}% reached
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-tertiary)] p-3">
+            <div className="mb-2 flex items-center gap-2 text-[var(--text-tertiary)]">
+              <TrendingDown className="h-4 w-4" aria-hidden />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.06em]">
+                Outcomes
+              </span>
+            </div>
+            <p className="m-0 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+              {analysis.results?.won ?? 0} won · {analysis.results?.follow_up ?? 0} follow-up
+              <br />
+              {analysis.results?.lost ?? 0} lost · {analysis.results?.not_qualified ?? 0} not fit
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-tertiary)] p-3">
+            <div className="mb-2 flex items-center gap-2 text-[var(--text-tertiary)]">
+              <CalendarClock className="h-4 w-4" aria-hidden />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.06em]">
+                Follow-through
+              </span>
+            </div>
+            <p className="m-0 text-[20px] font-semibold text-[var(--text-primary)]">
+              {analysis.callbacksScheduled.toLocaleString()}
+            </p>
+            <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+              callbacks scheduled · {analysis.notesLogged.toLocaleString()} notes logged
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-tertiary)] p-3">
+            <div className="mb-2 flex items-center gap-2 text-[var(--text-tertiary)]">
+              <FileText className="h-4 w-4" aria-hidden />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.06em]">
+                Customer demand
+              </span>
+            </div>
+            {assetEntries.length > 0 ? (
+              <p className="m-0 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+                {assetEntries.slice(0, 3).map(([asset, count]) => (
+                  <span className="block" key={asset}>
+                    {ASSET_LABELS[asset] ?? asset.replaceAll("_", " ")} · {count}
+                  </span>
+                ))}
+              </p>
+            ) : (
+              <p className="m-0 text-[12px] text-[var(--text-tertiary)]">
+                No requested assets logged
+              </p>
+            )}
+          </div>
+        </div>
+
+        {noteThemeEntries.length > 0 ? (
+          <div className="mb-5 rounded-xl border border-[var(--border)] bg-[var(--bg-tertiary)] px-4 py-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
+              Themes found in call notes
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {noteThemeEntries.slice(0, 5).map(([theme, count]) => (
+                <span
+                  key={theme}
+                  className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[11px] text-[var(--text-secondary)]"
+                >
+                  {theme} · {count}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {analysis.incompleteReachedLogs > 0 ? (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-[rgba(245,166,35,0.25)] bg-[rgba(245,166,35,0.07)] px-4 py-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#f5a623]" aria-hidden />
+            <p className="m-0 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+              <strong className="text-[var(--text-primary)]">
+                {analysis.incompleteReachedLogs.toLocaleString()} reached calls have no result.
+              </strong>{" "}
+              These calls cannot contribute to win, follow-up, loss, or qualification patterns.
+            </p>
+          </div>
+        ) : null}
 
         <ReasonBars
           title="Where deals pause"

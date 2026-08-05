@@ -404,6 +404,10 @@ export function LogCallForm({
     }
 
     if (reachOutcome === "reached") {
+      if (!result) {
+        setFormError("Please select the call result");
+        return false;
+      }
       if (result === "lost" || result === "not_qualified" || result === "follow_up") {
         if (!reason.trim()) {
           setReasonError("Please select a reason");
@@ -475,6 +479,7 @@ export function LogCallForm({
           const data = (await res.json().catch(() => ({}))) as { error?: string; field?: string };
           if (data.field === "reason") setReasonError(data.error ?? "Invalid reason");
           else if (data.field === "callbackAt") setScheduleError(data.error ?? "Invalid time");
+          else if (data.field === "result") setFormError(data.error ?? "Please select the call result");
           else setFormError(data.error ?? "Failed to log call");
           return;
         }
