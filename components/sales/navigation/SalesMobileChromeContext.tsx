@@ -47,26 +47,23 @@ export function useSalesMobileChrome() {
   if (!ctx) {
     return {
       moreOpen: false,
-      setMoreOpen: (_: boolean) => {},
+      setMoreOpen: (() => {}) as (open: boolean) => void,
       quickActionsOpen: false,
-      setQuickActionsOpen: (_: boolean) => {},
+      setQuickActionsOpen: (() => {}) as (open: boolean) => void,
       hideBottomNav: false,
-      setHideBottomNav: (_: boolean) => {},
+      setHideBottomNav: (() => {}) as (hide: boolean) => void,
     };
   }
   return ctx;
 }
 
-/** Sync WhatsApp chat/intel panes to hide bottom nav. */
-export function useHideSalesBottomNav(hide: boolean) {
+/** Setter to hide bottom nav (e.g. WhatsApp chat/intel panes). */
+export function useHideSalesBottomNav() {
   const { setHideBottomNav } = useSalesMobileChrome();
-  const set = useCallback(
+  return useCallback(
     (v: boolean) => {
       setHideBottomNav(v);
     },
     [setHideBottomNav]
   );
-
-  // callers useEffect themselves; expose setter for clarity
-  return set;
 }

@@ -238,7 +238,7 @@ async function fetchAssignedLeads(userId: string): Promise<LeadRow[]> {
   const supabase = createAdminClient();
   const select =
     "id, name, phone, status, follow_up_date, created_at, updated_at, source, client_id, score, is_stale, budget, project_type, deal_value, form_data";
-  let q = supabase
+  const q = supabase
     .from("leads")
     .select(select)
     .eq("assigned_to_id", userId)
@@ -453,10 +453,6 @@ export async function fetchSalespersonReports(opts: {
   const wonCount = wins.length;
   const wonPrevCount = winsPrev.length;
   const wonValue = wins.reduce((s, w) => s + (Number(w.deal_value) || 0), 0);
-  const wonValuePrev = winsPrev.reduce(
-    (s, w) => s + (Number((w as { deal_value?: number | null }).deal_value) || 0),
-    0
-  );
 
   const wonClosed = closedNow.filter((l) => l.status === "WON").length;
   const wonClosedPrev = closedPrev.filter((l) => l.status === "WON").length;

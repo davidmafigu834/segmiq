@@ -30,7 +30,6 @@ import {
   useSalesToast,
 } from "@/components/sales/ui";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
-import type { CalendarEvent } from "@/lib/sales/calendar/types";
 import { toDateKey } from "@/lib/sales/calendar/format";
 import { cn } from "@/lib/ui/cn";
 
@@ -636,7 +635,7 @@ export function SalesToolboxClient({
           leads={leads}
           defaultDateKey={toDateKey(new Date())}
           onClose={() => setScheduleOpen(false)}
-          onCreated={(_event: CalendarEvent) => {
+          onCreated={() => {
             setScheduleOpen(false);
             toast({
               tone: "success",

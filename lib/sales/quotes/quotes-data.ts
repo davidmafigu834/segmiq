@@ -220,7 +220,7 @@ function mapQuote(
   }
 
   let expiresSoon = false;
-  let isExpired = effective === "expired";
+  const isExpired = effective === "expired";
   if (validUntil && isPendingStatus(effective)) {
     const daysLeft = differenceInCalendarDays(new Date(validUntil), now);
     expiresSoon = daysLeft >= 0 && daysLeft <= QUOTE_EXPIRES_SOON_DAYS;

@@ -111,8 +111,7 @@ function buildOpenTask(
 
 function buildCompletedTask(
   event: EventRow,
-  lead: LeadRow | undefined,
-  now: Date
+  lead: LeadRow | undefined
 ): SalesTaskItem | null {
   if (!lead) return null;
   const relatedName = leadCardDisplayName({
@@ -312,7 +311,7 @@ export async function fetchSalespersonTasks(opts: {
 
   const completedTasks: SalesTaskItem[] = [];
   for (const ev of completedEvents) {
-    const task = buildCompletedTask(ev, completedLeadMap.get(ev.lead_id), now);
+    const task = buildCompletedTask(ev, completedLeadMap.get(ev.lead_id));
     if (task) completedTasks.push(task);
   }
 

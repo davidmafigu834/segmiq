@@ -11,7 +11,6 @@ import { formatTrend } from "@/lib/sales/sales-dashboard-display";
 import {
   resolveSalesReportRange,
   sourceBucket,
-  SALES_REPORT_PERIODS,
   SALES_REPORT_SOURCES,
   type SalesReportPeriodId,
 } from "@/lib/sales/sales-reports-data";
