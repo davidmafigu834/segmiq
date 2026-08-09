@@ -2,17 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Inbox, Search } from "lucide-react";
+import { Inbox, PanelRight, Search, X } from "lucide-react";
 import { initials } from "@/lib/inbox/assignee-colors";
 import { useInboxCompact, useInboxMobile } from "@/lib/inbox/use-inbox-mobile";
 import { countInboxFilters } from "@/lib/inbox/queue-filters";
 import type { InboxConversation, InboxFilter } from "@/lib/inbox/types";
+import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
 import { ChatThread } from "./ChatThread";
 import { ConversationList } from "./ConversationList";
 import { FilterTabs } from "./FilterTabs";
 import { InboxIconRail } from "./InboxIconRail";
 import { LeadIntelligencePanel } from "./LeadIntelligencePanel";
 import { InboxPanelResizeHandle } from "./InboxPanelResizeHandle";
+import { InboxSkeleton } from "./InboxSkeleton";
 import { useInboxPanelWidths } from "@/lib/inbox/use-inbox-panel-widths";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 
@@ -30,6 +32,8 @@ type Props = {
   initialSalespeople?: { id: string; name: string }[];
   initialFilter?: InboxFilter;
   backHref?: string;
+  pageTitle?: string;
+  breadcrumb?: string;
 };
 
 type MobilePane = "list" | "thread" | "intel";
@@ -48,20 +52,26 @@ export function TeamInbox({
   initialSalespeople = [],
   initialFilter = "all",
   backHref,
+  pageTitle = "WhatsApp Sales Hub",
+  breadcrumb = "SALES / INBOX",
 }: Props) {
   const [conversations, setConversations] = useState<InboxConversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InboxFilter>(initialFilter);
   const [search, setSearch] = useState("");
   const [convOpen, setConvOpen] = useState(false);
   const [intelOpen, setIntelOpen] = useState(false);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [claimToast, setClaimToast] = useState<string | null>(null);
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [companyName, setCompanyName] = useState("");
+  const [sessionOpen, setSessionOpen] = useState<boolean | null>(null);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const isMobile = useInboxMobile();
   const isCompact = useInboxCompact();
+  const { setHideBottomNav } = useSalesMobileChrome();
   const searchParams = useSearchParams();
   const leadFromUrl = searchParams.get("lead");
 
@@ -69,13 +79,17 @@ export function TeamInbox({
     if (!options?.silent) setLoading(true);
     try {
       const res = await fetch("/api/inbox/conversations");
+      if (!res.ok) throw new Error("Failed");
       const data = (await res.json()) as { conversations?: InboxConversation[] };
       const rows = data.conversations ?? [];
       setConversations(rows);
+      setLoadError(false);
       setActiveId((prev) => {
         if (prev && rows.some((r) => r.id === prev)) return prev;
         return rows[0]?.id ?? null;
       });
+    } catch {
+      if (!options?.silent) setLoadError(true);
     } finally {
       if (!options?.silent) setLoading(false);
     }
@@ -100,6 +114,12 @@ export function TeamInbox({
       setMobilePane("list");
     }
   }, [isMobile]);
+
+  useEffect(() => {
+    if (!claimToast) return;
+    const t = window.setTimeout(() => setClaimToast(null), 2800);
+    return () => window.clearTimeout(t);
+  }, [claimToast]);
 
   useEffect(() => {
     fetch(`/api/clients/${clientId}/company-profile`)
@@ -151,6 +171,7 @@ export function TeamInbox({
       if (res.ok) {
         await loadConversations();
         setActiveId(leadId);
+        setClaimToast("Lead claimed — you can reply now");
         if (isCompact && backHref) setMobilePane("thread");
       }
     } finally {
@@ -176,10 +197,17 @@ export function TeamInbox({
     setIntelOpen(false);
   }
 
-  const mobileIntelTop = whatsappMode ? "max-[1180px]:top-0" : "max-[1180px]:top-16";
+  const mobileIntelTop = whatsappMode ? "max-[1099px]:top-0" : "max-[1099px]:top-16";
   const paneNav = isCompact && whatsappMode;
   const intelOpenEffective = paneNav ? mobilePane === "intel" : intelOpen;
   const listOpenEffective = paneNav ? mobilePane === "list" : convOpen;
+
+  useEffect(() => {
+    const hide = paneNav && mobilePane !== "list";
+    setHideBottomNav(hide);
+    return () => setHideBottomNav(false);
+  }, [paneNav, mobilePane, setHideBottomNav]);
+
   const {
     listWidth,
     intelWidth,
@@ -192,14 +220,26 @@ export function TeamInbox({
     resizable,
   } = useInboxPanelWidths(whatsappMode && !paneNav);
 
+  const showHubChrome = whatsappMode && (!paneNav || mobilePane === "list");
+  const breadcrumbLabel = breadcrumb.replace(/\s*\/\s*/g, " / ");
+
   return (
     <div
       className={
         whatsappMode
-          ? "flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+          ? "relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#F7F8FA]"
           : "flex h-full min-h-[calc(100dvh-11rem)] flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] layout:min-h-[calc(100dvh-7.5rem)]"
       }
     >
+      {claimToast ? (
+        <div
+          role="status"
+          className="absolute left-1/2 top-3 z-50 -translate-x-1/2 rounded-[10px] border border-[#E4E7EC] bg-white px-4 py-2 text-[13px] font-medium text-[#101828] shadow-[0_8px_24px_rgba(16,24,40,0.08)]"
+        >
+          {claimToast}
+        </div>
+      ) : null}
+
       {!whatsappMode ? (
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-sidebar)] px-5">
           <div className="flex items-center gap-8">
@@ -211,7 +251,7 @@ export function TeamInbox({
                   setConvOpen((v) => !v);
                 }}
                 className="toggle-conv flex h-[34px] w-[34px] items-center justify-center rounded-[10px] text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)] hover:text-[var(--text-secondary)] max-[860px]:flex min-[861px]:hidden"
-                title="Leads"
+                aria-label="Open conversations"
               >
                 <Inbox size={16} />
               </button>
@@ -267,7 +307,96 @@ export function TeamInbox({
         </div>
       ) : null}
 
-      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "wa-hub-shell wa-hub-immersive" : ""}`}>
+      {showHubChrome ? (
+        <div className="shrink-0 border-b border-[#E4E7EC] bg-[#F7F8FA] px-4 py-3 layout:px-5 sm:px-5">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0 pl-11 layout:pl-0">
+              <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#98A2B3]">
+                {breadcrumbLabel}
+              </p>
+              <h1 className="mt-0.5 text-[22px] font-semibold leading-tight tracking-[-0.03em] text-[#101828] sm:text-[24px]">
+                {pageTitle}
+              </h1>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+              <div className="wa-search min-w-0 flex-1 sm:w-[260px] sm:flex-none lg:w-[300px]">
+                <Search size={16} strokeWidth={1.8} className="shrink-0 text-[#98A2B3]" aria-hidden />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name, phone, location..."
+                  className="w-full bg-transparent text-[14px] text-[#101828] placeholder:text-[#98A2B3] focus:outline-none"
+                  aria-label="Search conversations"
+                />
+                {search ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="shrink-0 rounded p-0.5 text-[#98A2B3] hover:text-[#101828]"
+                    aria-label="Clear search"
+                  >
+                    <X size={14} strokeWidth={1.8} />
+                  </button>
+                ) : (
+                  <kbd className="hidden shrink-0 rounded border border-[#E4E7EC] bg-[#F9FAFB] px-1.5 py-0.5 text-[10px] font-medium text-[#98A2B3] sm:inline">
+                    ⌘K
+                  </kbd>
+                )}
+              </div>
+              {!paneNav ? (
+                <button
+                  type="button"
+                  className="wa-icon-btn"
+                  aria-label={intelCollapsed ? "Show lead intelligence" : "Hide lead intelligence"}
+                  onClick={toggleIntelCollapsed}
+                >
+                  <PanelRight size={16} strokeWidth={1.8} />
+                </button>
+              ) : null}
+              {active ? (
+                <div
+                  className={`inline-flex items-center gap-1.5 rounded-[8px] border px-2.5 py-1.5 text-[12px] font-medium ${
+                    sessionOpen === true
+                      ? "border-[#D1FADF] bg-[#ECFDF3] text-[#027A48]"
+                      : sessionOpen === false
+                        ? "border-[#FED7AA] bg-[#FFFAEB] text-[#B54708]"
+                        : "border-[#E4E7EC] bg-white text-[#667085]"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      sessionOpen === true
+                        ? "bg-[#16A34A]"
+                        : sessionOpen === false
+                          ? "bg-[#F59E0B]"
+                          : "bg-[#98A2B3]"
+                    }`}
+                    aria-hidden
+                  />
+                  {sessionOpen === true
+                    ? "24h session open"
+                    : sessionOpen === false
+                      ? "24h session closed"
+                      : "Session"}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-2.5 overflow-x-auto inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <FilterTabs
+              filter={filter}
+              counts={counts}
+              onChange={setFilter}
+              variant="panel"
+            />
+          </div>
+        </div>
+      ) : null}
+
+      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "wa-hub-shell wa-hub-immersive wa-hub-premium" : ""}`}>
         {!whatsappMode ? (
           <InboxIconRail
             pipelineHref={pipelineHref}
@@ -278,8 +407,18 @@ export function TeamInbox({
         ) : null}
 
         {loading ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-[var(--text-tertiary)]">
-            Loading inbox…
+          <InboxSkeleton />
+        ) : loadError ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+            <p className="text-[15px] font-semibold text-[#101828]">Couldn&apos;t load conversations</p>
+            <p className="text-[13px] text-[#667085]">Check your connection and try again.</p>
+            <button
+              type="button"
+              onClick={() => void loadConversations()}
+              className="rounded-[10px] bg-[#D4FF4F] px-4 py-2 text-[13px] font-semibold text-[#101828] hover:bg-[#c8f244]"
+            >
+              Try again
+            </button>
           </div>
         ) : (
           <>
@@ -300,10 +439,11 @@ export function TeamInbox({
                 mobileFullScreen={paneNav}
                 onSearchChange={setSearch}
                 roleSubtitle={roleSubtitle}
-                filterCounts={counts}
-                onFilterChange={setFilter}
+                filterCounts={whatsappMode ? undefined : counts}
+                onFilterChange={whatsappMode ? undefined : setFilter}
                 panelWidth={resizable ? listWidth : undefined}
                 panelAnimated={resizable}
+                chromeInParent={whatsappMode}
               />
             ) : null}
             {resizable ? (
@@ -317,7 +457,7 @@ export function TeamInbox({
             ) : null}
             <div
               className={`flex min-h-0 min-w-0 flex-1 flex-col wa-panel ${
-                paneNav && mobilePane !== "thread" ? "max-[1180px]:hidden" : ""
+                paneNav && mobilePane !== "thread" ? "max-[1099px]:hidden" : ""
               }`}
             >
               <ChatThread
@@ -341,6 +481,7 @@ export function TeamInbox({
                 }}
                 onMessagesChange={() => void loadConversations({ silent: true })}
                 onConversationUpdate={() => void loadConversations({ silent: true })}
+                onSessionChange={setSessionOpen}
               />
             </div>
             {resizable ? (
@@ -369,6 +510,9 @@ export function TeamInbox({
                 onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
                 panelWidth={resizable ? intelWidth : undefined}
                 panelAnimated={resizable}
+                canClaim={salesCapable}
+                onClaim={(id) => void handleClaim(id)}
+                claiming={claimingId === active?.id}
               />
             ) : null}
           </>
@@ -380,7 +524,7 @@ export function TeamInbox({
         role="presentation"
         onClick={closePanels}
         className={`fixed inset-0 z-[35] hidden bg-black/60 ${
-          !paneNav && (convOpen || intelOpen) ? "min-[861px]:max-[1180px]:block" : ""
+          !paneNav && (convOpen || intelOpen) ? "min-[861px]:max-[1099px]:block" : ""
         }`}
       />
     </div>

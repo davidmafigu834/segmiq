@@ -14,7 +14,8 @@ import { excludeGraduatedLeads } from "@/lib/retargeting-shared";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 import { PriorityLeadCard } from "@/components/sales/PriorityLeadCard";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
-import { EmptyState, SegmentedTabs } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
+import { SegmentedControl } from "@/components/sales/ui";
 
 const DEFAULT_TAB: RecoverAgeTier = "week";
 
@@ -67,13 +68,14 @@ export function RecoverClient({
       </p>
 
       <div className="scrollbar-hide ag-fade-in mb-6 overflow-x-auto">
-        <SegmentedTabs
+        <SegmentedControl
           aria-label="Filter slipped leads by age"
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as RecoverAgeTier)}
-          tabs={RECOVER_AGE_TABS.map(({ tier, label }) => ({
+          onChange={(value) => setActiveTab(value)}
+          options={RECOVER_AGE_TABS.map(({ tier, label }) => ({
             value: tier,
-            label: `${label} · ${tabBuckets[tier].length}`,
+            label,
+            badge: tabBuckets[tier].length,
           }))}
         />
       </div>

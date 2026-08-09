@@ -533,90 +533,88 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     background: rgba(255, 255, 255, 0.3);
   }
 
-  /* WhatsApp Sales Hub — SaaS workspace surfaces & controls */
+  /* WhatsApp Sales Hub — premium light workspace (aligned with Sales Dashboard) */
   .wa-hub-shell {
-    --wa-accent: #0f9f73;
-    --wa-accent-strong: #087b59;
-    --wa-accent-soft: #e7f8f1;
-    --wa-ink: #17212b;
-    --wa-muted: #6b7886;
-    --wa-border: #dfe5eb;
+    --wa-accent: #d4ff4f;
+    --wa-accent-strong: #4d7c0f;
+    --wa-accent-soft: #f4fce8;
+    --wa-ink: #101828;
+    --wa-muted: #667085;
+    --wa-border: #e4e7ec;
     --wa-surface: #ffffff;
-    --wa-surface-subtle: #f7f9fb;
-    gap: 0.625rem;
-    padding: 0.625rem;
-    background:
-      radial-gradient(circle at 18% 0%, rgba(15, 159, 115, 0.08), transparent 28rem),
-      linear-gradient(145deg, #edf3f2 0%, #eef1f5 52%, #e9eef3 100%);
+    --wa-surface-subtle: #f7f8fa;
+    --wa-whatsapp: #25d366;
+    gap: 0;
+    padding: 0;
+    background: #f7f8fa;
   }
 
   .wa-panel {
     overflow: hidden;
-    border: 1px solid var(--wa-border, #dfe5eb);
-    border-radius: 0.875rem;
+    border: 1px solid var(--wa-border, #e4e7ec);
+    border-radius: 0;
     background-color: var(--wa-surface, #ffffff);
-    box-shadow: 0 8px 28px rgba(34, 48, 61, 0.08);
+    box-shadow: none;
   }
 
   .wa-panel-header {
-    border-bottom: 1px solid var(--wa-border, #dfe5eb);
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--wa-border, #e4e7ec);
+    background: #ffffff;
   }
 
   .wa-chat-wallpaper {
-    background-color: #f4f7f6;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.46)),
-      radial-gradient(circle at 18% 18%, rgba(15, 159, 115, 0.07) 0%, transparent 34%),
-      radial-gradient(circle at 84% 82%, rgba(42, 71, 92, 0.055) 0%, transparent 36%);
+    background-color: #fafbfc;
+    background-image: none;
   }
 
   .wa-header {
-    border-bottom: 1px solid var(--wa-border, #dfe5eb);
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 1px 0 rgba(34, 48, 61, 0.03);
-    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--wa-border, #e4e7ec);
+    background: #ffffff;
   }
 
   .wa-icon-btn {
     display: flex;
-    height: 2.5rem;
-    width: 2.5rem;
+    height: 2.25rem;
+    width: 2.25rem;
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
-    border-radius: 0.625rem;
-    color: #61707e;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    border-radius: 0.5625rem;
+    color: #667085;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-icon-btn:hover {
-    border-color: #dfe5eb;
-    background-color: #f7f9fb;
-    color: #17212b;
+    border-color: #e4e7ec;
+    background-color: #f2f4f7;
+    color: #101828;
+  }
+
+  .wa-icon-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(212, 255, 79, 0.55);
   }
 
   .wa-icon-btn:active {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
 
   .wa-icon-btn-muted {
     display: flex;
-    height: 2.5rem;
-    width: 2.5rem;
+    height: 2.25rem;
+    width: 2.25rem;
     align-items: center;
     justify-content: center;
     border: 1px solid transparent;
-    border-radius: 0.625rem;
-    color: #61707e;
+    border-radius: 0.5625rem;
+    color: #667085;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-icon-btn-muted:hover {
-    border-color: #dfe5eb;
-    background-color: #f7f9fb;
-    color: #17212b;
+    border-color: #e4e7ec;
+    background-color: #f2f4f7;
+    color: #101828;
   }
 
   .wa-search {
@@ -624,111 +622,107 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     align-items: center;
     gap: 0.5rem;
     border-radius: 0.625rem;
-    border: 1px solid #dfe5eb;
-    background-color: #f7f9fb;
-    padding: 0.625rem 0.75rem;
-    box-shadow: inset 0 1px 1px rgba(34, 48, 61, 0.02);
+    border: 1px solid #e4e7ec;
+    background-color: #ffffff;
+    padding: 0.5rem 0.75rem;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .wa-search:focus-within {
-    border-color: #0f9f73;
+    border-color: rgba(212, 255, 79, 0.65);
     background-color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(15, 159, 115, 0.11);
+    box-shadow: 0 0 0 3px rgba(212, 255, 79, 0.22);
   }
 
   .wa-conv-row {
+    position: relative;
     cursor: pointer;
-    margin: 0.25rem 0.5rem;
-    border: 1px solid transparent;
-    border-radius: 0.75rem;
-    padding: 0.75rem;
-    transition: background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    margin: 0;
+    border: 0;
+    border-bottom: 1px solid #f2f4f7;
+    border-radius: 0;
+    padding: 0.875rem 1rem;
+    transition: background-color 0.12s ease;
   }
 
   .wa-conv-row:hover {
-    border-color: #e4e9ee;
-    background-color: #f8fafb;
+    background-color: #f9fafb;
   }
 
   .wa-conv-row-active {
-    border-color: rgba(15, 159, 115, 0.26);
-    background: linear-gradient(135deg, #effaf6 0%, #f7fbfa 100%);
-    box-shadow: 0 3px 12px rgba(15, 159, 115, 0.08);
+    background-color: rgba(212, 255, 79, 0.1);
+    box-shadow: inset 3px 0 0 rgba(150, 190, 40, 0.55);
   }
 
   .wa-bubble-in {
-    border: 1px solid #e1e7ec;
-    border-radius: 0.875rem 0.875rem 0.875rem 0.25rem;
+    border: 1px solid #e4e7ec;
+    border-radius: 0.75rem;
     background-color: #ffffff;
     padding: 0.5rem 0.75rem 0.375rem;
     font-size: 0.875rem;
-    line-height: 1.4;
-    color: #111b21;
-    box-shadow: 0 2px 7px rgba(34, 48, 61, 0.07);
+    line-height: 1.45;
+    color: #101828;
+    box-shadow: none;
   }
 
   .wa-bubble-out {
-    border: 1px solid rgba(15, 159, 115, 0.18);
-    border-radius: 0.875rem 0.875rem 0.25rem 0.875rem;
-    background: linear-gradient(135deg, #daf7eb 0%, #e7f9f1 100%);
+    border: 1px solid rgba(150, 190, 40, 0.3);
+    border-radius: 0.75rem;
+    background: rgba(212, 255, 79, 0.12);
     padding: 0.5rem 0.75rem 0.375rem;
     font-size: 0.875rem;
-    line-height: 1.4;
-    color: #111b21;
-    box-shadow: 0 2px 7px rgba(15, 159, 115, 0.09);
+    line-height: 1.45;
+    color: #101828;
+    box-shadow: none;
   }
 
   .wa-day-pill {
-    border: 1px solid rgba(223, 229, 235, 0.9);
-    border-radius: 9999px;
-    background-color: rgba(255, 255, 255, 0.94);
-    padding: 0.375rem 0.75rem;
+    border: 0;
+    border-radius: 0;
+    background-color: transparent;
+    padding: 0.25rem 0;
     font-size: 0.6875rem;
-    font-weight: 600;
-    color: #54656f;
-    box-shadow: 0 1px 2px rgba(17, 27, 33, 0.06);
-    backdrop-filter: blur(4px);
+    font-weight: 500;
+    color: #98a2b3;
+    box-shadow: none;
   }
 
   .wa-system-pill {
-    border: 1px solid #f2df9d;
-    border-radius: 9999px;
-    background-color: #fff9df;
+    border: 1px solid #fef3c7;
+    border-radius: 0.625rem;
+    background-color: #fffbeb;
     padding: 0.375rem 0.75rem;
     font-size: 0.6875rem;
-    color: #54656f;
-    box-shadow: 0 1px 2px rgba(17, 27, 33, 0.06);
+    color: #667085;
+    box-shadow: none;
   }
 
   .wa-composer {
-    border-top: 1px solid #dfe5eb;
-    background: rgba(255, 255, 255, 0.97);
-    backdrop-filter: blur(14px);
+    border-top: 1px solid #e4e7ec;
+    background: #ffffff;
   }
 
   .wa-composer-input {
     min-width: 0;
     flex: 1;
-    border-radius: 0.75rem;
-    border: 1px solid #dfe5eb;
-    background-color: #f7f9fb;
-    padding: 0.625rem 1rem;
-    font-size: 1rem;
-    color: #111b21;
-    box-shadow: inset 0 1px 1px rgba(34, 48, 61, 0.02);
-    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    border-radius: 0.625rem;
+    border: 1px solid #e4e7ec;
+    background-color: #f7f8fa;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: #101828;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
   }
 
   .wa-composer-input::placeholder {
-    color: #667781;
+    color: #98a2b3;
   }
 
   .wa-composer-input:focus {
     outline: none;
-    border-color: #0f9f73;
+    border-color: rgba(212, 255, 79, 0.65);
     background-color: #ffffff;
-    box-shadow: 0 0 0 3px rgba(15, 159, 115, 0.11);
+    box-shadow: 0 0 0 3px rgba(212, 255, 79, 0.22);
   }
 
   .wa-plus-btn {
@@ -738,22 +732,22 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border: 1px solid #dfe5eb;
-    border-radius: 0.75rem;
-    color: #61707e;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    border: 1px solid #e4e7ec;
+    border-radius: 0.625rem;
+    color: #667085;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-plus-btn:hover {
-    border-color: #cdd6de;
-    background-color: #f7f9fb;
+    border-color: #d0d5dd;
+    background-color: #f2f4f7;
   }
 
   .wa-plus-btn-open {
-    transform: rotate(45deg);
-    border-color: #0f9f73;
-    background-color: #0f9f73;
-    color: #ffffff;
+    transform: none;
+    border-color: rgba(212, 255, 79, 0.55);
+    background-color: #f4fce8;
+    color: #101828;
   }
 
   .wa-send-btn {
@@ -763,18 +757,23 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border-radius: 0.75rem;
-    background: linear-gradient(135deg, #12aa7b 0%, #087b59 100%);
-    color: #ffffff;
+    border-radius: 0.625rem;
+    background: #d4ff4f;
+    color: #101828;
     transition: background-color 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
   }
 
   .wa-send-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #0f946c 0%, #076d50 100%);
+    background: #c8f244;
+  }
+
+  .wa-send-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 24, 40, 0.25);
   }
 
   .wa-send-btn:active:not(:disabled) {
-    transform: scale(0.96);
+    transform: scale(0.97);
   }
 
   .wa-send-btn:disabled {
@@ -784,40 +783,40 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .wa-filter-pill {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    border-radius: 9999px;
-    border: 1px solid #dfe5eb;
+    gap: 0.375rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e4e7ec;
     background-color: #ffffff;
-    padding: 0.4375rem 0.6875rem;
-    font-size: 0.6875rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.75rem;
     font-weight: 500;
-    color: #61707e;
+    color: #667085;
     white-space: nowrap;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-filter-pill:hover {
-    background-color: #f7f9fb;
-    border-color: #cdd6de;
+    background-color: #f9fafb;
+    border-color: #d0d5dd;
   }
 
   .wa-filter-pill-active {
-    border-color: #0f9f73;
-    background: linear-gradient(135deg, #12aa7b 0%, #087b59 100%);
-    color: #ffffff;
-    box-shadow: 0 3px 10px rgba(15, 159, 115, 0.2);
+    border-color: rgba(150, 190, 40, 0.55);
+    background: #f4fce8;
+    color: #101828;
+    box-shadow: none;
   }
 
   .wa-filter-pill-active:hover {
-    background: linear-gradient(135deg, #0f946c 0%, #076d50 100%);
-    border-color: #087b59;
+    background: #f4fce8;
+    border-color: rgba(150, 190, 40, 0.7);
   }
 
   .wa-card {
-    border-radius: 0.875rem;
-    border: 1px solid #dfe5eb;
+    border-radius: 0.75rem;
+    border: 1px solid #e4e7ec;
     background-color: #ffffff;
-    box-shadow: 0 3px 12px rgba(34, 48, 61, 0.055);
+    box-shadow: none;
   }
 
   .wa-btn-primary {
@@ -826,19 +825,20 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.75rem;
-    background: linear-gradient(135deg, #12aa7b 0%, #087b59 100%);
+    border-radius: 0.625rem;
+    background: #d4ff4f;
     padding: 0.625rem 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(15, 159, 115, 0.18);
-    transition: opacity 0.15s ease, transform 0.1s ease;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #101828;
+    box-shadow: none;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
   }
 
   .wa-btn-primary:hover:not(:disabled) {
-    filter: brightness(0.96);
-    box-shadow: 0 6px 16px rgba(15, 159, 115, 0.22);
+    background: #c8f244;
+    filter: none;
+    box-shadow: none;
   }
 
   .wa-btn-primary:active:not(:disabled) {
@@ -855,41 +855,40 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.75rem;
-    border: 1px solid #dfe5eb;
+    border-radius: 0.625rem;
+    border: 1px solid #e4e7ec;
     background-color: #ffffff;
     padding: 0.625rem 0.75rem;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 500;
-    color: #25313c;
+    color: #344054;
     transition: background-color 0.15s ease, border-color 0.15s ease;
   }
 
   .wa-btn-secondary:hover {
-    border-color: #cdd6de;
-    background-color: #f7f9fb;
+    border-color: #d0d5dd;
+    background-color: #f9fafb;
   }
 
   .wa-dropdown {
-    border-radius: 0.875rem;
-    border: 1px solid #dfe5eb;
+    border-radius: 0.75rem;
+    border: 1px solid #e4e7ec;
     background-color: #ffffff;
     padding: 0.25rem 0;
-    box-shadow: 0 16px 42px rgba(34, 48, 61, 0.16);
+    box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
   }
 
   .wa-empty-hint {
-    border: 1px solid rgba(223, 229, 235, 0.9);
-    border-radius: 1rem;
-    background-color: rgba(255, 255, 255, 0.88);
-    padding: 1rem 1.25rem;
+    border: 1px solid #e4e7ec;
+    border-radius: 0.875rem;
+    background-color: #ffffff;
+    padding: 1.25rem 1.5rem;
     font-size: 0.875rem;
-    color: #667781;
-    box-shadow: 0 10px 30px rgba(34, 48, 61, 0.09);
-    backdrop-filter: blur(10px);
+    color: #667085;
+    box-shadow: none;
   }
 
-  @media (max-width: 1180px) {
+  @media (max-width: 1099.98px) {
     .wa-hub-shell {
       gap: 0;
       padding: 0;
@@ -928,7 +927,11 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   html[data-crm-theme="light"] .wa-hub-immersive {
-    background: var(--surface-canvas);
+    background: #f7f8fa;
+  }
+
+  .sales-dashboard-premium .wa-hub-immersive {
+    background: #f7f8fa;
   }
 
   /* Draggable inbox panel splitters (desktop WhatsApp hub) */
@@ -982,7 +985,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .inbox-panel-resize-handle:focus-visible::before {
     left: -0.5px;
     width: 2px;
-    background: var(--channel-whatsapp);
+    background: #98a2b3;
   }
 
   body.inbox-panel-resizing .inbox-panel-resize-handle::before {
@@ -1078,6 +1081,10 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
       transition: margin-left 0.2s ease;
     }
 
+    .crm-shell-main.crm-shell-main--no-sidebar {
+      margin-left: 0;
+    }
+
     body.crm-sidebar-resizing .crm-shell-sidebar-host,
     body.crm-sidebar-resizing .crm-shell-sidebar,
     body.crm-sidebar-resizing .crm-shell-main {
@@ -1163,8 +1170,9 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     user-select: none !important;
   }
 
-  /* Sales Hub inherits the CRM dark shell. Light preview keeps native WA surfaces. */
-  html:not([data-crm-theme="light"]) .wa-hub-shell {
+  /* Sales Hub inherits the CRM dark shell. Light preview keeps native WA surfaces.
+     Premium salesperson shell (.sales-dashboard-premium) MUST stay light — see overrides below. */
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) {
     --wa-accent: var(--channel-whatsapp);
     --wa-accent-strong: #1fb85a;
     --wa-accent-soft: var(--channel-whatsapp-muted);
@@ -1176,109 +1184,250 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     background: var(--bg-primary);
   }
 
-  html:not([data-crm-theme="light"]) .wa-panel,
-  html:not([data-crm-theme="light"]) .wa-card {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-panel,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-card {
     border-color: var(--border);
     background: var(--surface-card);
     box-shadow: none;
   }
 
-  html:not([data-crm-theme="light"]) .wa-panel-header,
-  html:not([data-crm-theme="light"]) .wa-header,
-  html:not([data-crm-theme="light"]) .wa-composer {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-panel-header,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-header,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-composer {
     border-color: var(--border);
     background: rgba(15, 15, 15, 0.94);
   }
 
-  html:not([data-crm-theme="light"]) .wa-chat-wallpaper {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-chat-wallpaper {
     background-color: var(--bg-secondary);
     background-image:
       radial-gradient(circle at 20% 10%, rgba(37, 211, 102, 0.045), transparent 30rem),
       radial-gradient(circle at 80% 85%, rgba(255, 255, 255, 0.025), transparent 28rem);
   }
 
-  html:not([data-crm-theme="light"]) .wa-icon-btn,
-  html:not([data-crm-theme="light"]) .wa-icon-btn-muted {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-icon-btn,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-icon-btn-muted {
     color: var(--text-tertiary);
   }
 
-  html:not([data-crm-theme="light"]) .wa-icon-btn:hover,
-  html:not([data-crm-theme="light"]) .wa-icon-btn-muted:hover {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-icon-btn:hover,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-icon-btn-muted:hover {
     border-color: var(--border-hover);
     background: var(--bg-quaternary);
     color: var(--text-primary);
   }
 
-  html:not([data-crm-theme="light"]) .wa-search,
-  html:not([data-crm-theme="light"]) .wa-composer-input {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-search,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-composer-input {
     border-color: var(--border);
     background: var(--surface-input);
     color: var(--text-primary);
     box-shadow: none;
   }
 
-  html:not([data-crm-theme="light"]) .wa-search:focus-within,
-  html:not([data-crm-theme="light"]) .wa-composer-input:focus {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-search:focus-within,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-composer-input:focus {
     border-color: var(--channel-whatsapp);
     background: var(--surface-input);
     box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1);
   }
 
-  html:not([data-crm-theme="light"]) .wa-conv-row:hover {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-conv-row:hover {
     border-color: var(--border);
     background: var(--bg-tertiary);
   }
 
-  html:not([data-crm-theme="light"]) .wa-conv-row-active {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-conv-row-active {
     border-color: rgba(37, 211, 102, 0.25);
     background: var(--channel-whatsapp-muted);
     box-shadow: none;
   }
 
-  html:not([data-crm-theme="light"]) .wa-bubble-in {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-bubble-in {
     border-color: var(--border);
     background: var(--surface-card-alt);
     color: var(--text-primary);
     box-shadow: none;
   }
 
-  html:not([data-crm-theme="light"]) .wa-bubble-out {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-bubble-out {
     border-color: rgba(37, 211, 102, 0.22);
     background: #12341f;
     color: var(--text-primary);
     box-shadow: none;
   }
 
-  html:not([data-crm-theme="light"]) .wa-day-pill,
-  html:not([data-crm-theme="light"]) .wa-system-pill,
-  html:not([data-crm-theme="light"]) .wa-filter-pill,
-  html:not([data-crm-theme="light"]) .wa-btn-secondary,
-  html:not([data-crm-theme="light"]) .wa-dropdown,
-  html:not([data-crm-theme="light"]) .wa-empty-hint {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-day-pill,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-system-pill,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-filter-pill,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-btn-secondary,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-dropdown,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-empty-hint {
     border-color: var(--border);
     background: var(--surface-card-alt);
     color: var(--text-secondary);
     box-shadow: none;
   }
 
-  html:not([data-crm-theme="light"]) .wa-filter-pill:hover,
-  html:not([data-crm-theme="light"]) .wa-btn-secondary:hover {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-filter-pill:hover,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-btn-secondary:hover {
     border-color: var(--border-hover);
     background: var(--bg-quaternary);
   }
 
-  html:not([data-crm-theme="light"]) .wa-filter-pill-active,
-  html:not([data-crm-theme="light"]) .wa-filter-pill-active:hover {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-filter-pill-active,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-filter-pill-active:hover {
     border-color: var(--channel-whatsapp);
     background: var(--channel-whatsapp);
     color: #ffffff;
     box-shadow: none;
   }
 
-  html:not([data-crm-theme="light"]) .wa-panel-header,
-  html:not([data-crm-theme="light"]) .wa-header,
-  html:not([data-crm-theme="light"]) .wa-composer {
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-panel-header,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-header,
+  html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) .wa-composer {
     color: var(--text-primary);
+  }
+
+  /* Premium Sales Hub — always light, even when CRM shell is dark */
+  .sales-dashboard-premium .wa-hub-shell,
+  .wa-hub-premium {
+    --wa-accent: #d4ff4f;
+    --wa-accent-strong: #4d7c0f;
+    --wa-accent-soft: #f4fce8;
+    --wa-ink: #101828;
+    --wa-muted: #667085;
+    --wa-border: #e4e7ec;
+    --wa-surface: #ffffff;
+    --wa-surface-subtle: #f7f8fa;
+    --wa-whatsapp: #25d366;
+    background: #f7f8fa !important;
+    color: #101828;
+  }
+
+  .sales-dashboard-premium .wa-panel-header,
+  .sales-dashboard-premium .wa-header,
+  .sales-dashboard-premium .wa-composer,
+  .wa-hub-premium .wa-panel-header,
+  .wa-hub-premium .wa-header,
+  .wa-hub-premium .wa-composer {
+    background: #ffffff !important;
+    border-color: #e4e7ec !important;
+    color: #101828 !important;
+  }
+
+  .sales-dashboard-premium .wa-chat-wallpaper,
+  .wa-hub-premium .wa-chat-wallpaper {
+    background-color: #fafbfc !important;
+    background-image: none !important;
+  }
+
+  .sales-dashboard-premium .wa-conv-row-active,
+  .wa-hub-premium .wa-conv-row-active {
+    background-color: rgba(212, 255, 79, 0.1) !important;
+    box-shadow: inset 3px 0 0 rgba(150, 190, 40, 0.55) !important;
+    border-color: transparent !important;
+  }
+
+  .sales-dashboard-premium .wa-bubble-out,
+  .wa-hub-premium .wa-bubble-out {
+    background: rgba(212, 255, 79, 0.12) !important;
+    border-color: rgba(150, 190, 40, 0.25) !important;
+    color: #101828 !important;
+  }
+
+  .sales-dashboard-premium .wa-bubble-in,
+  .wa-hub-premium .wa-bubble-in {
+    background: #ffffff !important;
+    border-color: #e4e7ec !important;
+    color: #101828 !important;
+  }
+
+  .sales-dashboard-premium .wa-filter-pill-active,
+  .wa-hub-premium .wa-filter-pill-active {
+    border-color: rgba(150, 190, 40, 0.55) !important;
+    background: #f4fce8 !important;
+    color: #101828 !important;
+  }
+
+  .sales-dashboard-premium .wa-send-btn,
+  .wa-hub-premium .wa-send-btn {
+    background: #d4ff4f !important;
+    color: #101828 !important;
+  }
+
+  .wa-day-rule {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 22rem;
+    margin: 0.25rem auto;
+  }
+
+  .wa-day-rule::before,
+  .wa-day-rule::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e4e7ec;
+  }
+
+  .wa-day-rule span {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #98a2b3;
+    white-space: nowrap;
+  }
+
+  .wa-action-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    border-bottom: 1px solid #e4e7ec;
+    background: #ffffff;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .wa-action-chip {
+    display: inline-flex;
+    height: 34px;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 8px;
+    border: 1px solid #e4e7ec;
+    background: #ffffff;
+    padding: 0 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #667085;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .wa-action-chip:hover {
+    background: #f9fafb;
+    border-color: #d0d5dd;
+    color: #101828;
+  }
+
+  .wa-action-chip-active {
+    border-color: rgba(150, 190, 40, 0.55);
+    background: #f4fce8;
+    color: #101828;
+  }
+
+  .wa-session-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    background: #fffbeb;
+    margin: 0.5rem 0.75rem 0;
+    padding: 0.625rem 0.75rem;
+    color: #92400e;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -2917,3 +3066,547 @@ label[for="photo-input"] {
   .mk-shine::before { display: none; }
   .mk-reveal { opacity: 1; transform: none; transition: none; }
 }
+
+/* ── SegmiQ Sales design tokens ─────────────────────────────────────────── */
+/*
+  Applied on premium salesperson shells and portaled overlays.
+  Alias CRM vars so nested widgets (LogCallForm, GlobalSearch) stay light.
+*/
+.sales-dashboard-premium,
+.pipeline-drawer-light,
+.sales-modal-premium,
+.calendar-modal-premium {
+  /* Surfaces */
+  --sales-bg: #fdfdfe;
+  --sales-surface: #ffffff;
+  --sales-surface-subtle: #fafbfd;
+  --sales-surface-hover: #f9fafb;
+  --sales-surface-active: #f3f7e8;
+
+  /* Neutral scale (boards) */
+  --sales-neutral-900: #101828;
+  --sales-neutral-700: #344054;
+  --sales-neutral-500: #667085;
+  --sales-neutral-400: #98a2b3;
+  --sales-neutral-300: #d0d5dd;
+  --sales-neutral-200: #eaecf0;
+  --sales-neutral-100: #f2f4f7;
+  --sales-neutral-50: #fdfdfe;
+  --sales-neutral-0: #ffffff;
+
+  /* Text */
+  --sales-text-primary: #101828;
+  --sales-text-secondary: #667085;
+  --sales-text-muted: #98a2b3;
+  --sales-text-disabled: #b2b8c3;
+  --sales-text-label: #344054;
+
+  /* Borders */
+  --sales-border: #e4e7ec;
+  --sales-border-subtle: #eaecf0;
+  --sales-border-strong: #d0d5dd;
+
+  /* Brand (lime accent — not page background) */
+  --sales-brand: #d4ff4f;
+  --sales-brand-hover: #c6f23f;
+  --sales-brand-soft: rgba(212, 255, 79, 0.14);
+  --sales-brand-soft-solid: #f3fce3;
+  --sales-brand-border: rgba(160, 205, 40, 0.4);
+  --sales-brand-text: #101828;
+  --sales-brand-fg: #4d7c0f;
+
+  /* Sales sidebar (definitive white / minimal) */
+  --sales-sidebar-bg: #ffffff;
+  --sales-sidebar-border: #e4e7ec;
+  --sales-sidebar-divider: #eaecf0;
+  --sales-sidebar-text: #475467;
+  --sales-sidebar-text-hover: #101828;
+  --sales-sidebar-text-active: #101828;
+  --sales-sidebar-muted: #98a2b3;
+  --sales-sidebar-icon: #667085;
+  --sales-sidebar-icon-active: #4e6400;
+  --sales-sidebar-hover: #f8fafc;
+  --sales-sidebar-active: rgba(212, 255, 79, 0.18);
+  --sales-sidebar-active-gradient: linear-gradient(
+    90deg,
+    rgba(212, 255, 79, 0.26) 0%,
+    rgba(212, 255, 79, 0.13) 75%,
+    rgba(212, 255, 79, 0.04) 100%
+  );
+  --sales-sidebar-active-indicator: #b7e821;
+  --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.3);
+  --sales-sidebar-badge-text: #4e6500;
+  --sales-sidebar-width: 228px;
+  --sales-sidebar-width-collapsed: 68px;
+
+  /* Mobile chrome */
+  --sales-mobile-header-height: 64px;
+  --sales-mobile-nav-height: 72px;
+  --sales-mobile-page-padding: 16px;
+  --sales-mobile-content-pb: calc(
+    var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 12px
+  );
+  --sales-mobile-fab-bottom: calc(
+    var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 12px
+  );
+
+  /* Semantic */
+  --sales-success: #16a34a;
+  --sales-success-soft: #ecfdf3;
+  --sales-warning: #f59e0b;
+  --sales-warning-soft: #fffaeb;
+  --sales-danger: #ef4444;
+  --sales-danger-soft: #fef3f2;
+  --sales-info: #2563eb;
+  --sales-info-soft: #eff8ff;
+  --sales-purple: #8b5cf6;
+  --sales-purple-soft: #f4f3ff;
+  --sales-teal: #14b8a6;
+  --sales-teal-soft: #f0fdfa;
+  --sales-whatsapp: #25d366;
+
+  /* Radius */
+  --sales-radius-xs: 6px;
+  --sales-radius-sm: 8px;
+  --sales-radius-md: 10px;
+  --sales-radius-lg: 12px;
+  --sales-radius-xl: 14px;
+  --sales-radius-pill: 999px;
+
+  /* Shadows */
+  --sales-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.025);
+  --sales-shadow-popover: 0 8px 24px rgba(16, 24, 40, 0.1);
+  --sales-shadow-modal: 0 16px 40px rgba(16, 24, 40, 0.12);
+  --sales-shadow-dropdown: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --sales-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --sales-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --sales-shadow-lg: 0 8px 24px rgba(16, 24, 40, 0.1);
+  --sales-shadow-xl: 0 16px 40px rgba(16, 24, 40, 0.12);
+
+  /* Focus */
+  --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.25);
+
+  /* Z-index */
+  --sales-z-sticky: 20;
+  --sales-z-dropdown: 40;
+  --sales-z-popover: 50;
+  --sales-z-drawer: 60;
+  --sales-z-modal-backdrop: 70;
+  --sales-z-modal: 80;
+  --sales-z-toast: 100;
+  --sales-z-tooltip: 110;
+
+  /* Legacy aliases (dashboard / pipeline) */
+  --sd-lime: var(--sales-brand);
+  --sd-text: var(--sales-text-primary);
+  --sd-text-secondary: var(--sales-text-secondary);
+  --sd-text-muted: var(--sales-text-muted);
+  --sd-bg: var(--sales-bg);
+  --sd-card: var(--sales-surface);
+  --sd-border: var(--sales-border);
+  --sd-hover: var(--sales-surface-hover);
+
+  /* Remap CRM tokens so nested widgets stay light */
+  --bg-primary: var(--sales-bg);
+  --bg-secondary: var(--sales-surface);
+  --bg-tertiary: #f2f4f7;
+  --bg-quaternary: #eef0f3;
+  --surface-card: var(--sales-surface);
+  --surface-dropdown: var(--sales-surface);
+  --surface-input: var(--sales-surface);
+  --surface-card-alt: var(--sales-surface-subtle);
+  --surface-modal: var(--sales-surface);
+  --text-primary: var(--sales-text-primary);
+  --text-secondary: var(--sales-text-secondary);
+  --text-tertiary: var(--sales-text-muted);
+  --text-disabled: var(--sales-text-disabled);
+  --border: var(--sales-border);
+  --border-hover: var(--sales-border-strong);
+  --border-strong: var(--sales-border-strong);
+  --accent: var(--sales-brand);
+  --accent-hover: var(--sales-brand-hover);
+  --accent-foreground: var(--sales-brand-text);
+  --accent-ink: var(--sales-brand-text);
+  --accent-fg: var(--sales-brand-fg);
+  --accent-muted: var(--sales-brand-soft);
+  --accent-border: var(--sales-brand-border);
+  --success: var(--sales-success);
+  --success-bg: var(--sales-success-soft);
+  --success-fg: #027a48;
+  --warning: var(--sales-warning);
+  --error: var(--sales-danger);
+  --danger: var(--sales-danger);
+  --danger-bg: var(--sales-danger-soft);
+  --danger-fg: #b42318;
+  --info: var(--sales-info);
+
+  color: var(--sales-text-primary);
+  color-scheme: light;
+}
+
+/* Typography scale (Sales Design System boards) */
+.sales-dashboard-premium .sales-type-display {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sales-dashboard-premium .sales-type-h1 {
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sales-dashboard-premium .sales-type-h2 {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sales-dashboard-premium .sales-type-h3 {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.sales-dashboard-premium .sales-type-body-lg {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.sales-dashboard-premium .sales-type-body {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+}
+.sales-dashboard-premium .sales-type-small {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+.sales-dashboard-premium .sales-type-caption {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 400;
+}
+.sales-dashboard-premium .sales-type-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--sales-text-label);
+}
+.sales-dashboard-premium .sales-type-metric {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.sales-dashboard-premium .sales-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Salesperson premium dashboard ─────────────────────────────────────── */
+.sales-dashboard-premium {
+  color: var(--sales-text-primary);
+}
+.sales-dashboard-premium .sales-nav-item-active {
+  background: var(--sales-sidebar-active-gradient);
+  color: var(--sales-sidebar-text-active);
+  font-weight: 600;
+}
+.sales-dashboard-premium .sales-nav-item-active-collapsed {
+  background: var(--sales-sidebar-active);
+}
+.sales-dashboard-premium .sd-card {
+  border: 1px solid var(--sales-border-subtle);
+  border-radius: var(--sales-radius-xl);
+  background: var(--sales-surface);
+  box-shadow: var(--sales-shadow-card);
+}
+.sales-dashboard-premium .sd-icon-btn {
+  display: inline-flex;
+  height: 40px;
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sales-radius-md);
+  border: 1px solid var(--sales-border);
+  background: var(--sales-surface);
+  color: var(--sales-text-secondary);
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.sales-dashboard-premium .sd-icon-btn:hover:not(:disabled) {
+  background: var(--sales-surface-hover);
+  border-color: var(--sales-border-strong);
+  color: var(--sales-text-primary);
+}
+.sales-dashboard-premium .sd-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.sales-dashboard-premium .sd-icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--sales-focus-ring);
+}
+.sales-dashboard-premium .sd-search-wrap {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.sales-dashboard-premium .sd-search-wrap [class*="relative"] {
+  width: auto;
+}
+
+/* Mobile chrome layout helpers (visible below `layout` / 1100px) */
+.sales-dashboard-premium .sales-mobile-top-bar {
+  display: flex;
+  height: var(--sales-mobile-header-height);
+  padding-top: env(safe-area-inset-top, 0px);
+  height: calc(var(--sales-mobile-header-height) + env(safe-area-inset-top, 0px));
+}
+@media (min-width: 1100px) {
+  .sales-dashboard-premium .sales-mobile-top-bar,
+  .sales-dashboard-premium .sales-mobile-bottom-nav {
+    display: none !important;
+  }
+}
+.sales-dashboard-premium[data-hide-mobile-nav="true"] .sales-mobile-bottom-nav {
+  display: none !important;
+}
+.sales-dashboard-premium[data-hide-mobile-nav="true"] .sales-mobile-scroll {
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important;
+}
+@media (max-width: 1099.98px) {
+  .sales-dashboard-premium .sales-mobile-scroll {
+    padding-bottom: var(--sales-mobile-content-pb);
+  }
+  .sales-dashboard-premium .sales-mobile-toast-anchor {
+    bottom: var(--sales-mobile-fab-bottom);
+    top: auto;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* Pipeline page: use SegmentedControl (same as Calendar Month/Week/Agenda). */
+
+/*
+  Lead drawer portals to document.body — tokens set above on .pipeline-drawer-light.
+  Keep input/button remaps for nested CRM widgets.
+*/
+.pipeline-drawer-light {
+  background: var(--sales-surface);
+}
+.pipeline-drawer-light .input-base,
+.pipeline-drawer-light input,
+.pipeline-drawer-light textarea,
+.pipeline-drawer-light select {
+  color: var(--sales-text-primary);
+}
+.pipeline-drawer-light .btn-secondary,
+.pipeline-drawer-light .btn-secondary-dark {
+  color: var(--sales-text-primary);
+  border-color: var(--sales-border);
+  background: var(--sales-surface);
+}
+.pipeline-drawer-light .btn-primary {
+  color: var(--sales-brand-text);
+}
+
+/* Calendar / sales modals portal outside the premium shell — force light controls */
+.calendar-modal-premium,
+.sales-modal-premium {
+  color-scheme: light;
+  color: #101828;
+}
+.calendar-modal-premium input,
+.calendar-modal-premium textarea,
+.calendar-modal-premium select,
+.sales-modal-premium input,
+.sales-modal-premium textarea,
+.sales-modal-premium select {
+  color: #101828 !important;
+  background: #ffffff !important;
+  border-color: #e4e7ec !important;
+  color-scheme: light;
+}
+.calendar-modal-premium input::placeholder,
+.calendar-modal-premium textarea::placeholder,
+.sales-modal-premium input::placeholder,
+.sales-modal-premium textarea::placeholder {
+  color: #98a2b3 !important;
+}
+.calendar-modal-premium input[type="date"],
+.calendar-modal-premium input[type="time"],
+.calendar-modal-premium input[type="datetime-local"],
+.sales-modal-premium input[type="date"],
+.sales-modal-premium input[type="time"],
+.sales-modal-premium input[type="datetime-local"] {
+  color-scheme: light;
+}
+.calendar-modal-premium select:disabled,
+.sales-modal-premium select:disabled {
+  background: #f9fafb !important;
+  color: #667085 !important;
+}
+.calendar-modal-premium option,
+.sales-modal-premium option {
+  background: #ffffff;
+  color: #101828;
+}
+
+
+/* ── Premium Calendar workspace ───────────────────────────────────────── */
+.crm-shell-main:has(.sales-dashboard-premium),
+.crm-shell-main:has(.calendar-premium) {
+  background: #f7f8fa !important;
+}
+html:has(.sales-dashboard-premium) {
+  background: #f7f8fa;
+  height: 100%;
+  overflow: hidden;
+}
+html:has(.sales-dashboard-premium) body {
+  background: #f7f8fa;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Design-system showcase scrolls the document (no app shell scrollport) */
+html:has(.sales-ds-showcase),
+html:has(.sales-ds-showcase) body {
+  height: auto;
+  min-height: 100%;
+  overflow: auto;
+}
+.sales-ds-showcase {
+  min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.calendar-premium {
+  width: 100%;
+  max-width: none;
+}
+
+.calendar-premium-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: none;
+}
+
+.calendar-premium-center {
+  min-width: 0;
+  width: 100%;
+}
+
+.calendar-premium-right {
+  display: none;
+  min-width: 0;
+  align-self: start;
+}
+
+.calendar-premium-left {
+  display: none;
+  align-self: start;
+}
+
+.calendar-premium-month .cal-day-cell {
+  min-height: 100px;
+}
+
+@media (min-width: 1024px) {
+  .calendar-premium-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 280px);
+    gap: 14px;
+    align-items: start;
+  }
+  .calendar-premium-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .calendar-premium-month .cal-day-cell {
+    min-height: 108px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .calendar-premium-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(270px, 290px);
+    gap: 14px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .calendar-premium-layout {
+    grid-template-columns: 220px minmax(0, 1fr) 310px;
+    gap: 16px;
+  }
+  .calendar-premium-left {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .calendar-premium-month .cal-day-cell {
+    min-height: 118px;
+  }
+}
+
+.calendar-premium .cal-card {
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.025);
+}
+
+/* Shared segment switcher look (Calendar Month/Week/Agenda). Prefer SegmentedControl. */
+.calendar-premium .cal-seg,
+.sales-dashboard-premium .sales-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  padding: 4px;
+  border-radius: 9px;
+  border: 1px solid #e4e7ec;
+  background: #ffffff;
+}
+
+.calendar-premium .cal-seg [role="tab"],
+.sales-dashboard-premium .sales-seg [role="tab"] {
+  border-radius: 7px;
+  border: 1px solid transparent;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #667085;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.calendar-premium .cal-seg [role="tab"][aria-selected="true"],
+.sales-dashboard-premium .sales-seg [role="tab"][aria-selected="true"] {
+  background: rgba(212, 255, 79, 0.22);
+  border-color: rgba(160, 210, 30, 0.45);
+  color: #101828;
+  font-weight: 600;
+}
+
+.calendar-premium .cal-event-chip {
+  container-type: inline-size;
+}
+
+@container (max-width: 88px) {
+  .calendar-premium .cal-event-chip .cal-chip-time {
+    display: none;
+  }
+}
+
+

@@ -4,10 +4,10 @@ import {
   ArrowUpRight,
   ClipboardList,
   Mail,
-  MessageCircle,
   Phone,
   Send,
 } from "lucide-react";
+import { BrandIcon } from "@/components/sales/ui/BrandIcon";
 import type { LeadLane } from "@/lib/lead-lanes";
 import { classifyLeadLane, matchesQualifiers } from "@/lib/lead-lanes";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
@@ -281,7 +281,7 @@ export function FacebookLeadCard({
             onOpenLogSheet(lead.id, "whatsapp");
           }}
         >
-          <MessageCircle size={compact ? 14 : 15} className="text-[var(--channel-whatsapp)]" />
+          <BrandIcon brand="whatsapp" size={compact ? 14 : 15} />
         </LeadCardIconAction>
 
         <LeadCardIconAction label="View lead" compact={compact} onClick={() => onOpenLead(lead.id)}>

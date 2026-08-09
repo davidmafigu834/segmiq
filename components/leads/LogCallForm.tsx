@@ -33,6 +33,12 @@ function todayLocalISO(): string {
   return `${y}-${m}-${d}`;
 }
 
+function fieldLabelClass(premium: boolean) {
+  return premium
+    ? "mb-1.5 block text-[12px] font-medium text-[#667085]"
+    : "mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary";
+}
+
 function SegmentedControl<T extends string>({
   label,
   options,
@@ -40,6 +46,7 @@ function SegmentedControl<T extends string>({
   onChange,
   columns = 1,
   className = "",
+  premium = false,
 }: {
   label: string;
   options: { value: T; label: string }[];
@@ -47,17 +54,18 @@ function SegmentedControl<T extends string>({
   onChange: (v: T) => void;
   columns?: 1 | 2 | 3;
   className?: string;
+  premium?: boolean;
 }) {
   const gridClass =
     columns === 3 ? "grid-cols-3" : columns === 2 ? "grid-cols-2" : "grid-cols-1";
 
   return (
     <div className={className}>
-      <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-        {label}
-      </span>
+      <span className={fieldLabelClass(premium)}>{label}</span>
       <div
-        className={`grid ${gridClass} overflow-hidden rounded-lg border border-[var(--border)] divide-x divide-y divide-[var(--border)]`}
+        className={`grid ${gridClass} overflow-hidden divide-x divide-y divide-[var(--border)] border border-[var(--border)] ${
+          premium ? "rounded-[10px]" : "rounded-lg"
+        }`}
       >
         {options.map((opt) => {
           const active = value === opt.value;
@@ -69,8 +77,12 @@ function SegmentedControl<T extends string>({
               className={[
                 "min-h-[44px] px-3 py-2.5 text-sm transition-all touch-manipulation sm:min-h-0",
                 active
-                  ? "bg-[var(--accent-muted)] font-medium text-[var(--text-primary)]"
-                  : "bg-[var(--surface-card)] text-ink-secondary hover:bg-[var(--bg-tertiary)] hover:text-ink-primary",
+                  ? premium
+                    ? "bg-[rgba(212,255,79,0.18)] font-semibold text-[#101828]"
+                    : "bg-[var(--accent-muted)] font-medium text-[var(--text-primary)]"
+                  : premium
+                    ? "bg-white text-[#667085] hover:bg-[#F9FAFB] hover:text-[#101828]"
+                    : "bg-[var(--surface-card)] text-ink-secondary hover:bg-[var(--bg-tertiary)] hover:text-ink-primary",
               ].join(" ")}
             >
               {opt.label}
@@ -88,18 +100,18 @@ function ReasonPills({
   value,
   onChange,
   hint,
+  premium = false,
 }: {
   label: string;
   options: readonly string[];
   value: string;
   onChange: (v: string) => void;
   hint?: string;
+  premium?: boolean;
 }) {
   return (
     <div className="ag-fade-in space-y-2">
-      <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-        {label}
-      </span>
+      <span className={fieldLabelClass(premium)}>{label}</span>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => {
           const active = value === opt;
@@ -109,10 +121,15 @@ function ReasonPills({
               type="button"
               onClick={() => onChange(active ? "" : opt)}
               className={[
-                "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                "border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                premium ? "rounded-[8px]" : "rounded-full",
                 active
-                  ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
-                  : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
+                  ? premium
+                    ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.18)] font-medium text-[#101828]"
+                    : "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
+                  : premium
+                    ? "border-[#E4E7EC] text-[#667085] hover:border-[#D0D5DD] hover:bg-[#F9FAFB] hover:text-[#101828]"
+                    : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
               ].join(" ")}
             >
               {opt}
@@ -120,7 +137,11 @@ function ReasonPills({
           );
         })}
       </div>
-      {hint ? <p className="text-xs text-ink-tertiary">{hint}</p> : null}
+      {hint ? (
+        <p className={premium ? "text-[12px] text-[#98A2B3]" : "text-xs text-ink-tertiary"}>
+          {hint}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -141,6 +162,8 @@ export type LogCallFormProps = {
   onLeadUpdated?: (lead: LeadRow) => void;
   onOpenSendTab?: (assetTypes: SendAssetType[]) => void;
   variant?: "panel" | "magic" | "compact";
+  /** Light premium styling for salesperson dashboard / calendar sheets. */
+  appearance?: "default" | "premium";
   /** When real_estate, require which property was discussed. */
   businessType?: "trades" | "real_estate";
   clientId?: string | null;
@@ -160,6 +183,7 @@ export function LogCallForm({
   onLeadUpdated,
   onOpenSendTab,
   variant = "panel",
+  appearance = "default",
   businessType = "trades",
   clientId = null,
   contactId: contactIdProp = null,
@@ -199,6 +223,11 @@ export function LogCallForm({
 
   const isMagic = variant === "magic";
   const isCompact = variant === "compact";
+  const isPremium = appearance === "premium";
+  const labelClass = fieldLabelClass(isPremium);
+  const premiumFieldClass = isPremium
+    ? "mt-1 min-w-0 w-full rounded-[10px] border border-[#E4E7EC] bg-white px-3 py-2.5 text-[13px] text-[#101828] outline-none transition-colors placeholder:text-[#98A2B3] focus:border-[#D4FF4F] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]"
+    : null;
 
   useEffect(() => {
     setChannel(defaultChannel);
@@ -516,7 +545,7 @@ export function LogCallForm({
       }}
     >
       {!isCompact ? (
-        <div className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary">
+        <div className={isPremium ? "text-[12px] font-medium text-[#98A2B3]" : "font-mono text-[11px] uppercase tracking-[0.12em] text-ink-tertiary"}>
           Log call
         </div>
       ) : null}
@@ -527,15 +556,17 @@ export function LogCallForm({
         value={reachOutcome}
         onChange={setReachOutcome}
         columns={3}
+        premium={isPremium}
       />
 
       {isRealEstate ? (
         <div className="ag-fade-in space-y-2">
-          <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-            Which property?
-          </span>
+          <span className={labelClass}>Which property?</span>
           <select
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-sm"
+            className={
+              premiumFieldClass ??
+              "w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-sm"
+            }
             value={addingProperty ? "__add__" : listingId}
             onChange={(e) => {
               if (e.target.value === "__add__") {
@@ -557,7 +588,10 @@ export function LogCallForm({
           </select>
           {addingProperty ? (
             <select
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-sm"
+              className={
+                premiumFieldClass ??
+                "w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2 text-sm"
+              }
               value={newListingId}
               onChange={(e) => setNewListingId(e.target.value)}
             >
@@ -578,10 +612,12 @@ export function LogCallForm({
       {reachOutcome === "reached" ? (
         <>
           <div className="ag-fade-in">
-            <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-              Result
-            </span>
-            <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-[var(--border)] divide-x divide-y divide-[var(--border)]">
+            <span className={labelClass}>Result</span>
+            <div
+              className={`grid grid-cols-2 overflow-hidden divide-x divide-y divide-[var(--border)] border border-[var(--border)] ${
+                isPremium ? "rounded-[10px]" : "rounded-lg"
+              }`}
+            >
               {CALL_RESULTS.map((v) => {
                 const active = result === v;
                 return (
@@ -592,8 +628,12 @@ export function LogCallForm({
                     className={[
                       "min-h-[44px] px-3 py-2.5 text-sm transition-all touch-manipulation sm:min-h-0",
                       active
-                        ? "bg-[var(--accent-muted)] font-medium text-[var(--text-primary)]"
-                        : "bg-[var(--surface-card)] text-ink-secondary hover:bg-[var(--bg-tertiary)] hover:text-ink-primary",
+                        ? isPremium
+                          ? "bg-[rgba(212,255,79,0.18)] font-semibold text-[#101828]"
+                          : "bg-[var(--accent-muted)] font-medium text-[var(--text-primary)]"
+                        : isPremium
+                          ? "bg-white text-[#667085] hover:bg-[#F9FAFB] hover:text-[#101828]"
+                          : "bg-[var(--surface-card)] text-ink-secondary hover:bg-[var(--bg-tertiary)] hover:text-ink-primary",
                     ].join(" ")}
                   >
                     {CALL_RESULT_LABELS[v]}
@@ -609,6 +649,7 @@ export function LogCallForm({
               options={stallReasons}
               value={reason}
               onChange={setReason}
+              premium={isPremium}
             />
           ) : null}
 
@@ -618,6 +659,7 @@ export function LogCallForm({
               options={lostReasons}
               value={reason}
               onChange={setReason}
+              premium={isPremium}
             />
           ) : null}
 
@@ -628,19 +670,18 @@ export function LogCallForm({
               value={reason}
               onChange={setReason}
               hint='Aggregated "not a fit" reasons indicate ad-targeting mismatch, not a sales problem.'
+              premium={isPremium}
             />
           ) : null}
 
           {result === "won" ? (
-            <p className="ag-fade-in text-xs text-ink-tertiary">
+            <p className={isPremium ? "ag-fade-in text-[12px] text-[#98A2B3]" : "ag-fade-in text-xs text-ink-tertiary"}>
               Deal won — add any confirmation details in notes below.
             </p>
           ) : null}
 
           <div className="ag-fade-in space-y-2">
-            <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-              Did they ask for anything?
-            </span>
+            <span className={labelClass}>Did they ask for anything?</span>
             <div className="flex flex-wrap gap-2">
               {assetOptions.map((opt) => {
                 const active = assetsRequested.includes(opt.key);
@@ -650,10 +691,15 @@ export function LogCallForm({
                     type="button"
                     onClick={() => toggleAsset(opt.key)}
                     className={[
-                      "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                      "border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                      isPremium ? "rounded-[8px]" : "rounded-full",
                       active
-                        ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
-                        : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
+                        ? isPremium
+                          ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.18)] font-medium text-[#101828]"
+                          : "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
+                        : isPremium
+                          ? "border-[#E4E7EC] text-[#667085] hover:border-[#D0D5DD] hover:bg-[#F9FAFB] hover:text-[#101828]"
+                          : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
                     ].join(" ")}
                   >
                     {opt.label}
@@ -668,7 +714,7 @@ export function LogCallForm({
                     type="button"
                     disabled={directSending}
                     onClick={() => void directSendPortfolioTestimonials()}
-                    className="rounded-md border border-[var(--accent-border)] px-3 py-1.5 text-[13px] font-medium text-[var(--status-won-fg)] touch-manipulation hover:bg-[var(--accent-muted)] disabled:opacity-50"
+                    className="rounded-[8px] border border-[var(--accent-border)] px-3 py-1.5 text-[13px] font-medium text-[var(--status-won-fg)] touch-manipulation hover:bg-[var(--accent-muted)] disabled:opacity-50"
                   >
                     {directSending ? "Sending…" : "Send now"}
                   </button>
@@ -678,7 +724,7 @@ export function LogCallForm({
                     type="button"
                     disabled={directSending}
                     onClick={() => void sendSimilarListings()}
-                    className="rounded-md border border-[var(--accent-border)] px-3 py-1.5 text-[13px] font-medium text-[var(--status-won-fg)] touch-manipulation hover:bg-[var(--accent-muted)] disabled:opacity-50"
+                    className="rounded-[8px] border border-[var(--accent-border)] px-3 py-1.5 text-[13px] font-medium text-[var(--status-won-fg)] touch-manipulation hover:bg-[var(--accent-muted)] disabled:opacity-50"
                   >
                     {directSending ? "Sending…" : "Send similar listings"}
                   </button>
@@ -687,7 +733,7 @@ export function LogCallForm({
                   <button
                     type="button"
                     onClick={() => onOpenSendTab(selectedSendTypes)}
-                    className="rounded-md border border-[var(--border)] px-3 py-1.5 text-[13px] text-ink-primary touch-manipulation hover:bg-surface-card-alt"
+                    className="rounded-[8px] border border-[var(--border)] px-3 py-1.5 text-[13px] text-ink-primary touch-manipulation hover:bg-surface-card-alt"
                   >
                     {canDirectSendOnly ? "Open send panel" : "Send now"}
                   </button>
@@ -698,11 +744,9 @@ export function LogCallForm({
 
           {showScheduleViewing ? (
             <div className="ag-fade-in space-y-2">
-              <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-                Quick action
-              </span>
+              <span className={labelClass}>Quick action</span>
               {viewingBookedLabel ? (
-                <p className="rounded-lg border border-[var(--accent-border)] bg-[var(--accent-muted)] px-3 py-2 text-[13px] text-[var(--status-won-fg)]">
+                <p className="rounded-[10px] border border-[var(--accent-border)] bg-[var(--accent-muted)] px-3 py-2 text-[13px] text-[var(--status-won-fg)]">
                   Viewing booked for {viewingBookedLabel}
                 </p>
               ) : null}
@@ -710,7 +754,12 @@ export function LogCallForm({
                 <button
                   type="button"
                   onClick={() => setViewingOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-3 py-1.5 text-[13px] text-ink-secondary transition-all touch-manipulation hover:border-[var(--border-hover)] hover:text-ink-primary"
+                  className={[
+                    "inline-flex items-center gap-2 border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                    isPremium
+                      ? "rounded-[8px] border-[#E4E7EC] text-[#667085] hover:bg-[#F9FAFB] hover:text-[#101828]"
+                      : "rounded-full border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
+                  ].join(" ")}
                 >
                   <CalendarPlus className="h-3.5 w-3.5" strokeWidth={1.5} />
                   Schedule a viewing
@@ -744,7 +793,13 @@ export function LogCallForm({
       ) : null}
 
       {reachOutcome === "no_answer" ? (
-        <p className="ag-fade-in rounded-lg border border-[var(--border)] bg-[var(--surface-card-alt)] px-3 py-2.5 text-[13px] text-ink-secondary">
+        <p
+          className={
+            isPremium
+              ? "ag-fade-in rounded-[10px] border border-[#E4E7EC] bg-[#F9FAFB] px-3 py-2.5 text-[13px] text-[#667085]"
+              : "ag-fade-in rounded-lg border border-[var(--border)] bg-[var(--surface-card-alt)] px-3 py-2.5 text-[13px] text-ink-secondary"
+          }
+        >
           Attempt #{noAnswerCount + 1}. Repeated no-answers keep this lead in Call now, then
           Recover — and feed retargeting when it graduates.
         </p>
@@ -752,9 +807,7 @@ export function LogCallForm({
 
       {needsSchedule ? (
         <div className="ag-fade-in space-y-3">
-          <span className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
-            When should it come back?
-          </span>
+          <span className={labelClass}>When should it come back?</span>
           <div className="flex flex-wrap gap-2">
             {CALLBACK_SCHEDULE_OPTIONS.map((opt) => {
               const active = scheduleOption === opt;
@@ -767,10 +820,15 @@ export function LogCallForm({
                     setScheduleError(null);
                   }}
                   className={[
-                    "rounded-full border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                    "border px-3 py-1.5 text-[13px] transition-all touch-manipulation",
+                    isPremium ? "rounded-[8px]" : "rounded-full",
                     active
-                      ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
-                      : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
+                      ? isPremium
+                        ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.18)] font-medium text-[#101828]"
+                        : "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
+                      : isPremium
+                        ? "border-[#E4E7EC] text-[#667085] hover:border-[#D0D5DD] hover:bg-[#F9FAFB] hover:text-[#101828]"
+                        : "border-[var(--border)] text-ink-secondary hover:border-[var(--border-hover)] hover:text-ink-primary",
                   ].join(" ")}
                 >
                   {CALLBACK_SCHEDULE_LABELS[opt]}
@@ -779,11 +837,15 @@ export function LogCallForm({
             })}
           </div>
           {scheduleOption === "pick" ? (
-            <label className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+            <label className={labelClass}>
               Date & time
               <input
                 type="datetime-local"
-                className={`input-base mt-1 min-w-0 w-full ${fieldZoomClass}`}
+                className={
+                  premiumFieldClass
+                    ? `${premiumFieldClass} ${fieldZoomClass}`
+                    : `input-base mt-1 min-w-0 w-full ${fieldZoomClass}`
+                }
                 min={`${minPickDate}T00:00`}
                 value={customCallback}
                 onChange={(e) => {
@@ -798,10 +860,15 @@ export function LogCallForm({
               type="button"
               onClick={() => setConvertLater((v) => !v)}
               className={[
-                "flex items-center gap-2 rounded-md border px-3 py-2 text-[13px] transition-all touch-manipulation",
+                "flex items-center gap-2 border px-3 py-2 text-[13px] transition-all touch-manipulation",
+                isPremium ? "rounded-[10px]" : "rounded-md",
                 convertLater
-                  ? "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
-                  : "border-[var(--border)] text-ink-secondary hover:text-ink-primary",
+                  ? isPremium
+                    ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.18)] text-[#101828]"
+                    : "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--status-won-fg)]"
+                  : isPremium
+                    ? "border-[#E4E7EC] text-[#667085] hover:text-[#101828]"
+                    : "border-[var(--border)] text-ink-secondary hover:text-ink-primary",
               ].join(" ")}
             >
               <Star
@@ -820,11 +887,15 @@ export function LogCallForm({
 
       {reasonError ? <p className="font-sans text-[12px] text-[#DC2626]">{reasonError}</p> : null}
 
-      <label className="block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+      <label className={labelClass}>
         Notes
         <textarea
           name="notes"
-          className={`textarea-base mt-1 min-w-0 resize-none ${fieldZoomClass}`}
+          className={
+            premiumFieldClass
+              ? `${premiumFieldClass} resize-none ${fieldZoomClass}`
+              : `textarea-base mt-1 min-w-0 resize-none ${fieldZoomClass}`
+          }
           rows={3}
         />
       </label>
@@ -835,11 +906,13 @@ export function LogCallForm({
         <button
           type="submit"
           className={
-            isMagic
-              ? "min-h-[48px] w-full touch-manipulation rounded-md bg-[var(--accent)] py-3 text-base font-medium text-[var(--accent-foreground)] sm:min-h-0 sm:text-[13px]"
-              : isCompact
-                ? "min-h-12 w-full touch-manipulation rounded-xl bg-[var(--accent)] py-3 text-[15px] font-semibold text-[var(--accent-foreground)]"
-                : "min-h-12 w-full touch-manipulation rounded-md bg-[var(--accent)] py-3 text-[13px] font-medium text-[var(--accent-foreground)] sm:min-h-0"
+            isPremium
+              ? "min-h-12 w-full touch-manipulation rounded-[10px] bg-[#D4FF4F] py-3 text-[14px] font-semibold text-[#101828] transition-colors hover:bg-[#c8f244] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#101828]/30"
+              : isMagic
+                ? "min-h-[48px] w-full touch-manipulation rounded-md bg-[var(--accent)] py-3 text-base font-medium text-[var(--accent-foreground)] sm:min-h-0 sm:text-[13px]"
+                : isCompact
+                  ? "min-h-12 w-full touch-manipulation rounded-xl bg-[var(--accent)] py-3 text-[15px] font-semibold text-[var(--accent-foreground)]"
+                  : "min-h-12 w-full touch-manipulation rounded-md bg-[var(--accent)] py-3 text-[13px] font-medium text-[var(--accent-foreground)] sm:min-h-0"
           }
         >
           {isCompact && channel === "whatsapp" ? "Log WhatsApp" : "Save call log"}

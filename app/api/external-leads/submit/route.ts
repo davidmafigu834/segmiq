@@ -8,7 +8,7 @@ import {
 import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 import { processLeadIntelligence } from "@/lib/lead-intelligence";
 import { background } from "@/lib/background";
-import type { LeadSource } from "@/types";
+import type { DealSide, LeadSource } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -34,9 +34,46 @@ function mapSource(raw: unknown): LeadSource {
   return "WEBSITE";
 }
 
+/** Map estate-agency website enquiry types → RE deal_side. */
+function mapDealSide(raw: unknown): DealSide | null {
+  const s = String(raw ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/[\s-]+/g, "_");
+
+  if (
+    s === "buy_side" ||
+    s === "sell_side" ||
+    s === "landlord_side" ||
+    s === "tenant_side"
+  ) {
+    return s;
+  }
+
+  if (s === "property" || s === "buy" || s === "buyer") return "buy_side";
+  if (s === "sell" || s === "seller") return "sell_side";
+  if (s === "landlord" || s === "let_out") return "landlord_side";
+  if (s === "tenant" || s === "to_let" || s === "rent") return "tenant_side";
+  if (s === "general") return null;
+  return null;
+}
+
+function extractApiKey(req: Request, body: Record<string, unknown>): string {
+  const fromBody = typeof body.api_key === "string" ? body.api_key.trim() : "";
+  if (fromBody) return fromBody;
+  const auth = req.headers.get("authorization") || "";
+  const bearer = auth.match(/^Bearer\s+(.+)$/i);
+  if (bearer?.[1]) return bearer[1].trim();
+  const headerKey = req.headers.get("x-api-key");
+  if (headerKey) return headerKey.trim();
+  return "";
+}
+
 /**
  * POST /api/external-leads/submit
- * Third-party website / ad form ingestion. Never 500 on partial payloads.
+ * Third-party website / ad form ingestion (e.g. Landlords Junction Properties).
+ * Auth: `api_key` in JSON body, or `Authorization: Bearer sk_live_…`, or `x-api-key`.
+ * Never 500 on partial payloads (soft_fail JSON with HTTP 200).
  */
 export async function POST(req: Request) {
   try {
@@ -47,7 +84,7 @@ export async function POST(req: Request) {
       return NextResponse.json(softFail("Malformed JSON body").body, { status: 200 });
     }
 
-    const apiKey = typeof body.api_key === "string" ? body.api_key.trim() : "";
+    const apiKey = extractApiKey(req, body);
     if (!apiKey) {
       return NextResponse.json(softFail("Missing api_key").body, { status: 200 });
     }
@@ -76,6 +113,14 @@ export async function POST(req: Request) {
       typeof body.listing_reference === "string" ? body.listing_reference.trim() : "";
     const agentReference =
       typeof body.agent_reference === "string" ? body.agent_reference.trim() : "";
+    const enquiryTypeRaw =
+      typeof body.enquiry_type === "string"
+        ? body.enquiry_type.trim()
+        : typeof body.type === "string"
+          ? body.type.trim()
+          : "";
+    const dealSide =
+      mapDealSide(body.deal_side) ?? mapDealSide(enquiryTypeRaw);
 
     if (!phoneRaw && !email && !name) {
       return NextResponse.json(
@@ -84,7 +129,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Resolve listing by address or external_reference
+    // Resolve listing by external_reference (e.g. LJP property slug) or address
     let listingId: string | null = null;
     if (listingReference) {
       const { data: byRef } = await supabase
@@ -108,14 +153,13 @@ export async function POST(req: Request) {
       }
     }
 
-    // Match agent by phone
+    // Match agent by phone (LJP agent_reference)
     let overrideAssigneeId: string | null = null;
     if (agentReference) {
       const { data: agents } = await fetchRoundRobinEligibleUsers(supabase, client.id as string, {
         activeOnly: true,
         select: "id, name, phone, role, also_sells, is_active",
       });
-      // Dynamic select string makes Supabase return GenericStringError; cast the shape we asked for.
       const agentRows = (agents ?? []) as unknown as Array<{ id: string; phone: string | null }>;
       const match = agentRows.find((a) => phonesMatchLoose(a.phone, agentReference));
       if (match) overrideAssigneeId = match.id;
@@ -129,6 +173,9 @@ export async function POST(req: Request) {
       message: message || undefined,
       listing_reference: listingReference || undefined,
       agent_reference: agentReference || undefined,
+      enquiry_type: enquiryTypeRaw || undefined,
+      deal_side: dealSide || undefined,
+      website_origin: "external",
     };
 
     const result = await createLead({
@@ -153,7 +200,17 @@ export async function POST(req: Request) {
 
     const contactId = (leadRow?.contact_id as string | null) ?? null;
 
-    // Link listing interest + optional lead fields
+    // Link listing + deal_side on the lead
+    const leadPatch: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (listingId) leadPatch.linked_listing_id = listingId;
+    if (dealSide) leadPatch.deal_side = dealSide;
+
+    if (Object.keys(leadPatch).length > 1) {
+      await supabase.from("leads").update(leadPatch).eq("id", result.leadId);
+    }
+
     if (listingId && contactId) {
       const { data: contact } = await supabase
         .from("contacts")
@@ -165,14 +222,6 @@ export async function POST(req: Request) {
         .from("contacts")
         .update({ interested_listing_ids: next, updated_at: new Date().toISOString() })
         .eq("id", contactId);
-
-      await supabase
-        .from("leads")
-        .update({
-          linked_listing_id: listingId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", result.leadId);
     }
 
     background("external-leads-intelligence", async () => {
@@ -190,6 +239,8 @@ export async function POST(req: Request) {
       assigned_to_id: (leadRow?.assigned_to_id as string | null) ?? null,
       agent_matched: Boolean(overrideAssigneeId),
       listing_linked: Boolean(listingId),
+      deal_side: dealSide,
+      enquiry_type: enquiryTypeRaw || null,
       duplicate: result.duplicate,
     });
   } catch (err) {

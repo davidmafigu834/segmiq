@@ -131,13 +131,13 @@ function leadLocationHint(lead: RankableLead): boolean {
 }
 
 export const STAGE_LABELS: Record<string, string> = {
-  NEW: "New Lead",
+  NEW: "New",
   CONTACTED: "Contacted",
-  NEGOTIATING: "Quoted",
-  PROPOSAL_SENT: "Quoted",
+  NEGOTIATING: "Negotiating",
+  PROPOSAL_SENT: "Proposal sent",
   WON: "Won",
   LOST: "Lost",
-  NOT_QUALIFIED: "Lost",
+  NOT_QUALIFIED: "Not qualified",
 };
 
 export function stageLabel(status: string, followUpDate: string | null): string {
@@ -157,12 +157,14 @@ export function stageStyle(status: string, followUpDate: string | null): {
 } {
   const label = stageLabel(status, followUpDate);
   const map: Record<string, { bg: string; text: string; border: string }> = {
-    "New Lead": { bg: "rgba(212,255,79,0.12)", text: "var(--accent)", border: "rgba(212,255,79,0.3)" },
+    New: { bg: "rgba(212,255,79,0.12)", text: "var(--accent)", border: "rgba(212,255,79,0.3)" },
     Contacted: { bg: "rgba(255,255,255,0.06)", text: "var(--text-secondary)", border: "var(--border)" },
-    Quoted: { bg: "rgba(245,166,35,0.12)", text: "var(--warning)", border: "rgba(245,166,35,0.3)" },
+    Negotiating: { bg: "rgba(245,166,35,0.12)", text: "var(--warning)", border: "rgba(245,166,35,0.3)" },
+    "Proposal sent": { bg: "rgba(38,132,255,0.10)", text: "#2684FF", border: "rgba(38,132,255,0.28)" },
     "Follow-up Due": { bg: "rgba(245,166,35,0.12)", text: "var(--warning)", border: "rgba(245,166,35,0.3)" },
     Won: { bg: "rgba(61,214,140,0.12)", text: "var(--success)", border: "rgba(61,214,140,0.3)" },
     Lost: { bg: "rgba(255,68,68,0.12)", text: "var(--error)", border: "rgba(255,68,68,0.3)" },
+    "Not qualified": { bg: "rgba(255,68,68,0.12)", text: "var(--error)", border: "rgba(255,68,68,0.3)" },
   };
   return map[label] ?? map.Contacted;
 }

@@ -3,20 +3,26 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
-  MessageCircleMore,
+  ChevronDown,
+  Clock,
+  FileText,
   MoreHorizontal,
+  PanelRight,
+  Paperclip,
   Phone,
-  Plus,
   Send,
   StickyNote,
-  Target,
   Trophy,
+  Zap,
   XCircle,
 } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
 import type { InboxChatMessage, InboxConversation } from "@/lib/inbox/types";
 import { formatAwaitingReply, formatDealValue } from "@/lib/inbox/queue-filters";
+import { getSalesSignal } from "@/lib/inbox/format-display";
 import { applyQuickReplyVariables } from "@/lib/inbox/quick-reply-vars";
 import { LogCallForm } from "@/components/leads/LogCallForm";
+import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { groupMessagesByDay, MessageBubble } from "./MessageBubble";
 import { LeadStageBadge } from "./LeadStageBadge";
 import { LeadIntentBadge } from "./LeadIntentBadge";
@@ -38,6 +44,7 @@ type Props = {
   onToggleIntel: () => void;
   onMessagesChange: () => void;
   onConversationUpdate?: () => void;
+  onSessionChange?: (open: boolean | null) => void;
 };
 
 export function ChatThread({
@@ -54,6 +61,7 @@ export function ChatThread({
   onToggleIntel,
   onMessagesChange,
   onConversationUpdate,
+  onSessionChange,
 }: Props) {
   const [messages, setMessages] = useState<InboxChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,9 +73,11 @@ export function ChatThread({
   const [menuOpen, setMenuOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [composerMoreOpen, setComposerMoreOpen] = useState(false);
   const [savedReplies, setSavedReplies] = useState<SavedQuickReply[]>([]);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [hasNewBelow, setHasNewBelow] = useState(false);
   const [campaignContext, setCampaignContext] = useState<{
     campaignName: string;
     sentAt: string | null;
@@ -77,12 +87,15 @@ export function ChatThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const onMessagesChangeRef = useRef(onMessagesChange);
+  const onSessionChangeRef = useRef(onSessionChange);
   onMessagesChangeRef.current = onMessagesChange;
+  onSessionChangeRef.current = onSessionChange;
 
   useEffect(() => {
     stickToBottomRef.current = true;
     setQuickActionsOpen(false);
     setMenuOpen(false);
+    if (!conversation?.id) onSessionChangeRef.current?.(null);
   }, [conversation?.id]);
 
   useEffect(() => {
@@ -93,8 +106,10 @@ export function ChatThread({
       const node = scrollRef.current;
       if (!node) return;
       const threshold = 96;
-      stickToBottomRef.current =
+      const nearBottom =
         node.scrollHeight - node.scrollTop - node.clientHeight < threshold;
+      stickToBottomRef.current = nearBottom;
+      if (nearBottom) setHasNewBelow(false);
     }
 
     el.addEventListener("scroll", onScroll, { passive: true });
@@ -137,7 +152,9 @@ export function ChatThread({
             }
             return next;
           });
-          setSessionOpen(d.sessionOpen === true);
+          const open = d.sessionOpen === true;
+          setSessionOpen(open);
+          onSessionChangeRef.current?.(open);
           setCampaignContext(d.campaignContext ?? null);
         }
       } finally {
@@ -165,8 +182,12 @@ export function ChatThread({
   }, [canSend, clientId]);
 
   useEffect(() => {
-    if (!stickToBottomRef.current) return;
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (stickToBottomRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      setHasNewBelow(false);
+      return;
+    }
+    if (messages.length > 0) setHasNewBelow(true);
   }, [messages, conversation?.id]);
 
   async function sendCustomMessage(text: string) {
@@ -210,7 +231,9 @@ export function ChatThread({
           sessionOpen?: boolean;
         };
         setMessages(data.messages ?? []);
-        setSessionOpen(data.sessionOpen === true);
+        const open = data.sessionOpen === true;
+        setSessionOpen(open);
+        onSessionChangeRef.current?.(open);
       } else if (isWhatsApp) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         setSendError(err.error ?? "Could not send message");
@@ -343,13 +366,17 @@ export function ChatThread({
 
   if (!conversation) {
     return (
-      <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6 text-sm text-[var(--wa-muted)]">
+      <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6">
         <div className="wa-empty-hint max-w-sm text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--channel-whatsapp-muted)] text-[var(--channel-whatsapp)]">
-            <MessageCircleMore size={26} />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-[#E4E7EC] bg-[#F7F8FA] text-[#25D366]">
+            <SiWhatsapp size={24} aria-hidden />
           </div>
-          <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-[var(--text-primary)]">Choose a conversation</div>
-          View customer context, collaborate with your team and reply from one workspace.
+          <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-[#101828]">
+            Select a sales conversation
+          </div>
+          <p className="text-[13px] leading-relaxed text-[#667085]">
+            Choose a WhatsApp lead from the left to view the conversation, qualification details and next actions.
+          </p>
         </div>
       </div>
     );
@@ -360,187 +387,170 @@ export function ChatThread({
   const isWhatsApp = conversation.source === "WHATSAPP_INBOUND";
   const dealLabel = formatDealValue(conversation.dealValue, conversation.dealCurrency ?? "USD");
   const waitingLabel = formatAwaitingReply(conversation.awaitingReplyMinutes);
+  const prioritySignal = getSalesSignal(conversation);
+  const sessionClosed = isWhatsApp && !sessionOpen;
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <div
-        className={`shrink-0 max-[1180px]:pt-[max(0.75rem,env(safe-area-inset-top))] ${
+        className={`shrink-0 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))] ${
           isWhatsApp ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
         }`}
       >
         <div className="flex items-center justify-between gap-2 px-3 py-3 sm:px-4">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-          {onBack ? (
-            <button
-              type="button"
-              onClick={onBack}
-              title="Back to chats"
-              className={
-                isWhatsApp
-                  ? "wa-icon-btn-muted shrink-0"
-                  : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"
-              }
-            >
-              <ArrowLeft size={20} />
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={onToggleIntel}
-            className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-1 py-1 text-left transition-colors sm:gap-3 sm:px-1.5 sm:py-1.5 ${
-              isWhatsApp ? "hover:bg-[var(--wa-surface-subtle)]" : "hover:bg-[var(--bg-quaternary)]"
-            }`}
-          >
-            <WhatsAppAvatar
-              name={name}
-              phone={conversation.phone}
-              size="sm"
-              className="max-[480px]:h-9 max-[480px]:w-9"
-            />
-            <div className="min-w-0 flex-1">
-              <div
-                className={`flex items-center gap-1.5 truncate text-[15px] font-semibold tracking-tight ${
-                  isWhatsApp ? "text-[var(--wa-ink)]" : "text-[var(--text-primary)]"
-                }`}
-              >
-                <span className="truncate">{name}</span>
-                {isWhatsApp ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--channel-whatsapp)]" title="WhatsApp contact" /> : null}
-                <LeadIntentBadge
-                  score={conversation.score}
-                  label={conversation.scoreLabel}
-                  variant={isWhatsApp ? "header" : "default"}
-                  showScore
-                  className="max-[520px]:hidden"
-                />
-              </div>
-              <div
-                className={`mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] ${
-                  isWhatsApp ? "text-[var(--wa-muted)]" : "text-[var(--text-tertiary)]"
-                }`}
-              >
-                <LeadStageBadge
-                  status={conversation.status}
-                  followUpDate={conversation.followUpDate}
-                  variant={isWhatsApp ? "list" : "default"}
-                  className="max-[520px]:hidden"
-                />
-                <span className="truncate">
-                  {conversation.phone}
-                  <span className="max-[520px]:hidden">
-                    {conversation.location ? ` · ${conversation.location}` : ""}
-                    {dealLabel ? ` · ${dealLabel}` : ""}
-                    {waitingLabel ? ` · ${waitingLabel}` : ""}
-                  </span>
-                </span>
-              </div>
-            </div>
-          </button>
-        </div>
-        <div className="relative flex shrink-0 items-center gap-0.5 sm:gap-1">
-          {showLogCall ? (
-            <button
-              type="button"
-              onClick={() => setLogCallOpen(true)}
-              title="Log call"
-              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"}
-            >
-              <Phone size={16} />
-            </button>
-          ) : null}
-          {canSend ? (
-            <button
-              type="button"
-              onClick={() => void handleInternalNote()}
-              title="Internal note"
-              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9 max-[640px]:hidden" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)] max-[640px]:hidden"}
-            >
-              <StickyNote size={16} />
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            title="Actions"
-            className={isWhatsApp ? "wa-icon-btn !h-9 !w-9" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"}
-          >
-            <MoreHorizontal size={16} />
-          </button>
-          {menuOpen ? (
-            <div className={`absolute right-0 top-11 z-20 min-w-[200px] ${isWhatsApp ? "wa-dropdown" : "rounded-lg border border-[var(--border)] bg-[var(--surface-card)] py-1 shadow-lg"}`}>
-              {canSend ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    void handleInternalNote();
-                  }}
-                  className="hidden w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] max-[640px]:flex"
-                >
-                  <StickyNote size={14} />
-                  Add internal note
-                </button>
-              ) : null}
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            {onBack ? (
               <button
                 type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onToggleIntel();
-                }}
-                className="hidden w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] max-[640px]:flex"
+                onClick={onBack}
+                aria-label="Back to conversations"
+                className={
+                  isWhatsApp
+                    ? "wa-icon-btn-muted shrink-0"
+                    : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"
+                }
               >
-                <Target size={14} />
-                View lead details
+                <ArrowLeft size={20} />
               </button>
-              {canTransfer ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setTransferOpen(true);
-                  }}
-                  className="flex w-full px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
-                >
-                  Transfer conversation
-                </button>
-              ) : null}
-              {canUpdateStatus ? (
-                <>
-                  <button
-                    type="button"
-                    disabled={statusUpdating}
-                    onClick={() => void handleStatusUpdate("WON")}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--success)] hover:bg-[var(--success-muted)] disabled:opacity-50"
-                  >
-                    <Trophy size={14} />
-                    Mark as won
-                  </button>
-                  <button
-                    type="button"
-                    disabled={statusUpdating}
-                    onClick={() => void handleStatusUpdate("LOST")}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--danger-fg)] hover:bg-[var(--danger-bg)] disabled:opacity-50"
-                  >
-                    <XCircle size={14} />
-                    Mark as lost
-                  </button>
-                </>
-              ) : null}
-              {!canTransfer && !canUpdateStatus ? (
-                <div className="px-3 py-2 text-xs text-[var(--text-tertiary)] max-[640px]:hidden">No actions available</div>
-              ) : null}
+            ) : null}
+            <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+              <WhatsAppAvatar
+                name={name}
+                phone={conversation.phone}
+                size="sm"
+                className="max-[480px]:h-9 max-[480px]:w-9"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate text-[14px] font-semibold tracking-tight text-[#101828]">
+                    {name}
+                  </span>
+                  {isWhatsApp ? (
+                    <SiWhatsapp size={14} className="shrink-0 text-[#25D366]" aria-label="WhatsApp" />
+                  ) : null}
+                </div>
+                {conversation.phone ? (
+                  <div className="mt-0.5 truncate text-[12px] tabular-nums text-[#667085]">
+                    {conversation.phone}
+                  </div>
+                ) : null}
+                <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                  <LeadStageBadge
+                    status={conversation.status}
+                    followUpDate={conversation.followUpDate}
+                    variant="list"
+                  />
+                  <LeadIntentBadge
+                    score={conversation.score}
+                    label={conversation.scoreLabel}
+                    variant="list"
+                  />
+                  {dealLabel ? (
+                    <span className="inline-flex items-center rounded-full border border-[#E4E7EC] bg-[#F9FAFB] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-[#344054]">
+                      {dealLabel}
+                    </span>
+                  ) : null}
+                  {waitingLabel ? (
+                    <span className="inline-flex items-center rounded-full border border-[#FED7AA] bg-[#FFFAEB] px-1.5 py-0.5 text-[10px] font-semibold text-[#B54708]">
+                      {waitingLabel}
+                    </span>
+                  ) : null}
+                </div>
+                {prioritySignal ? (
+                  <div className="mt-1 truncate text-[11px] text-[#667085]" title={prioritySignal.detail}>
+                    {prioritySignal.title}
+                  </div>
+                ) : null}
+              </div>
             </div>
-          ) : null}
-          <button
-            type="button"
-            onClick={onToggleIntel}
-            title="Lead details"
-            className={`toggle-intel max-[1180px]:flex max-[640px]:hidden min-[1181px]:hidden ${
-              isWhatsApp ? "wa-icon-btn !h-9 !w-9" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)]"
-            }`}
-          >
-            <Target size={16} />
-          </button>
-        </div>
+          </div>
+          <div className="relative flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <button
+              type="button"
+              onClick={onToggleIntel}
+              aria-label="Open lead intelligence"
+              title="Lead intelligence"
+              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"}
+            >
+              <PanelRight size={16} strokeWidth={1.8} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="Conversation actions"
+              aria-expanded={menuOpen}
+              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"}
+            >
+              <MoreHorizontal size={16} />
+            </button>
+            {menuOpen ? (
+              <div className={`absolute right-0 top-11 z-20 min-w-[200px] ${isWhatsApp ? "wa-dropdown" : "rounded-lg border border-[var(--border)] bg-[var(--surface-card)] py-1 shadow-lg"}`}>
+                {canSend ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void handleInternalNote();
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                  >
+                    <StickyNote size={14} />
+                    Add internal note
+                  </button>
+                ) : null}
+                {showLogCall ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setLogCallOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                  >
+                    <Phone size={14} />
+                    Log call
+                  </button>
+                ) : null}
+                {canTransfer ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setTransferOpen(true);
+                    }}
+                    className="flex w-full px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                  >
+                    Transfer conversation
+                  </button>
+                ) : null}
+                {canUpdateStatus ? (
+                  <>
+                    <button
+                      type="button"
+                      disabled={statusUpdating}
+                      onClick={() => void handleStatusUpdate("WON")}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--success)] hover:bg-[var(--success-muted)] disabled:opacity-50"
+                    >
+                      <Trophy size={14} />
+                      Mark as won
+                    </button>
+                    <button
+                      type="button"
+                      disabled={statusUpdating}
+                      onClick={() => void handleStatusUpdate("LOST")}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--danger-fg)] hover:bg-[var(--danger-bg)] disabled:opacity-50"
+                    >
+                      <XCircle size={14} />
+                      Mark as lost
+                    </button>
+                  </>
+                ) : null}
+                {!canTransfer && !canUpdateStatus && !canSend && !showLogCall ? (
+                  <div className="px-3 py-2 text-xs text-[var(--text-tertiary)]">No actions available</div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -559,21 +569,23 @@ export function ChatThread({
 
       <div
         ref={scrollRef}
-        className="wa-chat-wallpaper inbox-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 sm:px-5"
+        className="wa-chat-wallpaper inbox-scroll relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 sm:px-5"
       >
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <span className="wa-empty-hint">Loading messages…</span>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-1 items-start justify-center pt-16">
             <span className="wa-empty-hint">No messages yet — say hello to start the conversation</span>
           </div>
         ) : (
           messageGroups.map((group) => (
             <div key={group.label} className="space-y-1.5">
               <div className="flex justify-center py-1">
-                <span className="wa-day-pill">{group.label}</span>
+                <div className="wa-day-rule">
+                  <span>{group.label}</span>
+                </div>
               </div>
               {group.messages.map((m) => (
                 <MessageBubble key={m.id} message={m} />
@@ -582,13 +594,111 @@ export function ChatThread({
           ))
         )}
         <div ref={bottomRef} />
+        {hasNewBelow ? (
+          <button
+            type="button"
+            onClick={() => {
+              stickToBottomRef.current = true;
+              setHasNewBelow(false);
+              bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="sticky bottom-3 z-10 mx-auto rounded-full border border-[#E4E7EC] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#101828] shadow-[0_4px_12px_rgba(16,24,40,0.08)]"
+          >
+            New messages ↓
+          </button>
+        ) : null}
       </div>
 
       {canSend ? (
-        <div className={`shrink-0 ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)] bg-[var(--bg-tertiary)]"}`}>
+        <div className={`shrink-0 bg-white ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
           {sendError ? (
             <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
               {sendError}
+            </div>
+          ) : null}
+          {isWhatsApp ? (
+            <div className="wa-action-strip relative">
+              <button
+                type="button"
+                onClick={() => setQuickActionsOpen((v) => !v)}
+                aria-expanded={quickActionsOpen}
+                aria-label="Quick replies"
+                className={`wa-action-chip ${quickActionsOpen ? "wa-action-chip-active" : ""}`}
+              >
+                <Zap size={14} strokeWidth={1.8} aria-hidden />
+                Quick replies
+              </button>
+              <button
+                type="button"
+                onClick={() => setQuickActionsOpen(true)}
+                aria-label="Send asset"
+                className="wa-action-chip max-[520px]:hidden"
+              >
+                <Paperclip size={14} strokeWidth={1.8} aria-hidden />
+                Send asset
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleInternalNote()}
+                aria-label="Add internal note"
+                className="wa-action-chip max-[640px]:hidden"
+              >
+                <StickyNote size={14} strokeWidth={1.8} aria-hidden />
+                Internal note
+              </button>
+              {showLogCall ? (
+                <button
+                  type="button"
+                  onClick={() => setLogCallOpen(true)}
+                  aria-label={`Log call with ${name}`}
+                  className="wa-action-chip"
+                >
+                  <Phone size={14} strokeWidth={1.8} aria-hidden />
+                  Log call
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setComposerMoreOpen((v) => !v)}
+                aria-expanded={composerMoreOpen}
+                aria-label="More composer actions"
+                className="wa-action-chip min-[641px]:hidden"
+              >
+                More
+                <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
+              </button>
+              {composerMoreOpen ? (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-20 cursor-default"
+                    aria-label="Close more actions"
+                    onClick={() => setComposerMoreOpen(false)}
+                  />
+                  <div className="absolute bottom-full right-2 z-30 mb-1 min-w-[160px] rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-[#101828] hover:bg-[#F9FAFB] min-[521px]:hidden"
+                      onClick={() => {
+                        setComposerMoreOpen(false);
+                        setQuickActionsOpen(true);
+                      }}
+                    >
+                      <Paperclip size={14} /> Send asset
+                    </button>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-[#101828] hover:bg-[#F9FAFB]"
+                      onClick={() => {
+                        setComposerMoreOpen(false);
+                        void handleInternalNote();
+                      }}
+                    >
+                      <StickyNote size={14} /> Internal note
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </div>
           ) : null}
           {quickActionsOpen ? (
@@ -601,37 +711,38 @@ export function ChatThread({
               onCollapse={() => setQuickActionsOpen(false)}
             />
           ) : null}
-          {conversation.source === "WHATSAPP_INBOUND" && !sessionOpen ? (
-            <div className={`border-t px-4 py-2.5 text-center text-[11px] leading-snug ${
-              isWhatsApp
-                ? "border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)]"
-                : "border-[var(--border)] bg-[var(--accent-muted)] text-[var(--accent-fg)]"
-            }`}
-            >
-              Outside the 24-hour WhatsApp window — your message will be sent as an approved template
+          {sessionClosed ? (
+            <div className="wa-session-banner">
+              <Clock size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
+              <div className="min-w-0">
+                <div className="text-[12px] font-semibold text-[#92400E]">WhatsApp 24h session closed</div>
+                <p className="mt-0.5 text-[11px] leading-snug text-[#A16207]">
+                  Free-form replies are unavailable until the customer messages again. Your message may send as an approved template when available.
+                </p>
+              </div>
             </div>
           ) : null}
-          <div className={`flex items-center gap-2 px-2 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:px-3 ${
-            isWhatsApp ? "" : "border-t border-[var(--border)]"
-          }`}
+          <div
+            className={`flex items-center gap-2 px-2 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:px-3 ${
+              isWhatsApp ? "" : "border-t border-[var(--border)]"
+            }`}
           >
-            <button
-              type="button"
-              onClick={() => setQuickActionsOpen((open) => !open)}
-              title={quickActionsOpen ? "Hide quick actions" : "Quick actions"}
-              aria-expanded={quickActionsOpen}
-              className={
-                isWhatsApp
-                  ? `wa-plus-btn ${quickActionsOpen ? "wa-plus-btn-open" : ""}`
-                  : `flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all ${
-                      quickActionsOpen
-                        ? "rotate-45 bg-[var(--accent)] text-[var(--accent-foreground)]"
-                        : "text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"
-                    }`
-              }
-            >
-              <Plus size={20} strokeWidth={2.25} />
-            </button>
+            {!isWhatsApp ? (
+              <button
+                type="button"
+                onClick={() => setQuickActionsOpen((open) => !open)}
+                title={quickActionsOpen ? "Hide quick actions" : "Quick actions"}
+                aria-expanded={quickActionsOpen}
+                aria-label="Quick actions"
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all ${
+                  quickActionsOpen
+                    ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
+                    : "text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"
+                }`}
+              >
+                <FileText size={18} />
+              </button>
+            ) : null}
             <input
               type="text"
               value={input}
@@ -640,14 +751,15 @@ export function ChatThread({
                 if (e.key === "Enter") void sendCustomMessage(input);
               }}
               placeholder={
-                conversation.source === "WHATSAPP_INBOUND" && !sessionOpen
-                  ? "Type your message — sent as a WhatsApp template"
-                  : "Type a message"
+                sessionClosed
+                  ? "Free-form replies unavailable — may send as template…"
+                  : "Type a WhatsApp reply..."
               }
               disabled={sending}
+              aria-label="Type a WhatsApp reply"
               className={
                 isWhatsApp
-                  ? "wa-composer-input sm:text-[15px]"
+                  ? `wa-composer-input sm:text-[14px] ${sessionClosed ? "opacity-80" : ""}`
                   : "min-w-0 flex-1 rounded-full border border-[var(--border)] bg-[var(--surface-input)] px-4 py-2.5 text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-focus)] sm:text-[15px]"
               }
             />
@@ -655,80 +767,69 @@ export function ChatThread({
               type="button"
               disabled={!input.trim() || sending}
               onClick={() => void sendCustomMessage(input)}
+              aria-label="Send WhatsApp message"
               className={
                 isWhatsApp
                   ? "wa-send-btn"
                   : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] transition-opacity disabled:opacity-40"
               }
             >
-              <Send size={18} />
+              <Send size={18} strokeWidth={1.8} />
             </button>
           </div>
         </div>
       ) : (
-        <div className="wa-composer shrink-0 px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-[var(--wa-muted)]">
-          Read-only — assign this lead to send messages
+        <div className="wa-composer shrink-0 bg-white px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-[#667085]">
+          Read-only — claim or assign this lead to send messages
         </div>
       )}
 
       {pricingPicker ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 sm:items-center">
-          <div className="w-full max-w-sm rounded-t-2xl border border-[var(--border)] bg-[var(--surface-card)] p-5 sm:rounded-xl">
-            <p className="mb-3 text-sm font-medium text-[var(--text-primary)]">Select package</p>
-            <div className="flex flex-col gap-2">
-              {pricingPicker.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => void sendAsset("PRICING_PACKAGE", p.id)}
-                  className="rounded-lg border border-[var(--border)] px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setPricingPicker(null)}
-              className="mt-3 w-full text-xs text-[var(--text-tertiary)]"
-            >
-              Cancel
-            </button>
+        <PremiumSheet
+          eyebrow="Assets"
+          title="Select package"
+          description="Choose which pricing package to send."
+          onClose={() => setPricingPicker(null)}
+          labelledBy="pricing-picker-title"
+          maxWidthClass="max-w-sm"
+        >
+          <div className="flex flex-col gap-2">
+            {pricingPicker.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => void sendAsset("PRICING_PACKAGE", p.id)}
+                className="rounded-[10px] border border-[#E4E7EC] bg-white px-3 py-2.5 text-left text-[13px] font-medium text-[#101828] transition-colors hover:bg-[#F9FAFB]"
+              >
+                {p.name}
+              </button>
+            ))}
           </div>
-        </div>
+        </PremiumSheet>
       ) : null}
 
       {logCallOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/75 sm:items-center"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setLogCallOpen(false);
-          }}
+        <PremiumSheet
+          eyebrow="Call log"
+          title="Log call"
+          description="Record the outcome and next step."
+          onClose={() => setLogCallOpen(false)}
+          labelledBy="inbox-log-call-title"
+          maxWidthClass="max-w-lg"
         >
-          <div className="max-h-[min(92dvh,100dvh)] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-[var(--border)] bg-[var(--surface-card)] p-5 sm:rounded-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Log call</h3>
-              <button
-                type="button"
-                onClick={() => setLogCallOpen(false)}
-                className="text-sm text-[var(--text-tertiary)]"
-              >
-                Close
-              </button>
-            </div>
-            <LogCallForm
-              leadId={conversation.id}
-              variant="compact"
-              onLogged={() => {
-                setLogCallOpen(false);
-                onMessagesChange();
-                void fetch(`/api/inbox/conversations/${conversation.id}/messages`)
-                  .then((r) => r.json())
-                  .then((d: { messages?: InboxChatMessage[] }) => setMessages(d.messages ?? []));
-              }}
-            />
-          </div>
-        </div>
+          <LogCallForm
+            leadId={conversation.id}
+            variant="compact"
+            appearance="premium"
+            onLogged={() => {
+              setLogCallOpen(false);
+              onMessagesChange();
+              void fetch(`/api/inbox/conversations/${conversation.id}/messages`)
+                .then((r) => r.json())
+                .then((d: { messages?: InboxChatMessage[] }) => setMessages(d.messages ?? []));
+            }}
+          />
+        </PremiumSheet>
       ) : null}
 
       <TransferDialog

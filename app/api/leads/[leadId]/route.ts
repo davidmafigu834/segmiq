@@ -3,7 +3,7 @@ import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { canModifyLead, canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { background } from "@/lib/background";
-import { logStatusChanged, logLeadReassigned, logFollowUpSet } from "@/lib/lead-events";
+import { logStatusChanged, logLeadReassigned, logFollowUpSet, logFollowUpCompleted } from "@/lib/lead-events";
 import { recordWinAnalysis } from "@/lib/win-analysis";
 import {
   canSetManualDealValue,
@@ -195,6 +195,20 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
           clientId,
           actor,
           followUpDate: parsed.data.follow_up_date as string,
+        })
+      );
+    }
+
+    if (
+      parsed.data.follow_up_date === null &&
+      previousLead.follow_up_date != null
+    ) {
+      background("logFollowUpCompleted", () =>
+        logFollowUpCompleted({
+          leadId: params.leadId,
+          clientId,
+          actor,
+          previousFollowUpDate: previousLead.follow_up_date as string,
         })
       );
     }

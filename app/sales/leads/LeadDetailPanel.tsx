@@ -4,7 +4,17 @@ import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
 import { format } from "date-fns";
-import { ChevronLeft, X, MessageCircle } from "lucide-react";
+import {
+  ChevronLeft,
+  CircleUserRound,
+  ExternalLink,
+  MoreVertical,
+  Phone,
+  Plus,
+  Star,
+  X,
+} from "lucide-react";
+import { SiFacebook, SiWhatsapp } from "react-icons/si";
 import Link from "next/link";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import {
@@ -13,8 +23,10 @@ import {
   whatsappLeadDisplayName,
   whatsappLeadSecondaryLine,
 } from "@/lib/leads/whatsapp-lead-display";
+import { isFacebookInstantFormLead } from "@/lib/leads/facebook-lead-display";
 import { useLeadPanel, closeLeadPanel, type LeadPanelTab } from "@/store/uiStore";
-import type { LeadRow, LeadStatus } from "@/types";
+import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
+import type { LeadRow } from "@/types";
 import { MagicLinkButton } from "@/components/MagicLinkButton";
 import { FormAnswersSection } from "@/components/leads/FormAnswersSection";
 import { FacebookFormIntentSection } from "@/components/leads/FacebookFormIntentSection";
@@ -27,10 +39,19 @@ import { LeadBriefing } from "@/components/leads/LeadBriefing";
 import { DealValueEditor } from "@/components/leads/DealValueEditor";
 import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
-import { ScoreBadge } from "@/components/ui/ScoreBadge";
 import { formatCallLogHeadline } from "@/lib/call-log-display";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { ManagerReassignLeadButton } from "@/components/customer-hub/ManagerReassignLeadButton";
+import { isActiveConvertLaterPick } from "@/lib/convert-later-picks";
+import { timeAgo } from "@/lib/sales-priority-lead";
+import {
+  PIPELINE_ACTIVE_STAGES,
+  PIPELINE_STAGE_LABEL,
+  formatLeadIntent,
+  getNextPipelineStage,
+  intentLikelihoodCopy,
+} from "@/lib/sales/pipeline-display";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 
 type CallLogApiRow = {
   id: string;
@@ -50,16 +71,11 @@ type SendAssetType = "PORTFOLIO" | "PROJECT" | "PRICING_PACKAGE" | "TESTIMONIALS
 
 const TERMINAL: ReadonlySet<string> = new Set(["WON", "LOST", "NOT_QUALIFIED"]);
 
-const MOVE_COLS = ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"] as const satisfies readonly LeadStatus[];
+const MOVE_COLS = PIPELINE_ACTIVE_STAGES;
 
 type MoveColumn = (typeof MOVE_COLS)[number];
 
-const COL_LABEL: Record<MoveColumn, string> = {
-  NEW: "New",
-  CONTACTED: "Contacted",
-  NEGOTIATING: "Negotiating",
-  PROPOSAL_SENT: "Proposal sent",
-};
+const COL_LABEL = PIPELINE_STAGE_LABEL;
 
 export function LeadDetailPanel({
   leads,
@@ -83,10 +99,17 @@ export function LeadDetailPanel({
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   const [activeTab, setActiveTab] = useState<LeadPanelTab>("details");
   const [sendPreselect, setSendPreselect] = useState<SendAssetType[] | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [closingStatus, setClosingStatus] = useState(false);
+  const isMobileDrawer = useMediaQuery("(max-width: 767px)");
+  const isBelowLayout = useMediaQuery("(max-width: 1099px)");
+  const { setHideBottomNav } = useSalesMobileChrome();
 
   useEffect(() => {
     if (!open) return;
     setSendPreselect(null);
+    setMoreOpen(false);
     setActiveTab(panelTab ?? "details");
   }, [leadId, open, panelTab]);
 
@@ -95,13 +118,19 @@ export function LeadDetailPanel({
   }, []);
 
   useEffect(() => {
-    if (!open || !lead) return;
+    const hide = Boolean(open && leadId && isBelowLayout);
+    setHideBottomNav(hide);
+    return () => setHideBottomNav(false);
+  }, [open, leadId, isBelowLayout, setHideBottomNav]);
+
+  useEffect(() => {
+    if (!open || !lead || !isMobileDrawer) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [open, lead]);
+  }, [open, lead, isMobileDrawer]);
 
   useEffect(() => {
     if (!open || !lead?.client_id) return;
@@ -124,8 +153,6 @@ export function LeadDetailPanel({
   const alsoSells = session?.alsoSells;
   const canSell = canActAsSalesperson({ userId: session?.userId, role, alsoSells });
   const isReadOnly = readOnlyProp === true || (role === "CLIENT_MANAGER" && !alsoSells);
-  // Quoting is allowed for salespeople, managers and agency admins (broader than
-  // lead editing, which keeps managers read-only).
   const canQuote =
     role === "SALESPERSON" || role === "SUPER_ADMIN" || role === "CLIENT_MANAGER";
 
@@ -134,7 +161,6 @@ export function LeadDetailPanel({
   const activeLead = lead;
   const isWhatsAppChat = isWhatsAppInboundLead(activeLead.source);
   const displayName = whatsappLeadDisplayName(activeLead);
-  const first = displayName.split(/\s+/)[0] ?? "Lead";
   const isClosed = TERMINAL.has(activeLead.status);
   const phone = activeLead.phone?.trim() ?? "";
 
@@ -154,104 +180,244 @@ export function LeadDetailPanel({
     if (res.ok && json.lead) onLeadUpdated(json.lead);
   }
 
+  async function handleCloseDeal(status: "WON" | "LOST" | "NOT_QUALIFIED") {
+    if (!onLeadUpdated || closingStatus) return;
+    setClosingStatus(true);
+    try {
+      const res = await fetch(`/api/leads/${activeLead.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { lead?: LeadRow };
+      if (res.ok && json.lead) onLeadUpdated(json.lead);
+    } finally {
+      setClosingStatus(false);
+    }
+  }
+
+  async function togglePick() {
+    if (!onLeadUpdated || picking || isReadOnly) return;
+    setPicking(true);
+    const next = !isActiveConvertLaterPick(activeLead);
+    try {
+      const res = await fetch(`/api/leads/${activeLead.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_convert_later_pick: next }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { lead?: LeadRow };
+      if (res.ok && json.lead) onLeadUpdated(json.lead);
+    } finally {
+      setPicking(false);
+    }
+  }
+
+  function openWhatsAppAction() {
+    if (isWhatsAppChat) return;
+    try {
+      window.localStorage.setItem(`log:channel:${activeLead.id}`, "whatsapp");
+    } catch {
+      /* ignore */
+    }
+    void openWhatsAppAndLog({
+      leadId: activeLead.id,
+      clientId: activeLead.client_id,
+      leadName: activeLead.name,
+      leadPhone: activeLead.phone,
+      repName: session?.user?.name ?? "",
+      formData: (activeLead.form_data as Record<string, unknown> | null) ?? null,
+      tier: "neutral",
+    });
+  }
+
+  function scrollToLogCall() {
+    setActiveTab("details");
+    window.requestAnimationFrame(() => {
+      document.getElementById("log-call-form-anchor")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  const isFacebook = isFacebookInstantFormLead(activeLead.source);
+  const picked = isActiveConvertLaterPick(activeLead);
+  const relative = timeAgo(activeLead.updated_at || activeLead.created_at);
+  const subtitle = isWhatsAppChat
+    ? `WhatsApp chat · ${relative}`
+    : isFacebook
+      ? `Facebook Instant Form · ${relative}`
+      : `Lead details · ${relative}`;
+  const nextStage = getNextPipelineStage(activeLead.status);
+  const intent = formatLeadIntent(activeLead.score);
+  const score = activeLead.score;
+
+  const tabClass = (active: boolean) =>
+    `flex-1 border-b-2 px-3 py-3 text-center text-[13px] font-medium transition-colors duration-150 ${
+      active
+        ? "border-[#D4FF4F] text-[#101828]"
+        : "border-transparent text-[#667085] hover:text-[#101828]"
+    }`;
+
+  const qaBtn =
+    "flex min-h-[72px] min-w-0 flex-1 flex-col items-center justify-center gap-1.5 rounded-[10px] border border-[#E4E7EC] bg-white px-1 py-2 text-[11px] font-medium text-[#667085] transition-colors duration-150 hover:bg-[#F9FAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4FF4F] disabled:opacity-40";
+
   const panel = (
-    <div className="fixed inset-0 z-[60] flex items-end justify-stretch sm:items-end md:items-stretch md:justify-end">
-      <button
-        type="button"
-        className="absolute inset-0 z-0 cursor-default bg-black/50"
-        aria-label="Close lead"
-        onClick={handleClose}
-      />
+    <div
+      className={`fixed inset-0 z-[60] flex items-end justify-stretch md:items-stretch md:justify-end ${
+        isMobileDrawer ? "" : "pointer-events-none"
+      }`}
+    >
+      {isMobileDrawer ? (
+        <button
+          type="button"
+          className="absolute inset-0 z-0 cursor-default bg-black/40"
+          aria-label="Close lead"
+          onClick={handleClose}
+        />
+      ) : null}
       <div
-        className="relative z-10 flex w-full min-w-0 max-w-full flex-col overflow-hidden bg-surface-card shadow-2xl max-md:max-h-[min(96dvh,100dvh)] max-md:rounded-t-2xl max-md:pb-[env(safe-area-inset-bottom)] md:max-h-[100dvh] md:h-[100dvh] md:max-w-[min(100%,520px)] md:rounded-none md:border-l md:border-t-0 md:border-border md:shadow-[0_0_0_1px_rgba(0,0,0,0.04)]"
+        className="pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 max-w-full flex-col overflow-hidden border-[#E4E7EC] bg-white text-[#101828] shadow-[0_8px_30px_rgba(16,24,40,0.08)] transition-transform duration-200 max-md:max-h-[min(96dvh,100dvh)] max-md:rounded-t-2xl max-md:pb-[env(safe-area-inset-bottom)] md:h-[100dvh] md:max-h-[100dvh] md:w-[520px] md:max-w-[min(100%,520px)] md:rounded-none md:border-l"
         role="dialog"
-        aria-modal
+        aria-modal={isMobileDrawer}
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="safe-top flex h-12 min-h-12 shrink-0 items-center gap-3 border-b border-border border-opacity-20 bg-surface-sidebar px-4 text-[var(--text-on-dark)] max-md:rounded-t-2xl md:min-h-0 md:px-5"
+          className="safe-top flex shrink-0 items-start gap-3 border-b border-[#E4E7EC] bg-white px-4 pb-3 max-md:rounded-t-2xl md:px-5 md:pt-4"
           style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
         >
           <button
             type="button"
-            className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text-on-dark)] touch-manipulation md:hidden"
+            className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center text-[#667085] touch-manipulation md:hidden"
             onClick={handleClose}
             aria-label="Back"
           >
-            <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
+            <ChevronLeft className="h-5 w-5" strokeWidth={1.8} />
           </button>
-          <div className="min-w-0 flex-1 truncate font-display text-[17px] leading-tight sm:text-lg md:text-xl">
-            {displayName}
+
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#F8F9FB]">
             {isWhatsAppChat ? (
-              <span className="mt-0.5 block truncate font-sans text-[11px] font-normal text-[var(--text-on-dark-dim)]">
-                WhatsApp chat
-              </span>
-            ) : null}
+              <SiWhatsapp size={16} color="#25D366" aria-hidden />
+            ) : isFacebook ? (
+              <SiFacebook size={16} color="#1877F2" aria-hidden />
+            ) : (
+              <CircleUserRound size={16} strokeWidth={1.8} className="text-[#667085]" aria-hidden />
+            )}
+          </span>
+
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-[17px] font-semibold tracking-[-0.02em] text-[#101828] md:text-[18px]">
+              {displayName}
+            </h2>
+            <p className="mt-0.5 truncate text-[12px] text-[#667085]">{subtitle}</p>
           </div>
-          <button
-            type="button"
-            className="hidden h-10 w-10 items-center justify-center text-[var(--text-on-dark-dim)] touch-manipulation hover:text-[var(--text-on-dark)] md:flex"
-            onClick={handleClose}
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" strokeWidth={1.5} />
-          </button>
+
+          <div className="flex shrink-0 items-center gap-0.5">
+            {!isReadOnly && !isClosed ? (
+              <button
+                type="button"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-[#98A2B3] transition-colors hover:bg-[#F9FAFB] hover:text-[#F59E0B]"
+                aria-label={picked ? `Remove ${displayName} from picks` : `Save ${displayName} to picks`}
+                disabled={picking}
+                onClick={() => void togglePick()}
+              >
+                <Star
+                  size={16}
+                  strokeWidth={1.8}
+                  className={picked ? "text-[#F59E0B]" : undefined}
+                  fill={picked ? "currentColor" : "none"}
+                />
+              </button>
+            ) : null}
+            <div className="relative">
+              <button
+                type="button"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-[#667085] transition-colors hover:bg-[#F9FAFB]"
+                aria-label="More actions"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((v) => !v)}
+              >
+                <MoreVertical size={16} strokeWidth={1.8} />
+              </button>
+              {moreOpen ? (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-10 cursor-default"
+                    aria-label="Close menu"
+                    onClick={() => setMoreOpen(false)}
+                  />
+                  <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
+                    {!isReadOnly ? (
+                      <button
+                        type="button"
+                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-[#F9FAFB]"
+                        onClick={() => {
+                          setMoreOpen(false);
+                          scrollToLogCall();
+                        }}
+                      >
+                        Log call
+                      </button>
+                    ) : null}
+                    {canQuote ? (
+                      <button
+                        type="button"
+                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-[#F9FAFB]"
+                        onClick={() => {
+                          setMoreOpen(false);
+                          setActiveTab("quote");
+                        }}
+                      >
+                        Open quote
+                      </button>
+                    ) : null}
+                    {!isReadOnly ? (
+                      <button
+                        type="button"
+                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-[#F9FAFB]"
+                        onClick={() => {
+                          setMoreOpen(false);
+                          setActiveTab("send");
+                        }}
+                      >
+                        Send assets
+                      </button>
+                    ) : null}
+                  </div>
+                </>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              className="hidden h-9 w-9 items-center justify-center rounded-[8px] text-[#667085] transition-colors hover:bg-[#F9FAFB] md:inline-flex"
+              onClick={handleClose}
+              aria-label="Close"
+            >
+              <X size={16} strokeWidth={1.8} />
+            </button>
+          </div>
         </div>
-        {/* Tab bar */}
-        <div className="flex shrink-0 border-b border-border">
-          <button
-            type="button"
-            onClick={() => setActiveTab("details")}
-            className={`flex-1 border-b-2 px-4 py-2.5 text-center font-mono text-[11px] uppercase tracking-wide transition-colors ${
-              activeTab === "details"
-                ? "border-[var(--info)] text-ink-primary"
-                : "border-transparent text-ink-secondary hover:text-ink-primary"
-            }`}
-          >
+
+        <div className="sticky top-0 z-[1] flex shrink-0 border-b border-[#E4E7EC] bg-white">
+          <button type="button" onClick={() => setActiveTab("details")} className={tabClass(activeTab === "details")}>
             Details
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("timeline")}
-            className={`flex-1 border-b-2 px-4 py-2.5 text-center font-mono text-[11px] uppercase tracking-wide transition-colors ${
-              activeTab === "timeline"
-                ? "border-[var(--info)] text-ink-primary"
-                : "border-transparent text-ink-secondary hover:text-ink-primary"
-            }`}
-          >
+          <button type="button" onClick={() => setActiveTab("timeline")} className={tabClass(activeTab === "timeline")}>
             Timeline
           </button>
           {canQuote ? (
-            <button
-              type="button"
-              onClick={() => setActiveTab("quote")}
-              className={`flex-1 border-b-2 px-4 py-2.5 text-center font-mono text-[11px] uppercase tracking-wide transition-colors ${
-                activeTab === "quote"
-                  ? "border-[var(--info)] text-ink-primary"
-                  : "border-transparent text-ink-secondary hover:text-ink-primary"
-              }`}
-            >
+            <button type="button" onClick={() => setActiveTab("quote")} className={tabClass(activeTab === "quote")}>
               Quote
             </button>
           ) : null}
           {!isReadOnly ? (
-            <button
-              type="button"
-              onClick={() => setActiveTab("send")}
-              className={`flex-1 border-b-2 px-4 py-2.5 text-center font-mono text-[11px] uppercase tracking-wide transition-colors ${
-                activeTab === "send"
-                  ? "border-[var(--info)] text-ink-primary"
-                  : "border-transparent text-ink-secondary hover:text-ink-primary"
-              }`}
-            >
+            <button type="button" onClick={() => setActiveTab("send")} className={tabClass(activeTab === "send")}>
               Send
             </button>
           ) : null}
         </div>
-        <div className="min-h-0 flex-1 divide-y divide-border overflow-y-auto overflow-x-hidden overscroll-y-contain pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm max-md:text-[15px] [touch-action:pan-y]">
-          {activeTab === "timeline" ? (
-            <LeadTimeline key={timelineRefresh} leadId={activeLead.id} />
-          ) : null}
+
+        <div className="min-h-0 flex-1 divide-y divide-[#E4E7EC] overflow-y-auto overflow-x-hidden overscroll-y-contain pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm max-md:text-[15px] [touch-action:pan-y]">
+          {activeTab === "timeline" ? <LeadTimeline key={timelineRefresh} leadId={activeLead.id} /> : null}
           {activeTab === "quote" && canQuote ? (
             <div className="p-4 sm:p-5">
               <QuotationsPanel
@@ -288,250 +454,359 @@ export function LeadDetailPanel({
               />
             </div>
           ) : null}
+
           <div className={activeTab !== "details" ? "hidden" : ""}>
-          <div className="space-y-3 p-4 max-md:pt-3 sm:p-5">
-            {isWhatsAppChat ? (
-              <div className="rounded-lg border border-[var(--channel-whatsapp-muted)] bg-[var(--channel-whatsapp-muted)] p-4">
-                <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--channel-whatsapp)]">
-                  <MessageCircle size={14} />
-                  WhatsApp conversation
-                </div>
-                <p className="mb-3 text-[14px] leading-relaxed text-[var(--text-secondary)]">
-                  {whatsappLeadSecondaryLine(activeLead)}
-                </p>
-                <Link
-                  href={whatsappInboxHref(activeLead.id)}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--channel-whatsapp)] px-4 py-2.5 text-sm font-medium text-black transition-opacity hover:opacity-90"
-                >
-                  <MessageCircle size={16} />
-                  Open in Sales Hub
-                </Link>
-              </div>
-            ) : null}
-            <LeadBriefing leadId={activeLead.id} />
-            <LeadIntelligenceCard
-              leadId={activeLead.id}
-              canReprocess={
-                role === "SUPER_ADMIN" || role === "CLIENT_MANAGER"
-              }
-            />
-            <HandoverBanner leadId={activeLead.id} />
-            <DealValueEditor
-              lead={activeLead}
-              disabled={isReadOnly}
-              onUpdated={onLeadUpdated}
-            />
-            {activeLead.is_stale && (
-              <StaleLeadRecovery
-                leadId={activeLead.id}
-                leadName={activeLead.name ?? "Lead"}
-                clientId={activeLead.client_id}
-                staleDays={Math.round(
-                  (Date.now() -
-                    new Date(
-                      activeLead.stale_since ?? activeLead.created_at
-                    ).getTime()) /
-                    (1000 * 60 * 60 * 24)
-                )}
-                assetsSentTypes={[]}
-                onSent={() => setTimelineRefresh((k) => k + 1)}
-              />
-            )}
-            {activeLead.score !== null && activeLead.score !== undefined && (
-              <div className="mb-4 rounded-xl border border-border bg-surface-card-alt px-4 py-3.5">
-                <div className="mb-2.5 flex items-center justify-between">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-tertiary">
-                    Lead score
-                  </p>
-                  <ScoreBadge score={activeLead.score} />
-                </div>
-                <div className="mb-3 h-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
+            <div className="space-y-4 p-4 max-md:pt-3 sm:p-5">
+              {score != null && Number.isFinite(score) ? (
+                <div className="flex items-center gap-4 rounded-[12px] border border-[#E4E7EC] bg-[#FCFCFD] px-4 py-3.5">
                   <div
-                    className="h-1 rounded-full transition-[width] duration-700 ease-out"
+                    className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
                     style={{
-                      width: `${activeLead.score}%`,
-                      background:
-                        activeLead.score >= 70
-                          ? "var(--success)"
-                          : activeLead.score >= 40
-                          ? "var(--warning)"
-                          : "var(--text-tertiary)",
+                      background: `conic-gradient(#2684FF ${Math.min(100, score)}%, #E4E7EC 0)`,
                     }}
-                  />
-                </div>
-                {activeLead.score_breakdown && (
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {Object.entries(activeLead.score_breakdown).map(
-                      ([key, value]) => (
-                        <div
-                          key={key}
-                          className="rounded-md bg-[var(--bg-tertiary)] px-1 py-1.5 text-center"
-                        >
-                          <p className="mb-0.5 text-sm font-bold leading-none text-ink-primary">
-                            {value}
-                          </p>
-                          <p className="text-[9px] capitalize tracking-[0.04em] text-ink-tertiary">
-                            {key.replace(/_/g, " ")}
-                          </p>
-                        </div>
-                      )
-                    )}
+                    aria-label={`Lead score ${score}`}
+                  >
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[15px] font-semibold tabular-nums text-[#101828]">
+                      {Math.round(score)}
+                    </div>
                   </div>
-                )}
-              </div>
-            )}
-            {!isWhatsAppChat ? (
-              <FacebookFormIntentSection formData={activeLead.form_data} />
-            ) : null}
-            {isReadOnly ? (
-              <div className="min-w-0 break-words text-[13px] text-ink-secondary">
-                {phone ? (
-                  <>
-                    Phone:{" "}
-                    <a className="font-mono text-ink-primary underline-offset-2 hover:underline" href={`tel:${phone}`}>
-                      {phone}
-                    </a>
-                  </>
-                ) : (
-                  "No phone on file"
-                )}
-              </div>
-            ) : (
-              <a className="block min-w-0 break-all font-mono text-lg text-[var(--info)] underline" href={`tel:${phone}`}>
-                {activeLead.phone}
-              </a>
-            )}
-            <div className="min-w-0 break-all text-ink-secondary">{activeLead.email}</div>
-            <div className="break-words font-mono text-[11px] uppercase text-ink-tertiary">
-              Source · {isWhatsAppChat ? "WhatsApp chat" : activeLead.source} · {format(new Date(activeLead.created_at), "MMM d, yyyy")}
-            </div>
-            {!isWhatsAppChat ? <MagicLinkButton token={activeLead.magic_token} /> : null}
-            {!isReadOnly ? (
-              <div className="flex flex-col sm:flex-row w-full gap-2">
-                <a
-                  className="btn-primary flex min-h-12 flex-1 items-center justify-center touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
-                  href={`tel:${phone}`}
-                >
-                  Call {first}
-                </a>
-                {isWhatsAppChat ? (
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-medium text-[#101828]">{intentLikelihoodCopy(score)}</p>
+                    <p className="mt-0.5 text-[12px] text-[#667085]">
+                      {isWhatsAppChat
+                        ? "Engaged via WhatsApp"
+                        : isFacebook
+                          ? "Engaged via Facebook"
+                          : "Based on lead activity"}
+                    </p>
+                    {intent ? (
+                      <span className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] text-[#667085]">
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ background: intent.dot }}
+                          aria-hidden
+                        />
+                        {intent.label}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+
+              {isWhatsAppChat ? (
+                <div className="rounded-[12px] border border-[#D1FADF] bg-[#F6FEF9] p-4">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#027A48]">
+                    WhatsApp conversation
+                  </p>
+                  <p className="mb-3 text-[13px] leading-relaxed text-[#667085]">
+                    {whatsappLeadSecondaryLine(activeLead)}
+                  </p>
                   <Link
                     href={whatsappInboxHref(activeLead.id)}
-                    className="btn-secondary-dark flex min-h-12 flex-1 items-center justify-center gap-2 touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[#25D366] px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
                   >
-                    <MessageCircle size={16} /> Open in Sales Hub
+                    <SiWhatsapp size={16} aria-hidden />
+                    Open in Sales Hub
                   </Link>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-secondary-dark flex min-h-12 flex-1 items-center justify-center touch-manipulation py-3.5 text-base sm:min-h-0 md:py-2 md:text-sm"
-                    onClick={() => {
-                      try {
-                        window.localStorage.setItem(`log:channel:${activeLead.id}`, "whatsapp");
-                      } catch {}
-                      openWhatsAppAndLog({
-                        leadId: activeLead.id,
-                        clientId: activeLead.client_id,
-                        leadName: activeLead.name,
-                        leadPhone: activeLead.phone,
-                        repName: session?.user?.name ?? "",
-                        formData: (activeLead.form_data as Record<string, unknown> | null) ?? null,
-                        tier: "neutral",
-                      });
-                    }}
-                  >
-                    <MessageCircle size={16} /> Message on WhatsApp
-                  </button>
-                )}
+                </div>
+              ) : null}
+
+              <LeadBriefing leadId={activeLead.id} />
+              <LeadIntelligenceCard
+                leadId={activeLead.id}
+                canReprocess={role === "SUPER_ADMIN" || role === "CLIENT_MANAGER"}
+              />
+              <HandoverBanner leadId={activeLead.id} />
+              <DealValueEditor lead={activeLead} disabled={isReadOnly} onUpdated={onLeadUpdated} />
+              {activeLead.is_stale ? (
+                <StaleLeadRecovery
+                  leadId={activeLead.id}
+                  leadName={activeLead.name ?? "Lead"}
+                  clientId={activeLead.client_id}
+                  staleDays={Math.round(
+                    (Date.now() -
+                      new Date(activeLead.stale_since ?? activeLead.created_at).getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  )}
+                  assetsSentTypes={[]}
+                  onSent={() => setTimelineRefresh((k) => k + 1)}
+                />
+              ) : null}
+
+              {!isWhatsAppChat ? <FacebookFormIntentSection formData={activeLead.form_data} /> : null}
+
+              <div className="space-y-1.5">
+                {isReadOnly ? (
+                  <div className="min-w-0 break-words text-[13px] text-[#667085]">
+                    {phone ? (
+                      <>
+                        Phone:{" "}
+                        <a className="font-mono text-[#101828] underline-offset-2 hover:underline" href={`tel:${phone}`}>
+                          {phone}
+                        </a>
+                      </>
+                    ) : (
+                      "No phone on file"
+                    )}
+                  </div>
+                ) : phone ? (
+                  <a className="block min-w-0 break-all font-mono text-[15px] text-[#2684FF] underline" href={`tel:${phone}`}>
+                    {phone}
+                  </a>
+                ) : null}
+                {activeLead.email ? (
+                  <div className="min-w-0 break-all text-[13px] text-[#667085]">{activeLead.email}</div>
+                ) : null}
+                <div className="text-[11px] uppercase tracking-wide text-[#98A2B3]">
+                  Source · {isWhatsAppChat ? "WhatsApp" : isFacebook ? "Facebook Instant Form" : activeLead.source} ·{" "}
+                  {format(new Date(activeLead.created_at), "MMM d, yyyy")}
+                </div>
+                {!isWhatsAppChat ? <MagicLinkButton token={activeLead.magic_token} /> : null}
+              </div>
+
+              {!isReadOnly && !isClosed ? (
+                <div>
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">Status</p>
+                  <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                    {MOVE_COLS.map((col, idx) => {
+                      const currentIdx = (MOVE_COLS as readonly string[]).indexOf(activeLead.status);
+                      const isCurrent = activeLead.status === col;
+                      const isPast = currentIdx > idx;
+                      return (
+                        <div key={col} className="flex items-center gap-1.5">
+                          {idx > 0 ? (
+                            <span className="text-[#D0D5DD]" aria-hidden>
+                              ›
+                            </span>
+                          ) : null}
+                          <span
+                            className={`inline-flex items-center gap-1.5 text-[12px] ${
+                              isCurrent
+                                ? "font-semibold text-[#101828]"
+                                : isPast
+                                  ? "text-[#667085]"
+                                  : "text-[#98A2B3]"
+                            }`}
+                          >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                isCurrent ? "bg-[#2684FF]" : isPast ? "bg-[#22C55E]" : "bg-[#E4E7EC]"
+                              }`}
+                              aria-hidden
+                            />
+                            {COL_LABEL[col]}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {nextStage ? (
+                    <button
+                      type="button"
+                      className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[#2684FF] px-4 text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
+                      onClick={() => void handleMoveStage(nextStage)}
+                    >
+                      Move to {COL_LABEL[nextStage]}
+                    </button>
+                  ) : activeLead.status === "PROPOSAL_SENT" ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        disabled={closingStatus}
+                        className="h-10 rounded-[10px] border border-[#E4E7EC] bg-[#ECFDF3] text-[12px] font-medium text-[#027A48]"
+                        onClick={() => void handleCloseDeal("WON")}
+                      >
+                        Won
+                      </button>
+                      <button
+                        type="button"
+                        disabled={closingStatus}
+                        className="h-10 rounded-[10px] border border-[#E4E7EC] bg-[#FEF3F2] text-[12px] font-medium text-[#B42318]"
+                        onClick={() => void handleCloseDeal("LOST")}
+                      >
+                        Lost
+                      </button>
+                      <button
+                        type="button"
+                        disabled={closingStatus}
+                        className="h-10 rounded-[10px] border border-[#E4E7EC] bg-[#F2F4F7] text-[12px] font-medium text-[#667085]"
+                        onClick={() => void handleCloseDeal("NOT_QUALIFIED")}
+                      >
+                        Not qualified
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!isReadOnly ? (
+                <div>
+                  <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">
+                    Quick actions
+                  </p>
+                  <div className="flex gap-2">
+                    {isWhatsAppChat ? (
+                      <Link
+                        href={whatsappInboxHref(activeLead.id)}
+                        className={qaBtn}
+                        aria-label={`Message ${displayName} on WhatsApp`}
+                      >
+                        <SiWhatsapp size={18} color="#25D366" aria-hidden />
+                        WhatsApp
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className={qaBtn}
+                        disabled={!phone}
+                        aria-label={`Message ${displayName} on WhatsApp`}
+                        onClick={openWhatsAppAction}
+                      >
+                        <SiWhatsapp size={18} color="#25D366" aria-hidden />
+                        WhatsApp
+                      </button>
+                    )}
+                    {phone ? (
+                      <a href={`tel:${phone}`} className={qaBtn} aria-label={`Call ${displayName}`}>
+                        <Phone size={18} strokeWidth={1.8} aria-hidden />
+                        Call
+                      </a>
+                    ) : (
+                      <button type="button" className={qaBtn} disabled aria-label="No phone">
+                        <Phone size={18} strokeWidth={1.8} aria-hidden />
+                        Call
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className={qaBtn}
+                      aria-label={`Log call for ${displayName}`}
+                      onClick={scrollToLogCall}
+                    >
+                      <Plus size={18} strokeWidth={1.8} aria-hidden />
+                      Log call
+                    </button>
+                    <button
+                      type="button"
+                      className={qaBtn}
+                      aria-label="Send assets"
+                      onClick={() => setActiveTab("send")}
+                    >
+                      <ExternalLink size={18} strokeWidth={1.8} aria-hidden />
+                      Send assets
+                    </button>
+                    <button
+                      type="button"
+                      className={qaBtn}
+                      aria-label="More actions"
+                      onClick={() => setMoreOpen(true)}
+                    >
+                      <MoreVertical size={18} strokeWidth={1.8} aria-hidden />
+                      More
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            {role === "SALESPERSON" &&
+            !isReadOnly &&
+            !isClosed &&
+            (MOVE_COLS as readonly string[]).includes(activeLead.status) ? (
+              <div className="border-b border-[#E4E7EC] p-4 max-md:px-4 sm:p-5 md:hidden">
+                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3]">
+                  Move to
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {MOVE_COLS.filter((c) => c !== activeLead.status).map((col) => (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={() => void handleMoveStage(col)}
+                      className="min-h-12 rounded-[10px] border border-[#E4E7EC] px-2 text-left text-sm text-[#101828] touch-manipulation hover:bg-[#F9FAFB] sm:min-h-0 sm:h-9 sm:py-0"
+                    >
+                      → {COL_LABEL[col]}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : null}
-          </div>
-          {role === "SALESPERSON" &&
-          !isReadOnly &&
-          !isClosed &&
-          (MOVE_COLS as readonly string[]).includes(activeLead.status) ? (
-            <div className="border-b border-border p-4 max-md:px-4 sm:p-5 md:hidden">
-              <label className="mb-2 block font-mono text-xs uppercase tracking-wide text-ink-tertiary">
-                Move to
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {MOVE_COLS.filter((c) => c !== activeLead.status).map((col) => (
-                  <button
-                    key={col}
-                    type="button"
-                    onClick={() => void handleMoveStage(col)}
-                    className="min-h-12 rounded-md border border-border px-2 text-left text-sm text-ink-primary touch-manipulation hover:bg-surface-card-alt sm:min-h-0 sm:h-9 sm:py-0"
-                  >
-                    → {COL_LABEL[col]}
-                  </button>
-                ))}
+
+            {!isWhatsAppChat ? (
+              <FormAnswersSection
+                className="max-md:px-4"
+                formData={activeLead.form_data ?? {}}
+                lead={activeLead}
+                compactMobile
+                title={isFacebook ? "Form answers" : "Project details"}
+              />
+            ) : null}
+
+            {(canSell || role === "SUPER_ADMIN") && !isReadOnly ? (
+              <>
+                <div className="p-4 sm:p-5">
+                  <CallHistory leadId={activeLead.id} refreshKey={logRefresh} />
+                </div>
+                {!isClosed ? (
+                  <div className="p-4 sm:p-5">
+                    <div id="log-call-form-anchor" />
+                    <LogCallForm
+                      leadId={activeLead.id}
+                      businessType={businessType}
+                      clientId={activeLead.client_id}
+                      contactId={activeLead.contact_id}
+                      onLogged={() => setLogRefresh((k) => k + 1)}
+                      onLeadUpdated={onLeadUpdated}
+                      onOpenSendTab={(types) => {
+                        setSendPreselect(types);
+                        setActiveTab("send");
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="p-4 text-sm text-[#667085] sm:p-5">
+                    This lead is closed — call log is read-only.
+                  </div>
+                )}
+              </>
+            ) : null}
+
+            {role === "SUPER_ADMIN" && !isReadOnly ? (
+              <AgencyLeadAdminSection
+                lead={activeLead}
+                onLeadUpdated={onLeadUpdated}
+                onAfterArchive={handleClose}
+              />
+            ) : null}
+
+            {role === "CLIENT_MANAGER" || (role === "SUPER_ADMIN" && isReadOnly) ? (
+              <div className="space-y-3 border-t border-[#E4E7EC] p-4 sm:p-5 max-md:pb-6">
+                <div className="font-mono text-[11px] uppercase text-[#98A2B3]">Assignment</div>
+                <p className="text-[13px] text-[#667085]">
+                  {activeLead.assigned_to_id
+                    ? "Move this lead to another salesperson on your team."
+                    : "Assign this lead to a salesperson on your team."}
+                </p>
+                <ManagerReassignLeadButton
+                  clientId={activeLead.client_id}
+                  leadId={activeLead.id}
+                  currentAssigneeId={activeLead.assigned_to_id}
+                  onReassigned={({ assigneeId }) => {
+                    onLeadUpdated?.({
+                      ...activeLead,
+                      assigned_to_id: assigneeId,
+                    });
+                  }}
+                />
               </div>
-            </div>
-          ) : null}
-          {!isWhatsAppChat ? (
-            <FormAnswersSection
-              className="max-md:px-4"
-              formData={activeLead.form_data ?? {}}
-              lead={activeLead}
-              compactMobile
-            />
-          ) : null}
-          {(canSell || role === "SUPER_ADMIN") && !isReadOnly ? (
-            <>
+            ) : null}
+
+            {isReadOnly ? (
               <div className="p-4 sm:p-5">
                 <CallHistory leadId={activeLead.id} refreshKey={logRefresh} />
               </div>
-              {!isClosed ? (
-                <div className="p-4 sm:p-5">
-                  <div id="log-call-form-anchor" />
-                  <LogCallForm
-                    leadId={activeLead.id}
-                    businessType={businessType}
-                    clientId={activeLead.client_id}
-                    contactId={activeLead.contact_id}
-                    onLogged={() => setLogRefresh((k) => k + 1)}
-                    onLeadUpdated={onLeadUpdated}
-                    onOpenSendTab={(types) => {
-                      setSendPreselect(types);
-                      setActiveTab("send");
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="p-4 sm:p-5 text-sm text-ink-secondary">This lead is closed — call log is read-only.</div>
-              )}
-            </>
-          ) : null}
-          {role === "SUPER_ADMIN" && !isReadOnly ? (
-            <AgencyLeadAdminSection lead={activeLead} onLeadUpdated={onLeadUpdated} onAfterArchive={handleClose} />
-          ) : null}
-          {(role === "CLIENT_MANAGER" || (role === "SUPER_ADMIN" && isReadOnly)) ? (
-            <div className="space-y-3 border-t border-border p-4 sm:p-5 max-md:pb-6">
-              <div className="font-mono text-[11px] uppercase text-ink-tertiary">Assignment</div>
-              <p className="text-[13px] text-ink-secondary">
-                {activeLead.assigned_to_id
-                  ? "Move this lead to another salesperson on your team."
-                  : "Assign this lead to a salesperson on your team."}
-              </p>
-              <ManagerReassignLeadButton
-                clientId={activeLead.client_id}
-                leadId={activeLead.id}
-                currentAssigneeId={activeLead.assigned_to_id}
-                onReassigned={({ assigneeId }) => {
-                  onLeadUpdated?.({
-                    ...activeLead,
-                    assigned_to_id: assigneeId,
-                  });
-                }}
-              />
-            </div>
-          ) : null}
-          {isReadOnly ? (
-            <div className="p-4 sm:p-5">
-              <CallHistory leadId={activeLead.id} refreshKey={logRefresh} />
-            </div>
-          ) : null}
-          </div>{/* end details tab wrapper */}
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
@@ -617,11 +892,11 @@ function AgencyLeadAdminSection({
   }
 
   return (
-    <div className="space-y-4 border-t border-border p-4 sm:p-5 max-md:pb-6">
-      <div className="font-mono text-[11px] uppercase text-ink-tertiary">Agency</div>
-      {msg ? <p className="text-[13px] text-[var(--status-lost-fg)]">{msg}</p> : null}
+    <div className="space-y-4 border-t border-[#E4E7EC] p-4 sm:p-5 max-md:pb-6">
+      <div className="font-mono text-[11px] uppercase text-[#98A2B3]">Agency</div>
+      {msg ? <p className="text-[13px] text-[#B42318]">{msg}</p> : null}
       <div>
-        <label className="mb-1 block text-[12px] font-medium text-ink-secondary" htmlFor={`reassign-${lead.id}`}>
+        <label className="mb-1 block text-[12px] font-medium text-[#667085]" htmlFor={`reassign-${lead.id}`}>
           Reassign to
         </label>
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-stretch">
@@ -648,7 +923,7 @@ function AgencyLeadAdminSection({
           </button>
         </div>
         <textarea
-          className="mt-2 w-full rounded-md border border-border bg-surface-card px-3 py-2 text-[13px] text-ink-primary placeholder:text-ink-tertiary"
+          className="mt-2 w-full rounded-md border border-[#E4E7EC] bg-white px-3 py-2 text-[13px] text-[#101828] placeholder:text-[#98A2B3]"
           rows={2}
           placeholder="Handover notes (optional) — visible in timeline"
           value={handoverNotes}
@@ -657,7 +932,7 @@ function AgencyLeadAdminSection({
       </div>
       <button
         type="button"
-        className="min-h-11 w-full text-left text-[13px] font-medium text-[var(--status-lost-fg)] underline-offset-2 touch-manipulation hover:underline sm:min-h-0 sm:w-auto"
+        className="min-h-11 w-full text-left text-[13px] font-medium text-[#B42318] underline-offset-2 touch-manipulation hover:underline sm:min-h-0 sm:w-auto"
         disabled={busy !== null}
         onClick={() => void handleArchive()}
       >
@@ -693,28 +968,28 @@ function CallHistory({ leadId, refreshKey }: { leadId: string; refreshKey: numbe
 
   return (
     <div>
-      <div className="font-mono text-[11px] uppercase text-ink-tertiary">Call history</div>
-      {error ? <p className="mt-2 text-[13px] text-ink-secondary">{error}</p> : null}
-      {!error && logs === null ? <p className="mt-2 text-[13px] text-ink-tertiary">Loading…</p> : null}
-      {logs && logs.length === 0 ? <p className="mt-2 text-[13px] text-ink-tertiary">No calls logged yet.</p> : null}
+      <div className="font-mono text-[11px] uppercase text-[#98A2B3]">Call history</div>
+      {error ? <p className="mt-2 text-[13px] text-[#667085]">{error}</p> : null}
+      {!error && logs === null ? <p className="mt-2 text-[13px] text-[#98A2B3]">Loading…</p> : null}
+      {logs && logs.length === 0 ? <p className="mt-2 text-[13px] text-[#98A2B3]">No calls logged yet.</p> : null}
       {logs && logs.length > 0 ? (
         <ul className="relative mt-3 list-none space-y-0 p-0">
-          <div className="absolute bottom-0 left-[7px] top-2 border-l border-border" aria-hidden />
+          <div className="absolute bottom-0 left-[7px] top-2 border-l border-[#E4E7EC]" aria-hidden />
           {logs.map((log) => (
-            <li key={log.id} className="relative border-b border-border py-3.5 pl-6 last:border-b-0">
+            <li key={log.id} className="relative border-b border-[#E4E7EC] py-3.5 pl-6 last:border-b-0">
               <span
                 className={`absolute left-[7px] top-[22px] h-2 w-2 rounded-full ${
-                  log.outcome === "LOST" ? "bg-[var(--status-lost-fg)]" : "bg-ink-tertiary"
+                  log.outcome === "LOST" ? "bg-[#EF4444]" : "bg-[#98A2B3]"
                 }`}
                 aria-hidden
               />
               <div className="flex items-start justify-between gap-3">
                 <CallHistoryOutcome log={log} />
-                <span className="shrink-0 font-mono text-[11px] text-ink-tertiary tabular-nums">
+                <span className="shrink-0 font-mono text-[11px] text-[#98A2B3] tabular-nums">
                   {format(new Date(log.created_at), "HH:mm")}
                 </span>
               </div>
-              <p className="mt-1 font-mono text-[10px] text-ink-tertiary">{log.users?.name ?? "—"}</p>
+              <p className="mt-1 font-mono text-[10px] text-[#98A2B3]">{log.users?.name ?? "—"}</p>
             </li>
           ))}
         </ul>
@@ -731,26 +1006,22 @@ function CallHistoryOutcome({ log }: { log: CallLogApiRow }) {
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-baseline gap-2">
         {isLost ? (
-          <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-[var(--status-lost-bg)] px-2.5 text-[11px] font-medium leading-none text-[var(--status-lost-fg)]">
+          <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-[#FEF3F2] px-2.5 text-[11px] font-medium leading-none text-[#B42318]">
             Lost
           </span>
         ) : null}
         <span
           className={
             isLost
-              ? "text-[13px] text-ink-primary"
-              : "font-mono text-[11px] font-normal uppercase tracking-wide text-ink-secondary"
+              ? "text-[13px] text-[#101828]"
+              : "font-mono text-[11px] font-normal uppercase tracking-wide text-[#667085]"
           }
         >
           {isLost && log.reason ? `— ${log.reason}` : headline}
         </span>
       </div>
-      {!isLost && log.notes ? (
-        <p className="mt-1 text-[13px] text-ink-primary">{log.notes}</p>
-      ) : null}
-      {isLost && log.notes ? (
-        <p className="mt-1 text-[12px] text-ink-secondary">{log.notes}</p>
-      ) : null}
+      {!isLost && log.notes ? <p className="mt-1 text-[13px] text-[#101828]">{log.notes}</p> : null}
+      {isLost && log.notes ? <p className="mt-1 text-[12px] text-[#667085]">{log.notes}</p> : null}
     </div>
   );
 }

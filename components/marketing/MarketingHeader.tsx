@@ -7,65 +7,57 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Search, Menu, X } from "lucide-react";
+import { ChevronDown, Globe2, Menu, X } from "lucide-react";
 import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
 import { ML } from "@/lib/marketing-links";
 
 const NAV = [
-  { label: "Overview", href: "/" },
-  { label: "Why Segmiq", href: "/why-segmiq" },
-  { label: "Security", href: "/security" },
-  { label: "Segmiq CRM", href: "/products/segmiq-crm" },
-  { label: "Features", href: "/features" },
+  { label: "Product", href: "/products/segmiq-crm", menu: true },
+  { label: "Solutions", href: "/solutions", menu: true },
   { label: "Pricing", href: "/pricing" },
-  { label: "Blog", href: ML.blog },
+  { label: "Partners", href: "/partners" },
+  { label: "Resources", href: ML.blog, menu: true },
 ];
 
 export default function MarketingHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 text-white backdrop-blur">
-      <div className="mx-auto max-w-[1100px] px-5 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-8">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/90 text-white backdrop-blur-xl">
+      <div className="mx-auto flex h-[58px] max-w-[1180px] items-center justify-between px-5 sm:px-8">
+        <div className="flex items-center gap-14">
           <SegmiqWordmark href="/" priority />
-          <nav className="hidden lg:flex items-center gap-6 text-sm text-white/60">
+          <nav className="hidden items-center gap-8 text-[12px] text-white/65 lg:flex">
             {NAV.map((n) =>
               n.href.startsWith("http") ? (
-                <a key={n.label} href={n.href} className="hover:text-white">
-                  {n.label}
+                <a key={n.label} href={n.href} className="flex items-center gap-1 hover:text-white">
+                  {n.label}{n.menu && <ChevronDown className="h-3 w-3" />}
                 </a>
               ) : (
-                <Link key={n.label} href={n.href} className="hover:text-white">
-                  {n.label}
+                <Link key={n.label} href={n.href} className="flex items-center gap-1 hover:text-white">
+                  {n.label}{n.menu && <ChevronDown className="h-3 w-3" />}
                 </Link>
               )
             )}
           </nav>
         </div>
-        <div className="flex items-center gap-3 text-sm">
-          <a href={ML.blog} aria-label="Search" className="hidden sm:inline text-white/60 hover:text-white">
-            <Search className="w-[18px] h-[18px]" />
-          </a>
-          <Link href={ML.features} className="hidden md:inline text-white/60 hover:text-white">
-            Docs
-          </Link>
-          <Link href={ML.contact} className="hidden md:inline text-white/60 hover:text-white">
-            Support
-          </Link>
-          <Link href={ML.login} className="hidden sm:inline font-medium hover:text-[#D4FF4F]">
+        <div className="flex items-center gap-4 text-xs">
+          <button aria-label="Choose region" className="hidden text-white/55 transition hover:text-white sm:block">
+            <Globe2 className="h-4 w-4" />
+          </button>
+          <Link href={ML.login} className="hidden font-medium text-white/55 transition hover:text-white md:inline">
             Sign in
           </Link>
           <Link
             href={ML.contact}
-            className="hidden sm:inline px-4 py-2 rounded-full bg-[#D4FF4F] text-black font-semibold hover:bg-[#c8f040]"
+            className="hidden rounded-md bg-[#D4FF4F] px-4 py-2 font-semibold text-black hover:bg-[#e2ff79] sm:inline"
           >
             Book a demo
           </Link>
           <button
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => setOpen((o) => !o)}
-            className="lg:hidden w-10 h-10 -mr-2 grid place-items-center"
+            className="-mr-2 grid h-10 w-10 place-items-center lg:hidden"
           >
             {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>

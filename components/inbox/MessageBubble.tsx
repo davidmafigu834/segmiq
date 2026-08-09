@@ -109,11 +109,12 @@ export function MessageBubble({ message }: Props) {
   if (message.kind === "internal") {
     return (
       <div className="flex justify-center px-2">
-        <span className="max-w-[85%] rounded-xl border border-dashed border-[#C9D4DC] bg-white/90 px-3.5 py-2.5 text-center text-[11px] text-[#61707E] shadow-[0_3px_10px_rgba(34,48,61,0.06)] backdrop-blur-sm">
-          <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-[#7B8996]">
+        <span className="max-w-[min(85%,480px)] rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3.5 py-2.5 text-left text-[12px] text-[#92400E]">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#A16207]">
             Internal note
           </span>
-          {message.text}
+          <span className="text-[#78350F]">{message.text}</span>
+          <span className="mt-1.5 block text-[10px] text-[#A16207]">Only your team can see this</span>
         </span>
       </div>
     );
@@ -121,11 +122,11 @@ export function MessageBubble({ message }: Props) {
 
   return (
     <div className={`flex px-1 ${isRep ? "justify-end" : "justify-start"}`}>
-      <div className={`relative max-w-[min(78%,520px)] ${isRep ? "wa-bubble-out" : "wa-bubble-in"}`}>
+      <div className={`relative max-w-[min(68%,480px)] ${isRep ? "wa-bubble-out" : "wa-bubble-in"}`}>
         <MediaBlock message={message} />
-        {showText ? <div className="whitespace-pre-wrap break-words pr-1">{message.text}</div> : null}
+        {showText ? <div className="whitespace-pre-wrap break-words pr-1 text-[13.5px] leading-[1.45] sm:text-[14px]">{message.text}</div> : null}
         <div className="-mb-0.5 mt-0.5 flex items-center justify-end gap-1">
-          <span className="text-[11px] leading-none text-[#667781]">{formatTime(message.createdAt)}</span>
+          <span className="text-[11px] tabular-nums leading-none text-[#98A2B3]">{formatTime(message.createdAt)}</span>
           {isRep ? <StatusTicks status={message.status} /> : null}
         </div>
       </div>

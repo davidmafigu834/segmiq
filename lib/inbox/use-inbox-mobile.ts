@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 /** Phone — legacy team inbox drawer */
 export const INBOX_MOBILE_BP = 860;
 
-/** Tablet + phone — WhatsApp hub single-pane navigation */
-export const INBOX_COMPACT_BP = 1180;
+/** Tablet + phone — WhatsApp hub single-pane navigation (below layout / 1100px) */
+export const INBOX_COMPACT_BP = 1099;
 
 function useMediaMaxWidth(maxWidthPx: number): boolean {
   const [matches, setMatches] = useState(false);

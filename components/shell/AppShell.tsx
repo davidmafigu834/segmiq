@@ -216,7 +216,7 @@ export function AppShell({
       <div
         className={`crm-shell-main flex min-h-0 min-w-0 max-w-full flex-1 flex-col ${
           hideSidebar
-            ? "h-full max-h-full overflow-hidden"
+            ? "crm-shell-main--no-sidebar h-full max-h-full overflow-hidden"
             : "layout:min-h-0 layout:overflow-hidden"
         }`}
       >

@@ -62,7 +62,8 @@ export function WebsiteIntegrationPanel({ clientId }: { clientId: string }) {
   -d '{
   "api_key": "${apiKey ?? "YOUR_API_KEY"}",
   "source": "website",
-  "listing_reference": "12 Oak Avenue",
+  "enquiry_type": "PROPERTY",
+  "listing_reference": "3-bedroom-house-hillside",
   "agent_reference": "+263771234567",
   "name": "Jane Doe",
   "phone": "+263771234567",
@@ -79,8 +80,11 @@ export function WebsiteIntegrationPanel({ clientId }: { clientId: string }) {
         <div>
           <h3 className="font-display text-xl">Website Integration</h3>
           <p className="mt-1 text-sm text-ink-secondary">
-            Generate an API key for your website or ad forms. Leads flow through the same
-            assignment and WhatsApp pipeline as Segmiq forms.
+            Generate an API key for your agency website (e.g. Landlords Junction Properties).
+            Enquiries become SegmiQ inquiries with the same assignment and WhatsApp pipeline.
+            Send <code className="text-xs">enquiry_type</code>,{" "}
+            <code className="text-xs">listing_reference</code> (property slug), and{" "}
+            <code className="text-xs">agent_reference</code> (agent phone).
           </p>
         </div>
       </div>

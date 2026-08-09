@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import {
   ArrowUpRight,
   ClipboardList,
-  MessageCircle,
   Phone,
 } from "lucide-react";
+import { BrandIcon } from "@/components/sales/ui/BrandIcon";
 import type { LeadLane } from "@/lib/lead-lanes";
 import {
   whatsappInboxHref,
@@ -131,14 +131,14 @@ export function WhatsAppLeadCard({
             <div className={`flex flex-wrap items-center gap-1.5 ${compact ? "mt-2" : "mt-2.5"}`}>
               <LeadIntentBadge score={score} label={label} variant="default" showScore />
               <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">
-                <MessageCircle size={10} className="text-[var(--channel-whatsapp)]" />
+                <BrandIcon brand="whatsapp" size={10} />
                 WhatsApp
               </span>
             </div>
           ) : (
             <div className={`${compact ? "mt-2" : "mt-2.5"}`}>
               <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-tertiary)]">
-                <MessageCircle size={10} className="text-[var(--channel-whatsapp)]" />
+                <BrandIcon brand="whatsapp" size={10} />
                 WhatsApp
               </span>
             </div>
@@ -158,7 +158,7 @@ export function WhatsAppLeadCard({
             compact ? "h-8 px-3 text-[11px]" : "h-9 px-3.5 text-[12px] sm:text-[13px]"
           }`}
         >
-          <MessageCircle size={compact ? 13 : 14} strokeWidth={2.25} />
+          <BrandIcon brand="whatsapp" size={compact ? 13 : 14} />
           <span className="truncate">Open conversation</span>
           <ArrowUpRight size={compact ? 12 : 13} className="shrink-0 opacity-70" />
         </button>

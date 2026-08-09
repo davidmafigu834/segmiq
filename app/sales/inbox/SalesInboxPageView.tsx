@@ -6,7 +6,38 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { SoloLayout } from "@/components/layouts/SoloLayout";
 import { TeamInbox } from "@/components/inbox/TeamInbox";
+import { WhatsAppSalesHubShell } from "@/components/inbox/WhatsAppSalesHubShell";
+import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import type { InboxFilter } from "@/lib/inbox/types";
+
+function InboxSuspenseFallback() {
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col bg-[#F7F8FA] p-4" aria-busy aria-label="Loading inbox">
+      <div className="mb-4 h-8 w-56 animate-pulse rounded-lg bg-[#E4E7EC]/50" />
+      <div className="mb-3 flex gap-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-8 w-24 animate-pulse rounded-full bg-[#E4E7EC]/40" />
+        ))}
+      </div>
+      <div className="flex min-h-0 flex-1 gap-0 overflow-hidden rounded-[12px] border border-[#E4E7EC] bg-white">
+        <div className="hidden w-[360px] shrink-0 border-r border-[#E4E7EC] p-3 sm:block">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="mb-3 flex gap-3">
+              <div className="h-10 w-10 animate-pulse rounded-full bg-[#F2F4F7]" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-3 w-2/3 animate-pulse rounded bg-[#F2F4F7]" />
+                <div className="h-3 w-full animate-pulse rounded bg-[#F8F9FB]" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-1 items-center justify-center text-sm text-[#98A2B3]">
+          Loading WhatsApp Sales Hub…
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export async function SalesInboxPageView({
   pageTitle,
@@ -27,29 +58,79 @@ export async function SalesInboxPageView({
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
   const Layout = isSolo ? SoloLayout : SalesLayout;
 
+  if (!fullPage) {
+    return (
+      <Layout breadcrumb={breadcrumb} pageTitle={pageTitle}>
+        <Suspense fallback={<InboxSuspenseFallback />}>
+          <TeamInbox
+            userName={session.user?.name ?? "User"}
+            userId={session.userId}
+            role={session.role === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON"}
+            alsoSells={session.alsoSells}
+            clientId={session.clientId}
+            roleSubtitle={isSolo ? "Owner" : "Sales Executive"}
+            pipelineHref="/sales/leads"
+            settingsHref="/sales/profile"
+            inboxHref="/sales/inbox"
+            teamHref={isSolo ? undefined : dashboardHref}
+            initialFilter={initialFilter}
+          />
+        </Suspense>
+      </Layout>
+    );
+  }
+
+  const [navBadges, userRes] = await Promise.all([
+    fetchSalesNavBadges(session.userId, session.clientId),
+    (async () => {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const supabase = createAdminClient();
+      return supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle();
+    })(),
+  ]);
+
+  const whatsappBadge =
+    (navBadges.hotLeads || 0) +
+    (navBadges.needsReply || 0) +
+    (navBadges.followUpDue || 0);
+  const tasksBadge = navBadges.followUpsToday || navBadges.callNow || 0;
+  const avatarUrl = (userRes.data?.avatar_url as string | null) ?? null;
+
   return (
     <Layout
       breadcrumb={breadcrumb}
       pageTitle={pageTitle}
-      hideShellHeader={fullPage}
-      contentFlush={fullPage}
+      hideShellHeader
+      hideShellSidebar
+      contentFlush
     >
-      <Suspense fallback={<div className="flex h-full items-center justify-center text-sm text-[var(--text-tertiary)]">Loading inbox…</div>}>
-        <TeamInbox
-          userName={session.user?.name ?? "User"}
-          userId={session.userId}
-          role={session.role === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON"}
-          alsoSells={session.alsoSells}
-          clientId={session.clientId}
-          roleSubtitle={isSolo ? "Owner" : "Salesperson"}
-          pipelineHref="/sales/leads"
-          settingsHref="/sales/profile"
-          inboxHref="/sales/inbox"
-          teamHref={isSolo ? undefined : dashboardHref}
-          initialFilter={initialFilter}
-          backHref={fullPage ? dashboardHref : undefined}
-        />
-      </Suspense>
+      <WhatsAppSalesHubShell
+        userName={session.user?.name ?? "Sales"}
+        userRoleLabel={isSolo ? "Owner" : "Sales Executive"}
+        avatarUrl={avatarUrl}
+        whatsappBadge={whatsappBadge}
+        tasksBadge={tasksBadge}
+        isSolo={isSolo}
+      >
+        <Suspense fallback={<InboxSuspenseFallback />}>
+          <TeamInbox
+            userName={session.user?.name ?? "User"}
+            userId={session.userId}
+            role={session.role === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON"}
+            alsoSells={session.alsoSells}
+            clientId={session.clientId}
+            roleSubtitle={isSolo ? "Owner" : "Sales Executive"}
+            pipelineHref="/sales/leads"
+            settingsHref="/sales/profile"
+            inboxHref="/sales/inbox"
+            teamHref={isSolo ? undefined : dashboardHref}
+            initialFilter={initialFilter}
+            backHref={dashboardHref}
+            pageTitle={pageTitle}
+            breadcrumb={breadcrumb}
+          />
+        </Suspense>
+      </WhatsAppSalesHubShell>
     </Layout>
   );
 }

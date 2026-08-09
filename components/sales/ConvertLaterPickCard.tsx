@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Phone, PhoneOff, MessageCircle, Star, ExternalLink } from "lucide-react";
+import { Phone, PhoneOff, Star, ExternalLink } from "lucide-react";
+import { BrandIcon } from "@/components/sales/ui/BrandIcon";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import {
   formatPickCallback,
@@ -120,7 +121,7 @@ export function ConvertLaterPickCard({
             className={actionButtonClass}
             aria-label="Message on WhatsApp"
           >
-            <MessageCircle size={15} />
+            <BrandIcon brand="whatsapp" size={15} />
           </button>
         ) : null}
 

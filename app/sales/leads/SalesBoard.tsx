@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { Inbox, Star } from "lucide-react";
+import { Inbox, Info, Search, Star } from "lucide-react";
 import { ConvertLaterPickCard } from "@/components/sales/ConvertLaterPickCard";
-import { SalesLeadCard } from "@/components/sales/SalesLeadCard";
+import { PipelineLeadCard } from "@/components/sales/pipeline/PipelineLeadCard";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 import {
   isActiveConvertLaterPick,
@@ -15,38 +15,27 @@ import {
 import { sortKanbanLeads } from "@/lib/kanbanSort";
 import type { LeadWithClientResponseLimit } from "@/lib/leadStatus";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
-import type { LeadRow, LeadStatus } from "@/types";
-import { StatusPill } from "@/components/StatusPill";
-import { openLeadPanel } from "@/store/uiStore";
+import type { LeadRow } from "@/types";
+import { openLeadPanel, useLeadPanel } from "@/store/uiStore";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
-import { EmptyState, Input, SegmentedTabs } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
+import { SegmentedControl } from "@/components/sales/ui";
 import { LeadDetailPanel } from "./LeadDetailPanel";
+import {
+  PIPELINE_ACTIVE_STAGES,
+  PIPELINE_STAGE_ACCENT,
+  PIPELINE_STAGE_LABEL,
+  closedStatusPillClass,
+  formatPipelineStage,
+  type PipelineActiveStage,
+} from "@/lib/sales/pipeline-display";
+import { format } from "date-fns";
+import { formatDealValue, resolveNumericDealValue } from "@/lib/sales/sales-dashboard-display";
 
-const COLS = ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"] as const satisfies readonly LeadStatus[];
+const COLS = PIPELINE_ACTIVE_STAGES;
 
-type BoardColumn = (typeof COLS)[number];
-
-const COL_LABEL: Record<BoardColumn, string> = {
-  NEW: "New",
-  CONTACTED: "Contacted",
-  NEGOTIATING: "Negotiating",
-  PROPOSAL_SENT: "Proposal sent",
-};
-
-const COL_DOT: Record<BoardColumn, string> = {
-  NEW: "var(--info)",
-  CONTACTED: "var(--success)",
-  NEGOTIATING: "var(--warning)",
-  PROPOSAL_SENT: "#8b5cf6",
-};
-
-const COL_ACCENT: Record<string, string> = {
-  NEW: "border-t-[var(--info)]",
-  CONTACTED: "border-t-[var(--success)]",
-  NEGOTIATING: "border-t-[var(--warning)]",
-  PROPOSAL_SENT: "border-t-violet-500",
-};
+type BoardColumn = PipelineActiveStage;
 
 function toQuickLogLeads(leads: LeadWithClientResponseLimit[]): PriorityLead[] {
   return leads.map((l) => ({
@@ -71,12 +60,22 @@ function toQuickLogLeads(leads: LeadWithClientResponseLimit[]): PriorityLead[] {
 }
 
 function matchesSearch(l: LeadWithClientResponseLimit, q: string): boolean {
+  const formBits: string[] = [];
+  if (l.form_data && typeof l.form_data === "object") {
+    for (const [k, v] of Object.entries(l.form_data)) {
+      if (/company|business|org|email|budget|service|project|locat/i.test(k)) {
+        if (typeof v === "string") formBits.push(v);
+        else if (Array.isArray(v)) formBits.push(v.map(String).join(" "));
+      }
+    }
+  }
   const hay = [
     l.name,
     l.phone,
     l.email,
     l.project_type,
     l.budget != null ? String(l.budget) : "",
+    ...formBits,
   ]
     .filter(Boolean)
     .join(" ")
@@ -88,41 +87,40 @@ export function SalesBoard({
   initialLeads,
   initialTab = "active",
   pickLogContext = {},
+  repName = "",
 }: {
   initialLeads: LeadWithClientResponseLimit[];
   initialTab?: "active" | "closed";
   pickLogContext?: Record<string, PickCallLogContext>;
+  repName?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const leadFromUrl = searchParams.get("lead");
   const tabFromUrl = searchParams.get("tab");
+  const { open: panelOpen, leadId: panelLeadId } = useLeadPanel();
+  const drawerOpen = panelOpen && Boolean(panelLeadId);
 
   const [leads, setLeads] = useState<LeadWithClientResponseLimit[]>(initialLeads);
   const [tab, setTab] = useState<"active" | "closed">(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  /** Single-column pipeline + column tabs below `lg` — full kanban from `lg` up (1024px+). */
-  const isMobileKanban = useMediaQuery("(max-width: 1023px)");
+  const isMobileKanban = useMediaQuery("(max-width: 1099px)");
   const [activeColumn, setActiveColumn] = useState<BoardColumn>("NEW");
   const [viewMode, setViewMode] = useState<"kanban" | "picks">("kanban");
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [dragError, setDragError] = useState<string | null>(null);
 
-  const openLead = useCallback((id: string) => {
-    openLeadPanel(id);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("lead", id);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams]);
-
-  const openSend = useCallback((id: string) => {
-    openLeadPanel(id, "send");
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("lead", id);
-    params.set("tab", "send");
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [pathname, router, searchParams]);
+  const openLead = useCallback(
+    (id: string) => {
+      openLeadPanel(id);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("lead", id);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   useEffect(() => {
     setLeads(initialLeads);
@@ -141,13 +139,19 @@ export function SalesBoard({
     }
   }, [tab]);
 
+  useEffect(() => {
+    if (!dragError) return;
+    const t = window.setTimeout(() => setDragError(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [dragError]);
+
   const activeInPipeline = useMemo(
     () => leads.filter((l) => (COLS as readonly string[]).includes(l.status)),
     [leads]
   );
 
   const { openLogSheet, logSheetProps } = useSalesLogSheet();
-  const { sheet } = logSheetProps(toQuickLogLeads(activeInPipeline));
+  const { sheet } = logSheetProps(toQuickLogLeads(activeInPipeline.length ? activeInPipeline : leads));
 
   const filteredActive = useMemo(() => {
     if (!debouncedQuery) return activeInPipeline;
@@ -157,11 +161,7 @@ export function SalesBoard({
   const sortedForKanban = useMemo(() => sortKanbanLeads(filteredActive), [filteredActive]);
 
   const picksLeads = useMemo(
-    () =>
-      sortConvertLaterPicks(
-        filteredActive.filter(isActiveConvertLaterPick),
-        pickLogContext
-      ),
+    () => sortConvertLaterPicks(filteredActive.filter(isActiveConvertLaterPick), pickLogContext),
     [filteredActive, pickLogContext]
   );
 
@@ -189,12 +189,21 @@ export function SalesBoard({
     [leads]
   );
 
+  const filteredClosed = useMemo(() => {
+    if (!debouncedQuery) return closed;
+    return closed.filter((l) => matchesSearch(l, debouncedQuery));
+  }, [closed, debouncedQuery]);
+
   const hasSearchNoMatch =
-    tab === "active" && Boolean(debouncedQuery) && activeInPipeline.length > 0 && filteredActive.length === 0;
+    tab === "active" &&
+    Boolean(debouncedQuery) &&
+    activeInPipeline.length > 0 &&
+    filteredActive.length === 0;
 
   const showFullEmpty = leads.length === 0;
   const hasClosed = closed.length > 0;
-  const noActiveButHasClosed = tab === "active" && activeInPipeline.length === 0 && hasClosed && !debouncedQuery;
+  const noActiveButHasClosed =
+    tab === "active" && activeInPipeline.length === 0 && hasClosed && !debouncedQuery;
 
   const clearLeadQuery = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -223,9 +232,7 @@ export function SalesBoard({
       prev.map((l) => {
         if (l.id !== updated.id) return l;
         const clients =
-          "clients" in updated && updated.clients != null
-            ? updated.clients
-            : l.clients;
+          "clients" in updated && updated.clients != null ? updated.clients : l.clients;
         return { ...updated, clients } as LeadWithClientResponseLimit;
       })
     );
@@ -245,9 +252,9 @@ export function SalesBoard({
     }
     const currentIdx = (COLS as readonly BoardColumn[]).indexOf(activeColumn);
     if (deltaX < 0 && currentIdx < COLS.length - 1) {
-      setActiveColumn(COLS[currentIdx + 1]);
+      setActiveColumn(COLS[currentIdx + 1]!);
     } else if (deltaX > 0 && currentIdx > 0) {
-      setActiveColumn(COLS[currentIdx - 1]);
+      setActiveColumn(COLS[currentIdx - 1]!);
     }
     setTouchStartX(null);
   }
@@ -262,6 +269,7 @@ export function SalesBoard({
 
     const previousLeads = leads;
     setLeads((prev) => prev.map((l) => (l.id === draggableId ? { ...l, status: nextStatus } : l)));
+    setDragError(null);
 
     try {
       const res = await fetch(`/api/leads/${draggableId}`, {
@@ -272,135 +280,253 @@ export function SalesBoard({
       if (!res.ok) throw new Error("Failed to update lead status");
     } catch {
       setLeads(previousLeads);
+      setDragError("Couldn't update stage. Lead restored — try again.");
     }
   }
 
   const pipelineTabs = (
-    <SegmentedTabs
+    <SegmentedControl
       aria-label="Pipeline tab"
       value={tab}
-      onValueChange={(value) => setTab(value as "active" | "closed")}
-      tabs={[
+      onChange={(value) => setTab(value)}
+      options={[
         { value: "active", label: "Active" },
         { value: "closed", label: "Closed" },
       ]}
     />
   );
 
+  const searchField = (
+    <label className="relative block min-w-0 flex-1 sm:max-w-[min(100%,18rem)]">
+      <span className="sr-only">Search leads</span>
+      <Search
+        size={15}
+        strokeWidth={1.8}
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]"
+        aria-hidden
+      />
+      <input
+        type="search"
+        placeholder="Search by name, phone..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="h-9 w-full rounded-[10px] border border-[#E4E7EC] bg-white py-2 pl-9 pr-3 text-[13px] text-[#101828] placeholder:text-[#98A2B3] outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#D0D5DD] focus:ring-2 focus:ring-[#D4FF4F]/40"
+        aria-label="Search leads"
+      />
+    </label>
+  );
+
+  const toolbar = (
+    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      {pipelineTabs}
+      {tab === "active" ? (
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+          <SegmentedControl
+            aria-label="Board view"
+            value={viewMode}
+            onChange={(value) => setViewMode(value)}
+            options={[
+              { value: "kanban", label: "Board" },
+              {
+                value: "picks",
+                label: "Picks",
+                badge: picksCount > 0 ? picksCount : undefined,
+              },
+            ]}
+          />
+          {searchField}
+        </div>
+      ) : (
+        <div className="flex w-full justify-end sm:w-auto">{searchField}</div>
+      )}
+    </div>
+  );
+
+  const detailPanel = (
+    <LeadDetailPanel leads={leads} onLeadUpdated={handleLeadUpdated} onClose={handleUrlAfterPanelClose} />
+  );
+
+  const boardPad = drawerOpen && !isMobileKanban ? "layout:pr-[min(520px,42vw)]" : "";
+
   if (tab === "closed") {
     return (
-      <div className="w-full min-w-0 max-w-full">
-        <div className="mb-6 border-b border-border pb-4">{pipelineTabs}</div>
-        <div className="overflow-x-auto rounded-lg border border-border bg-surface-card p-2 md:p-0">
-          <ResponsiveTable<LeadWithClientResponseLimit>
-            columns={
-              [
-                {
-                  key: "name",
-                  label: "Name",
-                  mobilePrimary: true,
-                  render: (l) => (
-                    <div>
-                      <div className="font-medium text-ink-primary">{l.name}</div>
-                      <div className="font-mono text-xs text-ink-tertiary">{l.phone ?? "—"}</div>
-                    </div>
-                  ),
-                },
-                {
-                  key: "status",
-                  label: "Status",
-                  render: (l) => <StatusPill status={l.status} />,
-                },
-              ] as ResponsiveTableColumn<LeadWithClientResponseLimit>[]
-            }
-            rows={closed}
-            rowKey={(l) => l.id}
-            onRowClick={(l) => openLeadPanel(l.id)}
-          />
-        </div>
-        <LeadDetailPanel leads={leads} onLeadUpdated={handleLeadUpdated} onClose={handleUrlAfterPanelClose} />
+      <div className={`relative w-full min-w-0 max-w-full transition-[padding] duration-200 ${boardPad}`}>
+        {toolbar}
+        {filteredClosed.length === 0 ? (
+          <div className="rounded-[12px] border border-dashed border-[#E4E7EC] bg-white">
+            <EmptyState
+              icon={Inbox}
+              title={debouncedQuery ? `No leads match “${searchQuery.trim()}”` : "No closed deals yet"}
+              description={
+                debouncedQuery
+                  ? "Try another name, phone number, email, project type or budget."
+                  : "Won, lost, and not-qualified deals will appear here."
+              }
+            />
+            {debouncedQuery ? (
+              <div className="flex justify-center pb-6">
+                <button
+                  type="button"
+                  className="text-[13px] font-medium text-[#2684FF]"
+                  onClick={() => setSearchQuery("")}
+                >
+                  Clear search
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-[12px] border border-[#E4E7EC] bg-white">
+            <ResponsiveTable<LeadWithClientResponseLimit>
+              columns={
+                [
+                  {
+                    key: "name",
+                    label: "Name",
+                    mobilePrimary: true,
+                    render: (l) => (
+                      <div>
+                        <div className="font-medium text-[#101828]">{l.name?.trim() || "Unnamed lead"}</div>
+                        <div className="font-mono text-xs text-[#98A2B3]">{l.phone ?? "—"}</div>
+                      </div>
+                    ),
+                  },
+                  {
+                    key: "status",
+                    label: "Status",
+                    render: (l) => (
+                      <span
+                        className={`inline-flex rounded-md px-2 py-0.5 text-[12px] font-medium ${closedStatusPillClass(l.status)}`}
+                      >
+                        {formatPipelineStage(l.status)}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "closed",
+                    label: "Closed",
+                    mobileHidden: true,
+                    render: (l) => (
+                      <span className="text-[13px] text-[#667085]">
+                        {format(new Date(l.updated_at), "d MMM yyyy")}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: "value",
+                    label: "Value",
+                    mobileHidden: true,
+                    render: (l) => {
+                      const { amount } = resolveNumericDealValue(l);
+                      return (
+                        <span className="tabular-nums text-[13px] text-[#667085]">
+                          {amount == null ? "—" : formatDealValue(amount)}
+                        </span>
+                      );
+                    },
+                  },
+                  {
+                    key: "source",
+                    label: "Source",
+                    mobileHidden: true,
+                    render: (l) => (
+                      <span className="text-[13px] text-[#667085]">{l.source?.trim() || "—"}</span>
+                    ),
+                  },
+                ] as ResponsiveTableColumn<LeadWithClientResponseLimit>[]
+              }
+              rows={filteredClosed}
+              rowKey={(l) => l.id}
+              onRowClick={(l) => openLead(l.id)}
+            />
+          </div>
+        )}
+        {sheet}
+        {detailPanel}
       </div>
     );
   }
 
   if (showFullEmpty) {
     return (
-      <div className="w-full min-w-0 max-w-full">
-        <div className="mb-6 border-b border-border pb-4">{pipelineTabs}</div>
-        <div className="flex flex-1 flex-col items-center justify-center py-16">
-          <div className="max-w-sm rounded-lg border border-dashed border-border bg-surface-card">
+      <div className={`relative w-full min-w-0 max-w-full ${boardPad}`}>
+        {toolbar}
+        <div className="flex flex-1 flex-col items-center justify-center py-12">
+          <div className="w-full max-w-md rounded-[12px] border border-dashed border-[#E4E7EC] bg-white">
             <EmptyState
               icon={Inbox}
               title="No leads yet"
-              description="Your new leads will appear here the moment they come in. You'll also get a WhatsApp and email for each one."
+              description="New leads assigned to you will appear here."
             />
           </div>
         </div>
-        <LeadDetailPanel leads={leads} onLeadUpdated={handleLeadUpdated} onClose={handleUrlAfterPanelClose} />
+        {sheet}
+        {detailPanel}
       </div>
     );
   }
 
   return (
-    <div className="w-full min-w-0 max-w-full">
-      <div className="mb-6 flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
-        {pipelineTabs}
-        <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:max-w-md sm:flex-row sm:items-center sm:justify-end sm:gap-2 sm:pl-0">
-          <SegmentedTabs
-            aria-label="Board view"
-            value={viewMode}
-            onValueChange={(value) => setViewMode(value as "kanban" | "picks")}
-            tabs={[
-              { value: "kanban", label: "Board" },
-              {
-                value: "picks",
-                label: (
-                  <span className="inline-flex items-center gap-1">
-                    <Star className="h-3 w-3" strokeWidth={1.5} fill={viewMode === "picks" ? "currentColor" : "none"} />
-                    Picks{picksCount > 0 ? ` · ${picksCount}` : ""}
-                  </span>
-                ),
-              },
-            ]}
-          />
-          <Input
-            type="search"
-            placeholder="Search by name, phone…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full min-w-0 sm:max-w-[min(100%,20rem)]"
-            aria-label="Search leads"
-          />
+    <div className={`relative w-full min-w-0 max-w-full transition-[padding] duration-200 ${boardPad}`}>
+      {toolbar}
+
+      {dragError ? (
+        <div
+          role="alert"
+          className="mb-4 rounded-[10px] border border-[#FECDCA] bg-[#FEF3F2] px-3 py-2 text-[13px] text-[#B42318]"
+        >
+          {dragError}
         </div>
-      </div>
+      ) : null}
 
       {noActiveButHasClosed ? (
-        <p className="mb-4 rounded-md border border-border bg-surface-card-alt px-3 py-2 text-sm text-ink-secondary">
-          No active leads right now. Switch to <strong>Closed</strong> to see won and lost deals.
-        </p>
+        <div className="mb-5 flex flex-col items-start gap-3 rounded-[12px] border border-[#E4E7EC] bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[14px] font-medium text-[#101828]">No active leads</p>
+            <p className="mt-0.5 text-[13px] text-[#667085]">
+              Your closed deals are still available under Closed.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="inline-flex h-9 items-center rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[13px] font-medium text-[#101828] hover:bg-[#F9FAFB]"
+            onClick={() => setTab("closed")}
+          >
+            View closed leads
+          </button>
+        </div>
       ) : null}
 
       {hasSearchNoMatch ? (
-        <div className="mb-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-card-alt px-4 py-10 text-center">
-          <p className="text-sm text-ink-secondary">
-            No leads match <span className="font-medium text-ink-primary">&quot;{searchQuery.trim()}&quot;</span>
+        <div className="mb-6 flex flex-col items-center justify-center rounded-[12px] border border-dashed border-[#E4E7EC] bg-white px-4 py-12 text-center">
+          <p className="text-[15px] font-medium text-[#101828]">
+            No leads match “{searchQuery.trim()}”
           </p>
-          <button type="button" className="btn-ghost mt-3 text-sm" onClick={() => setSearchQuery("")}>
+          <p className="mt-1 max-w-sm text-[13px] text-[#667085]">
+            Try another name, phone number, email, project type or budget.
+          </p>
+          <button
+            type="button"
+            className="mt-4 text-[13px] font-medium text-[#2684FF]"
+            onClick={() => setSearchQuery("")}
+          >
             Clear search
           </button>
         </div>
       ) : viewMode === "picks" ? (
-        <div className="ag-fade-in">
-          <p className="mb-4 text-[13px] text-ink-secondary">
-            Leads you starred from a follow-up — your gut pile, separate from system follow-ups and
-            retargeting.
-          </p>
+        <div>
+          <div className="mb-4">
+            <h2 className="text-[16px] font-semibold text-[#101828]">Convert-later picks</h2>
+            <p className="mt-1 text-[13px] text-[#667085]">
+              Leads you saved during follow-ups because they may be ready to convert later.
+            </p>
+          </div>
           {picksLeads.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border bg-surface-card">
+            <div className="rounded-[12px] border border-dashed border-[#E4E7EC] bg-white">
               <EmptyState
                 icon={Star}
                 title="No picks yet"
-                description='When you log a follow-up, toggle "Save to my convert-later picks" to add a lead here.'
+                description="Save a promising lead to your picks during a follow-up and it will appear here."
               />
             </div>
           ) : (
@@ -418,17 +544,9 @@ export function SalesBoard({
         </div>
       ) : isMobileKanban ? (
         <div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              paddingBottom: "12px",
-              borderBottom: "1px solid var(--border)",
-            }}
-          >
+          <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {COLS.map((col) => {
-              const count = grouped[col].length;
+              const count = grouped[col]?.length ?? 0;
               const isActive = activeColumn === col;
               return (
                 <button
@@ -439,51 +557,50 @@ export function SalesBoard({
                     setActiveColumn(col);
                   }}
                   className={[
-                    "flex h-8 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs",
+                    "inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-[10px] border px-3 text-[12px] font-medium transition-colors duration-150",
                     isActive
-                      ? "bg-surface-sidebar font-medium text-[var(--text-on-dark)]"
-                      : "bg-surface-card-alt text-ink-secondary",
+                      ? "border-transparent bg-[#101828] text-white"
+                      : "border-[#E4E7EC] bg-white text-[#667085]",
                   ].join(" ")}
                 >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: COL_DOT[col] }} />
-                  <span className="uppercase tracking-wide">{COL_LABEL[col]}</span>
-                  <span className="font-mono tabular-nums opacity-70">{count}</span>
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: PIPELINE_STAGE_ACCENT[col] }}
+                    aria-hidden
+                  />
+                  {PIPELINE_STAGE_LABEL[col]}
+                  <span className="font-mono tabular-nums opacity-80">{count}</span>
                 </button>
               );
             })}
             <button
               type="button"
               onClick={() => setViewMode("picks")}
-              className="flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-surface-card-alt px-3 text-xs text-ink-secondary"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[12px] font-medium text-[#667085]"
             >
-              <Star className="h-3 w-3 shrink-0" strokeWidth={1.5} />
-              <span className="uppercase tracking-wide">Picks</span>
+              <Star size={12} strokeWidth={1.8} aria-hidden />
+              Picks
               {picksCount > 0 ? (
                 <span className="font-mono tabular-nums opacity-80">{picksCount}</span>
               ) : null}
             </button>
           </div>
-          <div
-            className="pt-4"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            {grouped[activeColumn].length === 0 ? (
-              <p className="rounded-md border border-dashed border-border bg-surface-card-alt px-4 py-8 text-center text-sm text-ink-tertiary">
-                No leads in {COL_LABEL[activeColumn]}.
-              </p>
+          <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+            {(grouped[activeColumn]?.length ?? 0) === 0 ? (
+              <div className="rounded-[12px] border border-dashed border-[#E4E7EC] bg-[#FCFCFD] px-4 py-10 text-center text-[13px] text-[#98A2B3]">
+                No leads in {PIPELINE_STAGE_LABEL[activeColumn]}
+              </div>
             ) : (
               <div className="space-y-3">
-                {grouped[activeColumn].map((l) => (
-                  <SalesLeadCard
+                {grouped[activeColumn]!.map((l) => (
+                  <PipelineLeadCard
                     key={l.id}
                     lead={l}
                     intentScore={l.score ?? null}
-                    clientSlaHours={l.clients?.response_time_limit_hours}
-                    repName=""
+                    repName={repName}
                     onOpenLogSheet={openLogSheet}
                     onOpenLead={openLead}
-                    onOpenSend={openSend}
+                    onLeadUpdated={handleLeadUpdated}
                   />
                 ))}
               </div>
@@ -491,66 +608,94 @@ export function SalesBoard({
           </div>
         </div>
       ) : (
-        <DragDropContext onDragEnd={onDragEnd}>
-          <div className="grid min-w-0 grid-cols-4 gap-2 pb-4 layout:gap-3">
-            {COLS.map((col) => (
-              <Droppable droppableId={col} key={col}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`flex min-h-[12rem] min-w-0 flex-col rounded-lg border border-border bg-transparent ${
-                      snapshot.isDraggingOver ? "ring-2 ring-dashed ring-[var(--accent)]" : ""
-                    }`}
-                  >
-                    <div className={`border-t-2 ${COL_ACCENT[col] ?? "border-t-border"} px-1 pb-2 pt-3`}>
-                      <div className="flex items-center justify-between gap-1 px-1.5 layout:px-2">
-                        <span className="truncate font-mono text-[10px] uppercase tracking-wide text-ink-tertiary layout:text-[11px]">
-                          {COL_LABEL[col]}
-                        </span>
-                        <span className="rounded-md bg-surface-card-alt px-2 py-0.5 font-mono text-[11px] text-ink-secondary">
-                          {grouped[col].length}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex min-h-[8rem] flex-1 flex-col space-y-2 px-1 pb-3 layout:space-y-3 layout:px-2">
-                      {grouped[col].map((l, index) => (
-                        <Draggable draggableId={l.id} index={index} key={l.id}>
-                          {(p, s) => (
-                            <div
-                              ref={p.innerRef}
-                              {...p.draggableProps}
-                              {...p.dragHandleProps}
-                              className={`min-w-0 cursor-grab active:cursor-grabbing ${
-                                s.isDragging ? "relative z-50 rounded-xl shadow-lg ring-2 ring-[var(--accent)]" : ""
-                              }`}
-                            >
-                              <SalesLeadCard
-                                lead={l}
-                                compact
-                                intentScore={l.score ?? null}
-                                clientSlaHours={l.clients?.response_time_limit_hours}
-                                repName=""
-                                onOpenLogSheet={openLogSheet}
-                                onOpenLead={openLead}
-                                onOpenSend={openSend}
-                              />
+        <div className="relative pb-10">
+          <DragDropContext onDragEnd={onDragEnd}>
+            <div className="overflow-x-auto pb-1">
+              <div
+                className="grid min-w-0 gap-3"
+                style={{
+                  gridTemplateColumns: "repeat(4, minmax(220px, 1fr))",
+                  minWidth: "min(100%, 920px)",
+                }}
+              >
+                {COLS.map((col) => (
+                  <Droppable droppableId={col} key={col}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`flex min-h-[14rem] min-w-0 flex-col overflow-hidden rounded-[12px] border bg-white transition-[border-color,background-color] duration-150 ${
+                          snapshot.isDraggingOver
+                            ? "border-[#2684FF]/60 bg-[#F8FBFF]"
+                            : "border-[#E4E7EC]"
+                        }`}
+                      >
+                        <div
+                          className="h-[3px] w-full shrink-0"
+                          style={{ background: PIPELINE_STAGE_ACCENT[col] }}
+                          aria-hidden
+                        />
+                        <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
+                          <span className="truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-[#667085]">
+                            {PIPELINE_STAGE_LABEL[col]}
+                          </span>
+                          <span className="inline-flex h-5 min-w-[22px] items-center justify-center rounded-md bg-[#F2F4F7] px-1.5 font-mono text-[11px] text-[#667085]">
+                            {grouped[col]?.length ?? 0}
+                          </span>
+                        </div>
+                        <div className="flex min-h-[8rem] flex-1 flex-col gap-2 px-2 pb-3">
+                          {(grouped[col]?.length ?? 0) === 0 ? (
+                            <div className="flex flex-1 items-center justify-center rounded-[10px] border border-dashed border-[#E4E7EC] px-2 py-8 text-center text-[12px] text-[#98A2B3]">
+                              No leads in {PIPELINE_STAGE_LABEL[col]}
                             </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  </div>
-                )}
-              </Droppable>
-            ))}
+                          ) : null}
+                          {grouped[col]?.map((l, index) => (
+                            <Draggable draggableId={l.id} index={index} key={l.id}>
+                              {(p, s) => (
+                                <div
+                                  ref={p.innerRef}
+                                  {...p.draggableProps}
+                                  {...p.dragHandleProps}
+                                  className={`min-w-0 cursor-grab active:cursor-grabbing ${
+                                    s.isDragging
+                                      ? "relative z-50 scale-[1.02] rounded-[12px] shadow-[0_8px_24px_rgba(16,24,40,0.12)]"
+                                      : ""
+                                  }`}
+                                >
+                                  <PipelineLeadCard
+                                    lead={l}
+                                    compact
+                                    intentScore={l.score ?? null}
+                                    repName={repName}
+                                    onOpenLogSheet={openLogSheet}
+                                    onOpenLead={openLead}
+                                    onLeadUpdated={handleLeadUpdated}
+                                  />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      </div>
+                    )}
+                  </Droppable>
+                ))}
+              </div>
+            </div>
+          </DragDropContext>
+
+          <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2">
+            <div className="pointer-events-none inline-flex items-center gap-1.5 rounded-full border border-[#E4E7EC] bg-white/95 px-3 py-1.5 text-[12px] text-[#667085] shadow-[0_1px_2px_rgba(16,24,40,0.04)] backdrop-blur-sm">
+              <Info size={13} strokeWidth={1.8} className="text-[#98A2B3]" aria-hidden />
+              Drag & drop leads between stages to update status
+            </div>
           </div>
-        </DragDropContext>
+        </div>
       )}
 
       {sheet}
-      <LeadDetailPanel leads={leads} onLeadUpdated={handleLeadUpdated} onClose={handleUrlAfterPanelClose} />
+      {detailPanel}
     </div>
   );
 }

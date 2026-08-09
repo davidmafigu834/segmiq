@@ -6,21 +6,25 @@ import { stageLabel, stageStyle } from "@/lib/inbox/scoring";
 type Variant = "default" | "list" | "header";
 
 const LIST_STYLES: Record<string, { bg: string; text: string }> = {
-  "New Lead": { bg: "#E7FCE3", text: "#008069" },
-  Contacted: { bg: "#F0F2F5", text: "#54656F" },
-  Quoted: { bg: "#FFF4E5", text: "#B45309" },
-  "Follow-up Due": { bg: "#FFF4E5", text: "#B45309" },
+  New: { bg: "#F4FCE8", text: "#4D7C0F" },
+  Contacted: { bg: "#ECFDF3", text: "#027A48" },
+  Negotiating: { bg: "#FFFAEB", text: "#B54708" },
+  "Proposal sent": { bg: "#EFF8FF", text: "#175CD3" },
+  "Follow-up Due": { bg: "#FFFAEB", text: "#B54708" },
   Won: { bg: "#DCFCE7", text: "#15803D" },
   Lost: { bg: "#FEE2E2", text: "#B91C1C" },
+  "Not qualified": { bg: "#FEE2E2", text: "#B91C1C" },
 };
 
 const HEADER_STYLES: Record<string, { bg: string; text: string }> = {
-  "New Lead": { bg: "rgba(255,255,255,0.22)", text: "#FFFFFF" },
-  Contacted: { bg: "rgba(255,255,255,0.16)", text: "#E9F7EF" },
-  Quoted: { bg: "rgba(255,244,229,0.28)", text: "#FFF4E5" },
-  "Follow-up Due": { bg: "rgba(255,244,229,0.28)", text: "#FFF4E5" },
-  Won: { bg: "rgba(220,252,231,0.28)", text: "#DCFCE7" },
-  Lost: { bg: "rgba(254,226,226,0.28)", text: "#FEE2E2" },
+  New: { bg: "#F4FCE8", text: "#4D7C0F" },
+  Contacted: { bg: "#ECFDF3", text: "#027A48" },
+  Negotiating: { bg: "#FFFAEB", text: "#B54708" },
+  "Proposal sent": { bg: "#EFF8FF", text: "#175CD3" },
+  "Follow-up Due": { bg: "#FFFAEB", text: "#B54708" },
+  Won: { bg: "#DCFCE7", text: "#15803D" },
+  Lost: { bg: "#FEE2E2", text: "#B91C1C" },
+  "Not qualified": { bg: "#FEE2E2", text: "#B91C1C" },
 };
 
 type Props = {

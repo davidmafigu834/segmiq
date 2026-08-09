@@ -86,7 +86,7 @@ export function InboxPanelResizeHandle({
           onToggleCollapse?.();
         }
       }}
-      className={`inbox-panel-resize-handle hidden min-[1181px]:flex ${
+      className={`inbox-panel-resize-handle hidden min-[1100px]:flex ${
         collapsed ? "inbox-panel-resize-handle--collapsed" : ""
       } ${panel === "list" ? "inbox-panel-resize-handle--list" : "inbox-panel-resize-handle--intel"}`}
     >

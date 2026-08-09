@@ -19,7 +19,7 @@ import { getDashboardForecastCard, type DashboardForecastCard } from "@/lib/reve
 import { getClientActivePipelineValue } from "@/lib/client-team-report";
 import { computeWhatsAppHubReport, type WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
 import { buildSoloBusinessPulseMetrics, type PulseBarMetric } from "@/components/dashboard/pulse-metrics";
-import { classifyLeadLane } from "@/lib/lead-lanes";
+import { classifyLeadLane, parseBudgetValue } from "@/lib/lead-lanes";
 import { getDailyMirrorCoachingLine } from "@/lib/ai/mirror-coaching";
 
 // Raw campaign_qualifiers row shape (read-only; table added in migration 037).
@@ -48,6 +48,7 @@ type SalespersonLeadRow = {
   budget?: string | null;
   project_type?: string | null;
   timeline?: string | null;
+  deal_value?: number | null;
   form_data?: Record<string, unknown> | null;
   is_convert_later_pick?: boolean | null;
   updated_at?: string;
@@ -60,14 +61,16 @@ function isMissingLeadsColumn(
   return String(err?.message ?? "").includes(`column leads.${column} does not exist`);
 }
 
-const SALESPERSON_LEAD_CORE_SELECT =
-  "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, budget, project_type, timeline, is_convert_later_pick, updated_at";
-
-function salespersonLeadSelect(includeScoring: boolean, includeConvertLater: boolean): string {
-  const core = includeConvertLater
-    ? SALESPERSON_LEAD_CORE_SELECT
+function salespersonLeadSelect(
+  includeScoring: boolean,
+  includeConvertLater: boolean,
+  includeDealValue = true
+): string {
+  const base = includeConvertLater
+    ? "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, budget, project_type, timeline, is_convert_later_pick, updated_at"
     : "id, name, phone, status, follow_up_date, created_at, source, form_data, client_id, assigned_to_id, budget, project_type, timeline";
-  return includeScoring ? `${core}, score, is_stale, stale_since` : core;
+  const withDeal = includeDealValue ? `${base}, deal_value` : base;
+  return includeScoring ? `${withDeal}, score, is_stale, stale_since` : withDeal;
 }
 
 /** Handles DBs that predate migration 032 (score/is_stale) or lack is_archived. */
@@ -83,6 +86,7 @@ async function fetchAssignedLeadsForSalesperson(
   let archivedFilterUsed = true;
   let includeScoring = true;
   let includeConvertLater = true;
+  let includeDealValue = true;
 
   const run = (select: string, useArchived: boolean) => {
     let q = supabase
@@ -96,14 +100,22 @@ async function fetchAssignedLeadsForSalesperson(
   };
 
   let result = await run(
-    salespersonLeadSelect(includeScoring, includeConvertLater),
+    salespersonLeadSelect(includeScoring, includeConvertLater, includeDealValue),
     archivedFilterUsed
   );
+
+  if (result.error && isMissingLeadsColumn(result.error, "deal_value")) {
+    includeDealValue = false;
+    result = await run(
+      salespersonLeadSelect(includeScoring, includeConvertLater, includeDealValue),
+      archivedFilterUsed
+    );
+  }
 
   if (result.error && isMissingLeadsColumn(result.error, "is_archived")) {
     archivedFilterUsed = false;
     result = await run(
-      salespersonLeadSelect(includeScoring, includeConvertLater),
+      salespersonLeadSelect(includeScoring, includeConvertLater, includeDealValue),
       false
     );
   }
@@ -115,13 +127,13 @@ async function fetchAssignedLeadsForSalesperson(
   ) {
     includeConvertLater = false;
     result = await run(
-      salespersonLeadSelect(includeScoring, includeConvertLater),
+      salespersonLeadSelect(includeScoring, includeConvertLater, includeDealValue),
       archivedFilterUsed
     );
     if (result.error && isMissingLeadsColumn(result.error, "is_archived")) {
       archivedFilterUsed = false;
       result = await run(
-        salespersonLeadSelect(includeScoring, includeConvertLater),
+        salespersonLeadSelect(includeScoring, includeConvertLater, includeDealValue),
         false
       );
     }
@@ -135,13 +147,13 @@ async function fetchAssignedLeadsForSalesperson(
   ) {
     includeScoring = false;
     result = await run(
-      salespersonLeadSelect(includeScoring, includeConvertLater),
+      salespersonLeadSelect(includeScoring, includeConvertLater, includeDealValue),
       archivedFilterUsed
     );
     if (result.error && isMissingLeadsColumn(result.error, "is_archived")) {
       archivedFilterUsed = false;
       result = await run(
-        salespersonLeadSelect(includeScoring, includeConvertLater),
+        salespersonLeadSelect(includeScoring, includeConvertLater, includeDealValue),
         false
       );
     }
@@ -1094,7 +1106,7 @@ export async function fetchSalespersonDashboardData(userId: string) {
 
     supabase
       .from("win_analysis")
-      .select("id, deal_value, days_to_close, created_at, leads(name)")
+      .select("id, deal_value, days_to_close, created_at, lead_id, leads(name)")
       .eq("salesperson_id", userId)
       .gte("created_at", monthStart.toISOString()),
 
@@ -1302,6 +1314,187 @@ export async function fetchSalespersonDashboardData(userId: string) {
     }
   }
 
+  const leadValueOf = (lead: SalespersonLeadRow): number => {
+    const deal = Number(lead.deal_value);
+    if (Number.isFinite(deal) && deal > 0) return deal;
+    return parseBudgetValue(lead.budget) ?? 0;
+  };
+
+  const overdueFollowUps = activeLeads.filter((l) => {
+    if (!l.follow_up_date) return false;
+    const d = new Date(l.follow_up_date);
+    return d.getTime() < now.getTime() && d.toDateString() !== now.toDateString();
+  }).length;
+
+  const pipelineValue = activeLeads.reduce((s, l) => s + leadValueOf(l), 0);
+
+  const prevMonthStart = new Date(monthStart);
+  prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const sixtyDaysAgo = new Date(now);
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+  const [
+    { data: prevMonthWins },
+    { data: closedThisMonth },
+    { data: closedPrevMonth },
+    { data: responseLogs },
+  ] = await Promise.all([
+    supabase
+      .from("win_analysis")
+      .select("id, deal_value")
+      .eq("salesperson_id", userId)
+      .gte("created_at", prevMonthStart.toISOString())
+      .lt("created_at", monthStart.toISOString()),
+    supabase
+      .from("leads")
+      .select("id, status")
+      .eq("assigned_to_id", userId)
+      .in("status", ["WON", "LOST"])
+      .gte("updated_at", monthStart.toISOString()),
+    supabase
+      .from("leads")
+      .select("id, status")
+      .eq("assigned_to_id", userId)
+      .in("status", ["WON", "LOST"])
+      .gte("updated_at", prevMonthStart.toISOString())
+      .lt("updated_at", monthStart.toISOString()),
+    activeIds.length
+      ? supabase
+          .from("call_logs")
+          .select("lead_id, created_at")
+          .in("lead_id", activeIds)
+          .order("created_at", { ascending: true })
+      : Promise.resolve({ data: [] as Array<{ lead_id: string; created_at: string }> }),
+  ]);
+
+  const wonValueThisMonth = (monthWins ?? []).reduce(
+    (s, w) => s + (Number((w as { deal_value?: number | null }).deal_value) || 0),
+    0
+  );
+  const prevWonCount = (prevMonthWins ?? []).length;
+  const wonChangePct =
+    prevWonCount === 0 && wonThisMonth === 0
+      ? null
+      : prevWonCount === 0
+        ? wonThisMonth > 0
+          ? 100
+          : null
+        : Math.round(((wonThisMonth - prevWonCount) / prevWonCount) * 100);
+
+  const closedNow = (closedThisMonth ?? []) as Array<{ status: string }>;
+  const closedPrev = (closedPrevMonth ?? []) as Array<{ status: string }>;
+  const wonNow = closedNow.filter((l) => l.status === "WON").length;
+  const wonPrev = closedPrev.filter((l) => l.status === "WON").length;
+  const conversionRate =
+    closedNow.length === 0 ? null : Math.round((wonNow / closedNow.length) * 100);
+  const prevConversion =
+    closedPrev.length === 0 ? null : Math.round((wonPrev / closedPrev.length) * 100);
+  const conversionChangePct =
+    conversionRate == null || prevConversion == null
+      ? null
+      : conversionRate - prevConversion;
+
+  const avgResponseMinutes = firstCallResponseMinutes(
+    activeLeads.map((l) => ({ id: l.id, created_at: l.created_at })),
+    (responseLogs ?? []) as Array<{ lead_id: string; created_at: string }>
+  );
+
+  const recentPipelineValue = activeLeads
+    .filter((l) => new Date(l.created_at) >= thirtyDaysAgo)
+    .reduce((s, l) => s + leadValueOf(l), 0);
+  const priorPipelineValue = activeLeads
+    .filter((l) => {
+      const c = new Date(l.created_at);
+      return c >= sixtyDaysAgo && c < thirtyDaysAgo;
+    })
+    .reduce((s, l) => s + leadValueOf(l), 0);
+  const pipelineValueChangePct =
+    priorPipelineValue === 0 && recentPipelineValue === 0
+      ? null
+      : priorPipelineValue === 0
+        ? recentPipelineValue > 0
+          ? 100
+          : null
+        : Math.round(((recentPipelineValue - priorPipelineValue) / priorPipelineValue) * 100);
+
+  const sourceBucket = (raw: string | null | undefined) => {
+    const s = (raw ?? "other").toLowerCase();
+    if (s.includes("whatsapp") || s === "wa") return { key: "whatsapp", label: "WhatsApp" };
+    if (s.includes("facebook") || s.includes("meta") || s === "fb")
+      return { key: "facebook", label: "Facebook Ads" };
+    if (s.includes("refer")) return { key: "referral", label: "Referrals" };
+    if (s.includes("web") || s.includes("site") || s.includes("form"))
+      return { key: "website", label: "Website" };
+    return { key: "other", label: "Other" };
+  };
+
+  const countSources = (rows: SalespersonLeadRow[], from: Date, to?: Date) => {
+    const map = new Map<string, { label: string; count: number }>();
+    for (const lead of rows) {
+      const created = new Date(lead.created_at);
+      if (created < from) continue;
+      if (to && created >= to) continue;
+      const b = sourceBucket(lead.source);
+      const cur = map.get(b.key) ?? { label: b.label, count: 0 };
+      cur.count += 1;
+      map.set(b.key, cur);
+    }
+    return map;
+  };
+
+  const thisSources = countSources(leads, monthStart);
+  const prevSources = countSources(leads, prevMonthStart, monthStart);
+  const leadSources = ["whatsapp", "facebook", "referral", "website", "other"]
+    .map((key) => {
+      const cur = thisSources.get(key);
+      const prev = prevSources.get(key);
+      const count = cur?.count ?? 0;
+      const prevCount = prev?.count ?? 0;
+      const label =
+        cur?.label ??
+        prev?.label ??
+        sourceBucket(key).label;
+      const changePct =
+        prevCount === 0 && count === 0
+          ? null
+          : prevCount === 0
+            ? count > 0
+              ? 100
+              : null
+            : Math.round(((count - prevCount) / prevCount) * 100);
+      return { key, label, count, changePct, previousCount: prevCount };
+    });
+
+  const performanceSeries: Array<{ label: string; value: number }> = [];
+  const winsChrono = [...(monthWins ?? [])].sort(
+    (a, b) =>
+      new Date((a as { created_at: string }).created_at).getTime() -
+      new Date((b as { created_at: string }).created_at).getTime()
+  );
+  let running = 0;
+  performanceSeries.push({
+    label: format(monthStart, "d MMM"),
+    value: 0,
+  });
+  for (const w of winsChrono) {
+    running += Number((w as { deal_value?: number | null }).deal_value) || 0;
+    performanceSeries.push({
+      label: format(new Date((w as { created_at: string }).created_at), "d MMM"),
+      value: running,
+    });
+  }
+  if (performanceSeries.length === 1) {
+    const mid = new Date(monthStart);
+    mid.setDate(15);
+    const end = new Date(monthStart);
+    end.setMonth(end.getMonth() + 1);
+    end.setDate(0);
+    performanceSeries.push({ label: format(mid, "d MMM"), value: 0 });
+    performanceSeries.push({ label: format(end, "d MMM"), value: wonValueThisMonth });
+  }
+
   return {
     assignmentMode,
     priorityLeads: priorityLeads.slice(0, 20),
@@ -1327,6 +1520,31 @@ export async function fetchSalespersonDashboardData(userId: string) {
     recentActivity: recentEvents ?? [],
     recentWins: monthWins ?? [],
     retargetingStatuses,
+    insights: {
+      overdueFollowUps,
+      pipelineValue,
+      pipelineValueChangePct,
+      conversionRate,
+      conversionChangePct,
+      avgResponseMinutes,
+      wonValueThisMonth,
+      wonChangePct,
+      leadSources,
+      performanceTarget: await (async () => {
+        const clientId = (repUser?.client_id as string | null) ?? null;
+        if (!clientId) return null;
+        try {
+          const { getGoalProgressForReports } = await import(
+            "@/lib/sales/goals/sales-goals-data"
+          );
+          const g = await getGoalProgressForReports({ userId, clientId });
+          return g.hasTarget ? g.target : null;
+        } catch {
+          return null;
+        }
+      })(),
+      performanceSeries,
+    },
     debug:
       process.env.NODE_ENV === "development"
         ? await (async () => {

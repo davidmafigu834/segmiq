@@ -6,40 +6,49 @@ type Props = {
   label: string;
   value: number;
   max: number;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   light?: boolean;
+  barColor?: string;
 };
 
-export function ScoreBreakdownBar({ label, value, max, icon: Icon, light = false }: Props) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+export function ScoreBreakdownBar({
+  label,
+  value,
+  max,
+  icon: Icon,
+  light = false,
+  barColor,
+}: Props) {
+  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between">
+      <div className="mb-1 flex items-center justify-between gap-2">
         <div
-          className={`flex items-center gap-1.5 text-xs ${
-            light ? "text-[#667781]" : "text-[var(--text-secondary)]"
+          className={`flex items-center gap-1.5 text-[12px] ${
+            light ? "text-[#667085]" : "text-[var(--text-secondary)]"
           }`}
         >
-          <Icon size={14} />
+          {Icon ? <Icon size={13} strokeWidth={1.8} aria-hidden /> : null}
           {label}
         </div>
         <span
-          className={`text-xs font-medium ${light ? "text-[#111B21]" : "text-[var(--text-primary)]"}`}
-          style={{ fontFamily: "var(--font-instrument-serif)" }}
+          className={`text-[12px] font-medium tabular-nums ${
+            light ? "text-[#101828]" : "text-[var(--text-primary)]"
+          }`}
         >
-          {value}/{max}
+          {pct}%
         </span>
       </div>
       <div
-        className={`h-2 w-full overflow-hidden rounded-full ${light ? "bg-[#E9EDEF]" : "bg-[var(--bg-quaternary)]"}`}
+        className={`h-1 w-full overflow-hidden rounded-full ${
+          light ? "bg-[#F2F4F7]" : "bg-[var(--bg-quaternary)]"
+        }`}
       >
         <div
-          className="h-2 rounded-full transition-[width] duration-500 ease-out"
+          className="h-1 rounded-full transition-[width] duration-500 ease-out"
           style={{
             width: `${pct}%`,
-            background: light
-              ? "linear-gradient(90deg, #00A884 0%, #008069 100%)"
-              : "var(--accent)",
+            background: barColor || (light ? "#D4FF4F" : "var(--accent)"),
           }}
         />
       </div>

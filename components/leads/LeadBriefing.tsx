@@ -33,120 +33,39 @@ export function LeadBriefing({ leadId }: Props) {
   }, [leadId]);
 
   if (error) return null;
+  if (!loading && !briefing && !suggestion) return null;
 
   return (
-    <div
-      style={{
-        background: "var(--ag-surface)",
-        border: "0.5px solid var(--ag-border)",
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 20,
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
-        <div
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: 6,
-            background: "rgba(212,255,79,0.1)",
-            border: "0.5px solid rgba(212,255,79,0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <i className="ti ti-sparkles" style={{ fontSize: 12, color: "#D4FF4F" }} />
-        </div>
-        <p
-          style={{
-            fontFamily: "var(--ag-font-body)",
-            fontSize: 11,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: "var(--ag-text-tertiary)",
-            margin: 0,
-          }}
-        >
+    <div className="mb-5 rounded-xl border border-[#E4E7EC] bg-white p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98A2B3]">
           AI briefing
         </p>
+        <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[10px] font-medium text-[#667085]">
+          Beta
+        </span>
       </div>
 
       {loading ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className="flex flex-col gap-2">
           {[90, 70, 50].map((w, i) => (
             <div
               key={i}
-              style={{
-                height: 13,
-                width: `${w}%`,
-                background: "var(--ag-surface-2)",
-                borderRadius: 4,
-                animation: "skeleton-shimmer 1.5s ease-in-out infinite",
-              }}
+              className="h-3.5 animate-pulse rounded bg-[#F2F4F7]"
+              style={{ width: `${w}%` }}
             />
           ))}
         </div>
       ) : (
         <>
-          {briefing && (
-            <p
-              style={{
-                fontFamily: "var(--ag-font-body)",
-                fontSize: 13,
-                color: "var(--ag-text-secondary)",
-                margin: "0 0 12px",
-                lineHeight: 1.65,
-              }}
-            >
-              {briefing}
+          {briefing ? (
+            <p className="mb-3 text-[13px] leading-relaxed text-[#667085]">{briefing}</p>
+          ) : null}
+          {suggestion ? (
+            <p className="rounded-lg border border-[rgba(212,255,79,0.25)] bg-[rgba(212,255,79,0.06)] px-3 py-2.5 text-[13px] leading-snug text-[#101828]">
+              {suggestion}
             </p>
-          )}
-
-          {suggestion && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 8,
-                padding: "10px 12px",
-                background: "rgba(212,255,79,0.05)",
-                border: "0.5px solid rgba(212,255,79,0.15)",
-                borderRadius: 8,
-              }}
-            >
-              <i
-                className="ti ti-arrow-right"
-                style={{
-                  fontSize: 13,
-                  color: "#D4FF4F",
-                  flexShrink: 0,
-                  marginTop: 1,
-                }}
-              />
-              <p
-                style={{
-                  fontFamily: "var(--ag-font-body)",
-                  fontSize: 13,
-                  color: "var(--ag-text-primary)",
-                  margin: 0,
-                  lineHeight: 1.5,
-                }}
-              >
-                {suggestion}
-              </p>
-            </div>
-          )}
+          ) : null}
         </>
       )}
     </div>

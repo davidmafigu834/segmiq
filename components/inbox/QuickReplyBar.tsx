@@ -83,7 +83,7 @@ export function QuickReplyBar({
     <div
       className={
         isWa
-          ? "max-h-[min(42vh,320px)] overflow-y-auto border-b border-[var(--wa-border)] bg-[var(--wa-surface-subtle)]/95 px-3 py-3.5 sm:px-4 inbox-scroll backdrop-blur-sm"
+          ? "max-h-[min(42vh,320px)] overflow-y-auto border-b border-[#E4E7EC] bg-white px-3 py-3.5 sm:px-4 inbox-scroll"
           : "max-h-[min(42vh,320px)] overflow-y-auto border-b border-[var(--border)] bg-[var(--bg-tertiary)] px-3 py-2.5 sm:px-4 inbox-scroll"
       }
     >

@@ -59,6 +59,7 @@ export type LossCallLogRow = {
 
 export type LossLeadRow = {
   id: string;
+  name?: string | null;
   status: string;
   source: string | null;
   deal_value: number | null;
@@ -91,6 +92,14 @@ export type LossAnalysisResult = {
     count: number;
     estimatedValue: number | null;
     leadIds: string[];
+    leads: Array<{
+      id: string;
+      name: string;
+      reason: string;
+      estimatedValue: number | null;
+      callbackAt: string | null;
+      lastOutcomeAt: string;
+    }>;
   };
   notFitBySource: Record<string, NotFitSourceStats>;
   contactedOutcomes: number;
@@ -368,6 +377,7 @@ export function aggregateLossFromData(
   }
 
   const recoverableIds: string[] = [];
+  const recoverableLeads: LossAnalysisResult["recoverablePile"]["leads"] = [];
   let valueSum = 0;
 
   for (const lead of leads) {
@@ -392,7 +402,20 @@ export function aggregateLossFromData(
     recoverableIds.push(lead.id);
     const val = leadEstimatedValue(lead);
     if (val != null) valueSum += val;
+    recoverableLeads.push({
+      id: lead.id,
+      name: lead.name?.trim() || "Unnamed lead",
+      reason,
+      estimatedValue: val,
+      callbackAt: latest?.callback_at ?? null,
+      lastOutcomeAt: latest!.created_at,
+    });
   }
+
+  recoverableLeads.sort(
+    (a, b) =>
+      new Date(b.lastOutcomeAt).getTime() - new Date(a.lastOutcomeAt).getTime()
+  );
 
   const notFitLeadIdsBySource: Record<string, Set<string>> = {};
   const leadsInWindowBySource: Record<string, number> = {};
@@ -463,6 +486,7 @@ export function aggregateLossFromData(
       count: recoverableIds.length,
       estimatedValue: recoverableIds.length > 0 && valueSum > 0 ? valueSum : null,
       leadIds: recoverableIds,
+      leads: recoverableLeads,
     },
     notFitBySource,
     contactedOutcomes,
@@ -594,7 +618,7 @@ function emptyLossResult(windowStart: Date, windowEnd: Date): LossAnalysisResult
     stallReasons: initReasonCounts(ALL_FOLLOW_UP_HOLDUP_REASONS),
     lostReasons: initReasonCounts(ALL_LOST_REASONS),
     notFitReasons: initReasonCounts(ALL_NOT_QUALIFIED_REASONS),
-    recoverablePile: { count: 0, estimatedValue: null, leadIds: [] },
+    recoverablePile: { count: 0, estimatedValue: null, leadIds: [], leads: [] },
     notFitBySource: {},
     contactedOutcomes: 0,
     notFitOutcomes: 0,
@@ -611,7 +635,7 @@ function emptyLossResult(windowStart: Date, windowEnd: Date): LossAnalysisResult
 }
 
 const LOSS_LEAD_SELECT =
-  "id, status, source, deal_value, budget, form_data, lost_reason, not_qualified_reason, created_at, updated_at";
+  "id, name, status, source, deal_value, budget, form_data, lost_reason, not_qualified_reason, created_at, updated_at";
 
 function isMissingLeadsArchivedColumn(error: unknown): boolean {
   const msg =

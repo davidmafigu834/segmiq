@@ -80,8 +80,19 @@ export type CreateLeadInput = {
   assignmentModeOverride?: "direct" | "pool" | "round_robin";
 };
 
-const AUTO_INBOUND_SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE"];
-const DEDUP_INBOUND_SOURCES: LeadSource[] = ["FACEBOOK", "LANDING_PAGE"];
+/** Sources that auto-route under direct/round_robin (website + Meta + hosted forms). */
+const AUTO_INBOUND_SOURCES: LeadSource[] = [
+  "FACEBOOK",
+  "LANDING_PAGE",
+  "WEBSITE",
+  "FACEBOOK_AD",
+];
+const DEDUP_INBOUND_SOURCES: LeadSource[] = [
+  "FACEBOOK",
+  "LANDING_PAGE",
+  "WEBSITE",
+  "FACEBOOK_AD",
+];
 
 type SalespersonRow = {
   id: string;

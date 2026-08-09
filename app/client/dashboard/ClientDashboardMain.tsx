@@ -33,6 +33,7 @@ import {
   type RetargetingStatusView,
 } from "@/lib/retargeting-shared";
 import { LossInsightsSection } from "@/components/dashboard/LossInsightsSection";
+import { LeadLocationInsightsSection } from "@/components/dashboard/LeadLocationInsightsSection";
 import { RevenueForecastCard, type ForecastCardData } from "@/components/dashboard/RevenueForecastCard";
 import { WhatsAppHubReportSection } from "@/components/reports/WhatsAppHubReportSection";
 import type { WhatsAppHubReport } from "@/lib/whatsapp-hub-report";
@@ -953,7 +954,8 @@ export default function ClientDashboardMain({
       </div>
 
       {session?.clientId ? (
-        <div className="ag-fade-in ag-delay-3 mb-8">
+        <div className="ag-fade-in ag-delay-3 mb-8 space-y-6">
+          <LeadLocationInsightsSection clientId={session.clientId as string} />
           <LossInsightsSection
             clientId={session.clientId as string}
             businessType={data.businessType === "real_estate" ? "real_estate" : "trades"}

@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle, X } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { LogCallForm } from "@/components/leads/LogCallForm";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 import { leadCardDisplayName } from "@/lib/leads/whatsapp-lead-display";
+import { PremiumSheet } from "./PremiumSheet";
+
+const fieldClass =
+  "h-11 w-full rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[13px] text-[#101828] outline-none transition-colors placeholder:text-[#98A2B3] focus:border-[#D4FF4F] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
 
 export function QuickLogSheet({
   leads,
@@ -55,6 +59,7 @@ export function QuickLogSheet({
   }, [selectedLead?.client_id]);
 
   const needsLeadPicker = !preselectedLeadId;
+  const isWhatsApp = defaultChannel === "whatsapp";
 
   function handleSubmitSuccess() {
     setSuccess(true);
@@ -65,90 +70,71 @@ export function QuickLogSheet({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/75"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <PremiumSheet
+      eyebrow={isWhatsApp ? "WhatsApp" : "Call log"}
+      title={isWhatsApp ? "Log WhatsApp contact" : "Log a call"}
+      description={
+        selectedLead && !needsLeadPicker
+          ? leadCardDisplayName(selectedLead)
+          : "Record the outcome and next step."
+      }
+      onClose={onClose}
+      labelledBy="quick-log-sheet-title"
     >
-      <div className="flex max-h-[min(92dvh,100dvh)] w-full flex-col rounded-t-2xl border-x border-t border-[var(--border)] bg-[var(--surface-card)]">
-        <div className="w-10 h-1 shrink-0 rounded-full bg-[var(--bg-quaternary)] mx-auto mt-3" />
-
-        <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-5 py-4">
-          <div className="min-w-0">
-            <h3 className="font-display text-[18px] font-semibold text-[var(--text-primary)] truncate">
-              {defaultChannel === "whatsapp" ? "Log WhatsApp contact" : "Log a call"}
-            </h3>
-            {selectedLead && !needsLeadPicker ? (
-              <p className="mt-0.5 truncate text-[13px] text-[var(--text-secondary)]">
-                {leadCardDisplayName(selectedLead)}
-              </p>
-            ) : null}
+      {success ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[12px] bg-[#ECFDF3] text-[#027A48]">
+            <CheckCircle size={22} strokeWidth={1.8} />
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
-            aria-label="Close"
-          >
-            <X size={14} />
-          </button>
+          <p className="text-[15px] font-semibold text-[#101828]">
+            {isWhatsApp ? "WhatsApp contact logged" : "Call logged"}
+          </p>
+          <p className="mt-1 text-[13px] text-[#667085]">Closing…</p>
         </div>
-
-        <div
-          className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-5"
-          style={{ paddingBottom: "calc(20px + env(safe-area-inset-bottom))" }}
-        >
-          {success ? (
-            <div className="ag-fade-in flex flex-col items-center justify-center py-6 text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-tertiary)]">
-                <CheckCircle size={22} className="text-[var(--success)]" />
-              </div>
-              <p className="text-[15px] font-semibold text-[var(--success)]">
-                {defaultChannel === "whatsapp" ? "WhatsApp contact logged" : "Call logged"}
-              </p>
+      ) : (
+        <div className="space-y-4">
+          {needsLeadPicker ? (
+            <div>
+              <label
+                htmlFor="quick-log-lead"
+                className="mb-1.5 block text-[12px] font-medium text-[#667085]"
+              >
+                Lead
+              </label>
+              <select
+                id="quick-log-lead"
+                value={selectedLeadId}
+                onChange={(e) => setSelectedLeadId(e.target.value)}
+                className={fieldClass}
+              >
+                <option value="">Select lead…</option>
+                {leads.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {leadCardDisplayName(l)}
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : (
-            <div className="ag-fade-in space-y-4">
-              {needsLeadPicker ? (
-                <div>
-                  <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
-                    Lead
-                  </p>
-                  <select
-                    value={selectedLeadId}
-                    onChange={(e) => setSelectedLeadId(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-3 text-[14px] text-[var(--text-primary)] transition-colors focus:border-[var(--border-hover)] focus:outline-none"
-                  >
-                    <option value="">Select lead…</option>
-                    {leads.map((l) => (
-                      <option key={l.id} value={l.id}>
-                        {leadCardDisplayName(l)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
+          ) : null}
 
-              {selectedLeadId ? (
-                <LogCallForm
-                  key={`${selectedLeadId}-${defaultChannel}`}
-                  leadId={selectedLeadId}
-                  variant="compact"
-                  defaultChannel={defaultChannel}
-                  businessType={businessType}
-                  clientId={selectedLead?.client_id ?? null}
-                  onSubmitSuccess={handleSubmitSuccess}
-                />
-              ) : needsLeadPicker ? (
-                <p className="text-[13px] text-[var(--text-tertiary)]">
-                  Choose a lead to log the outcome.
-                </p>
-              ) : null}
-            </div>
-          )}
+          {selectedLeadId ? (
+            <LogCallForm
+              key={`${selectedLeadId}-${defaultChannel}`}
+              leadId={selectedLeadId}
+              variant="compact"
+              appearance="premium"
+              defaultChannel={defaultChannel}
+              businessType={businessType}
+              clientId={selectedLead?.client_id ?? null}
+              onSubmitSuccess={handleSubmitSuccess}
+            />
+          ) : needsLeadPicker ? (
+            <p className="rounded-[10px] border border-dashed border-[#E4E7EC] bg-[#F9FAFB] px-4 py-6 text-center text-[13px] text-[#98A2B3]">
+              Choose a lead to log the outcome.
+            </p>
+          ) : null}
         </div>
-      </div>
-    </div>
+      )}
+    </PremiumSheet>
   );
 }

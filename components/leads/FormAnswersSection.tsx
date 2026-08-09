@@ -27,9 +27,16 @@ type Props = {
   className?: string;
   /** Nicer on narrow lead panel: one column until md, wide rows span on md+ */
   compactMobile?: boolean;
+  title?: string;
 };
 
-export function FormAnswersSection({ formData, lead, className, compactMobile }: Props) {
+export function FormAnswersSection({
+  formData,
+  lead,
+  className,
+  compactMobile,
+  title = "Form answers",
+}: Props) {
   const entries = formatFormData(formData as Record<string, unknown>).filter(entry => {
     const normalizedKey = entry.label.toLowerCase().trim();
     return !STRUCTURED_FIELD_LABELS.has(normalizedKey);
@@ -48,8 +55,10 @@ export function FormAnswersSection({ formData, lead, className, compactMobile }:
   if (entries.length === 0) return null;
 
   return (
-    <div className={["min-w-0 border-b border-border px-5 py-5", className].filter(Boolean).join(" ")}>
-      <div className="mb-4 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">Form answers</div>
+    <div className={["min-w-0 border-b border-[#E4E7EC] bg-[#F8F9FB]/60 px-5 py-5", className].filter(Boolean).join(" ")}>
+      <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98A2B3]">
+        {title}
+      </div>
       <FormAnswersGrid compactMobile={compactMobile} entries={entries} />
     </div>
   );
@@ -77,8 +86,12 @@ function FormAnswersGrid({
         const spanClass = compactMobile ? (wide ? "md:col-span-2" : "") : wide ? "col-span-2" : "";
         return (
           <div key={`${entry.label}-${i}`} className={spanClass}>
-            <dt className="mb-1 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-tertiary">{entry.label}</dt>
-            <dd className="min-w-0 break-words text-sm leading-relaxed text-ink-primary">{entry.value}</dd>
+            <dt className="mb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[#98A2B3]">
+              {entry.label}
+            </dt>
+            <dd className="min-w-0 break-words text-sm leading-relaxed text-[#101828]">
+              {entry.value}
+            </dd>
           </div>
         );
       })}

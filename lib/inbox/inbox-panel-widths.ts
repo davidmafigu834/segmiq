@@ -1,11 +1,11 @@
 export const INBOX_PANEL_WIDTHS_KEY = "segmiq-inbox-panel-widths";
 
 export const DEFAULT_LIST_PANEL_WIDTH = 360;
-export const DEFAULT_INTEL_PANEL_WIDTH = 360;
+export const DEFAULT_INTEL_PANEL_WIDTH = 380;
 
 export const MIN_LIST_PANEL_WIDTH = 280;
 export const MAX_LIST_PANEL_WIDTH = 480;
-export const MIN_INTEL_PANEL_WIDTH = 300;
+export const MIN_INTEL_PANEL_WIDTH = 320;
 export const MAX_INTEL_PANEL_WIDTH = 520;
 
 /** Drag below this width to snap the conversations panel closed. */

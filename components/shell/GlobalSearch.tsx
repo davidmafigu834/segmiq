@@ -15,7 +15,13 @@ type SearchResult = {
   href: string;
 };
 
-export function GlobalSearch({ role }: { role: UserRole }) {
+export function GlobalSearch({
+  role,
+  placeholder,
+}: {
+  role: UserRole;
+  placeholder?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -107,25 +113,32 @@ export function GlobalSearch({ role }: { role: UserRole }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openSearch}
-        className="hidden h-9 w-[220px] shrink-0 items-center gap-3 rounded-md border border-border bg-surface-card px-3 text-left text-sm text-ink-tertiary hover:border-[var(--border-strong)] xl:w-[280px] 2xl:w-[320px] lg:flex"
-      >
-        <Search className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-        <span className="min-w-0 flex-1 truncate">Search…</span>
-        <kbd className="hidden shrink-0 rounded-[4px] border border-border bg-surface-card-alt px-1.5 py-0.5 font-mono text-[10px] text-ink-tertiary sm:inline-block">
-          ⌘K
-        </kbd>
-      </button>
-      <button
-        type="button"
-        onClick={openSearch}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-surface-card text-ink-secondary transition-colors hover:bg-surface-card-alt lg:hidden"
-        aria-label="Search"
-      >
-        <Search className="h-4 w-4" strokeWidth={1.5} />
-      </button>
+      <div className="inline-flex shrink-0 items-center">
+        <button
+          type="button"
+          onClick={openSearch}
+          className="hidden h-10 w-[220px] shrink-0 items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-left text-[13px] text-sales-text-muted transition-colors hover:border-sales-border-strong xl:w-[260px] lg:inline-flex"
+        >
+          <Search className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+          <span className="min-w-0 flex-1 truncate">
+            {placeholder ??
+              (role === "SALESPERSON" || role === "CLIENT_MANAGER"
+                ? "Search leads, customers, deals..."
+                : "Search…")}
+          </span>
+          <kbd className="hidden shrink-0 rounded-[4px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 font-mono text-[10px] text-sales-text-muted sm:inline-block">
+            ⌘K
+          </kbd>
+        </button>
+        <button
+          type="button"
+          onClick={openSearch}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface text-sales-text-secondary transition-colors hover:bg-sales-surface-hover lg:hidden"
+          aria-label="Search"
+        >
+          <Search className="h-4 w-4" strokeWidth={1.5} />
+        </button>
+      </div>
 
       {open ? (
         <div
@@ -142,11 +155,12 @@ export function GlobalSearch({ role }: { role: UserRole }) {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={
-                  role === "SALESPERSON"
+                  placeholder ??
+                  (role === "SALESPERSON"
                     ? "Search your assigned leads…"
                     : role === "CLIENT_MANAGER"
                       ? "Search leads and team…"
-                      : "Search leads, clients, and team…"
+                      : "Search leads, clients, and team…")
                 }
                 className="min-w-0 flex-1 border-0 bg-transparent text-base text-ink-primary outline-none placeholder:text-ink-tertiary"
               />

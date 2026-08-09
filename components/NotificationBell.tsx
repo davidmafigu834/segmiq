@@ -123,17 +123,17 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
   }
 
   return (
-    <div ref={ref} className="relative z-40">
+    <div ref={ref} className="relative z-40 shrink-0">
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : void handleOpen())}
-        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-ink-secondary transition-colors hover:bg-surface-card-alt"
+        className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
         aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
       >
         <Bell className="h-4 w-4" strokeWidth={1.75} />
         {unreadCount > 0 ? (
           <span
-            className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-0.5 font-mono text-[10px] font-bold leading-none text-accent-ink ring-2 ring-bg-primary"
+            className="absolute right-1 top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-sales-brand px-1 text-[10px] font-semibold leading-none text-sales-brand-text ring-2 ring-sales-bg"
             aria-hidden
           >
             {unreadCount > 9 ? "9+" : unreadCount}

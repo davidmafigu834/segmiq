@@ -5,62 +5,63 @@ import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
 
 const COLS = [
   {
-    h: "Platform",
+    h: "Product",
     links: [
-      { label: "Overview", href: "/" },
-      { label: "Why Segmiq", href: "/why-segmiq" },
-      { label: "Security", href: "/security" },
-      { label: "Status", href: "/status" },
-      { label: "Segmiq CRM", href: "/products/segmiq-crm" },
-    ],
-  },
-  {
-    h: "Products & pricing",
-    links: [
-      { label: "Segmiq CRM", href: "/products/segmiq-crm" },
-      { label: "Segmiq Cloud", href: "https://cloud.segmiq.com" },
-      { label: "Features", href: "/features" },
-      { label: "Pricing", href: "/pricing" },
+      { label: "WhatsApp Sales Hub", href: "/products/segmiq-crm" },
+      { label: "Lead Management", href: "/features" },
+      { label: "Automation", href: "/features" },
+      { label: "Quotations", href: "/features" },
+      { label: "Reports", href: "/features" },
     ],
   },
   {
     h: "Solutions",
     links: [
-      { label: "Construction", href: "/solutions/construction" },
       { label: "Solar", href: "/solutions/solar" },
+      { label: "Construction", href: "/solutions/construction" },
       { label: "Roofing", href: "/solutions/roofing" },
-      { label: "Electrical & landscaping", href: "/solutions/electrical-landscaping" },
+      { label: "Electrical", href: "/solutions/electrical-landscaping" },
+      { label: "Landscaping", href: "/solutions/electrical-landscaping" },
+      { label: "Real Estate", href: "/contact" },
+    ],
+  },
+  {
+    h: "Company",
+    links: [
+      { label: "About", href: "/why-segmiq" },
+      { label: "Partners", href: "/partners" },
+      { label: "Careers", href: "/careers" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
     h: "Resources",
     links: [
       { label: "Blog", href: "https://blog.segmiq.com" },
-      { label: "Status", href: "/status" },
-      { label: "Privacy", href: "/privacy" },
-      { label: "Terms", href: "/terms" },
-    ],
-  },
-  {
-    h: "Engage",
-    links: [
-      { label: "Book a demo", href: "/contact" },
-      { label: "Contact sales", href: "/contact" },
-      { label: "Become a partner", href: "/partners" },
-      { label: "Careers", href: "/careers" },
+      { label: "Help Centre", href: "/contact" },
+      { label: "Blog", href: "https://blog.segmiq.com" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
     ],
   },
 ];
 
 export default function MarketingFooter() {
   return (
-    <footer className="border-t border-white/10 bg-black/90 pt-12 pb-8 text-white">
-      <div className="mx-auto max-w-[1100px] px-5">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
+    <footer className="border-t border-white/10 bg-black pb-8 pt-12 text-white">
+      <div className="mx-auto max-w-[1120px] px-5">
+        <div className="grid grid-cols-2 gap-8 text-[12px] md:grid-cols-[1.4fr_repeat(4,1fr)]">
+          <div className="col-span-2 md:col-span-1">
+            <SegmiqWordmark href="/" />
+            <p className="mt-3 max-w-[190px] text-[10px] leading-4 text-white/35">Revenue operating system for service businesses in Africa.</p>
+            <a href="mailto:hello@segmiq.com" className="mt-4 inline-block text-[10px] text-white/55 hover:text-white">
+              hello@segmiq.com
+            </a>
+          </div>
           {COLS.map((col) => (
             <div key={col.h}>
               <div className="font-semibold mb-3">{col.h}</div>
-              <ul className="space-y-2 text-white/60">
+              <ul className="space-y-2 text-white/45">
                 {col.links.map(({ label, href }) => (
                   <li key={label}>
                     {href.startsWith("http") ? (
@@ -78,11 +79,8 @@ export default function MarketingFooter() {
             </div>
           ))}
         </div>
-        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-white/45">
-          <div className="flex items-center gap-3">
-            <SegmiqWordmark href="/" size="sm" />
-            <span>© 2026 Segmiq · segmiq.com</span>
-          </div>
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-[10px] text-white/35 sm:flex-row">
+          <span>© {new Date().getFullYear()} SegmiQ. All rights reserved.</span>
           <div className="flex gap-5">
             <Link href="/privacy" className="hover:text-white">
               Privacy

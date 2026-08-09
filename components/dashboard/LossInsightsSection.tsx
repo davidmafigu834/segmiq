@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   DollarSign,
   Pause,
@@ -11,6 +12,8 @@ import {
   CalendarClock,
   FileText,
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/Card";
@@ -33,6 +36,14 @@ type LossAnalysis = {
     count: number;
     estimatedValue: number | null;
     leadIds: string[];
+    leads: Array<{
+      id: string;
+      name: string;
+      reason: string;
+      estimatedValue: number | null;
+      callbackAt: string | null;
+      lastOutcomeAt: string;
+    }>;
   };
   uniqueLeadsCalled: number;
   reachOutcomes: Record<string, number>;
@@ -128,6 +139,7 @@ export function LossInsightsSection({
   const notFitLabels = getNotQualifiedReasons(businessType);
   const [analysis, setAnalysis] = useState<LossAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showRecoverable, setShowRecoverable] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -252,8 +264,50 @@ export function LossInsightsSection({
                 Still in the pipeline with affordability or timing hold-ups — worth a
                 follow-up when circumstances change.
               </p>
+              {pile.count > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowRecoverable((open) => !open)}
+                  className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#60a5fa] transition hover:text-[#93c5fd]"
+                >
+                  {showRecoverable ? "Hide leads" : `View ${pile.count} leads`}
+                  {showRecoverable ? (
+                    <ChevronUp className="h-3.5 w-3.5" aria-hidden />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+                  )}
+                </button>
+              ) : null}
             </div>
           </div>
+          {showRecoverable && pile.leads?.length > 0 ? (
+            <div className="mt-4 max-h-80 divide-y divide-[var(--border)] overflow-y-auto border-t border-[rgba(96,165,250,0.16)]">
+              {pile.leads.map((lead) => (
+                <Link
+                  key={lead.id}
+                  href={`/client/leads/pipeline?lead=${lead.id}`}
+                  className="flex items-center justify-between gap-3 px-1 py-3 transition hover:bg-[rgba(96,165,250,0.05)]"
+                >
+                  <div className="min-w-0">
+                    <p className="m-0 truncate text-[13px] font-semibold text-[var(--text-primary)]">
+                      {lead.name}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-[var(--text-tertiary)]">
+                      {lead.reason}
+                      {lead.callbackAt
+                        ? ` · callback ${new Date(lead.callbackAt).toLocaleDateString()}`
+                        : ""}
+                    </p>
+                  </div>
+                  <span className="shrink-0 font-mono text-[12px] text-[#60a5fa]">
+                    {lead.estimatedValue != null
+                      ? `$${lead.estimatedValue.toLocaleString()}`
+                      : "Open"}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
         )}
 

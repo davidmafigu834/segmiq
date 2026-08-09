@@ -279,6 +279,31 @@ export async function logFollowUpSet({
   });
 }
 
+/** Clears a scheduled follow-up (Tasks “mark complete”). */
+export async function logFollowUpCompleted({
+  leadId,
+  clientId,
+  actor,
+  previousFollowUpDate,
+}: {
+  leadId: string;
+  clientId: string;
+  actor: Actor;
+  previousFollowUpDate?: string | null;
+}): Promise<void> {
+  await logLeadEvent({
+    leadId,
+    clientId,
+    actor,
+    eventType: "FOLLOW_UP_SET",
+    eventData: {
+      follow_up_date: null,
+      completed: true,
+      previous_follow_up_date: previousFollowUpDate ?? null,
+    },
+  });
+}
+
 export async function logWalkInIntake({
   leadId,
   clientId,

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { PremiumSheet } from "@/components/sales/PremiumSheet";
 
 type Salesperson = { id: string; name: string };
 
@@ -13,6 +14,9 @@ type Props = {
   onTransfer: (assigneeId: string, handoverNotes: string) => Promise<void>;
   whatsappMode?: boolean;
 };
+
+const fieldClass =
+  "h-11 w-full rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[13px] text-[#101828] outline-none transition-colors placeholder:text-[#98A2B3] focus:border-[#D4FF4F] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
 
 export function TransferDialog({
   open,
@@ -48,63 +52,19 @@ export function TransferDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/55 p-4 backdrop-blur-[2px] sm:items-center">
-      <div
-        className={`w-full max-w-md rounded-2xl border p-5 shadow-2xl ${
-          whatsappMode ? "border-[#E9EDEF] bg-white" : "border-[var(--border)] bg-[var(--surface-card)]"
-        }`}
-      >
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className={`text-base font-semibold ${whatsappMode ? "text-[#111B21]" : "text-[var(--text-primary)]"}`}>
-            {whatsappMode ? "Transfer conversation" : "Reassign lead"}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`rounded-full p-1 ${whatsappMode ? "text-[#54656F] hover:bg-[#F0F2F5]" : "text-[var(--text-tertiary)]"}`}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <label className={`mb-1 block text-xs font-medium ${whatsappMode ? "text-[#667781]" : "text-[var(--text-secondary)]"}`}>
-          Transfer to
-        </label>
-        <select
-          value={assigneeId}
-          onChange={(e) => setAssigneeId(e.target.value)}
-          className={`mb-3 w-full rounded-lg border px-3 py-2 text-sm ${
-            whatsappMode ? "border-[#E9EDEF] bg-white text-[#111B21]" : "border-[var(--border)] bg-[var(--bg-primary)]"
-          }`}
-        >
-          <option value="">Select salesperson…</option>
-          {options.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-
-        <label className={`mb-1 block text-xs font-medium ${whatsappMode ? "text-[#667781]" : "text-[var(--text-secondary)]"}`}>
-          Handover note (internal)
-        </label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={3}
-          placeholder="Customer summary, next action, context for the new rep…"
-          className={`mb-3 w-full resize-none rounded-lg border px-3 py-2 text-sm ${
-            whatsappMode ? "border-[#E9EDEF] bg-white text-[#111B21]" : "border-[var(--border)] bg-[var(--bg-primary)]"
-          }`}
-        />
-
-        {error ? <p className="mb-2 text-xs text-red-600">{error}</p> : null}
-
+    <PremiumSheet
+      eyebrow={whatsappMode ? "WhatsApp" : "Pipeline"}
+      title={whatsappMode ? "Transfer conversation" : "Reassign lead"}
+      description="Pass context so the next rep can pick up cleanly."
+      onClose={onClose}
+      labelledBy="transfer-dialog-title"
+      maxWidthClass="max-w-md"
+      footer={
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className={`rounded-lg px-3 py-2 text-sm ${whatsappMode ? "text-[#54656F] hover:bg-[#F0F2F5]" : "text-[var(--text-secondary)]"}`}
+            className="inline-flex h-10 min-w-[44px] items-center justify-center rounded-[10px] border border-[#E4E7EC] bg-white px-4 text-[13px] font-medium text-[#101828] transition-colors hover:bg-[#F9FAFB]"
           >
             Cancel
           </button>
@@ -112,13 +72,46 @@ export function TransferDialog({
             type="button"
             disabled={!assigneeId || submitting}
             onClick={() => void handleSubmit()}
-            className="wa-btn-primary !w-auto px-5 py-2.5"
+            className="inline-flex h-10 min-w-[44px] items-center justify-center gap-2 rounded-[10px] bg-[#D4FF4F] px-5 text-[13px] font-semibold text-[#101828] transition-colors hover:bg-[#c8f244] disabled:opacity-50"
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
             {whatsappMode ? "Transfer" : "Reassign"}
           </button>
         </div>
+      }
+    >
+      <div className="space-y-4">
+        <label className="block">
+          <span className="mb-1.5 block text-[12px] font-medium text-[#667085]">Transfer to</span>
+          <select
+            value={assigneeId}
+            onChange={(e) => setAssigneeId(e.target.value)}
+            className={fieldClass}
+          >
+            <option value="">Select salesperson…</option>
+            {options.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-[12px] font-medium text-[#667085]">
+            Handover note (internal)
+          </span>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Customer summary, next action, context for the new rep…"
+            className={`${fieldClass} h-auto min-h-[88px] resize-none py-2.5`}
+          />
+        </label>
+
+        {error ? <p className="text-[12px] text-[#EF4444]">{error}</p> : null}
       </div>
-    </div>
+    </PremiumSheet>
   );
 }

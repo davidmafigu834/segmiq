@@ -1,54 +1,67 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
-import { SalesQuotesClient, type SalesQuoteListItem } from "./SalesQuotesClient";
-import type { QuotationRow } from "@/types";
+import { SoloLayout } from "@/components/layouts/SoloLayout";
+import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
+import { SalesQuotesClient } from "@/components/sales/quotes/SalesQuotesClient";
+import { Skeleton } from "@/components/sales/ui";
+import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-type DbQuoteRow = QuotationRow & {
-  leads: { name: string | null; phone: string | null } | null;
-};
-
-function mapQuote(row: DbQuoteRow): SalesQuoteListItem {
-  return {
-    ...row,
-    lead_name: row.leads?.name ?? row.customer_name,
-    lead_phone: row.leads?.phone ?? row.customer_phone,
-  };
+function QuotesFallback() {
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Skeleton className="h-10 w-36 rounded-[10px]" />
+      </div>
+      <Skeleton className="h-10 w-full max-w-3xl rounded-sales-md" />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
+        <Skeleton className="h-[420px] rounded-sales-xl" />
+        <div className="space-y-4">
+          <Skeleton className="h-[230px] rounded-sales-xl" />
+          <Skeleton className="h-[200px] rounded-sales-xl" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default async function SalesQuotesPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.userId) redirect("/login");
+  if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
-  const supabase = createAdminClient();
-  const { data: leads } = await supabase
-    .from("leads")
-    .select("id")
-    .eq("assigned_to_id", session.userId);
-
-  const leadIds = (leads ?? []).map((l) => l.id as string);
-  let quotes: SalesQuoteListItem[] = [];
-
-  if (leadIds.length > 0) {
-    const { data, error } = await supabase
-      .from("quotations")
-      .select("*, leads(name, phone)")
-      .in("lead_id", leadIds)
-      .order("updated_at", { ascending: false });
-
-    if (!error && data) {
-      quotes = (data as DbQuoteRow[]).map(mapQuote);
-    }
-  }
+  const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
+  const shell = await loadSalesShellProps(session);
 
   return (
-    <SalesLayout breadcrumb="SALES / QUOTES" pageTitle="My quotes">
-      <SalesQuotesClient initialQuotes={quotes} />
-    </SalesLayout>
+    <Layout
+      breadcrumb="SALES / QUOTATIONS"
+      pageTitle="Quotations"
+      hideShellHeader
+      hideShellSidebar
+      contentFlush
+    >
+      <SalesAppShell
+        {...shell}
+        breadcrumb="Sales / Quotations"
+        title="Quotations"
+        description="Create, send and track quotations. Turn quotes into won deals."
+        searchPlaceholder="Search leads, customers, quotes..."
+      >
+        <Suspense fallback={<QuotesFallback />}>
+          <SalesQuotesClient />
+        </Suspense>
+      </SalesAppShell>
+    </Layout>
   );
 }
