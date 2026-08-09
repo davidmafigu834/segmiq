@@ -160,8 +160,8 @@ export function SalesTasksClient() {
       if (statusFilter === "pending" && task.status !== "pending") return false;
       if (statusFilter === "overdue" && task.status !== "overdue") return false;
       if (statusFilter === "completed" && !task.completed) return false;
-      if (statusFilter === "all" && task.completed && statusFilter !== "completed") {
-        // keep completed only when explicitly filtering completed; hide from default all open-focused lists for mine/assigned
+      if (statusFilter === "all" && task.completed) {
+        // hide completed from default open-focused lists for mine/assigned
         if (view === "mine" || view === "assigned") return false;
       }
       if (dueFilter !== "all" && !task.completed && !matchesDueFilter(task.dueAt, dueFilter)) {
