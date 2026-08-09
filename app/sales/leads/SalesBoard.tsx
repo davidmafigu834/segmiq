@@ -14,7 +14,8 @@ import {
 } from "@/lib/convert-later-picks";
 import { sortKanbanLeads } from "@/lib/kanbanSort";
 import type { LeadWithClientResponseLimit } from "@/lib/leadStatus";
-import type { PriorityLead } from "@/lib/sales-priority-lead";
+import type { PriorityLead, SalesLeadCardLead } from "@/lib/sales-priority-lead";
+import type { LeadRow } from "@/types";
 import { openLeadPanel, useLeadPanel } from "@/store/uiStore";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
@@ -226,18 +227,28 @@ export function SalesBoard({
     openLeadPanel(leadFromUrl, tab);
   }, [leadFromUrl, tabFromUrl, leads]);
 
-  const handleLeadUpdated = useCallback((updated: { id: string } & Record<string, unknown>) => {
+  const handleLeadUpdated = useCallback((updated: LeadRow | LeadWithClientResponseLimit) => {
     setLeads((prev) =>
       prev.map((l) => {
         if (l.id !== updated.id) return l;
         const clients =
-          "clients" in updated && updated.clients != null
-            ? (updated.clients as LeadWithClientResponseLimit["clients"])
-            : l.clients;
+          "clients" in updated && updated.clients != null ? updated.clients : l.clients;
         return { ...l, ...updated, clients } as LeadWithClientResponseLimit;
       })
     );
   }, []);
+
+  const handleCardLeadUpdated = useCallback(
+    (patch: SalesLeadCardLead & { is_convert_later_pick?: boolean | null }) => {
+      setLeads((prev) =>
+        prev.map((l) => {
+          if (l.id !== patch.id) return l;
+          return { ...l, ...patch } as LeadWithClientResponseLimit;
+        })
+      );
+    },
+    []
+  );
 
   function handleTouchStart(e: React.TouchEvent) {
     setTouchStartX(e.touches[0].clientX);
@@ -537,7 +548,7 @@ export function SalesBoard({
                   key={l.id}
                   lead={l}
                   logContext={pickLogContext[l.id]}
-                  onLeadUpdated={handleLeadUpdated}
+                  onLeadUpdated={handleCardLeadUpdated}
                 />
               ))}
             </div>
@@ -601,7 +612,7 @@ export function SalesBoard({
                     repName={repName}
                     onOpenLogSheet={openLogSheet}
                     onOpenLead={openLead}
-                    onLeadUpdated={handleLeadUpdated}
+                    onLeadUpdated={handleCardLeadUpdated}
                   />
                 ))}
               </div>
@@ -670,7 +681,7 @@ export function SalesBoard({
                                     repName={repName}
                                     onOpenLogSheet={openLogSheet}
                                     onOpenLead={openLead}
-                                    onLeadUpdated={handleLeadUpdated}
+                                    onLeadUpdated={handleCardLeadUpdated}
                                   />
                                 </div>
                               )}

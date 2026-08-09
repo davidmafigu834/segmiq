@@ -294,7 +294,7 @@ export async function fetchSalespersonTasks(opts: {
     return data.completed === true || data.follow_up_date == null;
   });
 
-  const completedLeadIds = [...new Set(completedEvents.map((e) => e.lead_id))];
+  const completedLeadIds = Array.from(new Set(completedEvents.map((e) => e.lead_id)));
   const completedLeadMap = new Map<string, LeadRow>();
   if (completedLeadIds.length > 0) {
     const { data: completedLeads } = await supabase

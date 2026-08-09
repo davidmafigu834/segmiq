@@ -80,6 +80,7 @@ const plans = [
       "Quotations",
     ],
     button: "Start with Starter",
+    featured: false,
   },
   {
     name: "Growth",
@@ -108,6 +109,7 @@ const plans = [
       "Priority support",
     ],
     button: "Talk to sales",
+    featured: false,
   },
 ] as const;
 

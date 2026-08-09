@@ -511,7 +511,9 @@ export async function fetchSalespersonQuotes(opts: {
     quoteRows = (periodRes.data ?? []) as DbQuote[];
   }
 
-  const clientIds = [...new Set(leadRows.map((l) => l.client_id).filter(Boolean))];
+  const clientIds = Array.from(
+    new Set(leadRows.map((l) => l.client_id).filter(Boolean))
+  );
   let hasTemplates = false;
   if (clientIds.length > 0) {
     const { count } = await supabase

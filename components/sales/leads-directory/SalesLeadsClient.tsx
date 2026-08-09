@@ -265,9 +265,10 @@ export function SalesLeadsClient({
   const selectedId = panel.open ? panel.leadId : null;
 
   const pageCount = Math.max(1, Math.ceil((data?.meta.totalFiltered ?? 0) / pageSize));
+  const currentPage = data?.meta.page ?? page;
   const showingFrom =
-    !data || data.meta.totalFiltered === 0 ? 0 : (data.meta.page - 1) * pageSize + 1;
-  const showingTo = Math.min(data?.meta.page * pageSize ?? 0, data?.meta.totalFiltered ?? 0);
+    !data || data.meta.totalFiltered === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const showingTo = Math.min(currentPage * pageSize, data?.meta.totalFiltered ?? 0);
 
   function openLead(id: string) {
     openLeadPanel(id);
