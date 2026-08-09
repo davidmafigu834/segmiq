@@ -433,7 +433,7 @@ export async function fetchSalespersonReports(opts: {
   };
 
   const wins = filterWinsBySource(
-    (winsCurrent ?? []) as Array<{
+    (winsCurrent ?? []) as unknown as Array<{
       id: string;
       deal_value: number | null;
       created_at: string;
@@ -715,7 +715,11 @@ export async function fetchSalespersonReports(opts: {
   // Won by source
   const wonBySourceMap = new Map<string, { count: number; value: number }>();
   for (const w of wins) {
-    const lead = w.leads as { source?: string | null } | null;
+    const leadRaw = w.leads as
+      | { source?: string | null }
+      | { source?: string | null }[]
+      | null;
+    const lead = Array.isArray(leadRaw) ? leadRaw[0] : leadRaw;
     const b = sourceBucket(lead?.source);
     const cur = wonBySourceMap.get(b.key) ?? { count: 0, value: 0 };
     cur.count += 1;
