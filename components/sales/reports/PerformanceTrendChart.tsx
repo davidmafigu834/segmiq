@@ -70,9 +70,13 @@ export function PerformanceTrendChart({
             boxShadow: "0 4px 12px rgba(16,24,40,0.08)",
             fontSize: 12,
           }}
-          formatter={(value: number, name: string) => {
-            if (name === "Revenue") return [formatDealCurrency(value, { currency }), name];
-            return [value, name];
+          formatter={(value, name) => {
+            const n = typeof value === "number" ? value : Number(value);
+            const label = String(name ?? "");
+            if (label === "Revenue") {
+              return [formatDealCurrency(Number.isFinite(n) ? n : 0, { currency }), label];
+            }
+            return [Number.isFinite(n) ? n : 0, label];
           }}
         />
         <Bar
