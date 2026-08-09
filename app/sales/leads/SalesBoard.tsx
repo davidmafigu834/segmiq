@@ -15,7 +15,6 @@ import {
 import { sortKanbanLeads } from "@/lib/kanbanSort";
 import type { LeadWithClientResponseLimit } from "@/lib/leadStatus";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
-import type { LeadRow } from "@/types";
 import { openLeadPanel, useLeadPanel } from "@/store/uiStore";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
@@ -227,13 +226,15 @@ export function SalesBoard({
     openLeadPanel(leadFromUrl, tab);
   }, [leadFromUrl, tabFromUrl, leads]);
 
-  const handleLeadUpdated = useCallback((updated: LeadRow | LeadWithClientResponseLimit) => {
+  const handleLeadUpdated = useCallback((updated: { id: string } & Record<string, unknown>) => {
     setLeads((prev) =>
       prev.map((l) => {
         if (l.id !== updated.id) return l;
         const clients =
-          "clients" in updated && updated.clients != null ? updated.clients : l.clients;
-        return { ...updated, clients } as LeadWithClientResponseLimit;
+          "clients" in updated && updated.clients != null
+            ? (updated.clients as LeadWithClientResponseLimit["clients"])
+            : l.clients;
+        return { ...l, ...updated, clients } as LeadWithClientResponseLimit;
       })
     );
   }, []);
