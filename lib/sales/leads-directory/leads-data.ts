@@ -377,23 +377,29 @@ export async function fetchSalespersonLeadsDirectory(opts: {
   const selectCols =
     "id, client_id, name, phone, email, project_type, source, status, score, follow_up_date, created_at, updated_at, is_stale, budget, form_data, is_archived";
 
-  let leadsRes = await supabase
+  let { data: leadsData, error: leadsError } = await supabase
     .from("leads")
     .select(selectCols)
     .eq("assigned_to_id", opts.userId)
     .order("created_at", { ascending: false });
 
-  if (leadsRes.error && String(leadsRes.error.message || "").includes("is_archived")) {
-    leadsRes = await supabase
+  if (leadsError && String(leadsError.message || "").includes("is_archived")) {
+    const retry = await supabase
       .from("leads")
       .select(
         "id, client_id, name, phone, email, project_type, source, status, score, follow_up_date, created_at, updated_at, is_stale, budget, form_data"
       )
       .eq("assigned_to_id", opts.userId)
       .order("created_at", { ascending: false });
+    leadsData = retry.data as typeof leadsData;
+    leadsError = retry.error;
   }
 
-  const raw = ((leadsRes.data ?? []) as DbLead[]).filter((l) => !l.is_archived);
+  if (leadsError) {
+    throw new Error(leadsError.message || "Failed to load leads");
+  }
+
+  const raw = ((leadsData ?? []) as DbLead[]).filter((l) => !l.is_archived);
   const lastMap = await fetchLastCallTimes(raw.map((l) => l.id));
   const mapped = raw.map((l) => mapRow(l, lastMap[l.id] ?? null, now));
 
