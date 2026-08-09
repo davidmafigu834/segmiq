@@ -93,11 +93,11 @@ export default async function SalesCalendarRoutePage() {
   }
 
   const leadIds = scheduledLeads.map((l) => l.id);
-  const contactIds = [
-    ...new Set(
+  const contactIds = Array.from(
+    new Set(
       scheduledLeads.map((l) => l.contact_id).filter((id): id is string => Boolean(id))
-    ),
-  ];
+    )
+  );
 
   const [callbackAtByLeadId, quoteRows, contactRows] = await Promise.all([
     fetchLatestScheduledCallbacksByLeadId(supabase, leadIds),
