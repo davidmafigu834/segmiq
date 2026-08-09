@@ -319,7 +319,7 @@ function OverviewTab({
           supporting={k.conversionRate.supporting}
           tip="Deals won divided by deals closed (won + lost) during the selected period."
           trend={
-            conversionPts == null || k.conversionRate.trend.direction === "none"
+            conversionPts == null
               ? null
               : {
                   direction: k.conversionRate.trend.direction,
