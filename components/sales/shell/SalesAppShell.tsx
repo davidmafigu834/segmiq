@@ -44,10 +44,11 @@ export function SalesPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <div className="flex min-h-10 items-center justify-between gap-3">
+    <div className="space-y-2 layout:space-y-1.5">
+      {/* Desktop only — avoids empty min-h spacer pushing the title down on mobile */}
+      <div className="hidden min-h-10 items-center justify-between gap-3 layout:flex">
         {breadcrumb ? (
-          <p className="hidden min-w-0 truncate text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted md:block">
+          <p className="min-w-0 truncate text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
             {breadcrumb}
           </p>
         ) : (
@@ -59,12 +60,13 @@ export function SalesPageHeader({
           </div>
         ) : null}
       </div>
+
       <div className="min-w-0">
-        <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[28px] layout:text-[30px]">
+        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[26px] layout:text-[30px]">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1.5 text-[13px] leading-snug text-sales-text-secondary sm:text-[14px]">
+          <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary sm:mt-1.5 sm:text-[14px]">
             {description}
           </p>
         ) : null}
@@ -281,8 +283,8 @@ function SalesAppShellInner({
           className={[
             "sales-mobile-scroll min-h-0 min-w-0 flex-1 w-full max-w-none overflow-y-auto overscroll-contain",
             dense
-              ? "space-y-4 px-4 py-4 sm:px-6 layout:px-7 layout:py-5"
-              : "space-y-5 px-4 py-4 sm:px-6 layout:px-8 layout:py-6",
+              ? "space-y-4 px-4 pb-4 pt-3 sm:px-6 layout:px-7 layout:py-5"
+              : "space-y-5 px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6",
           ].join(" ")}
         >
           {showDefaultHeader && title ? (

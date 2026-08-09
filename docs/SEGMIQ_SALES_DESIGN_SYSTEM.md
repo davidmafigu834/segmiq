@@ -230,3 +230,48 @@ Inbox compact / single-pane WhatsApp flow aligns to **below layout** (`INBOX_COM
 ### QA viewports
 
 375 · 390 · 430 · 768 · 1024 · 1366 · 1440 — no body horizontal overflow; desktop chrome unchanged at `layout+`.
+
+---
+
+## 13. Authentication
+
+Public CRM auth (`/login`, `/forgot-password`, `/reset-password`) and SegmiQ Cloud auth (`/cloud/login`, `/cloud/signup`, `/cloud/forgot-password`) share the **marketing theme preference** (`segmiq-marketing-theme`) with the landing page — not the CRM app theme.
+
+### Layout
+
+| Viewport | Behavior |
+|----------|----------|
+| ≥1024px | Split screen: brand/product left (~55%), form right (~45%) |
+| <1024px | Single column: logo + theme toggle, then form (no large product panel) |
+
+Shell: `components/auth/AuthShell.tsx` (CRM) · `components/auth/CloudAuthShell.tsx` (Cloud)  
+Layout: `AuthLayout` / `CloudAuthLayout` · left panel: `AuthMarketingPanel` / `CloudAuthMarketingPanel`
+
+CRM left panel uses the static `ProductHeroVisual` (same light product UI as marketing). Do **not** mount the live app.
+
+### Form
+
+- Max width: ~430px login / ~460px signup  
+- Input height: 48px · radius 9px  
+- Primary CTA: `#D4FF4F` / ink `#101828` (dark ink `#0B0D0C`), height 48px  
+- Labels: 13px · visible (not placeholder-only)  
+- Focus: border `#A8D52C` + soft lime ring  
+
+### Theme
+
+Sun/Moon toggle (top-right desktop; header on mobile). Persists with landing via `MarketingThemeProvider`.
+
+### Tokens
+
+Reuse `--marketing-*` (see `app/globals.css` `.marketing-page` / `.marketing-page.dark`).
+
+### Product facts
+
+- CRM: credentials only · no self-signup · no OAuth · forgot/reset real  
+- Cloud: self-signup fields from `/api/cloud/signup` schema · password min 8  
+- No free-trial / Google / remember-me unless product adds them  
+- Redirects: preserve `/api/auth/home` + `callbackUrl` sanitization  
+
+### Errors & loading
+
+Inline alerts (no `alert()`). Button spinner + disabled while submitting. Preserve anti-enumeration copy on password reset success.

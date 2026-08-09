@@ -25,7 +25,7 @@ export function SalesMobileTopBar({
   const homeHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
 
   return (
-    <header className="sales-mobile-top-bar sticky top-0 z-[30] shrink-0 items-center justify-between gap-2 border-b border-sales-border-subtle bg-sales-surface px-4 layout:hidden">
+    <header className="sales-mobile-top-bar sticky top-0 z-[30] shrink-0 items-center justify-between gap-2 border-b border-sales-border-subtle bg-sales-surface/95 px-4 backdrop-blur-md layout:hidden">
       <Link
         href={homeHref}
         className="flex min-w-0 items-center focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"

@@ -9,13 +9,13 @@ body {
 }
 
 :root {
-  /* ── Backgrounds ── */
+  /* ?? Backgrounds ?? */
   --bg-primary: #050505;
   --bg-secondary: #0a0a0a;
   --bg-tertiary: #111111;
   --bg-quaternary: #191919;
 
-  /* ── Surfaces (keep legacy names so Tailwind aliases auto-update) ── */
+  /* ?? Surfaces (keep legacy names so Tailwind aliases auto-update) ?? */
   --surface-sidebar: #080808;
   --surface-sidebar-elevated: #141414;
   --surface-sidebar-border: rgba(255, 255, 255, 0.09);
@@ -28,7 +28,7 @@ body {
   --surface-dropdown: #111111;
   --bg-card: var(--surface-card);
 
-  /* ── Text ── */
+  /* ?? Text ?? */
   --text-primary: #ededed;
   --text-secondary: #b4b4b4;
   --text-tertiary: #858585;
@@ -37,7 +37,7 @@ body {
   --text-on-dark: #ededed;
   --text-on-dark-dim: #bbbbbb;
 
-  /* ── Accent — lime (Leadstaq brand) ── */
+  /* ?? Accent ? lime (Leadstaq brand) ?? */
   --accent: #d4ff4f;
   --accent-hover: #c8f244;
   --accent-ink: #000000;
@@ -49,7 +49,7 @@ body {
   --channel-whatsapp: #25d366;
   --channel-whatsapp-muted: rgba(37, 211, 102, 0.12);
 
-  /* ── Status — muted dark equivalents ── */
+  /* ?? Status ? muted dark equivalents ?? */
   --success: #3dd68c;
   --success-bg: rgba(61, 214, 140, 0.1);
   --success-fg: #3dd68c;
@@ -73,20 +73,20 @@ body {
   --info-muted: rgba(0, 112, 243, 0.1);
   --info-border: rgba(0, 112, 243, 0.2);
 
-  /* ── Borders ── */
+  /* ?? Borders ?? */
   --border: rgba(255, 255, 255, 0.1);
   --border-hover: rgba(255, 255, 255, 0.2);
   --border-focus: rgba(255, 255, 255, 0.4);
   --border-strong: rgba(255, 255, 255, 0.28);
   --border-dark: rgba(255, 255, 255, 0.15);
 
-  /* ── Shadows ── */
+  /* ?? Shadows ?? */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.65);
   --shadow-modal: 0 16px 64px rgba(0, 0, 0, 0.9);
 
-  /* ── Radius ── */
+  /* ?? Radius ?? */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
@@ -96,7 +96,7 @@ body {
   --control-md: 36px;
   --control-lg: 40px;
 
-  /* ── Sidebar / topbar layout ── */
+  /* ?? Sidebar / topbar layout ?? */
   --sidebar-width: 240px;
   --crm-sidebar-width: 240px;
   --sidebar-bg: #000000;
@@ -105,20 +105,20 @@ body {
   --topbar-bg: #000000;
   --topbar-border: rgba(255, 255, 255, 0.15);
 
-  /* ── Transitions ── */
+  /* ?? Transitions ?? */
   --transition-fast: 100ms ease;
   --transition-base: 150ms ease;
 
-  /* ── Legacy aliases ── */
+  /* ?? Legacy aliases ?? */
   --background: #000000;
   --foreground: #ededed;
 
-  /* ── Font role aliases ── */
+  /* ?? Font role aliases ?? */
   --font-serif: var(--font-instrument-serif);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* ── Status pill tokens (dashboard) ── */
+  /* ?? Status pill tokens (dashboard) ?? */
   --status-new-bg: rgba(0, 112, 243, 0.12);
   --status-new-fg: #60a5fa;
   --status-contacted-bg: rgba(61, 214, 140, 0.1);
@@ -136,7 +136,7 @@ body {
   --status-proposal-bg: rgba(139, 92, 246, 0.12);
   --status-proposal-fg: #a78bfa;
 
-  /* ── Client avatar palette ── */
+  /* ?? Client avatar palette ?? */
   --avatar-palette-0: #d4ff4f;
   --avatar-palette-1: #fb923c;
   --avatar-palette-2: #60a5fa;
@@ -144,7 +144,7 @@ body {
   --avatar-palette-4: #a78bfa;
   --avatar-palette-5: #34d399;
 
-  /* ── Activity dot colors ── */
+  /* ?? Activity dot colors ?? */
   --activity-new: #3b82f6;
   --activity-won: var(--accent);
   --activity-follow: #f59e0b;
@@ -152,7 +152,7 @@ body {
   --activity-nq: #555555;
 }
 
-/* ── Sales workspace light mode preview (scoped to /sales and /solo routes) ── */
+/* ?? Sales workspace light mode preview (scoped to /sales and /solo routes) ?? */
 html[data-crm-theme="light"],
 html:has(.crm-theme-light),
 html[data-crm-theme="light"] body,
@@ -318,7 +318,7 @@ html[data-crm-theme="light"] ::selection,
   color: var(--text-primary);
 }
 
-/* Dark CRM — native + WebKit scrollbars match dark surfaces */
+/* Dark CRM ? native + WebKit scrollbars match dark surfaces */
 html[data-crm]:not([data-crm-theme="light"]),
 html[data-crm]:not([data-crm-theme="light"]) body {
   color-scheme: dark;
@@ -476,7 +476,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     display: none;
   }
 
-  /* WhatsApp Sales Hub — inbox scrollbars (theme-aware) */
+  /* WhatsApp Sales Hub ? inbox scrollbars (theme-aware) */
   html[data-crm-theme="light"] .inbox-scroll,
   html:has(.crm-theme-light) .inbox-scroll {
     scrollbar-width: thin;
@@ -533,7 +533,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     background: rgba(255, 255, 255, 0.3);
   }
 
-  /* WhatsApp Sales Hub — premium light workspace (aligned with Sales Dashboard) */
+  /* WhatsApp Sales Hub ? premium light workspace (aligned with Sales Dashboard) */
   .wa-hub-shell {
     --wa-accent: #d4ff4f;
     --wa-accent-strong: #4d7c0f;
@@ -901,7 +901,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     }
   }
 
-  /* Full-bleed Sales Hub beside CRM sidebar — no inset card wrapper on desktop */
+  /* Full-bleed Sales Hub beside CRM sidebar ? no inset card wrapper on desktop */
   .wa-hub-immersive {
     gap: 0;
     padding: 0;
@@ -1062,7 +1062,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     user-select: none !important;
   }
 
-  /* CRM shell sidebar — resizable + collapsible (desktop) */
+  /* CRM shell sidebar ? resizable + collapsible (desktop) */
   @media (min-width: 1100px) {
     .crm-shell-sidebar-host {
       width: var(--crm-sidebar-width, 240px);
@@ -1171,7 +1171,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   /* Sales Hub inherits the CRM dark shell. Light preview keeps native WA surfaces.
-     Premium salesperson shell (.sales-dashboard-premium) MUST stay light — see overrides below. */
+     Premium salesperson shell (.sales-dashboard-premium) MUST stay light ? see overrides below. */
   html:not([data-crm-theme="light"]) .wa-hub-shell:not(.wa-hub-premium) {
     --wa-accent: var(--channel-whatsapp);
     --wa-accent-strong: #1fb85a;
@@ -1289,7 +1289,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     color: var(--text-primary);
   }
 
-  /* Premium Sales Hub — always light, even when CRM shell is dark */
+  /* Premium Sales Hub ? always light, even when CRM shell is dark */
   .sales-dashboard-premium .wa-hub-shell,
   .wa-hub-premium {
     --wa-accent: #d4ff4f;
@@ -1449,7 +1449,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     padding-top: env(safe-area-inset-top, 0px);
   }
 
-  /* ── Cloud dashboard fonts ── */
+  /* ?? Cloud dashboard fonts ?? */
   .font-cloud-display {
     font-family: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
   }
@@ -1470,11 +1470,11 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 }
 
-/* ── Hide scrollbars on swipeable pill/scroll rows (except Cloud scroll-x) ── */
+/* ?? Hide scrollbars on swipeable pill/scroll rows (except Cloud scroll-x) ?? */
 .fw-pills-scroll::-webkit-scrollbar { display: none; }
 .pills-scroll:not(.cloud-scroll-x)::-webkit-scrollbar { display: none; }
 
-/* ── Fieldwork (fw) design tokens ── */
+/* ?? Fieldwork (fw) design tokens ?? */
 :root {
   --fw-soil:          #1C1410;
   --fw-soil-2:        #2E2218;
@@ -1495,7 +1495,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   --fw-font-body: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
 }
 
-/* ── Cloud dashboard design tokens ── */
+/* ?? Cloud dashboard design tokens ?? */
 :root {
   --cloud-bg: #F3F4F6;
   --cloud-bg-secondary: #E8EAEE;
@@ -1665,7 +1665,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   animation: cloud-auth-enter 0.45s ease-out both;
 }
 
-/* Cloud dashboard — light theme reset (overrides CRM dark body text inheritance) */
+/* Cloud dashboard ? light theme reset (overrides CRM dark body text inheritance) */
 .cloud-dashboard {
   color: var(--cloud-text-primary);
 }
@@ -1686,7 +1686,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   background-color: var(--cloud-surface);
 }
 
-/* Cloud dashboard shell — sidebar & topbar */
+/* Cloud dashboard shell ? sidebar & topbar */
 .cloud-shell-sidebar {
   width: var(--cloud-sidebar-width);
   background: var(--cloud-sidebar-bg);
@@ -2468,7 +2468,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   color: #b91c1c;
 }
 
-/* ── SegmiQ Cloud scrollbars (light surfaces — overrides CRM white thumbs) ── */
+/* ?? SegmiQ Cloud scrollbars (light surfaces ? overrides CRM white thumbs) ?? */
 .cloud-app {
   scrollbar-width: thin;
   scrollbar-color: rgba(17, 17, 17, 0.28) rgba(17, 17, 17, 0.06);
@@ -2662,7 +2662,7 @@ html:has(.cloud-surface-dark) body::-webkit-scrollbar-track {
   display: none;
 }
 
-/* ── Agency dashboard (CRM) design tokens — dark system ── */
+/* ?? Agency dashboard (CRM) design tokens ? dark system ?? */
 :root {
   --ag-bg: #000000;
   --ag-surface: #0a0a0a;
@@ -2693,7 +2693,7 @@ html:has(.cloud-surface-dark) body::-webkit-scrollbar-track {
   --ag-font-body: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
 }
 
-/* ── CRM: stronger line borders (scoped — cloud/marketing use their own tokens) ── */
+/* ?? CRM: stronger line borders (scoped ? cloud/marketing use their own tokens) ?? */
 html[data-crm] {
   --border: rgba(255, 255, 255, 0.28);
   --border-hover: rgba(255, 255, 255, 0.38);
@@ -2708,7 +2708,7 @@ html[data-crm] {
   --ag-border-strong: rgba(255, 255, 255, 0.42);
 }
 
-/* ── Skeleton shimmer animation ── */
+/* ?? Skeleton shimmer animation ?? */
 @keyframes skeleton-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -2725,14 +2725,14 @@ html[data-crm] {
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
-/* ── Safe area support for PWA installed to home screen ── */
-/* ── Upload zone touch optimization ── */
+/* ?? Safe area support for PWA installed to home screen ?? */
+/* ?? Upload zone touch optimization ?? */
 label[for="photo-input"] {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Timeline animations (public share page) ── */
+/* ?? Timeline animations (public share page) ?? */
 @keyframes node-pulse {
   0%   { box-shadow: 0 0 0 0 rgba(212, 255, 79, 0.4); }
   70%  { box-shadow: 0 0 0 10px rgba(212, 255, 79, 0); }
@@ -2772,13 +2772,13 @@ label[for="photo-input"] {
   transform: scale(1.04);
 }
 
-/* ── Skeleton shimmer — used by AI loading states ── */
+/* ?? Skeleton shimmer ? used by AI loading states ?? */
 @keyframes skeleton-shimmer {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
 
-/* ── Event Capture kiosk (trade-show stand) ── */
+/* ?? Event Capture kiosk (trade-show stand) ?? */
 @keyframes event-capture-glow {
   0%, 100% { opacity: 0.85; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.06); }
@@ -2826,7 +2826,7 @@ label[for="photo-input"] {
   mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
 }
 
-/* ── Agency dashboard fade-in animations ── */
+/* ?? Agency dashboard fade-in animations ?? */
 @keyframes ag-fade-up {
   from {
     opacity: 0;
@@ -2849,7 +2849,7 @@ label[for="photo-input"] {
 .ag-delay-4 { animation-delay: 0.20s; }
 .ag-delay-5 { animation-delay: 0.25s; }
 
-/* ── Agency dashboard hover utilities ── */
+/* ?? Agency dashboard hover utilities ?? */
 .ag-card-hover {
   transition: border-color 0.15s ease, background 0.15s ease;
 }
@@ -2920,7 +2920,7 @@ label[for="photo-input"] {
 }
 
 /* ============================================================
-   MARKETING — glow + motion utilities (mk-*)
+   MARKETING ? glow + motion utilities (mk-*)
    Used by the (marketing) landing page for an enterprise,
    "alive" feel: glowing buttons, animated borders, float, etc.
    ============================================================ */
@@ -3067,7 +3067,7 @@ label[for="photo-input"] {
   .mk-reveal { opacity: 1; transform: none; transition: none; }
 }
 
-/* ── SegmiQ Sales design tokens ─────────────────────────────────────────── */
+/* ?? SegmiQ Sales design tokens ??????????????????????????????????????????? */
 /*
   Applied on premium salesperson shells and portaled overlays.
   Alias CRM vars so nested widgets (LogCallForm, GlobalSearch) stay light.
@@ -3106,7 +3106,7 @@ label[for="photo-input"] {
   --sales-border-subtle: #eaecf0;
   --sales-border-strong: #d0d5dd;
 
-  /* Brand (lime accent — not page background) */
+  /* Brand (lime accent ? not page background) */
   --sales-brand: #d4ff4f;
   --sales-brand-hover: #c6f23f;
   --sales-brand-soft: rgba(212, 255, 79, 0.14);
@@ -3140,14 +3140,14 @@ label[for="photo-input"] {
   --sales-sidebar-width-collapsed: 68px;
 
   /* Mobile chrome */
-  --sales-mobile-header-height: 64px;
-  --sales-mobile-nav-height: 72px;
+  --sales-mobile-header-height: 56px;
+  --sales-mobile-nav-height: 64px;
   --sales-mobile-page-padding: 16px;
   --sales-mobile-content-pb: calc(
-    var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 12px
+    var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 10px
   );
   --sales-mobile-fab-bottom: calc(
-    var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 12px
+    var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 10px
   );
 
   /* Semantic */
@@ -3305,7 +3305,7 @@ label[for="photo-input"] {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Salesperson premium dashboard ─────────────────────────────────────── */
+/* ?? Salesperson premium dashboard ??????????????????????????????????????? */
 .sales-dashboard-premium {
   color: var(--sales-text-primary);
 }
@@ -3395,7 +3395,7 @@ label[for="photo-input"] {
 /* Pipeline page: use SegmentedControl (same as Calendar Month/Week/Agenda). */
 
 /*
-  Lead drawer portals to document.body — tokens set above on .pipeline-drawer-light.
+  Lead drawer portals to document.body ? tokens set above on .pipeline-drawer-light.
   Keep input/button remaps for nested CRM widgets.
 */
 .pipeline-drawer-light {
@@ -3417,7 +3417,7 @@ label[for="photo-input"] {
   color: var(--sales-brand-text);
 }
 
-/* Calendar / sales modals portal outside the premium shell — force light controls */
+/* Calendar / sales modals portal outside the premium shell ? force light controls */
 .calendar-modal-premium,
 .sales-modal-premium {
   color-scheme: light;
@@ -3460,7 +3460,7 @@ label[for="photo-input"] {
 }
 
 
-/* ── Premium Calendar workspace ───────────────────────────────────────── */
+/* ?? Premium Calendar workspace ????????????????????????????????????????? */
 .crm-shell-main:has(.sales-dashboard-premium),
 .crm-shell-main:has(.calendar-premium) {
   background: #f7f8fa !important;
@@ -3609,4 +3609,368 @@ html:has(.sales-ds-showcase) body {
   }
 }
 
+
+
+/* ?? Marketing Soft Lime Halo + theme tokens (landing page) ?? */
+.marketing-page {
+  --marketing-bg: #ffffff;
+  --marketing-bg-subtle: #fafbf8;
+  --marketing-bg-soft: #fcfcfb;
+  --marketing-surface: #ffffff;
+  --marketing-surface-elevated: #ffffff;
+  --marketing-text: #101828;
+  --marketing-text-heading: #101114;
+  --marketing-text-secondary: #667085;
+  --marketing-text-label: #344054;
+  --marketing-text-muted: #98a2b3;
+  --marketing-border: #e4e7ec;
+  --marketing-border-subtle: #eaecf0;
+  --marketing-border-strong: #d0d5dd;
+  --marketing-hover: #f9fafb;
+  --marketing-brand: #d4ff4f;
+  --marketing-brand-hover: #c8f244;
+  --marketing-brand-ink: #101828;
+  --marketing-accent-text: #a9da16;
+  --marketing-olive: #718000;
+  --marketing-link: #568000;
+  --marketing-link-hover: #3f6200;
+  --marketing-halo-soft: rgba(212, 255, 79, 0.045);
+  --marketing-halo: rgba(212, 255, 79, 0.065);
+  --marketing-halo-medium: rgba(212, 255, 79, 0.08);
+  --marketing-halo-strong: rgba(212, 255, 79, 0.095);
+  --marketing-preview-shadow: 0 18px 50px rgba(16, 24, 40, 0.08);
+  --marketing-card-shadow: 0 1px 2px rgba(16, 24, 40, 0.02);
+  --marketing-card-shadow-hover: 0 10px 28px rgba(16, 24, 40, 0.055);
+  --marketing-footer-bg: #ffffff;
+  --marketing-quote-mark: rgba(197, 235, 66, 0.6);
+  --marketing-check-bg: #f7fee7;
+  --marketing-check-fg: #568000;
+  --marketing-trust-check: #4d7c0f;
+  --marketing-row-hover: #fcfdf9;
+  --marketing-story-surface: #fbfcf8;
+
+  position: relative;
+  background-color: var(--marketing-bg);
+  color: var(--marketing-text);
+  overflow-x: clip;
+}
+
+/* `.dark` class (React) + html data attr (pre-hydration script) share dark tokens */
+.marketing-page.dark,
+html[data-marketing-theme="dark"] .marketing-page {
+  --marketing-bg: #0b0d0c;
+  --marketing-bg-subtle: #0e110e;
+  --marketing-bg-soft: #0e110e;
+  --marketing-surface: #111411;
+  --marketing-surface-elevated: #151815;
+  --marketing-text: #f7f8f5;
+  --marketing-text-heading: #f7f8f5;
+  --marketing-text-secondary: #b3b8b0;
+  --marketing-text-label: #b3b8b0;
+  --marketing-text-muted: #7d847a;
+  --marketing-border: #272c27;
+  --marketing-border-subtle: #1e231e;
+  --marketing-border-strong: #2b302b;
+  --marketing-hover: #191d19;
+  --marketing-brand: #d4ff4f;
+  --marketing-brand-hover: #c7f238;
+  --marketing-brand-ink: #0b0d0c;
+  --marketing-accent-text: #d4ff4f;
+  --marketing-olive: #c5eb42;
+  --marketing-link: #d4ff4f;
+  --marketing-link-hover: #e2ff79;
+  --marketing-halo-soft: rgba(212, 255, 79, 0.045);
+  --marketing-halo: rgba(212, 255, 79, 0.09);
+  --marketing-halo-medium: rgba(212, 255, 79, 0.1);
+  --marketing-halo-strong: rgba(212, 255, 79, 0.11);
+  --marketing-preview-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+  --marketing-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --marketing-card-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.2);
+  --marketing-footer-bg: #090b0a;
+  --marketing-quote-mark: rgba(212, 255, 79, 0.45);
+  --marketing-check-bg: rgba(212, 255, 79, 0.12);
+  --marketing-check-fg: #d4ff4f;
+  --marketing-trust-check: #a8c94a;
+  --marketing-row-hover: #191d19;
+  --marketing-story-surface: #151815;
+}
+
+html[data-marketing-theme="dark"] {
+  background-color: #0b0d0c;
+  color-scheme: dark;
+}
+
+.marketing-page.dark .marketing-halo--hero::before,
+html[data-marketing-theme="dark"] .marketing-halo--hero::before {
+  background-image: radial-gradient(
+    ellipse clamp(480px, 58vw, 980px) clamp(380px, 48vw, 720px) at 72% 42%,
+    var(--marketing-halo-strong) 0%,
+    var(--marketing-halo) 34%,
+    rgba(212, 255, 79, 0.018) 55%,
+    transparent 72%
+  );
+}
+
+@media (max-width: 1023px) {
+  .marketing-page.dark .marketing-halo--hero::before,
+  html[data-marketing-theme="dark"] .marketing-halo--hero::before {
+    background-image: radial-gradient(
+      ellipse clamp(420px, 90vw, 720px) clamp(360px, 70vw, 560px) at 50% 78%,
+      rgba(212, 255, 79, 0.08) 0%,
+      rgba(212, 255, 79, 0.04) 40%,
+      transparent 70%
+    );
+  }
+}
+
+/* Product preview frames float on dark canvas; internal UI stays light */
+.marketing-page.dark .marketing-product-chrome,
+html[data-marketing-theme="dark"] .marketing-product-chrome {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: var(--marketing-preview-shadow);
+}
+
+.marketing-page.dark .marketing-feature-icon:not(.marketing-feature-icon--whatsapp),
+html[data-marketing-theme="dark"] .marketing-feature-icon:not(.marketing-feature-icon--whatsapp) {
+  background-color: rgba(212, 255, 79, 0.1) !important;
+  border: 1px solid rgba(212, 255, 79, 0.12);
+  color: #d4ff4f !important;
+}
+
+.marketing-page.dark .marketing-feature-icon--whatsapp,
+html[data-marketing-theme="dark"] .marketing-feature-icon--whatsapp {
+  background-color: rgba(37, 211, 102, 0.12) !important;
+  border: 1px solid rgba(37, 211, 102, 0.18);
+}
+
+.marketing-page.dark .marketing-client-logo,
+html[data-marketing-theme="dark"] .marketing-client-logo {
+  opacity: 0.62;
+}
+
+.marketing-page.dark .marketing-client-logo:hover,
+html[data-marketing-theme="dark"] .marketing-client-logo:hover {
+  opacity: 1;
+}
+
+.marketing-page.dark ::selection,
+html[data-marketing-theme="dark"] .marketing-page ::selection {
+  background: rgba(212, 255, 79, 0.25);
+  color: #f7f8f5;
+}
+
+/* Wordmark swap before React applies .dark (FOUC script uses data-marketing-theme) */
+html[data-marketing-theme="dark"] .marketing-page .marketing-wordmark-light {
+  display: none !important;
+}
+html[data-marketing-theme="dark"] .marketing-page .marketing-wordmark-dark {
+  display: block !important;
+}
+
+.marketing-page.dark .marketing-feature-card:hover,
+html[data-marketing-theme="dark"] .marketing-feature-card:hover {
+  background-color: #141814;
+  border-color: #333933;
+}
+
+
+.marketing-halo {
+  position: relative;
+  isolation: isolate;
+}
+
+.marketing-halo::before {
+  content: "";
+  position: absolute;
+  inset: -80px -40px;
+  z-index: -1;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+
+/* Hero ? medium halo behind product (right / lower on mobile) */
+.marketing-halo--hero::before {
+  inset: -100px -60px -40px;
+  background-image: radial-gradient(
+    ellipse clamp(480px, 58vw, 980px) clamp(380px, 48vw, 720px) at 72% 42%,
+    var(--marketing-halo-strong) 0%,
+    var(--marketing-halo) 32%,
+    rgba(212, 255, 79, 0.028) 55%,
+    transparent 72%
+  );
+}
+
+@media (max-width: 1023px) {
+  .marketing-halo--hero::before {
+    background-image: radial-gradient(
+      ellipse clamp(420px, 90vw, 720px) clamp(360px, 70vw, 560px) at 50% 78%,
+      rgba(212, 255, 79, 0.06) 0%,
+      rgba(212, 255, 79, 0.03) 40%,
+      transparent 70%
+    );
+  }
+}
+
+/* Product capabilities ? soft centered halo behind card grid */
+.marketing-halo--center::before {
+  inset: -60px -40px;
+  background-image: radial-gradient(
+    ellipse clamp(560px, 70vw, 1100px) clamp(420px, 50vw, 780px) at 50% 58%,
+    var(--marketing-halo) 0%,
+    rgba(212, 255, 79, 0.03) 45%,
+    transparent 70%
+  );
+}
+
+@media (max-width: 767px) {
+  .marketing-halo--center::before {
+    background-image: radial-gradient(
+      ellipse 95vw 70vw at 50% 55%,
+      rgba(212, 255, 79, 0.05) 0%,
+      transparent 68%
+    );
+  }
+}
+
+/* Team sales showcase ? dual soft halos */
+.marketing-halo--showcase::before {
+  inset: -70px -50px;
+  background-image:
+    radial-gradient(
+      ellipse clamp(420px, 42vw, 700px) clamp(380px, 40vw, 620px) at 22% 55%,
+      var(--marketing-halo-soft) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse clamp(460px, 46vw, 760px) clamp(400px, 42vw, 660px) at 78% 50%,
+      var(--marketing-halo) 0%,
+      rgba(212, 255, 79, 0.03) 48%,
+      transparent 72%
+    );
+}
+
+@media (max-width: 1279px) {
+  .marketing-halo--showcase::before {
+    background-image: radial-gradient(
+      ellipse 90vw 55vw at 50% 50%,
+      rgba(212, 255, 79, 0.05) 0%,
+      transparent 68%
+    );
+  }
+}
+
+/* Customer story ? very soft left ambience */
+.marketing-halo--story::before {
+  inset: -50px -30px;
+  background-image: radial-gradient(
+    ellipse clamp(420px, 48vw, 780px) clamp(320px, 36vw, 560px) at 28% 50%,
+    rgba(212, 255, 79, 0.045) 0%,
+    transparent 65%
+  );
+}
+
+@media (max-width: 767px) {
+  .marketing-halo--story::before {
+    background-image: radial-gradient(
+      ellipse 85vw 50vw at 40% 30%,
+      rgba(212, 255, 79, 0.035) 0%,
+      transparent 68%
+    );
+  }
+}
+
+/* Workflow ? tiny residual center cue only */
+.marketing-halo--workflow::before {
+  inset: -40px -20px;
+  background-image: radial-gradient(
+    ellipse clamp(500px, 55vw, 860px) clamp(280px, 30vw, 480px) at 50% 48%,
+    rgba(212, 255, 79, 0.032) 0%,
+    transparent 68%
+  );
+}
+
+@media (max-width: 767px) {
+  .marketing-halo--workflow::before {
+    opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marketing-page.marketing-theme-ready {
+    transition: background-color 200ms ease, color 160ms ease;
+  }
+}
+
+/* ?? Auth shell (login / forgot / reset) ?? */
+.auth-marketing-halo {
+  background-image: radial-gradient(
+    ellipse at 48% 82%,
+    rgba(212, 255, 79, 0.09),
+    rgba(212, 255, 79, 0.035) 42%,
+    transparent 72%
+  );
+}
+
+.marketing-page.dark .auth-marketing-halo,
+html[data-marketing-theme="dark"] .auth-marketing-halo {
+  background-image: radial-gradient(
+    ellipse at 48% 80%,
+    rgba(212, 255, 79, 0.075),
+    rgba(212, 255, 79, 0.03) 44%,
+    transparent 72%
+  );
+}
+
+.auth-product-fade {
+  background: linear-gradient(to top, var(--marketing-bg) 8%, transparent 100%);
+}
+
+.auth-shell .marketing-product-chrome {
+  box-shadow: 0 20px 55px rgba(16, 24, 40, 0.08);
+}
+
+.marketing-page.dark .auth-shell .marketing-product-chrome,
+html[data-marketing-theme="dark"] .auth-shell .marketing-product-chrome {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+}
+
+/* Theme-compatible browser autofill */
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--marketing-text);
+  caret-color: var(--marketing-text);
+  box-shadow: 0 0 0 1000px var(--marketing-bg) inset;
+  transition: background-color 99999s ease-out;
+}
+
+.marketing-page.dark .auth-input,
+html[data-marketing-theme="dark"] .auth-input {
+  background-color: #111411;
+  border-color: #3a4039;
+}
+
+.marketing-page.dark .auth-input:hover,
+html[data-marketing-theme="dark"] .auth-input:hover {
+  border-color: #4a5249;
+}
+
+.marketing-page.dark .auth-input::placeholder,
+html[data-marketing-theme="dark"] .auth-input::placeholder {
+  color: #6f766d;
+}
+
+.marketing-page.dark .auth-shell > main,
+html[data-marketing-theme="dark"] .auth-shell > main {
+  background-color: #0e110e;
+}
+
+/* Auth pages must fit one viewport ? no document scroll */
+.marketing-page:has(> .auth-shell) {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
 

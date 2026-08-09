@@ -35,7 +35,7 @@ export default function SegmiqWordmark({
           alt="Segmiq"
           width={width}
           height={height}
-          className={`${className} dark:hidden`}
+          className={`${className} marketing-wordmark-light dark:hidden`}
           priority={priority}
         />
         <Image
@@ -43,7 +43,7 @@ export default function SegmiqWordmark({
           alt="Segmiq"
           width={width}
           height={height}
-          className={`${className} hidden dark:block`}
+          className={`${className} marketing-wordmark-dark hidden dark:block`}
           priority={priority}
         />
       </>

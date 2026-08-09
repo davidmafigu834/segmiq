@@ -438,11 +438,11 @@ export function SalesQuotesClient() {
       {!neverQuoted ? (
         <>
           {/* Header actions */}
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="secondary"
               size="md"
-              className="h-10 rounded-[10px] md:hidden"
+              className="h-10 min-w-0 flex-1 rounded-[10px] md:hidden md:flex-none"
               leftIcon={<ListFilter size={16} strokeWidth={1.8} />}
               onClick={() => setFiltersOpen(true)}
             >
@@ -456,7 +456,7 @@ export function SalesQuotesClient() {
             <Button
               variant="primary"
               size="md"
-              className="h-10 rounded-[10px]"
+              className="h-10 shrink-0 rounded-[10px] md:ml-auto"
               leftIcon={<FilePlus2 size={16} strokeWidth={1.8} />}
               onClick={() => setCreateOpen(true)}
             >

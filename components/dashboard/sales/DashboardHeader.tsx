@@ -39,12 +39,12 @@ export function DashboardHeader({
   const greeting = `Good ${greetingPart()}, ${firstName}`;
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex min-h-10 items-center justify-between gap-3">
-        <p className="hidden min-w-0 truncate text-[11px] font-medium tracking-[0.06em] text-[#98A2B3] md:block">
+    <div className="space-y-2 layout:space-y-1.5">
+      <div className="hidden min-h-10 items-center justify-between gap-3 layout:flex">
+        <p className="min-w-0 truncate text-[11px] font-medium tracking-[0.06em] text-[#98A2B3]">
           {dateLabel}
         </p>
-        <div className="ml-auto hidden shrink-0 flex-nowrap items-center justify-end gap-2 layout:flex">
+        <div className="ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-2">
           <div className="sd-search-wrap">
             <GlobalSearch role={notificationRole} />
           </div>
@@ -140,10 +140,10 @@ export function DashboardHeader({
       </div>
 
       <div className="min-w-0">
-        <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.03em] text-[#101828] sm:text-[28px] layout:text-[30px]">
+        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-[#101828] sm:text-[26px] layout:text-[30px]">
           {greeting}
         </h1>
-        <p className="mt-1.5 text-[13px] text-[#667085] sm:text-[14px]">
+        <p className="mt-1 text-[13px] text-[#667085] sm:mt-1.5 sm:text-[14px]">
           Here’s what’s happening with your pipeline today.
         </p>
       </div>

@@ -21,7 +21,7 @@ export function ToolboxHeaderSearch() {
         router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
       }}
       placeholder="Search tools..."
-      className="w-full sm:w-[260px]"
+      className="hidden w-full sm:w-[260px] layout:block"
       id="toolbox-search"
     />
   );

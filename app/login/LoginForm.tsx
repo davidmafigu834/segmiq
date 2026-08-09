@@ -1,11 +1,10 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import { sanitizeCallbackPath } from "@/lib/auth/post-login-redirect";
 
 function reasonBanner(reason: string | null): { message: string; tone: "warning" | "danger" } | null {
@@ -14,12 +13,16 @@ function reasonBanner(reason: string | null): { message: string; tone: "warning"
   }
   if (reason === "no_client") {
     return {
-      message: "Your account is not linked to a client workspace. Ask your manager or Segmiq support to fix your user setup.",
+      message:
+        "Your account is not linked to a client workspace. Ask your manager or Segmiq support to fix your user setup.",
       tone: "danger",
     };
   }
   return null;
 }
+
+const inputClass =
+  "auth-input h-12 w-full rounded-[9px] border border-[var(--marketing-border-strong)] bg-[var(--marketing-bg)] px-3.5 text-[15px] text-[var(--marketing-text)] placeholder:text-[var(--marketing-text-muted)] transition-[border-color,box-shadow] focus:border-[#A8D52C] focus:outline-none focus:ring-2 focus:ring-[rgba(212,255,79,0.14)] disabled:opacity-60";
 
 function LoginFormInner() {
   const router = useRouter();
@@ -81,12 +84,12 @@ function LoginFormInner() {
         password,
       });
       if (res?.error || !res?.ok) {
-        setError("Invalid email or password. Check your details or use Forgot password.");
+        setError("Email or password is incorrect.");
         return;
       }
       await resolveRedirectAfterSignIn();
     } catch {
-      setError("Sign in failed. Please try again.");
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -94,163 +97,147 @@ function LoginFormInner() {
 
   if (status === "loading" || status === "authenticated") {
     return (
-      <div className="flex w-full max-w-[420px] items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface-card)] p-10 text-[var(--text-tertiary)]">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      <div className="flex w-full items-center justify-center py-16 text-[var(--marketing-text-muted)]">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
         Opening workspace…
       </div>
     );
   }
 
   return (
-    <div className="relative w-full max-w-[420px]">
-      <div className="mb-8 flex flex-col items-center lg:items-start">
-        <Link href="/" className="mb-6 inline-flex lg:hidden">
-          <Image
-            src="/segmiq-wordmark.png"
-            alt="Segmiq"
-            width={150}
-            height={26}
-            className="h-6 w-auto"
-            priority
-          />
-        </Link>
-
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent-fg)]">
-          Segmiq CRM
-        </p>
-        <h1 className="mt-2 font-display text-[30px] leading-tight tracking-tight text-[var(--text-primary)] sm:text-[34px]">
+    <div className="w-full">
+      <div>
+        <h1
+          className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-[var(--marketing-text-heading)] sm:text-[30px]"
+          style={{ fontWeight: 650 }}
+        >
           Welcome back
         </h1>
-        <p className="mt-2 max-w-sm text-[14px] leading-relaxed text-[var(--text-secondary)]">
-          Sign in to manage contacts, conversations, and your pipeline.
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--marketing-text-secondary)]">
+          Sign in to your SegmiQ account.
         </p>
       </div>
 
-      <div className="login-form-card rounded-2xl border border-[var(--border)] bg-[var(--surface-card)] p-6 shadow-[var(--shadow-lg)] sm:p-8">
-        {banner ? (
-          <div
-            className={`mb-5 flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm ${
-              banner.tone === "warning"
-                ? "border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)]"
-                : "border-[var(--danger-border)] bg-[var(--danger-bg)] text-[var(--danger-fg)]"
-            }`}
+      {banner ? (
+        <div
+          role="status"
+          className={`mt-7 flex items-start gap-2.5 rounded-[9px] border px-3.5 py-3 text-[13px] ${
+            banner.tone === "warning"
+              ? "border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.08)] text-[var(--marketing-text)]"
+              : "border-[rgba(239,68,68,0.35)] bg-[#FEF2F2] text-[#991B1B] dark:bg-[rgba(127,29,29,0.35)] dark:text-[#FECACA]"
+          }`}
+        >
+          {banner.tone === "warning" ? (
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          ) : (
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          )}
+          <span>{banner.message}</span>
+        </div>
+      ) : null}
+
+      <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
+        <div>
+          <label
+            className="mb-1.5 block text-[13px] font-medium text-[var(--marketing-text-label)]"
+            htmlFor="email"
           >
-            {banner.tone === "warning" ? (
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            ) : (
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-            )}
-            <span>{banner.message}</span>
+            Email address
+          </label>
+          <input
+            id="email"
+            type="email"
+            inputMode="email"
+            autoCapitalize="off"
+            autoComplete="email"
+            placeholder="you@company.com"
+            required
+            disabled={loading}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "login-error" : undefined}
+            className={inputClass}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <div className="mb-1.5 flex items-center justify-between gap-3">
+            <label
+              className="text-[13px] font-medium text-[var(--marketing-text-label)]"
+              htmlFor="password"
+            >
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-[12px] font-semibold text-[var(--marketing-link)] transition-colors hover:text-[var(--marketing-link-hover)]"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              required
+              disabled={loading}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "login-error" : undefined}
+              className={`${inputClass} pr-12`}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-1.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg text-[var(--marketing-text-muted)] transition-colors hover:text-[var(--marketing-text)]"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        {error ? (
+          <div
+            id="login-error"
+            role="alert"
+            className="flex items-start gap-2 rounded-[9px] border border-[rgba(239,68,68,0.35)] bg-[#FEF2F2] px-3.5 py-2.5 text-[13px] text-[#B91C1C] dark:bg-[rgba(127,29,29,0.35)] dark:text-[#FECACA]"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <span>{error}</span>
           </div>
         ) : null}
 
-        <form className="space-y-5" onSubmit={onSubmit}>
-          <div>
-            <label className="mb-2 block text-[13px] font-medium text-[var(--text-primary)]" htmlFor="email">
-              Work email
-            </label>
-            <div className="relative">
-              <Mail
-                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
-                aria-hidden
-              />
-              <input
-                id="email"
-                type="email"
-                inputMode="email"
-                autoCapitalize="off"
-                autoComplete="email"
-                placeholder="you@company.com"
-                required
-                className="login-input h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] pl-10 pr-4 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-          </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[9px] bg-[var(--marketing-brand)] text-[14px] font-semibold text-[var(--marketing-brand-ink)] transition-colors hover:bg-[var(--marketing-brand-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--marketing-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--marketing-surface)] disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ fontWeight: 650 }}
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              Signing in…
+            </>
+          ) : (
+            "Sign in"
+          )}
+        </button>
+      </form>
 
-          <div>
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <label className="text-[13px] font-medium text-[var(--text-primary)]" htmlFor="password">
-                Password
-              </label>
-              <Link
-                href="/forgot-password"
-                className="text-[12px] font-medium text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-fg)]"
-              >
-                Forgot password?
-              </Link>
-            </div>
-            <div className="relative">
-              <Lock
-                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
-                aria-hidden
-              />
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                required
-                className="login-input h-12 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] pl-10 pr-11 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          {error ? (
-            <div className="rounded-xl border border-[var(--danger-border)] bg-[var(--danger-bg)] px-3.5 py-2.5 text-sm text-[var(--danger-fg)]">
-              {error}
-            </div>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-[14px] font-semibold text-[var(--accent-ink)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Signing in…
-              </>
-            ) : (
-              <>
-                Continue to workspace
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
-        </form>
-      </div>
-
-      <p className="mt-6 text-center text-[13px] leading-relaxed text-[var(--text-tertiary)] lg:text-left">
-        Accounts are provisioned by Segmiq.{" "}
-        <Link href="/contact" className="font-medium text-[var(--accent-fg)] hover:underline">
+      <p className="mt-6 text-[13px] leading-relaxed text-[var(--marketing-text-secondary)]">
+        Accounts are provisioned by SegmiQ.{" "}
+        <Link
+          href="/contact"
+          className="font-semibold text-[var(--marketing-link)] hover:text-[var(--marketing-link-hover)]"
+        >
           Need access?
         </Link>
       </p>
-
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] text-[var(--text-tertiary)] lg:justify-start">
-        <Link href="/legal/privacy" className="transition-colors hover:text-[var(--text-primary)]">
-          Privacy
-        </Link>
-        <Link href="/legal/terms" className="transition-colors hover:text-[var(--text-primary)]">
-          Terms
-        </Link>
-        <Link href="/" className="transition-colors hover:text-[var(--text-primary)]">
-          Back to segmiq.com
-        </Link>
-      </div>
     </div>
   );
 }
@@ -259,7 +246,8 @@ export function LoginForm() {
   return (
     <Suspense
       fallback={
-        <div className="w-full max-w-[420px] rounded-2xl border border-[var(--border)] bg-[var(--surface-card)] p-8 text-center text-[var(--text-tertiary)]">
+        <div className="flex w-full items-center justify-center py-16 text-[var(--marketing-text-muted)]">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
           Loading…
         </div>
       }

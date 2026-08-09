@@ -25,17 +25,22 @@ export function persistCrmTheme(theme: CrmTheme) {
   }
 }
 
-/** CRM app routes use CRM tokens (see globals.css). Excludes Segmiq Cloud. */
+/** CRM app routes use CRM tokens (see globals.css). Excludes Segmiq Cloud and public auth. */
 export function isCrmPath(pathname: string): boolean {
   if (pathname.startsWith("/cloud")) return false;
+  // Public auth uses MarketingThemeProvider / AuthLayout — not CRM chrome.
+  if (
+    pathname === "/login" ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password")
+  ) {
+    return false;
+  }
   return (
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/client") ||
     pathname.startsWith("/sales") ||
     pathname.startsWith("/solo") ||
-    pathname === "/login" ||
-    pathname.startsWith("/onboard") ||
-    pathname.startsWith("/forgot-password") ||
-    pathname.startsWith("/reset-password")
+    pathname.startsWith("/onboard")
   );
 }

@@ -321,7 +321,7 @@ export function SalesLeadsClient({
   return (
     <div className="w-full space-y-4">
       {!neverLeads ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
           <div className="hidden min-w-0 flex-1 flex-wrap items-center gap-2 md:flex">
           <MenuSelect
             aria-label="Lead source"
@@ -439,7 +439,7 @@ export function SalesLeadsClient({
           <Button
             variant="secondary"
             size="md"
-            className="h-10 shrink-0 rounded-[10px] md:hidden"
+            className="h-10 min-w-0 flex-1 rounded-[10px] md:hidden"
             leftIcon={<ListFilter size={16} strokeWidth={1.8} />}
             onClick={() => setFiltersOpen(true)}
           >
@@ -453,7 +453,7 @@ export function SalesLeadsClient({
           <Button
             variant="primary"
             size="md"
-            className="ml-auto h-10 shrink-0 rounded-[10px]"
+            className="h-10 shrink-0 rounded-[10px] md:ml-auto"
             leftIcon={<Plus size={16} strokeWidth={1.8} />}
             onClick={() => setAddOpen(true)}
           >

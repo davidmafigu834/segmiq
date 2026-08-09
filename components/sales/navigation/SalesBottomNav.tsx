@@ -28,11 +28,11 @@ function NavIcon({
       return (
         <span
           className={cn(
-            "flex h-11 w-11 items-center justify-center rounded-full",
-            active ? "bg-sales-brand" : "bg-[rgba(212,255,79,0.35)]"
+            "flex h-10 w-10 items-center justify-center rounded-full shadow-[0_2px_8px_rgba(212,255,79,0.35)]",
+            active ? "bg-sales-brand" : "bg-[rgba(212,255,79,0.4)]"
           )}
         >
-          <SiWhatsapp size={20} color="#101828" aria-hidden />
+          <SiWhatsapp size={18} color="#101828" aria-hidden />
         </span>
       );
     }
@@ -49,7 +49,7 @@ function NavIcon({
   return (
     <Icon
       size={20}
-      strokeWidth={1.75}
+      strokeWidth={active ? 2 : 1.75}
       className={active ? "text-[#4E6400]" : "text-sales-text-secondary"}
       aria-hidden
     />
@@ -75,11 +75,11 @@ export function SalesBottomNav({
 
   return (
     <nav
-      className="sales-mobile-bottom-nav fixed inset-x-0 bottom-0 z-[40] border-t border-sales-border bg-sales-surface pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-4px_20px_rgba(16,24,40,0.05)] layout:hidden"
+      className="sales-mobile-bottom-nav fixed inset-x-0 bottom-0 z-[40] border-t border-sales-border-subtle bg-sales-surface/95 backdrop-blur-md pb-[env(safe-area-inset-bottom,0px)] layout:hidden"
       aria-label="Sales mobile navigation"
       style={{ height: "calc(var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px))" }}
     >
-      <div className="mx-auto flex h-[var(--sales-mobile-nav-height)] max-w-lg items-stretch justify-between px-1">
+      <div className="mx-auto grid h-[var(--sales-mobile-nav-height)] max-w-lg grid-cols-5 items-stretch px-1">
         {items.map((item) => {
           const active = item.match(pathname);
           const badge = item.badgeKey ? badges[item.badgeKey] : undefined;
@@ -91,24 +91,25 @@ export function SalesBottomNav({
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium transition-colors",
+                "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
                 active ? "text-[#101828]" : "text-sales-text-secondary"
               )}
             >
               <span
                 className={cn(
-                  "relative flex items-center justify-center rounded-[10px] transition-colors",
-                  !isWa && active && "bg-[rgba(212,255,79,0.18)] px-3 py-1"
+                  "relative flex h-8 items-center justify-center rounded-[10px] transition-colors",
+                  !isWa && "w-11",
+                  !isWa && active && "bg-[rgba(212,255,79,0.2)]"
                 )}
               >
                 <NavIcon icon={item.icon} active={active} emphasized={isWa} />
                 {showBadge ? (
-                  <span className="absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[rgba(212,255,79,0.9)] px-1 text-[9px] font-semibold text-[#4E6500]">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[rgba(212,255,79,0.95)] px-1 text-[9px] font-semibold text-[#4E6500]">
                     {badge! > 99 ? "99+" : badge}
                   </span>
                 ) : null}
               </span>
-              <span className="truncate">{item.mobileLabel ?? item.label}</span>
+              <span className="max-w-full truncate leading-none">{item.mobileLabel ?? item.label}</span>
             </Link>
           );
         })}
@@ -116,7 +117,7 @@ export function SalesBottomNav({
         <button
           type="button"
           className={cn(
-            "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[10px] font-medium transition-colors",
+            "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
             moreOpen ? "text-[#101828]" : "text-sales-text-secondary"
           )}
           aria-label="More"
@@ -125,18 +126,18 @@ export function SalesBottomNav({
         >
           <span
             className={cn(
-              "flex items-center justify-center rounded-[10px] px-3 py-1",
-              moreOpen && "bg-[rgba(212,255,79,0.18)]"
+              "flex h-8 w-11 items-center justify-center rounded-[10px] transition-colors",
+              moreOpen && "bg-[rgba(212,255,79,0.2)]"
             )}
           >
             <Ellipsis
               size={20}
-              strokeWidth={1.75}
+              strokeWidth={moreOpen ? 2 : 1.75}
               className={moreOpen ? "text-[#4E6400]" : "text-sales-text-secondary"}
               aria-hidden
             />
           </span>
-          <span>More</span>
+          <span className="leading-none">More</span>
         </button>
       </div>
     </nav>
