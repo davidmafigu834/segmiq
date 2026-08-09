@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CircleHelp, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { SalesNavItem, SalesNavSection } from "@/components/sales/navigation/SalesNavItem";
 import {
   displaySalesName,
@@ -38,6 +39,9 @@ export function SalesSidebar({
   onToggleCollapsed?: () => void;
 }) {
   const pathname = usePathname();
+  const crmTheme = useCrmThemeOptional();
+  const wordmarkSrc =
+    crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
   const items = resolveSalesNavItems(isSolo);
   const salesItems = salesNavItemsBySection(items, "sales");
   const toolsItems = salesNavItemsBySection(items, "tools");
@@ -74,7 +78,7 @@ export function SalesSidebar({
               />
             ) : (
               <Image
-                src="/segmiq-wordmark-black.png"
+                src={wordmarkSrc}
                 alt="SegmiQ"
                 width={100}
                 height={24}
@@ -189,12 +193,12 @@ export function SalesSidebar({
                 className="h-8 w-8 rounded-full object-cover ring-1 ring-[var(--sales-sidebar-border)]"
               />
             ) : (
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F2F4F7] text-[11px] font-semibold text-[#101828] ring-1 ring-[var(--sales-sidebar-border)]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--sales-neutral-100)] text-[11px] font-semibold text-sales-text-primary ring-1 ring-[var(--sales-sidebar-border)]">
                 {salesNameInitials(userName)}
               </span>
             )}
             <span className="min-w-0">
-              <span className="block truncate text-[13px] font-semibold text-[#101828]">
+              <span className="block truncate text-[13px] font-semibold text-sales-text-primary">
                 {displaySalesName(userName)}
               </span>
               <span className="block truncate text-[11px] text-[var(--sales-sidebar-muted)]">

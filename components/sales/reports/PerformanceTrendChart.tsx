@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SALES_COLORS } from "@/lib/sales/design-tokens";
+import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
 import { ChartEmptyState } from "@/components/sales/ui/Charts";
 import { formatDealCurrency } from "@/lib/sales/format";
 
@@ -21,6 +21,7 @@ export function PerformanceTrendChart({
   data: Array<{ label: string; leadsCreated: number; dealsWon: number; revenue: number }>;
   currency?: string;
 }) {
+  const colors = useSalesChartColors();
   const has =
     data.some((d) => d.leadsCreated > 0 || d.dealsWon > 0 || d.revenue > 0);
   if (!has) {
@@ -35,16 +36,16 @@ export function PerformanceTrendChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid vertical={false} stroke={SALES_COLORS.borderSubtle} strokeDasharray="3 6" />
+        <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 6" />
         <XAxis
           dataKey="label"
-          tick={{ fill: SALES_COLORS.textMuted, fontSize: 11 }}
+          tick={{ fill: colors.axis, fontSize: 11 }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           yAxisId="left"
-          tick={{ fill: SALES_COLORS.textMuted, fontSize: 11 }}
+          tick={{ fill: colors.axis, fontSize: 11 }}
           axisLine={false}
           tickLine={false}
           width={32}
@@ -53,7 +54,7 @@ export function PerformanceTrendChart({
         <YAxis
           yAxisId="right"
           orientation="right"
-          tick={{ fill: SALES_COLORS.textMuted, fontSize: 11 }}
+          tick={{ fill: colors.axis, fontSize: 11 }}
           axisLine={false}
           tickLine={false}
           width={44}
@@ -66,7 +67,9 @@ export function PerformanceTrendChart({
         <Tooltip
           contentStyle={{
             borderRadius: 12,
-            border: `1px solid ${SALES_COLORS.border}`,
+            border: `1px solid ${colors.border}`,
+            backgroundColor: colors.surfaceRaised,
+            color: colors.textPrimary,
             boxShadow: "0 4px 12px rgba(16,24,40,0.08)",
             fontSize: 12,
           }}
@@ -83,7 +86,7 @@ export function PerformanceTrendChart({
           yAxisId="left"
           dataKey="leadsCreated"
           name="Leads created"
-          fill={SALES_COLORS.brand}
+          fill={colors.brand}
           radius={[4, 4, 0, 0]}
           maxBarSize={28}
         />
@@ -92,7 +95,7 @@ export function PerformanceTrendChart({
           type="monotone"
           dataKey="dealsWon"
           name="Deals won"
-          stroke={SALES_COLORS.info}
+          stroke={colors.info}
           strokeWidth={2}
           dot={false}
           activeDot={{ r: 3 }}
@@ -102,7 +105,7 @@ export function PerformanceTrendChart({
           type="monotone"
           dataKey="revenue"
           name="Revenue"
-          stroke={SALES_COLORS.purple}
+          stroke={colors.purple}
           strokeWidth={2}
           dot={false}
           activeDot={{ r: 3 }}

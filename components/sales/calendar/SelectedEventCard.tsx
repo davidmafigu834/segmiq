@@ -35,12 +35,12 @@ export function SelectedEventCard({
 }) {
   if (!event) {
     return (
-      <div className="cal-card p-3">
-        <h2 className="mb-2 text-[14px] font-semibold text-[#101828]">Selected event</h2>
-        <div className="flex flex-col items-center rounded-[10px] bg-[#F9FAFB] px-3 py-5 text-center">
-          <MousePointerClick size={18} strokeWidth={1.8} className="text-[#98A2B3]" aria-hidden />
-          <p className="mt-2 text-[13px] font-semibold text-[#101828]">Select an event</p>
-          <p className="mt-0.5 max-w-[220px] text-[12px] text-[#667085]">
+      <div className="cal-card border-sales-border bg-sales-surface p-3 text-sales-text-primary">
+        <h2 className="mb-2 text-[14px] font-semibold text-sales-text-primary">Selected event</h2>
+        <div className="flex flex-col items-center rounded-[10px] bg-sales-surface-hover px-3 py-5 text-center">
+          <MousePointerClick size={18} strokeWidth={1.8} className="text-sales-text-muted" aria-hidden />
+          <p className="mt-2 text-[13px] font-semibold text-sales-text-primary">Select an event</p>
+          <p className="mt-0.5 max-w-[220px] text-[12px] text-sales-text-secondary">
             Customer details and quick actions will appear here.
           </p>
         </div>
@@ -62,7 +62,7 @@ export function SelectedEventCard({
         : "Follow-up call";
 
   return (
-    <div className="cal-card p-3">
+    <div className="cal-card border-sales-border bg-sales-surface p-3 text-sales-text-primary">
       <div className="mb-2.5 flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span
@@ -70,12 +70,12 @@ export function SelectedEventCard({
             style={{ background: getEventTypeColor(event.kind) }}
             aria-hidden
           />
-          <h2 className="truncate text-[14px] font-semibold text-[#101828]">{title}</h2>
+          <h2 className="truncate text-[14px] font-semibold text-sales-text-primary">{title}</h2>
         </div>
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex items-center gap-1 rounded-[8px] px-2 py-1 text-[12px] font-semibold text-[#667085] transition-colors hover:bg-[#F9FAFB] hover:text-[#101828]"
+          className="inline-flex items-center gap-1 rounded-[8px] px-2 py-1 text-[12px] font-semibold text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary"
           aria-label="Edit event"
         >
           <Pencil size={13} strokeWidth={1.8} aria-hidden />
@@ -84,7 +84,7 @@ export function SelectedEventCard({
       </div>
 
       {salesContext ? (
-        <p className="mb-2.5 rounded-[8px] bg-[#F9FAFB] px-2.5 py-1.5 text-[12px] font-medium text-[#667085]">
+        <p className="mb-2.5 rounded-[8px] bg-sales-surface-hover px-2.5 py-1.5 text-[12px] font-medium text-sales-text-secondary">
           {salesContext}
         </p>
       ) : null}
@@ -92,13 +92,13 @@ export function SelectedEventCard({
       <dl className="space-y-2">
         {event.customerName ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-[#98A2B3]">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
               Customer
             </dt>
             <dd>
               <Link
                 href={leadHref}
-                className="text-[13px] font-semibold text-[#101828] underline-offset-2 hover:underline"
+                className="text-[13px] font-semibold text-sales-text-primary underline-offset-2 hover:underline"
               >
                 {event.customerName}
               </Link>
@@ -108,11 +108,11 @@ export function SelectedEventCard({
 
         {event.pipelineStage ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-[#98A2B3]">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
               Pipeline
             </dt>
             <dd>
-              <span className="inline-flex rounded-md bg-[#F2F4F7] px-2 py-0.5 text-[12px] font-medium text-[#101828]">
+              <span className="inline-flex rounded-md bg-[var(--sales-neutral-100)] px-2 py-0.5 text-[12px] font-medium text-sales-text-primary">
                 {event.pipelineStage}
               </span>
             </dd>
@@ -121,7 +121,7 @@ export function SelectedEventCard({
 
         {event.phone ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-[#98A2B3]">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
               Phone
             </dt>
             <dd>
@@ -137,36 +137,36 @@ export function SelectedEventCard({
 
         {event.location ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-[#98A2B3]">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
               Location
             </dt>
-            <dd className="text-[13px] text-[#101828]">{event.location}</dd>
+            <dd className="text-[13px] text-sales-text-primary">{event.location}</dd>
           </div>
         ) : null}
 
         <div>
-          <dt className="text-[11px] font-medium uppercase tracking-wide text-[#98A2B3]">
+          <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
             Time
           </dt>
-          <dd className="text-[13px] text-[#101828]">{formatEventRange(event)}</dd>
+          <dd className="text-[13px] text-sales-text-primary">{formatEventRange(event)}</dd>
         </div>
 
         {event.notes ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-[#98A2B3]">
+            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
               Notes
             </dt>
-            <dd className="text-[13px] text-[#101828]">{event.notes}</dd>
+            <dd className="text-[13px] text-sales-text-primary">{event.notes}</dd>
           </div>
         ) : null}
       </dl>
 
       {(event.pipelineStage || event.quoteStatus) && !event.overdue ? (
-        <div className="mt-3 rounded-[8px] border border-[#E4E7EC] bg-[#FCFCFD] px-2.5 py-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3]">
+        <div className="mt-3 rounded-[8px] border border-sales-border bg-sales-surface-subtle px-2.5 py-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
             Prepare for this event
           </p>
-          <ul className="mt-1 space-y-0.5 text-[12px] text-[#667085]">
+          <ul className="mt-1 space-y-0.5 text-[12px] text-sales-text-secondary">
             {event.pipelineStage ? <li>Pipeline: {event.pipelineStage}</li> : null}
             {event.quoteNumber ? (
               <li>
@@ -197,7 +197,7 @@ export function SelectedEventCard({
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Link
           href={whatsappHref}
-          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[9px] border border-[#E4E7EC] bg-white text-[12px] font-semibold text-[#101828] transition-colors hover:bg-[#F9FAFB]"
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border bg-sales-surface text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
           aria-label={`WhatsApp ${customerLabel}`}
         >
           <SiWhatsapp size={14} color="#25D366" aria-hidden />
@@ -206,7 +206,7 @@ export function SelectedEventCard({
         {event.phone ? (
           <a
             href={`tel:${event.phone}`}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[9px] border border-[#E4E7EC] bg-white text-[12px] font-semibold text-[#101828] transition-colors hover:bg-[#F9FAFB]"
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border bg-sales-surface text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
             aria-label={`Call ${customerLabel}`}
           >
             <Phone size={14} strokeWidth={1.8} aria-hidden />
@@ -216,7 +216,7 @@ export function SelectedEventCard({
           <button
             type="button"
             disabled
-            className="inline-flex h-10 cursor-not-allowed items-center justify-center gap-1.5 rounded-[9px] border border-[#E4E7EC] text-[12px] font-semibold text-[#98A2B3]"
+            className="inline-flex h-10 cursor-not-allowed items-center justify-center gap-1.5 rounded-[9px] border border-sales-border text-[12px] font-semibold text-sales-text-muted"
             title="No phone number on this lead"
           >
             <Phone size={14} strokeWidth={1.8} aria-hidden />
@@ -226,7 +226,7 @@ export function SelectedEventCard({
         <button
           type="button"
           onClick={onReschedule}
-          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[9px] border border-[#E4E7EC] bg-white text-[12px] font-semibold text-[#101828] transition-colors hover:bg-[#F9FAFB]"
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border bg-sales-surface text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
           aria-label="Reschedule event"
         >
           <CalendarClock size={14} strokeWidth={1.8} aria-hidden />
@@ -235,7 +235,7 @@ export function SelectedEventCard({
         <button
           type="button"
           onClick={onLogNote}
-          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[9px] border border-[#E4E7EC] bg-white text-[12px] font-semibold text-[#101828] transition-colors hover:bg-[#F9FAFB]"
+          className="inline-flex h-10 items-center justify-center gap-1.5 rounded-[9px] border border-sales-border bg-sales-surface text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
           aria-label="Log note"
         >
           <NotebookPen size={14} strokeWidth={1.8} aria-hidden />

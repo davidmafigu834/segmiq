@@ -129,7 +129,7 @@ export function SetGoalDialog({
         <div>
           <FieldLabel>Period</FieldLabel>
           {mode === "edit" ? (
-            <p className="mt-1.5 rounded-[10px] border border-sales-border bg-[#F9FAFB] px-3 py-2.5 text-[13px] font-medium text-sales-text-primary">
+            <p className="mt-1.5 rounded-[10px] border border-sales-border bg-sales-surface-hover px-3 py-2.5 text-[13px] font-medium text-sales-text-primary">
               {goalPeriodBounds(periodKey).label}
             </p>
           ) : (

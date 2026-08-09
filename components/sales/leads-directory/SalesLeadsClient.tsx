@@ -386,7 +386,7 @@ export function SalesLeadsClient({
                   aria-label="Close filters"
                   onClick={() => setFiltersOpen(false)}
                 />
-                <div className="absolute right-0 z-30 mt-2 w-72 space-y-3 rounded-[12px] border border-sales-border bg-white p-4 shadow-sales-popover">
+                <div className="absolute right-0 z-30 mt-2 w-72 space-y-3 rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-popover">
                   <p className="text-[12px] font-semibold text-sales-text-primary">Advanced filters</p>
                   <div>
                     <p className="mb-1.5 text-[11px] font-medium text-sales-text-muted">Intent</p>
@@ -643,7 +643,7 @@ export function SalesLeadsClient({
               label="Hot leads"
               value={String(data.kpis.hot.value)}
               icon={Target}
-              iconTint="bg-[#FEF3F2] text-[#EF4444]"
+              iconTint="bg-sales-danger-soft text-sales-danger"
               tip="Score ≥ 70 (SegmiQ Hot threshold)."
             />
             <ReportKpiCard
@@ -651,7 +651,7 @@ export function SalesLeadsClient({
               value={String(data.kpis.won.value)}
               trend={data.kpis.won.trend}
               icon={Trophy}
-              iconTint="bg-[#ECFDF3] text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-[#16A34A]"
             />
             <ReportKpiCard
               label="Conversion rate"
@@ -665,7 +665,7 @@ export function SalesLeadsClient({
                 data.kpis.conversionRate.value == null ? "No closed deals yet" : undefined
               }
               icon={TrendingUp}
-              iconTint="bg-[#ECFDF3] text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-[#16A34A]"
               tip={data.kpis.conversionRate.formula}
             />
           </div>
@@ -1019,7 +1019,7 @@ function LeadTableRow({
             <MoreVertical strokeWidth={1.8} />
           </IconButton>
           {menuOpen ? (
-            <div className="absolute right-0 top-9 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-white py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
+            <div className="absolute right-0 top-9 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
               <MenuItem icon={<ExternalLink size={14} />} label="Open lead" onClick={onOpen} />
               <MenuItem icon={<SiWhatsapp size={14} color="#25D366" />} label="Message on WhatsApp" onClick={onWhatsApp} />
               {phone ? <MenuItem icon={<Phone size={14} />} label="Call" onClick={onCall} /> : null}

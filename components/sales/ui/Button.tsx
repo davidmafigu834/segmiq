@@ -15,9 +15,9 @@ export type SalesButtonSize = "sm" | "md" | "lg";
 
 const variantClass: Record<SalesButtonVariant, string> = {
   primary:
-    "bg-sales-brand text-sales-brand-text hover:bg-sales-brand-hover active:bg-[#B8E62F] border border-transparent",
+    "bg-sales-brand text-sales-brand-text hover:bg-sales-brand-hover active:bg-[var(--sales-brand-hover)] border border-transparent",
   secondary:
-    "bg-sales-surface text-sales-text-primary border border-sales-border-strong hover:bg-sales-surface-hover hover:border-sales-border-strong active:bg-sales-neutral-100",
+    "bg-sales-surface text-sales-text-primary border border-sales-border-strong hover:bg-sales-surface-hover hover:border-sales-border-strong active:bg-[var(--sales-neutral-100)]",
   ghost:
     "bg-transparent text-sales-text-secondary border border-transparent hover:bg-sales-surface-hover hover:text-sales-text-primary",
   danger:
@@ -66,7 +66,7 @@ export const Button = forwardRef<HTMLButtonElement, SalesButtonProps>(
         className={cn(
           "inline-flex items-center justify-center font-semibold whitespace-nowrap transition-colors duration-150",
           "focus:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
-          "disabled:opacity-45 disabled:cursor-not-allowed disabled:bg-[#F2F4F7] disabled:text-sales-text-muted disabled:border-sales-border",
+          "disabled:opacity-45 disabled:cursor-not-allowed disabled:bg-[var(--sales-neutral-100)] disabled:text-sales-text-muted disabled:border-sales-border",
           variantClass[variant],
           variant !== "link" ? sizeClass[size] : "",
           className

@@ -526,7 +526,7 @@ export function SalesQuotesClient() {
                       aria-label="Close filters"
                       onClick={() => setFiltersOpen(false)}
                     />
-                    <div className="absolute right-0 z-30 mt-2 w-64 rounded-[12px] border border-sales-border bg-white p-4 shadow-sales-popover">
+                    <div className="absolute right-0 z-30 mt-2 w-64 rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-popover">
                       <p className="text-[12px] font-semibold text-sales-text-primary">Advanced filters</p>
                       <label className="mt-3 flex cursor-pointer items-start gap-2.5">
                         <input
@@ -713,14 +713,14 @@ export function SalesQuotesClient() {
               value={String(data.kpis.accepted.value)}
               trend={data.kpis.accepted.trend}
               icon={CircleCheck}
-              iconTint="bg-[#ECFDF3] text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-[#16A34A]"
             />
             <ReportKpiCard
               label="Declined"
               value={String(data.kpis.declined.value)}
               trend={data.kpis.declined.trend}
               icon={CircleX}
-              iconTint="bg-[#FEF3F2] text-[#EF4444]"
+              iconTint="bg-sales-danger-soft text-sales-danger"
               tip="Fewer declines is better — trends flip colour accordingly."
             />
             <ReportKpiCard
@@ -735,7 +735,7 @@ export function SalesQuotesClient() {
                 data.kpis.conversionRate.value == null ? "No quote outcomes yet" : undefined
               }
               icon={TrendingUp}
-              iconTint="bg-[#ECFDF3] text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-[#16A34A]"
               tip={data.kpis.conversionRate.formula}
             />
           </div>
@@ -930,7 +930,7 @@ export function SalesQuotesClient() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="mt-3 h-9 rounded-[10px] bg-white"
+                      className="mt-3 h-9 rounded-[10px] bg-sales-surface"
                       leftIcon={<FilePlus2 size={14} strokeWidth={1.8} />}
                       onClick={() => setCreateOpen(true)}
                     >
@@ -1083,7 +1083,7 @@ function QuoteTableRow({
             <MoreVertical strokeWidth={1.8} />
           </IconButton>
           {menuOpen ? (
-            <div className="absolute right-0 top-9 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-white py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
+            <div className="absolute right-0 top-9 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
               <MenuItem icon={<ExternalLink size={14} />} label="View quote" onClick={onOpen} />
               {quote.effectiveStatus === "draft" ? (
                 <MenuItem icon={<Pencil size={14} />} label="Edit quote" onClick={onOpen} />

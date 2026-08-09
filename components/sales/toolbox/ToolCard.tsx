@@ -44,7 +44,7 @@ export function ToolCard({
           <Icon size={20} strokeWidth={1.8} aria-hidden />
         </span>
         {badge ? (
-          <span className="rounded-[6px] bg-[#F2F4F7] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-secondary">
+          <span className="rounded-[6px] bg-[var(--sales-neutral-100)] px-2 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-secondary">
             {badge}
           </span>
         ) : null}

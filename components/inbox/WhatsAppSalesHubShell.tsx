@@ -46,7 +46,7 @@ function HubShellInner({
 
   return (
     <div
-      className="sales-dashboard-premium flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-[#F7F8FA] text-[#111318]"
+      className="sales-dashboard-premium flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}

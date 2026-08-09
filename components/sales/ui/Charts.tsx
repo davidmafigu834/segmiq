@@ -14,7 +14,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SALES_CHART_SERIES, SALES_COLORS } from "@/lib/sales/design-tokens";
+import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
 import { cn } from "@/lib/ui/cn";
 
 export function ChartEmptyState({
@@ -52,7 +52,7 @@ function ChartTooltipBox({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-sales-lg border border-sales-border bg-sales-surface px-3 py-2 shadow-sales-popover">
+    <div className="rounded-sales-lg border border-sales-border bg-[var(--sales-surface-raised,#151815)] px-3 py-2 shadow-sales-popover">
       {label ? <p className="mb-1 text-[11px] text-sales-text-muted">{label}</p> : null}
       {payload.map((p, i) => (
         <p key={i} className="text-[12px] font-medium tabular-nums text-sales-text-primary">
@@ -77,6 +77,7 @@ export function SalesAreaChart({
   emptyTitle?: string;
   emptyDescription?: string;
 }) {
+  const colors = useSalesChartColors();
   const has = data.some((d) => Number(d[dataKey] ?? 0) > 0);
   if (!has) {
     return <ChartEmptyState title={emptyTitle} description={emptyDescription} />;
@@ -87,21 +88,21 @@ export function SalesAreaChart({
       <AreaChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="salesAreaFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={SALES_COLORS.brand} stopOpacity={0.22} />
-            <stop offset="100%" stopColor={SALES_COLORS.brand} stopOpacity={0.02} />
+            <stop offset="0%" stopColor={colors.brand} stopOpacity={0.18} />
+            <stop offset="100%" stopColor={colors.brand} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid vertical={false} stroke={SALES_COLORS.borderSubtle} strokeDasharray="3 6" />
+        <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 6" />
         <XAxis
           dataKey={xKey}
-          tick={{ fill: SALES_COLORS.textMuted, fontSize: 11 }}
+          tick={{ fill: colors.axis, fontSize: 11 }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           domain={[0, Math.ceil(max * 1.1) || 100]}
           tickFormatter={(v) => (v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`)}
-          tick={{ fill: SALES_COLORS.textMuted, fontSize: 11 }}
+          tick={{ fill: colors.axis, fontSize: 11 }}
           axisLine={false}
           tickLine={false}
           width={42}
@@ -110,11 +111,11 @@ export function SalesAreaChart({
         <Area
           type="monotone"
           dataKey={dataKey}
-          stroke="#B8F200"
+          stroke={colors.brand}
           strokeWidth={2}
           fill="url(#salesAreaFill)"
           dot={false}
-          activeDot={{ r: 4, fill: SALES_COLORS.textPrimary, stroke: SALES_COLORS.brand, strokeWidth: 2 }}
+          activeDot={{ r: 4, fill: colors.textPrimary, stroke: colors.brand, strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>
@@ -132,26 +133,27 @@ export function SalesBarChart({
   xKey?: string;
   emptyTitle?: string;
 }) {
+  const colors = useSalesChartColors();
   const has = data.some((d) => Number(d[dataKey] ?? 0) > 0);
   if (!has) return <ChartEmptyState title={emptyTitle} />;
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-        <CartesianGrid vertical={false} stroke={SALES_COLORS.borderSubtle} strokeDasharray="3 6" />
+        <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 6" />
         <XAxis
           dataKey={xKey}
-          tick={{ fill: SALES_COLORS.textMuted, fontSize: 11 }}
+          tick={{ fill: colors.axis, fontSize: 11 }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fill: SALES_COLORS.textMuted, fontSize: 11 }}
+          tick={{ fill: colors.axis, fontSize: 11 }}
           axisLine={false}
           tickLine={false}
           width={36}
         />
         <Tooltip content={<ChartTooltipBox />} />
-        <Bar dataKey={dataKey} fill={SALES_COLORS.info} radius={[4, 4, 0, 0]} maxBarSize={36} />
+        <Bar dataKey={dataKey} fill={colors.info} radius={[4, 4, 0, 0]} maxBarSize={36} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -172,12 +174,13 @@ export function SalesDonutChart({
   centerLabel?: string;
   emptyTitle?: string;
 }) {
+  const colors = useSalesChartColors();
   const total = data.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
   if (total <= 0) return <ChartEmptyState title={emptyTitle} />;
 
   const slices = data.map((d, i) => ({
     ...d,
-    color: d.color ?? SALES_CHART_SERIES[i % SALES_CHART_SERIES.length],
+    color: d.color ?? colors.series[i % colors.series.length],
   }));
 
   return (

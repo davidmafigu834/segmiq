@@ -38,13 +38,13 @@ type LookupMatch = {
 const SOURCES = ["Referral", "Walk-in", "Phone call", "WhatsApp", "Repeat customer", "Other"];
 
 const fieldClass =
-  "h-11 w-full rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[13px] text-[#101828] outline-none transition-colors placeholder:text-[#98A2B3] focus:border-[#D4FF4F] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
+  "h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none transition-colors placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
 
-const labelClass = "text-[12px] font-medium text-[#667085]";
+const labelClass = "text-[12px] font-medium text-sales-text-secondary";
 
 const chipActive =
   "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.16)]";
-const chipIdle = "border-[#E4E7EC] bg-white hover:bg-[#F9FAFB]";
+const chipIdle = "border-sales-border bg-sales-surface hover:bg-sales-surface-hover";
 
 export function AddToHubSheet({
   assignmentMode,
@@ -235,10 +235,10 @@ export function AddToHubSheet({
     >
       {success ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[12px] bg-[#ECFDF3] text-[#027A48]">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[12px] bg-sales-success-soft text-[var(--success-fg,#027A48)]">
             <CheckCircle2 size={22} strokeWidth={1.8} />
           </div>
-          <p className="text-[15px] font-semibold text-[#101828]">
+          <p className="text-[15px] font-semibold text-sales-text-primary">
             {variant === "walk_in" || isWalkInFlow
               ? "Walk-in logged"
               : isLead
@@ -247,7 +247,7 @@ export function AddToHubSheet({
                   : "Lead added"
                 : "Customer saved"}
           </p>
-          <p className="mt-1 text-[13px] text-[#667085]">Closing…</p>
+          <p className="mt-1 text-[13px] text-sales-text-secondary">Closing…</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -262,21 +262,21 @@ export function AddToHubSheet({
                       type === t ? chipActive : chipIdle
                     }`}
                   >
-                    <span className="flex items-center gap-2 text-[13px] font-semibold text-[#101828]">
+                    <span className="flex items-center gap-2 text-[13px] font-semibold text-sales-text-primary">
                       {t === "lead" ? (
                         <Send
                           size={15}
-                          className={type === t ? "text-[#4D7C0F]" : "text-[#98A2B3]"}
+                          className={type === t ? "text-sales-brand-fg" : "text-sales-text-muted"}
                         />
                       ) : (
                         <Users
                           size={15}
-                          className={type === t ? "text-[#4D7C0F]" : "text-[#98A2B3]"}
+                          className={type === t ? "text-sales-brand-fg" : "text-sales-text-muted"}
                         />
                       )}
                       {t === "lead" ? "New lead" : "Existing customer"}
                     </span>
-                    <span className="mt-0.5 block text-[11px] text-[#98A2B3]">
+                    <span className="mt-0.5 block text-[11px] text-sales-text-muted">
                       {t === "lead" ? "Enters the pipeline." : "Files to Customers."}
                     </span>
                   </button>
@@ -296,7 +296,7 @@ export function AddToHubSheet({
 
               <label className="flex flex-col gap-1.5">
                 <span className={labelClass}>
-                  Phone <span className="text-[#4D7C0F]">*</span>
+                  Phone <span className="text-sales-brand-fg">*</span>
                 </span>
                 <input
                   className={fieldClass}
@@ -311,7 +311,7 @@ export function AddToHubSheet({
                 <div className="flex gap-2.5 rounded-[10px] border border-[rgba(245,158,11,0.35)] bg-[rgba(245,158,11,0.08)] p-3">
                   <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[#F59E0B]" />
                   <div className="min-w-0">
-                    <p className="text-[12.5px] leading-snug text-[#101828]">
+                    <p className="text-[12.5px] leading-snug text-sales-text-primary">
                       Already in your Customer Hub
                       {match?.name ? (
                         <>
@@ -320,11 +320,11 @@ export function AddToHubSheet({
                         </>
                       ) : null}
                       {match?.ownedByYou ? (
-                        <span className="text-[#98A2B3]"> · owned by you</span>
+                        <span className="text-sales-text-muted"> · owned by you</span>
                       ) : match?.owner ? (
-                        <span className="text-[#98A2B3]"> · owned by {match.owner}</span>
+                        <span className="text-sales-text-muted"> · owned by {match.owner}</span>
                       ) : (
-                        <span className="text-[#98A2B3]"> · unassigned</span>
+                        <span className="text-sales-text-muted"> · unassigned</span>
                       )}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -339,7 +339,7 @@ export function AddToHubSheet({
                         <button
                           type="button"
                           onClick={() => router.push(`/client/contacts/${match.id}`)}
-                          className="rounded-[8px] border border-[#E4E7EC] px-2.5 py-1 text-[12px] font-medium text-[#101828]"
+                          className="rounded-[8px] border border-sales-border px-2.5 py-1 text-[12px] font-medium text-sales-text-primary"
                         >
                           Open existing
                         </button>
@@ -347,7 +347,7 @@ export function AddToHubSheet({
                       <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-[8px] border border-[#E4E7EC] px-2.5 py-1 text-[12px] font-medium text-[#101828]"
+                        className="rounded-[8px] border border-sales-border px-2.5 py-1 text-[12px] font-medium text-sales-text-primary"
                       >
                         Cancel
                       </button>
@@ -356,7 +356,7 @@ export function AddToHubSheet({
                 </div>
               )}
               {match && isLead && forceNew && (
-                <p className="text-[11.5px] text-[#98A2B3]">
+                <p className="text-[11.5px] text-sales-text-muted">
                   Adding as a new job under the existing contact.
                 </p>
               )}
@@ -383,7 +383,7 @@ export function AddToHubSheet({
               {isWalkInFlow && (
                 <div className="flex flex-col gap-2">
                   <span className={labelClass}>
-                    What happened? <span className="text-[#4D7C0F]">*</span>
+                    What happened? <span className="text-sales-brand-fg">*</span>
                   </span>
                   <div className="flex flex-col gap-2">
                     {WALK_IN_OUTCOMES.map((o) => (
@@ -395,10 +395,10 @@ export function AddToHubSheet({
                           intakeOutcome === o.value ? chipActive : chipIdle
                         }`}
                       >
-                        <span className="block text-[13px] font-semibold text-[#101828]">
+                        <span className="block text-[13px] font-semibold text-sales-text-primary">
                           {o.label}
                         </span>
-                        <span className="mt-0.5 block text-[11px] text-[#98A2B3]">
+                        <span className="mt-0.5 block text-[11px] text-sales-text-muted">
                           {o.hint}
                         </span>
                       </button>
@@ -410,7 +410,7 @@ export function AddToHubSheet({
               {isWalkInFlow && intakeOutcome === "follow_up_later" && (
                 <label className="flex flex-col gap-1.5">
                   <span className={labelClass}>
-                    Follow-up date <span className="text-[#4D7C0F]">*</span>
+                    Follow-up date <span className="text-sales-brand-fg">*</span>
                   </span>
                   <input
                     type="date"
@@ -460,7 +460,7 @@ export function AddToHubSheet({
                       </option>
                     ))}
                   </select>
-                  <span className="text-[11px] text-[#98A2B3]">
+                  <span className="text-[11px] text-sales-text-muted">
                     {MANUAL_LEAD_STAGES.find((s) => s.value === stage)?.hint}
                   </span>
                 </label>
@@ -490,8 +490,8 @@ export function AddToHubSheet({
                         onClick={() => setPriority(p)}
                         className={`flex-1 rounded-[10px] border px-3 py-2 text-[12.5px] font-medium capitalize transition ${
                           priority === p
-                            ? `${chipActive} text-[#101828]`
-                            : `${chipIdle} text-[#667085]`
+                            ? `${chipActive} text-sales-text-primary`
+                            : `${chipIdle} text-sales-text-secondary`
                         }`}
                       >
                         {p}
@@ -504,7 +504,7 @@ export function AddToHubSheet({
               <button
                 type="button"
                 onClick={() => setShowMore((v) => !v)}
-                className="flex items-center gap-1.5 self-start text-[12.5px] font-medium text-[#667085] hover:text-[#101828]"
+                className="flex items-center gap-1.5 self-start text-[12.5px] font-medium text-sales-text-secondary hover:text-sales-text-primary"
               >
                 <ChevronDown size={15} className={`transition ${showMore ? "rotate-180" : ""}`} />{" "}
                 More details
@@ -564,7 +564,7 @@ export function AddToHubSheet({
                       onChange={() => setAssignChoice("specific")}
                       className="accent-[#D4FF4F]"
                     />
-                    <span className="text-[13px] text-[#101828]">A salesperson</span>
+                    <span className="text-[13px] text-sales-text-primary">A salesperson</span>
                     {assignChoice === "specific" && (
                       <select
                         className={`${fieldClass} ml-auto max-w-[160px]`}
@@ -590,9 +590,9 @@ export function AddToHubSheet({
                       onChange={() => setAssignChoice("pool")}
                       className="accent-[#D4FF4F]"
                     />
-                    <span className="text-[13px] text-[#101828]">
+                    <span className="text-[13px] text-sales-text-primary">
                       Team pool{" "}
-                      <span className="text-[11px] text-[#98A2B3]">· anyone can claim</span>
+                      <span className="text-[11px] text-sales-text-muted">· anyone can claim</span>
                     </span>
                   </label>
                   <label className="flex cursor-pointer items-center gap-2.5">
@@ -603,21 +603,21 @@ export function AddToHubSheet({
                       onChange={() => setAssignChoice("auto")}
                       className="accent-[#D4FF4F]"
                     />
-                    <span className="text-[13px] text-[#101828]">
+                    <span className="text-[13px] text-sales-text-primary">
                       Auto{" "}
-                      <span className="text-[11px] text-[#98A2B3]">· round-robin</span>
+                      <span className="text-[11px] text-sales-text-muted">· round-robin</span>
                     </span>
                   </label>
                 </div>
               )}
               {isLead && mode === "salesperson" && (
-                <div className="flex items-center gap-2.5 rounded-[10px] border border-[#E4E7EC] bg-[#F9FAFB] px-3 py-2.5">
-                  <Check size={15} className="shrink-0 text-[#4D7C0F]" />
-                  <span className="text-[12.5px] text-[#667085]">{salespersonNote}</span>
+                <div className="flex items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface-hover px-3 py-2.5">
+                  <Check size={15} className="shrink-0 text-sales-brand-fg" />
+                  <span className="text-[12.5px] text-sales-text-secondary">{salespersonNote}</span>
                 </div>
               )}
 
-              {error && <p className="text-[12.5px] text-[#EF4444]">{error}</p>}
+              {error && <p className="text-[12.5px] text-sales-danger">{error}</p>}
 
               <button
                 type="button"
@@ -627,7 +627,7 @@ export function AddToHubSheet({
                   dupeBlocking ||
                   (isLead && mode === "manager" && assignChoice === "specific" && !assigneeId)
                 }
-                className="mt-1 flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-[#D4FF4F] px-4 text-[14px] font-semibold text-[#101828] transition-colors hover:bg-[#c8f244] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#101828]/30 disabled:opacity-50"
+                className="mt-1 flex min-h-12 w-full items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-4 text-[14px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sales-neutral-900)]/30 disabled:opacity-50"
               >
                 <UserPlus size={15} strokeWidth={1.8} />{" "}
                 {variant === "walk_in" || isWalkInFlow

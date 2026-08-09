@@ -135,13 +135,13 @@ export function PipelineLeadCard({
   }
 
   const btn =
-    "inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-[#E4E7EC] bg-white text-[#667085] transition-colors duration-150 hover:bg-[#F9FAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4FF4F] disabled:opacity-40";
+    "inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-sales-border bg-sales-surface text-sales-text-secondary transition-colors duration-150 hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand disabled:opacity-40";
 
   const moveTargets = PIPELINE_ACTIVE_STAGES.filter((s) => s !== lead.status);
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-[12px] border border-[#E4E7EC] bg-white transition-[border-color,box-shadow] duration-150 hover:border-[#D0D5DD] hover:shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${
+      className={`group relative overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface transition-[border-color,box-shadow] duration-150 hover:border-sales-border-strong hover:shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${
         compact ? "p-3" : "p-3.5"
       }`}
     >
@@ -152,7 +152,7 @@ export function PipelineLeadCard({
           ) : source.kind === "facebook" ? (
             <SiFacebook size={14} color="#1877F2" aria-hidden />
           ) : (
-            <CircleUserRound size={14} strokeWidth={1.8} className="text-[#667085]" aria-hidden />
+            <CircleUserRound size={14} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />
           )}
         </span>
 
@@ -163,17 +163,17 @@ export function PipelineLeadCard({
               onClick={() => onOpenLead(lead.id)}
               className="min-w-0 flex-1 text-left"
             >
-              <h3 className="truncate text-[13px] font-semibold tracking-[-0.01em] text-[#101828]" title={name}>
+              <h3 className="truncate text-[13px] font-semibold tracking-[-0.01em] text-sales-text-primary" title={name}>
                 {name}
               </h3>
               {phone ? (
-                <p className="mt-0.5 truncate font-mono text-[11px] text-[#98A2B3]">{phone}</p>
+                <p className="mt-0.5 truncate font-mono text-[11px] text-sales-text-muted">{phone}</p>
               ) : null}
             </button>
             {onLeadUpdated ? (
               <button
                 type="button"
-                className="shrink-0 rounded-md p-1 text-[#98A2B3] transition-colors hover:text-[#F59E0B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4FF4F]"
+                className="shrink-0 rounded-md p-1 text-sales-text-muted transition-colors hover:text-[#F59E0B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
                 aria-label={picked ? `Remove ${name} from picks` : `Save ${name} to picks`}
                 disabled={picking}
                 onClick={togglePick}
@@ -189,17 +189,17 @@ export function PipelineLeadCard({
           </div>
 
           {subtitle ? (
-            <p className="mt-1.5 truncate text-[12px] text-[#667085]" title={subtitle}>
+            <p className="mt-1.5 truncate text-[12px] text-sales-text-secondary" title={subtitle}>
               {subtitle}
             </p>
           ) : service ? (
-            <p className="mt-1.5 truncate text-[12px] text-[#667085]">{service}</p>
+            <p className="mt-1.5 truncate text-[12px] text-sales-text-secondary">{service}</p>
           ) : null}
 
           {budgetIntentLine ? (
-            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] text-[#667085]">
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[12px] text-sales-text-secondary">
               {budget ? <span className="tabular-nums">{budget}</span> : null}
-              {budget && intent ? <span className="text-[#D0D5DD]">·</span> : null}
+              {budget && intent ? <span className="text-[var(--sales-neutral-300)]">·</span> : null}
               {intent ? (
                 <span className="inline-flex items-center gap-1">
                   <span
@@ -213,11 +213,11 @@ export function PipelineLeadCard({
             </p>
           ) : null}
 
-          <p className="mt-1 text-[11px] text-[#98A2B3]">{sourceTimeLine}</p>
+          <p className="mt-1 text-[11px] text-sales-text-muted">{sourceTimeLine}</p>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5 border-t border-[#E4E7EC] pt-2.5">
+      <div className="mt-3 flex items-center gap-1.5 border-t border-sales-border pt-2.5">
         <button
           type="button"
           className={btn}
@@ -284,9 +284,9 @@ export function PipelineLeadCard({
                 />
                 <div
                   role="menu"
-                  className="absolute bottom-full left-0 z-30 mb-1.5 w-44 overflow-hidden rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.1)]"
+                  className="absolute bottom-full left-0 z-30 mb-1.5 w-44 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.1)]"
                 >
-                  <p className="px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
+                  <p className="px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
                     Move to
                   </p>
                   {moveTargets.map((stage) => (
@@ -294,7 +294,7 @@ export function PipelineLeadCard({
                       key={stage}
                       type="button"
                       role="menuitem"
-                      className="flex w-full px-3 py-2 text-left text-[13px] text-[#101828] hover:bg-[#F9FAFB]"
+                      className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
                       disabled={moving}
                       onClick={(e) => void handleMoveStage(e, stage)}
                     >

@@ -34,8 +34,8 @@ export function WeekCalendar({
     now.getHours() <= 17;
 
   return (
-    <div className="overflow-hidden rounded-[14px] border border-[#E4E7EC] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-      <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-[#E4E7EC] bg-[#F9FAFB]">
+    <div className="overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-sales-border bg-sales-surface-hover">
         <div />
         {days.map((day) => {
           const key = toDateKey(day);
@@ -45,15 +45,15 @@ export function WeekCalendar({
               key={key}
               type="button"
               onClick={() => onSelectDate(key)}
-              className="px-1 py-2.5 text-center transition-colors hover:bg-white"
+              className="px-1 py-2.5 text-center transition-colors hover:bg-sales-surface"
             >
-              <span className="block text-[10px] font-medium uppercase text-[#98A2B3]">
+              <span className="block text-[10px] font-medium uppercase text-sales-text-muted">
                 {format(day, "EEE")}
               </span>
               <span
                 className={[
                   "mx-auto mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-semibold",
-                  today ? "bg-[#D4FF4F] text-[#101828]" : "text-[#101828]",
+                  today ? "bg-sales-brand text-sales-brand-text" : "text-sales-text-primary",
                 ].join(" ")}
               >
                 {format(day, "d")}
@@ -64,13 +64,13 @@ export function WeekCalendar({
       </div>
 
       {/* All-day row */}
-      <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-[#E4E7EC]">
-        <div className="px-1 py-2 text-[10px] font-medium text-[#98A2B3]">All day</div>
+      <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-sales-border">
+        <div className="px-1 py-2 text-[10px] font-medium text-sales-text-muted">All day</div>
         {days.map((day) => {
           const key = toDateKey(day);
           const dayEvents = eventsForDateKey(events, key).filter((e) => !e.hasTimedCallback);
           return (
-            <div key={key} className="min-h-[44px] space-y-0.5 border-l border-[#E4E7EC] p-1">
+            <div key={key} className="min-h-[44px] space-y-0.5 border-l border-sales-border p-1">
               {dayEvents.slice(0, 3).map((event) => (
                 <WeekEventBlock
                   key={event.id}
@@ -97,9 +97,9 @@ export function WeekCalendar({
         {HOURS.map((hour) => (
           <div
             key={hour}
-            className="grid min-h-[56px] grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-[#F2F4F7]"
+            className="grid min-h-[56px] grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-[var(--sales-neutral-100)]"
           >
-            <div className="px-1 py-1 text-[10px] font-medium text-[#98A2B3]">
+            <div className="px-1 py-1 text-[10px] font-medium text-sales-text-muted">
               {String(hour).padStart(2, "0")}:00
             </div>
             {days.map((day) => {
@@ -113,7 +113,7 @@ export function WeekCalendar({
                 }
               });
               return (
-                <div key={key} className="space-y-0.5 border-l border-[#F2F4F7] p-0.5">
+                <div key={key} className="space-y-0.5 border-l border-[var(--sales-neutral-100)] p-0.5">
                   {hourEvents.map((event) => (
                     <WeekEventBlock
                       key={event.id}
@@ -152,7 +152,7 @@ function WeekEventBlock({
         "w-full rounded-[6px] border px-1.5 py-1 text-left transition-colors duration-150",
         selected
           ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.14)]"
-          : "border-[#E4E7EC] bg-white hover:border-[#D0D5DD]",
+          : "border-sales-border bg-sales-surface hover:border-sales-border-strong",
         event.overdue ? "border-l-2 border-l-[#EF4444]" : "",
       ].join(" ")}
       aria-label={`Open ${event.customerName ?? getEventTypeLabel(event.kind)}`}
@@ -163,14 +163,14 @@ function WeekEventBlock({
           style={{ background: getEventTypeColor(event.kind) }}
           aria-hidden
         />
-        <span className="truncate text-[10px] font-semibold text-[#101828]">
+        <span className="truncate text-[10px] font-semibold text-sales-text-primary">
           {showTime
             ? `${formatEventTime(event.startAt, true)} · ${getEventTypeLabel(event.kind)}`
             : getEventTypeLabel(event.kind)}
         </span>
       </span>
       {event.customerName ? (
-        <span className="mt-0.5 block truncate pl-2.5 text-[10px] text-[#667085]">
+        <span className="mt-0.5 block truncate pl-2.5 text-[10px] text-sales-text-secondary">
           {event.customerName}
         </span>
       ) : null}

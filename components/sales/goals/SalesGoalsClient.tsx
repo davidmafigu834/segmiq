@@ -178,7 +178,7 @@ export function SalesGoalsClient() {
           {(data.lifecycle === "completed_success" || data.progress.aboveTarget > 0) &&
           data.progress.progressPct >= 100 ? (
             <div className="flex min-h-[48px] items-center gap-3 rounded-[12px] border border-[#D1FADF] bg-[#F6FEF9] px-3.5 py-2.5">
-              <Trophy size={16} strokeWidth={1.8} className="shrink-0 text-[#027A48]" aria-hidden />
+              <Trophy size={16} strokeWidth={1.8} className="shrink-0 text-[var(--success-fg,#027A48)]" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-sales-text-primary">Goal achieved</p>
                 <p className="text-[12px] text-sales-text-secondary">
@@ -518,7 +518,7 @@ function ProgressBySourceCard({ data }: { data: SalesGoalsPayload }) {
                   <span className="inline-flex min-w-0 items-center gap-2 text-sales-text-secondary">
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ background: SOURCE_COLORS[s.key] ?? "#98A2B3" }}
+                      style={{ background: SOURCE_COLORS[s.key] ?? "var(--sales-text-muted)" }}
                     />
                     <SourceIcon sourceKey={s.key} />
                     <span className="truncate">{s.label}</span>
@@ -601,10 +601,10 @@ function GoalMilestonesCard({ data }: { data: SalesGoalsPayload }) {
               className={cn(
                 "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                 m.status === "achieved"
-                  ? "bg-[#ECFDF3] text-[#027A48]"
+                  ? "bg-sales-success-soft text-[var(--success-fg,#027A48)]"
                   : m.status === "in_progress"
                     ? "bg-[#EFF8FF] text-[#2563EB]"
-                    : "bg-[#F2F4F7] text-sales-text-muted"
+                    : "bg-[var(--sales-neutral-100)] text-sales-text-muted"
               )}
             >
               <Trophy size={14} strokeWidth={1.8} aria-hidden />
@@ -714,7 +714,7 @@ function TipsCard({ data }: { data: SalesGoalsPayload }) {
       <CardContent className="flex-1 space-y-3">
         {data.recommendations.map((tip) => (
           <div key={tip.id} className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#ECFDF3] text-[#027A48]">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sales-success-soft text-[var(--success-fg,#027A48)]">
               <Check size={12} strokeWidth={2.4} aria-hidden />
             </span>
             {tip.href ? (

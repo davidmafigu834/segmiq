@@ -63,7 +63,7 @@ export function MenuSelect<T extends string>({
         aria-controls={listId}
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          "inline-flex items-center gap-1.5 whitespace-nowrap rounded-[10px] border border-sales-border bg-white font-medium text-sales-text-primary",
+          "inline-flex items-center gap-1.5 whitespace-nowrap rounded-[10px] border border-sales-border bg-sales-surface font-medium text-sales-text-primary",
           "transition-colors duration-150 hover:border-sales-border-strong hover:bg-sales-surface-hover",
           "focus:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
           size === "sm" ? "h-8 px-2.5 text-[12px]" : "h-10 px-3 text-[13px]",
@@ -96,7 +96,7 @@ export function MenuSelect<T extends string>({
           role="listbox"
           aria-label={ariaLabel}
           className={cn(
-            "absolute top-[calc(100%+6px)] z-30 min-w-[180px] overflow-hidden rounded-[12px] border border-sales-border bg-white py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]",
+            "absolute top-[calc(100%+6px)] z-30 min-w-[180px] overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]",
             align === "right" ? "right-0" : "left-0",
             menuClassName
           )}

@@ -9,7 +9,12 @@ export function parseCrmTheme(value: string | undefined | null): CrmTheme {
 export function readStoredCrmTheme(): CrmTheme {
   if (typeof window === "undefined") return "dark";
   try {
-    return parseCrmTheme(localStorage.getItem(CRM_THEME_STORAGE_KEY));
+    const crm = localStorage.getItem(CRM_THEME_STORAGE_KEY);
+    if (crm === "light" || crm === "dark") return crm;
+    // Align with marketing/auth preference when CRM has never been set
+    const marketing = localStorage.getItem("segmiq-marketing-theme");
+    if (marketing === "light" || marketing === "dark") return marketing;
+    return "dark";
   } catch {
     return "dark";
   }
@@ -20,6 +25,9 @@ export function persistCrmTheme(theme: CrmTheme) {
   try {
     localStorage.setItem(CRM_THEME_STORAGE_KEY, theme);
     document.cookie = `${CRM_THEME_STORAGE_KEY}=${theme};path=/;max-age=31536000;SameSite=Lax`;
+    // Keep landing/auth preference in sync so theme feels continuous
+    localStorage.setItem("segmiq-marketing-theme", theme);
+    document.cookie = `segmiq-marketing-theme=${theme};path=/;max-age=31536000;SameSite=Lax`;
   } catch {
     /* ignore */
   }
@@ -41,6 +49,7 @@ export function isCrmPath(pathname: string): boolean {
     pathname.startsWith("/client") ||
     pathname.startsWith("/sales") ||
     pathname.startsWith("/solo") ||
-    pathname.startsWith("/onboard")
+    pathname.startsWith("/onboard") ||
+    pathname.startsWith("/dev/sales-design-system")
   );
 }

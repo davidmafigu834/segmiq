@@ -131,7 +131,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["quick", "replies", "whatsapp", "templates", "messages"],
     section: "follow_up",
     icon: MessageSquareText,
-    iconTint: "bg-[#ECFDF3] text-[#16A34A]",
+    iconTint: "bg-sales-success-soft text-[#16A34A]",
   },
   {
     id: "upload_photos",

@@ -33,8 +33,8 @@ export default function AuthLayout({
           <AuthThemeToggle />
         </header>
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto px-5 pb-4 pt-1 sm:px-8 lg:overflow-hidden lg:px-10 lg:pb-4 lg:pt-2 xl:px-14">
-          <div className={`w-full ${formMaxWidthClass}`}>{children}</div>
+        <div className="relative flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-5 pb-8 pt-12 sm:px-8 lg:justify-start lg:overflow-hidden lg:px-10 lg:pb-4 lg:pt-2 xl:px-14">
+          <div className={`mx-auto w-full ${formMaxWidthClass} lg:mx-0`}>{children}</div>
         </div>
 
         <footer className="shrink-0 px-5 pb-4 pt-1 text-[12px] text-[var(--marketing-text-muted)] sm:px-8 lg:px-10 xl:px-14">

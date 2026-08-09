@@ -16,7 +16,7 @@ export function PerformanceCard({ performance }: { performance: SalesPerformance
         <div className="flex items-center gap-5">
           <div className="relative flex h-[108px] w-[108px] shrink-0 items-center justify-center">
             <svg width="108" height="108" viewBox="0 0 108 108" aria-hidden>
-              <circle cx="54" cy="54" r={42} fill="none" stroke="#F2F4F7" strokeWidth={8} />
+              <circle cx="54" cy="54" r={42} fill="none" stroke="var(--sales-chart-track, var(--sales-neutral-100))" strokeWidth={8} />
               <circle
                 cx="54"
                 cy="54"

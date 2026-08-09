@@ -188,7 +188,7 @@ export function CreateQuoteDialog({
                         onClick={() => setSelectedId(c.id)}
                         className={cn(
                           "flex w-full items-start gap-3 px-3.5 py-3 text-left transition-colors",
-                          active ? "bg-[#F3F7E8]" : "hover:bg-sales-surface-hover"
+                          active ? "bg-sales-surface-active" : "hover:bg-sales-surface-hover"
                         )}
                       >
                         <span
@@ -196,7 +196,7 @@ export function CreateQuoteDialog({
                             "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
                             active
                               ? "border-sales-brand-fg bg-sales-brand"
-                              : "border-sales-border bg-white"
+                              : "border-sales-border bg-sales-surface"
                           )}
                           aria-hidden
                         >
@@ -231,7 +231,7 @@ export function CreateQuoteDialog({
                 <select
                   value={templateId}
                   onChange={(e) => setTemplateId(e.target.value)}
-                  className="h-10 w-full rounded-[10px] border border-sales-border bg-white px-3 text-[13px] text-sales-text-primary outline-none focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]"
+                  className="h-10 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]"
                 >
                   <option value="">Blank quotation</option>
                   {templates.map((t) => (

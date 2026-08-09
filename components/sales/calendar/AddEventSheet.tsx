@@ -26,7 +26,7 @@ import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button } from "@/components/sales/ui/Button";
 
 const fieldClass =
-  "h-11 w-full rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[13px] text-[#101828] outline-none transition-colors placeholder:text-[#98A2B3] focus:border-[#D4FF4F] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
+  "h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none transition-colors placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
 
 export function AddEventSheet({
   leads,
@@ -180,7 +180,7 @@ export function AddEventSheet({
                       "flex min-h-[44px] flex-col items-start rounded-[10px] border px-2.5 py-2 text-left transition-colors",
                       active
                         ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.16)]"
-                        : "border-[#E4E7EC] bg-white hover:bg-[#F9FAFB]",
+                        : "border-sales-border bg-sales-surface hover:bg-sales-surface-hover",
                     ].join(" ")}
                     aria-pressed={active}
                   >
@@ -190,7 +190,7 @@ export function AddEventSheet({
                         style={{ background: getEventTypeColor(k) }}
                         aria-hidden
                       />
-                      <span className="text-[12px] font-semibold text-[#101828]">
+                      <span className="text-[12px] font-semibold text-sales-text-primary">
                         {getEventTypeLabel(k)}
                       </span>
                     </span>
@@ -198,13 +198,13 @@ export function AddEventSheet({
                 );
               })}
             </div>
-            <p className="mt-2 text-[11px] leading-relaxed text-[#98A2B3]">
+            <p className="mt-2 text-[11px] leading-relaxed text-sales-text-muted">
               Saves as a lead follow-up date. Timed callbacks are set when logging a call.
             </p>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[12px] font-medium text-[#667085]" htmlFor="cal-add-title">
+            <label className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary" htmlFor="cal-add-title">
               Title
             </label>
             <input
@@ -218,14 +218,14 @@ export function AddEventSheet({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[12px] font-medium text-[#667085]" htmlFor="cal-add-search">
+            <label className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary" htmlFor="cal-add-search">
               Lead / customer
             </label>
             <div className="relative">
               <Search
                 size={16}
                 strokeWidth={1.8}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
                 aria-hidden
               />
               <input
@@ -243,10 +243,10 @@ export function AddEventSheet({
               <div className="mt-2 rounded-[12px] border border-[rgba(160,210,30,0.45)] bg-[rgba(212,255,79,0.08)] p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-[#101828]">
+                    <p className="truncate text-[13px] font-semibold text-sales-text-primary">
                       {selectedName}
                     </p>
-                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-[#667085]">
+                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[12px] text-sales-text-secondary">
                       {selected.phone ? (
                         <span className="inline-flex items-center gap-1 font-mono">
                           <Phone size={12} strokeWidth={1.8} aria-hidden />
@@ -273,21 +273,21 @@ export function AddEventSheet({
                       setLeadId("");
                       setTitle("");
                     }}
-                    className="text-[12px] font-semibold text-[#667085] hover:text-[#101828]"
+                    className="text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
                   >
                     Change
                   </button>
                 </div>
               </div>
             ) : (
-              <ul className="mt-2 max-h-48 overflow-y-auto rounded-[12px] border border-[#E4E7EC] bg-white">
+              <ul className="mt-2 max-h-48 overflow-y-auto rounded-[12px] border border-sales-border bg-sales-surface">
                 {filtered.map((lead) => {
                   const name = leadCardDisplayName(lead);
                   const stage = lead.status
                     ? STAGE_LABELS[lead.status] ?? lead.status.replace(/_/g, " ")
                     : null;
                   return (
-                    <li key={lead.id} className="border-b border-[#F2F4F7] last:border-b-0">
+                    <li key={lead.id} className="border-b border-[var(--sales-neutral-100)] last:border-b-0">
                       <button
                         type="button"
                         onClick={() => {
@@ -295,19 +295,19 @@ export function AddEventSheet({
                           setQuery("");
                           setTitle("");
                         }}
-                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-[#F9FAFB]"
+                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-sales-surface-hover"
                       >
                         <span
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-[#101828]"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-sales-text-primary"
                           style={{ background: getEventTypeTint(kind) }}
                         >
                           {name.slice(0, 1).toUpperCase()}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-semibold text-[#101828]">
+                          <span className="block truncate text-[13px] font-semibold text-sales-text-primary">
                             {name}
                           </span>
-                          <span className="mt-0.5 block truncate text-[11px] text-[#667085]">
+                          <span className="mt-0.5 block truncate text-[11px] text-sales-text-secondary">
                             {[lead.phone, stage].filter(Boolean).join(" · ")}
                           </span>
                         </span>
@@ -316,7 +316,7 @@ export function AddEventSheet({
                   );
                 })}
                 {!filtered.length ? (
-                  <li className="px-3 py-5 text-center text-[12px] text-[#98A2B3]">
+                  <li className="px-3 py-5 text-center text-[12px] text-sales-text-muted">
                     No matching leads
                   </li>
                 ) : null}
@@ -325,14 +325,14 @@ export function AddEventSheet({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[12px] font-medium text-[#667085]" htmlFor="cal-add-date">
+            <label className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary" htmlFor="cal-add-date">
               Date
             </label>
             <div className="relative">
               <CalendarDays
                 size={16}
                 strokeWidth={1.8}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
                 aria-hidden
               />
               <input
@@ -354,8 +354,8 @@ export function AddEventSheet({
                     className={[
                       "inline-flex h-8 items-center rounded-full border px-2.5 text-[11px] font-semibold transition-colors",
                       active
-                        ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.22)] text-[#101828]"
-                        : "border-[#E4E7EC] bg-white text-[#667085] hover:bg-[#F9FAFB]",
+                        ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.22)] text-sales-text-primary"
+                        : "border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover",
                     ].join(" ")}
                   >
                     {active ? <Check size={12} strokeWidth={2} className="mr-1" aria-hidden /> : null}
@@ -365,9 +365,9 @@ export function AddEventSheet({
               })}
             </div>
             {date ? (
-              <p className="mt-2 text-[12px] text-[#667085]">
+              <p className="mt-2 text-[12px] text-sales-text-secondary">
                 Scheduled for{" "}
-                <span className="font-semibold text-[#101828]">
+                <span className="font-semibold text-sales-text-primary">
                   {format(parseISO(`${date}T12:00:00`), "EEE, d MMM yyyy")}
                 </span>
               </p>
@@ -375,8 +375,8 @@ export function AddEventSheet({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[12px] font-medium text-[#667085]" htmlFor="cal-add-notes">
-              Notes <span className="font-normal text-[#98A2B3]">(optional, session only)</span>
+            <label className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary" htmlFor="cal-add-notes">
+              Notes <span className="font-normal text-sales-text-muted">(optional, session only)</span>
             </label>
             <textarea
               id="cal-add-notes"
@@ -384,15 +384,15 @@ export function AddEventSheet({
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="What should you prepare for this meeting?"
-              className="w-full resize-none rounded-[10px] border border-[#E4E7EC] bg-white px-3 py-2.5 text-[13px] text-[#101828] outline-none placeholder:text-[#98A2B3] focus:border-[#D4FF4F] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]"
+              className="w-full resize-none rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2.5 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]"
             />
-            <p className="mt-1 text-[11px] text-[#98A2B3]">
+            <p className="mt-1 text-[11px] text-sales-text-muted">
               Notes stay on this calendar view until refresh. Use Log note on the event for CRM history.
             </p>
           </div>
 
           {error ? (
-            <div className="rounded-[10px] border border-[#FECACA] bg-[#FFF8F7] px-3 py-2.5 text-[13px] text-[#B42318]">
+            <div className="rounded-[10px] border border-sales-danger/25 bg-sales-danger-soft px-3 py-2.5 text-[13px] text-sales-danger">
               {error}
             </div>
           ) : null}

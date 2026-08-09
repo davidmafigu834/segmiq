@@ -151,7 +151,7 @@ export function EditEventSheet({
           })}
         </div>
         {error ? (
-          <div className="rounded-sales-md border border-sales-danger/25 bg-sales-danger-soft px-3 py-2.5 text-[13px] text-[#B42318]">
+          <div className="rounded-sales-md border border-sales-danger/25 bg-sales-danger-soft px-3 py-2.5 text-[13px] text-sales-danger">
             {error}
           </div>
         ) : null}

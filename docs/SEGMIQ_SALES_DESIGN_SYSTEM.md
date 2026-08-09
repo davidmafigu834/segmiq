@@ -275,3 +275,81 @@ Reuse `--marketing-*` (see `app/globals.css` `.marketing-page` / `.marketing-pag
 ### Errors & loading
 
 Inline alerts (no `alert()`). Button spinner + disabled while submitting. Preserve anti-enumeration copy on password reset success.
+
+---
+
+## 14. Dark Mode
+
+Dark mode is a **first-class color theme** for the approved light Salesperson application. It does **not** redesign layout, navigation, business logic, or data.
+
+### Preference & persistence
+
+| Concern | Implementation |
+|---------|----------------|
+| Provider | Reuse `CrmThemeProvider` (`segmiq-crm-theme`) — no separate SalesThemeProvider |
+| Toggle | Compact Moon/Sun in desktop + mobile sales top bars (`SalesThemeToggle`) |
+| Profile | Appearance section (`CrmThemeSetting`) |
+| Sync | CRM theme persists marketing/auth key too (and vice versa) so Landing → Login → Sales feel continuous |
+| FOUC | Blocking script in `app/layout.tsx` sets `data-crm` / `data-crm-theme` before paint |
+| Scope | `.sales-dashboard-premium`, `.pipeline-drawer-light`, `.sales-modal-premium`, `.calendar-modal-premium` |
+
+Selector for dark sales tokens:
+
+`html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium` (and portal sibling classes)
+
+### Dark palette (semantic `--sales-*`)
+
+| Token | Value |
+|-------|-------|
+| `--sales-bg` | `#0B0D0C` |
+| `--sales-bg-subtle` | `#0E110E` |
+| `--sales-sidebar-bg` | `#0D100E` |
+| `--sales-surface` | `#111411` |
+| `--sales-surface-raised` | `#151815` |
+| `--sales-surface-hover` | `#181C18` |
+| `--sales-surface-selected` / active | `#1B2019` |
+| `--sales-text-primary` | `#F7F8F5` |
+| `--sales-text-secondary` | `#B1B7AE` |
+| `--sales-text-muted` | `#7D847A` |
+| `--sales-border` | `#272C27` |
+| `--sales-border-subtle` | `#1E231E` |
+| `--sales-border-strong` | `#343A34` |
+| `--sales-brand` | `#D4FF4F` |
+| `--sales-brand-soft` | `rgba(212,255,79,.10)` |
+
+### Semantic status (dark)
+
+Success `#4ADE80` · Warning `#FBBF24` · Danger `#F87171` · Info `#60A5FA` · Purple `#A78BFA` · Teal `#2DD4BF` · WhatsApp `#25D366`  
+Soft variants use ~10% alpha on the same hues.
+
+### Surface hierarchy
+
+Page `#0B0D0C` → Sidebar `#0D100E` → Card `#111411` → Raised `#151815` → Hover `#181C18`. Prefer borders/elevation over heavy shadows. No glassmorphism, neon lime glows, or pure-black-only UI.
+
+### Lime usage
+
+Accent only: primary CTAs, active nav (soft lime surface + lime icon), selected chips, chart primary series, goal progress. Not every icon/border/row.
+
+### Charts
+
+Use `useSalesChartColors()` so Recharts grid/axis/tooltip/series follow CSS vars without remounting business data.
+
+### WhatsApp Sales Hub
+
+Premium hub styles bind to `--sales-*` / `--wa-*` aliases. Inbound bubbles elevated dark surface; outbound restrained lime alpha — not full `#D4FF4F` blocks. Session closed = soft amber. WhatsApp green preserved for WhatsApp actions.
+
+### Documents / media
+
+Quotation PDF/print previews stay print-correct (white document). Dark theme applies to the editor chrome around them, not the printed page. Photos/avatars never inverted.
+
+### Mobile
+
+Same nav structure. Top bar + bottom nav + More sheet use sales tokens. Theme toggle remains in the mobile top bar.
+
+### Showcase
+
+`/dev/sales-design-system` includes a theme toggle and must be validated in both Light and Dark.
+
+### Light regression
+
+Light tokens in `.sales-dashboard-premium { ... }` remain the approved light system. Dark overrides must not alter light values.

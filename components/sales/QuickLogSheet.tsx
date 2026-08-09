@@ -8,7 +8,7 @@ import { leadCardDisplayName } from "@/lib/leads/whatsapp-lead-display";
 import { PremiumSheet } from "./PremiumSheet";
 
 const fieldClass =
-  "h-11 w-full rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[13px] text-[#101828] outline-none transition-colors placeholder:text-[#98A2B3] focus:border-[#D4FF4F] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
+  "h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none transition-colors placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
 
 export function QuickLogSheet({
   leads,
@@ -83,13 +83,13 @@ export function QuickLogSheet({
     >
       {success ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[12px] bg-[#ECFDF3] text-[#027A48]">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[12px] bg-sales-success-soft text-[var(--success-fg,#027A48)]">
             <CheckCircle size={22} strokeWidth={1.8} />
           </div>
-          <p className="text-[15px] font-semibold text-[#101828]">
+          <p className="text-[15px] font-semibold text-sales-text-primary">
             {isWhatsApp ? "WhatsApp contact logged" : "Call logged"}
           </p>
-          <p className="mt-1 text-[13px] text-[#667085]">Closing…</p>
+          <p className="mt-1 text-[13px] text-sales-text-secondary">Closing…</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -97,7 +97,7 @@ export function QuickLogSheet({
             <div>
               <label
                 htmlFor="quick-log-lead"
-                className="mb-1.5 block text-[12px] font-medium text-[#667085]"
+                className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary"
               >
                 Lead
               </label>
@@ -129,7 +129,7 @@ export function QuickLogSheet({
               onSubmitSuccess={handleSubmitSuccess}
             />
           ) : needsLeadPicker ? (
-            <p className="rounded-[10px] border border-dashed border-[#E4E7EC] bg-[#F9FAFB] px-4 py-6 text-center text-[13px] text-[#98A2B3]">
+            <p className="rounded-[10px] border border-dashed border-sales-border bg-sales-surface-hover px-4 py-6 text-center text-[13px] text-sales-text-muted">
               Choose a lead to log the outcome.
             </p>
           ) : null}

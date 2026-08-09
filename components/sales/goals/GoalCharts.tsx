@@ -15,7 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SALES_COLORS } from "@/lib/sales/design-tokens";
+import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
 import { formatDealCurrency } from "@/lib/sales/format";
 import type { GoalProgressPoint, GoalWeeklyComparison } from "@/lib/sales/goals/types";
 
@@ -47,13 +47,13 @@ export function GoalProgressRing({
       aria-label={`${display}% of target achieved`}
     >
       <svg width={size} height={size} viewBox="0 0 140 140" aria-hidden>
-        <circle cx="70" cy="70" r={r} fill="none" stroke="#EAECF0" strokeWidth={10} />
+        <circle cx="70" cy="70" r={r} fill="none" stroke="var(--sales-chart-track, var(--sales-border-subtle))" strokeWidth={10} />
         <circle
           cx="70"
           cy="70"
           r={r}
           fill="none"
-          stroke="#D4FF4F"
+          stroke="var(--sales-brand)"
           strokeWidth={10}
           strokeLinecap="round"
           strokeDasharray={c}
@@ -82,6 +82,7 @@ export function GoalProgressChart({
   target: number;
   currency: string;
 }) {
+  const colors = useSalesChartColors();
   const chartData = series.map((p) => ({
     label: p.label,
     value: p.cumulative,
@@ -96,21 +97,21 @@ export function GoalProgressChart({
         <AreaChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="goalProgressFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={SALES_COLORS.brand} stopOpacity={0.28} />
-              <stop offset="100%" stopColor={SALES_COLORS.brand} stopOpacity={0.02} />
+              <stop offset="0%" stopColor={colors.brand} stopOpacity={0.28} />
+              <stop offset="100%" stopColor={colors.brand} stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid vertical={false} stroke="#EAECF0" strokeDasharray="3 6" />
+          <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 6" />
           <XAxis
             dataKey="label"
-            tick={{ fill: "#98A2B3", fontSize: 11 }}
+            tick={{ fill: colors.axis, fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             interval="preserveStartEnd"
             minTickGap={28}
           />
           <YAxis
-            tick={{ fill: "#98A2B3", fontSize: 11 }}
+            tick={{ fill: colors.axis, fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             width={42}
@@ -125,12 +126,24 @@ export function GoalProgressChart({
                 dealsWon: number;
               };
               return (
-                <div className="rounded-[12px] border border-[#E4E7EC] bg-white px-3 py-2 shadow-[0_4px_12px_rgba(16,24,40,0.08)]">
-                  <p className="text-[11px] text-sales-text-muted">{label}</p>
-                  <p className="mt-1 text-[12px] font-semibold tabular-nums text-sales-text-primary">
+                <div
+                  className="rounded-[12px] px-3 py-2 shadow-[0_4px_12px_rgba(16,24,40,0.08)]"
+                  style={{
+                    border: `1px solid ${colors.border}`,
+                    backgroundColor: colors.surfaceRaised,
+                    color: colors.textPrimary,
+                  }}
+                >
+                  <p className="text-[11px]" style={{ color: colors.textMuted }}>
+                    {label}
+                  </p>
+                  <p
+                    className="mt-1 text-[12px] font-semibold tabular-nums"
+                    style={{ color: colors.textPrimary }}
+                  >
                     Revenue won {formatDealCurrency(row.value, { currency })}
                   </p>
-                  <p className="text-[12px] text-sales-text-secondary">
+                  <p className="text-[12px]" style={{ color: colors.textSecondary }}>
                     Deals won {row.dealsWon}
                   </p>
                 </div>
@@ -140,12 +153,12 @@ export function GoalProgressChart({
           {target > 0 ? (
             <ReferenceLine
               y={target}
-              stroke="#98A2B3"
+              stroke={colors.axis}
               strokeDasharray="4 4"
               label={{
                 value: `${fmtAxis(target, currency)} Target`,
                 position: "insideTopRight",
-                fill: "#667085",
+                fill: colors.textSecondary,
                 fontSize: 11,
               }}
             />
@@ -153,7 +166,7 @@ export function GoalProgressChart({
           <Area
             type="monotone"
             dataKey="value"
-            stroke={SALES_COLORS.brand}
+            stroke={colors.brand}
             strokeWidth={2}
             fill="url(#goalProgressFill)"
             isAnimationActive={false}
@@ -170,7 +183,7 @@ const SOURCE_COLORS: Record<string, string> = {
   referral: "#8B5CF6",
   website: "#F59E0B",
   manual: "#14B8A6",
-  other: "#98A2B3",
+  other: "var(--sales-text-muted)",
 };
 
 export function GoalSourceDonut({
@@ -203,7 +216,7 @@ export function GoalSourceDonut({
             isAnimationActive={false}
           >
             {data.map((d) => (
-              <Cell key={d.key} fill={SOURCE_COLORS[d.key] ?? "#98A2B3"} />
+              <Cell key={d.key} fill={SOURCE_COLORS[d.key] ?? "var(--sales-text-muted)"} />
             ))}
           </Pie>
         </PieChart>
@@ -225,14 +238,15 @@ export function GoalComparisonBars({
   weeks: GoalWeeklyComparison[];
   currency: string;
 }) {
+  const colors = useSalesChartColors();
   return (
     <div className="h-[140px] w-full" aria-label="Weekly comparison chart">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={weeks} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} barGap={4}>
-          <CartesianGrid vertical={false} stroke="#EAECF0" strokeDasharray="3 6" />
+          <CartesianGrid vertical={false} stroke={colors.grid} strokeDasharray="3 6" />
           <XAxis
             dataKey="label"
-            tick={{ fill: "#98A2B3", fontSize: 11 }}
+            tick={{ fill: colors.axis, fontSize: 11 }}
             axisLine={false}
             tickLine={false}
           />
@@ -241,12 +255,22 @@ export function GoalComparisonBars({
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               return (
-                <div className="rounded-[12px] border border-[#E4E7EC] bg-white px-3 py-2 shadow-[0_4px_12px_rgba(16,24,40,0.08)]">
-                  <p className="text-[11px] text-sales-text-muted">{label}</p>
+                <div
+                  className="rounded-[12px] px-3 py-2 shadow-[0_4px_12px_rgba(16,24,40,0.08)]"
+                  style={{
+                    border: `1px solid ${colors.border}`,
+                    backgroundColor: colors.surfaceRaised,
+                    color: colors.textPrimary,
+                  }}
+                >
+                  <p className="text-[11px]" style={{ color: colors.textMuted }}>
+                    {label}
+                  </p>
                   {payload.map((p) => (
                     <p
                       key={String(p.dataKey)}
-                      className="text-[12px] font-medium tabular-nums text-sales-text-primary"
+                      className="text-[12px] font-medium tabular-nums"
+                      style={{ color: colors.textPrimary }}
                     >
                       {p.name}: {formatDealCurrency(Number(p.value) || 0, { currency })}
                     </p>
@@ -258,7 +282,7 @@ export function GoalComparisonBars({
           <Bar
             dataKey="thisMonth"
             name="This month"
-            fill="#D4FF4F"
+            fill={colors.brand}
             radius={[4, 4, 0, 0]}
             maxBarSize={18}
             isAnimationActive={false}
@@ -266,7 +290,7 @@ export function GoalComparisonBars({
           <Bar
             dataKey="lastMonth"
             name="Last month"
-            fill="#E4E7EC"
+            fill={colors.border}
             radius={[4, 4, 0, 0]}
             maxBarSize={18}
             isAnimationActive={false}

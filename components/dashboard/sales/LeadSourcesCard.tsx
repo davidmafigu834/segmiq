@@ -18,12 +18,12 @@ function SourceIcon({ brand }: { brand: SalesLeadSourceItem["brand"] }) {
   if (brand === "whatsapp") return <SiWhatsapp size={16} color="#25D366" aria-hidden />;
   if (brand === "facebook") return <SiFacebook size={16} color="#1877F2" aria-hidden />;
   if (brand === "referral") {
-    return <Users size={16} strokeWidth={1.8} className="text-[#667085]" aria-hidden />;
+    return <Users size={16} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />;
   }
   if (brand === "website") {
-    return <Globe2 size={16} strokeWidth={1.8} className="text-[#667085]" aria-hidden />;
+    return <Globe2 size={16} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />;
   }
-  return <MoreHorizontal size={16} strokeWidth={1.8} className="text-[#98A2B3]" aria-hidden />;
+  return <MoreHorizontal size={16} strokeWidth={1.8} className="text-sales-text-muted" aria-hidden />;
 }
 
 export function LeadSourcesCard({ data }: { data: SalesDashboardRaw }) {
@@ -49,18 +49,18 @@ export function LeadSourcesCard({ data }: { data: SalesDashboardRaw }) {
       }
     >
       {sources.every((s) => s.count === 0) ? (
-        <p className="py-6 text-center text-[13px] text-[#98A2B3]">No lead sources yet</p>
+        <p className="py-6 text-center text-[13px] text-sales-text-muted">No lead sources yet</p>
       ) : (
         <ul className="space-y-3.5">
           {sources.map((s) => (
             <li key={s.id}>
               <div className="mb-1.5 flex items-center justify-between gap-2">
-                <span className="inline-flex min-w-0 items-center gap-2 text-[13px] font-medium text-[#101828]">
+                <span className="inline-flex min-w-0 items-center gap-2 text-[13px] font-medium text-sales-text-primary">
                   <SourceIcon brand={s.brand} />
                   <span className="truncate">{s.label}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-2 text-[12px]">
-                  <span className="font-semibold tabular-nums text-[#101828]">{s.count}</span>
+                  <span className="font-semibold tabular-nums text-sales-text-primary">{s.count}</span>
                   {s.trendLabel ? (
                     <span
                       className={cn(
@@ -68,8 +68,8 @@ export function LeadSourcesCard({ data }: { data: SalesDashboardRaw }) {
                         s.trendDirection === "up"
                           ? "text-[#16A34A]"
                           : s.trendDirection === "down"
-                            ? "text-[#EF4444]"
-                            : "text-[#98A2B3]"
+                            ? "text-sales-danger"
+                            : "text-sales-text-muted"
                       )}
                     >
                       {s.trendLabel}
@@ -77,9 +77,9 @@ export function LeadSourcesCard({ data }: { data: SalesDashboardRaw }) {
                   ) : null}
                 </span>
               </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[#EAECF0]">
+              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--sales-border-subtle)]">
                 <div
-                  className="h-full rounded-full bg-[#D4FF4F]"
+                  className="h-full rounded-full bg-sales-brand"
                   style={{
                     width: `${s.count > 0 ? Math.max((s.count / maxCount) * 100, 4) : 0}%`,
                   }}

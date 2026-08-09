@@ -69,6 +69,8 @@ import {
   SALES_RADIUS,
   SALES_SHADOW,
 } from "@/lib/sales/design-tokens";
+import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
+import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 
 const NAV = [
   { id: "colors", label: "Colors" },
@@ -141,6 +143,7 @@ function ShowcaseInner() {
   const [radio, setRadio] = useState("a");
   const [q, setQ] = useState("");
   const [selectVal, setSelectVal] = useState("whatsapp");
+  const crmTheme = useCrmThemeOptional();
 
   return (
     <div className="sales-dashboard-premium sales-ds-showcase min-h-screen overflow-y-auto bg-sales-bg text-sales-text-primary">
@@ -163,15 +166,21 @@ function ShowcaseInner() {
         </aside>
 
         <div className="min-w-0 flex-1 space-y-12">
-          <header>
-            <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
-              Development only · Full catalog
-            </p>
-            <h1 className="sales-type-h1 mt-1">SegmiQ Sales Design System</h1>
-            <p className="mt-2 max-w-2xl sales-type-body-lg text-sales-text-secondary">
-              Complete token and component reference aligned to the Sales Design System boards.
-              Use this page to verify primitives before shipping sales UI.
-            </p>
+          <header className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                Development only · Full catalog
+              </p>
+              <h1 className="sales-type-h1 mt-1">SegmiQ Sales Design System</h1>
+              <p className="mt-2 max-w-2xl sales-type-body-lg text-sales-text-secondary">
+                Complete token and component reference aligned to the Sales Design System boards.
+                Use this page to verify primitives before shipping sales UI.
+              </p>
+              <p className="mt-2 text-[12px] text-sales-text-muted">
+                Active theme: {crmTheme?.theme === "light" ? "Light" : "Dark"}
+              </p>
+            </div>
+            <SalesThemeToggle />
           </header>
 
           {/* ── Colors ─────────────────────────────────────────── */}

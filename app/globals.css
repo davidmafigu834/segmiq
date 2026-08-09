@@ -1289,20 +1289,20 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     color: var(--text-primary);
   }
 
-  /* Premium Sales Hub ? always light, even when CRM shell is dark */
+  /* Premium Sales Hub — uses sales design tokens (light + dark via CRM theme) */
   .sales-dashboard-premium .wa-hub-shell,
   .wa-hub-premium {
-    --wa-accent: #d4ff4f;
-    --wa-accent-strong: #4d7c0f;
-    --wa-accent-soft: #f4fce8;
-    --wa-ink: #101828;
-    --wa-muted: #667085;
-    --wa-border: #e4e7ec;
-    --wa-surface: #ffffff;
-    --wa-surface-subtle: #f7f8fa;
-    --wa-whatsapp: #25d366;
-    background: #f7f8fa !important;
-    color: #101828;
+    --wa-accent: var(--sales-brand);
+    --wa-accent-strong: var(--sales-brand-fg);
+    --wa-accent-soft: var(--sales-brand-soft-solid);
+    --wa-ink: var(--sales-text-primary);
+    --wa-muted: var(--sales-text-secondary);
+    --wa-border: var(--sales-border);
+    --wa-surface: var(--sales-surface);
+    --wa-surface-subtle: var(--sales-bg);
+    --wa-whatsapp: var(--sales-whatsapp);
+    background: var(--sales-bg) !important;
+    color: var(--sales-text-primary);
   }
 
   .sales-dashboard-premium .wa-panel-header,
@@ -1311,20 +1311,20 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .wa-hub-premium .wa-panel-header,
   .wa-hub-premium .wa-header,
   .wa-hub-premium .wa-composer {
-    background: #ffffff !important;
-    border-color: #e4e7ec !important;
-    color: #101828 !important;
+    background: var(--sales-surface-subtle) !important;
+    border-color: var(--sales-border) !important;
+    color: var(--sales-text-primary) !important;
   }
 
   .sales-dashboard-premium .wa-chat-wallpaper,
   .wa-hub-premium .wa-chat-wallpaper {
-    background-color: #fafbfc !important;
+    background-color: var(--sales-bg) !important;
     background-image: none !important;
   }
 
   .sales-dashboard-premium .wa-conv-row-active,
   .wa-hub-premium .wa-conv-row-active {
-    background-color: rgba(212, 255, 79, 0.1) !important;
+    background-color: var(--sales-brand-soft) !important;
     box-shadow: inset 3px 0 0 rgba(150, 190, 40, 0.55) !important;
     border-color: transparent !important;
   }
@@ -1332,28 +1332,28 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .sales-dashboard-premium .wa-bubble-out,
   .wa-hub-premium .wa-bubble-out {
     background: rgba(212, 255, 79, 0.12) !important;
-    border-color: rgba(150, 190, 40, 0.25) !important;
-    color: #101828 !important;
+    border-color: rgba(212, 255, 79, 0.15) !important;
+    color: var(--sales-text-primary) !important;
   }
 
   .sales-dashboard-premium .wa-bubble-in,
   .wa-hub-premium .wa-bubble-in {
-    background: #ffffff !important;
-    border-color: #e4e7ec !important;
-    color: #101828 !important;
+    background: var(--sales-surface-hover) !important;
+    border-color: var(--sales-border) !important;
+    color: var(--sales-text-primary) !important;
   }
 
   .sales-dashboard-premium .wa-filter-pill-active,
   .wa-hub-premium .wa-filter-pill-active {
-    border-color: rgba(150, 190, 40, 0.55) !important;
-    background: #f4fce8 !important;
-    color: #101828 !important;
+    border-color: var(--sales-brand-border) !important;
+    background: var(--sales-brand-soft) !important;
+    color: var(--sales-text-primary) !important;
   }
 
   .sales-dashboard-premium .wa-send-btn,
   .wa-hub-premium .wa-send-btn {
-    background: #d4ff4f !important;
-    color: #101828 !important;
+    background: var(--sales-brand) !important;
+    color: var(--sales-brand-text) !important;
   }
 
   .wa-day-rule {
@@ -1370,13 +1370,13 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     content: "";
     flex: 1;
     height: 1px;
-    background: #e4e7ec;
+    background: var(--sales-border, #e4e7ec);
   }
 
   .wa-day-rule span {
     font-size: 0.6875rem;
     font-weight: 500;
-    color: #98a2b3;
+    color: var(--sales-text-muted, #98a2b3);
     white-space: nowrap;
   }
 
@@ -1385,8 +1385,8 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     flex-wrap: wrap;
     align-items: center;
     gap: 0.25rem;
-    border-bottom: 1px solid #e4e7ec;
-    background: #ffffff;
+    border-bottom: 1px solid var(--sales-border, #e4e7ec);
+    background: var(--sales-surface, #ffffff);
     padding: 0.375rem 0.75rem;
   }
 
@@ -1396,38 +1396,38 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     align-items: center;
     gap: 0.375rem;
     border-radius: 8px;
-    border: 1px solid #e4e7ec;
-    background: #ffffff;
+    border: 1px solid var(--sales-border, #e4e7ec);
+    background: var(--sales-surface, #ffffff);
     padding: 0 0.625rem;
     font-size: 0.75rem;
     font-weight: 500;
-    color: #667085;
+    color: var(--sales-text-secondary, #667085);
     white-space: nowrap;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-action-chip:hover {
-    background: #f9fafb;
-    border-color: #d0d5dd;
-    color: #101828;
+    background: var(--sales-surface-hover, #f9fafb);
+    border-color: var(--sales-border-strong, #d0d5dd);
+    color: var(--sales-text-primary, #101828);
   }
 
   .wa-action-chip-active {
-    border-color: rgba(150, 190, 40, 0.55);
-    background: #f4fce8;
-    color: #101828;
+    border-color: var(--sales-brand-border, rgba(150, 190, 40, 0.55));
+    background: var(--sales-brand-soft, #f4fce8);
+    color: var(--sales-text-primary, #101828);
   }
 
   .wa-session-banner {
     display: flex;
     align-items: flex-start;
     gap: 0.625rem;
-    border: 1px solid #fde68a;
+    border: 1px solid rgba(251, 191, 36, 0.16);
     border-radius: 10px;
-    background: #fffbeb;
+    background: rgba(251, 191, 36, 0.075);
     margin: 0.5rem 0.75rem 0;
     padding: 0.625rem 0.75rem;
-    color: #92400e;
+    color: var(--sales-warning, #92400e);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -3242,6 +3242,208 @@ label[for="photo-input"] {
 
   color: var(--sales-text-primary);
   color-scheme: light;
+
+  /* Chart helpers (light) */
+  --sales-chart-grid: #eaecf0;
+  --sales-chart-axis: #98a2b3;
+  --sales-chart-track: #eaecf0;
+  --sales-surface-raised: #ffffff;
+  --sales-surface-selected: #f3f7e8;
+  --sales-bg-subtle: #fafbfd;
+  --sales-overlay: rgba(16, 24, 40, 0.35);
+  --sales-skeleton-base: #e4e7ec;
+  --sales-skeleton-highlight: #f2f4f7;
+}
+
+/*
+  Sales dark mode — keyed to CRM theme (html[data-crm] without data-crm-theme=light).
+  Light token block above remains the source of truth for light mode.
+*/
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium,
+html[data-crm]:not([data-crm-theme="light"]) .pipeline-drawer-light,
+html[data-crm]:not([data-crm-theme="light"]) .sales-modal-premium,
+html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
+  /* Surfaces */
+  --sales-bg: #0b0d0c;
+  --sales-bg-subtle: #0e110e;
+  --sales-surface: #111411;
+  --sales-surface-subtle: #0f120f;
+  --sales-surface-hover: #181c18;
+  --sales-surface-active: #1b2019;
+  --sales-surface-raised: #151815;
+  --sales-surface-selected: #1b2019;
+
+  /* Neutral scale */
+  --sales-neutral-900: #f7f8f5;
+  --sales-neutral-700: #b1b7ae;
+  --sales-neutral-500: #7d847a;
+  --sales-neutral-400: #626961;
+  --sales-neutral-300: #343a34;
+  --sales-neutral-200: #272c27;
+  --sales-neutral-100: #1e231e;
+  --sales-neutral-50: #0e110e;
+  --sales-neutral-0: #111411;
+
+  /* Text */
+  --sales-text-primary: #f7f8f5;
+  --sales-text-secondary: #b1b7ae;
+  --sales-text-muted: #7d847a;
+  --sales-text-disabled: #555c54;
+  --sales-text-label: #b1b7ae;
+
+  /* Borders */
+  --sales-border: #272c27;
+  --sales-border-subtle: #1e231e;
+  --sales-border-strong: #343a34;
+
+  /* Brand */
+  --sales-brand: #d4ff4f;
+  --sales-brand-hover: #c8f23f;
+  --sales-brand-soft: rgba(212, 255, 79, 0.1);
+  --sales-brand-soft-solid: #1b2019;
+  --sales-brand-border: rgba(212, 255, 79, 0.22);
+  --sales-brand-text: #101828;
+  --sales-brand-fg: #d4ff4f;
+
+  /* Sidebar */
+  --sales-sidebar-bg: #0d100e;
+  --sales-sidebar-border: #1e231e;
+  --sales-sidebar-divider: #1e231e;
+  --sales-sidebar-text: #a3aaa1;
+  --sales-sidebar-text-hover: #f2f4f1;
+  --sales-sidebar-text-active: #f7f8f5;
+  --sales-sidebar-muted: #626961;
+  --sales-sidebar-icon: #747c73;
+  --sales-sidebar-icon-active: #d4ff4f;
+  --sales-sidebar-hover: #151915;
+  --sales-sidebar-active: rgba(212, 255, 79, 0.1);
+  --sales-sidebar-active-gradient: linear-gradient(
+    90deg,
+    rgba(212, 255, 79, 0.14) 0%,
+    rgba(212, 255, 79, 0.08) 75%,
+    rgba(212, 255, 79, 0.03) 100%
+  );
+  --sales-sidebar-active-indicator: #d4ff4f;
+  --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.12);
+  --sales-sidebar-badge-text: #d4ff4f;
+
+  /* Semantic */
+  --sales-success: #4ade80;
+  --sales-success-soft: rgba(74, 222, 128, 0.1);
+  --sales-warning: #fbbf24;
+  --sales-warning-soft: rgba(251, 191, 36, 0.1);
+  --sales-danger: #f87171;
+  --sales-danger-soft: rgba(248, 113, 113, 0.1);
+  --sales-info: #60a5fa;
+  --sales-info-soft: rgba(96, 165, 250, 0.1);
+  --sales-purple: #a78bfa;
+  --sales-purple-soft: rgba(167, 139, 250, 0.1);
+  --sales-teal: #2dd4bf;
+  --sales-teal-soft: rgba(45, 212, 191, 0.1);
+  --sales-whatsapp: #25d366;
+
+  /* Shadows — elevation via surfaces; shadows only for floating UI */
+  --sales-shadow-card: none;
+  --sales-shadow-popover: 0 18px 45px rgba(0, 0, 0, 0.36);
+  --sales-shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.4);
+  --sales-shadow-dropdown: 0 14px 36px rgba(0, 0, 0, 0.35);
+  --sales-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --sales-shadow-md: 0 8px 22px rgba(0, 0, 0, 0.3);
+  --sales-shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.35);
+  --sales-shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.4);
+
+  /* Focus */
+  --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.24);
+
+  /* Charts */
+  --sales-chart-grid: #202520;
+  --sales-chart-axis: #737a71;
+  --sales-chart-track: #292f29;
+
+  /* Misc */
+  --sales-overlay: rgba(0, 0, 0, 0.62);
+  --sales-skeleton-base: #171b17;
+  --sales-skeleton-highlight: #202520;
+
+  /* CRM remap inside sales shell */
+  --bg-primary: var(--sales-bg);
+  --bg-secondary: var(--sales-surface);
+  --bg-tertiary: #151815;
+  --bg-quaternary: #181c18;
+  --surface-card: var(--sales-surface);
+  --surface-dropdown: var(--sales-surface-raised);
+  --surface-input: var(--sales-surface);
+  --surface-card-alt: var(--sales-surface-subtle);
+  --surface-modal: var(--sales-surface-raised);
+  --text-primary: var(--sales-text-primary);
+  --text-secondary: var(--sales-text-secondary);
+  --text-tertiary: var(--sales-text-muted);
+  --text-disabled: var(--sales-text-disabled);
+  --border: var(--sales-border);
+  --border-hover: var(--sales-border-strong);
+  --border-strong: var(--sales-border-strong);
+  --accent: var(--sales-brand);
+  --accent-hover: var(--sales-brand-hover);
+  --accent-foreground: var(--sales-brand-text);
+  --accent-ink: var(--sales-brand-text);
+  --accent-fg: var(--sales-brand-fg);
+  --accent-muted: var(--sales-brand-soft);
+  --accent-border: var(--sales-brand-border);
+  --success: var(--sales-success);
+  --success-bg: var(--sales-success-soft);
+  --success-fg: #4ade80;
+  --warning: var(--sales-warning);
+  --error: var(--sales-danger);
+  --danger: var(--sales-danger);
+  --danger-bg: var(--sales-danger-soft);
+  --danger-fg: #f87171;
+  --info: var(--sales-info);
+
+  color: var(--sales-text-primary);
+  color-scheme: dark;
+}
+
+.sales-dashboard-premium .sales-mobile-bottom-nav {
+  background: color-mix(in srgb, var(--sales-sidebar-bg) 95%, transparent);
+  box-shadow: 0 -8px 28px rgba(16, 24, 40, 0.06);
+}
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-bottom-nav {
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.25);
+}
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-top-bar {
+  background: color-mix(in srgb, var(--sales-sidebar-bg) 95%, transparent);
+}
+
+/* Autofill readability in sales forms */
+.sales-dashboard-premium input:-webkit-autofill,
+.sales-dashboard-premium textarea:-webkit-autofill,
+.sales-dashboard-premium select:-webkit-autofill,
+.pipeline-drawer-light input:-webkit-autofill,
+.sales-modal-premium input:-webkit-autofill,
+.calendar-modal-premium input:-webkit-autofill {
+  -webkit-text-fill-color: var(--sales-text-primary);
+  caret-color: var(--sales-text-primary);
+  box-shadow: 0 0 0 1000px var(--sales-surface) inset;
+  transition: background-color 99999s ease-out;
+}
+
+/* Optional restrained color transitions (respect reduced motion) */
+@media (prefers-reduced-motion: no-preference) {
+  .sales-dashboard-premium,
+  .sales-dashboard-premium .sd-card,
+  .sales-dashboard-premium .sd-icon-btn {
+    transition-property: background-color, border-color, color;
+    transition-duration: 180ms, 180ms, 150ms;
+    transition-timing-function: ease;
+  }
+}
+
+/* Sales scrollbars when themed */
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb {
+  background: #303630;
+}
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb:hover {
+  background: #444b43;
 }
 
 /* Typography scale (Sales Design System boards) */
@@ -3417,11 +3619,11 @@ label[for="photo-input"] {
   color: var(--sales-brand-text);
 }
 
-/* Calendar / sales modals portal outside the premium shell ? force light controls */
+/* Calendar / sales modals portal outside the premium shell — theme via sales tokens */
 .calendar-modal-premium,
 .sales-modal-premium {
-  color-scheme: light;
-  color: #101828;
+  color-scheme: inherit;
+  color: var(--sales-text-primary);
 }
 .calendar-modal-premium input,
 .calendar-modal-premium textarea,
@@ -3429,16 +3631,16 @@ label[for="photo-input"] {
 .sales-modal-premium input,
 .sales-modal-premium textarea,
 .sales-modal-premium select {
-  color: #101828 !important;
-  background: #ffffff !important;
-  border-color: #e4e7ec !important;
-  color-scheme: light;
+  color: var(--sales-text-primary) !important;
+  background: var(--sales-surface) !important;
+  border-color: var(--sales-border) !important;
+  color-scheme: inherit;
 }
 .calendar-modal-premium input::placeholder,
 .calendar-modal-premium textarea::placeholder,
 .sales-modal-premium input::placeholder,
 .sales-modal-premium textarea::placeholder {
-  color: #98a2b3 !important;
+  color: var(--sales-text-muted) !important;
 }
 .calendar-modal-premium input[type="date"],
 .calendar-modal-premium input[type="time"],
@@ -3446,34 +3648,42 @@ label[for="photo-input"] {
 .sales-modal-premium input[type="date"],
 .sales-modal-premium input[type="time"],
 .sales-modal-premium input[type="datetime-local"] {
-  color-scheme: light;
+  color-scheme: inherit;
 }
 .calendar-modal-premium select:disabled,
 .sales-modal-premium select:disabled {
-  background: #f9fafb !important;
-  color: #667085 !important;
+  background: var(--sales-surface-subtle) !important;
+  color: var(--sales-text-secondary) !important;
 }
 .calendar-modal-premium option,
 .sales-modal-premium option {
-  background: #ffffff;
-  color: #101828;
+  background: var(--sales-surface);
+  color: var(--sales-text-primary);
 }
 
 
 /* ?? Premium Calendar workspace ????????????????????????????????????????? */
 .crm-shell-main:has(.sales-dashboard-premium),
 .crm-shell-main:has(.calendar-premium) {
-  background: #f7f8fa !important;
+  background: var(--sales-bg, #f7f8fa) !important;
 }
 html:has(.sales-dashboard-premium) {
-  background: #f7f8fa;
+  background: #fdfdfe;
   height: 100%;
   overflow: hidden;
 }
 html:has(.sales-dashboard-premium) body {
-  background: #f7f8fa;
+  background: #fdfdfe;
   height: 100%;
   overflow: hidden;
+}
+html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium),
+html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium) body {
+  background: #0b0d0c;
+}
+html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboard-premium),
+html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.calendar-premium) {
+  background: #0b0d0c !important;
 }
 
 /* Design-system showcase scrolls the document (no app shell scrollport) */
@@ -3561,11 +3771,19 @@ html:has(.sales-ds-showcase) body {
   }
 }
 
+.sales-dashboard-premium .calendar-premium .cal-card,
 .calendar-premium .cal-card {
-  background: #ffffff;
-  border: 1px solid #e4e7ec;
+  background-color: var(--sales-surface) !important;
+  border: 1px solid var(--sales-border);
   border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.025);
+  box-shadow: var(--sales-shadow-card);
+  color: var(--sales-text-primary);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .calendar-premium .cal-card {
+  background-color: #111411 !important;
+  border-color: #272c27 !important;
+  color: #f7f8f5;
 }
 
 /* Shared segment switcher look (Calendar Month/Week/Agenda). Prefer SegmentedControl. */
@@ -3576,8 +3794,8 @@ html:has(.sales-ds-showcase) body {
   gap: 0;
   padding: 4px;
   border-radius: 9px;
-  border: 1px solid #e4e7ec;
-  background: #ffffff;
+  border: 1px solid var(--sales-border);
+  background: var(--sales-surface);
 }
 
 .calendar-premium .cal-seg [role="tab"],
@@ -3587,15 +3805,15 @@ html:has(.sales-ds-showcase) body {
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 500;
-  color: #667085;
+  color: var(--sales-text-secondary);
   transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
 .calendar-premium .cal-seg [role="tab"][aria-selected="true"],
 .sales-dashboard-premium .sales-seg [role="tab"][aria-selected="true"] {
-  background: rgba(212, 255, 79, 0.22);
-  border-color: rgba(160, 210, 30, 0.45);
-  color: #101828;
+  background: var(--sales-brand-soft);
+  border-color: var(--sales-brand-border);
+  color: var(--sales-text-primary);
   font-weight: 600;
 }
 

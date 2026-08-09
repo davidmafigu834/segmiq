@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   addMonths,
   addWeeks,
@@ -59,11 +59,8 @@ export function SalesCalendarPage({
   const [optionsOpen, setOptionsOpen] = useState(false);
   const isMdUp = useMediaQuery("(min-width: 768px)");
 
-  useEffect(() => {
-    if (!isMdUp && viewMode !== "agenda") {
-      setViewMode("agenda");
-    }
-  }, [isMdUp, viewMode]);
+  // Mobile uses TodayAgenda (not Month/Week). Do not force `viewMode` to agenda —
+  // that effect raced hydration (useMediaQuery starts false) and replaced Month with Agenda on desktop.
 
   const filtered = useMemo(
     () => filterEventsByKinds(events, enabledKinds),
@@ -182,21 +179,21 @@ export function SalesCalendarPage({
   return (
     <div className="calendar-premium space-y-3">
       {overdueCount > 0 ? (
-        <div className="flex min-h-[48px] items-center gap-3 rounded-[12px] border border-[#FECACA] bg-[#FFF8F7] px-3.5 py-2.5">
-          <AlarmClock size={16} strokeWidth={1.8} className="shrink-0 text-[#B42318]" aria-hidden />
+        <div className="flex min-h-[48px] items-center gap-3 rounded-[12px] border border-sales-danger/25 bg-sales-danger-soft px-3.5 py-2.5">
+          <AlarmClock size={16} strokeWidth={1.8} className="shrink-0 text-sales-danger" aria-hidden />
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-semibold text-[#101828]">
+            <p className="text-[13px] font-semibold text-sales-text-primary">
               {overdueCount} overdue follow-up{overdueCount === 1 ? "" : "s"}
             </p>
-            <p className="text-[12px] text-[#667085]">
+            <p className="text-[12px] text-sales-text-secondary">
               Some scheduled follow-ups need attention.
             </p>
           </div>
           <button
             type="button"
-            className="shrink-0 text-[13px] font-semibold text-[#B42318] underline-offset-2 hover:underline"
+            className="shrink-0 text-[13px] font-semibold text-sales-danger underline-offset-2 hover:underline"
             onClick={() => {
-              setViewMode("agenda");
+              if (isMdUp) setViewMode("agenda");
               goToday();
             }}
           >
@@ -216,9 +213,9 @@ export function SalesCalendarPage({
           >
             <ChevronLeft size={18} strokeWidth={1.8} />
           </button>
-          <div className="inline-flex h-10 min-w-[148px] items-center gap-2 rounded-[9px] border border-[#E4E7EC] bg-white px-3">
-            <CalendarDays size={16} strokeWidth={1.8} className="text-[#667085]" aria-hidden />
-            <span className="text-[14px] font-semibold text-[#101828]">
+          <div className="inline-flex h-10 min-w-[148px] items-center gap-2 rounded-[9px] border border-sales-border bg-sales-surface px-3">
+            <CalendarDays size={16} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />
+            <span className="text-[14px] font-semibold text-sales-text-primary">
               {formatCalendarMonth(viewMonth)}
             </span>
           </div>
@@ -233,7 +230,7 @@ export function SalesCalendarPage({
           <button
             type="button"
             onClick={goToday}
-            className="inline-flex h-10 w-[72px] items-center justify-center rounded-[9px] border border-[#E4E7EC] bg-white text-[12px] font-semibold text-[#101828] transition-colors hover:bg-[#F9FAFB]"
+            className="inline-flex h-10 w-[72px] items-center justify-center rounded-[9px] border border-sales-border bg-sales-surface text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
             aria-label="Go to today"
           >
             Today
@@ -241,7 +238,7 @@ export function SalesCalendarPage({
           <button
             type="button"
             onClick={() => setOptionsOpen(true)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-[9px] border border-[#E4E7EC] bg-white px-3 text-[12px] font-semibold text-[#101828] transition-colors hover:bg-[#F9FAFB] 2xl:hidden"
+            className="inline-flex h-10 items-center gap-1.5 rounded-[9px] border border-sales-border bg-sales-surface px-3 text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover 2xl:hidden"
             aria-label="Calendar options"
           >
             <SlidersHorizontal size={14} strokeWidth={1.8} aria-hidden />
@@ -261,7 +258,7 @@ export function SalesCalendarPage({
           <button
             type="button"
             onClick={() => setAddOpen(true)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-[9px] bg-[#D4FF4F] px-3.5 text-[13px] font-semibold text-[#101828] transition-colors hover:bg-[#c8f244]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-[9px] bg-sales-brand px-3.5 text-[13px] font-semibold text-sales-brand-text transition-colors hover:bg-sales-brand-hover"
             aria-label="Add event"
           >
             <Plus size={16} strokeWidth={1.8} aria-hidden />
@@ -363,9 +360,9 @@ export function SalesCalendarPage({
             aria-label="Close calendar options"
             onClick={() => setOptionsOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 z-50 w-[min(92vw,300px)] overflow-y-auto border-r border-[#E4E7EC] bg-[#F7F8FA] p-3 shadow-[0_8px_32px_rgba(16,24,40,0.12)] layout:left-[232px]">
+          <div className="fixed inset-y-0 left-0 z-50 w-[min(92vw,300px)] overflow-y-auto border-r border-sales-border bg-sales-bg p-3 shadow-[0_8px_32px_rgba(16,24,40,0.12)] layout:left-[232px]">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-[14px] font-semibold text-[#101828]">Calendar options</p>
+              <p className="text-[14px] font-semibold text-sales-text-primary">Calendar options</p>
               <button
                 type="button"
                 className="sd-icon-btn"

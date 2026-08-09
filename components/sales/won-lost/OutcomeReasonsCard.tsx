@@ -42,7 +42,7 @@ export function OutcomeReasonsCard({
                   <span className="ml-1.5 text-sales-text-muted">{row.pct}%</span>
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#EAECF0]">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--sales-border-subtle)]">
                 <div
                   className={cn("h-full rounded-full transition-[width] duration-200", fill)}
                   style={{ width: `${Math.max(2, Math.min(100, row.pct))}%` }}

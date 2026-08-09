@@ -103,7 +103,7 @@ export function SalesMoreSheet({
             onQuickActions();
           }}
         >
-          <Zap size={18} strokeWidth={1.8} className="text-[#4E6400]" aria-hidden />
+          <Zap size={18} strokeWidth={1.8} className="text-[var(--sales-sidebar-icon-active)]" aria-hidden />
           Quick actions
         </button>
 

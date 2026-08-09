@@ -25,10 +25,10 @@ export function CalendarEventChip({
         onClick();
       }}
       className={[
-        "cal-event-chip flex w-full items-start gap-1 rounded-[6px] border bg-white px-1 py-0.5 text-left transition-[border-color,box-shadow] duration-150",
+        "cal-event-chip flex w-full items-start gap-1 rounded-[6px] border bg-sales-surface px-1 py-0.5 text-left transition-[border-color,box-shadow] duration-150",
         selected
           ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.1)]"
-          : "border-[#E4E7EC] hover:border-[#D0D5DD] hover:shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
+          : "border-sales-border hover:border-sales-border-strong hover:shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
         event.overdue ? "border-l-2 !border-l-[#F97066]" : "",
       ].join(" ")}
       style={
@@ -44,17 +44,17 @@ export function CalendarEventChip({
         aria-hidden
       />
       <span className="min-w-0 flex-1 leading-tight">
-        <span className="line-clamp-1 block text-[11px] font-semibold text-[#101828]">
-          <span className="cal-chip-time text-[#667085]">
+        <span className="line-clamp-1 block text-[11px] font-semibold text-sales-text-primary">
+          <span className="cal-chip-time text-sales-text-secondary">
             {time !== "All day" ? `${time} ` : ""}
           </span>
           {label}
         </span>
         {customer ? (
-          <span className="line-clamp-1 block text-[10px] text-[#667085]">{customer}</span>
+          <span className="line-clamp-1 block text-[10px] text-sales-text-secondary">{customer}</span>
         ) : null}
         {event.overdue ? (
-          <span className="block text-[9px] font-medium text-[#B42318]">Overdue</span>
+          <span className="block text-[9px] font-medium text-sales-danger">Overdue</span>
         ) : null}
       </span>
     </button>

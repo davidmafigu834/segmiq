@@ -27,7 +27,7 @@ function activityIcon(type: QuoteActivityItem["type"]) {
     case "accepted":
       return <CircleCheck {...props} className="text-[#16A34A]" />;
     case "declined":
-      return <CircleX {...props} className="text-[#EF4444]" />;
+      return <CircleX {...props} className="text-sales-danger" />;
     case "viewed":
       return <Eye {...props} className="text-[#8B5CF6]" />;
     case "sent":

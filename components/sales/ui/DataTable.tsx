@@ -66,7 +66,7 @@ export function DataTableRow({
     <tr
       className={cn(
         "h-14 transition-colors duration-150 hover:bg-sales-surface-hover",
-        selected ? "bg-sales-surface-active" : "",
+        selected ? "bg-[var(--sales-brand-soft)]" : "",
         className
       )}
       {...props}

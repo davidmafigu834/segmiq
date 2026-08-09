@@ -19,10 +19,10 @@ export function PriorityRow({
   const subtitle = task.industry || "";
 
   return (
-    <li className="grid min-h-[56px] grid-cols-1 gap-2 border-b border-[#E5E7EB] px-4 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1.35fr)_110px_minmax(0,1fr)_auto] sm:items-center sm:gap-3 sm:px-5">
+    <li className="grid min-h-[56px] grid-cols-1 gap-2 border-b border-sales-border px-4 py-2.5 last:border-b-0 sm:grid-cols-[minmax(0,1.35fr)_110px_minmax(0,1fr)_auto] sm:items-center sm:gap-3 sm:px-5">
       <div className="flex min-w-0 items-center gap-3">
         <div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F2F4F7] text-[11px] font-semibold text-[#667085]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--sales-neutral-100)] text-[11px] font-semibold text-sales-text-secondary"
           aria-hidden
         >
           {task.initials}
@@ -31,12 +31,12 @@ export function PriorityRow({
           <Link
             href={task.href}
             title={task.name}
-            className="block truncate text-[13px] font-semibold text-[#101828] transition-colors hover:text-[#4D7C0F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4FF4F]"
+            className="block truncate text-[13px] font-semibold text-sales-text-primary transition-colors hover:text-sales-brand-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
           >
             {task.name}
           </Link>
           {subtitle ? (
-            <p className="truncate text-[12px] text-[#667085]" title={subtitle}>
+            <p className="truncate text-[12px] text-sales-text-secondary" title={subtitle}>
               {subtitle}
             </p>
           ) : null}
@@ -46,7 +46,7 @@ export function PriorityRow({
       <div className="pl-12 sm:pl-0">
         <span
           className={`inline-flex max-w-full truncate rounded-[7px] px-2 py-0.5 text-[11px] font-medium ${
-            task.overdue ? "bg-[#FEF2F2] text-[#EF4444]" : "bg-[#F2F4F7] text-[#667085]"
+            task.overdue ? "bg-sales-danger-soft text-sales-danger" : "bg-[var(--sales-neutral-100)] text-sales-text-secondary"
           }`}
           title={task.dueLabel}
         >
@@ -55,8 +55,8 @@ export function PriorityRow({
       </div>
 
       <div className="min-w-0 pl-12 sm:pl-0">
-        <p className="truncate text-[13px] font-medium text-[#101828]">{task.taskLabel}</p>
-        <p className="truncate text-[12px] text-[#98A2B3]">{task.taskDetail}</p>
+        <p className="truncate text-[13px] font-medium text-sales-text-primary">{task.taskLabel}</p>
+        <p className="truncate text-[12px] text-sales-text-muted">{task.taskDetail}</p>
       </div>
 
       <div className="flex items-center gap-1.5 pl-12 sm:justify-end sm:pl-0">
@@ -104,7 +104,7 @@ export function PriorityRow({
         )}
         <button
           type="button"
-          className="inline-flex h-10 min-w-[44px] items-center justify-center rounded-[9px] border border-[#E4E7EC] bg-white px-3 text-[12px] font-medium text-[#101828] transition-colors duration-150 hover:bg-[#F9FAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4FF4F]"
+          className="inline-flex h-10 min-w-[44px] items-center justify-center rounded-[9px] border border-sales-border bg-sales-surface px-3 text-[12px] font-medium text-sales-text-primary transition-colors duration-150 hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
           onClick={() => onLog(task.leadId, "call")}
         >
           Log
@@ -130,12 +130,12 @@ export function PrioritiesCard({
       title="Today’s priorities"
       action={
         <div className="flex items-center gap-3">
-          <span className="inline-flex min-w-[22px] items-center justify-center rounded-[7px] bg-[#F2F4F7] px-1.5 py-0.5 text-[11px] font-semibold text-[#667085] tabular-nums">
+          <span className="inline-flex min-w-[22px] items-center justify-center rounded-[7px] bg-[var(--sales-neutral-100)] px-1.5 py-0.5 text-[11px] font-semibold text-sales-text-secondary tabular-nums">
             {totalCount}
           </span>
           <Link
             href="/sales/call-now"
-            className="text-[12px] font-medium text-[#667085] transition-colors hover:text-[#101828]"
+            className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
           >
             View call queue
           </Link>
@@ -144,8 +144,8 @@ export function PrioritiesCard({
     >
       {tasks.length === 0 ? (
         <div className="px-5 py-12 text-center">
-          <p className="text-[14px] font-medium text-[#101828]">You’re clear for now</p>
-          <p className="mt-1 text-[13px] text-[#667085]">
+          <p className="text-[14px] font-medium text-sales-text-primary">You’re clear for now</p>
+          <p className="mt-1 text-[13px] text-sales-text-secondary">
             No follow-ups or call-now leads need attention.
           </p>
         </div>

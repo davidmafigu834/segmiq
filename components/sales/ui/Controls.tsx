@@ -34,7 +34,7 @@ export function Switch({
     >
       <span
         className={cn(
-          "inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-150",
+          "inline-block h-4 w-4 rounded-full bg-[var(--sales-neutral-0)] shadow transition-transform duration-150",
           checked ? "translate-x-[18px]" : "translate-x-0.5"
         )}
       />
@@ -169,7 +169,7 @@ export function SegmentedControl<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex max-w-full flex-nowrap items-center gap-0 overflow-x-auto rounded-[9px] border border-[#E4E7EC] bg-white p-1",
+        "inline-flex max-w-full flex-nowrap items-center gap-0 overflow-x-auto rounded-[9px] border border-sales-border bg-sales-surface p-1",
         className
       )}
     >
@@ -185,8 +185,8 @@ export function SegmentedControl<T extends string>({
             className={cn(
               "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[7px] border px-3 py-1.5 text-[12px] transition-[background-color,border-color,color] duration-150",
               active
-                ? "border-[rgba(160,210,30,0.45)] bg-[rgba(212,255,79,0.22)] font-semibold text-[#101828]"
-                : "border-transparent font-medium text-[#667085] hover:text-[#101828]"
+                ? "border-[rgba(160,210,30,0.45)] bg-[rgba(212,255,79,0.22)] font-semibold text-sales-text-primary"
+                : "border-transparent font-medium text-sales-text-secondary hover:text-sales-text-primary"
             )}
           >
             <span className="whitespace-nowrap leading-none">{opt.label}</span>
@@ -195,8 +195,8 @@ export function SegmentedControl<T extends string>({
                 className={cn(
                   "inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold leading-none tabular-nums",
                   active
-                    ? "bg-white text-[#101828] shadow-[0_0_0_1px_rgba(16,24,40,0.04)]"
-                    : "bg-[#F2F4F7] text-[#667085]"
+                    ? "bg-sales-surface text-sales-text-primary shadow-[0_0_0_1px_rgba(16,24,40,0.04)]"
+                    : "bg-[var(--sales-neutral-100)] text-sales-text-secondary"
                 )}
               >
                 {opt.badge}

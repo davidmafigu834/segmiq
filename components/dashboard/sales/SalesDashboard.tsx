@@ -97,7 +97,7 @@ function SalesDashboardInner({
 
   return (
     <div
-      className="sales-dashboard-premium flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#F7F8FA] text-[#111318]"
+      className="sales-dashboard-premium flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >
@@ -140,15 +140,15 @@ function SalesDashboardInner({
           ) : null}
 
           {data.numbers.totalActive === 0 ? (
-            <div className="rounded-[14px] border border-[#E6E8EC] bg-white p-5">
-              <p className="text-[15px] font-semibold text-[#111318]">No leads assigned to you yet</p>
-              <p className="mt-2 text-[13px] leading-relaxed text-[#667085]">
+            <div className="rounded-[14px] border border-sales-border bg-sales-surface p-5">
+              <p className="text-[15px] font-semibold text-sales-text-primary">No leads assigned to you yet</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-sales-text-secondary">
                 Your sales view only shows leads assigned to you. New enquiries will arrive via
                 round-robin, or a manager can assign leads from the pipeline.
                 {s?.role === "CLIENT_MANAGER" ? (
                   <>
                     {" "}
-                    <Link href="/client/dashboard" className="font-medium text-[#4D7C0F] hover:underline">
+                    <Link href="/client/dashboard" className="font-medium text-sales-brand-fg hover:underline">
                       Return to the manager dashboard
                     </Link>{" "}
                     for full team visibility.
@@ -214,7 +214,7 @@ export function SalesDashboard(props: SalesDashboardProps) {
 
 function SalesDashboardSkeletonShell() {
   return (
-    <div className="sales-dashboard-premium min-h-[100dvh] bg-[#F7F8FA] p-4 layout:pl-[228px] layout:p-6">
+    <div className="sales-dashboard-premium min-h-[100dvh] bg-sales-bg p-4 layout:pl-[228px] layout:p-6">
       <div className="shimmer mb-6 h-24 rounded-[14px]" />
       <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-5">
         {[1, 2, 3, 4, 5].map((i) => (

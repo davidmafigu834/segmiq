@@ -55,6 +55,34 @@ export const SALES_COLORS = {
   facebook: "#1877F2",
 } as const;
 
+/** Dark sales palette (mirrors CSS dark overrides). Prefer CSS vars / useSalesChartColors in UI. */
+export const SALES_COLORS_DARK = {
+  bg: "#0B0D0C",
+  bgSubtle: "#0E110E",
+  sidebarBg: "#0D100E",
+  surface: "#111411",
+  surfaceRaised: "#151815",
+  surfaceHover: "#181C18",
+  surfaceSelected: "#1B2019",
+  textPrimary: "#F7F8F5",
+  textSecondary: "#B1B7AE",
+  textMuted: "#7D847A",
+  textVeryMuted: "#626961",
+  border: "#272C27",
+  borderSubtle: "#1E231E",
+  borderStrong: "#343A34",
+  brand: "#D4FF4F",
+  brandSoft: "rgba(212, 255, 79, 0.10)",
+  brandSelected: "rgba(212, 255, 79, 0.14)",
+  success: "#4ADE80",
+  warning: "#FBBF24",
+  danger: "#F87171",
+  info: "#60A5FA",
+  purple: "#A78BFA",
+  teal: "#2DD4BF",
+  whatsapp: "#25D366",
+} as const;
+
 export const SALES_RADIUS = {
   xs: 6,
   sm: 8,

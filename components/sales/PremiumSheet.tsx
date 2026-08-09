@@ -38,7 +38,7 @@ export function PremiumSheet({
     <div className="sales-modal-premium calendar-modal-premium pipeline-drawer-light fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4">
       <button
         type="button"
-        className="absolute inset-0 z-[70] bg-[#101828]/35 backdrop-blur-[2px]"
+        className="absolute inset-0 z-[70] bg-[var(--sales-neutral-900)]/35 backdrop-blur-[2px]"
         aria-label="Close"
         onClick={onClose}
       />

@@ -84,7 +84,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={item.id}
               className={cn(
-                "pointer-events-auto flex gap-3 rounded-sales-lg border bg-sales-surface p-3.5 shadow-sales-popover",
+                "pointer-events-auto flex gap-3 rounded-sales-lg border border-sales-border bg-[var(--sales-surface-raised,var(--sales-surface))] p-3.5 shadow-sales-popover",
                 toneBorder[item.tone]
               )}
               role="status"

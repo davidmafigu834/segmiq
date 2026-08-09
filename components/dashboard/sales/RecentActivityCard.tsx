@@ -12,12 +12,12 @@ function ActivityIcon({ kind }: { kind: SalesActivityItem["kind"] }) {
     return <Eye size={15} strokeWidth={1.8} className="text-[#2684FF]" aria-hidden />;
   }
   if (kind === "call") {
-    return <Phone size={15} strokeWidth={1.8} className="text-[#667085]" aria-hidden />;
+    return <Phone size={15} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />;
   }
   if (kind === "won") {
     return <Trophy size={15} strokeWidth={1.8} className="text-[#16A34A]" aria-hidden />;
   }
-  return <Activity size={15} strokeWidth={1.8} className="text-[#98A2B3]" aria-hidden />;
+  return <Activity size={15} strokeWidth={1.8} className="text-sales-text-muted" aria-hidden />;
 }
 
 export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
@@ -27,7 +27,7 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
       action={
         <Link
           href="/sales/leads"
-          className="text-[12px] font-medium text-[#667085] transition-colors hover:text-[#101828]"
+          className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
         >
           View pipeline
         </Link>
@@ -35,11 +35,11 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
     >
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center px-5 py-10 text-center">
-          <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-[8px] bg-[#F2F4F7] text-[#98A2B3]">
+          <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-[8px] bg-[var(--sales-neutral-100)] text-sales-text-muted">
             <Activity size={18} strokeWidth={1.8} aria-hidden />
           </span>
-          <p className="text-[13px] font-medium text-[#101828]">No recent activity yet</p>
-          <p className="mt-1 max-w-[240px] text-[12px] text-[#98A2B3]">
+          <p className="text-[13px] font-medium text-sales-text-primary">No recent activity yet</p>
+          <p className="mt-1 max-w-[240px] text-[12px] text-sales-text-muted">
             Calls, WhatsApp replies and deal updates will appear here.
           </p>
         </div>
@@ -47,16 +47,16 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
         <ul className="divide-y divide-[#E5E7EB]">
           {items.map((item) => {
             const body = (
-              <div className="flex items-start gap-3 px-5 py-3 transition-colors duration-150 hover:bg-[#F9FAFB]">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[#F2F4F7]">
+              <div className="flex items-start gap-3 px-5 py-3 transition-colors duration-150 hover:bg-sales-surface-hover">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[var(--sales-neutral-100)]">
                   <ActivityIcon kind={item.kind} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-[#101828]">{item.title}</p>
+                  <p className="text-[13px] font-medium text-sales-text-primary">{item.title}</p>
                   {item.detail ? (
-                    <p className="mt-0.5 truncate text-[12px] text-[#667085]">{item.detail}</p>
+                    <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{item.detail}</p>
                   ) : null}
-                  <p className="mt-1 text-[11px] text-[#98A2B3]">{item.timeLabel}</p>
+                  <p className="mt-1 text-[11px] text-sales-text-muted">{item.timeLabel}</p>
                 </div>
               </div>
             );
@@ -65,7 +65,7 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
                 {item.href ? (
                   <Link
                     href={item.href}
-                    className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#D4FF4F]"
+                    className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
                   >
                     {body}
                   </Link>

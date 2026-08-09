@@ -51,7 +51,7 @@ function SourceBadgeIcon({ kind }: { kind: ReturnType<typeof contactLeadSourceMe
 }
 
 function primaryButtonClass(kind: ReturnType<typeof contactLeadSourceMeta>["kind"]): string {
-  if (kind === "walk_in") return "bg-[#D4FF4F] text-[#0A0B0D] hover:opacity-90";
+  if (kind === "walk_in") return "bg-sales-brand text-[#0A0B0D] hover:opacity-90";
   if (kind === "referral") return "bg-[#a78bfa] text-white hover:opacity-90";
   if (kind === "landing_page") return "bg-[var(--accent)] text-[var(--accent-ink)] hover:opacity-90";
   return "bg-[var(--text-primary)] text-[var(--bg-primary)] hover:opacity-90";

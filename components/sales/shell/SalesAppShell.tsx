@@ -16,6 +16,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { SalesSidebar } from "@/components/sales/navigation/SalesSidebar";
 import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
+import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import { SalesMobileTopBar } from "@/components/sales/navigation/SalesMobileTopBar";
 import { SalesBottomNav } from "@/components/sales/navigation/SalesBottomNav";
 import {
@@ -234,6 +235,7 @@ function SalesAppShellInner({
       {headerActions}
       <div className="hidden shrink-0 items-center gap-1.5 layout:flex">
         <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+        <SalesThemeToggle />
         {showQuickActions ? (
           <SalesQuickActions onAddLead={openAddHubSheet} onLogCall={onLogCall} />
         ) : null}

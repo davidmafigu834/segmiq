@@ -72,7 +72,7 @@ export function ActivityRow({
 }) {
   const body = (
     <div className="flex items-start gap-3 px-5 py-3 transition-colors duration-150 hover:bg-sales-surface-hover">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-sales-sm bg-[#F2F4F7]">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-sales-sm bg-[var(--sales-neutral-100)]">
         {icon}
       </span>
       <div className="min-w-0 flex-1">

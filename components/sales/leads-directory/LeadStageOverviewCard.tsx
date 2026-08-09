@@ -48,7 +48,7 @@ export function LeadStageOverviewCard({
                     <span className="ml-1.5 text-sales-text-muted">{s.pct}%</span>
                   </span>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-[#F2F4F7]">
+                <div className="h-1.5 overflow-hidden rounded-full bg-[var(--sales-neutral-100)]">
                   <div
                     className="h-full rounded-full transition-[width] duration-300"
                     style={{ width: `${Math.max(s.pct, 2)}%`, background: s.color }}

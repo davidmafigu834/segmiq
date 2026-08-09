@@ -41,13 +41,13 @@ export function MiniCalendar({
     const strip = days.slice(start, start + 7);
 
     return (
-      <div className="cal-card p-2.5">
+      <div className="cal-card border-sales-border bg-sales-surface p-2.5 text-sales-text-primary">
         <div className="mb-1.5 flex items-center justify-between">
-          <p className="text-[13px] font-semibold text-[#101828]">{formatCalendarMonth(month)}</p>
+          <p className="text-[13px] font-semibold text-sales-text-primary">{formatCalendarMonth(month)}</p>
           <button
             type="button"
             onClick={onToday}
-            className="text-[12px] font-semibold text-[#101828] underline-offset-2 hover:underline"
+            className="text-[12px] font-semibold text-sales-text-primary underline-offset-2 hover:underline"
             aria-label="Go to today"
           >
             Today
@@ -66,28 +66,28 @@ export function MiniCalendar({
                 onClick={() => onSelectDate(key)}
                 className={[
                   "flex min-w-[44px] flex-[1_0_44px] snap-center flex-col items-center rounded-[9px] px-1.5 py-1.5 transition-colors duration-150",
-                  selectedDay ? "bg-[rgba(212,255,79,0.35)]" : "hover:bg-[#F9FAFB]",
+                  selectedDay ? "bg-[rgba(212,255,79,0.35)]" : "hover:bg-sales-surface-hover",
                 ].join(" ")}
                 aria-label={format(day, "EEEE d MMMM")}
                 aria-pressed={selectedDay}
               >
-                <span className="text-[10px] font-medium uppercase text-[#98A2B3]">
+                <span className="text-[10px] font-medium uppercase text-sales-text-muted">
                   {format(day, "EEE").slice(0, 2)}
                 </span>
                 <span
                   className={[
                     "mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-semibold",
                     selectedDay
-                      ? "bg-[#D4FF4F] text-[#101828]"
+                      ? "bg-sales-brand text-sales-brand-text"
                       : today
-                        ? "ring-1 ring-[rgba(160,210,30,0.55)] text-[#101828]"
-                        : "text-[#101828]",
+                        ? "ring-1 ring-[rgba(160,210,30,0.55)] text-sales-text-primary"
+                        : "text-sales-text-primary",
                   ].join(" ")}
                 >
                   {format(day, "d")}
                 </span>
                 {count > 0 ? (
-                  <span className="mt-0.5 h-1 w-1 rounded-full bg-[#667085]" aria-hidden />
+                  <span className="mt-0.5 h-1 w-1 rounded-full bg-[var(--sales-neutral-500)]" aria-hidden />
                 ) : (
                   <span className="mt-0.5 h-1 w-1" aria-hidden />
                 )}
@@ -101,15 +101,15 @@ export function MiniCalendar({
   }
 
   return (
-    <div className="cal-card p-2.5">
-      <p className="mb-2 text-[14px] font-semibold text-[#101828]">
+    <div className="cal-card border-sales-border bg-sales-surface p-2.5 text-sales-text-primary">
+      <p className="mb-2 text-[14px] font-semibold text-sales-text-primary">
         {formatCalendarMonth(month)}
       </p>
       <div className="mb-0.5 grid grid-cols-7">
         {WEEKDAYS.map((d) => (
           <div
             key={d}
-            className="py-0.5 text-center text-[10px] font-medium uppercase tracking-wide text-[#98A2B3]"
+            className="py-0.5 text-center text-[10px] font-medium uppercase tracking-wide text-sales-text-muted"
           >
             {d}
           </div>
@@ -133,12 +133,12 @@ export function MiniCalendar({
               className={[
                 "relative flex h-8 flex-col items-center justify-center rounded-full text-[12px] transition-colors duration-150",
                 selected
-                  ? "bg-[#D4FF4F] font-semibold text-[#101828]"
+                  ? "bg-sales-brand font-semibold text-sales-brand-text"
                   : today
-                    ? "font-semibold text-[#101828] ring-1 ring-[rgba(160,210,30,0.55)]"
+                    ? "font-semibold text-sales-text-primary ring-1 ring-[rgba(160,210,30,0.55)]"
                     : inMonth
-                      ? "font-medium text-[#101828] hover:bg-[#F2F4F7]"
-                      : "text-[#98A2B3] hover:bg-[#F9FAFB]",
+                      ? "font-medium text-sales-text-primary hover:bg-[var(--sales-neutral-100)]"
+                      : "text-sales-text-muted hover:bg-sales-surface-hover",
               ].join(" ")}
               aria-label={format(day, "EEEE d MMMM yyyy")}
               aria-pressed={selected}
@@ -158,7 +158,7 @@ export function MiniCalendar({
       <button
         type="button"
         onClick={onToday}
-        className="mt-2 h-9 w-full rounded-[9px] border border-[#E4E7EC] bg-[#F9FAFB] text-[12px] font-semibold text-[#101828] transition-colors hover:bg-[#F2F4F7]"
+        className="mt-2 h-9 w-full rounded-[9px] border border-sales-border bg-sales-surface-hover text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-[var(--sales-neutral-100)]"
         aria-label="Go to today"
       >
         Today

@@ -73,10 +73,10 @@ function TypeIcon({ type, size = 16 }: { type: SalesTaskItem["type"]; size?: num
 }
 
 function typeTint(type: SalesTaskItem["type"]) {
-  if (type === "whatsapp") return "bg-[#ECFDF3]";
+  if (type === "whatsapp") return "bg-sales-success-soft";
   if (type === "call") return "bg-[#F0FDFA]";
   if (type === "quote_review") return "bg-[#FFFAEB]";
-  return "bg-[#ECFDF3]";
+  return "bg-sales-success-soft";
 }
 
 function statusTone(status: SalesTaskItem["status"]) {
@@ -349,7 +349,7 @@ export function SalesTasksClient() {
                     aria-label="Close filters"
                     onClick={() => setFiltersOpen(false)}
                   />
-                  <div className="absolute right-0 z-30 mt-1.5 w-[280px] overflow-hidden rounded-[12px] border border-sales-border bg-white shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
+                  <div className="absolute right-0 z-30 mt-1.5 w-[280px] overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
                     <div className="border-b border-sales-border-subtle px-3.5 py-3">
                       <p className="text-[13px] font-semibold text-sales-text-primary">Filters</p>
                       <p className="mt-0.5 text-[12px] text-sales-text-secondary">
@@ -565,7 +565,7 @@ export function SalesTasksClient() {
                     : null
                 }
                 icon={CircleCheck}
-                iconTint="bg-[#ECFDF3] text-[#027A48]"
+                iconTint="bg-sales-success-soft text-[var(--success-fg,#027A48)]"
               />
               <ReportKpiCard
                 label="Overdue"
@@ -577,7 +577,7 @@ export function SalesTasksClient() {
                     : null
                 }
                 icon={CircleAlert}
-                iconTint="bg-[#FEF3F2] text-[#B42318]"
+                iconTint="bg-sales-danger-soft text-[var(--danger-fg,#B42318)]"
               />
             </div>
 
@@ -933,11 +933,11 @@ export function SalesTasksClient() {
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
           <button
             type="button"
-            className="absolute inset-0 bg-[#101828]/35"
+            className="absolute inset-0 bg-[var(--sales-neutral-900)]/35"
             aria-label="Close"
             onClick={() => setRescheduleTask(null)}
           />
-          <div className="relative z-10 w-full max-w-sm rounded-sales-xl border border-sales-border bg-white p-5 shadow-sales-modal">
+          <div className="relative z-10 w-full max-w-sm rounded-sales-xl border border-sales-border bg-sales-surface p-5 shadow-sales-modal">
             <h3 className="text-[16px] font-semibold text-sales-text-primary">Reschedule</h3>
             <p className="mt-1 text-[13px] text-sales-text-secondary">{rescheduleTask.title}</p>
             <input
@@ -1062,7 +1062,7 @@ function TaskTableRow({
   return (
     <tr
       className={cn(
-        "group transition-colors hover:bg-[#F9FAFB]",
+        "group transition-colors hover:bg-sales-surface-hover",
         task.completed && "opacity-60"
       )}
     >
@@ -1104,7 +1104,7 @@ function TaskTableRow({
               {task.title}
             </button>
             <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="inline-flex h-5 items-center rounded-full bg-[#F2F4F7] px-2 text-[11px] font-medium text-sales-text-secondary">
+              <span className="inline-flex h-5 items-center rounded-full bg-[var(--sales-neutral-100)] px-2 text-[11px] font-medium text-sales-text-secondary">
                 {task.typeLabel}
               </span>
               <Link
@@ -1146,7 +1146,7 @@ function TaskTableRow({
             <MoreHorizontal size={16} strokeWidth={1.8} />
           </button>
           {menuOpen ? (
-            <div className="absolute right-0 top-8 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-white py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
+            <div className="absolute right-0 top-8 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
               <MenuItem onClick={onOpen}>Open task</MenuItem>
               {!task.completed ? (
                 <>
@@ -1203,7 +1203,7 @@ function MobileTaskCard({
 }) {
   const tone = dueDateTone(task);
   return (
-    <article className="rounded-sales-lg border border-sales-border bg-white p-3">
+    <article className="rounded-sales-lg border border-sales-border bg-sales-surface p-3">
       <div className="flex items-start gap-3">
         <Checkbox
           checked={task.completed}
@@ -1214,7 +1214,7 @@ function MobileTaskCard({
         />
         <button type="button" className="min-w-0 flex-1 text-left" onClick={onOpen}>
           <p className="text-[14px] font-semibold text-sales-text-primary">{task.title}</p>
-          <span className="mt-1 inline-flex h-5 items-center rounded-full bg-[#F2F4F7] px-2 text-[11px] font-medium text-sales-text-secondary">
+          <span className="mt-1 inline-flex h-5 items-center rounded-full bg-[var(--sales-neutral-100)] px-2 text-[11px] font-medium text-sales-text-secondary">
             {task.typeLabel}
           </span>
         </button>

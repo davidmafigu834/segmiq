@@ -22,11 +22,11 @@ const ICON_MAP = {
 } as const;
 
 const ICON_TINT: Record<SalesKpiItem["icon"], string> = {
-  followups: "bg-[#FFF7ED] text-[#B45309]",
-  pipeline: "bg-[#F0FDF4] text-[#15803D]",
-  won: "bg-[#F7FEE7] text-[#4D7C0F]",
-  conversion: "bg-[#EFF6FF] text-[#2563EB]",
-  response: "bg-[#F2F4F7] text-[#667085]",
+  followups: "bg-sales-warning-soft text-[#B45309]",
+  pipeline: "bg-sales-success-soft text-[var(--success-fg,#15803D)]",
+  won: "bg-[var(--sales-brand-soft-solid,#F7FEE7)] text-sales-brand-fg",
+  conversion: "bg-sales-info-soft text-sales-info",
+  response: "bg-[var(--sales-neutral-100)] text-sales-text-secondary",
 };
 
 export function Trend({
@@ -159,7 +159,7 @@ export function LeadIdentity({
     <div className="flex min-w-0 items-center gap-2.5">
       <div
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-full bg-[#F2F4F7] font-semibold text-sales-text-secondary",
+          "flex shrink-0 items-center justify-center rounded-full bg-[var(--sales-neutral-100)] font-semibold text-sales-text-secondary",
           avatar
         )}
         aria-hidden

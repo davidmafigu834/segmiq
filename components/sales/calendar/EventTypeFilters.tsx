@@ -21,8 +21,8 @@ export function EventTypeFilters({
   onToggle: (kind: CalendarEventKind) => void;
 }) {
   return (
-    <div className="cal-card p-2.5">
-      <p className="mb-1.5 text-[14px] font-semibold text-[#101828]">Event types</p>
+    <div className="cal-card border-sales-border bg-sales-surface p-2.5 text-sales-text-primary">
+      <p className="mb-1.5 text-[14px] font-semibold text-sales-text-primary">Event types</p>
       <ul>
         {ALL_FILTER_KINDS.map((kind) => {
           const supported = SUPPORTED_EVENT_KINDS.includes(kind);
@@ -32,7 +32,7 @@ export function EventTypeFilters({
               <label
                 className={[
                   "flex h-[34px] cursor-pointer items-center gap-2 rounded-[8px] px-1 transition-colors",
-                  supported ? "hover:bg-[#F9FAFB]" : "cursor-not-allowed opacity-45",
+                  supported ? "hover:bg-sales-surface-hover" : "cursor-not-allowed opacity-45",
                 ].join(" ")}
                 title={
                   supported
@@ -45,12 +45,12 @@ export function EventTypeFilters({
                   style={{ background: getEventTypeColor(kind) }}
                   aria-hidden
                 />
-                <span className="min-w-0 flex-1 truncate text-[13px] text-[#101828]">
+                <span className="min-w-0 flex-1 truncate text-[13px] text-sales-text-primary">
                   {getEventTypeLabel(kind)}
                 </span>
                 <input
                   type="checkbox"
-                  className="h-3.5 w-3.5 rounded border-[#D0D5DD] accent-[#22C55E]"
+                  className="h-3.5 w-3.5 rounded border-sales-border-strong accent-[#22C55E]"
                   checked={checked}
                   disabled={!supported}
                   onChange={() => onToggle(kind)}
@@ -65,7 +65,7 @@ export function EventTypeFilters({
         type="button"
         disabled
         title="Custom event types are not supported yet"
-        className="mt-1.5 w-full cursor-not-allowed rounded-[9px] border border-dashed border-[#E4E7EC] py-1.5 text-[12px] font-medium text-[#98A2B3]"
+        className="mt-1.5 w-full cursor-not-allowed rounded-[9px] border border-dashed border-sales-border py-1.5 text-[12px] font-medium text-sales-text-muted"
       >
         + Add custom type
       </button>

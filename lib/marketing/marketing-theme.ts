@@ -20,6 +20,9 @@ export function persistMarketingTheme(theme: MarketingTheme) {
   try {
     localStorage.setItem(MARKETING_THEME_STORAGE_KEY, theme);
     document.cookie = `${MARKETING_THEME_STORAGE_KEY}=${theme};path=/;max-age=31536000;SameSite=Lax`;
+    // Keep CRM/sales preference in sync
+    localStorage.setItem("segmiq-crm-theme", theme);
+    document.cookie = `segmiq-crm-theme=${theme};path=/;max-age=31536000;SameSite=Lax`;
   } catch {
     /* ignore */
   }

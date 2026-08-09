@@ -314,7 +314,7 @@ export function SalesBoard({
       <Search
         size={15}
         strokeWidth={1.8}
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
         aria-hidden
       />
       <input
@@ -322,7 +322,7 @@ export function SalesBoard({
         placeholder="Search by name, phone..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        className="h-9 w-full rounded-[10px] border border-[#E4E7EC] bg-white py-2 pl-9 pr-3 text-[13px] text-[#101828] placeholder:text-[#98A2B3] outline-none transition-[border-color,box-shadow] duration-150 focus:border-[#D0D5DD] focus:ring-2 focus:ring-[#D4FF4F]/40"
+        className="h-9 w-full rounded-[10px] border border-sales-border bg-sales-surface py-2 pl-9 pr-3 text-[13px] text-sales-text-primary placeholder:text-sales-text-muted outline-none transition-[border-color,box-shadow] duration-150 focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40"
         aria-label="Search leads"
       />
     </label>
@@ -365,7 +365,7 @@ export function SalesBoard({
       <div className={`relative w-full min-w-0 max-w-full transition-[padding] duration-200 ${boardPad}`}>
         {toolbar}
         {filteredClosed.length === 0 ? (
-          <div className="rounded-[12px] border border-dashed border-[#E4E7EC] bg-white">
+          <div className="rounded-[12px] border border-dashed border-sales-border bg-sales-surface">
             <EmptyState
               icon={Inbox}
               title={debouncedQuery ? `No leads match “${searchQuery.trim()}”` : "No closed deals yet"}
@@ -388,7 +388,7 @@ export function SalesBoard({
             ) : null}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-[12px] border border-[#E4E7EC] bg-white">
+          <div className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
             <ResponsiveTable<LeadWithClientResponseLimit>
               columns={
                 [
@@ -398,8 +398,8 @@ export function SalesBoard({
                     mobilePrimary: true,
                     render: (l) => (
                       <div>
-                        <div className="font-medium text-[#101828]">{l.name?.trim() || "Unnamed lead"}</div>
-                        <div className="font-mono text-xs text-[#98A2B3]">{l.phone ?? "—"}</div>
+                        <div className="font-medium text-sales-text-primary">{l.name?.trim() || "Unnamed lead"}</div>
+                        <div className="font-mono text-xs text-sales-text-muted">{l.phone ?? "—"}</div>
                       </div>
                     ),
                   },
@@ -419,7 +419,7 @@ export function SalesBoard({
                     label: "Closed",
                     mobileHidden: true,
                     render: (l) => (
-                      <span className="text-[13px] text-[#667085]">
+                      <span className="text-[13px] text-sales-text-secondary">
                         {format(new Date(l.updated_at), "d MMM yyyy")}
                       </span>
                     ),
@@ -431,7 +431,7 @@ export function SalesBoard({
                     render: (l) => {
                       const { amount } = resolveNumericDealValue(l);
                       return (
-                        <span className="tabular-nums text-[13px] text-[#667085]">
+                        <span className="tabular-nums text-[13px] text-sales-text-secondary">
                           {amount == null ? "—" : formatDealValue(amount)}
                         </span>
                       );
@@ -442,7 +442,7 @@ export function SalesBoard({
                     label: "Source",
                     mobileHidden: true,
                     render: (l) => (
-                      <span className="text-[13px] text-[#667085]">{l.source?.trim() || "—"}</span>
+                      <span className="text-[13px] text-sales-text-secondary">{l.source?.trim() || "—"}</span>
                     ),
                   },
                 ] as ResponsiveTableColumn<LeadWithClientResponseLimit>[]
@@ -464,7 +464,7 @@ export function SalesBoard({
       <div className={`relative w-full min-w-0 max-w-full ${boardPad}`}>
         {toolbar}
         <div className="flex flex-1 flex-col items-center justify-center py-12">
-          <div className="w-full max-w-md rounded-[12px] border border-dashed border-[#E4E7EC] bg-white">
+          <div className="w-full max-w-md rounded-[12px] border border-dashed border-sales-border bg-sales-surface">
             <EmptyState
               icon={Inbox}
               title="No leads yet"
@@ -485,23 +485,23 @@ export function SalesBoard({
       {dragError ? (
         <div
           role="alert"
-          className="mb-4 rounded-[10px] border border-[#FECDCA] bg-[#FEF3F2] px-3 py-2 text-[13px] text-[#B42318]"
+          className="mb-4 rounded-[10px] border border-[#FECDCA] bg-sales-danger-soft px-3 py-2 text-[13px] text-[var(--danger-fg,#B42318)]"
         >
           {dragError}
         </div>
       ) : null}
 
       {noActiveButHasClosed ? (
-        <div className="mb-5 flex flex-col items-start gap-3 rounded-[12px] border border-[#E4E7EC] bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-5 flex flex-col items-start gap-3 rounded-[12px] border border-sales-border bg-sales-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[14px] font-medium text-[#101828]">No active leads</p>
-            <p className="mt-0.5 text-[13px] text-[#667085]">
+            <p className="text-[14px] font-medium text-sales-text-primary">No active leads</p>
+            <p className="mt-0.5 text-[13px] text-sales-text-secondary">
               Your closed deals are still available under Closed.
             </p>
           </div>
           <button
             type="button"
-            className="inline-flex h-9 items-center rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[13px] font-medium text-[#101828] hover:bg-[#F9FAFB]"
+            className="inline-flex h-9 items-center rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
             onClick={() => setTab("closed")}
           >
             View closed leads
@@ -510,11 +510,11 @@ export function SalesBoard({
       ) : null}
 
       {hasSearchNoMatch ? (
-        <div className="mb-6 flex flex-col items-center justify-center rounded-[12px] border border-dashed border-[#E4E7EC] bg-white px-4 py-12 text-center">
-          <p className="text-[15px] font-medium text-[#101828]">
+        <div className="mb-6 flex flex-col items-center justify-center rounded-[12px] border border-dashed border-sales-border bg-sales-surface px-4 py-12 text-center">
+          <p className="text-[15px] font-medium text-sales-text-primary">
             No leads match “{searchQuery.trim()}”
           </p>
-          <p className="mt-1 max-w-sm text-[13px] text-[#667085]">
+          <p className="mt-1 max-w-sm text-[13px] text-sales-text-secondary">
             Try another name, phone number, email, project type or budget.
           </p>
           <button
@@ -528,13 +528,13 @@ export function SalesBoard({
       ) : viewMode === "picks" ? (
         <div>
           <div className="mb-4">
-            <h2 className="text-[16px] font-semibold text-[#101828]">Convert-later picks</h2>
-            <p className="mt-1 text-[13px] text-[#667085]">
+            <h2 className="text-[16px] font-semibold text-sales-text-primary">Convert-later picks</h2>
+            <p className="mt-1 text-[13px] text-sales-text-secondary">
               Leads you saved during follow-ups because they may be ready to convert later.
             </p>
           </div>
           {picksLeads.length === 0 ? (
-            <div className="rounded-[12px] border border-dashed border-[#E4E7EC] bg-white">
+            <div className="rounded-[12px] border border-dashed border-sales-border bg-sales-surface">
               <EmptyState
                 icon={Star}
                 title="No picks yet"
@@ -571,8 +571,8 @@ export function SalesBoard({
                   className={[
                     "inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-[10px] border px-3 text-[12px] font-medium transition-colors duration-150",
                     isActive
-                      ? "border-transparent bg-[#101828] text-white"
-                      : "border-[#E4E7EC] bg-white text-[#667085]",
+                      ? "border-transparent bg-[var(--sales-neutral-900)] text-white"
+                      : "border-sales-border bg-sales-surface text-sales-text-secondary",
                   ].join(" ")}
                 >
                   <span
@@ -588,7 +588,7 @@ export function SalesBoard({
             <button
               type="button"
               onClick={() => setViewMode("picks")}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[12px] font-medium text-[#667085]"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[12px] font-medium text-sales-text-secondary"
             >
               <Star size={12} strokeWidth={1.8} aria-hidden />
               Picks
@@ -599,7 +599,7 @@ export function SalesBoard({
           </div>
           <div onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             {(grouped[activeColumn]?.length ?? 0) === 0 ? (
-              <div className="rounded-[12px] border border-dashed border-[#E4E7EC] bg-[#FCFCFD] px-4 py-10 text-center text-[13px] text-[#98A2B3]">
+              <div className="rounded-[12px] border border-dashed border-sales-border bg-sales-surface-subtle px-4 py-10 text-center text-[13px] text-sales-text-muted">
                 No leads in {PIPELINE_STAGE_LABEL[activeColumn]}
               </div>
             ) : (
@@ -636,10 +636,10 @@ export function SalesBoard({
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`flex min-h-[14rem] min-w-0 flex-col overflow-hidden rounded-[12px] border bg-white transition-[border-color,background-color] duration-150 ${
+                        className={`flex min-h-[14rem] min-w-0 flex-col overflow-hidden rounded-[12px] border bg-sales-surface transition-[border-color,background-color] duration-150 ${
                           snapshot.isDraggingOver
                             ? "border-[#2684FF]/60 bg-[#F8FBFF]"
-                            : "border-[#E4E7EC]"
+                            : "border-sales-border"
                         }`}
                       >
                         <div
@@ -648,16 +648,16 @@ export function SalesBoard({
                           aria-hidden
                         />
                         <div className="flex items-center justify-between gap-2 px-3 pb-2 pt-3">
-                          <span className="truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-[#667085]">
+                          <span className="truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-secondary">
                             {PIPELINE_STAGE_LABEL[col]}
                           </span>
-                          <span className="inline-flex h-5 min-w-[22px] items-center justify-center rounded-md bg-[#F2F4F7] px-1.5 font-mono text-[11px] text-[#667085]">
+                          <span className="inline-flex h-5 min-w-[22px] items-center justify-center rounded-md bg-[var(--sales-neutral-100)] px-1.5 font-mono text-[11px] text-sales-text-secondary">
                             {grouped[col]?.length ?? 0}
                           </span>
                         </div>
                         <div className="flex min-h-[8rem] flex-1 flex-col gap-2 px-2 pb-3">
                           {(grouped[col]?.length ?? 0) === 0 ? (
-                            <div className="flex flex-1 items-center justify-center rounded-[10px] border border-dashed border-[#E4E7EC] px-2 py-8 text-center text-[12px] text-[#98A2B3]">
+                            <div className="flex flex-1 items-center justify-center rounded-[10px] border border-dashed border-sales-border px-2 py-8 text-center text-[12px] text-sales-text-muted">
                               No leads in {PIPELINE_STAGE_LABEL[col]}
                             </div>
                           ) : null}
@@ -698,8 +698,8 @@ export function SalesBoard({
           </DragDropContext>
 
           <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2">
-            <div className="pointer-events-none inline-flex items-center gap-1.5 rounded-full border border-[#E4E7EC] bg-white/95 px-3 py-1.5 text-[12px] text-[#667085] shadow-[0_1px_2px_rgba(16,24,40,0.04)] backdrop-blur-sm">
-              <Info size={13} strokeWidth={1.8} className="text-[#98A2B3]" aria-hidden />
+            <div className="pointer-events-none inline-flex items-center gap-1.5 rounded-full border border-sales-border bg-sales-surface/95 px-3 py-1.5 text-[12px] text-sales-text-secondary shadow-[0_1px_2px_rgba(16,24,40,0.04)] backdrop-blur-sm">
+              <Info size={13} strokeWidth={1.8} className="text-sales-text-muted" aria-hidden />
               Drag & drop leads between stages to update status
             </div>
           </div>

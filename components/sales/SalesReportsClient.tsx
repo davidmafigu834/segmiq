@@ -291,7 +291,7 @@ function OverviewTab({
           value={String(k.leadsCreated.value)}
           trend={trendWithVs(k.leadsCreated.trend, periodLabel)}
           icon={UsersRound}
-          iconTint="bg-[#ECFDF3] text-[#16A34A]"
+          iconTint="bg-sales-success-soft text-[#16A34A]"
         />
         <ReportKpiCard
           label="Deals won"
@@ -348,7 +348,7 @@ function OverviewTab({
               : null
           }
           icon={CircleCheck}
-          iconTint="bg-[var(--sales-brand-soft-solid,#F3FCE3)] text-[#4D7C0F]"
+          iconTint="bg-[var(--sales-brand-soft-solid,#F3FCE3)] text-sales-brand-fg"
         />
       </div>
 
@@ -503,7 +503,7 @@ function GoalProgress({ data, currency }: { data: SalesReportsPayload; currency:
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sales-md bg-[#F2F4F7] text-sales-text-secondary">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sales-md bg-[var(--sales-neutral-100)] text-sales-text-secondary">
             <Target size={18} strokeWidth={1.8} aria-hidden />
           </span>
           <div className="min-w-0">
@@ -536,7 +536,7 @@ function GoalProgress({ data, currency }: { data: SalesReportsPayload; currency:
       <div className="flex items-center gap-5">
         <div className="relative flex h-[100px] w-[100px] shrink-0 items-center justify-center">
           <svg width="100" height="100" viewBox="0 0 108 108" aria-hidden>
-            <circle cx="54" cy="54" r={r} fill="none" stroke="#EAECF0" strokeWidth={8} />
+            <circle cx="54" cy="54" r={r} fill="none" stroke="var(--sales-border-subtle)" strokeWidth={8} />
             <circle
               cx="54"
               cy="54"
@@ -603,8 +603,8 @@ const SOURCE_BAR: Record<string, string> = {
   facebook: "#1877F2",
   referral: "#8B5CF6",
   website: "#F59E0B",
-  manual: "#667085",
-  other: "#98A2B3",
+  manual: "var(--sales-text-secondary)",
+  other: "var(--sales-text-muted)",
 };
 
 function LeadSourcesList({ data }: { data: SalesReportsPayload }) {
@@ -630,7 +630,7 @@ function LeadSourcesList({ data }: { data: SalesReportsPayload }) {
               <span className="ml-2 text-sales-text-muted">{s.pct}%</span>
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-[#EAECF0]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[var(--sales-border-subtle)]">
             <div
               className="h-full rounded-full"
               style={{
@@ -699,7 +699,7 @@ function ActivityList({ items }: { items: SalesReportsPayload["activity"] }) {
           <span className="w-[118px] shrink-0 truncate text-[13px] font-medium text-sales-text-primary">
             {a.label}
           </span>
-          <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#EAECF0]">
+          <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--sales-border-subtle)]">
             <div
               className="h-full rounded-full bg-sales-brand"
               style={{ width: `${a.count > 0 ? Math.max(a.relative, 4) : 0}%` }}
@@ -733,7 +733,7 @@ function PauseList({ data }: { data: SalesReportsPayload }) {
               <span className="ml-2 text-sales-text-muted">{p.pct}%</span>
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-[#EAECF0]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[var(--sales-border-subtle)]">
             <div
               className="h-full rounded-full bg-sales-warning"
               style={{ width: `${Math.min(Math.max(p.pct, p.count > 0 ? 4 : 0), 72)}%` }}

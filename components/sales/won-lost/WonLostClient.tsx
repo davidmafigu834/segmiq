@@ -346,14 +346,14 @@ export function WonLostClient() {
               value={String(data.kpis.wonDeals.value)}
               trend={data.kpis.wonDeals.trend}
               icon={Trophy}
-              iconTint="bg-[#ECFDF3] text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-[#16A34A]"
             />
             <ReportKpiCard
               label="Lost deals"
               value={String(data.kpis.lostDeals.value)}
               trend={data.kpis.lostDeals.trend}
               icon={CircleX}
-              iconTint="bg-[#FEF3F2] text-[#EF4444]"
+              iconTint="bg-sales-danger-soft text-sales-danger"
             />
             <ReportKpiCard
               label="Win rate"
@@ -362,7 +362,7 @@ export function WonLostClient() {
               }
               trend={data.kpis.winRate.trend}
               icon={TrendingUp}
-              iconTint="bg-[#ECFDF3] text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-[#16A34A]"
               tip="Percentage of closed deals that were won."
             />
             <ReportKpiCard
@@ -370,14 +370,14 @@ export function WonLostClient() {
               value={formatValueDisplay(data.kpis.revenueWon.value, currency)}
               trend={data.kpis.revenueWon.trend}
               icon={CircleDollarSign}
-              iconTint="bg-[#ECFDF3] text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-[#16A34A]"
             />
             <ReportKpiCard
               label="Lost value"
               value={formatValueDisplay(data.kpis.lostValue.value, currency)}
               trend={data.kpis.lostValue.trend}
               icon={CircleDollarSign}
-              iconTint="bg-[#FEF3F2] text-[#EF4444]"
+              iconTint="bg-sales-danger-soft text-sales-danger"
               tip={
                 data.kpis.lostValue.recordedCount < data.kpis.lostValue.lostCount
                   ? "Based on lost deals with a recorded value."
@@ -731,7 +731,7 @@ function DealTableRow({
             <MoreVertical strokeWidth={1.8} />
           </IconButton>
           {menuOpen ? (
-            <div className="absolute right-0 top-9 z-30 w-44 overflow-hidden rounded-[12px] border border-sales-border bg-white py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
+            <div className="absolute right-0 top-9 z-30 w-44 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
               <button
                 type="button"
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"

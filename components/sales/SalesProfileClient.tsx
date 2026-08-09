@@ -294,7 +294,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
                     aria-label="Change profile photo"
                     disabled={uploading}
                     onClick={() => fileRef.current?.click()}
-                    className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border border-sales-border bg-white text-sales-text-secondary shadow-sales-card hover:bg-sales-surface-hover"
+                    className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border border-sales-border bg-sales-surface text-sales-text-secondary shadow-sales-card hover:bg-sales-surface-hover"
                   >
                     <Camera size={14} strokeWidth={1.8} />
                   </button>
@@ -479,9 +479,9 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
               <button
                 type="button"
                 onClick={() => setPwOpen((o) => !o)}
-                className="flex w-full items-center gap-3 rounded-[10px] border border-sales-border bg-white px-3 py-3 text-left transition-colors hover:bg-sales-surface-hover"
+                className="flex w-full items-center gap-3 rounded-[10px] border border-sales-border bg-sales-surface px-3 py-3 text-left transition-colors hover:bg-sales-surface-hover"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F2F4F7]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--sales-neutral-100)]">
                   <KeyRound size={16} strokeWidth={1.8} className="text-sales-text-secondary" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -574,7 +574,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
                 </div>
               ) : null}
 
-              <div className="flex items-start gap-2.5 rounded-[10px] bg-[#F9FAFB] px-3 py-2.5">
+              <div className="flex items-start gap-2.5 rounded-[10px] bg-sales-surface-hover px-3 py-2.5">
                 <ShieldCheck size={16} strokeWidth={1.8} className="mt-0.5 shrink-0 text-sales-text-muted" />
                 <p className="text-[12px] text-sales-text-secondary">
                   Changing your password signs out other devices on next request.
@@ -626,7 +626,7 @@ function NotifRow({
   const id = title.replace(/\s+/g, "-").toLowerCase();
   return (
     <div className="flex items-start gap-3 px-5 py-4">
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-sales-sm bg-[#F2F4F7]">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-sales-sm bg-[var(--sales-neutral-100)]">
         {icon}
       </span>
       <div className="min-w-0 flex-1">

@@ -30,13 +30,13 @@ export function UpcomingReminders({ events }: { events: CalendarEvent[] }) {
     .slice(0, 4);
 
   return (
-    <div className="cal-card p-3">
-      <h2 className="mb-2 text-[14px] font-semibold text-[#101828]">Upcoming reminders</h2>
+    <div className="cal-card border-sales-border bg-sales-surface p-3 text-sales-text-primary">
+      <h2 className="mb-2 text-[14px] font-semibold text-sales-text-primary">Upcoming reminders</h2>
 
       {!reminders.length ? (
-        <div className="rounded-[10px] bg-[#F9FAFB] px-3 py-4 text-center">
-          <p className="text-[13px] font-semibold text-[#101828]">No upcoming reminders</p>
-          <p className="mt-0.5 text-[12px] text-[#667085]">
+        <div className="rounded-[10px] bg-sales-surface-hover px-3 py-4 text-center">
+          <p className="text-[13px] font-semibold text-sales-text-primary">No upcoming reminders</p>
+          <p className="mt-0.5 text-[12px] text-sales-text-secondary">
             Scheduled follow-ups and callbacks will appear here.
           </p>
         </div>
@@ -47,18 +47,18 @@ export function UpcomingReminders({ events }: { events: CalendarEvent[] }) {
               <AlarmClock
                 size={14}
                 strokeWidth={1.8}
-                className="mt-0.5 shrink-0 text-[#667085]"
+                className="mt-0.5 shrink-0 text-sales-text-secondary"
                 aria-hidden
               />
               <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium text-[#101828]">
+                <p className="truncate text-[13px] font-medium text-sales-text-primary">
                   {event.kind === "CALL"
                     ? `Call back ${event.customerName ?? "lead"}`
                     : event.kind === "QUOTE_REVIEW"
                       ? `Review quote with ${event.customerName ?? "lead"}`
                       : `Follow up with ${event.customerName ?? "lead"}`}
                 </p>
-                <p className="text-[12px] text-[#667085]">
+                <p className="text-[12px] text-sales-text-secondary">
                   {formatRelativeEventDate(event.startAt)}
                   {!event.hasTimedCallback ? " · All day" : ""}
                 </p>
@@ -71,7 +71,7 @@ export function UpcomingReminders({ events }: { events: CalendarEvent[] }) {
 
       <Link
         href="/sales/followups"
-        className="mt-2.5 inline-flex text-[12px] font-semibold text-[#101828] underline-offset-2 hover:underline"
+        className="mt-2.5 inline-flex text-[12px] font-semibold text-sales-text-primary underline-offset-2 hover:underline"
       >
         View all reminders →
       </Link>

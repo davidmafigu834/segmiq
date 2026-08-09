@@ -22,10 +22,10 @@ function TypeIcon({ type }: { type: SalesTaskItem["type"] }) {
 }
 
 function typeTint(type: SalesTaskItem["type"]) {
-  if (type === "whatsapp") return "bg-[#ECFDF3]";
+  if (type === "whatsapp") return "bg-sales-success-soft";
   if (type === "call") return "bg-[#F0FDFA]";
   if (type === "quote_review") return "bg-[#FFFAEB]";
-  return "bg-[#ECFDF3]";
+  return "bg-sales-success-soft";
 }
 
 function statusTone(status: SalesTaskItem["status"]) {
@@ -141,14 +141,14 @@ export function TaskDetailDrawer({
         <div className="flex flex-wrap gap-2">
           <Link
             href={task.leadHref}
-            className="inline-flex h-9 items-center rounded-sales-md border border-sales-border bg-white px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+            className="inline-flex h-9 items-center rounded-sales-md border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
           >
             Open lead
           </Link>
           {task.whatsappHref ? (
             <Link
               href={task.whatsappHref}
-              className="inline-flex h-9 items-center gap-1.5 rounded-sales-md border border-sales-border bg-white px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+              className="inline-flex h-9 items-center gap-1.5 rounded-sales-md border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
             >
               <SiWhatsapp size={14} /> Message on WhatsApp
             </Link>
@@ -156,7 +156,7 @@ export function TaskDetailDrawer({
           {task.phone ? (
             <a
               href={`tel:${task.phone}`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-sales-md border border-sales-border bg-white px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+              className="inline-flex h-9 items-center gap-1.5 rounded-sales-md border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
             >
               <Phone size={14} strokeWidth={1.8} /> Call
             </a>

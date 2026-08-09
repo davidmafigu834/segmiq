@@ -50,7 +50,7 @@ export function CrmThemeSetting() {
           Appearance
         </h2>
         <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Choose how the CRM looks on this device. Dark is the default.
+          Choose light or dark for this device. Preference syncs with SegmiQ landing and auth.
         </p>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">

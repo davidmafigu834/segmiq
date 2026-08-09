@@ -55,7 +55,10 @@ export function Alert({
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("animate-pulse rounded-sales-md bg-[#E4E7EC]/70", className)}
+      className={cn(
+        "animate-pulse rounded-sales-md bg-[var(--sales-skeleton-base,var(--sales-border))] opacity-80",
+        className
+      )}
       aria-hidden
       {...props}
     />
@@ -81,7 +84,7 @@ export function EmptyState({
   return (
     <div className={cn("flex flex-col items-center justify-center px-5 text-center", pad, className)}>
       {icon ? (
-        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-sales-md bg-[#F2F4F7] text-sales-text-muted">
+        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-sales-md bg-[var(--sales-neutral-100)] text-sales-text-muted">
           {icon}
         </span>
       ) : null}
@@ -163,7 +166,7 @@ export function Avatar({
   return (
     <div
       className={cn(
-        "flex items-center justify-center rounded-full bg-[#F2F4F7] font-semibold text-sales-text-primary ring-1 ring-sales-border",
+        "flex items-center justify-center rounded-full bg-[var(--sales-neutral-100)] font-semibold text-sales-text-primary ring-1 ring-sales-border",
         sizes[size],
         className
       )}

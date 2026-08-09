@@ -77,6 +77,12 @@ export default function RootLayout({
       className={`${instrumentSerif.variable} ${GeistSans.variable} ${GeistMono.variable} ${dmSans.variable} ${dmSerif.variable}`}
     >
       <head>
+        {/* Prevent CRM/sales theme flash before hydration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=location.pathname;var crm=p.indexOf("/sales")===0||p.indexOf("/solo")===0||p.indexOf("/dashboard")===0||p.indexOf("/client")===0||p.indexOf("/onboard")===0||p.indexOf("/dev/sales-design-system")===0;if(!crm)return;var t=null;try{t=localStorage.getItem("segmiq-crm-theme")}catch(e){}if(t!=="light"&&t!=="dark"){try{t=localStorage.getItem("segmiq-marketing-theme")}catch(e){}}if(t!=="light"&&t!=="dark")t="dark";var h=document.documentElement;h.setAttribute("data-crm","");if(t==="light")h.setAttribute("data-crm-theme","light");else h.removeAttribute("data-crm-theme");h.style.colorScheme=t==="light"?"light":"dark"}catch(e){}})();`,
+          }}
+        />
         {isCloudHost ? (
           <>
             {/* No crossorigin — use-credentials breaks installability on some browsers */}

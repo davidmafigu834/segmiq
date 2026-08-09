@@ -13,27 +13,27 @@ export type BadgeTone =
 export type BadgeAppearance = "soft" | "outline" | "solid";
 
 const softTone: Record<BadgeTone, string> = {
-  neutral: "bg-[#F2F4F7] text-sales-text-secondary",
+  neutral: "bg-[var(--sales-neutral-100)] text-sales-text-secondary",
   brand: "bg-[var(--sales-brand-soft-solid,#F3FCE3)] text-sales-brand-fg",
-  success: "bg-sales-success-soft text-[#027A48]",
+  success: "bg-sales-success-soft text-[var(--success-fg,#027A48)]",
   warning: "bg-sales-warning-soft text-[#B54708]",
-  danger: "bg-sales-danger-soft text-[#B42318]",
+  danger: "bg-sales-danger-soft text-[var(--danger-fg,#B42318)]",
   info: "bg-sales-info-soft text-[#175CD3]",
   purple: "bg-sales-purple-soft text-[#6941C6]",
 };
 
 const outlineTone: Record<BadgeTone, string> = {
-  neutral: "border border-sales-border bg-white text-sales-text-secondary",
-  brand: "border border-sales-brand-border bg-white text-sales-brand-fg",
-  success: "border border-sales-success/30 bg-white text-sales-success",
-  warning: "border border-sales-warning/35 bg-white text-[#B54708]",
-  danger: "border border-sales-danger/30 bg-white text-sales-danger",
-  info: "border border-sales-info/30 bg-white text-sales-info",
-  purple: "border border-sales-purple/30 bg-white text-sales-purple",
+  neutral: "border border-sales-border bg-sales-surface text-sales-text-secondary",
+  brand: "border border-sales-brand-border bg-sales-surface text-sales-brand-fg",
+  success: "border border-sales-success/30 bg-sales-surface text-sales-success",
+  warning: "border border-sales-warning/35 bg-sales-surface text-[#B54708]",
+  danger: "border border-sales-danger/30 bg-sales-surface text-sales-danger",
+  info: "border border-sales-info/30 bg-sales-surface text-sales-info",
+  purple: "border border-sales-purple/30 bg-sales-surface text-sales-purple",
 };
 
 const solidTone: Record<BadgeTone, string> = {
-  neutral: "bg-[#667085] text-white",
+  neutral: "bg-[var(--sales-neutral-500)] text-white",
   brand: "bg-sales-brand text-sales-brand-text",
   success: "bg-sales-success text-white",
   warning: "bg-sales-warning text-white",

@@ -253,12 +253,12 @@ export function LeadDetailPanel({
   const tabClass = (active: boolean) =>
     `flex-1 border-b-2 px-3 py-3 text-center text-[13px] font-medium transition-colors duration-150 ${
       active
-        ? "border-[#D4FF4F] text-[#101828]"
-        : "border-transparent text-[#667085] hover:text-[#101828]"
+        ? "border-sales-brand text-sales-text-primary"
+        : "border-transparent text-sales-text-secondary hover:text-sales-text-primary"
     }`;
 
   const qaBtn =
-    "flex min-h-[72px] min-w-0 flex-1 flex-col items-center justify-center gap-1.5 rounded-[10px] border border-[#E4E7EC] bg-white px-1 py-2 text-[11px] font-medium text-[#667085] transition-colors duration-150 hover:bg-[#F9FAFB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4FF4F] disabled:opacity-40";
+    "flex min-h-[72px] min-w-0 flex-1 flex-col items-center justify-center gap-1.5 rounded-[10px] border border-sales-border bg-sales-surface px-1 py-2 text-[11px] font-medium text-sales-text-secondary transition-colors duration-150 hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand disabled:opacity-40";
 
   const panel = (
     <div
@@ -275,18 +275,18 @@ export function LeadDetailPanel({
         />
       ) : null}
       <div
-        className="pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 max-w-full flex-col overflow-hidden border-[#E4E7EC] bg-white text-[#101828] shadow-[0_8px_30px_rgba(16,24,40,0.08)] transition-transform duration-200 max-md:max-h-[min(96dvh,100dvh)] max-md:rounded-t-2xl max-md:pb-[env(safe-area-inset-bottom)] md:h-[100dvh] md:max-h-[100dvh] md:w-[520px] md:max-w-[min(100%,520px)] md:rounded-none md:border-l"
+        className="pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 max-w-full flex-col overflow-hidden border-sales-border bg-sales-surface text-sales-text-primary shadow-[0_8px_30px_rgba(16,24,40,0.08)] transition-transform duration-200 max-md:max-h-[min(96dvh,100dvh)] max-md:rounded-t-2xl max-md:pb-[env(safe-area-inset-bottom)] md:h-[100dvh] md:max-h-[100dvh] md:w-[520px] md:max-w-[min(100%,520px)] md:rounded-none md:border-l"
         role="dialog"
         aria-modal={isMobileDrawer}
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="safe-top flex shrink-0 items-start gap-3 border-b border-[#E4E7EC] bg-white px-4 pb-3 max-md:rounded-t-2xl md:px-5 md:pt-4"
+          className="safe-top flex shrink-0 items-start gap-3 border-b border-sales-border bg-sales-surface px-4 pb-3 max-md:rounded-t-2xl md:px-5 md:pt-4"
           style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
         >
           <button
             type="button"
-            className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center text-[#667085] touch-manipulation md:hidden"
+            className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center text-sales-text-secondary touch-manipulation md:hidden"
             onClick={handleClose}
             aria-label="Back"
           >
@@ -299,22 +299,22 @@ export function LeadDetailPanel({
             ) : isFacebook ? (
               <SiFacebook size={16} color="#1877F2" aria-hidden />
             ) : (
-              <CircleUserRound size={16} strokeWidth={1.8} className="text-[#667085]" aria-hidden />
+              <CircleUserRound size={16} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />
             )}
           </span>
 
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[17px] font-semibold tracking-[-0.02em] text-[#101828] md:text-[18px]">
+            <h2 className="truncate text-[17px] font-semibold tracking-[-0.02em] text-sales-text-primary md:text-[18px]">
               {displayName}
             </h2>
-            <p className="mt-0.5 truncate text-[12px] text-[#667085]">{subtitle}</p>
+            <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{subtitle}</p>
           </div>
 
           <div className="flex shrink-0 items-center gap-0.5">
             {!isReadOnly && !isClosed ? (
               <button
                 type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-[#98A2B3] transition-colors hover:bg-[#F9FAFB] hover:text-[#F59E0B]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-muted transition-colors hover:bg-sales-surface-hover hover:text-[#F59E0B]"
                 aria-label={picked ? `Remove ${displayName} from picks` : `Save ${displayName} to picks`}
                 disabled={picking}
                 onClick={() => void togglePick()}
@@ -330,7 +330,7 @@ export function LeadDetailPanel({
             <div className="relative">
               <button
                 type="button"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-[#667085] transition-colors hover:bg-[#F9FAFB]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-secondary transition-colors hover:bg-sales-surface-hover"
                 aria-label="More actions"
                 aria-expanded={moreOpen}
                 onClick={() => setMoreOpen((v) => !v)}
@@ -345,11 +345,11 @@ export function LeadDetailPanel({
                     aria-label="Close menu"
                     onClick={() => setMoreOpen(false)}
                   />
-                  <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
+                  <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
                     {!isReadOnly ? (
                       <button
                         type="button"
-                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-[#F9FAFB]"
+                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-sales-surface-hover"
                         onClick={() => {
                           setMoreOpen(false);
                           scrollToLogCall();
@@ -361,7 +361,7 @@ export function LeadDetailPanel({
                     {canQuote ? (
                       <button
                         type="button"
-                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-[#F9FAFB]"
+                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-sales-surface-hover"
                         onClick={() => {
                           setMoreOpen(false);
                           setActiveTab("quote");
@@ -373,7 +373,7 @@ export function LeadDetailPanel({
                     {!isReadOnly ? (
                       <button
                         type="button"
-                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-[#F9FAFB]"
+                        className="flex w-full px-3 py-2 text-left text-[13px] hover:bg-sales-surface-hover"
                         onClick={() => {
                           setMoreOpen(false);
                           setActiveTab("send");
@@ -388,7 +388,7 @@ export function LeadDetailPanel({
             </div>
             <button
               type="button"
-              className="hidden h-9 w-9 items-center justify-center rounded-[8px] text-[#667085] transition-colors hover:bg-[#F9FAFB] md:inline-flex"
+              className="hidden h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-secondary transition-colors hover:bg-sales-surface-hover md:inline-flex"
               onClick={handleClose}
               aria-label="Close"
             >
@@ -397,7 +397,7 @@ export function LeadDetailPanel({
           </div>
         </div>
 
-        <div className="sticky top-0 z-[1] flex shrink-0 border-b border-[#E4E7EC] bg-white">
+        <div className="sticky top-0 z-[1] flex shrink-0 border-b border-sales-border bg-sales-surface">
           <button type="button" onClick={() => setActiveTab("details")} className={tabClass(activeTab === "details")}>
             Details
           </button>
@@ -416,7 +416,7 @@ export function LeadDetailPanel({
           ) : null}
         </div>
 
-        <div className="min-h-0 flex-1 divide-y divide-[#E4E7EC] overflow-y-auto overflow-x-hidden overscroll-y-contain pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm max-md:text-[15px] [touch-action:pan-y]">
+        <div className="min-h-0 flex-1 divide-y divide-sales-border overflow-y-auto overflow-x-hidden overscroll-y-contain pb-[max(1.25rem,env(safe-area-inset-bottom))] text-sm max-md:text-[15px] [touch-action:pan-y]">
           {activeTab === "timeline" ? <LeadTimeline key={timelineRefresh} leadId={activeLead.id} /> : null}
           {activeTab === "quote" && canQuote ? (
             <div className="p-4 sm:p-5">
@@ -458,21 +458,21 @@ export function LeadDetailPanel({
           <div className={activeTab !== "details" ? "hidden" : ""}>
             <div className="space-y-4 p-4 max-md:pt-3 sm:p-5">
               {score != null && Number.isFinite(score) ? (
-                <div className="flex items-center gap-4 rounded-[12px] border border-[#E4E7EC] bg-[#FCFCFD] px-4 py-3.5">
+                <div className="flex items-center gap-4 rounded-[12px] border border-sales-border bg-sales-surface-subtle px-4 py-3.5">
                   <div
                     className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
                     style={{
-                      background: `conic-gradient(#2684FF ${Math.min(100, score)}%, #E4E7EC 0)`,
+                      background: `conic-gradient(#2684FF ${Math.min(100, score)}%, var(--sales-border) 0)`,
                     }}
                     aria-label={`Lead score ${score}`}
                   >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[15px] font-semibold tabular-nums text-[#101828]">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sales-surface text-[15px] font-semibold tabular-nums text-sales-text-primary">
                       {Math.round(score)}
                     </div>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[14px] font-medium text-[#101828]">{intentLikelihoodCopy(score)}</p>
-                    <p className="mt-0.5 text-[12px] text-[#667085]">
+                    <p className="text-[14px] font-medium text-sales-text-primary">{intentLikelihoodCopy(score)}</p>
+                    <p className="mt-0.5 text-[12px] text-sales-text-secondary">
                       {isWhatsAppChat
                         ? "Engaged via WhatsApp"
                         : isFacebook
@@ -480,7 +480,7 @@ export function LeadDetailPanel({
                           : "Based on lead activity"}
                     </p>
                     {intent ? (
-                      <span className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] text-[#667085]">
+                      <span className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] text-sales-text-secondary">
                         <span
                           className="h-1.5 w-1.5 rounded-full"
                           style={{ background: intent.dot }}
@@ -495,10 +495,10 @@ export function LeadDetailPanel({
 
               {isWhatsAppChat ? (
                 <div className="rounded-[12px] border border-[#D1FADF] bg-[#F6FEF9] p-4">
-                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#027A48]">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--success-fg,#027A48)]">
                     WhatsApp conversation
                   </p>
-                  <p className="mb-3 text-[13px] leading-relaxed text-[#667085]">
+                  <p className="mb-3 text-[13px] leading-relaxed text-sales-text-secondary">
                     {whatsappLeadSecondaryLine(activeLead)}
                   </p>
                   <Link
@@ -537,11 +537,11 @@ export function LeadDetailPanel({
 
               <div className="space-y-1.5">
                 {isReadOnly ? (
-                  <div className="min-w-0 break-words text-[13px] text-[#667085]">
+                  <div className="min-w-0 break-words text-[13px] text-sales-text-secondary">
                     {phone ? (
                       <>
                         Phone:{" "}
-                        <a className="font-mono text-[#101828] underline-offset-2 hover:underline" href={`tel:${phone}`}>
+                        <a className="font-mono text-sales-text-primary underline-offset-2 hover:underline" href={`tel:${phone}`}>
                           {phone}
                         </a>
                       </>
@@ -555,9 +555,9 @@ export function LeadDetailPanel({
                   </a>
                 ) : null}
                 {activeLead.email ? (
-                  <div className="min-w-0 break-all text-[13px] text-[#667085]">{activeLead.email}</div>
+                  <div className="min-w-0 break-all text-[13px] text-sales-text-secondary">{activeLead.email}</div>
                 ) : null}
-                <div className="text-[11px] uppercase tracking-wide text-[#98A2B3]">
+                <div className="text-[11px] uppercase tracking-wide text-sales-text-muted">
                   Source · {isWhatsAppChat ? "WhatsApp" : isFacebook ? "Facebook Instant Form" : activeLead.source} ·{" "}
                   {format(new Date(activeLead.created_at), "MMM d, yyyy")}
                 </div>
@@ -566,7 +566,7 @@ export function LeadDetailPanel({
 
               {!isReadOnly && !isClosed ? (
                 <div>
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">Status</p>
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Status</p>
                   <div className="mb-3 flex flex-wrap items-center gap-1.5">
                     {MOVE_COLS.map((col, idx) => {
                       const currentIdx = (MOVE_COLS as readonly string[]).indexOf(activeLead.status);
@@ -575,22 +575,22 @@ export function LeadDetailPanel({
                       return (
                         <div key={col} className="flex items-center gap-1.5">
                           {idx > 0 ? (
-                            <span className="text-[#D0D5DD]" aria-hidden>
+                            <span className="text-[var(--sales-neutral-300)]" aria-hidden>
                               ›
                             </span>
                           ) : null}
                           <span
                             className={`inline-flex items-center gap-1.5 text-[12px] ${
                               isCurrent
-                                ? "font-semibold text-[#101828]"
+                                ? "font-semibold text-sales-text-primary"
                                 : isPast
-                                  ? "text-[#667085]"
-                                  : "text-[#98A2B3]"
+                                  ? "text-sales-text-secondary"
+                                  : "text-sales-text-muted"
                             }`}
                           >
                             <span
                               className={`h-1.5 w-1.5 rounded-full ${
-                                isCurrent ? "bg-[#2684FF]" : isPast ? "bg-[#22C55E]" : "bg-[#E4E7EC]"
+                                isCurrent ? "bg-[#2684FF]" : isPast ? "bg-[#22C55E]" : "bg-sales-border"
                               }`}
                               aria-hidden
                             />
@@ -613,7 +613,7 @@ export function LeadDetailPanel({
                       <button
                         type="button"
                         disabled={closingStatus}
-                        className="h-10 rounded-[10px] border border-[#E4E7EC] bg-[#ECFDF3] text-[12px] font-medium text-[#027A48]"
+                        className="h-10 rounded-[10px] border border-sales-border bg-sales-success-soft text-[12px] font-medium text-[var(--success-fg,#027A48)]"
                         onClick={() => void handleCloseDeal("WON")}
                       >
                         Won
@@ -621,7 +621,7 @@ export function LeadDetailPanel({
                       <button
                         type="button"
                         disabled={closingStatus}
-                        className="h-10 rounded-[10px] border border-[#E4E7EC] bg-[#FEF3F2] text-[12px] font-medium text-[#B42318]"
+                        className="h-10 rounded-[10px] border border-sales-border bg-sales-danger-soft text-[12px] font-medium text-[var(--danger-fg,#B42318)]"
                         onClick={() => void handleCloseDeal("LOST")}
                       >
                         Lost
@@ -629,7 +629,7 @@ export function LeadDetailPanel({
                       <button
                         type="button"
                         disabled={closingStatus}
-                        className="h-10 rounded-[10px] border border-[#E4E7EC] bg-[#F2F4F7] text-[12px] font-medium text-[#667085]"
+                        className="h-10 rounded-[10px] border border-sales-border bg-[var(--sales-neutral-100)] text-[12px] font-medium text-sales-text-secondary"
                         onClick={() => void handleCloseDeal("NOT_QUALIFIED")}
                       >
                         Not qualified
@@ -641,7 +641,7 @@ export function LeadDetailPanel({
 
               {!isReadOnly ? (
                 <div>
-                  <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">
+                  <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
                     Quick actions
                   </p>
                   <div className="flex gap-2">
@@ -713,8 +713,8 @@ export function LeadDetailPanel({
             !isReadOnly &&
             !isClosed &&
             (MOVE_COLS as readonly string[]).includes(activeLead.status) ? (
-              <div className="border-b border-[#E4E7EC] p-4 max-md:px-4 sm:p-5 md:hidden">
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3]">
+              <div className="border-b border-sales-border p-4 max-md:px-4 sm:p-5 md:hidden">
+                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
                   Move to
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -723,7 +723,7 @@ export function LeadDetailPanel({
                       key={col}
                       type="button"
                       onClick={() => void handleMoveStage(col)}
-                      className="min-h-12 rounded-[10px] border border-[#E4E7EC] px-2 text-left text-sm text-[#101828] touch-manipulation hover:bg-[#F9FAFB] sm:min-h-0 sm:h-9 sm:py-0"
+                      className="min-h-12 rounded-[10px] border border-sales-border px-2 text-left text-sm text-sales-text-primary touch-manipulation hover:bg-sales-surface-hover sm:min-h-0 sm:h-9 sm:py-0"
                     >
                       → {COL_LABEL[col]}
                     </button>
@@ -764,7 +764,7 @@ export function LeadDetailPanel({
                     />
                   </div>
                 ) : (
-                  <div className="p-4 text-sm text-[#667085] sm:p-5">
+                  <div className="p-4 text-sm text-sales-text-secondary sm:p-5">
                     This lead is closed — call log is read-only.
                   </div>
                 )}
@@ -780,9 +780,9 @@ export function LeadDetailPanel({
             ) : null}
 
             {role === "CLIENT_MANAGER" || (role === "SUPER_ADMIN" && isReadOnly) ? (
-              <div className="space-y-3 border-t border-[#E4E7EC] p-4 sm:p-5 max-md:pb-6">
-                <div className="font-mono text-[11px] uppercase text-[#98A2B3]">Assignment</div>
-                <p className="text-[13px] text-[#667085]">
+              <div className="space-y-3 border-t border-sales-border p-4 sm:p-5 max-md:pb-6">
+                <div className="font-mono text-[11px] uppercase text-sales-text-muted">Assignment</div>
+                <p className="text-[13px] text-sales-text-secondary">
                   {activeLead.assigned_to_id
                     ? "Move this lead to another salesperson on your team."
                     : "Assign this lead to a salesperson on your team."}
@@ -892,11 +892,11 @@ function AgencyLeadAdminSection({
   }
 
   return (
-    <div className="space-y-4 border-t border-[#E4E7EC] p-4 sm:p-5 max-md:pb-6">
-      <div className="font-mono text-[11px] uppercase text-[#98A2B3]">Agency</div>
-      {msg ? <p className="text-[13px] text-[#B42318]">{msg}</p> : null}
+    <div className="space-y-4 border-t border-sales-border p-4 sm:p-5 max-md:pb-6">
+      <div className="font-mono text-[11px] uppercase text-sales-text-muted">Agency</div>
+      {msg ? <p className="text-[13px] text-[var(--danger-fg,#B42318)]">{msg}</p> : null}
       <div>
-        <label className="mb-1 block text-[12px] font-medium text-[#667085]" htmlFor={`reassign-${lead.id}`}>
+        <label className="mb-1 block text-[12px] font-medium text-sales-text-secondary" htmlFor={`reassign-${lead.id}`}>
           Reassign to
         </label>
         <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-stretch">
@@ -923,7 +923,7 @@ function AgencyLeadAdminSection({
           </button>
         </div>
         <textarea
-          className="mt-2 w-full rounded-md border border-[#E4E7EC] bg-white px-3 py-2 text-[13px] text-[#101828] placeholder:text-[#98A2B3]"
+          className="mt-2 w-full rounded-md border border-sales-border bg-sales-surface px-3 py-2 text-[13px] text-sales-text-primary placeholder:text-sales-text-muted"
           rows={2}
           placeholder="Handover notes (optional) — visible in timeline"
           value={handoverNotes}
@@ -932,7 +932,7 @@ function AgencyLeadAdminSection({
       </div>
       <button
         type="button"
-        className="min-h-11 w-full text-left text-[13px] font-medium text-[#B42318] underline-offset-2 touch-manipulation hover:underline sm:min-h-0 sm:w-auto"
+        className="min-h-11 w-full text-left text-[13px] font-medium text-[var(--danger-fg,#B42318)] underline-offset-2 touch-manipulation hover:underline sm:min-h-0 sm:w-auto"
         disabled={busy !== null}
         onClick={() => void handleArchive()}
       >
@@ -968,28 +968,28 @@ function CallHistory({ leadId, refreshKey }: { leadId: string; refreshKey: numbe
 
   return (
     <div>
-      <div className="font-mono text-[11px] uppercase text-[#98A2B3]">Call history</div>
-      {error ? <p className="mt-2 text-[13px] text-[#667085]">{error}</p> : null}
-      {!error && logs === null ? <p className="mt-2 text-[13px] text-[#98A2B3]">Loading…</p> : null}
-      {logs && logs.length === 0 ? <p className="mt-2 text-[13px] text-[#98A2B3]">No calls logged yet.</p> : null}
+      <div className="font-mono text-[11px] uppercase text-sales-text-muted">Call history</div>
+      {error ? <p className="mt-2 text-[13px] text-sales-text-secondary">{error}</p> : null}
+      {!error && logs === null ? <p className="mt-2 text-[13px] text-sales-text-muted">Loading…</p> : null}
+      {logs && logs.length === 0 ? <p className="mt-2 text-[13px] text-sales-text-muted">No calls logged yet.</p> : null}
       {logs && logs.length > 0 ? (
         <ul className="relative mt-3 list-none space-y-0 p-0">
-          <div className="absolute bottom-0 left-[7px] top-2 border-l border-[#E4E7EC]" aria-hidden />
+          <div className="absolute bottom-0 left-[7px] top-2 border-l border-sales-border" aria-hidden />
           {logs.map((log) => (
-            <li key={log.id} className="relative border-b border-[#E4E7EC] py-3.5 pl-6 last:border-b-0">
+            <li key={log.id} className="relative border-b border-sales-border py-3.5 pl-6 last:border-b-0">
               <span
                 className={`absolute left-[7px] top-[22px] h-2 w-2 rounded-full ${
-                  log.outcome === "LOST" ? "bg-[#EF4444]" : "bg-[#98A2B3]"
+                  log.outcome === "LOST" ? "bg-sales-danger" : "bg-[var(--sales-neutral-400)]"
                 }`}
                 aria-hidden
               />
               <div className="flex items-start justify-between gap-3">
                 <CallHistoryOutcome log={log} />
-                <span className="shrink-0 font-mono text-[11px] text-[#98A2B3] tabular-nums">
+                <span className="shrink-0 font-mono text-[11px] text-sales-text-muted tabular-nums">
                   {format(new Date(log.created_at), "HH:mm")}
                 </span>
               </div>
-              <p className="mt-1 font-mono text-[10px] text-[#98A2B3]">{log.users?.name ?? "—"}</p>
+              <p className="mt-1 font-mono text-[10px] text-sales-text-muted">{log.users?.name ?? "—"}</p>
             </li>
           ))}
         </ul>
@@ -1006,22 +1006,22 @@ function CallHistoryOutcome({ log }: { log: CallLogApiRow }) {
     <div className="min-w-0 flex-1">
       <div className="flex flex-wrap items-baseline gap-2">
         {isLost ? (
-          <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-[#FEF3F2] px-2.5 text-[11px] font-medium leading-none text-[#B42318]">
+          <span className="inline-flex h-[22px] shrink-0 items-center rounded-md bg-sales-danger-soft px-2.5 text-[11px] font-medium leading-none text-[var(--danger-fg,#B42318)]">
             Lost
           </span>
         ) : null}
         <span
           className={
             isLost
-              ? "text-[13px] text-[#101828]"
-              : "font-mono text-[11px] font-normal uppercase tracking-wide text-[#667085]"
+              ? "text-[13px] text-sales-text-primary"
+              : "font-mono text-[11px] font-normal uppercase tracking-wide text-sales-text-secondary"
           }
         >
           {isLost && log.reason ? `— ${log.reason}` : headline}
         </span>
       </div>
-      {!isLost && log.notes ? <p className="mt-1 text-[13px] text-[#101828]">{log.notes}</p> : null}
-      {isLost && log.notes ? <p className="mt-1 text-[12px] text-[#667085]">{log.notes}</p> : null}
+      {!isLost && log.notes ? <p className="mt-1 text-[13px] text-sales-text-primary">{log.notes}</p> : null}
+      {isLost && log.notes ? <p className="mt-1 text-[12px] text-sales-text-secondary">{log.notes}</p> : null}
     </div>
   );
 }

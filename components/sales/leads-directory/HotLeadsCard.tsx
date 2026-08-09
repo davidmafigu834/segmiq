@@ -31,7 +31,7 @@ export function HotLeadsCard({
     <Card className="overflow-hidden">
       <CardHeader className="border-b-0 px-5 pb-2 pt-4">
         <CardTitle className="flex items-center gap-2 text-[14px] font-semibold">
-          <Flame size={16} strokeWidth={1.8} className="text-[#EF4444]" aria-hidden />
+          <Flame size={16} strokeWidth={1.8} className="text-sales-danger" aria-hidden />
           Hot leads
         </CardTitle>
       </CardHeader>

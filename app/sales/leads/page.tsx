@@ -21,16 +21,16 @@ function PipelineSkeleton() {
   return (
     <div className="space-y-4" aria-busy aria-label="Loading pipeline">
       <div className="flex gap-3">
-        <div className="h-9 w-40 animate-pulse rounded-lg bg-[#E4E7EC]/40" />
-        <div className="ml-auto h-9 w-56 animate-pulse rounded-lg bg-[#E4E7EC]/40" />
+        <div className="h-9 w-40 animate-pulse rounded-lg bg-sales-border/40" />
+        <div className="ml-auto h-9 w-56 animate-pulse rounded-lg bg-sales-border/40" />
       </div>
       <div className="grid grid-cols-1 gap-3 layout:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="min-h-[16rem] rounded-[12px] border border-[#E4E7EC] bg-white p-3"
+            className="min-h-[16rem] rounded-[12px] border border-sales-border bg-sales-surface p-3"
           >
-            <div className="mb-3 h-4 w-24 animate-pulse rounded bg-[#F2F4F7]" />
+            <div className="mb-3 h-4 w-24 animate-pulse rounded bg-[var(--sales-neutral-100)]" />
             <div className="space-y-2">
               <div className="h-28 animate-pulse rounded-[12px] bg-[#F8F9FB]" />
               <div className="h-28 animate-pulse rounded-[12px] bg-[#F8F9FB]" />

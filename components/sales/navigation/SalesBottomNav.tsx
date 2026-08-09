@@ -28,11 +28,11 @@ function NavIcon({
       return (
         <span
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full shadow-[0_2px_8px_rgba(212,255,79,0.35)]",
+            "flex h-10 w-10 items-center justify-center rounded-full text-sales-brand-text shadow-[0_2px_8px_rgba(212,255,79,0.35)]",
             active ? "bg-sales-brand" : "bg-[rgba(212,255,79,0.4)]"
           )}
         >
-          <SiWhatsapp size={18} color="#101828" aria-hidden />
+          <SiWhatsapp size={18} color="currentColor" aria-hidden />
         </span>
       );
     }
@@ -40,7 +40,7 @@ function NavIcon({
       <SiWhatsapp
         size={18}
         color="currentColor"
-        className={active ? "text-[#4E6400]" : "text-sales-text-secondary"}
+        className={active ? "text-[var(--sales-sidebar-icon-active)]" : "text-sales-text-secondary"}
         aria-hidden
       />
     );
@@ -50,7 +50,7 @@ function NavIcon({
     <Icon
       size={20}
       strokeWidth={active ? 2 : 1.75}
-      className={active ? "text-[#4E6400]" : "text-sales-text-secondary"}
+      className={active ? "text-[var(--sales-sidebar-icon-active)]" : "text-sales-text-secondary"}
       aria-hidden
     />
   );
@@ -92,7 +92,7 @@ export function SalesBottomNav({
               aria-current={active ? "page" : undefined}
               className={cn(
                 "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
-                active ? "text-[#101828]" : "text-sales-text-secondary"
+                active ? "text-sales-text-primary" : "text-sales-text-secondary"
               )}
             >
               <span
@@ -104,7 +104,7 @@ export function SalesBottomNav({
               >
                 <NavIcon icon={item.icon} active={active} emphasized={isWa} />
                 {showBadge ? (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[rgba(212,255,79,0.95)] px-1 text-[9px] font-semibold text-[#4E6500]">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[rgba(212,255,79,0.95)] px-1 text-[9px] font-semibold text-[var(--sales-sidebar-badge-text)]">
                     {badge! > 99 ? "99+" : badge}
                   </span>
                 ) : null}
@@ -118,7 +118,7 @@ export function SalesBottomNav({
           type="button"
           className={cn(
             "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
-            moreOpen ? "text-[#101828]" : "text-sales-text-secondary"
+            moreOpen ? "text-sales-text-primary" : "text-sales-text-secondary"
           )}
           aria-label="More"
           aria-expanded={moreOpen}
@@ -133,7 +133,7 @@ export function SalesBottomNav({
             <Ellipsis
               size={20}
               strokeWidth={moreOpen ? 2 : 1.75}
-              className={moreOpen ? "text-[#4E6400]" : "text-sales-text-secondary"}
+              className={moreOpen ? "text-[var(--sales-sidebar-icon-active)]" : "text-sales-text-secondary"}
               aria-hidden
             />
           </span>
