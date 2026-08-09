@@ -185,7 +185,9 @@ export default function ProductHeroVisual() {
                         </div>
                         <span
                           className={`shrink-0 rounded-md px-1.5 py-0.5 text-[8px] font-medium ${
-                            row.overdue ? "bg-[#FEF2F2] text-[#EF4444]" : "bg-[#F2F4F7] text-[#667085]"
+                            "overdue" in row && row.overdue
+                              ? "bg-[#FEF2F2] text-[#EF4444]"
+                              : "bg-[#F2F4F7] text-[#667085]"
                           }`}
                         >
                           {row.due}

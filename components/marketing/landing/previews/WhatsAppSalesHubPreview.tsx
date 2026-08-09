@@ -71,7 +71,7 @@ export default function WhatsAppSalesHubPreview() {
               <li
                 key={chat.name}
                 className={`border-b border-[#F2F4F7] px-2.5 py-2 ${
-                  chat.active ? "bg-[#F9FAFB]" : "bg-white"
+                  "active" in chat && chat.active ? "bg-[#F9FAFB]" : "bg-white"
                 }`}
               >
                 <div className="flex items-center justify-between gap-1">
