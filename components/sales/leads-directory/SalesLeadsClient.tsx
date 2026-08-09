@@ -776,12 +776,18 @@ export function SalesLeadsClient({
                       <MenuSelect
                         aria-label="Rows per page"
                         size="sm"
-                        value={pageSize}
+                        value={String(pageSize)}
                         onChange={(v) => {
-                          setPageSize(v);
-                          setPage(1);
+                          const next = Number(v);
+                          if ((PAGE_SIZES as readonly number[]).includes(next)) {
+                            setPageSize(next as (typeof PAGE_SIZES)[number]);
+                            setPage(1);
+                          }
                         }}
-                        options={PAGE_SIZES.map((n) => ({ value: n, label: `${n} / page` }))}
+                        options={PAGE_SIZES.map((n) => ({
+                          value: String(n),
+                          label: `${n} / page`,
+                        }))}
                       />
                       <div className="flex items-center gap-1">
                         <IconButton

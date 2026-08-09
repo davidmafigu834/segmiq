@@ -843,10 +843,15 @@ export function SalesQuotesClient() {
                       <MenuSelect
                         aria-label="Rows per page"
                         size="sm"
-                        value={pageSize}
-                        onChange={(v) => setPageSize(v)}
+                        value={String(pageSize)}
+                        onChange={(v) => {
+                          const next = Number(v);
+                          if ((PAGE_SIZES as readonly number[]).includes(next)) {
+                            setPageSize(next as (typeof PAGE_SIZES)[number]);
+                          }
+                        }}
                         options={PAGE_SIZES.map((n) => ({
-                          value: n,
+                          value: String(n),
                           label: `${n} / page`,
                         }))}
                       />
