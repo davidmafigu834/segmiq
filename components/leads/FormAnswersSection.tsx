@@ -55,8 +55,15 @@ export function FormAnswersSection({
   if (entries.length === 0) return null;
 
   return (
-    <div className={["min-w-0 border-b border-[#E4E7EC] bg-[#F8F9FB]/60 px-5 py-5", className].filter(Boolean).join(" ")}>
-      <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98A2B3]">
+    <div
+      className={[
+        "min-w-0 border-b border-[var(--border)] bg-[var(--surface-card-alt)] px-5 py-5",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
         {title}
       </div>
       <FormAnswersGrid compactMobile={compactMobile} entries={entries} />
@@ -86,10 +93,10 @@ function FormAnswersGrid({
         const spanClass = compactMobile ? (wide ? "md:col-span-2" : "") : wide ? "col-span-2" : "";
         return (
           <div key={`${entry.label}-${i}`} className={spanClass}>
-            <dt className="mb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[#98A2B3]">
+            <dt className="mb-1 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-tertiary)]">
               {entry.label}
             </dt>
-            <dd className="min-w-0 break-words text-sm leading-relaxed text-[#101828]">
+            <dd className="min-w-0 break-words text-sm leading-relaxed text-[var(--text-primary)]">
               {entry.value}
             </dd>
           </div>
