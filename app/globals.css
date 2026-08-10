@@ -3304,10 +3304,10 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
 
   /* Text */
   --sales-text-primary: #f7f8f5;
-  --sales-text-secondary: #b8beb4;
-  --sales-text-muted: #8a9187;
-  --sales-text-disabled: #5c635b;
-  --sales-text-label: #b8beb4;
+  --sales-text-secondary: #c4cac0;
+  --sales-text-muted: #9aa196;
+  --sales-text-disabled: #6a7168;
+  --sales-text-label: #c4cac0;
 
   /* Borders — readable on elevated cards, not lost into the canvas */
   --sales-border: #2f362f;
@@ -3568,7 +3568,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   border-radius: var(--sales-radius-md);
   border: 1px solid var(--sales-border);
   background: var(--sales-surface);
-  color: var(--sales-text-secondary);
+  color: var(--sales-text-primary);
   transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 .sales-dashboard-premium .sd-icon-btn:hover:not(:disabled) {
@@ -3583,6 +3583,13 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
 .sales-dashboard-premium .sd-icon-btn:focus-visible {
   outline: none;
   box-shadow: var(--sales-focus-ring);
+}
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-icon-btn {
+  background: var(--sales-surface-raised);
+  border-color: var(--sales-border-strong);
+}
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-icon-btn:hover:not(:disabled) {
+  background: var(--sales-surface-hover);
 }
 .sales-dashboard-premium .sd-search-wrap {
   display: inline-flex;

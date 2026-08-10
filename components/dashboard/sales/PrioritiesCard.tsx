@@ -62,7 +62,7 @@ export function PriorityRow({
       <div className="flex items-center gap-1.5 pl-12 sm:justify-end sm:pl-0">
         <button
           type="button"
-          className="sd-icon-btn !h-10 !w-10 !min-h-10 !min-w-10"
+          className="sd-icon-btn !h-10 !w-10 !min-h-10 !min-w-10 text-sales-whatsapp"
           aria-label={`Message ${task.name} on WhatsApp`}
           title="Message on WhatsApp"
           disabled={!task.phone}
@@ -80,17 +80,17 @@ export function PriorityRow({
             onLog(task.leadId, "whatsapp");
           }}
         >
-          <SiWhatsapp size={16} color="#25D366" aria-hidden />
+          <SiWhatsapp size={17} className="text-sales-whatsapp" aria-hidden />
         </button>
         {task.phone ? (
           <a
             href={`tel:${task.phone}`}
-            className="sd-icon-btn !h-10 !w-10 !min-h-10 !min-w-10"
+            className="sd-icon-btn !h-10 !w-10 !min-h-10 !min-w-10 text-sales-text-primary"
             aria-label={`Call ${task.name}`}
             title="Call customer"
             onClick={() => onLog(task.leadId, "call")}
           >
-            <Phone size={16} strokeWidth={1.8} aria-hidden />
+            <Phone size={17} strokeWidth={2} className="text-sales-text-primary" aria-hidden />
           </a>
         ) : (
           <button
@@ -99,7 +99,7 @@ export function PriorityRow({
             disabled
             aria-label="No phone number"
           >
-            <Phone size={16} strokeWidth={1.8} aria-hidden />
+            <Phone size={17} strokeWidth={2} aria-hidden />
           </button>
         )}
         <button

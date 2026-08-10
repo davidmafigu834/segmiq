@@ -13,9 +13,9 @@ export function FollowUpBanner({
   if (dueCount <= 0) return null;
 
   return (
-    <aside className="flex flex-col gap-3 rounded-[14px] border border-sales-border bg-gradient-to-r from-[#F7FEE7] via-[#FBFCFD] to-[#FBFCFD] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <aside className="flex flex-col gap-3 rounded-[14px] border border-sales-brand-border bg-gradient-to-r from-[var(--sales-brand-soft-solid)] via-sales-surface to-sales-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-start gap-3">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-brand text-sales-text-primary">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-brand text-sales-brand-text">
           <Target size={16} strokeWidth={1.8} aria-hidden />
         </span>
         <div className="min-w-0">
@@ -31,7 +31,7 @@ export function FollowUpBanner({
       </div>
       <Link
         href="/sales/followups"
-        className="inline-flex h-10 min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-text-primary transition-colors duration-150 hover:bg-sales-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sales-neutral-900)]/40"
+        className="inline-flex h-10 min-w-[44px] shrink-0 items-center justify-center gap-1.5 rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text transition-colors duration-150 hover:bg-sales-brand-hover focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
       >
         View follow-ups
         <ArrowRight size={16} strokeWidth={1.8} aria-hidden />

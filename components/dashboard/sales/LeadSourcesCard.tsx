@@ -15,15 +15,19 @@ import { MenuSelect } from "@/components/sales/ui/MenuSelect";
 import { cn } from "@/lib/ui/cn";
 
 function SourceIcon({ brand }: { brand: SalesLeadSourceItem["brand"] }) {
-  if (brand === "whatsapp") return <SiWhatsapp size={16} color="#25D366" aria-hidden />;
-  if (brand === "facebook") return <SiFacebook size={16} color="#1877F2" aria-hidden />;
+  if (brand === "whatsapp") {
+    return <SiWhatsapp size={16} className="text-sales-whatsapp" aria-hidden />;
+  }
+  if (brand === "facebook") {
+    return <SiFacebook size={16} className="text-[#60A5FA]" aria-hidden />;
+  }
   if (brand === "referral") {
-    return <Users size={16} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />;
+    return <Users size={16} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
   }
   if (brand === "website") {
-    return <Globe2 size={16} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />;
+    return <Globe2 size={16} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
   }
-  return <MoreHorizontal size={16} strokeWidth={1.8} className="text-sales-text-muted" aria-hidden />;
+  return <MoreHorizontal size={16} strokeWidth={2} className="text-sales-text-secondary" aria-hidden />;
 }
 
 export function LeadSourcesCard({ data }: { data: SalesDashboardRaw }) {

@@ -7,17 +7,19 @@ import type { SalesActivityItem } from "./types";
 import { CardShell } from "./KpiCard";
 
 function ActivityIcon({ kind }: { kind: SalesActivityItem["kind"] }) {
-  if (kind === "whatsapp") return <SiWhatsapp size={15} color="#25D366" aria-hidden />;
+  if (kind === "whatsapp") {
+    return <SiWhatsapp size={16} className="text-sales-whatsapp" aria-hidden />;
+  }
   if (kind === "quote") {
-    return <Eye size={15} strokeWidth={1.8} className="text-[#2684FF]" aria-hidden />;
+    return <Eye size={16} strokeWidth={2} className="text-[#60A5FA]" aria-hidden />;
   }
   if (kind === "call") {
-    return <Phone size={15} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />;
+    return <Phone size={16} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
   }
   if (kind === "won") {
-    return <Trophy size={15} strokeWidth={1.8} className="text-[#16A34A]" aria-hidden />;
+    return <Trophy size={16} strokeWidth={2} className="text-sales-success" aria-hidden />;
   }
-  return <Activity size={15} strokeWidth={1.8} className="text-sales-text-muted" aria-hidden />;
+  return <Activity size={16} strokeWidth={2} className="text-sales-text-secondary" aria-hidden />;
 }
 
 export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
