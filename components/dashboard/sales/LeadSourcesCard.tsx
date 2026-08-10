@@ -48,47 +48,51 @@ export function LeadSourcesCard({ data }: { data: SalesDashboardRaw }) {
         />
       }
     >
-      {sources.every((s) => s.count === 0) ? (
-        <p className="py-6 text-center text-[13px] text-sales-text-muted">No lead sources yet</p>
-      ) : (
-        <ul className="space-y-3.5">
-          {sources.map((s) => (
-            <li key={s.id}>
-              <div className="mb-1.5 flex items-center justify-between gap-2">
-                <span className="inline-flex min-w-0 items-center gap-2 text-[13px] font-medium text-sales-text-primary">
-                  <SourceIcon brand={s.brand} />
-                  <span className="truncate">{s.label}</span>
-                </span>
-                <span className="flex shrink-0 items-center gap-2 text-[12px]">
-                  <span className="font-semibold tabular-nums text-sales-text-primary">{s.count}</span>
-                  {s.trendLabel ? (
-                    <span
-                      className={cn(
-                        "tabular-nums",
-                        s.trendDirection === "up"
-                          ? "text-[#16A34A]"
-                          : s.trendDirection === "down"
-                            ? "text-sales-danger"
-                            : "text-sales-text-muted"
-                      )}
-                    >
-                      {s.trendLabel}
+      <div className="min-w-0 px-4 py-4 sm:px-5">
+        {sources.every((s) => s.count === 0) ? (
+          <p className="py-6 text-center text-[13px] text-sales-text-muted">No lead sources yet</p>
+        ) : (
+          <ul className="min-w-0 space-y-3.5">
+            {sources.map((s) => (
+              <li key={s.id} className="min-w-0">
+                <div className="mb-1.5 flex min-w-0 items-center justify-between gap-3">
+                  <span className="inline-flex min-w-0 items-center gap-2 text-[13px] font-medium text-sales-text-primary">
+                    <span className="inline-flex shrink-0">
+                      <SourceIcon brand={s.brand} />
                     </span>
-                  ) : null}
-                </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--sales-border-subtle)]">
-                <div
-                  className="h-full rounded-full bg-sales-brand"
-                  style={{
-                    width: `${s.count > 0 ? Math.max((s.count / maxCount) * 100, 4) : 0}%`,
-                  }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                    <span className="truncate">{s.label}</span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2 text-[12px]">
+                    <span className="font-semibold tabular-nums text-sales-text-primary">{s.count}</span>
+                    {s.trendLabel ? (
+                      <span
+                        className={cn(
+                          "tabular-nums",
+                          s.trendDirection === "up"
+                            ? "text-[#16A34A]"
+                            : s.trendDirection === "down"
+                              ? "text-sales-danger"
+                              : "text-sales-text-muted"
+                        )}
+                      >
+                        {s.trendLabel}
+                      </span>
+                    ) : null}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-[var(--sales-border-subtle)]">
+                  <div
+                    className="h-full rounded-full bg-sales-brand"
+                    style={{
+                      width: `${s.count > 0 ? Math.max((s.count / maxCount) * 100, 4) : 0}%`,
+                    }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </CardShell>
   );
 }

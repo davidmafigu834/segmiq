@@ -335,21 +335,22 @@ Selector for dark sales tokens:
 
 | Token | Value |
 |-------|-------|
-| `--sales-bg` | `#0B0D0C` |
-| `--sales-bg-subtle` | `#0E110E` |
-| `--sales-sidebar-bg` | `#0D100E` |
-| `--sales-surface` | `#111411` |
-| `--sales-surface-raised` | `#151815` |
-| `--sales-surface-hover` | `#181C18` |
-| `--sales-surface-selected` / active | `#1B2019` |
+| `--sales-bg` | `#090B09` |
+| `--sales-bg-subtle` | `#0C0E0C` |
+| `--sales-sidebar-bg` | `#0C0E0C` |
+| `--sales-surface` | `#171B17` |
+| `--sales-surface-subtle` | `#1C211C` |
+| `--sales-surface-raised` | `#1F241F` |
+| `--sales-surface-hover` | `#222822` |
+| `--sales-surface-selected` / active | `#243024` |
 | `--sales-text-primary` | `#F7F8F5` |
-| `--sales-text-secondary` | `#B1B7AE` |
-| `--sales-text-muted` | `#7D847A` |
-| `--sales-border` | `#272C27` |
-| `--sales-border-subtle` | `#1E231E` |
-| `--sales-border-strong` | `#343A34` |
+| `--sales-text-secondary` | `#B8BEB4` |
+| `--sales-text-muted` | `#8A9187` |
+| `--sales-border` | `#2F362F` |
+| `--sales-border-subtle` | `#262C26` |
+| `--sales-border-strong` | `#3F473F` |
 | `--sales-brand` | `#D4FF4F` |
-| `--sales-brand-soft` | `rgba(212,255,79,.10)` |
+| `--sales-brand-soft` | `rgba(212,255,79,.12)` |
 
 ### Semantic status (dark)
 
@@ -358,7 +359,7 @@ Soft variants use ~10% alpha on the same hues.
 
 ### Surface hierarchy
 
-Page `#0B0D0C` → Sidebar `#0D100E` → Card `#111411` → Raised `#151815` → Hover `#181C18`. Prefer borders/elevation over heavy shadows. No glassmorphism, neon lime glows, or pure-black-only UI.
+Page `#090B09` → Sidebar `#0C0E0C` → Card `#171B17` → Nested `#1C211C` → Raised `#1F241F` → Hover `#222822`. Cards use a soft lift shadow plus clearer borders so bordered elements separate from the canvas. No glassmorphism, neon lime glows, or pure-black-only UI.
 
 ### Lime usage
 

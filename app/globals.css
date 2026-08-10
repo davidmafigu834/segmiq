@@ -3278,68 +3278,71 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium,
 html[data-crm]:not([data-crm-theme="light"]) .pipeline-drawer-light,
 html[data-crm]:not([data-crm-theme="light"]) .sales-modal-premium,
 html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
-  /* Surfaces */
-  --sales-bg: #0b0d0c;
-  --sales-bg-subtle: #0e110e;
-  --sales-surface: #111411;
-  --sales-surface-subtle: #0f120f;
-  --sales-surface-hover: #181c18;
-  --sales-surface-active: #1b2019;
-  --sales-surface-raised: #151815;
-  --sales-surface-selected: #1b2019;
+  /*
+    Surface hierarchy (canvas → card → nested → raised):
+    Keep page deep; lift cards enough to read against it; nest panels one step higher.
+  */
+  --sales-bg: #090b09;
+  --sales-bg-subtle: #0c0e0c;
+  --sales-surface: #171b17;
+  --sales-surface-subtle: #1c211c;
+  --sales-surface-hover: #222822;
+  --sales-surface-active: #262c26;
+  --sales-surface-raised: #1f241f;
+  --sales-surface-selected: #243024;
 
   /* Neutral scale */
   --sales-neutral-900: #f7f8f5;
   --sales-neutral-700: #b1b7ae;
-  --sales-neutral-500: #7d847a;
-  --sales-neutral-400: #626961;
-  --sales-neutral-300: #343a34;
-  --sales-neutral-200: #272c27;
-  --sales-neutral-100: #1e231e;
-  --sales-neutral-50: #0e110e;
-  --sales-neutral-0: #111411;
+  --sales-neutral-500: #8a9187;
+  --sales-neutral-400: #6b7269;
+  --sales-neutral-300: #3d453d;
+  --sales-neutral-200: #2e342e;
+  --sales-neutral-100: #222822;
+  --sales-neutral-50: #0c0e0c;
+  --sales-neutral-0: #171b17;
 
   /* Text */
   --sales-text-primary: #f7f8f5;
-  --sales-text-secondary: #b1b7ae;
-  --sales-text-muted: #7d847a;
-  --sales-text-disabled: #555c54;
-  --sales-text-label: #b1b7ae;
+  --sales-text-secondary: #b8beb4;
+  --sales-text-muted: #8a9187;
+  --sales-text-disabled: #5c635b;
+  --sales-text-label: #b8beb4;
 
-  /* Borders */
-  --sales-border: #272c27;
-  --sales-border-subtle: #1e231e;
-  --sales-border-strong: #343a34;
+  /* Borders — readable on elevated cards, not lost into the canvas */
+  --sales-border: #2f362f;
+  --sales-border-subtle: #262c26;
+  --sales-border-strong: #3f473f;
 
   /* Brand */
   --sales-brand: #d4ff4f;
   --sales-brand-hover: #c8f23f;
-  --sales-brand-soft: rgba(212, 255, 79, 0.1);
-  --sales-brand-soft-solid: #1b2019;
-  --sales-brand-border: rgba(212, 255, 79, 0.22);
+  --sales-brand-soft: rgba(212, 255, 79, 0.12);
+  --sales-brand-soft-solid: #243024;
+  --sales-brand-border: rgba(212, 255, 79, 0.28);
   --sales-brand-text: #101828;
   --sales-brand-fg: #d4ff4f;
 
-  /* Sidebar */
-  --sales-sidebar-bg: #0d100e;
-  --sales-sidebar-border: #1e231e;
-  --sales-sidebar-divider: #1e231e;
+  /* Sidebar — sits with canvas, not with cards */
+  --sales-sidebar-bg: #0c0e0c;
+  --sales-sidebar-border: #222822;
+  --sales-sidebar-divider: #222822;
   --sales-sidebar-text: #a3aaa1;
   --sales-sidebar-text-hover: #f2f4f1;
   --sales-sidebar-text-active: #f7f8f5;
-  --sales-sidebar-muted: #626961;
-  --sales-sidebar-icon: #747c73;
+  --sales-sidebar-muted: #6b7269;
+  --sales-sidebar-icon: #7d847a;
   --sales-sidebar-icon-active: #d4ff4f;
-  --sales-sidebar-hover: #151915;
-  --sales-sidebar-active: rgba(212, 255, 79, 0.1);
+  --sales-sidebar-hover: #171b17;
+  --sales-sidebar-active: rgba(212, 255, 79, 0.12);
   --sales-sidebar-active-gradient: linear-gradient(
     90deg,
-    rgba(212, 255, 79, 0.14) 0%,
-    rgba(212, 255, 79, 0.08) 75%,
+    rgba(212, 255, 79, 0.16) 0%,
+    rgba(212, 255, 79, 0.09) 75%,
     rgba(212, 255, 79, 0.03) 100%
   );
   --sales-sidebar-active-indicator: #d4ff4f;
-  --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.12);
+  --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.14);
   --sales-sidebar-badge-text: #d4ff4f;
 
   /* Semantic — `-fg` is the accessible text colour on the matching `-soft` fill */
@@ -3367,17 +3370,17 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   /* Reads against both the lime "on" track and the neutral "off" track */
   --sales-switch-thumb: #f7f8f5;
 
-  /* Shadows — elevation via surfaces; shadows only for floating UI */
-  --sales-shadow-card: none;
-  --sales-shadow-card-hover: 0 8px 20px -10px rgba(0, 0, 0, 0.5);
-  --sales-shadow-raised: 0 4px 12px -6px rgba(0, 0, 0, 0.45);
-  --sales-shadow-popover: 0 18px 45px rgba(0, 0, 0, 0.36);
-  --sales-shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.4);
-  --sales-shadow-dropdown: 0 14px 36px rgba(0, 0, 0, 0.35);
-  --sales-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --sales-shadow-md: 0 8px 22px rgba(0, 0, 0, 0.3);
-  --sales-shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.35);
-  --sales-shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.4);
+  /* Shadows — soft lift so bordered cards separate from the canvas */
+  --sales-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --sales-shadow-card-hover: 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 24px -10px rgba(0, 0, 0, 0.55);
+  --sales-shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.05), 0 6px 16px -6px rgba(0, 0, 0, 0.5);
+  --sales-shadow-popover: 0 18px 45px rgba(0, 0, 0, 0.4);
+  --sales-shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.45);
+  --sales-shadow-dropdown: 0 14px 36px rgba(0, 0, 0, 0.4);
+  --sales-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sales-shadow-md: 0 8px 22px rgba(0, 0, 0, 0.35);
+  --sales-shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.4);
+  --sales-shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.45);
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.24);
@@ -3385,23 +3388,23 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-focus-outline: #d4ff4f;
 
   /* Charts */
-  --sales-chart-grid: #202520;
-  --sales-chart-axis: #737a71;
-  --sales-chart-track: #292f29;
+  --sales-chart-grid: #2a312a;
+  --sales-chart-axis: #8a9187;
+  --sales-chart-track: #2e342e;
 
   /* Misc */
   --sales-overlay: rgba(0, 0, 0, 0.62);
-  --sales-skeleton-base: #171b17;
-  --sales-skeleton-highlight: #202520;
+  --sales-skeleton-base: #1c211c;
+  --sales-skeleton-highlight: #2a312a;
 
   /* CRM remap inside sales shell */
   --bg-primary: var(--sales-bg);
   --bg-secondary: var(--sales-surface);
-  --bg-tertiary: #151815;
-  --bg-quaternary: #181c18;
+  --bg-tertiary: #1c211c;
+  --bg-quaternary: #222822;
   --surface-card: var(--sales-surface);
   --surface-dropdown: var(--sales-surface-raised);
-  --surface-input: var(--sales-surface);
+  --surface-input: var(--sales-surface-raised);
   --surface-card-alt: var(--sales-surface-subtle);
   --surface-modal: var(--sales-surface-raised);
   --text-primary: var(--sales-text-primary);

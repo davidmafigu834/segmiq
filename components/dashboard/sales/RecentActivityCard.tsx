@@ -44,7 +44,7 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-[#E5E7EB]">
+        <ul className="divide-y divide-sales-border-subtle">
           {items.map((item) => {
             const body = (
               <div className="flex items-start gap-3 px-5 py-3 transition-colors duration-150 hover:bg-sales-surface-hover">
