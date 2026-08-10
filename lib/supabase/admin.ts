@@ -11,6 +11,12 @@ export function createAdminClient(): SupabaseClient {
   }
   cached = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    // Next.js caches fetch() in Server Components by default; without this,
+    // admin GETs (e.g. clients list) can stay stale after inserts.
+    global: {
+      fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, { ...init, cache: "no-store" }),
+    },
   });
   return cached;
 }

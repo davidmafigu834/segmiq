@@ -14,14 +14,25 @@ export type ClientsPageListRow = {
 
 type Filter = "all" | "managed" | "self_serve";
 
-export function ClientsPageClient({ clients }: { clients: ClientsPageListRow[] }) {
+export function ClientsPageClient({
+  clients,
+  loadError = null,
+}: {
+  clients: ClientsPageListRow[];
+  loadError?: string | null;
+}) {
   const [filter, setFilter] = useState<Filter>("all");
+  const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
-    if (filter === "managed") return clients.filter((c) => c.agency_managed);
-    if (filter === "self_serve") return clients.filter((c) => !c.agency_managed);
-    return clients;
-  }, [clients, filter]);
+    const q = query.trim().toLowerCase();
+    return clients.filter((c) => {
+      if (filter === "managed" && !c.agency_managed) return false;
+      if (filter === "self_serve" && c.agency_managed) return false;
+      if (!q) return true;
+      return c.name.toLowerCase().includes(q) || c.industry.toLowerCase().includes(q);
+    });
+  }, [clients, filter, query]);
 
   const managedCount = clients.filter((c) => c.agency_managed).length;
   const selfServeCount = clients.length - managedCount;
@@ -52,8 +63,20 @@ export function ClientsPageClient({ clients }: { clients: ClientsPageListRow[] }
             </button>
           ))}
         </div>
-        <NewClientButton />
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search clients…"
+            className="h-9 w-44 rounded-md border border-[var(--ag-border)] bg-[var(--surface-card)] px-3 text-[12px] text-[var(--ag-text-primary)] outline-none placeholder:text-[var(--ag-text-tertiary)] focus:border-[var(--accent)] sm:w-56"
+          />
+          <NewClientButton />
+        </div>
       </div>
+      {loadError ? (
+        <p className="mb-4 text-sm text-red-600">Couldn’t load clients: {loadError}</p>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-2 layout:grid-cols-3">
         {filtered.map((c) => (
           <Link
