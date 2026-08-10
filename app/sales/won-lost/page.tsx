@@ -16,7 +16,7 @@ function WonLostFallback() {
   return (
     <div className="space-y-4">
       <Skeleton className="h-10 w-full max-w-xl rounded-sales-md" />
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
         ))}

@@ -30,7 +30,8 @@ export function LeadTable({
   const wrap = variant === "minimal" ? "" : "overflow-hidden rounded-lg border border-border bg-surface-card";
   return (
     <div className={wrap}>
-      <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto">
+      <table className="w-full min-w-[720px] text-left text-sm">
         <thead className={variant === "minimal" ? "border-b border-border" : "bg-surface-card-alt text-ink-secondary"}>
           <tr>
             <th className="px-4 py-3 font-mono text-[11px] font-normal uppercase tracking-wide text-ink-tertiary">
@@ -91,6 +92,7 @@ export function LeadTable({
           ))}
         </tbody>
       </table>
+      </div>
       {showFooter ? (
         <div className="border-t border-border px-4 py-2 text-right font-mono text-[11px] text-ink-tertiary">
           <Link href="/dashboard/leads" className="text-ink-primary underline-offset-2 hover:underline">

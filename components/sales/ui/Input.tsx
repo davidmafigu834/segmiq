@@ -4,8 +4,18 @@ import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, type
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
 
+/**
+ * 16px text below `sm` prevents iOS Safari from zooming the viewport on focus;
+ * it steps back down to the 13px board size on larger screens.
+ */
+const fieldText = "text-[16px] sm:text-[13px]";
+const fieldHeight = "h-11 sm:h-10";
+
 const fieldBase =
-  "w-full rounded-sales-md border border-sales-border bg-sales-surface text-sales-text-primary placeholder:text-sales-text-muted outline-none transition-colors duration-150 focus:border-sales-brand focus:shadow-[var(--sales-focus-ring)] disabled:opacity-50 disabled:cursor-not-allowed";
+  "w-full rounded-sales-md border border-sales-border-strong bg-sales-surface text-sales-text-primary placeholder:text-sales-text-muted outline-none transition-[border-color,box-shadow] duration-150 focus:border-sales-brand focus:shadow-[var(--sales-focus-ring)] disabled:cursor-not-allowed disabled:bg-sales-neutral-100 disabled:text-sales-text-disabled disabled:opacity-70";
+
+const fieldInvalid =
+  "border-sales-danger focus:border-sales-danger focus:shadow-[var(--sales-focus-ring-danger)]";
 
 export type SalesInputProps = InputHTMLAttributes<HTMLInputElement> & {
   compact?: boolean;
@@ -20,9 +30,9 @@ export const Input = forwardRef<HTMLInputElement, SalesInputProps>(
         aria-invalid={invalid || undefined}
         className={cn(
           fieldBase,
-          compact ? "h-9 px-3 text-[13px]" : "h-10 px-3 text-[13px]",
-          invalid &&
-            "border-sales-danger focus:border-sales-danger focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]",
+          fieldText,
+          compact ? "h-10 px-3 sm:h-9" : `${fieldHeight} px-3`,
+          invalid && fieldInvalid,
           className
         )}
         {...props}
@@ -36,7 +46,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
     return (
       <textarea
         ref={ref}
-        className={cn(fieldBase, "min-h-[88px] resize-none px-3 py-2.5 text-[13px]", className)}
+        className={cn(fieldBase, fieldText, "min-h-[88px] resize-y px-3 py-2.5", className)}
         {...props}
       />
     );
@@ -49,9 +59,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
       <select
         ref={ref}
         className={cn(
-          "rounded-sales-md border border-sales-border bg-sales-surface text-sales-text-primary outline-none transition-colors duration-150",
-          "focus:border-sales-brand focus:shadow-[var(--sales-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50",
-          "h-10 px-3 text-[13px]",
+          "rounded-sales-md border border-sales-border-strong bg-sales-surface text-sales-text-primary outline-none transition-[border-color,box-shadow] duration-150",
+          "focus:border-sales-brand focus:shadow-[var(--sales-focus-ring)] disabled:cursor-not-allowed disabled:bg-sales-neutral-100 disabled:opacity-70",
+          fieldHeight,
+          fieldText,
+          "px-3",
           // Default full width unless caller sets a width class / wrapper constrains it
           className?.match(/\b(!?w-|max-w-)/) ? null : "w-full",
           className
@@ -99,7 +111,7 @@ export function SearchInput({
       {value ? (
         <button
           type="button"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sales-sm p-1 text-sales-text-muted hover:text-sales-text-primary"
+          className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-sales-sm text-sales-text-muted transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--sales-focus-outline)]"
           aria-label="Clear search"
           onClick={() => {
             onChange("");
@@ -110,7 +122,7 @@ export function SearchInput({
         </button>
       ) : shortcutHint ? (
         <kbd
-          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted"
+          className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted sm:block"
           aria-hidden
         >
           ⌘K
@@ -134,7 +146,7 @@ export function FieldLabel({
   return (
     <label
       htmlFor={htmlFor}
-      className={cn("mb-1.5 block text-[12px] font-medium text-[#344054]", className)}
+      className={cn("mb-1.5 block text-[12px] font-medium text-sales-text-label", className)}
     >
       {children}
       {required ? <span className="ml-0.5 text-sales-danger">*</span> : null}

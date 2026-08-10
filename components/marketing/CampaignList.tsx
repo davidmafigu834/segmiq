@@ -67,8 +67,8 @@ export function CampaignList({ clientId }: { clientId: string }) {
           </Link>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-[var(--border)]">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="border-b border-[var(--border)] bg-[var(--surface-elevated)]">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-[var(--text-secondary)]">Name</th>

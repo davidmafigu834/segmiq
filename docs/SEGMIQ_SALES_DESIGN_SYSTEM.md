@@ -48,6 +48,20 @@ CSS scopes: `.sales-dashboard-premium`, `.pipeline-drawer-light`, `.sales-modal-
 | `--sales-teal` | `#14B8A6` | Accent series |
 | `--sales-whatsapp` | `#25D366` | WhatsApp only |
 
+### Semantic foreground pairs
+
+Every semantic hue ships three tokens that must be used together — never hand-pick a hex for text on a tinted fill, because the light-mode value goes unreadable in dark:
+
+| Fill | Text | Example |
+|------|------|---------|
+| `bg-sales-success-soft` | `text-sales-success-fg` | Won KPI tint |
+| `bg-sales-warning-soft` | `text-sales-warning-fg` | Due-soon pill |
+| `bg-sales-danger-soft` | `text-sales-danger-fg` | Overdue pill |
+| `bg-sales-info-soft` | `text-sales-info-fg` | Cold intent |
+| `bg-sales-purple-soft` | `text-sales-purple-fg` | Proposal stage |
+
+`--sales-solid-ink` is the text colour for saturated `solid` fills (white in light, near-black in dark).
+
 Tailwind: `bg-sales-brand`, `text-sales-text-primary`, etc.  
 TS: [`lib/sales/design-tokens.ts`](../lib/sales/design-tokens.ts)
 
@@ -75,11 +89,13 @@ Numbers: `tabular-nums` / `.sales-tabular`
 
 **Radius:** xs 6 · sm 8 · md 10 · lg 12 · xl 14 · pill 999  
 
-**Shadows:**
+**Shadows** (light mode is layered — a tight contact shadow plus a wide soft one; dark mode leans on surface steps instead):
 
 | Token | Use |
 |-------|-----|
-| `--sales-shadow-card` | Cards |
+| `--sales-shadow-card` | Cards at rest |
+| `--sales-shadow-card-hover` | Interactive card hover |
+| `--sales-shadow-raised` | Raised inline panels |
 | `--sales-shadow-dropdown` | Menus |
 | `--sales-shadow-popover` | Popovers |
 | `--sales-shadow-modal` | Modals / drawers |
@@ -98,12 +114,15 @@ Import from `@/components/sales/ui`.
 | Danger / Success | **Solid** semantic fill, white text |
 | Link | Text + underline on hover |
 
-**Sizes:** sm **32** · md **40** · lg **48**
+**Sizes:** sm **32** · md **40** · lg **48**. `md` grows to **44** below `sm` so primary actions clear the touch-target minimum on phones.
+
+Solid variants (`primary`, `danger`, `success`) carry `--sales-shadow-card` at rest and drop it on `:active` for a pressed feel.
 
 ### Inputs
 
-White surface, `#D0D5DD` border, lime focus ring. `invalid` → red border + `FieldError`.  
-`SearchInput` supports optional `shortcutHint` (⌘K).
+White surface, `#D0D5DD` (`--sales-border-strong`) border, lime focus ring. `invalid` → red border + `--sales-focus-ring-danger` + `FieldError`.  
+Height **44** below `sm`, **40** above. Text renders at **16px on phones** (below 16px iOS Safari zooms the viewport on focus) and steps down to the 13px board size at `sm`.  
+`SearchInput` supports optional `shortcutHint` (⌘K) — hidden on phones, which have no ⌘ key.
 
 ### Badges
 
@@ -114,13 +133,16 @@ White surface, `#D0D5DD` border, lime focus ring. `invalid` → red border + `Fi
 
 `standard` · `interactive` · `selected` (lime soft) · `attention` (danger soft) · `compact` · `flat`
 
+`interactive` lifts to `--sales-shadow-card-hover` and nudges 1px down on press.  
+`CardHeader` / `CardContent` / `CardFooter` use a 16px gutter below `sm` and 20px above; header and footer wrap rather than overflow.
+
 ### Controls
 
 - Checkbox: lime fill + white check  
 - Radio: lime center  
-- Switch: lime track when on  
-- Tabs: lime underline  
-- Segmented: **solid lime** active segment  
+- Switch: lime track when on; the thumb goes **dark** when on (lime is too light for a white thumb) and the hit area extends to ~44px without changing the visual size  
+- Tabs: lime underline; scrolls horizontally when tabs overflow  
+- Segmented: lime-soft active segment, scrolls horizontally when segments overflow  
 
 ### Alerts & toasts
 
@@ -145,7 +167,16 @@ Sentence case. Verb buttons (`Log call`, `Add lead`). Human errors.
 
 ## 8. Accessibility
 
-Focus ring `--sales-focus-ring`. Icon buttons require `aria-label`. Prefer 44px touch targets on mobile primary actions.
+Two focus treatments, both driven by tokens:
+
+| Treatment | Token | Applies to |
+|-----------|-------|------------|
+| Soft lime glow | `--sales-focus-ring` | Text fields (`Input`, `TextArea`, `Select`, `SearchInput`) |
+| Crisp 2px outline, 2px offset | `--sales-focus-outline` | Buttons, icon buttons, tabs, segments, switches, linked KPI cards |
+
+Buttons use the outline because the lime glow is effectively invisible against the lime `primary` fill.
+
+Icon buttons require `aria-label`. Prefer 44px touch targets on mobile primary actions.
 
 ## 9. Do / Don't
 
@@ -153,6 +184,7 @@ Focus ring `--sales-focus-ring`. Icon buttons require `aria-label`. Prefer 44px 
 |----|-------|
 | Compose from `sales/ui` | One-off button hex |
 | Use `--sales-*` | Scatter raw hex in new work |
+| Pair `-soft` fills with `-fg` text | Hardcode a hex for text on a tinted fill |
 | Soft badges for stages | Lime page backgrounds |
 | Cold = blue | Cold = gray |
 
@@ -204,8 +236,8 @@ Inbox compact / single-pane WhatsApp flow aligns to **below layout** (`INBOX_COM
 
 | Token | Role |
 |-------|------|
-| `--sales-mobile-header-height` | Top bar (64px) |
-| `--sales-mobile-nav-height` | Bottom nav (72px) |
+| `--sales-mobile-header-height` | Top bar (56px) |
+| `--sales-mobile-nav-height` | Bottom nav (64px) |
 | `--sales-mobile-page-padding` | Page gutter (16px) |
 | `--sales-mobile-content-pb` | Scroll area bottom pad = nav + safe-area + 12px |
 | `--sales-mobile-fab-bottom` | FAB / toast clearance above nav |
@@ -222,7 +254,9 @@ Inbox compact / single-pane WhatsApp flow aligns to **below layout** (`INBOX_COM
 ### Content rules
 
 - Main scroll regions use `.sales-mobile-scroll` so bottom padding clears the nav (reset when nav is hidden).
-- Tables → cards below `md` where lists exist (Leads, Quotes, Won & Lost, Reports Sources).
+- Tables → cards below `md` where lists exist (Leads, Quotes, Won & Lost, Reports Sources). Any table kept at `md+` needs an `overflow-x-auto` wrapper and a `min-w-*` on the table — `DataTable` does this for you.
+- Filters must stay reachable on phones: every list page hides its desktop filter row at `md` and offers the same controls in a `PremiumSheet` behind a **Filters** button with an active-count badge (Leads, Quotes, Won & Lost).
+- KPI rows step `grid-cols-2` → `md:grid-cols-3` → `xl:grid-cols-5`. Skeletons must use the same steps as the real cards or the page reflows on load.
 - Charts: prefer ~220–260px height on phone; stack report sections vertically.
 - Toasts: `.sales-mobile-toast-anchor` pins above the bottom nav on small screens.
 - Log FAB: desktop/`layout+` only; mobile uses Quick actions.

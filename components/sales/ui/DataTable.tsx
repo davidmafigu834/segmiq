@@ -7,9 +7,11 @@ import { EmptyState } from "./Feedback";
 export function DataTable({
   children,
   className,
+  scrollClassName,
 }: {
   children: ReactNode;
   className?: string;
+  scrollClassName?: string;
 }) {
   return (
     <div
@@ -18,7 +20,11 @@ export function DataTable({
         className
       )}
     >
-      <div className="overflow-x-auto">{children}</div>
+      <div
+        className={cn("overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]", scrollClassName)}
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -42,7 +48,7 @@ export function DataTableHead({
   return (
     <thead
       className={cn(
-        "bg-sales-surface-subtle text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted",
+        "border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted",
         className
       )}
       {...props}
@@ -65,8 +71,8 @@ export function DataTableRow({
   return (
     <tr
       className={cn(
-        "h-14 transition-colors duration-150 hover:bg-sales-surface-hover",
-        selected ? "bg-[var(--sales-brand-soft)]" : "",
+        "h-[52px] transition-colors duration-150 hover:bg-sales-surface-hover sm:h-14",
+        selected ? "bg-sales-brand-soft" : "",
         className
       )}
       {...props}
@@ -78,14 +84,19 @@ export function DataTableTh({
   className,
   ...props
 }: React.ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("px-4 py-3 font-medium", className)} {...props} />;
+  return <th className={cn("whitespace-nowrap px-3 py-3 font-medium sm:px-4", className)} {...props} />;
 }
 
 export function DataTableTd({
   className,
   ...props
 }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3 text-[13px] text-sales-text-primary", className)} {...props} />;
+  return (
+    <td
+      className={cn("px-3 py-3 text-[13px] text-sales-text-primary sm:px-4", className)}
+      {...props}
+    />
+  );
 }
 
 export function DataTableEmpty({

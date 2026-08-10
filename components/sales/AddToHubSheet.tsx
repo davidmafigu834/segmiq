@@ -235,7 +235,7 @@ export function AddToHubSheet({
     >
       {success ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[12px] bg-sales-success-soft text-[var(--success-fg,#027A48)]">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-[12px] bg-sales-success-soft text-sales-success-fg">
             <CheckCircle2 size={22} strokeWidth={1.8} />
           </div>
           <p className="text-[15px] font-semibold text-sales-text-primary">

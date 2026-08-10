@@ -29,7 +29,7 @@ export function Alert({
   return (
     <aside
       className={cn(
-        "flex flex-col gap-3 rounded-sales-lg border border-l-[3px] px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-3 rounded-sales-lg border border-l-[3px] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4",
         toneClass[tone],
         className
       )}
@@ -43,11 +43,15 @@ export function Alert({
         <div className="min-w-0">
           <p className="text-[14px] font-semibold text-sales-text-primary">{title}</p>
           {children ? (
-            <div className="mt-0.5 text-[13px] text-sales-text-secondary">{children}</div>
+            <div className="mt-0.5 break-words text-[13px] text-sales-text-secondary">
+              {children}
+            </div>
           ) : null}
         </div>
       </div>
-      {action}
+      {action ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">{action}</div>
+      ) : null}
     </aside>
   );
 }
@@ -80,17 +84,20 @@ export function EmptyState({
   size?: "compact" | "standard" | "large";
   className?: string;
 }) {
-  const pad = size === "compact" ? "py-8" : size === "large" ? "py-16" : "py-12";
+  const pad =
+    size === "compact" ? "py-8" : size === "large" ? "py-12 sm:py-16" : "py-10 sm:py-12";
   return (
-    <div className={cn("flex flex-col items-center justify-center px-5 text-center", pad, className)}>
+    <div className={cn("flex flex-col items-center justify-center px-4 text-center sm:px-5", pad, className)}>
       {icon ? (
-        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-sales-md bg-[var(--sales-neutral-100)] text-sales-text-muted">
+        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-sales-md bg-sales-neutral-100 text-sales-text-muted">
           {icon}
         </span>
       ) : null}
-      <p className="text-[14px] font-semibold text-sales-text-primary">{title}</p>
+      <p className="text-balance text-[14px] font-semibold text-sales-text-primary">{title}</p>
       {description ? (
-        <p className="mt-1 max-w-[280px] text-[13px] text-sales-text-secondary">{description}</p>
+        <p className="mt-1 max-w-[320px] text-pretty text-[13px] text-sales-text-secondary">
+          {description}
+        </p>
       ) : null}
       {action ? <div className="mt-4">{action}</div> : null}
     </div>
@@ -116,7 +123,10 @@ export function Progress({
   };
   return (
     <div
-      className={cn("h-2 w-full overflow-hidden rounded-full bg-sales-border-subtle", className)}
+      className={cn(
+        "h-2 w-full overflow-hidden rounded-full bg-[var(--sales-chart-track,var(--sales-border-subtle))]",
+        className
+      )}
       role="progressbar"
       aria-valuenow={pct}
       aria-valuemin={0}

@@ -3,6 +3,9 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
 
+const focusRing =
+  "focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]";
+
 export function Switch({
   checked,
   onCheckedChange,
@@ -26,16 +29,21 @@ export function Switch({
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-150",
-        "focus:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
+        // `before` widens the hit area to ~44px without changing the visual size.
+        "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-150 touch-manipulation",
+        "before:absolute before:-inset-x-1.5 before:-inset-y-3 before:content-['']",
+        focusRing,
+        "disabled:cursor-not-allowed disabled:opacity-50",
         checked ? "bg-sales-brand" : "bg-sales-border-strong"
       )}
     >
       <span
         className={cn(
-          "inline-block h-4 w-4 rounded-full bg-[var(--sales-neutral-0)] shadow transition-transform duration-150",
-          checked ? "translate-x-[18px]" : "translate-x-0.5"
+          "inline-block h-4 w-4 rounded-full shadow-sm transition-transform duration-150",
+          // Lime is a very light track, so the "on" thumb goes dark in both themes.
+          checked
+            ? "translate-x-[18px] bg-sales-brand-text"
+            : "translate-x-0.5 bg-[var(--sales-switch-thumb)]"
         )}
       />
     </button>
@@ -61,7 +69,7 @@ export function Checkbox({
     <label
       htmlFor={id}
       className={cn(
-        "inline-flex items-center gap-2 text-[13px] text-sales-text-primary",
+        "inline-flex min-h-[32px] items-center gap-2 py-1 text-[13px] text-sales-text-primary",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
       )}
     >
@@ -114,7 +122,7 @@ export function Radio({
     <label
       htmlFor={id}
       className={cn(
-        "inline-flex items-center gap-2 text-[13px] text-sales-text-primary",
+        "inline-flex min-h-[32px] items-center gap-2 py-1 text-[13px] text-sales-text-primary",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
       )}
     >
@@ -169,7 +177,7 @@ export function SegmentedControl<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex max-w-full flex-nowrap items-center gap-0 overflow-x-auto rounded-[9px] border border-sales-border bg-sales-surface p-1",
+        "scrollbar-hide inline-flex max-w-full flex-nowrap items-center gap-0 overflow-x-auto overscroll-x-contain rounded-[9px] border border-sales-border bg-sales-surface p-1",
         className
       )}
     >
@@ -183,10 +191,11 @@ export function SegmentedControl<T extends string>({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[7px] border px-3 py-1.5 text-[12px] transition-[background-color,border-color,color] duration-150",
+              "inline-flex min-h-[34px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[7px] border px-3 py-1.5 text-[12px] transition-[background-color,border-color,color] duration-150",
+              focusRing,
               active
-                ? "border-[rgba(160,210,30,0.45)] bg-[rgba(212,255,79,0.22)] font-semibold text-sales-text-primary"
-                : "border-transparent font-medium text-sales-text-secondary hover:text-sales-text-primary"
+                ? "border-sales-brand-border bg-sales-brand-soft font-semibold text-sales-text-primary"
+                : "border-transparent font-medium text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
             )}
           >
             <span className="whitespace-nowrap leading-none">{opt.label}</span>
@@ -195,8 +204,8 @@ export function SegmentedControl<T extends string>({
                 className={cn(
                   "inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold leading-none tabular-nums",
                   active
-                    ? "bg-sales-surface text-sales-text-primary shadow-[0_0_0_1px_rgba(16,24,40,0.04)]"
-                    : "bg-[var(--sales-neutral-100)] text-sales-text-secondary"
+                    ? "bg-sales-surface text-sales-text-primary ring-1 ring-sales-border-subtle"
+                    : "bg-sales-neutral-100 text-sales-text-secondary"
                 )}
               >
                 {opt.badge}
@@ -225,7 +234,10 @@ export function Tabs({
   return (
     <div
       role="tablist"
-      className={cn("flex gap-4 border-b border-sales-border-subtle", className)}
+      className={cn(
+        "scrollbar-hide flex gap-4 overflow-x-auto overscroll-x-contain border-b border-sales-border-subtle",
+        className
+      )}
     >
       {items.map((item) => {
         const active = item.id === value;
@@ -237,7 +249,8 @@ export function Tabs({
             aria-selected={active}
             onClick={() => onChange(item.id)}
             className={cn(
-              "relative h-11 text-[13px] transition-colors duration-150",
+              "relative h-11 shrink-0 whitespace-nowrap text-[13px] transition-colors duration-150",
+              focusRing,
               active
                 ? "font-semibold text-sales-text-primary"
                 : "font-medium text-sales-text-secondary hover:text-sales-text-primary"

@@ -28,8 +28,8 @@ function NavIcon({
       return (
         <span
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-full text-sales-brand-text shadow-[0_2px_8px_rgba(212,255,79,0.35)]",
-            active ? "bg-sales-brand" : "bg-[rgba(212,255,79,0.4)]"
+            "flex h-10 w-10 items-center justify-center rounded-full text-sales-brand-text shadow-[0_2px_8px_rgba(212,255,79,0.3)]",
+            active ? "bg-sales-brand" : "bg-sales-brand/60"
           )}
         >
           <SiWhatsapp size={18} color="currentColor" aria-hidden />
@@ -99,12 +99,12 @@ export function SalesBottomNav({
                 className={cn(
                   "relative flex h-8 items-center justify-center rounded-[10px] transition-colors",
                   !isWa && "w-11",
-                  !isWa && active && "bg-[rgba(212,255,79,0.2)]"
+                  !isWa && active && "bg-[var(--sales-sidebar-active)]"
                 )}
               >
                 <NavIcon icon={item.icon} active={active} emphasized={isWa} />
                 {showBadge ? (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[rgba(212,255,79,0.95)] px-1 text-[9px] font-semibold text-[var(--sales-sidebar-badge-text)]">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-sales-brand px-1 text-[9px] font-semibold text-sales-brand-text">
                     {badge! > 99 ? "99+" : badge}
                   </span>
                 ) : null}
@@ -127,7 +127,7 @@ export function SalesBottomNav({
           <span
             className={cn(
               "flex h-8 w-11 items-center justify-center rounded-[10px] transition-colors",
-              moreOpen && "bg-[rgba(212,255,79,0.2)]"
+              moreOpen && "bg-[var(--sales-sidebar-active)]"
             )}
           >
             <Ellipsis

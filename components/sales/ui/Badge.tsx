@@ -13,33 +13,36 @@ export type BadgeTone =
 export type BadgeAppearance = "soft" | "outline" | "solid";
 
 const softTone: Record<BadgeTone, string> = {
-  neutral: "bg-[var(--sales-neutral-100)] text-sales-text-secondary",
-  brand: "bg-[var(--sales-brand-soft-solid,#F3FCE3)] text-sales-brand-fg",
-  success: "bg-sales-success-soft text-[var(--success-fg,#027A48)]",
-  warning: "bg-sales-warning-soft text-[#B54708]",
-  danger: "bg-sales-danger-soft text-[var(--danger-fg,#B42318)]",
-  info: "bg-sales-info-soft text-[#175CD3]",
-  purple: "bg-sales-purple-soft text-[#6941C6]",
+  neutral: "bg-sales-neutral-100 text-sales-text-secondary",
+  brand: "bg-sales-brand-soft-solid text-sales-brand-fg",
+  success: "bg-sales-success-soft text-sales-success-fg",
+  warning: "bg-sales-warning-soft text-sales-warning-fg",
+  danger: "bg-sales-danger-soft text-sales-danger-fg",
+  info: "bg-sales-info-soft text-sales-info-fg",
+  purple: "bg-sales-purple-soft text-sales-purple-fg",
 };
 
 const outlineTone: Record<BadgeTone, string> = {
   neutral: "border border-sales-border bg-sales-surface text-sales-text-secondary",
   brand: "border border-sales-brand-border bg-sales-surface text-sales-brand-fg",
-  success: "border border-sales-success/30 bg-sales-surface text-sales-success",
-  warning: "border border-sales-warning/35 bg-sales-surface text-[#B54708]",
-  danger: "border border-sales-danger/30 bg-sales-surface text-sales-danger",
-  info: "border border-sales-info/30 bg-sales-surface text-sales-info",
-  purple: "border border-sales-purple/30 bg-sales-surface text-sales-purple",
+  success: "border border-sales-success/30 bg-sales-surface text-sales-success-fg",
+  warning: "border border-sales-warning/35 bg-sales-surface text-sales-warning-fg",
+  danger: "border border-sales-danger/30 bg-sales-surface text-sales-danger-fg",
+  info: "border border-sales-info/30 bg-sales-surface text-sales-info-fg",
+  purple: "border border-sales-purple/30 bg-sales-surface text-sales-purple-fg",
 };
 
+const solidInk = "text-[var(--sales-solid-ink)]";
+
 const solidTone: Record<BadgeTone, string> = {
-  neutral: "bg-[var(--sales-neutral-500)] text-white",
+  neutral: `bg-[var(--sales-neutral-500)] ${solidInk}`,
   brand: "bg-sales-brand text-sales-brand-text",
-  success: "bg-sales-success text-white",
-  warning: "bg-sales-warning text-white",
-  danger: "bg-sales-danger text-white",
-  info: "bg-sales-info text-white",
-  purple: "bg-sales-purple text-white",
+  // Amber is too light for white text in either theme.
+  warning: "bg-sales-warning text-[#4A2A02]",
+  success: `bg-sales-success ${solidInk}`,
+  danger: `bg-sales-danger ${solidInk}`,
+  info: `bg-sales-info ${solidInk}`,
+  purple: `bg-sales-purple ${solidInk}`,
 };
 
 export function Badge({
@@ -57,7 +60,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex max-w-full items-center truncate rounded-[6px] px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex max-w-full items-center gap-1 truncate rounded-sales-xs px-2 py-[3px] text-[11px] font-medium leading-4",
         toneMap[tone],
         className
       )}
@@ -159,7 +162,7 @@ export function MetaPill({ children, className }: { children: ReactNode; classNa
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-sales-sm border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[11px] font-medium text-sales-text-secondary",
+        "inline-flex max-w-full items-center gap-1 truncate rounded-sales-sm border border-sales-border bg-sales-surface-subtle px-2 py-[3px] text-[11px] font-medium leading-4 text-sales-text-secondary",
         className
       )}
     >

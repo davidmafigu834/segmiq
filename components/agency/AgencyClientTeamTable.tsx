@@ -17,8 +17,8 @@ export function AgencyClientTeamTable({ members }: { members: TeamMember[] }) {
   }
 
   return (
-    <div className="border border-border">
-      <table className="w-full text-left text-sm">
+    <div className="overflow-x-auto border border-border">
+      <table className="w-full min-w-[560px] text-left text-sm">
         <thead className="border-b border-border bg-surface-card-alt font-mono text-[11px] uppercase tracking-wide text-ink-tertiary">
           <tr>
             <th className="px-4 py-3">Name</th>

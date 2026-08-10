@@ -565,7 +565,7 @@ export function SalesTasksClient() {
                     : null
                 }
                 icon={CircleCheck}
-                iconTint="bg-sales-success-soft text-[var(--success-fg,#027A48)]"
+                iconTint="bg-sales-success-soft text-sales-success-fg"
               />
               <ReportKpiCard
                 label="Overdue"
@@ -577,20 +577,20 @@ export function SalesTasksClient() {
                     : null
                 }
                 icon={CircleAlert}
-                iconTint="bg-sales-danger-soft text-[var(--danger-fg,#B42318)]"
+                iconTint="bg-sales-danger-soft text-sales-danger-fg"
               />
             </div>
 
             <Card className="overflow-hidden border-sales-border shadow-sales-card">
-              <div className="hidden md:block">
-                <table className="w-full table-fixed border-collapse text-left">
+              <div className="hidden overflow-x-auto overscroll-x-contain md:block">
+                <table className="w-full min-w-[620px] table-fixed border-collapse text-left">
                   <colgroup>
                     <col className="w-11" />
                     <col />
                     <col className="w-[28%]" />
                     <col className="w-11" />
                   </colgroup>
-                  <thead className="border-b border-sales-border-subtle bg-[#FAFBFC]">
+                  <thead className="border-b border-sales-border-subtle bg-sales-surface-subtle">
                     <tr className="text-[12px] font-medium text-sales-text-muted">
                       <th className="px-3 py-3" scope="col">
                         <span className="sr-only">Complete</span>
@@ -665,10 +665,10 @@ export function SalesTasksClient() {
               </div>
 
               <div className="flex flex-col gap-3 border-t border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-[12px] text-sales-text-secondary tabular-nums">
+                <p className="text-[12px] tabular-nums text-sales-text-secondary">
                   Showing {showingFrom} to {showingTo} of {filteredTasks.length} tasks
                 </p>
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
                   <IconButton
                     aria-label="Previous page"
                     size="sm"

@@ -15,11 +15,11 @@ const variantClass: Record<SalesCardVariant, string> = {
   compact:
     "bg-sales-surface border border-sales-border-subtle rounded-sales-lg shadow-sales-card",
   interactive:
-    "bg-sales-surface border border-sales-border-subtle rounded-sales-xl shadow-sales-card transition-[border-color,box-shadow] duration-150 hover:border-sales-border-strong",
+    "bg-sales-surface border border-sales-border-subtle rounded-sales-xl shadow-sales-card transition-[border-color,box-shadow,transform] duration-150 hover:border-sales-border-strong hover:shadow-sales-card-hover active:translate-y-px focus-within:border-sales-brand-border motion-reduce:transition-none motion-reduce:active:translate-y-0",
   selected:
-    "bg-[var(--sales-brand-soft-solid)] border border-sales-brand-border rounded-sales-xl shadow-sales-card",
+    "bg-sales-brand-soft-solid border border-sales-brand-border rounded-sales-xl shadow-sales-card",
   attention:
-    "bg-sales-danger-soft border border-sales-danger/20 rounded-sales-xl shadow-sales-card",
+    "bg-sales-danger-soft border border-sales-danger/25 rounded-sales-xl shadow-sales-card",
   flat: "bg-sales-surface border border-sales-border-subtle rounded-sales-xl",
 };
 
@@ -45,13 +45,13 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3 border-b border-sales-border-subtle px-5 py-3.5",
+        "flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-sales-border-subtle px-4 py-3 sm:px-5 sm:py-3.5",
         className
       )}
       {...props}
     >
       <div className="min-w-0 flex-1">{children}</div>
-      {action}
+      {action ? <div className="flex shrink-0 items-center gap-2">{action}</div> : null}
     </div>
   );
 }
@@ -76,14 +76,14 @@ export function CardDescription({
 }
 
 export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("px-5 py-4", className)} {...props} />;
+  return <div className={cn("px-4 py-4 sm:px-5", className)} {...props} />;
 }
 
 export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-2 border-t border-sales-border-subtle px-5 py-3",
+        "flex flex-wrap items-center justify-end gap-2 border-t border-sales-border-subtle px-4 py-3 sm:px-5",
         className
       )}
       {...props}

@@ -22,11 +22,11 @@ const ICON_MAP = {
 } as const;
 
 const ICON_TINT: Record<SalesKpiItem["icon"], string> = {
-  followups: "bg-sales-warning-soft text-[#B45309]",
-  pipeline: "bg-sales-success-soft text-[var(--success-fg,#15803D)]",
-  won: "bg-[var(--sales-brand-soft-solid,#F7FEE7)] text-sales-brand-fg",
-  conversion: "bg-sales-info-soft text-sales-info",
-  response: "bg-[var(--sales-neutral-100)] text-sales-text-secondary",
+  followups: "bg-sales-warning-soft text-sales-warning-fg",
+  pipeline: "bg-sales-success-soft text-sales-success-fg",
+  won: "bg-sales-brand-soft-solid text-sales-brand-fg",
+  conversion: "bg-sales-info-soft text-sales-info-fg",
+  response: "bg-sales-neutral-100 text-sales-text-secondary",
 };
 
 export function Trend({
@@ -71,7 +71,7 @@ export function MetricValue({
   return (
     <p
       className={cn(
-        "text-[28px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-sales-text-primary",
+        "truncate text-[22px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-sales-text-primary sm:text-[26px] layout:text-[28px]",
         className
       )}
     >
@@ -84,24 +84,26 @@ export function KpiStat({ item }: { item: SalesKpiItem }) {
   const Icon = ICON_MAP[item.icon];
   const body = (
     <>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-[12px] font-medium text-sales-text-secondary">{item.label}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 text-[12px] font-medium leading-snug text-sales-text-secondary">
+          {item.label}
+        </p>
         <span
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-sales-sm",
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-sales-sm sm:h-8 sm:w-8",
             ICON_TINT[item.icon]
           )}
         >
-          <Icon size={18} strokeWidth={1.8} aria-hidden />
+          <Icon size={16} strokeWidth={1.8} aria-hidden className="sm:size-[18px]" />
         </span>
       </div>
-      <div>
+      <div className="min-w-0">
         <MetricValue value={item.value} />
         <div className="mt-2 min-h-[18px]">
           {item.trend ? (
             <Trend direction={item.trend.direction} label={item.trend.label} />
           ) : (
-            <p className="text-[12px] text-sales-text-muted">{item.supporting}</p>
+            <p className="truncate text-[12px] text-sales-text-muted">{item.supporting}</p>
           )}
         </div>
       </div>
@@ -109,13 +111,17 @@ export function KpiStat({ item }: { item: SalesKpiItem }) {
   );
 
   const className =
-    "sd-card group flex h-full min-h-[120px] flex-col justify-between p-4 transition-[border-color,box-shadow] duration-150 hover:border-sales-border-strong";
+    "sd-card group flex h-full min-h-[104px] min-w-0 flex-col justify-between p-3.5 transition-[border-color,box-shadow] duration-150 sm:min-h-[120px] sm:p-4";
 
   if (item.href) {
     return (
       <Link
         href={item.href}
-        className={cn(className, "focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]")}
+        className={cn(
+          className,
+          "hover:border-sales-border-strong hover:shadow-sales-card-hover",
+          "focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]"
+        )}
         aria-label={`View ${item.label}`}
       >
         {body}

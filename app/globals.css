@@ -3150,20 +3150,29 @@ label[for="photo-input"] {
     var(--sales-mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 10px
   );
 
-  /* Semantic */
+  /* Semantic — `-fg` is the accessible text colour on the matching `-soft` fill */
   --sales-success: #16a34a;
   --sales-success-soft: #ecfdf3;
+  --sales-success-fg: #027a48;
   --sales-warning: #f59e0b;
   --sales-warning-soft: #fffaeb;
+  --sales-warning-fg: #b54708;
   --sales-danger: #ef4444;
   --sales-danger-soft: #fef3f2;
+  --sales-danger-fg: #b42318;
   --sales-info: #2563eb;
   --sales-info-soft: #eff8ff;
+  --sales-info-fg: #175cd3;
   --sales-purple: #8b5cf6;
   --sales-purple-soft: #f4f3ff;
+  --sales-purple-fg: #6941c6;
   --sales-teal: #14b8a6;
   --sales-teal-soft: #f0fdfa;
+  --sales-teal-fg: #107569;
   --sales-whatsapp: #25d366;
+  /* Text placed on a saturated `solid` fill */
+  --sales-solid-ink: #ffffff;
+  --sales-switch-thumb: #ffffff;
 
   /* Radius */
   --sales-radius-xs: 6px;
@@ -3173,11 +3182,15 @@ label[for="photo-input"] {
   --sales-radius-xl: 14px;
   --sales-radius-pill: 999px;
 
-  /* Shadows */
-  --sales-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.025);
-  --sales-shadow-popover: 0 8px 24px rgba(16, 24, 40, 0.1);
-  --sales-shadow-modal: 0 16px 40px rgba(16, 24, 40, 0.12);
-  --sales-shadow-dropdown: 0 4px 12px rgba(16, 24, 40, 0.08);
+  /* Shadows — layered so cards read as separated without looking heavy */
+  --sales-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px -1px rgba(16, 24, 40, 0.03);
+  --sales-shadow-card-hover: 0 1px 2px rgba(16, 24, 40, 0.05),
+    0 8px 20px -8px rgba(16, 24, 40, 0.12);
+  --sales-shadow-raised: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 10px -4px rgba(16, 24, 40, 0.07);
+  --sales-shadow-popover: 0 1px 2px rgba(16, 24, 40, 0.06), 0 12px 28px -8px rgba(16, 24, 40, 0.16);
+  --sales-shadow-modal: 0 2px 6px rgba(16, 24, 40, 0.06), 0 24px 56px -16px rgba(16, 24, 40, 0.22);
+  --sales-shadow-dropdown: 0 1px 2px rgba(16, 24, 40, 0.06),
+    0 8px 20px -6px rgba(16, 24, 40, 0.12);
   --sales-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
   --sales-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
   --sales-shadow-lg: 0 8px 24px rgba(16, 24, 40, 0.1);
@@ -3185,6 +3198,8 @@ label[for="photo-input"] {
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.25);
+  --sales-focus-ring-danger: 0 0 0 3px rgba(239, 68, 68, 0.16);
+  --sales-focus-outline: #a8d52c;
 
   /* Z-index */
   --sales-z-sticky: 20;
@@ -3327,23 +3342,35 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.12);
   --sales-sidebar-badge-text: #d4ff4f;
 
-  /* Semantic */
+  /* Semantic — `-fg` is the accessible text colour on the matching `-soft` fill */
   --sales-success: #4ade80;
   --sales-success-soft: rgba(74, 222, 128, 0.1);
+  --sales-success-fg: #86efac;
   --sales-warning: #fbbf24;
   --sales-warning-soft: rgba(251, 191, 36, 0.1);
+  --sales-warning-fg: #fcd34d;
   --sales-danger: #f87171;
   --sales-danger-soft: rgba(248, 113, 113, 0.1);
+  --sales-danger-fg: #fca5a5;
   --sales-info: #60a5fa;
   --sales-info-soft: rgba(96, 165, 250, 0.1);
+  --sales-info-fg: #93c5fd;
   --sales-purple: #a78bfa;
   --sales-purple-soft: rgba(167, 139, 250, 0.1);
+  --sales-purple-fg: #c4b5fd;
   --sales-teal: #2dd4bf;
   --sales-teal-soft: rgba(45, 212, 191, 0.1);
+  --sales-teal-fg: #5eead4;
   --sales-whatsapp: #25d366;
+  /* Dark semantic fills are light hues, so solid badges take dark ink */
+  --sales-solid-ink: #0b0d0c;
+  /* Reads against both the lime "on" track and the neutral "off" track */
+  --sales-switch-thumb: #f7f8f5;
 
   /* Shadows — elevation via surfaces; shadows only for floating UI */
   --sales-shadow-card: none;
+  --sales-shadow-card-hover: 0 8px 20px -10px rgba(0, 0, 0, 0.5);
+  --sales-shadow-raised: 0 4px 12px -6px rgba(0, 0, 0, 0.45);
   --sales-shadow-popover: 0 18px 45px rgba(0, 0, 0, 0.36);
   --sales-shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.4);
   --sales-shadow-dropdown: 0 14px 36px rgba(0, 0, 0, 0.35);
@@ -3354,6 +3381,8 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.24);
+  --sales-focus-ring-danger: 0 0 0 3px rgba(248, 113, 113, 0.2);
+  --sales-focus-outline: #d4ff4f;
 
   /* Charts */
   --sales-chart-grid: #202520;

@@ -601,7 +601,7 @@ function GoalMilestonesCard({ data }: { data: SalesGoalsPayload }) {
               className={cn(
                 "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                 m.status === "achieved"
-                  ? "bg-sales-success-soft text-[var(--success-fg,#027A48)]"
+                  ? "bg-sales-success-soft text-sales-success-fg"
                   : m.status === "in_progress"
                     ? "bg-[#EFF8FF] text-[#2563EB]"
                     : "bg-[var(--sales-neutral-100)] text-sales-text-muted"
@@ -714,7 +714,7 @@ function TipsCard({ data }: { data: SalesGoalsPayload }) {
       <CardContent className="flex-1 space-y-3">
         {data.recommendations.map((tip) => (
           <div key={tip.id} className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sales-success-soft text-[var(--success-fg,#027A48)]">
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sales-success-soft text-sales-success-fg">
               <Check size={12} strokeWidth={2.4} aria-hidden />
             </span>
             {tip.href ? (

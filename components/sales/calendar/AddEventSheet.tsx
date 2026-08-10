@@ -165,7 +165,7 @@ export function AddEventSheet({
       <div className="space-y-5">
           <div>
             <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Event type</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {SUPPORTED_EVENT_KINDS.map((k) => {
                 const active = kind === k;
                 return (

@@ -20,7 +20,7 @@ function QuotesFallback() {
         <Skeleton className="h-10 w-36 rounded-[10px]" />
       </div>
       <Skeleton className="h-10 w-full max-w-3xl rounded-sales-md" />
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
         ))}

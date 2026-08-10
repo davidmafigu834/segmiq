@@ -39,6 +39,7 @@ import {
   SegmentedControl,
   Skeleton,
 } from "@/components/sales/ui";
+import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { ReportKpiCard } from "@/components/sales/reports/ReportKpiCard";
 import { WinLossTrendChart } from "@/components/sales/won-lost/WinLossTrendChart";
 import { OutcomeReasonsCard } from "@/components/sales/won-lost/OutcomeReasonsCard";
@@ -139,6 +140,7 @@ export function WonLostClient() {
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(10);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [data, setData] = useState<WonLostPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -230,6 +232,9 @@ export function WonLostClient() {
     URL.revokeObjectURL(url);
   };
 
+  const mobileFilterCount =
+    (period === "this_month" ? 0 : 1) + (source === "all" ? 0 : 1) + (search.trim() ? 1 : 0);
+
   const neverClosed = !loading && data && data.totals.closedAllTime === 0;
   const periodEmpty = !loading && data && data.deals.length === 0 && data.totals.closedAllTime > 0;
 
@@ -286,17 +291,95 @@ export function WonLostClient() {
             />
           </div>
         </div>
-        <Button
-          variant="secondary"
-          size="md"
-          className="h-10 shrink-0 rounded-[10px]"
-          leftIcon={<Download size={16} strokeWidth={1.8} />}
-          onClick={exportCsv}
-          disabled={!filteredDeals.length}
-        >
-          Export
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            className="min-w-0 flex-1 rounded-[10px] md:hidden"
+            leftIcon={<ListFilter size={16} strokeWidth={1.8} />}
+            onClick={() => setFiltersOpen(true)}
+          >
+            Filters
+            {mobileFilterCount > 0 ? (
+              <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
+                {mobileFilterCount}
+              </span>
+            ) : null}
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            className="shrink-0 rounded-[10px]"
+            leftIcon={<Download size={16} strokeWidth={1.8} />}
+            onClick={exportCsv}
+            disabled={!filteredDeals.length}
+          >
+            Export
+          </Button>
+        </div>
       </div>
+
+      {filtersOpen ? (
+        <div className="md:hidden">
+          <PremiumSheet
+            title="Filters"
+            description="Date range, source, and search"
+            onClose={() => setFiltersOpen(false)}
+            footer={
+              <div className="flex items-center justify-between gap-3">
+                <Button
+                  variant="ghost"
+                  size="md"
+                  disabled={mobileFilterCount === 0}
+                  onClick={() => {
+                    setPeriod("this_month");
+                    setGranularityOverride(null);
+                    setSource("all");
+                    setSearch("");
+                  }}
+                >
+                  Clear all
+                </Button>
+                <Button variant="primary" size="md" onClick={() => setFiltersOpen(false)}>
+                  Show {filteredDeals.length} deals
+                </Button>
+              </div>
+            }
+          >
+            <div className="space-y-4">
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium text-sales-text-muted">Date range</p>
+                <MenuSelect
+                  aria-label="Date range"
+                  value={period}
+                  onChange={(v) => {
+                    setPeriod(v);
+                    setGranularityOverride(null);
+                  }}
+                  options={WON_LOST_PERIODS.map((p) => ({ value: p.id, label: p.label }))}
+                />
+              </div>
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium text-sales-text-muted">Source</p>
+                <MenuSelect
+                  aria-label="Lead source"
+                  value={source}
+                  onChange={setSource}
+                  options={WON_LOST_SOURCES.map((s) => ({ value: s.id, label: s.label }))}
+                />
+              </div>
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium text-sales-text-muted">Search</p>
+                <SearchInput
+                  placeholder="Search customer, deal, reason..."
+                  value={search}
+                  onChange={setSearch}
+                />
+              </div>
+            </div>
+          </PremiumSheet>
+        </div>
+      ) : null}
 
       {loading && !data ? <WonLostSkeleton /> : null}
 
@@ -346,7 +429,7 @@ export function WonLostClient() {
               value={String(data.kpis.wonDeals.value)}
               trend={data.kpis.wonDeals.trend}
               icon={Trophy}
-              iconTint="bg-sales-success-soft text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-sales-success-fg"
             />
             <ReportKpiCard
               label="Lost deals"
@@ -362,7 +445,7 @@ export function WonLostClient() {
               }
               trend={data.kpis.winRate.trend}
               icon={TrendingUp}
-              iconTint="bg-sales-success-soft text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-sales-success-fg"
               tip="Percentage of closed deals that were won."
             />
             <ReportKpiCard
@@ -370,7 +453,7 @@ export function WonLostClient() {
               value={formatValueDisplay(data.kpis.revenueWon.value, currency)}
               trend={data.kpis.revenueWon.trend}
               icon={CircleDollarSign}
-              iconTint="bg-sales-success-soft text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-sales-success-fg"
             />
             <ReportKpiCard
               label="Lost value"
@@ -932,7 +1015,7 @@ function SelectedDealSnapshot({
 function WonLostSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-[118px] rounded-[12px]" />
         ))}

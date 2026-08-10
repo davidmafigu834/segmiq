@@ -291,7 +291,7 @@ function OverviewTab({
           value={String(k.leadsCreated.value)}
           trend={trendWithVs(k.leadsCreated.trend, periodLabel)}
           icon={UsersRound}
-          iconTint="bg-sales-success-soft text-[#16A34A]"
+          iconTint="bg-sales-success-soft text-sales-success-fg"
         />
         <ReportKpiCard
           label="Deals won"
@@ -651,18 +651,20 @@ function FunnelView({
   stages: SalesReportsPayload["funnel"];
 }) {
   return (
-    <div className="grid grid-cols-5 gap-1">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 lg:gap-1">
       {stages.map((stage, i) => (
         <div key={stage.id} className="min-w-0">
           <div
-            className="flex min-h-[76px] flex-col items-center justify-center rounded-sales-md px-1 py-2 text-center"
+            className="flex min-h-[76px] flex-col items-center justify-center rounded-sales-md px-2 py-2 text-center lg:px-1"
             style={{ background: `${stage.color}14` }}
           >
-            <p className="truncate text-[10px] font-medium text-sales-text-secondary">{stage.label}</p>
+            <p className="w-full truncate text-[11px] font-medium text-sales-text-secondary lg:text-[10px]">
+              {stage.label}
+            </p>
             <p className="mt-1 text-[18px] font-semibold tabular-nums text-sales-text-primary">
               {stage.count}
             </p>
-            <p className="mt-0.5 text-[9px] tabular-nums text-sales-text-muted">
+            <p className="mt-0.5 text-[10px] tabular-nums text-sales-text-muted lg:text-[9px]">
               {i === 0
                 ? "\u00a0"
                 : stage.rateOfPrevious == null
@@ -694,9 +696,9 @@ function ActivityList({ items }: { items: SalesReportsPayload["activity"] }) {
   return (
     <ul className="space-y-1">
       {items.map((a) => (
-        <li key={a.key} className="flex h-[36px] items-center gap-2.5">
+        <li key={a.key} className="flex h-[36px] items-center gap-2 sm:gap-2.5">
           <span className="flex w-5 shrink-0 justify-center">{iconFor(a.key)}</span>
-          <span className="w-[118px] shrink-0 truncate text-[13px] font-medium text-sales-text-primary">
+          <span className="w-[88px] shrink-0 truncate text-[13px] font-medium text-sales-text-primary sm:w-[118px]">
             {a.label}
           </span>
           <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[var(--sales-border-subtle)]">

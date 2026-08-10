@@ -13,24 +13,34 @@ export type SalesButtonVariant =
   | "link";
 export type SalesButtonSize = "sm" | "md" | "lg";
 
+/**
+ * Focus uses a crisp 2px outline rather than the soft lime glow: the glow is
+ * effectively invisible against the lime `primary` fill.
+ */
+const focusClass =
+  "focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]";
+
 const variantClass: Record<SalesButtonVariant, string> = {
   primary:
-    "bg-sales-brand text-sales-brand-text hover:bg-sales-brand-hover active:bg-[var(--sales-brand-hover)] border border-transparent",
+    "bg-sales-brand text-sales-brand-text border border-transparent shadow-sales-card hover:bg-sales-brand-hover active:bg-sales-brand-hover active:shadow-none",
   secondary:
-    "bg-sales-surface text-sales-text-primary border border-sales-border-strong hover:bg-sales-surface-hover hover:border-sales-border-strong active:bg-[var(--sales-neutral-100)]",
+    "bg-sales-surface text-sales-text-primary border border-sales-border-strong shadow-sales-card hover:bg-sales-surface-hover active:bg-sales-neutral-100 active:shadow-none",
   ghost:
-    "bg-transparent text-sales-text-secondary border border-transparent hover:bg-sales-surface-hover hover:text-sales-text-primary",
+    "bg-transparent text-sales-text-secondary border border-transparent hover:bg-sales-surface-hover hover:text-sales-text-primary active:bg-sales-neutral-100",
   danger:
-    "bg-sales-danger text-white border border-transparent hover:bg-[#DC2626] active:bg-[#B91C1C]",
+    "bg-sales-danger text-white border border-transparent shadow-sales-card hover:brightness-95 active:brightness-90 active:shadow-none",
   success:
-    "bg-sales-success text-white border border-transparent hover:bg-[#15803D] active:bg-[#166534]",
+    "bg-sales-success text-white border border-transparent shadow-sales-card hover:brightness-95 active:brightness-90 active:shadow-none",
   link: "bg-transparent border-transparent text-sales-brand-fg hover:underline px-0 h-auto min-h-0",
 };
 
-/** Board sizes: Small 32 · Medium 40 · Large 48 */
+/**
+ * Board sizes: Small 32 · Medium 40 · Large 48.
+ * `md` grows to a 44px touch target below `sm` so primary actions stay tappable.
+ */
 const sizeClass: Record<SalesButtonSize, string> = {
   sm: "h-8 min-h-8 px-3 text-[12px] gap-1.5 rounded-sales-sm",
-  md: "h-10 min-h-10 px-3.5 text-[13px] gap-2 rounded-sales-md",
+  md: "h-11 min-h-11 px-4 text-[13px] gap-2 rounded-sales-md sm:h-10 sm:min-h-10 sm:px-3.5",
   lg: "h-12 min-h-12 px-5 text-[14px] gap-2 rounded-sales-md",
 };
 
@@ -64,9 +74,10 @@ export const Button = forwardRef<HTMLButtonElement, SalesButtonProps>(
         type={type}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center font-semibold whitespace-nowrap transition-colors duration-150",
-          "focus:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
-          "disabled:opacity-45 disabled:cursor-not-allowed disabled:bg-[var(--sales-neutral-100)] disabled:text-sales-text-muted disabled:border-sales-border",
+          "inline-flex select-none items-center justify-center whitespace-nowrap font-semibold",
+          "transition-[background-color,border-color,color,box-shadow,filter] duration-150 touch-manipulation",
+          focusClass,
+          "disabled:cursor-not-allowed disabled:border-sales-border disabled:bg-sales-neutral-100 disabled:text-sales-text-muted disabled:opacity-60 disabled:shadow-none",
           variantClass[variant],
           variant !== "link" ? sizeClass[size] : "",
           className
@@ -115,13 +126,14 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          "inline-flex items-center justify-center rounded-sales-md border transition-colors duration-150",
-          "focus:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
-          "disabled:opacity-40 disabled:cursor-not-allowed",
+          "inline-flex shrink-0 items-center justify-center rounded-sales-md border touch-manipulation",
+          "transition-[background-color,border-color,color] duration-150",
+          focusClass,
+          "disabled:cursor-not-allowed disabled:opacity-40",
           iconSizeClass[size],
           active
             ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
-            : "border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover hover:border-sales-border-strong hover:text-sales-text-primary",
+            : "border-sales-border bg-sales-surface text-sales-text-secondary hover:border-sales-border-strong hover:bg-sales-surface-hover hover:text-sales-text-primary active:bg-sales-neutral-100",
           className
         )}
         {...props}

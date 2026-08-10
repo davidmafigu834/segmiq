@@ -651,7 +651,7 @@ export function SalesLeadsClient({
               value={String(data.kpis.won.value)}
               trend={data.kpis.won.trend}
               icon={Trophy}
-              iconTint="bg-sales-success-soft text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-sales-success-fg"
             />
             <ReportKpiCard
               label="Conversion rate"
@@ -665,7 +665,7 @@ export function SalesLeadsClient({
                 data.kpis.conversionRate.value == null ? "No closed deals yet" : undefined
               }
               icon={TrendingUp}
-              iconTint="bg-sales-success-soft text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-sales-success-fg"
               tip={data.kpis.conversionRate.formula}
             />
           </div>
@@ -1140,7 +1140,7 @@ function MobileLeadCard({
 function LeadsSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
         ))}

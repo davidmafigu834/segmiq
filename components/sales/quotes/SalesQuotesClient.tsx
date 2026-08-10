@@ -713,7 +713,7 @@ export function SalesQuotesClient() {
               value={String(data.kpis.accepted.value)}
               trend={data.kpis.accepted.trend}
               icon={CircleCheck}
-              iconTint="bg-sales-success-soft text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-sales-success-fg"
             />
             <ReportKpiCard
               label="Declined"
@@ -735,7 +735,7 @@ export function SalesQuotesClient() {
                 data.kpis.conversionRate.value == null ? "No quote outcomes yet" : undefined
               }
               icon={TrendingUp}
-              iconTint="bg-sales-success-soft text-[#16A34A]"
+              iconTint="bg-sales-success-soft text-sales-success-fg"
               tip={data.kpis.conversionRate.formula}
             />
           </div>
@@ -1194,7 +1194,7 @@ function MobileQuoteCard({ quote, onOpen }: { quote: QuoteListRow; onOpen: () =>
 function QuotesSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
         ))}
