@@ -61,7 +61,7 @@ export function DealWorkspaceClient({
   const [deal, setDeal] = useState(initialDeal);
   const [quotes] = useState(initialQuotes);
   const [commercial, setCommercial] = useState(initialCommercial);
-  const [completeness, setCompleteness] = useState(initialCompleteness);
+  const [completeness] = useState(initialCompleteness);
   const [nextAction, setNextAction] = useState(initialNext);
   const [moving, setMoving] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);

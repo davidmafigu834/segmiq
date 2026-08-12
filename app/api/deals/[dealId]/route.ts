@@ -169,11 +169,9 @@ export async function PATCH(
     return NextResponse.json({ deal: result.deal });
   }
 
-  const {
-    close: _c,
-    stage: _s,
-    ...fieldPatch
-  } = data;
+  const fieldPatch = { ...data };
+  delete fieldPatch.close;
+  delete fieldPatch.stage;
 
   if (Object.keys(fieldPatch).length === 0) {
     return NextResponse.json({ error: "No updates" }, { status: 400 });

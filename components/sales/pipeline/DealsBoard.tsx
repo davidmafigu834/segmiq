@@ -19,7 +19,6 @@ import {
   isDealClosedStage,
   type DealActiveStage,
 } from "@/lib/sales/deals/display";
-import type { DealCommercialValue } from "@/lib/sales/deals/commercial-value";
 import type { DealRow } from "@/types";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowRightLeft, Phone } from "lucide-react";
 import { SiFacebook, SiWhatsapp } from "react-icons/si";
 import { useRouter } from "next/navigation";
-import type { DealRow, DealStage, LeadSource } from "@/types";
+import type { DealRow, DealStage } from "@/types";
 import type { DealCommercialValue } from "@/lib/sales/deals/commercial-value";
 import {
   DEAL_ACTIVE_STAGES,
