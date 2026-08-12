@@ -29,8 +29,8 @@ export function PriorityLeadCard({
       repName={repName}
       intentScore={lead.aiScore ?? null}
       onOpenLogSheet={onOpenLogSheet}
-      onOpenLead={(id) => router.push(`/sales/leads?lead=${id}`)}
-      onOpenSend={(id) => router.push(`/sales/leads?lead=${id}&tab=send`)}
+      onOpenLead={(id) => router.push(`/sales/call-now?lead=${id}`)}
+      onOpenSend={(id) => router.push(`/sales/call-now?lead=${id}&tab=send`)}
     />
   );
 }

@@ -41,7 +41,7 @@ export function PriorityLanes({
   nurtureOpen,
   onNurtureOpenChange,
   onOpenLogSheet,
-  allLeadsHref = "/sales/leads",
+  allLeadsHref = "/sales/pipeline",
   seeAllHref = defaultSeeAllHref,
   showHeader = true,
 }: PriorityLanesProps) {

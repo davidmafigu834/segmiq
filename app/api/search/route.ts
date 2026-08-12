@@ -70,7 +70,7 @@ export async function GET(req: Request) {
   for (const lead of leads ?? []) {
     const cl = (lead as { clients?: { name?: string; slug?: string } | null }).clients;
     const href = salesScoped
-      ? `/sales/leads?lead=${lead.id}`
+      ? `/sales/call-now?lead=${lead.id}`
       : role === "CLIENT_MANAGER"
         ? `/client/leads/pipeline?lead=${lead.id}`
         : `/dashboard/leads?lead=${lead.id}`;

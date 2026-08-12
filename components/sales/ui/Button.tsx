@@ -133,7 +133,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           iconSizeClass[size],
           active
             ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
-            : "border-sales-border bg-sales-surface text-sales-text-secondary hover:border-sales-border-strong hover:bg-sales-surface-hover hover:text-sales-text-primary active:bg-sales-neutral-100",
+            : "border-sales-border bg-sales-surface-raised text-sales-text-secondary hover:border-sales-border-strong hover:bg-sales-surface-hover hover:text-sales-text-primary active:bg-sales-neutral-100",
           className
         )}
         {...props}

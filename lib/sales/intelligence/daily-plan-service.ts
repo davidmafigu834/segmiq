@@ -866,7 +866,7 @@ export async function fetchDailySalesPlan(opts: {
     whatNeedsAttention.push({
       id: "no-next",
       text: `${noNext} active deal${noNext === 1 ? "" : "s"} with no next action`,
-      href: "/sales/leads",
+      href: "/sales/pipeline",
     });
   }
   if (coverage.available && coverage.coverageRatio != null && coverage.coverageRatio < 1) {

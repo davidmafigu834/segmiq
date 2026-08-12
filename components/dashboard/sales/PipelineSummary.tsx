@@ -30,7 +30,7 @@ export function PipelineColumn({ stage }: { stage: SalesPipelineStage }) {
         )}
         {stage.remainingCount > 0 ? (
           <Link
-            href="/sales/leads"
+            href="/sales/pipeline"
             className="pt-1 text-center text-[11px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
           >
             +{stage.remainingCount} more
@@ -68,7 +68,7 @@ export function PipelineSummary({ stages }: { stages: SalesPipelineStage[] }) {
       title="My pipeline"
       action={
         <Link
-          href="/sales/leads"
+          href="/sales/pipeline"
           className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
         >
           View full pipeline

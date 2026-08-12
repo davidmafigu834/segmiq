@@ -11,8 +11,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { EmptyState } from "@/components/ui";
-import { SegmentedControl, useSalesToast } from "@/components/sales/ui";
+import { EmptyState, SegmentedControl, useSalesToast } from "@/components/sales/ui";
 import {
   PipelineDealCard,
   type PipelineDealCardItem,
@@ -389,9 +388,9 @@ export function DealsBoard({
     tab === "active";
 
   const toolbar = (
-    <div className="mb-4 flex flex-col gap-3">
+    <div className="mb-5 flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex items-center gap-1 border-b border-transparent">
+        <div className="flex items-end gap-0 border-b border-sales-border">
           {(
             [
               { value: "active", label: "Active" },
@@ -406,15 +405,15 @@ export function DealsBoard({
                 if (opt.value === "closed") setViewMode("board");
               }}
               className={cn(
-                "relative min-h-9 px-3 text-[13px] font-semibold transition-colors",
+                "relative -mb-px min-h-9 px-3 pb-2.5 text-[13px] font-semibold transition-colors",
                 tab === opt.value
-                  ? "text-[#101828] dark:text-[#F7F8F5]"
-                  : "text-[#667085] hover:text-[#344054] dark:text-[#B1B7AE]"
+                  ? "text-sales-text-primary"
+                  : "text-sales-text-secondary hover:text-sales-text-primary"
               )}
             >
               {opt.label}
               {tab === opt.value ? (
-                <span className="absolute inset-x-2 -bottom-px h-[2px] rounded-full bg-[#D4FF4F]" />
+                <span className="absolute inset-x-2 bottom-0 h-[2px] rounded-full bg-sales-brand" />
               ) : null}
             </button>
           ))}
@@ -448,12 +447,12 @@ export function DealsBoard({
             />
           )}
 
-          <label className="relative block min-w-0 flex-1 sm:max-w-[min(100%,18rem)]">
+          <label className="relative block min-w-0 flex-1 sm:max-w-[min(100%,17rem)]">
             <span className="sr-only">Search deals</span>
             <Search
               size={15}
               strokeWidth={1.8}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#98A2B3]"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
               aria-hidden
             />
             <input
@@ -461,7 +460,7 @@ export function DealsBoard({
               placeholder="Search Deals, customers..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="h-9 w-full rounded-[10px] border border-[#E4E7EC] bg-white py-2 pl-9 pr-3 text-[13px] text-[#101828] outline-none transition-[border-color,box-shadow] placeholder:text-[#98A2B3] focus:border-[#CDD5DF] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)] dark:border-[#272C27] dark:bg-[#111411] dark:text-[#F7F8F5]"
+              className="h-9 w-full rounded-[10px] border border-sales-border bg-sales-surface py-2 pl-9 pr-3 text-[13px] text-sales-text-primary outline-none transition-[border-color,box-shadow] placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40"
               aria-label="Search deals"
             />
           </label>
@@ -474,17 +473,17 @@ export function DealsBoard({
                 className={cn(
                   "inline-flex h-9 items-center gap-1.5 rounded-[10px] border px-3 text-[13px] font-medium transition-colors",
                   filtersActive(filters)
-                    ? "border-[rgba(212,255,79,0.55)] bg-[rgba(212,255,79,0.08)] text-[#101828] dark:text-[#F7F8F5]"
-                    : "border-[#E4E7EC] bg-white text-[#344054] hover:border-[#CDD5DF] dark:border-[#272C27] dark:bg-[#111411] dark:text-[#F7F8F5]"
+                    ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
+                    : "border-sales-border bg-sales-surface text-sales-text-label hover:border-sales-border-strong hover:bg-sales-surface-hover"
                 )}
               >
                 <Filter className="h-3.5 w-3.5" strokeWidth={1.8} />
                 Filter & search
-                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                <ChevronDown className="h-3.5 w-3.5 text-sales-text-muted" />
               </button>
               {filterOpen ? (
-                <div className="absolute right-0 z-30 mt-1 w-[min(100vw-2rem,20rem)] rounded-[12px] border border-[#E4E7EC] bg-white p-3 shadow-[0_12px_32px_rgba(16,24,40,0.12)] dark:border-[#272C27] dark:bg-[#151815]">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3]">
+                <div className="absolute right-0 z-30 mt-1.5 w-[min(100vw-2rem,20rem)] rounded-sales-lg border border-sales-border bg-sales-surface-raised p-3.5 shadow-sales-popover">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
                     Stage
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -503,10 +502,10 @@ export function DealsBoard({
                             }))
                           }
                           className={cn(
-                            "rounded-full px-2.5 py-1 text-[11px] font-medium",
+                            "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
                             on
-                              ? "bg-[#101828] text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
-                              : "bg-[#F2F4F7] text-[#667085] dark:bg-[#1B1F1B] dark:text-[#B1B7AE]"
+                              ? "bg-sales-neutral-900 text-white dark:bg-sales-brand dark:text-sales-brand-text"
+                              : "bg-sales-neutral-100 text-sales-text-secondary hover:bg-sales-surface-hover"
                           )}
                         >
                           {DEAL_STAGE_LABEL[s]}
@@ -514,13 +513,14 @@ export function DealsBoard({
                       );
                     })}
                   </div>
-                  <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3]">
+                  <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
                     Attention
                   </p>
-                  <div className="mt-2 space-y-1.5">
-                    <label className="flex items-center gap-2 text-[12px] text-[#344054] dark:text-[#F7F8F5]">
+                  <div className="mt-2 space-y-2">
+                    <label className="flex items-center gap-2 text-[12px] text-sales-text-primary">
                       <input
                         type="checkbox"
+                        className="rounded border-sales-border-strong"
                         checked={filters.atRisk}
                         onChange={(e) =>
                           setFilters((f) => ({ ...f, atRisk: e.target.checked }))
@@ -528,9 +528,10 @@ export function DealsBoard({
                       />
                       At Risk
                     </label>
-                    <label className="flex items-center gap-2 text-[12px] text-[#344054] dark:text-[#F7F8F5]">
+                    <label className="flex items-center gap-2 text-[12px] text-sales-text-primary">
                       <input
                         type="checkbox"
+                        className="rounded border-sales-border-strong"
                         checked={filters.noNextAction}
                         onChange={(e) =>
                           setFilters((f) => ({
@@ -542,7 +543,7 @@ export function DealsBoard({
                       No Next Action
                     </label>
                   </div>
-                  <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3]">
+                  <p className="mt-3.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
                     Quote status
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
@@ -558,20 +559,20 @@ export function DealsBoard({
                         type="button"
                         onClick={() => setFilters((f) => ({ ...f, hasQuote: o.v }))}
                         className={cn(
-                          "rounded-full px-2.5 py-1 text-[11px] font-medium",
+                          "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors",
                           filters.hasQuote === o.v
-                            ? "bg-[#101828] text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
-                            : "bg-[#F2F4F7] text-[#667085] dark:bg-[#1B1F1B]"
+                            ? "bg-sales-neutral-900 text-white dark:bg-sales-brand dark:text-sales-brand-text"
+                            : "bg-sales-neutral-100 text-sales-text-secondary"
                         )}
                       >
                         {o.l}
                       </button>
                     ))}
                   </div>
-                  <div className="mt-3 flex justify-between gap-2 border-t border-[#E4E7EC] pt-3 dark:border-[#272C27]">
+                  <div className="mt-3.5 flex justify-between gap-2 border-t border-sales-border pt-3">
                     <button
                       type="button"
-                      className="text-[12px] font-medium text-[#667085]"
+                      className="text-[12px] font-medium text-sales-text-secondary hover:text-sales-text-primary"
                       onClick={() => {
                         clearFilters();
                         setFilterOpen(false);
@@ -581,7 +582,7 @@ export function DealsBoard({
                     </button>
                     <button
                       type="button"
-                      className="rounded-[8px] bg-[#101828] px-3 py-1.5 text-[12px] font-semibold text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
+                      className="rounded-sales-sm bg-sales-neutral-900 px-3 py-1.5 text-[12px] font-semibold text-white dark:bg-sales-brand dark:text-sales-brand-text"
                       onClick={() => setFilterOpen(false)}
                     >
                       Done
@@ -601,16 +602,16 @@ export function DealsBoard({
               key={c.key}
               type="button"
               onClick={c.clear}
-              className="inline-flex items-center gap-1 rounded-full border border-[#E4E7EC] bg-white px-2.5 py-1 text-[11px] font-medium text-[#344054] dark:border-[#272C27] dark:bg-[#111411] dark:text-[#F7F8F5]"
+              className="inline-flex items-center gap-1 rounded-full border border-sales-border bg-sales-surface px-2.5 py-1 text-[11px] font-medium text-sales-text-label hover:border-sales-border-strong"
             >
               {c.label}
-              <X className="h-3 w-3 opacity-60" />
+              <X className="h-3 w-3 text-sales-text-muted" />
             </button>
           ))}
           <button
             type="button"
             onClick={clearFilters}
-            className="text-[11px] font-semibold text-[#667085] hover:text-[#101828]"
+            className="text-[11px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
           >
             Clear all
           </button>
@@ -652,7 +653,7 @@ export function DealsBoard({
         {toolbar}
         {closedItems.length === 0 ? (
           <EmptyState
-            icon={Inbox}
+            icon={<Inbox className="h-4 w-4" strokeWidth={1.5} />}
             title={
               debouncedQuery
                 ? `No Deals match “${query.trim()}”`
@@ -667,7 +668,7 @@ export function DealsBoard({
               debouncedQuery ? (
                 <button
                   type="button"
-                  className="text-[13px] font-medium text-[#2684FF]"
+                  className="text-[13px] font-medium text-sales-info-fg"
                   onClick={() => setQuery("")}
                 >
                   Clear search
@@ -676,39 +677,39 @@ export function DealsBoard({
             }
           />
         ) : (
-          <div className="overflow-hidden rounded-[12px] border border-[#E4E7EC] bg-white dark:border-[#272C27] dark:bg-[#111411]">
-            <ul className="divide-y divide-[#E4E7EC] dark:divide-[#272C27]">
+          <div className="overflow-hidden rounded-sales-lg border border-sales-border bg-sales-surface shadow-sales-card">
+            <ul className="divide-y divide-sales-border">
               {closedItems.map((it) => (
                 <li key={it.deal.id}>
                   <button
                     type="button"
                     onClick={() => openDeal(it.deal.id)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[#F8F9FB] dark:hover:bg-[#151815]"
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-sales-surface-hover"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-semibold text-[#101828] dark:text-[#F7F8F5]">
+                      <p className="truncate text-[13px] font-semibold text-sales-text-primary">
                         {it.deal.name}
                       </p>
-                      <p className="truncate text-[12px] text-[#667085]">
+                      <p className="truncate text-[12px] text-sales-text-secondary">
                         {it.customerName || "Customer"}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
                       <span
                         className={cn(
-                          "inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium",
+                          "inline-flex rounded-sales-xs px-2 py-0.5 text-[11px] font-medium",
                           it.deal.stage === "WON"
-                            ? "bg-[#ECFDF3] text-[#027A48]"
-                            : "bg-[#FEF3F2] text-[#B42318]"
+                            ? "bg-sales-success-soft text-sales-success-fg"
+                            : "bg-sales-danger-soft text-sales-danger-fg"
                         )}
                       >
                         {formatDealStage(it.deal.stage)}
                       </span>
-                      <p className="mt-1 text-[12px] tabular-nums text-[#667085]">
+                      <p className="mt-1 text-[12px] tabular-nums text-sales-text-secondary">
                         {it.commercial.display}
                       </p>
                       {it.deal.stage === "LOST" && it.deal.lost_reason ? (
-                        <p className="mt-0.5 max-w-[10rem] truncate text-[11px] text-[#98A2B3]">
+                        <p className="mt-0.5 max-w-[10rem] truncate text-[11px] text-sales-text-muted">
                           {it.deal.lost_reason}
                         </p>
                       ) : null}
@@ -724,51 +725,53 @@ export function DealsBoard({
     );
   }
 
-  // Picks view
   if (viewMode === "picks") {
     return (
       <div className={cn("relative w-full min-w-0 transition-[padding] duration-200", boardPad)}>
         {toolbar}
         {picks.length === 0 ? (
           <EmptyState
-            icon={Inbox}
+            icon={<Inbox className="h-4 w-4" strokeWidth={1.5} />}
             title="No priority Deals need attention right now."
             description="Your active Deals have clear next actions."
           />
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2.5">
             {picks.map(({ item: it, att }) => (
               <li key={it.deal.id}>
                 <button
                   type="button"
                   onClick={() => openDeal(it.deal.id)}
                   className={cn(
-                    "w-full rounded-[12px] border border-[#E4E7EC] bg-white p-4 text-left shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-[border-color,box-shadow] hover:border-[#CDD5DF] hover:shadow-[0_4px_12px_rgba(16,24,40,0.06)] dark:border-[#272C27] dark:bg-[#111411]",
+                    "w-full rounded-[12px] border border-sales-border bg-sales-surface p-4 text-left shadow-sales-card transition-[border-color,box-shadow] hover:border-sales-border-strong hover:shadow-sales-card-hover",
                     selectedDealId === it.deal.id &&
-                      "border-[rgba(212,255,79,0.55)] bg-[rgba(212,255,79,0.035)]"
+                      "border-sales-brand-border bg-sales-brand-soft"
                   )}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-[14px] font-semibold text-[#101828] dark:text-[#F7F8F5]">
+                      <p className="text-[14px] font-semibold text-sales-text-primary">
                         {it.deal.name}
                         {it.customerName ? (
-                          <span className="font-medium text-[#667085]">
+                          <span className="font-medium text-sales-text-secondary">
                             {" "}
                             — {it.customerName}
                           </span>
                         ) : null}
                       </p>
-                      <p className="mt-1 text-[12px] text-[#667085]">
+                      <p className="mt-1 text-[12px] text-sales-text-secondary">
                         {formatDealStage(it.deal.stage)}
                         {" · "}
-                        <span className="font-semibold tabular-nums text-[#101828] dark:text-[#F7F8F5]">
+                        <span className="font-semibold tabular-nums text-sales-text-primary">
                           {it.commercial.kind === "pending"
                             ? "Value pending"
                             : it.commercial.display}
                         </span>
                       </p>
-                      <p className="mt-1 text-[12px] text-[#667085]" data-course-target="pipeline-next-action">
+                      <p
+                        className="mt-1 text-[12px] text-sales-text-secondary"
+                        data-course-target="pipeline-next-action"
+                      >
                         {it.deal.next_action_at
                           ? `${it.deal.next_action_label || "Follow up"} · ${new Date(
                               it.deal.next_action_at
@@ -782,19 +785,17 @@ export function DealsBoard({
                       </p>
                     </div>
                     {att.badge ? (
-                      <span className="rounded-md bg-[#FEF3F2] px-2 py-0.5 text-[11px] font-medium text-[#B42318]">
+                      <span className="rounded-sales-xs bg-sales-danger-soft px-2 py-0.5 text-[11px] font-medium text-sales-danger-fg">
                         {att.badge}
                       </span>
                     ) : null}
                   </div>
                   {att.reason ? (
-                    <div className="mt-3 rounded-[10px] bg-[#F8F9FB] px-3 py-2 dark:bg-[#151815]">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#98A2B3]">
+                    <div className="mt-3 rounded-sales-md bg-sales-surface-subtle px-3 py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
                         Why now
                       </p>
-                      <p className="mt-0.5 text-[12px] text-[#344054] dark:text-[#B1B7AE]">
-                        {att.reason}
-                      </p>
+                      <p className="mt-0.5 text-[12px] text-sales-text-label">{att.reason}</p>
                     </div>
                   ) : null}
                 </button>
@@ -807,13 +808,12 @@ export function DealsBoard({
     );
   }
 
-  // Board empty states
   if (searchNoMatch || filterNoMatch || enrichedActive.length === 0) {
     return (
       <div className={cn("relative w-full min-w-0", boardPad)}>
         {toolbar}
         <EmptyState
-          icon={Inbox}
+          icon={<Inbox className="h-4 w-4" strokeWidth={1.5} />}
           title={
             searchNoMatch
               ? `No Deals match “${query.trim()}”`
@@ -830,7 +830,7 @@ export function DealsBoard({
             searchNoMatch ? (
               <button
                 type="button"
-                className="text-[13px] font-medium text-[#2684FF]"
+                className="text-[13px] font-medium text-sales-info-fg"
                 onClick={() => setQuery("")}
               >
                 Clear search
@@ -838,7 +838,7 @@ export function DealsBoard({
             ) : filterNoMatch ? (
               <button
                 type="button"
-                className="text-[13px] font-medium text-[#2684FF]"
+                className="text-[13px] font-medium text-sales-info-fg"
                 onClick={clearFilters}
               >
                 Clear filters
@@ -846,7 +846,7 @@ export function DealsBoard({
             ) : (
               <Link
                 href="/sales/call-now"
-                className="inline-flex min-h-[44px] items-center rounded-[10px] bg-[#101828] px-4 text-[13px] font-semibold text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
+                className="inline-flex min-h-11 items-center rounded-sales-md bg-sales-neutral-900 px-4 text-[13px] font-semibold text-white dark:bg-sales-brand dark:text-sales-brand-text"
               >
                 View Leads
               </Link>
@@ -858,7 +858,6 @@ export function DealsBoard({
     );
   }
 
-  // Mobile stage-focused board
   if (isNarrow) {
     return (
       <div className={cn("relative w-full min-w-0", boardPad)}>
@@ -872,10 +871,10 @@ export function DealsBoard({
                 data-course-target={`pipeline-stage-${col.toLowerCase().replace(/_/g, "-")}`}
                 onClick={() => setMobileCol(col)}
                 className={cn(
-                  "min-h-[40px] shrink-0 rounded-full px-3 text-[12px] font-medium",
+                  "min-h-10 shrink-0 rounded-full px-3 text-[12px] font-medium transition-colors",
                   mobileCol === col
-                    ? "bg-[rgba(212,255,79,0.35)] text-[#101828] ring-1 ring-[rgba(212,255,79,0.7)] dark:bg-[rgba(212,255,79,0.2)] dark:text-[#F7F8F5]"
-                    : "border border-[#E4E7EC] bg-white text-[#667085] dark:border-[#272C27] dark:bg-[#111411]"
+                    ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand-border"
+                    : "border border-sales-border bg-sales-surface text-sales-text-secondary"
                 )}
               >
                 {DEAL_STAGE_LABEL[col]} · {byColumn[col].length}
@@ -884,7 +883,7 @@ export function DealsBoard({
           </div>
           <div className="space-y-2">
             {byColumn[mobileCol].length === 0 ? (
-              <p className="py-8 text-center text-[13px] text-[#98A2B3]">
+              <p className="py-8 text-center text-[13px] text-sales-text-muted">
                 No Deals in {DEAL_STAGE_LABEL[mobileCol]}.
               </p>
             ) : (
@@ -899,15 +898,11 @@ export function DealsBoard({
     );
   }
 
-  // Desktop kanban
   return (
     <div className={cn("relative w-full min-w-0 transition-[padding] duration-200", boardPad)}>
       {toolbar}
       <DragDropContext onDragEnd={(r) => void onDragEnd(r)}>
-        <div
-          className="grid grid-cols-4 gap-3"
-          data-course-target="pipeline-board"
-        >
+        <div className="grid grid-cols-4 gap-3" data-course-target="pipeline-board">
           {COLS.map((col) => {
             const rows = byColumn[col];
             const visible = visibleByCol[col];
@@ -920,14 +915,14 @@ export function DealsBoard({
                 data-course-target={`pipeline-stage-${col.toLowerCase().replace(/_/g, "-")}`}
               >
                 <div
-                  className="mb-2 flex items-center justify-between gap-2 border-t-[2px] px-1 pt-2"
+                  className="mb-2.5 flex items-center justify-between gap-2 border-t-[2px] px-0.5 pt-2"
                   style={{ borderColor: DEAL_STAGE_ACCENT[col] }}
                 >
                   <div className="flex items-center gap-2">
-                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#667085] dark:text-[#B1B7AE]">
+                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-secondary">
                       {DEAL_STAGE_LABEL[col]}
                     </h3>
-                    <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#344054] dark:bg-[#1B1F1B] dark:text-[#F7F8F5]">
+                    <span className="rounded-sales-xs bg-sales-neutral-100 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-label">
                       {rows.length}
                     </span>
                   </div>
@@ -938,13 +933,12 @@ export function DealsBoard({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={cn(
-                        "min-h-[12rem] space-y-2 rounded-[10px] p-1 transition-colors duration-150",
-                        snapshot.isDraggingOver &&
-                          "bg-[rgba(212,255,79,0.025)] ring-1 ring-[rgba(212,255,79,0.2)]"
+                        "min-h-[12rem] space-y-2.5 rounded-sales-md p-0.5 transition-colors duration-150",
+                        snapshot.isDraggingOver && "bg-sales-brand-soft/40 ring-1 ring-sales-brand-border/40"
                       )}
                     >
                       {shown.length === 0 ? (
-                        <p className="px-2 py-6 text-center text-[12px] text-[#98A2B3]">
+                        <p className="px-2 py-6 text-center text-[12px] text-sales-text-muted">
                           No Deals in {DEAL_STAGE_LABEL[col]}.
                         </p>
                       ) : null}
@@ -956,8 +950,7 @@ export function DealsBoard({
                               {...drag.draggableProps}
                               {...drag.dragHandleProps}
                               className={cn(
-                                dragSnap.isDragging &&
-                                  "rotate-[0.5deg] shadow-[0_12px_28px_rgba(16,24,40,0.14)]"
+                                dragSnap.isDragging && "shadow-sales-popover"
                               )}
                             >
                               <PipelineDealCard
@@ -978,7 +971,7 @@ export function DealsBoard({
                       {remaining > 0 ? (
                         <button
                           type="button"
-                          className="w-full rounded-[10px] py-2 text-center text-[12px] font-semibold text-[#667085] hover:bg-[#F8F9FB] hover:text-[#101828] dark:hover:bg-[#151815]"
+                          className="w-full rounded-sales-md py-2 text-center text-[12px] font-semibold text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
                           onClick={() =>
                             setVisibleByCol((v) => ({
                               ...v,

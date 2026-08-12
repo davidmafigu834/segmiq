@@ -333,7 +333,7 @@ export function DealWorkspaceClient({
     <div>
       <div className="mb-3">
         <Link
-          href="/sales/leads"
+          href="/sales/pipeline"
           className="inline-flex min-h-11 items-center gap-1.5 rounded-sales-md px-2 text-[13px] font-medium text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />

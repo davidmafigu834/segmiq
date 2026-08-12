@@ -100,7 +100,7 @@ export function AppShell({
     if (href === "/client/dashboard") return pathname === "/client/dashboard";
     if (href === "/solo/dashboard") return pathname === "/solo/dashboard";
     if (href === "/sales/dashboard") return pathname === "/sales/dashboard";
-    if (href === "/sales/leads") return pathname === "/sales/leads";
+    if (href === "/sales/pipeline") return pathname === "/sales/pipeline";
     if (href === "/sales/inbox") return isWhatsAppSalesHubPath(pathname);
     if (href === "/sales/call-now") return pathname === "/sales/call-now";
     if (href === "/sales/recover") return pathname === "/sales/recover";
@@ -119,7 +119,7 @@ export function AppShell({
       ? [
           primaryNav.find((item) => item.href === "/sales/dashboard" || item.href === "/solo/dashboard"),
           primaryNav.find((item) => item.href === "/sales/inbox"),
-          primaryNav.find((item) => item.href === "/sales/leads"),
+          primaryNav.find((item) => item.href === "/sales/pipeline"),
           primaryNav.find((item) => item.href === "/sales/quotes"),
         ].filter((item): item is AppShellNavItem => Boolean(item))
       : primaryNav.slice(0, 4);

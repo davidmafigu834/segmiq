@@ -39,6 +39,8 @@ export function courseEventForPathname(pathname: string): CourseEventName | null
     return "NAVIGATED_TO_DASHBOARD";
   }
   if (
+    pathname === "/sales/pipeline" ||
+    pathname.startsWith("/sales/pipeline/") ||
     pathname === "/sales/leads" ||
     pathname.startsWith("/sales/leads/") ||
     pathname.startsWith("/sales/deals/")

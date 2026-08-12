@@ -1026,7 +1026,7 @@ function LeadTableRow({
               <MenuItem icon={<FileText size={14} />} label="Create quote" onClick={onQuote} />
               <MenuItem icon={<Clock3 size={14} />} label="View timeline" onClick={onTimeline} />
               <Link
-                href={`/sales/leads?lead=${row.id}`}
+                href={`/sales/call-now?lead=${row.id}`}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
               >
                 <ExternalLink size={14} strokeWidth={1.8} />

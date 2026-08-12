@@ -51,7 +51,7 @@ function isWhatsAppSource(source: string | null): boolean {
 function leadHref(lead: LeadRow): string {
   return isWhatsAppSource(lead.source)
     ? `/sales/inbox?lead=${lead.id}`
-    : `/sales/leads?lead=${lead.id}`;
+    : `/sales/call-now?lead=${lead.id}`;
 }
 
 function buildOpenTask(

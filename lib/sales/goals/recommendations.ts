@@ -19,7 +19,7 @@ export function buildGoalRecommendations(input: RecommendationInput): GoalRecomm
       {
         id: "upcoming",
         text: "Your goal starts next period. Keep pipeline warm so you hit the ground running.",
-        href: "/sales/leads",
+        href: "/sales/pipeline",
       },
     ];
   }
@@ -62,7 +62,7 @@ export function buildGoalRecommendations(input: RecommendationInput): GoalRecomm
     tips.push({
       id: "stale",
       text: `Re-engage ${input.staleHighValue} stale high-value deal${input.staleHighValue === 1 ? "" : "s"}.`,
-      href: "/sales/leads",
+      href: "/sales/pipeline",
     });
   }
 
@@ -76,7 +76,7 @@ export function buildGoalRecommendations(input: RecommendationInput): GoalRecomm
       tips.push({
         id: "start",
         text: "Focus on moving open deals to Won — revenue updates your goal automatically.",
-        href: "/sales/leads",
+        href: "/sales/pipeline",
       });
     } else {
       tips.push({

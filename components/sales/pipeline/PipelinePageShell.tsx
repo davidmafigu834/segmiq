@@ -19,7 +19,7 @@ export function PipelinePageShell({
   breadcrumb = "Sales / Pipeline",
   title = "My pipeline",
   description = "Track and manage the Deals you're actively working to win.",
-  dense = false,
+  dense = true,
 }: {
   children: ReactNode;
   userName: string;
@@ -52,6 +52,7 @@ export function PipelinePageShell({
       title={title}
       description={description}
       dense={dense}
+      searchPlaceholder="Search Deals, customers..."
     >
       {children}
     </SalesAppShell>

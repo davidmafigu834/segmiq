@@ -695,7 +695,7 @@ export async function fetchSalespersonReports(opts: {
       value: leadValue(l),
       score: l.score ?? null,
       lastActivity: l.updated_at || l.created_at,
-      href: `/sales/leads?lead=${l.id}`,
+      href: `/sales/call-now?lead=${l.id}`,
     }));
 
   // Pipeline value by stage (for Pipeline tab)

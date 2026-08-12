@@ -140,7 +140,9 @@ See also [SEGMIQ_SALES_DESIGN_SYSTEM.md](./SEGMIQ_SALES_DESIGN_SYSTEM.md) §16 a
 
 ## My Pipeline (salesperson)
 
-Route: `/sales/leads` · label **My Pipeline**.
+Route: `/sales/pipeline` · label **My Pipeline**.
+
+Legacy `/sales/leads` redirects to `/sales/pipeline` (or to `/sales/call-now` when `?lead=` is present).
 
 **My Pipeline = my active Deals** — not raw Leads. Cards represent Deals and may reference customer, originating Lead (source / intent score), Quotes, next action, and attention state.
 

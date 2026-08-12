@@ -497,11 +497,11 @@ Surfaces `#111411` / raised `#151815`; borders `#272C27` / `#1E231E`; chart tool
 
 ### Links
 
-Enquiries → `/sales/call-now` · Deals → `/sales/deals/[id]` · Pipeline → `/sales/leads` · Plan/Focus → `/sales/tasks` · Goals context → Goals when present.
+Enquiries → `/sales/call-now` · Deals → `/sales/deals/[id]` · Pipeline → `/sales/pipeline` · Plan/Focus → `/sales/tasks` · Goals context → Goals when present.
 
 ## 16b. My Pipeline
 
-Route `/sales/leads`. Deal-based Kanban (not Lead cards). Light mode should match the SegmiQ 2.0 Pipeline reference density.
+Route `/sales/pipeline` (legacy `/sales/leads` redirects). Deal-based Kanban (not Lead cards). Light mode should match the SegmiQ 2.0 Pipeline reference density.
 
 ### Layout
 

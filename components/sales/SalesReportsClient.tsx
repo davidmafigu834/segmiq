@@ -446,7 +446,7 @@ function OverviewTab({
             title="Where deals pause"
             footer={
               <Link
-                href="/sales/leads"
+                href="/sales/pipeline"
                 className="text-[12px] font-medium text-sales-brand-fg hover:underline"
               >
                 View details →
@@ -476,7 +476,7 @@ function OverviewTab({
             title="Top opportunities"
             footer={
               <Link
-                href="/sales/leads"
+                href="/sales/pipeline"
                 className="text-[12px] font-medium text-sales-brand-fg hover:underline"
               >
                 View all opportunities →

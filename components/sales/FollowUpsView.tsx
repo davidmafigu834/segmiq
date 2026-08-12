@@ -36,7 +36,7 @@ function FollowUpRow({
   const href =
     source === "WHATSAPP_INBOUND"
       ? `/sales/inbox?lead=${lead.id}`
-      : `/sales/leads?lead=${lead.id}`;
+      : `/sales/call-now?lead=${lead.id}`;
 
   return (
     <li className="border-b border-border last:border-b-0">

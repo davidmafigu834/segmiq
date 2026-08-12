@@ -92,7 +92,7 @@ describe("guided learning engine", () => {
 
 describe("guided learning route events", () => {
   it("maps pipeline and leads routes", () => {
-    assert.equal(courseEventForPathname("/sales/leads"), "NAVIGATED_TO_PIPELINE");
+    assert.equal(courseEventForPathname("/sales/pipeline"), "NAVIGATED_TO_PIPELINE");
     assert.equal(courseEventForPathname("/sales/call-now"), "NAVIGATED_TO_LEADS");
     assert.equal(courseEventForPathname("/sales/dashboard"), "NAVIGATED_TO_DASHBOARD");
   });

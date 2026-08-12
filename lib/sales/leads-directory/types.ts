@@ -1,6 +1,6 @@
 /**
  * Salesperson Leads directory (sidebar: Leads → /sales/call-now).
- * Distinct from My Pipeline (/sales/leads).
+ * Distinct from My Pipeline (/sales/pipeline).
  */
 
 import type { LeadStatus } from "@/types";

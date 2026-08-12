@@ -26,7 +26,7 @@ export default async function ClientTeamPage({
   } else if (role === "CLIENT_MANAGER") {
     if (!session.clientId) redirect("/login");
   } else {
-    redirect("/sales/leads");
+    redirect("/sales/pipeline");
   }
 
   const supabase = createAdminClient();

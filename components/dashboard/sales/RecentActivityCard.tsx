@@ -34,7 +34,7 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
       title="Recent activity"
       action={
         <Link
-          href="/sales/leads"
+          href="/sales/pipeline"
           className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
         >
           View pipeline

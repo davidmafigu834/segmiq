@@ -69,7 +69,7 @@ export async function SalesInboxPageView({
             alsoSells={session.alsoSells}
             clientId={session.clientId}
             roleSubtitle={isSolo ? "Owner" : "Sales Executive"}
-            pipelineHref="/sales/leads"
+            pipelineHref="/sales/pipeline"
             settingsHref="/sales/profile"
             inboxHref="/sales/inbox"
             teamHref={isSolo ? undefined : dashboardHref}
@@ -120,7 +120,7 @@ export async function SalesInboxPageView({
             alsoSells={session.alsoSells}
             clientId={session.clientId}
             roleSubtitle={isSolo ? "Owner" : "Sales Executive"}
-            pipelineHref="/sales/leads"
+            pipelineHref="/sales/pipeline"
             settingsHref="/sales/profile"
             inboxHref="/sales/inbox"
             teamHref={isSolo ? undefined : dashboardHref}

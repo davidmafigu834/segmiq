@@ -15,7 +15,7 @@ export function PipelineSnapshotCard({ stages }: { stages: SalesPipelineSnapshot
             Deals only
           </span>
           <Link
-            href="/sales/leads"
+            href="/sales/pipeline"
             className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
           >
             View full pipeline

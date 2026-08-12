@@ -408,7 +408,7 @@ export function WonLostClient() {
               description="Won and lost deals will appear here as you close opportunities."
               action={
                 <Link
-                  href="/sales/leads"
+                  href="/sales/pipeline"
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-sales-brand px-3.5 text-[13px] font-semibold text-sales-brand-text"
                 >
                   <Columns3 size={16} strokeWidth={1.8} aria-hidden />
@@ -570,7 +570,7 @@ export function WonLostClient() {
                           </Button>
                         ) : (
                           <Link
-                            href="/sales/leads"
+                            href="/sales/pipeline"
                             className="inline-flex h-8 items-center justify-center rounded-[8px] border border-sales-border-strong bg-sales-surface px-3 text-[12px] font-semibold text-sales-text-primary"
                           >
                             View pipeline

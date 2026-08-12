@@ -104,7 +104,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
 
   function leadHref(n: NotificationRow): string {
     if (n.lead_id) {
-      if (role === "SALESPERSON") return `/sales/leads?lead=${n.lead_id}`;
+      if (role === "SALESPERSON") return `/sales/call-now?lead=${n.lead_id}`;
       if (role === "CLIENT_MANAGER") return `/client/leads/pipeline?lead=${n.lead_id}`;
       return `/dashboard/leads?lead=${n.lead_id}`;
     }
@@ -117,7 +117,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
     if (n.type === "BACKFILL_COMPLETE") {
       return "/dashboard/leads";
     }
-    if (role === "SALESPERSON") return "/sales/leads";
+    if (role === "SALESPERSON") return "/sales/pipeline";
     if (role === "CLIENT_MANAGER") return "/client/leads";
     return "/dashboard/leads";
   }

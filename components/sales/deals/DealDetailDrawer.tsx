@@ -53,7 +53,7 @@ type DrawerPayload = {
 };
 
 const actionSquare =
-  "inline-flex h-11 w-11 flex-col items-center justify-center gap-0.5 rounded-[10px] border border-[#E4E7EC] bg-white text-[10px] font-medium text-[#667085] transition-colors hover:border-[#CDD5DF] hover:bg-[#F8F9FB] dark:border-[#272C27] dark:bg-[#151815] dark:text-[#B1B7AE] dark:hover:border-[#343A34]";
+  "inline-flex h-11 w-11 flex-col items-center justify-center gap-0.5 rounded-[10px] border border-sales-border bg-sales-surface-raised text-[10px] font-medium text-sales-text-secondary transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover";
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "";
@@ -284,7 +284,7 @@ export function DealDetailDrawer({
     const loadingPanel = (
       <div
         className={cn(
-          "pipeline-drawer-light pointer-events-auto relative z-10 flex w-full flex-col border-sales-border bg-white p-4 dark:bg-[#0F120F]",
+          "pipeline-drawer-light pointer-events-auto relative z-10 flex w-full flex-col border-sales-border bg-sales-surface p-4 ",
           isMobile
             ? "max-h-[min(96dvh,100dvh)] rounded-t-2xl"
             : "h-[100dvh] w-[min(100%,400px)] border-l"
@@ -328,7 +328,7 @@ export function DealDetailDrawer({
   const panel = (
     <div
       className={cn(
-        "pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 flex-col overflow-hidden border-sales-border bg-white text-[#101828] shadow-[0_8px_30px_rgba(16,24,40,0.08)] transition-transform duration-200 dark:bg-[#0F120F] dark:text-[#F7F8F5]",
+        "pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 flex-col overflow-hidden border-sales-border bg-sales-surface text-sales-text-primary shadow-sales-modal transition-transform duration-200",
         isMobile
           ? "max-h-[min(96dvh,100dvh)] rounded-t-2xl pb-[env(safe-area-inset-bottom)]"
           : "h-[100dvh] max-h-[100dvh] w-[min(100%,400px)] rounded-none border-l"
@@ -339,13 +339,13 @@ export function DealDetailDrawer({
       aria-label="Deal details"
     >
       {/* Header */}
-      <header className="shrink-0 border-b border-[#E4E7EC] px-4 pb-3 pt-4 dark:border-[#252A25]">
+      <header className="shrink-0 border-b border-sales-border px-4 pb-3 pt-4 ">
         <div className="flex items-start gap-3">
           {isMobile ? (
             <button
               type="button"
               onClick={onClose}
-              className="mt-1 flex h-9 w-9 items-center justify-center rounded-[8px] text-[#667085] hover:bg-[#F8F9FB] dark:hover:bg-[#151815]"
+              className="mt-1 flex h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover "
               aria-label="Back"
             >
               <X className="h-5 w-5" />
@@ -371,16 +371,16 @@ export function DealDetailDrawer({
                 </Badge>
               ) : null}
             </div>
-            <p className="mt-0.5 truncate text-[13px] text-[#667085] dark:text-[#B1B7AE]">
+            <p className="mt-0.5 truncate text-[13px] text-sales-text-secondary ">
               {[deal?.name, company].filter(Boolean).join(" · ")}
             </p>
-            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[12px] text-[#98A2B3]">
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[12px] text-sales-text-muted">
               {company ? <span>{company}</span> : null}
               {sourceLabel ? (
                 isWhatsAppInboundLead(leadSource) ? (
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1 font-medium text-[#25D366]"
+                    className="inline-flex items-center gap-1 font-medium text-sales-whatsapp"
                     onClick={() => void handleWhatsApp()}
                   >
                     <SiWhatsapp className="h-3 w-3" />
@@ -395,7 +395,7 @@ export function DealDetailDrawer({
           <div className="flex shrink-0 items-center gap-1">
             <Link
               href={`/sales/deals/${dealId}`}
-              className="inline-flex h-9 items-center gap-1 rounded-[8px] px-2 text-[12px] font-semibold text-[#344054] hover:bg-[#F8F9FB] dark:text-[#F7F8F5] dark:hover:bg-[#151815]"
+              className="inline-flex h-9 items-center gap-1 rounded-[8px] px-2 text-[12px] font-semibold text-sales-text-label hover:bg-sales-surface-hover  "
             >
               <ExternalLink className="h-3.5 w-3.5" />
               View full Deal
@@ -404,7 +404,7 @@ export function DealDetailDrawer({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-9 w-9 items-center justify-center rounded-[8px] text-[#667085] hover:bg-[#F8F9FB] dark:hover:bg-[#151815]"
+                className="flex h-9 w-9 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover "
                 aria-label="Close"
               >
                 <X className="h-5 w-5" />
@@ -416,7 +416,7 @@ export function DealDetailDrawer({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {error ? (
-          <div className="rounded-[12px] border border-[#E4E7EC] bg-[#F8F9FB] p-4 text-center dark:border-[#272C27] dark:bg-[#151815]">
+          <div className="rounded-[12px] border border-sales-border bg-sales-surface-subtle p-4 text-center  ">
             <p className="text-[13px] font-medium">{error}</p>
             <Button
               className="mt-3"
@@ -430,19 +430,19 @@ export function DealDetailDrawer({
         ) : null}
 
         {attention?.needsAttention && attention.reason ? (
-          <section className="mb-3 rounded-[12px] border border-[#FEE4E2] bg-[#FEF3F2] px-3 py-2.5 dark:border-[#3A2422] dark:bg-[#1A1211]">
-            <p className="text-[12px] font-semibold text-[#B42318] dark:text-[#FDA29B]">
+          <section className="mb-3 rounded-[12px] border border-sales-danger/25 bg-sales-danger-soft px-3 py-2.5">
+            <p className="text-[12px] font-semibold text-sales-danger-fg">
               Needs attention
             </p>
-            <p className="mt-0.5 text-[12px] text-[#912018] dark:text-[#FECDCA]">
+            <p className="mt-0.5 text-[12px] text-sales-danger-fg/90">
               {attention.reason}
             </p>
           </section>
         ) : null}
 
         {/* Deal intelligence */}
-        <section className="mb-3 rounded-[12px] border border-[#E4E7EC] bg-white p-3.5 dark:border-[#272C27] dark:bg-[#111411]">
-          <h3 className="text-[13px] font-semibold text-[#101828] dark:text-[#F7F8F5]">
+        <section className="mb-3 rounded-[12px] border border-sales-border bg-sales-surface p-3.5  ">
+          <h3 className="text-[13px] font-semibold text-sales-text-primary ">
             Deal intelligence
           </h3>
           {loading && !commercial ? (
@@ -457,12 +457,12 @@ export function DealDetailDrawer({
                   <span className="text-[22px] font-semibold tabular-nums">
                     {Math.round(lead?.score ?? seed?.leadScore ?? 0)}
                   </span>
-                  <span className="text-[12px] text-[#667085]">Lead score · acquisition context</span>
+                  <span className="text-[12px] text-sales-text-secondary">Lead score · acquisition context</span>
                 </div>
               ) : null}
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <div>
-                  <p className="text-[11px] text-[#98A2B3]">Est. value</p>
+                  <p className="text-[11px] text-sales-text-muted">Est. value</p>
                   <p className="mt-0.5 text-[13px] font-semibold tabular-nums">
                     {commercial?.kind === "pending"
                       ? "Pending"
@@ -470,13 +470,13 @@ export function DealDetailDrawer({
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-[#98A2B3]">Deal age</p>
+                  <p className="text-[11px] text-sales-text-muted">Deal age</p>
                   <p className="mt-0.5 text-[13px] font-semibold">
                     {age === 0 ? "Today" : `${age}d`}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-[#98A2B3]">Last activity</p>
+                  <p className="text-[11px] text-sales-text-muted">Last activity</p>
                   <p className="mt-0.5 text-[13px] font-semibold">
                     {deal?.last_meaningful_activity_at
                       ? timeAgo(deal.last_meaningful_activity_at)
@@ -489,12 +489,12 @@ export function DealDetailDrawer({
         </section>
 
         {/* Discovery */}
-        <section className="mb-3 rounded-[12px] border border-[#E4E7EC] bg-white p-3.5 dark:border-[#272C27] dark:bg-[#111411]">
+        <section className="mb-3 rounded-[12px] border border-sales-border bg-sales-surface p-3.5  ">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-[13px] font-semibold">Deal details</h3>
             <Link
               href={`/sales/deals/${dealId}`}
-              className="text-[12px] font-semibold text-[#344054] hover:underline dark:text-[#D4FF4F]"
+              className="text-[12px] font-semibold text-sales-text-label hover:underline"
             >
               Edit
             </Link>
@@ -502,14 +502,14 @@ export function DealDetailDrawer({
           <dl className="mt-3 space-y-2.5">
             {discoveryRows.map((row) => (
               <div key={row.label} className="flex items-start justify-between gap-3">
-                <dt className="text-[12px] text-[#98A2B3]">{row.label}</dt>
-                <dd className="max-w-[60%] text-right text-[12px] font-medium text-[#101828] dark:text-[#F7F8F5]">
+                <dt className="text-[12px] text-sales-text-muted">{row.label}</dt>
+                <dd className="max-w-[60%] text-right text-[12px] font-medium text-sales-text-primary ">
                   {row.value ? (
                     row.value
                   ) : (
                     <Link
                       href={`/sales/deals/${dealId}`}
-                      className="font-semibold text-[#667085] underline-offset-2 hover:underline"
+                      className="font-semibold text-sales-text-secondary underline-offset-2 hover:underline"
                     >
                       Not added · Add
                     </Link>
@@ -522,7 +522,7 @@ export function DealDetailDrawer({
 
         {/* Pipeline stage */}
         <section
-          className="mb-3 rounded-[12px] border border-[#E4E7EC] bg-white p-3.5 dark:border-[#272C27] dark:bg-[#111411]"
+          className="mb-3 rounded-[12px] border border-sales-border bg-sales-surface p-3.5  "
           data-course-target="pipeline-stage-progress"
         >
           <h3 className="text-[13px] font-semibold">Pipeline stage</h3>
@@ -540,7 +540,7 @@ export function DealDetailDrawer({
                       <span
                         className={cn(
                           "absolute left-1/2 top-[11px] h-[2px] w-full",
-                          done || current ? "bg-[#D4FF4F]" : "bg-[#E4E7EC] dark:bg-[#343A34]"
+                          done || current ? "bg-sales-brand" : "bg-sales-border"
                         )}
                         aria-hidden
                       />
@@ -555,10 +555,10 @@ export function DealDetailDrawer({
                       className={cn(
                         "relative z-[1] flex h-6 w-6 items-center justify-center rounded-full border-2 text-[10px] font-bold transition-colors",
                         current
-                          ? "border-[#D4FF4F] bg-[#D4FF4F] text-[#101828]"
+                          ? "border-sales-brand bg-sales-brand text-sales-brand-text"
                           : done
-                            ? "border-[#D4FF4F] bg-[#D4FF4F] text-[#101828]"
-                            : "border-[#E4E7EC] bg-white text-[#98A2B3] dark:border-[#343A34] dark:bg-[#111411]"
+                            ? "border-sales-brand bg-sales-brand text-sales-brand-text"
+                            : "border-sales-border bg-sales-surface text-sales-text-muted"
                       )}
                       aria-label={`Move to ${DEAL_STAGE_LABEL[stage]}`}
                     >
@@ -568,8 +568,8 @@ export function DealDetailDrawer({
                       className={cn(
                         "mt-2 max-w-[4.5rem] text-center text-[10px] font-medium leading-tight",
                         current
-                          ? "text-[#101828] dark:text-[#F7F8F5]"
-                          : "text-[#98A2B3]"
+                          ? "text-sales-text-primary "
+                          : "text-sales-text-muted"
                       )}
                     >
                       {DEAL_STAGE_LABEL[stage]}
@@ -581,7 +581,7 @@ export function DealDetailDrawer({
           ) : (
             <p className="mt-2 text-[13px] font-medium">{formatDealStage(deal.stage)}</p>
           )}
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#667085]">
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-sales-text-secondary">
             <span>
               Stage since ·{" "}
               {new Date(deal.updated_at).toLocaleDateString(undefined, {
@@ -602,7 +602,7 @@ export function DealDetailDrawer({
             ) : null}
           </div>
           {stageConfirm ? (
-            <div className="mt-3 rounded-[10px] border border-[#E4E7EC] bg-[#F8F9FB] p-3 dark:border-[#272C27] dark:bg-[#151815]">
+            <div className="mt-3 rounded-[10px] border border-sales-border bg-sales-surface-subtle p-3  ">
               <p className="text-[12px] font-medium">
                 Move Deal to {DEAL_STAGE_LABEL[stageConfirm]}?
               </p>
@@ -628,7 +628,7 @@ export function DealDetailDrawer({
 
         {/* Next action */}
         <section
-          className="mb-3 rounded-[12px] border border-[#E4E7EC] bg-white p-3.5 dark:border-[#272C27] dark:bg-[#111411]"
+          className="mb-3 rounded-[12px] border border-sales-border bg-sales-surface p-3.5  "
           data-course-target="pipeline-next-action"
         >
           <h3 className="text-[13px] font-semibold">Next action</h3>
@@ -637,7 +637,7 @@ export function DealDetailDrawer({
               <p className="mt-2 text-[14px] font-semibold">
                 {nextAction.label || "Follow up"}
               </p>
-              <p className="mt-0.5 text-[12px] text-[#667085]">
+              <p className="mt-0.5 text-[12px] text-sales-text-secondary">
                 {formatWhen(nextAction.at)}
                 {nextAction.isOverdue ? " · Overdue" : ""}
               </p>
@@ -645,7 +645,7 @@ export function DealDetailDrawer({
           ) : (
             <>
               <p className="mt-2 text-[14px] font-semibold">No next action scheduled</p>
-              <p className="mt-0.5 text-[12px] text-[#667085]">
+              <p className="mt-0.5 text-[12px] text-sales-text-secondary">
                 {nextAction?.emptyMessage ||
                   "This active Deal doesn't have another action planned."}
               </p>
@@ -685,7 +685,7 @@ export function DealDetailDrawer({
         </section>
 
         {/* Quotation */}
-        <section className="mb-3 rounded-[12px] border border-[#E4E7EC] bg-white p-3.5 dark:border-[#272C27] dark:bg-[#111411]">
+        <section className="mb-3 rounded-[12px] border border-sales-border bg-sales-surface p-3.5  ">
           <h3 className="text-[13px] font-semibold">Quotation status</h3>
           {latestQuote ? (
             <>
@@ -694,7 +694,7 @@ export function DealDetailDrawer({
                   <p className="text-[13px] font-semibold">
                     {latestQuote.quote_number || "Quote"}
                   </p>
-                  <p className="text-[12px] text-[#667085]">
+                  <p className="text-[12px] text-sales-text-secondary">
                     {[
                       money(latestQuote.total),
                       formatQuoteStatus(latestQuote.status),
@@ -737,7 +737,7 @@ export function DealDetailDrawer({
             </>
           ) : (
             <>
-              <p className="mt-2 text-[13px] text-[#667085]">No Quote created yet.</p>
+              <p className="mt-2 text-[13px] text-sales-text-secondary">No Quote created yet.</p>
               <Button
                 className="mt-3 w-full"
                 size="sm"
@@ -755,12 +755,12 @@ export function DealDetailDrawer({
         </section>
 
         {/* Recent activity */}
-        <section className="mb-2 rounded-[12px] border border-[#E4E7EC] bg-white p-3.5 dark:border-[#272C27] dark:bg-[#111411]">
+        <section className="mb-2 rounded-[12px] border border-sales-border bg-sales-surface p-3.5  ">
           <div className="flex items-center justify-between">
             <h3 className="text-[13px] font-semibold">Recent activity</h3>
             <Link
               href={`/sales/deals/${dealId}`}
-              className="text-[12px] font-semibold text-[#344054] hover:underline dark:text-[#D4FF4F]"
+              className="text-[12px] font-semibold text-sales-text-label hover:underline"
             >
               View all
             </Link>
@@ -774,18 +774,18 @@ export function DealDetailDrawer({
             <ul className="mt-3 space-y-3">
               {(data?.timeline ?? []).slice(0, 5).map((ev) => (
                 <li key={ev.id} className="flex gap-2.5">
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#D4FF4F]" />
+                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sales-brand" />
                   <div className="min-w-0">
                     <p className="text-[12px] font-medium">{ev.label}</p>
                     {ev.detail ? (
-                      <p className="truncate text-[11px] text-[#667085]">{ev.detail}</p>
+                      <p className="truncate text-[11px] text-sales-text-secondary">{ev.detail}</p>
                     ) : null}
-                    <p className="mt-0.5 text-[11px] text-[#98A2B3]">{timeAgo(ev.at)}</p>
+                    <p className="mt-0.5 text-[11px] text-sales-text-muted">{timeAgo(ev.at)}</p>
                   </div>
                 </li>
               ))}
               {(data?.timeline ?? []).length === 0 ? (
-                <li className="text-[12px] text-[#667085]">No activity recorded yet.</li>
+                <li className="text-[12px] text-sales-text-secondary">No activity recorded yet.</li>
               ) : null}
             </ul>
           )}
@@ -793,7 +793,7 @@ export function DealDetailDrawer({
       </div>
 
       {isMobile ? (
-        <div className="flex shrink-0 gap-2 border-t border-[#E4E7EC] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-[#252A25]">
+        <div className="flex shrink-0 gap-2 border-t border-sales-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] ">
           {(isWhatsAppInboundLead(leadSource) || customerPhone) && (
             <button type="button" className={cn(actionSquare, "flex-1")} onClick={() => void handleWhatsApp()}>
               <SiWhatsapp className="h-4 w-4" style={{ color: "#25D366" }} />

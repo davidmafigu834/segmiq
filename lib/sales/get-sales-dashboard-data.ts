@@ -156,7 +156,7 @@ function buildCommercialKpis(c: SalesDashboardCommercial): SalesKpiItem[] {
       value: String(c.activeDeals),
       supporting: "In pipeline",
       icon: "deals",
-      href: "/sales/leads",
+      href: "/sales/pipeline",
     },
     {
       id: "pipeline",
@@ -167,7 +167,7 @@ function buildCommercialKpis(c: SalesDashboardCommercial): SalesKpiItem[] {
           : moneyLabel(null),
       supporting: pipelineSupporting,
       icon: "pipeline",
-      href: "/sales/leads",
+      href: "/sales/pipeline",
     },
     {
       id: "won",
@@ -432,7 +432,7 @@ function buildPipelineSnapshot(opts: {
       valueLabel: known > 0 || stageDeals.length === 0 ? moneyLabel(known === 0 && awaiting > 0 ? null : known) : moneyLabel(null),
       knownValue: known,
       awaitingEstimate: awaiting,
-      href: `/sales/leads?stage=${stage}`,
+      href: `/sales/pipeline?stage=${stage}`,
     };
   });
 }

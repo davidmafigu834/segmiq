@@ -86,13 +86,15 @@ export const SALES_NAVIGATION: SalesNavItemConfig[] = [
   {
     id: "pipeline",
     label: "My Pipeline",
-    href: "/sales/leads",
+    href: "/sales/pipeline",
     icon: "pipeline",
     section: "sales",
     mobileSlot: "primary",
     mobileLabel: "Pipeline",
     match: (p) =>
-      exactOrChild(p, "/sales/leads") || exactOrChild(p, "/sales/deals"),
+      exactOrChild(p, "/sales/pipeline") ||
+      exactOrChild(p, "/sales/leads") ||
+      exactOrChild(p, "/sales/deals"),
   },
   {
     id: "whatsapp",

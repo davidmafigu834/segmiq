@@ -98,7 +98,7 @@ export async function notifyBulkReassignment({ clientId, leadIds, actorId }: Bul
   const actorName = (actorUser as { name: string } | null)?.name ?? "Manager";
 
   const baseUrl = getPublicBaseUrl();
-  const leadsUrl = `${baseUrl}/sales/leads`;
+  const leadsUrl = `${baseUrl}/sales/pipeline`;
 
   const allowWhatsApp = isWhatsAppDeliveryConfigured();
 

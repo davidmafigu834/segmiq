@@ -61,7 +61,7 @@ export async function SalesLayout({
           }
         : undefined
     ),
-    { href: "/sales/leads", label: "My pipeline", icon: "layout-grid" as const },
+    { href: "/sales/pipeline", label: "My pipeline", icon: "layout-grid" as const },
     { href: "/sales/event-capture", label: "Event Capture", icon: "calendar" as const },
     { href: "/sales/quotes", label: "Quotations", icon: "file-text" as const },
     { href: "/sales/won-lost", label: "Won & Lost", icon: "trophy" as const },
@@ -87,7 +87,7 @@ export async function SalesLayout({
       actions={actions}
       unreadNotifications={unread}
       notificationRole={session?.role ?? "SALESPERSON"}
-      quickActionHref="/sales/leads"
+      quickActionHref="/sales/pipeline"
       showQuickAction={false}
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
