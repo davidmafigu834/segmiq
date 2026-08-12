@@ -18,7 +18,7 @@ export function PipelinePageShell({
   assignmentMode = "direct",
   breadcrumb = "Sales / Pipeline",
   title = "My pipeline",
-  description = "Manage your leads and move deals forward.",
+  description = "Track and manage the Deals you're actively working to win.",
   dense = false,
 }: {
   children: ReactNode;

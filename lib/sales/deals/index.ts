@@ -7,3 +7,4 @@ export * from "./close-deal";
 export * from "./timeline";
 export * from "./permissions";
 export * from "./customer-deals";
+export * from "./attention";

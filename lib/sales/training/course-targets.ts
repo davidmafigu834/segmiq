@@ -33,6 +33,18 @@ export const COURSE_TARGETS = {
   "dashboard-sales-plan": "dashboard-sales-plan",
   "dashboard-quick-actions": "dashboard-quick-actions",
   "dashboard-course-card": "dashboard-course-card",
+  // My Pipeline (live product)
+  "pipeline-board": "pipeline-board",
+  "pipeline-stage-qualified": "pipeline-stage-qualified",
+  "pipeline-stage-scoping": "pipeline-stage-scoping",
+  "pipeline-stage-proposal-sent": "pipeline-stage-proposal-sent",
+  "pipeline-stage-negotiating": "pipeline-stage-negotiating",
+  "pipeline-deal-card": "pipeline-deal-card",
+  "pipeline-deal-value": "pipeline-deal-value",
+  "pipeline-next-action": "pipeline-next-action",
+  "pipeline-deal-drawer": "pipeline-deal-drawer",
+  "pipeline-stage-progress": "pipeline-stage-progress",
+  "pipeline-create-quote": "pipeline-create-quote",
   // Practice host
   "practice-lead-row": "practice-lead-row",
   "practice-lead-discovery": "practice-lead-discovery",

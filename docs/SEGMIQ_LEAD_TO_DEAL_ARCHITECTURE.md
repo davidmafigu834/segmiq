@@ -137,3 +137,44 @@ The Dashboard shows **both** Leads and Deals, but never mixes their commercial m
 - Unknown Deal value displays as “Value not estimated” / awaiting estimate — never `$0`.
 
 See also [SEGMIQ_SALES_DESIGN_SYSTEM.md](./SEGMIQ_SALES_DESIGN_SYSTEM.md) §16 and [SEGMIQ_DAILY_SALES_INTELLIGENCE.md](./SEGMIQ_DAILY_SALES_INTELLIGENCE.md).
+
+## My Pipeline (salesperson)
+
+Route: `/sales/leads` · label **My Pipeline**.
+
+**My Pipeline = my active Deals** — not raw Leads. Cards represent Deals and may reference customer, originating Lead (source / intent score), Quotes, next action, and attention state.
+
+### Stages on the board
+
+Active Kanban columns (source of truth — never Lead-era New/Contacted):
+
+1. Qualified  
+2. Scoping  
+3. Proposal sent  
+4. Negotiating  
+
+Closed tab: Won / Lost list (not Kanban columns). Closing requires deliberate Won/Lost flows (`closeDealWon` / `closeDealLost`).
+
+### Card semantics
+
+- Primary identity: customer name; secondary: Deal name  
+- Commercial value via `getDealCommercialValue()` — never show `$0` for unknown  
+- Hot/Warm/Cold = originating Lead intent, not Deal stage  
+- Source = originating Lead source  
+- Attention badges from shared `getDealAttentionState()` (same rules as Daily Sales Intelligence)
+
+### Board / Picks / Closed
+
+| Mode | Behavior |
+|------|----------|
+| **Board** | Deal Kanban; drag/drop between active stages → `updateDealStage` |
+| **Picks** | Ranked Deals needing attention (overdue, at risk, no next action, late-stage, etc.) — same priority engine, not a separate AI ranker |
+| **Closed** | Outcome list: Won / Lost filters |
+
+### Deal Detail Drawer
+
+Selecting a card opens a right-side `DealDetailDrawer` (`?deal=<id>`). Full Deal Workspace remains at `/sales/deals/[dealId]`. Drawer sections: intelligence, discovery details, stage progress, next action, quotation status, recent activity.
+
+### Stage changes
+
+One persistence path: `PATCH /api/deals/[id]` → `updateDealStage()`. Drag/drop and drawer stage confirm share it. Rollback + toast on failure.

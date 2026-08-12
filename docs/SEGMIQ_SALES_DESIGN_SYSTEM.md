@@ -499,6 +499,46 @@ Surfaces `#111411` / raised `#151815`; borders `#272C27` / `#1E231E`; chart tool
 
 Enquiries → `/sales/call-now` · Deals → `/sales/deals/[id]` · Pipeline → `/sales/leads` · Plan/Focus → `/sales/tasks` · Goals context → Goals when present.
 
+## 16b. My Pipeline
+
+Route `/sales/leads`. Deal-based Kanban (not Lead cards). Light mode should match the SegmiQ 2.0 Pipeline reference density.
+
+### Layout
+
+| Element | Spec |
+|---------|------|
+| Header | Breadcrumb `SALES / PIPELINE` · title **My pipeline** · supporting Deal-focused copy |
+| Tabs | **Active** / **Closed** with thin lime underline on active |
+| Segment | **Board** / **Picks** (Active only) |
+| Filter | **Filter & search** control; chips when filters applied |
+| Desktop board | 4 equal columns; thin colored top accent per stage; near-page background (no heavy grey columns) |
+| Drawer | Right panel ~380–400px; push board with padding ≥1280px; overlay below |
+| Mobile | One stage at a time via horizontal chips; full-height Deal sheet |
+
+### DealCard (`PipelineDealCard`)
+
+- Radius 12px · 1px border `#E4E7EC` / dark `#272C27` · subtle shadow  
+- Hover: stronger border `#CDD5DF`, shadow `0 4px 12px rgba(16,24,40,.06)` — **no scale / neon**  
+- Selected: soft lime tint `rgba(212,255,79,.035)` + restrained lime border  
+- Action strip: Open · WhatsApp · Call · Schedule · Quote · More (~32px outlined icons)  
+- Attention badges compact (Overdue / Due today / At risk / No next action)
+
+### Stage accents
+
+Use `DEAL_STAGE_ACCENT`: Qualified `#2684FF` · Scoping `#14B8A6` · Proposal sent `#8B5CF6` · Negotiating `#F59E0B`.
+
+### Drag / drop
+
+Slight elevation while dragging; drop target soft lime wash `rgba(212,255,79,.025)`. No rotation circus / lime glow.
+
+### Deal Detail Drawer
+
+Sections: Deal intelligence · Deal details · Pipeline stage progress · Next action · Quotation status · Recent activity. Lime CTAs only where primary (e.g. Create Quote / Schedule follow-up). Course targets: `pipeline-board`, `pipeline-deal-card`, `pipeline-deal-drawer`, etc.
+
+### Dark
+
+Page `#0B0D0C` family · cards `#111411` · raised `#151815` · borders `#272C27` · text `#F7F8F5` / `#B1B7AE`. WhatsApp stays `#25D366`.
+
 ## 17. Guided Learning
 
 Interactive SegmiQ 2.0 course (not a third-party tour widget). Full behavior: [`docs/SEGMIQ_INTERACTIVE_TRAINING.md`](./SEGMIQ_INTERACTIVE_TRAINING.md).

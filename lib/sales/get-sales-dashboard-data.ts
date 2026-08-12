@@ -8,7 +8,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchSalespersonDashboardData } from "@/lib/dashboard-data";
 import { fetchDailySalesPlan } from "@/lib/sales/intelligence/daily-plan-service";
 import { reasonText } from "@/lib/sales/intelligence/reasons";
-import { DEFAULT_STAGE_INACTIVITY_HOURS } from "@/lib/sales/intelligence/defaults";
 import { firstQualifyingResponseMinutes } from "@/lib/sales/intelligence/meaningful-activity";
 import type {
   DailyCommitmentProgress,
@@ -22,6 +21,7 @@ import {
   DEAL_ACTIVE_STAGES,
   DEAL_STAGE_ACCENT,
   DEAL_STAGE_LABEL,
+  getDealAttentionState,
   getDealCommercialValue,
   getDealNextActionState,
   latestQuoteTotal,
@@ -288,95 +288,12 @@ function dealAttentionReason(
   deal: DealRow,
   now: Date
 ): { code: SalesActionReasonCode; reason: string; atRisk: boolean; urgency: number } {
-  const next = getDealNextActionState(deal);
-  if (!next.hasNextAction) {
-    return {
-      code: "NO_NEXT_ACTION",
-      reason: reasonText("NO_NEXT_ACTION"),
-      atRisk: true,
-      urgency: 90,
-    };
-  }
-  if (next.isOverdue) {
-    return {
-      code: "FOLLOWUP_OVERDUE",
-      reason: reasonText("FOLLOWUP_OVERDUE"),
-      atRisk: true,
-      urgency: 95,
-    };
-  }
-  if (deal.expected_decision_at) {
-    const decision = Date.parse(deal.expected_decision_at);
-    const hours = (decision - now.getTime()) / 3_600_000;
-    if (Number.isFinite(hours) && hours >= 0 && hours <= 48) {
-      return {
-        code: "LATE_STAGE_NEEDS_ACTION",
-        reason: reasonText("LATE_STAGE_NEEDS_ACTION"),
-        atRisk: false,
-        urgency: 85,
-      };
-    }
-  }
-  if (deal.stage === "PROPOSAL_SENT" || deal.stage === "NEGOTIATING") {
-    const dueSoon =
-      next.at != null && Date.parse(next.at) - now.getTime() < 24 * 3_600_000;
-    if (dueSoon || !next.hasNextAction) {
-      return {
-        code: deal.stage === "PROPOSAL_SENT" ? "QUOTE_WAITING" : "LATE_STAGE_NEEDS_ACTION",
-        reason: reasonText(
-          deal.stage === "PROPOSAL_SENT" ? "QUOTE_WAITING" : "LATE_STAGE_NEEDS_ACTION"
-        ),
-        atRisk: false,
-        urgency: 80,
-      };
-    }
-  }
-  const last = deal.last_meaningful_activity_at
-    ? Date.parse(deal.last_meaningful_activity_at)
-    : Date.parse(deal.updated_at);
-  const inactivityHours = Number.isFinite(last)
-    ? (now.getTime() - last) / 3_600_000
-    : 0;
-  const threshold = DEFAULT_STAGE_INACTIVITY_HOURS[deal.stage] ?? 72;
-  if (inactivityHours >= threshold) {
-    return {
-      code: "DEAL_STALE",
-      reason: reasonText("DEAL_STALE", {
-        ageLabel: inactivityHours >= 48 ? `${Math.floor(inactivityHours / 24)} days` : `${Math.floor(inactivityHours)}h`,
-      }),
-      atRisk: true,
-      urgency: 75,
-    };
-  }
-  if (deal.value_status === "PENDING_ESTIMATE") {
-    return {
-      code: "NO_NEXT_ACTION",
-      reason: "Value still needs estimate",
-      atRisk: false,
-      urgency: 40,
-    };
-  }
-  // Due today
-  if (next.at) {
-    const d = new Date(next.at);
-    if (
-      d.getFullYear() === now.getFullYear() &&
-      d.getMonth() === now.getMonth() &&
-      d.getDate() === now.getDate()
-    ) {
-      return {
-        code: "FOLLOWUP_DUE_TODAY",
-        reason: reasonText("FOLLOWUP_DUE_TODAY"),
-        atRisk: false,
-        urgency: 70,
-      };
-    }
-  }
+  const derived = getDealAttentionState(deal, now);
   return {
-    code: "FOLLOWUP_DUE_TODAY",
-    reason: reasonText("FOLLOWUP_DUE_TODAY"),
-    atRisk: false,
-    urgency: 30,
+    code: derived.code,
+    reason: derived.reason || reasonText(derived.code),
+    atRisk: derived.atRisk,
+    urgency: derived.urgency,
   };
 }
 

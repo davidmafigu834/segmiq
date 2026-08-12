@@ -64,13 +64,15 @@ export default async function SalesPipelinePage() {
     dealIds.length
       ? supabase
           .from("quotations")
-          .select("id, deal_id, lead_id, total, status, sent_at, created_at, updated_at")
+          .select(
+            "id, deal_id, lead_id, quote_number, total, status, sent_at, created_at, updated_at"
+          )
           .in("deal_id", dealIds)
       : Promise.resolve({ data: [] as unknown[] }),
     leadIds.length
       ? supabase
           .from("leads")
-          .select("id, name, phone, score, source, manual_priority")
+          .select("id, name, phone, score, source, manual_priority, form_data")
           .in("id", leadIds)
       : Promise.resolve({ data: [] as unknown[] }),
   ]);
@@ -91,14 +93,29 @@ export default async function SalesPipelinePage() {
         phone: string | null;
         score: number | null;
         source: string;
-        manual_priority: string | null;
+        manual_priority: "hot" | "warm" | "cold" | null;
+        form_data: Record<string, unknown> | null;
       }[]
     ).map((l) => [l.id, l])
   );
 
+  function companyFromForm(form: Record<string, unknown> | null | undefined): string | null {
+    if (!form) return null;
+    for (const key of ["company", "business", "organisation", "organization", "company_name"]) {
+      const v = form[key];
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return null;
+  }
+
   const boardItems: DealBoardItem[] = dealRows.map((deal) => {
-    const dealQuotes = quotesByDeal.get(deal.id) ?? [];
+    const dealQuotes = [...(quotesByDeal.get(deal.id) ?? [])].sort((a, b) => {
+      const aT = Date.parse(a.sent_at || a.updated_at || a.created_at);
+      const bT = Date.parse(b.sent_at || b.updated_at || b.created_at);
+      return bT - aT;
+    });
     const lead = leadById.get(deal.originating_lead_id);
+    const latest = dealQuotes[0];
     return {
       deal,
       commercial: getDealCommercialValue(deal, {
@@ -106,8 +123,19 @@ export default async function SalesPipelinePage() {
       }),
       customerName: lead?.name ?? null,
       customerPhone: lead?.phone ?? null,
+      customerCompany: companyFromForm(lead?.form_data) ?? deal.location ?? null,
       leadScore: lead?.score ?? null,
       leadSource: lead?.source ?? null,
+      leadManualPriority: lead?.manual_priority ?? null,
+      quoteCount: dealQuotes.length,
+      latestQuote: latest
+        ? {
+            id: latest.id,
+            quote_number: latest.quote_number ?? null,
+            total: latest.total ?? null,
+            status: latest.status,
+          }
+        : null,
     };
   });
 
@@ -150,9 +178,15 @@ export default async function SalesPipelinePage() {
         whatsappBadge={whatsappBadge}
         tasksBadge={tasksBadge}
         isSolo={session.clientMode === "solo"}
+        breadcrumb="SALES / PIPELINE"
+        title="My pipeline"
+        description="Track and manage the Deals you're actively working to win."
       >
         <Suspense fallback={<PipelineSkeleton />}>
-          <DealsBoard initialItems={boardItems} />
+          <DealsBoard
+            initialItems={boardItems}
+            repName={session.user?.name ?? "Sales"}
+          />
         </Suspense>
       </PipelinePageShell>
     </SalesLayout>
