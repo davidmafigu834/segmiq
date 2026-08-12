@@ -102,7 +102,6 @@ export function DealDetailDrawer({
   const router = useRouter();
   const { toast } = useSalesToast();
   const isMobile = useMediaQuery("(max-width: 767px)");
-  const isCompactDesktop = useMediaQuery("(max-width: 1280px)");
   const { setHideBottomNav } = useSalesMobileChrome();
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
   const [loading, setLoading] = useState(false);
@@ -116,10 +115,10 @@ export function DealDetailDrawer({
   }, []);
 
   useEffect(() => {
-    const hide = Boolean(open && dealId && (isMobile || isCompactDesktop));
+    const hide = Boolean(open && dealId && isMobile);
     setHideBottomNav(hide);
     return () => setHideBottomNav(false);
-  }, [open, dealId, isMobile, isCompactDesktop, setHideBottomNav]);
+  }, [open, dealId, isMobile, setHideBottomNav]);
 
   useEffect(() => {
     if (!open || !isMobile) return;
@@ -277,20 +276,19 @@ export function DealDetailDrawer({
 
   if (!open || !dealId || !portalEl) return null;
 
-  const overlay = isMobile || isCompactDesktop;
+  // Mobile: bottom sheet with dimmed backdrop. Desktop: fixed right sidebar (no overlay).
+  const overlay = isMobile;
   const badgeTone = attentionBadgeTone(attention?.badge ?? null);
+  const panelShell = cn(
+    "pipeline-drawer-light pointer-events-auto relative z-10 flex min-w-0 flex-col overflow-hidden border-sales-border bg-sales-surface text-sales-text-primary shadow-sales-modal transition-transform duration-200",
+    isMobile
+      ? "w-full max-h-[min(96dvh,100dvh)] rounded-t-2xl pb-[env(safe-area-inset-bottom)]"
+      : "h-[100dvh] max-h-[100dvh] w-[400px] max-w-[400px] shrink-0 rounded-none border-l"
+  );
 
   if (!deal) {
     const loadingPanel = (
-      <div
-        className={cn(
-          "pipeline-drawer-light pointer-events-auto relative z-10 flex w-full flex-col border-sales-border bg-sales-surface p-4 ",
-          isMobile
-            ? "max-h-[min(96dvh,100dvh)] rounded-t-2xl"
-            : "h-[100dvh] w-[min(100%,400px)] border-l"
-        )}
-        data-course-target="pipeline-deal-drawer"
-      >
+      <div className={cn(panelShell, "p-4")} data-course-target="pipeline-deal-drawer">
         <div className="flex items-center justify-between">
           <Skeleton className="h-11 w-11 rounded-full" />
           <button type="button" onClick={onClose} aria-label="Close" className="p-2">
@@ -327,15 +325,10 @@ export function DealDetailDrawer({
 
   const panel = (
     <div
-      className={cn(
-        "pipeline-drawer-light pointer-events-auto relative z-10 flex w-full min-w-0 flex-col overflow-hidden border-sales-border bg-sales-surface text-sales-text-primary shadow-sales-modal transition-transform duration-200",
-        isMobile
-          ? "max-h-[min(96dvh,100dvh)] rounded-t-2xl pb-[env(safe-area-inset-bottom)]"
-          : "h-[100dvh] max-h-[100dvh] w-[min(100%,400px)] rounded-none border-l"
-      )}
+      className={panelShell}
       data-course-target="pipeline-deal-drawer"
       role="dialog"
-      aria-modal="true"
+      aria-modal={isMobile}
       aria-label="Deal details"
     >
       {/* Header */}

@@ -3,6 +3,7 @@ export * from "./commercial-value";
 export * from "./readiness";
 export * from "./completeness";
 export * from "./create-deal";
+export * from "./create-deal-form";
 export * from "./close-deal";
 export * from "./timeline";
 export * from "./permissions";

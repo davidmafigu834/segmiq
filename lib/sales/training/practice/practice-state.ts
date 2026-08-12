@@ -63,7 +63,7 @@ export function createPracticeSeed(): PracticeScenarioState {
     },
     deal: {
       id: "practice-deal-tariro",
-      name: "Tariro Moyo — Solar",
+      name: "5kW Solar Installation",
       stage: "QUALIFIED",
       estimatedValue: 4800,
       nextActionLabel: "Follow up on site visit",

@@ -8,6 +8,11 @@ import {
 import { getDealReadiness } from "../lib/sales/deals/readiness";
 import { getDealCompleteness } from "../lib/sales/deals/completeness";
 import { isDealActiveStage, formatDealStage, isLeadConverted } from "../lib/sales/deals/display";
+import {
+  buildCreateDealPayload,
+  parseLeadBudgetHint,
+  suggestDealName,
+} from "../lib/sales/deals/create-deal-form";
 import type { DealRow, LeadRow } from "../types";
 
 function baseDeal(over: Partial<DealRow> = {}): DealRow {
@@ -216,5 +221,123 @@ describe("not qualified isolation", () => {
     });
     // Readiness can be structurally ready; createDealFromLead rejects NOT_QUALIFIED
     assert.equal(typeof r.ready, "boolean");
+  });
+});
+
+describe("create deal form helpers", () => {
+  it("suggests deal name from project, not customer name", () => {
+    assert.equal(
+      suggestDealName({
+        project_type: "Warehouse Roofing Project",
+        customer_need: null,
+        name: "Tafadzwa Moyo",
+      }),
+      "Warehouse Roofing Project"
+    );
+    assert.equal(
+      suggestDealName({ project_type: null, customer_need: null, name: "Tafadzwa Moyo" }),
+      ""
+    );
+  });
+
+  it("parses budget exact and range", () => {
+    assert.deepEqual(parseLeadBudgetHint("$6,500"), { mode: "exact", exact: 6500 });
+    assert.deepEqual(parseLeadBudgetHint("$5,000 – $7,000"), {
+      mode: "range",
+      min: 5000,
+      max: 7000,
+    });
+    assert.deepEqual(parseLeadBudgetHint(null), { mode: "later" });
+  });
+
+  it("builds exact / range / later payloads", () => {
+    const exact = buildCreateDealPayload({
+      name: "5kW Solar",
+      serviceSummary: "Solar",
+      customerNeed: "Backup",
+      location: "",
+      buyingTimeframe: "Within 30 days",
+      decisionMakerStatus: "",
+      decisionMakerName: "",
+      expectedDecisionAt: "",
+      valueMode: "exact",
+      exactValue: "6500",
+      rangeMin: "",
+      rangeMax: "",
+      nextActionLabel: "Follow up",
+      nextActionAt: "2026-08-15T10:00",
+      notes: "",
+    });
+    assert.equal(exact.ok, true);
+    if (exact.ok) {
+      assert.equal(exact.payload.salesEstimate, 6500);
+      assert.equal(exact.payload.valuePending, false);
+    }
+
+    const range = buildCreateDealPayload({
+      name: "Roofing",
+      serviceSummary: "",
+      customerNeed: "",
+      location: "",
+      buyingTimeframe: "",
+      decisionMakerStatus: "",
+      decisionMakerName: "",
+      expectedDecisionAt: "",
+      valueMode: "range",
+      exactValue: "",
+      rangeMin: "5000",
+      rangeMax: "7000",
+      nextActionLabel: "",
+      nextActionAt: "",
+      notes: "Spoke on site",
+    });
+    assert.equal(range.ok, true);
+    if (range.ok) {
+      assert.equal(range.payload.estimatedValueMin, 5000);
+      assert.equal(range.payload.estimatedValueMax, 7000);
+      assert.equal(range.payload.notes, "Spoke on site");
+    }
+
+    const badRange = buildCreateDealPayload({
+      name: "Roofing",
+      serviceSummary: "",
+      customerNeed: "",
+      location: "",
+      buyingTimeframe: "",
+      decisionMakerStatus: "",
+      decisionMakerName: "",
+      expectedDecisionAt: "",
+      valueMode: "range",
+      exactValue: "",
+      rangeMin: "7000",
+      rangeMax: "5000",
+      nextActionLabel: "",
+      nextActionAt: "",
+      notes: "",
+    });
+    assert.equal(badRange.ok, false);
+
+    const later = buildCreateDealPayload({
+      name: "Site visit deal",
+      serviceSummary: "",
+      customerNeed: "",
+      location: "",
+      buyingTimeframe: "",
+      decisionMakerStatus: "",
+      decisionMakerName: "",
+      expectedDecisionAt: "",
+      valueMode: "later",
+      exactValue: "",
+      rangeMin: "",
+      rangeMax: "",
+      nextActionLabel: "Site assessment",
+      nextActionAt: "",
+      notes: "",
+    });
+    assert.equal(later.ok, true);
+    if (later.ok) {
+      assert.equal(later.payload.valuePending, true);
+      assert.equal(later.payload.salesEstimate, null);
+    }
   });
 });

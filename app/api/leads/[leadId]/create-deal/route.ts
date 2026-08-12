@@ -27,6 +27,7 @@ const bodySchema = z.object({
   valuePending: z.boolean().optional(),
   nextActionAt: z.string().datetime().nullable().optional(),
   nextActionLabel: z.string().max(300).nullable().optional(),
+  notes: z.string().max(4000).nullable().optional(),
 });
 
 export async function POST(

@@ -45,6 +45,13 @@ export const COURSE_TARGETS = {
   "pipeline-deal-drawer": "pipeline-deal-drawer",
   "pipeline-stage-progress": "pipeline-stage-progress",
   "pipeline-create-quote": "pipeline-create-quote",
+  // Create Deal modal (live product)
+  "create-deal-modal": "create-deal-modal",
+  "create-deal-name": "create-deal-name",
+  "create-deal-value": "create-deal-value",
+  "create-deal-next-action": "create-deal-next-action",
+  "create-deal-submit": "create-deal-submit",
+  "deal-readiness": "deal-readiness",
   // Practice host
   "practice-lead-row": "practice-lead-row",
   "practice-lead-discovery": "practice-lead-discovery",

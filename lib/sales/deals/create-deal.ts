@@ -35,6 +35,8 @@ export type CreateDealFromLeadInput = {
   valuePending?: boolean;
   nextActionAt?: string | null;
   nextActionLabel?: string | null;
+  /** Optional conversation notes stored on deal metadata (not Lead acquisition). */
+  notes?: string | null;
   /** Skip readiness gate (server migration / admin). Default false. */
   force?: boolean;
 };
@@ -211,6 +213,29 @@ export async function createDealFromLead(
   }
 
   const dealId = rpcId as string;
+  const notes = input.notes?.trim();
+  if (notes) {
+    const { data: existingMeta } = await supabase
+      .from("deals")
+      .select("metadata")
+      .eq("id", dealId)
+      .maybeSingle();
+    const prev =
+      existingMeta &&
+      typeof existingMeta.metadata === "object" &&
+      existingMeta.metadata != null &&
+      !Array.isArray(existingMeta.metadata)
+        ? (existingMeta.metadata as Record<string, unknown>)
+        : {};
+    await supabase
+      .from("deals")
+      .update({
+        metadata: { ...prev, create_notes: notes },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", dealId);
+  }
+
   const { data: deal } = await supabase.from("deals").select("*").eq("id", dealId).maybeSingle();
   if (!deal) {
     return {

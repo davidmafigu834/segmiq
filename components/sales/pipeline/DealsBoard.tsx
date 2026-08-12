@@ -122,7 +122,7 @@ export function DealsBoard({
   const stageFromUrl = parseStageParam(searchParams.get("stage")) ?? initialStage;
   const dealFromUrl = searchParams.get("deal");
   const isNarrow = useMediaQuery("(max-width: 900px)");
-  const isCompactDrawer = useMediaQuery("(max-width: 1280px)");
+  const isMobileDrawer = useMediaQuery("(max-width: 767px)");
 
   const [items, setItems] = useState(initialItems);
   const [tab, setTab] = useState<"active" | "closed">(initialTab);
@@ -374,8 +374,8 @@ export function DealsBoard({
   }, [tab, filtered, selectedDealId, closeDeal]);
 
   const drawerOpen = Boolean(selectedDealId);
-  const boardPad =
-    drawerOpen && !isNarrow && !isCompactDrawer ? "layout:pr-[min(400px,32vw)]" : "";
+  // Reserve space for the docked right sidebar so the board stays usable beside it.
+  const boardPad = drawerOpen && !isMobileDrawer ? "pr-[400px]" : "";
 
   const hasActiveDeals = items.some((it) => isDealActiveStage(it.deal.stage));
   const searchNoMatch =

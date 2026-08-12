@@ -22,6 +22,7 @@ export function DealReadinessCard({
     <Card
       variant={compact ? "compact" : "standard"}
       aria-label="Deal readiness"
+      data-course-target="deal-readiness"
       className={cn(compact ? "p-0" : undefined)}
     >
       <CardContent className={cn(compact ? "p-3" : "space-y-0 pt-4")}>
@@ -82,7 +83,7 @@ export function DealReadinessCard({
                   disabled={creating}
                   onClick={onCreateDeal}
                 >
-                  {creating ? "Creating…" : "Create deal"}
+                  {creating ? "Creating…" : "Create Deal"}
                 </Button>
               ) : null}
               {onKeepQualifying ? (

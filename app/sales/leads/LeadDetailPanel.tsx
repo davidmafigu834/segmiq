@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
   ChevronLeft,
@@ -42,7 +43,7 @@ import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { DealReadinessCard } from "@/components/sales/deals/DealReadinessCard";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { getDealReadiness } from "@/lib/sales/deals/readiness";
-import { formatLeadLifecycle, isLeadConverted, isLeadOpenForQualification } from "@/lib/sales/deals/display";
+import { formatLeadLifecycle, formatDealStage, isLeadConverted, isLeadOpenForQualification } from "@/lib/sales/deals/display";
 import { formatCallLogHeadline } from "@/lib/call-log-display";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { ManagerReassignLeadButton } from "@/components/customer-hub/ManagerReassignLeadButton";
@@ -53,6 +54,8 @@ import {
   intentLikelihoodCopy,
 } from "@/lib/sales/pipeline-display";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import { useSalesToast } from "@/components/sales/ui";
+import { getDealCommercialValue } from "@/lib/sales/deals/commercial-value";
 
 type CallLogApiRow = {
   id: string;
@@ -92,6 +95,7 @@ export function LeadDetailPanel({
   const { open, leadId, tab: panelTab } = useLeadPanel();
   const lead = leads.find((l) => l.id === leadId) ?? null;
   const { data: session } = useSession();
+  const router = useRouter();
   const role = session?.role;
   const [logRefresh, setLogRefresh] = useState(0);
   const [businessType, setBusinessType] = useState<"trades" | "real_estate">("trades");
@@ -103,6 +107,8 @@ export function LeadDetailPanel({
   const [moreOpen, setMoreOpen] = useState(false);
   const [closingStatus, setClosingStatus] = useState(false);
   const [createDealOpen, setCreateDealOpen] = useState(false);
+  const [relatedDeal, setRelatedDeal] = useState<DealRow | null>(null);
+  const { toast } = useSalesToast();
   const isMobileDrawer = useMediaQuery("(max-width: 767px)");
   const isBelowLayout = useMediaQuery("(max-width: 1099px)");
   const { setHideBottomNav } = useSalesMobileChrome();
@@ -111,6 +117,7 @@ export function LeadDetailPanel({
     if (!open) return;
     setSendPreselect(null);
     setMoreOpen(false);
+    setRelatedDeal(null);
     setActiveTab(panelTab ?? "details");
   }, [leadId, open, panelTab]);
 
@@ -529,19 +536,31 @@ export function LeadDetailPanel({
                 </p>
               </div>
 
-              {converted && activeLead.active_deal_id ? (
+              {converted && (activeLead.active_deal_id || relatedDeal?.id) ? (
                 <div className="rounded-[12px] border border-[rgba(212,255,79,0.45)] bg-[rgba(212,255,79,0.1)] p-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
-                    Related deal
+                    Related Deal
                   </p>
-                  <p className="mt-1 text-[13px] text-sales-text-secondary">
-                    Deal created — open the commercial workspace to continue.
-                  </p>
+                  {relatedDeal ? (
+                    <>
+                      <p className="mt-1 text-[14px] font-semibold text-sales-text-primary">
+                        {relatedDeal.name}
+                      </p>
+                      <p className="mt-0.5 text-[12px] text-sales-text-secondary">
+                        {formatDealStage(relatedDeal.stage)} ·{" "}
+                        {getDealCommercialValue(relatedDeal).display}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-1 text-[13px] text-sales-text-secondary">
+                      Deal created — open the commercial workspace to continue.
+                    </p>
+                  )}
                   <Link
-                    href={`/sales/deals/${activeLead.active_deal_id}`}
+                    href={`/sales/deals/${relatedDeal?.id ?? activeLead.active_deal_id}`}
                     className="mt-2 inline-flex min-h-[40px] items-center text-[13px] font-semibold text-sales-text-primary"
                   >
-                    Open deal
+                    Open Deal
                   </Link>
                 </div>
               ) : converted ? (
@@ -710,8 +729,20 @@ export function LeadDetailPanel({
                   onClick={() => setCreateDealOpen(true)}
                   className="min-h-12 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-sm font-semibold text-sales-text-primary touch-manipulation"
                 >
-                  Create deal
+                  Create Deal
                 </button>
+              </div>
+            ) : role === "SALESPERSON" &&
+              !isReadOnly &&
+              converted &&
+              (activeLead.active_deal_id || relatedDeal?.id) ? (
+              <div className="border-b border-sales-border p-4 max-md:px-4 sm:p-5 md:hidden">
+                <Link
+                  href={`/sales/deals/${relatedDeal?.id ?? activeLead.active_deal_id}`}
+                  className="flex min-h-12 w-full items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface px-3 text-sm font-semibold text-sales-text-primary touch-manipulation"
+                >
+                  Open Deal
+                </Link>
               </div>
             ) : null}
 
@@ -805,14 +836,22 @@ export function LeadDetailPanel({
         lead={activeLead}
         open={createDealOpen}
         onClose={() => setCreateDealOpen(false)}
-        onCreated={(deal: DealRow) => {
+        onCreated={(deal: DealRow, meta) => {
+          setRelatedDeal(deal);
           onLeadUpdated?.({
             ...activeLead,
             status: "CONVERTED_TO_DEAL",
             active_deal_id: deal.id,
             converted_at: new Date().toISOString(),
           });
-          window.location.href = `/sales/deals/${deal.id}`;
+          if (!meta?.alreadyExisted) {
+            toast({
+              tone: "success",
+              title: "Deal created",
+              description: `${deal.name} is now in your Pipeline.`,
+            });
+            router.refresh();
+          }
         }}
       />
     </>

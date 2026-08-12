@@ -233,13 +233,13 @@ export const SEGMIQ_2_COURSE: GuidedCourseDefinition = {
           label: "CREATE DEAL",
           title: "Create the Deal",
           description:
-            "When readiness looks solid, create the Deal. This is the moment an enquiry becomes a commercial opportunity.",
-          target: "practice-create-deal",
-          placement: "top",
+            "This is the same Create Deal modal you’ll use with real Leads. Confirm the opportunity — Deal name, value, timing, and what happens next — then press Create Deal.",
+          target: "create-deal-modal",
+          placement: "left",
           practiceScenario: "lead-to-deal",
           requiredAction: {
             event: "PRACTICE_DEAL_CREATED",
-            cue: "Create Deal to continue",
+            cue: "Fill the form and Create Deal to continue",
           },
         },
         {
