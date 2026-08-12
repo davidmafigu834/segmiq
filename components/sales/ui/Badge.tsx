@@ -110,6 +110,8 @@ export function StatusDot({
 const STAGE_TONE: Record<string, BadgeTone> = {
   NEW: "info",
   CONTACTED: "success",
+  QUALIFIED: "info",
+  SCOPING: "brand",
   NEGOTIATING: "warning",
   PROPOSAL_SENT: "purple",
   WON: "success",

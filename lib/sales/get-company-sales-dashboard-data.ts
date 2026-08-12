@@ -158,7 +158,7 @@ function roleLabel(role: string, alsoSells: boolean | null | undefined): string 
 
 function dealHref(deal: DealRow, alsoSells: boolean): string {
   if (alsoSells) return `/sales/deals/${deal.id}`;
-  return `/client/leads/pipeline?lead=${deal.originating_lead_id}`;
+  return `/client/leads/pipeline?deal=${deal.id}`;
 }
 
 function activityTitle(
@@ -1201,7 +1201,7 @@ export async function getCompanySalesDashboard(opts: {
     hasActiveDeals: activeDeals.length > 0,
     atRiskDeals: atRiskItems.slice(0, AT_RISK_PREVIEW_LIMIT),
     atRiskTotal: dealsAtRiskCount,
-    atRiskViewAllHref: "/client/leads/pipeline",
+    atRiskViewAllHref: "/client/leads/pipeline?health=at_risk",
     revenueTrend,
     revenueTotal,
     revenueTotalLabel: moneyLabel(revenueTotal),

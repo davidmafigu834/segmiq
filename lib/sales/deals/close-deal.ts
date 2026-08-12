@@ -296,3 +296,65 @@ export async function updateDealFields(opts: {
 
   return { ok: true, deal: updated as DealRow };
 }
+
+export async function reassignDealOwner(opts: {
+  dealId: string;
+  actorId: string;
+  ownerId: string;
+}): Promise<UpdateDealStageResult> {
+  const supabase = createAdminClient();
+  const { data: previous } = await supabase
+    .from("deals")
+    .select("*")
+    .eq("id", opts.dealId)
+    .maybeSingle();
+  if (!previous) return { ok: false, error: "Deal not found.", status: 404 };
+  const prev = previous as DealRow;
+  if (prev.owner_id === opts.ownerId) {
+    return { ok: true, deal: prev };
+  }
+
+  const { data: owner } = await supabase
+    .from("users")
+    .select("id, client_id, role, also_sells, is_active")
+    .eq("id", opts.ownerId)
+    .maybeSingle();
+  if (!owner || (owner.client_id as string) !== prev.client_id) {
+    return { ok: false, error: "Owner must belong to this company.", status: 400 };
+  }
+  if (owner.is_active === false) {
+    return { ok: false, error: "That teammate is inactive.", status: 400 };
+  }
+  const role = owner.role as string;
+  const canOwn =
+    role === "SALESPERSON" || (role === "CLIENT_MANAGER" && Boolean(owner.also_sells));
+  if (!canOwn) {
+    return { ok: false, error: "Owner must be a salesperson on this team.", status: 400 };
+  }
+
+  const now = new Date().toISOString();
+  const { data: updated, error } = await supabase
+    .from("deals")
+    .update({
+      owner_id: opts.ownerId,
+      updated_at: now,
+    })
+    .eq("id", opts.dealId)
+    .select("*")
+    .single();
+
+  if (error || !updated) {
+    return { ok: false, error: "Could not reassign this Deal.", status: 500 };
+  }
+
+  await logDealEvent({
+    leadId: prev.originating_lead_id,
+    clientId: prev.client_id,
+    dealId: opts.dealId,
+    actorId: opts.actorId,
+    eventType: "DEAL_UPDATED",
+    eventData: { owner_from: prev.owner_id, owner_to: opts.ownerId },
+  });
+
+  return { ok: true, deal: updated as DealRow };
+}

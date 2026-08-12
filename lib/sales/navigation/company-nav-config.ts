@@ -83,7 +83,8 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "company",
     mobileSlot: "primary",
     mobileLabel: "Pipeline",
-    match: (p) => exactOrChild(p, "/client/leads/pipeline"),
+    match: (p) =>
+      exactOrChild(p, "/client/leads/pipeline") || exactOrChild(p, "/client/deals"),
   },
   {
     id: "whatsapp",

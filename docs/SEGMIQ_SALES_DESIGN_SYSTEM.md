@@ -547,7 +547,49 @@ Same structure as salesperson premium scope (`.sales-dashboard-premium`). Focus 
 
 ### Links
 
-Leads / Hub → `/client/leads` · Pipeline → `/client/leads/pipeline` · Team → `/client/team` · Deals (if `alsoSells`) → `/sales/deals/[id]` · Reports → `/client/reports`.
+Leads / Hub → `/client/leads` · Pipeline → `/client/leads/pipeline` · Team → `/client/team` · Company Deal workspace → `/client/deals/[id]` · Deals (if `alsoSells`) → `/sales/deals/[id]` · Reports → `/client/reports`.
+
+## 16e. Company Pipeline
+
+Route: `/client/leads/pipeline` · Shell: same `CompanyWorkspaceShell` as Dashboard and Team · Full product docs: [SEGMIQ_COMPANY_PIPELINE.md](./SEGMIQ_COMPANY_PIPELINE.md).
+
+This is **table-first company oversight**, not the salesperson Kanban (`/sales/pipeline`). Dashboard, Team, and Pipeline should read as three pages of the same application.
+
+### Information hierarchy
+
+1. Breadcrumb **COMPANY / PIPELINE** · title **Pipeline** (never “My Pipeline”) · supporting 13–14px
+2. **Six** KPI cards full width
+3. **One Pipeline table card (left ~70%)** + **Deal detail panel (right ~360–410px / 28–30%)** when a row is selected
+4. Pagination inside the table card — **no charts, funnels, or analytics under the table**
+
+Do not auto-select a Deal on load. No panel → table uses full content width.
+
+### Visual patterns
+
+| Element | Spec |
+|---------|------|
+| Page | `#F7F8FA` / dark `#0B0D0C` |
+| Cards | White / `#111411`, 1px `#E4E7EC` / `#272C27`, radius 12–14px, near-flat shadow |
+| Active Pipeline nav | Soft lime wash, not a solid lime pill |
+| Tabs | Underline lime + muted count, not pills |
+| Toolbar | Search · Filters · Group by · Sort **inside** the table card, below tabs |
+| Selected row | `rgba(212,255,79,.16)` light · `.08` dark |
+| Row height | ~56px · hover `#FAFBFC` / dark `#171B17` |
+| Panel | Same top as table; ~180–220ms width transition |
+
+### Deal panel order (do not rearrange)
+
+Deal name → Stage + Value → Customer → Expected Decision + Owner → Next Action → View Deal / Log Activity → Deal Health → Deal Summary → View full details.
+
+Deal Health is operational (On track / Needs attention / At risk), never a fake close probability.
+
+### Responsive
+
+| Breakpoint | Layout |
+|------------|--------|
+| ≥1280 | Inline panel beside table |
+| <1280 | Overlay drawer |
+| <768 | Deal cards; KPI 2-col; chip tabs; full-height sheet |
 
 ## 16d. Company Team
 

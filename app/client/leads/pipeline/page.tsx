@@ -1,88 +1,92 @@
 import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { addMonths, startOfMonth } from "date-fns";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCompanyPipelinePageData } from "@/lib/sales/get-company-pipeline-page-data";
+import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { HubTabs } from "@/components/client-contacts/HubTabs";
-import { CustomerHubPipelineShell } from "@/components/customer-hub/CustomerHubPipelineShell";
-import type { ClientLeadListRow } from "@/components/client-leads/client-leads-types";
+import { CompanyPipelinePage } from "@/components/dashboard/company/pipeline/CompanyPipelinePage";
+import { CompanyPipelinePageSkeleton } from "@/components/dashboard/company/pipeline/CompanyPipelinePageSkeleton";
 
-export default async function ClientPipelinePage() {
+export const dynamic = "force-dynamic";
+
+export default async function ClientPipelinePage({
+  searchParams,
+}: {
+  searchParams: { clientId?: string };
+}) {
   const session = await getServerSession(authOptions);
-  if (!session?.clientId) redirect("/login");
-  if (session.role !== "CLIENT_MANAGER") redirect("/login");
+  if (!session?.userId) redirect("/login");
 
-  const supabase = createAdminClient();
-  const clientId = session.clientId;
+  const role = session.role;
+  const previewClientId = searchParams.clientId;
 
-  const PAGE_LIMIT = 50;
-
-  const [{ data: leadsRaw, count: leadsCount }, { data: salespeople }, { data: clientRow }] =
-    await Promise.all([
-      supabase
-        .from("leads")
-        .select("*, assigned_to:users!assigned_to_id ( id, name, avatar_url )", { count: "exact" })
-        .eq("client_id", clientId)
-        .order("created_at", { ascending: false })
-        .range(0, PAGE_LIMIT - 1),
-      supabase
-        .from("users")
-        .select("id, name")
-        .eq("client_id", clientId)
-        .eq("role", "SALESPERSON")
-        .eq("is_active", true),
-      supabase.from("clients").select("name, assignment_mode").eq("id", clientId).maybeSingle(),
-    ]);
-
-  const rows = leadsRaw ?? [];
-  const totalCount = leadsCount ?? 0;
-  const hasMore = rows.length >= PAGE_LIMIT && totalCount > PAGE_LIMIT;
-
-  const ids = rows.map((l) => l.id as string);
-  const lastBy = new Map<string, string>();
-  if (ids.length) {
-    const { data: logs } = await supabase
-      .from("call_logs")
-      .select("lead_id, created_at")
-      .in("lead_id", ids)
-      .order("created_at", { ascending: false });
-    for (const log of logs ?? []) {
-      const lid = log.lead_id as string;
-      if (!lastBy.has(lid)) lastBy.set(lid, log.created_at as string);
-    }
+  if (role === "SUPER_ADMIN") {
+    if (!previewClientId && !session.clientId) redirect("/dashboard");
+  } else if (role === "CLIENT_MANAGER") {
+    if (!session.clientId) redirect("/login");
+  } else {
+    redirect("/sales/pipeline");
   }
 
-  const initialLeads: ClientLeadListRow[] = rows.map((row) => ({
-    ...(row as ClientLeadListRow),
-    last_call_at: lastBy.get(row.id as string) ?? null,
-  }));
+  const clientId =
+    role === "SUPER_ADMIN" ? previewClientId || session.clientId! : session.clientId!;
 
-  const m0 = startOfMonth(new Date()).toISOString();
-  const m1 = addMonths(startOfMonth(new Date()), 1).toISOString();
-  const totalThisMonth = initialLeads.filter((l) => l.created_at >= m0 && l.created_at < m1).length;
+  const supabase = createAdminClient();
+  const [data, unreadRes, userRes, clientRes, navBadges] = await Promise.all([
+    getCompanyPipelinePageData({
+      clientId,
+      actor: {
+        userId: session.userId,
+        role: session.role,
+        clientId: session.clientId,
+        alsoSells: Boolean(session.alsoSells),
+      },
+    }),
+    session.userId
+      ? supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.userId)
+          .eq("read", false)
+      : Promise.resolve({ count: 0 }),
+    session.userId
+      ? supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("clients").select("logo_url").eq("id", clientId).maybeSingle(),
+    session.userId
+      ? fetchSalesNavBadges(session.userId, clientId)
+      : Promise.resolve({
+          hotLeads: 0,
+          needsReply: 0,
+          followUpDue: 0,
+          followUpsToday: 0,
+          callNow: 0,
+        }),
+  ]);
 
-  const clientName = (clientRow?.name as string) ?? "Your company";
-  const assignmentMode =
-    (clientRow?.assignment_mode as "direct" | "pool" | "round_robin" | null) ?? "direct";
+  const whatsappBadge =
+    (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
 
   return (
-    <ClientManagerLayout breadcrumbPage="PIPELINE" pageTitle="Customer Hub" hideShellHeader>
-      <Suspense fallback={<div className="shimmer h-64 rounded-xl" />}>
-        <div className="px-0">
-          <HubTabs />
-          <CustomerHubPipelineShell
-            clientId={clientId}
-            clientName={clientName}
-            assignmentMode={assignmentMode}
-            initialLeads={initialLeads}
-            salespeople={(salespeople ?? []) as { id: string; name: string }[]}
-            totalThisMonth={totalThisMonth}
-            initialHasMore={hasMore}
-            totalCount={totalCount}
-          />
-        </div>
+    <ClientManagerLayout
+      breadcrumbPage="PIPELINE"
+      pageTitle="Pipeline"
+      hideShellHeader
+      hideShellSidebar
+      navClientId={clientId}
+    >
+      <Suspense fallback={<CompanyPipelinePageSkeleton />}>
+        <CompanyPipelinePage
+          data={data}
+          unreadNotifications={unreadRes.count ?? 0}
+          notificationRole={session.role}
+          userName={session.user?.name ?? "User"}
+          avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
+          companyLogoUrl={(clientRes.data as { logo_url?: string | null } | null)?.logo_url ?? null}
+          whatsappBadge={whatsappBadge}
+        />
       </Suspense>
     </ClientManagerLayout>
   );

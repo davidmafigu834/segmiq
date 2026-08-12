@@ -80,6 +80,8 @@ export function DealWorkspaceClient({
   timeline,
   openClose,
   repName,
+  backHref = "/sales/pipeline",
+  backLabel = "Back to pipeline",
 }: {
   initialDeal: DealRow;
   lead: LeadRow | null;
@@ -90,6 +92,8 @@ export function DealWorkspaceClient({
   timeline: DealTimelineItem[];
   openClose: "won" | "lost" | null;
   repName: string;
+  backHref?: string;
+  backLabel?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -321,11 +325,11 @@ export function DealWorkspaceClient({
     <div>
       <div className="mb-3">
         <Link
-          href="/sales/pipeline"
+          href={backHref}
           className="inline-flex min-h-11 items-center gap-1.5 rounded-sales-md px-2 text-[13px] font-medium text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary"
         >
           <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
-          Back to pipeline
+          {backLabel}
         </Link>
       </div>
 
