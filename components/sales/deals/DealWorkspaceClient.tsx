@@ -3,15 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Check,
-  Circle,
-  MessageCircle,
-  MoreHorizontal,
-  Phone,
-  FileText,
-} from "lucide-react";
+import { ArrowLeft, Check, Circle, FileText, Phone } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import type { DealRow, LeadRow, QuotationRow } from "@/types";
 import type { DealCommercialValue } from "@/lib/sales/deals/commercial-value";
@@ -27,6 +19,19 @@ import {
 import { LOST_REASONS } from "@/lib/call-log-constants";
 import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import { timeAgo } from "@/lib/sales-priority-lead";
+import { formatQuoteStatus } from "@/lib/sales/quotes/format";
+import { cn } from "@/lib/ui/cn";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Timeline,
+  type TimelineItem,
+} from "@/components/sales/ui";
 
 type NextActionState = {
   hasNextAction: boolean;
@@ -35,6 +40,25 @@ type NextActionState = {
   at: string | null;
   emptyMessage: string;
 };
+
+function stageBadgeTone(stage: string): "neutral" | "brand" | "info" | "purple" | "warning" | "success" | "danger" {
+  if (stage === "QUALIFIED") return "info";
+  if (stage === "SCOPING") return "brand";
+  if (stage === "PROPOSAL_SENT") return "purple";
+  if (stage === "NEGOTIATING") return "warning";
+  if (stage === "WON") return "success";
+  if (stage === "LOST") return "danger";
+  return "neutral";
+}
+
+function quoteStatusTone(status: string): "neutral" | "brand" | "info" | "success" | "danger" | "warning" {
+  if (status === "draft") return "neutral";
+  if (status === "sent" || status === "viewed") return "info";
+  if (status === "accepted") return "success";
+  if (status === "rejected") return "danger";
+  if (status === "expired") return "warning";
+  return "neutral";
+}
 
 export function DealWorkspaceClient({
   initialDeal,
@@ -64,7 +88,6 @@ export function DealWorkspaceClient({
   const [completeness] = useState(initialCompleteness);
   const [nextAction, setNextAction] = useState(initialNext);
   const [moving, setMoving] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const [closeMode, setCloseMode] = useState<"won" | "lost" | null>(openClose);
   const [wonValue, setWonValue] = useState(() =>
     commercial.kind === "amount" ? String(commercial.amount) : ""
@@ -97,13 +120,10 @@ export function DealWorkspaceClient({
           maximumFractionDigits: 0,
         }).format(deal.customer_budget),
       });
-    } else if (
-      deal.estimated_value_min != null &&
-      deal.estimated_value_max != null
-    ) {
+    } else if (deal.estimated_value_min != null && deal.estimated_value_max != null) {
       rows.push({
         label: "Budget",
-        value: `$${deal.estimated_value_min}–$${deal.estimated_value_max}`,
+        value: `$${deal.estimated_value_min.toLocaleString()}–$${deal.estimated_value_max.toLocaleString()}`,
       });
     }
     if (deal.buying_timeframe) {
@@ -127,6 +147,30 @@ export function DealWorkspaceClient({
     }
     return rows.filter((r) => r.value);
   }, [deal, lead, customerName]);
+
+  const timelineItems: TimelineItem[] = useMemo(
+    () =>
+      timeline.slice(0, 40).map((ev) => ({
+        id: ev.id,
+        title: ev.label,
+        description: ev.detail,
+        timeLabel: new Date(ev.at).toLocaleString(undefined, {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        tone:
+          ev.eventType === "DEAL_WON"
+            ? "success"
+            : ev.eventType === "DEAL_LOST"
+              ? "danger"
+              : ev.eventType.startsWith("DEAL_")
+                ? "brand"
+                : "neutral",
+      })),
+    [timeline]
+  );
 
   async function patchDeal(body: Record<string, unknown>) {
     const res = await fetch(`/api/deals/${deal.id}`, {
@@ -229,9 +273,7 @@ export function DealWorkspaceClient({
   }
 
   async function saveDecision() {
-    await patchDeal({
-      expected_decision_at: decisionDraft || null,
-    });
+    await patchDeal({ expected_decision_at: decisionDraft || null });
     setEditingDecision(false);
   }
 
@@ -253,140 +295,196 @@ export function DealWorkspaceClient({
     });
   }
 
-  const fieldClass =
-    "mt-1 min-h-[44px] w-full rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[14px] text-[#101828] outline-none focus:border-[#D4FF4F] dark:border-[#272C27] dark:bg-[#111411] dark:text-[#F7F8F5]";
+  const activeIdx = DEAL_ACTIVE_STAGES.indexOf(
+    deal.stage as (typeof DEAL_ACTIVE_STAGES)[number]
+  );
+
+  const metaItems = [
+    {
+      label: "Estimated value",
+      value: commercial.display,
+      hint: commercial.kind !== "pending" ? formatDealValueBasis(commercial.basis) : null,
+    },
+    {
+      label: "Expected decision",
+      value: deal.expected_decision_at
+        ? new Date(deal.expected_decision_at).toLocaleDateString(undefined, {
+            day: "numeric",
+            month: "short",
+          })
+        : "Not set",
+      hint: null,
+    },
+    {
+      label: "Last contact",
+      value: deal.last_meaningful_activity_at
+        ? timeAgo(deal.last_meaningful_activity_at)
+        : timeAgo(deal.updated_at),
+      hint: null,
+    },
+    {
+      label: "Next action",
+      value: nextAction.hasNextAction ? nextAction.label || "Scheduled" : "None",
+      hint: nextAction.isOverdue ? "Overdue" : null,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA] text-[#101828] dark:bg-[#0B0D0C] dark:text-[#F7F8F5]">
-      <div className="mx-auto max-w-6xl px-4 pb-28 pt-4 layout:pb-10">
-        <div className="mb-4 flex items-center gap-2">
-          <Link
-            href="/sales/leads"
-            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-[10px] px-2 text-[13px] font-medium text-[#667085] hover:bg-white dark:text-[#B1B7AE] dark:hover:bg-[#151815]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Pipeline
-          </Link>
-        </div>
+    <div>
+      <div className="mb-3">
+        <Link
+          href="/sales/leads"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-sales-md px-2 text-[13px] font-medium text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary"
+        >
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.8} />
+          Back to pipeline
+        </Link>
+      </div>
 
-        {/* Header */}
-        <header className="rounded-[16px] border border-[#E4E7EC] bg-white p-4 dark:border-[#272C27] dark:bg-[#111411] layout:p-5">
-          <div className="flex flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
+      {/* Header */}
+      <Card className="mb-4">
+        <CardContent className="space-y-5 pt-5">
+          <div className="flex flex-col gap-4 layout:flex-row layout:items-start layout:justify-between">
             <div className="min-w-0">
-              <p className="text-[12px] font-medium uppercase tracking-wide text-[#667085] dark:text-[#B1B7AE]">
+              <p className="sales-type-label uppercase tracking-[0.06em] text-sales-text-muted">
                 {customerName}
               </p>
-              <h1 className="mt-1 text-[22px] font-semibold tracking-tight">{deal.name}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-[#F2F4F7] px-2.5 py-1 text-[12px] font-medium text-[#344054] dark:bg-[#151815] dark:text-[#B1B7AE]">
+                <Badge tone={stageBadgeTone(deal.stage)} appearance="soft">
                   {formatDealStage(deal.stage)}
-                </span>
+                </Badge>
                 {lead?.score != null ? (
-                  <span className="text-[12px] text-[#667085] dark:text-[#B1B7AE]">
+                  <span className="text-[12px] text-sales-text-muted">
                     Origin intent {lead.score}
                   </span>
                 ) : null}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm layout:text-right">
-              <div>
-                <p className="text-[11px] text-[#667085] dark:text-[#B1B7AE]">Estimated value</p>
-                <p className="font-semibold">{commercial.display}</p>
-                {commercial.kind !== "pending" ? (
-                  <p className="text-[11px] text-[#98A2B3]">
-                    {formatDealValueBasis(commercial.basis)}
+
+            {!closed ? (
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  leftIcon={<Phone size={16} strokeWidth={1.8} />}
+                  onClick={callCustomer}
+                  disabled={!lead?.phone}
+                >
+                  Call
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  leftIcon={<SiWhatsapp size={16} color="#25D366" />}
+                  onClick={whatsappCustomer}
+                  disabled={!lead}
+                >
+                  WhatsApp
+                </Button>
+                {lead ? (
+                  <Button
+                    variant="primary"
+                    size="md"
+                    leftIcon={<FileText size={16} strokeWidth={1.8} />}
+                    onClick={() =>
+                      router.push(`/sales/quotes?leadId=${lead.id}&dealId=${deal.id}`)
+                    }
+                  >
+                    Create quote
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 border-t border-sales-border-subtle pt-4 sm:grid-cols-4">
+            {metaItems.map((item) => (
+              <div key={item.label} className="min-w-0">
+                <p className="text-[11px] font-medium text-sales-text-muted">{item.label}</p>
+                <p className="mt-0.5 truncate text-[14px] font-semibold tabular-nums text-sales-text-primary">
+                  {item.value}
+                </p>
+                {item.hint ? (
+                  <p
+                    className={cn(
+                      "mt-0.5 text-[11px]",
+                      item.hint === "Overdue"
+                        ? "text-sales-danger-fg"
+                        : "text-sales-text-muted"
+                    )}
+                  >
+                    {item.hint}
                   </p>
                 ) : null}
               </div>
-              <div>
-                <p className="text-[11px] text-[#667085] dark:text-[#B1B7AE]">Expected decision</p>
-                <p className="font-semibold">
-                  {deal.expected_decision_at
-                    ? new Date(deal.expected_decision_at).toLocaleDateString(undefined, {
-                        day: "numeric",
-                        month: "short",
-                      })
-                    : "Not set"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] text-[#667085] dark:text-[#B1B7AE]">Last contact</p>
-                <p className="font-semibold">
-                  {deal.last_meaningful_activity_at
-                    ? timeAgo(deal.last_meaningful_activity_at)
-                    : timeAgo(deal.updated_at)}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] text-[#667085] dark:text-[#B1B7AE]">Next action</p>
-                <p className="font-semibold">
-                  {nextAction.hasNextAction
-                    ? nextAction.label || "Scheduled"
-                    : "None"}
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Stage progress */}
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
-            {DEAL_ACTIVE_STAGES.map((stage, idx) => {
-              const activeIdx = DEAL_ACTIVE_STAGES.indexOf(
-                deal.stage as (typeof DEAL_ACTIVE_STAGES)[number]
-              );
-              const done = !closed && activeIdx >= idx;
-              const current = deal.stage === stage;
-              return (
-                <button
-                  key={stage}
-                  type="button"
-                  disabled={closed || moving}
-                  onClick={() => void moveStage(stage)}
-                  className={`min-h-[40px] shrink-0 rounded-full px-3 text-[12px] font-medium ${
-                    current
-                      ? "bg-[#101828] text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
-                      : done
-                        ? "bg-[rgba(212,255,79,0.2)] text-[#101828] dark:text-[#F7F8F5]"
-                        : "border border-[#E4E7EC] text-[#667085] dark:border-[#272C27] dark:text-[#B1B7AE]"
-                  }`}
-                >
-                  {DEAL_STAGE_LABEL[stage]}
-                </button>
-              );
-            })}
-            {!closed ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setCloseMode("won")}
-                  className="min-h-[40px] shrink-0 rounded-full border border-[#E4E7EC] px-3 text-[12px] font-medium text-[#027A48] dark:border-[#272C27]"
-                >
-                  Won
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCloseMode("lost")}
-                  className="min-h-[40px] shrink-0 rounded-full border border-[#E4E7EC] px-3 text-[12px] font-medium text-[#B42318] dark:border-[#272C27]"
-                >
-                  Lost
-                </button>
-              </>
-            ) : null}
+          <div className="border-t border-sales-border-subtle pt-4">
+            <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              Stage
+            </p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {DEAL_ACTIVE_STAGES.map((stage, idx) => {
+                const current = deal.stage === stage;
+                const done = !closed && activeIdx >= idx;
+                return (
+                  <button
+                    key={stage}
+                    type="button"
+                    disabled={closed || moving}
+                    onClick={() => void moveStage(stage)}
+                    className={cn(
+                      "min-h-10 shrink-0 rounded-full px-3.5 text-[12px] font-medium transition-colors disabled:opacity-50",
+                      current
+                        ? "bg-sales-brand text-sales-brand-text shadow-sales-card"
+                        : done
+                          ? "bg-sales-brand-soft text-sales-text-primary"
+                          : "border border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover"
+                    )}
+                  >
+                    {DEAL_STAGE_LABEL[stage]}
+                  </button>
+                );
+              })}
+              {!closed ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setCloseMode("won")}
+                    className="min-h-10 shrink-0 rounded-full border border-sales-border bg-sales-success-soft px-3.5 text-[12px] font-medium text-sales-success-fg"
+                  >
+                    Won
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCloseMode("lost")}
+                    className="min-h-10 shrink-0 rounded-full border border-sales-border bg-sales-danger-soft px-3.5 text-[12px] font-medium text-sales-danger-fg"
+                  >
+                    Lost
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
-        </header>
+        </CardContent>
+      </Card>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.7fr)_minmax(280px,1fr)]">
-          {/* Left column */}
-          <div className="space-y-4">
-            {/* Next action */}
-            <section className="rounded-[16px] border border-[#E4E7EC] bg-white p-4 dark:border-[#272C27] dark:bg-[#111411]">
-              <h2 className="text-[13px] font-semibold">Next action</h2>
+      <div className="grid grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.7fr)_minmax(280px,1fr)]">
+        {/* Main column */}
+        <div className="space-y-4">
+          <Card variant={nextAction.isOverdue ? "attention" : "standard"}>
+            <CardHeader>
+              <CardTitle>Next action</CardTitle>
+            </CardHeader>
+            <CardContent>
               {nextAction.hasNextAction ? (
-                <div className="mt-2">
-                  <p className="text-[16px] font-semibold">
+                <div>
+                  <p className="text-[16px] font-semibold text-sales-text-primary">
                     {nextAction.label || "Follow-up"}
                   </p>
-                  <p className="text-[13px] text-[#667085] dark:text-[#B1B7AE]">
+                  <p className="mt-1 text-[13px] text-sales-text-secondary">
                     {nextAction.at
                       ? new Date(nextAction.at).toLocaleString(undefined, {
                           weekday: "short",
@@ -398,81 +496,96 @@ export function DealWorkspaceClient({
                       : null}
                     {nextAction.isOverdue ? " · Overdue" : null}
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="min-h-[44px] rounded-[10px] bg-[#101828] px-4 text-[13px] font-semibold text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
-                      onClick={() =>
-                        void patchDeal({
-                          next_action_at: null,
-                          next_action_label: null,
-                        }).then(() =>
-                          setNextAction({
-                            hasNextAction: false,
-                            isOverdue: false,
-                            label: null,
-                            at: null,
-                            emptyMessage:
-                              "This active Deal does not have another action scheduled.",
-                          })
-                        )
-                      }
-                    >
-                      Complete
-                    </button>
-                  </div>
+                  {!closed ? (
+                    <div className="mt-4">
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onClick={() =>
+                          void patchDeal({
+                            next_action_at: null,
+                            next_action_label: null,
+                          }).then(() =>
+                            setNextAction({
+                              hasNextAction: false,
+                              isOverdue: false,
+                              label: null,
+                              at: null,
+                              emptyMessage:
+                                "This active Deal does not have another action scheduled.",
+                            })
+                          )
+                        }
+                      >
+                        Complete
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
-                <div className="mt-2">
-                  <p className="text-[13px] text-[#667085] dark:text-[#B1B7AE]">
+                <div>
+                  <p className="text-[13px] text-sales-text-secondary">
                     {nextAction.emptyMessage ||
                       "This active Deal does not have another action scheduled."}
                   </p>
                   {!closed ? (
-                    <Link
-                      href={`/sales/calendar?deal=${deal.id}`}
-                      className="mt-3 inline-flex min-h-[44px] items-center rounded-[10px] border border-[#E4E7EC] px-4 text-[13px] font-medium dark:border-[#272C27]"
-                    >
-                      Schedule follow-up
-                    </Link>
+                    <div className="mt-4">
+                      <Link
+                        href={`/sales/calendar?deal=${deal.id}`}
+                        className="inline-flex min-h-11 items-center justify-center rounded-sales-md border border-sales-border-strong bg-sales-surface px-4 text-[13px] font-semibold text-sales-text-primary shadow-sales-card transition-colors hover:bg-sales-surface-hover"
+                      >
+                        Schedule follow-up
+                      </Link>
+                    </div>
                   ) : null}
                 </div>
               )}
-            </section>
+            </CardContent>
+          </Card>
 
-            {/* Quotes */}
-            <section className="rounded-[16px] border border-[#E4E7EC] bg-white p-4 dark:border-[#272C27] dark:bg-[#111411]">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-[13px] font-semibold">Quotations</h2>
-                {!closed && lead ? (
-                  <Link
-                    href={`/sales/quotes?leadId=${lead.id}&dealId=${deal.id}`}
-                    className="text-[12px] font-semibold text-[#101828] dark:text-[#D4FF4F]"
+          <Card>
+            <CardHeader
+              action={
+                !closed && lead ? (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() =>
+                      router.push(`/sales/quotes?leadId=${lead.id}&dealId=${deal.id}`)
+                    }
                   >
                     Create quote
-                  </Link>
-                ) : null}
-              </div>
+                  </Button>
+                ) : null
+              }
+            >
+              <CardTitle>Quotations</CardTitle>
+            </CardHeader>
+            <CardContent>
               {quotes.length === 0 ? (
-                <p className="mt-2 text-[13px] text-[#667085] dark:text-[#B1B7AE]">
+                <p className="text-[13px] text-sales-text-secondary">
                   No quotation created yet.
                 </p>
               ) : (
-                <ul className="mt-3 space-y-2">
+                <ul className="space-y-2">
                   {quotes.map((q) => (
                     <li
                       key={q.id}
-                      className="flex items-center justify-between rounded-[12px] border border-[#E4E7EC] px-3 py-2.5 dark:border-[#272C27]"
+                      className="flex items-center justify-between gap-3 rounded-sales-lg border border-sales-border-subtle bg-sales-surface-subtle px-3 py-2.5"
                     >
-                      <div>
-                        <p className="text-[13px] font-medium">
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-sales-text-primary">
                           {q.quote_number || "Quote"}
                         </p>
-                        <p className="text-[12px] capitalize text-[#667085] dark:text-[#B1B7AE]">
-                          {q.status}
-                        </p>
+                        <Badge
+                          tone={quoteStatusTone(q.status)}
+                          appearance="soft"
+                          className="mt-1"
+                        >
+                          {formatQuoteStatus(q.status)}
+                        </Badge>
                       </div>
-                      <p className="text-[13px] font-semibold">
+                      <p className="shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-primary">
                         {new Intl.NumberFormat("en-US", {
                           style: "currency",
                           currency: q.currency || "USD",
@@ -483,292 +596,243 @@ export function DealWorkspaceClient({
                   ))}
                 </ul>
               )}
-            </section>
+            </CardContent>
+          </Card>
 
-            {/* Timeline */}
-            <section className="rounded-[16px] border border-[#E4E7EC] bg-white p-4 dark:border-[#272C27] dark:bg-[#111411]">
-              <h2 className="text-[13px] font-semibold">Timeline</h2>
-              <ol className="mt-3 space-y-3">
-                {timeline.slice(0, 40).map((ev) => (
-                  <li key={ev.id} className="flex gap-3">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#D4FF4F]" />
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-medium">{ev.label}</p>
-                      {ev.detail ? (
-                        <p className="text-[12px] text-[#667085] dark:text-[#B1B7AE]">
-                          {ev.detail}
-                        </p>
-                      ) : null}
-                      <p className="text-[11px] text-[#98A2B3]">
-                        {new Date(ev.at).toLocaleString()}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          </div>
-
-          {/* Right rail */}
-          <div className="space-y-4">
-            <section className="rounded-[16px] border border-[#E4E7EC] bg-white p-4 dark:border-[#272C27] dark:bg-[#111411]">
-              <h2 className="text-[13px] font-semibold">What we know</h2>
-              {knownFields.length === 0 ? (
-                <p className="mt-2 text-[13px] text-[#667085] dark:text-[#B1B7AE]">
-                  No Deal yet details captured — add discovery as you learn more.
+          <Card>
+            <CardHeader>
+              <CardTitle>Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {timelineItems.length === 0 ? (
+                <p className="text-[13px] text-sales-text-secondary">
+                  No activity recorded yet.
                 </p>
               ) : (
-                <dl className="mt-3 space-y-2">
+                <Timeline items={timelineItems} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right rail */}
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>What we know</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {knownFields.length === 0 ? (
+                <p className="text-[13px] text-sales-text-secondary">
+                  Add discovery details as you learn more.
+                </p>
+              ) : (
+                <dl className="space-y-3">
                   {knownFields.map((row) => (
                     <div key={row.label}>
-                      <dt className="text-[11px] text-[#667085] dark:text-[#B1B7AE]">
+                      <dt className="text-[11px] font-medium text-sales-text-muted">
                         {row.label}
                       </dt>
-                      <dd className="text-[13px] font-medium">{row.value}</dd>
+                      <dd className="mt-0.5 text-[13px] font-medium text-sales-text-primary">
+                        {row.value}
+                      </dd>
                     </div>
                   ))}
                 </dl>
               )}
-            </section>
+            </CardContent>
+          </Card>
 
-            <section className="rounded-[16px] border border-[#E4E7EC] bg-white p-4 dark:border-[#272C27] dark:bg-[#111411]">
-              <h2 className="text-[13px] font-semibold">Commercial</h2>
-              <div className="mt-3 space-y-2 text-[13px]">
-                <div className="flex justify-between gap-2">
-                  <span className="text-[#667085] dark:text-[#B1B7AE]">Estimated value</span>
-                  <span className="font-medium">{commercial.display}</span>
-                </div>
-                {deal.customer_budget != null && deal.customer_budget > 0 ? (
-                  <div className="flex justify-between gap-2">
-                    <span className="text-[#667085] dark:text-[#B1B7AE]">Customer budget</span>
-                    <span className="font-medium">
-                      ${deal.customer_budget.toLocaleString()}
-                    </span>
-                  </div>
-                ) : null}
-                {quotes[0] ? (
-                  <div className="flex justify-between gap-2">
-                    <span className="text-[#667085] dark:text-[#B1B7AE]">Latest quotation</span>
-                    <span className="font-medium">
-                      ${Number(quotes[0].total).toLocaleString()} · {quotes[0].status}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-[#667085] dark:text-[#B1B7AE]">No quotation created yet.</p>
-                )}
+          <Card>
+            <CardHeader>
+              <CardTitle>Commercial</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-start justify-between gap-3 text-[13px]">
+                <span className="text-sales-text-secondary">Estimated value</span>
+                <span className="text-right font-semibold tabular-nums text-sales-text-primary">
+                  {commercial.display}
+                </span>
               </div>
+              {deal.customer_budget != null && deal.customer_budget > 0 ? (
+                <div className="flex items-start justify-between gap-3 text-[13px]">
+                  <span className="text-sales-text-secondary">Customer budget</span>
+                  <span className="font-medium tabular-nums text-sales-text-primary">
+                    ${deal.customer_budget.toLocaleString()}
+                  </span>
+                </div>
+              ) : null}
+              {quotes[0] ? (
+                <div className="flex items-start justify-between gap-3 text-[13px]">
+                  <span className="text-sales-text-secondary">Latest quotation</span>
+                  <span className="text-right font-medium text-sales-text-primary">
+                    ${Number(quotes[0].total).toLocaleString()}
+                    <span className="ml-1 text-sales-text-muted">
+                      · {formatQuoteStatus(quotes[0].status)}
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <p className="text-[13px] text-sales-text-secondary">
+                  No quotation created yet.
+                </p>
+              )}
+
               {!closed ? (
-                <div className="mt-3 space-y-2">
+                <div className="space-y-3 border-t border-sales-border-subtle pt-3">
                   {editingValue ? (
                     <div className="space-y-2">
-                      <input
-                        className={fieldClass}
+                      <Input
                         value={valueDraft}
                         onChange={(e) => setValueDraft(e.target.value)}
                         placeholder="e.g. 6500"
                         inputMode="decimal"
+                        aria-label="Estimated deal value"
                       />
-                      <button
-                        type="button"
-                        onClick={() => void saveValue()}
-                        className="min-h-[40px] rounded-[10px] bg-[#101828] px-3 text-[12px] font-semibold text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
-                      >
+                      <Button variant="primary" size="sm" onClick={() => void saveValue()}>
                         Save value
-                      </button>
+                      </Button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto px-0"
                       onClick={() => {
                         setValueDraft(
                           commercial.kind === "amount" ? String(commercial.amount) : ""
                         );
                         setEditingValue(true);
                       }}
-                      className="text-[12px] font-semibold text-[#101828] dark:text-[#D4FF4F]"
                     >
                       {commercial.kind === "pending"
                         ? "Estimate deal value"
                         : "Update value"}
-                    </button>
+                    </Button>
                   )}
+
                   {editingDecision ? (
                     <div className="space-y-2">
-                      <input
+                      <Input
                         type="date"
-                        className={fieldClass}
                         value={decisionDraft}
                         onChange={(e) => setDecisionDraft(e.target.value)}
+                        aria-label="Expected decision date"
                       />
-                      <button
-                        type="button"
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={() => void saveDecision()}
-                        className="min-h-[40px] rounded-[10px] bg-[#101828] px-3 text-[12px] font-semibold text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
                       >
                         Save date
-                      </button>
+                      </Button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto px-0"
                       onClick={() => setEditingDecision(true)}
-                      className="block text-[12px] font-semibold text-[#101828] dark:text-[#D4FF4F]"
                     >
                       {deal.expected_decision_at
                         ? "Change expected decision"
                         : "Add expected decision date"}
-                    </button>
+                    </Button>
                   )}
                 </div>
               ) : null}
-            </section>
+            </CardContent>
+          </Card>
 
-            <section className="rounded-[16px] border border-[#E4E7EC] bg-white p-4 dark:border-[#272C27] dark:bg-[#111411]">
-              <h2 className="text-[13px] font-semibold">Deal information</h2>
-              <p className="mt-1 text-[12px] text-[#667085] dark:text-[#B1B7AE]">
+          <Card>
+            <CardHeader>
+              <CardTitle>Deal information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-[12px] text-sales-text-secondary">
                 {completeness.summaryLabel}
               </p>
-              <ul className="mt-3 space-y-1.5">
+              <ul className="mt-3 space-y-2">
                 {completeness.items.map((item) => (
-                  <li key={item.id} className="flex items-center gap-2 text-[12px]">
+                  <li
+                    key={item.id}
+                    className="flex items-center gap-2 text-[12px] text-sales-text-primary"
+                  >
                     {item.done ? (
-                      <Check className="h-3.5 w-3.5 text-[#027A48]" />
+                      <Check className="h-3.5 w-3.5 text-sales-success" strokeWidth={2} />
                     ) : (
-                      <Circle className="h-3.5 w-3.5 text-[#98A2B3]" />
+                      <Circle className="h-3.5 w-3.5 text-sales-text-muted" strokeWidth={1.8} />
                     )}
                     {item.label}
                   </li>
                 ))}
               </ul>
-            </section>
+              {completeness.nextSuggestion ? (
+                <p className="mt-3 text-[12px] font-medium text-sales-text-secondary">
+                  {completeness.nextSuggestion.cta}
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
 
-            {lead ? (
-              <section className="rounded-[16px] border border-[#E4E7EC] bg-white p-4 dark:border-[#272C27] dark:bg-[#111411]">
-                <h2 className="text-[13px] font-semibold">Related lead</h2>
-                <p className="mt-1 text-[13px] text-[#667085] dark:text-[#B1B7AE]">
-                  Acquisition history preserved · {lead.source.replace(/_/g, " ")}
+          {lead ? (
+            <Card variant="flat">
+              <CardContent className="py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  Related lead
+                </p>
+                <p className="mt-1 text-[13px] text-sales-text-secondary">
+                  Acquisition history preserved ·{" "}
+                  {String(lead.source).replace(/_/g, " ")}
                 </p>
                 {lead.contact_id ? (
                   <Link
                     href={`/sales/customers/${lead.contact_id}`}
-                    className="mt-2 inline-block text-[12px] font-semibold text-[#101828] dark:text-[#D4FF4F]"
+                    className="mt-2 inline-flex text-[12px] font-semibold text-sales-text-primary underline-offset-2 hover:underline"
                   >
                     Open customer
                   </Link>
                 ) : null}
-              </section>
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile action bar */}
-      {!closed ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E4E7EC] bg-white/95 px-3 py-2 backdrop-blur dark:border-[#272C27] dark:bg-[#111411]/95 layout:hidden">
-          <div className="mx-auto flex max-w-lg gap-2">
-            <button
-              type="button"
-              onClick={callCustomer}
-              className="flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] text-[11px] font-medium"
-            >
-              <Phone className="h-4 w-4" />
-              Call
-            </button>
-            <button
-              type="button"
-              onClick={whatsappCustomer}
-              className="flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] text-[11px] font-medium"
-            >
-              <SiWhatsapp className="h-4 w-4" style={{ color: "#25D366" }} />
-              WhatsApp
-            </button>
-            {lead ? (
-              <Link
-                href={`/sales/quotes?leadId=${lead.id}&dealId=${deal.id}`}
-                className="flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] text-[11px] font-medium"
-              >
-                <FileText className="h-4 w-4" />
-                Quote
-              </Link>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setMoreOpen((v) => !v)}
-              className="flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-[10px] text-[11px] font-medium"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-              More
-            </button>
-          </div>
-          {moreOpen ? (
-            <div className="mx-auto mt-2 max-w-lg space-y-1 rounded-[12px] border border-[#E4E7EC] bg-white p-2 dark:border-[#272C27] dark:bg-[#151815]">
-              <button
-                type="button"
-                className="flex min-h-[44px] w-full items-center gap-2 rounded-[8px] px-3 text-[13px]"
-                onClick={() => {
-                  setCloseMode("won");
-                  setMoreOpen(false);
-                }}
-              >
-                Mark won
-              </button>
-              <button
-                type="button"
-                className="flex min-h-[44px] w-full items-center gap-2 rounded-[8px] px-3 text-[13px]"
-                onClick={() => {
-                  setCloseMode("lost");
-                  setMoreOpen(false);
-                }}
-              >
-                Mark lost
-              </button>
-              <button
-                type="button"
-                className="flex min-h-[44px] w-full items-center gap-2 rounded-[8px] px-3 text-[13px]"
-                onClick={() => {
-                  document.getElementById("log-area")?.scrollIntoView();
-                  setMoreOpen(false);
-                }}
-              >
-                <MessageCircle className="h-4 w-4" />
-                Log activity
-              </button>
-            </div>
+              </CardContent>
+            </Card>
           ) : null}
         </div>
-      ) : null}
+      </div>
 
       {/* Close dialog */}
       {closeMode ? (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 sm:items-center">
-          <div className="w-full max-w-md rounded-t-[18px] bg-white p-4 dark:bg-[#111411] sm:rounded-[18px]">
-            <h3 className="text-[16px] font-semibold">
+          <div className="sales-modal-premium w-full max-w-md rounded-t-sales-xl bg-sales-surface p-5 shadow-sales-modal sm:rounded-sales-xl">
+            <h3 className="text-[16px] font-semibold text-sales-text-primary">
               {closeMode === "won" ? "Mark deal won" : "Mark deal lost"}
             </h3>
             {closeMode === "won" ? (
-              <label className="mt-3 block text-[12px] font-medium text-[#667085]">
-                Final value
-                <input
-                  className={fieldClass}
+              <label className="mt-4 block">
+                <span className="text-[12px] font-medium text-sales-text-secondary">
+                  Final value
+                </span>
+                <Input
+                  className="mt-1.5"
                   value={wonValue}
                   onChange={(e) => setWonValue(e.target.value)}
                   inputMode="decimal"
                 />
               </label>
             ) : (
-              <div className="mt-3 space-y-2">
-                <p className="text-[12px] font-medium text-[#667085]">Reason</p>
+              <div className="mt-4 space-y-2">
+                <p className="text-[12px] font-medium text-sales-text-secondary">Reason</p>
                 <div className="flex flex-wrap gap-2">
                   {LOST_REASONS.map((r) => (
                     <button
                       key={r}
                       type="button"
                       onClick={() => setLostReason(r)}
-                      className={`min-h-[40px] rounded-full border px-3 text-[12px] ${
+                      className={cn(
+                        "min-h-10 rounded-full border px-3 text-[12px] font-medium transition-colors",
                         lostReason === r
-                          ? "border-[#101828] bg-[#F2F4F7] font-semibold dark:border-[#D4FF4F]"
-                          : "border-[#E4E7EC] dark:border-[#272C27]"
-                      }`}
+                          ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
+                          : "border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover"
+                      )}
                     >
                       {r}
                     </button>
@@ -777,26 +841,28 @@ export function DealWorkspaceClient({
               </div>
             )}
             {closeError ? (
-              <p className="mt-2 text-[13px] text-[#B42318]" role="alert">
+              <p className="mt-3 text-[13px] text-sales-danger-fg" role="alert">
                 {closeError}
               </p>
             ) : null}
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
+            <div className="mt-5 flex gap-2">
+              <Button
+                variant="secondary"
+                size="md"
+                className="flex-1"
                 onClick={() => setCloseMode(null)}
-                className="min-h-[44px] flex-1 rounded-[10px] border border-[#E4E7EC] text-[13px] font-medium dark:border-[#272C27]"
               >
                 Cancel
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant={closeMode === "won" ? "success" : "danger"}
+                size="md"
+                className="flex-1"
                 disabled={closing}
                 onClick={() => void submitClose()}
-                className="min-h-[44px] flex-1 rounded-[10px] bg-[#101828] text-[13px] font-semibold text-white disabled:opacity-50 dark:bg-[#D4FF4F] dark:text-[#101828]"
               >
                 {closing ? "Saving…" : "Confirm"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

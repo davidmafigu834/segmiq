@@ -4,7 +4,10 @@ import { authOptions } from "@/lib/auth";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
+import { SoloLayout } from "@/components/layouts/SoloLayout";
+import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { DealWorkspaceClient } from "@/components/sales/deals/DealWorkspaceClient";
+import { loadSalesShellProps } from "@/lib/sales/sales-shell-props";
 import {
   getDealCommercialValue,
   getDealCompleteness,
@@ -42,7 +45,7 @@ export default async function DealWorkspacePage({
     }
   }
 
-  const [{ data: lead }, { data: quotes }, timeline] = await Promise.all([
+  const [{ data: lead }, { data: quotes }, timeline, shell] = await Promise.all([
     supabase.from("leads").select("*").eq("id", dealRow.originating_lead_id).maybeSingle(),
     supabase
       .from("quotations")
@@ -55,6 +58,7 @@ export default async function DealWorkspacePage({
       dealId: dealRow.id,
       originatingLeadId: dealRow.originating_lead_id,
     }),
+    loadSalesShellProps(session),
   ]);
 
   const quoteRows = (quotes ?? []) as QuotationRow[];
@@ -62,32 +66,45 @@ export default async function DealWorkspacePage({
   const commercial = getDealCommercialValue(dealRow, { latestQuoteTotal: quoteTotal });
   const completeness = getDealCompleteness(dealRow, { latestQuoteTotal: quoteTotal });
   const nextAction = getDealNextActionState(dealRow);
+  const leadRow = (lead as LeadRow) ?? null;
+  const customerName = leadRow?.name?.trim() || "Customer";
+
+  const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
 
   return (
-    <SalesLayout
+    <Layout
       breadcrumb="SALES / DEAL"
       pageTitle={dealRow.name}
       hideShellHeader
       hideShellSidebar
       contentFlush
     >
-      <DealWorkspaceClient
-        initialDeal={dealRow}
-        lead={(lead as LeadRow) ?? null}
-        quotes={quoteRows}
-        commercial={commercial}
-        completeness={completeness}
-        nextAction={nextAction}
-        timeline={timeline}
-        openClose={
-          searchParams?.close === "won"
-            ? "won"
-            : searchParams?.close === "lost"
-              ? "lost"
-              : null
-        }
-        repName={session.user?.name ?? ""}
-      />
-    </SalesLayout>
+      <SalesAppShell
+        {...shell}
+        breadcrumb="Sales / Deal"
+        title={dealRow.name}
+        description={`${customerName} · Keep this opportunity moving until a decision is made.`}
+        searchPlaceholder="Search leads, deals, quotes..."
+        dense
+      >
+        <DealWorkspaceClient
+          initialDeal={dealRow}
+          lead={leadRow}
+          quotes={quoteRows}
+          commercial={commercial}
+          completeness={completeness}
+          nextAction={nextAction}
+          timeline={timeline}
+          openClose={
+            searchParams?.close === "won"
+              ? "won"
+              : searchParams?.close === "lost"
+                ? "lost"
+                : null
+          }
+          repName={session.user?.name ?? ""}
+        />
+      </SalesAppShell>
+    </Layout>
   );
 }
