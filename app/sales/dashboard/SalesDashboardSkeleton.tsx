@@ -8,15 +8,15 @@ export default function SalesDashboardSkeleton() {
         ))}
       </div>
       <div className="shimmer mb-4 h-[120px] rounded-[14px]" />
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_0.95fr]">
-        <div className="space-y-4">
-          <div className="shimmer h-[280px] rounded-[14px]" />
-          <div className="shimmer h-[320px] rounded-[14px]" />
-        </div>
-        <div className="space-y-4">
-          <div className="shimmer h-[220px] rounded-[14px]" />
-          <div className="shimmer h-[180px] rounded-[14px]" />
-        </div>
+      <div className="mb-4 space-y-4">
+        <div className="shimmer h-[220px] rounded-[14px]" />
+        <div className="shimmer h-[280px] rounded-[14px]" />
+        <div className="shimmer h-[140px] rounded-[14px]" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="shimmer h-[240px] rounded-[14px]" />
+        ))}
       </div>
     </div>
   );

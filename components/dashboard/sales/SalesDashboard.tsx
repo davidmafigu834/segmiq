@@ -194,28 +194,31 @@ function SalesDashboardInner({
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 layout:gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.95fr)]">
-            <div className="min-w-0 space-y-4 layout:space-y-5">
-              <NewEnquiriesCard
-                items={data.priorityEnquiries}
-                emptyHint={
-                  data.priorityDeals.length > 0
-                    ? "Focus on Deals requiring attention below."
-                    : undefined
-                }
-              />
-              <DealsAttentionCard items={data.priorityDeals} hasAnyDeals={data.hasAnyDeals} />
-              <PipelineSnapshotCard stages={data.pipelineSnapshot} />
-              {performance.hasTarget ? <PerformanceCard performance={performance} /> : null}
-            </div>
-
-            <div className="min-w-0 space-y-4 layout:space-y-5">
-              <LeadDealFunnelCard stages={data.funnel} />
-              <ActivityTodayCard metrics={data.activityToday} />
-              <SourceMixCard data={legacy} />
-              <RecentActivityCard items={data.recentActivity} />
-            </div>
+          {/* Action tables — full width so columns can breathe */}
+          <div className="w-full min-w-0 space-y-4 layout:space-y-5">
+            <NewEnquiriesCard
+              items={data.priorityEnquiries}
+              emptyHint={
+                data.priorityDeals.length > 0
+                  ? "Focus on Deals requiring attention below."
+                  : undefined
+              }
+            />
+            <DealsAttentionCard items={data.priorityDeals} hasAnyDeals={data.hasAnyDeals} />
           </div>
+
+          {/* Pipeline snapshot — full width under action work */}
+          <PipelineSnapshotCard stages={data.pipelineSnapshot} />
+
+          {/* Intelligence / analytics — own row so they never squeeze tables */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 layout:gap-5">
+            <LeadDealFunnelCard stages={data.funnel} />
+            <ActivityTodayCard metrics={data.activityToday} />
+            <SourceMixCard data={legacy} />
+            <RecentActivityCard items={data.recentActivity} />
+          </div>
+
+          {performance.hasTarget ? <PerformanceCard performance={performance} /> : null}
 
           <div className="hidden layout:block">
             <TodaysSalesPlanStrip {...data.planSummary} />
@@ -260,15 +263,15 @@ function SalesDashboardSkeletonShell() {
         ))}
       </div>
       <div className="shimmer mb-4 h-[120px] rounded-[14px]" />
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_0.95fr]">
-        <div className="space-y-4">
-          <div className="shimmer h-[280px] rounded-[14px]" />
-          <div className="shimmer h-[320px] rounded-[14px]" />
-        </div>
-        <div className="space-y-4">
-          <div className="shimmer h-[220px] rounded-[14px]" />
-          <div className="shimmer h-[180px] rounded-[14px]" />
-        </div>
+      <div className="mb-4 space-y-4">
+        <div className="shimmer h-[220px] rounded-[14px]" />
+        <div className="shimmer h-[280px] rounded-[14px]" />
+        <div className="shimmer h-[140px] rounded-[14px]" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="shimmer h-[240px] rounded-[14px]" />
+        ))}
       </div>
     </div>
   );

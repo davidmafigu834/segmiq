@@ -123,9 +123,16 @@ export function NewEnquiriesCard({
         </div>
       ) : (
         <>
-          {/* Desktop table */}
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[640px] text-left">
+          {/* Desktop table — full width */}
+          <div className="hidden w-full md:block">
+            <table className="w-full table-fixed text-left">
+              <colgroup>
+                <col className="w-[34%]" />
+                <col className="w-[16%]" />
+                <col className="w-[12%]" />
+                <col className="w-[14%]" />
+                <col className="w-[24%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
                   <th className="px-5 py-2.5 font-semibold">Name</th>
@@ -154,9 +161,9 @@ export function NewEnquiriesCard({
                       </Link>
                     </td>
                     <td className="px-3 py-2">
-                      <span className="inline-flex items-center gap-1.5 text-[12px] text-sales-text-secondary">
+                      <span className="inline-flex min-w-0 items-center gap-1.5 text-[12px] text-sales-text-secondary">
                         <SourceIcon source={item.source} />
-                        {sourceLabel(item.source)}
+                        <span className="truncate">{sourceLabel(item.source)}</span>
                       </span>
                     </td>
                     <td className="px-3 py-2">
