@@ -219,3 +219,91 @@ export function buildCreateDealPayload(input: {
     },
   };
 }
+
+/** Map an existing Deal to the Create Deal value-mode control. */
+export function valueModeFromDeal(deal: {
+  value_status?: string | null;
+  estimated_value?: number | null;
+  sales_estimate?: number | null;
+  estimated_value_min?: number | null;
+  estimated_value_max?: number | null;
+}): DealValueMode {
+  if (deal.value_status === "RANGE") return "range";
+  if (deal.value_status === "PENDING_ESTIMATE") return "later";
+  if (
+    deal.estimated_value_min != null &&
+    deal.estimated_value_max != null &&
+    deal.estimated_value_min > 0 &&
+    deal.estimated_value_max > 0
+  ) {
+    return "range";
+  }
+  const exact = deal.sales_estimate ?? deal.estimated_value;
+  if (exact != null && exact > 0) return "exact";
+  if (deal.value_status === "KNOWN") return "exact";
+  return "later";
+}
+
+/** PATCH body for Deal workspace / Complete Deal details. */
+export function buildDealUpdatePatch(input: {
+  name: string;
+  serviceSummary: string;
+  location: string;
+  buyingTimeframe: string;
+  decisionMakerStatus: "YES" | "NO" | "UNKNOWN" | "";
+  decisionMakerName: string;
+  expectedDecisionAt: string;
+  valueMode: DealValueMode;
+  exactValue: string;
+  rangeMin: string;
+  rangeMax: string;
+  nextActionLabel: string;
+  nextActionAt: string;
+}):
+  | { ok: true; patch: Record<string, unknown> }
+  | { ok: false; fieldErrors: Record<string, string> } {
+  const built = buildCreateDealPayload({
+    ...input,
+    customerNeed: "",
+    notes: "",
+  });
+  if (!built.ok) return built;
+
+  const p = built.payload;
+  const patch: Record<string, unknown> = {
+    name: p.name,
+    service_summary: p.serviceSummary,
+    location: p.location,
+    buying_timeframe: p.buyingTimeframe,
+    decision_maker_status: p.decisionMakerStatus,
+    decision_maker_name: p.decisionMakerName,
+    expected_decision_at: p.expectedDecisionAt,
+    next_action_at: p.nextActionAt,
+    next_action_label: p.nextActionLabel,
+  };
+
+  if (p.valuePending) {
+    patch.value_status = "PENDING_ESTIMATE";
+    patch.value_basis = null;
+    patch.sales_estimate = null;
+    patch.estimated_value = null;
+    patch.estimated_value_min = null;
+    patch.estimated_value_max = null;
+  } else if (p.estimatedValueMin != null && p.estimatedValueMax != null) {
+    patch.value_status = "RANGE";
+    patch.value_basis = "SALES_ESTIMATE";
+    patch.estimated_value_min = p.estimatedValueMin;
+    patch.estimated_value_max = p.estimatedValueMax;
+    patch.sales_estimate = null;
+    patch.estimated_value = null;
+  } else {
+    patch.value_status = "KNOWN";
+    patch.value_basis = "SALES_ESTIMATE";
+    patch.sales_estimate = p.salesEstimate;
+    patch.estimated_value = p.estimatedValue;
+    patch.estimated_value_min = null;
+    patch.estimated_value_max = null;
+  }
+
+  return { ok: true, patch };
+}

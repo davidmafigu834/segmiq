@@ -486,7 +486,7 @@ export function DealDetailDrawer({
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-[13px] font-semibold">Deal details</h3>
             <Link
-              href={`/sales/deals/${dealId}`}
+              href={`/sales/deals/${dealId}?edit=details`}
               className="text-[12px] font-semibold text-sales-text-label hover:underline"
             >
               Edit
@@ -501,7 +501,7 @@ export function DealDetailDrawer({
                     row.value
                   ) : (
                     <Link
-                      href={`/sales/deals/${dealId}`}
+                      href={`/sales/deals/${dealId}?edit=details`}
                       className="font-semibold text-sales-text-secondary underline-offset-2 hover:underline"
                     >
                       Not added · Add

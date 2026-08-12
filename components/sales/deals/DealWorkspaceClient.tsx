@@ -1,14 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Circle, FileText, Phone } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import type { DealRow, LeadRow, QuotationRow } from "@/types";
 import type { DealCommercialValue } from "@/lib/sales/deals/commercial-value";
+import {
+  getDealCommercialValue,
+  latestQuoteTotal,
+} from "@/lib/sales/deals/commercial-value";
 import type { DealCompletenessResult } from "@/lib/sales/deals/completeness";
+import { getDealCompleteness } from "@/lib/sales/deals/completeness";
 import type { DealTimelineItem } from "@/lib/sales/deals/timeline";
+import { getDealNextActionState } from "@/lib/sales/deals/timeline";
 import {
   DEAL_ACTIVE_STAGES,
   DEAL_STAGE_LABEL,
@@ -32,6 +38,10 @@ import {
   Timeline,
   type TimelineItem,
 } from "@/components/sales/ui";
+import {
+  DealDetailsEditorSheet,
+  type DealDetailsFocus,
+} from "@/components/sales/deals/DealDetailsEditorSheet";
 
 type NextActionState = {
   hasNextAction: boolean;
@@ -82,10 +92,11 @@ export function DealWorkspaceClient({
   repName: string;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [deal, setDeal] = useState(initialDeal);
   const [quotes] = useState(initialQuotes);
   const [commercial, setCommercial] = useState(initialCommercial);
-  const [completeness] = useState(initialCompleteness);
+  const [completeness, setCompleteness] = useState(initialCompleteness);
   const [nextAction, setNextAction] = useState(initialNext);
   const [moving, setMoving] = useState(false);
   const [closeMode, setCloseMode] = useState<"won" | "lost" | null>(openClose);
@@ -95,10 +106,37 @@ export function DealWorkspaceClient({
   const [lostReason, setLostReason] = useState("");
   const [closeError, setCloseError] = useState<string | null>(null);
   const [closing, setClosing] = useState(false);
-  const [valueDraft, setValueDraft] = useState("");
-  const [editingValue, setEditingValue] = useState(false);
-  const [decisionDraft, setDecisionDraft] = useState(deal.expected_decision_at ?? "");
-  const [editingDecision, setEditingDecision] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsFocus, setDetailsFocus] = useState<DealDetailsFocus>(null);
+
+  useEffect(() => {
+    const edit = searchParams.get("edit");
+    if (edit === "details" || edit === "value" || edit === "next") {
+      setDetailsFocus(
+        edit === "value" ? "value" : edit === "next" ? "next_action" : null
+      );
+      setDetailsOpen(true);
+    }
+  }, [searchParams]);
+
+  function openDetails(focus: DealDetailsFocus = null) {
+    setDetailsFocus(focus);
+    setDetailsOpen(true);
+  }
+
+  function applyDealUpdate(updated: DealRow) {
+    const latest = latestQuoteTotal(quotes);
+    setDeal(updated);
+    setCommercial(getDealCommercialValue(updated, { latestQuoteTotal: latest }));
+    setCompleteness(
+      getDealCompleteness(updated, {
+        latestQuoteTotal: latest,
+        hasNextAction: Boolean(updated.next_action_at),
+      })
+    );
+    setNextAction(getDealNextActionState(updated));
+    router.refresh();
+  }
 
   const customerName = lead?.name?.trim() || "Customer";
   const closed = isDealClosedStage(deal.stage);
@@ -183,8 +221,7 @@ export function DealWorkspaceClient({
       error?: string;
     };
     if (!res.ok || !json.deal) throw new Error(json.error || "Update failed");
-    setDeal(json.deal);
-    router.refresh();
+    applyDealUpdate(json.deal);
     return json.deal;
   }
 
@@ -208,21 +245,9 @@ export function DealWorkspaceClient({
           setCloseError("Enter a valid final value.");
           return;
         }
-        const updated = await patchDeal({
+        await patchDeal({
           close: { outcome: "WON", wonValue: n },
         });
-        setCommercial({
-          kind: "amount",
-          amount: n,
-          basis: "WON_VALUE",
-          label: "Won value",
-          display: new Intl.NumberFormat("en-US", {
-            style: "currency",
-            currency: "USD",
-            maximumFractionDigits: 0,
-          }).format(n),
-        });
-        setDeal(updated);
       } else if (closeMode === "lost") {
         if (!lostReason.trim()) {
           setCloseError("Select a lost reason.");
@@ -233,48 +258,11 @@ export function DealWorkspaceClient({
         });
       }
       setCloseMode(null);
-      router.refresh();
     } catch (e) {
       setCloseError(e instanceof Error ? e.message : "Could not close deal.");
     } finally {
       setClosing(false);
     }
-  }
-
-  async function saveValue() {
-    const n = Number(String(valueDraft).replace(/[^0-9.]/g, ""));
-    if (!Number.isFinite(n) || n <= 0) {
-      await patchDeal({
-        value_status: "PENDING_ESTIMATE",
-        sales_estimate: null,
-        estimated_value: null,
-        value_basis: null,
-      });
-    } else {
-      await patchDeal({
-        value_status: "KNOWN",
-        sales_estimate: n,
-        estimated_value: n,
-        value_basis: "SALES_ESTIMATE",
-      });
-      setCommercial({
-        kind: "amount",
-        amount: n,
-        basis: "SALES_ESTIMATE",
-        label: "Sales estimate",
-        display: new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-          maximumFractionDigits: 0,
-        }).format(n),
-      });
-    }
-    setEditingValue(false);
-  }
-
-  async function saveDecision() {
-    await patchDeal({ expected_decision_at: decisionDraft || null });
-    setEditingDecision(false);
   }
 
   function callCustomer() {
@@ -497,7 +485,7 @@ export function DealWorkspaceClient({
                     {nextAction.isOverdue ? " · Overdue" : null}
                   </p>
                   {!closed ? (
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       <Button
                         variant="primary"
                         size="md"
@@ -505,19 +493,17 @@ export function DealWorkspaceClient({
                           void patchDeal({
                             next_action_at: null,
                             next_action_label: null,
-                          }).then(() =>
-                            setNextAction({
-                              hasNextAction: false,
-                              isOverdue: false,
-                              label: null,
-                              at: null,
-                              emptyMessage:
-                                "This active Deal does not have another action scheduled.",
-                            })
-                          )
+                          })
                         }
                       >
                         Complete
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        onClick={() => openDetails("next_action")}
+                      >
+                        Reschedule
                       </Button>
                     </div>
                   ) : null}
@@ -529,12 +515,19 @@ export function DealWorkspaceClient({
                       "This active Deal does not have another action scheduled."}
                   </p>
                   {!closed ? (
-                    <div className="mt-4">
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onClick={() => openDetails("next_action")}
+                      >
+                        Schedule next action
+                      </Button>
                       <Link
                         href={`/sales/calendar?deal=${deal.id}`}
                         className="inline-flex min-h-11 items-center justify-center rounded-sales-md border border-sales-border-strong bg-sales-surface px-4 text-[13px] font-semibold text-sales-text-primary shadow-sales-card transition-colors hover:bg-sales-surface-hover"
                       >
-                        Schedule follow-up
+                        Open calendar
                       </Link>
                     </div>
                   ) : null}
@@ -618,14 +611,35 @@ export function DealWorkspaceClient({
         {/* Right rail */}
         <div className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader
+              action={
+                !closed ? (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto px-0"
+                    onClick={() => openDetails(null)}
+                  >
+                    {knownFields.length === 0 ? "Add details" : "Edit"}
+                  </Button>
+                ) : null
+              }
+            >
               <CardTitle>What we know</CardTitle>
             </CardHeader>
             <CardContent>
               {knownFields.length === 0 ? (
-                <p className="text-[13px] text-sales-text-secondary">
-                  Add discovery details as you learn more.
-                </p>
+                <div className="space-y-2">
+                  <p className="text-[13px] text-sales-text-secondary">
+                    Add discovery details as you learn more — service, timeframe, decision maker,
+                    location.
+                  </p>
+                  {!closed ? (
+                    <Button variant="secondary" size="sm" onClick={() => openDetails("service")}>
+                      Complete Deal details
+                    </Button>
+                  ) : null}
+                </div>
               ) : (
                 <dl className="space-y-3">
                   {knownFields.map((row) => (
@@ -644,7 +658,20 @@ export function DealWorkspaceClient({
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader
+              action={
+                !closed ? (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto px-0"
+                    onClick={() => openDetails("value")}
+                  >
+                    {commercial.kind === "pending" ? "Estimate value" : "Update"}
+                  </Button>
+                ) : null
+              }
+            >
               <CardTitle>Commercial</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -654,6 +681,14 @@ export function DealWorkspaceClient({
                   {commercial.display}
                 </span>
               </div>
+              {formatDealValueBasis(deal.value_basis) ? (
+                <div className="flex items-start justify-between gap-3 text-[13px]">
+                  <span className="text-sales-text-secondary">Basis</span>
+                  <span className="font-medium text-sales-text-primary">
+                    {formatDealValueBasis(deal.value_basis)}
+                  </span>
+                </div>
+              ) : null}
               {deal.customer_budget != null && deal.customer_budget > 0 ? (
                 <div className="flex items-start justify-between gap-3 text-[13px]">
                   <span className="text-sales-text-secondary">Customer budget</span>
@@ -677,69 +712,26 @@ export function DealWorkspaceClient({
                   No quotation created yet.
                 </p>
               )}
-
-              {!closed ? (
-                <div className="space-y-3 border-t border-sales-border-subtle pt-3">
-                  {editingValue ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={valueDraft}
-                        onChange={(e) => setValueDraft(e.target.value)}
-                        placeholder="e.g. 6500"
-                        inputMode="decimal"
-                        aria-label="Estimated deal value"
-                      />
-                      <Button variant="primary" size="sm" onClick={() => void saveValue()}>
-                        Save value
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto px-0"
-                      onClick={() => {
-                        setValueDraft(
-                          commercial.kind === "amount" ? String(commercial.amount) : ""
-                        );
-                        setEditingValue(true);
-                      }}
-                    >
-                      {commercial.kind === "pending"
-                        ? "Estimate deal value"
-                        : "Update value"}
-                    </Button>
-                  )}
-
-                  {editingDecision ? (
-                    <div className="space-y-2">
-                      <Input
-                        type="date"
-                        value={decisionDraft}
-                        onChange={(e) => setDecisionDraft(e.target.value)}
-                        aria-label="Expected decision date"
-                      />
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => void saveDecision()}
-                      >
-                        Save date
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto px-0"
-                      onClick={() => setEditingDecision(true)}
-                    >
-                      {deal.expected_decision_at
-                        ? "Change expected decision"
-                        : "Add expected decision date"}
-                    </Button>
-                  )}
+              {deal.expected_decision_at ? (
+                <div className="flex items-start justify-between gap-3 text-[13px]">
+                  <span className="text-sales-text-secondary">Expected decision</span>
+                  <span className="font-medium text-sales-text-primary">
+                    {new Date(deal.expected_decision_at).toLocaleDateString(undefined, {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
                 </div>
+              ) : !closed ? (
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto px-0"
+                  onClick={() => openDetails("expected_decision")}
+                >
+                  Add expected decision date
+                </Button>
               ) : null}
             </CardContent>
           </Card>
@@ -754,23 +746,52 @@ export function DealWorkspaceClient({
               </p>
               <ul className="mt-3 space-y-2">
                 {completeness.items.map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex items-center gap-2 text-[12px] text-sales-text-primary"
-                  >
-                    {item.done ? (
-                      <Check className="h-3.5 w-3.5 text-sales-success" strokeWidth={2} />
-                    ) : (
-                      <Circle className="h-3.5 w-3.5 text-sales-text-muted" strokeWidth={1.8} />
-                    )}
-                    {item.label}
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      disabled={closed || item.done}
+                      onClick={() => {
+                        if (item.id === "value") openDetails("value");
+                        else if (item.id === "expected_decision") openDetails("expected_decision");
+                        else if (item.id === "next_action") openDetails("next_action");
+                        else if (item.id === "decision_maker") openDetails("decision_maker");
+                        else openDetails("service");
+                      }}
+                      className={cn(
+                        "flex w-full items-center gap-2 text-left text-[12px] text-sales-text-primary",
+                        !item.done && !closed
+                          ? "cursor-pointer hover:text-sales-brand-fg"
+                          : "cursor-default"
+                      )}
+                    >
+                      {item.done ? (
+                        <Check className="h-3.5 w-3.5 text-sales-success" strokeWidth={2} />
+                      ) : (
+                        <Circle className="h-3.5 w-3.5 text-sales-text-muted" strokeWidth={1.8} />
+                      )}
+                      <span className={!item.done && !closed ? "underline-offset-2 hover:underline" : ""}>
+                        {item.label}
+                      </span>
+                    </button>
                   </li>
                 ))}
               </ul>
-              {completeness.nextSuggestion ? (
-                <p className="mt-3 text-[12px] font-medium text-sales-text-secondary">
+              {completeness.nextSuggestion && !closed ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => {
+                    const id = completeness.nextSuggestion?.id;
+                    if (id === "value") openDetails("value");
+                    else if (id === "expected_decision") openDetails("expected_decision");
+                    else if (id === "next_action") openDetails("next_action");
+                    else if (id === "decision_maker") openDetails("decision_maker");
+                    else openDetails("service");
+                  }}
+                >
                   {completeness.nextSuggestion.cta}
-                </p>
+                </Button>
               ) : null}
             </CardContent>
           </Card>
@@ -866,6 +887,22 @@ export function DealWorkspaceClient({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {!closed ? (
+        <DealDetailsEditorSheet
+          deal={deal}
+          open={detailsOpen}
+          focus={detailsFocus}
+          onClose={() => {
+            setDetailsOpen(false);
+            setDetailsFocus(null);
+            if (searchParams.get("edit")) {
+              router.replace(`/sales/deals/${deal.id}`, { scroll: false });
+            }
+          }}
+          onSaved={(updated) => applyDealUpdate(updated)}
+        />
       ) : null}
     </div>
   );

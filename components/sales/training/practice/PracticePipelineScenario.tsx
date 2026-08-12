@@ -19,7 +19,7 @@ export function PracticePipelineScenario() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[14px] border border-sales-border bg-sales-surface p-4">
+      <div>
         <p className="text-[12px] text-sales-text-muted">Practice Pipeline</p>
         <button
           type="button"

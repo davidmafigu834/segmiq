@@ -10,6 +10,7 @@ import { getDealCompleteness } from "../lib/sales/deals/completeness";
 import { isDealActiveStage, formatDealStage, isLeadConverted } from "../lib/sales/deals/display";
 import {
   buildCreateDealPayload,
+  buildDealUpdatePatch,
   parseLeadBudgetHint,
   suggestDealName,
 } from "../lib/sales/deals/create-deal-form";
@@ -338,6 +339,52 @@ describe("create deal form helpers", () => {
     if (later.ok) {
       assert.equal(later.payload.valuePending, true);
       assert.equal(later.payload.salesEstimate, null);
+    }
+  });
+
+  it("builds deal update patch for range and pending", () => {
+    const range = buildDealUpdatePatch({
+      name: "Roof",
+      serviceSummary: "Roofing",
+      location: "Harare",
+      buyingTimeframe: "Within 30 days",
+      decisionMakerStatus: "YES",
+      decisionMakerName: "Tendai",
+      expectedDecisionAt: "2026-09-01",
+      valueMode: "range",
+      exactValue: "",
+      rangeMin: "5000",
+      rangeMax: "7000",
+      nextActionLabel: "Follow up",
+      nextActionAt: "2026-08-20T10:00",
+    });
+    assert.equal(range.ok, true);
+    if (range.ok) {
+      assert.equal(range.patch.value_status, "RANGE");
+      assert.equal(range.patch.estimated_value_min, 5000);
+      assert.equal(range.patch.estimated_value_max, 7000);
+      assert.equal(range.patch.decision_maker_status, "YES");
+    }
+
+    const pending = buildDealUpdatePatch({
+      name: "Site visit",
+      serviceSummary: "",
+      location: "",
+      buyingTimeframe: "",
+      decisionMakerStatus: "",
+      decisionMakerName: "",
+      expectedDecisionAt: "",
+      valueMode: "later",
+      exactValue: "",
+      rangeMin: "",
+      rangeMax: "",
+      nextActionLabel: "",
+      nextActionAt: "",
+    });
+    assert.equal(pending.ok, true);
+    if (pending.ok) {
+      assert.equal(pending.patch.value_status, "PENDING_ESTIMATE");
+      assert.equal(pending.patch.estimated_value, null);
     }
   });
 });
