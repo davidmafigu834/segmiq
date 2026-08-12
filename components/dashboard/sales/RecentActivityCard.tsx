@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, Eye, Phone, Trophy } from "lucide-react";
+import { Activity, BriefcaseBusiness, Eye, Inbox, Phone, Trophy } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import type { SalesActivityItem } from "./types";
 import { CardShell } from "./KpiCard";
@@ -18,6 +18,12 @@ function ActivityIcon({ kind }: { kind: SalesActivityItem["kind"] }) {
   }
   if (kind === "won") {
     return <Trophy size={16} strokeWidth={2} className="text-sales-success" aria-hidden />;
+  }
+  if (kind === "deal") {
+    return <BriefcaseBusiness size={16} strokeWidth={2} className="text-sales-teal-fg" aria-hidden />;
+  }
+  if (kind === "lead") {
+    return <Inbox size={16} strokeWidth={2} className="text-sales-info-fg" aria-hidden />;
   }
   return <Activity size={16} strokeWidth={2} className="text-sales-text-secondary" aria-hidden />;
 }

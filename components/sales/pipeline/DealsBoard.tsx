@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
-import { Inbox, Search } from "lucide-react";
+import { Inbox, Search, X } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui";
 import { SegmentedControl } from "@/components/sales/ui";
@@ -16,6 +16,7 @@ import {
   DEAL_STAGE_ACCENT,
   DEAL_STAGE_LABEL,
   formatDealStage,
+  isDealActiveStage,
   isDealClosedStage,
   type DealActiveStage,
 } from "@/lib/sales/deals/display";
@@ -40,19 +41,46 @@ function matchesSearch(item: DealBoardItem, q: string): boolean {
   return hay.includes(q);
 }
 
+function parseStageParam(raw: string | null): DealActiveStage | null {
+  if (!raw) return null;
+  return isDealActiveStage(raw) ? raw : null;
+}
+
 export function DealsBoard({
   initialItems,
   initialTab = "active",
+  initialStage = null,
 }: {
   initialItems: DealBoardItem[];
   initialTab?: "active" | "closed";
+  initialStage?: DealActiveStage | null;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const stageFromUrl = parseStageParam(searchParams.get("stage")) ?? initialStage;
   const isNarrow = useMediaQuery("(max-width: 900px)");
   const [items, setItems] = useState(initialItems);
   const [tab, setTab] = useState<"active" | "closed">(initialTab);
   const [query, setQuery] = useState("");
-  const [mobileCol, setMobileCol] = useState<DealActiveStage>("QUALIFIED");
+  const [stageFilter, setStageFilter] = useState<DealActiveStage | null>(stageFromUrl);
+  const [mobileCol, setMobileCol] = useState<DealActiveStage>(stageFromUrl ?? "QUALIFIED");
+
+  useEffect(() => {
+    const next = parseStageParam(searchParams.get("stage"));
+    if (next) {
+      setStageFilter(next);
+      setMobileCol(next);
+      setTab("active");
+    }
+  }, [searchParams]);
+
+  const clearStageFilter = useCallback(() => {
+    setStageFilter(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("stage");
+    const qs = params.toString();
+    router.replace(qs ? `/sales/leads?${qs}` : "/sales/leads");
+  }, [router, searchParams]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -60,10 +88,11 @@ export function DealsBoard({
       const closed = isDealClosedStage(it.deal.stage);
       if (tab === "active" && closed) return false;
       if (tab === "closed" && !closed) return false;
+      if (tab === "active" && stageFilter && it.deal.stage !== stageFilter) return false;
       if (q && !matchesSearch(it, q)) return false;
       return true;
     });
-  }, [items, tab, query]);
+  }, [items, tab, query, stageFilter]);
 
   const byColumn = useMemo(() => {
     const map: Record<DealActiveStage, DealBoardItem[]> = {
@@ -132,6 +161,8 @@ export function DealsBoard({
     return { sum, pending };
   }, [filtered]);
 
+  const visibleCols = stageFilter ? ([stageFilter] as readonly DealActiveStage[]) : COLS;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 layout:flex-row layout:items-center">
@@ -154,6 +185,22 @@ export function DealsBoard({
           />
         </div>
       </div>
+
+      {tab === "active" && stageFilter ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-sales-sm border border-sales-border bg-sales-surface px-2 py-1 text-[12px] font-medium text-sales-text-primary">
+            Stage: {DEAL_STAGE_LABEL[stageFilter]}
+          </span>
+          <button
+            type="button"
+            onClick={clearStageFilter}
+            className="inline-flex min-h-9 items-center gap-1 rounded-sales-md px-2 text-[12px] font-semibold text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
+          >
+            <X size={14} aria-hidden />
+            Clear filter
+          </button>
+        </div>
+      ) : null}
 
       {tab === "active" ? (
         <p className="text-[12px] text-sales-text-secondary">
@@ -209,21 +256,35 @@ export function DealsBoard({
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Inbox}
-          title="No active deals yet"
-          description="Qualified opportunities will appear here once you create a Deal from a Lead."
+          title={stageFilter ? `No deals in ${DEAL_STAGE_LABEL[stageFilter]}` : "No active deals yet"}
+          description={
+            stageFilter
+              ? "Try another stage or clear the filter."
+              : "Qualified opportunities will appear here once you create a Deal from a Lead."
+          }
           action={
-            <Link
-              href="/sales/call-now"
-              className="inline-flex min-h-[44px] items-center rounded-[10px] bg-[#101828] px-4 text-[13px] font-semibold text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
-            >
-              View leads
-            </Link>
+            stageFilter ? (
+              <button
+                type="button"
+                onClick={clearStageFilter}
+                className="inline-flex min-h-[44px] items-center rounded-[10px] bg-[#101828] px-4 text-[13px] font-semibold text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
+              >
+                Show all stages
+              </button>
+            ) : (
+              <Link
+                href="/sales/call-now"
+                className="inline-flex min-h-[44px] items-center rounded-[10px] bg-[#101828] px-4 text-[13px] font-semibold text-white dark:bg-[#D4FF4F] dark:text-[#101828]"
+              >
+                View leads
+              </Link>
+            )
           }
         />
       ) : isNarrow ? (
         <div className="space-y-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {COLS.map((col) => (
+            {(stageFilter ? [stageFilter] : COLS).map((col) => (
               <button
                 key={col}
                 type="button"
@@ -252,9 +313,13 @@ export function DealsBoard({
         </div>
       ) : (
         <DragDropContext onDragEnd={(r) => void onDragEnd(r)}>
-          <div className="grid grid-cols-4 gap-3">
-            {COLS.map((col) => (
-              <div key={col} className="min-w-0">
+          <div
+            className={`grid gap-3 ${
+              visibleCols.length === 1 ? "grid-cols-1 layout:max-w-md" : "grid-cols-4"
+            }`}
+          >
+            {visibleCols.map((col) => (
+              <div key={col} className="min-w-0" id={`pipeline-stage-${col}`}>
                 <div className="mb-2 flex items-center gap-2 px-1">
                   <span
                     className="h-2 w-2 rounded-full"

@@ -177,6 +177,8 @@ export type LeadIntelligenceSignal = {
     sentAt: string | null;
   } | null;
   isWhatsAppCapable: boolean;
+  /** When set, this signal represents an active Deal (post Lead→Deal conversion). */
+  dealId?: string | null;
 };
 
 export type PriorityEngineContext = {

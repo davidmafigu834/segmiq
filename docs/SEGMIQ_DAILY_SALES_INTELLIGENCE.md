@@ -225,7 +225,15 @@ Coverage, current focus, what needs attention, today’s commitments + opt-in se
 
 ### Dashboard
 
-Compact Today’s Plan card; Today’s priorities prefer engine queue with lane-based fallback.
+- **Today's Focus** card (BUILD / MOVE / CLOSE) from the same `focus` payload
+- **New enquiries** + **Deals requiring attention** prefer engine queue categories (lead contact vs deal movement)
+- Compact Today's Sales Plan strip + `/sales/tasks` continuation
+- Commercial KPIs and Pipeline snapshot use Deal commercial value — not raw Lead `deal_value`
+- Graceful degradation if `/api/sales/daily-plan` fails; other Dashboard metrics remain
+
+Active **Deal** rows are now converted into priority-engine signals (`dealId` on `LeadIntelligenceSignal`) so Tasks and Dashboard share one ranking path for commercial work after Lead→Deal conversion.
+
+See `getSalesDashboardData()` and [SEGMIQ_SALES_DESIGN_SYSTEM.md](./SEGMIQ_SALES_DESIGN_SYSTEM.md) §16.
 
 ---
 

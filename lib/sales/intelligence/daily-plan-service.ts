@@ -74,6 +74,7 @@ type LeadRow = {
 type QuoteRow = {
   id: string;
   lead_id: string;
+  deal_id?: string | null;
   quote_number: string | null;
   total: number | null;
   status: string;
@@ -448,18 +449,42 @@ export async function fetchDailySalesPlan(opts: {
   const deals = ((dealsRes.data ?? []) as DealRow[]).filter((d) =>
     ACTIVE_DEAL_STAGES.has(d.stage)
   );
-  const leadIds = leads.map((l) => l.id);
-  const leadIdSet = new Set(leadIds);
-  const callbacks = await fetchLatestScheduledCallbacksByLeadId(supabase, leadIds);
+  const dealOriginLeadIds = [...new Set(deals.map((d) => d.originating_lead_id).filter(Boolean))];
 
-  const quotes = ((quotesRes.data ?? []) as QuoteRow[]).filter((q) => leadIdSet.has(q.lead_id));
+  // Contact rows for Deal-originating leads (often CONVERTED_TO_DEAL — not in active lead query)
+  const missingOriginIds = dealOriginLeadIds.filter((id) => !allLeads.some((l) => l.id === id));
+  const originLeadsRes =
+    missingOriginIds.length > 0
+      ? await supabase
+          .from("leads")
+          .select(
+            "id, name, phone, email, source, status, score, manual_priority, project_type, deal_value, budget, created_at, follow_up_date, assigned_to_id, form_data, is_archived"
+          )
+          .in("id", missingOriginIds)
+      : { data: [] as LeadRow[] };
+  const originLeads = (originLeadsRes.data ?? []) as LeadRow[];
+  const leadContactById = new Map<string, LeadRow>();
+  for (const l of [...allLeads, ...originLeads]) leadContactById.set(l.id, l);
+
+  const leadIds = leads.map((l) => l.id);
+  const activityLeadIds = [...new Set([...leadIds, ...dealOriginLeadIds])];
+  const activityLeadIdSet = new Set(activityLeadIds);
+  const callbacks = await fetchLatestScheduledCallbacksByLeadId(supabase, activityLeadIds);
+
+  const allQuotes = (quotesRes.data ?? []) as QuoteRow[];
   const openQuoteByLead = new Map<string, QuoteRow>();
-  for (const q of quotes) {
+  const openQuoteByDeal = new Map<string, QuoteRow>();
+  for (const q of allQuotes) {
     if (!OPEN_QUOTE_STATUSES.has(q.status)) continue;
-    if (!openQuoteByLead.has(q.lead_id)) openQuoteByLead.set(q.lead_id, q);
+    if (q.deal_id && !openQuoteByDeal.has(q.deal_id)) openQuoteByDeal.set(q.deal_id, q);
+    if (activityLeadIdSet.has(q.lead_id) && !openQuoteByLead.has(q.lead_id)) {
+      openQuoteByLead.set(q.lead_id, q);
+    }
   }
 
-  const events = ((eventsRes.data ?? []) as EventRow[]).filter((e) => leadIdSet.has(e.lead_id));
+  const events = ((eventsRes.data ?? []) as EventRow[]).filter((e) =>
+    activityLeadIdSet.has(e.lead_id)
+  );
   const eventsByLead = new Map<string, EventRow[]>();
   const followUpCreatorByLead = new Map<string, string>();
   for (const e of events) {
@@ -471,7 +496,9 @@ export async function fetchDailySalesPlan(opts: {
     }
   }
 
-  const calls = ((callsRes.data ?? []) as CallRow[]).filter((c) => leadIdSet.has(c.lead_id));
+  const calls = ((callsRes.data ?? []) as CallRow[]).filter((c) =>
+    activityLeadIdSet.has(c.lead_id)
+  );
   const callsByLead = new Map<string, string[]>();
   for (const c of calls) {
     const list = callsByLead.get(c.lead_id) ?? [];
@@ -479,7 +506,9 @@ export async function fetchDailySalesPlan(opts: {
     callsByLead.set(c.lead_id, list);
   }
 
-  const waMessages = ((waRes.data ?? []) as WaRow[]).filter((m) => leadIdSet.has(m.lead_id));
+  const waMessages = ((waRes.data ?? []) as WaRow[]).filter((m) =>
+    activityLeadIdSet.has(m.lead_id)
+  );
   const awaitingMap = buildAwaitingReplyMap(waMessages, now);
   const waByLead = new Map<string, WaRow[]>();
   for (const m of waMessages) {
@@ -488,7 +517,7 @@ export async function fetchDailySalesPlan(opts: {
     waByLead.set(m.lead_id, list);
   }
 
-  const signals: LeadIntelligenceSignal[] = leads.map((l) => {
+  function toSignalFromLead(l: LeadRow): LeadIntelligenceSignal {
     const leadEvents = eventsByLead.get(l.id) ?? [];
     const callAts = callsByLead.get(l.id) ?? [];
     const wa = waByLead.get(l.id) ?? [];
@@ -548,10 +577,88 @@ export async function fetchDailySalesPlan(opts: {
           }
         : null,
       isWhatsAppCapable: Boolean(l.phone) || String(l.source ?? "").includes("WHATSAPP"),
+      dealId: null,
+    };
+  }
+
+  const leadSignals: LeadIntelligenceSignal[] = leads.map(toSignalFromLead);
+
+  const dealSignals: LeadIntelligenceSignal[] = deals.map((d) => {
+    const origin = leadContactById.get(d.originating_lead_id);
+    const leadEvents = eventsByLead.get(d.originating_lead_id) ?? [];
+    const callAts = callsByLead.get(d.originating_lead_id) ?? [];
+    const wa = waByLead.get(d.originating_lead_id) ?? [];
+    const outboundWa = wa.filter((m) => m.direction === "outbound").map((m) => m.created_at);
+    const allWaAts = wa.map((m) => m.created_at);
+    const derivedFirst = deriveFirstRespondedAt(leadEvents, callAts, outboundWa);
+    const derivedLast = deriveLastMeaningfulActivityAt(leadEvents, callAts, allWaAts);
+    const nextAt = d.next_action_at;
+    const hasFutureNextAction = Boolean(
+      nextAt && Number.isFinite(Date.parse(nextAt)) && Date.parse(nextAt) > now.getTime()
+    );
+    const openQuote =
+      openQuoteByDeal.get(d.id) ?? openQuoteByLead.get(d.originating_lead_id) ?? null;
+    const commercial = getDealNumericValueForCoverage(d);
+    const displayName =
+      d.name?.trim() ||
+      (origin
+        ? leadCardDisplayName({
+            name: origin.name,
+            phone: origin.phone,
+            source: origin.source,
+            form_data: origin.form_data,
+          })
+        : "Deal");
+
+    return {
+      id: d.originating_lead_id,
+      name: displayName,
+      phone: origin?.phone ?? null,
+      email: origin?.email ?? null,
+      source: origin?.source ?? null,
+      status: d.stage,
+      score: origin?.score ?? null,
+      manualPriority:
+        origin?.manual_priority === "hot" ||
+        origin?.manual_priority === "warm" ||
+        origin?.manual_priority === "cold"
+          ? origin.manual_priority
+          : null,
+      projectType: d.service_summary ?? origin?.project_type ?? null,
+      dealValue: commercial,
+      budget: origin?.budget ?? null,
+      createdAt: d.created_at,
+      followUpDate: d.next_action_at,
+      callbackAt: null,
+      assignedToId: d.owner_id ?? opts.userId,
+      followUpCreatedById: null,
+      // Deals are past first contact by definition
+      firstRespondedAt: derivedFirst ?? d.created_at,
+      lastMeaningfulActivityAt:
+        d.last_meaningful_activity_at ?? derivedLast ?? d.updated_at ?? d.created_at,
+      awaitingReplyMinutes: awaitingMap.get(d.originating_lead_id) ?? null,
+      hasFutureNextAction,
+      openQuote: openQuote
+        ? {
+            id: openQuote.id,
+            quoteNumber: openQuote.quote_number,
+            total: openQuote.total != null ? Number(openQuote.total) : null,
+            status: openQuote.status,
+            sentAt: openQuote.updated_at || openQuote.created_at,
+          }
+        : null,
+      isWhatsAppCapable:
+        Boolean(origin?.phone) || String(origin?.source ?? "").includes("WHATSAPP"),
+      dealId: d.id,
     };
   });
 
-  const signalsById = new Map(signals.map((s) => [s.id, s]));
+  const signals: LeadIntelligenceSignal[] = [...leadSignals, ...dealSignals];
+
+  const signalsById = new Map(signals.map((s) => [s.dealId ?? s.id, s]));
+  // Also index by lead id for reconcile of lead-only states
+  for (const s of leadSignals) signalsById.set(s.id, s);
+
   const reconciledStates = await reconcileActionStates(
     actionStates,
     signalsById,
@@ -703,7 +810,11 @@ export async function fetchDailySalesPlan(opts: {
     priorityActions: ranked.queue,
     coverage,
     lateStageCount,
-    activeDealCount: signals.length,
+    activeDealCount:
+      deals.length +
+      leadSignals.filter(
+        (s) => s.status === "NEGOTIATING" || s.status === "PROPOSAL_SENT"
+      ).length,
   });
 
   const completedPriority = reconciledStates.filter(

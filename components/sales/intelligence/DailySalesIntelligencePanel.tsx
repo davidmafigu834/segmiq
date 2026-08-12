@@ -48,12 +48,16 @@ async function postAction(
   if (!res.ok) throw new Error("Failed");
 }
 
-function leadHref(rec: SalesActionRecommendation): string {
+function entityHref(rec: SalesActionRecommendation): string {
+  const dealId =
+    (typeof rec.metadata?.dealId === "string" && rec.metadata.dealId) ||
+    (rec.sourceEntityType === "deal" ? rec.sourceEntityId : null);
+  if (dealId) return `/sales/deals/${dealId}`;
   const id = rec.customer?.leadId ?? rec.sourceEntityId;
-  if (!id) return "/sales/leads";
+  if (!id) return "/sales/call-now";
   const source = String(rec.customer?.source ?? "");
   if (source.includes("WHATSAPP")) return `/sales/inbox?lead=${id}`;
-  return `/sales/leads?lead=${id}`;
+  return `/sales/call-now?lead=${id}`;
 }
 
 function ProgressRow({
@@ -152,7 +156,7 @@ function ActionButtons({
       ) : null}
       {rec.customer?.leadId || rec.sourceEntityId ? (
         <Link
-          href={leadHref(rec)}
+          href={entityHref(rec)}
           className={cn(
             "inline-flex items-center justify-center rounded-sales-md px-3 text-[13px] font-medium text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary",
             dense ? "h-9 min-h-9" : "h-11 min-h-11"

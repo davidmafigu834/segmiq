@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSalesActorFromRequest } from "@/lib/api-guards";
-import { fetchSalespersonDashboardData } from "@/lib/dashboard-data";
+import { getSalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +10,11 @@ export async function GET(req: Request) {
   const { session } = guard;
 
   try {
-    const data = await fetchSalespersonDashboardData(session!.userId);
-    return NextResponse.json({ ...data });
+    const data = await getSalesDashboardData({
+      userId: session!.userId,
+      clientId: session!.clientId ?? null,
+    });
+    return NextResponse.json(data);
   } catch (err) {
     console.error("Salesperson dashboard error:", err);
     return NextResponse.json({ error: "Failed to load dashboard" }, { status: 500 });

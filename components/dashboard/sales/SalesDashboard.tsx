@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
@@ -8,14 +8,8 @@ import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import type { RetargetingStatusView } from "@/lib/retargeting-shared";
-import {
-  buildPerformance,
-  buildPipelineStages,
-  buildPriorityTasks,
-  buildRecentActivity,
-  buildSalesKpis,
-  type SalesDashboardRaw,
-} from "@/lib/sales/sales-dashboard-view";
+import { buildPerformance } from "@/lib/sales/sales-dashboard-view";
+import type { SalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import { SalesSidebar } from "@/components/sales/navigation/SalesSidebar";
 import { SalesMobileTopBar } from "@/components/sales/navigation/SalesMobileTopBar";
@@ -30,54 +24,19 @@ import {
 } from "@/components/sales/navigation/SalesMobileChromeContext";
 import { ToastProvider } from "@/components/sales/ui/Toast";
 import { DashboardHeader } from "./DashboardHeader";
-import { FollowUpBanner } from "./FollowUpBanner";
 import { KpiCard } from "./KpiCard";
-import { LeadSourcesCard } from "./LeadSourcesCard";
 import { PerformanceCard } from "./PerformanceCard";
-import { PipelineSummary } from "./PipelineSummary";
-import { PrioritiesCard } from "./PrioritiesCard";
 import { RecentActivityCard } from "./RecentActivityCard";
-import { TodaysPlanCard } from "./TodaysPlanCard";
-import type { SalesPriorityTask } from "./types";
-import type { DailySalesPlanPayload } from "@/lib/sales/intelligence/types";
-
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
-}
-
-function mapPlanToPriorityTasks(plan: DailySalesPlanPayload, clientId: string): SalesPriorityTask[] {
-  return plan.queue
-    .filter((q) => q.customer?.leadId)
-    .slice(0, 6)
-    .map((q) => {
-      const leadId = q.customer!.leadId!;
-      const source = String(q.customer?.source ?? "");
-      const href = source.includes("WHATSAPP")
-        ? `/sales/inbox?lead=${leadId}`
-        : `/sales/leads?lead=${leadId}`;
-      return {
-        id: q.idempotencyKey,
-        leadId,
-        clientId,
-        name: q.customer?.name ?? q.title,
-        initials: initials(q.customer?.name ?? q.title),
-        industry: q.subtitle ?? "",
-        location: "",
-        dueLabel: q.urgencyLabel ?? "Now",
-        overdue: q.reasonCode === "FOLLOWUP_OVERDUE",
-        taskLabel: q.recommendedActionLabel,
-        taskDetail: q.reason,
-        phone: q.customer?.phone ?? null,
-        href,
-      };
-    });
-}
+import { SourceMixCard } from "./SourceMixCard";
+import { TodaysFocusCard, TodaysSalesPlanStrip } from "./TodaysFocusCard";
+import { NewEnquiriesCard } from "./NewEnquiriesCard";
+import { DealsAttentionCard } from "./DealsAttentionCard";
+import { LeadDealFunnelCard } from "./LeadDealFunnelCard";
+import { ActivityTodayCard } from "./ActivityTodayCard";
+import { PipelineSnapshotCard } from "./PipelineSnapshotCard";
 
 export type SalesDashboardProps = {
-  data: SalesDashboardRaw & { retargetingStatuses?: RetargetingStatusView[] };
+  data: SalesDashboardData;
   session: unknown;
   unreadNotifications: number;
   whatsappBadge: number;
@@ -105,7 +64,6 @@ function SalesDashboardInner({
   const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
-  const [now] = useState(() => new Date());
   const { collapsed, toggleCollapsed, width } = useSalesSidebarCollapsed();
   const { setQuickActionsOpen, quickActionsOpen } = useSalesMobileChrome();
 
@@ -113,44 +71,30 @@ function SalesDashboardInner({
     setMounted(true);
   }, []);
 
+  const legacy = data.legacy;
   const { openLogSheet, logSheetProps } = useSalesLogSheet();
-  const { sheet } = logSheetProps(data.allActiveLeads);
+  const { sheet } = logSheetProps(legacy.allActiveLeads);
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
-  const { hubSheet } = addHubSheetProps(data.assignmentMode ?? "direct");
+  const { hubSheet } = addHubSheetProps(legacy.assignmentMode ?? "direct");
 
-  const kpis = useMemo(() => buildSalesKpis(data, now), [data, now]);
-  const fallbackPriorities = useMemo(() => buildPriorityTasks(data, now, 6), [data, now]);
-  const [enginePriorities, setEnginePriorities] = useState<SalesPriorityTask[] | null>(null);
-  const stages = useMemo(() => buildPipelineStages(data), [data]);
-  const activity = useMemo(() => buildRecentActivity(data), [data]);
-  const performance = useMemo(() => buildPerformance(data, now), [data, now]);
+  const performance = buildPerformance(legacy);
+  const goalProgressPct =
+    data.goal?.hasGoal &&
+    data.goal.targetValue != null &&
+    data.goal.targetValue > 0 &&
+    data.goal.achievedValue != null
+      ? Math.min(100, Math.round((data.goal.achievedValue / data.goal.targetValue) * 100))
+      : performance.hasTarget
+        ? performance.progressPct
+        : null;
 
-  useEffect(() => {
-    let cancelled = false;
-    const clientId = data.allActiveLeads[0]?.client_id ?? "";
-    void (async () => {
-      try {
-        const res = await fetch("/api/sales/daily-plan");
-        if (!res.ok) return;
-        const plan = (await res.json()) as DailySalesPlanPayload;
-        if (cancelled) return;
-        const mapped = mapPlanToPriorityTasks(plan, clientId);
-        if (mapped.length > 0) setEnginePriorities(mapped);
-      } catch {
-        // keep fallback lane priorities
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [data.allActiveLeads]);
+  const prospectCommitment = data.plan?.progress.commitments.find((c) => c.kind === "NEW_PROSPECTS");
+  const prospectProgress =
+    prospectCommitment && prospectCommitment.target > 0
+      ? { completed: prospectCommitment.completed, target: prospectCommitment.target }
+      : null;
 
-  const priorities = enginePriorities ?? fallbackPriorities;
-  const dueCount = data.numbers.followUpToday + data.numbers.callNow;
-  const overdueCount = data.insights?.overdueFollowUps ?? 0;
-  const priorityTotal =
-    enginePriorities?.length ??
-    data.numbers.callNow + data.numbers.followUpToday + data.numbers.slipped;
+  const retargetingStatuses = (legacy.retargetingStatuses ?? []) as RetargetingStatusView[];
 
   if (!mounted) {
     return <SalesDashboardSkeletonShell />;
@@ -185,7 +129,7 @@ function SalesDashboardInner({
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
-        <div className="sales-mobile-scroll min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6">
+        <div className="sales-mobile-scroll min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:space-y-5 sm:px-6 layout:px-8 layout:py-6">
           <DashboardHeader
             firstName={firstName}
             userName={fullName}
@@ -196,16 +140,18 @@ function SalesDashboardInner({
             onAddLead={openAddHubSheet}
           />
 
-          {(data.retargetingStatuses?.length ?? 0) > 0 ? (
-            <RetargetingBanners statuses={data.retargetingStatuses!} />
+          {retargetingStatuses.length > 0 ? (
+            <RetargetingBanners statuses={retargetingStatuses} />
           ) : null}
 
-          {data.numbers.totalActive === 0 ? (
+          {!data.hasAnyLeads && !data.hasAnyDeals ? (
             <div className="rounded-[14px] border border-sales-border bg-sales-surface p-5">
-              <p className="text-[15px] font-semibold text-sales-text-primary">No leads assigned to you yet</p>
+              <p className="text-[15px] font-semibold text-sales-text-primary">
+                No enquiries or Deals yet
+              </p>
               <p className="mt-2 text-[13px] leading-relaxed text-sales-text-secondary">
-                Your sales view only shows leads assigned to you. New enquiries will arrive via
-                round-robin, or a manager can assign leads from the pipeline.
+                New enquiries will appear here when assigned to you. Qualify them into Deals when a
+                genuine commercial opportunity is confirmed.
                 {s?.role === "CLIENT_MANAGER" ? (
                   <>
                     {" "}
@@ -219,31 +165,61 @@ function SalesDashboardInner({
             </div>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-5">
-            {kpis.map((item) => (
+          {/* Mobile: Today's Focus + Plan first */}
+          <div className="space-y-4 layout:hidden">
+            <TodaysFocusCard
+              focus={data.focus}
+              coverage={data.coverage}
+              goalProgressPct={goalProgressPct}
+              prospectProgress={prospectProgress}
+              error={data.planError}
+            />
+            <TodaysSalesPlanStrip {...data.planSummary} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
+            {data.kpis.map((item) => (
               <KpiCard key={item.id} item={item} />
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.9fr)]">
-            <div className="min-w-0 space-y-5">
-              <PrioritiesCard
-                tasks={priorities}
-                totalCount={priorityTotal || priorities.length}
-                repName={fullName}
-                onLog={openLogSheet}
+          {/* Desktop Today's Focus */}
+          <div className="hidden layout:block">
+            <TodaysFocusCard
+              focus={data.focus}
+              coverage={data.coverage}
+              goalProgressPct={goalProgressPct}
+              prospectProgress={prospectProgress}
+              error={data.planError}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 layout:gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,0.95fr)]">
+            <div className="min-w-0 space-y-4 layout:space-y-5">
+              <NewEnquiriesCard
+                items={data.priorityEnquiries}
+                emptyHint={
+                  data.priorityDeals.length > 0
+                    ? "Focus on Deals requiring attention below."
+                    : undefined
+                }
               />
-              <PerformanceCard performance={performance} />
-              <PipelineSummary stages={stages} />
+              <DealsAttentionCard items={data.priorityDeals} hasAnyDeals={data.hasAnyDeals} />
+              <PipelineSnapshotCard stages={data.pipelineSnapshot} />
+              {performance.hasTarget ? <PerformanceCard performance={performance} /> : null}
             </div>
-            <div className="min-w-0 space-y-5">
-              <TodaysPlanCard />
-              <LeadSourcesCard data={data} />
-              <RecentActivityCard items={activity} />
+
+            <div className="min-w-0 space-y-4 layout:space-y-5">
+              <LeadDealFunnelCard stages={data.funnel} />
+              <ActivityTodayCard metrics={data.activityToday} />
+              <SourceMixCard data={legacy} />
+              <RecentActivityCard items={data.recentActivity} />
             </div>
           </div>
 
-          <FollowUpBanner dueCount={dueCount} overdueCount={overdueCount} />
+          <div className="hidden layout:block">
+            <TodaysSalesPlanStrip {...data.planSummary} />
+          </div>
         </div>
       </div>
 
@@ -277,15 +253,22 @@ export function SalesDashboard(props: SalesDashboardProps) {
 function SalesDashboardSkeletonShell() {
   return (
     <div className="sales-dashboard-premium min-h-[100dvh] bg-sales-bg p-4 layout:pl-[228px] layout:p-6">
-      <div className="shimmer mb-6 h-24 rounded-[14px]" />
-      <div className="mb-5 grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-5">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="shimmer h-[124px] rounded-[14px]" />
+      <div className="shimmer mb-5 h-20 rounded-[14px]" />
+      <div className="mb-4 grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="shimmer h-[110px] rounded-[14px]" />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <div className="shimmer h-[420px] rounded-[14px]" />
-        <div className="shimmer h-[420px] rounded-[14px]" />
+      <div className="shimmer mb-4 h-[120px] rounded-[14px]" />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.7fr_0.95fr]">
+        <div className="space-y-4">
+          <div className="shimmer h-[280px] rounded-[14px]" />
+          <div className="shimmer h-[320px] rounded-[14px]" />
+        </div>
+        <div className="space-y-4">
+          <div className="shimmer h-[220px] rounded-[14px]" />
+          <div className="shimmer h-[180px] rounded-[14px]" />
+        </div>
       </div>
     </div>
   );

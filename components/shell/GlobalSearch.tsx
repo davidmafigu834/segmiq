@@ -123,7 +123,7 @@ export function GlobalSearch({
           <span className="min-w-0 flex-1 truncate">
             {placeholder ??
               (role === "SALESPERSON" || role === "CLIENT_MANAGER"
-                ? "Search leads, customers, deals..."
+                ? "Search leads, deals, customers, quotes..."
                 : "Search…")}
           </span>
           <kbd className="hidden shrink-0 rounded-[4px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 font-mono text-[10px] text-sales-text-muted sm:inline-block">
@@ -157,7 +157,7 @@ export function GlobalSearch({
                 placeholder={
                   placeholder ??
                   (role === "SALESPERSON"
-                    ? "Search your assigned leads…"
+                    ? "Search leads, deals, customers, quotes..."
                     : role === "CLIENT_MANAGER"
                       ? "Search leads and team…"
                       : "Search leads, clients, and team…")

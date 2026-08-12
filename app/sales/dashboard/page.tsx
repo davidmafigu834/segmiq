@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { redirect } from "next/navigation";
-import { fetchSalespersonDashboardData } from "@/lib/dashboard-data";
+import { getSalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import SalesDashboardMain from "./SalesDashboardMain";
@@ -20,7 +20,10 @@ export default async function SalesDashboardPage() {
   }
 
   const [data, navBadges] = await Promise.all([
-    fetchSalespersonDashboardData(session.userId),
+    getSalesDashboardData({
+      userId: session.userId,
+      clientId: session.clientId ?? null,
+    }),
     fetchSalesNavBadges(session.userId, session.clientId ?? null),
   ]);
 

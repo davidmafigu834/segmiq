@@ -104,7 +104,7 @@ function baseRec(opts: {
   metadata?: Record<string, unknown>;
   origin?: SalesActionRecommendation["origin"];
 }): SalesActionRecommendation {
-  const sourceEntityId = opts.lead?.id ?? null;
+  const sourceEntityId = opts.lead?.dealId ?? opts.lead?.id ?? null;
   const idempotencyKey = buildIdempotencyKey({
     salespersonId: opts.ctx.salespersonId,
     planDate: opts.ctx.planDate,
@@ -118,7 +118,13 @@ function baseRec(opts: {
     idempotencyKey,
     actionType: opts.actionType,
     origin: opts.origin ?? "SYSTEM_RECOMMENDED",
-    sourceEntityType: opts.lead ? "lead" : opts.actionType === "PROSPECT_NEW_CUSTOMERS" ? "goal" : "none",
+    sourceEntityType: opts.lead?.dealId
+      ? "deal"
+      : opts.lead
+        ? "lead"
+        : opts.actionType === "PROSPECT_NEW_CUSTOMERS"
+          ? "goal"
+          : "none",
     sourceEntityId,
     attentionScore: clamp(opts.attentionScore),
     title: opts.title,
@@ -142,7 +148,10 @@ function baseRec(opts: {
         }
       : null,
     availableActions: opts.availableActions,
-    metadata: opts.metadata ?? {},
+    metadata: {
+      ...(opts.metadata ?? {}),
+      ...(opts.lead?.dealId ? { dealId: opts.lead.dealId, leadId: opts.lead.id } : {}),
+    },
   };
 }
 
@@ -450,21 +459,22 @@ function generateLeadCandidates(
   return out;
 }
 
-/** Deduplicate: keep highest-scoring candidate per lead (except prospecting). */
+/** Deduplicate: keep highest-scoring candidate per lead/deal entity (except prospecting). */
 function dedupeByLead(candidates: SalesActionRecommendation[]): SalesActionRecommendation[] {
-  const byLead = new Map<string, SalesActionRecommendation>();
+  const byEntity = new Map<string, SalesActionRecommendation>();
   const nonLead: SalesActionRecommendation[] = [];
   for (const c of candidates) {
     if (!c.sourceEntityId || c.actionType === "PROSPECT_NEW_CUSTOMERS") {
       nonLead.push(c);
       continue;
     }
-    const prev = byLead.get(c.sourceEntityId);
+    const key = `${c.sourceEntityType}:${c.sourceEntityId}`;
+    const prev = byEntity.get(key);
     if (!prev || c.attentionScore > prev.attentionScore) {
-      byLead.set(c.sourceEntityId, c);
+      byEntity.set(key, c);
     }
   }
-  return [...byLead.values(), ...nonLead];
+  return [...byEntity.values(), ...nonLead];
 }
 
 function stableSort(a: SalesActionRecommendation, b: SalesActionRecommendation): number {

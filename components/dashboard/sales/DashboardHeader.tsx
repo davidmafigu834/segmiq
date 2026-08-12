@@ -34,7 +34,7 @@ export function DashboardHeader({
     <SalesPageHeader
       breadcrumb="Sales / Dashboard"
       title={greeting}
-      description="Here’s what’s happening with your pipeline today."
+      description="Here's what needs attention across your enquiries and deals today."
       actions={
         <>
           <div className="sd-search-wrap hidden min-w-0 shrink layout:inline-flex">

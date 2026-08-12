@@ -80,3 +80,35 @@ export function minutesSince(iso: string | null | undefined, now: Date): number 
   if (!Number.isFinite(t)) return null;
   return Math.max(0, Math.floor((now.getTime() - t) / (1000 * 60)));
 }
+
+/**
+ * Average minutes from lead.created_at → first qualifying salesperson response
+ * (CALL_LOGGED / MESSAGE_SENT events, call logs, or outbound WhatsApp).
+ * Does not use lead.updatedAt.
+ */
+export function firstQualifyingResponseMinutes(
+  leads: { id: string; created_at: string }[],
+  opts: {
+    eventsByLead?: Map<string, ActivityTimestampRow[]>;
+    callAtsByLead?: Map<string, string[]>;
+    outboundWaByLead?: Map<string, string[]>;
+  }
+): number | null {
+  const deltas: number[] = [];
+  for (const lead of leads) {
+    const created = Date.parse(lead.created_at);
+    if (!Number.isFinite(created)) continue;
+    const first = deriveFirstRespondedAt(
+      opts.eventsByLead?.get(lead.id) ?? [],
+      opts.callAtsByLead?.get(lead.id) ?? [],
+      opts.outboundWaByLead?.get(lead.id) ?? []
+    );
+    if (!first) continue;
+    const responded = Date.parse(first);
+    if (!Number.isFinite(responded)) continue;
+    const mins = (responded - created) / 60_000;
+    if (mins >= 0 && Number.isFinite(mins)) deltas.push(mins);
+  }
+  if (deltas.length === 0) return null;
+  return deltas.reduce((a, b) => a + b, 0) / deltas.length;
+}

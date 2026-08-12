@@ -125,3 +125,15 @@ Same tenant + owner/manager rules as leads. Salespeople cannot create deals from
 - Sales velocity charts (timestamps captured)
 - Making `quotations.lead_id` nullable
 - Fake stage close-probability forecasting changes
+
+## Salesperson Dashboard semantics
+
+The Dashboard shows **both** Leads and Deals, but never mixes their commercial meaning:
+
+- **Leads** power acquisition: new enquiries, source mix, first-response, qualification funnel top.
+- **Deals** power revenue: active deal count, pipeline value (`getDealCommercialValue`), pipeline snapshot stages, won outcomes, deals requiring attention.
+- **Today's Focus / plan** come from Daily Sales Intelligence (`fetchDailySalesPlan`) — the same engine as Tasks.
+- A new Lead must **not** inflate Active Deals or Pipeline Value until a Deal is created.
+- Unknown Deal value displays as “Value not estimated” / awaiting estimate — never `$0`.
+
+See also [SEGMIQ_SALES_DESIGN_SYSTEM.md](./SEGMIQ_SALES_DESIGN_SYSTEM.md) §16 and [SEGMIQ_DAILY_SALES_INTELLIGENCE.md](./SEGMIQ_DAILY_SALES_INTELLIGENCE.md).

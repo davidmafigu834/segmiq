@@ -141,6 +141,26 @@ describe("priority engine ranking", () => {
     assert.ok(hit, "expected stale or no-next-action recommendation for inactive negotiating deal");
   });
 
+  it("ranks active Deal signals with deal sourceEntityType", () => {
+    const dealSignal = lead({
+      id: "origin-lead-1",
+      name: "Warehouse Roofing",
+      status: "NEGOTIATING",
+      score: 70,
+      firstRespondedAt: "2026-08-01T12:00:00.000Z",
+      lastMeaningfulActivityAt: "2026-08-10T12:00:00.000Z",
+      hasFutureNextAction: false,
+      followUpDate: null,
+      dealId: "deal-99",
+    });
+    const ranked = rankSalesActions({ leads: [dealSignal], ctx: ctx() });
+    const hit = ranked.queue.find((q) => q.sourceEntityType === "deal") ?? ranked.all.find((q) => q.sourceEntityType === "deal");
+    assert.ok(hit, "expected deal-typed recommendation");
+    assert.equal(hit!.sourceEntityId, "deal-99");
+    assert.equal(hit!.metadata.dealId, "deal-99");
+    assert.equal(hit!.customer?.leadId, "origin-lead-1");
+  });
+
   it("produces PROSPECT_NEW_CUSTOMERS when deal queue empty and coverage low", () => {
     const ranked = rankSalesActions({
       leads: [],

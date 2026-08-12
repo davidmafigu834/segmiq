@@ -19,12 +19,16 @@ const SKIP_REASONS = [
   "Other",
 ] as const;
 
-function leadHref(rec: SalesActionRecommendation): string {
+function entityHref(rec: SalesActionRecommendation): string {
+  const dealId =
+    (typeof rec.metadata?.dealId === "string" && rec.metadata.dealId) ||
+    (rec.sourceEntityType === "deal" ? rec.sourceEntityId : null);
+  if (dealId) return `/sales/deals/${dealId}`;
   const id = rec.customer?.leadId ?? rec.sourceEntityId;
-  if (!id) return "/sales/leads";
+  if (!id) return "/sales/call-now";
   const source = String(rec.customer?.source ?? "");
   if (source.includes("WHATSAPP")) return `/sales/inbox?lead=${id}`;
-  return `/sales/leads?lead=${id}`;
+  return `/sales/call-now?lead=${id}`;
 }
 
 export function FocusModeOverlay({
@@ -195,7 +199,7 @@ export function FocusModeOverlay({
                 {(current.customer?.leadId || current.sourceEntityId) &&
                 !current.availableActions.includes("add_prospect") ? (
                   <Link
-                    href={leadHref(current)}
+                    href={entityHref(current)}
                     onClick={onClose}
                     className="inline-flex h-11 min-h-11 w-full items-center justify-center rounded-sales-md text-[13px] font-medium text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
                   >

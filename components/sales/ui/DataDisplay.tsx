@@ -4,9 +4,11 @@ import Link from "next/link";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  BriefcaseBusiness,
   CalendarClock,
   CircleDollarSign,
   Clock3,
+  Inbox,
   Target,
   Trophy,
 } from "lucide-react";
@@ -19,6 +21,8 @@ const ICON_MAP = {
   won: Trophy,
   conversion: Target,
   response: Clock3,
+  enquiries: Inbox,
+  deals: BriefcaseBusiness,
 } as const;
 
 const ICON_TINT: Record<SalesKpiItem["icon"], string> = {
@@ -27,6 +31,8 @@ const ICON_TINT: Record<SalesKpiItem["icon"], string> = {
   won: "bg-sales-brand-soft-solid text-sales-brand-fg",
   conversion: "bg-sales-info-soft text-sales-info-fg",
   response: "bg-sales-neutral-100 text-sales-text-secondary",
+  enquiries: "bg-sales-info-soft text-sales-info-fg",
+  deals: "bg-sales-teal-soft text-sales-teal-fg",
 };
 
 export function Trend({

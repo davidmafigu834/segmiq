@@ -442,3 +442,59 @@ Page `#F7F8FA` / `#0B0D0C` · Surface `#FFFFFF` / `#111411` · Text `#101828` / 
 
 Use: Estimated deal value · Expected decision · Next action · Value not estimated yet · Deal created.  
 Avoid fake probabilities and enterprise CRM jargon.
+
+## 16. Salesperson Dashboard
+
+Route: `/sales/dashboard` · Aggregator: `getSalesDashboardData()` · UI: `components/dashboard/sales/*`.
+
+### Information hierarchy (action first)
+
+1. Greeting (real first name) + search / chrome  
+2. Commercial KPI row (6)  
+3. **Today's Focus** (BUILD / MOVE / CLOSE from Daily Sales Plan)  
+4. **New enquiries needing action** + **Deals requiring attention**  
+5. Right rail: Lead → Deal funnel · My activity today · Source mix · Recent activity  
+6. **Pipeline snapshot** (Deals only)  
+7. Today's Sales Plan continuation strip  
+8. Optional compact Goal / My Performance when a target exists  
+
+### Lead vs Deal semantics
+
+| Module | Entity |
+|--------|--------|
+| New enquiries KPI + list | **Leads** needing first contact / reply |
+| Active deals · Pipeline value · Pipeline snapshot | **Active Deals** via `getDealCommercialValue()` |
+| Deals won | **Deal** outcomes (`stage = WON`) |
+| Source mix | Lead acquisition this period |
+| Funnel | Lead → Deal journey counts (period counts; no fake cohort %) |
+
+### KPI definitions
+
+| KPI | Meaning |
+|-----|---------|
+| New enquiries | Leads created today in salesperson scope |
+| Active deals | Deals in QUALIFIED / SCOPING / PROPOSAL_SENT / NEGOTIATING |
+| Pipeline value | Sum of known commercial values on active Deals; pending excluded (never `$0`) |
+| Deals won | Won Deals this calendar month |
+| Follow-ups due | Due today + overdue (leads + deal next actions) |
+| Response time | Avg minutes lead created → first call log |
+
+### Today's Focus
+
+Uses `fetchDailySalesPlan().focus` (`BUILD` / `MOVE` / `CLOSE`). Soft lime wash only; no AI chrome. CTA → `/sales/tasks`.
+
+### Responsive
+
+| Breakpoint | Layout |
+|------------|--------|
+| Mobile | Focus + Plan high; KPI 2-col; enquiry/deal cards; funnel horizontal scroll; source legend under donut |
+| ~1024 | Stack main then intelligence |
+| Desktop `xl` | ~68/32 main + rail; KPI 6-across when comfortable |
+
+### Dark mode
+
+Surfaces `#111411` / raised `#151815`; borders `#272C27` / `#1E231E`; chart tooltips use sales surface tokens; lime restrained.
+
+### Links
+
+Enquiries → `/sales/call-now` · Deals → `/sales/deals/[id]` · Pipeline → `/sales/leads` · Plan/Focus → `/sales/tasks` · Goals context → Goals when present.
