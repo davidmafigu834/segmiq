@@ -15,6 +15,7 @@ import { KpiCard } from "@/components/dashboard/sales/KpiCard";
 import { PipelineSnapshotCard } from "@/components/dashboard/sales/PipelineSnapshotCard";
 import { CompanyDashboardHeader } from "./CompanyDashboardHeader";
 import { CompanyFocusAreasCard } from "./CompanyFocusAreasCard";
+import { CompanyTeamCalendarCard } from "./CompanyTeamCalendarCard";
 import { CompanyTeamPerformanceCard } from "./CompanyTeamPerformanceCard";
 import { CompanyFunnelCard } from "./CompanyFunnelCard";
 import { CompanyLeadSourcesCard } from "./CompanyLeadSourcesCard";
@@ -133,16 +134,27 @@ export function CompanyDashboard({
             ))}
           </div>
 
-          <div className="hidden w-full gap-4 layout:grid layout:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.9fr)] layout:gap-5">
+          {/* Compact focus strip — desktop */}
+          <div className="hidden layout:block">
             <CompanyFocusAreasCard
               signals={data.focusAreas}
               viewAllHref={data.focusAreasViewAllHref}
             />
-            <CompanyFunnelCard
-              stages={data.funnel}
-              conversionRate={data.conversionRate}
-              conversionDefinition={data.conversionDefinition}
+          </div>
+
+          {/* Team calendar + Funnel */}
+          <div className="grid w-full grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-5">
+            <CompanyTeamCalendarCard
+              items={data.teamCalendar}
+              overdueCount={data.teamCalendarOverdueCount}
             />
+            <div className="hidden layout:block">
+              <CompanyFunnelCard
+                stages={data.funnel}
+                conversionRate={data.conversionRate}
+                conversionDefinition={data.conversionDefinition}
+              />
+            </div>
           </div>
 
           <div className="grid w-full grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.95fr)] layout:gap-5">

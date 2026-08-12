@@ -74,6 +74,21 @@ export type CompanyActivityItem = {
   actorName: string | null;
 };
 
+export type CompanyCalendarItem = {
+  id: string;
+  kind: "follow_up" | "call" | "deal_action" | "quote_review";
+  title: string;
+  customerName: string | null;
+  ownerName: string | null;
+  ownerId: string | null;
+  startAt: string;
+  dayKey: string;
+  dayLabel: string;
+  timeLabel: string;
+  overdue: boolean;
+  href: string;
+};
+
 export type CompanySalesDashboardData = {
   clientId: string;
   clientName: string;
@@ -82,6 +97,8 @@ export type CompanySalesDashboardData = {
   kpis: SalesKpiItem[];
   focusAreas: CompanyFocusSignal[];
   focusAreasViewAllHref: string;
+  teamCalendar: CompanyCalendarItem[];
+  teamCalendarOverdueCount: number;
   team: CompanyTeamMemberRow[];
   teamTotal: number;
   teamViewAllHref: string;

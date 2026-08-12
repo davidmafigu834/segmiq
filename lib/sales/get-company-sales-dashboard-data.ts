@@ -33,12 +33,15 @@ import type { SalesFunnelStage, SalesKpiItem, SalesPipelineSnapshotStage } from 
 import type {
   CompanyActivityItem,
   CompanyAtRiskDeal,
+  CompanyCalendarItem,
   CompanyFocusSignal,
   CompanyLeadSourceItem,
   CompanyRevenuePoint,
   CompanyTeamMemberRow,
   CompanySalesDashboardData,
 } from "@/components/dashboard/company/types";
+import { resolveFollowUpDateTime } from "@/lib/call-log-constants";
+import { format as formatDate, isToday, isTomorrow, startOfDay, addDays } from "date-fns";
 
 const QUALIFIED_LEAD_STATUSES = new Set([
   "QUALIFIED",
@@ -1090,6 +1093,92 @@ export async function getCompanySalesDashboard(opts: {
     avgResponseMinutesPrev,
   });
 
+  // --- Team calendar: combined lead follow-ups + deal next actions (7 days) ---
+  const calendarStart = startOfDay(now);
+  const calendarEnd = addDays(calendarStart, 7);
+  const nameByUserId = new Map(team.map((t) => [t.id, t.name?.trim() || "Team member"]));
+
+  function dayMeta(d: Date): { dayKey: string; dayLabel: string; timeLabel: string; overdue: boolean } {
+    const overdue = d < calendarStart;
+    const dayKey = overdue ? "overdue" : formatDate(d, "yyyy-MM-dd");
+    let dayLabel: string;
+    if (overdue) dayLabel = "Overdue";
+    else if (isToday(d)) dayLabel = "Today";
+    else if (isTomorrow(d)) dayLabel = "Tomorrow";
+    else dayLabel = formatDate(d, "EEE d MMM");
+    const allDay = d.getHours() === 12 && d.getMinutes() === 0;
+    return {
+      dayKey,
+      dayLabel,
+      timeLabel: overdue ? formatDate(d, "d MMM") : allDay ? "All day" : formatDate(d, "HH:mm"),
+      overdue,
+    };
+  }
+
+  const calendarItems: CompanyCalendarItem[] = [];
+
+  for (const l of leads) {
+    if (!l.follow_up_date) continue;
+    if (["WON", "LOST", "NOT_QUALIFIED", "CONVERTED_TO_DEAL"].includes(l.status)) continue;
+    const start = resolveFollowUpDateTime(l.follow_up_date);
+    if (!start || start >= calendarEnd) continue;
+    const meta = dayMeta(start);
+    const ownerId = l.assigned_to_id;
+    const kind: CompanyCalendarItem["kind"] =
+      l.status === "PROPOSAL_SENT" ? "quote_review" : "follow_up";
+    calendarItems.push({
+      id: `lead-${l.id}`,
+      kind,
+      title:
+        kind === "quote_review"
+          ? `Quote follow-up · ${l.name?.trim() || "Customer"}`
+          : `Follow up · ${l.name?.trim() || "Customer"}`,
+      customerName: l.name?.trim() || null,
+      ownerName: ownerId ? nameByUserId.get(ownerId) ?? null : null,
+      ownerId,
+      startAt: start.toISOString(),
+      dayKey: meta.dayKey,
+      dayLabel: meta.dayLabel,
+      timeLabel: meta.timeLabel,
+      overdue: meta.overdue,
+      href: `/client/leads/pipeline?lead=${l.id}`,
+    });
+  }
+
+  for (const d of activeDeals) {
+    const next = getDealNextActionState(d);
+    if (!next.at) continue;
+    const start = new Date(next.at);
+    if (Number.isNaN(start.getTime()) || start >= calendarEnd) continue;
+    const meta = dayMeta(start);
+    const ownerId = d.owner_id;
+    calendarItems.push({
+      id: `deal-${d.id}`,
+      kind: "deal_action",
+      title: next.label?.trim()
+        ? `${next.label.trim()} · ${d.name}`
+        : `Deal next action · ${d.name}`,
+      customerName: d.decision_maker_name?.trim() || d.name,
+      ownerName: ownerId ? nameByUserId.get(ownerId) ?? null : null,
+      ownerId,
+      startAt: start.toISOString(),
+      dayKey: meta.dayKey,
+      dayLabel: meta.dayLabel,
+      timeLabel: meta.overdue ? formatDate(start, "d MMM") : formatDate(start, "HH:mm"),
+      overdue: meta.overdue || next.isOverdue,
+      href: alsoSells
+        ? `/sales/deals/${d.id}`
+        : `/client/leads/pipeline?lead=${d.originating_lead_id}`,
+    });
+  }
+  calendarItems.sort((a, b) => {
+    if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+    return a.startAt.localeCompare(b.startAt);
+  });
+
+  const teamCalendarOverdueCount = calendarItems.filter((i) => i.overdue).length;
+  const teamCalendar = calendarItems.slice(0, 24);
+
   return {
     clientId,
     clientName,
@@ -1098,6 +1187,8 @@ export async function getCompanySalesDashboard(opts: {
     kpis,
     focusAreas,
     focusAreasViewAllHref: "/client/leads",
+    teamCalendar,
+    teamCalendarOverdueCount,
     team: teamPreview,
     teamTotal: teamRows.length,
     teamViewAllHref: "/client/team",

@@ -60,32 +60,29 @@ export function CompanyFocusAreasCard({
       }
     >
       {signals.length === 0 ? (
-        <div className="px-5 py-8 text-center">
+        <div className="px-5 py-5 text-center">
           <p className="text-[13px] font-medium text-sales-text-primary">
             No operational issues need attention right now.
           </p>
-          <p className="mt-1 text-[12px] text-sales-text-muted">
-            Overdue follow-ups, at-risk Deals and hot enquiries will appear here.
-          </p>
         </div>
       ) : isOnboarding ? (
-        <div className="px-5 py-6">
-          <p className="text-[15px] font-semibold text-sales-text-primary">
+        <div className="px-5 py-4">
+          <p className="text-[14px] font-semibold text-sales-text-primary">
             {signals[0]!.label}
           </p>
-          <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-sales-text-secondary">
+          <p className="mt-1 max-w-xl text-[12px] leading-relaxed text-sales-text-secondary">
             {signals[0]!.supporting}
           </p>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-wrap gap-2">
             <Link
               href="/client/team"
-              className="inline-flex min-h-11 items-center rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-fg"
+              className="inline-flex min-h-10 items-center rounded-[10px] bg-sales-brand px-3.5 text-[12px] font-semibold text-sales-brand-fg"
             >
               Add salesperson
             </Link>
             <Link
               href="/client/leads"
-              className="inline-flex min-h-11 items-center rounded-[10px] border border-sales-border px-4 text-[13px] font-semibold text-sales-text-primary"
+              className="inline-flex min-h-10 items-center rounded-[10px] border border-sales-border px-3.5 text-[12px] font-semibold text-sales-text-primary"
             >
               Add Lead
             </Link>
@@ -99,24 +96,26 @@ export function CompanyFocusAreasCard({
               <Link
                 key={signal.id}
                 href={signal.href}
-                className="flex min-h-[88px] items-start gap-3 px-5 py-4 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                className="flex min-h-[64px] items-center gap-2.5 px-4 py-2.5 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
               >
                 <span
                   className={cn(
-                    "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
                     SEVERITY_TINT[signal.severity]
                   )}
                 >
-                  <Icon size={16} strokeWidth={1.8} aria-hidden />
+                  <Icon size={15} strokeWidth={1.8} aria-hidden />
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[22px] font-semibold tabular-nums tracking-[-0.03em] text-sales-text-primary">
-                    {signal.count}
-                  </p>
-                  <p className="mt-0.5 text-[13px] font-semibold text-sales-text-primary">
-                    {signal.label}
-                  </p>
-                  <p className="mt-0.5 text-[12px] text-sales-text-muted">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-[18px] font-semibold tabular-nums tracking-[-0.03em] text-sales-text-primary">
+                      {signal.count}
+                    </p>
+                    <p className="truncate text-[12px] font-semibold text-sales-text-primary">
+                      {signal.label}
+                    </p>
+                  </div>
+                  <p className="truncate text-[11px] text-sales-text-muted">
                     {signal.supporting}
                   </p>
                 </div>
