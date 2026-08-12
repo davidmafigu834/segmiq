@@ -659,32 +659,32 @@ export async function getCompanySalesDashboard(opts: {
     const chunk = ids.slice(0, 1500);
     const empty = { data: [] as unknown[] };
     const [calls, wa, events] = await Promise.all([
-      supabase
-        .from("call_logs")
-        .select("lead_id, created_at")
-        .in("lead_id", chunk)
-        .order("created_at", { ascending: true })
-        .limit(4000)
-        .then((r) => r)
-        .catch(() => empty),
-      supabase
-        .from("whatsapp_messages")
-        .select("lead_id, direction, created_at")
-        .in("lead_id", chunk)
-        .eq("direction", "outbound")
-        .order("created_at", { ascending: true })
-        .limit(4000)
-        .then((r) => r)
-        .catch(() => empty),
-      supabase
-        .from("lead_events")
-        .select("lead_id, event_type, created_at")
-        .in("lead_id", chunk)
-        .in("event_type", ["CALL_LOGGED", "MESSAGE_SENT"])
-        .order("created_at", { ascending: true })
-        .limit(4000)
-        .then((r) => r)
-        .catch(() => empty),
+      Promise.resolve(
+        supabase
+          .from("call_logs")
+          .select("lead_id, created_at")
+          .in("lead_id", chunk)
+          .order("created_at", { ascending: true })
+          .limit(4000)
+      ).catch(() => empty),
+      Promise.resolve(
+        supabase
+          .from("whatsapp_messages")
+          .select("lead_id, direction, created_at")
+          .in("lead_id", chunk)
+          .eq("direction", "outbound")
+          .order("created_at", { ascending: true })
+          .limit(4000)
+      ).catch(() => empty),
+      Promise.resolve(
+        supabase
+          .from("lead_events")
+          .select("lead_id, event_type, created_at")
+          .in("lead_id", chunk)
+          .in("event_type", ["CALL_LOGGED", "MESSAGE_SENT"])
+          .order("created_at", { ascending: true })
+          .limit(4000)
+      ).catch(() => empty),
     ]);
     const callAtsByLead = new Map<string, string[]>();
     const outboundWaByLead = new Map<string, string[]>();
