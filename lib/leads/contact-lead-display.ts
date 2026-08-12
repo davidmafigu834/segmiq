@@ -1,4 +1,4 @@
-import { extractFromFormData } from "@/lib/lead-helpers";
+import { extractFromFormData, extractPhoneFromFormData, looksLikePhoneNumber } from "@/lib/lead-helpers";
 import { formatFormKey, formatFormValue } from "@/lib/format-form-data";
 import { intakeOutcomeLabel, type WalkInIntakeOutcome } from "@/lib/walk-in-intake";
 import type { LeadSource } from "@/types";
@@ -165,11 +165,10 @@ export function contactLeadPhone(lead: {
   phone?: string | null;
   form_data?: Record<string, unknown> | null;
 }): string | null {
-  return (
-    lead.phone?.trim() ||
-    extractFromFormData(lead.form_data ?? {}, ["phone", "mobile", "tel"])?.trim() ||
-    null
-  );
+  if (lead.phone?.trim() && looksLikePhoneNumber(lead.phone)) {
+    return lead.phone.trim();
+  }
+  return extractPhoneFromFormData(lead.form_data ?? {})?.trim() || null;
 }
 
 export function walkInIntakeLabel(lead: {

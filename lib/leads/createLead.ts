@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { newMagicToken, parseLeadFields } from "@/lib/lead-helpers";
+import { newMagicToken, parseLeadFields, looksLikePhoneNumber } from "@/lib/lead-helpers";
 import { prospectEnquiryLabel } from "@/lib/format-form-data";
 import { notifyNewLead, notifyAdminsNoSalesperson } from "@/lib/notifications";
 import { parseSalesPrefs } from "@/lib/notification-prefs";
@@ -433,7 +433,7 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     status: initialStatus ?? ("NEW" as const),
     form_data: storedFormData,
     name: fields.name,
-    phone: fields.phone,
+    phone: phoneDigits ?? (fields.phone && looksLikePhoneNumber(fields.phone) ? fields.phone.trim() : null),
     email: fields.email,
     budget: fields.budget,
     project_type: fields.project_type,

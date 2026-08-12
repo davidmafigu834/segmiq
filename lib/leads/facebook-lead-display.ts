@@ -1,4 +1,4 @@
-import { extractFromFormData } from "@/lib/lead-helpers";
+import { extractFromFormData, extractPhoneFromFormData, looksLikePhoneNumber } from "@/lib/lead-helpers";
 import { formatFormKey, formatFormValue } from "@/lib/format-form-data";
 
 export function isFacebookInstantFormLead(source?: string | null): boolean {
@@ -6,7 +6,7 @@ export function isFacebookInstantFormLead(source?: string | null): boolean {
 }
 
 const SKIP_FORM_KEY =
-  /^(utm_|id$|created_time|fb_|gclid|full_name|first_name|last_name|email|e-mail|phone|mobile|tel|name)$/i;
+  /^(utm_|id$|created_time|fb_|gclid|full_name|first_name|last_name|email|e-mail|phone|phone_number|mobile|tel|name)$/i;
 
 function isContactFieldKey(key: string): boolean {
   const lower = key.toLowerCase();
@@ -41,8 +41,7 @@ export function facebookLeadDisplayName(lead: {
       .trim();
   if (fromForm) return fromForm;
 
-  const phone =
-    lead.phone?.trim() || extractFromFormData(fd, ["phone", "mobile", "tel"]);
+  const phone = facebookLeadPhone(lead);
   if (phone) return phone;
 
   const email = extractFromFormData(fd, ["email", "e-mail"]);
@@ -66,11 +65,10 @@ export function facebookLeadPhone(lead: {
   phone?: string | null;
   form_data?: Record<string, unknown> | null;
 }): string | null {
-  return (
-    lead.phone?.trim() ||
-    extractFromFormData(lead.form_data ?? {}, ["phone", "mobile", "tel"])?.trim() ||
-    null
-  );
+  if (lead.phone?.trim() && looksLikePhoneNumber(lead.phone)) {
+    return lead.phone.trim();
+  }
+  return extractPhoneFromFormData(lead.form_data ?? {})?.trim() || null;
 }
 
 export type FacebookFormHighlight = {
