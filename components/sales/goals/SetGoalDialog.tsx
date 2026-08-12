@@ -17,6 +17,7 @@ export function SetGoalDialog({
   initialPeriodKey,
   initialTarget,
   currency,
+  salespersonId,
   onClose,
   onSuccess,
 }: {
@@ -25,6 +26,8 @@ export function SetGoalDialog({
   initialPeriodKey: string;
   initialTarget?: number;
   currency: string;
+  /** When set, managers create/edit a Goal for this salesperson via the Company Team API. */
+  salespersonId?: string;
   onClose: () => void;
   onSuccess: (opts: { periodKey: string; mode: "create" | "edit"; target: number }) => void;
 }) {
@@ -66,26 +69,52 @@ export function SetGoalDialog({
           setError("Goal not found.");
           return;
         }
-        const patch = await fetch(`/api/sales/goals/${goalId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetValue }),
-        });
-        const json = await patch.json().catch(() => ({}));
-        if (!patch.ok) {
-          setError((json as { error?: string }).error ?? "Couldn't save goal");
-          return;
+        if (salespersonId) {
+          const patch = await fetch(`/api/client/team/goals`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ goalId, targetValue }),
+          });
+          const json = await patch.json().catch(() => ({}));
+          if (!patch.ok) {
+            setError((json as { error?: string }).error ?? "Couldn't save goal");
+            return;
+          }
+        } else {
+          const patch = await fetch(`/api/sales/goals/${goalId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetValue }),
+          });
+          const json = await patch.json().catch(() => ({}));
+          if (!patch.ok) {
+            setError((json as { error?: string }).error ?? "Couldn't save goal");
+            return;
+          }
         }
       } else {
-        const res = await fetch("/api/sales/goals", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetValue, periodKey, currency }),
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          setError((json as { error?: string }).error ?? "Couldn't save goal");
-          return;
+        if (salespersonId) {
+          const res = await fetch("/api/client/team/goals", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ salespersonId, targetValue, periodKey, currency }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setError((json as { error?: string }).error ?? "Couldn't save goal");
+            return;
+          }
+        } else {
+          const res = await fetch("/api/sales/goals", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ targetValue, periodKey, currency }),
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setError((json as { error?: string }).error ?? "Couldn't save goal");
+            return;
+          }
         }
       }
       onSuccess({ periodKey, mode, target: targetValue });

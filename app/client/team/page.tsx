@@ -1,12 +1,13 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCompanyTeamPageData } from "@/lib/sales/get-company-team-page-data";
+import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { ClientTeamDashboard } from "@/components/client-team/ClientTeamDashboard";
-import { TeamMembersManager } from "@/components/client-team/TeamMembersManager";
+import { CompanyTeamPage } from "@/components/dashboard/company/team/CompanyTeamPage";
+import { CompanyTeamPageSkeleton } from "@/components/dashboard/company/team/CompanyTeamPageSkeleton";
 
 export default async function ClientTeamPage({
   searchParams,
@@ -20,49 +21,71 @@ export default async function ClientTeamPage({
   const previewClientId = searchParams.clientId;
 
   if (role === "SUPER_ADMIN") {
-    if (!previewClientId) {
-      redirect("/dashboard");
-    }
+    if (!previewClientId && !session.clientId) redirect("/dashboard");
   } else if (role === "CLIENT_MANAGER") {
     if (!session.clientId) redirect("/login");
   } else {
     redirect("/sales/pipeline");
   }
 
+  const clientId =
+    role === "SUPER_ADMIN" ? previewClientId || session.clientId! : session.clientId!;
+
   const supabase = createAdminClient();
-  const targetClientId = role === "SUPER_ADMIN" ? previewClientId! : session.clientId!;
-  const { data: clientRow } = await supabase
-    .from("clients")
-    .select("name, round_robin_index")
-    .eq("id", targetClientId)
-    .maybeSingle();
-  const clientName = (clientRow?.name as string) ?? "Your company";
-  const roundRobinIndex = Number((clientRow as { round_robin_index?: number } | null)?.round_robin_index ?? 0);
+  const [data, unreadRes, userRes, clientRes, navBadges] = await Promise.all([
+    getCompanyTeamPageData({
+      clientId,
+      actor: {
+        userId: session.userId,
+        role: session.role,
+        clientId: session.clientId,
+      },
+      alsoSells: Boolean(session.alsoSells),
+    }),
+    session.userId
+      ? supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.userId)
+          .eq("read", false)
+      : Promise.resolve({ count: 0 }),
+    session.userId
+      ? supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("clients").select("logo_url").eq("id", clientId).maybeSingle(),
+    session.userId
+      ? fetchSalesNavBadges(session.userId, clientId)
+      : Promise.resolve({
+          hotLeads: 0,
+          needsReply: 0,
+          followUpDue: 0,
+          followUpsToday: 0,
+          callNow: 0,
+        }),
+  ]);
+
+  const whatsappBadge =
+    (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
 
   return (
     <ClientManagerLayout
+      breadcrumbPage="TEAM"
+      pageTitle="Team"
       hideShellHeader
-      navClientId={targetClientId}
-      breadcrumbOverride={`${clientName} / TEAM`}
-      pageTitle="Your team"
+      hideShellSidebar
+      navClientId={clientId}
     >
-      {role === "SUPER_ADMIN" ? (
-        <p className="mb-6 rounded-lg border border-[var(--border)] bg-[var(--bg-tertiary)] px-3.5 py-2.5 font-mono text-[11px] text-[var(--text-secondary)]">
-          Previewing client team ·{" "}
-          <Link href="/dashboard" className="text-[var(--accent)] underline-offset-2 hover:underline">
-            Back to agency
-          </Link>
-        </p>
-      ) : null}
-      <Suspense fallback={<div className="shimmer h-[min(480px,70vh)] rounded-lg border border-[var(--border)]" />}>
-        <ClientTeamDashboard
-          clientName={clientName}
-          previewClientId={role === "SUPER_ADMIN" ? previewClientId : undefined}
+      <Suspense fallback={<CompanyTeamPageSkeleton />}>
+        <CompanyTeamPage
+          data={data}
+          unreadNotifications={unreadRes.count ?? 0}
+          notificationRole={session.role}
+          userName={session.user?.name ?? "User"}
+          avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
+          companyLogoUrl={(clientRes.data as { logo_url?: string | null } | null)?.logo_url ?? null}
+          whatsappBadge={whatsappBadge}
         />
       </Suspense>
-      {role === "CLIENT_MANAGER" ? (
-        <TeamMembersManager clientId={targetClientId} roundRobinIndex={roundRobinIndex} />
-      ) : null}
     </ClientManagerLayout>
   );
 }

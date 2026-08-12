@@ -549,6 +549,51 @@ Same structure as salesperson premium scope (`.sales-dashboard-premium`). Focus 
 
 Leads / Hub → `/client/leads` · Pipeline → `/client/leads/pipeline` · Team → `/client/team` · Deals (if `alsoSells`) → `/sales/deals/[id]` · Reports → `/client/reports`.
 
+## 16d. Company Team
+
+Route: `/client/team` · Shell: same `CompanyWorkspaceShell` as Dashboard · Full product docs: [SEGMIQ_COMPANY_TEAM.md](./SEGMIQ_COMPANY_TEAM.md).
+
+Dashboard and Team should read as two pages of the same application. Difference: Team nav is active; main content changes.
+
+### Information hierarchy
+
+1. Breadcrumb **COMPANY / TEAM** · title **Team** (~28–30px) · supporting 13–14px
+2. Five KPI cards full width (Team members, Active Deals, Team Pipeline Value, Deals Won, Avg. response time)
+3. **Team table (left ~68–70%)** + **member detail panel (right ~400–440px)** when a row is selected
+4. Below the table only: **Team composition** · **Goal coverage** · **People needing support** — the member panel continues down the right
+
+Do not auto-select a member on load. No panel → table and analytics use full content width.
+
+### Visual patterns
+
+| Element | Spec |
+|---------|------|
+| Page | `#F7F8FA` / dark `#0B0D0C` |
+| Cards | White / `#111411`, 1px `#E4E7EC` / `#272C27`, radius 12–14px, near-flat shadow |
+| Active Team nav | Soft lime wash, not a solid lime pill |
+| Tabs | Underline lime, not segmented pills |
+| Selected row | `rgba(212,255,79,.16)` light · `.08` dark |
+| Goal bars / ring / chart | SegmiQ lime on a light track |
+| Table rows | ~52px |
+| Micro KPIs | 2×3, ~68px, radius 10px |
+| Member panel actions | Icon slots + lime primary **View pipeline** |
+
+### Member panel order (do not rearrange)
+
+Header → Goal progress → 6 micro KPIs → Performance trend (Won revenue, 6 months) → Needs attention + Recent activity → action bar.
+
+### Responsive
+
+| Breakpoint | Layout |
+|------------|--------|
+| ≥1280 | Inline panel beside table + analytics |
+| <1280 | Overlay drawer |
+| <768 | Member cards; stacked KPIs 2-col; analytics 1-col; sheet stacks attention/activity |
+
+### Dark mode
+
+Selected row restrained lime. Panel `#111411`, inner micro cards `#151815`, borders `#272C27`. Chart tooltips from `useSalesChartColors` — no white leak.
+
 ## 16b. My Pipeline
 
 Route `/sales/pipeline` (legacy `/sales/leads` redirects). Deal-based Kanban (not Lead cards). Light mode should match the SegmiQ 2.0 Pipeline reference density.

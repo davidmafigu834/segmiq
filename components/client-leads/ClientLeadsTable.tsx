@@ -135,7 +135,9 @@ export function ClientLeadsTable({
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [assignee, setAssignee] = useState<string>("all");
+  const [assignee, setAssignee] = useState<string>(
+    () => searchParams.get("assignedToId") || "all"
+  );
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");

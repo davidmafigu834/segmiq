@@ -19,25 +19,31 @@ export function CompanyDashboardHeader({
   userName,
   avatarUrl,
   canAddLead,
+  breadcrumb = "Company / Dashboard",
+  title,
+  description = "Overview of your sales operation and team performance.",
 }: {
   unreadNotifications: number;
   notificationRole: UserRole;
   userName: string;
   avatarUrl?: string | null;
   canAddLead: boolean;
+  breadcrumb?: string;
+  title?: string;
+  description?: string;
 }) {
   const [open, setOpen] = useState(false);
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps("direct");
   const firstName = userName.trim().split(/\s+/)[0] || "there";
-  const greeting = `Good ${greetingPart()}, ${firstName}`;
+  const greeting = title ?? `Good ${greetingPart()}, ${firstName}`;
 
   return (
     <>
       <SalesPageHeader
-        breadcrumb="Company / Dashboard"
+        breadcrumb={breadcrumb}
         title={greeting}
-        description="Overview of your sales operation and team performance."
+        description={description}
         actions={
           <>
             <div className="sd-search-wrap min-w-0 shrink">
@@ -86,7 +92,7 @@ export function CompanyDashboardHeader({
                         </button>
                       ) : null}
                       <Link
-                        href="/client/team"
+                        href="/client/team?invite=1"
                         role="menuitem"
                         className="flex items-center gap-2.5 px-3 py-2.5 text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
                         onClick={() => setOpen(false)}
