@@ -2,15 +2,10 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { Menu } from "lucide-react";
-import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { CompanySidebar } from "@/components/company/navigation/CompanySidebar";
+import { CompanyMobileTopBar } from "@/components/company/navigation/CompanyMobileTopBar";
+import { CompanyBottomNav } from "@/components/company/navigation/CompanyBottomNav";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
-import { NotificationBell } from "@/components/NotificationBell";
-import { GlobalSearch } from "@/components/shell/GlobalSearch";
-import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
-import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
 import { KpiCard } from "@/components/dashboard/sales/KpiCard";
 import { PipelineSnapshotCard } from "@/components/dashboard/sales/PipelineSnapshotCard";
 import { CompanyDashboardHeader } from "./CompanyDashboardHeader";
@@ -43,11 +38,7 @@ export function CompanyDashboard({
   whatsappBadge?: number;
 }) {
   const [mounted, setMounted] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { collapsed, toggleCollapsed, width } = useCompanySidebarCollapsed();
-  const crmTheme = useCrmThemeOptional();
-  const wordmarkSrc =
-    crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
 
   useEffect(() => {
     setMounted(true);
@@ -65,59 +56,34 @@ export function CompanyDashboard({
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >
-      <CompanySidebar
-        companyName={data.clientName}
-        companyLogoUrl={companyLogoUrl}
+      <div className="hidden layout:contents">
+        <CompanySidebar
+          companyName={data.clientName}
+          companyLogoUrl={companyLogoUrl}
+          userName={userName}
+          userRoleLabel="Company Manager"
+          avatarUrl={avatarUrl}
+          whatsappBadge={whatsappBadge}
+          collapsed={collapsed}
+          onToggleCollapsed={toggleCollapsed}
+        />
+      </div>
+
+      <CompanyMobileTopBar
         userName={userName}
         userRoleLabel="Company Manager"
         avatarUrl={avatarUrl}
-        whatsappBadge={whatsappBadge}
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-        collapsed={collapsed}
-        onToggleCollapsed={toggleCollapsed}
+        unreadNotifications={unreadNotifications}
+        notificationRole={notificationRole}
       />
 
-      {/* Mobile top bar */}
-      <header className="sales-mobile-top-bar sticky top-0 z-[30] flex shrink-0 items-center justify-between gap-2 border-b border-sales-border-subtle bg-sales-surface/95 px-4 backdrop-blur-md layout:hidden">
-        <div className="flex min-w-0 items-center gap-2">
-          <button
-            type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover"
-            aria-label="Open menu"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu size={20} strokeWidth={1.8} />
-          </button>
-          <Image
-            src={wordmarkSrc}
-            alt="SegmiQ"
-            width={112}
-            height={26}
-            priority
-            className="h-[26px] w-auto max-w-[112px] object-contain object-left"
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <div className="sd-search-wrap">
-            <GlobalSearch role={notificationRole} />
-          </div>
-          <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
-          <SalesThemeToggle size="mobile" />
-          <SalesProfileMenu
-            userName={userName}
-            userRoleLabel="Company Manager"
-            avatarUrl={avatarUrl}
-            compact
-          />
-        </div>
-      </header>
-
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
-        <div className="sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-28 pt-3 sm:space-y-5 sm:px-5 layout:px-6 layout:py-5 layout:pb-8 xl:px-7">
+        <div className="sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:space-y-5 sm:px-6 layout:px-8 layout:py-6">
           <CompanyDashboardHeader
             unreadNotifications={unreadNotifications}
             notificationRole={notificationRole}
+            userName={userName}
+            avatarUrl={avatarUrl}
             canAddLead
           />
 
@@ -134,7 +100,6 @@ export function CompanyDashboard({
             ))}
           </div>
 
-          {/* Compact focus strip — desktop */}
           <div className="hidden layout:block">
             <CompanyFocusAreasCard
               signals={data.focusAreas}
@@ -142,7 +107,6 @@ export function CompanyDashboard({
             />
           </div>
 
-          {/* Team calendar + Funnel */}
           <div className="grid w-full grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-5">
             <CompanyTeamCalendarCard
               items={data.teamCalendar}
@@ -213,6 +177,8 @@ export function CompanyDashboard({
           </div>
         </div>
       </div>
+
+      <CompanyBottomNav whatsappBadge={whatsappBadge} />
     </div>
   );
 }

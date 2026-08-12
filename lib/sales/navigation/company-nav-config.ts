@@ -24,16 +24,23 @@ export type CompanyNavIconId =
   | "billing"
   | "settings";
 
+export type CompanyNavSectionId = "company" | "tools";
+export type CompanyNavMobileSlot = "primary" | "more";
+
 export type CompanyNavItemConfig = {
   id: string;
   label: string;
   href: string;
   icon: CompanyNavIconId;
+  section: CompanyNavSectionId;
   badgeKey?: CompanyNavBadgeKey;
+  mobileSlot?: CompanyNavMobileSlot;
+  mobileLabel?: string;
   match: (pathname: string) => boolean;
 };
 
-export const COMPANY_SIDEBAR_WIDTH_EXPANDED = 240;
+/** Match salesperson sidebar width exactly. */
+export const COMPANY_SIDEBAR_WIDTH_EXPANDED = 228;
 export const COMPANY_SIDEBAR_WIDTH_COLLAPSED = 68;
 export const COMPANY_SIDEBAR_COLLAPSED_KEY = "segmiq-company-sidebar-collapsed";
 
@@ -54,7 +61,7 @@ function exactOrChild(pathname: string, href: string): boolean {
 }
 
 /**
- * Company / Manager navigation — only routes that exist.
+ * Company / Manager navigation — mirrors salesperson sidebar IA.
  * Calendar & Tasks omitted until company-scoped pages ship.
  */
 export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
@@ -63,58 +70,78 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Dashboard",
     href: "/client/dashboard",
     icon: "dashboard",
+    section: "company",
+    mobileSlot: "primary",
+    mobileLabel: "Dashboard",
     match: (p) => p === "/client/dashboard",
-  },
-  {
-    id: "team",
-    label: "Team",
-    href: "/client/team",
-    icon: "team",
-    match: (p) => exactOrChild(p, "/client/team"),
   },
   {
     id: "pipeline",
     label: "Pipeline",
     href: "/client/leads/pipeline",
     icon: "pipeline",
+    section: "company",
+    mobileSlot: "primary",
+    mobileLabel: "Pipeline",
     match: (p) => exactOrChild(p, "/client/leads/pipeline"),
-  },
-  {
-    id: "leads",
-    label: "Leads",
-    href: "/client/leads",
-    icon: "leads",
-    match: (p) =>
-      (p === "/client/leads" || p.startsWith("/client/leads/")) &&
-      !p.startsWith("/client/leads/pipeline"),
   },
   {
     id: "whatsapp",
     label: "WhatsApp Sales Hub",
     href: "/client/inbox",
     icon: "whatsapp",
+    section: "company",
     badgeKey: "whatsapp",
+    mobileSlot: "primary",
+    mobileLabel: "WhatsApp",
     match: (p) => exactOrChild(p, "/client/inbox"),
   },
   {
-    id: "quotations",
-    label: "Quotations",
-    href: "/client/quote-settings",
-    icon: "quotations",
-    match: (p) => exactOrChild(p, "/client/quote-settings"),
+    id: "team",
+    label: "Team",
+    href: "/client/team",
+    icon: "team",
+    section: "company",
+    mobileSlot: "primary",
+    mobileLabel: "Team",
+    match: (p) => exactOrChild(p, "/client/team"),
+  },
+  {
+    id: "leads",
+    label: "Leads",
+    href: "/client/leads",
+    icon: "leads",
+    section: "company",
+    mobileSlot: "more",
+    match: (p) =>
+      (p === "/client/leads" || p.startsWith("/client/leads/")) &&
+      !p.startsWith("/client/leads/pipeline"),
   },
   {
     id: "customers",
     label: "Customers",
     href: "/client/customers",
     icon: "customers",
+    section: "company",
+    mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/customers"),
+  },
+  {
+    id: "quotations",
+    label: "Quotations",
+    href: "/client/quote-settings",
+    icon: "quotations",
+    section: "tools",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/quote-settings"),
   },
   {
     id: "reports",
     label: "Reports",
     href: "/client/reports",
     icon: "reports",
+    section: "tools",
+    mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/reports"),
   },
   {
@@ -122,6 +149,8 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Billing",
     href: "/client/billing",
     icon: "billing",
+    section: "tools",
+    mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/billing"),
   },
   {
@@ -129,10 +158,31 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     label: "Settings",
     href: "/client/account",
     icon: "settings",
+    section: "tools",
+    mobileSlot: "more",
     match: (p) =>
       exactOrChild(p, "/client/account") || exactOrChild(p, "/client/company-profile"),
   },
 ];
+
+export function companyNavBySection(
+  items: CompanyNavItemConfig[],
+  section: CompanyNavSectionId
+): CompanyNavItemConfig[] {
+  return items.filter((i) => i.section === section);
+}
+
+export function companyMobilePrimaryItems(
+  items: CompanyNavItemConfig[] = COMPANY_NAVIGATION
+): CompanyNavItemConfig[] {
+  return items.filter((i) => i.mobileSlot === "primary");
+}
+
+export function companyMobileMoreItems(
+  items: CompanyNavItemConfig[] = COMPANY_NAVIGATION
+): CompanyNavItemConfig[] {
+  return items.filter((i) => i.mobileSlot === "more");
+}
 
 export function companyNameInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

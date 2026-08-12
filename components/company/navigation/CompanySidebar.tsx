@@ -6,10 +6,11 @@ import { usePathname } from "next/navigation";
 import { CircleHelp, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
+import { SalesNavSection } from "@/components/sales/navigation/SalesNavItem";
 import {
   COMPANY_NAV_LUCIDE,
   COMPANY_NAVIGATION,
-  companyNameInitials,
+  companyNavBySection,
   type CompanyNavBadgeKey,
   type CompanyNavIconId,
   type CompanyNavItemConfig,
@@ -106,9 +107,11 @@ function CompanyNavItem({
   );
 }
 
+/**
+ * Company sidebar — same chrome density and structure as SalesSidebar
+ * (wordmark header, sectioned nav, help link, profile only in mobile drawer).
+ */
 export function CompanySidebar({
-  companyName,
-  companyLogoUrl,
   userName,
   userRoleLabel = "Company Manager",
   avatarUrl,
@@ -118,7 +121,8 @@ export function CompanySidebar({
   collapsed = false,
   onToggleCollapsed,
 }: {
-  companyName: string;
+  /** @deprecated kept for call-site compatibility; identity lives in page content */
+  companyName?: string;
   companyLogoUrl?: string | null;
   userName: string;
   userRoleLabel?: string;
@@ -133,6 +137,8 @@ export function CompanySidebar({
   const crmTheme = useCrmThemeOptional();
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
+  const companyItems = companyNavBySection(COMPANY_NAVIGATION, "company");
+  const toolsItems = companyNavBySection(COMPANY_NAVIGATION, "tools");
 
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
@@ -177,7 +183,7 @@ export function CompanySidebar({
           {drawer ? (
             <button
               type="button"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)]"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
               aria-label="Close menu"
               onClick={onCloseMobile}
             >
@@ -186,8 +192,9 @@ export function CompanySidebar({
           ) : onToggleCollapsed && !collapsedMode ? (
             <button
               type="button"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)]"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Collapse sidebar"
+              title="Collapse sidebar"
               onClick={onToggleCollapsed}
             >
               <PanelLeftClose size={16} strokeWidth={1.8} />
@@ -197,8 +204,9 @@ export function CompanySidebar({
           {onToggleCollapsed && collapsedMode && !drawer ? (
             <button
               type="button"
-              className="absolute bottom-1 left-1/2 inline-flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)]"
+              className="absolute bottom-1 left-1/2 inline-flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Expand sidebar"
+              title="Expand sidebar"
               onClick={onToggleCollapsed}
             >
               <PanelLeftOpen size={14} strokeWidth={1.8} />
@@ -206,39 +214,12 @@ export function CompanySidebar({
           ) : null}
         </div>
 
-        {!collapsedMode ? (
-          <div className="mx-3 mb-3 rounded-[12px] border border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-hover)] px-3 py-2.5">
-            <div className="flex items-center gap-2.5">
-              {companyLogoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={companyLogoUrl}
-                  alt=""
-                  className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-[var(--sales-sidebar-border)]"
-                />
-              ) : (
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-brand text-[11px] font-semibold text-sales-brand-fg">
-                  {companyNameInitials(companyName)}
-                </span>
-              )}
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-semibold text-sales-text-primary">
-                  {companyName}
-                </p>
-                <p className="truncate text-[11px] text-[var(--sales-sidebar-muted)]">
-                  Company account
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
         <nav
-          className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-2 pb-3"
+          className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pb-3"
           aria-label="Company navigation"
         >
-          <div className="space-y-0.5">
-            {COMPANY_NAVIGATION.map((item) => (
+          <SalesNavSection label="Company" collapsed={collapsedMode}>
+            {companyItems.map((item) => (
               <CompanyNavItem
                 key={item.id}
                 item={item}
@@ -248,58 +229,66 @@ export function CompanySidebar({
                 onNavigate={onCloseMobile}
               />
             ))}
-          </div>
+          </SalesNavSection>
 
-          <div className={cn("mt-auto pt-4", collapsedMode ? "px-0" : "px-1")}>
-            {collapsedMode ? (
-              <Link
-                href="/client/account"
-                title="Help & Support"
-                aria-label="Help & Support"
-                className="mx-auto flex h-10 w-10 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)]"
-                onClick={onCloseMobile}
-              >
-                <CircleHelp size={17} strokeWidth={1.75} aria-hidden />
-              </Link>
-            ) : (
-              <Link
-                href="/client/account"
-                className="flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-[13px] font-medium text-[var(--sales-sidebar-text)] hover:bg-[var(--sales-sidebar-hover)]"
-                onClick={onCloseMobile}
-              >
-                <CircleHelp
-                  size={17}
-                  strokeWidth={1.75}
-                  className="shrink-0 text-[var(--sales-sidebar-icon)]"
-                  aria-hidden
+          <div className={cn(collapsedMode ? "mt-4" : "mt-5")}>
+            <SalesNavSection label="Tools" collapsed={collapsedMode}>
+              {toolsItems.map((item) => (
+                <CompanyNavItem
+                  key={item.id}
+                  item={item}
+                  active={item.match(pathname)}
+                  collapsed={collapsedMode}
+                  onNavigate={onCloseMobile}
                 />
-                Help & Support
-              </Link>
-            )}
+              ))}
+              {collapsedMode ? (
+                <Link
+                  href="/client/account"
+                  title="Help & Support"
+                  aria-label="Help & Support"
+                  className="mx-auto flex h-10 w-10 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
+                  onClick={onCloseMobile}
+                >
+                  <CircleHelp size={17} strokeWidth={1.75} aria-hidden />
+                </Link>
+              ) : (
+                <Link
+                  href="/client/account"
+                  className="flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-[13px] font-medium text-[var(--sales-sidebar-text)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+                  onClick={onCloseMobile}
+                >
+                  <CircleHelp
+                    size={17}
+                    strokeWidth={1.75}
+                    className="shrink-0 text-[var(--sales-sidebar-icon)]"
+                    aria-hidden
+                  />
+                  Help & Support
+                </Link>
+              )}
+            </SalesNavSection>
           </div>
         </nav>
 
-        <Link
-          href="/client/account"
-          onClick={onCloseMobile}
-          className={cn(
-            "mb-4 flex items-center gap-3 rounded-[10px] border border-[var(--sales-sidebar-border)] transition-colors hover:bg-[var(--sales-sidebar-hover)]",
-            collapsedMode ? "mx-2 justify-center px-2 py-2" : "mx-3 px-3 py-2.5"
-          )}
-        >
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatarUrl}
-              alt=""
-              className="h-8 w-8 rounded-full object-cover ring-1 ring-[var(--sales-sidebar-border)]"
-            />
-          ) : (
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--sales-neutral-100)] text-[11px] font-semibold text-sales-text-primary ring-1 ring-[var(--sales-sidebar-border)]">
-              {salesNameInitials(userName)}
-            </span>
-          )}
-          {!collapsedMode ? (
+        {drawer ? (
+          <Link
+            href="/client/account"
+            onClick={onCloseMobile}
+            className="mx-3 mb-4 flex items-center gap-3 rounded-[10px] border border-[var(--sales-sidebar-border)] px-3 py-2.5 transition-colors hover:bg-[var(--sales-sidebar-hover)]"
+          >
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover ring-1 ring-[var(--sales-sidebar-border)]"
+              />
+            ) : (
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--sales-neutral-100)] text-[11px] font-semibold text-sales-text-primary ring-1 ring-[var(--sales-sidebar-border)]">
+                {salesNameInitials(userName)}
+              </span>
+            )}
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-semibold text-sales-text-primary">
                 {displaySalesName(userName)}
@@ -308,8 +297,8 @@ export function CompanySidebar({
                 {userRoleLabel}
               </span>
             </span>
-          ) : null}
-        </Link>
+          </Link>
+        ) : null}
       </div>
     );
   }
@@ -319,7 +308,7 @@ export function CompanySidebar({
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 hidden border-r border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] transition-[width] duration-200 ease-out layout:block",
-          collapsed ? "w-[68px]" : "w-[240px]"
+          collapsed ? "w-[68px]" : "w-[228px]"
         )}
         data-collapsed={collapsed ? "true" : "false"}
       >

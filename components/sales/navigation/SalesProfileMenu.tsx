@@ -15,12 +15,18 @@ export function SalesProfileMenu({
   userRoleLabel = "Sales Executive",
   avatarUrl,
   compact,
+  profileHref = "/sales/profile",
+  helpHref = "/sales/training",
+  helpLabel = "Training",
 }: {
   userName: string;
   userRoleLabel?: string;
   avatarUrl?: string | null;
   /** Avatar-only trigger (narrow desktop / mobile header) */
   compact?: boolean;
+  profileHref?: string;
+  helpHref?: string;
+  helpLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -101,7 +107,7 @@ export function SalesProfileMenu({
             <p className="truncate text-[11px] text-sales-text-muted">{userRoleLabel}</p>
           </div>
           <Link
-            href="/sales/profile"
+            href={profileHref}
             role="menuitem"
             className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
             onClick={() => setOpen(false)}
@@ -110,7 +116,7 @@ export function SalesProfileMenu({
             My profile
           </Link>
           <Link
-            href="/sales/profile"
+            href={profileHref}
             role="menuitem"
             className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
             onClick={() => setOpen(false)}
@@ -119,13 +125,13 @@ export function SalesProfileMenu({
             Account & security
           </Link>
           <Link
-            href="/sales/training"
+            href={helpHref}
             role="menuitem"
             className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
             onClick={() => setOpen(false)}
           >
             <CircleHelp size={16} strokeWidth={1.8} aria-hidden />
-            Training
+            {helpLabel}
           </Link>
           <div className="my-1 border-t border-sales-border-subtle" />
           <button
