@@ -108,7 +108,12 @@ export function leadScoreLabel(score: number | null | undefined): string | null 
 }
 
 export function isClosedStage(status: LeadStatus | string): boolean {
-  return status === "WON" || status === "LOST" || status === "NOT_QUALIFIED";
+  return (
+    status === "WON" ||
+    status === "LOST" ||
+    status === "NOT_QUALIFIED" ||
+    status === "CONVERTED_TO_DEAL"
+  );
 }
 
 /** Re-export friendly aliases used by older modules. */

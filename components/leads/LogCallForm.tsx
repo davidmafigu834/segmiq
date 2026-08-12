@@ -7,8 +7,9 @@ import {
   CALLBACK_SCHEDULE_LABELS,
   CALLBACK_SCHEDULE_OPTIONS,
   CALL_RESULT_LABELS,
-  CALL_RESULTS,
+  DEAL_CALL_RESULTS,
   DIRECT_SEND_ASSET_TYPES,
+  LEAD_CALL_RESULTS,
   REACH_OUTCOME_LABELS,
   REACH_OUTCOMES,
   deriveLegacyOutcome,
@@ -171,6 +172,10 @@ export type LogCallFormProps = {
   contactId?: string | null;
   /** Preloaded interested listing ids for the contact (optional). */
   interestedListingIds?: string[];
+  /** When true, show deal close outcomes (won/lost) instead of lead qualification outcomes. */
+  hasActiveDeal?: boolean;
+  /** Fired after a successful log when result is qualified — open Create Deal flow. */
+  onQualifiedOpportunity?: (lead: LeadRow) => void;
 };
 
 export function LogCallForm({
@@ -188,7 +193,10 @@ export function LogCallForm({
   clientId = null,
   contactId: contactIdProp = null,
   interestedListingIds = [],
+  hasActiveDeal = false,
+  onQualifiedOpportunity,
 }: LogCallFormProps) {
+  const resultOptions = hasActiveDeal ? DEAL_CALL_RESULTS : LEAD_CALL_RESULTS;
   const [reachOutcome, setReachOutcome] = useState<ReachOutcome>("reached");
   const [result, setResult] = useState<CallResult | null>(null);
   const [reason, setReason] = useState("");
@@ -524,6 +532,10 @@ export function LogCallForm({
         if (payload.lead) onLeadUpdated?.(payload.lead);
         onLogged?.();
 
+        if (result === "qualified" && payload.lead) {
+          onQualifiedOpportunity?.(payload.lead);
+        }
+
         const legacy =
           (payload.legacyOutcome as CallOutcome | undefined) ??
           deriveLegacyOutcome(reachOutcome, result);
@@ -618,7 +630,7 @@ export function LogCallForm({
                 isPremium ? "rounded-[10px]" : "rounded-lg"
               }`}
             >
-              {CALL_RESULTS.map((v) => {
+              {resultOptions.map((v) => {
                 const active = result === v;
                 return (
                   <button
@@ -676,7 +688,19 @@ export function LogCallForm({
 
           {result === "won" ? (
             <p className={isPremium ? "ag-fade-in text-[12px] text-[#98A2B3]" : "ag-fade-in text-xs text-ink-tertiary"}>
-              Deal won — add any confirmation details in notes below.
+              Mark the deal won from the Deal workspace so the final value is confirmed.
+            </p>
+          ) : null}
+
+          {result === "qualified" ? (
+            <p className={isPremium ? "ag-fade-in text-[12px] text-[#667085]" : "ag-fade-in text-xs text-ink-secondary"}>
+              This looks like a real opportunity — you can create a Deal next.
+            </p>
+          ) : null}
+
+          {result === "qualifying" ? (
+            <p className={isPremium ? "ag-fade-in text-[12px] text-[#98A2B3]" : "ag-fade-in text-xs text-ink-tertiary"}>
+              Keep qualifying — capture what you learned in notes.
             </p>
           ) : null}
 

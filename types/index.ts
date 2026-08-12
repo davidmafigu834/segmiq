@@ -24,11 +24,40 @@ export type FeedbackSentiment = "positive" | "neutral" | "negative";
 export type LeadStatus =
   | "NEW"
   | "CONTACTED"
+  | "QUALIFIED"
+  | "CONVERTED_TO_DEAL"
+  | "NOT_QUALIFIED"
+  /** @deprecated Legacy commercial statuses — migrated to deals; retained for history/compat */
   | "NEGOTIATING"
   | "PROPOSAL_SENT"
   | "WON"
-  | "LOST"
+  | "LOST";
+
+/** Lead acquisition/qualification lifecycle (excludes legacy commercial statuses). */
+export type LeadLifecycleStatus =
+  | "NEW"
+  | "CONTACTED"
+  | "QUALIFIED"
+  | "CONVERTED_TO_DEAL"
   | "NOT_QUALIFIED";
+
+export type DealStage =
+  | "QUALIFIED"
+  | "SCOPING"
+  | "PROPOSAL_SENT"
+  | "NEGOTIATING"
+  | "WON"
+  | "LOST";
+
+export type DealValueStatus = "KNOWN" | "RANGE" | "PENDING_ESTIMATE";
+
+export type DealValueBasis =
+  | "CUSTOMER_BUDGET"
+  | "SALES_ESTIMATE"
+  | "LATEST_QUOTE"
+  | "WON_VALUE";
+
+export type DecisionMakerStatus = "YES" | "NO" | "UNKNOWN";
 
 export type DealValueSource = "manual" | "proposal";
 
@@ -173,6 +202,12 @@ export interface LeadRow {
   is_convert_later_pick: boolean | null;
   convert_later_note: string | null;
   manual_priority: "hot" | "warm" | "cold" | null;
+  qualified_at?: string | null;
+  converted_at?: string | null;
+  customer_need?: string | null;
+  decision_maker_status?: DecisionMakerStatus | null;
+  buying_timeframe?: string | null;
+  active_deal_id?: string | null;
   /** Real-estate deal fields (nullable; unused for trades). */
   deal_side?: DealSide | null;
   linked_listing_id?: string | null;
@@ -180,6 +215,39 @@ export interface LeadRow {
   offer_status?: OfferStatus | null;
   listing_agent_commission_pct?: number | null;
   selling_agent_commission_pct?: number | null;
+}
+
+export interface DealRow {
+  id: string;
+  client_id: string;
+  contact_id: string | null;
+  originating_lead_id: string;
+  owner_id: string | null;
+  name: string;
+  service_summary: string | null;
+  stage: DealStage;
+  value_status: DealValueStatus;
+  value_basis: DealValueBasis | null;
+  estimated_value: number | null;
+  estimated_value_min: number | null;
+  estimated_value_max: number | null;
+  customer_budget: number | null;
+  sales_estimate: number | null;
+  expected_decision_at: string | null;
+  location: string | null;
+  buying_timeframe: string | null;
+  decision_maker_status: DecisionMakerStatus | null;
+  decision_maker_name: string | null;
+  next_action_at: string | null;
+  next_action_label: string | null;
+  won_value: number | null;
+  won_at: string | null;
+  lost_at: string | null;
+  lost_reason: string | null;
+  last_meaningful_activity_at: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DevelopmentRow {
@@ -412,6 +480,7 @@ export interface QuotationRow {
   id: string;
   client_id: string;
   lead_id: string;
+  deal_id?: string | null;
   quote_number: string | null;
   status: QuotationStatus;
   customer_name: string | null;

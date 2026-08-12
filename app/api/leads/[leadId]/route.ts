@@ -35,11 +35,14 @@ const patchSchema = z.object({
     .enum([
       "NEW",
       "CONTACTED",
+      "QUALIFIED",
+      "CONVERTED_TO_DEAL",
+      "NOT_QUALIFIED",
+      // Legacy commercial (compat)
       "NEGOTIATING",
       "PROPOSAL_SENT",
       "WON",
       "LOST",
-      "NOT_QUALIFIED",
     ])
     .optional(),
   follow_up_date: z.string().nullable().optional(),

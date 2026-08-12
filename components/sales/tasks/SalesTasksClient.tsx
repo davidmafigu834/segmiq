@@ -43,6 +43,8 @@ import {
 import { ReportKpiCard } from "@/components/sales/reports/ReportKpiCard";
 import { AddTaskSheet } from "@/components/sales/tasks/AddTaskSheet";
 import { TaskDetailDrawer } from "@/components/sales/tasks/TaskDetailDrawer";
+import { DailySalesIntelligencePanel } from "@/components/sales/intelligence/DailySalesIntelligencePanel";
+import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { formatTrend } from "@/lib/sales/sales-dashboard-display";
 import {
   dueDateTone,
@@ -118,6 +120,9 @@ export function SalesTasksClient() {
   const [error, setError] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [detail, setDetail] = useState<SalesTaskItem | null>(null);
+  const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
+  const { hubSheet } = addHubSheetProps("direct");
+
   const [menuId, setMenuId] = useState<string | null>(null);
   const [tipDismissed, setTipDismissed] = useState(false);
   const [rescheduleTask, setRescheduleTask] = useState<SalesTaskItem | null>(null);
@@ -287,6 +292,14 @@ export function SalesTasksClient() {
 
   return (
     <div className="w-full space-y-4">
+      <DailySalesIntelligencePanel onRequestAddProspect={() => openAddHubSheet()} />
+
+      <div className="pt-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          Traditional tasks
+        </p>
+      </div>
+
       <div className="flex h-10 min-w-0 items-center gap-3">
         <div className="min-w-0 flex-1 overflow-x-auto">
           <SegmentedControl
@@ -916,6 +929,8 @@ export function SalesTasksClient() {
           onCreated={() => void load()}
         />
       ) : null}
+
+      {hubSheet}
 
       {detail ? (
         <TaskDetailDrawer

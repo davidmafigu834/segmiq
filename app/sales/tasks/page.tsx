@@ -45,7 +45,7 @@ export default async function SalesTasksPage() {
         {...shell}
         breadcrumb="Sales / Tasks"
         title="Tasks"
-        description="Manage your tasks, follow-ups, and daily activities."
+        description="Know what needs attention now and keep every opportunity moving."
         searchPlaceholder="Search leads, customers, tasks..."
       >
         <Suspense fallback={<TasksFallback />}>

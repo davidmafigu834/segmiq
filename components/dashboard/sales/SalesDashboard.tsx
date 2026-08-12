@@ -37,6 +37,44 @@ import { PerformanceCard } from "./PerformanceCard";
 import { PipelineSummary } from "./PipelineSummary";
 import { PrioritiesCard } from "./PrioritiesCard";
 import { RecentActivityCard } from "./RecentActivityCard";
+import { TodaysPlanCard } from "./TodaysPlanCard";
+import type { SalesPriorityTask } from "./types";
+import type { DailySalesPlanPayload } from "@/lib/sales/intelligence/types";
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+}
+
+function mapPlanToPriorityTasks(plan: DailySalesPlanPayload, clientId: string): SalesPriorityTask[] {
+  return plan.queue
+    .filter((q) => q.customer?.leadId)
+    .slice(0, 6)
+    .map((q) => {
+      const leadId = q.customer!.leadId!;
+      const source = String(q.customer?.source ?? "");
+      const href = source.includes("WHATSAPP")
+        ? `/sales/inbox?lead=${leadId}`
+        : `/sales/leads?lead=${leadId}`;
+      return {
+        id: q.idempotencyKey,
+        leadId,
+        clientId,
+        name: q.customer?.name ?? q.title,
+        initials: initials(q.customer?.name ?? q.title),
+        industry: q.subtitle ?? "",
+        location: "",
+        dueLabel: q.urgencyLabel ?? "Now",
+        overdue: q.reasonCode === "FOLLOWUP_OVERDUE",
+        taskLabel: q.recommendedActionLabel,
+        taskDetail: q.reason,
+        phone: q.customer?.phone ?? null,
+        href,
+      };
+    });
+}
 
 export type SalesDashboardProps = {
   data: SalesDashboardRaw & { retargetingStatuses?: RetargetingStatusView[] };
@@ -81,14 +119,37 @@ function SalesDashboardInner({
   const { hubSheet } = addHubSheetProps(data.assignmentMode ?? "direct");
 
   const kpis = useMemo(() => buildSalesKpis(data, now), [data, now]);
-  const priorities = useMemo(() => buildPriorityTasks(data, now, 6), [data, now]);
+  const fallbackPriorities = useMemo(() => buildPriorityTasks(data, now, 6), [data, now]);
+  const [enginePriorities, setEnginePriorities] = useState<SalesPriorityTask[] | null>(null);
   const stages = useMemo(() => buildPipelineStages(data), [data]);
   const activity = useMemo(() => buildRecentActivity(data), [data]);
   const performance = useMemo(() => buildPerformance(data, now), [data, now]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const clientId = data.allActiveLeads[0]?.client_id ?? "";
+    void (async () => {
+      try {
+        const res = await fetch("/api/sales/daily-plan");
+        if (!res.ok) return;
+        const plan = (await res.json()) as DailySalesPlanPayload;
+        if (cancelled) return;
+        const mapped = mapPlanToPriorityTasks(plan, clientId);
+        if (mapped.length > 0) setEnginePriorities(mapped);
+      } catch {
+        // keep fallback lane priorities
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [data.allActiveLeads]);
+
+  const priorities = enginePriorities ?? fallbackPriorities;
   const dueCount = data.numbers.followUpToday + data.numbers.callNow;
   const overdueCount = data.insights?.overdueFollowUps ?? 0;
   const priorityTotal =
+    enginePriorities?.length ??
     data.numbers.callNow + data.numbers.followUpToday + data.numbers.slipped;
 
   if (!mounted) {
@@ -176,6 +237,7 @@ function SalesDashboardInner({
               <PipelineSummary stages={stages} />
             </div>
             <div className="min-w-0 space-y-5">
+              <TodaysPlanCard />
               <LeadSourcesCard data={data} />
               <RecentActivityCard items={activity} />
             </div>

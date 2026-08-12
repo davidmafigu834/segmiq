@@ -388,3 +388,57 @@ Same nav structure. Top bar + bottom nav + More sheet use sales tokens. Theme to
 ### Light regression
 
 Light tokens in `.sales-dashboard-premium { ... }` remain the approved light system. Dark overrides must not alter light values.
+
+## 14. Daily Sales Intelligence components
+
+See also [SEGMIQ_DAILY_SALES_INTELLIGENCE.md](./SEGMIQ_DAILY_SALES_INTELLIGENCE.md).
+
+| Component | Role |
+|-----------|------|
+| Today's Focus card | Strategic BUILD / MOVE / CLOSE context + Start focus mode |
+| Next Best Action | Rank 1 action: customer, recommended action, why now, Call/WhatsApp/Open |
+| Up Next queue | Ranks 2-8 compact rows |
+| Today's Plan progress | Priority actions + opt-in commitments as text + Progress bars |
+| Pipeline coverage blurb | Cautious interpretation; never fake % |
+| System recommendation label | Subtle "Recommended by SegmiQ" badge ? Target/Zap icons, no AI sparkles |
+| Focus Mode overlay | Full-screen/centered one-action workflow; 44px touch targets |
+| Goal coverage / commitments | Goals page sections using the same tokens |
+
+Rules:
+
+- Use `--sales-*` tokens only (light + dark)
+- No giant gradient / glow / purple AI styling
+- Progress must include numeric text, not color alone
+- Intelligence API failure: show calm error; traditional tasks remain usable
+- Mobile: stack Focus ? Plan ? NBA ? Up Next; no horizontal tables for intelligence
+
+## 15. Lead → Deal workflow components
+
+See also [SEGMIQ_LEAD_TO_DEAL_ARCHITECTURE.md](./SEGMIQ_LEAD_TO_DEAL_ARCHITECTURE.md).
+
+| Component | Role |
+|-----------|------|
+| Deal readiness card | Compact checklist; optional value; Create deal CTA when ready |
+| Discovery / Create Deal sheet | Full-screen on mobile; prefilled lead fields; sticky primary CTA |
+| Deal Workspace | Command centre: header, stage chips, next action, What we know, commercial, quotes, timeline |
+| Deal stage progress | Horizontally scrollable chips on mobile; never squeeze equal tiny columns |
+| Next action card | Prominent; empty state with Schedule follow-up |
+| Deal completeness | Lightweight checklist; one suggested next field |
+| Deal quote list | Latest first; status labels humanized |
+| Deal timeline | Human event labels only (no raw enums) |
+| Pipeline deal card | Customer name + deal name + value + basis + next action |
+| Related deal (Lead drawer / WhatsApp) | Compact Active deal + Open deal; do not embed full workspace |
+
+### Layout
+
+**Desktop Deal Workspace:** header → stage → 2-column (~65% main / ~35% rail).  
+**Mobile:** identity → stage → value → actions → next action → what we know → commercial → quotes → timeline.
+
+### Tokens
+
+Page `#F7F8FA` / `#0B0D0C` · Surface `#FFFFFF` / `#111411` · Text `#101828` / `#F7F8F5` · Secondary `#667085` / `#B1B7AE` · Border `#E4E7EC` / `#272C27` · Lime `#D4FF4F`.
+
+### Copy
+
+Use: Estimated deal value · Expected decision · Next action · Value not estimated yet · Deal created.  
+Avoid fake probabilities and enterprise CRM jargon.

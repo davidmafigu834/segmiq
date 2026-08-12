@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
 import AuthMarketingPanel, {
   type AuthMarketingVariant,
 } from "@/components/auth/AuthMarketingPanel";
@@ -23,8 +22,7 @@ export default function AuthLayout({
 
       <main className="relative flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-[var(--marketing-bg-subtle)] lg:bg-[var(--marketing-surface)]">
         {/* Mobile header */}
-        <header className="flex h-14 shrink-0 items-center justify-between px-5 sm:px-8 lg:hidden">
-          <SegmiqWordmark href="/" theme="auto" size="sm" priority />
+        <header className="flex h-14 shrink-0 items-center justify-end px-5 sm:px-8 lg:hidden">
           <AuthThemeToggle />
         </header>
 

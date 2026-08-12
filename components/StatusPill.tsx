@@ -6,6 +6,8 @@ const classes: Record<
 > = {
   NEW: "bg-[var(--status-new-bg)] text-[var(--status-new-fg)]",
   CONTACTED: "bg-[var(--status-contacted-bg)] text-[var(--status-contacted-fg)]",
+  QUALIFIED: "bg-[var(--status-contacted-bg)] text-[var(--status-contacted-fg)]",
+  CONVERTED_TO_DEAL: "bg-[var(--status-proposal-bg)] text-[var(--status-proposal-fg)]",
   NEGOTIATING: "bg-[var(--status-negotiating-bg)] text-[var(--status-negotiating-fg)]",
   PROPOSAL_SENT: "bg-[var(--status-proposal-bg)] text-[var(--status-proposal-fg)]",
   WON: "bg-surface-sidebar text-accent",
@@ -15,6 +17,8 @@ const classes: Record<
 
 const DISPLAY: Partial<Record<LeadStatus, string>> = {
   PROPOSAL_SENT: "Proposal Sent",
+  CONVERTED_TO_DEAL: "Deal Created",
+  NOT_QUALIFIED: "Not Qualified",
 };
 
 function labelFor(status: LeadStatus): string {

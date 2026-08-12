@@ -123,6 +123,12 @@ export function LeadIntelligencePanel({
   const [editingQuote, setEditingQuote] = useState<QuotationWithItems | null>(null);
   const [actionMessage, setActionMessage] = useState("");
   const [updatingStage, setUpdatingStage] = useState<LeadStatus | null>(null);
+  const [relatedDeal, setRelatedDeal] = useState<{
+    id: string;
+    name: string;
+    stage: string;
+    valueLabel: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!conversation?.id) return;
@@ -152,13 +158,52 @@ export function LeadIntelligencePanel({
     let cancelled = false;
     fetch(`/api/leads/${conversation.id}`)
       .then((r) => r.json())
-      .then((d: { lead?: { form_data?: Record<string, unknown>; budget?: string | null; timeline?: string | null } }) => {
-        if (cancelled || !d.lead) return;
-        const formData = d.lead.form_data ?? null;
-        setCapturedFields(extractQualificationDisplayFields(formData));
-        setLeadBudget(typeof d.lead.budget === "string" && d.lead.budget.trim() ? d.lead.budget.trim() : null);
-        setLeadTimeline(typeof d.lead.timeline === "string" && d.lead.timeline.trim() ? d.lead.timeline.trim() : null);
-      })
+      .then(
+        async (d: {
+          lead?: {
+            form_data?: Record<string, unknown>;
+            budget?: string | null;
+            timeline?: string | null;
+            active_deal_id?: string | null;
+            status?: string;
+          };
+        }) => {
+          if (cancelled || !d.lead) return;
+          const formData = d.lead.form_data ?? null;
+          setCapturedFields(extractQualificationDisplayFields(formData));
+          setLeadBudget(
+            typeof d.lead.budget === "string" && d.lead.budget.trim()
+              ? d.lead.budget.trim()
+              : null
+          );
+          setLeadTimeline(
+            typeof d.lead.timeline === "string" && d.lead.timeline.trim()
+              ? d.lead.timeline.trim()
+              : null
+          );
+          if (d.lead.active_deal_id) {
+            const dealRes = await fetch(`/api/deals/${d.lead.active_deal_id}`);
+            if (cancelled || !dealRes.ok) {
+              setRelatedDeal(null);
+              return;
+            }
+            const dealJson = (await dealRes.json()) as {
+              deal?: { id: string; name: string; stage: string };
+              commercial?: { display?: string };
+            };
+            if (dealJson.deal) {
+              setRelatedDeal({
+                id: dealJson.deal.id,
+                name: dealJson.deal.name,
+                stage: dealJson.deal.stage,
+                valueLabel: dealJson.commercial?.display ?? "Value not estimated yet",
+              });
+            }
+          } else {
+            setRelatedDeal(null);
+          }
+        }
+      )
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -436,6 +481,33 @@ export function LeadIntelligencePanel({
               </button>
             ) : null}
           </section>
+
+          {relatedDeal ? (
+            <section className="border-b border-[#F2F4F7] px-4 py-3">
+              <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
+                Active deal
+              </div>
+              <div className="mt-1 text-[14px] font-semibold text-[#101828]">{relatedDeal.name}</div>
+              <div className="mt-0.5 text-[12px] text-[#667085]">
+                {relatedDeal.stage.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}
+                {" · "}
+                {relatedDeal.valueLabel}
+              </div>
+              <a
+                href={`/sales/deals/${relatedDeal.id}`}
+                className="mt-2 inline-flex min-h-[40px] items-center text-[12px] font-semibold text-[#101828]"
+              >
+                Open deal
+              </a>
+            </section>
+          ) : (
+            <section className="border-b border-[#F2F4F7] px-4 py-3">
+              <div className="text-[10px] font-medium uppercase tracking-[0.04em] text-[#98A2B3]">
+                Deal
+              </div>
+              <p className="mt-1 text-[12px] text-[#667085]">No Deal yet</p>
+            </section>
+          )}
 
           {/* Lead score */}
           <section className="border-b border-[#F2F4F7] px-4 py-3.5">

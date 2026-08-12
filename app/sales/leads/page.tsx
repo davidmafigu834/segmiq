@@ -6,13 +6,13 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { PipelinePageShell } from "@/components/sales/pipeline/PipelinePageShell";
+import { DealsBoard, type DealBoardItem } from "@/components/sales/pipeline/DealsBoard";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
-import { SalesBoard } from "./SalesBoard";
-import type { LeadWithClientResponseLimit } from "@/lib/leadStatus";
 import {
-  fetchLatestFollowUpLogsByLeadId,
-  isActiveConvertLaterPick,
-} from "@/lib/convert-later-picks";
+  getDealCommercialValue,
+  latestQuoteTotal,
+} from "@/lib/sales/deals";
+import type { DealRow, QuotationRow } from "@/types";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -42,34 +42,74 @@ function PipelineSkeleton() {
   );
 }
 
-export default async function SalesLeadsPage() {
+export default async function SalesPipelinePage() {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const supabase = createAdminClient();
-  const [first, navBadges] = await Promise.all([
+  const [dealsRes, navBadges] = await Promise.all([
     supabase
-      .from("leads")
-      .select("*, clients ( response_time_limit_hours )")
-      .eq("assigned_to_id", session.userId)
-      .or("is_archived.is.null,is_archived.eq.false")
-      .order("created_at", { ascending: false }),
+      .from("deals")
+      .select("*")
+      .eq("owner_id", session.userId)
+      .order("updated_at", { ascending: false }),
     fetchSalesNavBadges(session.userId, session.clientId ?? null),
   ]);
 
-  let leads = first.data;
-  if (first.error && String(first.error.message || "").includes("column leads.is_archived does not exist")) {
-    const retry = await supabase
-      .from("leads")
-      .select("*, clients ( response_time_limit_hours )")
-      .eq("assigned_to_id", session.userId)
-      .order("created_at", { ascending: false });
-    leads = retry.data ?? [];
+  const dealRows = (dealsRes.data ?? []) as DealRow[];
+  const dealIds = dealRows.map((d) => d.id);
+  const leadIds = [...new Set(dealRows.map((d) => d.originating_lead_id))];
+
+  const [{ data: quotes }, { data: leads }] = await Promise.all([
+    dealIds.length
+      ? supabase
+          .from("quotations")
+          .select("id, deal_id, lead_id, total, status, sent_at, created_at, updated_at")
+          .in("deal_id", dealIds)
+      : Promise.resolve({ data: [] as unknown[] }),
+    leadIds.length
+      ? supabase
+          .from("leads")
+          .select("id, name, phone, score, source, manual_priority")
+          .in("id", leadIds)
+      : Promise.resolve({ data: [] as unknown[] }),
+  ]);
+
+  const quotesByDeal = new Map<string, QuotationRow[]>();
+  for (const q of (quotes ?? []) as QuotationRow[]) {
+    if (!q.deal_id) continue;
+    const list = quotesByDeal.get(q.deal_id) ?? [];
+    list.push(q);
+    quotesByDeal.set(q.deal_id, list);
   }
 
-  const leadRows = (leads ?? []) as LeadWithClientResponseLimit[];
-  const pickLeadIds = leadRows.filter(isActiveConvertLaterPick).map((l) => l.id);
-  const pickLogContext = await fetchLatestFollowUpLogsByLeadId(supabase, pickLeadIds);
+  const leadById = new Map(
+    (
+      (leads ?? []) as {
+        id: string;
+        name: string | null;
+        phone: string | null;
+        score: number | null;
+        source: string;
+        manual_priority: string | null;
+      }[]
+    ).map((l) => [l.id, l])
+  );
+
+  const boardItems: DealBoardItem[] = dealRows.map((deal) => {
+    const dealQuotes = quotesByDeal.get(deal.id) ?? [];
+    const lead = leadById.get(deal.originating_lead_id);
+    return {
+      deal,
+      commercial: getDealCommercialValue(deal, {
+        latestQuoteTotal: latestQuoteTotal(dealQuotes),
+      }),
+      customerName: lead?.name ?? null,
+      customerPhone: lead?.phone ?? null,
+      leadScore: lead?.score ?? null,
+      leadSource: lead?.source ?? null,
+    };
+  });
 
   let unread = 0;
   let avatarUrl: string | null = null;
@@ -112,11 +152,7 @@ export default async function SalesLeadsPage() {
         isSolo={session.clientMode === "solo"}
       >
         <Suspense fallback={<PipelineSkeleton />}>
-          <SalesBoard
-            initialLeads={leadRows}
-            pickLogContext={pickLogContext}
-            repName={session.user?.name ?? ""}
-          />
+          <DealsBoard initialItems={boardItems} />
         </Suspense>
       </PipelinePageShell>
     </SalesLayout>

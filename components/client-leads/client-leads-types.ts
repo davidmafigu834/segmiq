@@ -8,11 +8,13 @@ export type ClientLeadListRow = LeadRow & {
 export const ALL_STATUSES: LeadStatus[] = [
   "NEW",
   "CONTACTED",
+  "QUALIFIED",
+  "CONVERTED_TO_DEAL",
+  "NOT_QUALIFIED",
   "NEGOTIATING",
   "PROPOSAL_SENT",
   "WON",
   "LOST",
-  "NOT_QUALIFIED",
 ];
 
 export function unwrapAssignee(
@@ -24,6 +26,9 @@ export function unwrapAssignee(
 }
 
 export function statusLabel(s: LeadStatus): string {
+  if (s === "CONVERTED_TO_DEAL") return "Deal created";
+  if (s === "NOT_QUALIFIED") return "Not qualified";
+  if (s === "PROPOSAL_SENT") return "Proposal sent";
   return s.replace(/_/g, " ");
 }
 

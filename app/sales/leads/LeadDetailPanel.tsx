@@ -26,7 +26,7 @@ import {
 import { isFacebookInstantFormLead } from "@/lib/leads/facebook-lead-display";
 import { useLeadPanel, closeLeadPanel, type LeadPanelTab } from "@/store/uiStore";
 import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
-import type { LeadRow } from "@/types";
+import type { DealRow, LeadRow } from "@/types";
 import { MagicLinkButton } from "@/components/MagicLinkButton";
 import { FormAnswersSection } from "@/components/leads/FormAnswersSection";
 import { FacebookFormIntentSection } from "@/components/leads/FacebookFormIntentSection";
@@ -39,16 +39,17 @@ import { LeadBriefing } from "@/components/leads/LeadBriefing";
 import { DealValueEditor } from "@/components/leads/DealValueEditor";
 import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
+import { DealReadinessCard } from "@/components/sales/deals/DealReadinessCard";
+import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
+import { getDealReadiness } from "@/lib/sales/deals/readiness";
+import { formatLeadLifecycle, isLeadConverted, isLeadOpenForQualification } from "@/lib/sales/deals/display";
 import { formatCallLogHeadline } from "@/lib/call-log-display";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { ManagerReassignLeadButton } from "@/components/customer-hub/ManagerReassignLeadButton";
 import { isActiveConvertLaterPick } from "@/lib/convert-later-picks";
 import { timeAgo } from "@/lib/sales-priority-lead";
 import {
-  PIPELINE_ACTIVE_STAGES,
-  PIPELINE_STAGE_LABEL,
   formatLeadIntent,
-  getNextPipelineStage,
   intentLikelihoodCopy,
 } from "@/lib/sales/pipeline-display";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
@@ -69,13 +70,12 @@ type CallLogApiRow = {
 
 type SendAssetType = "PORTFOLIO" | "PROJECT" | "PRICING_PACKAGE" | "TESTIMONIALS" | "DOCUMENT";
 
-const TERMINAL: ReadonlySet<string> = new Set(["WON", "LOST", "NOT_QUALIFIED"]);
-
-const MOVE_COLS = PIPELINE_ACTIVE_STAGES;
-
-type MoveColumn = (typeof MOVE_COLS)[number];
-
-const COL_LABEL = PIPELINE_STAGE_LABEL;
+const TERMINAL: ReadonlySet<string> = new Set([
+  "WON",
+  "LOST",
+  "NOT_QUALIFIED",
+  "CONVERTED_TO_DEAL",
+]);
 
 export function LeadDetailPanel({
   leads,
@@ -102,6 +102,7 @@ export function LeadDetailPanel({
   const [picking, setPicking] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [closingStatus, setClosingStatus] = useState(false);
+  const [createDealOpen, setCreateDealOpen] = useState(false);
   const isMobileDrawer = useMediaQuery("(max-width: 767px)");
   const isBelowLayout = useMediaQuery("(max-width: 1099px)");
   const { setHideBottomNav } = useSalesMobileChrome();
@@ -162,6 +163,19 @@ export function LeadDetailPanel({
   const isWhatsAppChat = isWhatsAppInboundLead(activeLead.source);
   const displayName = whatsappLeadDisplayName(activeLead);
   const isClosed = TERMINAL.has(activeLead.status);
+  const converted = isLeadConverted(activeLead.status) || Boolean(activeLead.active_deal_id);
+  const openForDeal = isLeadOpenForQualification(activeLead.status) || activeLead.status === "QUALIFIED";
+  const dealReadiness = getDealReadiness({
+    lead: activeLead,
+    discovery: {
+      interestConfirmed:
+        activeLead.status === "CONTACTED" ||
+        activeLead.status === "QUALIFIED" ||
+        activeLead.status === "CONVERTED_TO_DEAL",
+      nextStepAgreed: Boolean(activeLead.follow_up_date),
+      valuePending: true,
+    },
+  });
   const phone = activeLead.phone?.trim() ?? "";
 
   function handleClose() {
@@ -169,18 +183,7 @@ export function LeadDetailPanel({
     onClose?.();
   }
 
-  async function handleMoveStage(next: MoveColumn) {
-    if (!onLeadUpdated) return;
-    const res = await fetch(`/api/leads/${activeLead.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: next }),
-    });
-    const json = (await res.json().catch(() => ({}))) as { lead?: LeadRow; error?: string };
-    if (res.ok && json.lead) onLeadUpdated(json.lead);
-  }
-
-  async function handleCloseDeal(status: "WON" | "LOST" | "NOT_QUALIFIED") {
+  async function handleCloseDeal(status: "NOT_QUALIFIED") {
     if (!onLeadUpdated || closingStatus) return;
     setClosingStatus(true);
     try {
@@ -246,7 +249,6 @@ export function LeadDetailPanel({
     : isFacebook
       ? `Facebook Instant Form · ${relative}`
       : `Lead details · ${relative}`;
-  const nextStage = getNextPipelineStage(activeLead.status);
   const intent = formatLeadIntent(activeLead.score);
   const score = activeLead.score;
 
@@ -517,7 +519,52 @@ export function LeadDetailPanel({
                 canReprocess={role === "SUPER_ADMIN" || role === "CLIENT_MANAGER"}
               />
               <HandoverBanner leadId={activeLead.id} />
-              <DealValueEditor lead={activeLead} disabled={isReadOnly} onUpdated={onLeadUpdated} />
+
+              <div className="rounded-[12px] border border-sales-border bg-sales-surface p-3 text-[13px]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  Lead lifecycle
+                </p>
+                <p className="mt-1 font-medium text-sales-text-primary">
+                  {formatLeadLifecycle(activeLead.status)}
+                </p>
+              </div>
+
+              {converted && activeLead.active_deal_id ? (
+                <div className="rounded-[12px] border border-[rgba(212,255,79,0.45)] bg-[rgba(212,255,79,0.1)] p-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                    Related deal
+                  </p>
+                  <p className="mt-1 text-[13px] text-sales-text-secondary">
+                    Deal created — open the commercial workspace to continue.
+                  </p>
+                  <Link
+                    href={`/sales/deals/${activeLead.active_deal_id}`}
+                    className="mt-2 inline-flex min-h-[40px] items-center text-[13px] font-semibold text-sales-text-primary"
+                  >
+                    Open deal
+                  </Link>
+                </div>
+              ) : converted ? (
+                <div className="rounded-[12px] border border-sales-border bg-sales-surface p-3 text-[13px] text-sales-text-secondary">
+                  Deal created — acquisition history is preserved on this lead.
+                </div>
+              ) : openForDeal && !isReadOnly ? (
+                <DealReadinessCard
+                  readiness={dealReadiness}
+                  onCreateDeal={() => setCreateDealOpen(true)}
+                />
+              ) : !converted && !isClosed ? (
+                <p className="text-[13px] text-sales-text-secondary">
+                  No Deal yet. Continue qualification to confirm whether there is a commercial
+                  opportunity.
+                </p>
+              ) : null}
+
+              <DealValueEditor
+                lead={activeLead}
+                disabled={isReadOnly || converted}
+                onUpdated={onLeadUpdated}
+              />
               {activeLead.is_stale ? (
                 <StaleLeadRecovery
                   leadId={activeLead.id}
@@ -564,78 +611,22 @@ export function LeadDetailPanel({
                 {!isWhatsAppChat ? <MagicLinkButton token={activeLead.magic_token} /> : null}
               </div>
 
-              {!isReadOnly && !isClosed ? (
+              {!isReadOnly && !isClosed && !converted ? (
                 <div>
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Status</p>
-                  <div className="mb-3 flex flex-wrap items-center gap-1.5">
-                    {MOVE_COLS.map((col, idx) => {
-                      const currentIdx = (MOVE_COLS as readonly string[]).indexOf(activeLead.status);
-                      const isCurrent = activeLead.status === col;
-                      const isPast = currentIdx > idx;
-                      return (
-                        <div key={col} className="flex items-center gap-1.5">
-                          {idx > 0 ? (
-                            <span className="text-[var(--sales-neutral-300)]" aria-hidden>
-                              ›
-                            </span>
-                          ) : null}
-                          <span
-                            className={`inline-flex items-center gap-1.5 text-[12px] ${
-                              isCurrent
-                                ? "font-semibold text-sales-text-primary"
-                                : isPast
-                                  ? "text-sales-text-secondary"
-                                  : "text-sales-text-muted"
-                            }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                isCurrent ? "bg-[#2684FF]" : isPast ? "bg-[#22C55E]" : "bg-sales-border"
-                              }`}
-                              aria-hidden
-                            />
-                            {COL_LABEL[col]}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {nextStage ? (
-                    <button
-                      type="button"
-                      className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[#2684FF] px-4 text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
-                      onClick={() => void handleMoveStage(nextStage)}
-                    >
-                      Move to {COL_LABEL[nextStage]}
-                    </button>
-                  ) : activeLead.status === "PROPOSAL_SENT" ? (
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        disabled={closingStatus}
-                        className="h-10 rounded-[10px] border border-sales-border bg-sales-success-soft text-[12px] font-medium text-[var(--success-fg,#027A48)]"
-                        onClick={() => void handleCloseDeal("WON")}
-                      >
-                        Won
-                      </button>
-                      <button
-                        type="button"
-                        disabled={closingStatus}
-                        className="h-10 rounded-[10px] border border-sales-border bg-sales-danger-soft text-[12px] font-medium text-[var(--danger-fg,#B42318)]"
-                        onClick={() => void handleCloseDeal("LOST")}
-                      >
-                        Lost
-                      </button>
-                      <button
-                        type="button"
-                        disabled={closingStatus}
-                        className="h-10 rounded-[10px] border border-sales-border bg-[var(--sales-neutral-100)] text-[12px] font-medium text-sales-text-secondary"
-                        onClick={() => void handleCloseDeal("NOT_QUALIFIED")}
-                      >
-                        Not qualified
-                      </button>
-                    </div>
-                  ) : null}
+                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                    Qualification
+                  </p>
+                  <p className="mb-3 text-[13px] text-sales-text-secondary">
+                    Commercial stages live on Deals. Use call outcomes and Create deal when ready.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={closingStatus}
+                    className="h-10 w-full rounded-[10px] border border-sales-border bg-[var(--sales-neutral-100)] text-[12px] font-medium text-sales-text-secondary"
+                    onClick={() => void handleCloseDeal("NOT_QUALIFIED")}
+                  >
+                    Mark not qualified
+                  </button>
                 </div>
               ) : null}
 
@@ -712,23 +703,15 @@ export function LeadDetailPanel({
             {role === "SALESPERSON" &&
             !isReadOnly &&
             !isClosed &&
-            (MOVE_COLS as readonly string[]).includes(activeLead.status) ? (
+            !converted ? (
               <div className="border-b border-sales-border p-4 max-md:px-4 sm:p-5 md:hidden">
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
-                  Move to
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {MOVE_COLS.filter((c) => c !== activeLead.status).map((col) => (
-                    <button
-                      key={col}
-                      type="button"
-                      onClick={() => void handleMoveStage(col)}
-                      className="min-h-12 rounded-[10px] border border-sales-border px-2 text-left text-sm text-sales-text-primary touch-manipulation hover:bg-sales-surface-hover sm:min-h-0 sm:h-9 sm:py-0"
-                    >
-                      → {COL_LABEL[col]}
-                    </button>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setCreateDealOpen(true)}
+                  className="min-h-12 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-sm font-semibold text-sales-text-primary touch-manipulation"
+                >
+                  Create deal
+                </button>
               </div>
             ) : null}
 
@@ -755,8 +738,10 @@ export function LeadDetailPanel({
                       businessType={businessType}
                       clientId={activeLead.client_id}
                       contactId={activeLead.contact_id}
+                      hasActiveDeal={Boolean(activeLead.active_deal_id)}
                       onLogged={() => setLogRefresh((k) => k + 1)}
                       onLeadUpdated={onLeadUpdated}
+                      onQualifiedOpportunity={() => setCreateDealOpen(true)}
                       onOpenSendTab={(types) => {
                         setSendPreselect(types);
                         setActiveTab("send");
@@ -813,7 +798,25 @@ export function LeadDetailPanel({
   );
 
   if (!portalEl) return null;
-  return createPortal(panel, portalEl);
+  return (
+    <>
+      {createPortal(panel, portalEl)}
+      <CreateDealSheet
+        lead={activeLead}
+        open={createDealOpen}
+        onClose={() => setCreateDealOpen(false)}
+        onCreated={(deal: DealRow) => {
+          onLeadUpdated?.({
+            ...activeLead,
+            status: "CONVERTED_TO_DEAL",
+            active_deal_id: deal.id,
+            converted_at: new Date().toISOString(),
+          });
+          window.location.href = `/sales/deals/${deal.id}`;
+        }}
+      />
+    </>
+  );
 }
 
 function AgencyLeadAdminSection({

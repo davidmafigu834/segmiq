@@ -91,7 +91,8 @@ export const SALES_NAVIGATION: SalesNavItemConfig[] = [
     section: "sales",
     mobileSlot: "primary",
     mobileLabel: "Pipeline",
-    match: (p) => exactOrChild(p, "/sales/leads"),
+    match: (p) =>
+      exactOrChild(p, "/sales/leads") || exactOrChild(p, "/sales/deals"),
   },
   {
     id: "whatsapp",

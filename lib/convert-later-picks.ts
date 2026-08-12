@@ -21,7 +21,7 @@ export async function fetchLatestScheduledCallbacksByLeadId(
   supabase: SupabaseClient,
   leadIds: string[]
 ): Promise<Record<string, string>> {
-  if (leadIds.length === 0) return {};
+  if (!leadIds?.length) return {};
 
   const { data, error } = await supabase
     .from("call_logs")

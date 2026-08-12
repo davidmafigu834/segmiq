@@ -296,10 +296,37 @@ export async function fetchSalespersonWonLost(opts: {
     "id, name, phone, email, project_type, status, deal_value, updated_at, source, lost_reason, convert_later_note, form_data, contact_id, client_id, created_at";
 
   const [
-    { data: currentRows },
-    { data: previousRows },
-    { count: closedAllTime },
+    { data: currentDealRows },
+    { data: previousDealRows },
+    { count: closedDealsAllTime },
+    { data: currentLegacyRows },
+    { data: previousLegacyRows },
+    { count: closedLegacyAllTime },
   ] = await Promise.all([
+    supabase
+      .from("deals")
+      .select(
+        "id, name, stage, won_value, estimated_value, won_at, lost_at, lost_reason, updated_at, originating_lead_id, owner_id, created_at"
+      )
+      .eq("owner_id", opts.userId)
+      .in("stage", ["WON", "LOST"])
+      .gte("updated_at", range.from.toISOString())
+      .lt("updated_at", range.to.toISOString())
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("deals")
+      .select(
+        "id, name, stage, won_value, estimated_value, won_at, lost_at, lost_reason, updated_at, originating_lead_id, owner_id, created_at"
+      )
+      .eq("owner_id", opts.userId)
+      .in("stage", ["WON", "LOST"])
+      .gte("updated_at", range.previousFrom.toISOString())
+      .lt("updated_at", range.previousTo.toISOString()),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", opts.userId)
+      .in("stage", ["WON", "LOST"]),
     supabase
       .from("leads")
       .select(selectCols)
@@ -322,20 +349,68 @@ export async function fetchSalespersonWonLost(opts: {
       .in("status", ["WON", "LOST"]),
   ]);
 
-  const mapFilterSource = (rows: unknown[] | null) =>
-    (rows ?? [])
+  // Prefer deal outcomes; keep legacy lead WON/LOST only when no deal migration row exists
+  const dealLeadIds = new Set(
+    [
+      ...((currentDealRows ?? []) as { originating_lead_id: string }[]),
+      ...((previousDealRows ?? []) as { originating_lead_id: string }[]),
+    ].map((d) => d.originating_lead_id)
+  );
+
+  const mapDealRows = (rows: unknown[] | null) =>
+    (rows ?? []).map((raw) => {
+      const d = raw as {
+        id: string;
+        name: string;
+        stage: "WON" | "LOST";
+        won_value: number | null;
+        estimated_value: number | null;
+        won_at: string | null;
+        lost_at: string | null;
+        lost_reason: string | null;
+        updated_at: string;
+        originating_lead_id: string;
+        created_at: string;
+      };
+      return mapDeal({
+        id: d.id,
+        name: d.name,
+        phone: null,
+        email: null,
+        project_type: d.name,
+        status: d.stage,
+        deal_value: d.stage === "WON" ? d.won_value ?? d.estimated_value : d.estimated_value,
+        updated_at: d.won_at || d.lost_at || d.updated_at,
+        source: "MANUAL",
+        lost_reason: d.lost_reason,
+        convert_later_note: null,
+        form_data: null,
+        contact_id: null,
+        client_id: "",
+        created_at: d.created_at,
+      } as Parameters<typeof mapDeal>[0]);
+    });
+
+  const mapFilterSource = (rows: unknown[] | null, legacy: unknown[] | null) => {
+    const fromDeals = mapDealRows(rows).filter((d): d is ClosedDealRow => d != null);
+    const fromLegacy = (legacy ?? [])
       .map((r) => mapDeal(r as Parameters<typeof mapDeal>[0]))
       .filter((d): d is ClosedDealRow => d != null)
-      .filter((d) => source === "all" || d.sourceKey === source);
+      .filter((d) => !dealLeadIds.has(d.id));
+    return [...fromDeals, ...fromLegacy].filter(
+      (d) => source === "all" || d.sourceKey === source
+    );
+  };
 
-  const currentAll = mapFilterSource(currentRows as unknown[] | null);
-  const previousAll = mapFilterSource(previousRows as unknown[] | null);
+  const current = mapFilterSource(currentDealRows, currentLegacyRows);
+  const previous = mapFilterSource(previousDealRows, previousLegacyRows);
+  const closedAllTime = (closedDealsAllTime ?? 0) + (closedLegacyAllTime ?? 0);
 
   // KPIs use full WON+LOST for period/source so win rate stays canonical.
-  const kpis = buildKpis(currentAll, previousAll, range.label);
+  const kpis = buildKpis(current, previous, range.label);
 
   const fullTrend = groupOutcomesByPeriod(
-    currentAll.map((d) => ({ status: d.status, closeDate: d.closeDate })),
+    current.map((d) => ({ status: d.status, closeDate: d.closeDate })),
     { from: range.from, to: range.to },
     granularity
   );
@@ -350,7 +425,7 @@ export async function fetchSalespersonWonLost(opts: {
 
   // Reason chart uses lost deals matching source + period (hidden on Won tab in UI)
   const lostForReasons =
-    outcome === "won" ? [] : currentAll.filter((d) => d.status === "LOST");
+    outcome === "won" ? [] : current.filter((d) => d.status === "LOST");
   const lostReasons = groupOutcomeReasons(
     lostForReasons.map((d) => ({ reason: d.reason })),
     { includeMissing: lostForReasons.some((d) => !d.reason), maxRows: 6 }
@@ -373,7 +448,7 @@ export async function fetchSalespersonWonLost(opts: {
         "Win reasons aren't being captured yet. Add a win reason when closing a deal to build this insight.",
     },
     kpis,
-    deals: currentAll,
+    deals: current,
     trend,
     lostReasons: {
       rows: lostReasons.rows,
@@ -383,7 +458,7 @@ export async function fetchSalespersonWonLost(opts: {
     wonReasons: {
       rows: [],
       withReason: 0,
-      totalWon: currentAll.filter((d) => d.status === "WON").length,
+      totalWon: current.filter((d) => d.status === "WON").length,
       available: false,
     },
     totals: {

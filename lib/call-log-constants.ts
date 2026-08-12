@@ -12,16 +12,44 @@ export const REACH_OUTCOME_LABELS: Record<ReachOutcome, string> = {
   call_back: "Call me back",
 };
 
-/** Step 2 — result when reached */
-export const CALL_RESULTS = ["won", "follow_up", "lost", "not_qualified"] as const;
+/**
+ * Step 2 — result when reached.
+ * Lead lifecycle outcomes (pre-deal): qualifying | qualified | follow_up | not_qualified
+ * Deal outcomes (when active deal exists): won | lost | follow_up
+ */
+export const CALL_RESULTS = [
+  "qualifying",
+  "qualified",
+  "follow_up",
+  "not_qualified",
+  "won",
+  "lost",
+] as const;
 export type CallResult = (typeof CALL_RESULTS)[number];
 
 export const CALL_RESULT_LABELS: Record<CallResult, string> = {
+  qualifying: "Interested — still qualifying",
+  qualified: "Qualified opportunity",
+  follow_up: "Follow up later",
+  not_qualified: "Not a fit",
   won: "Won",
-  follow_up: "Follow-up",
   lost: "Lost",
-  not_qualified: "Not qualified",
 };
+
+/** Results shown when logging a call on a Lead without an active Deal. */
+export const LEAD_CALL_RESULTS = [
+  "qualifying",
+  "qualified",
+  "follow_up",
+  "not_qualified",
+] as const satisfies readonly CallResult[];
+
+/** Results shown when logging a call on an active Deal. */
+export const DEAL_CALL_RESULTS = [
+  "follow_up",
+  "won",
+  "lost",
+] as const satisfies readonly CallResult[];
 
 /** Trades stall reasons — default / historical values (must stay identical). */
 export const FOLLOW_UP_HOLDUP_REASONS = [
@@ -191,6 +219,8 @@ export function deriveLegacyOutcome(
     case "not_qualified":
       return "NOT_QUALIFIED";
     case "follow_up":
+    case "qualifying":
+    case "qualified":
     default:
       return "ANSWERED";
   }

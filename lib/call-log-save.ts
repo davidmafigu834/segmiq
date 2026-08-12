@@ -44,18 +44,18 @@ export function resolveNextStatus(
   reachOutcome: ReachOutcome,
   result: CallResult | null | undefined
 ): LeadStatus | null {
+  // Call attempts without contact must not mark Contacted
   if (reachOutcome === "no_answer") return null;
+  if (reachOutcome === "call_back") return null;
 
   if (reachOutcome === "reached") {
-    if (result === "won") return "WON";
-    if (result === "lost") return "LOST";
     if (result === "not_qualified") return "NOT_QUALIFIED";
+    if (result === "qualified") return "QUALIFIED";
+    // Won/Lost belong on Deals — do not close the Lead as WON/LOST
+    if (result === "won" || result === "lost") return null;
+    // qualifying / follow_up / default: first real contact
     if (currentStatus === "NEW") return "CONTACTED";
-    return null;
-  }
-
-  if (reachOutcome === "call_back") {
-    if (currentStatus === "NEW") return "CONTACTED";
+    if (result === "qualifying" && currentStatus === "CONTACTED") return null;
     return null;
   }
 
@@ -296,6 +296,14 @@ export async function saveCallLog(input: SaveCallLogInput): Promise<SaveCallLogR
 
   const { data: rescored } = await supabase.from("leads").select("*").eq("id", leadId).single();
   const noAnswerCount = await countNoAnswerAttempts(leadId);
+
+  void import("@/lib/sales/intelligence/daily-plan-service").then(({ reconcileLeadActionStates }) =>
+    reconcileLeadActionStates({
+      clientId: lead.client_id as string,
+      salespersonId: actorUserId,
+      leadId,
+    })
+  );
 
   return {
     lead: (rescored ?? updated) as LeadRow,

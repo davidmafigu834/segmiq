@@ -34,11 +34,12 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     notes?: string | null;
     terms?: string | null;
     templateId?: string;
+    dealId?: string | null;
   };
 
   const { data: lead } = await supabase
     .from("leads")
-    .select("name, phone, email")
+    .select("name, phone, email, active_deal_id")
     .eq("id", params.leadId)
     .single();
 
@@ -71,11 +72,17 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     body.valid_until ??
     format(addDays(new Date(), templateValidDays ?? 30), "yyyy-MM-dd");
 
+  const dealId =
+    (typeof body.dealId === "string" && body.dealId) ||
+    (lead?.active_deal_id as string | null) ||
+    null;
+
   const { data: quote, error } = await supabase
     .from("quotations")
     .insert({
       client_id: access.lead.client_id,
       lead_id: params.leadId,
+      deal_id: dealId,
       status: "draft",
       customer_name: (lead?.name as string | null) ?? null,
       customer_phone: (lead?.phone as string | null) ?? null,

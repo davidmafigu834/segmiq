@@ -37,6 +37,7 @@ import {
   SOURCE_COLORS,
 } from "@/components/sales/goals/GoalCharts";
 import { SetGoalDialog } from "@/components/sales/goals/SetGoalDialog";
+import { GoalsIntelligenceSection } from "@/components/sales/goals/GoalsIntelligenceSection";
 import { formatDealCurrency } from "@/lib/sales/format";
 import { formatGoalDate } from "@/lib/sales/goals/period";
 import type { SalesGoalsPayload } from "@/lib/sales/goals/types";
@@ -163,10 +164,13 @@ export function SalesGoalsClient() {
       ) : null}
 
       {data && data.lifecycle === "no_goal" ? (
-        <NoGoalState
-          data={data}
-          onSetGoal={() => setSheet("create")}
-        />
+        <>
+          <NoGoalState
+            data={data}
+            onSetGoal={() => setSheet("create")}
+          />
+          <GoalsIntelligenceSection />
+        </>
       ) : null}
 
       {data && data.goal && data.lifecycle === "upcoming" ? (
@@ -257,6 +261,8 @@ export function SalesGoalsClient() {
               onEdit={data.goal.editable ? () => setSheet("edit") : undefined}
             />
           </div>
+
+          <GoalsIntelligenceSection />
 
           <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
             <ProgressBySourceCard data={data} />

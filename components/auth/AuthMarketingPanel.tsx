@@ -1,5 +1,4 @@
 import { CircleCheck } from "lucide-react";
-import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
 import ProductHeroVisual from "@/components/marketing/landing/ProductHeroVisual";
 
 export type AuthMarketingVariant = "login" | "forgot" | "reset" | "signup";
@@ -69,22 +68,10 @@ export default function AuthMarketingPanel({
     <aside className="auth-marketing relative hidden h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-[var(--marketing-bg)] lg:flex">
       <div className="auth-marketing-halo pointer-events-none absolute inset-0" aria-hidden />
 
-      <header className="auth-panel-header relative z-[1] flex h-14 shrink-0 items-center px-10 xl:px-14">
-        <SegmiqWordmark href="/" theme="auto" size="md" priority />
-      </header>
-
-      <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden px-10 pb-0 pt-1 xl:px-14">
+      <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden px-10 pb-0 pt-14 xl:px-14">
         <div className="max-w-[520px] shrink-0">
-          <div className="inline-flex h-7 max-w-full items-center gap-2 rounded-full border border-[var(--marketing-border)] bg-[var(--marketing-surface-elevated)] px-3 text-[11px] font-medium text-[var(--marketing-text-secondary)]">
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--marketing-brand)]"
-              aria-hidden
-            />
-            <span className="truncate">The revenue operating system for service businesses</span>
-          </div>
-
           <h2
-            className="mt-3.5 text-[32px] font-semibold leading-[1.08] tracking-[-0.035em] text-[var(--marketing-text-heading)] xl:text-[38px]"
+            className="text-[32px] font-semibold leading-[1.08] tracking-[-0.035em] text-[var(--marketing-text-heading)] xl:text-[38px]"
             style={{ fontWeight: 650 }}
           >
             {copy.headline}

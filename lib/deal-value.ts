@@ -2,9 +2,10 @@ import type { LeadStatus } from "@/types";
 
 export type DealValueSource = "manual" | "proposal";
 
-/** Open stages where reps may enter a manual deal estimate. */
+/** Open stages where reps may enter a manual deal estimate (legacy lead path). */
 export const MANUAL_DEAL_VALUE_STATUSES: readonly LeadStatus[] = [
   "CONTACTED",
+  "QUALIFIED",
   "NEGOTIATING",
   "PROPOSAL_SENT",
 ];
