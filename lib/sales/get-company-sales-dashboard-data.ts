@@ -326,7 +326,15 @@ function buildFocusSignals(opts: {
   }
 
   candidates.sort((a, b) => b.rank - a.rank);
-  return candidates.slice(0, 3).map(({ rank: _r, ...rest }) => rest);
+  return candidates.slice(0, 3).map((c) => ({
+    id: c.id,
+    severity: c.severity,
+    count: c.count,
+    label: c.label,
+    supporting: c.supporting,
+    href: c.href,
+    ...(c.ctaLabel ? { ctaLabel: c.ctaLabel } : {}),
+  }));
 }
 
 function buildCompanyKpis(opts: {
