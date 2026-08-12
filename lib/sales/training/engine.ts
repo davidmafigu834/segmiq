@@ -277,7 +277,6 @@ export function skipLesson(
       currentLessonId: lessonId,
     };
   }
-  const steps = getLessonSteps(following, caps);
   return startCourse({ ...next, currentLessonId: null, currentStepId: null }, caps, following);
 }
 
