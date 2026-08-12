@@ -10,7 +10,8 @@ export function CourseProgressPanel() {
 
   return (
     <aside
-      className="fixed bottom-6 right-4 z-[var(--sales-z-course-coach,92)] hidden w-[240px] rounded-[14px] border border-sales-border bg-sales-surface p-3 shadow-sales-popover xl:block"
+      className="sales-modal-premium fixed bottom-6 right-4 z-[var(--sales-z-course-coach,92)] hidden w-[240px] rounded-[14px] border border-sales-border bg-sales-surface p-3 shadow-sales-modal xl:block"
+      style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}
       aria-label="Course progress"
     >
       <div className="mb-2 flex items-center justify-between">

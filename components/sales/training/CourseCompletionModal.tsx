@@ -9,12 +9,13 @@ export function CourseCompletionModal() {
   const { exit } = useGuidedCourse();
 
   return (
-    <div className="fixed inset-0 z-[var(--sales-z-course-modal,95)] flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 dark:bg-[rgba(0,0,0,0.55)]">
+    <div className="sales-modal-premium fixed inset-0 z-[var(--sales-z-course-modal,95)] flex items-center justify-center bg-[rgba(15,23,42,0.5)] p-4 dark:bg-[rgba(0,0,0,0.6)]">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="course-complete-title"
-        className="w-full max-w-[560px] rounded-[16px] border border-sales-border bg-sales-surface p-7 shadow-sales-popover sm:p-8"
+        className="w-full max-w-[560px] rounded-[16px] border border-sales-border bg-sales-surface p-7 shadow-sales-modal sm:p-8"
+        style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}
       >
         <div
           className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(212,255,79,0.35)] text-[18px] font-bold text-sales-brand-text"

@@ -14,14 +14,19 @@ export function CourseWelcomeModal({ isExistingUser }: { isExistingUser?: boolea
 
   return (
     <div
-      className="fixed inset-0 z-[var(--sales-z-course-modal,95)] flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 dark:bg-[rgba(0,0,0,0.55)]"
+      className="sales-modal-premium fixed inset-0 z-[var(--sales-z-course-modal,95)] flex items-center justify-center bg-[rgba(15,23,42,0.5)] p-4 dark:bg-[rgba(0,0,0,0.6)]"
       role="presentation"
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="guided-welcome-title"
-        className="w-full max-w-[640px] rounded-[16px] border border-sales-border bg-sales-surface p-6 shadow-sales-popover sm:p-8"
+        className="w-full max-w-[640px] rounded-[16px] border border-sales-border bg-sales-surface p-6 shadow-sales-modal sm:p-8"
+        style={{
+          // Course overlays render outside .sales-dashboard-premium — force opaque panel.
+          backgroundColor: "var(--sales-surface, #FFFFFF)",
+          color: "var(--sales-text-primary, #101828)",
+        }}
       >
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
           SegmiQ Guided Learning
@@ -42,7 +47,7 @@ export function CourseWelcomeModal({ isExistingUser }: { isExistingUser?: boolea
           ].map((item) => (
             <li key={item} className="flex items-start gap-2.5">
               <span
-                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(212,255,79,0.35)] text-[11px] font-bold text-sales-brand-text"
+                className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgba(212,255,79,0.35)] text-[11px] font-bold text-[#101828]"
                 aria-hidden
               >
                 ✓

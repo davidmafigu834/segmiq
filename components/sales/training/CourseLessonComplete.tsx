@@ -12,11 +12,12 @@ export function CourseLessonComplete() {
   const nextLesson = lessons.find((l) => l.id === progress.currentLessonId);
 
   return (
-    <div className="fixed inset-0 z-[var(--sales-z-course-modal,95)] flex items-center justify-center bg-[rgba(15,23,42,0.45)] p-4 dark:bg-[rgba(0,0,0,0.55)]">
+    <div className="sales-modal-premium fixed inset-0 z-[var(--sales-z-course-modal,95)] flex items-center justify-center bg-[rgba(15,23,42,0.5)] p-4 dark:bg-[rgba(0,0,0,0.6)]">
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-[16px] border border-sales-border bg-sales-surface p-6 shadow-sales-popover"
+        className="w-full max-w-md rounded-[16px] border border-sales-border bg-sales-surface p-6 shadow-sales-modal"
+        style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}
       >
         <p className="text-[13px] font-semibold text-sales-success-fg">✓ {completed?.title ?? "Lesson"} complete</p>
         <p className="mt-2 text-[14px] leading-relaxed text-sales-text-secondary">

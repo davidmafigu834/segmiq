@@ -153,9 +153,10 @@ export function CourseCoachmark({
         aria-modal="false"
         aria-label={step.title}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-[var(--sales-z-course-coach,92)]",
-          "rounded-t-[16px] border border-sales-border bg-sales-surface px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-3 shadow-sales-popover"
+          "sales-modal-premium fixed inset-x-0 bottom-0 z-[var(--sales-z-course-coach,92)]",
+          "rounded-t-[16px] border border-sales-border bg-sales-surface px-4 pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-3 shadow-sales-modal"
         )}
+        style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-sales-border" aria-hidden />
         {body}
@@ -168,8 +169,8 @@ export function CourseCoachmark({
       role="dialog"
       aria-modal="false"
       aria-label={step.title}
-      className="z-[var(--sales-z-course-coach,92)] rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-popover"
-      style={style}
+      className="sales-modal-premium z-[var(--sales-z-course-coach,92)] rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-modal"
+      style={{ ...style, backgroundColor: "var(--sales-surface, #FFFFFF)" }}
     >
       {body}
     </div>
