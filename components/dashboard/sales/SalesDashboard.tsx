@@ -23,6 +23,8 @@ import {
   useSalesMobileChrome,
 } from "@/components/sales/navigation/SalesMobileChromeContext";
 import { ToastProvider } from "@/components/sales/ui/Toast";
+import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount";
+import { CourseResumeCard } from "@/components/sales/training/CourseResumeCard";
 import { DashboardHeader } from "./DashboardHeader";
 import { KpiCard } from "./KpiCard";
 import { PerformanceCard } from "./PerformanceCard";
@@ -140,6 +142,8 @@ function SalesDashboardInner({
             onAddLead={openAddHubSheet}
           />
 
+          <CourseResumeCard />
+
           {retargetingStatuses.length > 0 ? (
             <RetargetingBanners statuses={retargetingStatuses} />
           ) : null}
@@ -247,7 +251,9 @@ export function SalesDashboard(props: SalesDashboardProps) {
   return (
     <ToastProvider>
       <SalesMobileChromeProvider>
-        <SalesDashboardInner {...props} />
+        <GuidedCourseMount isSolo={props.isSolo}>
+          <SalesDashboardInner {...props} />
+        </GuidedCourseMount>
       </SalesMobileChromeProvider>
     </ToastProvider>
   );

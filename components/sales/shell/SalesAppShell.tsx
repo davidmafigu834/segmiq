@@ -29,6 +29,7 @@ import {
 } from "@/components/sales/navigation/SalesMobileChromeContext";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { ToastProvider } from "@/components/sales/ui/Toast";
+import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount";
 import { Button } from "@/components/sales/ui/Button";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import type { UserRole } from "@/types";
@@ -92,6 +93,7 @@ export function SalesQuickActions({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Quick actions"
+        data-course-target="dashboard-quick-actions"
         onClick={() => setOpen((v) => !v)}
         leftIcon={<Zap size={16} strokeWidth={1.8} />}
         rightIcon={<ChevronDown size={14} strokeWidth={1.8} />}
@@ -335,7 +337,9 @@ export function SalesAppShell(props: Parameters<typeof SalesAppShellInner>[0]) {
   return (
     <ToastProvider>
       <SalesMobileChromeProvider>
-        <SalesAppShellInner {...props} />
+        <GuidedCourseMount isSolo={props.isSolo}>
+          <SalesAppShellInner {...props} />
+        </GuidedCourseMount>
       </SalesMobileChromeProvider>
     </ToastProvider>
   );

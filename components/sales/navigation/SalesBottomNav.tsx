@@ -90,6 +90,7 @@ export function SalesBottomNav({
               key={item.id}
               href={item.href}
               aria-current={active ? "page" : undefined}
+              data-course-target={`sales-mobile-nav-${item.id}`}
               className={cn(
                 "relative flex min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-[10px] font-medium transition-colors",
                 active ? "text-sales-text-primary" : "text-sales-text-secondary"
@@ -122,7 +123,13 @@ export function SalesBottomNav({
           )}
           aria-label="More"
           aria-expanded={moreOpen}
-          onClick={() => setMoreOpen(true)}
+          data-course-target="sales-mobile-nav-more"
+          onClick={() => {
+            setMoreOpen(true);
+            void import("@/lib/sales/training/course-events").then(({ emitCourseEvent }) => {
+              emitCourseEvent("MOBILE_MORE_OPENED");
+            });
+          }}
         >
           <span
             className={cn(

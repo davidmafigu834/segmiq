@@ -3210,6 +3210,10 @@ label[for="photo-input"] {
   --sales-z-modal: 80;
   --sales-z-toast: 100;
   --sales-z-tooltip: 110;
+  --sales-z-course-overlay: 90;
+  --sales-z-course-spotlight: 91;
+  --sales-z-course-coach: 92;
+  --sales-z-course-modal: 95;
 
   /* Legacy aliases (dashboard / pipeline) */
   --sd-lime: var(--sales-brand);

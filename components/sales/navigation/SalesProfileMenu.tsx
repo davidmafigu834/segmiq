@@ -118,15 +118,15 @@ export function SalesProfileMenu({
             <ShieldCheck size={16} strokeWidth={1.8} aria-hidden />
             Account & security
           </Link>
-          <a
-            href="mailto:support@leadstaq.tech"
+          <Link
+            href="/sales/training"
             role="menuitem"
             className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
             onClick={() => setOpen(false)}
           >
             <CircleHelp size={16} strokeWidth={1.8} aria-hidden />
-            Help & Support
-          </a>
+            Training
+          </Link>
           <div className="my-1 border-t border-sales-border-subtle" />
           <button
             type="button"

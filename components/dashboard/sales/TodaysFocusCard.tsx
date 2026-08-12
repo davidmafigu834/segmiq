@@ -60,6 +60,7 @@ export function TodaysFocusCard({
 
   return (
     <Card
+      data-course-target="dashboard-todays-focus"
       className={cn(
         "border-sales-border",
         "bg-[color-mix(in_srgb,var(--sales-brand)_4%,var(--sales-surface))]"
@@ -134,7 +135,10 @@ export function TodaysSalesPlanStrip({
   state: "active" | "complete" | "build";
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[14px] border border-sales-border bg-sales-surface p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+    <div
+      data-course-target="dashboard-sales-plan"
+      className="flex flex-col gap-3 rounded-[14px] border border-sales-border bg-sales-surface p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+    >
       <div className="min-w-0">
         <div className="flex items-start gap-2">
           {state === "complete" ? (

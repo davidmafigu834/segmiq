@@ -50,6 +50,7 @@ function NavRows({
             key={item.id}
             href={item.href}
             onClick={onNavigate}
+            data-course-target={`sales-mobile-more-${item.id}`}
             className={cn(
               "flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-[14px] font-medium transition-colors",
               active
@@ -119,14 +120,15 @@ export function SalesMoreSheet({
             Tools
           </p>
           <NavRows items={toolsMore} pathname={pathname} onNavigate={close} />
-          <a
-            href="mailto:support@leadstaq.tech"
+          <Link
+            href="/sales/training"
             onClick={close}
+            data-course-target="sales-mobile-more-training"
             className="mt-0.5 flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-[14px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
           >
             <CircleHelp size={18} strokeWidth={1.75} className="text-sales-text-secondary" aria-hidden />
-            Help & Support
-          </a>
+            Training
+          </Link>
         </section>
 
         <section>

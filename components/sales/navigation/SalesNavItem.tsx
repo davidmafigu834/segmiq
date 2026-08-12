@@ -59,6 +59,7 @@ export function SalesNavItem({
       title={collapsed ? label : undefined}
       aria-label={collapsed ? (showBadge ? `${label}, ${badge}` : label) : undefined}
       aria-current={active ? "page" : undefined}
+      data-course-target={`sales-nav-${item.id}`}
       className={cn(
         "group relative flex items-center rounded-[8px] transition-[background-color,color] duration-150 ease-out",
         "focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",

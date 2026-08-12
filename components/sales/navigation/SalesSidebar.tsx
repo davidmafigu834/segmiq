@@ -152,9 +152,10 @@ export function SalesSidebar({
               ))}
               {collapsedMode ? (
                 <a
-                  href="mailto:support@leadstaq.tech"
+                  href="/sales/training"
                   title="Help & Support"
                   aria-label="Help & Support"
+                  data-course-target="sales-nav-training"
                   className="mx-auto flex h-10 w-10 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
                   onClick={onCloseMobile}
                 >
@@ -162,7 +163,8 @@ export function SalesSidebar({
                 </a>
               ) : (
                 <a
-                  href="mailto:support@leadstaq.tech"
+                  href="/sales/training"
+                  data-course-target="sales-nav-training"
                   className="flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-[13px] font-medium text-[var(--sales-sidebar-text)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
                   onClick={onCloseMobile}
                 >
@@ -173,6 +175,7 @@ export function SalesSidebar({
                     aria-hidden
                   />
                   Help & Support
+                  <span className="sr-only"> — Training</span>
                 </a>
               )}
             </SalesNavSection>

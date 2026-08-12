@@ -123,6 +123,7 @@ export function KpiStat({ item }: { item: SalesKpiItem }) {
     return (
       <Link
         href={item.href}
+        data-course-target={item.id ? `dashboard-kpi-${item.id}` : undefined}
         className={cn(
           className,
           "hover:border-sales-border-strong hover:shadow-sales-card-hover",
@@ -135,7 +136,14 @@ export function KpiStat({ item }: { item: SalesKpiItem }) {
     );
   }
 
-  return <article className={className}>{body}</article>;
+  return (
+    <article
+      className={className}
+      data-course-target={item.id ? `dashboard-kpi-${item.id}` : undefined}
+    >
+      {body}
+    </article>
+  );
 }
 
 export function LeadIdentity({

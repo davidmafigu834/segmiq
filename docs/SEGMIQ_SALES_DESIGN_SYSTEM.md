@@ -498,3 +498,28 @@ Surfaces `#111411` / raised `#151815`; borders `#272C27` / `#1E231E`; chart tool
 ### Links
 
 Enquiries → `/sales/call-now` · Deals → `/sales/deals/[id]` · Pipeline → `/sales/leads` · Plan/Focus → `/sales/tasks` · Goals context → Goals when present.
+
+## 17. Guided Learning
+
+Interactive SegmiQ 2.0 course (not a third-party tour widget). Full behavior: [`docs/SEGMIQ_INTERACTIVE_TRAINING.md`](./SEGMIQ_INTERACTIVE_TRAINING.md).
+
+### Surfaces
+
+| Element | Spec |
+|---------|------|
+| Welcome modal | 600–680px, surface `#FFFFFF` / dark `#111411`, border `#E4E7EC` / `#272C27`, title 28–32px / 650–700 |
+| Overlay | `rgba(15, 23, 42, .45)` light; slightly deeper dark — target stays visible |
+| Target ring | 2px `#D4FF4F` + `box-shadow: 0 0 0 3px rgba(212,255,79,.25)` |
+| Coachmark | 300–360px desktop; 12–14px radius; thin border; small shadow; heading 16–18px |
+| Mobile coach | Bottom sheet under safe-area; target remains tappable |
+| Practice badge | Small lime soft pill + “Actions here don’t affect your real sales data.” |
+| Progress card | Compact Dashboard card; hideable; removed when course completed |
+| HUD | Compact “SegmiQ 2.0 Course · Lesson N of 7 · Pause” |
+
+### Z-index
+
+`--sales-z-course-overlay` 90 · coach 92 · modal 95 (below toast 100).
+
+### Rules
+
+No glassmorphism, neon borders, or purple gradients. Inherit active light/dark theme. Action steps have no Next substitute.
