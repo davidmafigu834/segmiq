@@ -251,21 +251,30 @@ export function AgencySidebar({
           />
           <div className={`${showBrandDetails ? "block" : "hidden"} text-left`}>
             {sidebarBrand ? (
-              <div className="mb-2 flex items-center gap-2.5">
-                {sidebarBrand.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- client-supplied arbitrary URL
-                  <img
-                    src={sidebarBrand.logoUrl}
-                    alt={sidebarBrand.name}
-                    className="h-5 w-5 shrink-0 rounded object-cover"
-                  />
-                ) : (
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-[var(--accent)] text-[10px] font-medium text-[var(--accent-ink)]">
-                    {initialsFromName(sidebarBrand.name)}
+              <div className="mb-1 space-y-2">
+                <div className="flex items-center gap-2.5">
+                  {sidebarBrand.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- client-supplied arbitrary URL
+                    <img
+                      src={sidebarBrand.logoUrl}
+                      alt=""
+                      className="h-8 w-8 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[11px] font-semibold text-[var(--accent-ink)]">
+                      {initialsFromName(sidebarBrand.name)}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="truncate text-[13px] font-semibold leading-tight text-[var(--text-on-dark)]">
+                      {sidebarBrand.name}
+                    </div>
+                    <div className="mt-0.5 font-mono text-[10px] uppercase tracking-wide text-[var(--text-on-dark-dim)]">
+                      Company account
+                    </div>
                   </div>
-                )}
-                <div className="h-3 w-px shrink-0 bg-[var(--border)]" aria-hidden />
-                <Image src={wordmarkSrc} alt="Segmiq" width={140} height={24} className="h-5 w-auto" />
+                </div>
+                <Image src={wordmarkSrc} alt="Segmiq" width={100} height={18} className="h-3.5 w-auto opacity-70" />
               </div>
             ) : (
               <>
@@ -275,11 +284,11 @@ export function AgencySidebar({
                   </div>
                 ) : null}
                 <Image src={wordmarkSrc} alt="Segmiq" width={160} height={28} className="h-6 w-auto" />
+                <div className="mt-1 font-mono text-[12px] font-medium uppercase tracking-wide text-[var(--text-on-dark-dim)]">
+                  {roleLabel}
+                </div>
               </>
             )}
-            <div className="mt-1 font-mono text-[12px] font-medium uppercase tracking-wide text-[var(--text-on-dark-dim)]">
-              {roleLabel}
-            </div>
           </div>
         </Link>
         <div className={`mt-4 h-px bg-[var(--surface-sidebar-border)] ${dividerClass}`} />

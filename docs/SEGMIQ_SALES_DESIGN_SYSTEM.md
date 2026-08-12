@@ -499,6 +499,56 @@ Surfaces `#111411` / raised `#151815`; borders `#272C27` / `#1E231E`; chart tool
 
 Enquiries → `/sales/call-now` · Deals → `/sales/deals/[id]` · Pipeline → `/sales/pipeline` · Plan/Focus → `/sales/tasks` · Goals context → Goals when present.
 
+## 16c. Company Dashboard
+
+Route: `/client/dashboard` · Aggregator: `getCompanySalesDashboard()` · UI: `components/dashboard/company/*` · Full product docs: [SEGMIQ_COMPANY_DASHBOARD.md](./SEGMIQ_COMPANY_DASHBOARD.md).
+
+### Information hierarchy (operational visibility)
+
+1. Breadcrumb **COMPANY / DASHBOARD** · title **Company dashboard**
+2. Commercial KPI row (6) — acquisition → qualification → deals → value → outcome → response quality
+3. **Focus areas that need attention** (aggregated alerts) + **Lead → Deal Funnel**
+4. **Team performance** + **Top Lead Sources**
+5. **Pipeline snapshot** (Deals only)
+6. **Deals at Risk** · **Revenue trend** · **Recent team activity**
+
+### Lead vs Deal vs Revenue
+
+| Module | Entity |
+|--------|--------|
+| New enquiries · Sources · Funnel enquiry stages | **Leads** |
+| Active Deals · Pipeline value · Snapshot · At risk | **Active Deals** via `getDealCommercialValue()` |
+| Deals Won · Revenue trend | **Won Deal** `won_value` |
+| Team Goal progress | Individual `sales_goals` (never fake 0%) |
+
+### Components
+
+| Component | Notes |
+|-----------|--------|
+| KPI cards | Same `KpiStat` / sales surface tokens; 2→3→6 grid |
+| Focus areas | Wide card, ≤3 signals, subtle lime tint `rgba(212,255,79,.035)`, semantic icon chips |
+| Team table | Desktop table; mobile salesperson cards; lime goal bars; **No Goal** when absent |
+| Funnel | Soft lime progression; mobile vertical steps; period counts only |
+| Source bars | Brand colors (WhatsApp `#25D366`, Facebook blue); thin bars |
+| Revenue chart | Lime 2px line + soft area; dark tooltip `#181C18` / grid `#202520` |
+| Activity feed | Human titles; semantic icons; no raw enums |
+
+### Responsive
+
+| Breakpoint | Layout |
+|------------|--------|
+| Mobile | Focus first; KPI 2-col; team cards; vertical funnel; stack analytics |
+| Tablet ~768–1024 | Stack intentionally; avoid cramped 3-column |
+| Desktop | Focus+Funnel row; Team+Sources; 3-up bottom analytics |
+
+### Dark mode
+
+Same structure as salesperson premium scope (`.sales-dashboard-premium`). Focus card: surface + subtle lime tint — not a giant lime panel. Team header row: raised / `#0F120F` in dark.
+
+### Links
+
+Leads / Hub → `/client/leads` · Pipeline → `/client/leads/pipeline` · Team → `/client/team` · Deals (if `alsoSells`) → `/sales/deals/[id]` · Reports → `/client/reports`.
+
 ## 16b. My Pipeline
 
 Route `/sales/pipeline` (legacy `/sales/leads` redirects). Deal-based Kanban (not Lead cards). Light mode should match the SegmiQ 2.0 Pipeline reference density.

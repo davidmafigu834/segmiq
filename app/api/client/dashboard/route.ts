@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRoles } from "@/lib/api-guards";
-import { fetchClientManagerDashboardData } from "@/lib/dashboard-data";
+import { getCompanySalesDashboard } from "@/lib/sales/get-company-sales-dashboard-data";
 
 export async function GET(req: Request) {
   const guard = await requireRoles(["CLIENT_MANAGER", "SUPER_ADMIN"]);
@@ -19,10 +19,13 @@ export async function GET(req: Request) {
   }
 
   try {
-    const data = await fetchClientManagerDashboardData(clientId);
+    const data = await getCompanySalesDashboard({
+      clientId,
+      alsoSells: Boolean(session!.alsoSells),
+    });
     return NextResponse.json(data);
   } catch (err) {
-    console.error("Client manager dashboard error:", err);
+    console.error("Company sales dashboard error:", err);
     return NextResponse.json({ error: "Failed to load dashboard" }, { status: 500 });
   }
 }

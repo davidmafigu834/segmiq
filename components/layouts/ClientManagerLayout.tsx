@@ -51,16 +51,23 @@ export async function ClientManagerLayout({
     businessType = (c?.business_type as string) ?? "trades";
   }
 
-  const breadcrumb =
+    const breadcrumb =
     breadcrumbOverride ??
-    (breadcrumbPage && clientName ? `${clientName} / ${breadcrumbPage}` : breadcrumbPage ?? clientName ?? "CLIENT");
+    (breadcrumbPage
+      ? `COMPANY / ${breadcrumbPage}`
+      : clientName
+        ? `COMPANY / ${clientName}`
+        : "COMPANY");
 
   const isRE = businessType === "real_estate";
 
   const primaryNav = [
     { href: "/client/dashboard", label: "Dashboard", icon: "home" as const },
-    { href: "/client/inbox", label: "Team Inbox", icon: "inbox" as const },
-    { href: "/client/leads", label: "Customer Hub", icon: "users" as const },
+    { href: "/client/team", label: isRE ? "Agents" : "Team", icon: "users" as const },
+    { href: "/client/leads/pipeline", label: "Pipeline", icon: "bar-chart-3" as const },
+    { href: "/client/leads", label: "Leads", icon: "users" as const },
+    { href: "/client/inbox", label: "WhatsApp Sales Hub", icon: "inbox" as const },
+    { href: "/client/customers", label: "Customers", icon: "users" as const },
     ...(isRE
       ? [
           { href: "/client/listings", label: "Listings", icon: "building2" as const },
@@ -69,29 +76,28 @@ export async function ClientManagerLayout({
       : []),
     { href: "/client/event-capture", label: "Event Capture", icon: "calendar" as const },
     { href: "/client/marketing", label: "Marketing", icon: "megaphone" as const },
-    { href: "/client/team", label: isRE ? "Agents" : "Team", icon: "users" as const },
     { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
     { href: "/client/billing", label: "Billing", icon: "receipt" as const },
     ...(session?.alsoSells
-      ? [{ href: "/sales/dashboard", label: isRE ? "My inquiries" : "My leads", icon: "phone" as const }]
+      ? [{ href: "/sales/dashboard", label: isRE ? "My inquiries" : "My sales", icon: "phone" as const }]
       : []),
   ];
 
   const secondaryNav = [
+    { href: "/client/quote-settings", label: "Quotations", icon: "file-text" as const },
     { href: "/upload", label: "Upload Photos", icon: "camera" as const },
     { href: "/client/company-profile", label: "Company", icon: "building2" as const },
-    { href: "/client/quote-settings", label: "Quotations", icon: "file-text" as const },
-    { href: "/client/account", label: "Account", icon: "settings" as const },
+    { href: "/client/account", label: "Settings", icon: "settings" as const },
   ];
 
   return (
     <AppShell
       homeHref="/client/dashboard"
-      roleLabel="Client"
+      roleLabel="Company"
       primaryNav={primaryNav}
       secondaryNav={secondaryNav}
       userName={session?.user?.name ?? "User"}
-      userRoleLabel="Client manager"
+      userRoleLabel="Company Manager"
       breadcrumb={breadcrumb}
       pageTitle={pageTitle}
       actions={actions}

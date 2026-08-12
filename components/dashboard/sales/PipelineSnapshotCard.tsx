@@ -5,7 +5,13 @@ import { ChevronRight } from "lucide-react";
 import type { SalesPipelineSnapshotStage } from "./types";
 import { CardShell } from "./KpiCard";
 
-export function PipelineSnapshotCard({ stages }: { stages: SalesPipelineSnapshotStage[] }) {
+export function PipelineSnapshotCard({
+  stages,
+  viewAllHref = "/sales/pipeline",
+}: {
+  stages: SalesPipelineSnapshotStage[];
+  viewAllHref?: string;
+}) {
   return (
     <CardShell
       title="Pipeline snapshot"
@@ -15,7 +21,7 @@ export function PipelineSnapshotCard({ stages }: { stages: SalesPipelineSnapshot
             Deals only
           </span>
           <Link
-            href="/sales/pipeline"
+            href={viewAllHref}
             className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
           >
             View full pipeline
