@@ -676,6 +676,35 @@ Sections: Deal intelligence · Deal details · Pipeline stage progress · Next a
 
 Page `#0B0D0C` family · cards `#111411` · raised `#151815` · borders `#272C27` · text `#F7F8F5` / `#B1B7AE`. WhatsApp stays `#25D366`.
 
+## 16f. Company Leads
+
+Route: `/client/leads` · Shell: the same `CompanyWorkspaceShell` as Dashboard, Team, and Pipeline · Full product docs: [SEGMIQ_COMPANY_LEADS.md](./SEGMIQ_COMPANY_LEADS.md).
+
+Company Leads is a **table-first acquisition and qualification workspace**. A Lead is not a Deal and must not contribute commercial Pipeline metrics before the canonical Create Deal flow succeeds.
+
+### Information hierarchy
+
+1. Breadcrumb **COMPANY / LEADS** · title **Leads** · supporting copy · compact lime **Add Lead**
+2. Exactly six KPI cards: New Leads, Hot Leads, Contacted, Qualified, Conversion Rate, Avg. Response Time
+3. One Leads table card (left ~70%) + selected Lead detail panel (right ~360–410px / 28–30%)
+4. No lower analytics, source charts, funnels, or Pipeline graphics
+
+### Table and panel pattern
+
+| Element | Spec |
+|---|---|
+| Tabs | All Leads · New · Hot · Contacted · Qualified · Not Qualified; thin lime underline, no pills |
+| Toolbar | Search · Filters · Source · Owner · Sort inside the table card |
+| Columns | Checkbox · Lead · Source · Contact · Status · Lead score · Owner · Created · Actions |
+| Rows | 58–62px, subtle separators, no zebra striping or hover scale |
+| Selected row | `rgba(212,255,79,.16)` light · `.08` dark |
+| Panel order | Header → contact actions → score/signals → about → customer need → next action → footer |
+| Footer | View full details + lime Create Deal; Open Deal when one already exists |
+
+Hot is score intent (`70+`), not lifecycle. New / Contacted / Qualified / Not Qualified are lifecycle views. A high-scoring Not Qualified record is not included in the actionable Hot count.
+
+Do not auto-select the first Lead. At ≥1280px the selected panel is inline and top-aligned with the table; below 1280px it overlays; below 768px the table becomes Lead cards and the panel becomes a full-height sheet.
+
 ## 17. Guided Learning
 
 Interactive SegmiQ 2.0 course (not a third-party tour widget). Full behavior: [`docs/SEGMIQ_INTERACTIVE_TRAINING.md`](./SEGMIQ_INTERACTIVE_TRAINING.md).
