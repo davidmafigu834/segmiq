@@ -18,7 +18,6 @@ import type {
   CompanyLeadsTabCounts,
 } from "@/components/dashboard/company/leads/types";
 import { DEFAULT_COMPANY_LEADS_FILTERS } from "@/components/dashboard/company/leads/types";
-import type { LeadStatus } from "@/types";
 
 export const COMPANY_LEADS_PAGE_SIZE = 10;
 export const COMPANY_LEADS_CAP = 2000;
