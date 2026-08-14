@@ -126,7 +126,7 @@ export function CompanyCustomersPage({ data, unreadNotifications, notificationRo
   function viewDeals(row: CompanyCustomerRow) {
     const params = new URLSearchParams({ customerId: row.id });
     if (notificationRole === "SUPER_ADMIN") params.set("clientId", data.clientId);
-    router.push(`/client/pipeline?${params.toString()}`);
+    router.push(`/client/leads/pipeline?${params.toString()}`);
   }
 
   const tabScoped = data.rows.filter((row) => matchesCompanyCustomersTab(row, tab));

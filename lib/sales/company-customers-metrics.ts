@@ -31,14 +31,13 @@ export function parseCompanyCustomersTab(value: string | null): CompanyCustomers
 export function formatCustomerType(value: string | null | undefined): CompanyCustomerRow["customerType"] {
   const normalized = value?.trim().toLowerCase();
   if (normalized === "company") return "company";
-  if (normalized === "individual") return "individual";
-  return "unclassified";
+  // Legacy contacts were person records before Customer type existed. Treat
+  // an untyped legacy record as Individual until a manager explicitly changes it.
+  return "individual";
 }
 
 export function customerTypeLabel(type: CompanyCustomerRow["customerType"]): string {
-  if (type === "company") return "Company";
-  if (type === "individual") return "Individual";
-  return "Not set";
+  return type === "company" ? "Company" : "Individual";
 }
 
 export function formatCustomerMoney(amount: number, currency = "USD"): string {

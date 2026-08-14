@@ -49,9 +49,7 @@ function CustomerTypeBadge({ row }: { row: CompanyCustomerRow }) {
       tone={
         row.customerType === "company"
           ? "success"
-          : row.customerType === "individual"
-            ? "info"
-            : "neutral"
+          : "info"
       }
       appearance="soft"
       className="!px-2 !py-0.5 !text-[11px] !font-medium"
@@ -332,7 +330,6 @@ export function CompanyCustomersTableCard({
               { value: "all", label: "Customer Type" },
               { value: "company", label: "Companies" },
               { value: "individual", label: "Individuals" },
-              { value: "unclassified", label: "Type not set" },
             ]}
           />
           <MenuSelect

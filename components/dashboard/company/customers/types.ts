@@ -1,6 +1,6 @@
 import type { SalesKpiItem } from "@/components/dashboard/sales/types";
 
-export type CompanyCustomerType = "company" | "individual" | "unclassified";
+export type CompanyCustomerType = "company" | "individual";
 export type CompanyCustomersTab = "all" | "companies" | "individuals" | "recent";
 export type CompanyCustomersSort =
   | "recent_interaction"
@@ -79,6 +79,23 @@ export type CompanyCustomerDetail = CompanyCustomerRow & {
   recentActivity: CompanyCustomerActivity[];
   viewDetailsHref: string;
   viewDealsHref: string;
+};
+
+export type CompanyCustomerProfileDeal = {
+  id: string;
+  name: string;
+  stage: string;
+  stageLabel: string;
+  valueLabel: string;
+  ownerName: string | null;
+  lastActivityLabel: string;
+  href: string;
+};
+
+export type CompanyCustomerProfileData = {
+  customer: CompanyCustomerDetail;
+  notes: string | null;
+  deals: CompanyCustomerProfileDeal[];
 };
 
 export type CompanyCustomersTabCounts = Record<CompanyCustomersTab, number>;

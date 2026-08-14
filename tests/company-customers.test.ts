@@ -4,6 +4,7 @@ import {
   buildCompanyCustomersKpis,
   countCompanyCustomersTabs,
   customerValueLabel,
+  formatCustomerType,
   matchesCompanyCustomersFilters,
   matchesCompanyCustomersSearch,
   matchesCompanyCustomersTab,
@@ -45,20 +46,26 @@ function row(partial: Partial<CompanyCustomerRow> = {}): CompanyCustomerRow {
 }
 
 describe("Company Customers truth model", () => {
-  it("keeps company, individual, and unclassified Customer types explicit", () => {
+  it("treats legacy untyped person contacts as Individuals", () => {
+    assert.equal(formatCustomerType(null), "individual");
+    assert.equal(formatCustomerType(undefined), "individual");
+    assert.equal(formatCustomerType("company"), "company");
+  });
+
+  it("keeps company and individual Customer types explicit", () => {
     const rows = [
       row(),
       row({ id: "person", customerType: "individual", customerTypeLabel: "Individual" }),
-      row({ id: "unknown", customerType: "unclassified", customerTypeLabel: "Not set" }),
+      row({ id: "legacy", customerType: "individual", customerTypeLabel: "Individual" }),
     ];
     assert.deepEqual(countCompanyCustomersTabs(rows, new Date("2026-08-14T12:00:00Z")), {
       all: 3,
       companies: 1,
-      individuals: 1,
+      individuals: 2,
       recent: 3,
     });
     assert.equal(matchesCompanyCustomersTab(rows[2]!, "companies"), false);
-    assert.equal(matchesCompanyCustomersTab(rows[2]!, "individuals"), false);
+    assert.equal(matchesCompanyCustomersTab(rows[2]!, "individuals"), true);
   });
 
   it("uses meaningful interaction timestamps for Recent and never created_at", () => {

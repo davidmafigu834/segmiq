@@ -8,6 +8,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   DEAL_ACTIVE_STAGES,
+  DEAL_STAGE_LABEL,
   getDealCommercialValue,
 } from "@/lib/sales/deals";
 import { loadQuoteTotalsByDealId } from "@/lib/sales/get-company-team-page-data";
@@ -23,6 +24,7 @@ import {
 import type {
   CompanyCustomerActivity,
   CompanyCustomerDetail,
+  CompanyCustomerProfileData,
   CompanyCustomerRow,
   CompanyCustomersOwnerOption,
   CompanyCustomersPageData,
@@ -59,6 +61,8 @@ type LeadLink = {
   id: string;
   contact_id: string | null;
   project_type?: string | null;
+  assigned_to_id?: string | null;
+  created_at?: string;
 };
 
 type ActivitySignal = {
@@ -119,6 +123,7 @@ async function loadCustomerRelations(clientId: string, contacts: CustomerContact
       quoteTotals: new Map<string, number | null>(),
       lastByContact: new Map<string, ActivitySignal>(),
       leadLinks: [] as LeadLink[],
+      fallbackOwnerByContact: new Map<string, string>(),
     };
   }
 
@@ -132,7 +137,7 @@ async function loadCustomerRelations(clientId: string, contacts: CustomerContact
       chunks(contactIds).map((ids) =>
         supabase
           .from("leads")
-          .select("id, contact_id, project_type")
+          .select("id, contact_id, project_type, assigned_to_id, created_at")
           .eq("client_id", clientId)
           .in("contact_id", ids)
       )
@@ -148,6 +153,41 @@ async function loadCustomerRelations(clientId: string, contacts: CustomerContact
       .map((lead) => [lead.id, lead.contact_id])
   );
   const leadIds = [...leadToContact.keys()];
+  const ownerCandidates = new Map<
+    string,
+    { ownerId: string; rank: number; at: number }
+  >();
+  const considerOwner = (
+    contactId: string | null,
+    ownerId: string | null | undefined,
+    rank: number,
+    at: string | null | undefined
+  ) => {
+    if (!contactId || !ownerId) return;
+    const candidate = { ownerId, rank, at: at ? Date.parse(at) || 0 : 0 };
+    const current = ownerCandidates.get(contactId);
+    if (
+      !current ||
+      candidate.rank > current.rank ||
+      (candidate.rank === current.rank && candidate.at > current.at)
+    ) {
+      ownerCandidates.set(contactId, candidate);
+    }
+  };
+  for (const deal of deals) {
+    considerOwner(
+      deal.contact_id,
+      deal.owner_id,
+      (DEAL_ACTIVE_STAGES as readonly string[]).includes(deal.stage) ? 3 : 2,
+      deal.updated_at
+    );
+  }
+  for (const lead of leadLinks) {
+    considerOwner(lead.contact_id, lead.assigned_to_id, 1, lead.created_at);
+  }
+  const fallbackOwnerByContact = new Map(
+    [...ownerCandidates].map(([contactId, candidate]) => [contactId, candidate.ownerId])
+  );
 
   const signals: ActivitySignal[] = deals.flatMap((deal) =>
     deal.contact_id && deal.last_meaningful_activity_at
@@ -201,7 +241,13 @@ async function loadCustomerRelations(clientId: string, contacts: CustomerContact
     }
   }
 
-  return { deals, quoteTotals, lastByContact: latestSignal(signals), leadLinks };
+  return {
+    deals,
+    quoteTotals,
+    lastByContact: latestSignal(signals),
+    leadLinks,
+    fallbackOwnerByContact,
+  };
 }
 
 function dealTotalsByContact(deals: DealRow[], quoteTotals: Map<string, number | null>) {
@@ -237,6 +283,7 @@ function dealTotalsByContact(deals: DealRow[], quoteTotals: Map<string, number |
 function mapCustomerRow(opts: {
   contact: CustomerContact;
   owner: TeamUser | undefined;
+  ownerId: string | null;
   dealTotals: DealTotals | undefined;
   lastSignal: ActivitySignal | undefined;
   currency: string;
@@ -255,7 +302,7 @@ function mapCustomerRow(opts: {
     email: opts.contact.email?.trim() || null,
     location: opts.contact.location?.trim() || null,
     source: opts.contact.source?.trim() || null,
-    ownerId: opts.contact.relationship_owner_id ?? null,
+    ownerId: opts.ownerId,
     ownerName: opts.owner?.name?.trim() || null,
     ownerAvatarUrl: opts.owner?.avatar_url ?? null,
     customerSince: opts.contact.created_at,
@@ -301,18 +348,21 @@ export async function getCompanyCustomersPageData(opts: {
   const teamById = new Map(team.map((member) => [member.id, member]));
   const relations = await loadCustomerRelations(opts.clientId, contacts);
   const totalsByContact = dealTotalsByContact(relations.deals, relations.quoteTotals);
-  const rows = contacts.map((contact) =>
-    mapCustomerRow({
+  const rows = contacts.map((contact) => {
+    const ownerId =
+      contact.relationship_owner_id ??
+      relations.fallbackOwnerByContact.get(contact.id) ??
+      null;
+    return mapCustomerRow({
       contact,
-      owner: contact.relationship_owner_id
-        ? teamById.get(contact.relationship_owner_id)
-        : undefined,
+      ownerId,
+      owner: ownerId ? teamById.get(ownerId) : undefined,
       dealTotals: totalsByContact.get(contact.id),
       lastSignal: relations.lastByContact.get(contact.id),
       currency,
       now,
-    })
-  );
+    });
+  });
 
   const activeDeals = rows.reduce((sum, row) => sum + row.activeDeals, 0);
   const activePipelineKnown = rows.reduce((sum, row) => sum + row.activePipelineKnown, 0);
@@ -371,6 +421,7 @@ function activityTitle(eventType: string): { kind: CompanyCustomerActivity["kind
 export async function getCompanyCustomerDetail(opts: {
   clientId: string;
   customerId: string;
+  activityLimit?: number;
 }): Promise<CompanyCustomerDetail | null> {
   const supabase = createAdminClient();
   const now = new Date();
@@ -394,11 +445,14 @@ export async function getCompanyCustomerDetail(opts: {
   const team = (teamRes.data ?? []) as TeamUser[];
   const relations = await loadCustomerRelations(opts.clientId, [contact]);
   const totalsByContact = dealTotalsByContact(relations.deals, relations.quoteTotals);
-  const owner = contact.relationship_owner_id
-    ? team.find((member) => member.id === contact.relationship_owner_id)
-    : undefined;
+  const ownerId =
+    contact.relationship_owner_id ??
+    relations.fallbackOwnerByContact.get(contact.id) ??
+    null;
+  const owner = ownerId ? team.find((member) => member.id === ownerId) : undefined;
   const row = mapCustomerRow({
     contact,
+    ownerId,
     owner,
     dealTotals: totalsByContact.get(contact.id),
     lastSignal: relations.lastByContact.get(contact.id),
@@ -515,8 +569,64 @@ export async function getCompanyCustomerDetail(opts: {
     canCall: Boolean(row.phone),
     canWhatsApp: Boolean(digits),
     canEmail: Boolean(row.email),
-    recentActivity: deduped.slice(0, 3),
+    recentActivity: deduped.slice(0, opts.activityLimit ?? 3),
     viewDetailsHref: `/client/contacts/${row.id}`,
-    viewDealsHref: `/client/pipeline?customerId=${encodeURIComponent(row.id)}`,
+    viewDealsHref: `/client/leads/pipeline?customerId=${encodeURIComponent(row.id)}`,
+  };
+}
+
+export async function getCompanyCustomerProfileData(opts: {
+  clientId: string;
+  customerId: string;
+}): Promise<CompanyCustomerProfileData | null> {
+  const customer = await getCompanyCustomerDetail({ ...opts, activityLimit: 12 });
+  if (!customer) return null;
+  const supabase = createAdminClient();
+  const [contactRes, dealsRes, teamRes] = await Promise.all([
+    supabase
+      .from("contacts")
+      .select("notes")
+      .eq("id", opts.customerId)
+      .eq("client_id", opts.clientId)
+      .maybeSingle(),
+    supabase
+      .from("deals")
+      .select("*")
+      .eq("client_id", opts.clientId)
+      .eq("contact_id", opts.customerId)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("users")
+      .select("id, name")
+      .eq("client_id", opts.clientId),
+  ]);
+  const deals = (dealsRes.data ?? []) as DealRow[];
+  const quoteTotals = await loadQuoteTotalsByDealId(deals.map((deal) => deal.id));
+  const teamById = new Map(
+    ((teamRes.data ?? []) as Array<{ id: string; name: string | null }>).map((member) => [
+      member.id,
+      member.name?.trim() || "Team member",
+    ])
+  );
+  return {
+    customer,
+    notes: (contactRes.data?.notes as string | null | undefined)?.trim() || null,
+    deals: deals.map((deal) => {
+      const commercial = getDealCommercialValue(deal, {
+        latestQuoteTotal: quoteTotals.get(deal.id) ?? null,
+      });
+      return {
+        id: deal.id,
+        name: deal.name?.trim() || "Untitled Deal",
+        stage: deal.stage,
+        stageLabel: DEAL_STAGE_LABEL[deal.stage] ?? deal.stage,
+        valueLabel: commercial.display,
+        ownerName: deal.owner_id ? teamById.get(deal.owner_id) ?? null : null,
+        lastActivityLabel: formatCustomerDate(
+          deal.last_meaningful_activity_at ?? deal.updated_at
+        ),
+        href: `/client/deals/${deal.id}`,
+      };
+    }),
   };
 }

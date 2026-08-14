@@ -1,6 +1,6 @@
 # SegMiQ 2.0 — Company Customers
 
-Route: `/client/customers`
+Routes: `/client/customers` and `/client/contacts/[customer-id]`
 
 ## Purpose and business truth
 
@@ -12,8 +12,8 @@ The page never treats a Lead as a Customer or a Customer as a Deal. Lead score, 
 
 - The page is available to authenticated `CLIENT_MANAGER` users and authorized `SUPER_ADMIN` previews.
 - List and detail reads always include `client_id`; cross-company detail IDs return not found.
-- Customer type and relationship owner are explicit Customer fields. They are not inferred from a name, Lead owner, or Deal owner.
-- Existing Customer records remain unclassified until a user sets their type.
+- Customer type and relationship owner are explicit Customer fields for all new records.
+- Legacy untyped person contacts are treated as Individuals. Until the backfill is applied, a missing relationship owner resolves from the most recent active Deal, then any Deal, then the newest Lead assignment.
 - Owner options are active, sales-capable users from the same company.
 
 ## Information architecture
@@ -49,7 +49,7 @@ The table card owns underline tabs, search/filter/sort controls, rows, results c
 - Recent means a meaningful Customer interaction in the last 30 days. `contacts.updated_at` and profile views are not interactions.
 - Search covers name, primary contact, phone, email, location, industry/category, and relationship owner.
 - Customer Value means cumulative known value from won Deals. A won Deal without recorded value stays “Not recorded.”
-- Customer type and owner filters use explicit contact fields.
+- Customer type and owner filters use explicit contact fields plus the deterministic legacy fallback described above.
 - Rows use a restrained lime selection tint; there is no zebra striping or hover scaling.
 
 The current tenant query is capped at 2,500 Customer records. Related Deals, Leads, quotes, calls, messages, and events are loaded in chunks, not per Customer, to avoid N+1 behavior.
@@ -71,12 +71,12 @@ The panel does not invent a status badge, favourite state, invoice totals, payme
 
 - **Add Customer** opens the shared Add to Hub sheet locked to Customer mode. It captures explicit company/individual type, relationship owner, location, primary contact, and category while retaining phone duplicate prevention.
 - **Call**, **WhatsApp**, and **Email** are enabled only when the underlying contact value exists.
-- **View full details** opens the canonical contact workspace.
+- **View full details** opens the Company 2.0 Customer profile with canonical Deal history, commercial metrics, recent activity, relationship information, and editable Customer fields.
 - **View Deals** opens Company Pipeline with `customerId=<contact-id>`; Pipeline filters canonical `deals.contact_id`.
 
 ## Data architecture
 
-Migration `20260814090000_company_customer_relationship_fields.sql` adds nullable `customer_type`, `primary_contact_name`, `industry`, and `relationship_owner_id` fields to canonical contacts. It deliberately performs no heuristic backfill.
+Migration `20260814090000_company_customer_relationship_fields.sql` adds nullable `customer_type`, `primary_contact_name`, `industry`, and `relationship_owner_id` fields to canonical contacts. Migration `20260814103000_backfill_legacy_customer_directory.sql` classifies legacy person contacts as Individuals and seeds a stable relationship owner from existing Deal or Lead ownership.
 
 `getCompanyCustomersPageData` builds compact table DTOs from company-scoped contacts and batched relations. `getCompanyCustomerDetail` authorizes the selected record and builds a focused panel DTO. Both use the central Deal commercial-value resolver and quote totals.
 
