@@ -43,7 +43,7 @@ function initials(name: string): string {
 }
 
 function OwnerAvatar({ owner, size = "md" }: { owner: CalendarOwner; size?: "sm" | "md" }) {
-  const className = size === "sm" ? "h-6 w-6 text-[8px]" : "h-9 w-9 text-[10px]";
+  const className = size === "sm" ? "h-7 w-7 text-[9px]" : "h-10 w-10 text-[11px]";
   if (owner.avatarUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -86,10 +86,10 @@ function TeamIdentity({ owner, events }: { owner: CalendarOwner; events: Company
       <OwnerAvatar owner={owner} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className="truncate text-[11px] font-semibold text-sales-text-primary">{owner.name}</span>
+          <span className="truncate text-[12.5px] font-semibold text-sales-text-primary">{owner.name}</span>
           <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dotClass)} title={attention.label} aria-label={attention.label} />
         </span>
-        <span className="mt-0.5 block truncate text-[9px] text-sales-text-muted">{owner.roleLabel}</span>
+        <span className="mt-0.5 block truncate text-[11px] text-sales-text-muted">{owner.roleLabel}</span>
       </span>
     </>
   );
@@ -155,13 +155,13 @@ export function CompanyTeamWeekView({
     <div className="max-h-[680px] overflow-auto overscroll-contain" data-course-target="calendar-team-week">
       <div className="min-w-[940px] xl:min-w-0">
         <div className="sticky top-0 z-20 grid border-b border-sales-border-subtle bg-sales-surface" style={{ gridTemplateColumns: columns }}>
-          <div className="sticky left-0 z-30 flex items-center border-r border-sales-border-subtle bg-sales-surface px-3 text-[9px] font-semibold uppercase tracking-[0.05em] text-sales-text-muted">Team member</div>
+          <div className="sticky left-0 z-30 flex items-center border-r border-sales-border-subtle bg-sales-surface px-3 text-[10px] font-semibold uppercase tracking-[0.05em] text-sales-text-muted">Team member</div>
           {days.map((day) => {
             const key = format(day, "yyyy-MM-dd");
             const today = key === todayKey;
             return (
               <button key={key} type="button" onClick={() => onSelectDate(key)} className={cn("min-h-[60px] border-r border-sales-border-subtle px-2 py-2 text-center last:border-r-0 hover:bg-sales-surface-hover", key === selectedDateKey && "bg-sales-surface-subtle")}>
-                <span className={cn("block text-[9px] font-semibold uppercase tracking-[0.06em]", today ? "text-sales-brand-fg" : "text-sales-text-muted")}>{format(day, "EEE")}</span>
+                <span className={cn("block text-[10px] font-semibold uppercase tracking-[0.06em]", today ? "text-sales-brand-fg" : "text-sales-text-muted")}>{format(day, "EEE")}</span>
                 <span className={cn("mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full text-[15px] font-semibold", today ? "bg-sales-brand text-sales-brand-text" : "text-sales-text-primary")}>{format(day, "d")}</span>
               </button>
             );
@@ -173,7 +173,7 @@ export function CompanyTeamWeekView({
           const ownerEvents = events.filter((event) => companyCalendarOwnerKey(event.ownerId) === ownerKey);
           const ownerId = owner.id === COMPANY_CALENDAR_UNASSIGNED_OWNER ? null : owner.id;
           return (
-            <div key={owner.id} className="group/team grid h-[116px] border-b border-sales-border-subtle last:border-b-0 hover:bg-sales-surface-hover" style={{ gridTemplateColumns: columns }}>
+            <div key={owner.id} className="group/team grid h-[148px] border-b border-sales-border-subtle last:border-b-0 hover:bg-sales-surface-hover" style={{ gridTemplateColumns: columns }}>
               <div className="sticky left-0 z-10 border-r border-sales-border-subtle bg-sales-surface group-hover/team:bg-sales-surface-hover">
                 <TeamIdentity owner={owner} events={ownerEvents} />
               </div>
@@ -190,7 +190,7 @@ export function CompanyTeamWeekView({
                           <CompanyCalendarEventCard key={event.id} event={event} timezone={timezone} selected={selectedEventId === event.id} onClick={() => onSelectEvent(event)} />
                         ))}
                         {remaining > 0 ? (
-                          <button type="button" onClick={() => onMore(ownerId, key)} className="block w-full truncate px-1 text-left text-[8px] font-semibold text-sales-brand-fg hover:underline">+ {remaining} more</button>
+                          <button type="button" onClick={() => onMore(ownerId, key)} className="block w-full truncate px-1 text-left text-[10px] font-semibold text-sales-brand-fg hover:underline">+ {remaining} more</button>
                         ) : null}
                       </div>
                     ) : canCreate && ownerId ? (
@@ -224,10 +224,10 @@ function TeamAgendaGroup({
     <section className="border-b border-sales-border-subtle p-3 last:border-b-0">
       <div className="flex items-center gap-2">
         <OwnerAvatar owner={owner} size="sm" />
-        <div className="min-w-0"><h3 className="truncate text-[11px] font-semibold text-sales-text-primary">{owner.name}</h3><p className="text-[9px] text-sales-text-muted">{owner.roleLabel}</p></div>
-        <span className="ml-auto text-[9px] text-sales-text-muted">{events.length} {events.length === 1 ? "activity" : "activities"}</span>
+        <div className="min-w-0"><h3 className="truncate text-[12.5px] font-semibold text-sales-text-primary">{owner.name}</h3><p className="text-[11px] text-sales-text-muted">{owner.roleLabel}</p></div>
+        <span className="ml-auto text-[11px] text-sales-text-muted">{events.length} {events.length === 1 ? "activity" : "activities"}</span>
       </div>
-      {events.length ? <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{events.map((event) => <CompanyCalendarEventCard key={event.id} event={event} timezone={timezone} variant="list" selected={selectedEventId === event.id} onClick={() => onSelectEvent(event)} />)}</div> : <p className="mt-2 rounded-[8px] border border-dashed border-sales-border px-3 py-3 text-[10px] text-sales-text-muted">No activities scheduled.</p>}
+      {events.length ? <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{events.map((event) => <CompanyCalendarEventCard key={event.id} event={event} timezone={timezone} variant="list" selected={selectedEventId === event.id} onClick={() => onSelectEvent(event)} />)}</div> : <p className="mt-2 rounded-[8px] border border-dashed border-sales-border px-3 py-3 text-[11px] text-sales-text-muted">No activities scheduled.</p>}
     </section>
   );
 }
@@ -251,7 +251,7 @@ export function CompanyTeamDayView({
   const rows = ownerRows(owners, dayEvents);
   return (
     <div className="max-h-[680px] overflow-y-auto">
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-sales-border-subtle bg-sales-surface px-4 py-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.05em] text-sales-text-muted">Team day</p><h2 className="mt-0.5 text-[13px] font-semibold text-sales-text-primary">{format(parseDateKey(dateKey), "EEEE, MMMM d")}</h2></div><span className="text-[10px] text-sales-text-muted">{dayEvents.length} activities</span></div>
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-sales-border-subtle bg-sales-surface px-4 py-3"><div><p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-sales-text-muted">Team day</p><h2 className="mt-0.5 text-[14px] font-semibold text-sales-text-primary">{format(parseDateKey(dateKey), "EEEE, MMMM d")}</h2></div><span className="text-[11px] text-sales-text-muted">{dayEvents.length} activities</span></div>
       {rows.map((owner) => <TeamAgendaGroup key={owner.id} owner={owner} events={dayEvents.filter((event) => companyCalendarOwnerKey(event.ownerId) === owner.id)} timezone={timezone} selectedEventId={selectedEventId} onSelectEvent={onSelectEvent} />)}
     </div>
   );
@@ -280,8 +280,8 @@ export function MobileTeamCalendarAgenda({
   const rows = ownerRows(owners, dayEvents).filter((owner) => dayEvents.some((event) => companyCalendarOwnerKey(event.ownerId) === owner.id));
   return (
     <div>
-      <div className="flex gap-1 overflow-x-auto border-b border-sales-border-subtle p-3">{dates.map((date) => { const key = format(date, "yyyy-MM-dd"); const active = key === selectedDateKey; return <button key={key} type="button" onClick={() => onSelectDate(key)} className={cn("min-w-[48px] rounded-[9px] border px-2 py-2 text-center", active ? "border-sales-brand bg-sales-brand text-sales-brand-text" : "border-sales-border bg-sales-surface")}><span className="block text-[8px] font-semibold uppercase">{format(date, "EEE")}</span><span className="mt-1 block text-[14px] font-semibold">{format(date, "d")}</span></button>; })}</div>
-      {!rows.length ? <div className="flex min-h-[260px] flex-col items-center justify-center px-6 text-center"><CalendarDays size={24} className="text-sales-text-muted" /><p className="mt-2 text-[12px] font-semibold text-sales-text-primary">No team activities for this day.</p><p className="mt-1 text-[10px] text-sales-text-muted">Choose another date or schedule a new activity.</p></div> : rows.map((owner) => <TeamAgendaGroup key={owner.id} owner={owner} events={dayEvents.filter((event) => companyCalendarOwnerKey(event.ownerId) === owner.id)} timezone={timezone} selectedEventId={selectedEventId} onSelectEvent={onSelectEvent} />)}
+      <div className="flex gap-1.5 overflow-x-auto border-b border-sales-border-subtle p-3">{dates.map((date) => { const key = format(date, "yyyy-MM-dd"); const active = key === selectedDateKey; return <button key={key} type="button" onClick={() => onSelectDate(key)} className={cn("min-w-[52px] rounded-[9px] border px-2 py-2.5 text-center", active ? "border-sales-brand bg-sales-brand text-sales-brand-text" : "border-sales-border bg-sales-surface")}><span className="block text-[10px] font-semibold uppercase">{format(date, "EEE")}</span><span className="mt-1 block text-[14px] font-semibold">{format(date, "d")}</span></button>; })}</div>
+      {!rows.length ? <div className="flex min-h-[260px] flex-col items-center justify-center px-6 text-center"><CalendarDays size={24} className="text-sales-text-muted" /><p className="mt-2 text-[13px] font-semibold text-sales-text-primary">No team activities for this day.</p><p className="mt-1 text-[11px] text-sales-text-muted">Choose another date or schedule a new activity.</p></div> : rows.map((owner) => <TeamAgendaGroup key={owner.id} owner={owner} events={dayEvents.filter((event) => companyCalendarOwnerKey(event.ownerId) === owner.id)} timezone={timezone} selectedEventId={selectedEventId} onSelectEvent={onSelectEvent} />)}
     </div>
   );
 }

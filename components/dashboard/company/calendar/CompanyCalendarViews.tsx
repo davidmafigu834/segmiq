@@ -373,14 +373,14 @@ export function CompanyMonthView({
               </span>
               {dayEvents.length ? (
                 <span className="block space-y-1">
-                  {summaries.slice(0, 2).map(([label, count]) => <span key={label} className="flex items-center justify-between rounded-[6px] bg-sales-surface-subtle px-1.5 py-1 text-[9px] text-sales-text-secondary"><span>{label}</span><span className="font-semibold text-sales-text-primary">{count}</span></span>)}
-                  {summaries.length > 2 ? <span className="block px-1 text-[8px] font-semibold text-sales-brand-fg">+ {summaries.slice(2).reduce((sum, [, count]) => sum + count, 0)} more activities</span> : null}
+                  {summaries.slice(0, 2).map(([label, count]) => <span key={label} className="flex items-center justify-between rounded-[6px] bg-sales-surface-subtle px-2 py-1 text-[10px] text-sales-text-secondary"><span>{label}</span><span className="font-semibold text-sales-text-primary">{count}</span></span>)}
+                  {summaries.length > 2 ? <span className="block px-1 text-[10px] font-semibold text-sales-brand-fg">+ {summaries.slice(2).reduce((sum, [, count]) => sum + count, 0)} more activities</span> : null}
                   {owners.length ? <span className="mt-2 flex -space-x-1.5">{owners.map((event) => event.ownerAvatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img key={event.ownerId} src={event.ownerAvatarUrl} alt="" className="h-5 w-5 rounded-full border border-sales-surface object-cover" title={event.ownerName ?? undefined} />
                   ) : <span key={event.ownerId} className="flex h-5 w-5 items-center justify-center rounded-full border border-sales-surface bg-sales-brand-soft text-[7px] font-semibold text-sales-text-primary" title={event.ownerName ?? undefined}>{event.ownerName?.slice(0, 1).toUpperCase()}</span>)}</span> : null}
                 </span>
-              ) : <span className="text-[9px] text-sales-text-disabled">No activity</span>}
+              ) : <span className="text-[11px] text-sales-text-disabled">No activity</span>}
             </button>
           );
         })}
@@ -469,7 +469,7 @@ export function AgendaEventRow({
       <span className="w-[72px] shrink-0 text-[11px] font-medium tabular-nums text-sales-text-secondary">{event.allDay ? "All day" : formatCalendarTime(event.startAt, timezone)}</span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[12px] font-semibold text-sales-text-primary">{event.title}</span>
-        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-sales-text-muted">
+        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-sales-text-muted">
           {event.ownerAvatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={event.ownerAvatarUrl} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" />
@@ -477,7 +477,7 @@ export function AgendaEventRow({
           <span className="truncate">{event.relatedLabel}{event.ownerName ? ` · ${event.ownerName}` : " · Unassigned"}</span>
         </span>
       </span>
-      <span className={cn("hidden shrink-0 rounded-[5px] border px-1.5 py-0.5 text-[9px] font-medium sm:inline-flex", event.status === "overdue" ? "border-sales-danger/30 bg-sales-danger-soft text-sales-danger-fg" : "border-sales-border bg-sales-surface-subtle text-sales-text-secondary")}>{event.status === "overdue" ? "Overdue" : relationLabel(event)}</span>
+      <span className={cn("hidden shrink-0 rounded-[5px] border px-1.5 py-0.5 text-[10px] font-medium sm:inline-flex", event.status === "overdue" ? "border-sales-danger/30 bg-sales-danger-soft text-sales-danger-fg" : "border-sales-border bg-sales-surface-subtle text-sales-text-secondary")}>{event.status === "overdue" ? "Overdue" : relationLabel(event)}</span>
     </button>
   );
 }
@@ -517,7 +517,7 @@ export function MobileCalendarAgenda({
           const today = key === todayKey;
           return (
             <button key={key} type="button" onClick={() => onSelectDate(key)} className={cn("flex min-w-[52px] flex-1 flex-col items-center rounded-[10px] border px-2 py-2", selected ? "border-sales-brand bg-sales-brand-soft" : "border-sales-border bg-sales-surface", today && !selected && "ring-1 ring-sales-brand-border")}>
-              <span className="text-[9px] font-semibold uppercase text-sales-text-muted">{format(day, "EEE")}</span>
+              <span className="text-[10px] font-semibold uppercase text-sales-text-muted">{format(day, "EEE")}</span>
               <span className="mt-1 text-[14px] font-semibold text-sales-text-primary">{format(day, "d")}</span>
             </button>
           );

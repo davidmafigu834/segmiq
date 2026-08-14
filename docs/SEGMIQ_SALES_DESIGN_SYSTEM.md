@@ -753,12 +753,12 @@ No glassmorphism, neon borders, or purple gradients. Inherit active light/dark t
 
 ## Company Calendar
 
-The Company Calendar is a team sales execution workspace: six compact KPI cards, one dominant bordered Calendar card, and a 300px right agenda rail.
+The Company Calendar is a team sales execution workspace: six KPI cards using the shared Company Customers hierarchy, one dominant bordered Calendar card, and a 300px right agenda rail.
 
 - Week is the primary desktop view: sticky Team member column × Sunday–Saturday day columns. Every permitted salesperson remains visible even with no activity.
-- Team cells show at most two compact event cards plus `+ N more`; manager rows are about 116px and scroll inside the Calendar card.
+- Team cells show at most two readable event cards plus `+ N more`; manager rows are about 148px and scroll inside the Calendar card.
 - Controls stay inside the main card: previous, next, Today, date range, Day/Week/Month/Agenda, then structured Filters. Team scope sits directly below and scopes KPIs too.
-- Event cards use soft semantic type tints, 7px radius, time/icon/title/entity hierarchy, full-detail tooltips, and no scale hover. Overdue overrides the tint with a red execution state; at risk adds an amber edge.
+- Event cards use soft semantic type tints, 8px radius, a readable 10–11px time/title/entity hierarchy, full-detail tooltips, and no scale hover. Overdue overrides the tint with a red execution state; at risk adds an amber edge.
 - Month is a manager overview with type counts, attention state, and owner avatars. Day and Agenda are grouped/identified by salesperson.
 - The right rail is one surface with mini month, selected-date team agenda, and Upcoming. Selecting an event converts that same rail into Event Detail.
 - Mobile is agenda-first with a horizontal date strip and team grouping. Tablet moves the right rail into a drawer.

@@ -131,20 +131,20 @@ function FiltersPopover({
       <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close filters" onClick={onClose} />
       <div className="absolute right-0 top-11 z-30 w-[290px] rounded-[12px] border border-sales-border bg-sales-surface p-3.5 shadow-sales-popover">
         <div className="flex items-center justify-between"><h3 className="text-[13px] font-semibold text-sales-text-primary">Calendar filters</h3><button type="button" className="sd-icon-btn !h-7 !w-7" onClick={onClose} aria-label="Close"><X size={14} /></button></div>
-        <label className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted" htmlFor="company-calendar-owner">Owner</label>
-        <select id="company-calendar-owner" value={filters.ownerId} onChange={(event) => onChange({ ...filters, ownerId: event.target.value })} className="mt-1.5 h-10 w-full rounded-[9px] border border-sales-border bg-sales-surface px-2.5 text-[12px] text-sales-text-primary outline-none focus:border-sales-brand">
+        <label className="mt-3 block text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted" htmlFor="company-calendar-owner">Owner</label>
+        <select id="company-calendar-owner" value={filters.ownerId} onChange={(event) => onChange({ ...filters, ownerId: event.target.value })} className="mt-1.5 h-10 w-full rounded-[9px] border border-sales-border bg-sales-surface px-2.5 text-[13px] text-sales-text-primary outline-none focus:border-sales-brand">
           <option value="all">All permitted salespeople</option>
           {owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
         </select>
-        <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Activity type</p>
+        <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Activity type</p>
         <div className="mt-1.5 grid grid-cols-2 gap-1.5">
           {COMPANY_CALENDAR_EVENT_KINDS.map((kind) => {
             const active = filters.kinds.includes(kind);
-            return <button key={kind} type="button" onClick={() => toggleKind(kind)} className={cn("flex min-h-9 items-center gap-2 rounded-[8px] border px-2 text-left text-[10px] font-medium", active ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : "border-sales-border text-sales-text-secondary")}><span className={cn("flex h-4 w-4 items-center justify-center rounded-[4px] border", active ? "border-sales-brand bg-sales-brand text-sales-brand-text" : "border-sales-border")}>{active ? <Check size={10} /> : null}</span>{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
+            return <button key={kind} type="button" onClick={() => toggleKind(kind)} className={cn("flex min-h-9 items-center gap-2 rounded-[8px] border px-2.5 text-left text-[11px] font-medium", active ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : "border-sales-border text-sales-text-secondary")}><span className={cn("flex h-4 w-4 items-center justify-center rounded-[4px] border", active ? "border-sales-brand bg-sales-brand text-sales-brand-text" : "border-sales-border")}>{active ? <Check size={10} /> : null}</span>{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
           })}
         </div>
-        <label className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted" htmlFor="company-calendar-status">Status</label>
-        <select id="company-calendar-status" value={filters.status} onChange={(event) => onChange({ ...filters, status: event.target.value as CompanyCalendarFilters["status"], includeCompleted: true })} className="mt-1.5 h-10 w-full rounded-[9px] border border-sales-border bg-sales-surface px-2.5 text-[12px] text-sales-text-primary outline-none focus:border-sales-brand">
+        <label className="mt-3 block text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted" htmlFor="company-calendar-status">Status</label>
+        <select id="company-calendar-status" value={filters.status} onChange={(event) => onChange({ ...filters, status: event.target.value as CompanyCalendarFilters["status"], includeCompleted: true })} className="mt-1.5 h-10 w-full rounded-[9px] border border-sales-border bg-sales-surface px-2.5 text-[13px] text-sales-text-primary outline-none focus:border-sales-brand">
           <option value="all">All statuses</option>
           <option value="scheduled">Scheduled</option>
           <option value="overdue">Overdue</option>
@@ -152,8 +152,8 @@ function FiltersPopover({
           <option value="cancelled">Cancelled</option>
           <option value="at_risk">At risk / attention</option>
         </select>
-        <label className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted" htmlFor="company-calendar-relation">Related record</label>
-        <select id="company-calendar-relation" value={filters.relationType} onChange={(event) => onChange({ ...filters, relationType: event.target.value as CompanyCalendarFilters["relationType"] })} className="mt-1.5 h-10 w-full rounded-[9px] border border-sales-border bg-sales-surface px-2.5 text-[12px] text-sales-text-primary outline-none focus:border-sales-brand">
+        <label className="mt-3 block text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted" htmlFor="company-calendar-relation">Related record</label>
+        <select id="company-calendar-relation" value={filters.relationType} onChange={(event) => onChange({ ...filters, relationType: event.target.value as CompanyCalendarFilters["relationType"] })} className="mt-1.5 h-10 w-full rounded-[9px] border border-sales-border bg-sales-surface px-2.5 text-[13px] text-sales-text-primary outline-none focus:border-sales-brand">
           <option value="all">Leads, Deals and Customers</option>
           <option value="lead">Lead-related</option>
           <option value="deal">Deal-related</option>
@@ -523,7 +523,7 @@ export function CompanyCalendarPage({
       <CompanyCalendarSummary metrics={metrics} activeAction={summaryAction} scopeLabel={metricScopeLabel} onAction={handleSummaryAction} />
 
       <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]" data-course-target="company-calendar">
-        <section className="min-w-0 overflow-hidden rounded-[13px] border border-sales-border bg-sales-surface shadow-sales-card">
+        <section className="min-w-0 overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
           <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between" data-course-target="calendar-view-switcher">
             <div className="flex flex-wrap items-center gap-1.5">
               <button type="button" onClick={() => navigate(-1)} className="sd-icon-btn" aria-label={`Previous ${view}`}><ChevronLeft size={17} /></button>
@@ -533,30 +533,30 @@ export function CompanyCalendarPage({
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex h-10 items-center rounded-[9px] border border-sales-border bg-sales-surface p-0.5">
-                {VIEWS.map((item) => <button key={item.id} type="button" onClick={() => changeView(item.id)} aria-pressed={view === item.id} className={cn("h-8 rounded-[7px] px-3 text-[11px] font-medium text-sales-text-secondary transition-colors", view === item.id && "bg-sales-brand text-sales-brand-text shadow-sm")}>{item.label}</button>)}
+                {VIEWS.map((item) => <button key={item.id} type="button" onClick={() => changeView(item.id)} aria-pressed={view === item.id} className={cn("h-8 rounded-[7px] px-3 text-[12px] font-medium text-sales-text-secondary transition-colors", view === item.id && "bg-sales-brand text-sales-brand-text shadow-sm")}>{item.label}</button>)}
               </div>
               <div className="relative">
-                <button type="button" onClick={() => setFiltersOpen((open) => !open)} className={cn("inline-flex h-10 items-center gap-1.5 rounded-[9px] border px-3 text-[11px] font-semibold", filtersOpen || activeFilterCount ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : "border-sales-border bg-sales-surface text-sales-text-primary hover:bg-sales-surface-hover")}><SlidersHorizontal size={14} />Filters{activeFilterCount ? <span className="rounded-full bg-sales-brand px-1.5 py-0.5 text-[9px] text-sales-brand-text">{activeFilterCount}</span> : null}</button>
+                <button type="button" onClick={() => setFiltersOpen((open) => !open)} className={cn("inline-flex h-10 items-center gap-1.5 rounded-[9px] border px-3 text-[12px] font-semibold", filtersOpen || activeFilterCount ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : "border-sales-border bg-sales-surface text-sales-text-primary hover:bg-sales-surface-hover")}><SlidersHorizontal size={14} />Filters{activeFilterCount ? <span className="rounded-full bg-sales-brand px-1.5 py-0.5 text-[10px] text-sales-brand-text">{activeFilterCount}</span> : null}</button>
                 {filtersOpen ? <FiltersPopover filters={filters} owners={data.owners} onChange={(next) => {
                   if (next.ownerId !== filters.ownerId) updateUrl({ owner: next.ownerId });
                   setSummaryAction(null);
                   setFilters(next);
                 }} onClose={() => setFiltersOpen(false)} /> : null}
               </div>
-              <button type="button" onClick={() => setAgendaOpen(true)} className="inline-flex h-10 items-center gap-1.5 rounded-[9px] border border-sales-border px-3 text-[11px] font-semibold text-sales-text-primary xl:hidden"><Filter size={14} />Agenda</button>
+              <button type="button" onClick={() => setAgendaOpen(true)} className="inline-flex h-10 items-center gap-1.5 rounded-[9px] border border-sales-border px-3 text-[12px] font-semibold text-sales-text-primary xl:hidden"><Filter size={14} />Agenda</button>
             </div>
           </div>
 
           <div className="flex min-h-[48px] flex-wrap items-center justify-between gap-2 border-b border-sales-border-subtle px-3 py-2 sm:px-4" data-course-target="calendar-team-filter">
             <div className="flex items-center gap-2">
               <label htmlFor="company-calendar-team" className="sr-only">Team member</label>
-              <select id="company-calendar-team" value={filters.ownerId} onChange={(event) => changeOwner(event.target.value)} className="h-9 min-w-[154px] rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[10px] font-semibold text-sales-text-primary outline-none focus:border-sales-brand">
+              <select id="company-calendar-team" value={filters.ownerId} onChange={(event) => changeOwner(event.target.value)} className="h-9 min-w-[154px] rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[12px] font-medium text-sales-text-primary outline-none focus:border-sales-brand">
                 <option value="all">Team (All)</option>
                 {data.owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
               </select>
-              {filters.ownerId !== "all" ? <span className="hidden text-[9px] text-sales-text-muted sm:inline">Activity KPIs and Calendar are filtered to this salesperson.</span> : null}
+              {filters.ownerId !== "all" ? <span className="hidden text-[11px] text-sales-text-muted sm:inline">Activity KPIs and Calendar are filtered to this salesperson.</span> : null}
             </div>
-            {summaryAction ? <button type="button" onClick={() => setSummaryAction(null)} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-sales-brand-border bg-sales-brand-soft px-2.5 text-[9px] font-semibold text-sales-text-primary"><X size={11} />Clear {summaryAction.replace("_", " ")} filter</button> : null}
+            {summaryAction ? <button type="button" onClick={() => setSummaryAction(null)} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-sales-brand-border bg-sales-brand-soft px-2.5 text-[11px] font-semibold text-sales-text-primary"><X size={12} />Clear {summaryAction.replace("_", " ")} filter</button> : null}
           </div>
 
           <div className="md:hidden">
@@ -571,13 +571,13 @@ export function CompanyCalendarPage({
 
           <div className="hidden min-h-[52px] items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-2.5 md:flex">
             <div className="flex flex-wrap items-center gap-2" aria-label="Activity Types">
-              <span className="mr-1 text-[10px] font-semibold text-sales-text-primary">Activity Types</span>
+              <span className="mr-1 text-[12px] font-semibold text-sales-text-primary">Activity Types</span>
               {COMPANY_CALENDAR_EVENT_KINDS.map((kind) => {
                 const active = filters.kinds.includes(kind);
-                return <button key={kind} type="button" onClick={() => { setSummaryAction(null); setFilters((current) => ({ ...current, kinds: active ? current.kinds.filter((value) => value !== kind) : [...current.kinds, kind] })); }} aria-pressed={active} className={cn("inline-flex h-7 items-center gap-1 rounded-[6px] border px-1.5 text-[9px] font-medium transition-opacity", active ? "border-sales-border bg-sales-surface-subtle text-sales-text-secondary" : "border-sales-border opacity-40")}><CompanyCalendarEventIcon kind={kind} size={11} />{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
+                return <button key={kind} type="button" onClick={() => { setSummaryAction(null); setFilters((current) => ({ ...current, kinds: active ? current.kinds.filter((value) => value !== kind) : [...current.kinds, kind] })); }} aria-pressed={active} className={cn("inline-flex h-8 items-center gap-1.5 rounded-[7px] border px-2 text-[10px] font-medium transition-opacity", active ? "border-sales-border bg-sales-surface-subtle text-sales-text-secondary" : "border-sales-border opacity-40")}><CompanyCalendarEventIcon kind={kind} size={12} />{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
               })}
             </div>
-            <label className="flex shrink-0 cursor-pointer items-center gap-2 text-[10px] font-medium text-sales-text-secondary"><input type="checkbox" checked={showWeekends} onChange={(event) => { setShowWeekends(event.target.checked); window.localStorage.setItem("segmiq-company-calendar-weekends", String(event.target.checked)); }} className="h-4 w-4 accent-[var(--sales-brand)]" />Show weekends</label>
+            <label className="flex shrink-0 cursor-pointer items-center gap-2 text-[11px] font-medium text-sales-text-secondary"><input type="checkbox" checked={showWeekends} onChange={(event) => { setShowWeekends(event.target.checked); window.localStorage.setItem("segmiq-company-calendar-weekends", String(event.target.checked)); }} className="h-4 w-4 accent-[var(--sales-brand)]" />Show weekends</label>
           </div>
         </section>
 

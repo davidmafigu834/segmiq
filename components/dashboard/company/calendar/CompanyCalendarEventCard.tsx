@@ -58,30 +58,30 @@ export function CompanyCalendarEventCard({
       title={details}
       aria-label={`Open ${event.title} for ${event.relatedLabel}, owned by ${owner}`}
       className={cn(
-        "company-calendar-event group relative w-full overflow-hidden rounded-[7px] border text-left outline-none transition-[border-color,box-shadow,background-color] duration-150 hover:shadow-[0_3px_10px_rgba(16,24,40,0.10)] focus-visible:ring-2 focus-visible:ring-sales-brand",
+        "company-calendar-event group relative w-full overflow-hidden rounded-[8px] border text-left outline-none transition-[border-color,box-shadow,background-color] duration-150 hover:border-sales-border-strong hover:shadow-sales-card-hover focus-visible:ring-2 focus-visible:ring-sales-brand",
         meta.className,
         overdue && "company-calendar-event-overdue",
         completed && "opacity-65",
         event.status === "cancelled" && "opacity-50 line-through",
         selected && "ring-2 ring-sales-brand ring-offset-1 ring-offset-sales-surface",
-        variant === "matrix" && "min-h-[43px] px-2 py-1",
-        variant === "list" && "min-h-[54px] px-2.5 py-2",
-        variant === "month" && "min-h-[42px] px-1.5 py-1"
+        variant === "matrix" && "min-h-[52px] px-2.5 py-2",
+        variant === "list" && "min-h-[62px] px-3 py-2.5",
+        variant === "month" && "min-h-[48px] px-2 py-1.5"
       )}
     >
-      <span className="flex items-center justify-between gap-1 text-[8px] font-semibold tabular-nums opacity-75">
+      <span className="flex items-center justify-between gap-1 text-[10px] font-medium tabular-nums opacity-80">
         <span className="flex min-w-0 items-center gap-1">
-          {overdue ? <AlertTriangle size={10} aria-hidden /> : <CompanyCalendarEventIcon kind={event.kind} size={10} />}
+          {overdue ? <AlertTriangle size={12} aria-hidden /> : <CompanyCalendarEventIcon kind={event.kind} size={12} />}
           <span className="truncate">
             {event.allDay ? "All day" : formatCalendarTime(event.startAt, timezone)}
           </span>
         </span>
-        {completed ? <CheckCircle2 size={10} aria-label="Completed" /> : atRisk ? <AlertTriangle size={10} aria-label="Needs attention" /> : null}
+        {completed ? <CheckCircle2 size={12} aria-label="Completed" /> : atRisk ? <AlertTriangle size={12} aria-label="Needs attention" /> : null}
       </span>
-      <span className="mt-0.5 block truncate text-[9px] font-semibold leading-[1.25]">
+      <span className="mt-1 block truncate text-[11px] font-semibold leading-[1.25]">
         {compactTitle(event)}
       </span>
-      <span className="mt-0.5 block truncate text-[8px] leading-[1.2] opacity-70">
+      <span className="mt-0.5 block truncate text-[10px] leading-[1.25] opacity-75">
         {event.relatedLabel}
       </span>
     </button>
