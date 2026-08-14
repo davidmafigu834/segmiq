@@ -750,3 +750,15 @@ Interactive SegmiQ 2.0 course (not a third-party tour widget). Full behavior: [`
 ### Rules
 
 No glassmorphism, neon borders, or purple gradients. Inherit active light/dark theme. Action steps have no Next substitute.
+
+## Company Calendar
+
+The Company Calendar uses a two-zone desktop workspace: one dominant bordered Calendar card and one 300px right agenda rail. Do not place KPI cards, tables, charts, or lower analytics around this workspace.
+
+- Calendar controls stay inside the main card: previous, next, Today, date range, Day/Week/Month/Agenda, then Filters.
+- Week headers use compact weekday labels and large date numbers; only the actual local Today uses the lime circle.
+- All-day activity has a dedicated row above the hourly grid.
+- Event cards use soft semantic type tints, a related border, 7px radius, compact type/time/title/entity hierarchy, and no scale hover.
+- The right rail is one surface with mini month, selected-date agenda, and Upcoming sections. Selecting an event converts that same rail into Event Detail.
+- Mobile is agenda-first with a horizontal date strip. Tablet moves the right rail into a drawer.
+- Dark Calendar surfaces use the standard Company dark tokens, subtle grid borders, and low-opacity semantic event tints.

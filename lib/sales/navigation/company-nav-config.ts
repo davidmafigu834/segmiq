@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  CalendarDays,
   Columns3,
   CreditCard,
   FileText,
@@ -19,6 +20,7 @@ export type CompanyNavIconId =
   | "leads"
   | "whatsapp"
   | "quotations"
+  | "calendar"
   | "customers"
   | "reports"
   | "billing"
@@ -50,6 +52,7 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   pipeline: Columns3,
   leads: UsersRound,
   quotations: FileText,
+  calendar: CalendarDays,
   customers: UsersRound,
   reports: BarChart3,
   billing: CreditCard,
@@ -62,7 +65,6 @@ function exactOrChild(pathname: string, href: string): boolean {
 
 /**
  * Company / Manager navigation — mirrors salesperson sidebar IA.
- * Calendar & Tasks omitted until company-scoped pages ship.
  */
 export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
   {
@@ -76,6 +78,16 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     match: (p) => p === "/client/dashboard",
   },
   {
+    id: "team",
+    label: "Team",
+    href: "/client/team",
+    icon: "team",
+    section: "company",
+    mobileSlot: "primary",
+    mobileLabel: "Team",
+    match: (p) => exactOrChild(p, "/client/team"),
+  },
+  {
     id: "pipeline",
     label: "Pipeline",
     href: "/client/leads/pipeline",
@@ -85,6 +97,18 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     mobileLabel: "Pipeline",
     match: (p) =>
       exactOrChild(p, "/client/leads/pipeline") || exactOrChild(p, "/client/deals"),
+  },
+  {
+    id: "leads",
+    label: "Leads",
+    href: "/client/leads",
+    icon: "leads",
+    section: "company",
+    mobileSlot: "more",
+    mobileLabel: "Leads",
+    match: (p) =>
+      (p === "/client/leads" || p.startsWith("/client/leads/")) &&
+      !p.startsWith("/client/leads/pipeline"),
   },
   {
     id: "whatsapp",
@@ -98,25 +122,22 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     match: (p) => exactOrChild(p, "/client/inbox"),
   },
   {
-    id: "team",
-    label: "Team",
-    href: "/client/team",
-    icon: "team",
-    section: "company",
-    mobileSlot: "primary",
-    mobileLabel: "Team",
-    match: (p) => exactOrChild(p, "/client/team"),
-  },
-  {
-    id: "leads",
-    label: "Leads",
-    href: "/client/leads",
-    icon: "leads",
+    id: "quotations",
+    label: "Quotations",
+    href: "/client/quote-settings",
+    icon: "quotations",
     section: "company",
     mobileSlot: "more",
-    match: (p) =>
-      (p === "/client/leads" || p.startsWith("/client/leads/")) &&
-      !p.startsWith("/client/leads/pipeline"),
+    match: (p) => exactOrChild(p, "/client/quote-settings"),
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    href: "/client/calendar",
+    icon: "calendar",
+    section: "company",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/calendar"),
   },
   {
     id: "customers",
@@ -126,15 +147,6 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "company",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/customers"),
-  },
-  {
-    id: "quotations",
-    label: "Quotations",
-    href: "/client/quote-settings",
-    icon: "quotations",
-    section: "tools",
-    mobileSlot: "more",
-    match: (p) => exactOrChild(p, "/client/quote-settings"),
   },
   {
     id: "reports",

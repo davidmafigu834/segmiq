@@ -3864,6 +3864,70 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-premium .cal-card {
   container-type: inline-size;
 }
 
+/* Company Calendar semantic event palette. Event color represents activity type,
+   never owner, and receives purpose-built dark equivalents. */
+.company-calendar-event[data-event-kind="whatsapp"] {
+  background: #effcf3;
+  border-color: #a8e2b7;
+  color: #174a27;
+}
+.company-calendar-event[data-event-kind="call"] {
+  background: #fff7ed;
+  border-color: #fdba8c;
+  color: #7c2d12;
+}
+.company-calendar-event[data-event-kind="follow_up"] {
+  background: #eff6ff;
+  border-color: #a9cdfb;
+  color: #173f73;
+}
+.company-calendar-event[data-event-kind="quote_review"] {
+  background: #fffbea;
+  border-color: #f4d77a;
+  color: #65430b;
+}
+.company-calendar-event[data-event-kind="deal_action"] {
+  background: #eefbf8;
+  border-color: #96d8ca;
+  color: #164f46;
+}
+.company-calendar-event[data-event-kind="site_visit"] {
+  background: #f5f1ff;
+  border-color: #c9b8f5;
+  color: #4b2b82;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-kind="whatsapp"] {
+  background: rgba(37, 211, 102, 0.11);
+  border-color: rgba(88, 210, 127, 0.38);
+  color: #d7f8e0;
+}
+html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-kind="call"] {
+  background: rgba(249, 115, 22, 0.11);
+  border-color: rgba(251, 146, 60, 0.38);
+  color: #ffdfc5;
+}
+html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-kind="follow_up"] {
+  background: rgba(59, 130, 246, 0.11);
+  border-color: rgba(96, 165, 250, 0.38);
+  color: #d6e7ff;
+}
+html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-kind="quote_review"] {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(251, 191, 36, 0.36);
+  color: #fbe8ad;
+}
+html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-kind="deal_action"] {
+  background: rgba(20, 184, 166, 0.1);
+  border-color: rgba(45, 212, 191, 0.34);
+  color: #ccf3ec;
+}
+html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-kind="site_visit"] {
+  background: rgba(139, 92, 246, 0.11);
+  border-color: rgba(167, 139, 250, 0.38);
+  color: #e7ddff;
+}
+
 @container (max-width: 88px) {
   .calendar-premium .cal-event-chip .cal-chip-time {
     display: none;
@@ -4234,4 +4298,3 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   min-height: 0;
   overflow: hidden;
 }
-
