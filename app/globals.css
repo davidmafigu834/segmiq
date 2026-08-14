@@ -1356,9 +1356,10 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     color: var(--sales-brand-text) !important;
   }
 
-  /* Company WhatsApp Hub: three aligned, independent workspace panels. */
+  /* Company WhatsApp Hub: one continuous, resizable conversation workspace. */
   .company-wa-workspace {
-    background: var(--sales-bg) !important;
+    position: relative;
+    background: var(--sales-surface) !important;
   }
 
   html:not([data-crm-theme="light"]) .company-wa-workspace .bg-white,
@@ -1385,26 +1386,78 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   @media (min-width: 1100px) {
     .company-wa-workspace .wa-panel {
       min-width: 0;
-      width: 100%;
-      border: 1px solid var(--sales-border) !important;
-      border-radius: 12px !important;
+      border: 0 !important;
+      border-radius: 0 !important;
       box-shadow: none !important;
+    }
+
+    .company-wa-workspace .company-wa-chat-pane {
+      background: var(--sales-surface);
     }
   }
 
-  @media (max-width: 639.98px) {
-    .company-wa-kpi[data-kpi-id="new"],
-    .company-wa-kpi[data-kpi-id="resolved"] {
-      display: none;
+  @media (min-width: 1100px) and (max-width: 1279.98px) {
+    .company-wa-workspace #convPanel {
+      border-right: 1px solid var(--sales-border) !important;
     }
 
-    .company-wa-kpi {
-      padding: 0.625rem 0.75rem;
+    .company-wa-workspace .company-wa-context-pane {
+      position: absolute;
+      inset-block: 0;
+      right: 0;
+      z-index: 30;
+      width: min(360px, 92%) !important;
+      border-left: 1px solid var(--sales-border) !important;
+      box-shadow: -12px 0 28px rgba(16, 24, 40, 0.12) !important;
     }
+  }
 
-    .company-wa-kpi > div:nth-of-type(2) {
-      font-size: 1.25rem;
+  @media (max-width: 1099.98px) {
+    .company-wa-workspace {
+      margin: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
     }
+  }
+
+  .company-wa-workspace .wa-conv-row {
+    min-height: 74px;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .company-wa-workspace #convPanel > .wa-panel-header > div:first-child {
+    padding-block: 0.625rem;
+  }
+
+  .company-wa-workspace #convPanel > .wa-panel-header > div:nth-child(2) button {
+    padding-block: 0.5rem;
+  }
+
+  .company-wa-workspace #convPanel > .wa-panel-header > div:last-child {
+    padding-block: 0.5rem;
+  }
+
+  .company-wa-workspace .wa-composer-input {
+    min-height: 38px;
+    padding-block: 0.5rem;
+  }
+
+  .wa-hub-premium .wa-empty-hint {
+    border-color: var(--sales-border) !important;
+    background: var(--sales-surface-subtle) !important;
+    color: var(--sales-text-secondary) !important;
+  }
+
+  .wa-hub-premium .wa-btn-secondary {
+    width: auto !important;
+    border-color: var(--sales-border) !important;
+    background: var(--sales-surface) !important;
+    color: var(--sales-text-primary) !important;
+  }
+
+  .wa-hub-premium .wa-btn-secondary:hover {
+    border-color: var(--sales-border-strong) !important;
+    background: var(--sales-surface-hover) !important;
   }
 
   .wa-day-rule {

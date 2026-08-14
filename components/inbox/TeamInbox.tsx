@@ -4,10 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Inbox, PanelRight, Search, X } from "lucide-react";
 import { initials } from "@/lib/inbox/assignee-colors";
-import { useInboxCompact, useInboxMobile } from "@/lib/inbox/use-inbox-mobile";
+import {
+  useInboxCompact,
+  useInboxMobile,
+  useInboxWideWorkspace,
+} from "@/lib/inbox/use-inbox-mobile";
 import { countInboxFilters } from "@/lib/inbox/queue-filters";
 import type { InboxConversation, InboxFilter } from "@/lib/inbox/types";
-import { computeCompanyWhatsAppSummary } from "@/lib/inbox/company-whatsapp-summary";
 import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
 import { ChatThread } from "./ChatThread";
 import { ConversationList } from "./ConversationList";
@@ -17,9 +20,9 @@ import { LeadIntelligencePanel } from "./LeadIntelligencePanel";
 import { InboxPanelResizeHandle } from "./InboxPanelResizeHandle";
 import { InboxSkeleton } from "./InboxSkeleton";
 import { useInboxPanelWidths } from "@/lib/inbox/use-inbox-panel-widths";
+import { COMPANY_INBOX_PANEL_WIDTHS_KEY } from "@/lib/inbox/inbox-panel-widths";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
-import { CompanyWhatsAppKpis } from "./CompanyWhatsAppKpis";
 import { CompanyConversationInsightRail } from "./CompanyConversationInsightRail";
 
 type Props = {
@@ -45,6 +48,10 @@ type Props = {
 };
 
 type MobilePane = "list" | "thread" | "intel";
+
+function activeConversationStorageKey(clientId: string): string {
+  return `segmiq-company-whatsapp-active:${clientId}`;
+}
 
 export function TeamInbox({
   userName,
@@ -84,9 +91,10 @@ export function TeamInbox({
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const isMobile = useInboxMobile();
   const isCompact = useInboxCompact();
+  const isWideWorkspace = useInboxWideWorkspace();
   const { setHideBottomNav } = useSalesMobileChrome();
   const searchParams = useSearchParams();
-  const leadFromUrl = searchParams.get("lead");
+  const leadFromUrl = searchParams.get("conversation") ?? searchParams.get("lead");
 
   const loadConversations = useCallback(async (options?: { silent?: boolean }) => {
     if (!options?.silent) setLoading(true);
@@ -99,6 +107,15 @@ export function TeamInbox({
       setLoadError(false);
       setActiveId((prev) => {
         if (prev && rows.some((r) => r.id === prev)) return prev;
+        if (companyMode) {
+          try {
+            const stored = localStorage.getItem(activeConversationStorageKey(clientId));
+            if (stored && rows.some((row) => row.id === stored)) return stored;
+          } catch {
+            /* ignore unavailable storage */
+          }
+          return null;
+        }
         return rows[0]?.id ?? null;
       });
     } catch {
@@ -106,7 +123,7 @@ export function TeamInbox({
     } finally {
       if (!options?.silent) setLoading(false);
     }
-  }, []);
+  }, [clientId, companyMode]);
 
   useEffect(() => {
     void loadConversations();
@@ -119,8 +136,15 @@ export function TeamInbox({
     if (!leadFromUrl || conversations.length === 0) return;
     if (!conversations.some((c) => c.id === leadFromUrl)) return;
     setActiveId(leadFromUrl);
+    if (companyMode) {
+      try {
+        localStorage.setItem(activeConversationStorageKey(clientId), leadFromUrl);
+      } catch {
+        /* ignore unavailable storage */
+      }
+    }
     if (isCompact && backHref) setMobilePane("thread");
-  }, [leadFromUrl, conversations, isCompact, backHref]);
+  }, [leadFromUrl, conversations, isCompact, backHref, clientId, companyMode]);
 
   useEffect(() => {
     if (!isMobile) {
@@ -168,11 +192,6 @@ export function TeamInbox({
     () => countInboxFilters(conversations, userId),
     [conversations, userId]
   );
-  const companySummary = useMemo(
-    () => computeCompanyWhatsAppSummary(conversations),
-    [conversations]
-  );
-
   const salesCapable = canActAsSalesperson({ userId, role, alsoSells });
   const ownsActive = !!active && active.assignedToId === userId;
   const canReassign = role === "CLIENT_MANAGER" || role === "SUPER_ADMIN";
@@ -200,6 +219,16 @@ export function TeamInbox({
 
   function handleSelect(id: string) {
     setActiveId(id);
+    if (companyMode) {
+      try {
+        localStorage.setItem(activeConversationStorageKey(clientId), id);
+        const url = new URL(window.location.href);
+        url.searchParams.set("conversation", id);
+        window.history.replaceState(window.history.state, "", url);
+      } catch {
+        /* selection remains functional without persistence */
+      }
+    }
     if (isCompact && whatsappMode) {
       setMobilePane("thread");
       return;
@@ -216,7 +245,6 @@ export function TeamInbox({
 
   const mobileIntelTop = whatsappMode ? "max-[1099px]:top-0" : "max-[1099px]:top-16";
   const paneNav = isCompact && whatsappMode;
-  const intelOpenEffective = paneNav ? mobilePane === "intel" : intelOpen;
   const listOpenEffective = paneNav ? mobilePane === "list" : convOpen;
 
   useEffect(() => {
@@ -236,7 +264,23 @@ export function TeamInbox({
     toggleListCollapsed,
     toggleIntelCollapsed,
     resizable,
-  } = useInboxPanelWidths(whatsappMode && !paneNav && !companyMode);
+  } = useInboxPanelWidths(
+    whatsappMode && !paneNav && (!companyMode || isWideWorkspace),
+    companyMode
+      ? {
+          storageKey: COMPANY_INBOX_PANEL_WIDTHS_KEY,
+          defaultListWidth: 330,
+          defaultIntelWidth: 350,
+          allowListCollapse: false,
+        }
+      : undefined
+  );
+
+  const intelOpenEffective = paneNav
+    ? mobilePane === "intel"
+    : companyMode && resizable
+      ? !intelCollapsed
+      : intelOpen;
 
   const showHubChrome = whatsappMode && !companyMode && (!paneNav || mobilePane === "list");
   const breadcrumbLabel = breadcrumb.replace(/\s*\/\s*/g, " / ");
@@ -259,15 +303,12 @@ export function TeamInbox({
       ) : null}
 
       {companyMode && (!paneNav || mobilePane === "list") ? (
-        <>
-          <CompanyWhatsAppHeader
-            unreadNotifications={unreadNotifications}
-            notificationRole={role}
-            userName={userName}
-            avatarUrl={avatarUrl}
-          />
-          <CompanyWhatsAppKpis summary={companySummary} onFilter={setFilter} />
-        </>
+        <CompanyWhatsAppHeader
+          unreadNotifications={unreadNotifications}
+          notificationRole={role}
+          userName={userName}
+          avatarUrl={avatarUrl}
+        />
       ) : null}
 
       {!whatsappMode ? (
@@ -429,7 +470,7 @@ export function TeamInbox({
       <div
         className={`min-h-0 flex-1 overflow-hidden ${
           companyMode
-            ? "company-wa-workspace wa-hub-shell wa-hub-premium flex layout:grid layout:grid-cols-[minmax(250px,26fr)_minmax(400px,46fr)_minmax(270px,28fr)] layout:gap-3 layout:px-7 layout:pb-5"
+            ? "company-wa-workspace wa-hub-shell wa-hub-premium mx-3 mb-3 flex overflow-hidden rounded-[11px] border border-sales-border bg-sales-surface sm:mx-4 sm:mb-4"
             : whatsappMode
               ? "flex wa-hub-shell wa-hub-immersive wa-hub-premium"
               : "flex"
@@ -480,7 +521,7 @@ export function TeamInbox({
                 filterCounts={companyMode || !whatsappMode ? counts : undefined}
                 onFilterChange={companyMode || !whatsappMode ? setFilter : undefined}
                 ownerOptions={companyMode ? salespeople : undefined}
-                panelWidth={!companyMode && resizable ? listWidth : undefined}
+                panelWidth={resizable ? listWidth : undefined}
                 panelAnimated={resizable}
                 chromeInParent={whatsappMode && !companyMode}
                 companyMode={companyMode}
@@ -491,12 +532,13 @@ export function TeamInbox({
                 panel="list"
                 collapsed={listCollapsed}
                 onResize={resizeList}
-                onToggleCollapse={toggleListCollapsed}
+                onToggleCollapse={companyMode ? undefined : toggleListCollapsed}
                 label="Resize conversations panel"
+                desktopClassName={companyMode ? "min-[1280px]:flex" : undefined}
               />
             ) : null}
             <div
-              className={`flex min-h-0 min-w-0 flex-1 flex-col wa-panel ${
+              className={`company-wa-chat-pane flex min-h-0 min-w-0 flex-1 flex-col wa-panel ${
                 paneNav && mobilePane !== "thread" ? "max-[1099px]:hidden" : ""
               }`}
             >
@@ -516,6 +558,10 @@ export function TeamInbox({
                     setMobilePane("intel");
                     return;
                   }
+                  if (companyMode && resizable) {
+                    toggleIntelCollapsed();
+                    return;
+                  }
                   setConvOpen(false);
                   setIntelOpen((v) => !v);
                 }}
@@ -533,24 +579,38 @@ export function TeamInbox({
                 canCreateDeal={(canReassign || (salesCapable && ownsActive)) && !active?.activeDealId}
                 leadHref={active ? `/client/leads?lead=${active.id}` : undefined}
                 dealHref={active?.activeDealId ? `/client/deals/${active.activeDealId}` : undefined}
+                contextOpen={intelOpenEffective}
               />
             </div>
-            {resizable ? (
+            {resizable && (!companyMode || active) ? (
               <InboxPanelResizeHandle
                 panel="intel"
                 collapsed={intelCollapsed}
                 onResize={resizeIntel}
                 onToggleCollapse={toggleIntelCollapsed}
-                label="Resize lead workspace panel"
+                label="Resize customer context panel"
+                desktopClassName={companyMode ? "min-[1280px]:flex" : undefined}
               />
             ) : null}
             {companyMode ? (
-              <CompanyConversationInsightRail
-                conversation={active}
-                open={intelOpenEffective}
-                refreshKey={contextRevision}
-                onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
-              />
+              active && (!resizable || !intelCollapsed) ? (
+                <CompanyConversationInsightRail
+                  conversation={active}
+                  open={intelOpenEffective}
+                  refreshKey={contextRevision}
+                  panelWidth={resizable ? intelWidth : undefined}
+                  onCollapse={() => {
+                    if (paneNav) {
+                      setMobilePane("thread");
+                    } else if (resizable) {
+                      toggleIntelCollapsed();
+                    } else {
+                      setIntelOpen(false);
+                    }
+                  }}
+                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                />
+              ) : null
             ) : !resizable || !intelCollapsed ? (
               <LeadIntelligencePanel
                 conversation={active}

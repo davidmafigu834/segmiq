@@ -13,8 +13,8 @@ import {
 } from "@/lib/inbox/inbox-panel-widths";
 
 type Action =
-  | { type: "HYDRATE"; layout: InboxPanelLayout }
-  | { type: "RESIZE_LIST"; delta: number }
+  | { type: "HYDRATE"; layout: InboxPanelLayout; allowListCollapse: boolean }
+  | { type: "RESIZE_LIST"; delta: number; allowListCollapse: boolean }
   | { type: "RESIZE_INTEL"; delta: number }
   | { type: "TOGGLE_LIST" }
   | { type: "TOGGLE_INTEL" };
@@ -22,7 +22,9 @@ type Action =
 function reducer(state: InboxPanelLayout, action: Action): InboxPanelLayout {
   switch (action.type) {
     case "HYDRATE":
-      return action.layout;
+      return action.allowListCollapse
+        ? action.layout
+        : { ...action.layout, listCollapsed: false };
     case "RESIZE_LIST": {
       const { delta } = action;
       if (!delta) return state;
@@ -35,7 +37,7 @@ function reducer(state: InboxPanelLayout, action: Action): InboxPanelLayout {
         };
       }
       const next = state.list + delta;
-      if (next < LIST_COLLAPSE_DRAG_WIDTH) {
+      if (action.allowListCollapse && next < LIST_COLLAPSE_DRAG_WIDTH) {
         return { ...state, listCollapsed: true, listSavedWidth: state.list };
       }
       return { ...state, list: clampListWidth(next) };
@@ -80,24 +82,48 @@ function reducer(state: InboxPanelLayout, action: Action): InboxPanelLayout {
   }
 }
 
-export function useInboxPanelWidths(enabled: boolean) {
-  const [layout, dispatch] = useReducer(reducer, defaultInboxPanelLayout());
+export function useInboxPanelWidths(
+  enabled: boolean,
+  {
+    storageKey,
+    defaultListWidth,
+    defaultIntelWidth,
+    allowListCollapse = true,
+  }: {
+    storageKey?: string;
+    defaultListWidth?: number;
+    defaultIntelWidth?: number;
+    allowListCollapse?: boolean;
+  } = {}
+) {
+  const [layout, dispatch] = useReducer(
+    reducer,
+    undefined,
+    () => defaultInboxPanelLayout({ list: defaultListWidth, intel: defaultIntelWidth })
+  );
   const [hydrated, setHydrated] = useReducer(() => true, false);
 
   useEffect(() => {
     if (!enabled) return;
-    dispatch({ type: "HYDRATE", layout: readInboxPanelLayout() });
+    dispatch({
+      type: "HYDRATE",
+      layout: readInboxPanelLayout({
+        storageKey,
+        defaults: { list: defaultListWidth, intel: defaultIntelWidth },
+      }),
+      allowListCollapse,
+    });
     setHydrated();
-  }, [enabled]);
+  }, [allowListCollapse, defaultIntelWidth, defaultListWidth, enabled, storageKey]);
 
   useEffect(() => {
     if (!enabled || !hydrated) return;
-    persistInboxPanelLayout(layout);
-  }, [enabled, hydrated, layout]);
+    persistInboxPanelLayout(layout, storageKey);
+  }, [enabled, hydrated, layout, storageKey]);
 
   const resizeList = useCallback((delta: number) => {
-    dispatch({ type: "RESIZE_LIST", delta });
-  }, []);
+    dispatch({ type: "RESIZE_LIST", delta, allowListCollapse });
+  }, [allowListCollapse]);
 
   const resizeIntel = useCallback((delta: number) => {
     dispatch({ type: "RESIZE_INTEL", delta });

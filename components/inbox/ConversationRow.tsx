@@ -11,6 +11,7 @@ import {
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 import { LeadStageBadge } from "./LeadStageBadge";
 import { LeadIntentBadge } from "./LeadIntentBadge";
+import { initials } from "@/lib/inbox/assignee-colors";
 import { Image as ImageIcon, Mic } from "lucide-react";
 
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
   onClaim: (leadId: string) => void;
   claiming: boolean;
   canClaim: boolean;
+  companyMode?: boolean;
 };
 
 function previewIcon(messageType: string | null | undefined) {
@@ -37,11 +39,12 @@ export function ConversationRow({
   onClaim,
   claiming,
   canClaim,
+  companyMode = false,
 }: Props) {
   const name = displayContactName(conversation);
   const waitingLabel = formatAwaitingReply(conversation.awaitingReplyMinutes);
   const waitingTone = getWaitingTone(conversation.awaitingReplyMinutes);
-  const metaLine = conversationMetaLine(conversation, currentRepName);
+  const metaLine = companyMode ? null : conversationMetaLine(conversation, currentRepName);
   const isUnassigned = !conversation.assignedToId;
   const unread = conversation.unread > 0;
 
@@ -86,7 +89,7 @@ export function ConversationRow({
             </span>
           </div>
 
-          <div className="mt-1 flex items-center gap-1.5 text-[12px] text-[#667085]">
+          <div className={`${companyMode ? "mt-0.5" : "mt-1"} flex items-center gap-1.5 text-[12px] text-[#667085]`}>
             <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
               {previewIcon(conversation.lastMessageType)}
               <span className={`truncate ${unread ? "font-medium text-[#344054]" : ""}`}>
@@ -100,7 +103,7 @@ export function ConversationRow({
             ) : null}
           </div>
 
-          <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+          <div className={`${companyMode ? "mt-1" : "mt-1.5"} flex min-w-0 flex-wrap items-center gap-1.5`}>
             <LeadStageBadge
               status={conversation.status}
               followUpDate={conversation.followUpDate}
@@ -128,6 +131,15 @@ export function ConversationRow({
               </button>
             ) : isUnassigned ? (
               <span className="text-[10px] font-medium text-[#98A2B3]">Unassigned</span>
+            ) : null}
+            {companyMode && conversation.assignee ? (
+              <span
+                className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F2F4F7] px-1 text-[8px] font-semibold text-[#667085]"
+                title={`Owner: ${conversation.assignee.name}`}
+                aria-label={`Owner: ${conversation.assignee.name}`}
+              >
+                {initials(conversation.assignee.name)}
+              </span>
             ) : null}
           </div>
 

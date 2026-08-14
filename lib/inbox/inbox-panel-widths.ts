@@ -1,4 +1,5 @@
 export const INBOX_PANEL_WIDTHS_KEY = "segmiq-inbox-panel-widths";
+export const COMPANY_INBOX_PANEL_WIDTHS_KEY = "segmiq-company-inbox-panel-widths";
 
 export const DEFAULT_LIST_PANEL_WIDTH = 360;
 export const DEFAULT_INTEL_PANEL_WIDTH = 380;
@@ -36,27 +37,38 @@ export function clampIntelWidth(value: number): number {
   return Math.round(Math.min(MAX_INTEL_PANEL_WIDTH, Math.max(MIN_INTEL_PANEL_WIDTH, value)));
 }
 
-export function defaultInboxPanelLayout(): InboxPanelLayout {
+export function defaultInboxPanelLayout(
+  defaults: Partial<Pick<InboxPanelLayout, "list" | "intel">> = {}
+): InboxPanelLayout {
+  const list = clampListWidth(defaults.list ?? DEFAULT_LIST_PANEL_WIDTH);
+  const intel = clampIntelWidth(defaults.intel ?? DEFAULT_INTEL_PANEL_WIDTH);
   return {
-    list: DEFAULT_LIST_PANEL_WIDTH,
-    intel: DEFAULT_INTEL_PANEL_WIDTH,
+    list,
+    intel,
     listCollapsed: false,
     intelCollapsed: false,
-    listSavedWidth: DEFAULT_LIST_PANEL_WIDTH,
-    intelSavedWidth: DEFAULT_INTEL_PANEL_WIDTH,
+    listSavedWidth: list,
+    intelSavedWidth: intel,
   };
 }
 
-export function readInboxPanelLayout(): InboxPanelLayout {
+export function readInboxPanelLayout({
+  storageKey = INBOX_PANEL_WIDTHS_KEY,
+  defaults,
+}: {
+  storageKey?: string;
+  defaults?: Partial<Pick<InboxPanelLayout, "list" | "intel">>;
+} = {}): InboxPanelLayout {
   if (typeof window === "undefined") {
-    return defaultInboxPanelLayout();
+    return defaultInboxPanelLayout(defaults);
   }
   try {
-    const raw = localStorage.getItem(INBOX_PANEL_WIDTHS_KEY);
-    if (!raw) return defaultInboxPanelLayout();
+    const fallback = defaultInboxPanelLayout(defaults);
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<InboxPanelLayout & InboxPanelWidths>;
-    const list = clampListWidth(typeof parsed.list === "number" ? parsed.list : DEFAULT_LIST_PANEL_WIDTH);
-    const intel = clampIntelWidth(typeof parsed.intel === "number" ? parsed.intel : DEFAULT_INTEL_PANEL_WIDTH);
+    const list = clampListWidth(typeof parsed.list === "number" ? parsed.list : fallback.list);
+    const intel = clampIntelWidth(typeof parsed.intel === "number" ? parsed.intel : fallback.intel);
     return {
       list,
       intel,
@@ -70,14 +82,17 @@ export function readInboxPanelLayout(): InboxPanelLayout {
       ),
     };
   } catch {
-    return defaultInboxPanelLayout();
+    return defaultInboxPanelLayout(defaults);
   }
 }
 
-export function persistInboxPanelLayout(layout: InboxPanelLayout) {
+export function persistInboxPanelLayout(
+  layout: InboxPanelLayout,
+  storageKey = INBOX_PANEL_WIDTHS_KEY
+) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(INBOX_PANEL_WIDTHS_KEY, JSON.stringify(layout));
+    localStorage.setItem(storageKey, JSON.stringify(layout));
   } catch {
     /* ignore */
   }

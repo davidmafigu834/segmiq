@@ -113,7 +113,7 @@ export function ConversationList({
     panelWidth != null
       ? "shrink-0"
       : companyMode
-        ? "w-full min-w-0"
+        ? "w-full min-w-0 min-[1100px]:w-[clamp(300px,24vw,320px)] min-[1100px]:shrink-0"
         : whatsappMode
           ? "w-[360px]"
           : "w-[360px]";
@@ -158,7 +158,7 @@ export function ConversationList({
                   {companyMode ? "Conversations" : "Sales conversations"}
                 </div>
                 <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#667085]">
-                  {filtered.length}
+                  {companyMode ? conversations.length : filtered.length}
                 </span>
               </div>
               {roleSubtitle && !companyMode ? (
@@ -230,7 +230,7 @@ export function ConversationList({
               })}
             </div>
           ) : null}
-          {!chromeInParent && filterCounts && onFilterChange ? (
+          {!companyMode && !chromeInParent && filterCounts && onFilterChange ? (
             <div className="overflow-x-auto border-t border-[#E4E7EC] px-4 py-2.5 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <FilterTabs
                 filter={filter}
@@ -373,12 +373,13 @@ export function ConversationList({
               onClaim={onClaim}
               claiming={claimingId === c.id}
               canClaim={canClaim}
+              companyMode={companyMode}
             />
           ))
         )}
       </div>
       {companyMode && filtered.length > 0 ? (
-        <div className="flex min-h-[48px] shrink-0 items-center justify-between gap-2 border-t border-[#E4E7EC] bg-white px-3">
+        <div className="flex min-h-[40px] shrink-0 items-center justify-between gap-2 border-t border-[#E4E7EC] bg-white px-3">
           <span className="truncate text-[9.5px] text-[#667085]">
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
           </span>

@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   BriefcaseBusiness,
   CalendarDays,
+  ChevronRight,
   FileText,
   Mail,
   MapPin,
@@ -13,13 +14,12 @@ import {
   Phone,
   UserRound,
 } from "lucide-react";
-import { SiWhatsapp } from "react-icons/si";
 import type { CompanyConversationContext, InboxConversation } from "@/lib/inbox/types";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 
 function formatDateTime(value: string): { date: string; time: string } {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return { date: "—", time: "" };
+  if (Number.isNaN(date.getTime())) return { date: "Not available", time: "" };
   return {
     date: new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(date),
     time: new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(date),
@@ -41,7 +41,7 @@ function relativeDate(value: string): string {
 }
 
 function duration(seconds: number | null): string {
-  if (seconds == null) return "—";
+  if (seconds == null) return "Not available";
   if (seconds < 60) return `${Math.max(1, Math.round(seconds))}s`;
   const mins = Math.round(seconds / 60);
   if (mins < 60) return `${mins}m`;
@@ -80,11 +80,15 @@ export function CompanyConversationInsightRail({
   open,
   refreshKey = 0,
   onMobileBack,
+  onCollapse,
+  panelWidth,
 }: {
   conversation: InboxConversation | null;
   open: boolean;
   refreshKey?: number;
   onMobileBack?: () => void;
+  onCollapse?: () => void;
+  panelWidth?: number;
 }) {
   const [context, setContext] = useState<CompanyConversationContext | null>(null);
   const [loading, setLoading] = useState(false);
@@ -120,19 +124,11 @@ export function CompanyConversationInsightRail({
     refreshKey,
   ]);
 
-  const mobileClass = open
-    ? "max-[1099px]:fixed max-[1099px]:inset-0 max-[1099px]:z-50 max-[1099px]:flex max-[1099px]:w-full"
-    : "max-[1099px]:hidden";
+  const responsiveClass = open
+    ? "max-[1099px]:fixed max-[1099px]:inset-0 max-[1099px]:z-50 max-[1099px]:flex max-[1099px]:w-full max-[1279px]:flex"
+    : "max-[1279px]:hidden";
 
-  if (!conversation) {
-    return (
-      <aside className={`wa-panel flex h-full min-h-0 min-w-0 flex-col bg-sales-surface ${mobileClass}`}>
-        <div className="flex flex-1 items-center justify-center p-6 text-[13px] text-sales-text-muted">
-          Select a conversation to view customer context.
-        </div>
-      </aside>
-    );
-  }
+  if (!conversation) return null;
 
   const name = context?.contact.name ?? displayContactName(conversation);
   const phone = context?.contact.phone ?? conversation.phone;
@@ -145,48 +141,58 @@ export function CompanyConversationInsightRail({
         : "WAITING_ON_CUSTOMER");
 
   return (
-    <aside className={`wa-panel flex h-full min-h-0 min-w-0 flex-col bg-sales-surface ${mobileClass}`}>
-      <div className="flex min-h-12 shrink-0 items-center gap-2 border-b border-sales-border px-3.5 py-3 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <aside
+      style={panelWidth != null ? { width: panelWidth } : undefined}
+      className={`company-wa-context-pane inbox-panel-animated wa-panel flex h-full min-h-0 min-w-0 shrink-0 flex-col bg-sales-surface ${responsiveClass}`}
+    >
+      <div className="flex min-h-12 shrink-0 items-center gap-2 border-b border-sales-border px-3.5 py-2 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))]">
         {onMobileBack ? (
           <button type="button" onClick={onMobileBack} className="wa-icon-btn-muted" aria-label="Back to conversation">
             <ArrowLeft size={19} strokeWidth={1.8} />
           </button>
         ) : null}
         <h2 className="min-w-0 flex-1 text-[13px] font-semibold text-sales-text-primary">Customer Overview</h2>
+        {onCollapse ? (
+          <button
+            type="button"
+            onClick={onCollapse}
+            className="wa-icon-btn-muted max-[1099px]:hidden"
+            aria-label="Collapse customer context"
+            title="Collapse customer context"
+          >
+            <ChevronRight size={17} strokeWidth={1.8} />
+          </button>
+        ) : null}
       </div>
 
       <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto">
-        <RailSection title="Customer Overview">
-          <div className="rounded-[11px] border border-sales-border bg-sales-surface-subtle p-3">
-            <div className="flex items-start gap-3">
-              <WhatsAppAvatar name={name} phone={phone} size="md" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                  <span className="rounded-[5px] bg-[rgba(37,211,102,0.1)] px-1.5 py-0.5 text-[9px] font-semibold text-[#168A42]">
-                    Lead
-                  </span>
-                  <span className="text-[10px] text-sales-text-muted">
-                    {context?.contact.lifecycle
-                      ? context.contact.lifecycle.replace(/_/g, " ")
-                      : conversation.stageLabel}
-                  </span>
-                </div>
-                <div className="mt-2 space-y-1.5 text-[10.5px] text-sales-text-secondary">
-                  {phone ? (
-                    <div className="flex items-center gap-2"><Phone size={12} /><span className="truncate tabular-nums">{phone}</span></div>
-                  ) : null}
-                  {context?.contact.email ? (
-                    <div className="flex items-center gap-2"><Mail size={12} /><span className="truncate">{context.contact.email}</span></div>
-                  ) : null}
-                  {(context?.contact.location ?? conversation.location) ? (
-                    <div className="flex items-center gap-2"><MapPin size={12} /><span className="truncate">{context?.contact.location ?? conversation.location}</span></div>
-                  ) : null}
-                </div>
+        <section className="border-b border-sales-border-subtle px-4 py-3.5">
+          <div className="flex items-start gap-3">
+            <WhatsAppAvatar name={name} phone={phone} size="md" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</div>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-[5px] bg-[rgba(37,211,102,0.1)] px-1.5 py-0.5 text-[9px] font-semibold text-[#168A42]">Lead</span>
+                <span className="text-[10px] text-sales-text-muted">
+                  {context?.contact.lifecycle
+                    ? context.contact.lifecycle.replace(/_/g, " ")
+                    : conversation.stageLabel}
+                </span>
+              </div>
+              <div className="mt-2 space-y-1.5 text-[10.5px] text-sales-text-secondary">
+                {phone ? (
+                  <div className="flex items-center gap-2"><Phone size={12} /><span className="truncate tabular-nums">{phone}</span></div>
+                ) : null}
+                {context?.contact.email ? (
+                  <div className="flex items-center gap-2"><Mail size={12} /><span className="truncate">{context.contact.email}</span></div>
+                ) : null}
+                {(context?.contact.location ?? conversation.location) ? (
+                  <div className="flex items-center gap-2"><MapPin size={12} /><span className="truncate">{context?.contact.location ?? conversation.location}</span></div>
+                ) : null}
               </div>
             </div>
           </div>
-        </RailSection>
+        </section>
 
         <RailSection title="Conversation Insights">
           <div className="grid grid-cols-2 gap-2">
@@ -196,7 +202,7 @@ export function CompanyConversationInsightRail({
               { label: "Response Time", value: duration(context?.insights.firstResponseSeconds ?? conversation.firstResponseSeconds), helper: "First response" },
               { label: "Status", value: statusLabel(status), helper: status === "WAITING_ON_TEAM" ? "Response required" : "Conversation workflow" },
             ].map((metric) => (
-              <div key={metric.label} className="min-w-0 rounded-[9px] border border-sales-border bg-sales-surface-subtle p-2.5">
+              <div key={metric.label} className="min-w-0 rounded-[8px] bg-sales-surface-subtle p-2.5">
                 <div className="text-[9px] font-medium text-sales-text-muted">{metric.label}</div>
                 <div className={`mt-1 truncate text-[12px] font-semibold ${status === "WAITING_ON_TEAM" && metric.label === "Status" ? "text-[#D97706]" : "text-sales-text-primary"}`}>
                   {metric.value}
@@ -268,16 +274,13 @@ export function CompanyConversationInsightRail({
             <a href={phone ? `tel:${phone}` : undefined} aria-disabled={!phone} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover aria-disabled:pointer-events-none aria-disabled:opacity-45">
               <Phone size={13} /> Call
             </a>
-            <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("segmiq:focus-whatsapp-composer"))} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
-              <SiWhatsapp size={13} className="text-[#25D366]" /> WhatsApp
-            </button>
+            <Link href={`/client/calendar?lead=${conversation.id}`} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
+              <CalendarDays size={13} /> Schedule
+            </Link>
             <Link href={`/client/leads?lead=${conversation.id}`} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
               <MoreHorizontal size={13} /> More
             </Link>
           </div>
-          <Link href={`/client/leads?lead=${conversation.id}`} className="mt-2 flex items-center gap-2 text-[9.5px] font-medium text-sales-link hover:underline">
-            <CalendarDays size={12} /> Schedule follow-up or update Lead
-          </Link>
         </RailSection>
       </div>
     </aside>

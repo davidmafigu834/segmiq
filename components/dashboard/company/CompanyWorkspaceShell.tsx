@@ -18,6 +18,7 @@ export function CompanyWorkspaceShell({
   whatsappBadge = 0,
   immersive = false,
   hideMobileChrome = false,
+  preferCollapsedSidebar = false,
 }: {
   children: ReactNode;
   companyName?: string;
@@ -31,9 +32,13 @@ export function CompanyWorkspaceShell({
   immersive?: boolean;
   /** Used by single-pane mobile workspaces while a detail pane is open. */
   hideMobileChrome?: boolean;
+  /** Workspace routes may prefer the compact sidebar only when no user preference exists yet. */
+  preferCollapsedSidebar?: boolean;
 }) {
   const [mounted, setMounted] = useState(false);
-  const { collapsed, toggleCollapsed, width } = useCompanySidebarCollapsed();
+  const { collapsed, toggleCollapsed, width } = useCompanySidebarCollapsed({
+    preferCollapsedOnFirstVisit: preferCollapsedSidebar,
+  });
 
   useEffect(() => {
     setMounted(true);

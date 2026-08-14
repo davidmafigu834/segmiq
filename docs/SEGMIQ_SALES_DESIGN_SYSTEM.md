@@ -766,14 +766,14 @@ The Company Calendar is a team sales execution workspace: six KPI cards using th
 
 ## Company WhatsApp Sales Hub patterns
 
-The Company WhatsApp Sales Hub uses the Company workspace shell and a fixed desktop hierarchy: page header, six compact KPIs, then a 26/46/28 three-column inbox. No analytics modules appear below the workspace.
+The Company WhatsApp Sales Hub uses the Company workspace shell with a compact page header followed immediately by one full-height integrated inbox. It has no KPI row and no analytics modules below the workspace. At 1280px and above the list and context widths are resizable (approximately 300â€“350px and 310â€“380px); the chat owns all remaining space. At 1100â€“1279px the context becomes an overlay drawer, and below 1100px the existing single-pane flow applies.
 
 - `ConversationRow`: dense avatar/name/preview/time layout with real relationship state, unread badge, neutral hover, and a soft lime selected wash with a 3px indicator.
 - `ChatHeader`: contact identity on the left; owner identity and authorized owner control on the right.
-- `ConversationToolbar`: compact Assign/Reassign, Add Note, Create/View Deal and View Lead actions immediately below the header. Mobile keeps only the essential actions visible.
+- `ConversationToolbar`: compact Add Note, Create/View Deal and View Lead actions immediately below the header. Assignment is consolidated into the owner control in the header.
 - `MessageBubble`: incoming messages use a bordered neutral surface; outgoing messages use a low-opacity lime tint. Width remains content-aware and capped by the chat layout.
-- `Composer`: independently anchored to the center panel with quick replies/assets, message input, a compact lime send control and an amber service-window notice when required.
-- `ConversationInsightRail`: Customer Overview, Conversation Insights, Related Records, Team Activity and Quick Actions in this exact order.
+- `Composer`: independently anchored to the center panel with icon-triggered quick replies/assets, message input, a compact lime send control and an amber service-window notice when required. Company mode has no permanent action strip.
+- `ConversationInsightRail`: one continuous scroll pane with Customer Overview, Conversation Insights, Related Records, Team Activity and Call/Schedule/More Quick Actions in this exact order. It may collapse from the chat header.
 - `ConversationInsightMetric`: a compact 2×2 grid for first contact, message count, first response and deterministic conversation status.
 - `TeamActivityFeed`: three recent meaningful sales events with actor, action and time; never presence, page-view or typing surveillance.
 - Mobile inbox: single-pane list → chat → intelligence navigation. Global bottom navigation hides in chat/intelligence so it cannot cover the composer.

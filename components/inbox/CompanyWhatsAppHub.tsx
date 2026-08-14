@@ -46,6 +46,7 @@ export function CompanyWhatsAppHub({
         notificationRole={notificationRole}
         whatsappBadge={whatsappBadge}
         immersive
+        preferCollapsedSidebar
         hideMobileChrome={mobilePane !== "list"}
       >
         <TeamInbox

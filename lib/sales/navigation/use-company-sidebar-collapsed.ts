@@ -7,16 +7,26 @@ import {
   COMPANY_SIDEBAR_WIDTH_EXPANDED,
 } from "@/lib/sales/navigation/company-nav-config";
 
-export function useCompanySidebarCollapsed() {
+export function useCompanySidebarCollapsed({
+  preferCollapsedOnFirstVisit = false,
+}: {
+  preferCollapsedOnFirstVisit?: boolean;
+} = {}) {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     try {
-      setCollapsed(localStorage.getItem(COMPANY_SIDEBAR_COLLAPSED_KEY) === "1");
+      const stored = localStorage.getItem(COMPANY_SIDEBAR_COLLAPSED_KEY);
+      if (stored == null && preferCollapsedOnFirstVisit) {
+        localStorage.setItem(COMPANY_SIDEBAR_COLLAPSED_KEY, "1");
+        setCollapsed(true);
+        return;
+      }
+      setCollapsed(stored === "1");
     } catch {
-      setCollapsed(false);
+      setCollapsed(preferCollapsedOnFirstVisit);
     }
-  }, []);
+  }, [preferCollapsedOnFirstVisit]);
 
   const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => {

@@ -10,6 +10,7 @@ type Props = {
   /** Which side panel this handle controls. */
   panel: "list" | "intel";
   label?: string;
+  desktopClassName?: string;
 };
 
 export function InboxPanelResizeHandle({
@@ -18,6 +19,7 @@ export function InboxPanelResizeHandle({
   collapsed = false,
   panel,
   label = "Resize panel",
+  desktopClassName = "min-[1100px]:flex",
 }: Props) {
   const draggingRef = useRef(false);
 
@@ -86,7 +88,7 @@ export function InboxPanelResizeHandle({
           onToggleCollapse?.();
         }
       }}
-      className={`inbox-panel-resize-handle hidden min-[1100px]:flex ${
+      className={`inbox-panel-resize-handle hidden ${desktopClassName} ${
         collapsed ? "inbox-panel-resize-handle--collapsed" : ""
       } ${panel === "list" ? "inbox-panel-resize-handle--list" : "inbox-panel-resize-handle--intel"}`}
     >

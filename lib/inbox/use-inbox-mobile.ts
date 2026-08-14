@@ -22,6 +22,20 @@ function useMediaMaxWidth(maxWidthPx: number): boolean {
   return matches;
 }
 
+function useMediaMinWidth(minWidthPx: number): boolean {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(min-width: ${minWidthPx}px)`);
+    const update = () => setMatches(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [minWidthPx]);
+
+  return matches;
+}
+
 export function useInboxMobile(): boolean {
   return useMediaMaxWidth(INBOX_MOBILE_BP);
 }
@@ -29,4 +43,9 @@ export function useInboxMobile(): boolean {
 /** True at tablet widths and below — drives list → chat → intel pane flow in WhatsApp hub */
 export function useInboxCompact(): boolean {
   return useMediaMaxWidth(INBOX_COMPACT_BP);
+}
+
+/** Wide enough for the integrated three-pane Company workspace. */
+export function useInboxWideWorkspace(): boolean {
+  return useMediaMinWidth(1280);
 }

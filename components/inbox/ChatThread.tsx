@@ -17,7 +17,6 @@ import {
   StickyNote,
   Trophy,
   UserRound,
-  UserRoundPlus,
   Zap,
   XCircle,
 } from "lucide-react";
@@ -58,6 +57,7 @@ type Props = {
   canCreateDeal?: boolean;
   leadHref?: string;
   dealHref?: string;
+  contextOpen?: boolean;
 };
 
 export function ChatThread({
@@ -80,6 +80,7 @@ export function ChatThread({
   canCreateDeal = false,
   leadHref,
   dealHref,
+  contextOpen = false,
 }: Props) {
   const [messages, setMessages] = useState<InboxChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -428,10 +429,10 @@ export function ChatThread({
             <SiWhatsapp size={24} aria-hidden />
           </div>
           <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-[#101828]">
-            Select a sales conversation
+            Select a conversation
           </div>
           <p className="text-[13px] leading-relaxed text-[#667085]">
-            Choose a WhatsApp lead from the left to view the conversation, qualification details and next actions.
+            Choose a WhatsApp conversation to view the customer&apos;s messages and sales context.
           </p>
         </div>
       </div>
@@ -547,9 +548,9 @@ export function ChatThread({
             <button
               type="button"
               onClick={onToggleIntel}
-              aria-label="Open lead intelligence"
-              title="Lead intelligence"
-              className={isWhatsApp ? "wa-icon-btn !h-9 !w-9" : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"}
+              aria-label={contextOpen ? "Hide customer context" : "Show customer context"}
+              title={contextOpen ? "Hide customer context" : "Show customer context"}
+              className={isWhatsApp ? `wa-icon-btn !h-9 !w-9 ${contextOpen ? "!border-sales-brand-border !bg-sales-brand-soft" : ""}` : "flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--bg-quaternary)]"}
             >
               <PanelRight size={16} strokeWidth={1.8} />
             </button>
@@ -645,29 +646,23 @@ export function ChatThread({
       </div>
 
       {companyMode ? (
-        <div className="flex min-h-[48px] shrink-0 items-center gap-2 overflow-x-auto border-b border-sales-border bg-sales-surface px-3 py-2 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {canReassign ? (
-            <button type="button" onClick={() => setTransferOpen(true)} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px]">
-              <UserRoundPlus size={13} strokeWidth={1.8} />
-              {conversation.assignedToId ? "Reassign" : "Assign"}
-            </button>
-          ) : null}
+        <div className="flex min-h-[44px] shrink-0 items-center gap-1.5 overflow-x-auto border-b border-sales-border bg-sales-surface px-3 py-1.5 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {canSend || canReassign ? (
-            <button type="button" onClick={() => void handleInternalNote()} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px] max-[520px]:hidden">
+            <button type="button" onClick={() => void handleInternalNote()} className="wa-btn-secondary shrink-0 !h-8 !w-auto !px-3 !text-[10px] max-[520px]:hidden">
               <StickyNote size={13} strokeWidth={1.8} /> Add Note
             </button>
           ) : null}
           {dealHref ? (
-            <Link href={dealHref} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px]">
+            <Link href={dealHref} className="wa-btn-secondary shrink-0 !h-8 !w-auto !px-3 !text-[10px]">
               <BriefcaseBusiness size={13} strokeWidth={1.8} /> View Deal
             </Link>
           ) : canCreateDeal ? (
-            <button type="button" onClick={() => void openCreateDeal()} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px] text-[#4D7C0F]">
+            <button type="button" onClick={() => void openCreateDeal()} className="wa-btn-secondary shrink-0 !h-8 !w-auto !px-3 !text-[10px] text-[#4D7C0F]">
               <BriefcaseBusiness size={13} strokeWidth={1.8} /> Create Deal
             </button>
           ) : null}
           {leadHref ? (
-            <Link href={leadHref} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px] max-[480px]:hidden">
+            <Link href={leadHref} className="wa-btn-secondary shrink-0 !h-8 !w-auto !px-3 !text-[10px] max-[480px]:hidden">
               <UserRound size={13} strokeWidth={1.8} /> View Lead
             </Link>
           ) : null}
@@ -736,7 +731,7 @@ export function ChatThread({
               {sendError}
             </div>
           ) : null}
-          {isWhatsApp ? (
+          {isWhatsApp && !companyMode ? (
             <div className="wa-action-strip relative">
               <button
                 type="button"
@@ -843,7 +838,9 @@ export function ChatThread({
             </div>
           ) : null}
           <div
-            className={`flex items-center gap-2 px-2 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] sm:px-3 ${
+            className={`flex items-center gap-2 px-2 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:px-3 ${
+              companyMode ? "py-1.5" : "py-2.5"
+            } ${
               isWhatsApp ? "" : "border-t border-[var(--border)]"
             }`}
           >
@@ -862,6 +859,29 @@ export function ChatThread({
               >
                 <FileText size={18} />
               </button>
+            ) : null}
+            {isWhatsApp && companyMode ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setQuickActionsOpen((open) => !open)}
+                  aria-expanded={quickActionsOpen}
+                  aria-label="Quick replies"
+                  title="Quick replies"
+                  className={`wa-icon-btn-muted shrink-0 ${quickActionsOpen ? "!border-sales-brand-border !bg-sales-brand-soft" : ""}`}
+                >
+                  <Zap size={16} strokeWidth={1.8} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickActionsOpen(true)}
+                  aria-label="Send asset"
+                  title="Send asset"
+                  className="wa-icon-btn-muted shrink-0"
+                >
+                  <Paperclip size={16} strokeWidth={1.8} />
+                </button>
+              </>
             ) : null}
             <input
               ref={composerRef}
