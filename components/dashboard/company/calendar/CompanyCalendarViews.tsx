@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
-  addDays,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
@@ -80,7 +79,6 @@ export function CalendarEventCard({
   style?: CSSProperties;
 }) {
   const meta = COMPANY_CALENDAR_KIND_META[event.kind];
-  const initials = ownerInitials(event.ownerName);
   return (
     <button
       type="button"
