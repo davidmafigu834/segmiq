@@ -131,8 +131,8 @@ export function companyCalendarRangeKeys(
     };
   }
   if (view === "week") {
-    const start = startOfWeek(anchor, { weekStartsOn: 1 });
-    const end = addDays(endOfWeek(anchor, { weekStartsOn: 1 }), 1);
+    const start = startOfWeek(anchor, { weekStartsOn: 0 });
+    const end = addDays(endOfWeek(anchor, { weekStartsOn: 0 }), 1);
     const sameMonth = start.getMonth() === addDays(end, -1).getMonth();
     return {
       startKey: format(start, "yyyy-MM-dd"),
@@ -168,7 +168,67 @@ export function matchesCompanyCalendarFilters(
   if (filters.ownerId !== "all" && event.ownerId !== filters.ownerId) return false;
   if (!filters.kinds.includes(event.kind)) return false;
   if (!filters.includeCompleted && event.status === "completed") return false;
+  if (filters.status === "at_risk" && !event.attentionReason) return false;
+  if (
+    filters.status !== "all" &&
+    filters.status !== "at_risk" &&
+    event.status !== filters.status
+  ) {
+    return false;
+  }
+  if (filters.relationType !== "all" && event.relationType !== filters.relationType) {
+    return false;
+  }
   return true;
+}
+
+export const COMPANY_CALENDAR_UNASSIGNED_OWNER = "unassigned";
+
+export function companyCalendarOwnerKey(ownerId: string | null): string {
+  return ownerId ?? COMPANY_CALENDAR_UNASSIGNED_OWNER;
+}
+
+export function groupCompanyCalendarEventsByOwnerDay(
+  events: CompanyCalendarEvent[],
+  timezone: string
+): Record<string, Record<string, CompanyCalendarEvent[]>> {
+  const grouped: Record<string, Record<string, CompanyCalendarEvent[]>> = {};
+  for (const event of events) {
+    const ownerKey = companyCalendarOwnerKey(event.ownerId);
+    const dayKey = calendarDateKey(event.startAt, timezone);
+    grouped[ownerKey] ??= {};
+    grouped[ownerKey]![dayKey] ??= [];
+    grouped[ownerKey]![dayKey]!.push(event);
+  }
+  for (const byDay of Object.values(grouped)) {
+    for (const dayEvents of Object.values(byDay)) {
+      dayEvents.sort((a, b) => a.startAt.localeCompare(b.startAt));
+    }
+  }
+  return grouped;
+}
+
+export function companyCalendarTeamAttention(events: CompanyCalendarEvent[]): {
+  tone: "clear" | "attention" | "overdue";
+  label: string;
+} {
+  const overdue = events.filter((event) => event.status === "overdue").length;
+  const atRisk = events.filter(
+    (event) => event.attentionReason && event.status !== "completed" && event.status !== "cancelled"
+  ).length;
+  if (overdue) {
+    return {
+      tone: "overdue",
+      label: `${overdue} overdue ${overdue === 1 ? "activity" : "activities"}`,
+    };
+  }
+  if (atRisk) {
+    return {
+      tone: "attention",
+      label: `${atRisk} ${atRisk === 1 ? "activity needs" : "activities need"} attention`,
+    };
+  }
+  return { tone: "clear", label: "No urgent issues in this period" };
 }
 
 export function canMutateCompanyCalendarLead({

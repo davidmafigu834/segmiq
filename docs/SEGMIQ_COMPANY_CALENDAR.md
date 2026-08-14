@@ -1,57 +1,70 @@
-# SegMiQ 2.0 — Company Calendar
+# SegMiQ 2.0 — Company Team Sales Calendar
 
 Route: `/client/calendar`
 
-## Purpose and scope
+## Purpose and source of truth
 
-The Company Calendar is the manager planning view for permitted company sales activity. It uses the approved Company workspace shell and shows activity for the selected company, not only activity owned by the signed-in manager. Every query is scoped by `client_id`; real-estate viewings are scoped through their canonical contact.
+The Company Calendar is a manager execution workspace for permitted company sales activity. It shows team ownership across the selected company, including team members with no activity and an Unassigned row when canonical records have no owner. Every read and write is scoped by `client_id`; real-estate viewings are scoped through their canonical contact.
 
-The Calendar is a read model over existing business sources rather than a separate event table:
+The Calendar remains a read model over real product records:
 
-- Lead follow-ups from `leads.follow_up_date`.
-- Timed callbacks from the latest scheduled `call_logs.callback_at` for those Leads.
-- Deal next actions from `deals.next_action_at` and `next_action_label`.
-- Real-estate site visits from canonical `viewings.scheduled_at`.
+- Lead follow-ups: `leads.follow_up_date`.
+- Timed callbacks: latest scheduled `call_logs.callback_at` for the Lead.
+- Deal next actions: `deals.next_action_at` and `next_action_label`.
+- Site visits: canonical `viewings.scheduled_at`.
+- Completed follow-ups: canonical Lead audit events with the completion marker.
 
-This preserves one source of truth. Completing or rescheduling an editable Lead follow-up uses the canonical Lead API. Deal next actions and viewings remain read-only from Calendar until their existing mutation flows expose equivalent scoped APIs.
+There is no duplicate Calendar event table. Creating, reassigning, rescheduling, and completing editable activity updates the canonical Lead and writes the existing audit events.
 
-## Views and navigation
+## Information hierarchy
 
-Day, Week, Month, and Agenda views share one Calendar card and one selected-date state. Day arrows move one day, Week arrows move one week, and Month/Agenda arrows move one month. Today uses the configured sales timezone. View and weekend preferences are stored locally, while `date`, `view`, and selected `event` are represented in URL state.
+1. Company Calendar header and New Activity action.
+2. Six execution KPIs: Upcoming Activities, Overdue Follow-ups, Today’s Activities, Completed (Week), Team Response Time, and At Risk Activities.
+3. Calendar workspace with period controls, Team filter, Day/Week/Month/Agenda switcher, structured filters, and semantic legend.
+4. Right agenda rail: mini month, selected-date team agenda, Upcoming, or selected Event Detail.
 
-The Week view uses Monday as the established SegMiQ week start. Untimed Lead follow-ups appear in the all-day row. Timed callbacks, Deal actions, and viewings appear in the hourly grid. Overlapping activities use deterministic side-by-side layout. The current-time indicator appears only when today is visible and the time falls within the 08:00–18:00 fallback working window.
+Selecting a salesperson scopes both KPI cards and Calendar content. Owner scope is represented by the `owner` URL parameter; date, view, and selected event are also URL state.
+
+## Metric definitions
+
+- **Upcoming Activities:** scheduled unresolved Lead follow-ups, Deal actions, or visits from the current company-local date through the next seven days.
+- **Overdue Follow-ups:** canonical Lead follow-up due dates that have passed and remain unresolved.
+- **Today’s Activities:** scheduled or completed activity on the current company-local date; cancelled records are excluded.
+- **Completed (Week):** canonical follow-up completions and explicitly completed visits recorded in the current Sunday–Saturday company-local week.
+- **Team Response Time:** average Lead captured → first qualifying response for Leads captured in the last 30 days. Qualifying responses reuse the Dashboard definition: first logged call, outbound WhatsApp message, or matching call/message audit event. Previous 30 days provide the comparison.
+- **At Risk Activities:** unresolved overdue follow-ups, passed unresolved visits, or scheduled actions attached to deterministically at-risk Deals.
+
+Counts are server-calculated from canonical sources. Empty results display zero or “No response data”; the UI never fabricates trends.
+
+## Views and interaction
+
+Week is the default desktop view and uses a Sunday–Saturday team-by-day matrix. The first column is sticky and contains avatar, name, role, and an execution-status dot. Day columns contain at most two compact event cards plus a `+ N more` action. Empty team cells expose a focused add affordance for authorized users. The matrix scrolls internally when the team is large.
+
+Day groups the selected date by salesperson. Month gives a manager overview with activity-type totals, attention state, and participating owner avatars. Agenda is a chronological operational list. Mobile is agenda-first with a horizontal date strip and team grouping; tablet moves the right rail into a drawer.
+
+Selecting an event keeps the Calendar visible and turns the right rail into Event Detail. Card hierarchy is time, semantic icon, concise activity title, and related Lead/Deal/Customer. Tooltips provide the full range, owner, entity, and attention reason.
 
 ## Event semantics
 
-Event color represents activity type, never salesperson:
+Color represents activity type, never salesperson:
 
 - WhatsApp follow-up: green.
 - Call: orange.
-- Lead follow-up: blue.
-- Quote review: amber.
-- Deal next action: teal.
+- Lead follow-up/meeting: blue.
+- Quote review/task: amber.
+- Deal/internal action: teal.
 - Site visit: violet.
 
-Cards prioritize time, title, and related Lead/Deal/Customer. Selecting a card keeps the Calendar visible and switches the right rail into Event Detail mode. The detail order is type/status, date/time/timezone, related entity, owner, location, description, contextual actions, and edit/reschedule where authorized.
-
-## Right agenda rail
-
-The default right rail is one bordered container with three internal sections:
-
-1. Mini month calendar with Today, selected date, outside-month, and activity-dot states.
-2. Selected-date agenda using the same active filters as the grid.
-3. A limited Upcoming list that excludes completed and cancelled activity.
-
-On tablet the rail becomes a drawer. Mobile is agenda-first with a horizontal date strip and full-width activity rows; Event Detail uses the same rail content in a full-height sheet.
+Overdue state overrides the type tint with a restrained red surface and edge. At-risk state adds an amber edge. Completed items receive a green edge and reduced emphasis. Hover changes border/shadow only; cards never scale or glow.
 
 ## Filters, permissions, and actions
 
-Managers can filter by permitted company owner, real activity type, and completed state. New Activity reuses the canonical Lead follow-up sheet. `SUPER_ADMIN` can schedule any company Lead. A sales-capable manager can schedule only their own assigned Leads, matching existing `canModifyLead` authorization. Other managers receive a view-only Calendar.
+Filters cover owner, activity type, status (including At risk), and related record type. KPI cards act as real quick filters and navigate to the relevant view. The Team selector and filter owner field share the same state.
 
-Call, WhatsApp, and entity links use existing routes. Mark Complete clears the canonical Lead follow-up and logs the existing follow-up completion event. Destructive controls are not exposed because no Calendar-specific record exists to delete.
+Company managers and super admins can schedule and reassign activity only to eligible users in the same client. The dedicated Company Calendar activity endpoint validates both Lead scope and target owner before updating canonical fields. Event Detail exposes completion/reschedule only where the event source supports the action. Salesperson Calendar behavior is unchanged.
 
-## Performance, timezone, and themes
+## Performance, timezone, accessibility, and themes
 
-The server queries a bounded month-centered window with a future buffer, caps every source, batches owner/contact/quote/callback enrichment, and avoids per-event reads. Navigation updates URL state through Next.js without a browser reload and obtains a new bounded range.
+The server uses bounded, batched source queries with explicit limits, bulk callback/response enrichment, and no per-card requests. Historical unresolved follow-ups are retained for overdue KPI drill-down while views group only relevant dates.
 
-Display and date-key calculations use the configured agency sales timezone with the existing SegMiQ fallback. Light and dark modes use Sales semantic tokens; dark event cards use low-opacity semantic tints instead of unchanged light pastels.
+Date keys, Today, week boundaries, and metric periods use the configured company timezone. Cards and controls have keyboard focus states, semantic labels, readable tooltips, and native select controls. Light and dark themes use Sales semantic tokens with purpose-built dark event tints. Loading skeletons preserve the six-KPI and team-matrix geometry.

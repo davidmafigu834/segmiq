@@ -46,11 +46,18 @@ import { cn } from "@/lib/ui/cn";
 import {
   CompanyAgendaView,
   CompanyMonthView,
-  CompanyWeekView,
-  MobileCalendarAgenda,
 } from "./CompanyCalendarViews";
+import {
+  CompanyTeamDayView,
+  CompanyTeamWeekView,
+  MobileTeamCalendarAgenda,
+} from "./CompanyTeamCalendarViews";
 import { CompanyCalendarAgendaRail } from "./CompanyCalendarAgendaRail";
 import { CompanyCalendarEventIcon } from "./CompanyCalendarEventIcon";
+import {
+  CompanyCalendarSummary,
+  type CompanyCalendarSummaryAction,
+} from "./CompanyCalendarSummary";
 
 const VIEWS: Array<{ id: CompanyCalendarView; label: string }> = [
   { id: "day", label: "Day" },
@@ -136,7 +143,22 @@ function FiltersPopover({
             return <button key={kind} type="button" onClick={() => toggleKind(kind)} className={cn("flex min-h-9 items-center gap-2 rounded-[8px] border px-2 text-left text-[10px] font-medium", active ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : "border-sales-border text-sales-text-secondary")}><span className={cn("flex h-4 w-4 items-center justify-center rounded-[4px] border", active ? "border-sales-brand bg-sales-brand text-sales-brand-text" : "border-sales-border")}>{active ? <Check size={10} /> : null}</span>{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
           })}
         </div>
-        <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-sales-text-secondary"><input type="checkbox" checked={filters.includeCompleted} onChange={(event) => onChange({ ...filters, includeCompleted: event.target.checked })} className="h-4 w-4 accent-[var(--sales-brand)]" />Show completed activities</label>
+        <label className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted" htmlFor="company-calendar-status">Status</label>
+        <select id="company-calendar-status" value={filters.status} onChange={(event) => onChange({ ...filters, status: event.target.value as CompanyCalendarFilters["status"], includeCompleted: true })} className="mt-1.5 h-10 w-full rounded-[9px] border border-sales-border bg-sales-surface px-2.5 text-[12px] text-sales-text-primary outline-none focus:border-sales-brand">
+          <option value="all">All statuses</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="overdue">Overdue</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="at_risk">At risk / attention</option>
+        </select>
+        <label className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted" htmlFor="company-calendar-relation">Related record</label>
+        <select id="company-calendar-relation" value={filters.relationType} onChange={(event) => onChange({ ...filters, relationType: event.target.value as CompanyCalendarFilters["relationType"] })} className="mt-1.5 h-10 w-full rounded-[9px] border border-sales-border bg-sales-surface px-2.5 text-[12px] text-sales-text-primary outline-none focus:border-sales-brand">
+          <option value="all">Leads, Deals and Customers</option>
+          <option value="lead">Lead-related</option>
+          <option value="deal">Deal-related</option>
+          <option value="customer">Customer-related</option>
+        </select>
         <div className="mt-3 flex justify-end border-t border-sales-border-subtle pt-3"><button type="button" onClick={() => onChange(DEFAULT_COMPANY_CALENDAR_FILTERS)} className="text-[11px] font-semibold text-sales-text-secondary hover:text-sales-text-primary">Reset filters</button></div>
       </div>
     </>
@@ -148,6 +170,7 @@ export function CompanyCalendarPage({
   initialDateKey,
   initialView,
   initialEventId,
+  initialOwnerId,
   canCreateActivities,
   unreadNotifications,
   notificationRole,
@@ -160,6 +183,7 @@ export function CompanyCalendarPage({
   initialDateKey: string;
   initialView?: string;
   initialEventId: string | null;
+  initialOwnerId: string;
   canCreateActivities: boolean;
   unreadNotifications: number;
   notificationRole: UserRole;
@@ -178,11 +202,16 @@ export function CompanyCalendarPage({
   const [view, setView] = useState<CompanyCalendarView>(() => parseView(initialView) ?? "week");
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialEventId);
   const [miniMonth, setMiniMonth] = useState(() => startOfMonth(parseISO(`${initialDateKey}T12:00:00`)));
-  const [filters, setFilters] = useState(DEFAULT_COMPANY_CALENDAR_FILTERS);
+  const [filters, setFilters] = useState<CompanyCalendarFilters>(() => ({
+    ...DEFAULT_COMPANY_CALENDAR_FILTERS,
+    ownerId: data.owners.some((owner) => owner.id === initialOwnerId) ? initialOwnerId : "all",
+  }));
+  const [summaryAction, setSummaryAction] = useState<CompanyCalendarSummaryAction | null>(null);
   const [showWeekends, setShowWeekends] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [addDefaultOwnerId, setAddDefaultOwnerId] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -200,6 +229,12 @@ export function CompanyCalendarPage({
     setSelectedEventId(eventId);
   }, [searchParams]);
   useEffect(() => {
+    const ownerId = data.owners.some((owner) => owner.id === initialOwnerId)
+      ? initialOwnerId
+      : "all";
+    setFilters((current) => ({ ...current, ownerId }));
+  }, [data.owners, initialOwnerId]);
+  useEffect(() => {
     if (parseView(initialView)) return;
     const stored = parseView(window.localStorage.getItem("segmiq-company-calendar-view"));
     if (stored) setView(stored);
@@ -207,10 +242,23 @@ export function CompanyCalendarPage({
     if (weekends != null) setShowWeekends(weekends !== "false");
   }, [initialView]);
 
-  const filteredEvents = useMemo(
-    () => events.filter((event) => matchesCompanyCalendarFilters(event, filters)),
-    [events, filters]
-  );
+  const todayKey = calendarDateKey(new Date(), data.timezone);
+  const upcomingEndKey = format(addDays(parseISO(`${todayKey}T12:00:00`), 7), "yyyy-MM-dd");
+  const filteredEvents = useMemo(() => {
+    const base = events.filter((event) => matchesCompanyCalendarFilters(event, filters));
+    if (!summaryAction || summaryAction === "today") return base;
+    return base.filter((event) => {
+      const eventKey = calendarDateKey(event.startAt, data.timezone);
+      if (summaryAction === "upcoming") {
+        return event.status === "scheduled" && eventKey >= todayKey && eventKey < upcomingEndKey;
+      }
+      if (summaryAction === "overdue") {
+        return event.sourceType === "lead_follow_up" && event.status === "overdue";
+      }
+      if (summaryAction === "completed") return event.status === "completed";
+      return Boolean(event.attentionReason) && event.status !== "completed" && event.status !== "cancelled";
+    });
+  }, [data.timezone, events, filters, summaryAction, todayKey, upcomingEndKey]);
   useEffect(() => {
     if (
       selectedEventId &&
@@ -228,25 +276,51 @@ export function CompanyCalendarPage({
     [filteredEvents, selectedDateKey, data.timezone]
   );
   const upcomingEvents = useMemo(() => {
-    const todayKey = calendarDateKey(new Date(), data.timezone);
     const baseline = selectedDateKey > todayKey ? selectedDateKey : todayKey;
     return filteredEvents
       .filter((event) => event.status !== "completed" && event.status !== "cancelled")
       .filter((event) => calendarDateKey(event.startAt, data.timezone) > baseline)
       .sort((a, b) => a.startAt.localeCompare(b.startAt));
-  }, [filteredEvents, selectedDateKey, data.timezone]);
+  }, [filteredEvents, selectedDateKey, data.timezone, todayKey]);
   const range = companyCalendarRangeKeys(selectedDateKey, view);
+  const agendaEvents = summaryAction
+    ? filteredEvents
+    : filteredEvents.filter((event) => {
+        const eventKey = calendarDateKey(event.startAt, data.timezone);
+        return eventKey >= range.startKey && eventKey < range.endKey;
+      });
+  const visibleOwners = filters.ownerId === "all"
+    ? data.owners
+    : data.owners.filter((owner) => owner.id === filters.ownerId);
+  const metrics = filters.ownerId === "all"
+    ? data.summary.all
+    : data.summary.byOwner[filters.ownerId] ?? {
+        upcomingActivities: 0,
+        overdueFollowUps: 0,
+        todayActivities: 0,
+        completedWeek: 0,
+        atRiskActivities: 0,
+        responseTimeMinutes: null,
+        responseTimeMinutesPrevious: null,
+      };
+  const metricScopeLabel = filters.ownerId === "all"
+    ? "All team"
+    : data.owners.find((owner) => owner.id === filters.ownerId)?.name ?? "Selected owner";
   const activeFilterCount =
     (filters.ownerId !== "all" ? 1 : 0) +
     (filters.kinds.length !== COMPANY_CALENDAR_EVENT_KINDS.length ? 1 : 0) +
-    (!filters.includeCompleted ? 1 : 0);
+    (filters.status !== "all" ? 1 : 0) +
+    (filters.relationType !== "all" ? 1 : 0) +
+    (summaryAction ? 1 : 0);
 
-  function updateUrl(opts: { date?: string; view?: CompanyCalendarView; event?: string | null; push?: boolean }) {
+  function updateUrl(opts: { date?: string; view?: CompanyCalendarView; event?: string | null; owner?: string; push?: boolean }) {
     const params = new URLSearchParams(searchParams.toString());
     if (opts.date) params.set("date", opts.date);
     if (opts.view) params.set("view", opts.view);
     if (opts.event === null) params.delete("event");
     else if (opts.event) params.set("event", opts.event);
+    if (opts.owner === "all") params.delete("owner");
+    else if (opts.owner) params.set("owner", opts.owner);
     if (notificationRole === "SUPER_ADMIN") params.set("clientId", data.clientId);
     const href = `${pathname}?${params.toString()}`;
     startTransition(() => {
@@ -297,17 +371,52 @@ export function CompanyCalendarPage({
     selectDate(calendarDateKey(new Date(), data.timezone));
   }
 
-  function openAdd() {
+  function changeOwner(ownerId: string) {
+    setFilters((current) => ({ ...current, ownerId }));
+    updateUrl({ owner: ownerId });
+  }
+
+  function handleSummaryAction(action: CompanyCalendarSummaryAction) {
+    const next = summaryAction === action ? null : action;
+    setSummaryAction(next);
+    setFilters((current) => ({
+      ...current,
+      kinds: [...COMPANY_CALENDAR_EVENT_KINDS],
+      status: "all",
+      relationType: "all",
+      includeCompleted: true,
+    }));
+    if (next === "today") {
+      goToday();
+      changeView("day");
+    }
+    if (next === "upcoming" || next === "overdue" || next === "at_risk") changeView("agenda");
+    if (next === "completed") {
+      goToday();
+      changeView("week");
+    }
+  }
+
+  function openAdd(ownerId: string | null = null, dateKey?: string) {
     if (!canCreateActivities) {
       toast({ title: "This Calendar is view-only for your account.", tone: "info" });
       return;
     }
+    if (dateKey) selectDate(dateKey);
+    setAddDefaultOwnerId(ownerId);
     setAddOpen(true);
   }
 
-  function fromLegacy(event: CalendarEvent, previous?: CompanyCalendarEvent): CompanyCalendarEvent {
+  function fromLegacy(
+    event: CalendarEvent,
+    previous?: CompanyCalendarEvent,
+    ownerIdOverride?: string | null
+  ): CompanyCalendarEvent {
     const lead = data.scheduleableLeads.find((item) => item.id === event.leadId);
-    const owner = data.leadOwners[event.leadId];
+    const savedOwner = data.leadOwners[event.leadId];
+    const owner = ownerIdOverride !== undefined
+      ? data.owners.find((item) => item.id === ownerIdOverride) ?? null
+      : savedOwner;
     return {
       id: event.id,
       sourceType: "lead_follow_up",
@@ -322,6 +431,7 @@ export function CompanyCalendarPage({
       ownerId: owner?.id ?? previous?.ownerId ?? null,
       ownerName: owner?.name ?? previous?.ownerName ?? null,
       ownerAvatarUrl: owner?.avatarUrl ?? previous?.ownerAvatarUrl ?? null,
+      ownerRoleLabel: owner?.roleLabel ?? previous?.ownerRoleLabel ?? null,
       relationType: "lead",
       relatedId: event.leadId,
       relatedLabel: event.customerName || lead?.name || "Lead",
@@ -333,23 +443,47 @@ export function CompanyCalendarPage({
       phone: event.phone,
       location: event.location,
       description: event.notes || event.projectType,
+      attentionReason: null,
       canEdit: true,
       canComplete: true,
     };
+  }
+
+  async function updateCompanyActivity(input: {
+    leadId: string;
+    followUpDate: string | null;
+    ownerId?: string | null;
+  }) {
+    const response = await fetch("/api/client/calendar/activities", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        leadId: input.leadId,
+        followUpDate: input.followUpDate,
+        ...(input.ownerId ? { ownerId: input.ownerId } : {}),
+      }),
+    });
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) throw new Error(body.error || "Could not update activity");
   }
 
   async function completeEvent() {
     if (!selectedEvent?.canComplete || !selectedEvent.leadId) return;
     setBusy(true);
     try {
-      const response = await fetch(`/api/leads/${selectedEvent.leadId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ follow_up_date: null }),
+      await updateCompanyActivity({
+        leadId: selectedEvent.leadId,
+        followUpDate: null,
       });
-      const body = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) throw new Error(body.error || "Could not complete activity");
-      setEvents((current) => current.filter((event) => event.id !== selectedEvent.id));
+      setEvents((current) => current.map((event) => event.id === selectedEvent.id ? {
+        ...event,
+        status: "completed" as const,
+        startAt: new Date().toISOString(),
+        allDay: false,
+        attentionReason: null,
+        canEdit: false,
+        canComplete: false,
+      } : event).sort((a, b) => a.startAt.localeCompare(b.startAt)));
       closeEvent();
       toast({ title: "Activity completed", tone: "success" });
       router.refresh();
@@ -376,7 +510,7 @@ export function CompanyCalendarPage({
       onSelectEvent={selectEvent}
       onBack={closeEvent}
       onViewAll={() => changeView("agenda")}
-      onAdd={openAdd}
+      onAdd={() => openAdd()}
       onEdit={() => setEditOpen(true)}
       onComplete={() => void completeEvent()}
     />
@@ -384,7 +518,9 @@ export function CompanyCalendarPage({
 
   return (
     <CompanyWorkspaceShell companyName={data.clientName} companyLogoUrl={companyLogoUrl} userName={userName} avatarUrl={avatarUrl} unreadNotifications={unreadNotifications} notificationRole={notificationRole} whatsappBadge={whatsappBadge}>
-      <CompanyDashboardHeader unreadNotifications={unreadNotifications} notificationRole={notificationRole} userName={userName} avatarUrl={avatarUrl} canAddLead={false} breadcrumb="Company / Calendar" title="Calendar" description="Plan your day, manage activities and never miss an opportunity." primaryAction={<Button variant="primary" size="md" disabled={!canCreateActivities} leftIcon={<Plus size={16} />} rightIcon={<ChevronDown size={14} />} onClick={openAdd} data-course-target="calendar-new-activity">New Activity</Button>} />
+      <CompanyDashboardHeader unreadNotifications={unreadNotifications} notificationRole={notificationRole} userName={userName} avatarUrl={avatarUrl} canAddLead={false} breadcrumb="Company / Calendar" title="Company Calendar" description="Team activities, follow-ups, meetings and tasks in one place." primaryAction={<Button variant="primary" size="md" disabled={!canCreateActivities} leftIcon={<Plus size={16} />} rightIcon={<ChevronDown size={14} />} onClick={() => openAdd()} data-course-target="calendar-new-activity">New Activity</Button>} />
+
+      <CompanyCalendarSummary metrics={metrics} activeAction={summaryAction} scopeLabel={metricScopeLabel} onAction={handleSummaryAction} />
 
       <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]" data-course-target="company-calendar">
         <section className="min-w-0 overflow-hidden rounded-[13px] border border-sales-border bg-sales-surface shadow-sales-card">
@@ -401,19 +537,36 @@ export function CompanyCalendarPage({
               </div>
               <div className="relative">
                 <button type="button" onClick={() => setFiltersOpen((open) => !open)} className={cn("inline-flex h-10 items-center gap-1.5 rounded-[9px] border px-3 text-[11px] font-semibold", filtersOpen || activeFilterCount ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : "border-sales-border bg-sales-surface text-sales-text-primary hover:bg-sales-surface-hover")}><SlidersHorizontal size={14} />Filters{activeFilterCount ? <span className="rounded-full bg-sales-brand px-1.5 py-0.5 text-[9px] text-sales-brand-text">{activeFilterCount}</span> : null}</button>
-                {filtersOpen ? <FiltersPopover filters={filters} owners={data.owners} onChange={setFilters} onClose={() => setFiltersOpen(false)} /> : null}
+                {filtersOpen ? <FiltersPopover filters={filters} owners={data.owners} onChange={(next) => {
+                  if (next.ownerId !== filters.ownerId) updateUrl({ owner: next.ownerId });
+                  setSummaryAction(null);
+                  setFilters(next);
+                }} onClose={() => setFiltersOpen(false)} /> : null}
               </div>
               <button type="button" onClick={() => setAgendaOpen(true)} className="inline-flex h-10 items-center gap-1.5 rounded-[9px] border border-sales-border px-3 text-[11px] font-semibold text-sales-text-primary xl:hidden"><Filter size={14} />Agenda</button>
             </div>
           </div>
 
+          <div className="flex min-h-[48px] flex-wrap items-center justify-between gap-2 border-b border-sales-border-subtle px-3 py-2 sm:px-4" data-course-target="calendar-team-filter">
+            <div className="flex items-center gap-2">
+              <label htmlFor="company-calendar-team" className="sr-only">Team member</label>
+              <select id="company-calendar-team" value={filters.ownerId} onChange={(event) => changeOwner(event.target.value)} className="h-9 min-w-[154px] rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[10px] font-semibold text-sales-text-primary outline-none focus:border-sales-brand">
+                <option value="all">Team (All)</option>
+                {data.owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.name}</option>)}
+              </select>
+              {filters.ownerId !== "all" ? <span className="hidden text-[9px] text-sales-text-muted sm:inline">Activity KPIs and Calendar are filtered to this salesperson.</span> : null}
+            </div>
+            {summaryAction ? <button type="button" onClick={() => setSummaryAction(null)} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-sales-brand-border bg-sales-brand-soft px-2.5 text-[9px] font-semibold text-sales-text-primary"><X size={11} />Clear {summaryAction.replace("_", " ")} filter</button> : null}
+          </div>
+
           <div className="md:hidden">
-            <MobileCalendarAgenda selectedDateKey={selectedDateKey} events={filteredEvents} timezone={data.timezone} selectedEventId={selectedEventId} onSelectDate={selectDate} onSelectEvent={selectEvent} onAdd={openAdd} canCreate={canCreateActivities} />
+            <MobileTeamCalendarAgenda selectedDateKey={selectedDateKey} owners={visibleOwners} events={filteredEvents} timezone={data.timezone} selectedEventId={selectedEventId} onSelectDate={selectDate} onSelectEvent={selectEvent} />
           </div>
           <div className="hidden md:block">
-            {view === "day" || view === "week" ? <CompanyWeekView anchorKey={selectedDateKey} dayMode={view === "day"} showWeekends={showWeekends} events={filteredEvents} timezone={data.timezone} selectedDateKey={selectedDateKey} selectedEventId={selectedEventId} onSelectDate={selectDate} onSelectEvent={selectEvent} /> : null}
-            {view === "month" ? <CompanyMonthView anchorKey={selectedDateKey} showWeekends={showWeekends} events={filteredEvents} timezone={data.timezone} selectedDateKey={selectedDateKey} selectedEventId={selectedEventId} onSelectDate={selectDate} onSelectEvent={selectEvent} /> : null}
-            {view === "agenda" ? <CompanyAgendaView events={filteredEvents} timezone={data.timezone} selectedEventId={selectedEventId} onSelectEvent={selectEvent} onAdd={openAdd} canCreate={canCreateActivities} /> : null}
+            {view === "week" ? <CompanyTeamWeekView anchorKey={selectedDateKey} showWeekends={showWeekends} owners={visibleOwners} events={filteredEvents} timezone={data.timezone} selectedDateKey={selectedDateKey} selectedEventId={selectedEventId} canCreate={canCreateActivities} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreate={(ownerId, dateKey) => openAdd(ownerId, dateKey)} onMore={(ownerId, dateKey) => { changeOwner(ownerId ?? "all"); selectDate(dateKey); setAgendaOpen(true); }} /> : null}
+            {view === "day" ? <CompanyTeamDayView dateKey={selectedDateKey} owners={visibleOwners} events={filteredEvents} timezone={data.timezone} selectedEventId={selectedEventId} onSelectEvent={selectEvent} /> : null}
+            {view === "month" ? <CompanyMonthView anchorKey={selectedDateKey} showWeekends={showWeekends} events={filteredEvents} timezone={data.timezone} selectedDateKey={selectedDateKey} onSelectDate={selectDate} /> : null}
+            {view === "agenda" ? <CompanyAgendaView events={agendaEvents} timezone={data.timezone} selectedEventId={selectedEventId} onSelectEvent={selectEvent} onAdd={() => openAdd()} canCreate={canCreateActivities} /> : null}
           </div>
 
           <div className="hidden min-h-[52px] items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-2.5 md:flex">
@@ -421,7 +574,7 @@ export function CompanyCalendarPage({
               <span className="mr-1 text-[10px] font-semibold text-sales-text-primary">Activity Types</span>
               {COMPANY_CALENDAR_EVENT_KINDS.map((kind) => {
                 const active = filters.kinds.includes(kind);
-                return <button key={kind} type="button" onClick={() => setFilters((current) => ({ ...current, kinds: active ? current.kinds.filter((value) => value !== kind) : [...current.kinds, kind] }))} aria-pressed={active} className={cn("inline-flex h-7 items-center gap-1 rounded-[6px] border px-1.5 text-[9px] font-medium transition-opacity", active ? "border-sales-border bg-sales-surface-subtle text-sales-text-secondary" : "border-sales-border opacity-40")}><CompanyCalendarEventIcon kind={kind} size={11} />{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
+                return <button key={kind} type="button" onClick={() => { setSummaryAction(null); setFilters((current) => ({ ...current, kinds: active ? current.kinds.filter((value) => value !== kind) : [...current.kinds, kind] })); }} aria-pressed={active} className={cn("inline-flex h-7 items-center gap-1 rounded-[6px] border px-1.5 text-[9px] font-medium transition-opacity", active ? "border-sales-border bg-sales-surface-subtle text-sales-text-secondary" : "border-sales-border opacity-40")}><CompanyCalendarEventIcon kind={kind} size={11} />{COMPANY_CALENDAR_KIND_META[kind].shortLabel}</button>;
               })}
             </div>
             <label className="flex shrink-0 cursor-pointer items-center gap-2 text-[10px] font-medium text-sales-text-secondary"><input type="checkbox" checked={showWeekends} onChange={(event) => { setShowWeekends(event.target.checked); window.localStorage.setItem("segmiq-company-calendar-weekends", String(event.target.checked)); }} className="h-4 w-4 accent-[var(--sales-brand)]" />Show weekends</label>
@@ -433,8 +586,37 @@ export function CompanyCalendarPage({
 
       {agendaOpen ? <div className="fixed inset-0 z-[70] xl:hidden"><button type="button" className="absolute inset-0 bg-black/35" aria-label="Close agenda" onClick={() => setAgendaOpen(false)} /><div className="absolute inset-y-0 right-0 w-full overflow-y-auto bg-sales-bg p-3 shadow-sales-popover sm:w-[min(92vw,420px)]"><button type="button" className="sd-icon-btn absolute right-5 top-5 z-10" onClick={() => setAgendaOpen(false)} aria-label="Close agenda"><X size={17} /></button>{agendaRail}</div></div> : null}
 
-      {addOpen ? <AddEventSheet leads={data.scheduleableLeads} defaultDateKey={selectedDateKey} onClose={() => setAddOpen(false)} onCreated={(created) => { const mapped = fromLegacy(created); setEvents((current) => [...current.filter((event) => event.sourceId !== mapped.sourceId || event.sourceType !== "lead_follow_up"), mapped].sort((a, b) => a.startAt.localeCompare(b.startAt))); setAddOpen(false); selectEvent(mapped); toast({ title: "Activity scheduled", tone: "success" }); router.refresh(); }} /> : null}
-      {editOpen && selectedEvent?.canEdit && selectedEvent.leadId ? <EditEventSheet event={toLegacyEvent(selectedEvent)} onClose={() => setEditOpen(false)} onUpdated={(updated) => { const mapped = fromLegacy(updated, selectedEvent); setEvents((current) => current.map((event) => event.id === selectedEvent.id ? mapped : event).sort((a, b) => a.startAt.localeCompare(b.startAt))); setEditOpen(false); selectEvent(mapped); toast({ title: "Activity rescheduled", tone: "success" }); router.refresh(); }} /> : null}
+      {addOpen ? <AddEventSheet
+        leads={data.scheduleableLeads}
+        ownerOptions={data.owners}
+        leadOwnerIds={Object.fromEntries(Object.entries(data.leadOwners).map(([leadId, owner]) => [leadId, owner?.id ?? null]))}
+        defaultOwnerId={addDefaultOwnerId ?? (filters.ownerId !== "all" ? filters.ownerId : null)}
+        defaultDateKey={selectedDateKey}
+        scheduleActivity={({ leadId, date, ownerId }) => updateCompanyActivity({ leadId, followUpDate: date, ownerId })}
+        onClose={() => { setAddOpen(false); setAddDefaultOwnerId(null); }}
+        onCreated={(created, context) => {
+          const mapped = fromLegacy(created, undefined, context?.ownerId);
+          setEvents((current) => [...current.filter((event) => event.sourceId !== mapped.sourceId || event.sourceType !== "lead_follow_up"), mapped].sort((a, b) => a.startAt.localeCompare(b.startAt)));
+          setAddOpen(false);
+          setAddDefaultOwnerId(null);
+          selectEvent(mapped);
+          toast({ title: "Activity scheduled", tone: "success" });
+          router.refresh();
+        }}
+      /> : null}
+      {editOpen && selectedEvent?.canEdit && selectedEvent.leadId ? <EditEventSheet
+        event={toLegacyEvent(selectedEvent)}
+        saveDate={(date) => updateCompanyActivity({ leadId: selectedEvent.leadId!, followUpDate: date })}
+        onClose={() => setEditOpen(false)}
+        onUpdated={(updated) => {
+          const mapped = fromLegacy(updated, selectedEvent);
+          setEvents((current) => current.map((event) => event.id === selectedEvent.id ? mapped : event).sort((a, b) => a.startAt.localeCompare(b.startAt)));
+          setEditOpen(false);
+          selectEvent(mapped);
+          toast({ title: "Activity rescheduled", tone: "success" });
+          router.refresh();
+        }}
+      /> : null}
     </CompanyWorkspaceShell>
   );
 }

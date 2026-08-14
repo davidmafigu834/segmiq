@@ -24,7 +24,7 @@ function safeDateKey(value: string | undefined, fallback: string): string {
 export default async function CompanyCalendarRoute({
   searchParams,
 }: {
-  searchParams: { clientId?: string; date?: string; view?: string; event?: string };
+  searchParams: { clientId?: string; date?: string; view?: string; event?: string; owner?: string };
 }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
@@ -57,7 +57,7 @@ export default async function CompanyCalendarRoute({
       rangeEndKey: queryRange.endKey,
       actorId: session.userId,
       timezone,
-      canManageAny: session.role === "SUPER_ADMIN",
+      canManageAny: true,
       canActAsSalesperson: salespersonCapability,
     }),
     supabase
@@ -87,7 +87,8 @@ export default async function CompanyCalendarRoute({
         initialDateKey={anchorKey}
         initialView={searchParams.view}
         initialEventId={searchParams.event ?? null}
-        canCreateActivities={session.role === "SUPER_ADMIN" || salespersonCapability}
+        initialOwnerId={searchParams.owner ?? "all"}
+        canCreateActivities
         unreadNotifications={unreadRes.count ?? 0}
         notificationRole={session.role}
         userName={session.user?.name ?? "User"}

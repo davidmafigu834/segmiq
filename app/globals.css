@@ -3928,6 +3928,33 @@ html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-
   color: #e7ddff;
 }
 
+/* Execution state takes precedence over semantic activity color. The stronger
+   edge and low-contrast tint stay readable without introducing dashboard glow. */
+.company-calendar-event[data-event-state="overdue"] {
+  background: #fff1ef;
+  border-color: #e89b90;
+  box-shadow: inset 3px 0 0 #d64a3a;
+  color: #7a241c;
+}
+.company-calendar-event[data-event-state="at-risk"] {
+  border-color: #dda934;
+  box-shadow: inset 3px 0 0 #d49116;
+}
+.company-calendar-event[data-event-state="completed"] {
+  box-shadow: inset 3px 0 0 #4b9b56;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-state="overdue"] {
+  background: rgba(210, 72, 58, 0.14);
+  border-color: rgba(244, 134, 120, 0.58);
+  box-shadow: inset 3px 0 0 #f07d6e;
+  color: #ffe0dc;
+}
+html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-state="at-risk"] {
+  border-color: rgba(244, 186, 65, 0.62);
+  box-shadow: inset 3px 0 0 #e5a92d;
+}
+
 @container (max-width: 88px) {
   .calendar-premium .cal-event-chip .cal-chip-time {
     display: none;

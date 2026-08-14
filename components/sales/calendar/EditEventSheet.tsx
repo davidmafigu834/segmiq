@@ -14,10 +14,12 @@ const fieldClass =
 
 export function EditEventSheet({
   event,
+  saveDate,
   onClose,
   onUpdated,
 }: {
   event: CalendarEvent;
+  saveDate?: (date: string) => Promise<void>;
   onClose: () => void;
   onUpdated: (event: CalendarEvent) => void;
 }) {
@@ -49,15 +51,19 @@ export function EditEventSheet({
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/leads/${event.leadId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ follow_up_date: date }),
-      });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        setError(json.error ?? "Could not reschedule");
-        return;
+      if (saveDate) {
+        await saveDate(date);
+      } else {
+        const res = await fetch(`/api/leads/${event.leadId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ follow_up_date: date }),
+        });
+        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          setError(json.error ?? "Could not reschedule");
+          return;
+        }
       }
       const sameDay =
         event.hasTimedCallback && toDateKey(parseISO(event.startAt)) === date;
@@ -80,8 +86,8 @@ export function EditEventSheet({
       );
       if (updated) onUpdated(updated);
       else onClose();
-    } catch {
-      setError("Could not reschedule");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not reschedule");
     } finally {
       setSaving(false);
     }

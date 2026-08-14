@@ -31,18 +31,27 @@ const fieldClass =
 export function AddEventSheet({
   leads,
   defaultDateKey,
+  ownerOptions,
+  leadOwnerIds,
+  defaultOwnerId,
+  scheduleActivity,
   onClose,
   onCreated,
 }: {
   leads: PriorityLead[];
   defaultDateKey: string;
+  ownerOptions?: Array<{ id: string; name: string; roleLabel?: string }>;
+  leadOwnerIds?: Record<string, string | null>;
+  defaultOwnerId?: string | null;
+  scheduleActivity?: (input: { leadId: string; date: string; ownerId: string | null }) => Promise<void>;
   onClose: () => void;
-  onCreated: (event: CalendarEvent) => void;
+  onCreated: (event: CalendarEvent, context?: { ownerId: string | null }) => void;
 }) {
   const [kind, setKind] = useState<CalendarEventKind>("FOLLOW_UP");
   const [query, setQuery] = useState("");
   const [leadId, setLeadId] = useState("");
   const [date, setDate] = useState(defaultDateKey);
+  const [ownerId, setOwnerId] = useState(defaultOwnerId ?? "");
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -88,22 +97,26 @@ export function AddEventSheet({
   }, []);
 
   async function handleSave() {
-    if (!leadId || !date) {
-      setError("Choose a lead and date.");
+    if (!leadId || !date || (ownerOptions && !ownerId)) {
+      setError(ownerOptions && !ownerId ? "Choose an activity owner." : "Choose a lead and date.");
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      const res = await fetch(`/api/leads/${leadId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ follow_up_date: date }),
-      });
-      const json = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        setError(json.error ?? "Could not schedule follow-up");
-        return;
+      if (scheduleActivity) {
+        await scheduleActivity({ leadId, date, ownerId: ownerId || null });
+      } else {
+        const res = await fetch(`/api/leads/${leadId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ follow_up_date: date }),
+        });
+        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          setError(json.error ?? "Could not schedule follow-up");
+          return;
+        }
       }
       const event = adaptLeadToCalendarEvent(
         {
@@ -121,17 +134,20 @@ export function AddEventSheet({
         undefined
       );
       if (event) {
-        onCreated({
-          ...event,
-          kind: SUPPORTED_EVENT_KINDS.includes(kind) ? kind : event.kind,
-          title: title.trim() || event.title,
-          notes: notes.trim() || null,
-        });
+        onCreated(
+          {
+            ...event,
+            kind: SUPPORTED_EVENT_KINDS.includes(kind) ? kind : event.kind,
+            title: title.trim() || event.title,
+            notes: notes.trim() || null,
+          },
+          { ownerId: ownerId || null }
+        );
       } else {
         onClose();
       }
-    } catch {
-      setError("Could not schedule follow-up");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not schedule follow-up");
     } finally {
       setSaving(false);
     }
@@ -153,7 +169,7 @@ export function AddEventSheet({
           <Button
             variant="primary"
             className="flex-1"
-            disabled={saving || !leadId || !date}
+            disabled={saving || !leadId || !date || Boolean(ownerOptions && !ownerId)}
             loading={saving}
             onClick={handleSave}
           >
@@ -163,6 +179,30 @@ export function AddEventSheet({
       }
     >
       <div className="space-y-5">
+          {ownerOptions ? (
+            <div>
+              <label className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary" htmlFor="cal-add-owner">
+                Activity owner
+              </label>
+              <select
+                id="cal-add-owner"
+                value={ownerId}
+                onChange={(event) => setOwnerId(event.target.value)}
+                className={fieldClass}
+              >
+                <option value="">Choose salesperson</option>
+                {ownerOptions.map((owner) => (
+                  <option key={owner.id} value={owner.id}>
+                    {owner.name}{owner.roleLabel ? ` · ${owner.roleLabel}` : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-[11px] text-sales-text-muted">
+                Scheduling for another salesperson assigns the related Lead to them.
+              </p>
+            </div>
+          ) : null}
+
           <div>
             <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Event type</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -292,6 +332,9 @@ export function AddEventSheet({
                         type="button"
                         onClick={() => {
                           setLeadId(lead.id);
+                          if (ownerOptions && !defaultOwnerId) {
+                            setOwnerId(leadOwnerIds?.[lead.id] ?? "");
+                          }
                           setQuery("");
                           setTitle("");
                         }}

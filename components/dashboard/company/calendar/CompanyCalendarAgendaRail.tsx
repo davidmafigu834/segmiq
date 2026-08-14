@@ -73,8 +73,8 @@ function MiniMonth({
 }) {
   const monthStart = startOfMonth(month);
   const days = eachDayOfInterval({
-    start: startOfWeek(monthStart, { weekStartsOn: 1 }),
-    end: endOfWeek(endOfMonth(monthStart), { weekStartsOn: 1 }),
+    start: startOfWeek(monthStart, { weekStartsOn: 0 }),
+    end: endOfWeek(endOfMonth(monthStart), { weekStartsOn: 0 }),
   });
   const todayKey = calendarDateKey(new Date(), timezone);
   const activityDates = new Set(events.map((event) => calendarDateKey(event.startAt, timezone)));
@@ -88,7 +88,7 @@ function MiniMonth({
         </div>
       </div>
       <div className="mt-3 grid grid-cols-7 gap-y-1 text-center">
-        {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((label) => <span key={label} className="text-[9px] font-semibold text-sales-text-muted">{label}</span>)}
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((label) => <span key={label} className="text-[9px] font-semibold text-sales-text-muted">{label}</span>)}
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
           const today = key === todayKey;
@@ -108,13 +108,21 @@ function MiniMonth({
 
 function AgendaRow({ event, timezone, onSelect }: { event: CompanyCalendarEvent; timezone: string; onSelect: () => void }) {
   const meta = COMPANY_CALENDAR_KIND_META[event.kind];
+  const initials = event.ownerName?.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "?";
   return (
     <button type="button" onClick={onSelect} className="flex w-full items-center gap-2.5 border-b border-sales-border-subtle py-2.5 text-left last:border-0 hover:bg-sales-surface-hover" aria-label={`Open ${event.title}`}>
       <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", meta.className)} data-event-kind={event.kind}><CompanyCalendarEventIcon kind={event.kind} size={14} /></span>
       <span className="w-[56px] shrink-0 text-[10px] font-medium tabular-nums text-sales-text-secondary">{event.allDay ? "All day" : formatCalendarTime(event.startAt, timezone)}</span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[11px] font-semibold text-sales-text-primary">{event.title}</span>
-        <span className="mt-0.5 block truncate text-[10px] text-sales-text-muted">{event.relatedLabel}</span>
+        <span className="mt-0.5 block truncate text-[9px] text-sales-text-muted">{event.relatedLabel}</span>
+        <span className="mt-1 flex min-w-0 items-center gap-1 text-[8px] text-sales-text-muted">
+          {event.ownerAvatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={event.ownerAvatarUrl} alt="" className="h-3.5 w-3.5 shrink-0 rounded-full object-cover" />
+          ) : <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-sales-brand-soft text-[5px] font-semibold text-sales-text-primary">{initials}</span>}
+          <span className="truncate">{event.ownerName ?? "Unassigned"}</span>
+        </span>
       </span>
       <span className="shrink-0 rounded-[5px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 text-[9px] font-medium text-sales-text-secondary">{relationLabel(event)}</span>
     </button>
@@ -176,7 +184,7 @@ function DefaultAgenda({
             {upcomingEvents.slice(0, 4).map((event) => (
               <button key={event.id} type="button" onClick={() => onSelectEvent(event)} className="grid w-full grid-cols-[54px_minmax(0,1fr)_auto] items-start gap-2 border-b border-sales-border-subtle py-2.5 text-left last:border-0 hover:bg-sales-surface-hover">
                 <span className="text-[9px] font-medium text-sales-text-muted">{new Intl.DateTimeFormat("en-US", { timeZone: timezone, month: "short", day: "numeric" }).format(new Date(event.startAt))}<span className="mt-0.5 block">{event.allDay ? "All day" : formatCalendarTime(event.startAt, timezone)}</span></span>
-                <span className="min-w-0"><span className="block truncate text-[10px] font-semibold text-sales-text-primary">{event.title}</span><span className="mt-0.5 block truncate text-[9px] text-sales-text-muted">{event.relatedLabel}</span></span>
+                <span className="min-w-0"><span className="block truncate text-[10px] font-semibold text-sales-text-primary">{event.title}</span><span className="mt-0.5 block truncate text-[9px] text-sales-text-muted">{event.relatedLabel}</span><span className="mt-0.5 block truncate text-[8px] text-sales-text-muted">{event.ownerName ?? "Unassigned"}</span></span>
                 <span className="rounded-[5px] border border-sales-border px-1 py-0.5 text-[8px] font-medium text-sales-text-secondary">{COMPANY_CALENDAR_KIND_META[event.kind].shortLabel}</span>
               </button>
             ))}
@@ -220,7 +228,8 @@ function EventDetail({
         <div className="flex gap-3 py-3.5"><UserRound size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Owner</p><div className="mt-1.5 flex items-center gap-2">{event.ownerAvatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={event.ownerAvatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
-        ) : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sales-surface-subtle text-[9px] font-semibold text-sales-text-primary">{initials}</span>}<span className="text-[11px] text-sales-text-primary">{event.ownerName ?? "Unassigned"}</span></div></div></div>
+        ) : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sales-surface-subtle text-[9px] font-semibold text-sales-text-primary">{initials}</span>}<span><span className="block text-[11px] text-sales-text-primary">{event.ownerName ?? "Unassigned"}</span>{event.ownerRoleLabel ? <span className="mt-0.5 block text-[9px] text-sales-text-muted">{event.ownerRoleLabel}</span> : null}</span></div></div></div>
+        {event.attentionReason ? <div className="rounded-[9px] border border-sales-warning/25 bg-sales-warning-soft px-3 py-2.5 text-[10px] leading-relaxed text-sales-warning-fg"><span className="font-semibold">Needs attention:</span> {event.attentionReason}</div> : null}
         {event.location ? <div className="flex gap-3 py-3.5"><MapPin size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Location</p><p className="mt-1 text-[11px] text-sales-text-primary">{event.location}</p></div></div> : null}
         {event.description ? <div className="py-3.5"><p className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Description</p><p className="mt-1.5 text-[11px] leading-relaxed text-sales-text-secondary">{event.description}</p></div> : null}
       </div>

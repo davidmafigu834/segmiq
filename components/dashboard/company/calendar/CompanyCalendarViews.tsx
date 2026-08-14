@@ -12,7 +12,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { CalendarDays, Plus } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, Plus } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
 import {
   COMPANY_CALENDAR_KIND_META,
@@ -58,6 +58,10 @@ function relationLabel(event: CompanyCalendarEvent): string {
   return "Lead";
 }
 
+function ownerInitials(name: string | null): string {
+  return name?.split(/\s+/).filter(Boolean).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "?";
+}
+
 export function CalendarEventCard({
   event,
   timezone,
@@ -76,6 +80,7 @@ export function CalendarEventCard({
   style?: CSSProperties;
 }) {
   const meta = COMPANY_CALENDAR_KIND_META[event.kind];
+  const initials = ownerInitials(event.ownerName);
   return (
     <button
       type="button"
@@ -150,8 +155,8 @@ export function CompanyWeekView({
   const allWeekDays = dayMode
     ? [anchor]
     : eachDayOfInterval({
-        start: startOfWeek(anchor, { weekStartsOn: 1 }),
-        end: endOfWeek(anchor, { weekStartsOn: 1 }),
+        start: startOfWeek(anchor, { weekStartsOn: 0 }),
+        end: endOfWeek(anchor, { weekStartsOn: 0 }),
       });
   const days = showWeekends || dayMode ? allWeekDays : allWeekDays.filter((day) => day.getDay() % 6);
   const todayKey = calendarDateKey(now, timezone);
@@ -313,28 +318,24 @@ export function CompanyMonthView({
   events,
   timezone,
   selectedDateKey,
-  selectedEventId,
   onSelectDate,
-  onSelectEvent,
 }: {
   anchorKey: string;
   showWeekends: boolean;
   events: CompanyCalendarEvent[];
   timezone: string;
   selectedDateKey: string;
-  selectedEventId: string | null;
   onSelectDate: (key: string) => void;
-  onSelectEvent: (event: CompanyCalendarEvent) => void;
 }) {
   const anchor = parseDateKey(anchorKey);
   const monthStart = startOfMonth(anchor);
   const days = eachDayOfInterval({
-    start: startOfWeek(monthStart, { weekStartsOn: 1 }),
-    end: endOfWeek(endOfMonth(monthStart), { weekStartsOn: 1 }),
+    start: startOfWeek(monthStart, { weekStartsOn: 0 }),
+    end: endOfWeek(endOfMonth(monthStart), { weekStartsOn: 0 }),
   }).filter((day) => showWeekends || day.getDay() % 6);
-  const weekdays = (showWeekends ? [1, 2, 3, 4, 5, 6, 0] : [1, 2, 3, 4, 5]).map((day) =>
-    format(addDays(startOfWeek(new Date(2026, 0, 5), { weekStartsOn: 1 }), day === 0 ? 6 : day - 1), "EEE")
-  );
+  const weekdays = showWeekends
+    ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    : ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const todayKey = calendarDateKey(new Date(), timezone);
 
   return (
@@ -351,20 +352,38 @@ export function CompanyMonthView({
           const key = format(day, "yyyy-MM-dd");
           const dayEvents = eventsForDate(events, key, timezone);
           const today = key === todayKey;
+          const counts = new Map<string, number>();
+          for (const event of dayEvents) {
+            const label = COMPANY_CALENDAR_KIND_META[event.kind].shortLabel;
+            counts.set(label, (counts.get(label) ?? 0) + 1);
+          }
+          const summaries = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+          const hasAttention = dayEvents.some(
+            (event) => event.status === "overdue" || Boolean(event.attentionReason)
+          );
+          const owners = dayEvents
+            .filter((event) => event.ownerName)
+            .filter((event, index, rows) => rows.findIndex((row) => row.ownerId === event.ownerId) === index)
+            .slice(0, 3);
           return (
-            <div key={key} className={cn("min-h-[112px] border-b border-r border-sales-border-subtle p-1.5", !isSameMonth(day, monthStart) && "bg-sales-surface-subtle")}>
-              <button type="button" onClick={() => onSelectDate(key)} className="mb-1 flex w-full">
+            <button type="button" key={key} onClick={() => onSelectDate(key)} className={cn("min-h-[124px] border-b border-r border-sales-border-subtle p-2 text-left transition-colors hover:bg-sales-surface-hover", !isSameMonth(day, monthStart) && "bg-sales-surface-subtle", key === selectedDateKey && "ring-1 ring-inset ring-sales-brand-border")}>
+              <span className="mb-2 flex w-full items-center justify-between">
                 <span className={cn("inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold", today ? "bg-sales-brand text-sales-brand-text" : key === selectedDateKey ? "bg-sales-surface-hover text-sales-text-primary ring-1 ring-sales-border" : "text-sales-text-secondary")}>
                   {format(day, "d")}
                 </span>
-              </button>
-              <div className="space-y-1">
-                {dayEvents.slice(0, 3).map((event) => (
-                  <CalendarEventCard key={event.id} event={event} timezone={timezone} compact selected={selectedEventId === event.id} onClick={() => onSelectEvent(event)} />
-                ))}
-                {dayEvents.length > 3 ? <button type="button" onClick={() => onSelectDate(key)} className="px-1 text-[9px] font-semibold text-sales-text-muted">+{dayEvents.length - 3} more</button> : null}
-              </div>
-            </div>
+                {hasAttention ? <AlertTriangle size={11} className="text-sales-warning" aria-label="Contains activities needing attention" /> : null}
+              </span>
+              {dayEvents.length ? (
+                <span className="block space-y-1">
+                  {summaries.slice(0, 2).map(([label, count]) => <span key={label} className="flex items-center justify-between rounded-[6px] bg-sales-surface-subtle px-1.5 py-1 text-[9px] text-sales-text-secondary"><span>{label}</span><span className="font-semibold text-sales-text-primary">{count}</span></span>)}
+                  {summaries.length > 2 ? <span className="block px-1 text-[8px] font-semibold text-sales-brand-fg">+ {summaries.slice(2).reduce((sum, [, count]) => sum + count, 0)} more activities</span> : null}
+                  {owners.length ? <span className="mt-2 flex -space-x-1.5">{owners.map((event) => event.ownerAvatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={event.ownerId} src={event.ownerAvatarUrl} alt="" className="h-5 w-5 rounded-full border border-sales-surface object-cover" title={event.ownerName ?? undefined} />
+                  ) : <span key={event.ownerId} className="flex h-5 w-5 items-center justify-center rounded-full border border-sales-surface bg-sales-brand-soft text-[7px] font-semibold text-sales-text-primary" title={event.ownerName ?? undefined}>{event.ownerName?.slice(0, 1).toUpperCase()}</span>)}</span> : null}
+                </span>
+              ) : <span className="text-[9px] text-sales-text-disabled">No activity</span>}
+            </button>
           );
         })}
       </div>
@@ -447,14 +466,20 @@ export function AgendaEventRow({
       className={cn("flex min-h-[58px] w-full items-center gap-3 rounded-[10px] border px-3 py-2 text-left transition-colors hover:bg-sales-surface-hover", selected ? "border-sales-brand bg-sales-brand-soft" : "border-sales-border")}
     >
       <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", meta.className)} data-event-kind={event.kind}>
-        <CompanyCalendarEventIcon kind={event.kind} size={14} />
+        {event.status === "overdue" ? <AlertTriangle size={14} /> : event.status === "completed" ? <CheckCircle2 size={14} /> : <CompanyCalendarEventIcon kind={event.kind} size={14} />}
       </span>
       <span className="w-[72px] shrink-0 text-[11px] font-medium tabular-nums text-sales-text-secondary">{event.allDay ? "All day" : formatCalendarTime(event.startAt, timezone)}</span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[12px] font-semibold text-sales-text-primary">{event.title}</span>
-        <span className="mt-0.5 block truncate text-[11px] text-sales-text-muted">{event.relatedLabel}{event.ownerName ? ` · ${event.ownerName}` : ""}</span>
+        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] text-sales-text-muted">
+          {event.ownerAvatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={event.ownerAvatarUrl} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" />
+          ) : <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-sales-brand-soft text-[6px] font-semibold text-sales-text-primary">{ownerInitials(event.ownerName)}</span>}
+          <span className="truncate">{event.relatedLabel}{event.ownerName ? ` · ${event.ownerName}` : " · Unassigned"}</span>
+        </span>
       </span>
-      <span className="hidden shrink-0 rounded-[5px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 text-[9px] font-medium text-sales-text-secondary sm:inline-flex">{relationLabel(event)}</span>
+      <span className={cn("hidden shrink-0 rounded-[5px] border px-1.5 py-0.5 text-[9px] font-medium sm:inline-flex", event.status === "overdue" ? "border-sales-danger/30 bg-sales-danger-soft text-sales-danger-fg" : "border-sales-border bg-sales-surface-subtle text-sales-text-secondary")}>{event.status === "overdue" ? "Overdue" : relationLabel(event)}</span>
     </button>
   );
 }
