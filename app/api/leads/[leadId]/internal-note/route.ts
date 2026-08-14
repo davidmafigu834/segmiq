@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { canModifyLead } from "@/lib/auth/permissions";
+import { authOptions } from "@/lib/auth";
+import { canModifyLead, canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/lead-events";
 
@@ -10,9 +12,20 @@ const bodySchema = z.object({
 
 export async function POST(req: Request, { params }: { params: { leadId: string } }) {
   const access = await canModifyLead(params.leadId, req);
-  if (!access.allowed) {
+  const session = !access.allowed ? await getServerSession(authOptions) : null;
+  const managerAccess =
+    !access.allowed && session?.role === "CLIENT_MANAGER"
+      ? await canReadLead(params.leadId, req)
+      : null;
+  if (!access.allowed && !managerAccess?.ok) {
+    if (managerAccess) {
+      return NextResponse.json({ error: "Not found" }, { status: managerAccess.status });
+    }
     return NextResponse.json({ error: access.reason }, { status: access.status });
   }
+
+  const actorId = access.allowed ? access.userId : session!.userId!;
+  const actorRole = access.allowed ? access.role : "CLIENT_MANAGER";
 
   const parsed = bodySchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -30,15 +43,15 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const { data: actorUser } = await supabase.from("users").select("name").eq("id", access.userId).maybeSingle();
+  const { data: actorUser } = await supabase.from("users").select("name").eq("id", actorId).maybeSingle();
 
   await logLeadEvent({
     leadId: params.leadId,
     clientId: lead.client_id as string,
     actor: {
-      id: access.userId,
+      id: actorId,
       name: (actorUser as { name: string } | null)?.name ?? "Unknown",
-      role: access.role,
+      role: actorRole,
     },
     eventType: "NOTE_ADDED",
     eventData: {

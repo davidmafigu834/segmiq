@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowLeft,
+  BriefcaseBusiness,
+  CheckCircle2,
   ChevronDown,
   Clock,
   FileText,
@@ -13,6 +16,8 @@ import {
   Send,
   StickyNote,
   Trophy,
+  UserRound,
+  UserRoundPlus,
   Zap,
   XCircle,
 } from "lucide-react";
@@ -29,6 +34,9 @@ import { LeadIntentBadge } from "./LeadIntentBadge";
 import { QuickReplyBar, type QuickReplyAction, type SavedQuickReply } from "./QuickReplyBar";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 import { TransferDialog } from "./TransferDialog";
+import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
+import type { LeadRow } from "@/types";
+import { initials } from "@/lib/inbox/assignee-colors";
 
 type Props = {
   conversation: InboxConversation | null;
@@ -45,6 +53,11 @@ type Props = {
   onMessagesChange: () => void;
   onConversationUpdate?: () => void;
   onSessionChange?: (open: boolean | null) => void;
+  companyMode?: boolean;
+  canReassign?: boolean;
+  canCreateDeal?: boolean;
+  leadHref?: string;
+  dealHref?: string;
 };
 
 export function ChatThread({
@@ -62,6 +75,11 @@ export function ChatThread({
   onMessagesChange,
   onConversationUpdate,
   onSessionChange,
+  companyMode = false,
+  canReassign = false,
+  canCreateDeal = false,
+  leadHref,
+  dealHref,
 }: Props) {
   const [messages, setMessages] = useState<InboxChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,6 +95,8 @@ export function ChatThread({
   const [savedReplies, setSavedReplies] = useState<SavedQuickReply[]>([]);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [createDealOpen, setCreateDealOpen] = useState(false);
+  const [dealLead, setDealLead] = useState<LeadRow | null>(null);
   const [hasNewBelow, setHasNewBelow] = useState(false);
   const [campaignContext, setCampaignContext] = useState<{
     campaignName: string;
@@ -86,6 +106,7 @@ export function ChatThread({
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
+  const composerRef = useRef<HTMLInputElement>(null);
   const onMessagesChangeRef = useRef(onMessagesChange);
   const onSessionChangeRef = useRef(onSessionChange);
   onMessagesChangeRef.current = onMessagesChange;
@@ -97,6 +118,12 @@ export function ChatThread({
     setMenuOpen(false);
     if (!conversation?.id) onSessionChangeRef.current?.(null);
   }, [conversation?.id]);
+
+  useEffect(() => {
+    const focusComposer = () => composerRef.current?.focus();
+    window.addEventListener("segmiq:focus-whatsapp-composer", focusComposer);
+    return () => window.removeEventListener("segmiq:focus-whatsapp-composer", focusComposer);
+  }, []);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -364,6 +391,35 @@ export function ChatThread({
     onMessagesChange();
   }
 
+  async function handleConversationStatus(status: "OPEN" | "RESOLVED") {
+    if (!conversation || statusUpdating) return;
+    setStatusUpdating(true);
+    try {
+      const res = await fetch(`/api/inbox/conversations/${conversation.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        onConversationUpdate?.();
+        onMessagesChange();
+      }
+    } finally {
+      setStatusUpdating(false);
+      setMenuOpen(false);
+    }
+  }
+
+  async function openCreateDeal() {
+    if (!conversation || !canCreateDeal) return;
+    const res = await fetch(`/api/leads/${conversation.id}`);
+    if (!res.ok) return;
+    const data = (await res.json()) as { lead?: LeadRow };
+    if (!data.lead) return;
+    setDealLead(data.lead);
+    setCreateDealOpen(true);
+  }
+
   if (!conversation) {
     return (
       <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6">
@@ -430,11 +486,12 @@ export function ChatThread({
                   ) : null}
                 </div>
                 {conversation.phone ? (
-                  <div className="mt-0.5 truncate text-[12px] tabular-nums text-[#667085]">
+                  <div className="mt-0.5 truncate text-[11px] tabular-nums text-[#667085]">
                     {conversation.phone}
+                    {companyMode && conversation.location ? ` · ${conversation.location}` : ""}
                   </div>
                 ) : null}
-                <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
+                {!companyMode ? <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                   <LeadStageBadge
                     status={conversation.status}
                     followUpDate={conversation.followUpDate}
@@ -455,8 +512,8 @@ export function ChatThread({
                       {waitingLabel}
                     </span>
                   ) : null}
-                </div>
-                {prioritySignal ? (
+                </div> : null}
+                {!companyMode && prioritySignal ? (
                   <div className="mt-1 truncate text-[11px] text-[#667085]" title={prioritySignal.detail}>
                     {prioritySignal.title}
                   </div>
@@ -465,6 +522,28 @@ export function ChatThread({
             </div>
           </div>
           <div className="relative flex shrink-0 items-center gap-0.5 sm:gap-1">
+            {companyMode ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (canReassign) setTransferOpen(true);
+                }}
+                disabled={!canReassign}
+                className="mr-1 hidden min-w-0 items-center gap-2 rounded-[8px] px-2 py-1 text-left hover:bg-sales-surface-hover disabled:cursor-default layout:flex"
+                aria-label={canReassign ? "Assign or reassign conversation" : "Conversation owner"}
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sales-surface-hover text-[9px] font-semibold text-sales-text-primary">
+                  {conversation.assignee ? initials(conversation.assignee.name) : <UserRound size={13} />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[8px] uppercase tracking-[0.04em] text-sales-text-muted">Owner</span>
+                  <span className={`block max-w-24 truncate text-[10.5px] font-medium ${conversation.assignee ? "text-sales-text-primary" : "text-[#D97706]"}`}>
+                    {conversation.assignee?.name ?? "Unassigned"}
+                  </span>
+                </span>
+                {canReassign ? <ChevronDown size={12} className="text-sales-text-muted" /> : null}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onToggleIntel}
@@ -485,7 +564,7 @@ export function ChatThread({
             </button>
             {menuOpen ? (
               <div className={`absolute right-0 top-11 z-20 min-w-[200px] ${isWhatsApp ? "wa-dropdown" : "rounded-lg border border-[var(--border)] bg-[var(--surface-card)] py-1 shadow-lg"}`}>
-                {canSend ? (
+                {canSend || canReassign ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -523,7 +602,7 @@ export function ChatThread({
                     Transfer conversation
                   </button>
                 ) : null}
-                {canUpdateStatus ? (
+                {canUpdateStatus && !companyMode ? (
                   <>
                     <button
                       type="button"
@@ -545,7 +624,18 @@ export function ChatThread({
                     </button>
                   </>
                 ) : null}
-                {!canTransfer && !canUpdateStatus && !canSend && !showLogCall ? (
+                {companyMode && (canReassign || canUpdateStatus) ? (
+                  <button
+                    type="button"
+                    disabled={statusUpdating}
+                    onClick={() => void handleConversationStatus(conversation.conversationStatus === "RESOLVED" ? "OPEN" : "RESOLVED")}
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
+                  >
+                    <CheckCircle2 size={14} />
+                    {conversation.conversationStatus === "RESOLVED" ? "Reopen conversation" : "Resolve conversation"}
+                  </button>
+                ) : null}
+                {!canTransfer && !canUpdateStatus && !canSend && !canReassign && !showLogCall ? (
                   <div className="px-3 py-2 text-xs text-[var(--text-tertiary)]">No actions available</div>
                 ) : null}
               </div>
@@ -553,6 +643,36 @@ export function ChatThread({
           </div>
         </div>
       </div>
+
+      {companyMode ? (
+        <div className="flex min-h-[48px] shrink-0 items-center gap-2 overflow-x-auto border-b border-sales-border bg-sales-surface px-3 py-2 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {canReassign ? (
+            <button type="button" onClick={() => setTransferOpen(true)} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px]">
+              <UserRoundPlus size={13} strokeWidth={1.8} />
+              {conversation.assignedToId ? "Reassign" : "Assign"}
+            </button>
+          ) : null}
+          {canSend || canReassign ? (
+            <button type="button" onClick={() => void handleInternalNote()} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px] max-[520px]:hidden">
+              <StickyNote size={13} strokeWidth={1.8} /> Add Note
+            </button>
+          ) : null}
+          {dealHref ? (
+            <Link href={dealHref} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px]">
+              <BriefcaseBusiness size={13} strokeWidth={1.8} /> View Deal
+            </Link>
+          ) : canCreateDeal ? (
+            <button type="button" onClick={() => void openCreateDeal()} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px] text-[#4D7C0F]">
+              <BriefcaseBusiness size={13} strokeWidth={1.8} /> Create Deal
+            </button>
+          ) : null}
+          {leadHref ? (
+            <Link href={leadHref} className="wa-btn-secondary shrink-0 !h-8 !px-3 !text-[10px] max-[480px]:hidden">
+              <UserRound size={13} strokeWidth={1.8} /> View Lead
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       {campaignContext ? (
         <div className="border-b border-[var(--border)] bg-[rgba(212,255,79,0.06)] px-4 py-2 text-xs text-[var(--text-secondary)]">
@@ -744,6 +864,7 @@ export function ChatThread({
               </button>
             ) : null}
             <input
+              ref={composerRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -753,7 +874,9 @@ export function ChatThread({
               placeholder={
                 sessionClosed
                   ? "Free-form replies unavailable — may send as template…"
-                  : "Type a WhatsApp reply..."
+                  : companyMode
+                    ? "Type a message..."
+                    : "Type a WhatsApp reply..."
               }
               disabled={sending}
               aria-label="Type a WhatsApp reply"
@@ -840,6 +963,18 @@ export function ChatThread({
         onTransfer={handleTransfer}
         whatsappMode={isWhatsApp}
       />
+      {dealLead ? (
+        <CreateDealSheet
+          lead={dealLead}
+          open={createDealOpen}
+          onClose={() => setCreateDealOpen(false)}
+          onCreated={() => {
+            setCreateDealOpen(false);
+            onConversationUpdate?.();
+          }}
+          currency={conversation.dealCurrency ?? "USD"}
+        />
+      ) : null}
     </div>
   );
 }

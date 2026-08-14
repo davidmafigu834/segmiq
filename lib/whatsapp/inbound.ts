@@ -368,7 +368,19 @@ export async function handleInboundWhatsAppMessage(opts: {
     channel: "whatsapp",
   });
 
-  await supabase.from("leads").update({ updated_at: now }).eq("id", leadId);
+  const reopenResult = await supabase
+    .from("leads")
+    .update({
+      updated_at: now,
+      whatsapp_conversation_status: "OPEN",
+      whatsapp_resolved_at: null,
+      whatsapp_resolved_by_id: null,
+    })
+    .eq("id", leadId);
+  if (reopenResult.error) {
+    // Compatibility while the conversation-state migration is rolling out.
+    await supabase.from("leads").update({ updated_at: now }).eq("id", leadId);
+  }
 
   if (contactId && isOptOutMessage(body)) {
     await recordWhatsAppOptOut({

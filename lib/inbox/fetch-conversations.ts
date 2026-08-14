@@ -33,6 +33,9 @@ type LeadRow = {
   budget?: string | null;
   timeline?: string | null;
   deal_value?: number | null;
+  active_deal_id?: string | null;
+  whatsapp_conversation_status?: string | null;
+  whatsapp_resolved_at?: string | null;
 };
 
 function extractCompany(formData: Record<string, unknown> | null): string | null {
@@ -106,12 +109,17 @@ export async function fetchInboxConversations(opts: {
     else assignmentMode = "direct";
   }
 
-  const select =
-    "id, client_id, contact_id, assigned_to_id, name, phone, email, source, status, project_type, form_data, score, score_breakdown, follow_up_date, created_at, updated_at, budget, timeline, deal_value";
+  const baseSelect =
+    "id, client_id, contact_id, assigned_to_id, name, phone, email, source, status, project_type, form_data, score, score_breakdown, follow_up_date, created_at, updated_at, budget, timeline, deal_value, active_deal_id";
+  const select = `${baseSelect}, whatsapp_conversation_status, whatsapp_resolved_at`;
 
   let query = supabase.from("leads").select(select);
 
-  if (salesScoped && clientId) {
+  // A Company Manager always sees the company queue. `alsoSells` grants selling
+  // capabilities; it must not narrow the manager's oversight to their own Leads.
+  if (role === "CLIENT_MANAGER" && clientId) {
+    query = query.eq("client_id", clientId);
+  } else if (salesScoped && clientId) {
     if (assignmentMode === "pool" || assignmentMode === "direct") {
       query = query
         .eq("client_id", clientId)
@@ -119,8 +127,6 @@ export async function fetchInboxConversations(opts: {
     } else {
       query = query.eq("client_id", clientId).eq("assigned_to_id", userId);
     }
-  } else if (role === "CLIENT_MANAGER" && clientId) {
-    query = query.eq("client_id", clientId);
   } else if (role === "SUPER_ADMIN" && clientId) {
     query = query.eq("client_id", clientId);
   } else if (role === "SUPER_ADMIN") {
@@ -132,14 +138,18 @@ export async function fetchInboxConversations(opts: {
 
   query = query.eq("source", "WHATSAPP_INBOUND");
   query = query.or("is_archived.is.null,is_archived.eq.false");
-  query = query.not("status", "in", '("WON","LOST","NOT_QUALIFIED")');
+  if (role !== "CLIENT_MANAGER") {
+    query = query.not("status", "in", '("WON","LOST","NOT_QUALIFIED")');
+  }
 
   const { data: leads, error } = await query.order("updated_at", { ascending: false }).limit(500);
   if (error) {
     const msg = String(error.message ?? "");
-    if (msg.includes("is_archived") && clientId) {
-      let retryQuery = supabase.from("leads").select(select);
-      if (salesScoped) {
+    if ((msg.includes("is_archived") || msg.includes("whatsapp_conversation")) && clientId) {
+      let retryQuery = supabase.from("leads").select(baseSelect);
+      if (role === "CLIENT_MANAGER") {
+        retryQuery = retryQuery.eq("client_id", clientId);
+      } else if (salesScoped) {
         if (assignmentMode === "pool" || assignmentMode === "direct") {
           retryQuery = retryQuery
             .eq("client_id", clientId)
@@ -151,7 +161,12 @@ export async function fetchInboxConversations(opts: {
         retryQuery = retryQuery.eq("client_id", clientId);
       }
       retryQuery = retryQuery.eq("source", "WHATSAPP_INBOUND");
-      retryQuery = retryQuery.not("status", "in", '("WON","LOST","NOT_QUALIFIED")');
+      if (!msg.includes("is_archived")) {
+        retryQuery = retryQuery.or("is_archived.is.null,is_archived.eq.false");
+      }
+      if (role !== "CLIENT_MANAGER") {
+        retryQuery = retryQuery.not("status", "in", '("WON","LOST","NOT_QUALIFIED")');
+      }
       const retry = await retryQuery.order("updated_at", { ascending: false }).limit(500);
       if (retry.error) return [];
       return buildConversations(retry.data as LeadRow[], userId, clientId, supabase);
@@ -204,12 +219,6 @@ async function buildConversations(
   const contactById = new Map((contacts ?? []).map((c) => [c.id as string, c]));
   const userById = new Map((users ?? []).map((u) => [u.id as string, u]));
 
-  const { data: waMessages } = await supabase
-    .from("whatsapp_messages")
-    .select("lead_id, body, created_at, message_type, direction")
-    .in("lead_id", leadIds)
-    .order("created_at", { ascending: false });
-
   const lastWaByLead = new Map<
     string,
     {
@@ -220,19 +229,103 @@ async function buildConversations(
     }
   >();
   const lastInboundByLead = new Map<string, string>();
-  for (const m of waMessages ?? []) {
-    const lid = m.lead_id as string;
-    const direction = m.direction === "inbound" || m.direction === "outbound" ? m.direction : null;
-    if (!lastWaByLead.has(lid)) {
-      lastWaByLead.set(lid, {
-        body: (m.body as string | null)?.trim() || previewForType(m.message_type as string | null),
-        created_at: m.created_at as string,
-        message_type: (m.message_type as string | null) ?? null,
+  const messageCountByLead = new Map<string, number>();
+  const firstInboundByLead = new Map<string, string>();
+  const firstResponseSecondsByLead = new Map<string, number>();
+  const { data: aggregateRows, error: aggregateError } = await supabase.rpc(
+    "get_company_whatsapp_conversation_stats",
+    { p_client_id: clientId, p_lead_ids: leadIds }
+  );
+
+  if (!aggregateError) {
+    for (const raw of aggregateRows ?? []) {
+      const row = raw as {
+        lead_id: string;
+        last_body: string | null;
+        last_created_at: string;
+        last_message_type: string | null;
+        last_direction: string | null;
+        last_inbound_at: string | null;
+        first_inbound_at: string | null;
+        first_response_at: string | null;
+        message_count: number | string;
+      };
+      const direction =
+        row.last_direction === "inbound" || row.last_direction === "outbound"
+          ? row.last_direction
+          : null;
+      lastWaByLead.set(row.lead_id, {
+        body: row.last_body?.trim() || previewForType(row.last_message_type),
+        created_at: row.last_created_at,
+        message_type: row.last_message_type,
         direction,
       });
+      if (row.last_inbound_at) lastInboundByLead.set(row.lead_id, row.last_inbound_at);
+      if (row.first_inbound_at) firstInboundByLead.set(row.lead_id, row.first_inbound_at);
+      messageCountByLead.set(row.lead_id, Number(row.message_count) || 0);
+      if (row.first_inbound_at && row.first_response_at) {
+        firstResponseSecondsByLead.set(
+          row.lead_id,
+          Math.max(
+            0,
+            Math.round(
+              (new Date(row.first_response_at).getTime() -
+                new Date(row.first_inbound_at).getTime()) /
+                1000
+            )
+          )
+        );
+      }
     }
-    if (direction === "inbound" && !lastInboundByLead.has(lid)) {
-      lastInboundByLead.set(lid, m.created_at as string);
+  } else {
+    // Compatibility fallback while migration 090 is being rolled out.
+    const { data: waMessages } = await supabase
+      .from("whatsapp_messages")
+      .select("lead_id, body, created_at, message_type, direction")
+      .in("lead_id", leadIds)
+      .order("created_at", { ascending: false });
+
+    for (const m of waMessages ?? []) {
+      const lid = m.lead_id as string;
+      const direction =
+        m.direction === "inbound" || m.direction === "outbound" ? m.direction : null;
+      if (!lastWaByLead.has(lid)) {
+        lastWaByLead.set(lid, {
+          body:
+            (m.body as string | null)?.trim() || previewForType(m.message_type as string | null),
+          created_at: m.created_at as string,
+          message_type: (m.message_type as string | null) ?? null,
+          direction,
+        });
+      }
+      if (direction === "inbound" && !lastInboundByLead.has(lid)) {
+        lastInboundByLead.set(lid, m.created_at as string);
+      }
+    }
+
+    for (const m of [...(waMessages ?? [])].reverse()) {
+      const leadId = m.lead_id as string;
+      messageCountByLead.set(leadId, (messageCountByLead.get(leadId) ?? 0) + 1);
+      const createdAt = m.created_at as string;
+      if (m.direction === "inbound" && !firstInboundByLead.has(leadId)) {
+        firstInboundByLead.set(leadId, createdAt);
+      }
+      if (
+        m.direction === "outbound" &&
+        firstInboundByLead.has(leadId) &&
+        !firstResponseSecondsByLead.has(leadId)
+      ) {
+        const firstInboundAt = firstInboundByLead.get(leadId)!;
+        firstResponseSecondsByLead.set(
+          leadId,
+          Math.max(
+            0,
+            Math.round(
+              (new Date(createdAt).getTime() - new Date(firstInboundAt).getTime()) / 1000
+            )
+          )
+        );
+      }
     }
   }
 
@@ -365,6 +458,13 @@ async function buildConversations(
       latestQuoteNumber: latestQuote?.quote_number ?? null,
       latestQuoteStatus: latestQuote?.status ?? null,
       latestQuoteTotal: latestQuote?.total ?? null,
+      conversationStatus:
+        lead.whatsapp_conversation_status === "RESOLVED" ? "RESOLVED" : "OPEN",
+      resolvedAt: lead.whatsapp_resolved_at ?? null,
+      firstContactAt: firstInboundByLead.get(lead.id) ?? lead.created_at,
+      firstResponseSeconds: firstResponseSecondsByLead.get(lead.id) ?? null,
+      messageCount: messageCountByLead.get(lead.id) ?? 0,
+      activeDealId: lead.active_deal_id ?? null,
     };
   });
 

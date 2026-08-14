@@ -2,6 +2,10 @@ import type { LeadSource, LeadStatus } from "@/types";
 
 export type InboxFilter =
   | "all"
+  | "open"
+  | "new"
+  | "resolved"
+  | "unread"
   | "unassigned"
   | "mine"
   | "hot"
@@ -56,6 +60,55 @@ export type InboxConversation = {
   latestQuoteNumber: string | null;
   latestQuoteStatus: string | null;
   latestQuoteTotal: number | null;
+  /** Conversation workflow is intentionally separate from Lead/Deal lifecycle. */
+  conversationStatus: "OPEN" | "RESOLVED";
+  resolvedAt: string | null;
+  firstContactAt: string;
+  firstResponseSeconds: number | null;
+  messageCount: number;
+  activeDealId: string | null;
+};
+
+export type CompanyWhatsAppSummary = {
+  active: number;
+  newConversations: number;
+  avgFirstResponseSeconds: number | null;
+  resolved: number;
+  unassigned: number;
+  waitingOnTeam: number;
+  periodDays: number;
+};
+
+export type CompanyConversationActivity = {
+  id: string;
+  actorName: string;
+  label: string;
+  createdAt: string;
+};
+
+export type CompanyConversationContext = {
+  contact: {
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    location: string | null;
+    lifecycle: string | null;
+  };
+  insights: {
+    firstContactAt: string;
+    messageCount: number;
+    firstResponseSeconds: number | null;
+    status: "OPEN" | "WAITING_ON_TEAM" | "WAITING_ON_CUSTOMER" | "RESOLVED";
+  };
+  deal: {
+    id: string;
+    name: string;
+    stage: string;
+    value: number | null;
+    currency: string | null;
+  } | null;
+  quoteCount: number;
+  activity: CompanyConversationActivity[];
 };
 
 export type InboxChatMessage = {

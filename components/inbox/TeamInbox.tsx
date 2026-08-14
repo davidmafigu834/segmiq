@@ -7,6 +7,7 @@ import { initials } from "@/lib/inbox/assignee-colors";
 import { useInboxCompact, useInboxMobile } from "@/lib/inbox/use-inbox-mobile";
 import { countInboxFilters } from "@/lib/inbox/queue-filters";
 import type { InboxConversation, InboxFilter } from "@/lib/inbox/types";
+import { computeCompanyWhatsAppSummary } from "@/lib/inbox/company-whatsapp-summary";
 import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
 import { ChatThread } from "./ChatThread";
 import { ConversationList } from "./ConversationList";
@@ -17,6 +18,9 @@ import { InboxPanelResizeHandle } from "./InboxPanelResizeHandle";
 import { InboxSkeleton } from "./InboxSkeleton";
 import { useInboxPanelWidths } from "@/lib/inbox/use-inbox-panel-widths";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
+import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
+import { CompanyWhatsAppKpis } from "./CompanyWhatsAppKpis";
+import { CompanyConversationInsightRail } from "./CompanyConversationInsightRail";
 
 type Props = {
   userName: string;
@@ -34,6 +38,10 @@ type Props = {
   backHref?: string;
   pageTitle?: string;
   breadcrumb?: string;
+  companyMode?: boolean;
+  unreadNotifications?: number;
+  avatarUrl?: string | null;
+  onMobilePaneChange?: (pane: MobilePane) => void;
 };
 
 type MobilePane = "list" | "thread" | "intel";
@@ -54,6 +62,10 @@ export function TeamInbox({
   backHref,
   pageTitle = "WhatsApp Sales Hub",
   breadcrumb = "SALES / INBOX",
+  companyMode = false,
+  unreadNotifications = 0,
+  avatarUrl,
+  onMobilePaneChange,
 }: Props) {
   const [conversations, setConversations] = useState<InboxConversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +77,7 @@ export function TeamInbox({
   const [intelOpen, setIntelOpen] = useState(false);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [claimToast, setClaimToast] = useState<string | null>(null);
+  const [contextRevision, setContextRevision] = useState(0);
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [companyName, setCompanyName] = useState("");
   const [sessionOpen, setSessionOpen] = useState<boolean | null>(null);
@@ -155,6 +168,10 @@ export function TeamInbox({
     () => countInboxFilters(conversations, userId),
     [conversations, userId]
   );
+  const companySummary = useMemo(
+    () => computeCompanyWhatsAppSummary(conversations),
+    [conversations]
+  );
 
   const salesCapable = canActAsSalesperson({ userId, role, alsoSells });
   const ownsActive = !!active && active.assignedToId === userId;
@@ -205,8 +222,9 @@ export function TeamInbox({
   useEffect(() => {
     const hide = paneNav && mobilePane !== "list";
     setHideBottomNav(hide);
+    onMobilePaneChange?.(mobilePane);
     return () => setHideBottomNav(false);
-  }, [paneNav, mobilePane, setHideBottomNav]);
+  }, [paneNav, mobilePane, onMobilePaneChange, setHideBottomNav]);
 
   const {
     listWidth,
@@ -218,16 +236,16 @@ export function TeamInbox({
     toggleListCollapsed,
     toggleIntelCollapsed,
     resizable,
-  } = useInboxPanelWidths(whatsappMode && !paneNav);
+  } = useInboxPanelWidths(whatsappMode && !paneNav && !companyMode);
 
-  const showHubChrome = whatsappMode && (!paneNav || mobilePane === "list");
+  const showHubChrome = whatsappMode && !companyMode && (!paneNav || mobilePane === "list");
   const breadcrumbLabel = breadcrumb.replace(/\s*\/\s*/g, " / ");
 
   return (
     <div
       className={
         whatsappMode
-          ? "relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#F7F8FA]"
+          ? "relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-sales-bg"
           : "flex h-full min-h-[calc(100dvh-11rem)] flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] layout:min-h-[calc(100dvh-7.5rem)]"
       }
     >
@@ -238,6 +256,18 @@ export function TeamInbox({
         >
           {claimToast}
         </div>
+      ) : null}
+
+      {companyMode && (!paneNav || mobilePane === "list") ? (
+        <>
+          <CompanyWhatsAppHeader
+            unreadNotifications={unreadNotifications}
+            notificationRole={role}
+            userName={userName}
+            avatarUrl={avatarUrl}
+          />
+          <CompanyWhatsAppKpis summary={companySummary} onFilter={setFilter} />
+        </>
       ) : null}
 
       {!whatsappMode ? (
@@ -396,7 +426,15 @@ export function TeamInbox({
         </div>
       ) : null}
 
-      <div className={`flex min-h-0 flex-1 overflow-hidden ${whatsappMode ? "wa-hub-shell wa-hub-immersive wa-hub-premium" : ""}`}>
+      <div
+        className={`min-h-0 flex-1 overflow-hidden ${
+          companyMode
+            ? "company-wa-workspace wa-hub-shell wa-hub-premium flex layout:grid layout:grid-cols-[minmax(250px,26fr)_minmax(400px,46fr)_minmax(270px,28fr)] layout:gap-3 layout:px-7 layout:pb-5"
+            : whatsappMode
+              ? "flex wa-hub-shell wa-hub-immersive wa-hub-premium"
+              : "flex"
+        }`}
+      >
         {!whatsappMode ? (
           <InboxIconRail
             pipelineHref={pipelineHref}
@@ -439,11 +477,13 @@ export function TeamInbox({
                 mobileFullScreen={paneNav}
                 onSearchChange={setSearch}
                 roleSubtitle={roleSubtitle}
-                filterCounts={whatsappMode ? undefined : counts}
-                onFilterChange={whatsappMode ? undefined : setFilter}
-                panelWidth={resizable ? listWidth : undefined}
+                filterCounts={companyMode || !whatsappMode ? counts : undefined}
+                onFilterChange={companyMode || !whatsappMode ? setFilter : undefined}
+                ownerOptions={companyMode ? salespeople : undefined}
+                panelWidth={!companyMode && resizable ? listWidth : undefined}
                 panelAnimated={resizable}
-                chromeInParent={whatsappMode}
+                chromeInParent={whatsappMode && !companyMode}
+                companyMode={companyMode}
               />
             ) : null}
             {resizable ? (
@@ -479,9 +519,20 @@ export function TeamInbox({
                   setConvOpen(false);
                   setIntelOpen((v) => !v);
                 }}
-                onMessagesChange={() => void loadConversations({ silent: true })}
-                onConversationUpdate={() => void loadConversations({ silent: true })}
+                onMessagesChange={() => {
+                  setContextRevision((value) => value + 1);
+                  void loadConversations({ silent: true });
+                }}
+                onConversationUpdate={() => {
+                  setContextRevision((value) => value + 1);
+                  void loadConversations({ silent: true });
+                }}
                 onSessionChange={setSessionOpen}
+                companyMode={companyMode}
+                canReassign={canReassign}
+                canCreateDeal={(canReassign || (salesCapable && ownsActive)) && !active?.activeDealId}
+                leadHref={active ? `/client/leads?lead=${active.id}` : undefined}
+                dealHref={active?.activeDealId ? `/client/deals/${active.activeDealId}` : undefined}
               />
             </div>
             {resizable ? (
@@ -493,7 +544,14 @@ export function TeamInbox({
                 label="Resize lead workspace panel"
               />
             ) : null}
-            {!resizable || !intelCollapsed ? (
+            {companyMode ? (
+              <CompanyConversationInsightRail
+                conversation={active}
+                open={intelOpenEffective}
+                refreshKey={contextRevision}
+                onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+              />
+            ) : !resizable || !intelCollapsed ? (
               <LeadIntelligencePanel
                 conversation={active}
                 clientId={clientId}

@@ -3,6 +3,10 @@ import type { InboxConversation, InboxFilter } from "./types";
 
 export const INBOX_FILTER_LABELS: Record<InboxFilter, string> = {
   all: "All",
+  open: "Open",
+  new: "New",
+  resolved: "Resolved",
+  unread: "Unread",
   mine: "Mine",
   unassigned: "Unassigned",
   hot: "Hot",
@@ -23,6 +27,13 @@ export const INBOX_FILTER_ORDER: InboxFilter[] = [
   "quotes_sent",
 ];
 
+export const COMPANY_INBOX_FILTER_ORDER: InboxFilter[] = [
+  "all",
+  "open",
+  "awaiting_reply",
+  "resolved",
+];
+
 export function isFollowUpDue(c: InboxConversation, now = new Date()): boolean {
   if (!c.followUpDate) return false;
   const due = new Date(`${c.followUpDate}T23:59:59`);
@@ -30,11 +41,11 @@ export function isFollowUpDue(c: InboxConversation, now = new Date()): boolean {
 }
 
 export function isAwaitingReply(c: InboxConversation): boolean {
-  return c.lastMessageDirection === "inbound";
+  return c.conversationStatus === "OPEN" && c.lastMessageDirection === "inbound";
 }
 
 export function isWaitingForCustomer(c: InboxConversation): boolean {
-  return c.lastMessageDirection === "outbound";
+  return c.conversationStatus === "OPEN" && c.lastMessageDirection === "outbound";
 }
 
 export function hasQuoteSent(c: InboxConversation): boolean {
@@ -49,10 +60,20 @@ export function matchesInboxFilter(
   switch (filter) {
     case "all":
       return true;
+    case "open":
+      return c.conversationStatus === "OPEN";
+    case "new": {
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      return new Date(c.firstContactAt || c.createdAt).getTime() >= sevenDaysAgo;
+    }
+    case "resolved":
+      return c.conversationStatus === "RESOLVED";
+    case "unread":
+      return c.unread > 0;
     case "mine":
       return c.assignedToId === userId;
     case "unassigned":
-      return !c.assignedToId;
+      return c.conversationStatus === "OPEN" && !c.assignedToId;
     case "hot":
       return c.score >= SCORE_HOT_MIN;
     case "follow_up_due":
@@ -73,7 +94,10 @@ export function countInboxFilters(
   userId: string
 ): Record<InboxFilter, number> {
   const counts = {} as Record<InboxFilter, number>;
-  for (const key of INBOX_FILTER_ORDER) {
+  const allFilters = Array.from(
+    new Set<InboxFilter>([...INBOX_FILTER_ORDER, ...COMPANY_INBOX_FILTER_ORDER, "new", "unread"])
+  );
+  for (const key of allFilters) {
     counts[key] = rows.filter((c) => matchesInboxFilter(c, key, userId)).length;
   }
   return counts;

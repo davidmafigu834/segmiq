@@ -16,6 +16,8 @@ export function CompanyWorkspaceShell({
   unreadNotifications,
   notificationRole,
   whatsappBadge = 0,
+  immersive = false,
+  hideMobileChrome = false,
 }: {
   children: ReactNode;
   companyName?: string;
@@ -25,6 +27,10 @@ export function CompanyWorkspaceShell({
   unreadNotifications: number;
   notificationRole: UserRole;
   whatsappBadge?: number;
+  /** Full-height workspaces manage their own inner padding and scrolling. */
+  immersive?: boolean;
+  /** Used by single-pane mobile workspaces while a detail pane is open. */
+  hideMobileChrome?: boolean;
 }) {
   const [mounted, setMounted] = useState(false);
   const { collapsed, toggleCollapsed, width } = useCompanySidebarCollapsed();
@@ -43,6 +49,7 @@ export function CompanyWorkspaceShell({
     <div
       className="sales-dashboard-premium flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
+      data-hide-mobile-nav={hideMobileChrome ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >
       <div className="hidden layout:contents">
@@ -58,21 +65,29 @@ export function CompanyWorkspaceShell({
         />
       </div>
 
-      <CompanyMobileTopBar
-        userName={userName}
-        userRoleLabel="Company Manager"
-        avatarUrl={avatarUrl}
-        unreadNotifications={unreadNotifications}
-        notificationRole={notificationRole}
-      />
+      {!hideMobileChrome ? (
+        <CompanyMobileTopBar
+          userName={userName}
+          userRoleLabel="Company Manager"
+          avatarUrl={avatarUrl}
+          unreadNotifications={unreadNotifications}
+          notificationRole={notificationRole}
+        />
+      ) : null}
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
-        <div className="sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:space-y-5 sm:px-6 layout:px-8 layout:py-6">
+        <div
+          className={
+            immersive
+              ? "sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 overflow-hidden"
+              : "sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:space-y-5 sm:px-6 layout:px-8 layout:py-6"
+          }
+        >
           {children}
         </div>
       </div>
 
-      <CompanyBottomNav whatsappBadge={whatsappBadge} />
+      {!hideMobileChrome ? <CompanyBottomNav whatsappBadge={whatsappBadge} /> : null}
     </div>
   );
 }

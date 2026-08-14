@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { z } from "zod";
-import { canModifyLead } from "@/lib/auth/permissions";
+import { authOptions } from "@/lib/auth";
+import { canModifyLead, canReadLead } from "@/lib/auth/permissions";
 import { createDealFromLead } from "@/lib/sales/deals";
 
 const bodySchema = z.object({
@@ -35,9 +37,18 @@ export async function POST(
   { params }: { params: { leadId: string } }
 ) {
   const check = await canModifyLead(params.leadId, req);
-  if (!check.allowed) {
+  const session = !check.allowed ? await getServerSession(authOptions) : null;
+  const managerAccess =
+    !check.allowed && session?.role === "CLIENT_MANAGER"
+      ? await canReadLead(params.leadId, req)
+      : null;
+  if (!check.allowed && !managerAccess?.ok) {
+    if (managerAccess) {
+      return NextResponse.json({ error: "Not found" }, { status: managerAccess.status });
+    }
     return NextResponse.json({ error: check.reason }, { status: check.status });
   }
+  const actorId = check.allowed ? check.userId : session!.userId!;
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
@@ -46,7 +57,7 @@ export async function POST(
 
   const result = await createDealFromLead({
     leadId: params.leadId,
-    actorId: check.userId,
+    actorId,
     ...parsed.data,
   });
 

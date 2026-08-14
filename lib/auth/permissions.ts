@@ -167,7 +167,9 @@ export async function canReadLead(
     return { ok: true };
   }
 
-  if (session.role === "CLIENT_MANAGER" && !canActAsSalesperson(session)) {
+  // Company oversight is broader than the manager's optional personal sales
+  // queue. `alsoSells` adds write capabilities but must never narrow reads.
+  if (session.role === "CLIENT_MANAGER") {
     if (lead.client_id !== session.clientId) {
       return { ok: false, status: 404 };
     }

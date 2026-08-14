@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { InboxFilter, InboxConversation } from "@/lib/inbox/types";
 import { applyInboxFilter } from "@/lib/inbox/apply-filter";
+import { COMPANY_INBOX_FILTER_ORDER, INBOX_FILTER_LABELS } from "@/lib/inbox/queue-filters";
 import {
   CONVERSATION_SORT_LABELS,
   sortConversationsClient,
@@ -10,7 +11,7 @@ import {
 } from "@/lib/inbox/format-display";
 import { ConversationRow } from "./ConversationRow";
 import { FilterTabs } from "./FilterTabs";
-import { ArrowUpDown, Check, Search } from "lucide-react";
+import { ArrowUpDown, Check, ChevronLeft, ChevronRight, Search, SlidersHorizontal } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 
 type Props = {
@@ -31,9 +32,11 @@ type Props = {
   roleSubtitle?: string;
   filterCounts?: Record<InboxFilter, number>;
   onFilterChange?: (filter: InboxFilter) => void;
+  ownerOptions?: { id: string; name: string }[];
   panelWidth?: number;
   panelAnimated?: boolean;
   chromeInParent?: boolean;
+  companyMode?: boolean;
 };
 
 export function ConversationList({
@@ -54,17 +57,44 @@ export function ConversationList({
   roleSubtitle,
   filterCounts,
   onFilterChange,
+  ownerOptions = [],
   panelWidth,
   panelAnimated = false,
   chromeInParent = false,
+  companyMode = false,
 }: Props) {
   const [sort, setSort] = useState<ConversationSort>("newest");
   const [sortOpen, setSortOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [ownerFilter, setOwnerFilter] = useState("all");
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
-    const base = applyInboxFilter(conversations, filter, search, currentUserId);
+    const base = applyInboxFilter(conversations, filter, search, currentUserId).filter((row) => {
+      if (ownerFilter === "all") return true;
+      if (ownerFilter === "unassigned") return !row.assignedToId;
+      return row.assignedToId === ownerFilter;
+    });
     return sortConversationsClient(base, sort);
-  }, [conversations, filter, search, currentUserId, sort]);
+  }, [conversations, filter, search, currentUserId, ownerFilter, sort]);
+
+  const pageSize = companyMode ? 8 : Math.max(filtered.length, 1);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visibleRows = companyMode
+    ? filtered.slice((page - 1) * pageSize, page * pageSize)
+    : filtered;
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, ownerFilter, search, sort]);
+
+  useEffect(() => {
+    if (filter === "unassigned") setOwnerFilter("all");
+  }, [filter]);
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
   const mobileTop = whatsappMode
     ? mobileFullScreen
@@ -80,7 +110,13 @@ export function ConversationList({
       : "max-[860px]:-translate-x-full";
 
   const listWidthClass =
-    panelWidth != null ? "shrink-0" : whatsappMode ? "w-[360px]" : "w-[360px]";
+    panelWidth != null
+      ? "shrink-0"
+      : companyMode
+        ? "w-full min-w-0"
+        : whatsappMode
+          ? "w-[360px]"
+          : "w-[360px]";
 
   const emptyTitle =
     conversations.length === 0
@@ -119,19 +155,19 @@ export function ConversationList({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <div className="text-[15px] font-semibold tracking-tight text-[#101828]">
-                  Sales conversations
+                  {companyMode ? "Conversations" : "Sales conversations"}
                 </div>
                 <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#667085]">
                   {filtered.length}
                 </span>
               </div>
-              {roleSubtitle ? (
+              {roleSubtitle && !companyMode ? (
                 <div className="mt-0.5 truncate text-[12px] text-[#98A2B3]">
                   WhatsApp Sales Hub · {roleSubtitle}
                 </div>
               ) : null}
             </div>
-            <div className="relative">
+            {!companyMode ? <div className="relative">
               <button
                 type="button"
                 className="wa-icon-btn !h-8 !w-8"
@@ -171,8 +207,29 @@ export function ConversationList({
                   </div>
                 </>
               ) : null}
-            </div>
+            </div> : null}
           </div>
+          {companyMode && filterCounts && onFilterChange ? (
+            <div className="flex border-t border-[#E4E7EC] px-3">
+              {COMPANY_INBOX_FILTER_ORDER.map((key) => {
+                const active = filter === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => onFilterChange(key)}
+                    className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[10px] font-medium transition-colors ${
+                      active ? "text-[#101828]" : "text-[#667085] hover:text-[#101828]"
+                    }`}
+                  >
+                    {key === "awaiting_reply" ? "Waiting" : INBOX_FILTER_LABELS[key]}
+                    <span className="text-[9px] tabular-nums text-[#98A2B3]">{filterCounts[key] ?? 0}</span>
+                    {active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#B7E432]" /> : null}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
           {!chromeInParent && filterCounts && onFilterChange ? (
             <div className="overflow-x-auto border-t border-[#E4E7EC] px-4 py-2.5 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <FilterTabs
@@ -184,16 +241,79 @@ export function ConversationList({
             </div>
           ) : null}
           {!chromeInParent ? (
-            <div className="border-t border-[#E4E7EC] px-4 py-3">
-              <div className="wa-search">
+            <div className="border-t border-[#E4E7EC] px-3 py-3">
+              <div className="flex items-center gap-2">
+                <div className="wa-search min-w-0 flex-1">
                 <Search size={16} className="shrink-0 text-[#98A2B3]" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => onSearchChange?.(e.target.value)}
-                  placeholder="Search by name, phone, location..."
+                  placeholder={companyMode ? "Search conversations..." : "Search by name, phone, location..."}
                   className="w-full bg-transparent text-[14px] text-[#101828] placeholder:text-[#98A2B3] focus:outline-none"
                 />
+                </div>
+                {companyMode && onFilterChange ? (
+                  <div className="relative">
+                    <button type="button" className="wa-icon-btn !h-[38px] !w-[38px] border-[#E4E7EC]" onClick={() => setFilterOpen((value) => !value)} aria-label="Filter conversations" aria-expanded={filterOpen}>
+                      <SlidersHorizontal size={15} strokeWidth={1.8} />
+                    </button>
+                    {filterOpen ? (
+                      <>
+                        <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close filters" onClick={() => setFilterOpen(false)} />
+                        <div className="absolute right-0 z-30 mt-1 max-h-[min(70vh,420px)] w-56 overflow-y-auto rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)] inbox-scroll">
+                          {(["all", "unassigned", "awaiting_reply", "waiting_customer", "unread", "resolved", "quotes_sent"] as InboxFilter[]).map((key) => (
+                            <button key={key} type="button" className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] text-[#101828] hover:bg-[#F9FAFB]" onClick={() => { onFilterChange(key); setFilterOpen(false); }}>
+                              {key === "awaiting_reply" ? "Waiting on Team" : INBOX_FILTER_LABELS[key]}
+                              {filter === key ? <Check size={13} className="text-[#4D7C0F]" /> : null}
+                            </button>
+                          ))}
+                          <div className="my-1 border-t border-[#E4E7EC] px-3 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">
+                            Owner
+                          </div>
+                          {[
+                            { id: "all", name: "Any owner" },
+                            { id: "unassigned", name: "Unassigned" },
+                            ...ownerOptions,
+                          ].map((owner) => (
+                            <button
+                              key={owner.id}
+                              type="button"
+                              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] text-[#101828] hover:bg-[#F9FAFB]"
+                              onClick={() => {
+                                setOwnerFilter(owner.id);
+                                setFilterOpen(false);
+                              }}
+                            >
+                              <span className="truncate">{owner.name}</span>
+                              {ownerFilter === owner.id ? <Check size={13} className="shrink-0 text-[#4D7C0F]" /> : null}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+                {companyMode ? (
+                  <div className="relative">
+                    <button type="button" className="wa-icon-btn !h-[38px] !w-[38px] border-[#E4E7EC]" aria-label="Sort conversations" aria-expanded={sortOpen} onClick={() => setSortOpen((value) => !value)}>
+                      <ArrowUpDown size={15} strokeWidth={1.8} />
+                    </button>
+                    {sortOpen ? (
+                      <>
+                        <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close sort menu" onClick={() => setSortOpen(false)} />
+                        <div className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
+                          {(Object.keys(CONVERSATION_SORT_LABELS) as ConversationSort[]).map((key) => (
+                            <button key={key} type="button" className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] text-[#101828] hover:bg-[#F9FAFB]" onClick={() => { setSort(key); setSortOpen(false); }}>
+                              {CONVERSATION_SORT_LABELS[key]}
+                              {sort === key ? <Check size={13} className="text-[#4D7C0F]" /> : null}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -243,7 +363,7 @@ export function ConversationList({
             ) : null}
           </div>
         ) : (
-          filtered.map((c) => (
+          visibleRows.map((c) => (
             <ConversationRow
               key={c.id}
               conversation={c}
@@ -257,6 +377,18 @@ export function ConversationList({
           ))
         )}
       </div>
+      {companyMode && filtered.length > 0 ? (
+        <div className="flex min-h-[48px] shrink-0 items-center justify-between gap-2 border-t border-[#E4E7EC] bg-white px-3">
+          <span className="truncate text-[9.5px] text-[#667085]">
+            Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="wa-icon-btn !h-7 !w-7 disabled:opacity-35" aria-label="Previous page"><ChevronLeft size={13} /></button>
+            <span className="min-w-7 text-center text-[10px] font-semibold tabular-nums text-[#344054]">{page}/{pageCount}</span>
+            <button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="wa-icon-btn !h-7 !w-7 disabled:opacity-35" aria-label="Next page"><ChevronRight size={13} /></button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

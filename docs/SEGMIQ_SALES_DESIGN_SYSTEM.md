@@ -763,3 +763,19 @@ The Company Calendar is a team sales execution workspace: six KPI cards using th
 - The right rail is one surface with mini month, selected-date team agenda, and Upcoming. Selecting an event converts that same rail into Event Detail.
 - Mobile is agenda-first with a horizontal date strip and team grouping. Tablet moves the right rail into a drawer.
 - Dark surfaces use Company tokens, subtle grid borders, and purpose-built low-opacity event tints.
+
+## Company WhatsApp Sales Hub patterns
+
+The Company WhatsApp Sales Hub uses the Company workspace shell and a fixed desktop hierarchy: page header, six compact KPIs, then a 26/46/28 three-column inbox. No analytics modules appear below the workspace.
+
+- `ConversationRow`: dense avatar/name/preview/time layout with real relationship state, unread badge, neutral hover, and a soft lime selected wash with a 3px indicator.
+- `ChatHeader`: contact identity on the left; owner identity and authorized owner control on the right.
+- `ConversationToolbar`: compact Assign/Reassign, Add Note, Create/View Deal and View Lead actions immediately below the header. Mobile keeps only the essential actions visible.
+- `MessageBubble`: incoming messages use a bordered neutral surface; outgoing messages use a low-opacity lime tint. Width remains content-aware and capped by the chat layout.
+- `Composer`: independently anchored to the center panel with quick replies/assets, message input, a compact lime send control and an amber service-window notice when required.
+- `ConversationInsightRail`: Customer Overview, Conversation Insights, Related Records, Team Activity and Quick Actions in this exact order.
+- `ConversationInsightMetric`: a compact 2×2 grid for first contact, message count, first response and deterministic conversation status.
+- `TeamActivityFeed`: three recent meaningful sales events with actor, action and time; never presence, page-view or typing surveillance.
+- Mobile inbox: single-pane list → chat → intelligence navigation. Global bottom navigation hides in chat/intelligence so it cannot cover the composer.
+
+Use sales design tokens for both themes. Reserve SegmiQ lime for primary action, selection and focus; reserve WhatsApp green for channel identity.
