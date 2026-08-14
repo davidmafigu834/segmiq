@@ -6,6 +6,8 @@ import { logDocumentSent } from "@/lib/lead-events";
 import { persistLeadScore } from "@/lib/lead-scoring";
 import { firstName, regionFromDialCode } from "@/lib/messaging/whatsapp-vars";
 import { persistOutboundWhatsAppMessage } from "@/lib/whatsapp/persist-outbound";
+import { getSafeWhatsAppConnection } from "@/lib/whatsapp/connections";
+import { sendCanonicalWhatsAppDocument } from "@/lib/whatsapp/message-service";
 
 type AssetType =
   | "PORTFOLIO"
@@ -46,6 +48,13 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   }
 
   const clientId = lead.client_id as string;
+  const whatsappConnection = await getSafeWhatsAppConnection(clientId);
+  if (whatsappConnection.providerType === "TEMPORARY_WEB" && assetType !== "DOCUMENT") {
+    return NextResponse.json(
+      { error: "Quick connection supports manual replies and documents only. This asset requires Meta Cloud API." },
+      { status: 409 }
+    );
+  }
   const leadPhone = lead.phone as string;
   const prospectFirst = firstName(lead.name as string | null);
 
@@ -85,6 +94,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
 
   let documentName = "";
   let documentUrl = "";
+  let persistedByCanonicalService = false;
 
   try {
     switch (assetType) {
@@ -212,17 +222,34 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
           .single();
         if (!doc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-        await sendWhatsApp({
-          to: leadPhone,
-          template: "SEND_DOCUMENT",
-          variables: {
-            "1": prospectFirst,
-            "2": doc.name as string,
-            "3": (doc.description as string | null)?.trim() || doc.name as string,
-          },
-          fallbackBody: `Hi ${prospectFirst}, please find the ${doc.name as string} attached above.`,
-          context: { userId: check.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
-        });
+        if (whatsappConnection.providerType === "TEMPORARY_WEB") {
+          const result = await sendCanonicalWhatsAppDocument({
+            clientId,
+            leadId: lead.id as string,
+            to: leadPhone,
+            body: (doc.description as string | null)?.trim() || `Sent ${doc.name as string}`,
+            filename: doc.name as string,
+            mimeType: (doc.mime_type as string | null) ?? "application/pdf",
+            url: doc.file_url as string,
+            actorId: check.userId,
+            actorName: actor.name,
+            actorRole: actor.role,
+          });
+          if (!result.ok) return NextResponse.json({ error: result.error ?? "Document send failed" }, { status: 502 });
+          persistedByCanonicalService = true;
+        } else {
+          await sendWhatsApp({
+            to: leadPhone,
+            template: "SEND_DOCUMENT",
+            variables: {
+              "1": prospectFirst,
+              "2": doc.name as string,
+              "3": (doc.description as string | null)?.trim() || doc.name as string,
+            },
+            fallbackBody: `Hi ${prospectFirst}, please find the ${doc.name as string} attached above.`,
+            context: { userId: check.userId, leadId: lead.id as string, clientId, notificationType: "DOCUMENT_SENT" },
+          });
+        }
         documentName = doc.name as string;
         documentUrl = doc.file_url as string;
         break;
@@ -262,7 +289,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     customMessage: assetType === "CUSTOM_MESSAGE" ? (customMessage?.trim() ?? null) : null,
   });
 
-  if (lead.source === "WHATSAPP_INBOUND") {
+  if (lead.source === "WHATSAPP_INBOUND" && !persistedByCanonicalService) {
     const previewBody =
       assetType === "CUSTOM_MESSAGE"
         ? customMessage?.trim() || "Message sent"

@@ -33,6 +33,7 @@
     "lib/**/*.ts",
     "lib/**/*.tsx",
     "scripts/**/*.ts",
+    "services/**/*.ts",
     "store/**/*.ts",
     "store/**/*.tsx",
     "tests/**/*.ts",

@@ -6,6 +6,7 @@ import { firstName } from "@/lib/messaging/whatsapp-vars";
 import { isWhatsAppSessionOpen } from "./inbound";
 import { persistOutboundWhatsAppMessage } from "./persist-outbound";
 import { sendWhatsAppSessionMessage } from "./session-message";
+import { getSafeWhatsAppConnection } from "./connections";
 
 export type SendWhatsAppTextResult = SendResult & {
   channel: "whatsapp";
@@ -51,9 +52,10 @@ export async function sendWhatsAppTextToLead(opts: {
   }
 
   const clientId = lead.client_id as string;
+  const connection = await getSafeWhatsAppConnection(clientId);
   const sessionOpen = await isWhatsAppSessionOpen(opts.leadId);
 
-  if (sessionOpen) {
+  if (sessionOpen || connection.providerType === "TEMPORARY_WEB") {
     const result = await sendWhatsAppSessionMessage({
       to: lead.phone as string,
       body: opts.text,

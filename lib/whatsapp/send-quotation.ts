@@ -6,6 +6,8 @@ import { isWhatsAppSessionOpen } from "@/lib/whatsapp/inbound";
 import { sendWhatsAppSessionMessage } from "@/lib/whatsapp/session-message";
 import { sendWhatsAppSessionDocument, uploadWhatsAppMedia } from "@/lib/whatsapp/send-document";
 import { persistOutboundWhatsAppMessage } from "@/lib/whatsapp/persist-outbound";
+import { getSafeWhatsAppConnection } from "@/lib/whatsapp/connections";
+import { sendCanonicalWhatsAppDocument } from "@/lib/whatsapp/message-service";
 import type { SendResult } from "@/lib/messaging/log";
 
 export type SendQuotationWhatsAppResult = SendResult & {
@@ -36,6 +38,27 @@ export async function sendQuotationOnWhatsApp(opts: {
   const filename = `quotation-${opts.quoteNumber}.pdf`;
   const publicPdfLink = `${getPublicBaseUrl()}/api/quotes/${opts.publicToken}/pdf`;
   const documentLink = opts.pdfUrl ?? publicPdfLink;
+  const connection = await getSafeWhatsAppConnection(opts.clientId);
+
+  // Quick connection uses the provider-neutral document path. It must not
+  // upload media to, or fall back to, the Meta transport for a temporary
+  // linked-device tenant.
+  if (connection.providerType === "TEMPORARY_WEB") {
+    const result = await sendCanonicalWhatsAppDocument({
+      clientId: opts.clientId,
+      leadId: opts.leadId,
+      to: opts.phone,
+      body: opts.waMessage,
+      filename,
+      mimeType: "application/pdf",
+      url: documentLink,
+      actorId: opts.actorId,
+      actorName: opts.actorName,
+      actorRole: opts.actorRole,
+    });
+    return { ...result, mode: "session_document" };
+  }
+
   const sessionOpen = await isWhatsAppSessionOpen(opts.leadId);
 
   if (sessionOpen) {

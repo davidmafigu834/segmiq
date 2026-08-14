@@ -15,6 +15,9 @@ import {
   handleCampaignReply,
 } from "@/lib/marketing/campaign-reply";
 import { isOptOutMessage, recordWhatsAppOptOut } from "@/lib/marketing/consent";
+import type { WhatsAppMediaAsset } from "./media";
+import type { WhatsAppProviderType, WhatsAppSenderSource } from "./providers/types";
+import { getWhatsAppCapabilities } from "./providers/capabilities";
 
 const SESSION_MS = 24 * 60 * 60 * 1000;
 
@@ -151,8 +154,13 @@ export async function isWhatsAppSessionOpen(leadId: string): Promise<boolean> {
 
 export async function handleInboundWhatsAppMessage(opts: {
   phoneNumberId?: string | null;
+  clientId?: string | null;
+  connectionId?: string | null;
+  providerType?: WhatsAppProviderType;
+  senderSource?: WhatsAppSenderSource;
   message: InboundPayload;
   contactProfile?: WhatsAppContactProfile | null;
+  mediaAsset?: WhatsAppMediaAsset | null;
 }): Promise<void> {
   const { message, contactProfile } = opts;
   const providerId = message.id?.trim();
@@ -163,15 +171,64 @@ export async function handleInboundWhatsAppMessage(opts: {
   const { data: existing } = await supabase
     .from("whatsapp_messages")
     .select("id")
+    .eq("client_id", opts.clientId ?? "00000000-0000-0000-0000-000000000000")
+    .eq("provider_type", opts.providerType ?? "META_CLOUD")
     .eq("provider_id", providerId)
     .maybeSingle();
-  if (existing) return;
+  // Legacy Meta events do not know clientId until phone-number resolution.
+  if (opts.clientId && existing) return;
 
-  const client = await resolveClientFromWhatsAppPhoneNumberId(opts.phoneNumberId);
+  const directClient = opts.clientId
+    ? await supabase
+        .from("clients")
+        .select("id, name, dial_code, assignment_mode, is_active, is_archived")
+        .eq("id", opts.clientId)
+        .maybeSingle()
+    : null;
+  const client = directClient?.data && directClient.data.is_active !== false && !directClient.data.is_archived
+    ? {
+        id: directClient.data.id as string,
+        name: directClient.data.name as string,
+        dial_code: (directClient.data.dial_code as string | null) ?? null,
+        assignment_mode: (directClient.data.assignment_mode as string | null) ?? "direct",
+      }
+    : await resolveClientFromWhatsAppPhoneNumberId(opts.phoneNumberId);
   if (!client) return;
 
+  if (!opts.clientId) {
+    const { data: legacyExisting } = await supabase
+      .from("whatsapp_messages")
+      .select("id")
+      .eq("client_id", client.id)
+      .eq("provider_type", opts.providerType ?? "META_CLOUD")
+      .eq("provider_id", providerId)
+      .maybeSingle();
+    if (legacyExisting) return;
+  }
+
+  // Reserve the provider-scoped external identity before CRM work begins.
+  // Linked-device reconnects can replay the same event concurrently; the
+  // unique constraint here prevents a replay from creating a second Lead,
+  // Contact, activity, or task before whatsapp_messages is written.
+  if (opts.connectionId && opts.providerType) {
+    const { error: reservationError } = await supabase
+      .from("whatsapp_external_messages")
+      .insert({
+        client_id: client.id,
+        connection_id: opts.connectionId,
+        provider_type: opts.providerType,
+        provider_message_id: providerId,
+        remote_chat_id: message.from,
+        sender_source: opts.senderSource ?? "CUSTOMER",
+      });
+    if (reservationError) {
+      if (reservationError.code === "23505") return;
+      throw new Error(`Could not reserve WhatsApp provider message: ${reservationError.message}`);
+    }
+  }
+
   const mediaRef = mediaPayloadForType(message);
-  const mediaAsset = await fetchWhatsAppMediaAsset(client.id, mediaRef);
+  const mediaAsset = opts.mediaAsset ?? await fetchWhatsAppMediaAsset(client.id, mediaRef);
   const body = extractBody(message, mediaAsset.caption);
   const phone = displayPhone(message.from, client.dial_code);
   const phoneDigits = phone.replace(/\D/g, "");
@@ -343,7 +400,7 @@ export async function handleInboundWhatsAppMessage(opts: {
   });
 
   const now = new Date().toISOString();
-  await supabase.from("whatsapp_messages").insert({
+  const { data: persisted, error: persistError } = await supabase.from("whatsapp_messages").insert({
     client_id: client.id,
     lead_id: leadId,
     direction: "inbound",
@@ -357,14 +414,33 @@ export async function handleInboundWhatsAppMessage(opts: {
     media_storage_key: mediaAsset.storageKey,
     created_at: message.timestamp ? new Date(Number(message.timestamp) * 1000).toISOString() : now,
     updated_at: now,
-  });
+    provider_type: opts.providerType ?? "META_CLOUD",
+    connection_id: opts.connectionId ?? null,
+    sender_source: opts.senderSource ?? "CUSTOMER",
+  }).select("id").maybeSingle();
+
+  if (persistError || !persisted?.id) return;
+
+  if (opts.connectionId && opts.providerType) {
+    await supabase
+      .from("whatsapp_external_messages")
+      .update({ whatsapp_message_id: persisted.id })
+      .eq("connection_id", opts.connectionId)
+      .eq("provider_type", opts.providerType)
+      .eq("provider_message_id", providerId);
+  }
 
   await logLeadEvent({
     leadId,
     clientId: client.id,
     actor: { id: null, name: "Customer", role: "CUSTOMER" },
     eventType: "MESSAGE_RECEIVED",
-    eventData: { body, provider_id: providerId, message_type: message.type },
+    eventData: {
+      body,
+      provider_id: providerId,
+      provider_type: opts.providerType ?? "META_CLOUD",
+      message_type: message.type,
+    },
     channel: "whatsapp",
   });
 
@@ -427,16 +503,18 @@ export async function handleInboundWhatsAppMessage(opts: {
     }
   }
 
-  try {
-    await processWhatsAppQualification({
-      clientId: client.id,
-      clientName: client.name,
-      leadId,
-      phone,
-      inboundBody: body,
-      isNewLead,
-    });
-  } catch (err) {
-    console.error("[whatsapp] qualification error:", err);
+  if (getWhatsAppCapabilities(opts.providerType ?? "META_CLOUD").automatedMessages) {
+    try {
+      await processWhatsAppQualification({
+        clientId: client.id,
+        clientName: client.name,
+        leadId,
+        phone,
+        inboundBody: body,
+        isNewLead,
+      });
+    } catch (err) {
+      console.error("[whatsapp] qualification error:", err);
+    }
   }
 }

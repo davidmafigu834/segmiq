@@ -26,6 +26,8 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
 import { CompanyConversationInsightRail } from "./CompanyConversationInsightRail";
 import { SalesIntelligenceRail } from "./SalesIntelligenceRail";
+import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
+import { WhatsAppConnectionBadge } from "./WhatsAppConnectionBadge";
 
 type Props = {
   userName: string;
@@ -90,6 +92,7 @@ export function TeamInbox({
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [companyName, setCompanyName] = useState("");
   const [sessionOpen, setSessionOpen] = useState<boolean | null>(null);
+  const [whatsappConnection, setWhatsAppConnection] = useState<SafeWhatsAppConnection | null>(null);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const isMobile = useInboxMobile();
   const isCompact = useInboxCompact();
@@ -220,6 +223,26 @@ export function TeamInbox({
 
   const whatsappMode = !!backHref;
 
+  useEffect(() => {
+    if (!whatsappMode) return;
+    let cancelled = false;
+    const loadConnection = async () => {
+      try {
+        const response = await fetch("/api/whatsapp/connection", { cache: "no-store" });
+        const data = (await response.json()) as { connection?: SafeWhatsAppConnection };
+        if (!cancelled && response.ok && data.connection) setWhatsAppConnection(data.connection);
+      } catch {
+        // Conversation history remains available if transport status cannot be refreshed.
+      }
+    };
+    void loadConnection();
+    const timer = window.setInterval(() => void loadConnection(), 10_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [whatsappMode]);
+
   function handleSelect(id: string) {
     setActiveId(id);
     if (whatsappMode) {
@@ -315,6 +338,7 @@ export function TeamInbox({
           notificationRole={role}
           userName={userName}
           avatarUrl={avatarUrl}
+          connection={whatsappConnection}
         />
       ) : null}
 
@@ -436,6 +460,7 @@ export function TeamInbox({
                   <PanelRight size={16} strokeWidth={1.8} />
                 </button>
               ) : null}
+              <WhatsAppConnectionBadge connection={whatsappConnection} compact />
               {active ? (
                 <div
                   className={`inline-flex items-center gap-1.5 rounded-[8px] border px-2.5 py-1.5 text-[12px] font-medium ${
@@ -551,6 +576,8 @@ export function TeamInbox({
                 userName={userName}
                 companyName={companyName}
                 canSend={canSend}
+                transportAvailable={whatsappConnection ? whatsappConnection.connected : true}
+                connectionLabel={whatsappConnection?.providerLabel ?? "WhatsApp"}
                 canTransfer={canTransfer}
                 canUpdateStatus={canUpdateStatus}
                 salespeople={salespeople}

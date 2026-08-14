@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  AlertTriangle,
   BriefcaseBusiness,
   CheckCircle2,
   ChevronDown,
@@ -41,6 +42,8 @@ type Props = {
   userName: string;
   companyName?: string;
   canSend: boolean;
+  transportAvailable?: boolean;
+  connectionLabel?: string;
   canTransfer?: boolean;
   canUpdateStatus?: boolean;
   salespeople?: { id: string; name: string }[];
@@ -91,6 +94,8 @@ export function ChatThread({
   userName,
   companyName = "",
   canSend,
+  transportAvailable = true,
+  connectionLabel = "WhatsApp",
   canTransfer = false,
   canUpdateStatus = false,
   salespeople = [],
@@ -295,7 +300,7 @@ export function ChatThread({
   }, [messages, conversation?.id]);
 
   async function sendCustomMessage(text: string) {
-    if (!conversation || !text.trim() || sending) return;
+    if (!conversation || !text.trim() || sending || !transportAvailable) return;
     setSending(true);
     setSendError(null);
     try {
@@ -351,7 +356,7 @@ export function ChatThread({
     assetType: "PORTFOLIO" | "TESTIMONIALS" | "PRICING_PACKAGE" | "DOCUMENT",
     assetId?: string
   ) {
-    if (!conversation || sending) return;
+    if (!conversation || sending || !transportAvailable) return;
     setSending(true);
     setSendError(null);
     try {
@@ -820,7 +825,7 @@ export function ChatThread({
               onAction={(a) => void handleQuickAction(a)}
               onSavedReply={(body) => void handleSavedReply(body)}
               savedReplies={savedReplies}
-              disabled={sending}
+              disabled={sending || !transportAvailable}
               variant={isWhatsApp ? "whatsapp" : "default"}
               onCollapse={() => setQuickActionsOpen(false)}
             />
@@ -902,13 +907,15 @@ export function ChatThread({
                 if (e.key === "Enter") void sendCustomMessage(input);
               }}
               placeholder={
-                sessionClosed
-                  ? "Free-form replies unavailable — may send as template…"
-                  : companyMode
-                    ? "Type a message..."
-                    : "Type a WhatsApp reply..."
+                !transportAvailable
+                  ? "WhatsApp is disconnected"
+                  : sessionClosed
+                    ? "Free-form replies unavailable — may send as template…"
+                    : companyMode
+                      ? "Type a message..."
+                      : "Type a WhatsApp reply..."
               }
-              disabled={sending}
+              disabled={sending || !transportAvailable}
               aria-label="Type a WhatsApp reply"
               className={
                 isWhatsApp
@@ -918,7 +925,7 @@ export function ChatThread({
             />
             <button
               type="button"
-              disabled={!input.trim() || sending}
+              disabled={!input.trim() || sending || !transportAvailable}
               onClick={() => void sendCustomMessage(input)}
               aria-label="Send WhatsApp message"
               className={
@@ -943,6 +950,15 @@ export function ChatThread({
             >
               {claiming ? "Claiming..." : "Claim conversation"}
             </button>
+          ) : null}
+          {isWhatsApp && !transportAvailable ? (
+            <div className="mx-3 mb-1 flex items-start gap-2 rounded-[9px] border border-rose-200 bg-rose-50 px-3 py-2.5 text-rose-700">
+              <AlertTriangle size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
+              <div className="min-w-0">
+                <div className="text-[12px] font-semibold">{connectionLabel} is disconnected</div>
+                <p className="mt-0.5 text-[11px] leading-snug">Conversation history and CRM tools remain available. Sending resumes after a company manager reconnects WhatsApp.</p>
+              </div>
+            </div>
           ) : null}
         </div>
       )}

@@ -7,17 +7,21 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
 import type { UserRole } from "@/types";
+import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
+import { WhatsAppConnectionBadge } from "./WhatsAppConnectionBadge";
 
 export function CompanyWhatsAppHeader({
   unreadNotifications,
   notificationRole,
   userName,
   avatarUrl,
+  connection,
 }: {
   unreadNotifications: number;
   notificationRole: UserRole;
   userName: string;
   avatarUrl?: string | null;
+  connection: SafeWhatsAppConnection | null;
 }) {
   return (
     <header className="flex min-h-[76px] shrink-0 items-center justify-between gap-4 px-4 py-2.5 sm:px-5 layout:px-6">
@@ -55,7 +59,8 @@ export function CompanyWhatsAppHeader({
             helpHref="/client/account"
             helpLabel="Help & Support"
           />
-        <Link
+        <WhatsAppConnectionBadge connection={connection} canManage compact />
+        {connection?.connected && connection.capabilities.broadcast ? <Link
           href="/client/marketing/campaigns/new"
           className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] bg-sales-brand px-3 text-[11px] font-semibold text-sales-brand-text transition-colors hover:brightness-[0.97] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
           title="Create an approved-template WhatsApp campaign"
@@ -63,7 +68,7 @@ export function CompanyWhatsAppHeader({
           <Send size={15} strokeWidth={1.8} aria-hidden />
           Broadcast Message
           <ChevronDown size={12} strokeWidth={1.8} aria-hidden />
-        </Link>
+        </Link> : null}
       </div>
     </header>
   );

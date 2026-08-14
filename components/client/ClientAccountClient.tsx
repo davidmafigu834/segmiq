@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Check, Mail, Phone } from "lucide-react";
+import Link from "next/link";
+import { Check, ChevronRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { PageHeader } from "@/components/ui";
 import { normalizeToE164 } from "@/lib/phone-validate";
@@ -460,6 +461,18 @@ export function ClientAccountClient({
       <SectionDivider />
 
       <CrmThemeSetting />
+
+      <SectionDivider />
+
+      <section>
+        <h2 className="mb-1 font-serif text-2xl text-[--text-primary]">WhatsApp</h2>
+        <p className="mb-5 text-sm text-[--text-secondary]">Manage the provider that powers your company&apos;s existing WhatsApp Sales Hub.</p>
+        <Link href="/client/account/whatsapp" className="group flex items-center gap-4 rounded-xl border border-[--border] bg-[--surface-card] p-5 transition-colors hover:bg-[--surface-card-alt]">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ECFDF3] text-[#16A34A]"><MessageCircle size={21} /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-[--text-primary]">WhatsApp connection</span><span className="mt-0.5 block text-xs text-[--text-secondary]">View connection health or link an eligible business phone with QR.</span></span>
+          <ChevronRight size={18} className="text-[--text-tertiary] transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </section>
 
       <SectionDivider />
 

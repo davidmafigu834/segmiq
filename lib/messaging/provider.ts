@@ -1,5 +1,6 @@
 import { sendWhatsAppViaMeta, type SendWhatsAppParams } from "./meta-whatsapp";
 import type { SendResult } from "@/lib/messaging/log";
+import { resolveWhatsAppProvider } from "@/lib/whatsapp/providers/resolver";
 
 export type { SendWhatsAppParams, TemplateKey } from "./meta-whatsapp";
 export type { SendResult } from "@/lib/messaging/log";
@@ -23,5 +24,20 @@ export function isWhatsAppDeliveryConfigured(): boolean {
 export async function sendWhatsApp(
   params: SendWhatsAppParams
 ): Promise<SendResult & { channel: "whatsapp" }> {
+  // This entry point is used by template, campaign, reminder, and notification
+  // workflows. A selected Quick connection is intentionally manual-only, so
+  // never let those workflows silently fall through to legacy Meta credentials.
+  const clientId = params.context.clientId;
+  // Some platform-level notifications have no company transport scope.
+  if (!clientId) return sendWhatsAppViaMeta(params);
+  const { connection } = await resolveWhatsAppProvider(clientId);
+  if (connection?.providerType === "TEMPORARY_WEB") {
+    return {
+      ok: false,
+      error: "This WhatsApp connection doesn't support automated or broadcast messaging.",
+      errorCode: "UNSUPPORTED",
+      channel: "whatsapp",
+    };
+  }
   return sendWhatsAppViaMeta(params);
 }
