@@ -14,6 +14,9 @@ export type SalesKpiItem = {
   supporting: string;
   trend?: SalesKpiTrend;
   icon:
+    | "customers"
+    | "companies"
+    | "individuals"
     | "followups"
     | "pipeline"
     | "won"

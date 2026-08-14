@@ -8,7 +8,10 @@ import {
   CalendarClock,
   CircleDollarSign,
   Clock3,
+  Building2,
   Inbox,
+  UserRound,
+  UsersRound,
   Target,
   Trophy,
 } from "lucide-react";
@@ -16,6 +19,9 @@ import { cn } from "@/lib/ui/cn";
 import type { SalesKpiItem } from "@/components/dashboard/sales/types";
 
 const ICON_MAP = {
+  customers: UsersRound,
+  companies: Building2,
+  individuals: UserRound,
   followups: CalendarClock,
   pipeline: CircleDollarSign,
   won: Trophy,
@@ -26,6 +32,9 @@ const ICON_MAP = {
 } as const;
 
 const ICON_TINT: Record<SalesKpiItem["icon"], string> = {
+  customers: "bg-sales-brand-soft-solid text-sales-brand-fg",
+  companies: "bg-sales-success-soft text-sales-success-fg",
+  individuals: "bg-sales-info-soft text-sales-info-fg",
   followups: "bg-sales-warning-soft text-sales-warning-fg",
   pipeline: "bg-sales-success-soft text-sales-success-fg",
   won: "bg-sales-brand-soft-solid text-sales-brand-fg",

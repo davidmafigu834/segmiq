@@ -151,6 +151,11 @@ export interface ContactRow {
   source: string | null;
   lead_origin: "segmiq" | "client";
   lifecycle: ContactLifecycle;
+  /** Canonical Customer relationship fields (nullable for legacy/unclassified contacts). */
+  customer_type?: "company" | "individual" | null;
+  primary_contact_name?: string | null;
+  industry?: string | null;
+  relationship_owner_id?: string | null;
   notes: string | null;
   tags: string[];
   /** Trade-show / exhibition name when captured via Event Capture (nullable). */

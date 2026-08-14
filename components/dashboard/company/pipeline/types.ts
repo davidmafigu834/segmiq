@@ -71,6 +71,7 @@ export type CompanyPipelineNextActionView = {
 
 export type CompanyPipelineDealRow = {
   id: string;
+  contactId?: string | null;
   dealName: string;
   category: string | null;
   customerName: string;

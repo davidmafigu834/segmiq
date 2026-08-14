@@ -33,6 +33,10 @@ const bodySchema = z.object({
   name: z.string().max(200).optional(),
   phone: z.string().min(3).max(40),
   email: z.string().max(200).optional(),
+  customerType: z.enum(["company", "individual"]).optional(),
+  primaryContactName: z.string().max(200).optional(),
+  industry: z.string().max(200).optional(),
+  location: z.string().max(300).optional(),
   source: z.string().min(1).max(80),
   notes: z.string().max(5000).optional(),
   projectType: z.string().max(200).optional(),
@@ -74,6 +78,10 @@ export async function POST(req: Request) {
   }
   const b = parsed.data;
 
+  if (b.type === "customer" && !b.customerType) {
+    return NextResponse.json({ error: "Customer type is required", field: "customerType" }, { status: 400 });
+  }
+
   const requestedClientId = session.role === "SUPER_ADMIN" ? b.clientId : session.clientId;
   if (!requestedClientId) {
     return NextResponse.json({ error: "Missing client context" }, { status: 400 });
@@ -113,10 +121,20 @@ export async function POST(req: Request) {
   let contactId: string;
   if (existing) {
     contactId = existing.id as string;
-    if (b.type === "customer" && existing.lifecycle !== "customer") {
+    if (b.type === "customer") {
       await supabase
         .from("contacts")
-        .update({ lifecycle: "customer", updated_at: new Date().toISOString() })
+        .update({
+          lifecycle: "customer",
+          name: b.name?.trim() || existing.name,
+          email: emailTrim ?? undefined,
+          location: b.location?.trim() || undefined,
+          customer_type: b.customerType,
+          primary_contact_name: b.primaryContactName?.trim() || null,
+          industry: b.industry?.trim() || null,
+          relationship_owner_id: b.assigneeId ?? null,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", existing.id);
     }
     if (b.type === "lead" && !b.forceNew) {
@@ -164,6 +182,11 @@ export async function POST(req: Request) {
         lead_origin: "client",
         lifecycle: b.type === "customer" ? "customer" : "cold",
         notes: b.notes ?? null,
+        location: b.location?.trim() || null,
+        customer_type: b.type === "customer" ? b.customerType : null,
+        primary_contact_name: b.type === "customer" ? b.primaryContactName?.trim() || null : null,
+        industry: b.type === "customer" ? b.industry?.trim() || null : null,
+        relationship_owner_id: b.type === "customer" ? b.assigneeId ?? null : null,
       })
       .select("id")
       .single();

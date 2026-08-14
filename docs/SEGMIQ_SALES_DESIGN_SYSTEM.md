@@ -705,6 +705,27 @@ Hot is score intent (`70+`), not lifecycle. New / Contacted / Qualified / Not Qu
 
 Do not auto-select the first Lead. At ≥1280px the selected panel is inline and top-aligned with the table; below 1280px it overlays; below 768px the table becomes Lead cards and the panel becomes a full-height sheet.
 
+## 16g. Company Customers
+
+Route: `/client/customers` · Shell: `CompanyWorkspaceShell` · Full product docs: [SEGMIQ_COMPANY_CUSTOMERS.md](./SEGMIQ_COMPANY_CUSTOMERS.md).
+
+Company Customers is a table-first relationship directory. One Customer is one canonical Customer-lifecycle contact and can own many Deals.
+
+| Element | Spec |
+|---|---|
+| Header | `COMPANY / CUSTOMERS` · Customers · compact lime Add Customer |
+| KPIs | Exactly five: Total Customers, Companies, Individuals, Active Deals, Total Pipeline Value |
+| Tabs | All Customers · Companies · Individuals · Recent; thin lime underline |
+| Toolbar | Search · Filters · Customer Type · Owner · Sort, inside the table card |
+| Columns | Checkbox · Customer · Type · Contact · Location · Owner · Last Interaction · Active Deals · Customer Value · Actions |
+| Rows | 58–62px; soft lime selected state; no zebra striping or scale |
+| Panel order | Header → contact actions → overview → commercial metrics → recent activity → footer |
+| Footer | View full details + lime View Deals `(N)` |
+
+Customer Value is won value; Total Pipeline Value is active Deal value. Unknown estimates remain unknown and never become `$0`. Do not show Lead score, intent, qualification, Deal health, invoices, payments, a favourite star, or an invented Customer status.
+
+No Customer auto-selection. Use `?customer=<id>`. Inline panel at ≥1280px, overlay below, full-height sheet below 768px; mobile uses Customer cards. Light/dark colors inherit the Sales token system.
+
 ## 17. Guided Learning
 
 Interactive SegmiQ 2.0 course (not a third-party tour widget). Full behavior: [`docs/SEGMIQ_INTERACTIVE_TRAINING.md`](./SEGMIQ_INTERACTIVE_TRAINING.md).

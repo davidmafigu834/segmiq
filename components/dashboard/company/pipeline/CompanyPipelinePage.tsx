@@ -93,6 +93,7 @@ export function CompanyPipelinePage({
   const [busy, setBusy] = useState(false);
 
   const selectedId = searchParams.get("deal");
+  const customerId = searchParams.get("customerId");
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search), 300);
@@ -122,11 +123,12 @@ export function CompanyPipelinePage({
   const filtered = useMemo(() => {
     return data.rows.filter(
       (row) =>
+        (!customerId || row.contactId === customerId) &&
         matchesCompanyPipelineTab(row, tab) &&
         matchesCompanyPipelineSearch(row, debouncedSearch) &&
         matchesCompanyPipelineFilters(row, filters)
     );
-  }, [data.rows, tab, debouncedSearch, filters]);
+  }, [data.rows, tab, debouncedSearch, filters, customerId]);
 
   const sorted = useMemo(() => sortCompanyPipelineRows(filtered, sort), [filtered, sort]);
 

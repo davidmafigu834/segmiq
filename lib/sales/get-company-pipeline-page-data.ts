@@ -103,6 +103,7 @@ function mapRow(opts: {
 
   return {
     id: deal.id,
+    contactId: deal.contact_id,
     dealName: deal.name?.trim() || "Untitled Deal",
     category: deal.service_summary?.trim() || lead?.project_type?.trim() || null,
     customerName: lead?.name?.trim() || "Customer",

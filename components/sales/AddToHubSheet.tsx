@@ -51,6 +51,8 @@ export function AddToHubSheet({
   mode = "salesperson",
   clientId,
   defaultSource,
+  defaultType = "lead",
+  lockType = false,
   hideSourceField = false,
   variant = "default",
   initialContact,
@@ -62,6 +64,8 @@ export function AddToHubSheet({
   mode?: "salesperson" | "manager";
   clientId?: string;
   defaultSource?: string;
+  defaultType?: "lead" | "customer";
+  lockType?: boolean;
   hideSourceField?: boolean;
   variant?: "default" | "walk_in";
   initialContact?: { name?: string | null; phone?: string | null; email?: string | null };
@@ -69,7 +73,11 @@ export function AddToHubSheet({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const [type, setType] = useState<"lead" | "customer">("lead");
+  const [type, setType] = useState<"lead" | "customer">(defaultType);
+  const [customerType, setCustomerType] = useState<"" | "company" | "individual">("");
+  const [primaryContactName, setPrimaryContactName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [location, setLocation] = useState("");
   const [name, setName] = useState(initialContact?.name ?? "");
   const [phone, setPhone] = useState(initialContact?.phone ?? "");
   const [source, setSource] = useState(defaultSource ?? SOURCES[0]);
@@ -144,6 +152,14 @@ export function AddToHubSheet({
       setError("Enter a valid phone number.");
       return;
     }
+    if (!isLead && !name.trim()) {
+      setError("Enter the Customer name.");
+      return;
+    }
+    if (!isLead && !customerType) {
+      setError("Select whether this Customer is a company or an individual.");
+      return;
+    }
     if (isWalkInFlow && !intakeOutcome) {
       setError("Select what happened at the desk.");
       return;
@@ -165,6 +181,14 @@ export function AddToHubSheet({
         budget: budget.trim() || undefined,
         forceNew: forceNew || undefined,
       };
+      if (clientId) body.clientId = clientId;
+      if (!isLead) {
+        body.customerType = customerType;
+        body.primaryContactName = primaryContactName.trim() || undefined;
+        body.industry = industry.trim() || undefined;
+        body.location = location.trim() || undefined;
+        body.assigneeId = assigneeId || undefined;
+      }
       if (isLead) body.priority = priority;
       if (isLead && !isWalkInFlow) {
         body.initialStatus = stage;
@@ -220,8 +244,8 @@ export function AddToHubSheet({
 
   return (
     <PremiumSheet
-      eyebrow={variant === "walk_in" ? "Front desk" : "Customer Hub"}
-      title={variant === "walk_in" ? "Log walk-in" : "Add lead"}
+      eyebrow={variant === "walk_in" ? "Front desk" : isLead ? "Customer Hub" : "Company / Customers"}
+      title={variant === "walk_in" ? "Log walk-in" : isLead ? "Add lead" : "Add Customer"}
       description={
         variant === "walk_in"
           ? "They came to you — record what happens next."
@@ -251,7 +275,7 @@ export function AddToHubSheet({
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-              {variant !== "walk_in" && (
+              {variant !== "walk_in" && !lockType && (
               <div className="flex gap-2">
                 {(["lead", "customer"] as const).map((t) => (
                   <button
@@ -285,14 +309,64 @@ export function AddToHubSheet({
               )}
 
               <label className="flex flex-col gap-1.5">
-                <span className={labelClass}>Name</span>
+                <span className={labelClass}>{isLead ? "Name" : "Customer name"}</span>
                 <input
                   className={fieldClass}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Tendai Moyo"
+                  placeholder={isLead ? "e.g. Tendai Moyo" : "e.g. Moyo Residence"}
                 />
               </label>
+
+              {!isLead ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <label className="flex flex-col gap-1.5">
+                    <span className={labelClass}>Customer type</span>
+                    <select
+                      className={fieldClass}
+                      value={customerType}
+                      onChange={(e) => setCustomerType(e.target.value as typeof customerType)}
+                    >
+                      <option value="">Select…</option>
+                      <option value="company">Company</option>
+                      <option value="individual">Individual</option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1.5">
+                    <span className={labelClass}>Location</span>
+                    <input
+                      className={fieldClass}
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="e.g. Harare"
+                    />
+                  </label>
+                </div>
+              ) : null}
+
+              {!isLead && customerType === "company" ? (
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelClass}>Primary contact</span>
+                  <input
+                    className={fieldClass}
+                    value={primaryContactName}
+                    onChange={(e) => setPrimaryContactName(e.target.value)}
+                    placeholder="e.g. Tendai Moyo"
+                  />
+                </label>
+              ) : null}
+
+              {!isLead ? (
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelClass}>Industry / category</span>
+                  <input
+                    className={fieldClass}
+                    value={industry}
+                    onChange={(e) => setIndustry(e.target.value)}
+                    placeholder="optional — e.g. Residential Solar"
+                  />
+                </label>
+              ) : null}
 
               <label className="flex flex-col gap-1.5">
                 <span className={labelClass}>
@@ -610,6 +684,23 @@ export function AddToHubSheet({
                   </label>
                 </div>
               )}
+              {!isLead && mode === "manager" ? (
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelClass}>Relationship owner</span>
+                  <select
+                    className={fieldClass}
+                    value={assigneeId}
+                    onChange={(e) => setAssigneeId(e.target.value)}
+                  >
+                    <option value="">Unassigned</option>
+                    {salespeople.map((salesperson) => (
+                      <option key={salesperson.id} value={salesperson.id}>
+                        {salesperson.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               {isLead && mode === "salesperson" && (
                 <div className="flex items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface-hover px-3 py-2.5">
                   <Check size={15} className="shrink-0 text-sales-brand-fg" />
@@ -651,7 +742,12 @@ export function useAddHubSheet() {
     openAddHubSheet: () => setOpen(true),
     addHubSheetProps: (
       assignmentMode: AssignmentMode,
-      options?: { mode?: "salesperson" | "manager"; clientId?: string }
+      options?: {
+        mode?: "salesperson" | "manager";
+        clientId?: string;
+        defaultType?: "lead" | "customer";
+        lockType?: boolean;
+      }
     ) => ({
       openAddHubSheet: () => setOpen(true),
       hubSheet: open ? (
@@ -659,6 +755,8 @@ export function useAddHubSheet() {
           assignmentMode={assignmentMode}
           mode={options?.mode ?? "salesperson"}
           clientId={options?.clientId}
+          defaultType={options?.defaultType}
+          lockType={options?.lockType}
           onClose={() => setOpen(false)}
           onSuccess={() => router.refresh()}
         />
