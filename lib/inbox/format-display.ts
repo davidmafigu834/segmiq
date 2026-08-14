@@ -2,6 +2,7 @@ import { differenceInCalendarDays, format, isToday, isYesterday, parseISO } from
 import type { InboxConversation } from "./types";
 import { formatAwaitingReply, formatDealValue, isFollowUpDue } from "./queue-filters";
 import { SCORE_HOT_MIN, SCORE_WARM_MIN, STAGE_LABELS } from "./scoring";
+import { formatDealStage } from "@/lib/sales/deals/display";
 
 const MEANINGLESS_VALUES = new Set([
   "other",
@@ -164,9 +165,18 @@ export function conversationMetaLine(
         ? "You"
         : assigneeName;
 
+  if (conversation.activeDealId) {
+    return formatLeadMeta([
+      conversation.projectType,
+      conversation.dealStage ? formatDealStage(conversation.dealStage) : null,
+      dealLabel,
+      assigneePart,
+    ]);
+  }
+
   return formatLeadMeta([
     conversation.projectType,
-    dealLabel,
+    conversation.leadBudget,
     conversation.company,
     conversation.sourceLabel !== "WhatsApp" ? conversation.sourceLabel : null,
     assigneePart,

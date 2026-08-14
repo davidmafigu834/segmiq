@@ -20,6 +20,9 @@ export function applyInboxFilter(
       l.location,
       l.company,
       l.projectType,
+      l.dealName,
+      l.dealStage,
+      l.leadBudget,
       l.sourceLabel,
       l.assignee?.name,
     ]

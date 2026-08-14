@@ -9,6 +9,13 @@ export type InboxFilter =
   | "unassigned"
   | "mine"
   | "hot"
+  | "warm"
+  | "cold"
+  | "no_deal"
+  | "deal_qualified"
+  | "deal_scoping"
+  | "deal_proposal_sent"
+  | "deal_negotiating"
   | "follow_up_due"
   | "awaiting_reply"
   | "waiting_customer"
@@ -38,6 +45,8 @@ export type InboxConversation = {
   status: LeadStatus | string;
   stageLabel: string;
   projectType: string | null;
+  leadBudget: string | null;
+  leadTimeline: string | null;
   assignedToId: string | null;
   assignee: InboxAssignee | null;
   score: number;
@@ -67,6 +76,9 @@ export type InboxConversation = {
   firstResponseSeconds: number | null;
   messageCount: number;
   activeDealId: string | null;
+  dealName: string | null;
+  dealStage: string | null;
+  dealNextActionAt: string | null;
 };
 
 export type CompanyWhatsAppSummary = {

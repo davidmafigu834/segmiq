@@ -13,6 +13,8 @@ import { LeadStageBadge } from "./LeadStageBadge";
 import { LeadIntentBadge } from "./LeadIntentBadge";
 import { initials } from "@/lib/inbox/assignee-colors";
 import { Image as ImageIcon, Mic } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
+import { formatDealStage } from "@/lib/sales/deals/display";
 
 type Props = {
   conversation: InboxConversation;
@@ -61,15 +63,22 @@ export function ConversationRow({
       }}
       className={`wa-conv-row ${active ? "wa-conv-row-active" : ""}`}
       aria-current={active ? "true" : undefined}
+      data-course-target="whatsapp-conversation-row"
     >
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
           <WhatsAppAvatar name={name} phone={conversation.phone} size="sm" />
-          <LeadIntentBadge
-            score={conversation.score}
-            label={conversation.scoreLabel}
-            variant="dot"
-          />
+          {conversation.activeDealId ? (
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-sales-surface bg-[#25D366] text-white">
+              <SiWhatsapp size={8} aria-hidden />
+            </span>
+          ) : (
+            <LeadIntentBadge
+              score={conversation.score}
+              label={conversation.scoreLabel}
+              variant="dot"
+            />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
@@ -104,11 +113,17 @@ export function ConversationRow({
           </div>
 
           <div className={`${companyMode ? "mt-1" : "mt-1.5"} flex min-w-0 flex-wrap items-center gap-1.5`}>
-            <LeadStageBadge
-              status={conversation.status}
-              followUpDate={conversation.followUpDate}
-              variant="list"
-            />
+            {conversation.activeDealId && conversation.dealStage ? (
+              <span className="inline-flex max-w-full items-center truncate rounded-full bg-sales-info-soft px-2 py-0.5 text-[10px] font-semibold leading-none text-sales-info">
+                {formatDealStage(conversation.dealStage)}
+              </span>
+            ) : (
+              <LeadStageBadge
+                status={conversation.status}
+                followUpDate={companyMode ? conversation.followUpDate : null}
+                variant="list"
+              />
+            )}
             {waitingLabel ? (
               <span
                 className={`text-[10px] font-medium tabular-nums ${waitingToneClass(waitingTone)}`}

@@ -1442,6 +1442,87 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     padding-block: 0.5rem;
   }
 
+  /* Salesperson WhatsApp Hub: one daily-work surface with Lead -> Deal context. */
+  .salesperson-wa-workspace {
+    position: relative;
+    background: var(--sales-surface) !important;
+  }
+
+  .salesperson-wa-page-header h1,
+  .salesperson-wa-workspace .text-\[\#101828\],
+  .salesperson-wa-workspace .text-\[\#344054\] {
+    color: var(--sales-text-primary) !important;
+  }
+
+  .salesperson-wa-page-header .wa-search {
+    border-color: var(--sales-border);
+    background: var(--sales-surface);
+  }
+
+  .salesperson-wa-page-header .wa-search input {
+    color: var(--sales-text-primary) !important;
+  }
+
+  .salesperson-wa-page-header p,
+  .salesperson-wa-workspace .text-\[\#667085\],
+  .salesperson-wa-workspace .text-\[\#98A2B3\] {
+    color: var(--sales-text-secondary) !important;
+  }
+
+  .salesperson-wa-workspace .bg-white,
+  .salesperson-wa-workspace .bg-\[\#F9FAFB\],
+  .salesperson-wa-workspace .bg-\[\#F7F8FA\],
+  .salesperson-wa-workspace .bg-\[\#F2F4F7\] {
+    background-color: var(--sales-surface) !important;
+  }
+
+  .salesperson-wa-workspace .border-\[\#E4E7EC\],
+  .salesperson-wa-workspace .border-\[\#F2F4F7\] {
+    border-color: var(--sales-border) !important;
+  }
+
+  @media (min-width: 1280px) {
+    .salesperson-wa-workspace .wa-panel {
+      min-width: 0;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+  }
+
+  @media (min-width: 1100px) and (max-width: 1279.98px) {
+    .salesperson-wa-workspace #convPanel {
+      border: 0 !important;
+      border-right: 1px solid var(--sales-border) !important;
+    }
+
+    .salesperson-wa-workspace .company-wa-chat-pane {
+      border: 0 !important;
+    }
+  }
+
+  @media (max-width: 1099.98px) {
+    .salesperson-wa-workspace {
+      margin: 0 !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+    }
+  }
+
+  .salesperson-wa-workspace .wa-conv-row {
+    min-height: 80px;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .salesperson-wa-workspace .wa-chat-wallpaper {
+    background-color: var(--sales-bg) !important;
+  }
+
+  .salesperson-wa-workspace .wa-composer-input {
+    min-height: 40px;
+    padding-block: 0.55rem;
+  }
+
   .wa-hub-premium .wa-empty-hint {
     border-color: var(--sales-border) !important;
     background: var(--sales-surface-subtle) !important;

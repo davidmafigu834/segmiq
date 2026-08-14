@@ -34,6 +34,11 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
   }
 
   const supabase = createAdminClient();
+  const url = new URL(req.url);
+  const before = url.searchParams.get("before");
+  const requestedLimit = Number(url.searchParams.get("limit") || 80);
+  const pageLimit = Math.min(100, Math.max(20, Number.isFinite(requestedLimit) ? requestedLimit : 80));
+  const fetchLimit = pageLimit + 1;
 
   if (session?.userId) {
     await supabase
@@ -53,44 +58,58 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
   const isWhatsApp = lead?.source === "WHATSAPP_INBOUND";
   let messages: InboxChatMessage[] = [];
   let sessionOpen = false;
+  let hasMore = false;
 
   if (isWhatsApp) {
+    const waQuery = supabase
+      .from("whatsapp_messages")
+      .select("id, direction, body, created_at, message_type, status, media_url, media_mime_type, media_storage_key, provider_id")
+      .eq("lead_id", params.leadId);
+    const timelineQuery = supabase
+      .from("lead_events")
+      .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
+      .eq("lead_id", params.leadId)
+      .in("event_type", [
+        "CALL_LOGGED",
+        "LEAD_ASSIGNED",
+        "LEAD_REASSIGNED",
+        "FOLLOW_UP_SET",
+        "STATUS_CHANGED",
+        "NOTE_ADDED",
+        "DOCUMENT_SENT",
+      ]);
+    const messageEventQuery = supabase
+      .from("lead_events")
+      .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
+      .eq("lead_id", params.leadId)
+      .in("event_type", ["MESSAGE_SENT", "MESSAGE_RECEIVED"]);
+    const sessionLogQuery = supabase
+      .from("message_logs")
+      .select("id, payload_preview, created_at, provider_id, status")
+      .eq("lead_id", params.leadId)
+      .eq("channel", "whatsapp")
+      .eq("notification_type", "WHATSAPP_SESSION")
+      .eq("status", "sent");
+
     const [{ data: waRows }, { data: timelineEvents }, { data: messageEvents }, { data: sessionLogs }] =
       await Promise.all([
-      supabase
-        .from("whatsapp_messages")
-        .select("id, direction, body, created_at, message_type, status, media_url, media_mime_type, media_storage_key, provider_id")
-        .eq("lead_id", params.leadId)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("lead_events")
-        .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
-        .eq("lead_id", params.leadId)
-        .in("event_type", [
-          "CALL_LOGGED",
-          "LEAD_ASSIGNED",
-          "LEAD_REASSIGNED",
-          "FOLLOW_UP_SET",
-          "STATUS_CHANGED",
-          "NOTE_ADDED",
-          "DOCUMENT_SENT",
-        ])
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("lead_events")
-        .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
-        .eq("lead_id", params.leadId)
-        .in("event_type", ["MESSAGE_SENT", "MESSAGE_RECEIVED"])
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("message_logs")
-        .select("id, payload_preview, created_at, provider_id, status")
-        .eq("lead_id", params.leadId)
-        .eq("channel", "whatsapp")
-        .eq("notification_type", "WHATSAPP_SESSION")
-        .eq("status", "sent")
-        .order("created_at", { ascending: true }),
+      (before ? waQuery.lt("created_at", before) : waQuery)
+        .order("created_at", { ascending: false })
+        .limit(fetchLimit),
+      (before ? timelineQuery.lt("created_at", before) : timelineQuery)
+        .order("created_at", { ascending: false })
+        .limit(fetchLimit),
+      (before ? messageEventQuery.lt("created_at", before) : messageEventQuery)
+        .order("created_at", { ascending: false })
+        .limit(fetchLimit),
+      (before ? sessionLogQuery.lt("created_at", before) : sessionLogQuery)
+        .order("created_at", { ascending: false })
+        .limit(fetchLimit),
     ]);
+
+    hasMore = [waRows, timelineEvents, messageEvents, sessionLogs].some(
+      (rows) => (rows?.length ?? 0) > pageLimit
+    );
 
     const visibleWaProviderIds = new Set(
       (waRows ?? [])
@@ -185,23 +204,31 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       return !outboundBodies.has(text);
     });
 
-    messages = [...chat, ...dedupedSystem, ...legacyMessages, ...logFallback].sort(
+    const merged = [...chat, ...dedupedSystem, ...legacyMessages, ...logFallback].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
+    if (merged.length > pageLimit) hasMore = true;
+    messages = merged.slice(-pageLimit);
 
     sessionOpen = await isWhatsAppSessionOpen(params.leadId);
   } else {
-    const { data: events, error } = await supabase
+    const eventQuery = supabase
       .from("lead_events")
       .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
       .eq("lead_id", params.leadId)
-      .in("event_type", ["DOCUMENT_SENT", "NOTE_ADDED", "CALL_LOGGED", "LEAD_CREATED", "MESSAGE_RECEIVED", "MESSAGE_SENT"])
-      .order("created_at", { ascending: true });
+      .in("event_type", ["DOCUMENT_SENT", "NOTE_ADDED", "CALL_LOGGED", "LEAD_CREATED", "MESSAGE_RECEIVED", "MESSAGE_SENT"]);
+    const { data: events, error } = await (before
+      ? eventQuery.lt("created_at", before)
+      : eventQuery
+    )
+      .order("created_at", { ascending: false })
+      .limit(fetchLimit);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    hasMore = (events?.length ?? 0) > pageLimit;
     messages = eventsToChatMessages(
       (events ?? []).map((e) => ({
         id: e.id as string,
@@ -212,7 +239,9 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
         channel: e.channel as string | null,
         created_at: e.created_at as string,
       }))
-    );
+    )
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .slice(-pageLimit);
 
     if (messages.length === 0 && lead?.form_data) {
       const fd = lead.form_data as Record<string, unknown>;
@@ -236,5 +265,12 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
 
   const campaignContext = await getCampaignContextForLead(params.leadId);
 
-  return NextResponse.json({ messages, sessionOpen, isWhatsApp, campaignContext });
+  return NextResponse.json({
+    messages,
+    sessionOpen,
+    isWhatsApp,
+    campaignContext,
+    hasMore,
+    nextBefore: messages[0]?.createdAt ?? null,
+  });
 }

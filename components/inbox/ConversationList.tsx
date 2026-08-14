@@ -10,7 +10,6 @@ import {
   type ConversationSort,
 } from "@/lib/inbox/format-display";
 import { ConversationRow } from "./ConversationRow";
-import { FilterTabs } from "./FilterTabs";
 import { ArrowUpDown, Check, ChevronLeft, ChevronRight, Search, SlidersHorizontal } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 
@@ -68,6 +67,7 @@ export function ConversationList({
   const [filterOpen, setFilterOpen] = useState(false);
   const [ownerFilter, setOwnerFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(50);
 
   const filtered = useMemo(() => {
     const base = applyInboxFilter(conversations, filter, search, currentUserId).filter((row) => {
@@ -82,10 +82,35 @@ export function ConversationList({
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const visibleRows = companyMode
     ? filtered.slice((page - 1) * pageSize, page * pageSize)
-    : filtered;
+    : filtered.slice(0, visibleCount);
+
+  const showMine = conversations.some((row) => row.assignedToId !== currentUserId);
+  const salespersonPrimaryFilters: InboxFilter[] = [
+    "all",
+    ...(showMine ? (["mine"] as InboxFilter[]) : []),
+    "awaiting_reply",
+    "follow_up_due",
+  ];
+  const salespersonAdvancedFilters: InboxFilter[] = [
+    "hot",
+    "warm",
+    "cold",
+    "waiting_customer",
+    "quotes_sent",
+    ...(canClaim && conversations.some((row) => !row.assignedToId)
+      ? (["unassigned"] as InboxFilter[])
+      : []),
+    "no_deal",
+    "deal_qualified",
+    "deal_scoping",
+    "deal_proposal_sent",
+    "deal_negotiating",
+    "unread",
+  ];
 
   useEffect(() => {
     setPage(1);
+    setVisibleCount(50);
   }, [filter, ownerFilter, search, sort]);
 
   useEffect(() => {
@@ -115,7 +140,7 @@ export function ConversationList({
       : companyMode
         ? "w-full min-w-0 min-[1100px]:w-[clamp(300px,24vw,320px)] min-[1100px]:shrink-0"
         : whatsappMode
-          ? "w-[360px]"
+          ? "w-[310px] min-[1536px]:w-[350px]"
           : "w-[360px]";
 
   const emptyTitle =
@@ -148,6 +173,7 @@ export function ConversationList({
           : `max-[860px]:fixed max-[860px]:bottom-0 max-[860px]:left-0 ${mobileTop} max-[860px]:z-40 max-[860px]:w-[min(320px,88vw)] max-[860px]:shadow-[4px_0_24px_rgba(0,0,0,0.15)] max-[860px]:transition-transform max-[860px]:duration-200`,
         mobilePanelClass,
       ].join(" ")}
+      data-course-target={whatsappMode && !companyMode ? "whatsapp-conversations" : undefined}
     >
       {whatsappMode ? (
         <div className="sticky top-0 z-10 shrink-0 bg-white wa-panel-header max-[1099px]:pt-[env(safe-area-inset-top)]">
@@ -158,11 +184,11 @@ export function ConversationList({
                   {companyMode ? "Conversations" : "Sales conversations"}
                 </div>
                 <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#667085]">
-                  {companyMode ? conversations.length : filtered.length}
+                  {conversations.length}
                 </span>
               </div>
               {roleSubtitle && !companyMode ? (
-                <div className="mt-0.5 truncate text-[12px] text-[#98A2B3]">
+                <div className="mt-0.5 truncate text-[11px] text-[#98A2B3]">
                   WhatsApp Sales Hub · {roleSubtitle}
                 </div>
               ) : null}
@@ -231,13 +257,29 @@ export function ConversationList({
             </div>
           ) : null}
           {!companyMode && !chromeInParent && filterCounts && onFilterChange ? (
-            <div className="overflow-x-auto border-t border-[#E4E7EC] px-4 py-2.5 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <FilterTabs
-                filter={filter}
-                counts={filterCounts}
-                onChange={onFilterChange}
-                variant="panel"
-              />
+            <div className="overflow-x-auto border-t border-[#E4E7EC] px-3 py-2 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex min-w-max items-center gap-1" role="tablist" aria-label="Primary conversation filters">
+                {salespersonPrimaryFilters.map((key) => {
+                  const activeFilter = filter === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeFilter}
+                      onClick={() => onFilterChange(key)}
+                      className={`inline-flex items-center gap-1 rounded-[7px] border px-2 py-1.5 text-[10px] font-semibold transition-colors ${
+                        activeFilter
+                          ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
+                          : "border-transparent text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
+                      }`}
+                    >
+                      {INBOX_FILTER_LABELS[key]}
+                      <span className="tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ) : null}
           {!chromeInParent ? (
@@ -249,11 +291,11 @@ export function ConversationList({
                   type="text"
                   value={search}
                   onChange={(e) => onSearchChange?.(e.target.value)}
-                  placeholder={companyMode ? "Search conversations..." : "Search by name, phone, location..."}
+                  placeholder="Search conversations..."
                   className="w-full bg-transparent text-[14px] text-[#101828] placeholder:text-[#98A2B3] focus:outline-none"
                 />
                 </div>
-                {companyMode && onFilterChange ? (
+                {onFilterChange ? (
                   <div className="relative">
                     <button type="button" className="wa-icon-btn !h-[38px] !w-[38px] border-[#E4E7EC]" onClick={() => setFilterOpen((value) => !value)} aria-label="Filter conversations" aria-expanded={filterOpen}>
                       <SlidersHorizontal size={15} strokeWidth={1.8} />
@@ -261,34 +303,41 @@ export function ConversationList({
                     {filterOpen ? (
                       <>
                         <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close filters" onClick={() => setFilterOpen(false)} />
-                        <div className="absolute right-0 z-30 mt-1 max-h-[min(70vh,420px)] w-56 overflow-y-auto rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)] inbox-scroll">
-                          {(["all", "unassigned", "awaiting_reply", "waiting_customer", "unread", "resolved", "quotes_sent"] as InboxFilter[]).map((key) => (
-                            <button key={key} type="button" className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] text-[#101828] hover:bg-[#F9FAFB]" onClick={() => { onFilterChange(key); setFilterOpen(false); }}>
+                        <div className="absolute right-0 z-30 mt-1 max-h-[min(70vh,420px)] w-56 overflow-y-auto rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)] inbox-scroll">
+                          {(companyMode
+                            ? (["all", "unassigned", "awaiting_reply", "waiting_customer", "unread", "resolved", "quotes_sent"] as InboxFilter[])
+                            : salespersonAdvancedFilters
+                          ).map((key) => (
+                            <button key={key} type="button" className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] text-sales-text-primary hover:bg-sales-surface-hover" onClick={() => { onFilterChange(key); setFilterOpen(false); }}>
                               {key === "awaiting_reply" ? "Waiting on Team" : INBOX_FILTER_LABELS[key]}
                               {filter === key ? <Check size={13} className="text-[#4D7C0F]" /> : null}
                             </button>
                           ))}
-                          <div className="my-1 border-t border-[#E4E7EC] px-3 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-[0.06em] text-[#98A2B3]">
-                            Owner
-                          </div>
-                          {[
-                            { id: "all", name: "Any owner" },
-                            { id: "unassigned", name: "Unassigned" },
-                            ...ownerOptions,
-                          ].map((owner) => (
-                            <button
-                              key={owner.id}
-                              type="button"
-                              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] text-[#101828] hover:bg-[#F9FAFB]"
-                              onClick={() => {
-                                setOwnerFilter(owner.id);
-                                setFilterOpen(false);
-                              }}
-                            >
-                              <span className="truncate">{owner.name}</span>
-                              {ownerFilter === owner.id ? <Check size={13} className="shrink-0 text-[#4D7C0F]" /> : null}
-                            </button>
-                          ))}
+                          {companyMode ? (
+                            <>
+                              <div className="my-1 border-t border-sales-border px-3 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                                Owner
+                              </div>
+                              {[
+                                { id: "all", name: "Any owner" },
+                                { id: "unassigned", name: "Unassigned" },
+                                ...ownerOptions,
+                              ].map((owner) => (
+                                <button
+                                  key={owner.id}
+                                  type="button"
+                                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] text-sales-text-primary hover:bg-sales-surface-hover"
+                                  onClick={() => {
+                                    setOwnerFilter(owner.id);
+                                    setFilterOpen(false);
+                                  }}
+                                >
+                                  <span className="truncate">{owner.name}</span>
+                                  {ownerFilter === owner.id ? <Check size={13} className="shrink-0 text-[#4D7C0F]" /> : null}
+                                </button>
+                              ))}
+                            </>
+                          ) : null}
                         </div>
                       </>
                     ) : null}
@@ -388,6 +437,22 @@ export function ConversationList({
             <span className="min-w-7 text-center text-[10px] font-semibold tabular-nums text-[#344054]">{page}/{pageCount}</span>
             <button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="wa-icon-btn !h-7 !w-7 disabled:opacity-35" aria-label="Next page"><ChevronRight size={13} /></button>
           </div>
+        </div>
+      ) : null}
+      {!companyMode && whatsappMode && filtered.length > 0 ? (
+        <div className="flex min-h-[42px] shrink-0 items-center justify-between gap-2 border-t border-sales-border bg-sales-surface px-3">
+          <span className="truncate text-[10px] text-sales-text-secondary">
+            Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
+          </span>
+          {visibleCount < filtered.length ? (
+            <button
+              type="button"
+              onClick={() => setVisibleCount((value) => value + 50)}
+              className="rounded-[7px] border border-sales-border bg-sales-surface px-2.5 py-1.5 text-[10px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
+            >
+              Load more
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

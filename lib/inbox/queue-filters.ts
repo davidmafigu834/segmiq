@@ -1,4 +1,4 @@
-import { SCORE_HOT_MIN } from "./scoring";
+import { SCORE_HOT_MIN, SCORE_WARM_MIN } from "./scoring";
 import type { InboxConversation, InboxFilter } from "./types";
 
 export const INBOX_FILTER_LABELS: Record<InboxFilter, string> = {
@@ -10,6 +10,13 @@ export const INBOX_FILTER_LABELS: Record<InboxFilter, string> = {
   mine: "Mine",
   unassigned: "Unassigned",
   hot: "Hot",
+  warm: "Warm",
+  cold: "Cold",
+  no_deal: "No Deal",
+  deal_qualified: "Deal · Qualified",
+  deal_scoping: "Deal · Scoping",
+  deal_proposal_sent: "Deal · Proposal sent",
+  deal_negotiating: "Deal · Negotiating",
   follow_up_due: "Follow-up due",
   awaiting_reply: "Needs reply",
   waiting_customer: "Waiting for customer",
@@ -76,6 +83,20 @@ export function matchesInboxFilter(
       return c.conversationStatus === "OPEN" && !c.assignedToId;
     case "hot":
       return c.score >= SCORE_HOT_MIN;
+    case "warm":
+      return c.score >= SCORE_WARM_MIN && c.score < SCORE_HOT_MIN;
+    case "cold":
+      return c.score < SCORE_WARM_MIN;
+    case "no_deal":
+      return !c.activeDealId;
+    case "deal_qualified":
+      return c.dealStage === "QUALIFIED";
+    case "deal_scoping":
+      return c.dealStage === "SCOPING";
+    case "deal_proposal_sent":
+      return c.dealStage === "PROPOSAL_SENT";
+    case "deal_negotiating":
+      return c.dealStage === "NEGOTIATING";
     case "follow_up_due":
       return isFollowUpDue(c);
     case "awaiting_reply":
@@ -95,7 +116,19 @@ export function countInboxFilters(
 ): Record<InboxFilter, number> {
   const counts = {} as Record<InboxFilter, number>;
   const allFilters = Array.from(
-    new Set<InboxFilter>([...INBOX_FILTER_ORDER, ...COMPANY_INBOX_FILTER_ORDER, "new", "unread"])
+    new Set<InboxFilter>([
+      ...INBOX_FILTER_ORDER,
+      ...COMPANY_INBOX_FILTER_ORDER,
+      "new",
+      "unread",
+      "warm",
+      "cold",
+      "no_deal",
+      "deal_qualified",
+      "deal_scoping",
+      "deal_proposal_sent",
+      "deal_negotiating",
+    ])
   );
   for (const key of allFilters) {
     counts[key] = rows.filter((c) => matchesInboxFilter(c, key, userId)).length;

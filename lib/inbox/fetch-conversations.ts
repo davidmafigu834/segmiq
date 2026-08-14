@@ -12,6 +12,8 @@ import {
 } from "./scoring";
 import { sortInboxConversations } from "./queue-filters";
 import type { InboxConversation } from "./types";
+import type { DealRow } from "@/types";
+import { getDealCommercialValue } from "@/lib/sales/deals/commercial-value";
 
 type LeadRow = {
   id: string;
@@ -190,8 +192,11 @@ async function buildConversations(
   const assigneeIds = Array.from(
     new Set(leads.map((l) => l.assigned_to_id).filter(Boolean))
   ) as string[];
+  const activeDealIds = Array.from(
+    new Set(leads.map((l) => l.active_deal_id).filter(Boolean))
+  ) as string[];
 
-  const [{ data: intelRows }, { data: contacts }, { data: users }, { data: client }] =
+  const [{ data: intelRows }, { data: contacts }, { data: users }, { data: client }, { data: deals }] =
     await Promise.all([
       supabase.from("lead_intelligence").select("*").in("lead_id", leadIds),
       contactIds.length
@@ -212,12 +217,18 @@ async function buildConversations(
         ? supabase.from("users").select("id, name").in("id", assigneeIds)
         : Promise.resolve({ data: [] as { id: string; name: string }[] }),
       supabase.from("clients").select("ai_enabled").eq("id", clientId).maybeSingle(),
+      activeDealIds.length
+        ? supabase.from("deals").select("*").in("id", activeDealIds)
+        : Promise.resolve({ data: [] as DealRow[] }),
     ]);
 
   const aiEnabled = client?.ai_enabled === true;
   const intelByLead = new Map((intelRows ?? []).map((r) => [r.lead_id as string, r]));
   const contactById = new Map((contacts ?? []).map((c) => [c.id as string, c]));
   const userById = new Map((users ?? []).map((u) => [u.id as string, u]));
+  const dealById = new Map(
+    ((deals ?? []) as DealRow[]).map((deal) => [deal.id, deal])
+  );
 
   const lastWaByLead = new Map<
     string,
@@ -395,16 +406,21 @@ async function buildConversations(
 
     const waLast = lastWaByLead.get(lead.id);
     const latestQuote = latestQuoteByLead.get(lead.id) ?? null;
+    const activeDeal = lead.active_deal_id
+      ? dealById.get(lead.active_deal_id) ?? null
+      : null;
     const lastMessageDirection = waLast?.direction ?? null;
     const lastInboundAt = lastInboundByLead.get(lead.id) ?? null;
     const awaitingReplyMinutes =
       lastMessageDirection === "inbound" ? minutesSince(lastInboundAt ?? waLast?.created_at ?? null) : null;
-    const dealValue =
-      typeof lead.deal_value === "number" && lead.deal_value > 0
-        ? lead.deal_value
-        : latestQuote?.total && latestQuote.total > 0
-          ? latestQuote.total
-          : null;
+    const commercial = activeDeal
+      ? getDealCommercialValue(activeDeal, { latestQuoteTotal: latestQuote?.total ?? null })
+      : null;
+    const dealValue = commercial?.kind === "amount"
+      ? commercial.amount
+      : commercial?.kind === "range"
+        ? commercial.max
+        : null;
 
     const displayName =
       lead.name?.trim()
@@ -434,6 +450,8 @@ async function buildConversations(
       status: lead.status,
       stageLabel: stageLabel(lead.status, lead.follow_up_date),
       projectType: lead.project_type,
+      leadBudget: lead.budget ?? null,
+      leadTimeline: lead.timeline ?? null,
       assignedToId: lead.assigned_to_id,
       assignee: assigneeRow
         ? { id: assigneeRow.id as string, name: assigneeRow.name as string }
@@ -465,6 +483,9 @@ async function buildConversations(
       firstResponseSeconds: firstResponseSecondsByLead.get(lead.id) ?? null,
       messageCount: messageCountByLead.get(lead.id) ?? 0,
       activeDealId: lead.active_deal_id ?? null,
+      dealName: activeDeal?.name ?? null,
+      dealStage: activeDeal?.stage ?? null,
+      dealNextActionAt: activeDeal?.next_action_at ?? null,
     };
   });
 

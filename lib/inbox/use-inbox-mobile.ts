@@ -49,3 +49,8 @@ export function useInboxCompact(): boolean {
 export function useInboxWideWorkspace(): boolean {
   return useMediaMinWidth(1280);
 }
+
+/** Large desktop widths used by the reference three-pane proportions. */
+export function useInboxExtraWideWorkspace(): boolean {
+  return useMediaMinWidth(1536);
+}

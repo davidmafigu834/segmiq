@@ -16,6 +16,8 @@ function conversation(
     status: "NEW",
     stageLabel: "New",
     projectType: null,
+    leadBudget: null,
+    leadTimeline: null,
     assignedToId: "rep-1",
     assignee: { id: "rep-1", name: "Rep One" },
     score: 0,
@@ -44,6 +46,9 @@ function conversation(
     firstResponseSeconds: 120,
     messageCount: 2,
     activeDealId: null,
+    dealName: null,
+    dealStage: null,
+    dealNextActionAt: null,
     ...overrides,
   };
 }

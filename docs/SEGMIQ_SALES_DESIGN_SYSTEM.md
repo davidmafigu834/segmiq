@@ -764,6 +764,27 @@ The Company Calendar is a team sales execution workspace: six KPI cards using th
 - Mobile is agenda-first with a horizontal date strip and team grouping. Tablet moves the right rail into a drawer.
 - Dark surfaces use Company tokens, subtle grid borders, and purpose-built low-opacity event tints.
 
+## Salesperson WhatsApp Sales Hub patterns
+
+Route: `/sales/inbox` · Full product rules: [SEGMIQ_WHATSAPP_SALES_HUB.md](./SEGMIQ_WHATSAPP_SALES_HUB.md).
+
+The salesperson hub is one integrated, full-height three-pane selling workspace after a compact header. It has no KPI strip and no lower analytics. On large desktop the queue is approximately 330-360px, intelligence 390-430px, and chat owns the remaining width. At compact desktop widths those side panes reduce to approximately 300-320px and 340-370px. Intelligence becomes an overlay below 1280px; mobile uses queue → chat → intelligence as single panes.
+
+| Surface | Salesperson rule |
+|---|---|
+| Queue filters | All, Mine when meaningful, Needs reply, Follow-up due; real score, waiting, quote, assignment, no-Deal, and Deal-stage filters in an advanced popover |
+| Conversation row | Flat ~80px row; Lead lifecycle + intent before conversion, Deal stage after conversion; real budget/value only |
+| Chat header | Lead lifecycle, intent, budget before Deal; Deal stage and canonical Deal value after Deal |
+| Action strip | Directly under the header; reuse quick reply, asset, note, call, and canonical Lead/Deal actions |
+| Messages | Incoming neutral bordered; outgoing restrained lime; bounded history with explicit older-message paging |
+| Composer | Anchored; attachment, existing session enforcement, compact read-only/claim state when unavailable |
+| Lead rail | Identity → score/reasons → real AI briefing when available → qualification → readiness/Create Deal → follow-up → ownership |
+| Deal rail | Identity → commercial → deterministic health → stage → next action → quote → activity → ownership |
+
+Lead score is qualification intelligence, not a close probability. After conversion, Deal health replaces Lead score as the primary signal. Deal health is deterministic and operational; value always comes from `getDealCommercialValue()`. Do not invent AI text, quote status, owner, probability, value, source, or activity.
+
+Both themes use Sales tokens. Lime is reserved for selection, focus, progress, and the primary action; WhatsApp green remains channel identity. Pane collapse is persisted, rows do not scale on hover, and course targets remain stable. Message, record-detail, and AI requests fail independently so auxiliary intelligence cannot block conversation work.
+
 ## Company WhatsApp Sales Hub patterns
 
 The Company WhatsApp Sales Hub uses the Company workspace shell with a compact page header followed immediately by one full-height integrated inbox. It has no KPI row and no analytics modules below the workspace. At 1280px and above the list and context widths are resizable (approximately 300â€“350px and 310â€“380px); the chat owns all remaining space. At 1100â€“1279px the context becomes an overlay drawer, and below 1100px the existing single-pane flow applies.

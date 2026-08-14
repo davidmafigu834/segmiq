@@ -15,15 +15,13 @@ import {
   Phone,
   Send,
   StickyNote,
-  Trophy,
   UserRound,
   Zap,
-  XCircle,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import type { InboxChatMessage, InboxConversation } from "@/lib/inbox/types";
-import { formatAwaitingReply, formatDealValue } from "@/lib/inbox/queue-filters";
-import { getSalesSignal } from "@/lib/inbox/format-display";
+import { formatDealValue } from "@/lib/inbox/queue-filters";
+import { formatDealStage } from "@/lib/sales/deals/display";
 import { applyQuickReplyVariables } from "@/lib/inbox/quick-reply-vars";
 import { LogCallForm } from "@/components/leads/LogCallForm";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
@@ -58,7 +56,34 @@ type Props = {
   leadHref?: string;
   dealHref?: string;
   contextOpen?: boolean;
+  canClaim?: boolean;
+  onClaim?: (leadId: string) => void;
+  claiming?: boolean;
 };
+
+function mergeChatMessages(
+  existing: InboxChatMessage[],
+  incoming: InboxChatMessage[]
+): InboxChatMessage[] {
+  const byId = new Map(existing.map((message) => [message.id, message]));
+  for (const message of incoming) {
+    if (!message.id.startsWith("pending-")) {
+      for (const [id, pending] of Array.from(byId.entries())) {
+        if (
+          id.startsWith("pending-") &&
+          pending.direction === message.direction &&
+          pending.text === message.text
+        ) {
+          byId.delete(id);
+        }
+      }
+    }
+    byId.set(message.id, message);
+  }
+  return Array.from(byId.values()).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+}
 
 export function ChatThread({
   conversation,
@@ -81,6 +106,9 @@ export function ChatThread({
   leadHref,
   dealHref,
   contextOpen = false,
+  canClaim = false,
+  onClaim,
+  claiming = false,
 }: Props) {
   const [messages, setMessages] = useState<InboxChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -99,6 +127,9 @@ export function ChatThread({
   const [createDealOpen, setCreateDealOpen] = useState(false);
   const [dealLead, setDealLead] = useState<LeadRow | null>(null);
   const [hasNewBelow, setHasNewBelow] = useState(false);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [nextBefore, setNextBefore] = useState<string | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [campaignContext, setCampaignContext] = useState<{
     campaignName: string;
     sentAt: string | null;
@@ -110,6 +141,7 @@ export function ChatThread({
   const composerRef = useRef<HTMLInputElement>(null);
   const onMessagesChangeRef = useRef(onMessagesChange);
   const onSessionChangeRef = useRef(onSessionChange);
+  const loadOlderRef = useRef<() => void>(() => {});
   onMessagesChangeRef.current = onMessagesChange;
   onSessionChangeRef.current = onSessionChange;
 
@@ -138,6 +170,7 @@ export function ChatThread({
         node.scrollHeight - node.scrollTop - node.clientHeight < threshold;
       stickToBottomRef.current = nearBottom;
       if (nearBottom) setHasNewBelow(false);
+      if (node.scrollTop < 48) loadOlderRef.current();
     }
 
     el.addEventListener("scroll", onScroll, { passive: true });
@@ -147,19 +180,26 @@ export function ChatThread({
   useEffect(() => {
     if (!conversation?.id) {
       setMessages([]);
+      setHasOlder(false);
+      setNextBefore(null);
       return;
     }
     const conversationId = conversation.id;
     const conversationSource = conversation.source;
     let cancelled = false;
+    let requestInFlight = false;
 
     async function loadMessages(isInitial = false) {
+      if (requestInFlight) return;
+      requestInFlight = true;
       if (isInitial) setLoading(true);
       try {
-        const res = await fetch(`/api/inbox/conversations/${conversationId}/messages`);
+        const res = await fetch(`/api/inbox/conversations/${conversationId}/messages?limit=80`);
         const d = (await res.json()) as {
           messages?: InboxChatMessage[];
           sessionOpen?: boolean;
+          hasMore?: boolean;
+          nextBefore?: string | null;
           campaignContext?: {
             campaignName: string;
             sentAt: string | null;
@@ -169,6 +209,7 @@ export function ChatThread({
         if (!cancelled) {
           const next = d.messages ?? [];
           setMessages((prev) => {
+            if (!isInitial) return mergeChatMessages(prev, next);
             if (
               prev.length === next.length
               && prev.every((m, i) => {
@@ -180,12 +221,17 @@ export function ChatThread({
             }
             return next;
           });
+          if (isInitial) {
+            setHasOlder(d.hasMore === true);
+            setNextBefore(d.nextBefore ?? next[0]?.createdAt ?? null);
+          }
           const open = d.sessionOpen === true;
           setSessionOpen(open);
           onSessionChangeRef.current?.(open);
           setCampaignContext(d.campaignContext ?? null);
         }
       } finally {
+        requestInFlight = false;
         if (!cancelled && isInitial) setLoading(false);
       }
     }
@@ -200,6 +246,36 @@ export function ChatThread({
       if (interval) window.clearInterval(interval);
     };
   }, [conversation?.id, conversation?.source]);
+
+  async function loadOlderMessages() {
+    if (!conversation?.id || !hasOlder || !nextBefore || loadingOlder) return;
+    const scroller = scrollRef.current;
+    const previousHeight = scroller?.scrollHeight ?? 0;
+    setLoadingOlder(true);
+    try {
+      const response = await fetch(
+        `/api/inbox/conversations/${conversation.id}/messages?limit=80&before=${encodeURIComponent(nextBefore)}`
+      );
+      if (!response.ok) return;
+      const data = (await response.json()) as {
+        messages?: InboxChatMessage[];
+        hasMore?: boolean;
+        nextBefore?: string | null;
+      };
+      const older = data.messages ?? [];
+      setMessages((current) => mergeChatMessages(current, older));
+      setHasOlder(data.hasMore === true && older.length > 0);
+      setNextBefore(data.nextBefore ?? older[0]?.createdAt ?? null);
+      window.requestAnimationFrame(() => {
+        const node = scrollRef.current;
+        if (node) node.scrollTop = Math.max(0, node.scrollHeight - previousHeight);
+      });
+    } finally {
+      setLoadingOlder(false);
+    }
+  }
+
+  loadOlderRef.current = () => void loadOlderMessages();
 
   useEffect(() => {
     if (!canSend) return;
@@ -253,12 +329,12 @@ export function ChatThread({
           },
         ]);
         onMessagesChange();
-        const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages`);
+        const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages?limit=80`);
         const data = (await msgRes.json()) as {
           messages?: InboxChatMessage[];
           sessionOpen?: boolean;
         };
-        setMessages(data.messages ?? []);
+        setMessages((current) => mergeChatMessages(current, data.messages ?? []));
         const open = data.sessionOpen === true;
         setSessionOpen(open);
         onSessionChangeRef.current?.(open);
@@ -287,9 +363,9 @@ export function ChatThread({
       if (res.ok) {
         setQuickActionsOpen(false);
         onMessagesChange();
-        const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages`);
+        const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages?limit=80`);
         const data = (await msgRes.json()) as { messages?: InboxChatMessage[] };
-        setMessages(data.messages ?? []);
+        setMessages((current) => mergeChatMessages(current, data.messages ?? []));
       } else {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         setSendError(err.error ?? "Could not send message");
@@ -348,31 +424,9 @@ export function ChatThread({
     });
     if (res.ok) {
       onMessagesChange();
-      const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages`);
+      const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages?limit=80`);
       const data = (await msgRes.json()) as { messages?: InboxChatMessage[] };
-      setMessages(data.messages ?? []);
-    }
-  }
-
-  async function handleStatusUpdate(status: "WON" | "LOST") {
-    if (!conversation || statusUpdating) return;
-    if (status === "LOST") {
-      window.prompt("Reason lost (optional):");
-    }
-    setStatusUpdating(true);
-    try {
-      const res = await fetch(`/api/leads/${conversation.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) {
-        onConversationUpdate?.();
-        onMessagesChange();
-      }
-    } finally {
-      setStatusUpdating(false);
-      setMenuOpen(false);
+      setMessages((current) => mergeChatMessages(current, data.messages ?? []));
     }
   }
 
@@ -443,8 +497,6 @@ export function ChatThread({
   const messageGroups = groupMessagesByDay(messages);
   const isWhatsApp = conversation.source === "WHATSAPP_INBOUND";
   const dealLabel = formatDealValue(conversation.dealValue, conversation.dealCurrency ?? "USD");
-  const waitingLabel = formatAwaitingReply(conversation.awaitingReplyMinutes);
-  const prioritySignal = getSalesSignal(conversation);
   const sessionClosed = isWhatsApp && !sessionOpen;
 
   return (
@@ -492,31 +544,32 @@ export function ChatThread({
                     {companyMode && conversation.location ? ` · ${conversation.location}` : ""}
                   </div>
                 ) : null}
-                {!companyMode ? <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
-                  <LeadStageBadge
-                    status={conversation.status}
-                    followUpDate={conversation.followUpDate}
-                    variant="list"
-                  />
-                  <LeadIntentBadge
-                    score={conversation.score}
-                    label={conversation.scoreLabel}
-                    variant="list"
-                  />
-                  {dealLabel ? (
-                    <span className="inline-flex items-center rounded-full border border-[#E4E7EC] bg-[#F9FAFB] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-[#344054]">
-                      {dealLabel}
-                    </span>
-                  ) : null}
-                  {waitingLabel ? (
-                    <span className="inline-flex items-center rounded-full border border-[#FED7AA] bg-[#FFFAEB] px-1.5 py-0.5 text-[10px] font-semibold text-[#B54708]">
-                      {waitingLabel}
-                    </span>
-                  ) : null}
-                </div> : null}
-                {!companyMode && prioritySignal ? (
-                  <div className="mt-1 truncate text-[11px] text-[#667085]" title={prioritySignal.detail}>
-                    {prioritySignal.title}
+                {!companyMode ? (
+                  <div className="mt-1.5 flex min-w-0 items-center gap-1.5 overflow-hidden">
+                    {conversation.activeDealId ? (
+                      <>
+                        {conversation.dealStage ? (
+                          <span className="inline-flex shrink-0 rounded-full bg-sales-info-soft px-2 py-0.5 text-[10px] font-semibold text-sales-info">
+                            {formatDealStage(conversation.dealStage)}
+                          </span>
+                        ) : null}
+                        {dealLabel ? (
+                          <span className="truncate rounded-full border border-[#E4E7EC] bg-[#F9FAFB] px-2 py-0.5 text-[10px] font-semibold tabular-nums text-[#344054]">
+                            {dealLabel}
+                          </span>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <LeadStageBadge status={conversation.status} variant="list" />
+                        <LeadIntentBadge score={conversation.score} label={conversation.scoreLabel} variant="list" />
+                        {conversation.leadBudget ? (
+                          <span className="truncate rounded-full border border-[#E4E7EC] bg-[#F9FAFB] px-2 py-0.5 text-[10px] font-medium text-[#667085]">
+                            Budget {conversation.leadBudget}
+                          </span>
+                        ) : null}
+                      </>
+                    )}
                   </div>
                 ) : null}
               </div>
@@ -543,6 +596,17 @@ export function ChatThread({
                   </span>
                 </span>
                 {canReassign ? <ChevronDown size={12} className="text-sales-text-muted" /> : null}
+              </button>
+            ) : null}
+            {!companyMode && showLogCall ? (
+              <button
+                type="button"
+                onClick={() => setLogCallOpen(true)}
+                aria-label={`Log call with ${name}`}
+                title="Log call"
+                className="wa-icon-btn !h-9 !w-9 max-[420px]:hidden"
+              >
+                <Phone size={16} strokeWidth={1.8} />
               </button>
             ) : null}
             <button
@@ -603,28 +667,6 @@ export function ChatThread({
                     Transfer conversation
                   </button>
                 ) : null}
-                {canUpdateStatus && !companyMode ? (
-                  <>
-                    <button
-                      type="button"
-                      disabled={statusUpdating}
-                      onClick={() => void handleStatusUpdate("WON")}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--success)] hover:bg-[var(--success-muted)] disabled:opacity-50"
-                    >
-                      <Trophy size={14} />
-                      Mark as won
-                    </button>
-                    <button
-                      type="button"
-                      disabled={statusUpdating}
-                      onClick={() => void handleStatusUpdate("LOST")}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--danger-fg)] hover:bg-[var(--danger-bg)] disabled:opacity-50"
-                    >
-                      <XCircle size={14} />
-                      Mark as lost
-                    </button>
-                  </>
-                ) : null}
                 {companyMode && (canReassign || canUpdateStatus) ? (
                   <button
                     type="button"
@@ -644,6 +686,43 @@ export function ChatThread({
           </div>
         </div>
       </div>
+
+      {canSend && isWhatsApp && !companyMode ? (
+        <div className="wa-action-strip relative min-h-[44px] shrink-0" aria-label="Conversation tools">
+          <button
+            type="button"
+            onClick={() => setQuickActionsOpen((value) => !value)}
+            aria-expanded={quickActionsOpen}
+            className={`wa-action-chip ${quickActionsOpen ? "wa-action-chip-active" : ""}`}
+            data-course-target="whatsapp-quick-replies"
+          >
+            <Zap size={14} strokeWidth={1.8} /> Quick replies
+          </button>
+          <button type="button" onClick={() => setQuickActionsOpen(true)} className="wa-action-chip max-[520px]:hidden">
+            <Paperclip size={14} strokeWidth={1.8} /> Send asset
+          </button>
+          <button type="button" onClick={() => void handleInternalNote()} className="wa-action-chip max-[640px]:hidden">
+            <StickyNote size={14} strokeWidth={1.8} /> Internal note
+          </button>
+          {showLogCall ? (
+            <button type="button" onClick={() => setLogCallOpen(true)} className="wa-action-chip" data-course-target="whatsapp-log-call">
+              <Phone size={14} strokeWidth={1.8} /> Log call
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setComposerMoreOpen((value) => !value)} aria-expanded={composerMoreOpen} className="wa-action-chip min-[641px]:hidden">
+            More <ChevronDown size={14} strokeWidth={1.8} />
+          </button>
+          {composerMoreOpen ? (
+            <>
+              <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close more actions" onClick={() => setComposerMoreOpen(false)} />
+              <div className="absolute left-2 top-full z-30 mt-1 min-w-[160px] rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
+                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[521px]:hidden" onClick={() => { setComposerMoreOpen(false); setQuickActionsOpen(true); }}><Paperclip size={14} /> Send asset</button>
+                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover" onClick={() => { setComposerMoreOpen(false); void handleInternalNote(); }}><StickyNote size={14} /> Internal note</button>
+              </div>
+            </>
+          ) : null}
+        </div>
+      ) : null}
 
       {companyMode ? (
         <div className="flex min-h-[44px] shrink-0 items-center gap-1.5 overflow-x-auto border-b border-sales-border bg-sales-surface px-3 py-1.5 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -686,6 +765,11 @@ export function ChatThread({
         ref={scrollRef}
         className="wa-chat-wallpaper inbox-scroll relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 sm:px-5"
       >
+        {loadingOlder ? (
+          <div className="sticky top-0 z-10 mx-auto rounded-full border border-sales-border bg-sales-surface px-2.5 py-1 text-[10px] font-medium text-sales-text-secondary">
+            Loading older messages...
+          </div>
+        ) : null}
         {loading ? (
           <div className="flex flex-1 items-center justify-center">
             <span className="wa-empty-hint">Loading messages…</span>
@@ -717,7 +801,7 @@ export function ChatThread({
               setHasNewBelow(false);
               bottomRef.current?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="sticky bottom-3 z-10 mx-auto rounded-full border border-[#E4E7EC] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#101828] shadow-[0_4px_12px_rgba(16,24,40,0.08)]"
+            className="sticky bottom-3 z-10 mx-auto rounded-full border border-sales-border bg-sales-surface px-3 py-1.5 text-[12px] font-semibold text-sales-text-primary shadow-[0_4px_12px_rgba(16,24,40,0.08)]"
           >
             New messages ↓
           </button>
@@ -729,91 +813,6 @@ export function ChatThread({
           {sendError ? (
             <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
               {sendError}
-            </div>
-          ) : null}
-          {isWhatsApp && !companyMode ? (
-            <div className="wa-action-strip relative">
-              <button
-                type="button"
-                onClick={() => setQuickActionsOpen((v) => !v)}
-                aria-expanded={quickActionsOpen}
-                aria-label="Quick replies"
-                className={`wa-action-chip ${quickActionsOpen ? "wa-action-chip-active" : ""}`}
-              >
-                <Zap size={14} strokeWidth={1.8} aria-hidden />
-                Quick replies
-              </button>
-              <button
-                type="button"
-                onClick={() => setQuickActionsOpen(true)}
-                aria-label="Send asset"
-                className="wa-action-chip max-[520px]:hidden"
-              >
-                <Paperclip size={14} strokeWidth={1.8} aria-hidden />
-                Send asset
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleInternalNote()}
-                aria-label="Add internal note"
-                className="wa-action-chip max-[640px]:hidden"
-              >
-                <StickyNote size={14} strokeWidth={1.8} aria-hidden />
-                Internal note
-              </button>
-              {showLogCall ? (
-                <button
-                  type="button"
-                  onClick={() => setLogCallOpen(true)}
-                  aria-label={`Log call with ${name}`}
-                  className="wa-action-chip"
-                >
-                  <Phone size={14} strokeWidth={1.8} aria-hidden />
-                  Log call
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setComposerMoreOpen((v) => !v)}
-                aria-expanded={composerMoreOpen}
-                aria-label="More composer actions"
-                className="wa-action-chip min-[641px]:hidden"
-              >
-                More
-                <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
-              </button>
-              {composerMoreOpen ? (
-                <>
-                  <button
-                    type="button"
-                    className="fixed inset-0 z-20 cursor-default"
-                    aria-label="Close more actions"
-                    onClick={() => setComposerMoreOpen(false)}
-                  />
-                  <div className="absolute bottom-full right-2 z-30 mb-1 min-w-[160px] rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-[#101828] hover:bg-[#F9FAFB] min-[521px]:hidden"
-                      onClick={() => {
-                        setComposerMoreOpen(false);
-                        setQuickActionsOpen(true);
-                      }}
-                    >
-                      <Paperclip size={14} /> Send asset
-                    </button>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-[#101828] hover:bg-[#F9FAFB]"
-                      onClick={() => {
-                        setComposerMoreOpen(false);
-                        void handleInternalNote();
-                      }}
-                    >
-                      <StickyNote size={14} /> Internal note
-                    </button>
-                  </div>
-                </>
-              ) : null}
             </div>
           ) : null}
           {quickActionsOpen ? (
@@ -883,6 +882,17 @@ export function ChatThread({
                 </button>
               </>
             ) : null}
+            {isWhatsApp && !companyMode ? (
+              <button
+                type="button"
+                onClick={() => setQuickActionsOpen(true)}
+                aria-label="Attach a sales asset"
+                title="Attach sales asset"
+                className="wa-icon-btn-muted shrink-0"
+              >
+                <Paperclip size={16} strokeWidth={1.8} />
+              </button>
+            ) : null}
             <input
               ref={composerRef}
               type="text"
@@ -922,8 +932,18 @@ export function ChatThread({
           </div>
         </div>
       ) : (
-        <div className="wa-composer shrink-0 bg-white px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-[#667085]">
+        <div className="wa-composer flex shrink-0 items-center justify-between gap-3 bg-white px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-[11px] font-medium text-[#667085]">
           Read-only — claim or assign this lead to send messages
+          {!conversation.assignedToId && canClaim && onClaim ? (
+            <button
+              type="button"
+              disabled={claiming}
+              onClick={() => onClaim(conversation.id)}
+              className="shrink-0 rounded-[8px] bg-[#D4FF4F] px-2.5 py-1.5 text-[11px] font-semibold text-[#101828] disabled:opacity-50"
+            >
+              {claiming ? "Claiming..." : "Claim conversation"}
+            </button>
+          ) : null}
         </div>
       )}
 
@@ -967,9 +987,11 @@ export function ChatThread({
             onLogged={() => {
               setLogCallOpen(false);
               onMessagesChange();
-              void fetch(`/api/inbox/conversations/${conversation.id}/messages`)
+              void fetch(`/api/inbox/conversations/${conversation.id}/messages?limit=80`)
                 .then((r) => r.json())
-                .then((d: { messages?: InboxChatMessage[] }) => setMessages(d.messages ?? []));
+                .then((d: { messages?: InboxChatMessage[] }) =>
+                  setMessages((current) => mergeChatMessages(current, d.messages ?? []))
+                );
             }}
           />
         </PremiumSheet>
