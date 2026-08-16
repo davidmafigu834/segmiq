@@ -91,6 +91,7 @@ function StageControl({
               key={s}
               type="button"
               role="option"
+              aria-selected={s === stage}
               className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
               onClick={() => {
                 setOpen(false);
