@@ -22,6 +22,50 @@ export const CRM_PLAN_LABELS: Record<CrmPlan, string> = {
   scale: "Scale",
 };
 
+/** Active salesperson seats included on the plan. `null` means unlimited. */
+export const CRM_PLAN_SEATS: Record<CrmPlan, number | null> = {
+  starter: 5,
+  growth: 15,
+  scale: null,
+};
+
+export const CRM_PLAN_DESCRIPTIONS: Record<CrmPlan, string> = {
+  starter: "For small teams getting started with SegmiQ.",
+  growth: "For growing teams that need more power and automation.",
+  scale: "For larger teams that need the full intelligence engine.",
+};
+
+/** 3–5 headline entitlements from the public catalogue — not invented meters. */
+export const CRM_PLAN_FEATURES: Record<CrmPlan, string[]> = {
+  starter: [
+    "Up to 5 salespeople",
+    "WhatsApp lead capture",
+    "Lead timeline & scoring",
+    "All three portals",
+  ],
+  growth: [
+    "Up to 15 salespeople",
+    "AI intent scoring",
+    "Daily AI coaching",
+    "Win analysis & insights",
+  ],
+  scale: [
+    "Unlimited salespeople",
+    "Full intelligence engine",
+    "Audience segments",
+    "Priority support",
+  ],
+};
+
+export function isCrmPlan(value: string | null | undefined): value is CrmPlan {
+  return value === "starter" || value === "growth" || value === "scale";
+}
+
+export function planLabel(plan: string | null | undefined): string {
+  if (plan && isCrmPlan(plan)) return CRM_PLAN_LABELS[plan];
+  return plan?.trim() || "Custom";
+}
+
 /** Months charged up-front for a given cycle (annual = 10 → two months free). */
 const CYCLE_MONTHS: Record<BillingCycle, number> = {
   monthly: 1,

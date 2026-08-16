@@ -77,6 +77,14 @@ export const COURSE_TARGETS = {
   "quotation-amount-summary": "quotation-amount-summary",
   "quotation-items": "quotation-items",
   "quotation-create": "quotation-create",
+  // Company Billing
+  "billing-current-plan": "billing-current-plan",
+  "billing-manage-plan": "billing-manage-plan",
+  "billing-usage": "billing-usage",
+  "billing-invoices": "billing-invoices",
+  "billing-summary": "billing-summary",
+  "billing-payment-method": "billing-payment-method",
+  "billing-history": "billing-history",
 } as const;
 
 export type CourseTargetId = (typeof COURSE_TARGETS)[keyof typeof COURSE_TARGETS];

@@ -845,3 +845,25 @@ Analytics grid (1100px+): `minmax(0,1.15fr) minmax(0,1fr) minmax(360px,28%)`. Ro
 
 Lime is the primary chart accent (Revenue line, Lead bars, source tracks). Pipeline stages use the restrained Deal palette. Do not add a Lead/Deal drawer, Overview table, or a third analytics row.
 
+## Company Billing patterns
+
+Route: `/client/billing` · Full behavior: [SEGMIQ_COMPANY_BILLING.md](./SEGMIQ_COMPANY_BILLING.md).
+
+Company Billing reuses `CompanyWorkspaceShell`. Desktop is a two-column billing workspace, not a table + record-detail rail and not a reports dashboard.
+
+Desktop structure: compact header (BILLING / Billing / supporting copy + Billing help center) → main column ~72–75% + persistent right rail 350–390px. Stop there.
+
+| Surface | Rule |
+|---|---|
+| `BillingPlanCard` (`BillingCurrentPlan`) | Crown in a 64–68px lime-tint square; 18–20px plan name; soft status badge; 3–4 entitlements; 24–26px price; compact secondary Manage Plan. Height ~155–180px |
+| `UsageMeter` (`BillingUsageOverview`) | Horizontal modules; 5–6px track; lime / amber / red by UI-only 80% / 95% thresholds; unlimited has no bar. Only real metered resources (Team Members today) |
+| `InvoiceTable` | Desktop columns Invoice · Date · Status · Plan · Amount · Payment Method · Download; row 48–54px; no zebra; pagination inside the card |
+| `InvoiceCard` | Mobile only: number + status, date, plan, amount, method, Download. Do not squeeze the seven-column table |
+| `InvoiceDetailDrawer` | Overlay 420–480px (full-height sheet on mobile). Does **not** replace the billing rail |
+| `BillingSummaryCard` | Compact key/value + full-width lime Update Payment Method |
+| `PaymentMethodCard` | Safe brand + last4 + Primary; no PAN. Add/Remove/Set primary only if the provider supports them (manual billing does not) |
+| `BillingNavigationList` | History rows ~44px with icon + chevron; only real destinations |
+| `SubscriptionManagementModal` | Compact plan rows, current plan lime tint, catalogue prices labelled as defaults; no self-serve price write |
+
+Mobile order: Billing Summary → Current Plan → Usage → Payment Method → Invoices → History → Need Help. Lime remains limited to primary action, selection, and usage progress.
+

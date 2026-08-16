@@ -1,27 +1,80 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { ClientBillingView } from "@/components/billing/ClientBillingView";
-import { getClientBillingData } from "@/lib/billing/client-billing-data";
+import { CompanyBillingPage } from "@/components/dashboard/company/billing/CompanyBillingPage";
+import { getCompanyBillingPageData, emptyCompanyBillingPageData } from "@/lib/billing/company-billing-data";
+import { canAccessClientBilling } from "@/lib/billing/client-access";
 
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
-export default async function ClientBillingPage() {
+export default async function ClientBillingPage({
+  searchParams,
+}: {
+  searchParams: { clientId?: string };
+}) {
   const session = await getServerSession(authOptions);
-  if (!session?.clientId) redirect("/login");
-  if (session.role !== "CLIENT_MANAGER") redirect("/login");
+  if (!session?.userId) redirect("/login");
+  if (session.role === "SALESPERSON") {
+    redirect(session.clientMode === "solo" ? "/solo/billing" : "/sales/dashboard");
+  }
 
-  const data = await getClientBillingData(session.clientId);
+  const previewClientId = searchParams.clientId;
+  const clientId =
+    session.role === "SUPER_ADMIN" ? previewClientId || session.clientId : session.clientId;
+  if (!clientId) redirect(session.role === "SUPER_ADMIN" ? "/dashboard" : "/login");
+
+  if (session.role !== "SUPER_ADMIN") {
+    const access = await canAccessClientBilling({
+      userId: session.userId,
+      role: session.role,
+      clientId,
+      clientMode: session.clientMode,
+    });
+    if (!access.ok) redirect("/login");
+  }
+
+  const supabase = createAdminClient();
+  const [unreadRes, userRes, clientRes, navBadges, data] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", session.userId)
+      .eq("read", false),
+    supabase.from("users").select("avatar_url, email").eq("id", session.userId).maybeSingle(),
+    supabase.from("clients").select("logo_url, name").eq("id", clientId).maybeSingle(),
+    fetchSalesNavBadges(session.userId, clientId),
+    getCompanyBillingPageData(clientId).catch(() => emptyCompanyBillingPageData(clientId)),
+  ]);
+
+  const whatsappBadge =
+    (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
 
   return (
-    <ClientManagerLayout breadcrumbPage="BILLING" pageTitle="Billing">
-      <ClientBillingView
-        subscription={data.subscription}
-        invoices={data.invoices}
-        outstanding={data.outstanding}
-        currency={data.currency}
-        settings={data.settings}
+    <ClientManagerLayout
+      breadcrumbPage="BILLING"
+      pageTitle="Billing"
+      hideShellHeader
+      hideShellSidebar
+      navClientId={clientId}
+    >
+      <CompanyBillingPage
+        data={{
+          ...data,
+          billingEmail:
+            data.billingEmail ||
+            ((userRes.data as { email?: string | null } | null)?.email ?? null),
+        }}
+        unreadNotifications={unreadRes.count ?? 0}
+        notificationRole={session.role}
+        userName={session.user?.name ?? "User"}
+        avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
+        companyName={(clientRes.data as { name?: string | null } | null)?.name ?? undefined}
+        companyLogoUrl={(clientRes.data as { logo_url?: string | null } | null)?.logo_url ?? null}
+        whatsappBadge={whatsappBadge}
       />
     </ClientManagerLayout>
   );

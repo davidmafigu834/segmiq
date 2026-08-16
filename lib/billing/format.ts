@@ -5,6 +5,29 @@ export function formatMoney(amount: number | string | null | undefined, currency
   return `${currency} ${n.toFixed(2)}`;
 }
 
+/** Canonical currency display for Company Billing (`$149.00`). */
+export function formatBillingMoney(amount: number | string | null | undefined, currency = "USD"): string {
+  const n = Number(amount ?? 0);
+  if (!Number.isFinite(n)) return "—";
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n);
+  } catch {
+    return `${currency} ${n.toFixed(2)}`;
+  }
+}
+
+export function maskSecretTail(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const compact = value.replace(/\s+/g, "");
+  if (compact.length < 4) return compact;
+  return `•••• ${compact.slice(-4)}`;
+}
+
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "—";
   const d = typeof value === "string" ? new Date(value) : value;
