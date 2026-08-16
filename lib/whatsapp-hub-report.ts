@@ -148,11 +148,23 @@ export async function computeWhatsAppHubReport(opts: {
   period?: WhatsAppHubPeriod;
   salespersonId?: string | null;
   now?: Date;
+  from?: Date;
+  to?: Date;
 }): Promise<WhatsAppHubReport> {
   const supabase = createAdminClient();
   const now = opts.now ?? new Date();
   const periodId = opts.period ?? "this_week";
-  const range = periodRange(periodId, now);
+  const preset = periodRange(periodId, now);
+  const from = opts.from ?? preset.from;
+  const to = opts.to ?? preset.to;
+  const ms = Math.max(0, to.getTime() - from.getTime());
+  const range = {
+    from,
+    to,
+    priorFrom: opts.from ? new Date(from.getTime() - ms) : preset.priorFrom,
+    priorTo: opts.from ? from : preset.priorTo,
+    label: opts.from ? `${from.toISOString().slice(0, 10)} – ${to.toISOString().slice(0, 10)}` : preset.label,
+  };
   const fromIso = range.from.toISOString();
   const toIso = range.to.toISOString();
 
@@ -248,9 +260,10 @@ export async function computeWhatsAppHubReport(opts: {
   }
 
   const dailyVolume: WhatsAppHubDailyVolume[] = [];
-  const dayCount = periodId === "this_month"
-    ? Math.min(30, Math.ceil((range.to.getTime() - range.from.getTime()) / 86_400_000))
-    : 7;
+  const dayCount = Math.min(
+    31,
+    Math.max(1, Math.ceil((range.to.getTime() - range.from.getTime()) / 86_400_000))
+  );
   for (let i = dayCount - 1; i >= 0; i--) {
     const dayStart = subDays(range.to, i + 1);
     const dayEnd = subDays(range.to, i);

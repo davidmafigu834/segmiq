@@ -68,6 +68,17 @@ export function CompanyPipelinePage({
   const stackedSplit = useMediaQuery("(max-width: 767px)");
 
   const [tab, setTab] = useState<CompanyPipelineTab>(() => {
+    const stage = searchParams.get("stage");
+    if (
+      stage === "QUALIFIED" ||
+      stage === "SCOPING" ||
+      stage === "PROPOSAL_SENT" ||
+      stage === "NEGOTIATING" ||
+      stage === "WON" ||
+      stage === "LOST"
+    ) {
+      return stage;
+    }
     const id = searchParams.get("deal");
     const row = data.rows.find((r) => r.id === id);
     if (row?.stage === "WON" || row?.stage === "LOST") return row.stage;

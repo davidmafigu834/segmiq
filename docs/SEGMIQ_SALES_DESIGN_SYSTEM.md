@@ -820,3 +820,28 @@ Company Quotations uses the approved Company shell, one compact seven-card KPI r
 | Mobile detail sheet | Bottom sheet with the same desktop information order and safe-area footer |
 
 Quotation status never implies Deal outcome. Accepted does not mean Won; Declined or Expired does not mean Lost. Lime remains limited to primary action, focus, active-tab underline, and selection in both themes.
+
+## Company Reports patterns
+
+Route: `/client/reports` · Full behavior: [SEGMIQ_COMPANY_REPORTS.md](./SEGMIQ_COMPANY_REPORTS.md).
+
+Company Reports reuses `CompanyWorkspaceShell`. Overview is a chart/summary workspace, not a table + detail drawer.
+
+Desktop structure: compact header (REPORTS / Reports / supporting copy) with Date range, Filters, Export → underline report tabs → six `ReportKpiCard`s → two-row analytics grid with a spanning right rail → one footer strip. Stop there.
+
+| Surface | Rule |
+|---|---|
+| `ReportKpiCard` | White/surface, 1px border, 12px radius, icon circle, 24–26px metric, trend + 32px sparkline; height 135–150px; six equal cards |
+| `ReportSparkline` | Thin line, no axes; empty period is a flat muted line, never fabricated wiggles |
+| `ReportChartCard` | 12px radius, 14–18px padding, 14px/600 title, optional right `MenuSelect` |
+| `ReportTooltip` | Raised surface, 1px border, small shadow; dark `#151815` / `surfaceRaised` |
+| `PerformanceSummary` | Compact metric list; semantic trend colours (Lost/cycle/response down can be green) |
+| `TopSalespeople` | Avatar, name, Revenue Won, sparkline, trend; max ~5 real rows; View all → Team tab |
+| `SourceDistribution` / `LeadsBySource` | Label, lime track bar, count · %; unknown stays in the denominator |
+| `LeadConversionFunnel` | Visual funnel left + Stage/Count/Conversion table right; stack on mobile |
+| Mobile Reports | Vertical insight feed; tabs scroll inside the strip; KPI 2-col; no 3-column squeeze |
+
+Analytics grid (1100px+): `minmax(0,1.15fr) minmax(0,1fr) minmax(360px,28%)`. Row 1 ~275–300px, row 2 ~250–280px. Right rail order is Performance Summary → Top Salespeople → Leads by Source.
+
+Lime is the primary chart accent (Revenue line, Lead bars, source tracks). Pipeline stages use the restrained Deal palette. Do not add a Lead/Deal drawer, Overview table, or a third analytics row.
+
