@@ -1,0 +1,4 @@
+{
+  "//": "Baileys 7 ships as pure ESM. This scopes the gateway to ESM so tsx loads it as a module, without turning the CommonJS Next.js app into one.",
+  "type": "module"
+}

@@ -1,6 +1,9 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
-import { loadEnvConfig } from "@next/env";
+import { createRequire } from "node:module";
+// `@next/env` is CommonJS and exposes no named ESM exports, so it is imported
+// through the default interop rather than destructured.
+import nextEnv from "@next/env";
 import makeWASocket, {
   BufferJSON,
   Browsers,
@@ -13,11 +16,18 @@ import makeWASocket, {
   type WAMessage,
   type WASocket,
 } from "@whiskeysockets/baileys";
-import { signGatewayRequest, verifyGatewayRequest } from "../../lib/whatsapp/security/gateway-auth";
+// The shared signing module lives in the CommonJS half of the repository, so
+// Node cannot statically see its named exports from this ES module. Requiring
+// it keeps the gateway on exactly the implementation the web app verifies
+// against, instead of duplicating the signing rules.
+const requireCommonJs = createRequire(import.meta.url);
+const { signGatewayRequest, verifyGatewayRequest } = requireCommonJs(
+  "../../lib/whatsapp/security/gateway-auth"
+) as typeof import("../../lib/whatsapp/security/gateway-auth");
 
 // `next dev` loads .env.local automatically; this standalone long-running
 // gateway needs to load the same local configuration when run via npm.
-loadEnvConfig(process.cwd());
+nextEnv.loadEnvConfig(process.cwd());
 
 type StoredAuth = {
   creds: AuthenticationState["creds"];

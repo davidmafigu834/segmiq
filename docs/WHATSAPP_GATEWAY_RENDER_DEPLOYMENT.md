@@ -128,6 +128,7 @@ Settings should return to **Connected** on its own, with no QR code.
 | Symptom | Cause |
 | --- | --- |
 | Build succeeds, service crashes with `tsx: not found` | Deployed before the dependency change; `tsx` must be in `dependencies`, not `devDependencies` |
+| Crash on boot with `ERR_PACKAGE_PATH_NOT_EXPORTED` for `whatsapp-rust-bridge` | The gateway was loaded as CommonJS; `services/whatsapp-gateway/package.json` declares `{"type":"module"}` and must not be deleted |
 | Logs show `SEGMIQ_INTERNAL_BASE_URL is required` | Environment variable missing on Render, or set on Vercel by mistake |
 | Render runs `next build` and the deploy is huge | Build and start commands were left at Render's Next.js defaults |
 | Every request returns `401` | The two `WHATSAPP_GATEWAY_SHARED_SECRET` values differ, or Vercel was not redeployed after adding them |
