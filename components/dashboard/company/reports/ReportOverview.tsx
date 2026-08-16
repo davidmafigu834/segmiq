@@ -8,7 +8,7 @@ import {
   Target,
   Trophy,
 } from "lucide-react";
-import { ReportKpiCard } from "./ReportKpiCard";
+import { ReportKpiCard, reportKpiGridClass } from "./ReportKpiCard";
 import { RevenueWonChart } from "./RevenueWonChart";
 import { PipelineStageDonut } from "./PipelineStageDonut";
 import { PerformanceSummary } from "./PerformanceSummary";
@@ -60,8 +60,8 @@ export function ReportOverview({
   const scopeNote = data.filters.ownerName ? `Company scope: ${data.filters.ownerName}` : null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 layout:grid-cols-6">
+    <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden">
+      <section className={reportKpiGridClass(data.kpis.length)}>
         {data.kpis.map((item, i) => {
           const meta = KPI_META[i] ?? KPI_META[0]!;
           return (
@@ -80,65 +80,63 @@ export function ReportOverview({
         })}
       </section>
 
-      <div className="flex flex-col gap-4 layout:grid layout:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(360px,28%)] layout:grid-rows-[minmax(275px,1fr)_minmax(250px,1fr)] layout:gap-4">
-        <div className="order-1 min-h-0 layout:col-start-1 layout:row-start-1">
-          <RevenueWonChart
-            series={data.revenueSeries}
-            currency={data.currency}
-            granularity={granularity}
-            onGranularity={onGranularity}
-            error={data.errors.revenue}
-            onRetry={onRetry}
-          />
-        </div>
-        <div className="order-3 min-h-0 layout:col-start-2 layout:row-start-1">
-          <PipelineStageDonut
-            slices={data.pipeline.slices}
-            activeCount={data.pipeline.activeCount}
-            currency={data.currency}
-            mode={pipelineMode}
-            onMode={onPipelineMode}
-            error={data.errors.pipeline}
-            onRetry={onRetry}
-            onStageClick={(stage) => onOpenPipeline(stage)}
-          />
-        </div>
-        <div className="order-4 min-h-0 layout:col-start-1 layout:row-start-2">
-          <LeadsCreatedChart
-            series={data.leadSeries}
-            granularity={granularity}
-            onGranularity={onGranularity}
-            error={data.errors.leads}
-            onRetry={onRetry}
-          />
-        </div>
-        <div className="order-5 min-h-0 layout:col-start-2 layout:row-start-2">
-          <LeadConversionFunnel
-            stages={data.funnel.stages}
-            methodology={data.funnel.methodology}
-            error={data.errors.funnel}
-            onRetry={onRetry}
-          />
-        </div>
-        <div className="contents layout:col-start-3 layout:row-span-2 layout:row-start-1 layout:flex layout:min-h-0 layout:flex-col layout:gap-4">
-          <div className="order-2 min-h-0 layout:order-none">
-            <PerformanceSummary rows={data.performanceSummary} />
-          </div>
-          <div className="order-6 min-h-0 layout:order-none layout:flex-1">
-            <TopSalespeople
-              rows={data.topSalespeople}
+      <div className="grid min-w-0 grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,20rem)]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="h-[280px] min-w-0 overflow-hidden layout:h-[320px]">
+            <RevenueWonChart
+              series={data.revenueSeries}
               currency={data.currency}
-              onViewAll={onOpenTeam}
-              onSelect={() => onOpenTeam()}
+              granularity={granularity}
+              onGranularity={onGranularity}
+              error={data.errors.revenue}
+              onRetry={onRetry}
             />
           </div>
-          <div className="order-7 min-h-0 layout:order-none layout:flex-1">
-            <LeadsBySource
-              rows={data.leadSources.rows}
-              total={data.leadSources.total}
-              onViewAll={onOpenLeads}
+          <div className="h-[260px] min-w-0 overflow-hidden layout:h-[300px]">
+            <LeadsCreatedChart
+              series={data.leadSeries}
+              granularity={granularity}
+              onGranularity={onGranularity}
+              error={data.errors.leads}
+              onRetry={onRetry}
             />
           </div>
+        </div>
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="h-[280px] min-w-0 overflow-hidden layout:h-[320px]">
+            <PipelineStageDonut
+              slices={data.pipeline.slices}
+              activeCount={data.pipeline.activeCount}
+              currency={data.currency}
+              mode={pipelineMode}
+              onMode={onPipelineMode}
+              error={data.errors.pipeline}
+              onRetry={onRetry}
+              onStageClick={(stage) => onOpenPipeline(stage)}
+            />
+          </div>
+          <div className="h-[260px] min-w-0 overflow-hidden layout:h-[300px]">
+            <LeadConversionFunnel
+              stages={data.funnel.stages}
+              methodology={data.funnel.methodology}
+              error={data.errors.funnel}
+              onRetry={onRetry}
+            />
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-col gap-4">
+          <PerformanceSummary rows={data.performanceSummary} />
+          <TopSalespeople
+            rows={data.topSalespeople}
+            currency={data.currency}
+            onViewAll={onOpenTeam}
+            onSelect={() => onOpenTeam()}
+          />
+          <LeadsBySource
+            rows={data.leadSources.rows}
+            total={data.leadSources.total}
+            onViewAll={onOpenLeads}
+          />
         </div>
       </div>
 
@@ -155,15 +153,21 @@ export function ReportOverview({
 export function ReportOverviewSkeleton() {
   return (
     <div className="flex flex-col gap-4" aria-busy="true" aria-label="Loading reports">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 layout:grid-cols-6">
+      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:grid-cols-[repeat(3,minmax(0,1fr))] layout:grid-cols-[repeat(6,minmax(0,1fr))]">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-[142px] rounded-[12px]" />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(360px,28%)]">
-        <Skeleton className="h-[280px] rounded-[12px]" />
-        <Skeleton className="h-[280px] rounded-[12px]" />
-        <div className="space-y-4">
+      <div className="grid min-w-0 grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,20rem)]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <Skeleton className="h-[280px] rounded-[12px] layout:h-[320px]" />
+          <Skeleton className="h-[260px] rounded-[12px] layout:h-[300px]" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-4">
+          <Skeleton className="h-[280px] rounded-[12px] layout:h-[320px]" />
+          <Skeleton className="h-[260px] rounded-[12px] layout:h-[300px]" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-4">
           <Skeleton className="h-[140px] rounded-[12px]" />
           <Skeleton className="h-[160px] rounded-[12px]" />
           <Skeleton className="h-[160px] rounded-[12px]" />

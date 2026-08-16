@@ -54,17 +54,18 @@ export function PipelineStageDonut({
       }
       error={error}
       onRetry={onRetry}
-      className="min-h-[275px] layout:min-h-[280px]"
+      className="h-full min-h-[260px]"
+      bodyClassName="flex min-h-0 flex-col overflow-hidden"
     >
       {empty ? (
-        <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center">
+        <div className="flex h-full min-h-0 flex-col items-center justify-center text-center">
           <p className="text-[13px] font-medium text-sales-text-primary">
             No active Deals in the Pipeline.
           </p>
         </div>
       ) : (
-        <div className="flex h-full min-h-[200px] flex-col items-center gap-4 sm:flex-row sm:items-center">
-          <div className="relative h-[168px] w-[168px] shrink-0">
+        <div className="flex h-full min-h-0 items-center gap-3 overflow-hidden">
+          <div className="relative h-[132px] w-[132px] shrink-0 sm:h-[148px] sm:w-[148px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -118,7 +119,7 @@ export function PipelineStageDonut({
               </p>
             </div>
           </div>
-          <ul className="min-w-0 flex-1 space-y-2" aria-label="Active Deal stages">
+          <ul className="min-w-0 flex-1 space-y-1.5 overflow-y-auto pr-0.5" aria-label="Active Deal stages">
             {data.map((s) => (
               <li key={s.stage}>
                 <button

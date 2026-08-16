@@ -129,7 +129,8 @@ export function CompanyReportsPage({
       notificationRole={notificationRole}
       whatsappBadge={whatsappBadge}
     >
-      <CompanyReportsHeader
+      <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden">
+        <CompanyReportsHeader
         unreadNotifications={unreadNotifications}
         notificationRole={notificationRole}
         userName={userName}
@@ -201,6 +202,7 @@ export function CompanyReportsPage({
           refreshing={isValidating}
         />
       ) : null}
+      </div>
     </CompanyWorkspaceShell>
   );
 }

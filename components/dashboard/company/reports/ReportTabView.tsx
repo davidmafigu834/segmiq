@@ -1,6 +1,7 @@
 "use client";
 
-import { ReportKpiCard } from "./ReportKpiCard";
+import type { ReactNode } from "react";
+import { ReportKpiCard, reportKpiGridClass } from "./ReportKpiCard";
 import { ReportChartCard } from "./ReportChartCard";
 import { RevenueWonChart } from "./RevenueWonChart";
 import { PipelineStageDonut } from "./PipelineStageDonut";
@@ -43,17 +44,22 @@ export function ReportTabView({
   refreshing?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4 overflow-x-hidden">
       {data.tab === "sales" ? (
         <>
           <KpiGrid data={data} />
-          <RevenueWonChart
-            series={data.revenueSeries}
-            currency={data.currency}
-            granularity={granularity}
-            onGranularity={onGranularity}
-          />
-          <ReportChartCard title="Revenue Won by salesperson">
+          <div className="h-[280px] min-w-0 overflow-hidden layout:h-[320px]">
+            <RevenueWonChart
+              series={data.revenueSeries}
+              currency={data.currency}
+              granularity={granularity}
+              onGranularity={onGranularity}
+            />
+          </div>
+          <ReportChartCard
+            title="Revenue Won by salesperson"
+            hint="Deal win rate is Won / (Won + Lost) for Deals closed in this period — not Lead → Deal conversion."
+          >
             {data.bySalesperson.length === 0 ? (
               <p className="py-8 text-center text-[13px] text-sales-text-muted">
                 No Won Deal results in this period.
@@ -61,21 +67,15 @@ export function ReportTabView({
             ) : (
               <ul className="divide-y divide-sales-border-subtle">
                 {data.bySalesperson.map((row) => (
-                  <li key={row.userId} className="flex items-center justify-between gap-3 py-2.5">
-                    <span className="inline-flex min-w-0 items-center gap-2">
-                      <Avatar name={row.name} src={row.avatarUrl} size="sm" />
-                      <span className="truncate text-[13px] text-sales-text-primary">{row.name}</span>
-                    </span>
-                    <span className="text-[13px] tabular-nums text-sales-text-primary">
-                      {formatDealCurrency(row.revenueWon, { currency: data.currency })} · {row.dealsWon}
-                    </span>
-                  </li>
+                  <MetricRow
+                    key={row.userId}
+                    label={row.name}
+                    value={`${formatDealCurrency(row.revenueWon, { currency: data.currency })} · ${row.dealsWon}`}
+                    leading={<Avatar name={row.name} src={row.avatarUrl} size="sm" />}
+                  />
                 ))}
               </ul>
             )}
-            <p className="mt-3 text-[11px] text-sales-text-muted">
-              Deal win rate is Won / (Won + Lost) for Deals closed in this period — not Lead → Deal conversion.
-            </p>
           </ReportChartCard>
         </>
       ) : null}
@@ -83,60 +83,79 @@ export function ReportTabView({
       {data.tab === "pipeline" ? (
         <>
           <KpiGrid data={data} />
-          <PipelineStageDonut
-            slices={data.pipeline.slices}
-            activeCount={data.pipeline.activeCount}
-            currency={data.currency}
-            mode={pipelineMode}
-            onMode={onPipelineMode}
-          />
-          <p className="text-[12px] text-sales-text-muted">
-            {data.noNextAction} active Deal{data.noNextAction === 1 ? "" : "s"} with no next action scheduled.
-          </p>
+          <div className="grid min-w-0 grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.4fr)_minmax(0,20rem)]">
+            <div className="h-[280px] min-w-0 overflow-hidden layout:h-[320px]">
+              <PipelineStageDonut
+                slices={data.pipeline.slices}
+                activeCount={data.pipeline.activeCount}
+                currency={data.currency}
+                mode={pipelineMode}
+                onMode={onPipelineMode}
+              />
+            </div>
+            <div className="min-h-[160px] min-w-0 layout:h-[320px]">
+              <ReportChartCard title="Pipeline health">
+                <p className="text-[28px] font-semibold tabular-nums leading-none text-sales-text-primary">
+                  {data.noNextAction}
+                </p>
+                <p className="mt-2 text-[13px] leading-snug text-sales-text-secondary">
+                  Active Deal{data.noNextAction === 1 ? "" : "s"} with no next action scheduled.
+                </p>
+                <p className="mt-4 text-[11px] leading-relaxed text-sales-text-muted">
+                  Won and Lost Deals are not included in the stage chart.
+                </p>
+              </ReportChartCard>
+            </div>
+          </div>
         </>
       ) : null}
 
       {data.tab === "leads" ? (
         <>
           <KpiGrid data={data} />
-          <div className="grid grid-cols-1 gap-4 layout:grid-cols-2">
-            <LeadsCreatedChart
-              series={data.leadSeries}
-              granularity={granularity}
-              onGranularity={onGranularity}
-            />
-            <LeadConversionFunnel stages={data.funnel.stages} methodology={data.funnel.methodology} />
+          <div className="grid min-w-0 grid-cols-1 gap-4 layout:grid-cols-2">
+            <div className="h-[260px] min-w-0 overflow-hidden layout:h-[300px]">
+              <LeadsCreatedChart
+                series={data.leadSeries}
+                granularity={granularity}
+                onGranularity={onGranularity}
+              />
+            </div>
+            <div className="h-[260px] min-w-0 overflow-hidden layout:h-[300px]">
+              <LeadConversionFunnel stages={data.funnel.stages} methodology={data.funnel.methodology} />
+            </div>
           </div>
-          <LeadsBySource rows={data.leadSources.rows} total={data.leadSources.total} onViewAll={() => undefined} />
+          <LeadsBySource rows={data.leadSources.rows} total={data.leadSources.total} />
         </>
       ) : null}
 
       {data.tab === "whatsapp" ? (
         <>
           <KpiGrid data={data} />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-[repeat(1,minmax(0,1fr))] gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))]">
             <Stat label="Inbound messages" value={String(data.inbound)} />
             <Stat label="Outbound messages" value={String(data.outbound)} />
             <Stat label="Needs reply" value={String(data.awaitingReply)} />
           </div>
-          <ReportChartCard title="By owner">
+          <ReportChartCard
+            title="By owner"
+            hint="WhatsApp source means the Lead originated from WhatsApp. Messages sent are not sales success."
+          >
             {data.byRep.length === 0 ? (
-              <p className="py-8 text-center text-[13px] text-sales-text-muted">No WhatsApp activity in this period.</p>
+              <p className="py-8 text-center text-[13px] text-sales-text-muted">
+                No WhatsApp activity in this period.
+              </p>
             ) : (
               <ul className="divide-y divide-sales-border-subtle">
                 {data.byRep.map((row) => (
-                  <li key={row.userId} className="flex justify-between py-2.5 text-[13px]">
-                    <span>{row.name}</span>
-                    <span className="tabular-nums text-sales-text-secondary">
-                      {row.assignedChats} chats · {row.outboundMessages} sent
-                    </span>
-                  </li>
+                  <MetricRow
+                    key={row.userId}
+                    label={row.name}
+                    value={`${row.assignedChats} chats · ${row.outboundMessages} sent`}
+                  />
                 ))}
               </ul>
             )}
-            <p className="mt-3 text-[11px] text-sales-text-muted">
-              WhatsApp source means the Lead originated from WhatsApp. Messages sent are not sales success.
-            </p>
           </ReportChartCard>
         </>
       ) : null}
@@ -144,49 +163,49 @@ export function ReportTabView({
       {data.tab === "quotations" ? (
         <>
           <KpiGrid data={data} />
-          <ReportChartCard title="Quotes by status">
+          <ReportChartCard
+            title="Quotes by status"
+            hint="Quoted value is not Revenue Won. Accepted quotes do not mark Deals Won."
+          >
             {data.byStatus.length === 0 ? (
               <p className="py-8 text-center text-[13px] text-sales-text-muted">No quotations in this period.</p>
             ) : (
               <ul className="divide-y divide-sales-border-subtle">
                 {data.byStatus.map((row) => (
-                  <li key={row.status} className="flex justify-between py-2.5 text-[13px]">
-                    <span>{row.label}</span>
-                    <span className="tabular-nums">{row.count}</span>
-                  </li>
+                  <MetricRow key={row.status} label={row.label} value={String(row.count)} />
                 ))}
               </ul>
             )}
-            <p className="mt-3 text-[11px] text-sales-text-muted">
-              Quoted value is not Revenue Won. Accepted quotes do not mark Deals Won.
-            </p>
           </ReportChartCard>
         </>
       ) : null}
 
       {data.tab === "team" ? (
-        <ReportChartCard title="Team results">
+        <ReportChartCard
+          title="Team results"
+          hint="Ranked by Revenue Won. Activity volume is not used as a performance ranking."
+        >
           {data.rows.length === 0 ? (
             <p className="py-8 text-center text-[13px] text-sales-text-muted">No team members in scope.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-left text-[13px]">
+            <div className="min-w-0 overflow-x-auto">
+              <table className="w-full min-w-[36rem] table-fixed text-left text-[13px]">
                 <thead>
                   <tr className="text-[11px] text-sales-text-muted">
-                    <th className="pb-2 font-medium">Salesperson</th>
-                    <th className="pb-2 text-right font-medium">Revenue Won</th>
-                    <th className="pb-2 text-right font-medium">Deals Won</th>
-                    <th className="pb-2 text-right font-medium">Pipeline</th>
-                    <th className="pb-2 text-right font-medium">New Leads</th>
+                    <th className="w-[32%] pb-2 font-medium">Salesperson</th>
+                    <th className="w-[17%] pb-2 text-right font-medium">Revenue Won</th>
+                    <th className="w-[17%] pb-2 text-right font-medium">Deals Won</th>
+                    <th className="w-[17%] pb-2 text-right font-medium">Pipeline</th>
+                    <th className="w-[17%] pb-2 text-right font-medium">New Leads</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.rows.map((row) => (
                     <tr key={row.userId} className="border-t border-sales-border-subtle">
-                      <td className="py-2.5">
-                        <span className="inline-flex items-center gap-2">
+                      <td className="py-2.5 pr-3">
+                        <span className="inline-flex min-w-0 max-w-full items-center gap-2">
                           <Avatar name={row.name} src={row.avatarUrl} size="xs" />
-                          {row.name}
+                          <span className="truncate">{row.name}</span>
                         </span>
                       </td>
                       <td className="py-2.5 text-right tabular-nums">
@@ -203,9 +222,6 @@ export function ReportTabView({
               </table>
             </div>
           )}
-          <p className="mt-3 text-[11px] text-sales-text-muted">
-            Ranked by Revenue Won. Activity volume is not used as a performance ranking.
-          </p>
         </ReportChartCard>
       ) : null}
 
@@ -220,12 +236,11 @@ export function ReportTabView({
             ) : (
               <ul className="divide-y divide-sales-border-subtle">
                 {data.topCustomers.map((row) => (
-                  <li key={row.contactId} className="flex justify-between py-2.5 text-[13px]">
-                    <span className="truncate">{row.name}</span>
-                    <span className="tabular-nums">
-                      {formatDealCurrency(row.revenueWon, { currency: data.currency })} · {row.dealsWon}
-                    </span>
-                  </li>
+                  <MetricRow
+                    key={row.contactId}
+                    label={row.name}
+                    value={`${formatDealCurrency(row.revenueWon, { currency: data.currency })} · ${row.dealsWon}`}
+                  />
                 ))}
               </ul>
             )}
@@ -236,18 +251,15 @@ export function ReportTabView({
       {data.tab === "activities" ? (
         <>
           <KpiGrid data={data} />
-          <ReportChartCard title="Activity mix">
+          <ReportChartCard
+            title="Activity mix"
+            hint="Activity counts measure execution, not sales quality. People are not ranked by volume alone."
+          >
             <ul className="divide-y divide-sales-border-subtle">
               {data.byType.map((row) => (
-                <li key={row.type} className="flex justify-between py-2.5 text-[13px]">
-                  <span>{row.label}</span>
-                  <span className="tabular-nums">{row.count}</span>
-                </li>
+                <MetricRow key={row.type} label={row.label} value={String(row.count)} />
               ))}
             </ul>
-            <p className="mt-3 text-[11px] text-sales-text-muted">
-              Activity counts measure execution, not sales quality. People are not ranked by volume alone.
-            </p>
           </ReportChartCard>
         </>
       ) : null}
@@ -261,7 +273,7 @@ function KpiGrid({ data }: { data: CompanyReportPayload }) {
   if (!("kpis" in data) || !data.kpis?.length) return null;
   const icons = [CircleDollarSign, Trophy, Inbox, Target, BriefcaseBusiness, Clock3, MessageCircle, Users];
   return (
-    <section className="grid grid-cols-2 gap-3 md:grid-cols-3 layout:grid-cols-6">
+    <section className={reportKpiGridClass(data.kpis.length)}>
       {data.kpis.map((item, i) => {
         const Icon = icons[i] ?? Inbox;
         return (
@@ -282,11 +294,33 @@ function KpiGrid({ data }: { data: CompanyReportPayload }) {
   );
 }
 
+function MetricRow({
+  label,
+  value,
+  leading,
+}: {
+  label: string;
+  value: string;
+  leading?: ReactNode;
+}) {
+  return (
+    <li className="flex min-w-0 items-center justify-between gap-3 py-2.5">
+      <span className="inline-flex min-w-0 items-center gap-2">
+        {leading ? <span className="shrink-0">{leading}</span> : null}
+        <span className="truncate text-[13px] text-sales-text-primary" title={label}>
+          {label}
+        </span>
+      </span>
+      <span className="shrink-0 text-[13px] tabular-nums text-sales-text-secondary">{value}</span>
+    </li>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] border border-sales-border bg-sales-surface p-4">
-      <p className="text-[12px] text-sales-text-secondary">{label}</p>
-      <p className="mt-2 text-[22px] font-semibold tabular-nums text-sales-text-primary">{value}</p>
+    <div className="min-w-0 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface p-4">
+      <p className="truncate text-[12px] text-sales-text-secondary">{label}</p>
+      <p className="mt-2 truncate text-[22px] font-semibold tabular-nums text-sales-text-primary">{value}</p>
     </div>
   );
 }

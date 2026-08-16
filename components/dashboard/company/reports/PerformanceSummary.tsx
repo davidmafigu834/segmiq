@@ -10,9 +10,9 @@ export function PerformanceSummary({ rows }: { rows: PerformanceSummaryRow[] }) 
     <ReportChartCard title="Performance Summary" bodyClassName="pt-1" className="min-h-0">
       <ul className="divide-y divide-sales-border-subtle">
         {rows.map((row) => (
-          <li key={row.id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-            <span className="text-[12px] text-sales-text-secondary sm:text-[13px]">{row.label}</span>
-            <span className="flex min-w-0 items-center gap-2">
+          <li key={row.id} className="flex min-w-0 items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+            <span className="min-w-0 truncate text-[12px] text-sales-text-secondary sm:text-[13px]">{row.label}</span>
+            <span className="flex shrink-0 items-center gap-2">
               <span className="text-[13px] font-semibold tabular-nums text-sales-text-primary">
                 {row.value}
               </span>

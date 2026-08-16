@@ -11,7 +11,7 @@ export function LeadsBySource({
 }: {
   rows: SourceSlice[];
   total: number;
-  onViewAll: () => void;
+  onViewAll?: () => void;
   onSelect?: (key: string) => void;
 }) {
   const max = Math.max(...rows.map((r) => r.count), 1);
@@ -19,13 +19,15 @@ export function LeadsBySource({
     <ReportChartCard
       title="Leads by Source"
       action={
-        <button
-          type="button"
-          onClick={onViewAll}
-          className="text-[12px] font-medium text-sales-brand-fg hover:underline"
-        >
-          View all
-        </button>
+        onViewAll ? (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="text-[12px] font-medium text-sales-brand-fg hover:underline"
+          >
+            View all
+          </button>
+        ) : undefined
       }
       bodyClassName="pt-1"
     >

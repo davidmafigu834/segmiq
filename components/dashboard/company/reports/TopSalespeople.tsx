@@ -44,7 +44,7 @@ export function TopSalespeople({
               <button
                 type="button"
                 onClick={() => onSelect?.(row.userId)}
-                className="flex w-full items-center gap-2.5 rounded-[8px] px-0.5 py-0.5 text-left hover:bg-sales-surface-hover"
+                className="flex min-w-0 w-full items-center gap-2.5 rounded-[8px] px-0.5 py-0.5 text-left hover:bg-sales-surface-hover"
               >
                 <Avatar name={row.name} src={row.avatarUrl} size="sm" />
                 <span className="min-w-0 flex-1">
@@ -55,10 +55,12 @@ export function TopSalespeople({
                     {formatDealCurrency(row.revenueWon, { currency })}
                   </span>
                 </span>
-                <span className="hidden w-[56px] sm:block">
+                <span className="hidden w-[56px] shrink-0 sm:block">
                   <ReportSparkline data={row.sparkline} color="#22C55E" />
                 </span>
-                <Trend trend={row.trend} />
+                <span className="shrink-0">
+                  <Trend trend={row.trend} />
+                </span>
               </button>
             </li>
           ))}

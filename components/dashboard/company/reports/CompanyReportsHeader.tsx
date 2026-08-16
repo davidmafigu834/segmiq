@@ -67,7 +67,7 @@ export function CompanyReportsHeader({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
+      <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
         <div className="min-w-0">
           <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[26px] layout:text-[28px]">
             Reports
@@ -76,7 +76,7 @@ export function CompanyReportsHeader({
             Track performance, measure results and make data-driven decisions.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 layout:justify-end">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 layout:justify-end">
           <DateRangeControl from={from} to={to} preset={preset} onRange={onRange} />
           <FiltersControl ownerId={ownerId} owners={owners} onOwner={onOwner} />
           <Button variant="primary" size="sm" leftIcon={<Download size={14} />} onClick={onExport}>

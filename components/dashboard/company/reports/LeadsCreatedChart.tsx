@@ -43,16 +43,18 @@ export function LeadsCreatedChart({
       }
       error={error}
       onRetry={onRetry}
-      className="min-h-[250px] layout:min-h-[260px]"
+      className="h-full min-h-[240px]"
+      bodyClassName="flex min-h-0 flex-col overflow-hidden"
     >
       {!has ? (
-        <div className="flex h-full min-h-[180px] flex-col items-center justify-center text-center">
+        <div className="flex h-full min-h-0 flex-col items-center justify-center text-center">
           <p className="text-[13px] font-medium text-sales-text-primary">
             No Leads were captured during this period.
           </p>
         </div>
       ) : (
-        <div className="h-[190px] w-full sm:h-[200px] layout:h-[208px]" aria-label="Leads created over time">
+        <div className="relative h-full min-h-[160px] w-full" aria-label="Leads created over time">
+          <div className="absolute inset-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid stroke={colors.grid} vertical={false} strokeDasharray="3 6" />
@@ -89,6 +91,7 @@ export function LeadsCreatedChart({
               <Bar dataKey="current" name="New Leads" fill={colors.brand} radius={[3, 3, 0, 0]} maxBarSize={22} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
       )}
     </ReportChartCard>

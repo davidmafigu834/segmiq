@@ -40,7 +40,7 @@ export function RevenueWonChart({
     <ReportChartCard
       title="Revenue Won Over Time"
       legend={
-        <div className="flex items-center gap-3 text-[11px] text-sales-text-muted">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-sales-text-muted">
           <span className="inline-flex items-center gap-1.5">
             <span className="h-0.5 w-3 rounded-full bg-sales-brand" aria-hidden />
             This period
@@ -67,10 +67,11 @@ export function RevenueWonChart({
       }
       error={error}
       onRetry={onRetry}
-      className="min-h-[275px] layout:min-h-[280px]"
+      className="h-full min-h-[260px]"
+      bodyClassName="flex min-h-0 flex-col overflow-hidden"
     >
       {!has ? (
-        <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center">
+        <div className="flex h-full min-h-0 flex-col items-center justify-center text-center">
           <p className="text-[13px] font-medium text-sales-text-primary">
             No Deals were Won during this period.
           </p>
@@ -79,7 +80,8 @@ export function RevenueWonChart({
           </p>
         </div>
       ) : (
-        <div className="h-[210px] w-full sm:h-[220px] layout:h-[228px]" aria-label="Revenue Won over time">
+        <div className="relative h-full min-h-[180px] w-full" aria-label="Revenue Won over time">
+          <div className="absolute inset-0">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid stroke={colors.grid} vertical={false} strokeDasharray="3 6" />
@@ -133,6 +135,7 @@ export function RevenueWonChart({
               />
             </LineChart>
           </ResponsiveContainer>
+          </div>
         </div>
       )}
     </ReportChartCard>
