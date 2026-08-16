@@ -51,16 +51,6 @@ import type {
   CompanyQuotationsPageData,
 } from "./types";
 
-const KPI_MOBILE_ORDER: Record<string, string> = {
-  "Total Quotations": "order-1 xl:order-none",
-  Sent: "order-2 xl:order-none",
-  Accepted: "order-3 xl:order-none",
-  "Total Value": "order-4 xl:order-none",
-  Draft: "order-5 xl:order-none",
-  Viewed: "order-6 xl:order-none",
-  Declined: "order-7 xl:order-none",
-};
-
 export function CompanyQuotationsPage({
   data,
   loadError = null,
@@ -541,14 +531,14 @@ export function CompanyQuotationsPage({
       </div>
 
       <div
-        className="grid w-full grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7"
+        className="grid w-full min-w-0 grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7"
         data-course-target="company-quotations-kpis"
       >
         {loadError
           ? kpis.map((item) => (
               <article
                 key={item.label}
-                className={`min-w-0 rounded-[14px] border border-sales-border bg-sales-surface px-3.5 py-4 ${KPI_MOBILE_ORDER[item.label] ?? ""}`}
+                className="min-w-0 rounded-[14px] border border-sales-border bg-sales-surface px-3.5 py-4"
               >
                 <Skeleton className="h-9 w-9 rounded-full" />
                 <Skeleton className="mt-3 h-3 w-20" />
@@ -556,21 +546,17 @@ export function CompanyQuotationsPage({
               </article>
             ))
           : kpis.map((item) => (
-              <CompanyQuotationKpi
-                key={item.label}
-                {...item}
-                className={KPI_MOBILE_ORDER[item.label]}
-              />
+              <CompanyQuotationKpi key={item.label} {...item} />
             ))}
       </div>
 
       {selectedRow && !overlayPanel ? (
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_352px] items-start gap-4 duration-200">
-          {table}
-          {panel}
+        <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(330px,352px)]">
+          <div className="min-w-0 max-w-full">{table}</div>
+          <div className="min-h-0 min-w-0 xl:sticky xl:top-0">{panel}</div>
         </div>
       ) : (
-        table
+        <div className="min-w-0 max-w-full">{table}</div>
       )}
 
       {selectedRow && overlayPanel ? panel : null}

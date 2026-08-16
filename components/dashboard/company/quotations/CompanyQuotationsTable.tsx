@@ -555,7 +555,7 @@ export function CompanyQuotationsTable({
 
   return (
     <section
-      className="min-w-0 overflow-visible rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
+      className="min-w-0 max-w-full overflow-visible rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
       data-course-target="company-quotations-table"
     >
       <div
@@ -585,7 +585,7 @@ export function CompanyQuotationsTable({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 border-b border-sales-border-subtle px-3 py-3 sm:px-4 xl:flex-row xl:items-center">
+      <div className="flex min-w-0 flex-col gap-2 border-b border-sales-border-subtle px-3 py-3 sm:px-4 xl:flex-row xl:items-center">
         <div className="relative min-w-0 flex-1 xl:max-w-[240px]">
           <Search
             size={15}
@@ -667,8 +667,8 @@ export function CompanyQuotationsTable({
       ) : null}
 
       {rows.length > 0 && !loadError ? (
-      <div className="hidden min-w-0 overflow-x-auto lg:block">
-        <table className="w-full min-w-[970px] border-collapse text-left">
+      <div className="hidden min-w-0 max-w-full overflow-x-auto lg:block">
+        <table className="w-full min-w-[860px] border-collapse text-left">
           <thead className="bg-sales-surface-subtle">
             <tr className="h-10 border-b border-sales-border-subtle text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
               <th className="w-10 px-3 text-center">

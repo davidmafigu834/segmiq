@@ -174,8 +174,8 @@ export function CompanyQuotationDetailPanel({
         overlay
           ? stacked
             ? "fixed inset-x-0 bottom-0 max-h-[88dvh] rounded-t-[16px] border-b-0"
-            : "fixed inset-y-0 right-0 w-[min(380px,92vw)] border-y-0 border-r-0 shadow-sales-modal"
-          : "sticky top-0 max-h-[calc(100dvh-48px)] min-h-[600px] w-[352px] rounded-[14px]"
+            : "fixed inset-y-0 right-0 w-[min(352px,92vw)] border-y-0 border-r-0 shadow-sales-modal"
+          : "sticky top-0 max-h-[calc(100dvh-48px)] min-h-[600px] w-full rounded-[14px]"
       )}
       aria-label={`Quotation ${quoteNumber(row)} details`}
       data-course-target="company-quotation-detail"
