@@ -87,8 +87,8 @@ export async function ClientManagerLayout({
 
   const secondaryNav = [
     { href: "/upload", label: "Upload Photos", icon: "camera" as const },
-    { href: "/client/company-profile", label: "Company", icon: "building2" as const },
-    { href: "/client/account", label: "Settings", icon: "settings" as const },
+    { href: "/client/settings/company", label: "Company", icon: "building2" as const },
+    { href: "/client/settings", label: "Settings", icon: "settings" as const },
   ];
 
   return (
@@ -107,7 +107,7 @@ export async function ClientManagerLayout({
       sidebarBrand={clientName ? { name: clientName, logoUrl } : null}
       hideHeader={hideShellHeader}
       hideSidebar={hideShellSidebar}
-      profileHref="/client/account"
+      profileHref="/client/settings/profile"
     >
       {session?.isImpersonating ? (
         <ImpersonationBanner

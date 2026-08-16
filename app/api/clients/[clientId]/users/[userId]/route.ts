@@ -107,6 +107,18 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     return NextResponse.json({ error: "You cannot deactivate yourself" }, { status: 400 });
   }
 
+  if (role === "CLIENT_MANAGER" && parsed.data.is_active === false) {
+    const { count } = await supabase
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", params.clientId)
+      .eq("role", "CLIENT_MANAGER")
+      .eq("is_active", true);
+    if ((count ?? 0) <= 1) {
+      return NextResponse.json({ error: "At least one company manager is required." }, { status: 400 });
+    }
+  }
+
   if (parsed.data.also_sells !== undefined && role !== "CLIENT_MANAGER") {
     return NextResponse.json({ error: "Only managers can use also_sells" }, { status: 400 });
   }
@@ -282,6 +294,18 @@ export async function DELETE(_req: Request, { params }: { params: { clientId: st
   const role = u.role as string;
   if (role !== "SALESPERSON" && role !== "CLIENT_MANAGER") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (role === "CLIENT_MANAGER") {
+    const { count } = await supabase
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .eq("client_id", params.clientId)
+      .eq("role", "CLIENT_MANAGER")
+      .eq("is_active", true);
+    if ((count ?? 0) <= 1) {
+      return NextResponse.json({ error: "At least one company manager is required." }, { status: 400 });
+    }
   }
 
   const actorName = session.user?.name ?? "Manager";

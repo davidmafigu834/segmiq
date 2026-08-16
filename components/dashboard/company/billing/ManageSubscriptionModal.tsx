@@ -36,7 +36,7 @@ export function ManageSubscriptionModal({
           <Button variant="secondary" size="md" onClick={onClose}>
             Close
           </Button>
-          <Button variant="primary" size="md" onClick={() => { window.location.href = "/client/account"; }}>
+          <Button variant="primary" size="md" onClick={() => { window.location.href = "/client/settings/company"; }}>
             Contact support
           </Button>
         </div>

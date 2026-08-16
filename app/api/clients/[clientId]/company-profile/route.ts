@@ -20,6 +20,16 @@ const patchSchema = z
       .optional()
       .nullable(),
     primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    website: z.string().max(300).optional().nullable(),
+    country: z.string().max(80).optional().nullable(),
+    owner_email: z
+      .union([z.string().email().max(200), z.literal("")])
+      .optional()
+      .nullable(),
+    assignment_mode: z.enum(["direct", "pool", "round_robin"]).optional(),
+    business_type: z.enum(["trades", "real_estate"]).optional(),
+    capability_tagline: z.string().max(200).optional().nullable(),
+    years_in_operation: z.number().int().min(0).max(200).optional().nullable(),
   })
   .strict();
 
@@ -33,7 +43,9 @@ export async function GET(_req: Request, { params }: { params: { clientId: strin
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("clients")
-    .select("id, name, industry, slug, logo_url, response_time_limit_hours, dial_code, primary_color")
+    .select(
+      "id, name, industry, slug, logo_url, response_time_limit_hours, dial_code, primary_color, website, country, owner_email, assignment_mode, business_type, capability_tagline, years_in_operation, fb_page_id, fb_page_name, fb_form_name"
+    )
     .eq("id", params.clientId)
     .maybeSingle();
 
@@ -82,12 +94,21 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   if (body.response_time_limit_hours !== undefined) update.response_time_limit_hours = body.response_time_limit_hours;
   if (body.dial_code !== undefined) update.dial_code = body.dial_code ? body.dial_code.trim() : null;
   if (body.primary_color !== undefined) update.primary_color = body.primary_color;
+  if (body.website !== undefined) update.website = body.website?.trim() || null;
+  if (body.country !== undefined) update.country = body.country?.trim() || null;
+  if (body.owner_email !== undefined) update.owner_email = body.owner_email?.trim().toLowerCase() || null;
+  if (body.assignment_mode !== undefined) update.assignment_mode = body.assignment_mode;
+  if (body.business_type !== undefined) update.business_type = body.business_type;
+  if (body.capability_tagline !== undefined) update.capability_tagline = body.capability_tagline?.trim() || null;
+  if (body.years_in_operation !== undefined) update.years_in_operation = body.years_in_operation;
 
   const { data: client, error } = await supabase
     .from("clients")
     .update(update)
     .eq("id", params.clientId)
-    .select("id, name, industry, slug, logo_url, response_time_limit_hours, dial_code, primary_color")
+    .select(
+      "id, name, industry, slug, logo_url, response_time_limit_hours, dial_code, primary_color, website, country, owner_email, assignment_mode, business_type, capability_tagline, years_in_operation, fb_page_id, fb_page_name, fb_form_name"
+    )
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

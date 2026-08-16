@@ -192,7 +192,7 @@ export function BillingRail({
           If you have any questions about billing or your subscription, our support team is here to help.
         </p>
         <Link
-          href="/client/account"
+          href="/client/settings/company"
           className="mt-4 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-sales-sm border border-sales-border-strong bg-sales-surface text-[12px] font-semibold text-sales-text-primary shadow-sales-card hover:bg-sales-surface-hover"
         >
           <Headphones size={14} aria-hidden />

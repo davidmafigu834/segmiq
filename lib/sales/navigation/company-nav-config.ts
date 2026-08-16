@@ -170,12 +170,14 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
   {
     id: "settings",
     label: "Settings",
-    href: "/client/account",
+    href: "/client/settings",
     icon: "settings",
     section: "tools",
     mobileSlot: "more",
     match: (p) =>
-      exactOrChild(p, "/client/account") || exactOrChild(p, "/client/company-profile"),
+      exactOrChild(p, "/client/settings") ||
+      exactOrChild(p, "/client/account") ||
+      exactOrChild(p, "/client/company-profile"),
   },
 ];
 

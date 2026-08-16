@@ -30,7 +30,7 @@ function statusTone(state: WhatsAppConnectionState): string {
   return "border-slate-200 bg-slate-50 text-slate-600";
 }
 
-export function WhatsAppConnectionSettings() {
+export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: boolean }) {
   const [data, setData] = useState<AdminStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -93,17 +93,28 @@ export function WhatsAppConnectionSettings() {
   const canOfferQuickConnection = Boolean(
     connection?.temporaryFeatureEnabled && connection.temporaryBetaEligible
   );
+  const quickConnectionUnavailableMessage = !connection?.temporaryFeatureEnabled
+    ? "QR quick connection is switched off for this SegmiQ environment. Enable the beta and configure its secure gateway before a QR code can be generated."
+    : !connection.temporaryBetaEligible
+      ? "QR quick connection is not enabled for this company yet. A SegmiQ administrator must enrol this company in the beta before a QR code can be generated."
+      : "QR quick connection is temporarily unavailable.";
 
   return (
-    <div className="mx-auto w-full max-w-5xl pb-16">
-      <Link href="/client/account" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[--text-secondary] hover:text-[--text-primary]">
-        <ArrowLeft size={16} /> Account settings
-      </Link>
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className={embedded ? "w-full" : "mx-auto w-full max-w-5xl pb-16"}>
+      {embedded ? null : (
+        <Link href="/client/settings/integrations" className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-[--text-secondary] hover:text-[--text-primary]">
+          <ArrowLeft size={16} /> Settings
+        </Link>
+      )}
+      <div className={embedded ? "mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between" : "mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"}>
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">Settings / WhatsApp</p>
-          <h1 className="mt-2 font-serif text-3xl text-[--text-primary]">WhatsApp connection</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[--text-secondary]">
+          {embedded ? null : (
+            <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[--text-tertiary]">Settings / WhatsApp</p>
+          )}
+          <h1 className={embedded ? "text-[18px] font-semibold text-sales-text-primary" : "mt-2 font-serif text-3xl text-[--text-primary]"}>
+            WhatsApp connection
+          </h1>
+          <p className={embedded ? "mt-1 max-w-2xl text-[13px] leading-relaxed text-sales-text-secondary" : "mt-2 max-w-2xl text-sm leading-relaxed text-[--text-secondary]"}>
             Choose how your company&apos;s WhatsApp messages reach the existing Sales Hub. Connection settings are visible only to company managers.
           </p>
         </div>
@@ -187,7 +198,7 @@ export function WhatsAppConnectionSettings() {
                 </div>
               ) : (
                 <p className="text-sm leading-relaxed text-[--text-secondary]">
-                  The temporary QR beta is not enabled for this company. Your existing Meta Cloud API connection is unchanged.
+                  {quickConnectionUnavailableMessage}
                 </p>
               )}
             </div>
@@ -208,14 +219,14 @@ export function WhatsAppConnectionSettings() {
 
       {modalOpen && connection ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="wa-qr-title">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5">
-              <div><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">Quick connection</p><h2 id="wa-qr-title" className="mt-1 text-xl font-semibold text-slate-900">Link business phone</h2></div>
-              <button type="button" onClick={() => setModalOpen(false)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Close"><X size={18} /></button>
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-sales-border bg-sales-surface shadow-2xl">
+            <div className="flex items-start justify-between border-b border-sales-border-subtle px-6 py-5">
+              <div><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-sales-text-muted">Quick connection</p><h2 id="wa-qr-title" className="mt-1 text-xl font-semibold text-sales-text-primary">Link business phone</h2></div>
+              <button type="button" onClick={() => setModalOpen(false)} className="rounded-lg p-2 text-sales-text-secondary hover:bg-sales-surface-hover" aria-label="Close"><X size={18} /></button>
             </div>
             <div className="p-6 text-center">
               {data?.qrDataUrl ? (
-                <Image src={data.qrDataUrl} alt="WhatsApp quick connection QR code" width={280} height={280} unoptimized className="mx-auto h-[280px] w-[280px] rounded-xl border border-slate-200 bg-white p-2" />
+                <Image src={data.qrDataUrl} alt="WhatsApp quick connection QR code" width={280} height={280} unoptimized className="mx-auto h-[280px] w-[280px] rounded-xl border border-sales-border bg-white p-2" />
               ) : connection.status === "CONNECTED" ? (
                 <CheckCircle2 size={64} className="mx-auto text-emerald-500" />
               ) : data?.qrExpired ? (
@@ -224,14 +235,14 @@ export function WhatsAppConnectionSettings() {
                   <p className="mt-4 text-sm font-semibold">This QR code expired.</p>
                 </div>
               ) : (
-                <div className="mx-auto flex h-[280px] w-[280px] flex-col items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500">
+                <div className="mx-auto flex h-[280px] w-[280px] flex-col items-center justify-center rounded-xl border border-sales-border bg-sales-surface-subtle text-sales-text-secondary">
                   {connection.status === "ERROR" || connection.status === "RECONNECT_REQUIRED" ? <AlertTriangle size={38} /> : <Loader2 size={38} className="animate-spin" />}
                   <p className="mt-4 text-sm font-medium">{STATE_LABELS[connection.status]}</p>
                 </div>
               )}
-              <div className="mt-5 flex items-start gap-3 rounded-xl bg-slate-50 p-4 text-left">
-                <Smartphone size={20} className="mt-0.5 shrink-0 text-slate-600" />
-                <p className="text-xs leading-relaxed text-slate-600">On the business phone, open WhatsApp → Linked devices → Link a device, then scan this code. Keep the phone online while connecting.</p>
+              <div className="mt-5 flex items-start gap-3 rounded-xl bg-sales-surface-subtle p-4 text-left">
+                <Smartphone size={20} className="mt-0.5 shrink-0 text-sales-text-secondary" />
+                <p className="text-xs leading-relaxed text-sales-text-secondary">On the business phone, open WhatsApp → Linked devices → Link a device, then scan this code. Keep the phone online while connecting.</p>
               </div>
               {["ERROR", "RECONNECT_REQUIRED"].includes(connection.status) || data?.qrExpired ? (
                 <button type="button" disabled={busy} onClick={() => void reconnect()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#D4FF4F] px-4 py-2.5 text-sm font-semibold text-[#101828] disabled:opacity-50"><RefreshCw size={16} /> Generate a new code</button>

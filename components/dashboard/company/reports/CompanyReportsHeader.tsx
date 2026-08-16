@@ -60,8 +60,8 @@ export function CompanyReportsHeader({
             userName={userName}
             userRoleLabel="Company Manager"
             avatarUrl={avatarUrl}
-            profileHref="/client/account"
-            helpHref="/client/account"
+            profileHref="/client/settings/profile"
+            helpHref="/client/settings/profile"
             helpLabel="Help & Support"
           />
         </div>

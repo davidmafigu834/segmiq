@@ -54,8 +54,8 @@ export function CompanyMobileTopBar({
           userRoleLabel={userRoleLabel}
           avatarUrl={avatarUrl}
           compact
-          profileHref="/client/account"
-          helpHref="/client/account"
+          profileHref="/client/settings/profile"
+          helpHref="/client/settings/profile"
           helpLabel="Help & Support"
         />
       </div>

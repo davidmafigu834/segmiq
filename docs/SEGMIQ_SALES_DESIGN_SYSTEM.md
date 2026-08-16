@@ -867,3 +867,29 @@ Desktop structure: compact header (BILLING / Billing / supporting copy + Billing
 
 Mobile order: Billing Summary → Current Plan → Usage → Payment Method → Invoices → History → Need Help. Lime remains limited to primary action, selection, and usage progress.
 
+## Company Settings patterns
+
+Route: `/client/settings/{category}/{section?}` · Full behavior: [SEGMIQ_COMPANY_SETTINGS.md](./SEGMIQ_COMPANY_SETTINGS.md).
+
+Company Settings reuses `CompanyWorkspaceShell`. It is a **three-level control center**, not one long form and not a record-detail workspace.
+
+Desktop structure: compact header (SETTINGS / Settings / supporting copy) → underline category tabs → three columns: left section nav 210–230px, dominant center, contextual rail 300–330px. Gap 18–22px. Lime is limited to the active sidebar row, active tab underline, active left-nav row, and primary Save.
+
+| Surface | Rule |
+|---|---|
+| `SettingsCategoryTabs` | Text tabs, no pills or filled backgrounds. Active: dark text + 2px lime underline |
+| `SettingsSectionNav` | No outer card. Rows ~40–44px, 8px radius. Active: soft lime fill + 2px lime left mark |
+| `SettingsSectionCard` | White, 1px `#E4E7EC`, 12px radius, almost no shadow. Header + description + optional Edit at top right |
+| `SettingsInfoGrid` | 2-column label/value on desktop; stack on mobile. Labels 11px uppercase muted |
+| `SettingsContextRail` | Company: Account Summary → Quick Actions → Need Help. Other categories get a contextual help rail or none (team table, WhatsApp, Website API) |
+| `SettingsActionRow` | 44px row, icon tile, label, chevron. Real href or handler only |
+| `SettingsFormDrawer` | `PremiumSheet` ~560px. Footer Cancel + lime Save changes. Dirty close confirms |
+| `SettingsDangerZone` | Remove member / disconnect WhatsApp only inside drawers or confirmed flows — never large red buttons on the Company Information page |
+
+Tablet (below `layout` 1100px): do not squeeze three columns. Keep center dominant; section nav becomes a sheet; rail stacks under Company cards.
+
+Mobile: header → horizontally scrolling tabs → section selector sheet → stacked cards. Company mobile order: Information → Address → Business Information → Account Summary → Quick Actions → Help. Team table becomes member cards. Edit forms are one-column sheets with sticky footer.
+
+Dark: page `#0B0D0C`, surface `#111411` / `#151815`, border `#272C27`, left-nav active `rgba(212,255,79,.08–.12)`. Inputs and sheet portals use raised surfaces — no white leaks.
+
+

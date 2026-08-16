@@ -15,6 +15,7 @@ import {
   getNextRoundRobinOrder,
   ROUND_ROBIN_ELIGIBLE_OR,
 } from "@/lib/auth/sales-capabilities";
+import { CRM_PLAN_SEATS, isCrmPlan } from "@/lib/billing/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +144,41 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     .select("id, name, email, role, client_id, is_active, phone")
     .eq("email", email)
     .maybeSingle();
+
+  if (parsed.data.role === "SALESPERSON") {
+    const reactivatingActive =
+      Boolean(dupe) &&
+      (dupe?.client_id as string | null) === params.clientId &&
+      (dupe?.role as string | null) === "SALESPERSON" &&
+      dupe?.is_active !== false;
+    if (!reactivatingActive) {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("plan")
+        .eq("client_id", params.clientId)
+        .eq("product", "crm")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      const planKey = sub && isCrmPlan(sub.plan as string) ? (sub.plan as "starter" | "growth" | "scale") : null;
+      const limit = planKey ? CRM_PLAN_SEATS[planKey] : null;
+      if (limit != null) {
+        const { count } = await supabase
+          .from("users")
+          .select("*", { count: "exact", head: true })
+          .eq("client_id", params.clientId)
+          .eq("role", "SALESPERSON")
+          .eq("is_active", true);
+        if ((count ?? 0) >= limit) {
+          return NextResponse.json(
+            { error: `This plan includes ${limit} salesperson seats. Upgrade your plan to invite more.` },
+            { status: 400 }
+          );
+        }
+      }
+    }
+  }
+
   if (dupe) {
     const sameClient = (dupe.client_id as string | null) === params.clientId;
     const sameRole = (dupe.role as string | null) === parsed.data.role;
