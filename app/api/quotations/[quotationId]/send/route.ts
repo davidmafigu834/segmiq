@@ -53,8 +53,144 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   if (!itemCount) {
     return NextResponse.json({ error: "Add at least one line item before sending" }, { status: 400 });
   }
-  if (quote.status !== "draft") {
-    return NextResponse.json({ error: "Only draft quotations can be sent" }, { status: 400 });
+
+  const isResend = quote.status === "sent" || quote.status === "viewed";
+  if (!isResend && quote.status !== "draft") {
+    return NextResponse.json(
+      { error: "This quotation cannot be sent again in its current status" },
+      { status: 400 }
+    );
+  }
+
+  if (isResend) {
+    let quoteNumber = (quote.quote_number as string | null) ?? null;
+    let publicToken = (quote.public_token as string | null) ?? null;
+    if (!quoteNumber) quoteNumber = await allocateQuoteNumber(supabase, access.clientId);
+    if (!publicToken) {
+      const { randomBytes } = await import("crypto");
+      publicToken = randomBytes(32).toString("hex");
+      await supabase
+        .from("quotations")
+        .update({ public_token: publicToken, quote_number: quoteNumber, updated_at: new Date().toISOString() })
+        .eq("id", params.quotationId);
+    }
+
+    const pdfData = await buildQuotationPdfData(supabase, params.quotationId);
+    if (!pdfData) return NextResponse.json({ error: "Failed to assemble quotation" }, { status: 500 });
+
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await renderQuotationPdf(pdfData);
+    } catch (err) {
+      console.error("[quotation resend] PDF render error:", err);
+      return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
+    }
+
+    let pdfUrl = (quote.pdf_url as string | null) ?? null;
+    let pdfKey = (quote.pdf_key as string | null) ?? null;
+    if (isR2Configured()) {
+      try {
+        pdfKey = `clients/${access.clientId}/quotations/${quoteNumber}-${Date.now()}.pdf`;
+        await putObject(pdfKey, pdfBuffer, "application/pdf");
+        pdfUrl = getPublicUrl(pdfKey);
+        await supabase
+          .from("quotations")
+          .update({ pdf_url: pdfUrl, pdf_key: pdfKey, updated_at: new Date().toISOString() })
+          .eq("id", params.quotationId);
+      } catch (err) {
+        console.error("[quotation resend] R2 upload error:", err);
+      }
+    }
+
+    await logDocumentSent({
+      leadId: access.leadId,
+      clientId: access.clientId,
+      actor: access.actor,
+      documentType: "QUOTATION",
+      documentName: `Quotation ${quoteNumber} resent — ${formatMoney(Number(quote.total) || 0, (quote.currency as string) || "USD")}`,
+      url: pdfUrl ?? `${getPublicBaseUrl()}/quote/${publicToken}`,
+    });
+
+    const total = formatMoney(Number(quote.total) || 0, (quote.currency as string) || "USD");
+    const firstName = pdfData.customerName?.split(" ")[0] || "there";
+    const link = `${getPublicBaseUrl()}/quote/${publicToken}`;
+    const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${pdfData.companyName} — total ${total}. View and respond here: ${link}`;
+
+    const { data: leadForWhatsApp } = await supabase
+      .from("leads")
+      .select("phone, source")
+      .eq("id", access.leadId)
+      .maybeSingle();
+
+    const shouldSendWhatsApp =
+      Boolean(leadForWhatsApp?.phone) &&
+      (sendViaWhatsApp || leadForWhatsApp?.source === "WHATSAPP_INBOUND");
+
+    if (!leadForWhatsApp?.phone) {
+      return NextResponse.json(
+        {
+          error: "This quotation has no customer phone number to send to.",
+          success: false,
+          pdfUrl,
+          quoteNumber,
+          link,
+          waMessage,
+          whatsappSent: false,
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!shouldSendWhatsApp) {
+      return NextResponse.json({
+        success: true,
+        pdfUrl,
+        quoteNumber,
+        link,
+        waMessage,
+        whatsappSent: false,
+      });
+    }
+
+    const waResult = await sendQuotationOnWhatsApp({
+      leadId: access.leadId,
+      clientId: access.clientId,
+      phone: leadForWhatsApp.phone as string,
+      actorId: access.actor.id,
+      actorName: access.actor.name,
+      actorRole: access.actor.role,
+      quoteNumber,
+      waMessage,
+      pdfBuffer,
+      pdfUrl,
+      publicToken,
+    });
+
+    if (!waResult.ok) {
+      return NextResponse.json(
+        {
+          error: waResult.error || "WhatsApp delivery failed",
+          success: false,
+          pdfUrl,
+          quoteNumber,
+          link,
+          waMessage,
+          whatsappSent: false,
+          whatsappMode: waResult.mode,
+        },
+        { status: 502 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      pdfUrl,
+      quoteNumber,
+      link,
+      waMessage,
+      whatsappSent: true,
+      whatsappMode: waResult.mode,
+    });
   }
 
   // Allocate a quote number on first send; revisions keep the base number + suffix.

@@ -124,11 +124,12 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
   {
     id: "quotations",
     label: "Quotations",
-    href: "/client/quote-settings",
+    href: "/client/quotations",
     icon: "quotations",
     section: "company",
     mobileSlot: "more",
-    match: (p) => exactOrChild(p, "/client/quote-settings"),
+    match: (p) =>
+      exactOrChild(p, "/client/quotations") || exactOrChild(p, "/client/quote-settings"),
   },
   {
     id: "calendar",

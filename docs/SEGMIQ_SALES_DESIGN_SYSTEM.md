@@ -800,3 +800,22 @@ The Company WhatsApp Sales Hub uses the Company workspace shell with a compact p
 - Mobile inbox: single-pane list → chat → intelligence navigation. Global bottom navigation hides in chat/intelligence so it cannot cover the composer.
 
 Use sales design tokens for both themes. Reserve SegmiQ lime for primary action, selection and focus; reserve WhatsApp green for channel identity.
+
+## Company Quotations patterns
+
+Route: `/client/quotations` · Full behavior: [SEGMIQ_COMPANY_QUOTATIONS.md](./SEGMIQ_COMPANY_QUOTATIONS.md).
+
+Company Quotations uses the approved Company shell, one compact seven-card KPI row, then one `QuotationTable` beside one `QuotationDetailPanel`. It ends there; there are no revenue, source, conversion, or pipeline charts below.
+
+| Surface | Rule |
+|---|---|
+| `QuotationTable` | One bordered card containing status tabs, search/relationship filters, the exact operational columns, ten compact rows by default, and pagination |
+| `QuotationStatusBadge` | Draft neutral, Sent blue, Viewed violet, Accepted green, Declined red, Expired amber; small soft badges only |
+| Selected row | Low-opacity SegmiQ lime wash; no scale or shadow |
+| `QuotationDetailPanel` | 352px large-desktop rail; one continuous surface ordered header/actions → Customer → metadata → amounts → items → full quotation |
+| `QuotationAmountSummary` | Canonical Subtotal, optional negative Other/Discount, Tax, and grand Total; never label quoted value Revenue |
+| `QuotationItemsList` | Name, optional description, quantity, amount; preview five, then explicit expansion |
+| Mobile Quotation Card | Quote/status → Customer → Deal/title → amount/updated; no squeezed desktop table |
+| Mobile detail sheet | Bottom sheet with the same desktop information order and safe-area footer |
+
+Quotation status never implies Deal outcome. Accepted does not mean Won; Declined or Expired does not mean Lost. Lime remains limited to primary action, focus, active-tab underline, and selection in both themes.

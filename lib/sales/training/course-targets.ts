@@ -66,6 +66,17 @@ export const COURSE_TARGETS = {
   "practice-goals-revenue": "practice-goals-revenue",
   "practice-goals-coverage": "practice-goals-coverage",
   "practice-goals-commitments": "practice-goals-commitments",
+  // Company Quotations
+  "company-quotations-kpis": "company-quotations-kpis",
+  "company-quotations-tabs": "company-quotations-tabs",
+  "company-quotations-table": "company-quotations-table",
+  "company-quotation-row": "company-quotation-row",
+  "company-quotation-detail": "company-quotation-detail",
+  "quotation-view-pdf": "quotation-view-pdf",
+  "quotation-send": "quotation-send",
+  "quotation-amount-summary": "quotation-amount-summary",
+  "quotation-items": "quotation-items",
+  "quotation-create": "quotation-create",
 } as const;
 
 export type CourseTargetId = (typeof COURSE_TARGETS)[keyof typeof COURSE_TARGETS];
