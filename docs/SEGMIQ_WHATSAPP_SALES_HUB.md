@@ -4,6 +4,8 @@ Route: `/sales/inbox`
 
 The Salesperson WhatsApp Sales Hub is a focused selling workspace. It reuses the existing WhatsApp transport, session rules, assignments, quick replies, assets, notes, calls, quotations, Lead records, Deal records, and permission checks. The UI does not create a second messaging or CRM model.
 
+The hub is provider-neutral. Whether a company's messages travel over the official Meta Cloud API or the temporary quick connection, the hub renders the same conversations, Leads, Deals, and assignments, and sends through the same canonical message service. Salespeople never see a provider name or a QR code — the only difference they can observe is a reconnection notice when the transport is offline, and which actions the connection's capabilities allow. See `WHATSAPP_PROVIDER_ARCHITECTURE.md` for the transport layer beneath this workspace.
+
 ## Workspace contract
 
 On a large desktop the page is one full-height integrated surface directly below a compact header:

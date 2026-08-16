@@ -17,7 +17,8 @@ type NotificationRow = {
     | "LEAD_FLAG"
     | "UNCONTACTED_MANAGER_ALERT"
     | "FB_TOKEN_EXPIRED"
-    | "BACKFILL_COMPLETE";
+    | "BACKFILL_COMPLETE"
+    | "WHATSAPP_CONNECTION_ALERT";
   message: string;
   read: boolean;
   lead_id: string | null;
@@ -116,6 +117,9 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
     }
     if (n.type === "BACKFILL_COMPLETE") {
       return "/dashboard/leads";
+    }
+    if (n.type === "WHATSAPP_CONNECTION_ALERT") {
+      return "/client/settings/integrations/whatsapp";
     }
     if (role === "SALESPERSON") return "/sales/pipeline";
     if (role === "CLIENT_MANAGER") return "/client/leads";
@@ -228,6 +232,8 @@ function labelForType(type: string): string {
       return "New lead";
     case "WHATSAPP_MESSAGE":
       return "WhatsApp message";
+    case "WHATSAPP_CONNECTION_ALERT":
+      return "WhatsApp connection";
     case "FOLLOW_UP_DUE":
       return "Follow-up due";
     case "FOLLOW_UP_PREP":

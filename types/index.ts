@@ -72,6 +72,7 @@ export type CallOutcome =
 export type NotificationType =
   | "NEW_LEAD"
   | "WHATSAPP_MESSAGE"
+  | "WHATSAPP_CONNECTION_ALERT"
   | "FOLLOW_UP_DUE"
   | "FOLLOW_UP_PREP"
   | "DEAL_WON"

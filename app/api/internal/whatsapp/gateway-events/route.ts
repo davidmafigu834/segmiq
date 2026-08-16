@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { putObject, getPublicUrl } from "@/lib/storage/r2";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyWhatsAppReconnectRequired } from "@/lib/whatsapp/connection-alerts";
 import {
   deleteWhatsAppQr,
   getWhatsAppConnectionById,
@@ -129,6 +130,16 @@ export async function POST(request: Request) {
         eventType: `STATUS_${parsed.state}`,
         safeDetails: parsed.errorCode ? { errorCode: parsed.errorCode } : {},
       });
+      if (parsed.state === "RECONNECT_REQUIRED") {
+        // Alerting must not fail the gateway event: the connection state is
+        // already persisted and the gateway would otherwise retry the event.
+        await notifyWhatsAppReconnectRequired({
+          connectionId: connection.id,
+          clientId: connection.clientId,
+        }).catch((error) =>
+          console.error("[whatsapp] reconnect alert failed", error instanceof Error ? error.message : "unknown")
+        );
+      }
     } else if (parsed.type === "MESSAGE") {
       let media: NormalizedWhatsAppInbound["media"] = null;
       if (parsed.message.media?.base64) {

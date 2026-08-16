@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { randomUUID } from "node:crypto";
+import { loadEnvConfig } from "@next/env";
 import makeWASocket, {
   BufferJSON,
   Browsers,
@@ -14,6 +15,10 @@ import makeWASocket, {
 } from "@whiskeysockets/baileys";
 import { signGatewayRequest, verifyGatewayRequest } from "../../lib/whatsapp/security/gateway-auth";
 
+// `next dev` loads .env.local automatically; this standalone long-running
+// gateway needs to load the same local configuration when run via npm.
+loadEnvConfig(process.cwd());
+
 type StoredAuth = {
   creds: AuthenticationState["creds"];
   keys: Partial<Record<keyof SignalDataTypeMap, Record<string, unknown>>>;
@@ -27,17 +32,28 @@ type ManagedSession = {
   acceptAfter: number;
   reconnectAttempts: number;
   closing: boolean;
+  open: boolean;
+  /**
+   * Only an admin-initiated connect may surface a QR code. When a restore or
+   * automatic reconnect is asked to re-pair, the stored session no longer
+   * authorizes the device and the connection needs admin attention instead.
+   */
+  allowQr: boolean;
   sentByGateway: Set<string>;
   recentManualSendTimestamps: number[];
 };
 
 const sessions = new Map<string, ManagedSession>();
 const replayNonces = new Map<string, number>();
-const port = Number(process.env.WHATSAPP_GATEWAY_PORT || 8787);
+const port = Number(process.env.PORT || process.env.WHATSAPP_GATEWAY_PORT || 8787);
 const appBase = required("SEGMIQ_INTERNAL_BASE_URL").replace(/\/$/, "");
 const maxManualSendsPerMinute = Math.max(
   1,
   Number.parseInt(process.env.WHATSAPP_GATEWAY_MAX_SENDS_PER_MINUTE || "30", 10) || 30
+);
+const heartbeatIntervalMs = Math.max(
+  30_000,
+  Number.parseInt(process.env.WHATSAPP_GATEWAY_HEARTBEAT_SECONDS || "60", 10) * 1_000 || 60_000
 );
 const logger = {
   level: "silent",
@@ -244,7 +260,11 @@ function disconnectCode(error: unknown): number | undefined {
     ?? (error as { data?: { statusCode?: number } })?.data?.statusCode;
 }
 
-async function startConnection(connectionId: string, reconnectAttempts = 0): Promise<void> {
+async function startConnection(
+  connectionId: string,
+  reconnectAttempts = 0,
+  allowQr = true
+): Promise<void> {
   const existing = sessions.get(connectionId);
   if (existing) {
     existing.closing = true;
@@ -278,6 +298,8 @@ async function startConnection(connectionId: string, reconnectAttempts = 0): Pro
     acceptAfter: Math.floor(Date.now() / 1_000) * 1_000,
     reconnectAttempts,
     closing: false,
+    open: false,
+    allowQr,
     sentByGateway: new Set<string>(),
     recentManualSendTimestamps: [],
   });
@@ -305,11 +327,28 @@ async function startConnection(connectionId: string, reconnectAttempts = 0): Pro
   });
   socket.ev.on("connection.update", async (update) => {
     if (update.qr) {
+      if (!session.allowQr) {
+        // The stored session was rejected during an unattended restore or
+        // reconnect. Pairing again requires an admin, so stop here rather than
+        // issuing QR codes nobody is waiting to scan.
+        session.closing = true;
+        sessions.delete(connectionId);
+        socket.end(undefined);
+        await emit(connectionId, {
+          type: "STATUS",
+          state: "RECONNECT_REQUIRED",
+          errorCode: "SESSION_EXPIRED",
+          errorMessage: "The saved WhatsApp session is no longer valid. Scan a new QR code to reconnect.",
+        }).catch(() => {});
+        return;
+      }
       await emit(connectionId, {
         type: "QR",
         qr: update.qr,
         expiresAt: new Date(Date.now() + 60_000).toISOString(),
-      });
+      }).catch((error) =>
+        console.error("[whatsapp-gateway] qr publish failed", error instanceof Error ? error.message : "unknown")
+      );
       // A QR-bearing Baileys update often also has `connecting`. The QR is
       // authoritative for UI state; reporting CONNECTING afterwards would
       // hide the freshly issued code before an admin can scan it.
@@ -320,6 +359,7 @@ async function startConnection(connectionId: string, reconnectAttempts = 0): Pro
     }
     if (update.connection === "open") {
       session.reconnectAttempts = 0;
+      session.open = true;
       const user = socket.user;
       await emit(connectionId, {
         type: "STATUS",
@@ -331,6 +371,7 @@ async function startConnection(connectionId: string, reconnectAttempts = 0): Pro
     }
     if (update.connection === "close" && !session.closing) {
       const code = disconnectCode(update.lastDisconnect?.error);
+      session.open = false;
       sessions.delete(connectionId);
       if (code === DisconnectReason.loggedOut || code === DisconnectReason.badSession) {
         await emit(connectionId, {
@@ -353,7 +394,7 @@ async function startConnection(connectionId: string, reconnectAttempts = 0): Pro
       }
       await emit(connectionId, { type: "STATUS", state: "RECONNECTING" }).catch(() => {});
       const delay = Math.min(30_000, 1_000 * 2 ** (session.reconnectAttempts - 1));
-      setTimeout(() => void startConnection(connectionId, session.reconnectAttempts).catch(async (error) => {
+      setTimeout(() => void startConnection(connectionId, session.reconnectAttempts, false).catch(async (error) => {
         await emit(connectionId, {
           type: "STATUS", state: "ERROR", errorCode: "RECONNECT_FAILED",
           errorMessage: error instanceof Error ? error.message : "Reconnect failed",
@@ -449,6 +490,60 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   json(response, 404, { error: "Not found" });
 }
 
+/**
+ * A restart must not force every beta company to scan a new QR code. SegmiQ
+ * returns the connections that still hold a valid stored session; each one is
+ * re-established from that session, staggered so a large beta cohort does not
+ * open every socket in the same instant.
+ */
+async function restoreSessions(): Promise<void> {
+  let restorable: Array<{ connectionId: string }>;
+  try {
+    const result = await appRequest<{ connections?: Array<{ connectionId: string }> }>(
+      "/api/internal/whatsapp/connections/restorable",
+      "GET"
+    );
+    restorable = result.connections ?? [];
+  } catch (error) {
+    console.error(
+      "[whatsapp-gateway] session restore lookup failed",
+      error instanceof Error ? error.message : "unknown"
+    );
+    return;
+  }
+  if (restorable.length === 0) return;
+  console.info(`[whatsapp-gateway] restoring ${restorable.length} connection(s)`);
+  for (const [index, entry] of restorable.entries()) {
+    setTimeout(() => {
+      void startConnection(entry.connectionId, 0, false).catch(async (error) => {
+        await emit(entry.connectionId, {
+          type: "STATUS",
+          state: "RECONNECT_REQUIRED",
+          errorCode: "RESTORE_FAILED",
+          errorMessage: "The stored WhatsApp session could not be restored. Scan a new QR code to reconnect.",
+        }).catch(() => {});
+        console.error(
+          "[whatsapp-gateway] session restore failed",
+          error instanceof Error ? error.message : "unknown"
+        );
+      });
+    }, index * 1_500);
+  }
+}
+
+/**
+ * Keeps `last_seen_at` meaningful for healthy connections. Without it a quiet
+ * business number is indistinguishable from a dead socket.
+ */
+function startHeartbeat(): NodeJS.Timeout {
+  return setInterval(() => {
+    for (const session of sessions.values()) {
+      if (!session.open || session.closing) continue;
+      void emit(session.connectionId, { type: "HEARTBEAT" }).catch(() => {});
+    }
+  }, heartbeatIntervalMs).unref();
+}
+
 const server = createServer((request, response) => {
   void handle(request, response).catch((error) => {
     console.error("[whatsapp-gateway] request failed", error instanceof Error ? error.message : "unknown");
@@ -457,11 +552,16 @@ const server = createServer((request, response) => {
   });
 });
 
+let heartbeat: NodeJS.Timeout | null = null;
+
 server.listen(port, "0.0.0.0", () => {
   console.info(`[whatsapp-gateway] listening on port ${port}`);
+  heartbeat = startHeartbeat();
+  void restoreSessions();
 });
 
 async function shutdown(): Promise<void> {
+  if (heartbeat) clearInterval(heartbeat);
   for (const session of sessions.values()) {
     session.closing = true;
     session.socket.end(undefined);

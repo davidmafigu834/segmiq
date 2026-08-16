@@ -132,6 +132,39 @@ export async function getSafeWhatsAppConnection(clientId: string): Promise<SafeW
   };
 }
 
+/**
+ * Connections the gateway should re-establish after a restart. A stored session
+ * bundle is required: without one the linked device cannot be restored and the
+ * company admin has to scan a fresh QR code instead.
+ */
+const RESTORABLE_STATES: readonly WhatsAppConnectionState[] = [
+  "CONNECTING",
+  "CONNECTED",
+  "DEGRADED",
+  "RECONNECTING",
+  "ERROR",
+];
+
+export async function listRestorableTemporaryConnections(): Promise<
+  Array<{ connectionId: string; clientId: string }>
+> {
+  const { data, error } = await createAdminClient()
+    .from("whatsapp_connections")
+    .select("id, client_id, status, session_ciphertext")
+    .eq("provider_type", "TEMPORARY_WEB")
+    .eq("is_primary", true)
+    .in("status", RESTORABLE_STATES as WhatsAppConnectionState[])
+    .not("session_ciphertext", "is", null);
+  if (error) {
+    if (/does not exist|schema cache/i.test(error.message)) return [];
+    throw new Error(error.message);
+  }
+  return (data ?? []).map((row) => ({
+    connectionId: row.id as string,
+    clientId: row.client_id as string,
+  }));
+}
+
 export async function createOrResetTemporaryConnection(input: {
   clientId: string;
   actorId: string;

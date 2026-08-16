@@ -49,6 +49,26 @@ test("session and QR envelopes are authenticated and context-bound", async () =>
   await assert.rejects(() => decryptWhatsAppSecret(encrypted, "session:a:tenant-b"));
 });
 
+test("a restarted gateway can resume live connections without a new QR scan", () => {
+  // The gateway parks restorable connections in RECONNECTING before re-opening
+  // each socket, so every status a restore can start from must reach it.
+  for (const from of ["CONNECTING", "CONNECTED", "DEGRADED", "RECONNECTING", "ERROR"] as const) {
+    assert.equal(canTransitionWhatsAppConnection(from, "RECONNECTING"), true, from);
+  }
+  assert.equal(canTransitionWhatsAppConnection("RECONNECTING", "CONNECTING"), true);
+  assert.equal(canTransitionWhatsAppConnection("RECONNECTING", "CONNECTED"), true);
+});
+
+test("a restore whose stored session is rejected ends in RECONNECT_REQUIRED, not a QR loop", () => {
+  assert.equal(canTransitionWhatsAppConnection("RECONNECTING", "RECONNECT_REQUIRED"), true);
+  // An unattended reconnect must never publish a QR code, so this transition
+  // stays unavailable and the gateway reports RECONNECT_REQUIRED instead.
+  assert.equal(canTransitionWhatsAppConnection("RECONNECTING", "AWAITING_QR"), false);
+  // An admin-initiated reconnect resets the record first and starts over.
+  assert.equal(canTransitionWhatsAppConnection("RECONNECT_REQUIRED", "INITIALIZING"), true);
+  assert.equal(canTransitionWhatsAppConnection("INITIALIZING", "AWAITING_QR"), true);
+});
+
 test("gateway request signatures bind method, path, body, nonce and time", async () => {
   process.env.WHATSAPP_GATEWAY_SHARED_SECRET = "test-only-shared-secret-that-is-long-enough";
   const now = 1_800_000_000_000;
