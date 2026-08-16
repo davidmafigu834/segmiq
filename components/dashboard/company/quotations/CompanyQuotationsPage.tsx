@@ -183,7 +183,7 @@ export function CompanyQuotationsPage({
   }, [selectedId, loadDetail]);
 
   const pct = (count: number) =>
-    data.counts.all > 0 ? `${Math.round((count / data.counts.all) * 100)}%` : "0%";
+    data.counts.all > 0 ? `${Math.round((count / data.counts.all) * 100)}% of total` : "0% of total";
 
   const kpis = [
     {
@@ -192,6 +192,7 @@ export function CompanyQuotationsPage({
       supporting: "All time",
       icon: FileText,
       tone: "blue" as const,
+      onClick: () => setTab("all"),
     },
     {
       label: "Draft",
@@ -199,6 +200,7 @@ export function CompanyQuotationsPage({
       supporting: pct(data.counts.draft),
       icon: WalletCards,
       tone: "neutral" as const,
+      onClick: () => setTab("draft"),
     },
     {
       label: "Sent",
@@ -206,6 +208,7 @@ export function CompanyQuotationsPage({
       supporting: pct(data.counts.sent),
       icon: Send,
       tone: "blue" as const,
+      onClick: () => setTab("sent"),
     },
     {
       label: "Viewed",
@@ -213,6 +216,7 @@ export function CompanyQuotationsPage({
       supporting: pct(data.counts.viewed),
       icon: Eye,
       tone: "purple" as const,
+      onClick: () => setTab("viewed"),
     },
     {
       label: "Accepted",
@@ -220,6 +224,7 @@ export function CompanyQuotationsPage({
       supporting: pct(data.counts.accepted),
       icon: CircleCheck,
       tone: "success" as const,
+      onClick: () => setTab("accepted"),
     },
     {
       label: "Declined",
@@ -227,11 +232,12 @@ export function CompanyQuotationsPage({
       supporting: pct(data.counts.declined),
       icon: CircleX,
       tone: "danger" as const,
+      onClick: () => setTab("declined"),
     },
     {
       label: "Total Value",
       value: formatQuoteAmount(data.totalValue, data.currency),
-      supporting: "All statuses · All time",
+      supporting: "Quoted · all time",
       icon: WalletCards,
       tone: "brand" as const,
     },
@@ -538,11 +544,15 @@ export function CompanyQuotationsPage({
           ? kpis.map((item) => (
               <article
                 key={item.label}
-                className="min-w-0 rounded-[14px] border border-sales-border bg-sales-surface px-3.5 py-4"
+                className="sd-card flex h-full min-h-[104px] min-w-0 flex-col justify-between p-3.5 sm:min-h-[120px] sm:p-4"
               >
-                <Skeleton className="h-9 w-9 rounded-full" />
-                <Skeleton className="mt-3 h-3 w-20" />
-                <Skeleton className="mt-2 h-6 w-16" />
+                <div className="flex justify-end">
+                  <Skeleton className="h-8 w-8 rounded-sales-sm" />
+                </div>
+                <div>
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="mt-2 h-7 w-16" />
+                </div>
               </article>
             ))
           : kpis.map((item) => (

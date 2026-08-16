@@ -809,6 +809,7 @@ Company Quotations uses the approved Company shell, one compact seven-card KPI r
 
 | Surface | Rule |
 |---|---|
+| `QuotationKpi` | Shared `sd-card` / `KpiStat` geometry: label left, rounded icon right, 22–28px metric, 12px supporting; status cards filter the table |
 | `QuotationTable` | One bordered card containing status tabs, search/relationship filters, the exact operational columns, ten compact rows by default, and pagination |
 | `QuotationStatusBadge` | Draft neutral, Sent blue, Viewed violet, Accepted green, Declined red, Expired amber; small soft badges only |
 | Selected row | Low-opacity SegmiQ lime wash; no scale or shadow |
