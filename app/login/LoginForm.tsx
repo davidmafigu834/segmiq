@@ -1,11 +1,14 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import { sanitizeCallbackPath } from "@/lib/auth/post-login-redirect";
+import SegmiQPreloader, {
+  type SegmiQPreloaderState,
+} from "@/components/loading/SegmiQPreloader";
 
 function reasonBanner(reason: string | null): { message: string; tone: "warning" | "danger" } | null {
   if (reason === "session") {
@@ -33,43 +36,64 @@ function LoginFormInner() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [workspaceState, setWorkspaceState] = useState<SegmiQPreloaderState | "idle">("idle");
+  const resolvingWorkspace = useRef(false);
 
   const reason = searchParams.get("reason");
   const banner = reasonBanner(reason);
   const callbackUrl = searchParams.get("callbackUrl");
 
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    const qs = callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : "";
-    void fetch(`/api/auth/home${qs}`)
-      .then(async (res) => {
-        if (res.status === 403) {
-          await signOut({ redirect: false });
-          router.replace("/login?reason=no_client");
-          return;
-        }
-        if (!res.ok) return;
-        const data = (await res.json()) as { home?: string };
-        if (data.home) router.replace(data.home);
-      })
-      .catch(() => {});
-  }, [status, callbackUrl, router]);
+  const resolveWorkspace = useCallback(async () => {
+    if (resolvingWorkspace.current) return;
+    resolvingWorkspace.current = true;
+    setWorkspaceState("loading");
+    setError(null);
 
-  async function resolveRedirectAfterSignIn() {
     const safeCallback = sanitizeCallbackPath(callbackUrl);
     const qs = safeCallback ? `?callbackUrl=${encodeURIComponent(safeCallback)}` : "";
-    const res = await fetch(`/api/auth/home${qs}`);
-    if (res.status === 403) {
-      await signOut({ redirect: false });
-      router.replace("/login?reason=no_client");
-      return;
+    try {
+      const res = await fetch(`/api/auth/home${qs}`, { cache: "no-store" });
+      if (res.status === 403) {
+        await signOut({ redirect: false });
+        resolvingWorkspace.current = false;
+        window.location.replace("/login?reason=no_client");
+        return;
+      }
+      if (res.status === 401) {
+        await signOut({ redirect: false });
+        resolvingWorkspace.current = false;
+        window.location.replace("/login?reason=session");
+        return;
+      }
+      if (!res.ok) throw new Error("Workspace resolution failed");
+
+      const data = (await res.json()) as { home?: string };
+      if (!data.home) throw new Error("Workspace route missing");
+
+      // A document navigation keeps the real workspace preloader visible while
+      // middleware and the destination Server Component finish their auth/scope gates.
+      window.location.assign(data.home);
+    } catch {
+      resolvingWorkspace.current = false;
+      setWorkspaceState(navigator.onLine ? "error" : "offline");
     }
-    if (!res.ok) {
-      setError("Signed in, but we could not open your workspace. Please try again.");
-      return;
-    }
-    const data = (await res.json()) as { home?: string };
-    router.push(data.home ?? "/sales/dashboard");
+  }, [callbackUrl]);
+
+  useEffect(() => {
+    if (status === "authenticated") void resolveWorkspace();
+  }, [resolveWorkspace, status]);
+
+  async function retryWorkspace() {
+    resolvingWorkspace.current = false;
+    await resolveWorkspace();
+  }
+
+  async function leaveWorkspace() {
+    resolvingWorkspace.current = false;
+    await signOut({ redirect: false });
+    setWorkspaceState("idle");
+    setLoading(false);
+    router.replace("/login");
     router.refresh();
   }
 
@@ -87,7 +111,7 @@ function LoginFormInner() {
         setError("Email or password is incorrect.");
         return;
       }
-      await resolveRedirectAfterSignIn();
+      await resolveWorkspace();
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -95,17 +119,23 @@ function LoginFormInner() {
     }
   }
 
-  if (status === "loading" || status === "authenticated") {
-    return (
-      <div className="flex w-full items-center justify-center py-16 text-[var(--marketing-text-muted)]">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-        Opening workspace…
-      </div>
-    );
-  }
-
   return (
-    <div className="w-full">
+    <>
+      <SegmiQPreloader
+        active={status === "loading" || status === "authenticated" || workspaceState !== "idle"}
+        state={workspaceState === "idle" ? "loading" : workspaceState}
+        onRetry={retryWorkspace}
+        onSignOut={leaveWorkspace}
+      />
+
+      <div
+        className={`w-full ${
+          status !== "unauthenticated" || workspaceState !== "idle"
+            ? "pointer-events-none invisible"
+            : ""
+        }`}
+        aria-hidden={status !== "unauthenticated" || workspaceState !== "idle"}
+      >
       <div>
         <h1
           className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-[var(--marketing-text-heading)] sm:text-[30px]"
@@ -238,20 +268,14 @@ function LoginFormInner() {
           Need access?
         </Link>
       </p>
-    </div>
+      </div>
+    </>
   );
 }
 
 export function LoginForm() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex w-full items-center justify-center py-16 text-[var(--marketing-text-muted)]">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-          Loading…
-        </div>
-      }
-    >
+    <Suspense fallback={<SegmiQPreloader />}>
       <LoginFormInner />
     </Suspense>
   );
