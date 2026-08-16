@@ -128,4 +128,18 @@ Tenant filter: every query uses `client_id = clientId`.
 
 Uses SegmiQ 2.0 sales tokens via `.sales-dashboard-premium` (light `#F7F8FA` / dark `#0B0D0C` page hierarchy). Company shell remains `ClientManagerLayout` / `AppShell` with company-oriented nav labels.
 
+## Loading skeletons
+
+Company Manager routes must look like the live page while data is in flight — same chrome, same grid steps, inner KPI bones. Do not invent loading numbers.
+
+| Rule | Detail |
+|------|--------|
+| Chrome | `CompanyWorkspaceShell` paints immediately (no empty `mounted` gate) |
+| Primitives | `components/dashboard/company/skeletons/CompanySkeletonPrimitives.tsx` — header, KPI card, surface card, table card |
+| Grids | `lib/sales/company-skeleton-grids.ts` — must match live page class names |
+| Tokens | `Skeleton` from `@/components/sales/ui` (`--sales-skeleton-base`) so dark mode stays correct |
+| Routes | `loading.tsx` on dashboard, leads, pipeline, team, customers, quotations, calendar, billing, reports, settings, inbox |
+
+Inbox uses the immersive shell + three-pane skeleton. Calendar must not assume the old AppShell `pl-[252px]` offset.
+
 See also `docs/SEGMIQ_SALES_DESIGN_SYSTEM.md` § Company Dashboard.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { type CSSProperties, type ReactNode } from "react";
 import { CompanySidebar } from "@/components/company/navigation/CompanySidebar";
 import { CompanyMobileTopBar } from "@/components/company/navigation/CompanyMobileTopBar";
 import { CompanyBottomNav } from "@/components/company/navigation/CompanyBottomNav";
@@ -35,20 +35,9 @@ export function CompanyWorkspaceShell({
   /** Workspace routes may prefer the compact sidebar only when no user preference exists yet. */
   preferCollapsedSidebar?: boolean;
 }) {
-  const [mounted, setMounted] = useState(false);
   const { collapsed, toggleCollapsed, width } = useCompanySidebarCollapsed({
     preferCollapsedOnFirstVisit: preferCollapsedSidebar,
   });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return (
-      <div className="sales-dashboard-premium flex h-full min-h-0 flex-1 flex-col bg-sales-bg" />
-    );
-  }
 
   return (
     <div

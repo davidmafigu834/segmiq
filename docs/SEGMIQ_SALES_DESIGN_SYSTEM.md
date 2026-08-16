@@ -256,7 +256,8 @@ Inbox compact / single-pane WhatsApp flow aligns to **below layout** (`INBOX_COM
 - Main scroll regions use `.sales-mobile-scroll` so bottom padding clears the nav (reset when nav is hidden).
 - Tables → cards below `md` where lists exist (Leads, Quotes, Won & Lost, Reports Sources). Any table kept at `md+` needs an `overflow-x-auto` wrapper and a `min-w-*` on the table — `DataTable` does this for you.
 - Filters must stay reachable on phones: every list page hides its desktop filter row at `md` and offers the same controls in a `PremiumSheet` behind a **Filters** button with an active-count badge (Leads, Quotes, Won & Lost).
-- KPI rows step `grid-cols-2` → `md:grid-cols-3` → `xl:grid-cols-5`. Skeletons must use the same steps as the real cards or the page reflows on load.
+- KPI rows step with the **live page**, not a generic template. Company Manager grids live in `lib/sales/company-skeleton-grids.ts` and must match the page (`dashboard` 2→3→6, `leads`/`pipeline` 2→3→6, `team`/`customers` 2→3→5, `quotations` 2→4→7, `calendar` 2→3→6). Skeletons use `KpiCardSkeleton` (label + icon tile + value + trend bones inside `sd-card`) — never empty pulsing rectangles.
+- Company loading states wrap `CompanyWorkspaceShell` so sidebar + top bar paint immediately. Do not gate the shell on `mounted` with an empty canvas. Route `loading.tsx` files under `/client/*` must render the matching page skeleton, not a padded AppShell placeholder.
 - Charts: prefer ~220–260px height on phone; stack report sections vertically.
 - Toasts: `.sales-mobile-toast-anchor` pins above the bottom nav on small screens.
 - Log FAB: desktop/`layout+` only; mobile uses Quick actions.
@@ -544,6 +545,10 @@ Route: `/client/dashboard` · Aggregator: `getCompanySalesDashboard()` · UI: `c
 ### Dark mode
 
 Same structure as salesperson premium scope (`.sales-dashboard-premium`). Focus card: surface + subtle lime tint — not a giant lime panel. Team header row: raised / `#0F120F` in dark.
+
+### Loading
+
+Use `CompanyDashboardSkeleton` (shell + KPI bones + live grid). Shared primitives: `components/dashboard/company/skeletons/`. Do not blank the workspace on hydrate.
 
 ### Links
 

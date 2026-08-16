@@ -6,7 +6,8 @@ import useSWR from "swr";
 import { Tabs } from "@/components/sales/ui";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyReportsHeader } from "./CompanyReportsHeader";
-import { ReportOverview, ReportOverviewSkeleton } from "./ReportOverview";
+import { ReportOverview } from "./ReportOverview";
+import { ReportOverviewSkeleton } from "./ReportOverviewSkeleton";
 import { ReportTabView } from "./ReportTabView";
 import {
   COMPANY_REPORT_TABS,

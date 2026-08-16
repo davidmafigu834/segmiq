@@ -1,27 +1,54 @@
+"use client";
+
+import {
+  CompanyPageSkeletonShell,
+  KpiRowSkeleton,
+  PageHeaderSkeleton,
+  SurfaceCardSkeleton,
+} from "@/components/dashboard/company/skeletons/CompanySkeletonPrimitives";
+import { COMPANY_KPI_COUNTS, COMPANY_KPI_GRID } from "@/lib/sales/company-skeleton-grids";
+
 export default function CompanyDashboardSkeleton() {
   return (
-    <div className="sales-dashboard-premium space-y-4 sm:space-y-5" aria-busy="true" aria-label="Loading company dashboard">
-      <div className="space-y-2">
-        <div className="hidden h-4 w-40 animate-pulse rounded bg-sales-neutral-100 layout:block" />
-        <div className="h-8 w-64 max-w-full animate-pulse rounded bg-sales-neutral-100" />
-        <div className="h-4 w-80 max-w-full animate-pulse rounded bg-sales-neutral-100" />
-      </div>
+    <CompanyPageSkeletonShell label="Loading company dashboard">
+      <div className="space-y-4 sm:space-y-5">
+        <PageHeaderSkeleton titleWidth="w-72" subtitleWidth="w-[28rem]" />
 
-      <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="min-h-[104px] animate-pulse rounded-[14px] border border-sales-border bg-sales-surface sm:min-h-[120px]"
-          />
-        ))}
-      </div>
+        <div className="layout:hidden">
+          <SurfaceCardSkeleton bodyClassName="h-[72px]" />
+        </div>
 
-      <div className="h-[120px] animate-pulse rounded-[14px] border border-sales-border bg-sales-surface" />
+        <KpiRowSkeleton count={COMPANY_KPI_COUNTS.dashboard} gridClass={COMPANY_KPI_GRID.dashboard} />
 
-      <div className="grid grid-cols-1 gap-4 layout:grid-cols-[1.55fr_1fr]">
-        <div className="h-[280px] animate-pulse rounded-[14px] border border-sales-border bg-sales-surface" />
-        <div className="h-[280px] animate-pulse rounded-[14px] border border-sales-border bg-sales-surface" />
+        <div className="hidden layout:block">
+          <SurfaceCardSkeleton bodyClassName="h-[72px]" />
+        </div>
+
+        <div className="grid w-full grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-5">
+          <SurfaceCardSkeleton bodyClassName="h-[240px]" />
+          <div className="hidden layout:block">
+            <SurfaceCardSkeleton bodyClassName="h-[240px]" />
+          </div>
+        </div>
+
+        <div className="grid w-full grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.95fr)] layout:gap-5">
+          <SurfaceCardSkeleton bodyClassName="h-[280px]" />
+          <div className="space-y-4 layout:space-y-5">
+            <div className="layout:hidden">
+              <SurfaceCardSkeleton bodyClassName="h-[220px]" />
+            </div>
+            <SurfaceCardSkeleton bodyClassName="h-[220px]" />
+          </div>
+        </div>
+
+        <SurfaceCardSkeleton bodyClassName="h-[180px]" />
+
+        <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 layout:gap-5">
+          <SurfaceCardSkeleton bodyClassName="h-[220px]" />
+          <SurfaceCardSkeleton bodyClassName="h-[220px]" />
+          <SurfaceCardSkeleton bodyClassName="h-[220px]" />
+        </div>
       </div>
-    </div>
+    </CompanyPageSkeletonShell>
   );
 }

@@ -17,7 +17,6 @@ import { LeadConversionFunnel } from "./LeadConversionFunnel";
 import { TopSalespeople } from "./TopSalespeople";
 import { LeadsBySource } from "./LeadsBySource";
 import { ReportFooterStrip } from "./ReportFooterStrip";
-import { Skeleton } from "@/components/sales/ui";
 import type { CompanyReportOverview } from "@/lib/sales/company-reports/types";
 import type { ReportGranularity } from "@/lib/sales/company-reports/range";
 
@@ -146,33 +145,6 @@ export function ReportOverview({
         refreshing={refreshing}
         scopeNote={scopeNote}
       />
-    </div>
-  );
-}
-
-export function ReportOverviewSkeleton() {
-  return (
-    <div className="flex flex-col gap-4" aria-busy="true" aria-label="Loading reports">
-      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:grid-cols-[repeat(3,minmax(0,1fr))] layout:grid-cols-[repeat(6,minmax(0,1fr))]">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-[142px] rounded-[12px]" />
-        ))}
-      </div>
-      <div className="grid min-w-0 grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,20rem)]">
-        <div className="flex min-w-0 flex-col gap-4">
-          <Skeleton className="h-[280px] rounded-[12px] layout:h-[320px]" />
-          <Skeleton className="h-[260px] rounded-[12px] layout:h-[300px]" />
-        </div>
-        <div className="flex min-w-0 flex-col gap-4">
-          <Skeleton className="h-[280px] rounded-[12px] layout:h-[320px]" />
-          <Skeleton className="h-[260px] rounded-[12px] layout:h-[300px]" />
-        </div>
-        <div className="flex min-w-0 flex-col gap-4">
-          <Skeleton className="h-[140px] rounded-[12px]" />
-          <Skeleton className="h-[160px] rounded-[12px]" />
-          <Skeleton className="h-[160px] rounded-[12px]" />
-        </div>
-      </div>
     </div>
   );
 }
