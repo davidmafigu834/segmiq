@@ -53,12 +53,20 @@ export function PerformanceCard({ performance }: { performance: SalesPerformance
                 {formatDealValue(performance.achieved)}
               </dd>
             </div>
-            <div className="flex items-baseline justify-between gap-3 py-2 last:pb-0">
+            <div className="flex items-baseline justify-between gap-3 py-2">
               <dt className="text-[12px] text-sales-text-muted">Remaining</dt>
               <dd className="text-[13px] font-semibold tabular-nums text-sales-text-primary">
                 {performance.hasTarget ? formatDealValue(performance.remaining) : "—"}
               </dd>
             </div>
+            {performance.daysLeftLabel ? (
+              <div className="flex items-baseline justify-between gap-3 py-2 last:pb-0">
+                <dt className="text-[12px] text-sales-text-muted">Days left</dt>
+                <dd className="text-[13px] font-semibold tabular-nums text-sales-text-primary">
+                  {performance.daysLeftLabel}
+                </dd>
+              </div>
+            ) : null}
           </dl>
         </div>
 

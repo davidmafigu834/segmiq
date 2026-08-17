@@ -249,6 +249,13 @@ export function DailySalesIntelligencePanel({
             <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-sales-text-secondary">
               {plan.focus.body}
             </p>
+            {plan.goal.dailyFocus?.headline || plan.goal.daysLeftLabel || plan.schedule?.summary ? (
+              <p className="mt-2 text-[12px] text-sales-text-muted">
+                {[plan.goal.dailyFocus?.headline, plan.goal.daysLeftLabel, plan.schedule?.summary]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            ) : null}
             {plan.progress.planComplete ? (
               <p className="mt-2 flex items-center gap-1.5 text-[13px] font-medium text-sales-success">
                 <CircleCheck size={16} aria-hidden />

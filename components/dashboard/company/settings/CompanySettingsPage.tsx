@@ -84,6 +84,7 @@ function CompanySettingsPageInner({
   const [profile, setProfile] = useState(data.profile);
   const [quote, setQuote] = useState(data.quote);
   const [timezone, setTimezone] = useState(data.timezone);
+  const [operatingHours, setOperatingHours] = useState(data.operatingHours);
   const [user, setUser] = useState(data.currentUser);
   const [sectionSheet, setSectionSheet] = useState(false);
 
@@ -91,6 +92,7 @@ function CompanySettingsPageInner({
     setProfile(data.profile);
     setQuote(data.quote);
     setTimezone(data.timezone);
+    setOperatingHours(data.operatingHours);
     setUser(data.currentUser);
   }, [data]);
 
@@ -171,12 +173,14 @@ function CompanySettingsPageInner({
                 profile={profile}
                 quote={quote}
                 timezone={timezone}
+                operatingHours={operatingHours}
                 profileError={data.errors.profile}
                 quoteError={data.errors.quote}
                 onRetry={() => router.refresh()}
                 onProfileChange={onProfileChange}
                 onQuoteChange={onQuoteChange}
                 onTimezoneChange={setTimezone}
+                onOperatingHoursChange={setOperatingHours}
                 toast={toast}
               />
             ) : null}

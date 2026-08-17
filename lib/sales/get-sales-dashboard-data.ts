@@ -492,11 +492,18 @@ function buildPlanSummary(
     };
   }
 
+  const daysLeft = plan.goal.daysLeftLabel;
+  const focusMiss = plan.goal.dailyFocus?.headline;
+  const scheduleBit = plan.schedule?.withinHours
+    ? plan.schedule.hoursLeftLabel
+    : plan.schedule?.summary ?? null;
+  const extra = [daysLeft, focusMiss, scheduleBit].filter(Boolean).join(" · ");
+
   if (plan.progress.planComplete) {
     return {
       state: "complete",
       headline: "Today's sales plan is complete ✓",
-      supporting: "All priority actions and today's commitments are complete.",
+      supporting: extra || "All priority actions and today's commitments are complete.",
       ctaLabel: null,
       ctaHref: null,
       remainingPriority: 0,
@@ -521,7 +528,9 @@ function buildPlanSummary(
     return {
       state: "build",
       headline: `Your Deal queue is clear — ${prospectRemaining} prospect${prospectRemaining === 1 ? "" : "s"} remain in today's Pipeline-building commitment.`,
-      supporting: "Continue prospecting to create new commercial opportunities.",
+      supporting: extra
+        ? extra
+        : "Continue prospecting to create new commercial opportunities.",
       ctaLabel: "Continue prospecting",
       ctaHref: "/sales/tasks",
       remainingPriority: 0,
@@ -532,7 +541,7 @@ function buildPlanSummary(
   return {
     state: "active",
     headline: `You have ${remainingPriority || enquiryCount + dealCount} priority action${(remainingPriority || enquiryCount + dealCount) === 1 ? "" : "s"} today — ${enquiryCount} Lead action${enquiryCount === 1 ? "" : "s"} and ${dealCount} Deal action${dealCount === 1 ? "" : "s"}.`,
-    supporting: "Focus on these to keep Pipeline and new opportunities moving.",
+    supporting: extra || "Focus on these to keep Pipeline and new opportunities moving.",
     ctaLabel: "View my plan →",
     ctaHref: "/sales/tasks",
     remainingPriority,

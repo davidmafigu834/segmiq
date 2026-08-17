@@ -60,6 +60,9 @@ export function TodaysPlanCard() {
             <p className="mt-1 text-[15px] font-semibold text-sales-text-primary">
               {plan.focus.title}
             </p>
+            {plan.schedule ? (
+              <p className="mt-0.5 text-[12px] text-sales-text-muted">{plan.schedule.summary}</p>
+            ) : null}
           </div>
           <Link
             href="/sales/tasks"
@@ -81,6 +84,8 @@ export function TodaysPlanCard() {
         )}
 
         <ul className="space-y-1 text-[12px] text-sales-text-secondary">
+          {plan.goal.daysLeftLabel ? <li>{plan.goal.daysLeftLabel} on this goal</li> : null}
+          {plan.goal.dailyFocus?.headline ? <li>{plan.goal.dailyFocus.headline}</li> : null}
           {remainingPriority > 0 ? (
             <li>{remainingPriority} priority action{remainingPriority === 1 ? "" : "s"} remaining</li>
           ) : (

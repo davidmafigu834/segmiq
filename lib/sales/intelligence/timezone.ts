@@ -80,17 +80,20 @@ function timezoneOffsetMinutes(date: Date, timezone: string): number {
   }
 }
 
-/** Count remaining working days (inclusive of today if still a working day and before end of day). */
+/** Count remaining working days (inclusive of fromDate when it is a working day). */
 export function countWorkingDaysLeft(
   fromPlanDate: string,
   periodEndInclusive: string,
-  workingDays: readonly number[] = DEFAULT_SALES_EXECUTION.workingDays
+  workingDays: readonly number[] = DEFAULT_SALES_EXECUTION.workingDays,
+  includeFromDate = true
 ): number {
   const start = parseDateOnly(fromPlanDate);
   const end = parseDateOnly(periodEndInclusive);
   if (!start || !end || end < start) return 0;
-  let count = 0;
   const cursor = new Date(start);
+  if (!includeFromDate) cursor.setUTCDate(cursor.getUTCDate() + 1);
+  if (cursor > end) return 0;
+  let count = 0;
   while (cursor <= end) {
     if (workingDays.includes(cursor.getUTCDay())) count += 1;
     cursor.setUTCDate(cursor.getUTCDate() + 1);
@@ -98,10 +101,24 @@ export function countWorkingDaysLeft(
   return count;
 }
 
-function parseDateOnly(isoDate: string): Date | null {
+export function parseDateOnly(isoDate: string): Date | null {
   const [y, m, d] = isoDate.split("-").map(Number);
   if (!y || !m || !d) return null;
   return new Date(Date.UTC(y, m - 1, d));
+}
+
+export function formatDateOnlyUtc(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function addDaysToDateOnly(isoDate: string, days: number): string {
+  const start = parseDateOnly(isoDate);
+  if (!start) return isoDate;
+  start.setUTCDate(start.getUTCDate() + days);
+  return formatDateOnlyUtc(start);
 }
 
 export function buildIdempotencyKey(parts: {

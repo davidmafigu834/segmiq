@@ -111,5 +111,11 @@ export function mergeExecutionSettings(
       ...(clientBaseline.priorityWeights ?? {}),
       ...(salespersonOverride.priorityWeights ?? {}),
     },
+    workingDays:
+      salespersonOverride.workingDays && salespersonOverride.workingDays.length > 0
+        ? salespersonOverride.workingDays
+        : clientBaseline.workingDays,
+    workStartTime: salespersonOverride.workStartTime ?? clientBaseline.workStartTime,
+    workEndTime: salespersonOverride.workEndTime ?? clientBaseline.workEndTime,
   };
 }

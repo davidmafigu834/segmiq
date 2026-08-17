@@ -8,6 +8,8 @@ export type RecommendationInput = {
   remaining: number;
   lifecycle: string;
   progressPct: number;
+  daysLeftLabel?: string | null;
+  dailyFocusHeadline?: string | null;
 };
 
 /** Deterministic tips from real sales state — never invent filler. */
@@ -32,6 +34,14 @@ export function buildGoalRecommendations(input: RecommendationInput): GoalRecomm
         href: "/sales/goals",
       },
     ];
+  }
+
+  if (input.dailyFocusHeadline) {
+    tips.push({
+      id: "daily_focus",
+      text: input.dailyFocusHeadline,
+      href: "/sales/tasks",
+    });
   }
 
   if (input.overdueFollowUps > 0) {
@@ -67,7 +77,13 @@ export function buildGoalRecommendations(input: RecommendationInput): GoalRecomm
   }
 
   if (tips.length === 0) {
-    if (input.remaining > 0 && input.progressPct > 0) {
+    if (input.daysLeftLabel && input.remaining > 0) {
+      tips.push({
+        id: "days_left",
+        text: `${input.daysLeftLabel} in this goal period. Keep moving open deals to Won.`,
+        href: "/sales/pipeline",
+      });
+    } else if (input.remaining > 0 && input.progressPct > 0) {
       tips.push({
         id: "on_track",
         text: "You're on track. No urgent sales actions need attention right now.",

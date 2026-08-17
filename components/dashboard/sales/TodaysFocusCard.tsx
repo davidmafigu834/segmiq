@@ -18,12 +18,18 @@ export function TodaysFocusCard({
   goalProgressPct,
   prospectProgress,
   error,
+  daysLeftLabel,
+  dailyFocusHeadline,
+  scheduleLine,
 }: {
   focus: FocusModeResult | null;
   coverage: PipelineCoverageResult | null;
   goalProgressPct: number | null;
   prospectProgress: { completed: number; target: number } | null;
   error?: boolean;
+  daysLeftLabel?: string | null;
+  dailyFocusHeadline?: string | null;
+  scheduleLine?: string | null;
 }) {
   if (error) {
     return (
@@ -82,6 +88,11 @@ export function TodaysFocusCard({
           <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-sales-text-secondary">
             {focus.body}
           </p>
+          {scheduleLine || daysLeftLabel || dailyFocusHeadline ? (
+            <p className="mt-2 text-[12px] leading-relaxed text-sales-text-muted">
+              {[dailyFocusHeadline, daysLeftLabel, scheduleLine].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-sales-text-muted">
             {focus.mode === "BUILD" && prospectProgress && prospectProgress.target > 0 ? (

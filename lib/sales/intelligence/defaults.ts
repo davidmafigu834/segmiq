@@ -47,6 +47,9 @@ export const DEFAULT_SALES_EXECUTION = {
   weights: DEFAULT_PRIORITY_WEIGHTS,
   /** Mon–Fri fallback when no working-day calendar exists. */
   workingDays: [1, 2, 3, 4, 5] as const,
+  /** Default company work window when operating hours are not configured. */
+  workStartTime: "08:00",
+  workEndTime: "17:00",
   timezoneFallback: "Africa/Harare",
 } as const;
 

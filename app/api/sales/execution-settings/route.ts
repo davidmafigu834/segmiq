@@ -15,6 +15,9 @@ const patchSchema = z.object({
   dailyFollowupTarget: z.number().int().positive().nullable().optional(),
   dailyQuoteTarget: z.number().int().positive().nullable().optional(),
   dailyAppointmentTarget: z.number().int().positive().nullable().optional(),
+  workingDays: z.array(z.number().int().min(0).max(6)).min(1).max(7).nullable().optional(),
+  workStartTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).nullable().optional(),
+  workEndTime: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).nullable().optional(),
 });
 
 export async function GET(req: Request) {
@@ -64,16 +67,26 @@ export async function PATCH(req: Request) {
   }
 
   try {
+    const patch: Parameters<typeof upsertExecutionSettings>[0]["patch"] = {};
+    if (body.dailyProspectTarget !== undefined) patch.dailyProspectTarget = body.dailyProspectTarget;
+    if (body.dailyCallTarget !== undefined) patch.dailyCallTarget = body.dailyCallTarget;
+    if (body.dailyFollowupTarget !== undefined) patch.dailyFollowupTarget = body.dailyFollowupTarget;
+    if (body.dailyQuoteTarget !== undefined) patch.dailyQuoteTarget = body.dailyQuoteTarget;
+    if (body.dailyAppointmentTarget !== undefined) {
+      patch.dailyAppointmentTarget = body.dailyAppointmentTarget;
+    }
+    if (body.workingDays !== undefined) patch.workingDays = body.workingDays;
+    if (body.workStartTime !== undefined) {
+      patch.workStartTime = body.workStartTime ? body.workStartTime.slice(0, 5) : null;
+    }
+    if (body.workEndTime !== undefined) {
+      patch.workEndTime = body.workEndTime ? body.workEndTime.slice(0, 5) : null;
+    }
+
     const settings = await upsertExecutionSettings({
       clientId: session!.clientId,
       salespersonId: body.scope === "client" ? null : session!.userId,
-      patch: {
-        dailyProspectTarget: body.dailyProspectTarget,
-        dailyCallTarget: body.dailyCallTarget,
-        dailyFollowupTarget: body.dailyFollowupTarget,
-        dailyQuoteTarget: body.dailyQuoteTarget,
-        dailyAppointmentTarget: body.dailyAppointmentTarget,
-      },
+      patch,
     });
     return NextResponse.json({ settings });
   } catch (err) {

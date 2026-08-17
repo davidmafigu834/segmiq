@@ -79,7 +79,10 @@ function SalesDashboardInner({
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps(legacy.assignmentMode ?? "direct");
 
-  const performance = buildPerformance(legacy);
+  const performance = {
+    ...buildPerformance(legacy),
+    daysLeftLabel: data.goal?.daysLeftLabel ?? null,
+  };
   const goalProgressPct =
     data.goal?.hasGoal &&
     data.goal.targetValue != null &&
@@ -177,6 +180,9 @@ function SalesDashboardInner({
               goalProgressPct={goalProgressPct}
               prospectProgress={prospectProgress}
               error={data.planError}
+              daysLeftLabel={data.goal?.daysLeftLabel}
+              dailyFocusHeadline={data.goal?.dailyFocus?.headline}
+              scheduleLine={data.plan?.schedule?.summary}
             />
             <TodaysSalesPlanStrip {...data.planSummary} />
           </div>
@@ -195,6 +201,9 @@ function SalesDashboardInner({
               goalProgressPct={goalProgressPct}
               prospectProgress={prospectProgress}
               error={data.planError}
+              daysLeftLabel={data.goal?.daysLeftLabel}
+              dailyFocusHeadline={data.goal?.dailyFocus?.headline}
+              scheduleLine={data.plan?.schedule?.summary}
             />
           </div>
 

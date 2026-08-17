@@ -11,7 +11,12 @@ export * from "./priority-engine";
 export {
   fetchDailySalesPlan,
   fetchExecutionSettings,
+  fetchClientBaselineSettings,
   upsertExecutionSettings,
   mutateActionState,
   reconcileLeadActionStates,
+  resolveClientSalesTimezone,
+  loadDailyFocusLogs,
 } from "./daily-plan-service";
+export * from "./operating-hours";
+export * from "./daily-focus";

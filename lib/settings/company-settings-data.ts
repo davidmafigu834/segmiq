@@ -2,8 +2,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { CRM_PLAN_SEATS, isCrmPlan, planLabel, type CrmPlan } from "@/lib/billing/plans";
 import { billingCycleLabel } from "@/lib/billing/status";
 import { DEFAULT_MARKETING_SETTINGS } from "@/lib/marketing/settings";
+import { fetchClientBaselineSettings } from "@/lib/sales/intelligence/daily-plan-service";
+import { resolveOperatingHours } from "@/lib/sales/intelligence/operating-hours";
 import type {
   CompanyAccountSummary,
+  CompanyOperatingHours,
   CompanySettingsPageData,
   CompanySettingsProfile,
   CompanySettingsQuote,
@@ -14,7 +17,7 @@ export async function getCompanySettingsPageData(
   currentUser: CompanySettingsPageData["currentUser"]
 ): Promise<CompanySettingsPageData> {
   const supabase = createAdminClient();
-  const [clientRes, quoteRes, subRes, seatsRes, marketingRes, adminRes] = await Promise.all([
+  const [clientRes, quoteRes, subRes, seatsRes, marketingRes, adminRes, hoursSettings] = await Promise.all([
     supabase
       .from("clients")
       .select(
@@ -48,6 +51,7 @@ export async function getCompanySettingsPageData(
       .eq("role", "SUPER_ADMIN")
       .eq("is_active", true)
       .limit(1),
+    fetchClientBaselineSettings(clientId),
   ]);
 
   const c = clientRes.data;
@@ -100,12 +104,14 @@ export async function getCompanySettingsPageData(
     : null;
 
   const admin = adminRes.data?.[0] as { name?: string; email?: string; phone?: string | null } | undefined;
+  const operatingHours: CompanyOperatingHours = resolveOperatingHours(hoursSettings);
 
   return {
     clientId,
     profile,
     quote,
     timezone: (marketingRes.data?.timezone as string | null) ?? DEFAULT_MARKETING_SETTINGS.timezone,
+    operatingHours,
     account: subRes.error ? null : account,
     currentUser,
     agencyContact: admin

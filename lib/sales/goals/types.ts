@@ -127,4 +127,22 @@ export type SalesGoalsPayload = {
     dealsWon: number;
     pipelineValue: number;
   };
+  workingDaysLeft: number | null;
+  daysLeftLabel: string | null;
+  schedule: {
+    weekdayLabel: string;
+    dateLabel: string;
+    isWorkingDay: boolean;
+    workingDaysLabel: string;
+    workStartLabel: string;
+    workEndLabel: string;
+    summary: string;
+  } | null;
+  dailyFocus: {
+    yesterdayMissed: boolean;
+    yesterdayLabel: string | null;
+    missedStreak: number;
+    headline: string | null;
+    supporting: string | null;
+  } | null;
 };

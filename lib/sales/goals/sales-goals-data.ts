@@ -15,6 +15,19 @@ import {
 } from "./period";
 import { buildCumulativeSeries, calcProgress, resolveLifecycle } from "./progress";
 import { buildGoalRecommendations } from "./recommendations";
+import {
+  fetchExecutionSettings,
+  loadDailyFocusLogs,
+  resolveClientSalesTimezone,
+} from "@/lib/sales/intelligence/daily-plan-service";
+import { buildDailyFocusStatus, lookbackStartDate, trackingStartDate } from "@/lib/sales/intelligence/daily-focus";
+import {
+  countGoalWorkingDaysLeft,
+  formatDaysLeftLabel,
+  resolveOperatingHours,
+  resolveWorkdayState,
+  scheduleSummaryLine,
+} from "@/lib/sales/intelligence/operating-hours";
 import type {
   GoalRecentDeal,
   GoalSourceContribution,
@@ -196,8 +209,14 @@ export async function fetchSalesGoalsPayload(opts: {
   const prevKey = previousPeriodKey(periodKey);
   const prevBounds = goalPeriodBounds(prevKey);
   const now = new Date();
+  const [timezone, settings] = await Promise.all([
+    resolveClientSalesTimezone(opts.clientId),
+    fetchExecutionSettings({ clientId: opts.clientId, salespersonId: opts.userId }),
+  ]);
+  const hours = resolveOperatingHours(settings);
+  const schedule = resolveWorkdayState(now, timezone, hours);
 
-  const [goal, wins, prevWins, savedPeriods, pipelineRes, overdueRes, quotesRes, hotRes, staleRes] =
+  const [goal, wins, prevWins, savedPeriods, pipelineRes, overdueRes, quotesRes, hotRes, staleRes, focusLogs] =
     await Promise.all([
       getActiveGoalForPeriod(opts.clientId, opts.userId, bounds.periodStartIso),
       fetchWins(opts.userId, bounds.from, bounds.toExclusive, opts.clientId),
@@ -236,6 +255,12 @@ export async function fetchSalesGoalsPayload(opts: {
         .eq("client_id", opts.clientId)
         .eq("is_stale", true)
         .not("status", "in", '("WON","LOST","NOT_QUALIFIED")'),
+      loadDailyFocusLogs({
+        clientId: opts.clientId,
+        salespersonId: opts.userId,
+        fromDate: lookbackStartDate(schedule.planDate),
+        toDate: schedule.planDate,
+      }),
     ]);
 
   const currency = goal?.currency ?? "USD";
@@ -302,6 +327,29 @@ export async function fetchSalesGoalsPayload(opts: {
     (isPeriodCurrent(periodKey, now) || future) &&
     goal.status === "ACTIVE";
 
+  const workingDaysLeft =
+    goal && lifecycle === "active"
+      ? countGoalWorkingDaysLeft({
+          schedule,
+          periodEndInclusive: String(goal.period_end).slice(0, 10),
+        })
+      : null;
+  const dailyFocus =
+    goal && lifecycle === "active"
+      ? buildDailyFocusStatus({
+          schedule,
+          logs: focusLogs,
+          todayComplete: focusLogs.some(
+            (row) => row.planDate === schedule.planDate && row.planComplete
+          ),
+          trackingStartDate: trackingStartDate({
+            periodStart: String(goal.period_start).slice(0, 10),
+            goalCreatedAt: goal.created_at,
+            planDate: schedule.planDate,
+          }),
+        })
+      : null;
+
   return {
     currency,
     periodKey,
@@ -348,6 +396,8 @@ export async function fetchSalesGoalsPayload(opts: {
       remaining: progress.remaining,
       lifecycle,
       progressPct: progress.progressPct,
+      daysLeftLabel: formatDaysLeftLabel(workingDaysLeft),
+      dailyFocusHeadline: dailyFocus?.headline ?? null,
     }),
     periodOptions,
     currentPerformance: {
@@ -355,6 +405,18 @@ export async function fetchSalesGoalsPayload(opts: {
       dealsWon: wins.length,
       pipelineValue,
     },
+    workingDaysLeft,
+    daysLeftLabel: formatDaysLeftLabel(workingDaysLeft),
+    schedule: {
+      weekdayLabel: schedule.weekdayLabel,
+      dateLabel: schedule.dateLabel,
+      isWorkingDay: schedule.isWorkingDay,
+      workingDaysLabel: schedule.workingDaysLabel,
+      workStartLabel: schedule.workStartLabel,
+      workEndLabel: schedule.workEndLabel,
+      summary: scheduleSummaryLine(schedule),
+    },
+    dailyFocus,
   };
 }
 

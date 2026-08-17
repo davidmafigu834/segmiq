@@ -192,6 +192,23 @@ export function SalesGoalsClient() {
                 </p>
               </div>
             </div>
+          ) : data.dailyFocus?.headline || data.daysLeftLabel ? (
+            <div className="flex min-h-[48px] items-center gap-3 rounded-[12px] border border-sales-border bg-sales-surface px-3.5 py-2.5">
+              <Target size={16} strokeWidth={1.8} className="shrink-0 text-sales-brand-fg" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-sales-text-primary">
+                  {data.dailyFocus?.headline ?? data.daysLeftLabel}
+                </p>
+                <p className="text-[12px] text-sales-text-secondary">
+                  {[
+                    data.dailyFocus?.headline ? data.daysLeftLabel : null,
+                    data.schedule?.summary,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </div>
+            </div>
           ) : null}
 
           <div className="grid items-stretch gap-4 xl:grid-cols-12">
@@ -228,6 +245,16 @@ export function SalesGoalsClient() {
                             : "remaining"}
                       </dt>
                     </div>
+                    {data.daysLeftLabel ? (
+                      <div>
+                        <dd className="text-[16px] font-semibold tabular-nums text-sales-text-primary">
+                          {data.workingDaysLeft ?? "—"}
+                        </dd>
+                        <dt className="text-[12px] text-sales-text-muted">
+                          {data.workingDaysLeft === 1 ? "working day left" : "working days left"}
+                        </dt>
+                      </div>
+                    ) : null}
                   </dl>
                 </div>
                 <div className="min-w-0 flex-1 lg:w-[72%]">
@@ -441,6 +468,10 @@ function GoalDetailsCard({
     },
     { label: "Start date", value: formatGoalDate(g.periodStart) },
     { label: "End date", value: formatGoalDate(g.periodEnd) },
+    {
+      label: "Days left",
+      value: data.daysLeftLabel ?? (data.lifecycle === "upcoming" ? "Not started" : "—"),
+    },
     {
       label: "Status",
       value:

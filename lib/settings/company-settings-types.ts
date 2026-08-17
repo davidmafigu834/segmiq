@@ -53,11 +53,18 @@ export type CompanySettingsCurrentUser = {
   notificationPrefs: ManagerNotificationPrefs;
 };
 
+export type CompanyOperatingHours = {
+  workingDays: number[];
+  workStartTime: string;
+  workEndTime: string;
+};
+
 export type CompanySettingsPageData = {
   clientId: string;
   profile: CompanySettingsProfile;
   quote: CompanySettingsQuote;
   timezone: string;
+  operatingHours: CompanyOperatingHours;
   account: CompanyAccountSummary | null;
   agencyContact: { name: string; email: string; phone: string | null } | null;
   currentUser: CompanySettingsCurrentUser;

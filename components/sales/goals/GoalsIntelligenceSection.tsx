@@ -14,6 +14,8 @@ import {
 } from "@/components/sales/ui";
 import { formatDealCurrency } from "@/lib/sales/format";
 import type { DailySalesPlanPayload } from "@/lib/sales/intelligence/types";
+import { defaultOperatingHours } from "@/lib/sales/intelligence/operating-hours";
+import { OperatingHoursFields } from "@/components/settings/OperatingHoursFields";
 import { cn } from "@/lib/ui/cn";
 
 export function GoalsIntelligenceSection() {
@@ -26,6 +28,9 @@ export function GoalsIntelligenceSection() {
   const [calls, setCalls] = useState("");
   const [followups, setFollowups] = useState("");
   const [quotes, setQuotes] = useState("");
+  const [workingDays, setWorkingDays] = useState<number[]>([...defaultOperatingHours().workingDays]);
+  const [workStartTime, setWorkStartTime] = useState(defaultOperatingHours().workStartTime);
+  const [workEndTime, setWorkEndTime] = useState(defaultOperatingHours().workEndTime);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -46,13 +51,20 @@ export function GoalsIntelligenceSection() {
             dailyCallTarget: number | null;
             dailyFollowupTarget: number | null;
             dailyQuoteTarget: number | null;
+            workingDays: number[] | null;
+            workStartTime: string | null;
+            workEndTime: string | null;
           } | null;
         };
         const s = json.settings;
+        const hours = defaultOperatingHours();
         setProspects(s?.dailyProspectTarget != null ? String(s.dailyProspectTarget) : "");
         setCalls(s?.dailyCallTarget != null ? String(s.dailyCallTarget) : "");
         setFollowups(s?.dailyFollowupTarget != null ? String(s.dailyFollowupTarget) : "");
         setQuotes(s?.dailyQuoteTarget != null ? String(s.dailyQuoteTarget) : "");
+        setWorkingDays(s?.workingDays?.length ? s.workingDays : hours.workingDays);
+        setWorkStartTime(s?.workStartTime?.slice(0, 5) || hours.workStartTime);
+        setWorkEndTime(s?.workEndTime?.slice(0, 5) || hours.workEndTime);
       }
     } catch {
       setPlan(null);
@@ -81,6 +93,9 @@ export function GoalsIntelligenceSection() {
           dailyCallTarget: toNum(calls),
           dailyFollowupTarget: toNum(followups),
           dailyQuoteTarget: toNum(quotes),
+          workingDays,
+          workStartTime,
+          workEndTime,
         }),
       });
       if (!res.ok) throw new Error("fail");
@@ -120,6 +135,13 @@ export function GoalsIntelligenceSection() {
             </div>
             <h3 className="text-[18px] font-semibold text-sales-text-primary">{plan.focus.title}</h3>
             <p className="text-[13px] leading-relaxed text-sales-text-secondary">{plan.focus.body}</p>
+            {plan.goal.dailyFocus?.headline || plan.goal.daysLeftLabel || plan.schedule ? (
+              <p className="text-[12px] text-sales-text-muted">
+                {[plan.goal.dailyFocus?.headline, plan.goal.daysLeftLabel, plan.schedule?.summary]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            ) : null}
             <Link
               href="/sales/tasks"
               className="inline-flex items-center gap-1 text-[12px] font-semibold text-sales-brand-fg hover:underline"
@@ -140,6 +162,12 @@ export function GoalsIntelligenceSection() {
                   <p className="text-sales-text-muted">Remaining target</p>
                   <p className="mt-0.5 font-semibold text-sales-text-primary">
                     {formatDealCurrency(plan.goal.remainingValue, { currency })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sales-text-muted">Days left</p>
+                  <p className="mt-0.5 font-semibold text-sales-text-primary">
+                    {plan.goal.daysLeftLabel ?? "—"}
                   </p>
                 </div>
                 <div>
@@ -262,6 +290,15 @@ export function GoalsIntelligenceSection() {
                   </label>
                 ))}
               </div>
+              <OperatingHoursFields
+                workingDays={workingDays}
+                workStartTime={workStartTime}
+                workEndTime={workEndTime}
+                onWorkingDaysChange={setWorkingDays}
+                onStartChange={setWorkStartTime}
+                onEndChange={setWorkEndTime}
+                hint="Your hours override the company schedule for goal days left and today’s plan."
+              />
               <div className="flex gap-2">
                 <Button variant="primary" size="sm" loading={saving} onClick={() => void saveSettings()}>
                   Save

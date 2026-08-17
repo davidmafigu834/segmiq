@@ -16,9 +16,16 @@ import {
   companyInformationRows,
   confirmDiscardUnsaved,
   displayOrDash,
+  operatingHoursLabel,
   timezoneLabel,
 } from "@/lib/settings/company-settings-display";
-import type { CompanySettingsProfile, CompanySettingsQuote } from "@/lib/settings/company-settings-types";
+import type {
+  CompanyOperatingHours,
+  CompanySettingsProfile,
+  CompanySettingsQuote,
+} from "@/lib/settings/company-settings-types";
+import { OperatingHoursFields } from "@/components/settings/OperatingHoursFields";
+import { defaultOperatingHours } from "@/lib/sales/intelligence/operating-hours";
 
 async function patchProfile(clientId: string, body: Record<string, unknown>) {
   const res = await fetch(`/api/clients/${clientId}/company-profile`, {
@@ -46,27 +53,31 @@ export function CompanyInformationSection({
   profile,
   quote,
   timezone,
+  operatingHours,
   profileError,
   quoteError,
   onRetry,
   onProfileChange,
   onQuoteChange,
   onTimezoneChange,
+  onOperatingHoursChange,
   toast,
 }: {
   clientId: string;
   profile: CompanySettingsProfile;
   quote: CompanySettingsQuote;
   timezone: string;
+  operatingHours: CompanyOperatingHours;
   profileError?: boolean;
   quoteError?: boolean;
   onRetry: () => void;
   onProfileChange: (next: Partial<CompanySettingsProfile>) => void;
   onQuoteChange: (next: Partial<CompanySettingsQuote>) => void;
   onTimezoneChange: (tz: string) => void;
+  onOperatingHoursChange: (next: CompanyOperatingHours) => void;
   toast: (opts: { title: string; tone?: "success" | "error" | "warning" }) => void;
 }) {
-  const [edit, setEdit] = useState<"info" | "address" | "business" | null>(null);
+  const [edit, setEdit] = useState<"info" | "address" | "business" | "hours" | null>(null);
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -128,6 +139,19 @@ export function CompanyInformationSection({
         />
       </SettingsSectionCard>
 
+      <SettingsSectionCard
+        title="Operating hours"
+        description="Working days and hours used for goal days left and today’s plan."
+        onEdit={() => setEdit("hours")}
+      >
+        <SettingsInfoGrid
+          rows={[
+            { label: "Schedule", value: operatingHoursLabel(operatingHours) },
+            { label: "Time Zone", value: timezoneLabel(timezone) },
+          ]}
+        />
+      </SettingsSectionCard>
+
       {edit === "info" ? (
         <EditCompanyInformationDrawer
           clientId={clientId}
@@ -169,6 +193,19 @@ export function CompanyInformationSection({
             onTimezoneChange(tz);
             setEdit(null);
             toast({ title: "Business information updated.", tone: "success" });
+          }}
+          onError={(msg) => toast({ title: msg, tone: "error" })}
+        />
+      ) : null}
+      {edit === "hours" ? (
+        <EditOperatingHoursDrawer
+          clientId={clientId}
+          hours={operatingHours}
+          onClose={() => setEdit(null)}
+          onSaved={(next) => {
+            onOperatingHoursChange(next);
+            setEdit(null);
+            toast({ title: "Operating hours updated.", tone: "success" });
           }}
           onError={(msg) => toast({ title: msg, tone: "error" })}
         />
@@ -470,6 +507,95 @@ function EditBusinessInformationDrawer({
         </Select>
         <FieldHint>Stored as an IANA timezone. Existing timestamps stay in UTC.</FieldHint>
       </div>
+    </SettingsFormDrawer>
+  );
+}
+
+function EditOperatingHoursDrawer({
+  clientId,
+  hours,
+  onClose,
+  onSaved,
+  onError,
+}: {
+  clientId: string;
+  hours: CompanyOperatingHours;
+  onClose: () => void;
+  onSaved: (hours: CompanyOperatingHours) => void;
+  onError: (message: string) => void;
+}) {
+  const fallback = defaultOperatingHours();
+  const [workingDays, setWorkingDays] = useState(
+    hours.workingDays.length ? hours.workingDays : fallback.workingDays
+  );
+  const [workStartTime, setWorkStartTime] = useState(hours.workStartTime || fallback.workStartTime);
+  const [workEndTime, setWorkEndTime] = useState(hours.workEndTime || fallback.workEndTime);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const dirty =
+    workingDays.slice().sort().join(",") !== hours.workingDays.slice().sort().join(",") ||
+    workStartTime !== hours.workStartTime ||
+    workEndTime !== hours.workEndTime;
+
+  function requestClose() {
+    if (dirty && !confirmDiscardUnsaved()) return;
+    onClose();
+  }
+
+  async function save() {
+    if (workingDays.length === 0) {
+      setError("Select at least one working day.");
+      return;
+    }
+    if (workEndTime <= workStartTime) {
+      setError("Work end time must be after start time.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/sales/execution-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scope: "client",
+          workingDays,
+          workStartTime,
+          workEndTime,
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "Couldn't save operating hours");
+      onSaved({ workingDays, workStartTime, workEndTime });
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "Couldn't save operating hours");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <SettingsFormDrawer
+      title="Edit operating hours"
+      description="Goals count remaining working days, and today’s plan uses these hours in the company timezone."
+      onClose={requestClose}
+      onSave={() => void save()}
+      saving={saving}
+    >
+      <OperatingHoursFields
+        workingDays={workingDays}
+        workStartTime={workStartTime}
+        workEndTime={workEndTime}
+        onWorkingDaysChange={(days) => {
+          setError(null);
+          setWorkingDays(days);
+        }}
+        onStartChange={setWorkStartTime}
+        onEndChange={setWorkEndTime}
+        hint="Default is Monday–Friday, 8:00am–5:00pm. Salespeople can override this on Goals."
+      />
+      {error ? <FieldError>{error}</FieldError> : null}
     </SettingsFormDrawer>
   );
 }

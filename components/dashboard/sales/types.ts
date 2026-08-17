@@ -163,6 +163,7 @@ export type SalesPerformanceView = {
   series: SalesPerformancePoint[];
   hasTarget: boolean;
   hasChartData: boolean;
+  daysLeftLabel?: string | null;
 };
 
 export type SalesDashboardShellProps = {

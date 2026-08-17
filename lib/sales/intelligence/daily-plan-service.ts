@@ -15,7 +15,6 @@ import {
   ACTIVE_PIPELINE_STATUSES,
   DEFAULT_PRIORITY_WEIGHTS,
   DEFAULT_QUOTE_FOLLOWUP_HOURS,
-  DEFAULT_SALES_EXECUTION,
   DEFAULT_STAGE_INACTIVITY_HOURS,
   FIRST_RESPONSE_EVENT_TYPES,
   OPEN_QUOTE_STATUSES,
@@ -28,23 +27,34 @@ import {
   mergeExecutionSettings,
   type CommitmentCounts,
 } from "./commitments";
+import {
+  buildDailyFocusStatus,
+  lookbackStartDate,
+  trackingStartDate,
+  type DailyFocusLog,
+} from "./daily-focus";
 import { deriveFocusMode } from "./focus-mode";
 import {
   deriveFirstRespondedAt,
   deriveLastMeaningfulActivityAt,
   minutesSince,
 } from "./meaningful-activity";
+import {
+  countGoalWorkingDaysLeft,
+  formatDaysLeftLabel,
+  formatHoursLeftLabel,
+  resolveOperatingHours,
+  resolveWorkdayState,
+  scheduleSummaryLine,
+} from "./operating-hours";
 import { calcPipelineCoverage, sumActivePipelineValue } from "./pipeline-coverage";
 import { rankSalesActions, shouldResolveRecommendation } from "./priority-engine";
-import {
-  countWorkingDaysLeft,
-  planDateInTimezone,
-  planDayBoundsUtc,
-  resolveSalesTimezone,
-} from "./timezone";
+import { planDayBoundsUtc, resolveSalesTimezone } from "./timezone";
 import { countValidProspects, type ProspectCandidate } from "./valid-prospect";
 import type {
   ActionStateRow,
+  DailyFocusStatusPayload,
+  DailyPlanSchedule,
   DailySalesPlanPayload,
   LeadIntelligenceSignal,
   PriorityWeights,
@@ -119,6 +129,11 @@ function mapSettings(row: Record<string, unknown> | null): SalesExecutionSetting
     quoteFollowupHours:
       row.quote_followup_hours != null ? Number(row.quote_followup_hours) : null,
     priorityWeights: (row.priority_weights as Partial<PriorityWeights> | null) ?? null,
+    workingDays: Array.isArray(row.working_days)
+      ? (row.working_days as number[]).map((n) => Number(n))
+      : null,
+    workStartTime: row.work_start_time != null ? String(row.work_start_time).slice(0, 5) : null,
+    workEndTime: row.work_end_time != null ? String(row.work_end_time).slice(0, 5) : null,
   };
 }
 
@@ -172,6 +187,9 @@ export async function upsertExecutionSettings(opts: {
     dailyFollowupTarget: number | null;
     dailyQuoteTarget: number | null;
     dailyAppointmentTarget: number | null;
+    workingDays: number[] | null;
+    workStartTime: string | null;
+    workEndTime: string | null;
   }>;
 }): Promise<SalesExecutionSettingsRow> {
   const supabase = createAdminClient();
@@ -187,6 +205,9 @@ export async function upsertExecutionSettings(opts: {
   if ("dailyAppointmentTarget" in opts.patch) {
     payload.daily_appointment_target = opts.patch.dailyAppointmentTarget;
   }
+  if ("workingDays" in opts.patch) payload.working_days = opts.patch.workingDays;
+  if ("workStartTime" in opts.patch) payload.work_start_time = opts.patch.workStartTime;
+  if ("workEndTime" in opts.patch) payload.work_end_time = opts.patch.workEndTime;
 
   // Find existing
   let existingQuery = supabase
@@ -216,6 +237,120 @@ export async function upsertExecutionSettings(opts: {
     .single();
   if (error) throw new Error(error.message);
   return mapSettings(data as Record<string, unknown>)!;
+}
+
+export async function resolveClientSalesTimezone(clientId: string): Promise<string> {
+  const supabase = createAdminClient();
+  const [marketingRes, agency] = await Promise.all([
+    supabase
+      .from("client_marketing_settings")
+      .select("timezone")
+      .eq("client_id", clientId)
+      .maybeSingle(),
+    getAgencySettings(),
+  ]);
+  return resolveSalesTimezone(
+    (marketingRes.data?.timezone as string | null) ?? agency.default_timezone
+  );
+}
+
+export async function fetchClientBaselineSettings(
+  clientId: string
+): Promise<SalesExecutionSettingsRow | null> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("sales_execution_settings")
+    .select("*")
+    .eq("client_id", clientId)
+    .is("salesperson_id", null)
+    .maybeSingle();
+  if (error) {
+    if (/sales_execution_settings|does not exist|relation|working_days/i.test(error.message)) {
+      return null;
+    }
+    throw new Error(error.message);
+  }
+  return data ? mapSettings(data as Record<string, unknown>) : null;
+}
+
+function toSchedulePayload(state: ReturnType<typeof resolveWorkdayState>): DailyPlanSchedule {
+  return {
+    timezone: state.timezone,
+    planDate: state.planDate,
+    weekdayLabel: state.weekdayLabel,
+    dateLabel: state.dateLabel,
+    isWorkingDay: state.isWorkingDay,
+    withinHours: state.withinHours,
+    beforeStart: state.beforeStart,
+    afterEnd: state.afterEnd,
+    workStartLabel: state.workStartLabel,
+    workEndLabel: state.workEndLabel,
+    workingDaysLabel: state.workingDaysLabel,
+    minutesLeftInWorkday: state.minutesLeftInWorkday,
+    hoursLeftLabel: formatHoursLeftLabel(state.minutesLeftInWorkday),
+    summary: scheduleSummaryLine(state),
+  };
+}
+
+export async function loadDailyFocusLogs(opts: {
+  clientId: string;
+  salespersonId: string;
+  fromDate: string;
+  toDate: string;
+}): Promise<DailyFocusLog[]> {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("sales_daily_focus_log")
+    .select("plan_date, plan_complete")
+    .eq("client_id", opts.clientId)
+    .eq("salesperson_id", opts.salespersonId)
+    .gte("plan_date", opts.fromDate)
+    .lte("plan_date", opts.toDate)
+    .order("plan_date", { ascending: true });
+  if (error) {
+    if (/sales_daily_focus_log|does not exist|relation/i.test(error.message)) return [];
+    throw new Error(error.message);
+  }
+  return (data ?? []).map((row) => ({
+    planDate: String(row.plan_date).slice(0, 10),
+    planComplete: Boolean(row.plan_complete),
+  }));
+}
+
+async function upsertDailyFocusLog(opts: {
+  clientId: string;
+  salespersonId: string;
+  planDate: string;
+  planComplete: boolean;
+  freezeIncomplete: boolean;
+}): Promise<void> {
+  const supabase = createAdminClient();
+  const now = new Date().toISOString();
+  let planComplete = opts.planComplete;
+  if (opts.freezeIncomplete && !planComplete) {
+    const { data: existing } = await supabase
+      .from("sales_daily_focus_log")
+      .select("plan_complete")
+      .eq("client_id", opts.clientId)
+      .eq("salesperson_id", opts.salespersonId)
+      .eq("plan_date", opts.planDate)
+      .maybeSingle();
+    if (existing?.plan_complete) planComplete = true;
+  }
+  const { error } = await supabase.from("sales_daily_focus_log").upsert(
+    {
+      client_id: opts.clientId,
+      salesperson_id: opts.salespersonId,
+      plan_date: opts.planDate,
+      plan_complete: planComplete,
+      completed_at: planComplete ? now : null,
+      updated_at: now,
+    },
+    { onConflict: "client_id,salesperson_id,plan_date" }
+  );
+  if (error && !/sales_daily_focus_log|does not exist|relation/i.test(error.message)) {
+    console.error("daily focus log upsert failed:", error.message);
+  }
 }
 
 async function loadActionStates(
@@ -351,15 +486,15 @@ export async function fetchDailySalesPlan(opts: {
 }): Promise<DailySalesPlanPayload> {
   const now = opts.now ?? new Date();
   const supabase = createAdminClient();
-  const agency = await getAgencySettings();
-  const timezone = resolveSalesTimezone(agency.default_timezone);
-  const planDate = planDateInTimezone(now, timezone);
-  const dayBounds = planDayBoundsUtc(planDate, timezone);
-
+  const timezone = await resolveClientSalesTimezone(opts.clientId);
   const settings = await fetchExecutionSettings({
     clientId: opts.clientId,
     salespersonId: opts.userId,
   });
+  const hours = resolveOperatingHours(settings);
+  const schedule = resolveWorkdayState(now, timezone, hours);
+  const planDate = schedule.planDate;
+  const dayBounds = planDayBoundsUtc(planDate, timezone);
 
   const periodKey = parseGoalPeriodKey(null);
   const bounds = goalPeriodBounds(periodKey);
@@ -374,6 +509,7 @@ export async function fetchDailySalesPlan(opts: {
     waRes,
     callsRes,
     actionStates,
+    focusLogs,
   ] = await Promise.all([
     supabase
       .from("leads")
@@ -395,7 +531,7 @@ export async function fetchDailySalesPlan(opts: {
       .limit(500),
     supabase
       .from("sales_goals")
-      .select("id, target_value, currency, period_start, period_end, status")
+      .select("id, target_value, currency, period_start, period_end, status, created_at")
       .eq("client_id", opts.clientId)
       .eq("salesperson_id", opts.userId)
       .eq("goal_type", "REVENUE_WON")
@@ -439,6 +575,12 @@ export async function fetchDailySalesPlan(opts: {
       .order("created_at", { ascending: false })
       .limit(1000),
     loadActionStates(opts.userId, planDate),
+    loadDailyFocusLogs({
+      clientId: opts.clientId,
+      salespersonId: opts.userId,
+      fromDate: lookbackStartDate(planDate),
+      toDate: planDate,
+    }),
   ]);
 
   if (leadsRes.error) throw new Error(leadsRes.error.message);
@@ -668,7 +810,13 @@ export async function fetchDailySalesPlan(opts: {
   );
 
   // Goal progress
-  const goal = goalRes.data as { target_value: number; currency: string; period_end: string } | null;
+  const goal = goalRes.data as {
+    target_value: number;
+    currency: string;
+    period_start: string;
+    period_end: string;
+    created_at?: string;
+  } | null;
   const wins = (winsRes.data ?? []) as Array<{ deal_value: number | null }>;
   const achieved = wins.reduce((s, w) => s + (Number(w.deal_value) || 0), 0);
   const target = goal ? Number(goal.target_value) : 0;
@@ -878,8 +1026,48 @@ export async function fetchDailySalesPlan(opts: {
   }
 
   const workingDaysLeft = goal
-    ? countWorkingDaysLeft(planDate, String(goal.period_end).slice(0, 10), DEFAULT_SALES_EXECUTION.workingDays)
+    ? countGoalWorkingDaysLeft({
+        schedule,
+        periodEndInclusive: String(goal.period_end).slice(0, 10),
+      })
     : null;
+  const dailyFocus = goal
+    ? buildDailyFocusStatus({
+        schedule,
+        logs: focusLogs,
+        todayComplete: planComplete,
+        trackingStartDate: trackingStartDate({
+          periodStart: String(goal.period_start).slice(0, 10),
+          goalCreatedAt: goal.created_at ?? null,
+          planDate,
+        }),
+      })
+    : null;
+  const dailyFocusPayload: DailyFocusStatusPayload | null = dailyFocus
+    ? {
+        yesterdayMissed: dailyFocus.yesterdayMissed,
+        yesterdayLabel: dailyFocus.yesterdayLabel,
+        missedStreak: dailyFocus.missedStreak,
+        headline: dailyFocus.headline,
+        supporting: dailyFocus.supporting,
+      }
+    : null;
+
+  void upsertDailyFocusLog({
+    clientId: opts.clientId,
+    salespersonId: opts.userId,
+    planDate,
+    planComplete,
+    freezeIncomplete: schedule.afterEnd || !schedule.isWorkingDay,
+  });
+
+  if (dailyFocusPayload?.headline) {
+    whatNeedsAttention.unshift({
+      id: "daily-focus",
+      text: dailyFocusPayload.headline,
+      href: "/sales/tasks",
+    });
+  }
 
   // Enrich display names on recommendations
   const decorate = (rec: SalesActionRecommendation): SalesActionRecommendation => rec;
@@ -888,6 +1076,7 @@ export async function fetchDailySalesPlan(opts: {
     generatedAt: now.toISOString(),
     planDate,
     timezone,
+    schedule: toSchedulePayload(schedule),
     focus,
     coverage,
     progress: {
@@ -906,6 +1095,8 @@ export async function fetchDailySalesPlan(opts: {
       remainingValue: remaining,
       currency: goal?.currency ?? null,
       workingDaysLeft,
+      daysLeftLabel: formatDaysLeftLabel(workingDaysLeft),
+      dailyFocus: dailyFocusPayload,
     },
     settingsConfigured: hasAnyCommitmentConfigured(settings),
     capabilities: {
@@ -922,9 +1113,12 @@ export async function reconcileLeadActionStates(opts: {
   leadId: string;
 }): Promise<void> {
   try {
-    const agency = await getAgencySettings();
-    const timezone = resolveSalesTimezone(agency.default_timezone);
-    const planDate = planDateInTimezone(new Date(), timezone);
+    const timezone = await resolveClientSalesTimezone(opts.clientId);
+    const planDate = resolveWorkdayState(
+      new Date(),
+      timezone,
+      resolveOperatingHours(null)
+    ).planDate;
     const states = await loadActionStates(opts.salespersonId, planDate);
     const relevant = states.filter((s) => s.sourceEntityId === opts.leadId && s.state === "active");
     if (relevant.length === 0) return;

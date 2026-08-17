@@ -118,10 +118,36 @@ export type DailySalesPlanProgress = {
   planComplete: boolean;
 };
 
+export type DailyPlanSchedule = {
+  timezone: string;
+  planDate: string;
+  weekdayLabel: string;
+  dateLabel: string;
+  isWorkingDay: boolean;
+  withinHours: boolean;
+  beforeStart: boolean;
+  afterEnd: boolean;
+  workStartLabel: string;
+  workEndLabel: string;
+  workingDaysLabel: string;
+  minutesLeftInWorkday: number | null;
+  hoursLeftLabel: string | null;
+  summary: string;
+};
+
+export type DailyFocusStatusPayload = {
+  yesterdayMissed: boolean;
+  yesterdayLabel: string | null;
+  missedStreak: number;
+  headline: string | null;
+  supporting: string | null;
+};
+
 export type DailySalesPlanPayload = {
   generatedAt: string;
   planDate: string;
   timezone: string;
+  schedule: DailyPlanSchedule;
   focus: FocusModeResult;
   coverage: PipelineCoverageResult;
   progress: DailySalesPlanProgress;
@@ -139,6 +165,8 @@ export type DailySalesPlanPayload = {
     remainingValue: number | null;
     currency: string | null;
     workingDaysLeft: number | null;
+    daysLeftLabel: string | null;
+    dailyFocus: DailyFocusStatusPayload | null;
   };
   settingsConfigured: boolean;
   capabilities: {
@@ -221,6 +249,10 @@ export type SalesExecutionSettingsRow = {
   stageInactivityHours: Record<string, number> | null;
   quoteFollowupHours: number | null;
   priorityWeights: Partial<PriorityWeights> | null;
+  /** Null inherits company baseline / default Mon–Fri. */
+  workingDays: number[] | null;
+  workStartTime: string | null;
+  workEndTime: string | null;
 };
 
 export type ActionStateRow = {

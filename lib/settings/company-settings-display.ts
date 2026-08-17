@@ -1,3 +1,4 @@
+import { formatClockLabel, formatWorkingDaysLabel } from "@/lib/sales/intelligence/operating-hours";
 import { ASSIGNMENT_MODE_LABELS, COMPANY_TIMEZONES } from "./company-settings-config";
 import type { CompanyAccountSummary, CompanySettingsProfile, CompanySettingsQuote } from "./company-settings-types";
 import { formatDate } from "@/lib/billing/format";
@@ -80,4 +81,12 @@ export function companyInformationRows(
 export function confirmDiscardUnsaved(): boolean {
   if (typeof window === "undefined") return true;
   return window.confirm("You have unsaved changes. Discard them?");
+}
+
+export function operatingHoursLabel(hours: {
+  workingDays: number[];
+  workStartTime: string;
+  workEndTime: string;
+}): string {
+  return `${formatWorkingDaysLabel(hours.workingDays)} · ${formatClockLabel(hours.workStartTime)}–${formatClockLabel(hours.workEndTime)}`;
 }
