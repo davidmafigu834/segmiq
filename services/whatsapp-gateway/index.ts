@@ -16,6 +16,14 @@ import makeWASocket, {
   type WAMessage,
   type WASocket,
 } from "@whiskeysockets/baileys";
+import {
+  digitsFromJid,
+  isLiveUpsertType,
+  isSelfWhatsAppChat,
+  messageTimestampMs,
+  phoneFromWhatsAppKey,
+  unwrapWhatsAppContent,
+} from "../../lib/whatsapp/gateway-message";
 // The shared signing module lives in the CommonJS half of the repository, so
 // Node cannot statically see its named exports from this ES module. Requiring
 // it keeps the gateway on exactly the implementation the web app verifies
@@ -51,6 +59,7 @@ type ManagedSession = {
   allowQr: boolean;
   sentByGateway: Set<string>;
   recentManualSendTimestamps: number[];
+  recentMessages: Map<string, WAMessage["message"]>;
 };
 
 const sessions = new Map<string, ManagedSession>();
@@ -184,8 +193,16 @@ function authenticationState(auth: StoredAuth, persist: () => Promise<void>): Au
   return { creds: auth.creds, keys: keyStore };
 }
 
+function rememberMessage(session: ManagedSession, id: string | null | undefined, content: WAMessage["message"]): void {
+  if (!id || !content) return;
+  session.recentMessages.set(id, content);
+  if (session.recentMessages.size <= 300) return;
+  const oldest = session.recentMessages.keys().next().value;
+  if (oldest) session.recentMessages.delete(oldest);
+}
+
 function messageText(message: WAMessage): { body: string; type: string; media: WAMessage["message"] } {
-  const content = message.message;
+  const content = unwrapWhatsAppContent(message.message as Record<string, unknown> | null) as WAMessage["message"];
   if (!content) return { body: "", type: "text", media: content };
   if (content.conversation) return { body: content.conversation, type: "text", media: content };
   if (content.extendedTextMessage?.text) return { body: content.extendedTextMessage.text, type: "text", media: content };
@@ -207,7 +224,12 @@ function isAllowedChat(jid: string): boolean {
 }
 
 function phoneFromJid(jid: string): string {
-  return jid.split("@")[0]?.split(":")[0]?.replace(/\D/g, "") ?? "";
+  return digitsFromJid(jid);
+}
+
+function ownJids(session: ManagedSession): Array<string | null | undefined> {
+  const user = session.socket.user as { id?: string; lid?: string } | undefined;
+  return [user?.id, user?.lid];
 }
 
 function maySendManualMessage(session: ManagedSession): boolean {
@@ -220,14 +242,19 @@ function maySendManualMessage(session: ManagedSession): boolean {
   return true;
 }
 
-async function normalizedMessage(session: ManagedSession, message: WAMessage): Promise<void> {
+async function normalizedMessage(session: ManagedSession, message: WAMessage, opts?: { allowMissingTimestamp?: boolean }): Promise<void> {
   const remoteChatId = message.key.remoteJid ?? "";
   const providerMessageId = message.key.id ?? "";
   if (!providerMessageId || !isAllowedChat(remoteChatId)) return;
+  if (isSelfWhatsAppChat(remoteChatId, ownJids(session))) return;
   if (session.sentByGateway.delete(providerMessageId)) return;
-  const timestamp = Number(message.messageTimestamp ?? 0) * 1000;
+  rememberMessage(session, providerMessageId, message.message);
+  const timestamp = messageTimestampMs(message.messageTimestamp) || (opts?.allowMissingTimestamp ? Date.now() : 0);
   if (!timestamp || timestamp < session.acceptAfter) return;
   const extracted = messageText(message);
+  const from = phoneFromWhatsAppKey(message.key);
+  if (!from) return;
+  if (extracted.type === "text" && !extracted.body.trim()) return;
   const direction = message.key.fromMe ? "outbound" : "inbound";
   let media: Record<string, unknown> | null = null;
   if (["image", "audio", "video", "document", "sticker"].includes(extracted.type)) {
@@ -236,7 +263,7 @@ async function normalizedMessage(session: ManagedSession, message: WAMessage): P
         logger,
         reuploadRequest: session.socket.updateMediaMessage,
       });
-      const content = message.message;
+      const content = extracted.media;
       const node = content?.imageMessage ?? content?.audioMessage ?? content?.videoMessage ?? content?.documentMessage ?? content?.stickerMessage;
       media = {
         mimeType: node?.mimetype ?? "application/octet-stream",
@@ -253,7 +280,7 @@ async function normalizedMessage(session: ManagedSession, message: WAMessage): P
     message: {
       providerMessageId,
       remoteChatId,
-      from: phoneFromJid(remoteChatId),
+      from,
       timestamp: new Date(timestamp).toISOString(),
       messageType: extracted.type,
       body: extracted.body,
@@ -288,6 +315,7 @@ async function startConnection(
   const auth = parseAuth(stored.serializedSession);
   const placeholder = { connectionId, clientId: stored.clientId, auth } as ManagedSession;
   const state = authenticationState(auth, () => persistAuth(placeholder));
+  const recentMessages = new Map<string, WAMessage["message"]>();
   const socket = makeWASocket({
     auth: {
       creds: state.creds,
@@ -300,6 +328,7 @@ async function startConnection(
     markOnlineOnConnect: false,
     shouldSyncHistoryMessage: () => false,
     generateHighQualityLinkPreview: false,
+    getMessage: async (key) => recentMessages.get(key.id ?? "") ?? undefined,
   });
   const session: ManagedSession = Object.assign(placeholder, {
     socket,
@@ -312,6 +341,7 @@ async function startConnection(
     allowQr,
     sentByGateway: new Set<string>(),
     recentManualSendTimestamps: [],
+    recentMessages,
   });
   sessions.set(connectionId, session);
 
@@ -320,7 +350,7 @@ async function startConnection(
     await persistAuth(session).catch((error) => console.error("[whatsapp-gateway] auth persist failed", error));
   });
   socket.ev.on("messages.upsert", async ({ messages, type }) => {
-    if (type !== "notify") return;
+    if (!isLiveUpsertType(type)) return;
     for (const message of messages) {
       await normalizedMessage(session, message).catch((error) =>
         console.error("[whatsapp-gateway] message ingest failed", error instanceof Error ? error.message : "unknown")
@@ -330,6 +360,16 @@ async function startConnection(
   socket.ev.on("messages.update", async (updates) => {
     for (const update of updates) {
       const id = update.key.id;
+      if (update.update.message) {
+        rememberMessage(session, id, update.update.message);
+        await normalizedMessage(session, {
+          key: update.key,
+          message: update.update.message,
+          messageTimestamp: Date.now() / 1000,
+        } as WAMessage, { allowMissingTimestamp: true }).catch((error) =>
+          console.error("[whatsapp-gateway] message update ingest failed", error instanceof Error ? error.message : "unknown")
+        );
+      }
       const raw = Number(update.update.status ?? 0);
       const status = raw >= 4 ? "read" : raw >= 3 ? "delivered" : raw >= 2 ? "sent" : null;
       if (id && status) await emit(connectionId, { type: "RECEIPT", providerMessageId: id, status }).catch(() => {});

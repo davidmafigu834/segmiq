@@ -49,7 +49,7 @@ A QR code is only ever published for an admin-initiated connect or reconnect. If
 - Lifecycle is disconnected → initializing → awaiting QR → connecting → connected. Bounded exponential reconnects end in `RECONNECT_REQUIRED`.
 - QR challenges expire after 60 seconds and are encrypted at rest.
 - Auth state persists after credential/key updates through the encrypted internal session API; the development multi-file helper is not used.
-- Only new `messages.upsert` notifications are ingested. Historical sync is disabled.
+- Live `messages.upsert` `notify` and `append` events are ingested. Historical `prepend` sync is disabled.
 - R2 accepts supported inbound media up to 20 MB. Groups, status, newsletters, broadcasts, system chats, unsupported media, and oversized media are excluded.
 - The gateway rate-limits manual sends per connected business number (30/minute by default) and does not queue failed sends for a later surprise retry.
 - Every open session sends a heartbeat each minute, so `last_seen_at` reflects transport liveness rather than customer activity. A quiet business number stays fresh; a dead socket goes stale.
