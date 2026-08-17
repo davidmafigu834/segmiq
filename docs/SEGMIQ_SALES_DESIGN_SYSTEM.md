@@ -13,7 +13,7 @@ Dev showcase: `/dev/sales-design-system` (development only).
 
 ## 1. Philosophy
 
-Premium, calm, precise, operational. Lime is an accent — never a page wash.
+Premium, calm, precise, operational. Lime is an accent — never a page wash. Light mode uses an olive-stone canvas (`#EEEFE8`) with white cards and `#F3F4EE` sidebar chrome so surfaces layer instead of reading as one white sheet.
 
 1. Information before decoration  
 2. Red only for genuine attention / danger  
@@ -29,17 +29,18 @@ CSS scopes: `.sales-dashboard-premium`, `.pipeline-drawer-light`, `.sales-modal-
 |-------|-------|------|
 | `--sales-brand` | `#D4FF4F` | Primary CTA / active |
 | `--sales-brand-hover` | `#C6F23F` | Hover |
-| `--sales-brand-soft` | `rgba(212,255,79,0.14)` | Soft tint |
-| `--sales-brand-soft-solid` | `#F3FCE3` | Selected surfaces |
+| `--sales-brand-soft` | `rgba(212,255,79,0.22)` | Soft tint |
+| `--sales-brand-soft-solid` | `#EEF4D8` | Selected surfaces |
 | `--sales-brand-border` | `rgba(160,205,40,0.4)` | Selected border |
-| `--sales-bg` | `#F7F8FA` | Page canvas |
+| `--sales-bg` | `#EEEFE8` | Page canvas (olive-stone) |
 | `--sales-surface` | `#FFFFFF` | Cards |
-| `--sales-surface-subtle` | `#FAFBFD` | Subtle panels |
-| `--sales-border` | `#E4E7EC` | Default border |
-| `--sales-border-strong` | `#D0D5DD` | Input / strong |
-| `--sales-text-primary` | `#101828` | Body / titles |
-| `--sales-text-secondary` | `#667085` | Secondary |
-| `--sales-text-muted` | `#98A2B3` | Meta |
+| `--sales-surface-subtle` | `#F6F7F1` | Subtle panels |
+| `--sales-sidebar-bg` | `#F3F4EE` | Sidebar / top chrome |
+| `--sales-border` | `#D5D7CC` | Default border |
+| `--sales-border-strong` | `#C4C7BB` | Input / strong |
+| `--sales-text-primary` | `#14180F` | Body / titles |
+| `--sales-text-secondary` | `#5C6156` | Secondary |
+| `--sales-text-muted` | `#8A8F84` | Meta |
 | `--sales-success` | `#16A34A` | Won / success |
 | `--sales-warning` | `#F59E0B` | Warning |
 | `--sales-danger` | `#EF4444` | Danger / overdue |
@@ -196,18 +197,18 @@ Icon buttons require `aria-label`. Prefer 44px touch targets on mobile primary a
 
 ## 11. Sales Sidebar
 
-Definitive salesperson navigation (white / minimal). Source: `components/sales/navigation/SalesSidebar.tsx` + `lib/sales/navigation/sales-nav-config.ts`.
+Definitive salesperson navigation (olive-stone chrome, not white). Source: `components/sales/navigation/SalesSidebar.tsx` + `lib/sales/navigation/sales-nav-config.ts`.
 
 | Spec | Value |
 |------|-------|
 | Expanded width | **228px** |
 | Collapsed width | **68px** |
-| Background | `#FFFFFF` (`--sales-sidebar-bg`) |
-| Right border | `1px solid #E4E7EC` |
-| Section labels | `SALES` / `TOOLS` — 10px, uppercase, tracking 0.08em, `#98A2B3` |
+| Background | `#F3F4EE` (`--sales-sidebar-bg`) |
+| Right border | `1px solid #D5D7CC` |
+| Section labels | `SALES` / `TOOLS` — 10px, uppercase, tracking 0.08em, `#8A8F84` |
 | Nav row height | **40px**, radius **8px** |
-| Default text | 13px / 500 / `#475467` |
-| Active | Soft lime gradient (`--sales-sidebar-active-gradient`), text `#101828` / 600, icon `#4E6400` |
+| Default text | 13px / 500 / `#5C6156` |
+| Active | Soft lime gradient (`--sales-sidebar-active-gradient`), text `#14180F` / 600, icon `#4E6400` |
 | Badges | Soft lime (`rgba(212,255,79,.30)`), text `#4E6500` — live counts only |
 | Logo | Real wordmark (`/segmiq-wordmark-black.png`); collapsed uses `/brand/segmiq-q.png` |
 | Profile | **Not** in sidebar — top-bar `SalesProfileMenu` (avatar, name, role) |
@@ -437,7 +438,7 @@ See also [SEGMIQ_LEAD_TO_DEAL_ARCHITECTURE.md](./SEGMIQ_LEAD_TO_DEAL_ARCHITECTUR
 
 ### Tokens
 
-Page `#F7F8FA` / `#0B0D0C` · Surface `#FFFFFF` / `#111411` · Text `#101828` / `#F7F8F5` · Secondary `#667085` / `#B1B7AE` · Border `#E4E7EC` / `#272C27` · Lime `#D4FF4F`.
+Page `#EEEFE8` / `#0B0D0C` · Surface `#FFFFFF` / `#111411` · Text `#14180F` / `#F7F8F5` · Secondary `#5C6156` / `#B1B7AE` · Border `#D5D7CC` / `#272C27` · Lime `#D4FF4F`.
 
 ### Copy
 
@@ -573,8 +574,8 @@ Do not auto-select a Deal on load. No panel → table uses full content width.
 
 | Element | Spec |
 |---------|------|
-| Page | `#F7F8FA` / dark `#0B0D0C` |
-| Cards | White / `#111411`, 1px `#E4E7EC` / `#272C27`, radius 12–14px, near-flat shadow |
+| Page | `#EEEFE8` / dark `#0B0D0C` |
+| Cards | White / `#111411`, 1px `#D5D7CC` / `#272C27`, radius 12–14px, near-flat shadow |
 | Active Pipeline nav | Soft lime wash, not a solid lime pill |
 | Tabs | Underline lime + muted count, not pills |
 | Toolbar | Search · Filters · Group by · Sort **inside** the table card, below tabs |
@@ -615,8 +616,8 @@ Do not auto-select a member on load. No panel → table and analytics use full c
 
 | Element | Spec |
 |---------|------|
-| Page | `#F7F8FA` / dark `#0B0D0C` |
-| Cards | White / `#111411`, 1px `#E4E7EC` / `#272C27`, radius 12–14px, near-flat shadow |
+| Page | `#EEEFE8` / dark `#0B0D0C` |
+| Cards | White / `#111411`, 1px `#D5D7CC` / `#272C27`, radius 12–14px, near-flat shadow |
 | Active Team nav | Soft lime wash, not a solid lime pill |
 | Tabs | Underline lime, not segmented pills |
 | Selected row | `rgba(212,255,79,.16)` light · `.08` dark |

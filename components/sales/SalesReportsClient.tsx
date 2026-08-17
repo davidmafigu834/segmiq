@@ -200,7 +200,7 @@ export function SalesReportsClient() {
       </div>
 
       {data?.insight ? (
-        <aside className="flex items-start gap-2.5 rounded-sales-lg border border-sales-brand-border bg-[var(--sales-brand-soft-solid,#F3FCE3)] px-3.5 py-2.5 text-[13px] leading-snug text-sales-text-primary">
+        <aside className="flex items-start gap-2.5 rounded-sales-lg border border-sales-brand-border bg-[var(--sales-brand-soft-solid,#EEF4D8)] px-3.5 py-2.5 text-[13px] leading-snug text-sales-text-primary">
           <Lightbulb size={16} strokeWidth={1.8} className="mt-0.5 shrink-0 text-sales-brand-fg" aria-hidden />
           <p>{data.insight}</p>
         </aside>
@@ -348,7 +348,7 @@ function OverviewTab({
               : null
           }
           icon={CircleCheck}
-          iconTint="bg-[var(--sales-brand-soft-solid,#F3FCE3)] text-sales-brand-fg"
+          iconTint="bg-[var(--sales-brand-soft-solid,#EEF4D8)] text-sales-brand-fg"
         />
       </div>
 

@@ -851,7 +851,7 @@ export function SalesTasksClient() {
             </Card>
 
             {!tipDismissed ? (
-              <aside className="rounded-sales-xl border border-sales-brand-border bg-[var(--sales-brand-soft-solid,#F3FCE3)] p-4">
+              <aside className="rounded-sales-xl border border-sales-brand-border bg-[var(--sales-brand-soft-solid,#EEF4D8)] p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2">
                     <Lightbulb

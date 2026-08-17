@@ -484,7 +484,7 @@ export function ChatThread({
     return (
       <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6">
         <div className="wa-empty-hint max-w-sm text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-[#E4E7EC] bg-[#F7F8FA] text-[#25D366]">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-sales-border bg-sales-bg text-[#25D366]">
             <SiWhatsapp size={24} aria-hidden />
           </div>
           <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-[#101828]">

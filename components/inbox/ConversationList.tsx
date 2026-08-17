@@ -396,7 +396,7 @@ export function ConversationList({
       >
         {filtered.length === 0 ? (
           <div className="flex min-h-[260px] flex-col items-center justify-center px-8 py-10 text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-[#E4E7EC] bg-[#F7F8FA] text-[#25D366]">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-sales-border bg-sales-bg text-[#25D366]">
               <SiWhatsapp size={22} aria-hidden />
             </div>
             <p className="text-[14px] font-semibold text-[#101828]">{emptyTitle}</p>

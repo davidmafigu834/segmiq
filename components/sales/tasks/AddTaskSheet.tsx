@@ -136,7 +136,7 @@ export function AddTaskSheet({
                     type="button"
                     onClick={() => setLeadId(l.id)}
                     className={`flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-[13px] hover:bg-sales-surface-hover ${
-                      leadId === l.id ? "bg-[var(--sales-brand-soft-solid,#F3FCE3)]" : ""
+                      leadId === l.id ? "bg-[var(--sales-brand-soft-solid,#EEF4D8)]" : ""
                     }`}
                   >
                     <span className="min-w-0">

@@ -116,7 +116,7 @@ export function MenuSelect<T extends string>({
                 className={cn(
                   "flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-[13px] transition-colors",
                   active
-                    ? "bg-[var(--sales-brand-soft-solid,#F3FCE3)] font-semibold text-sales-text-primary"
+                    ? "bg-[var(--sales-brand-soft-solid,#EEF4D8)] font-semibold text-sales-text-primary"
                     : "font-medium text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
                 )}
               >

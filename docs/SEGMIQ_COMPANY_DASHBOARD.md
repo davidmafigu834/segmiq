@@ -126,7 +126,7 @@ Tenant filter: every query uses `client_id = clientId`.
 
 ## Design
 
-Uses SegmiQ 2.0 sales tokens via `.sales-dashboard-premium` (light `#F7F8FA` / dark `#0B0D0C` page hierarchy). Company shell remains `ClientManagerLayout` / `AppShell` with company-oriented nav labels.
+Uses SegmiQ 2.0 sales tokens via `.sales-dashboard-premium` (light `#EEEFE8` / dark `#0B0D0C` page hierarchy). Company shell remains `ClientManagerLayout` / `AppShell` with company-oriented nav labels.
 
 ## Loading skeletons
 

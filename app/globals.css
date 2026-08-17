@@ -152,13 +152,13 @@ body {
   --activity-nq: #555555;
 }
 
-/* ?? Sales workspace light mode preview (scoped to /sales and /solo routes) ?? */
+/* CRM / dashboard light mode — warm olive-stone (canvas behind white cards) */
 html[data-crm-theme="light"],
 html:has(.crm-theme-light),
 html[data-crm-theme="light"] body,
 html:has(.crm-theme-light) body {
-  background-color: #f7f7f4;
-  color: #141414;
+  background-color: #eeefe8;
+  color: #14180f;
   color-scheme: light;
 }
 
@@ -166,49 +166,49 @@ html[data-crm-theme="light"]::-webkit-scrollbar-thumb,
 html:has(.crm-theme-light)::-webkit-scrollbar-thumb,
 html[data-crm-theme="light"] body::-webkit-scrollbar-thumb,
 html:has(.crm-theme-light) body::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(28, 32, 20, 0.18);
 }
 
 html[data-crm-theme="light"]::-webkit-scrollbar-thumb:hover,
 html:has(.crm-theme-light)::-webkit-scrollbar-thumb:hover,
 html[data-crm-theme="light"] body::-webkit-scrollbar-thumb:hover,
 html:has(.crm-theme-light) body::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(28, 32, 20, 0.28);
 }
 
 html[data-crm-theme="light"],
 .crm-theme-light {
-  --bg-primary: #f7f7f4;
+  --bg-primary: #eeefe8;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #efefeb;
-  --bg-quaternary: #e4e4df;
+  --bg-tertiary: #f3f4ee;
+  --bg-quaternary: #e4e6dc;
 
-  --surface-sidebar: #ffffff;
-  --surface-sidebar-elevated: #f5f5f2;
-  --surface-sidebar-border: rgba(0, 0, 0, 0.08);
-  --surface-canvas: #f7f7f4;
+  --surface-sidebar: #f3f4ee;
+  --surface-sidebar-elevated: #eeefe8;
+  --surface-sidebar-border: rgba(28, 32, 20, 0.1);
+  --surface-canvas: #eeefe8;
   --surface-card: #ffffff;
-  --surface-card-alt: #f5f5f2;
-  --surface-overlay: rgba(0, 0, 0, 0.45);
+  --surface-card-alt: #f6f7f1;
+  --surface-overlay: rgba(28, 32, 20, 0.45);
   --surface-input: #ffffff;
   --surface-modal: #ffffff;
   --surface-dropdown: #ffffff;
   --bg-card: var(--surface-card);
 
-  --text-primary: #141414;
-  --text-secondary: #525252;
-  --text-tertiary: #737373;
-  --text-disabled: #a3a3a3;
+  --text-primary: #14180f;
+  --text-secondary: #5c6156;
+  --text-tertiary: #8a8f84;
+  --text-disabled: #a8ada2;
   --text-inverse: #ffffff;
-  --text-on-dark: #141414;
-  --text-on-dark-dim: #666666;
+  --text-on-dark: #14180f;
+  --text-on-dark-dim: #5c6156;
 
-  --accent: #84cc16;
-  --accent-hover: #65a30d;
-  --accent-ink: #141414;
-  --accent-foreground: #141414;
+  --accent: #d4ff4f;
+  --accent-hover: #c6f23f;
+  --accent-ink: #14180f;
+  --accent-foreground: #14180f;
   --accent-fg: #4d7c0f;
-  --accent-muted: rgba(77, 124, 15, 0.08);
+  --accent-muted: #eef4d8;
   --accent-border: rgba(77, 124, 15, 0.22);
   --shadow-accent-glow: 0 4px 16px rgba(101, 163, 13, 0.2);
   --channel-whatsapp: #128c7e;
@@ -237,24 +237,24 @@ html[data-crm-theme="light"],
   --info-muted: rgba(37, 99, 235, 0.08);
   --info-border: rgba(37, 99, 235, 0.18);
 
-  --border: rgba(0, 0, 0, 0.08);
-  --border-hover: rgba(0, 0, 0, 0.14);
-  --border-focus: rgba(0, 0, 0, 0.28);
-  --border-strong: rgba(0, 0, 0, 0.16);
-  --border-dark: rgba(0, 0, 0, 0.12);
+  --border: rgba(28, 32, 20, 0.1);
+  --border-hover: rgba(28, 32, 20, 0.16);
+  --border-focus: rgba(28, 32, 20, 0.28);
+  --border-strong: rgba(28, 32, 20, 0.18);
+  --border-dark: rgba(28, 32, 20, 0.14);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.1);
-  --shadow-modal: 0 16px 64px rgba(0, 0, 0, 0.14);
+  --shadow-sm: 0 1px 2px rgba(28, 32, 20, 0.05);
+  --shadow-md: 0 8px 24px rgba(28, 32, 20, 0.08);
+  --shadow-lg: 0 16px 48px rgba(28, 32, 20, 0.1);
+  --shadow-modal: 0 16px 64px rgba(28, 32, 20, 0.14);
 
-  --sidebar-bg: #ffffff;
-  --sidebar-border: rgba(0, 0, 0, 0.08);
-  --topbar-bg: rgba(255, 255, 255, 0.92);
-  --topbar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-bg: #f3f4ee;
+  --sidebar-border: rgba(28, 32, 20, 0.1);
+  --topbar-bg: rgba(243, 244, 238, 0.92);
+  --topbar-border: rgba(28, 32, 20, 0.1);
 
-  --background: #f7f7f4;
-  --foreground: #141414;
+  --background: #eeefe8;
+  --foreground: #14180f;
 
   --status-new-bg: rgba(37, 99, 235, 0.1);
   --status-new-fg: #2563eb;
@@ -264,8 +264,8 @@ html[data-crm-theme="light"],
   --status-followup-fg: #b45309;
   --status-won-bg: rgba(77, 124, 15, 0.1);
   --status-won-fg: #4d7c0f;
-  --status-lost-bg: rgba(0, 0, 0, 0.05);
-  --status-lost-fg: #737373;
+  --status-lost-bg: rgba(28, 32, 20, 0.05);
+  --status-lost-fg: #8a8f84;
   --status-flagged-bg: rgba(220, 38, 38, 0.08);
   --status-flagged-fg: #dc2626;
   --status-negotiating-bg: rgba(217, 119, 6, 0.08);
@@ -273,20 +273,20 @@ html[data-crm-theme="light"],
   --status-proposal-bg: rgba(124, 58, 237, 0.1);
   --status-proposal-fg: #7c3aed;
 
-  --ag-bg: #f7f7f4;
+  --ag-bg: #eeefe8;
   --ag-surface: #ffffff;
-  --ag-surface-2: #f5f5f2;
-  --ag-surface-3: #efefeb;
-  --ag-border: rgba(0, 0, 0, 0.08);
-  --ag-border-hover: rgba(0, 0, 0, 0.14);
-  --ag-border-strong: rgba(0, 0, 0, 0.16);
-  --ag-text-primary: #141414;
-  --ag-text-secondary: #525252;
-  --ag-text-tertiary: #737373;
-  --ag-text-muted: #a3a3a3;
-  --ag-lime: #84cc16;
-  --ag-lime-fg: #141414;
-  --ag-lime-muted: rgba(77, 124, 15, 0.08);
+  --ag-surface-2: #f6f7f1;
+  --ag-surface-3: #f3f4ee;
+  --ag-border: rgba(28, 32, 20, 0.1);
+  --ag-border-hover: rgba(28, 32, 20, 0.16);
+  --ag-border-strong: rgba(28, 32, 20, 0.18);
+  --ag-text-primary: #14180f;
+  --ag-text-secondary: #5c6156;
+  --ag-text-tertiary: #8a8f84;
+  --ag-text-muted: #a8ada2;
+  --ag-lime: #d4ff4f;
+  --ag-lime-fg: #14180f;
+  --ag-lime-muted: #eef4d8;
   --ag-lime-border: rgba(77, 124, 15, 0.22);
   --ag-success: #15803d;
   --ag-success-muted: rgba(22, 163, 74, 0.08);
@@ -299,17 +299,17 @@ html[data-crm-theme="light"],
 }
 
 html[data-crm-theme="light"][data-crm] {
-  --border: rgba(0, 0, 0, 0.08);
-  --border-hover: rgba(0, 0, 0, 0.14);
-  --border-focus: rgba(0, 0, 0, 0.28);
-  --border-strong: rgba(0, 0, 0, 0.16);
-  --border-dark: rgba(0, 0, 0, 0.12);
-  --surface-sidebar-border: rgba(0, 0, 0, 0.08);
-  --sidebar-border: rgba(0, 0, 0, 0.08);
-  --topbar-border: rgba(0, 0, 0, 0.08);
-  --ag-border: rgba(0, 0, 0, 0.08);
-  --ag-border-hover: rgba(0, 0, 0, 0.14);
-  --ag-border-strong: rgba(0, 0, 0, 0.16);
+  --border: rgba(28, 32, 20, 0.1);
+  --border-hover: rgba(28, 32, 20, 0.16);
+  --border-focus: rgba(28, 32, 20, 0.28);
+  --border-strong: rgba(28, 32, 20, 0.18);
+  --border-dark: rgba(28, 32, 20, 0.14);
+  --surface-sidebar-border: rgba(28, 32, 20, 0.1);
+  --sidebar-border: rgba(28, 32, 20, 0.1);
+  --topbar-border: rgba(28, 32, 20, 0.1);
+  --ag-border: rgba(28, 32, 20, 0.1);
+  --ag-border-hover: rgba(28, 32, 20, 0.16);
+  --ag-border-strong: rgba(28, 32, 20, 0.18);
 }
 
 html[data-crm-theme="light"] ::selection,
@@ -537,16 +537,16 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .wa-hub-shell {
     --wa-accent: #d4ff4f;
     --wa-accent-strong: #4d7c0f;
-    --wa-accent-soft: #f4fce8;
-    --wa-ink: #101828;
-    --wa-muted: #667085;
-    --wa-border: #e4e7ec;
+    --wa-accent-soft: #eef4d8;
+    --wa-ink: #14180f;
+    --wa-muted: #5c6156;
+    --wa-border: #d5d7cc;
     --wa-surface: #ffffff;
-    --wa-surface-subtle: #f7f8fa;
+    --wa-surface-subtle: #eeefe8;
     --wa-whatsapp: #25d366;
     gap: 0;
     padding: 0;
-    background: #f7f8fa;
+    background: #eeefe8;
   }
 
   .wa-panel {
@@ -563,7 +563,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .wa-chat-wallpaper {
-    background-color: #fafbfc;
+    background-color: #f6f7f1;
     background-image: none;
   }
 
@@ -927,11 +927,11 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   html[data-crm-theme="light"] .wa-hub-immersive {
-    background: #f7f8fa;
+    background: #eeefe8;
   }
 
   .sales-dashboard-premium .wa-hub-immersive {
-    background: #f7f8fa;
+    background: var(--sales-bg);
   }
 
   /* Draggable inbox panel splitters (desktop WhatsApp hub) */
@@ -1592,15 +1592,15 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .wa-action-chip:hover {
-    background: var(--sales-surface-hover, #f9fafb);
-    border-color: var(--sales-border-strong, #d0d5dd);
-    color: var(--sales-text-primary, #101828);
+    background: var(--sales-surface-hover, #e8eae3);
+    border-color: var(--sales-border-strong, #c4c7bb);
+    color: var(--sales-text-primary, #14180f);
   }
 
   .wa-action-chip-active {
     border-color: var(--sales-brand-border, rgba(150, 190, 40, 0.55));
-    background: var(--sales-brand-soft, #f4fce8);
-    color: var(--sales-text-primary, #101828);
+    background: var(--sales-brand-soft, #eef4d8);
+    color: var(--sales-text-primary, #14180f);
   }
 
   .wa-session-banner {
@@ -3261,56 +3261,56 @@ label[for="photo-input"] {
 .pipeline-drawer-light,
 .sales-modal-premium,
 .calendar-modal-premium {
-  /* Surfaces */
-  --sales-bg: #fdfdfe;
+  /* Surfaces — olive-stone canvas, white cards */
+  --sales-bg: #eeefe8;
   --sales-surface: #ffffff;
-  --sales-surface-subtle: #fafbfd;
-  --sales-surface-hover: #f9fafb;
-  --sales-surface-active: #f3f7e8;
+  --sales-surface-subtle: #f6f7f1;
+  --sales-surface-hover: #e8eae3;
+  --sales-surface-active: #eef4d8;
 
-  /* Neutral scale (boards) */
-  --sales-neutral-900: #101828;
-  --sales-neutral-700: #344054;
-  --sales-neutral-500: #667085;
-  --sales-neutral-400: #98a2b3;
-  --sales-neutral-300: #d0d5dd;
-  --sales-neutral-200: #eaecf0;
-  --sales-neutral-100: #f2f4f7;
-  --sales-neutral-50: #fdfdfe;
+  /* Neutral scale */
+  --sales-neutral-900: #14180f;
+  --sales-neutral-700: #3d4238;
+  --sales-neutral-500: #5c6156;
+  --sales-neutral-400: #8a8f84;
+  --sales-neutral-300: #c4c7bb;
+  --sales-neutral-200: #d5d7cc;
+  --sales-neutral-100: #f3f4ee;
+  --sales-neutral-50: #eeefe8;
   --sales-neutral-0: #ffffff;
 
   /* Text */
-  --sales-text-primary: #101828;
-  --sales-text-secondary: #667085;
-  --sales-text-muted: #98a2b3;
-  --sales-text-disabled: #b2b8c3;
-  --sales-text-label: #344054;
+  --sales-text-primary: #14180f;
+  --sales-text-secondary: #5c6156;
+  --sales-text-muted: #8a8f84;
+  --sales-text-disabled: #a8ada2;
+  --sales-text-label: #3d4238;
 
   /* Borders */
-  --sales-border: #e4e7ec;
-  --sales-border-subtle: #eaecf0;
-  --sales-border-strong: #d0d5dd;
+  --sales-border: #d5d7cc;
+  --sales-border-subtle: #e2e3db;
+  --sales-border-strong: #c4c7bb;
 
-  /* Brand (lime accent ? not page background) */
+  /* Brand (lime accent — not page background) */
   --sales-brand: #d4ff4f;
   --sales-brand-hover: #c6f23f;
-  --sales-brand-soft: rgba(212, 255, 79, 0.14);
-  --sales-brand-soft-solid: #f3fce3;
+  --sales-brand-soft: rgba(212, 255, 79, 0.22);
+  --sales-brand-soft-solid: #eef4d8;
   --sales-brand-border: rgba(160, 205, 40, 0.4);
-  --sales-brand-text: #101828;
+  --sales-brand-text: #14180f;
   --sales-brand-fg: #4d7c0f;
 
-  /* Sales sidebar (definitive white / minimal) */
-  --sales-sidebar-bg: #ffffff;
-  --sales-sidebar-border: #e4e7ec;
-  --sales-sidebar-divider: #eaecf0;
-  --sales-sidebar-text: #475467;
-  --sales-sidebar-text-hover: #101828;
-  --sales-sidebar-text-active: #101828;
-  --sales-sidebar-muted: #98a2b3;
-  --sales-sidebar-icon: #667085;
+  /* Sales sidebar — chrome, not white */
+  --sales-sidebar-bg: #f3f4ee;
+  --sales-sidebar-border: #d5d7cc;
+  --sales-sidebar-divider: #e2e3db;
+  --sales-sidebar-text: #5c6156;
+  --sales-sidebar-text-hover: #14180f;
+  --sales-sidebar-text-active: #14180f;
+  --sales-sidebar-muted: #8a8f84;
+  --sales-sidebar-icon: #5c6156;
   --sales-sidebar-icon-active: #4e6400;
-  --sales-sidebar-hover: #f8fafc;
+  --sales-sidebar-hover: #e8eae3;
   --sales-sidebar-active: rgba(212, 255, 79, 0.18);
   --sales-sidebar-active-gradient: linear-gradient(
     90deg,
@@ -3368,18 +3368,18 @@ label[for="photo-input"] {
   --sales-radius-pill: 999px;
 
   /* Shadows — layered so cards read as separated without looking heavy */
-  --sales-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px -1px rgba(16, 24, 40, 0.03);
-  --sales-shadow-card-hover: 0 1px 2px rgba(16, 24, 40, 0.05),
-    0 8px 20px -8px rgba(16, 24, 40, 0.12);
-  --sales-shadow-raised: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 10px -4px rgba(16, 24, 40, 0.07);
-  --sales-shadow-popover: 0 1px 2px rgba(16, 24, 40, 0.06), 0 12px 28px -8px rgba(16, 24, 40, 0.16);
-  --sales-shadow-modal: 0 2px 6px rgba(16, 24, 40, 0.06), 0 24px 56px -16px rgba(16, 24, 40, 0.22);
-  --sales-shadow-dropdown: 0 1px 2px rgba(16, 24, 40, 0.06),
-    0 8px 20px -6px rgba(16, 24, 40, 0.12);
-  --sales-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
-  --sales-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
-  --sales-shadow-lg: 0 8px 24px rgba(16, 24, 40, 0.1);
-  --sales-shadow-xl: 0 16px 40px rgba(16, 24, 40, 0.12);
+  --sales-shadow-card: 0 1px 2px rgba(28, 32, 20, 0.04), 0 1px 3px -1px rgba(28, 32, 20, 0.03);
+  --sales-shadow-card-hover: 0 1px 2px rgba(28, 32, 20, 0.05),
+    0 8px 20px -8px rgba(28, 32, 20, 0.12);
+  --sales-shadow-raised: 0 1px 2px rgba(28, 32, 20, 0.05), 0 4px 10px -4px rgba(28, 32, 20, 0.07);
+  --sales-shadow-popover: 0 1px 2px rgba(28, 32, 20, 0.06), 0 12px 28px -8px rgba(28, 32, 20, 0.16);
+  --sales-shadow-modal: 0 2px 6px rgba(28, 32, 20, 0.06), 0 24px 56px -16px rgba(28, 32, 20, 0.22);
+  --sales-shadow-dropdown: 0 1px 2px rgba(28, 32, 20, 0.06),
+    0 8px 20px -6px rgba(28, 32, 20, 0.12);
+  --sales-shadow-sm: 0 1px 2px rgba(28, 32, 20, 0.05);
+  --sales-shadow-md: 0 4px 12px rgba(28, 32, 20, 0.08);
+  --sales-shadow-lg: 0 8px 24px rgba(28, 32, 20, 0.1);
+  --sales-shadow-xl: 0 16px 40px rgba(28, 32, 20, 0.12);
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.25);
@@ -3413,8 +3413,11 @@ label[for="photo-input"] {
   /* Remap CRM tokens so nested widgets stay light */
   --bg-primary: var(--sales-bg);
   --bg-secondary: var(--sales-surface);
-  --bg-tertiary: #f2f4f7;
-  --bg-quaternary: #eef0f3;
+  --bg-tertiary: #f3f4ee;
+  --bg-quaternary: #e4e6dc;
+  --surface-sidebar: var(--sales-sidebar-bg);
+  --surface-canvas: var(--sales-bg);
+  --sidebar-bg: var(--sales-sidebar-bg);
   --surface-card: var(--sales-surface);
   --surface-dropdown: var(--sales-surface);
   --surface-input: var(--sales-surface);
@@ -3448,15 +3451,15 @@ label[for="photo-input"] {
   color-scheme: light;
 
   /* Chart helpers (light) */
-  --sales-chart-grid: #eaecf0;
-  --sales-chart-axis: #98a2b3;
-  --sales-chart-track: #eaecf0;
+  --sales-chart-grid: #d5d7cc;
+  --sales-chart-axis: #8a8f84;
+  --sales-chart-track: #e2e3db;
   --sales-surface-raised: #ffffff;
-  --sales-surface-selected: #f3f7e8;
-  --sales-bg-subtle: #fafbfd;
-  --sales-overlay: rgba(16, 24, 40, 0.35);
-  --sales-skeleton-base: #e4e7ec;
-  --sales-skeleton-highlight: #f2f4f7;
+  --sales-surface-selected: #eef4d8;
+  --sales-bg-subtle: #f3f4ee;
+  --sales-overlay: rgba(28, 32, 20, 0.35);
+  --sales-skeleton-base: #d5d7cc;
+  --sales-skeleton-highlight: #f3f4ee;
 }
 
 /*
@@ -3893,15 +3896,15 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-icon-b
 /* ?? Premium Calendar workspace ????????????????????????????????????????? */
 .crm-shell-main:has(.sales-dashboard-premium),
 .crm-shell-main:has(.calendar-premium) {
-  background: var(--sales-bg, #f7f8fa) !important;
+  background: var(--sales-bg, #eeefe8) !important;
 }
 html:has(.sales-dashboard-premium) {
-  background: #fdfdfe;
+  background: #eeefe8;
   height: 100%;
   overflow: hidden;
 }
 html:has(.sales-dashboard-premium) body {
-  background: #fdfdfe;
+  background: #eeefe8;
   height: 100%;
   overflow: hidden;
 }

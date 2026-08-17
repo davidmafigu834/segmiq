@@ -4,38 +4,38 @@
  */
 
 export const SALES_COLORS = {
-  bg: "#FDFDFE",
+  bg: "#EEEFE8",
   surface: "#FFFFFF",
-  surfaceSubtle: "#FAFBFD",
-  surfaceHover: "#F9FAFB",
-  surfaceActive: "#F3F7E8",
+  surfaceSubtle: "#F6F7F1",
+  surfaceHover: "#E8EAE3",
+  surfaceActive: "#EEF4D8",
 
-  neutral900: "#101828",
-  neutral700: "#344054",
-  neutral500: "#667085",
-  neutral400: "#98A2B3",
-  neutral300: "#D0D5DD",
-  neutral200: "#EAECF0",
-  neutral100: "#F2F4F7",
-  neutral50: "#FDFDFE",
+  neutral900: "#14180F",
+  neutral700: "#3D4238",
+  neutral500: "#5C6156",
+  neutral400: "#8A8F84",
+  neutral300: "#C4C7BB",
+  neutral200: "#D5D7CC",
+  neutral100: "#F3F4EE",
+  neutral50: "#EEEFE8",
   neutral0: "#FFFFFF",
 
-  textPrimary: "#101828",
-  textSecondary: "#667085",
-  textMuted: "#98A2B3",
-  textDisabled: "#B2B8C3",
-  textLabel: "#344054",
+  textPrimary: "#14180F",
+  textSecondary: "#5C6156",
+  textMuted: "#8A8F84",
+  textDisabled: "#A8ADA2",
+  textLabel: "#3D4238",
 
-  border: "#E4E7EC",
-  borderSubtle: "#EAECF0",
-  borderStrong: "#D0D5DD",
+  border: "#D5D7CC",
+  borderSubtle: "#E2E3DB",
+  borderStrong: "#C4C7BB",
 
   brand: "#D4FF4F",
   brandHover: "#C6F23F",
-  brandSoft: "rgba(212, 255, 79, 0.14)",
-  brandSoftSolid: "#F3FCE3",
+  brandSoft: "rgba(212, 255, 79, 0.22)",
+  brandSoftSolid: "#EEF4D8",
   brandBorder: "rgba(160, 205, 40, 0.4)",
-  brandText: "#101828",
+  brandText: "#14180F",
   brandFg: "#4D7C0F",
 
   success: "#16A34A",
@@ -93,10 +93,10 @@ export const SALES_RADIUS = {
 } as const;
 
 export const SALES_SHADOW = {
-  card: "0 1px 2px rgba(16, 24, 40, 0.025)",
-  dropdown: "0 4px 12px rgba(16, 24, 40, 0.08)",
-  popover: "0 8px 24px rgba(16, 24, 40, 0.10)",
-  modal: "0 16px 40px rgba(16, 24, 40, 0.12)",
+  card: "0 1px 2px rgba(28, 32, 20, 0.025)",
+  dropdown: "0 4px 12px rgba(28, 32, 20, 0.08)",
+  popover: "0 8px 24px rgba(28, 32, 20, 0.10)",
+  modal: "0 16px 40px rgba(28, 32, 20, 0.12)",
 } as const;
 
 /** Button heights from design boards: Small 32 · Medium 40 · Large 48 */
