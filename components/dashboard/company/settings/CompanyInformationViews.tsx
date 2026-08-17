@@ -199,7 +199,6 @@ export function CompanyInformationSection({
       ) : null}
       {edit === "hours" ? (
         <EditOperatingHoursDrawer
-          clientId={clientId}
           hours={operatingHours}
           onClose={() => setEdit(null)}
           onSaved={(next) => {
@@ -512,13 +511,11 @@ function EditBusinessInformationDrawer({
 }
 
 function EditOperatingHoursDrawer({
-  clientId,
   hours,
   onClose,
   onSaved,
   onError,
 }: {
-  clientId: string;
   hours: CompanyOperatingHours;
   onClose: () => void;
   onSaved: (hours: CompanyOperatingHours) => void;
