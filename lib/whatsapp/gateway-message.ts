@@ -15,8 +15,10 @@ export type GatewayMessageKey = {
 
 export function isLiveUpsertType(type: string | undefined): boolean {
   // Companion devices often deliver customer messages as `append` rather than
-  // `notify`. `prepend` is history and stays excluded.
-  return type === "notify" || type === "append";
+  // `notify`. Some Baileys builds omit the type or use `replace`. Only
+  // historical `prepend` sync stays excluded; `acceptAfter` still drops old
+  // timestamps.
+  return type !== "prepend";
 }
 
 export function digitsFromJid(jid: string | null | undefined): string {

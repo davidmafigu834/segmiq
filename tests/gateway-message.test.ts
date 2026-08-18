@@ -12,6 +12,8 @@ import { isSupportedTemporaryChat } from "../lib/whatsapp/normalized-inbound";
 test("linked-device ingest keeps live append events and skips history prepend", () => {
   assert.equal(isLiveUpsertType("notify"), true);
   assert.equal(isLiveUpsertType("append"), true);
+  assert.equal(isLiveUpsertType("replace"), true);
+  assert.equal(isLiveUpsertType(undefined), true);
   assert.equal(isLiveUpsertType("prepend"), false);
 });
 

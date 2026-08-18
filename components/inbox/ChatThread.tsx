@@ -243,7 +243,7 @@ export function ChatThread({
 
     void loadMessages(true);
     const interval = conversationSource === "WHATSAPP_INBOUND"
-      ? window.setInterval(() => void loadMessages(false), 5000)
+      ? window.setInterval(() => void loadMessages(false), 2_500)
       : null;
 
     return () => {

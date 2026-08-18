@@ -133,10 +133,9 @@ export function TeamInbox({
 
   useEffect(() => {
     void loadConversations();
-    if (!backHref) return;
-    const interval = window.setInterval(() => void loadConversations({ silent: true }), 10000);
+    const interval = window.setInterval(() => void loadConversations({ silent: true }), 3_000);
     return () => window.clearInterval(interval);
-  }, [loadConversations, backHref]);
+  }, [loadConversations]);
 
   useEffect(() => {
     if (!leadFromUrl || conversations.length === 0) return;

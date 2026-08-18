@@ -253,7 +253,10 @@ async function normalizedMessage(session: ManagedSession, message: WAMessage, op
   if (!timestamp || timestamp < session.acceptAfter) return;
   const extracted = messageText(message);
   const from = phoneFromWhatsAppKey(message.key);
-  if (!from) return;
+  if (!from) {
+    console.warn("[whatsapp-gateway] skipped message with no phone JID", providerMessageId);
+    return;
+  }
   if (extracted.type === "text" && !extracted.body.trim()) return;
   const direction = message.key.fromMe ? "outbound" : "inbound";
   let media: Record<string, unknown> | null = null;
