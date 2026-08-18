@@ -37,7 +37,20 @@ async function checkEmail(): Promise<boolean> {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
 }
 
+async function checkWhatsAppGateway(): Promise<boolean> {
+  const url = process.env.WHATSAPP_GATEWAY_URL?.trim().replace(/\/$/, "");
+  if (!url) return false;
+  try {
+    const res = await fetch(`${url}/health`, { method: "GET", cache: "no-store" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function checkWhatsApp(): Promise<boolean> {
+  const gatewayOk = await checkWhatsAppGateway();
+  if (gatewayOk) return true;
   const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
   const phoneId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
   if (!token || !phoneId) return false;

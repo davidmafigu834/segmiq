@@ -59,14 +59,39 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
     return () => window.clearInterval(timer);
   }, [connectionStatus, load, modalOpen]);
 
-  async function mutate(path: string) {
+  async function mutate(path: string, resume = false, treatGatewayDownAsWaking = false) {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ resume }),
+    });
+    const body = (await response.json().catch(() => ({}))) as { error?: string; waking?: boolean };
+    if (treatGatewayDownAsWaking && [502, 504].includes(response.status)) {
+      await load().catch(() => {});
+      return { waking: true as const };
+    }
+    if (!response.ok) throw new Error(body.error ?? "Connection request failed");
+    await load();
+    return body;
+  }
+
+  async function startOrResume(path: string) {
+    setModalOpen(true);
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch(path, { method: "POST" });
-      const body = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) throw new Error(body.error ?? "Connection request failed");
-      await load();
+      await fetch("/api/company/whatsapp/gateway-health", { cache: "no-store" }).catch(() => null);
+      let result = await mutate(path, false, true);
+      for (let attempt = 0; result.waking && attempt < 8; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 7_000));
+        await fetch("/api/company/whatsapp/gateway-health", { cache: "no-store" }).catch(() => null);
+        result = await mutate(path, true, true);
+      }
+      if (result.waking) {
+        setError(
+          "The WhatsApp service is still starting on Render. Keep this page open, wait about a minute, then tap Reconnect. The free plan sleeps when idle and can take up to a minute to wake."
+        );
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Connection request failed");
     } finally {
@@ -75,18 +100,24 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
   }
 
   async function startConnect() {
-    setModalOpen(true);
-    await mutate("/api/company/whatsapp/quick-connect");
+    await startOrResume("/api/company/whatsapp/quick-connect");
   }
 
   async function reconnect() {
-    setModalOpen(true);
-    await mutate("/api/company/whatsapp/reconnect");
+    await startOrResume("/api/company/whatsapp/reconnect");
   }
 
   async function disconnect() {
     if (!window.confirm("Disconnect this business phone? Existing conversations and CRM history will stay in SegmiQ.")) return;
-    await mutate("/api/company/whatsapp/disconnect");
+    setBusy(true);
+    setError(null);
+    try {
+      await mutate("/api/company/whatsapp/disconnect");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Connection request failed");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const connection = data?.connection;
@@ -180,7 +211,7 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
                   <button type="button" disabled={busy} onClick={() => setModalOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#D4FF4F] px-4 py-2.5 text-sm font-semibold text-[#101828] disabled:opacity-50">
                     <QrCode size={17} /> View connection
                   </button>
-                  {["ERROR", "RECONNECT_REQUIRED"].includes(connection.status) ? (
+                  {["ERROR", "RECONNECT_REQUIRED", "INITIALIZING"].includes(connection.status) ? (
                     <button type="button" disabled={busy} onClick={() => void reconnect()} className="inline-flex items-center gap-2 rounded-lg border border-[--border-strong] px-4 py-2.5 text-sm font-semibold text-[--text-primary] disabled:opacity-50">
                       <RefreshCw size={16} /> Reconnect
                     </button>
@@ -238,14 +269,19 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
                 <div className="mx-auto flex h-[280px] w-[280px] flex-col items-center justify-center rounded-xl border border-sales-border bg-sales-surface-subtle text-sales-text-secondary">
                   {connection.status === "ERROR" || connection.status === "RECONNECT_REQUIRED" ? <AlertTriangle size={38} /> : <Loader2 size={38} className="animate-spin" />}
                   <p className="mt-4 text-sm font-medium">{STATE_LABELS[connection.status]}</p>
+                  {busy || connection.status === "INITIALIZING" ? (
+                    <p className="mt-2 max-w-[220px] text-xs leading-relaxed text-sales-text-muted">
+                      Starting the WhatsApp service. After Render has been idle this can take up to a minute.
+                    </p>
+                  ) : null}
                 </div>
               )}
               <div className="mt-5 flex items-start gap-3 rounded-xl bg-sales-surface-subtle p-4 text-left">
                 <Smartphone size={20} className="mt-0.5 shrink-0 text-sales-text-secondary" />
                 <p className="text-xs leading-relaxed text-sales-text-secondary">On the business phone, open WhatsApp → Linked devices → Link a device, then scan this code. Keep the phone online while connecting.</p>
               </div>
-              {["ERROR", "RECONNECT_REQUIRED"].includes(connection.status) || data?.qrExpired ? (
-                <button type="button" disabled={busy} onClick={() => void reconnect()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#D4FF4F] px-4 py-2.5 text-sm font-semibold text-[#101828] disabled:opacity-50"><RefreshCw size={16} /> Generate a new code</button>
+              {["ERROR", "RECONNECT_REQUIRED", "INITIALIZING"].includes(connection.status) || data?.qrExpired ? (
+                <button type="button" disabled={busy} onClick={() => void reconnect()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#D4FF4F] px-4 py-2.5 text-sm font-semibold text-[#101828] disabled:opacity-50"><RefreshCw size={16} /> {busy ? "Starting service…" : "Generate a new code"}</button>
               ) : null}
             </div>
           </div>

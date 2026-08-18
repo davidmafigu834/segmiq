@@ -207,6 +207,27 @@ export async function createOrResetTemporaryConnection(input: {
   return mapConnection(data as ConnectionRow);
 }
 
+const QR_IN_PROGRESS = new Set<WhatsAppConnectionState>([
+  "INITIALIZING",
+  "AWAITING_QR",
+  "CONNECTING",
+]);
+
+/** Reuse an in-progress QR attempt so Render cold-start retries do not reset the row. */
+export async function ensureTemporaryWebConnection(input: {
+  clientId: string;
+  actorId: string;
+  resume?: boolean;
+}): Promise<WhatsAppConnectionRecord> {
+  if (input.resume) {
+    const current = await getPrimaryWhatsAppConnection(input.clientId);
+    if (current?.providerType === "TEMPORARY_WEB" && QR_IN_PROGRESS.has(current.status)) {
+      return current;
+    }
+  }
+  return createOrResetTemporaryConnection(input);
+}
+
 export async function transitionWhatsAppConnection(input: {
   connectionId: string;
   to: WhatsAppConnectionState;

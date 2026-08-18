@@ -464,7 +464,21 @@ function mediaHostAllowed(url: URL): boolean {
 async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
   const url = new URL(request.url ?? "/", "http://gateway.local");
   if (request.method === "GET" && url.pathname === "/health") {
-    json(response, 200, { ok: true, activeConnections: sessions.size });
+    response.writeHead(200, {
+      "content-type": "application/json",
+      "cache-control": "no-store",
+      "access-control-allow-origin": "*",
+    });
+    response.end(JSON.stringify({ ok: true, activeConnections: sessions.size }));
+    return;
+  }
+  if (request.method === "OPTIONS" && url.pathname === "/health") {
+    response.writeHead(204, {
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET",
+      "access-control-max-age": "600",
+    });
+    response.end();
     return;
   }
   const body = await readBody(request);

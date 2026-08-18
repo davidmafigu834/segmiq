@@ -6,6 +6,7 @@ import { canTransitionWhatsAppConnection } from "../lib/whatsapp/providers/state
 import { isSupportedTemporaryChat } from "../lib/whatsapp/normalized-inbound";
 import { decryptWhatsAppSecret, encryptWhatsAppSecret } from "../lib/whatsapp/security/secret-envelope";
 import { signGatewayRequest, verifyGatewayRequest } from "../lib/whatsapp/security/gateway-auth";
+import { gatewayUserError, isGatewayTimeoutError } from "../lib/whatsapp/gateway-client";
 
 test("temporary provider advertises only the supported beta capabilities", () => {
   const capabilities = getWhatsAppCapabilities("TEMPORARY_WEB");
@@ -67,6 +68,13 @@ test("a restore whose stored session is rejected ends in RECONNECT_REQUIRED, not
   // An admin-initiated reconnect resets the record first and starts over.
   assert.equal(canTransitionWhatsAppConnection("RECONNECT_REQUIRED", "INITIALIZING"), true);
   assert.equal(canTransitionWhatsAppConnection("INITIALIZING", "AWAITING_QR"), true);
+});
+
+test("gateway timeouts are explained instead of a raw abort message", () => {
+  const timeout = Object.assign(new Error("The operation was aborted due to timeout"), { name: "TimeoutError" });
+  assert.equal(isGatewayTimeoutError(timeout), true);
+  assert.match(gatewayUserError(timeout), /still starting/i);
+  assert.equal(isGatewayTimeoutError(new Error("Unauthorized")), false);
 });
 
 test("gateway request signatures bind method, path, body, nonce and time", async () => {
