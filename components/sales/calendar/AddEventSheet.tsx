@@ -13,12 +13,14 @@ import {
 import { STAGE_LABELS } from "@/lib/inbox/scoring";
 import { leadCardDisplayName } from "@/lib/leads/whatsapp-lead-display";
 import {
+  adaptDealToCalendarEvent,
   adaptLeadToCalendarEvent,
   getEventTypeColor,
   getEventTypeLabel,
   getEventTypeTint,
+  nextActionAtFromDateKey,
 } from "@/lib/sales/calendar/adapters";
-import type { CalendarEvent, CalendarEventKind } from "@/lib/sales/calendar/types";
+import type { CalendarDealOption, CalendarEvent, CalendarEventKind } from "@/lib/sales/calendar/types";
 import { SUPPORTED_EVENT_KINDS } from "@/lib/sales/calendar/types";
 import { toDateKey } from "@/lib/sales/calendar/format";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
@@ -30,6 +32,9 @@ const fieldClass =
 
 export function AddEventSheet({
   leads,
+  deals = [],
+  initialDealId = null,
+  initialLeadId = null,
   defaultDateKey,
   ownerOptions,
   leadOwnerIds,
@@ -39,6 +44,9 @@ export function AddEventSheet({
   onCreated,
 }: {
   leads: PriorityLead[];
+  deals?: CalendarDealOption[];
+  initialDealId?: string | null;
+  initialLeadId?: string | null;
   defaultDateKey: string;
   ownerOptions?: Array<{ id: string; name: string; roleLabel?: string }>;
   leadOwnerIds?: Record<string, string | null>;
@@ -47,15 +55,17 @@ export function AddEventSheet({
   onClose: () => void;
   onCreated: (event: CalendarEvent, context?: { ownerId: string | null }) => void;
 }) {
+  const presetDeal = deals.find((deal) => deal.id === initialDealId) ?? null;
   const [kind, setKind] = useState<CalendarEventKind>("FOLLOW_UP");
   const [query, setQuery] = useState("");
-  const [leadId, setLeadId] = useState("");
+  const [leadId, setLeadId] = useState(presetDeal?.originatingLeadId || initialLeadId || "");
   const [date, setDate] = useState(defaultDateKey);
   const [ownerId, setOwnerId] = useState(defaultOwnerId ?? "");
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(presetDeal?.nextActionLabel ?? "");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dealId = presetDeal?.id ?? null;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -76,6 +86,16 @@ export function AddEventSheet({
     : null;
 
   useEffect(() => {
+    if (presetDeal) {
+      const label =
+        kind === "CALL"
+          ? "Call customer"
+          : kind === "QUOTE_REVIEW"
+            ? "Prepare Quote"
+            : presetDeal.nextActionLabel?.trim() || "Follow up";
+      setTitle(`${label} · ${presetDeal.name}`);
+      return;
+    }
     if (!selectedName) return;
     const label =
       kind === "CALL"
@@ -84,7 +104,7 @@ export function AddEventSheet({
           ? "Quote review"
           : "Follow-up call";
     setTitle(`${label} · ${selectedName}`);
-  }, [selectedName, kind]);
+  }, [selectedName, kind, presetDeal]);
 
   const quickDates = useMemo(() => {
     const today = new Date();
@@ -97,13 +117,48 @@ export function AddEventSheet({
   }, []);
 
   async function handleSave() {
-    if (!leadId || !date || (ownerOptions && !ownerId)) {
-      setError(ownerOptions && !ownerId ? "Choose an activity owner." : "Choose a lead and date.");
+    if ((!dealId && !leadId) || !date || (ownerOptions && !ownerId)) {
+      setError(
+        ownerOptions && !ownerId
+          ? "Choose an activity owner."
+          : dealId
+            ? "Choose a date."
+            : "Choose a lead and date."
+      );
       return;
     }
     setSaving(true);
     setError(null);
     try {
+      if (dealId) {
+        const nextAt = nextActionAtFromDateKey(date);
+        const label = title.trim() || presetDeal?.nextActionLabel || "Follow up";
+        const res = await fetch(`/api/deals/${dealId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            next_action_at: nextAt,
+            next_action_label: label,
+          }),
+        });
+        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          setError(json.error ?? "Could not schedule follow-up");
+          return;
+        }
+        const event = adaptDealToCalendarEvent({
+          id: dealId,
+          name: presetDeal?.name ?? selectedName ?? "Deal",
+          originatingLeadId: presetDeal?.originatingLeadId || leadId,
+          phone: presetDeal?.phone ?? selected?.phone ?? null,
+          nextActionAt: nextAt,
+          nextActionLabel: label,
+          stage: presetDeal?.stage ?? null,
+        });
+        if (event) onCreated({ ...event, kind, notes: notes.trim() || null });
+        else onClose();
+        return;
+      }
       if (scheduleActivity) {
         await scheduleActivity({ leadId, date, ownerId: ownerId || null });
       } else {
@@ -156,8 +211,8 @@ export function AddEventSheet({
   return (
     <PremiumSheet
       eyebrow="Calendar"
-      title="Add event"
-      description="Schedule a follow-up against a real lead."
+      title={dealId ? "Schedule follow-up" : "Add event"}
+      description={dealId ? "This date becomes the Deal next action." : "Schedule a follow-up against a real lead."}
       onClose={onClose}
       labelledBy="cal-add-event-title"
       size="md"
@@ -169,7 +224,7 @@ export function AddEventSheet({
           <Button
             variant="primary"
             className="flex-1"
-            disabled={saving || !leadId || !date || Boolean(ownerOptions && !ownerId)}
+            disabled={saving || (!dealId && !leadId) || !date || Boolean(ownerOptions && !ownerId)}
             loading={saving}
             onClick={handleSave}
           >
@@ -239,7 +294,9 @@ export function AddEventSheet({
               })}
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-sales-text-muted">
-              Saves as a lead follow-up date. Timed callbacks are set when logging a call.
+              {dealId
+                ? "Saves as this Deal’s next action and shows on the calendar."
+                : "Saves as a lead follow-up date. Timed callbacks are set when logging a call."}
             </p>
           </div>
 
@@ -258,9 +315,18 @@ export function AddEventSheet({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary" htmlFor="cal-add-search">
-              Lead / customer
+            <label className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary" htmlFor={presetDeal ? "cal-add-deal" : "cal-add-search"}>
+              {presetDeal ? "Deal" : "Lead / customer"}
             </label>
+            {presetDeal ? (
+              <div id="cal-add-deal" className="rounded-[12px] border border-[rgba(160,210,30,0.45)] bg-[rgba(212,255,79,0.08)] p-3">
+                <p className="truncate text-[13px] font-semibold text-sales-text-primary">{presetDeal.name}</p>
+                <p className="mt-1 text-[12px] text-sales-text-secondary">
+                  {[presetDeal.phone, presetDeal.stage?.replace(/_/g, " ")].filter(Boolean).join(" · ") || "Active Deal"}
+                </p>
+              </div>
+            ) : (
+              <>
             <div className="relative">
               <Search
                 size={16}
@@ -364,6 +430,8 @@ export function AddEventSheet({
                   </li>
                 ) : null}
               </ul>
+            )}
+              </>
             )}
           </div>
 

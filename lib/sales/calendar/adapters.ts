@@ -1,7 +1,7 @@
 import { STAGE_LABELS } from "@/lib/inbox/scoring";
 import { resolveFollowUpDateTime } from "@/lib/call-log-constants";
 import { leadCardDisplayName } from "@/lib/leads/whatsapp-lead-display";
-import type { CalendarEvent, CalendarEventKind, CalendarLeadRow } from "./types";
+import type { CalendarDealOption, CalendarEvent, CalendarEventKind, CalendarLeadRow } from "./types";
 
 const KIND_META: Record<
   CalendarEventKind,
@@ -80,6 +80,7 @@ export function adaptLeadToCalendarEvent(
     startAt: start.toISOString(),
     endAt: null,
     leadId: lead.id,
+    dealId: null,
     customerName,
     phone: lead.phone,
     location: lead.location?.trim() || null,
@@ -130,4 +131,48 @@ export function adaptLeadsToCalendarEvents(
   return events.sort(
     (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
   );
+}
+
+function kindFromDealLabel(label: string | null | undefined): CalendarEventKind {
+  const value = (label ?? "").toLowerCase();
+  if (value.includes("call")) return "CALL";
+  if (value.includes("quote")) return "QUOTE_REVIEW";
+  return "FOLLOW_UP";
+}
+
+export function nextActionAtFromDateKey(dateKey: string): string {
+  return new Date(`${dateKey}T10:00:00`).toISOString();
+}
+
+export function adaptDealToCalendarEvent(deal: CalendarDealOption): CalendarEvent | null {
+  if (!deal.nextActionAt) return null;
+  const start = new Date(deal.nextActionAt);
+  if (!Number.isFinite(start.getTime())) return null;
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const overdue = start < startOfToday;
+  const title = deal.nextActionLabel?.trim() || `Follow-up · ${deal.name}`;
+  return {
+    id: `deal-action-${deal.id}`,
+    kind: kindFromDealLabel(deal.nextActionLabel),
+    title,
+    startAt: start.toISOString(),
+    endAt: null,
+    leadId: deal.originatingLeadId,
+    dealId: deal.id,
+    customerName: deal.name,
+    phone: deal.phone,
+    location: null,
+    pipelineStage: deal.stage,
+    status: deal.stage,
+    source: "DEAL",
+    notes: null,
+    quoteNumber: null,
+    quoteStatus: null,
+    quoteTotal: null,
+    projectType: null,
+    leadScore: null,
+    overdue,
+    hasTimedCallback: start.getHours() !== 0 || start.getMinutes() !== 0,
+  };
 }

@@ -22,6 +22,7 @@ export type CalendarEvent = {
   startAt: string;
   endAt?: string | null;
   leadId: string;
+  dealId?: string | null;
   customerName: string | null;
   phone: string | null;
   location: string | null;
@@ -54,4 +55,14 @@ export type CalendarLeadRow = {
   latestQuoteNumber?: string | null;
   latestQuoteStatus?: string | null;
   latestQuoteTotal?: number | null;
+};
+
+export type CalendarDealOption = {
+  id: string;
+  name: string;
+  originatingLeadId: string;
+  phone: string | null;
+  nextActionAt: string | null;
+  nextActionLabel: string | null;
+  stage: string | null;
 };

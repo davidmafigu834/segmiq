@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { addDays, format, parseISO } from "date-fns";
 import { CalendarDays, Check } from "lucide-react";
-import { adaptLeadToCalendarEvent, getEventTypeLabel } from "@/lib/sales/calendar/adapters";
+import { adaptDealToCalendarEvent, adaptLeadToCalendarEvent, getEventTypeLabel, nextActionAtFromDateKey } from "@/lib/sales/calendar/adapters";
 import type { CalendarEvent } from "@/lib/sales/calendar/types";
 import { toDateKey } from "@/lib/sales/calendar/format";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
@@ -53,6 +53,30 @@ export function EditEventSheet({
     try {
       if (saveDate) {
         await saveDate(date);
+      } else if (event.dealId) {
+        const nextAt = nextActionAtFromDateKey(date);
+        const res = await fetch(`/api/deals/${event.dealId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ next_action_at: nextAt }),
+        });
+        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          setError(json.error ?? "Could not reschedule");
+          return;
+        }
+        const updated = adaptDealToCalendarEvent({
+          id: event.dealId,
+          name: event.customerName ?? "Deal",
+          originatingLeadId: event.leadId,
+          phone: event.phone,
+          nextActionAt: nextAt,
+          nextActionLabel: event.title,
+          stage: event.status,
+        });
+        if (updated) onUpdated({ ...updated, kind: event.kind, notes: event.notes });
+        else onClose();
+        return;
       } else {
         const res = await fetch(`/api/leads/${event.leadId}`, {
           method: "PATCH",

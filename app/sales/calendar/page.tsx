@@ -7,9 +7,9 @@ import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { PipelinePageShell } from "@/components/sales/pipeline/PipelinePageShell";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { fetchLatestScheduledCallbacksByLeadId } from "@/lib/convert-later-picks";
-import { adaptLeadsToCalendarEvents } from "@/lib/sales/calendar/adapters";
+import { adaptDealToCalendarEvent, adaptLeadsToCalendarEvents } from "@/lib/sales/calendar/adapters";
 import { locationFromFormData } from "@/lib/sales/calendar/location";
-import type { CalendarLeadRow } from "@/lib/sales/calendar/types";
+import type { CalendarDealOption, CalendarLeadRow } from "@/lib/sales/calendar/types";
 import { SalesCalendarPage } from "@/components/sales/calendar/SalesCalendarPage";
 import type { PriorityLead } from "@/lib/sales-priority-lead";
 
@@ -38,13 +38,17 @@ type DbLead = {
   contact_id?: string | null;
 };
 
-export default async function SalesCalendarRoutePage() {
+export default async function SalesCalendarRoutePage({
+  searchParams,
+}: {
+  searchParams?: { deal?: string; lead?: string };
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const supabase = createAdminClient();
 
-  const [scheduledRes, allLeadsRes, navBadges] = await Promise.all([
+  const [scheduledRes, allLeadsRes, dealsRes, navBadges] = await Promise.all([
     supabase
       .from("leads")
       .select(LEAD_SELECT)
@@ -58,6 +62,13 @@ export default async function SalesCalendarRoutePage() {
       .eq("assigned_to_id", session.userId)
       .or("is_archived.is.null,is_archived.eq.false")
       .in("status", ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"])
+      .order("updated_at", { ascending: false })
+      .limit(200),
+    supabase
+      .from("deals")
+      .select("id, name, originating_lead_id, owner_id, stage, next_action_at, next_action_label, contact_id")
+      .eq("owner_id", session.userId)
+      .not("stage", "in", '("WON","LOST")')
       .order("updated_at", { ascending: false })
       .limit(200),
     fetchSalesNavBadges(session.userId, session.clientId ?? null),
@@ -90,6 +101,29 @@ export default async function SalesCalendarRoutePage() {
       .order("updated_at", { ascending: false })
       .limit(200);
     allLeads = (retry.data ?? []) as DbLead[];
+  }
+
+  type DbDeal = {
+    id: string;
+    name: string;
+    originating_lead_id: string;
+    owner_id: string | null;
+    stage: string | null;
+    next_action_at: string | null;
+    next_action_label: string | null;
+    contact_id: string | null;
+  };
+  let ownedDeals = (dealsRes.data ?? []) as DbDeal[];
+  const presetDealId = searchParams?.deal?.trim() || null;
+  const presetLeadId = searchParams?.lead?.trim() || null;
+  if (presetDealId && !ownedDeals.some((deal) => deal.id === presetDealId)) {
+    const extra = await supabase
+      .from("deals")
+      .select("id, name, originating_lead_id, owner_id, stage, next_action_at, next_action_label, contact_id")
+      .eq("id", presetDealId)
+      .eq("owner_id", session.userId)
+      .maybeSingle();
+    if (extra.data) ownedDeals = [extra.data as DbDeal, ...ownedDeals];
   }
 
   const leadIds = scheduledLeads.map((l) => l.id);
@@ -154,7 +188,46 @@ export default async function SalesCalendarRoutePage() {
     };
   });
 
-  const initialEvents = adaptLeadsToCalendarEvents(calendarLeads, callbackAtByLeadId);
+  const initialLeadEvents = adaptLeadsToCalendarEvents(calendarLeads, callbackAtByLeadId);
+
+  const phoneByLeadId = new Map<string, string | null>();
+  for (const lead of [...scheduledLeads, ...allLeads]) {
+    phoneByLeadId.set(lead.id, lead.phone);
+  }
+  const missingDealLeadIds = Array.from(
+    new Set(
+      ownedDeals
+        .map((deal) => deal.originating_lead_id)
+        .filter((id) => id && !phoneByLeadId.has(id))
+    )
+  );
+  if (missingDealLeadIds.length) {
+    const extraLeadPhones = await supabase
+      .from("leads")
+      .select("id, phone")
+      .in("id", missingDealLeadIds);
+    for (const row of extraLeadPhones.data ?? []) {
+      phoneByLeadId.set(row.id as string, (row.phone as string | null) ?? null);
+    }
+  }
+
+  const scheduleableDeals: CalendarDealOption[] = ownedDeals.map((deal) => ({
+    id: deal.id,
+    name: deal.name,
+    originatingLeadId: deal.originating_lead_id,
+    phone: phoneByLeadId.get(deal.originating_lead_id) ?? null,
+    nextActionAt: deal.next_action_at,
+    nextActionLabel: deal.next_action_label,
+    stage: deal.stage,
+  }));
+  const dealLeadIdsWithAction = new Set(
+    scheduleableDeals.filter((deal) => deal.nextActionAt).map((deal) => deal.originatingLeadId)
+  );
+  const dealEvents = scheduleableDeals
+    .map((deal) => adaptDealToCalendarEvent(deal))
+    .filter((event): event is NonNullable<typeof event> => Boolean(event));
+  const initialEvents = [...initialLeadEvents.filter((event) => !dealLeadIdsWithAction.has(event.leadId)), ...dealEvents]
+    .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
 
   const scheduleableLeads: PriorityLead[] = allLeads.map((lead) => ({
     id: lead.id,
@@ -225,6 +298,9 @@ export default async function SalesCalendarRoutePage() {
         <SalesCalendarPage
           initialEvents={initialEvents}
           scheduleableLeads={scheduleableLeads}
+          scheduleableDeals={scheduleableDeals}
+          presetDealId={presetDealId}
+          presetLeadId={presetLeadId}
         />
       </PipelinePageShell>
     </SalesLayout>

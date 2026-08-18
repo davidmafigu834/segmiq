@@ -11,7 +11,7 @@ import {
   subWeeks,
 } from "date-fns";
 import { AlarmClock, CalendarDays, ChevronLeft, ChevronRight, Plus, SlidersHorizontal, X } from "lucide-react";
-import type { CalendarEvent, CalendarEventKind, CalendarViewMode } from "@/lib/sales/calendar/types";
+import type { CalendarDealOption, CalendarEvent, CalendarEventKind, CalendarViewMode } from "@/lib/sales/calendar/types";
 import { SUPPORTED_EVENT_KINDS } from "@/lib/sales/calendar/types";
 import {
   eventsForDateKey,
@@ -41,9 +41,15 @@ const DEFAULT_ENABLED = new Set<CalendarEventKind>(SUPPORTED_EVENT_KINDS);
 export function SalesCalendarPage({
   initialEvents,
   scheduleableLeads,
+  scheduleableDeals = [],
+  presetDealId = null,
+  presetLeadId = null,
 }: {
   initialEvents: CalendarEvent[];
   scheduleableLeads: PriorityLead[];
+  scheduleableDeals?: CalendarDealOption[];
+  presetDealId?: string | null;
+  presetLeadId?: string | null;
 }) {
   const router = useRouter();
   const [events, setEvents] = useState(initialEvents);
@@ -52,7 +58,7 @@ export function SalesCalendarPage({
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("month");
   const [enabledKinds, setEnabledKinds] = useState(() => new Set(DEFAULT_ENABLED));
-  const [addOpen, setAddOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(() => Boolean(presetDealId || presetLeadId));
   const [editOpen, setEditOpen] = useState(false);
   const [logLeadId, setLogLeadId] = useState<string | null>(null);
   const [dayPopoverKey, setDayPopoverKey] = useState<string | null>(null);
@@ -142,7 +148,12 @@ export function SalesCalendarPage({
 
   function onEventCreated(created: CalendarEvent) {
     setEvents((prev) => {
-      const without = prev.filter((e) => e.leadId !== created.leadId);
+      const without = prev.filter((event) => {
+        if (created.dealId) {
+          return event.dealId !== created.dealId && event.leadId !== created.leadId;
+        }
+        return event.dealId || event.leadId !== created.leadId;
+      });
       return [...without, created].sort(
         (a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
       );
@@ -150,7 +161,13 @@ export function SalesCalendarPage({
     setSelectedEventId(created.id);
     setSelectedDateKey(toDateKey(parseISO(created.startAt)));
     setAddOpen(false);
+    if (presetDealId || presetLeadId) router.replace("/sales/calendar");
     router.refresh();
+  }
+
+  function closeAdd() {
+    setAddOpen(false);
+    if (presetDealId || presetLeadId) router.replace("/sales/calendar");
   }
 
   const views: { id: CalendarViewMode; label: string }[] = isMdUp
@@ -380,8 +397,11 @@ export function SalesCalendarPage({
       {addOpen ? (
         <AddEventSheet
           leads={scheduleableLeads}
+          deals={scheduleableDeals}
+          initialDealId={presetDealId}
+          initialLeadId={presetLeadId}
           defaultDateKey={selectedDateKey}
-          onClose={() => setAddOpen(false)}
+          onClose={closeAdd}
           onCreated={onEventCreated}
         />
       ) : null}

@@ -48,9 +48,11 @@ export function SelectedEventCard({
     );
   }
 
-  const leadHref = isWhatsAppInboundLead(event.source)
-    ? whatsappInboxHref(event.leadId)
-    : `/sales/call-now?lead=${event.leadId}`;
+  const leadHref = event.dealId
+    ? `/sales/deals/${event.dealId}`
+    : isWhatsAppInboundLead(event.source)
+      ? whatsappInboxHref(event.leadId)
+      : `/sales/call-now?lead=${event.leadId}`;
   const whatsappHref = whatsappInboxHref(event.leadId);
   const customerLabel = event.customerName ?? "Customer";
   const salesContext = getEventSalesContext(event);
