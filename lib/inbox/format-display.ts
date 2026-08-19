@@ -123,15 +123,39 @@ export function getScoreTone(label: "Hot" | "Warm" | "Cold" | null): {
   bar: string;
 } {
   if (label === "Hot") {
-    return { text: "#DC2626", bg: "#FEE2E2", border: "#FECACA", dot: "#EF4444", bar: "#D4FF4F" };
+    return {
+      text: "var(--sales-danger-fg, #DC2626)",
+      bg: "var(--sales-danger-soft, #FEE2E2)",
+      border: "color-mix(in srgb, var(--sales-danger, #EF4444) 35%, transparent)",
+      dot: "var(--sales-danger, #EF4444)",
+      bar: "var(--sales-brand, #D4FF4F)",
+    };
   }
   if (label === "Warm") {
-    return { text: "#C2410C", bg: "#FFF4E5", border: "#FED7AA", dot: "#F97316", bar: "#F59E0B" };
+    return {
+      text: "var(--sales-warning-fg, #C2410C)",
+      bg: "var(--sales-warning-soft, #FFF4E5)",
+      border: "color-mix(in srgb, var(--sales-warning, #F59E0B) 35%, transparent)",
+      dot: "var(--sales-warning, #F59E0B)",
+      bar: "var(--sales-warning, #F59E0B)",
+    };
   }
   if (label === "Cold") {
-    return { text: "#64748B", bg: "#F1F5F9", border: "#E2E8F0", dot: "#94A3B8", bar: "#94A3B8" };
+    return {
+      text: "var(--sales-text-secondary, #64748B)",
+      bg: "var(--sales-neutral-100, #F1F5F9)",
+      border: "var(--sales-border, #E2E8F0)",
+      dot: "var(--sales-text-muted, #94A3B8)",
+      bar: "var(--sales-text-muted, #94A3B8)",
+    };
   }
-  return { text: "#98A2B3", bg: "#F2F4F7", border: "#E4E7EC", dot: "#98A2B3", bar: "#D0D5DD" };
+  return {
+    text: "var(--sales-text-muted, #98A2B3)",
+    bg: "var(--sales-surface-subtle, #F2F4F7)",
+    border: "var(--sales-border, #E4E7EC)",
+    dot: "var(--sales-text-muted, #98A2B3)",
+    bar: "var(--sales-neutral-300, #D0D5DD)",
+  };
 }
 
 export type WaitingTone = "muted" | "amber" | "orange" | "red";

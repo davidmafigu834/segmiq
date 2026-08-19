@@ -549,7 +549,7 @@ export function ChatThread({
                 size="sm"
                 className="max-[480px]:h-9 max-[480px]:w-9"
               />
-              <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5 layout:flex-row layout:items-center layout:gap-2.5">
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span className="truncate text-[14px] font-semibold tracking-tight text-sales-text-primary">
                     {name}
@@ -559,13 +559,13 @@ export function ChatThread({
                   ) : null}
                 </div>
                 {conversation.phone ? (
-                  <div className="mt-0.5 truncate text-[11px] tabular-nums text-sales-text-secondary">
+                  <div className="truncate text-[11px] tabular-nums text-sales-text-secondary layout:shrink-0">
                     {conversation.phone}
                     {companyMode && conversation.location ? ` · ${conversation.location}` : ""}
                   </div>
                 ) : null}
                 {!companyMode ? (
-                  <div className="mt-1.5 flex min-w-0 items-center gap-1.5 overflow-hidden">
+                  <div className="flex min-w-0 shrink-0 items-center gap-1.5 overflow-hidden">
                     {conversation.activeDealId ? (
                       <>
                         {conversation.dealStage ? (
@@ -581,10 +581,10 @@ export function ChatThread({
                       </>
                     ) : (
                       <>
-                        <LeadStageBadge status={conversation.status} variant="list" />
-                        <LeadIntentBadge score={conversation.score} label={conversation.scoreLabel} variant="list" />
+                        <LeadStageBadge status={conversation.status} variant="list" className="shrink-0" />
+                        <LeadIntentBadge score={conversation.score} label={conversation.scoreLabel} variant="list" className="shrink-0" />
                         {conversation.leadBudget ? (
-                          <span className="truncate rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-medium text-sales-text-secondary">
+                          <span className="hidden truncate rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-medium text-sales-text-secondary min-[1280px]:inline-flex">
                             Budget {conversation.leadBudget}
                           </span>
                         ) : null}

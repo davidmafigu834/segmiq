@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { addDays, differenceInCalendarDays, format } from "date-fns";
 import {
@@ -96,10 +96,10 @@ function toDateInput(date: Date): string {
   return format(date, "yyyy-MM-dd");
 }
 
-function sectionTitle(label: string, action?: React.ReactNode) {
+function sectionTitle(label: string, action?: ReactNode) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <h3 className="text-[11px] font-semibold uppercase tracking-[0.055em] text-sales-text-muted">
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
         {label}
       </h3>
       {action}
@@ -111,16 +111,33 @@ function RailSection({
   children,
   courseTarget,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   courseTarget?: string;
 }) {
   return (
     <section
-      className="border-b border-sales-border px-4 py-3.5"
+      className="border-b border-sales-border-subtle px-4 py-4"
       data-course-target={courseTarget}
     >
       {children}
     </section>
+  );
+}
+
+function MetaChip({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex max-w-full items-center truncate rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10.5px] font-medium text-sales-text-secondary">
+      {children}
+    </span>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1.5">
+      <dt className="shrink-0 text-[11px] text-sales-text-muted">{label}</dt>
+      <dd className="min-w-0 truncate text-right text-[12.5px] font-medium text-sales-text-primary">{value}</dd>
+    </div>
   );
 }
 
@@ -432,20 +449,15 @@ export function SalesIntelligenceRail({
       } max-[1279px]:fixed max-[1279px]:bottom-0 max-[1279px]:right-0 ${mobileTopClass} max-[1279px]:z-40 max-[1279px]:w-[min(390px,94vw)] max-[1279px]:shadow-[-12px_0_28px_rgba(16,24,40,0.14)] max-[1279px]:transition-transform`}
       data-course-target={isDeal ? "whatsapp-deal-intelligence" : "whatsapp-lead-intelligence"}
     >
-      <header className="flex min-h-[54px] shrink-0 items-center gap-2 border-b border-sales-border px-3.5">
+      <header className="flex min-h-[52px] shrink-0 items-center gap-2 border-b border-sales-border px-3.5">
         {onMobileBack ? (
           <button type="button" onClick={onMobileBack} className="wa-icon-btn-muted shrink-0" aria-label="Back to conversation">
             <ArrowLeft size={19} />
           </button>
         ) : null}
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[14px] font-semibold tracking-[-0.015em] text-sales-text-primary">
-            {isDeal ? "Deal intelligence" : "Lead intelligence"}
-          </h2>
-          <p className="mt-0.5 text-[10px] text-sales-text-muted">
-            {isDeal ? "Commercial context and next action" : "Qualification and Deal readiness"}
-          </p>
-        </div>
+        <h2 className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.02em] text-sales-text-primary">
+          {isDeal ? "Deal intelligence" : "Lead intelligence"}
+        </h2>
         <button type="button" onClick={onCollapse} className="wa-icon-btn !h-8 !w-8" aria-label="Hide sales intelligence">
           <PanelRightClose size={15} />
         </button>
@@ -479,11 +491,13 @@ export function SalesIntelligenceRail({
               <div className="flex items-start gap-3">
                 <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[15px] font-semibold text-sales-text-primary">{dealData.deal.name}</div>
-                  <div className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{name}</div>
-                  <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-sales-text-muted">
-                    <span>Owner <strong className="font-medium text-sales-text-primary">{ownerDisplay}</strong></span>
-                    <span>Source <strong className="font-medium text-sales-text-primary">{formatSource(conversation.source as string)}</strong></span>
+                  <div className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
+                    {dealData.deal.name}
+                  </div>
+                  <div className="mt-0.5 truncate text-[12.5px] text-sales-text-secondary">{name}</div>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    <MetaChip>Owner · {ownerDisplay}</MetaChip>
+                    <MetaChip>{formatSource(conversation.source as string)}</MetaChip>
                   </div>
                 </div>
                 <Link href={`/sales/deals/${dealData.deal.id}`} className="wa-icon-btn !h-8 !w-8" aria-label="Open full Deal">
@@ -494,31 +508,46 @@ export function SalesIntelligenceRail({
 
             <RailSection>
               {sectionTitle("Commercial summary")}
-              <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5">
-                <div><dt className="text-[10.5px] text-sales-text-muted">Deal value</dt><dd className="mt-0.5 text-[13px] font-semibold text-sales-text-primary">{dealData.commercial.display}</dd></div>
-                <div><dt className="text-[10.5px] text-sales-text-muted">Expected decision</dt><dd className="mt-0.5 text-[12px] font-medium text-sales-text-primary">{formatDate(dealData.deal.expected_decision_at) || "Not set"}</dd></div>
-                <div><dt className="text-[10.5px] text-sales-text-muted">Deal age</dt><dd className="mt-0.5 text-[12px] font-medium text-sales-text-primary">{dealAge} day{dealAge === 1 ? "" : "s"}</dd></div>
-                <div><dt className="text-[10.5px] text-sales-text-muted">Latest activity</dt><dd className="mt-0.5 text-[12px] font-medium text-sales-text-primary">{formatDate(dealData.deal.last_meaningful_activity_at || dealData.deal.updated_at) || "Not recorded"}</dd></div>
+              <dl className="-my-1.5 divide-y divide-sales-border-subtle">
+                <Fact label="Deal value" value={dealData.commercial.display} />
+                <Fact label="Expected decision" value={formatDate(dealData.deal.expected_decision_at) || "Not set"} />
+                <Fact label="Deal age" value={`${dealAge} day${dealAge === 1 ? "" : "s"}`} />
+                <Fact label="Latest activity" value={formatDate(dealData.deal.last_meaningful_activity_at || dealData.deal.updated_at) || "Not recorded"} />
               </dl>
             </RailSection>
 
             <RailSection>
               {sectionTitle("Deal health")}
-              <div className={`mt-2.5 flex items-start gap-2 rounded-[9px] border px-3 py-2.5 ${attention?.atRisk ? "border-sales-danger/30 bg-sales-danger-soft" : attention?.needsAttention ? "border-sales-warning/30 bg-sales-warning-soft" : "border-sales-success/30 bg-sales-success-soft"}`}>
-                {attention?.needsAttention ? <AlertTriangle size={15} className="mt-0.5 shrink-0" /> : <Check size={15} className="mt-0.5 shrink-0" />}
-                <div><div className="text-[12px] font-semibold text-sales-text-primary">{attention?.needsAttention ? attention.badge || "Needs attention" : "On track"}</div><p className="mt-0.5 text-[11px] leading-relaxed text-sales-text-secondary">{attention?.reason || "The Deal has a clear next step and no current risk signal."}</p></div>
+              <div className={`flex items-start gap-2.5 rounded-[10px] border px-3 py-2.5 ${attention?.atRisk ? "border-sales-danger/30 bg-sales-danger-soft" : attention?.needsAttention ? "border-sales-warning/30 bg-sales-warning-soft" : "border-sales-success/30 bg-sales-success-soft"}`}>
+                {attention?.needsAttention ? <AlertTriangle size={16} className="mt-0.5 shrink-0" /> : <Check size={16} className="mt-0.5 shrink-0" />}
+                <div>
+                  <div className="text-[13px] font-semibold text-sales-text-primary">{attention?.needsAttention ? attention.badge || "Needs attention" : "On track"}</div>
+                  <p className="mt-0.5 text-[12px] leading-relaxed text-sales-text-secondary">{attention?.reason || "The Deal has a clear next step and no current risk signal."}</p>
+                </div>
               </div>
             </RailSection>
 
             <RailSection courseTarget="whatsapp-deal-stage">
               {sectionTitle("Pipeline stage")}
-              <div className="mt-3 grid grid-cols-4 gap-1">
+              <div className="grid grid-cols-4 gap-1">
                 {DEAL_ACTIVE_STAGES.map((stage, index) => {
                   const currentIndex = DEAL_ACTIVE_STAGES.indexOf(dealData.deal.stage as (typeof DEAL_ACTIVE_STAGES)[number]);
                   const current = stage === dealData.deal.stage;
                   const complete = currentIndex >= 0 && index < currentIndex;
                   return (
-                    <button key={stage} type="button" disabled={!canModifyDeal || busy || current} onClick={() => void patchDeal({ stage }, `Deal moved to ${formatDealStage(stage)}`)} className={`min-w-0 rounded-[7px] border px-1 py-2 text-[9px] font-semibold leading-tight transition-colors ${current ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary" : complete ? "border-sales-success/30 bg-sales-success-soft text-sales-success" : "border-sales-border bg-sales-surface text-sales-text-muted"} disabled:cursor-default`}>
+                    <button
+                      key={stage}
+                      type="button"
+                      disabled={!canModifyDeal || busy || current}
+                      onClick={() => void patchDeal({ stage }, `Deal moved to ${formatDealStage(stage)}`)}
+                      className={`min-w-0 rounded-[8px] border px-1 py-2 text-[10px] font-semibold leading-tight transition-colors ${
+                        current
+                          ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
+                          : complete
+                            ? "border-sales-success/30 bg-sales-success-soft text-sales-success"
+                            : "border-sales-border bg-sales-surface text-sales-text-muted hover:bg-sales-surface-hover"
+                      } disabled:cursor-default`}
+                    >
                       {formatDealStage(stage)}
                     </button>
                   );
@@ -529,45 +558,92 @@ export function SalesIntelligenceRail({
             <RailSection courseTarget="whatsapp-next-action">
               {sectionTitle("Next action")}
               {dealData.nextAction.hasNextAction ? (
-                <div className="mt-2.5 flex items-start gap-2.5">
+                <div className="flex items-start gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5">
                   <Clock3 size={16} className={`mt-0.5 shrink-0 ${dealData.nextAction.isOverdue ? "text-sales-danger" : "text-sales-text-label"}`} />
-                  <div className="min-w-0 flex-1"><div className="text-[13px] font-semibold text-sales-text-primary">{dealData.nextAction.label || "Follow up"}</div><div className={`mt-0.5 text-[11px] ${dealData.nextAction.isOverdue ? "font-medium text-sales-danger" : "text-sales-text-secondary"}`}>{formatDateTime(dealData.nextAction.at)}</div></div>
-                  {canModifyDeal ? <button type="button" disabled={busy} onClick={() => void patchDeal({ next_action_at: null, next_action_label: null }, "Next action completed")} className="text-[10.5px] font-semibold text-sales-text-label hover:underline">Complete</button> : null}
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-semibold text-sales-text-primary">{dealData.nextAction.label || "Follow up"}</div>
+                    <div className={`mt-0.5 text-[12px] ${dealData.nextAction.isOverdue ? "font-medium text-sales-danger" : "text-sales-text-secondary"}`}>
+                      {formatDateTime(dealData.nextAction.at)}
+                    </div>
+                  </div>
+                  {canModifyDeal ? (
+                    <button type="button" disabled={busy} onClick={() => void patchDeal({ next_action_at: null, next_action_label: null }, "Next action completed")} className="text-[11px] font-semibold text-sales-text-label hover:underline">
+                      Complete
+                    </button>
+                  ) : null}
                 </div>
               ) : (
-                <p className="mt-2 text-[12px] text-sales-text-secondary">No next action scheduled.</p>
+                <p className="text-[13px] text-sales-text-secondary">No next action scheduled.</p>
               )}
-              {canModifyDeal ? <FollowUpControls busy={busy} currentDate={dealData.nextAction.at} customDateOpen={customDateOpen} customDate={customDate} setCustomDateOpen={setCustomDateOpen} setCustomDate={setCustomDate} onSchedule={scheduleFollowUp} /> : null}
+              {canModifyDeal ? (
+                <FollowUpControls
+                  busy={busy}
+                  currentDate={dealData.nextAction.at}
+                  customDateOpen={customDateOpen}
+                  customDate={customDate}
+                  setCustomDateOpen={setCustomDateOpen}
+                  setCustomDate={setCustomDate}
+                  onSchedule={scheduleFollowUp}
+                />
+              ) : null}
             </RailSection>
 
             <RailSection courseTarget="whatsapp-quotation">
               {sectionTitle("Quotation")}
               {quoteNumber || quoteStatus ? (
-                <div className="mt-2.5 flex items-center gap-3 rounded-[9px] border border-sales-border bg-sales-surface-subtle p-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-sales-surface text-sales-text-label"><FileText size={16} /></div>
-                  <div className="min-w-0 flex-1"><div className="truncate text-[12px] font-semibold text-sales-text-primary">{quoteNumber ? `Quote #${quoteNumber}` : "Quotation"}</div><div className="mt-0.5 text-[10.5px] text-sales-text-secondary">{[quoteStatus, quoteTotal].filter(Boolean).join(" · ")}</div></div>
-                  <button type="button" disabled={busy} onClick={() => void openQuotation(false)} className="rounded-[7px] border border-sales-border bg-sales-surface px-2 py-1.5 text-[10.5px] font-semibold text-sales-text-primary">View</button>
+                <div className="flex items-center gap-3 rounded-[10px] border border-sales-border bg-sales-surface-subtle p-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px] bg-sales-surface text-sales-text-label">
+                    <FileText size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-semibold text-sales-text-primary">
+                      {quoteNumber ? `Quote #${quoteNumber}` : "Quotation"}
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-sales-text-secondary">
+                      {[quoteStatus, quoteTotal].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                  <button type="button" disabled={busy} onClick={() => void openQuotation(false)} className="rounded-[8px] border border-sales-border bg-sales-surface px-2.5 py-1.5 text-[11px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover">
+                    View
+                  </button>
                 </div>
               ) : (
-                <div className="mt-2.5 flex items-center justify-between gap-3"><p className="text-[12px] text-sales-text-secondary">No quotation created yet.</p><button type="button" disabled={busy} onClick={() => void openQuotation(true)} className="rounded-[8px] bg-sales-brand px-2.5 py-1.5 text-[11px] font-semibold text-sales-brand-text">Create quote</button></div>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[13px] text-sales-text-secondary">No quotation created yet.</p>
+                  <button type="button" disabled={busy} onClick={() => void openQuotation(true)} className="rounded-[8px] bg-sales-brand px-3 py-2 text-[12px] font-semibold text-sales-brand-text">
+                    Create quote
+                  </button>
+                </div>
               )}
             </RailSection>
 
             {dealData.timeline.length > 0 ? (
               <RailSection>
                 {sectionTitle("Recent Deal activity")}
-                <div className="mt-2.5 space-y-2.5">
+                <div className="space-y-3">
                   {dealData.timeline.slice(0, 3).map((item) => (
-                    <div key={item.id} className="flex items-start gap-2.5"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sales-brand" /><div className="min-w-0 flex-1"><div className="text-[11.5px] font-medium text-sales-text-primary">{item.label}</div><div className="mt-0.5 text-[10px] text-sales-text-muted">{formatDateTime(item.at)}</div></div></div>
+                    <div key={item.id} className="flex items-start gap-2.5">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sales-brand" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[12.5px] font-medium text-sales-text-primary">{item.label}</div>
+                        <div className="mt-0.5 text-[11px] text-sales-text-muted">{formatDateTime(item.at)}</div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </RailSection>
             ) : null}
 
-            {(canTransfer || canReassign) ? (
+            {canTransfer || canReassign ? (
               <RailSection>
                 {sectionTitle("Ownership & handover")}
-                <button type="button" onClick={() => setTransferOpen(true)} className="mt-2.5 inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[11px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"><ArrowLeftRight size={14} /> Transfer with notes</button>
+                <button
+                  type="button"
+                  onClick={() => setTransferOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
+                >
+                  <ArrowLeftRight size={14} /> Transfer with notes
+                </button>
               </RailSection>
             ) : null}
           </>
@@ -576,31 +652,198 @@ export function SalesIntelligenceRail({
             <RailSection>
               <div className="flex items-start gap-3">
                 <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />
-                <div className="min-w-0 flex-1"><div className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</div><div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-sales-whatsapp"><SiWhatsapp size={11} /> {conversation.phone || "WhatsApp"}</div></div>
-                <div className="shrink-0 text-right"><div className="text-[9px] uppercase tracking-[0.04em] text-sales-text-muted">Owner</div><div className="mt-0.5 max-w-28 truncate text-[11px] font-medium text-sales-text-primary">{ownerDisplay}</div><div className="mt-1.5 text-[9px] uppercase tracking-[0.04em] text-sales-text-muted">Source</div><div className="mt-0.5 text-[10.5px] text-sales-text-secondary">{formatSource(conversation.source as string)}</div></div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">{name}</div>
+                  <div className="mt-1 flex items-center gap-1.5 text-[12.5px] text-sales-whatsapp">
+                    <SiWhatsapp size={12} />
+                    <span className="truncate tabular-nums">{conversation.phone || "WhatsApp"}</span>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    <MetaChip>Owner · {ownerDisplay}</MetaChip>
+                    <MetaChip>{formatSource(conversation.source as string)}</MetaChip>
+                  </div>
+                </div>
               </div>
-              {!conversation.assignedToId && canClaim ? <button type="button" disabled={claiming} onClick={() => onClaim(conversation.id)} className="mt-3 inline-flex items-center gap-1.5 rounded-[8px] bg-sales-brand px-3 py-2 text-[11px] font-semibold text-sales-brand-text"><UserRoundPlus size={14} />{claiming ? "Claiming…" : "Claim lead"}</button> : null}
+              {!conversation.assignedToId && canClaim ? (
+                <button
+                  type="button"
+                  disabled={claiming}
+                  onClick={() => onClaim(conversation.id)}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-[9px] bg-sales-brand px-3 py-2.5 text-[13px] font-semibold text-sales-brand-text"
+                >
+                  <UserRoundPlus size={15} />
+                  {claiming ? "Claiming…" : "Claim lead"}
+                </button>
+              ) : null}
             </RailSection>
 
             <RailSection>
               {sectionTitle("Lead score")}
               {showScore ? (
-                <><div className="mt-3 flex items-start gap-4"><div className="relative flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full" style={{ background: `conic-gradient(${scoreTone.bar} ${conversation.score * 3.6}deg, var(--sales-border) 0deg)` }}><div className="flex h-[58px] w-[58px] flex-col items-center justify-center rounded-full bg-sales-surface"><span className="text-[22px] font-semibold tabular-nums text-sales-text-primary">{conversation.score}</span><span className="text-[9.5px] font-semibold" style={{ color: scoreTone.text }}>{conversation.scoreLabel}</span></div></div><div className="min-w-0 flex-1 space-y-2"><ScoreBreakdownBar label="Urgency" value={conversation.breakdown.urgency} max={25} light barColor={scoreTone.bar} /><ScoreBreakdownBar label="Budget" value={conversation.breakdown.budget} max={25} light barColor={scoreTone.bar} /><ScoreBreakdownBar label="Location" value={conversation.breakdown.location} max={15} light barColor={scoreTone.bar} /><ScoreBreakdownBar label="Product interest" value={conversation.breakdown.productInterest} max={20} light barColor={scoreTone.bar} /><ScoreBreakdownBar label="Engagement" value={conversation.breakdown.engagement} max={15} light barColor={scoreTone.bar} /></div></div>{scoreInsight ? <p className="mt-2.5 text-[11px] text-sales-text-secondary">{scoreInsight}</p> : null}</>
-              ) : <p className="mt-2 text-[12px] text-sales-text-secondary">Not enough qualification data yet.</p>}
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-sales-surface-subtle text-[22px] font-semibold tabular-nums tracking-tight text-sales-text-primary">
+                      {conversation.score}
+                    </div>
+                    <div className="min-w-0">
+                      <span
+                        className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em]"
+                        style={{ color: scoreTone.text, background: scoreTone.bg }}
+                      >
+                        {conversation.scoreLabel}
+                      </span>
+                      {scoreInsight ? (
+                        <p className="mt-1 text-[12.5px] leading-snug text-sales-text-secondary">{scoreInsight}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="mt-3.5 space-y-2">
+                    <ScoreBreakdownBar label="Urgency" value={conversation.breakdown.urgency} max={25} light compact barColor={scoreTone.bar} />
+                    <ScoreBreakdownBar label="Budget" value={conversation.breakdown.budget} max={25} light compact barColor={scoreTone.bar} />
+                    <ScoreBreakdownBar label="Location" value={conversation.breakdown.location} max={15} light compact barColor={scoreTone.bar} />
+                    <ScoreBreakdownBar label="Product interest" value={conversation.breakdown.productInterest} max={20} light compact barColor={scoreTone.bar} />
+                    <ScoreBreakdownBar label="Engagement" value={conversation.breakdown.engagement} max={15} light compact barColor={scoreTone.bar} />
+                  </div>
+                </>
+              ) : (
+                <p className="text-[13px] text-sales-text-secondary">Not enough qualification data yet.</p>
+              )}
             </RailSection>
 
-            {leadSummary ? <RailSection>{sectionTitle("AI briefing", <span className="rounded-[5px] bg-sales-info-soft px-1.5 py-0.5 text-[9px] font-semibold text-sales-info">Beta</span>)}<p className="mt-2 text-[12px] leading-relaxed text-sales-text-secondary">{leadSummary}</p>{suggestion ? <p className="mt-1.5 text-[11px] text-sales-text-muted"><strong className="font-medium text-sales-text-primary">Recommended: </strong>{suggestion}</p> : null}</RailSection> : null}
+            {leadSummary ? (
+              <RailSection>
+                {sectionTitle(
+                  "AI briefing",
+                  <span className="rounded-full bg-sales-info-soft px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.04em] text-sales-info">
+                    Beta
+                  </span>
+                )}
+                <div className="rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-3">
+                  <p className="text-[13px] leading-relaxed text-sales-text-primary">{leadSummary}</p>
+                  {suggestion ? (
+                    <p className="mt-2.5 border-t border-sales-border-subtle pt-2.5 text-[12.5px] leading-relaxed text-sales-text-secondary">
+                      <span className="font-semibold text-sales-text-primary">Recommended · </span>
+                      {suggestion}
+                    </p>
+                  ) : null}
+                </div>
+              </RailSection>
+            ) : null}
 
-            {(qualificationRows.length > 0 || conversation.tags.length > 0) ? <RailSection>{sectionTitle("Qualification details", <Link href={`/sales/leads?lead=${conversation.id}`} className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-sales-text-label"><Pencil size={11} /> Edit</Link>)}<dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2.5">{qualificationRows.slice(0, 8).map((row) => <div key={`${row.label}-${row.value}`} className="min-w-0"><dt className="text-[10px] text-sales-text-muted">{row.label}</dt><dd className="mt-0.5 truncate text-[11.5px] font-medium text-sales-text-primary">{row.value}</dd></div>)}</dl>{conversation.tags.length > 0 ? <div className="mt-2.5 flex flex-wrap gap-1">{conversation.tags.map((tag) => <span key={tag} className="rounded-[5px] bg-sales-info-soft px-1.5 py-1 text-[9.5px] font-medium text-sales-info">{tag.replace(/_/g, " ")}</span>)}</div> : null}</RailSection> : null}
+            {qualificationRows.length > 0 || conversation.tags.length > 0 ? (
+              <RailSection>
+                {sectionTitle(
+                  "Qualification details",
+                  <Link href={`/sales/leads?lead=${conversation.id}`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-sales-text-label hover:underline">
+                    <Pencil size={11} /> Edit
+                  </Link>
+                )}
+                {qualificationRows.length > 0 ? (
+                  <dl className="-my-1.5 divide-y divide-sales-border-subtle">
+                    {qualificationRows.slice(0, 8).map((row) => (
+                      <Fact key={`${row.label}-${row.value}`} label={row.label} value={row.value} />
+                    ))}
+                  </dl>
+                ) : null}
+                {conversation.tags.length > 0 ? (
+                  <div className={`${qualificationRows.length > 0 ? "mt-3" : ""} flex flex-wrap gap-1.5`}>
+                    {conversation.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-sales-info-soft px-2 py-1 text-[10.5px] font-medium text-sales-info">
+                        {tag.replace(/_/g, " ")}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </RailSection>
+            ) : null}
 
-            {readiness ? <RailSection courseTarget="whatsapp-deal-readiness">{sectionTitle("Deal readiness")}<p className="mt-1 text-[11px] text-sales-text-secondary">{readiness.requiredDone} of {readiness.requiredTotal} required details ready · {readiness.statusLabel}</p><ul className="mt-2.5 space-y-1.5">{readiness.items.map((item) => <li key={item.id} className="flex items-start gap-2 text-[11px]">{item.done ? <Check size={13} className="mt-0.5 shrink-0 text-sales-success" /> : <Circle size={13} className="mt-0.5 shrink-0 text-sales-text-muted" />}<span className={item.done ? "text-sales-text-primary" : "text-sales-text-secondary"}>{item.label}{!item.required ? <span className="text-sales-text-muted"> (optional)</span> : null}</span></li>)}</ul>{canCreateDeal && lead ? <button type="button" onClick={() => setCreateDealOpen(true)} className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-[8px] bg-sales-brand px-3 py-2.5 text-[12px] font-semibold text-sales-brand-text" data-course-target="whatsapp-create-deal"><BriefcaseBusiness size={15} /> Create Deal</button> : null}</RailSection> : null}
+            {readiness ? (
+              <RailSection courseTarget="whatsapp-deal-readiness">
+                {sectionTitle("Deal readiness")}
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[12.5px] text-sales-text-secondary">{readiness.statusLabel}</p>
+                  <span className="text-[11px] font-semibold tabular-nums text-sales-text-primary">
+                    {readiness.requiredDone}/{readiness.requiredTotal}
+                  </span>
+                </div>
+                <div className="h-1 overflow-hidden rounded-full bg-sales-neutral-100">
+                  <div
+                    className="h-full rounded-full bg-sales-brand transition-[width] duration-500 ease-out"
+                    style={{
+                      width: `${readiness.requiredTotal > 0 ? Math.round((readiness.requiredDone / readiness.requiredTotal) * 100) : 0}%`,
+                    }}
+                  />
+                </div>
+                <ul className="mt-3 space-y-2">
+                  {readiness.items.map((item) => (
+                    <li key={item.id} className="flex items-start gap-2 text-[12.5px]">
+                      {item.done ? (
+                        <Check size={14} className="mt-0.5 shrink-0 text-sales-success" />
+                      ) : (
+                        <Circle size={14} className="mt-0.5 shrink-0 text-sales-text-muted" />
+                      )}
+                      <span className={item.done ? "text-sales-text-primary" : "text-sales-text-secondary"}>
+                        {item.label}
+                        {!item.required ? <span className="text-sales-text-muted"> · optional</span> : null}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {canCreateDeal && lead ? (
+                  <button
+                    type="button"
+                    onClick={() => setCreateDealOpen(true)}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-[9px] bg-sales-brand px-3 py-2.5 text-[13px] font-semibold text-sales-brand-text"
+                    data-course-target="whatsapp-create-deal"
+                  >
+                    <BriefcaseBusiness size={15} /> Create Deal
+                  </button>
+                ) : null}
+              </RailSection>
+            ) : null}
 
-            <RailSection courseTarget="whatsapp-next-action">{sectionTitle("Next follow-up")}{lead?.follow_up_date || conversation.followUpDate ? <p className="mt-2 text-[12px] text-sales-text-secondary">Scheduled for <strong className="font-semibold text-sales-text-primary">{formatFollowUpDate(lead?.follow_up_date || conversation.followUpDate)}</strong></p> : <p className="mt-2 text-[12px] text-sales-text-secondary">No follow-up scheduled.</p>}<FollowUpControls busy={busy} currentDate={lead?.follow_up_date || conversation.followUpDate} customDateOpen={customDateOpen} customDate={customDate} setCustomDateOpen={setCustomDateOpen} setCustomDate={setCustomDate} onSchedule={scheduleFollowUp} /></RailSection>
+            <RailSection courseTarget="whatsapp-next-action">
+              {sectionTitle("Next follow-up")}
+              {lead?.follow_up_date || conversation.followUpDate ? (
+                <p className="text-[13px] text-sales-text-secondary">
+                  Scheduled for{" "}
+                  <strong className="font-semibold text-sales-text-primary">
+                    {formatFollowUpDate(lead?.follow_up_date || conversation.followUpDate)}
+                  </strong>
+                </p>
+              ) : (
+                <p className="text-[13px] text-sales-text-secondary">No follow-up scheduled.</p>
+              )}
+              <FollowUpControls
+                busy={busy}
+                currentDate={lead?.follow_up_date || conversation.followUpDate}
+                customDateOpen={customDateOpen}
+                customDate={customDate}
+                setCustomDateOpen={setCustomDateOpen}
+                setCustomDate={setCustomDate}
+                onSchedule={scheduleFollowUp}
+              />
+            </RailSection>
 
-            {(canTransfer || canReassign) ? <RailSection>{sectionTitle("Ownership & handover")}<button type="button" onClick={() => setTransferOpen(true)} className="mt-2.5 inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[11px] font-semibold text-sales-text-primary"><ArrowLeftRight size={14} /> Transfer with notes</button></RailSection> : null}
+            {canTransfer || canReassign ? (
+              <RailSection>
+                {sectionTitle("Ownership & handover")}
+                <button
+                  type="button"
+                  onClick={() => setTransferOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
+                >
+                  <ArrowLeftRight size={14} /> Transfer with notes
+                </button>
+              </RailSection>
+            ) : null}
           </>
         )}
-        {actionMessage ? <div role="status" className="px-4 py-3 text-[11px] font-semibold text-sales-text-label">{actionMessage}</div> : null}
+        {actionMessage ? (
+          <div role="status" className="border-t border-sales-border-subtle px-4 py-3 text-[12px] font-semibold text-sales-text-label">
+            {actionMessage}
+          </div>
+        ) : null}
       </div>
 
       {lead ? <CreateDealSheet lead={lead} open={createDealOpen} onClose={() => setCreateDealOpen(false)} onCreated={(deal) => { setCreateDealOpen(false); onUpdated(); void reloadDeal(deal.id); }} currency={conversation.dealCurrency ?? "USD"} /> : null}
@@ -629,16 +872,65 @@ function FollowUpControls({
 }) {
   return (
     <>
-      <div className="mt-3 grid grid-cols-4 gap-1.5">
+      <div className="mt-3 grid grid-cols-2 gap-1.5">
         {QUICK_FOLLOW_UPS.map((option) => {
           const date = addDays(new Date(), option.days);
           const value = toDateInput(date);
           const selected = currentDate?.startsWith(value) === true;
-          return <button key={option.label} type="button" disabled={busy} onClick={() => void onSchedule(value)} className={`rounded-[8px] border px-1.5 py-2 text-left ${selected ? "border-sales-brand-border bg-sales-brand-soft" : "border-sales-border bg-sales-surface"}`}><span className="block truncate text-[9.5px] font-semibold text-sales-text-primary">{option.label}</span><span className="mt-0.5 block text-[9px] text-sales-text-muted">{format(date, "MMM d")}</span></button>;
+          return (
+            <button
+              key={option.label}
+              type="button"
+              disabled={busy}
+              onClick={() => void onSchedule(value)}
+              className={`rounded-[9px] border px-2.5 py-2 text-left transition-colors ${
+                selected
+                  ? "border-sales-brand-border bg-sales-brand-soft"
+                  : "border-sales-border bg-sales-surface hover:bg-sales-surface-hover"
+              }`}
+            >
+              <span className="block truncate text-[12px] font-semibold text-sales-text-primary">{option.label}</span>
+              <span className="mt-0.5 block text-[11px] text-sales-text-muted">{format(date, "MMM d")}</span>
+            </button>
+          );
         })}
-        <button type="button" onClick={() => { setCustomDateOpen(!customDateOpen); if (!customDate) setCustomDate(toDateInput(addDays(new Date(), 1))); }} className={`rounded-[8px] border px-1.5 py-2 text-left ${customDateOpen ? "border-sales-brand-border bg-sales-brand-soft" : "border-sales-border bg-sales-surface"}`}><span className="flex items-center gap-1 text-[9.5px] font-semibold text-sales-text-primary"><CalendarDays size={10} /> Custom</span><span className="mt-0.5 block text-[9px] text-sales-text-muted">Pick date</span></button>
+        <button
+          type="button"
+          onClick={() => {
+            setCustomDateOpen(!customDateOpen);
+            if (!customDate) setCustomDate(toDateInput(addDays(new Date(), 1)));
+          }}
+          className={`rounded-[9px] border px-2.5 py-2 text-left transition-colors ${
+            customDateOpen
+              ? "border-sales-brand-border bg-sales-brand-soft"
+              : "border-sales-border bg-sales-surface hover:bg-sales-surface-hover"
+          }`}
+        >
+          <span className="flex items-center gap-1 text-[12px] font-semibold text-sales-text-primary">
+            <CalendarDays size={12} /> Custom
+          </span>
+          <span className="mt-0.5 block text-[11px] text-sales-text-muted">Pick date</span>
+        </button>
       </div>
-      {customDateOpen ? <div className="mt-2 flex gap-2"><input type="date" value={customDate} min={toDateInput(new Date())} onChange={(event) => setCustomDate(event.target.value)} className="min-w-0 flex-1 rounded-[8px] border border-sales-border bg-sales-surface px-2 py-2 text-[11px] text-sales-text-primary" /><button type="button" disabled={!customDate || busy} onClick={() => void onSchedule(customDate)} className="rounded-[8px] bg-sales-brand px-3 py-2 text-[11px] font-semibold text-sales-brand-text">{busy ? <Loader2 size={13} className="animate-spin" /> : "Save"}</button></div> : null}
+      {customDateOpen ? (
+        <div className="mt-2 flex gap-2">
+          <input
+            type="date"
+            value={customDate}
+            min={toDateInput(new Date())}
+            onChange={(event) => setCustomDate(event.target.value)}
+            className="min-w-0 flex-1 rounded-[8px] border border-sales-border bg-sales-surface px-2.5 py-2 text-[12px] text-sales-text-primary"
+          />
+          <button
+            type="button"
+            disabled={!customDate || busy}
+            onClick={() => void onSchedule(customDate)}
+            className="inline-flex min-w-[52px] items-center justify-center rounded-[8px] bg-sales-brand px-3 py-2 text-[12px] font-semibold text-sales-brand-text"
+          >
+            {busy ? <Loader2 size={13} className="animate-spin" /> : "Save"}
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }
