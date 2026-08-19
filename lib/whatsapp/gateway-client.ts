@@ -1,7 +1,7 @@
 import { signGatewayRequest } from "./security/gateway-auth";
 
 export const GATEWAY_SEND_TIMEOUT_MS = 12_000;
-/** Stay under Vercel Hobby's 10s function cap so a sleeping Render host can return 202 instead of a hard timeout. */
+/** Stay under Vercel Hobby's 10s function cap so a restarting gateway can return 202 instead of a hard timeout. */
 export const GATEWAY_CONNECT_TIMEOUT_MS = 8_000;
 export const GATEWAY_WAKE_TIMEOUT_MS = 8_000;
 
@@ -24,7 +24,7 @@ export function isGatewayTimeoutError(error: unknown): boolean {
 
 export function gatewayUserError(error: unknown): string {
   if (isGatewayTimeoutError(error)) {
-    return "The WhatsApp service is still starting. Render's free plan can take up to a minute after it has been idle. Wait, then try again.";
+    return "The WhatsApp service is still starting after a deploy or restart. Wait a few seconds, then try again.";
   }
   return error instanceof Error ? error.message : "WhatsApp gateway unavailable";
 }

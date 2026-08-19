@@ -89,7 +89,7 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
       }
       if (result.waking) {
         setError(
-          "The WhatsApp service is still starting on Render. Keep this page open, wait about a minute, then tap Reconnect. The free plan sleeps when idle and can take up to a minute to wake."
+          "The WhatsApp service is still starting. Keep this page open, wait a few seconds, then tap Reconnect."
         );
       }
     } catch (reason) {
@@ -271,7 +271,7 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
                   <p className="mt-4 text-sm font-medium">{STATE_LABELS[connection.status]}</p>
                   {busy || connection.status === "INITIALIZING" ? (
                     <p className="mt-2 max-w-[220px] text-xs leading-relaxed text-sales-text-muted">
-                      Starting the WhatsApp service. After Render has been idle this can take up to a minute.
+                      Starting the WhatsApp service. This usually takes a few seconds after a deploy.
                     </p>
                   ) : null}
                 </div>

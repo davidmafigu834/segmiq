@@ -14,7 +14,7 @@ The gateway needs no database and no persistent disk. Session bundles are stored
 
 ## Before you start
 
-- A paid Render instance for production. Free sleeps after ~15 minutes idle, which drops the WhatsApp socket. A QR demo can still work if you keep the connection page open while the service wakes (often 30–90 seconds).
+- A paid Render instance (Starter or larger). Free sleeps after ~15 minutes idle and drops the WhatsApp socket.
 - Your SegmiQ production URL on Vercel.
 - Push the current branch to GitHub, including the dependency change that moved `tsx` and `@next/env` into `dependencies`. Without it the service builds and then crashes on startup.
 
@@ -132,7 +132,7 @@ Settings should return to **Connected** on its own, with no QR code.
 | Logs show `SEGMIQ_INTERNAL_BASE_URL is required` | Environment variable missing on Render, or set on Vercel by mistake |
 | Render runs `next build` and the deploy is huge | Build and start commands were left at Render's Next.js defaults |
 | Every request returns `401` | The two `WHATSAPP_GATEWAY_SHARED_SECRET` values differ, or Vercel was not redeployed after adding them |
-| QR never appears / "operation was aborted due to timeout" | Render free tier was asleep. The first request now waits for a cold start; keep the QR modal open for up to a minute. Free instances still drop the WhatsApp socket after ~15 minutes idle unless something pings `/health`. |
+| QR never appears / "operation was aborted due to timeout" | The gateway was restarting or unreachable. Confirm Starter (not free), Health check `/health`, and that `SEGMIQ_INTERNAL_BASE_URL` can reach Vercel. Keep the QR modal open while it starts. |
 | SegmiQ says the gateway is unreachable | `WHATSAPP_GATEWAY_URL` wrong, or pointing at a Background Worker with no public URL |
 | Connections drop every time you ship the frontend | Auto-deploy is still on |
 | Service restarts on its own every few days | Memory ceiling; check the metrics graph and size up |
