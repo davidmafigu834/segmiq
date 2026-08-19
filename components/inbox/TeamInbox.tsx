@@ -312,7 +312,7 @@ export function TeamInbox({
       {claimToast ? (
         <div
           role="status"
-          className="absolute left-1/2 top-3 z-50 -translate-x-1/2 rounded-[10px] border border-[#E4E7EC] bg-white px-4 py-2 text-[13px] font-medium text-[#101828] shadow-[0_8px_24px_rgba(16,24,40,0.08)]"
+          className="absolute left-1/2 top-3 z-50 -translate-x-1/2 rounded-[10px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] font-medium text-sales-text-primary shadow-[0_8px_24px_rgba(16,24,40,0.08)]"
         >
           {claimToast}
         </div>
@@ -352,8 +352,8 @@ export function TeamInbox({
           <InboxSkeleton />
         ) : loadError ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-            <p className="text-[15px] font-semibold text-[#101828]">Couldn&apos;t load conversations</p>
-            <p className="text-[13px] text-[#667085]">Check your connection and try again.</p>
+            <p className="text-[15px] font-semibold text-sales-text-primary">Couldn&apos;t load conversations</p>
+            <p className="text-[13px] text-sales-text-secondary">Check your connection and try again.</p>
             <button
               type="button"
               onClick={() => void loadConversations()}

@@ -50,7 +50,7 @@ export function WhatsAppAvatar({ name, phone, imageUrl, size = "sm", className =
 
   return (
     <div
-      className={`flex items-center justify-center rounded-full font-semibold text-white ring-2 ring-white shadow-sm ${SIZE_CLASS[size]} ${className}`}
+      className={`flex items-center justify-center rounded-full font-semibold text-white ring-2 ring-[color:var(--wa-surface,#fff)] shadow-sm ${SIZE_CLASS[size]} ${className}`}
       style={{ backgroundColor: avatarColor(seed) }}
       aria-hidden
     >

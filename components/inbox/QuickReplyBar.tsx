@@ -35,17 +35,16 @@ export const QUICK_REPLY_ACTIONS: QuickReplyAction[] = [
 
 type DisplayMeta = {
   shortLabel: string;
-  tintBg: string;
-  tintFg: string;
+  chipClass: string;
 };
 
 const DISPLAY: Record<string, DisplayMeta> = {
-  "Send Pricing": { shortLabel: "Pricing", tintBg: "#E7FCE3", tintFg: "#008069" },
-  "Send Portfolio": { shortLabel: "Portfolio", tintBg: "#E0F2FE", tintFg: "#0369A1" },
-  "Schedule Site Visit": { shortLabel: "Site visit", tintBg: "#EDE9FE", tintFg: "#6D28D9" },
-  "Request Photos": { shortLabel: "Photos", tintBg: "#FFF4E5", tintFg: "#B45309" },
-  Reviews: { shortLabel: "Reviews", tintBg: "#FEF9C3", tintFg: "#A16207" },
-  Custom: { shortLabel: "Custom", tintBg: "#F0F2F5", tintFg: "#54656F" },
+  "Send Pricing": { shortLabel: "Pricing", chipClass: "bg-sales-success-soft text-sales-success-fg" },
+  "Send Portfolio": { shortLabel: "Portfolio", chipClass: "bg-sales-info-soft text-sales-info-fg" },
+  "Schedule Site Visit": { shortLabel: "Site visit", chipClass: "bg-sales-purple-soft text-sales-purple-fg" },
+  "Request Photos": { shortLabel: "Photos", chipClass: "bg-sales-warning-soft text-sales-warning-fg" },
+  Reviews: { shortLabel: "Reviews", chipClass: "bg-sales-warning-soft text-sales-warning-fg" },
+  Custom: { shortLabel: "Custom", chipClass: "bg-sales-surface-hover text-sales-text-secondary" },
 };
 
 type Props = {
@@ -83,7 +82,7 @@ export function QuickReplyBar({
     <div
       className={
         isWa
-          ? "max-h-[min(42vh,320px)] overflow-y-auto border-b border-[#E4E7EC] bg-white px-3 py-3.5 sm:px-4 inbox-scroll"
+          ? "max-h-[min(42vh,320px)] overflow-y-auto border-b border-sales-border bg-sales-surface px-3 py-3.5 sm:px-4 inbox-scroll"
           : "max-h-[min(42vh,320px)] overflow-y-auto border-b border-[var(--border)] bg-[var(--bg-tertiary)] px-3 py-2.5 sm:px-4 inbox-scroll"
       }
     >
@@ -150,8 +149,7 @@ export function QuickReplyBar({
           const Icon = action.icon;
           const meta = DISPLAY[action.label] ?? {
             shortLabel: action.label,
-            tintBg: "#F0F2F5",
-            tintFg: "#54656F",
+            chipClass: "bg-sales-surface-hover text-sales-text-secondary",
           };
 
           return (
@@ -167,10 +165,9 @@ export function QuickReplyBar({
               }
             >
               <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105"
-                style={{ background: meta.tintBg }}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-105 ${meta.chipClass}`}
               >
-                <Icon size={16} style={{ color: meta.tintFg }} strokeWidth={2.25} />
+                <Icon size={16} strokeWidth={2.25} />
               </span>
               <span className="min-w-0 flex-1 leading-tight">
                 <span

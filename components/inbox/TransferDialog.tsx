@@ -16,7 +16,7 @@ type Props = {
 };
 
 const fieldClass =
-  "h-11 w-full rounded-[10px] border border-[#E4E7EC] bg-white px-3 text-[13px] text-[#101828] outline-none transition-colors placeholder:text-[#98A2B3] focus:border-[#D4FF4F] focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
+  "h-11 w-full rounded-[10px] border border-sales-border-strong bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none transition-colors placeholder:text-sales-text-muted focus:border-sales-brand focus:shadow-[var(--sales-focus-ring)]";
 
 export function TransferDialog({
   open,
@@ -64,7 +64,7 @@ export function TransferDialog({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 min-w-[44px] items-center justify-center rounded-[10px] border border-[#E4E7EC] bg-white px-4 text-[13px] font-medium text-[#101828] transition-colors hover:bg-[#F9FAFB]"
+            className="inline-flex h-10 min-w-[44px] items-center justify-center rounded-[10px] border border-sales-border-strong bg-sales-surface px-4 text-[13px] font-medium text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
           >
             Cancel
           </button>
@@ -82,7 +82,7 @@ export function TransferDialog({
     >
       <div className="space-y-4">
         <label className="block">
-          <span className="mb-1.5 block text-[12px] font-medium text-[#667085]">Transfer to</span>
+          <span className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary">Transfer to</span>
           <select
             value={assigneeId}
             onChange={(e) => setAssigneeId(e.target.value)}
@@ -98,7 +98,7 @@ export function TransferDialog({
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-[12px] font-medium text-[#667085]">
+          <span className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary">
             Handover note (internal)
           </span>
           <textarea

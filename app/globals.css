@@ -543,6 +543,8 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     --wa-border: #d5d7cc;
     --wa-surface: #ffffff;
     --wa-surface-subtle: #eeefe8;
+    --wa-hover: #f9fafb;
+    --wa-input: #f7f8fa;
     --wa-whatsapp: #25d366;
     gap: 0;
     padding: 0;
@@ -559,17 +561,17 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
 
   .wa-panel-header {
     border-bottom: 1px solid var(--wa-border, #e4e7ec);
-    background: #ffffff;
+    background: var(--wa-surface, #ffffff);
   }
 
   .wa-chat-wallpaper {
-    background-color: #f6f7f1;
+    background-color: var(--wa-surface-subtle, #f6f7f1);
     background-image: none;
   }
 
   .wa-header {
     border-bottom: 1px solid var(--wa-border, #e4e7ec);
-    background: #ffffff;
+    background: var(--wa-surface, #ffffff);
   }
 
   .wa-icon-btn {
@@ -580,14 +582,14 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     justify-content: center;
     border: 1px solid transparent;
     border-radius: 0.5625rem;
-    color: #667085;
+    color: var(--wa-muted, #667085);
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-icon-btn:hover {
-    border-color: #e4e7ec;
-    background-color: #f2f4f7;
-    color: #101828;
+    border-color: var(--wa-border, #e4e7ec);
+    background-color: var(--wa-hover, #f2f4f7);
+    color: var(--wa-ink, #101828);
   }
 
   .wa-icon-btn:focus-visible {
@@ -607,14 +609,14 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     justify-content: center;
     border: 1px solid transparent;
     border-radius: 0.5625rem;
-    color: #667085;
+    color: var(--wa-muted, #667085);
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-icon-btn-muted:hover {
-    border-color: #e4e7ec;
-    background-color: #f2f4f7;
-    color: #101828;
+    border-color: var(--wa-border, #e4e7ec);
+    background-color: var(--wa-hover, #f2f4f7);
+    color: var(--wa-ink, #101828);
   }
 
   .wa-search {
@@ -622,15 +624,15 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     align-items: center;
     gap: 0.5rem;
     border-radius: 0.625rem;
-    border: 1px solid #e4e7ec;
-    background-color: #ffffff;
+    border: 1px solid var(--wa-border, #e4e7ec);
+    background-color: var(--wa-surface, #ffffff);
     padding: 0.5rem 0.75rem;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .wa-search:focus-within {
     border-color: rgba(212, 255, 79, 0.65);
-    background-color: #ffffff;
+    background-color: var(--wa-surface, #ffffff);
     box-shadow: 0 0 0 3px rgba(212, 255, 79, 0.22);
   }
 
@@ -639,14 +641,14 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     cursor: pointer;
     margin: 0;
     border: 0;
-    border-bottom: 1px solid #f2f4f7;
+    border-bottom: 1px solid var(--wa-border, #f2f4f7);
     border-radius: 0;
     padding: 0.875rem 1rem;
     transition: background-color 0.12s ease;
   }
 
   .wa-conv-row:hover {
-    background-color: #f9fafb;
+    background-color: var(--wa-hover, #f9fafb);
   }
 
   .wa-conv-row-active {
@@ -655,13 +657,13 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .wa-bubble-in {
-    border: 1px solid #e4e7ec;
+    border: 1px solid var(--wa-border, #e4e7ec);
     border-radius: 0.75rem;
-    background-color: #ffffff;
+    background-color: var(--wa-surface, #ffffff);
     padding: 0.5rem 0.75rem 0.375rem;
     font-size: 0.875rem;
     line-height: 1.45;
-    color: #101828;
+    color: var(--wa-ink, #101828);
     box-shadow: none;
   }
 
@@ -672,7 +674,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     padding: 0.5rem 0.75rem 0.375rem;
     font-size: 0.875rem;
     line-height: 1.45;
-    color: #101828;
+    color: var(--wa-ink, #101828);
     box-shadow: none;
   }
 
@@ -698,30 +700,30 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .wa-composer {
-    border-top: 1px solid #e4e7ec;
-    background: #ffffff;
+    border-top: 1px solid var(--wa-border, #e4e7ec);
+    background: var(--wa-surface, #ffffff);
   }
 
   .wa-composer-input {
     min-width: 0;
     flex: 1;
     border-radius: 0.625rem;
-    border: 1px solid #e4e7ec;
-    background-color: #f7f8fa;
+    border: 1px solid var(--wa-border, #e4e7ec);
+    background-color: var(--wa-input, #f7f8fa);
     padding: 0.625rem 0.875rem;
     font-size: 0.875rem;
-    color: #101828;
+    color: var(--wa-ink, #101828);
     transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
   }
 
   .wa-composer-input::placeholder {
-    color: #98a2b3;
+    color: var(--wa-muted, #98a2b3);
   }
 
   .wa-composer-input:focus {
     outline: none;
     border-color: rgba(212, 255, 79, 0.65);
-    background-color: #ffffff;
+    background-color: var(--wa-surface, #ffffff);
     box-shadow: 0 0 0 3px rgba(212, 255, 79, 0.22);
   }
 
@@ -732,22 +734,22 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    border: 1px solid #e4e7ec;
+    border: 1px solid var(--wa-border, #e4e7ec);
     border-radius: 0.625rem;
-    color: #667085;
+    color: var(--wa-muted, #667085);
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-plus-btn:hover {
-    border-color: #d0d5dd;
-    background-color: #f2f4f7;
+    border-color: var(--wa-border, #d0d5dd);
+    background-color: var(--wa-hover, #f2f4f7);
   }
 
   .wa-plus-btn-open {
     transform: none;
     border-color: rgba(212, 255, 79, 0.55);
-    background-color: #f4fce8;
-    color: #101828;
+    background-color: var(--wa-accent-soft, #f4fce8);
+    color: var(--wa-ink, #101828);
   }
 
   .wa-send-btn {
@@ -785,19 +787,19 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     align-items: center;
     gap: 0.375rem;
     border-radius: 0.5rem;
-    border: 1px solid #e4e7ec;
-    background-color: #ffffff;
+    border: 1px solid var(--wa-border, #e4e7ec);
+    background-color: var(--wa-surface, #ffffff);
     padding: 0.375rem 0.625rem;
     font-size: 0.75rem;
     font-weight: 500;
-    color: #667085;
+    color: var(--wa-muted, #667085);
     white-space: nowrap;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
 
   .wa-filter-pill:hover {
-    background-color: #f9fafb;
-    border-color: #d0d5dd;
+    background-color: var(--wa-hover, #f9fafb);
+    border-color: var(--wa-border, #d0d5dd);
   }
 
   .wa-filter-pill-active {
@@ -814,8 +816,8 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
 
   .wa-card {
     border-radius: 0.75rem;
-    border: 1px solid #e4e7ec;
-    background-color: #ffffff;
+    border: 1px solid var(--wa-border, #e4e7ec);
+    background-color: var(--wa-surface, #ffffff);
     box-shadow: none;
   }
 
@@ -856,35 +858,36 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     justify-content: center;
     gap: 0.5rem;
     border-radius: 0.625rem;
-    border: 1px solid #e4e7ec;
-    background-color: #ffffff;
+    border: 1px solid var(--wa-border, #e4e7ec);
+    background-color: var(--wa-surface, #ffffff);
     padding: 0.625rem 0.75rem;
     font-size: 0.8125rem;
     font-weight: 500;
-    color: #344054;
+    color: var(--wa-ink, #344054);
     transition: background-color 0.15s ease, border-color 0.15s ease;
   }
 
   .wa-btn-secondary:hover {
-    border-color: #d0d5dd;
-    background-color: #f9fafb;
+    border-color: var(--wa-border, #d0d5dd);
+    background-color: var(--wa-hover, #f9fafb);
   }
 
   .wa-dropdown {
     border-radius: 0.75rem;
-    border: 1px solid #e4e7ec;
-    background-color: #ffffff;
+    border: 1px solid var(--wa-border, #e4e7ec);
+    background-color: var(--wa-surface, #ffffff);
     padding: 0.25rem 0;
     box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
+    color: var(--wa-ink, #101828);
   }
 
   .wa-empty-hint {
-    border: 1px solid #e4e7ec;
+    border: 1px solid var(--wa-border, #e4e7ec);
     border-radius: 0.875rem;
-    background-color: #ffffff;
+    background-color: var(--wa-surface, #ffffff);
     padding: 1.25rem 1.5rem;
     font-size: 0.875rem;
-    color: #667085;
+    color: var(--wa-muted, #667085);
     box-shadow: none;
   }
 
@@ -1300,6 +1303,8 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     --wa-border: var(--sales-border);
     --wa-surface: var(--sales-surface);
     --wa-surface-subtle: var(--sales-bg);
+    --wa-hover: var(--sales-surface-hover);
+    --wa-input: var(--sales-surface-subtle);
     --wa-whatsapp: var(--sales-whatsapp);
     background: var(--sales-bg) !important;
     color: var(--sales-text-primary);
@@ -1350,10 +1355,86 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     color: var(--sales-text-primary) !important;
   }
 
+  .sales-dashboard-premium .wa-search,
+  .sales-dashboard-premium .wa-composer-input,
+  .sales-dashboard-premium .wa-dropdown,
+  .sales-dashboard-premium .wa-card,
+  .sales-dashboard-premium .wa-filter-pill,
+  .wa-hub-premium .wa-search,
+  .wa-hub-premium .wa-composer-input,
+  .wa-hub-premium .wa-dropdown,
+  .wa-hub-premium .wa-card,
+  .wa-hub-premium .wa-filter-pill {
+    border-color: var(--sales-border) !important;
+    background: var(--sales-surface) !important;
+    color: var(--sales-text-primary) !important;
+  }
+
+  .sales-dashboard-premium .wa-composer-input,
+  .wa-hub-premium .wa-composer-input {
+    background: var(--sales-surface-subtle) !important;
+  }
+
+  .sales-dashboard-premium .wa-search:focus-within,
+  .sales-dashboard-premium .wa-composer-input:focus,
+  .wa-hub-premium .wa-search:focus-within,
+  .wa-hub-premium .wa-composer-input:focus {
+    background: var(--sales-surface) !important;
+  }
+
+  .sales-dashboard-premium .wa-icon-btn,
+  .sales-dashboard-premium .wa-icon-btn-muted,
+  .wa-hub-premium .wa-icon-btn,
+  .wa-hub-premium .wa-icon-btn-muted {
+    color: var(--sales-text-secondary) !important;
+  }
+
+  .sales-dashboard-premium .wa-icon-btn:hover,
+  .sales-dashboard-premium .wa-icon-btn-muted:hover,
+  .wa-hub-premium .wa-icon-btn:hover,
+  .wa-hub-premium .wa-icon-btn-muted:hover {
+    border-color: var(--sales-border) !important;
+    background: var(--sales-surface-hover) !important;
+    color: var(--sales-text-primary) !important;
+  }
+
+  .sales-dashboard-premium .wa-conv-row:hover,
+  .wa-hub-premium .wa-conv-row:hover {
+    background-color: var(--sales-surface-hover) !important;
+  }
+
   .sales-dashboard-premium .wa-send-btn,
   .wa-hub-premium .wa-send-btn {
     background: var(--sales-brand) !important;
     color: var(--sales-brand-text) !important;
+  }
+
+  .sales-dashboard-premium .wa-system-pill,
+  .wa-hub-premium .wa-system-pill {
+    border-color: color-mix(in srgb, var(--sales-warning) 28%, transparent) !important;
+    background: var(--sales-warning-soft) !important;
+    color: var(--sales-warning-fg) !important;
+  }
+
+  .sales-dashboard-premium .wa-plus-btn-open,
+  .wa-hub-premium .wa-plus-btn-open {
+    border-color: var(--sales-brand-border) !important;
+    background: var(--sales-brand-soft-solid) !important;
+    color: var(--sales-text-primary) !important;
+  }
+
+  .sales-dashboard-premium .wa-filter-pill-active:hover,
+  .wa-hub-premium .wa-filter-pill-active:hover {
+    background: var(--sales-brand-soft) !important;
+    border-color: var(--sales-brand-border) !important;
+  }
+
+  html:not([data-crm-theme="light"]) .wa-hub-premium audio,
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace audio,
+  html:not([data-crm-theme="light"]) .company-wa-workspace audio {
+    color-scheme: dark;
+    border-radius: 8px;
+    background: var(--sales-surface-subtle);
   }
 
   /* Company WhatsApp Hub: one continuous, resizable conversation workspace. */
@@ -1362,24 +1443,52 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     background: var(--sales-surface) !important;
   }
 
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-white,
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-\[\#F9FAFB\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-\[\#F8F9FB\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-\[\#F7F8FA\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-\[\#F2F4F7\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-\[\#F0F2F5\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-\[\#FFFBEB\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-\[\#FFFAEB\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-\[\#F4FCE8\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .bg-rose-50,
+  html:not([data-crm-theme="light"]) .wa-hub-premium .hover\:bg-\[\#F9FAFB\]:hover,
+  html:not([data-crm-theme="light"]) .wa-hub-premium .hover\:bg-\[\#F2F4F7\]:hover,
   html:not([data-crm-theme="light"]) .company-wa-workspace .bg-white,
   html:not([data-crm-theme="light"]) .company-wa-workspace .bg-\[\#F9FAFB\],
+  html:not([data-crm-theme="light"]) .company-wa-workspace .bg-\[\#F8F9FB\],
   html:not([data-crm-theme="light"]) .company-wa-workspace .bg-\[\#F7F8FA\],
-  html:not([data-crm-theme="light"]) .company-wa-workspace .bg-\[\#F2F4F7\] {
+  html:not([data-crm-theme="light"]) .company-wa-workspace .bg-\[\#F2F4F7\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .bg-white,
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .bg-\[\#F9FAFB\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .bg-\[\#F8F9FB\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .bg-\[\#F7F8FA\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .bg-\[\#F2F4F7\] {
     background-color: var(--sales-surface) !important;
   }
 
   html:not([data-crm-theme="light"]) .company-wa-workspace .text-\[\#101828\],
-  html:not([data-crm-theme="light"]) .company-wa-workspace .text-\[\#344054\] {
+  html:not([data-crm-theme="light"]) .company-wa-workspace .text-\[\#344054\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .text-\[\#101828\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .text-\[\#344054\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .text-\[\#101828\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .text-\[\#111B21\] {
     color: var(--sales-text-primary) !important;
   }
 
   html:not([data-crm-theme="light"]) .company-wa-workspace .text-\[\#667085\],
-  html:not([data-crm-theme="light"]) .company-wa-workspace .text-\[\#98A2B3\] {
+  html:not([data-crm-theme="light"]) .company-wa-workspace .text-\[\#98A2B3\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .text-\[\#667085\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .text-\[\#98A2B3\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .text-\[\#667085\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .text-\[\#98A2B3\] {
     color: var(--sales-text-secondary) !important;
   }
 
-  html:not([data-crm-theme="light"]) .company-wa-workspace .border-\[\#E4E7EC\] {
+  html:not([data-crm-theme="light"]) .company-wa-workspace .border-\[\#E4E7EC\],
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .border-\[\#E4E7EC\],
+  html:not([data-crm-theme="light"]) .wa-hub-premium .border-\[\#E4E7EC\] {
     border-color: var(--sales-border) !important;
   }
 
@@ -1472,8 +1581,15 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .salesperson-wa-workspace .bg-white,
   .salesperson-wa-workspace .bg-\[\#F9FAFB\],
   .salesperson-wa-workspace .bg-\[\#F7F8FA\],
-  .salesperson-wa-workspace .bg-\[\#F2F4F7\] {
+  .salesperson-wa-workspace .bg-\[\#F2F4F7\],
+  .salesperson-wa-workspace .hover\:bg-\[\#F9FAFB\]:hover,
+  .salesperson-wa-workspace .hover\:bg-\[\#F2F4F7\]:hover {
     background-color: var(--sales-surface) !important;
+  }
+
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .hover\:bg-\[\#F9FAFB\]:hover,
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .hover\:bg-\[\#F2F4F7\]:hover {
+    background-color: var(--sales-surface-hover) !important;
   }
 
   .salesperson-wa-workspace .border-\[\#E4E7EC\],

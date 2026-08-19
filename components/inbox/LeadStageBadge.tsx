@@ -41,7 +41,7 @@ export function LeadStageBadge({
   className = "",
 }: Props) {
   const crmTheme = useCrmThemeOptional();
-  const isDarkCrm = crmTheme?.theme === "dark";
+  const isDarkCrm = crmTheme?.theme !== "light";
   const label = stageLabel(status, followUpDate ?? null);
 
   if (variant === "list") {

@@ -141,7 +141,7 @@ export function ConversationRow({
             ) : null}
             {companyMode && conversation.assignee ? (
               <span
-                className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F2F4F7] px-1 text-[8px] font-semibold text-[#667085]"
+                className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sales-surface-subtle px-1 text-[8px] font-semibold text-sales-text-secondary"
                 title={`Owner: ${conversation.assignee.name}`}
                 aria-label={`Owner: ${conversation.assignee.name}`}
               >

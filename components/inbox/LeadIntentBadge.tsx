@@ -31,7 +31,7 @@ export function LeadIntentBadge({
     return (
       <span
         title={title}
-        className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${className}`}
+        className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-[color:var(--wa-surface,#fff)] ${className}`}
         style={{ background: style.dot }}
       />
     );

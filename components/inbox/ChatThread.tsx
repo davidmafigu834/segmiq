@@ -502,10 +502,10 @@ export function ChatThread({
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-sales-border bg-sales-bg text-[#25D366]">
             <SiWhatsapp size={24} aria-hidden />
           </div>
-          <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-[#101828]">
+          <div className="mb-1.5 text-[16px] font-semibold tracking-tight text-sales-text-primary">
             Select a conversation
           </div>
-          <p className="text-[13px] leading-relaxed text-[#667085]">
+          <p className="text-[13px] leading-relaxed text-sales-text-secondary">
             Choose a WhatsApp conversation to view the customer&apos;s messages and sales context.
           </p>
         </div>
@@ -551,7 +551,7 @@ export function ChatThread({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate text-[14px] font-semibold tracking-tight text-[#101828]">
+                  <span className="truncate text-[14px] font-semibold tracking-tight text-sales-text-primary">
                     {name}
                   </span>
                   {isWhatsApp ? (
@@ -559,7 +559,7 @@ export function ChatThread({
                   ) : null}
                 </div>
                 {conversation.phone ? (
-                  <div className="mt-0.5 truncate text-[11px] tabular-nums text-[#667085]">
+                  <div className="mt-0.5 truncate text-[11px] tabular-nums text-sales-text-secondary">
                     {conversation.phone}
                     {companyMode && conversation.location ? ` · ${conversation.location}` : ""}
                   </div>
@@ -574,7 +574,7 @@ export function ChatThread({
                           </span>
                         ) : null}
                         {dealLabel ? (
-                          <span className="truncate rounded-full border border-[#E4E7EC] bg-[#F9FAFB] px-2 py-0.5 text-[10px] font-semibold tabular-nums text-[#344054]">
+                          <span className="truncate rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-semibold tabular-nums text-sales-text-primary">
                             {dealLabel}
                           </span>
                         ) : null}
@@ -584,7 +584,7 @@ export function ChatThread({
                         <LeadStageBadge status={conversation.status} variant="list" />
                         <LeadIntentBadge score={conversation.score} label={conversation.scoreLabel} variant="list" />
                         {conversation.leadBudget ? (
-                          <span className="truncate rounded-full border border-[#E4E7EC] bg-[#F9FAFB] px-2 py-0.5 text-[10px] font-medium text-[#667085]">
+                          <span className="truncate rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-medium text-sales-text-secondary">
                             Budget {conversation.leadBudget}
                           </span>
                         ) : null}
@@ -645,7 +645,7 @@ export function ChatThread({
                       setMenuOpen(false);
                       void handleInternalNote();
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-sales-text-primary hover:bg-sales-surface-hover"
                   >
                     <StickyNote size={14} />
                     Add internal note
@@ -658,7 +658,7 @@ export function ChatThread({
                       setMenuOpen(false);
                       setLogCallOpen(true);
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-sales-text-primary hover:bg-sales-surface-hover"
                   >
                     <Phone size={14} />
                     Log call
@@ -671,7 +671,7 @@ export function ChatThread({
                       setMenuOpen(false);
                       setTransferOpen(true);
                     }}
-                    className="flex w-full px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                    className="flex w-full px-3 py-2.5 text-left text-sm text-sales-text-primary hover:bg-sales-surface-hover"
                   >
                     Transfer conversation
                   </button>
@@ -681,14 +681,14 @@ export function ChatThread({
                     type="button"
                     disabled={statusUpdating}
                     onClick={() => void handleConversationStatus(conversation.conversationStatus === "RESOLVED" ? "OPEN" : "RESOLVED")}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] disabled:opacity-50"
+                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-50"
                   >
                     <CheckCircle2 size={14} />
                     {conversation.conversationStatus === "RESOLVED" ? "Reopen conversation" : "Resolve conversation"}
                   </button>
                 ) : null}
                 {!canTransfer && !canUpdateStatus && !canSend && !canReassign && !showLogCall ? (
-                  <div className="px-3 py-2 text-xs text-[var(--text-tertiary)]">No actions available</div>
+                  <div className="px-3 py-2 text-xs text-sales-text-muted">No actions available</div>
                 ) : null}
               </div>
             ) : null}
@@ -837,7 +837,7 @@ export function ChatThread({
       </div>
 
       {canSend ? (
-        <div className={`shrink-0 bg-white ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
+        <div className={`shrink-0 bg-sales-surface ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
           {sendError ? (
             <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
               {sendError}
@@ -867,8 +867,8 @@ export function ChatThread({
             <div className="wa-session-banner">
               <Clock size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
               <div className="min-w-0">
-                <div className="text-[12px] font-semibold text-[#92400E]">WhatsApp 24h session closed</div>
-                <p className="mt-0.5 text-[11px] leading-snug text-[#A16207]">
+                <div className="text-[12px] font-semibold">WhatsApp 24h session closed</div>
+                <p className="mt-0.5 text-[11px] leading-snug">
                   Free-form replies are unavailable until the customer messages again. Your message may send as an approved template when available.
                 </p>
               </div>
@@ -961,7 +961,7 @@ export function ChatThread({
           </div>
         </div>
       ) : (
-        <div className="wa-composer flex shrink-0 items-center justify-between gap-3 bg-white px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-[11px] font-medium text-[#667085]">
+        <div className="wa-composer flex shrink-0 items-center justify-between gap-3 bg-sales-surface px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-[11px] font-medium text-sales-text-secondary">
           Read-only — claim or assign this lead to send messages
           {!conversation.assignedToId && canClaim && onClaim ? (
             <button
@@ -974,7 +974,7 @@ export function ChatThread({
             </button>
           ) : null}
           {isWhatsApp && !transportAvailable ? (
-            <div className="mx-3 mb-1 flex items-start gap-2 rounded-[9px] border border-rose-200 bg-rose-50 px-3 py-2.5 text-rose-700">
+            <div className="mx-3 mb-1 flex items-start gap-2 rounded-[9px] border border-sales-danger/30 bg-sales-danger-soft px-3 py-2.5 text-sales-danger-fg">
               <AlertTriangle size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
               <div className="min-w-0">
                 <div className="text-[12px] font-semibold">{connectionLabel} is disconnected</div>
@@ -1000,7 +1000,7 @@ export function ChatThread({
                 key={p.id}
                 type="button"
                 onClick={() => void sendAsset("PRICING_PACKAGE", p.id)}
-                className="rounded-[10px] border border-[#E4E7EC] bg-white px-3 py-2.5 text-left text-[13px] font-medium text-[#101828] transition-colors hover:bg-[#F9FAFB]"
+                className="rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2.5 text-left text-[13px] font-medium text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
               >
                 {p.name}
               </button>

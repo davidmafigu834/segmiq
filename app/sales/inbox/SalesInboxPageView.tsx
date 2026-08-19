@@ -26,7 +26,7 @@ function InboxSuspenseFallback() {
               <div className="h-10 w-10 animate-pulse rounded-full bg-[var(--sales-neutral-100)]" />
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="h-3 w-2/3 animate-pulse rounded bg-[var(--sales-neutral-100)]" />
-                <div className="h-3 w-full animate-pulse rounded bg-[#F8F9FB]" />
+                <div className="h-3 w-full animate-pulse rounded bg-sales-neutral-100" />
               </div>
             </div>
           ))}

@@ -62,7 +62,7 @@ export function PremiumSheet({
     >
       <button
         type="button"
-        className="absolute inset-0 z-[70] bg-[var(--sales-neutral-900)]/40 dark:bg-black/62"
+        className="absolute inset-0 z-[70] bg-[var(--sales-overlay)]"
         aria-label="Close"
         disabled={closeDisabled}
         onClick={() => {

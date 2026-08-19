@@ -66,12 +66,27 @@ export function scoreIntentStyles(
   }
 
   if (label === "Hot") {
-    return { bg: "#FEE2E2", text: "#DC2626", border: "#FECACA", dot: "#EF4444" };
+    return {
+      bg: "var(--sales-danger-soft, #FEE2E2)",
+      text: "var(--sales-danger-fg, #DC2626)",
+      border: "color-mix(in srgb, var(--sales-danger, #EF4444) 35%, transparent)",
+      dot: "var(--sales-danger, #EF4444)",
+    };
   }
   if (label === "Warm") {
-    return { bg: "#FFF4E5", text: "#C2410C", border: "#FED7AA", dot: "#F97316" };
+    return {
+      bg: "var(--sales-warning-soft, #FFF4E5)",
+      text: "var(--sales-warning-fg, #C2410C)",
+      border: "color-mix(in srgb, var(--sales-warning, #F97316) 35%, transparent)",
+      dot: "var(--sales-warning, #F97316)",
+    };
   }
-  return { bg: "#F1F5F9", text: "#64748B", border: "#E2E8F0", dot: "#94A3B8" };
+  return {
+    bg: "var(--sales-neutral-100, #F1F5F9)",
+    text: "var(--sales-text-secondary, #64748B)",
+    border: "var(--sales-border, #E2E8F0)",
+    dot: "var(--sales-text-muted, #94A3B8)",
+  };
 }
 
 export function effectiveInboxScore(lead: {

@@ -30,7 +30,7 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
     const type = message.messageType;
     if (type === "audio") {
       return (
-        <div className="mb-1 flex items-center gap-2 text-[#667781]">
+        <div className="mb-1 flex items-center gap-2 text-sales-text-secondary">
           <Mic size={16} />
           <span className="text-[13px]">Voice message — media unavailable</span>
         </div>
@@ -38,7 +38,7 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
     }
     if (type === "image") {
       return (
-        <div className="mb-1 flex items-center gap-2 text-[#111B21]">
+        <div className="mb-1 flex items-center gap-2 text-sales-text-primary">
           <ImageIcon size={16} />
           <span className="text-[13px]">Photo</span>
         </div>
@@ -46,7 +46,7 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
     }
     if (type === "document") {
       return (
-        <div className="mb-1 flex items-center gap-2 text-[#111B21]">
+        <div className="mb-1 flex items-center gap-2 text-sales-text-primary">
           <FileText size={16} />
           <span className="text-[13px]">Document</span>
         </div>
@@ -109,12 +109,12 @@ export function MessageBubble({ message }: Props) {
   if (message.kind === "internal") {
     return (
       <div className="flex justify-center px-2">
-        <span className="max-w-[min(85%,480px)] rounded-[10px] border border-[#FDE68A] bg-[#FFFBEB] px-3.5 py-2.5 text-left text-[12px] text-[#92400E]">
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[#A16207]">
+        <span className="max-w-[min(85%,480px)] rounded-[10px] border border-sales-warning/30 bg-sales-warning-soft px-3.5 py-2.5 text-left text-[12px] text-sales-warning-fg">
+          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-warning">
             Internal note
           </span>
-          <span className="text-[#78350F]">{message.text}</span>
-          <span className="mt-1.5 block text-[10px] text-[#A16207]">Only your team can see this</span>
+          <span>{message.text}</span>
+          <span className="mt-1.5 block text-[10px] text-sales-warning/80">Only your team can see this</span>
         </span>
       </div>
     );
@@ -126,7 +126,7 @@ export function MessageBubble({ message }: Props) {
         <MediaBlock message={message} />
         {showText ? <div className="whitespace-pre-wrap break-words pr-1 text-[13.5px] leading-[1.45] sm:text-[14px]">{message.text}</div> : null}
         <div className="-mb-0.5 mt-0.5 flex items-center justify-end gap-1">
-          <span className="text-[11px] tabular-nums leading-none text-[#98A2B3]">{formatTime(message.createdAt)}</span>
+          <span className="text-[11px] tabular-nums leading-none text-sales-text-muted">{formatTime(message.createdAt)}</span>
           {isRep ? <StatusTicks status={message.status} /> : null}
         </div>
       </div>

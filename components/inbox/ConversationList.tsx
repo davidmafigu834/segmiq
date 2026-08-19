@@ -165,7 +165,7 @@ export function ConversationList({
         panelAnimated ? "inbox-panel-animated" : "",
         listWidthClass,
         whatsappMode
-          ? "bg-white wa-panel max-[1099px]:w-full"
+          ? "bg-sales-surface wa-panel max-[1099px]:w-full"
           : "border-r border-[var(--border)] bg-[var(--bg-tertiary)]",
         mobileFullScreen
           ? ""
@@ -175,7 +175,7 @@ export function ConversationList({
       data-course-target={whatsappMode && !companyMode ? "whatsapp-conversations" : undefined}
     >
       {whatsappMode ? (
-        <div className="sticky top-0 z-10 shrink-0 bg-white wa-panel-header max-[1099px]:pt-[env(safe-area-inset-top)]">
+        <div className="sticky top-0 z-10 shrink-0 bg-sales-surface wa-panel-header max-[1099px]:pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
@@ -189,7 +189,7 @@ export function ConversationList({
             </div>
           </div>
           {companyMode && filterCounts && onFilterChange ? (
-            <div className="flex border-t border-[#E4E7EC] px-3">
+            <div className="flex border-t border-sales-border px-3">
               {COMPANY_INBOX_FILTER_ORDER.map((key) => {
                 const active = filter === key;
                 return (
@@ -198,11 +198,11 @@ export function ConversationList({
                     type="button"
                     onClick={() => onFilterChange(key)}
                     className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[10px] font-medium transition-colors ${
-                      active ? "text-[#101828]" : "text-[#667085] hover:text-[#101828]"
+                      active ? "text-sales-text-primary" : "text-sales-text-secondary hover:text-sales-text-primary"
                     }`}
                   >
                     {key === "awaiting_reply" ? "Waiting" : INBOX_FILTER_LABELS[key]}
-                    <span className="text-[9px] tabular-nums text-[#98A2B3]">{filterCounts[key] ?? 0}</span>
+                    <span className="text-[9px] tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
                     {active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#B7E432]" /> : null}
                   </button>
                 );
@@ -235,16 +235,16 @@ export function ConversationList({
             </div>
           ) : null}
           {!chromeInParent ? (
-            <div className="border-t border-[#E4E7EC] px-3 py-3">
+            <div className="border-t border-sales-border px-3 py-3">
               <div className="flex items-center gap-2">
                 <div className="wa-search min-w-0 flex-1">
-                <Search size={16} className="shrink-0 text-[#98A2B3]" />
+                <Search size={16} className="shrink-0 text-sales-text-muted" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => onSearchChange?.(e.target.value)}
                   placeholder="Search conversations..."
-                  className="w-full bg-transparent text-[14px] text-[#101828] placeholder:text-[#98A2B3] focus:outline-none"
+                  className="w-full bg-transparent text-[14px] text-sales-text-primary placeholder:text-sales-text-muted focus:outline-none"
                 />
                 </div>
                 {onFilterChange ? (
@@ -335,7 +335,7 @@ export function ConversationList({
       )}
       <div
         className={`inbox-scroll min-h-0 flex-1 overflow-y-auto ${
-          whatsappMode ? "bg-white" : "bg-[var(--bg-secondary)]"
+          whatsappMode ? "bg-sales-surface" : "bg-[var(--bg-secondary)]"
         }`}
       >
         {filtered.length === 0 ? (
@@ -343,8 +343,8 @@ export function ConversationList({
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-sales-border bg-sales-bg text-[#25D366]">
               <SiWhatsapp size={22} aria-hidden />
             </div>
-            <p className="text-[14px] font-semibold text-[#101828]">{emptyTitle}</p>
-            <p className="mt-1.5 max-w-[240px] text-[12px] leading-relaxed text-[#667085]">{emptyBody}</p>
+            <p className="text-[14px] font-semibold text-sales-text-primary">{emptyTitle}</p>
+            <p className="mt-1.5 max-w-[240px] text-[12px] leading-relaxed text-sales-text-secondary">{emptyBody}</p>
             {search.trim() ? (
               <button
                 type="button"
@@ -372,13 +372,13 @@ export function ConversationList({
         )}
       </div>
       {companyMode && filtered.length > 0 ? (
-        <div className="flex min-h-[40px] shrink-0 items-center justify-between gap-2 border-t border-[#E4E7EC] bg-white px-3">
-          <span className="truncate text-[9.5px] text-[#667085]">
+        <div className="flex min-h-[40px] shrink-0 items-center justify-between gap-2 border-t border-sales-border bg-sales-surface px-3">
+          <span className="truncate text-[9.5px] text-sales-text-secondary">
             Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
           </span>
           <div className="flex items-center gap-1">
             <button type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))} className="wa-icon-btn !h-7 !w-7 disabled:opacity-35" aria-label="Previous page"><ChevronLeft size={13} /></button>
-            <span className="min-w-7 text-center text-[10px] font-semibold tabular-nums text-[#344054]">{page}/{pageCount}</span>
+            <span className="min-w-7 text-center text-[10px] font-semibold tabular-nums text-sales-text-primary">{page}/{pageCount}</span>
             <button type="button" disabled={page >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))} className="wa-icon-btn !h-7 !w-7 disabled:opacity-35" aria-label="Next page"><ChevronRight size={13} /></button>
           </div>
         </div>

@@ -25,7 +25,7 @@ export function ScoreBreakdownBar({
       <div className="mb-1 flex items-center justify-between gap-2">
         <div
           className={`flex items-center gap-1.5 text-[12px] ${
-            light ? "text-[#667085]" : "text-[var(--text-secondary)]"
+            light ? "text-sales-text-secondary" : "text-[var(--text-secondary)]"
           }`}
         >
           {Icon ? <Icon size={13} strokeWidth={1.8} aria-hidden /> : null}
@@ -33,7 +33,7 @@ export function ScoreBreakdownBar({
         </div>
         <span
           className={`text-[12px] font-medium tabular-nums ${
-            light ? "text-[#101828]" : "text-[var(--text-primary)]"
+            light ? "text-sales-text-primary" : "text-[var(--text-primary)]"
           }`}
         >
           {pct}%
@@ -41,7 +41,7 @@ export function ScoreBreakdownBar({
       </div>
       <div
         className={`h-1 w-full overflow-hidden rounded-full ${
-          light ? "bg-[#F2F4F7]" : "bg-[var(--bg-quaternary)]"
+          light ? "bg-sales-neutral-100" : "bg-[var(--bg-quaternary)]"
         }`}
       >
         <div

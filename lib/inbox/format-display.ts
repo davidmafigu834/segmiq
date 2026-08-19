@@ -145,11 +145,11 @@ export function getWaitingTone(minutes: number | null | undefined): WaitingTone 
 }
 
 export function waitingToneClass(tone: WaitingTone | null): string {
-  if (tone === "muted") return "text-[#98A2B3]";
-  if (tone === "amber") return "text-[#B54708]";
-  if (tone === "orange") return "text-[#C2410C]";
-  if (tone === "red") return "text-[#DC2626]";
-  return "text-[#98A2B3]";
+  if (tone === "muted") return "text-sales-text-muted";
+  if (tone === "amber") return "text-sales-warning-fg";
+  if (tone === "orange") return "text-sales-warning";
+  if (tone === "red") return "text-sales-danger";
+  return "text-sales-text-muted";
 }
 
 export function conversationMetaLine(
