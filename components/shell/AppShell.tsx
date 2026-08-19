@@ -104,7 +104,6 @@ export function AppShell({
     if (href === "/sales/inbox") return isWhatsAppSalesHubPath(pathname);
     if (href === "/sales/call-now") return pathname === "/sales/call-now";
     if (href === "/sales/recover") return pathname === "/sales/recover";
-    if (href === "/sales/inbox/hot-leads") return pathname === "/sales/inbox/hot-leads";
     if (href === "/sales/followups") return pathname.startsWith("/sales/followups");
     if (href === "/sales/reports") return pathname.startsWith("/sales/reports");
     if (href === "/client/inbox") return pathname === "/client/inbox";

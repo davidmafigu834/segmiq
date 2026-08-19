@@ -53,7 +53,6 @@ export function ConversationList({
   whatsappMode = false,
   mobileFullScreen = false,
   onSearchChange,
-  roleSubtitle,
   filterCounts,
   onFilterChange,
   ownerOptions = [],
@@ -180,60 +179,14 @@ export function ConversationList({
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <div className="text-[15px] font-semibold tracking-tight text-[#101828]">
-                  {companyMode ? "Conversations" : "Sales conversations"}
+                <div className="text-[15px] font-semibold tracking-tight text-sales-text-primary">
+                  Conversations
                 </div>
-                <span className="rounded-md bg-[#F2F4F7] px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#667085]">
+                <span className="rounded-md bg-sales-surface-subtle px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-secondary">
                   {conversations.length}
                 </span>
               </div>
-              {roleSubtitle && !companyMode ? (
-                <div className="mt-0.5 truncate text-[11px] text-[#98A2B3]">
-                  WhatsApp Sales Hub · {roleSubtitle}
-                </div>
-              ) : null}
             </div>
-            {!companyMode ? <div className="relative">
-              <button
-                type="button"
-                className="wa-icon-btn !h-8 !w-8"
-                aria-label="Sort conversations"
-                aria-expanded={sortOpen}
-                onClick={() => setSortOpen((v) => !v)}
-              >
-                <ArrowUpDown size={14} strokeWidth={1.8} />
-              </button>
-              {sortOpen ? (
-                <>
-                  <button
-                    type="button"
-                    className="fixed inset-0 z-20 cursor-default"
-                    aria-label="Close sort menu"
-                    onClick={() => setSortOpen(false)}
-                  />
-                  <div
-                    role="menu"
-                    className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]"
-                  >
-                    {(Object.keys(CONVERSATION_SORT_LABELS) as ConversationSort[]).map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        role="menuitem"
-                        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[12px] text-[#101828] hover:bg-[#F9FAFB]"
-                        onClick={() => {
-                          setSort(key);
-                          setSortOpen(false);
-                        }}
-                      >
-                        {CONVERSATION_SORT_LABELS[key]}
-                        {sort === key ? <Check size={14} className="text-[#4D7C0F]" aria-hidden /> : null}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-            </div> : null}
           </div>
           {companyMode && filterCounts && onFilterChange ? (
             <div className="flex border-t border-[#E4E7EC] px-3">
@@ -257,29 +210,28 @@ export function ConversationList({
             </div>
           ) : null}
           {!companyMode && !chromeInParent && filterCounts && onFilterChange ? (
-            <div className="overflow-x-auto border-t border-[#E4E7EC] px-3 py-2 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="flex min-w-max items-center gap-1" role="tablist" aria-label="Primary conversation filters">
-                {salespersonPrimaryFilters.map((key) => {
-                  const activeFilter = filter === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      role="tab"
-                      aria-selected={activeFilter}
-                      onClick={() => onFilterChange(key)}
-                      className={`inline-flex items-center gap-1 rounded-[7px] border px-2 py-1.5 text-[10px] font-semibold transition-colors ${
-                        activeFilter
-                          ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
-                          : "border-transparent text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
-                      }`}
-                    >
-                      {INBOX_FILTER_LABELS[key]}
-                      <span className="tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="flex border-t border-sales-border px-2" role="tablist" aria-label="Primary conversation filters">
+              {salespersonPrimaryFilters.map((key) => {
+                const activeFilter = filter === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeFilter}
+                    onClick={() => onFilterChange(key)}
+                    className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1 py-2.5 text-[10px] font-medium transition-colors ${
+                      activeFilter
+                        ? "text-sales-text-primary"
+                        : "text-sales-text-secondary hover:text-sales-text-primary"
+                    }`}
+                  >
+                    {INBOX_FILTER_LABELS[key]}
+                    <span className="text-[9px] tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
+                    {activeFilter ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-sales-brand" /> : null}
+                  </button>
+                );
+              })}
             </div>
           ) : null}
           {!chromeInParent ? (
@@ -297,7 +249,18 @@ export function ConversationList({
                 </div>
                 {onFilterChange ? (
                   <div className="relative">
-                    <button type="button" className="wa-icon-btn !h-[38px] !w-[38px] border-[#E4E7EC]" onClick={() => setFilterOpen((value) => !value)} aria-label="Filter conversations" aria-expanded={filterOpen}>
+                    <button
+                      type="button"
+                      className={`wa-icon-btn !h-[38px] !w-[38px] ${
+                        !companyMode && salespersonAdvancedFilters.includes(filter)
+                          ? "!border-sales-brand-border !bg-sales-brand-soft text-sales-text-primary"
+                          : "border-sales-border"
+                      }`}
+                      onClick={() => setFilterOpen((value) => !value)}
+                      aria-label="Filter conversations"
+                      aria-expanded={filterOpen}
+                      aria-pressed={!companyMode && salespersonAdvancedFilters.includes(filter)}
+                    >
                       <SlidersHorizontal size={15} strokeWidth={1.8} />
                     </button>
                     {filterOpen ? (
@@ -343,51 +306,32 @@ export function ConversationList({
                     ) : null}
                   </div>
                 ) : null}
-                {companyMode ? (
-                  <div className="relative">
-                    <button type="button" className="wa-icon-btn !h-[38px] !w-[38px] border-[#E4E7EC]" aria-label="Sort conversations" aria-expanded={sortOpen} onClick={() => setSortOpen((value) => !value)}>
+                <div className="relative">
+                    <button type="button" className="wa-icon-btn !h-[38px] !w-[38px] border-sales-border" aria-label="Sort conversations" aria-expanded={sortOpen} onClick={() => setSortOpen((value) => !value)}>
                       <ArrowUpDown size={15} strokeWidth={1.8} />
                     </button>
                     {sortOpen ? (
                       <>
                         <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close sort menu" onClick={() => setSortOpen(false)} />
-                        <div className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-[#E4E7EC] bg-white py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
+                        <div className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
                           {(Object.keys(CONVERSATION_SORT_LABELS) as ConversationSort[]).map((key) => (
-                            <button key={key} type="button" className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] text-[#101828] hover:bg-[#F9FAFB]" onClick={() => { setSort(key); setSortOpen(false); }}>
+                            <button key={key} type="button" className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] text-sales-text-primary hover:bg-sales-surface-hover" onClick={() => { setSort(key); setSortOpen(false); }}>
                               {CONVERSATION_SORT_LABELS[key]}
-                              {sort === key ? <Check size={13} className="text-[#4D7C0F]" /> : null}
+                              {sort === key ? <Check size={13} className="text-sales-success" /> : null}
                             </button>
                           ))}
                         </div>
                       </>
                     ) : null}
                   </div>
-                ) : null}
               </div>
             </div>
           ) : null}
         </div>
       ) : (
-        <>
-          <div className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-4 py-3">
-            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-              Team Inbox
-            </span>
-            <span className="text-xs text-[var(--text-tertiary)]">Sorted by recent</span>
-          </div>
-          <div className="flex shrink-0 items-center gap-1.5 border-b border-[var(--border)] px-4 py-2 text-[11px] text-[var(--text-tertiary)]">
-            <span
-              className="inline-block h-[10px] w-[10px] rounded-full"
-              style={{ background: "var(--accent)" }}
-            />
-            Your leads
-            <span
-              className="ml-2 inline-block h-[10px] w-[10px] rounded-full"
-              style={{ border: "1.5px dashed var(--text-tertiary)" }}
-            />
-            Unassigned — tap badge to claim
-          </div>
-        </>
+        <div className="flex shrink-0 items-center border-b border-sales-border px-4 py-3">
+          <span className="text-[15px] font-semibold text-sales-text-primary">Conversations</span>
+        </div>
       )}
       <div
         className={`inbox-scroll min-h-0 flex-1 overflow-y-auto ${

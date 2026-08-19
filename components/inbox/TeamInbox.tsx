@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Inbox, PanelRight, Search, X } from "lucide-react";
-import { initials } from "@/lib/inbox/assignee-colors";
 import {
   useInboxCompact,
   useInboxExtraWideWorkspace,
@@ -15,13 +13,14 @@ import type { InboxConversation, InboxFilter } from "@/lib/inbox/types";
 import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
 import { ChatThread } from "./ChatThread";
 import { ConversationList } from "./ConversationList";
-import { FilterTabs } from "./FilterTabs";
-import { InboxIconRail } from "./InboxIconRail";
 import { LeadIntelligencePanel } from "./LeadIntelligencePanel";
 import { InboxPanelResizeHandle } from "./InboxPanelResizeHandle";
 import { InboxSkeleton } from "./InboxSkeleton";
 import { useInboxPanelWidths } from "@/lib/inbox/use-inbox-panel-widths";
-import { COMPANY_INBOX_PANEL_WIDTHS_KEY } from "@/lib/inbox/inbox-panel-widths";
+import {
+  COMPANY_INBOX_PANEL_WIDTHS_KEY,
+  SALESPERSON_INBOX_PANEL_WIDTHS_KEY,
+} from "@/lib/inbox/inbox-panel-widths";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
 import { CompanyConversationInsightRail } from "./CompanyConversationInsightRail";
@@ -35,11 +34,11 @@ type Props = {
   role: "SALESPERSON" | "CLIENT_MANAGER" | "SUPER_ADMIN";
   alsoSells?: boolean;
   clientId: string;
-  roleSubtitle: string;
-  pipelineHref: string;
+  roleSubtitle?: string;
+  pipelineHref?: string;
   teamHref?: string;
-  settingsHref: string;
-  inboxHref: string;
+  settingsHref?: string;
+  inboxHref?: string;
   initialSalespeople?: { id: string; name: string }[];
   initialFilter?: InboxFilter;
   backHref?: string;
@@ -53,8 +52,10 @@ type Props = {
 
 type MobilePane = "list" | "thread" | "intel";
 
-function activeConversationStorageKey(clientId: string): string {
-  return `segmiq-company-whatsapp-active:${clientId}`;
+function activeConversationStorageKey(clientId: string, companyMode: boolean): string {
+  return companyMode
+    ? `segmiq-company-whatsapp-active:${clientId}`
+    : `segmiq-salesperson-whatsapp-active:${clientId}`;
 }
 
 export function TeamInbox({
@@ -63,16 +64,10 @@ export function TeamInbox({
   role,
   alsoSells = false,
   clientId,
-  roleSubtitle,
-  pipelineHref,
-  teamHref,
-  settingsHref,
-  inboxHref,
   initialSalespeople = [],
   initialFilter = "all",
   backHref,
   pageTitle = "WhatsApp Sales Hub",
-  breadcrumb = "SALES / INBOX",
   companyMode = false,
   unreadNotifications = 0,
   avatarUrl,
@@ -91,7 +86,6 @@ export function TeamInbox({
   const [contextRevision, setContextRevision] = useState(0);
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [companyName, setCompanyName] = useState("");
-  const [sessionOpen, setSessionOpen] = useState<boolean | null>(null);
   const [whatsappConnection, setWhatsAppConnection] = useState<SafeWhatsAppConnection | null>(null);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const isMobile = useInboxMobile();
@@ -101,6 +95,7 @@ export function TeamInbox({
   const { setHideBottomNav } = useSalesMobileChrome();
   const searchParams = useSearchParams();
   const leadFromUrl = searchParams.get("conversation") ?? searchParams.get("lead");
+  const whatsappMode = !!backHref;
 
   const loadConversations = useCallback(async (options?: { silent?: boolean }) => {
     if (!options?.silent) setLoading(true);
@@ -113,16 +108,13 @@ export function TeamInbox({
       setLoadError(false);
       setActiveId((prev) => {
         if (prev && rows.some((r) => r.id === prev)) return prev;
-        if (companyMode) {
-          try {
-            const stored = localStorage.getItem(activeConversationStorageKey(clientId));
-            if (stored && rows.some((row) => row.id === stored)) return stored;
-          } catch {
-            /* ignore unavailable storage */
-          }
-          return null;
+        try {
+          const stored = localStorage.getItem(activeConversationStorageKey(clientId, companyMode));
+          if (stored && rows.some((row) => row.id === stored)) return stored;
+        } catch {
+          /* ignore unavailable storage */
         }
-        return rows[0]?.id ?? null;
+        return null;
       });
     } catch {
       if (!options?.silent) setLoadError(true);
@@ -141,12 +133,10 @@ export function TeamInbox({
     if (!leadFromUrl || conversations.length === 0) return;
     if (!conversations.some((c) => c.id === leadFromUrl)) return;
     setActiveId(leadFromUrl);
-    if (companyMode) {
-      try {
-        localStorage.setItem(activeConversationStorageKey(clientId), leadFromUrl);
-      } catch {
-        /* ignore unavailable storage */
-      }
+    try {
+      localStorage.setItem(activeConversationStorageKey(clientId, companyMode), leadFromUrl);
+    } catch {
+      /* ignore unavailable storage */
     }
     if (isCompact && backHref) setMobilePane("thread");
   }, [leadFromUrl, conversations, isCompact, backHref, clientId, companyMode]);
@@ -220,8 +210,6 @@ export function TeamInbox({
     }
   }
 
-  const whatsappMode = !!backHref;
-
   useEffect(() => {
     if (!whatsappMode) return;
     let cancelled = false;
@@ -246,7 +234,7 @@ export function TeamInbox({
     setActiveId(id);
     if (whatsappMode) {
       try {
-        if (companyMode) localStorage.setItem(activeConversationStorageKey(clientId), id);
+        localStorage.setItem(activeConversationStorageKey(clientId, companyMode), id);
         const url = new URL(window.location.href);
         url.searchParams.set("conversation", id);
         window.history.replaceState(window.history.state, "", url);
@@ -286,7 +274,6 @@ export function TeamInbox({
     intelCollapsed,
     resizeList,
     resizeIntel,
-    toggleListCollapsed,
     toggleIntelCollapsed,
     resizable,
   } = useInboxPanelWidths(
@@ -299,9 +286,10 @@ export function TeamInbox({
           allowListCollapse: false,
         }
       : {
+          storageKey: SALESPERSON_INBOX_PANEL_WIDTHS_KEY,
           defaultListWidth: isExtraWideWorkspace ? 350 : 310,
           defaultIntelWidth: isExtraWideWorkspace ? 410 : 350,
-          allowListCollapse: true,
+          allowListCollapse: false,
         }
   );
 
@@ -311,8 +299,7 @@ export function TeamInbox({
       ? !intelCollapsed
       : intelOpen;
 
-  const showHubChrome = whatsappMode && !companyMode && !paneNav;
-  const breadcrumbLabel = breadcrumb.replace(/\s*\/\s*/g, " / ");
+  const showHubChrome = whatsappMode && !companyMode && (!paneNav || mobilePane === "list");
 
   return (
     <div
@@ -341,155 +328,14 @@ export function TeamInbox({
         />
       ) : null}
 
-      {!whatsappMode ? (
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--surface-sidebar)] px-5">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIntelOpen(false);
-                  setConvOpen((v) => !v);
-                }}
-                className="toggle-conv flex h-[34px] w-[34px] items-center justify-center rounded-[10px] text-[var(--text-tertiary)] transition-all hover:bg-[var(--bg-quaternary)] hover:text-[var(--text-secondary)] max-[860px]:flex min-[861px]:hidden"
-                aria-label="Open conversations"
-              >
-                <Inbox size={16} />
-              </button>
-              <div className="flex items-center gap-0.5">
-                <span
-                  className="text-2xl font-normal tracking-tight text-[var(--text-primary)]"
-                  style={{ fontFamily: "var(--font-instrument-serif)" }}
-                >
-                  Segmi
-                </span>
-                <span
-                  className="text-2xl font-normal tracking-tight text-[var(--accent-fg)]"
-                  style={{ fontFamily: "var(--font-instrument-serif)" }}
-                >
-                  Q
-                </span>
-              </div>
-            </div>
-            <div className="hidden w-80 items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-2 py-1 md:flex">
-              <Search size={14} className="shrink-0 text-[var(--text-tertiary)]" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search leads, phone, location..."
-                className="w-full bg-transparent px-1 py-1 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="hidden lg:block">
-            <FilterTabs filter={filter} counts={counts} onChange={setFilter} />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <div className="text-xs font-medium text-[var(--text-primary)]">{userName}</div>
-              <div className="text-xs text-[var(--text-tertiary)]">{roleSubtitle}</div>
-            </div>
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold"
-              style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
-            >
-              {initials(userName)}
-            </div>
-          </div>
-        </header>
-      ) : null}
-
-      {!whatsappMode ? (
-        <div className="flex min-h-0 flex-1 overflow-hidden border-b border-[var(--border)] px-4 py-2 lg:hidden">
-          <FilterTabs filter={filter} counts={counts} onChange={setFilter} />
-        </div>
-      ) : null}
-
       {showHubChrome ? (
-        <div className="salesperson-wa-page-header min-h-[64px] shrink-0 border-b border-sales-border bg-sales-bg px-4 py-2.5 layout:px-5 sm:px-5">
-          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <div className="min-w-0 pl-11 layout:pl-0">
-              <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-[#98A2B3]">
-                {breadcrumbLabel}
-              </p>
-              <h1 className="mt-0.5 text-[22px] font-semibold leading-tight tracking-[-0.03em] text-[#101828] sm:text-[24px]">
-                {pageTitle}
-              </h1>
-            </div>
-
-            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-              <div className="wa-search min-w-0 flex-1 sm:w-[260px] sm:flex-none lg:w-[300px]">
-                <Search size={16} strokeWidth={1.8} className="shrink-0 text-[#98A2B3]" aria-hidden />
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search by name, phone, location..."
-                  className="w-full bg-transparent text-[14px] text-[#101828] placeholder:text-[#98A2B3] focus:outline-none"
-                  aria-label="Search conversations"
-                />
-                {search ? (
-                  <button
-                    type="button"
-                    onClick={() => setSearch("")}
-                    className="shrink-0 rounded p-0.5 text-[#98A2B3] hover:text-[#101828]"
-                    aria-label="Clear search"
-                  >
-                    <X size={14} strokeWidth={1.8} />
-                  </button>
-                ) : (
-                  <kbd className="hidden shrink-0 rounded border border-[#E4E7EC] bg-[#F9FAFB] px-1.5 py-0.5 text-[10px] font-medium text-[#98A2B3] sm:inline">
-                    ⌘K
-                  </kbd>
-                )}
-              </div>
-              {!paneNav ? (
-                <button
-                  type="button"
-                  className="wa-icon-btn"
-                  aria-label={intelOpenEffective ? "Hide lead intelligence" : "Show lead intelligence"}
-                  onClick={() => {
-                    if (resizable) toggleIntelCollapsed();
-                    else setIntelOpen((value) => !value);
-                  }}
-                >
-                  <PanelRight size={16} strokeWidth={1.8} />
-                </button>
-              ) : null}
-              <WhatsAppConnectionBadge connection={whatsappConnection} compact />
-              {active ? (
-                <div
-                  className={`inline-flex items-center gap-1.5 rounded-[8px] border px-2.5 py-1.5 text-[12px] font-medium ${
-                    sessionOpen === true
-                      ? "border-[#D1FADF] bg-[#ECFDF3] text-[#027A48]"
-                      : sessionOpen === false
-                        ? "border-[#FED7AA] bg-[#FFFAEB] text-[#B54708]"
-                        : "border-[#E4E7EC] bg-white text-[#667085]"
-                  }`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      sessionOpen === true
-                        ? "bg-[#16A34A]"
-                        : sessionOpen === false
-                          ? "bg-[#F59E0B]"
-                          : "bg-[#98A2B3]"
-                    }`}
-                    aria-hidden
-                  />
-                  {sessionOpen === true
-                    ? "24h session open"
-                    : sessionOpen === false
-                      ? "24h session closed"
-                      : "Session"}
-                </div>
-              ) : null}
-            </div>
-          </div>
-
+        <div className="salesperson-wa-page-header flex min-h-[52px] shrink-0 items-center justify-between gap-3 border-b border-sales-border bg-sales-bg px-4 py-2 layout:px-5 sm:px-5">
+          <h1 className="truncate text-[18px] font-semibold tracking-[-0.03em] text-sales-text-primary sm:text-[20px]">
+            {pageTitle}
+          </h1>
+          {whatsappConnection && !whatsappConnection.connected ? (
+            <WhatsAppConnectionBadge connection={whatsappConnection} compact />
+          ) : null}
         </div>
       ) : null}
 
@@ -502,15 +348,6 @@ export function TeamInbox({
               : "flex"
         }`}
       >
-        {!whatsappMode ? (
-          <InboxIconRail
-            pipelineHref={pipelineHref}
-            teamHref={teamHref}
-            settingsHref={settingsHref}
-            inboxHref={inboxHref}
-          />
-        ) : null}
-
         {loading ? (
           <InboxSkeleton />
         ) : loadError ? (
@@ -543,7 +380,6 @@ export function TeamInbox({
                 whatsappMode={whatsappMode}
                 mobileFullScreen={paneNav}
                 onSearchChange={setSearch}
-                roleSubtitle={roleSubtitle}
                 filterCounts={whatsappMode || companyMode ? counts : undefined}
                 onFilterChange={whatsappMode || companyMode ? setFilter : undefined}
                 ownerOptions={companyMode ? salespeople : undefined}
@@ -558,7 +394,7 @@ export function TeamInbox({
                 panel="list"
                 collapsed={listCollapsed}
                 onResize={resizeList}
-                onToggleCollapse={companyMode ? undefined : toggleListCollapsed}
+                onToggleCollapse={undefined}
                 label="Resize conversations panel"
                 desktopClassName={whatsappMode ? "min-[1280px]:flex" : undefined}
               />
@@ -602,7 +438,6 @@ export function TeamInbox({
                   setContextRevision((value) => value + 1);
                   void loadConversations({ silent: true });
                 }}
-                onSessionChange={setSessionOpen}
                 companyMode={companyMode}
                 canReassign={canReassign}
                 canCreateDeal={(canReassign || (salesCapable && ownsActive)) && !active?.activeDealId}

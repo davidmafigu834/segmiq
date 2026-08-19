@@ -3,7 +3,6 @@
 import type { InboxConversation } from "@/lib/inbox/types";
 import { formatAwaitingReply } from "@/lib/inbox/queue-filters";
 import {
-  conversationMetaLine,
   formatRelativeMessageTime,
   getWaitingTone,
   waitingToneClass,
@@ -13,13 +12,12 @@ import { LeadStageBadge } from "./LeadStageBadge";
 import { LeadIntentBadge } from "./LeadIntentBadge";
 import { initials } from "@/lib/inbox/assignee-colors";
 import { Image as ImageIcon, Mic } from "lucide-react";
-import { SiWhatsapp } from "react-icons/si";
 import { formatDealStage } from "@/lib/sales/deals/display";
 
 type Props = {
   conversation: InboxConversation;
   active: boolean;
-  currentRepName: string;
+  currentRepName?: string;
   onSelect: () => void;
   onClaim: (leadId: string) => void;
   claiming: boolean;
@@ -28,15 +26,14 @@ type Props = {
 };
 
 function previewIcon(messageType: string | null | undefined) {
-  if (messageType === "image") return <ImageIcon size={14} className="shrink-0 text-[#98A2B3]" />;
-  if (messageType === "audio") return <Mic size={14} className="shrink-0 text-[#98A2B3]" />;
+  if (messageType === "image") return <ImageIcon size={14} className="shrink-0 text-sales-text-muted" />;
+  if (messageType === "audio") return <Mic size={14} className="shrink-0 text-sales-text-muted" />;
   return null;
 }
 
 export function ConversationRow({
   conversation,
   active,
-  currentRepName,
   onSelect,
   onClaim,
   claiming,
@@ -46,7 +43,6 @@ export function ConversationRow({
   const name = displayContactName(conversation);
   const waitingLabel = formatAwaitingReply(conversation.awaitingReplyMinutes);
   const waitingTone = getWaitingTone(conversation.awaitingReplyMinutes);
-  const metaLine = companyMode ? null : conversationMetaLine(conversation, currentRepName);
   const isUnassigned = !conversation.assignedToId;
   const unread = conversation.unread > 0;
 
@@ -68,22 +64,18 @@ export function ConversationRow({
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
           <WhatsAppAvatar name={name} phone={conversation.phone} size="sm" />
-          {conversation.activeDealId ? (
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-sales-surface bg-[#25D366] text-white">
-              <SiWhatsapp size={8} aria-hidden />
-            </span>
-          ) : (
+          {!conversation.activeDealId ? (
             <LeadIntentBadge
               score={conversation.score}
               label={conversation.scoreLabel}
               variant="dot"
             />
-          )}
+          ) : null}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <span
-              className={`min-w-0 flex-1 truncate text-[13px] tracking-[-0.01em] text-[#101828] ${
+              className={`min-w-0 flex-1 truncate text-[13px] tracking-[-0.01em] text-sales-text-primary ${
                 unread ? "font-semibold" : "font-medium"
               }`}
             >
@@ -91,22 +83,22 @@ export function ConversationRow({
             </span>
             <span
               className={`shrink-0 text-[11px] tabular-nums font-medium ${
-                unread ? "text-[#25D366]" : "text-[#98A2B3]"
+                unread ? "text-sales-whatsapp" : "text-sales-text-muted"
               }`}
             >
               {formatRelativeMessageTime(conversation.lastMessageAt)}
             </span>
           </div>
 
-          <div className={`${companyMode ? "mt-0.5" : "mt-1"} flex items-center gap-1.5 text-[12px] text-[#667085]`}>
+          <div className={`${companyMode ? "mt-0.5" : "mt-1"} flex items-center gap-1.5 text-[12px] text-sales-text-secondary`}>
             <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
               {previewIcon(conversation.lastMessageType)}
-              <span className={`truncate ${unread ? "font-medium text-[#344054]" : ""}`}>
+              <span className={`truncate ${unread ? "font-medium text-sales-text-primary" : ""}`}>
                 {conversation.lastMessage}
               </span>
             </div>
             {unread ? (
-              <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#25D366] px-1 text-[10px] font-bold tabular-nums text-white">
+              <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-sales-whatsapp px-1 text-[10px] font-bold tabular-nums text-white">
                 {conversation.unread > 9 ? "9+" : conversation.unread}
               </span>
             ) : null}
@@ -140,12 +132,12 @@ export function ConversationRow({
                   e.stopPropagation();
                   onClaim(conversation.id);
                 }}
-                className="rounded-md border border-[#E4E7EC] bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#101828] hover:bg-[#F4FCE8] disabled:opacity-50"
+                className="rounded-md border border-sales-border bg-sales-surface px-1.5 py-0.5 text-[10px] font-semibold text-sales-text-primary hover:bg-sales-brand-soft disabled:opacity-50"
               >
                 {claiming ? "Claiming…" : "Claim"}
               </button>
             ) : isUnassigned ? (
-              <span className="text-[10px] font-medium text-[#98A2B3]">Unassigned</span>
+              <span className="text-[10px] font-medium text-sales-text-muted">Unassigned</span>
             ) : null}
             {companyMode && conversation.assignee ? (
               <span
@@ -157,12 +149,6 @@ export function ConversationRow({
               </span>
             ) : null}
           </div>
-
-          {metaLine ? (
-            <div className="mt-1 truncate text-[11px] text-[#98A2B3]" title={metaLine}>
-              {metaLine}
-            </div>
-          ) : null}
         </div>
       </div>
     </div>

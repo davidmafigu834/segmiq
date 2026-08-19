@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { matchesInboxFilter } from "../lib/inbox/queue-filters";
 import type { InboxConversation } from "../lib/inbox/types";
+import { buildWhatsAppSalesHubNav, isWhatsAppSalesHubPath } from "../lib/sales/whatsapp-hub-nav";
 
 function conversation(overrides: Partial<InboxConversation> = {}): InboxConversation {
   return {
@@ -82,4 +83,16 @@ test("intent filters use the shared score thresholds", () => {
   assert.equal(matchesInboxFilter(conversation({ score: 86 }), "hot", "rep-1"), true);
   assert.equal(matchesInboxFilter(conversation({ score: 55 }), "warm", "rep-1"), true);
   assert.equal(matchesInboxFilter(conversation({ score: 20 }), "cold", "rep-1"), true);
+});
+
+test("WhatsApp Sales Hub nav is a single inbox item, not nested dashboard pages", () => {
+  const nav = buildWhatsAppSalesHubNav({ hotLeads: 2, needsReply: 3, followUpDue: 1, followUpsToday: 4 });
+
+  assert.equal(nav.href, "/sales/inbox");
+  assert.equal(nav.badge, 6);
+  assert.equal(nav.children, undefined);
+  assert.equal(isWhatsAppSalesHubPath("/sales/inbox"), true);
+  assert.equal(isWhatsAppSalesHubPath("/sales/inbox/needs-reply"), true);
+  assert.equal(isWhatsAppSalesHubPath("/sales/followups"), false);
+  assert.equal(isWhatsAppSalesHubPath("/sales/reports"), false);
 });

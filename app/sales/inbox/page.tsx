@@ -5,9 +5,8 @@ export const dynamic = "force-dynamic";
 export default function SalesInboxPage() {
   return (
     <SalesInboxPageView
-      breadcrumb="SALES / INBOX"
+      breadcrumb="SALES / WHATSAPP SALES HUB"
       pageTitle="WhatsApp Sales Hub"
-      fullPage
     />
   );
 }

@@ -5,10 +5,9 @@ export const dynamic = "force-dynamic";
 export default function AwaitingReplyInboxPage() {
   return (
     <SalesInboxPageView
-      breadcrumb="SALES / WHATSAPP SALES HUB / NEEDS REPLY"
-      pageTitle="Needs reply"
+      breadcrumb="SALES / WHATSAPP SALES HUB"
+      pageTitle="WhatsApp Sales Hub"
       initialFilter="awaiting_reply"
-      fullPage
     />
   );
 }

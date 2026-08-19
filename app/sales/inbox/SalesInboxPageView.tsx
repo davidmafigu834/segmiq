@@ -43,11 +43,11 @@ export async function SalesInboxPageView({
   pageTitle,
   breadcrumb,
   initialFilter = "all",
-  fullPage = false,
 }: {
   pageTitle: string;
   breadcrumb: string;
   initialFilter?: InboxFilter;
+  /** @deprecated Hub is always full-page. Kept so existing callers compile. */
   fullPage?: boolean;
 }) {
   const session = await getServerSession(authOptions);
@@ -57,28 +57,6 @@ export async function SalesInboxPageView({
   const isSolo = session.clientMode === "solo";
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
   const Layout = isSolo ? SoloLayout : SalesLayout;
-
-  if (!fullPage) {
-    return (
-      <Layout breadcrumb={breadcrumb} pageTitle={pageTitle}>
-        <Suspense fallback={<InboxSuspenseFallback />}>
-          <TeamInbox
-            userName={session.user?.name ?? "User"}
-            userId={session.userId}
-            role={session.role === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON"}
-            alsoSells={session.alsoSells}
-            clientId={session.clientId}
-            roleSubtitle={isSolo ? "Owner" : "Sales Executive"}
-            pipelineHref="/sales/pipeline"
-            settingsHref="/sales/profile"
-            inboxHref="/sales/inbox"
-            teamHref={isSolo ? undefined : dashboardHref}
-            initialFilter={initialFilter}
-          />
-        </Suspense>
-      </Layout>
-    );
-  }
 
   const [navBadges, userRes] = await Promise.all([
     fetchSalesNavBadges(session.userId, session.clientId),

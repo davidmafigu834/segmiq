@@ -26,6 +26,8 @@ import { formatDealStage } from "@/lib/sales/deals/display";
 import { applyQuickReplyVariables } from "@/lib/inbox/quick-reply-vars";
 import { LogCallForm } from "@/components/leads/LogCallForm";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
+import { Button } from "@/components/sales/ui/Button";
+import { TextArea } from "@/components/sales/ui/Input";
 import { groupMessagesByDay, MessageBubble } from "./MessageBubble";
 import { LeadStageBadge } from "./LeadStageBadge";
 import { LeadIntentBadge } from "./LeadIntentBadge";
@@ -131,6 +133,9 @@ export function ChatThread({
   const [sendError, setSendError] = useState<string | null>(null);
   const [createDealOpen, setCreateDealOpen] = useState(false);
   const [dealLead, setDealLead] = useState<LeadRow | null>(null);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
   const [hasNewBelow, setHasNewBelow] = useState(false);
   const [hasOlder, setHasOlder] = useState(false);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
@@ -387,8 +392,7 @@ export function ChatThread({
       if (action.preset) {
         await sendCustomMessage(action.preset);
       } else {
-        const text = window.prompt("Enter your message:");
-        if (text?.trim()) await sendCustomMessage(text);
+        composerRef.current?.focus();
       }
       return;
     }
@@ -418,20 +422,31 @@ export function ChatThread({
     await sendCustomMessage(text);
   }
 
-  async function handleInternalNote() {
+  function handleInternalNote() {
     if (!conversation) return;
-    const note = window.prompt("Add internal note (customer will not see this):");
-    if (!note?.trim()) return;
-    const res = await fetch(`/api/leads/${conversation.id}/internal-note`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ note: note.trim() }),
-    });
-    if (res.ok) {
-      onMessagesChange();
-      const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages?limit=80`);
-      const data = (await msgRes.json()) as { messages?: InboxChatMessage[] };
-      setMessages((current) => mergeChatMessages(current, data.messages ?? []));
+    setNoteDraft("");
+    setNoteOpen(true);
+  }
+
+  async function saveInternalNote() {
+    if (!conversation || !noteDraft.trim() || noteSaving) return;
+    setNoteSaving(true);
+    try {
+      const res = await fetch(`/api/leads/${conversation.id}/internal-note`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note: noteDraft.trim() }),
+      });
+      if (res.ok) {
+        setNoteOpen(false);
+        setNoteDraft("");
+        onMessagesChange();
+        const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages?limit=80`);
+        const data = (await msgRes.json()) as { messages?: InboxChatMessage[] };
+        setMessages((current) => mergeChatMessages(current, data.messages ?? []));
+      }
+    } finally {
+      setNoteSaving(false);
     }
   }
 
@@ -603,17 +618,6 @@ export function ChatThread({
                 {canReassign ? <ChevronDown size={12} className="text-sales-text-muted" /> : null}
               </button>
             ) : null}
-            {!companyMode && showLogCall ? (
-              <button
-                type="button"
-                onClick={() => setLogCallOpen(true)}
-                aria-label={`Log call with ${name}`}
-                title="Log call"
-                className="wa-icon-btn !h-9 !w-9 max-[420px]:hidden"
-              >
-                <Phone size={16} strokeWidth={1.8} />
-              </button>
-            ) : null}
             <button
               type="button"
               onClick={onToggleIntel}
@@ -706,7 +710,7 @@ export function ChatThread({
           <button type="button" onClick={() => setQuickActionsOpen(true)} className="wa-action-chip max-[520px]:hidden">
             <Paperclip size={14} strokeWidth={1.8} /> Send asset
           </button>
-          <button type="button" onClick={() => void handleInternalNote()} className="wa-action-chip max-[640px]:hidden">
+          <button type="button" onClick={handleInternalNote} className="wa-action-chip max-[640px]:hidden">
             <StickyNote size={14} strokeWidth={1.8} /> Internal note
           </button>
           {showLogCall ? (
@@ -714,15 +718,34 @@ export function ChatThread({
               <Phone size={14} strokeWidth={1.8} /> Log call
             </button>
           ) : null}
-          <button type="button" onClick={() => setComposerMoreOpen((value) => !value)} aria-expanded={composerMoreOpen} className="wa-action-chip min-[641px]:hidden">
+          {leadHref ? (
+            <Link href={leadHref} className="wa-action-chip max-[760px]:hidden">
+              <UserRound size={14} strokeWidth={1.8} /> View Lead
+            </Link>
+          ) : null}
+          {dealHref ? (
+            <Link href={dealHref} className="wa-action-chip">
+              <BriefcaseBusiness size={14} strokeWidth={1.8} /> View Deal
+            </Link>
+          ) : canCreateDeal ? (
+            <button type="button" onClick={() => void openCreateDeal()} className="wa-action-chip wa-action-chip-active">
+              <BriefcaseBusiness size={14} strokeWidth={1.8} /> Create Deal
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setComposerMoreOpen((value) => !value)} aria-expanded={composerMoreOpen} className="wa-action-chip min-[761px]:hidden">
             More <ChevronDown size={14} strokeWidth={1.8} />
           </button>
           {composerMoreOpen ? (
             <>
               <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close more actions" onClick={() => setComposerMoreOpen(false)} />
-              <div className="absolute left-2 top-full z-30 mt-1 min-w-[160px] rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
+              <div className="absolute left-2 top-full z-30 mt-1 min-w-[180px] rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[521px]:hidden" onClick={() => { setComposerMoreOpen(false); setQuickActionsOpen(true); }}><Paperclip size={14} /> Send asset</button>
-                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover" onClick={() => { setComposerMoreOpen(false); void handleInternalNote(); }}><StickyNote size={14} /> Internal note</button>
+                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[641px]:hidden" onClick={() => { setComposerMoreOpen(false); handleInternalNote(); }}><StickyNote size={14} /> Internal note</button>
+                {leadHref ? (
+                  <Link href={leadHref} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[761px]:hidden" onClick={() => setComposerMoreOpen(false)}>
+                    <UserRound size={14} /> View Lead
+                  </Link>
+                ) : null}
               </div>
             </>
           ) : null}
@@ -830,7 +853,17 @@ export function ChatThread({
               onCollapse={() => setQuickActionsOpen(false)}
             />
           ) : null}
-          {sessionClosed ? (
+          {!transportAvailable ? (
+            <div className="mx-3 mt-2 flex items-start gap-2 rounded-[9px] border border-sales-danger/30 bg-sales-danger-soft px-3 py-2.5 text-sales-danger-fg">
+              <AlertTriangle size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
+              <div className="min-w-0">
+                <div className="text-[12px] font-semibold">{connectionLabel} is disconnected</div>
+                <p className="mt-0.5 text-[11px] leading-snug">
+                  Conversation history and CRM tools remain available. Sending resumes after a company manager reconnects WhatsApp.
+                </p>
+              </div>
+            </div>
+          ) : sessionClosed ? (
             <div className="wa-session-banner">
               <Clock size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
               <div className="min-w-0">
@@ -886,17 +919,6 @@ export function ChatThread({
                   <Paperclip size={16} strokeWidth={1.8} />
                 </button>
               </>
-            ) : null}
-            {isWhatsApp && !companyMode ? (
-              <button
-                type="button"
-                onClick={() => setQuickActionsOpen(true)}
-                aria-label="Attach a sales asset"
-                title="Attach sales asset"
-                className="wa-icon-btn-muted shrink-0"
-              >
-                <Paperclip size={16} strokeWidth={1.8} />
-              </button>
             ) : null}
             <input
               ref={composerRef}
@@ -984,6 +1006,49 @@ export function ChatThread({
               </button>
             ))}
           </div>
+        </PremiumSheet>
+      ) : null}
+
+      {noteOpen ? (
+        <PremiumSheet
+          eyebrow="Internal"
+          title="Add internal note"
+          description="The customer will not see this note."
+          onClose={() => {
+            if (!noteSaving) setNoteOpen(false);
+          }}
+          closeDisabled={noteSaving}
+          labelledBy="inbox-internal-note-title"
+          maxWidthClass="max-w-lg"
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={noteSaving}
+                onClick={() => setNoteOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                loading={noteSaving}
+                disabled={!noteDraft.trim()}
+                onClick={() => void saveInternalNote()}
+              >
+                Save note
+              </Button>
+            </div>
+          }
+        >
+          <TextArea
+            value={noteDraft}
+            onChange={(event) => setNoteDraft(event.target.value)}
+            placeholder="Write a note for the team…"
+            rows={5}
+            autoFocus
+          />
         </PremiumSheet>
       ) : null}
 

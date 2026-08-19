@@ -1,5 +1,6 @@
 export const INBOX_PANEL_WIDTHS_KEY = "segmiq-inbox-panel-widths";
 export const COMPANY_INBOX_PANEL_WIDTHS_KEY = "segmiq-company-inbox-panel-widths";
+export const SALESPERSON_INBOX_PANEL_WIDTHS_KEY = "segmiq-salesperson-inbox-panel-widths";
 
 export const DEFAULT_LIST_PANEL_WIDTH = 360;
 export const DEFAULT_INTEL_PANEL_WIDTH = 380;
