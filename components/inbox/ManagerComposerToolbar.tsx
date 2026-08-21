@@ -159,7 +159,7 @@ export function ManagerComposerToolbar({
             {onTransfer ? (
               <ComposerTool icon={Headphones} label="Transfer" onClick={onTransfer} />
             ) : null}
-            {onTransferSupport ? (
+            {!isSupport && onTransferSupport ? (
               <ComposerTool icon={Headphones} label="To Support" onClick={onTransferSupport} />
             ) : null}
             {onMore ? <ComposerTool icon={MoreHorizontal} label="More" onClick={onMore} /> : null}

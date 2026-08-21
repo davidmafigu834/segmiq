@@ -1,22 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
   ArrowLeft,
   AlertTriangle,
-  BriefcaseBusiness,
   CheckCircle2,
   ChevronDown,
   FileText,
   MoreHorizontal,
   PanelRight,
-  Paperclip,
   Phone,
   Send,
   StickyNote,
   UserRound,
-  Zap,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import type { InboxChatMessage, InboxConversation } from "@/lib/inbox/types";

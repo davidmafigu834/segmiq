@@ -16,15 +16,6 @@ import type { CompanyConversationContext, InboxConversation } from "@/lib/inbox/
 import { supportStageLabel } from "@/lib/inbox/conversation-type";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 
-function formatDateTime(value: string): { date: string; time: string } {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return { date: "Not available", time: "" };
-  return {
-    date: new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(date),
-    time: new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(date),
-  };
-}
-
 function relativeDate(value: string): string {
   const date = new Date(value);
   const now = new Date();
