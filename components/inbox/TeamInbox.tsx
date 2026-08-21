@@ -335,7 +335,10 @@ export function TeamInbox({
       : intelOpen;
 
   const showHubChrome =
-    whatsappMode && !companyMode && (!paneNav || mobilePane === "list") && !activeId;
+    whatsappMode && !companyMode && paneNav && mobilePane === "list" && !activeId;
+
+  const showCompanyPageHeader =
+    companyMode && paneNav && mobilePane === "list" && !activeId;
 
   return (
     <div
@@ -354,7 +357,7 @@ export function TeamInbox({
         </div>
       ) : null}
 
-      {companyMode && (!paneNav || mobilePane === "list") ? (
+      {showCompanyPageHeader ? (
         <CompanyWhatsAppHeader
           unreadNotifications={unreadNotifications}
           notificationRole={role}
@@ -371,9 +374,7 @@ export function TeamInbox({
           companyMode
             ? "company-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
             : whatsappMode
-              ? `salesperson-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface ${
-                  activeId ? "wa-hub-conversation-focused" : ""
-                }`
+              ? "salesperson-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
               : "flex"
         }`}
       >
@@ -431,9 +432,22 @@ export function TeamInbox({
             <div
               className={`company-wa-chat-pane flex min-h-0 min-w-0 flex-1 flex-col wa-panel ${
                 paneNav && mobilePane !== "thread" ? "max-[1099px]:hidden" : ""
-              }`}
+              } ${activeId ? "wa-hub-conversation-focused" : ""}`}
               data-course-target={whatsappMode && !companyMode ? "whatsapp-chat" : undefined}
             >
+              {whatsappMode && !companyMode ? (
+                <SalespersonHubHeader
+                  connection={whatsappConnection}
+                  title={pageTitle}
+                  variant="pane"
+                />
+              ) : null}
+              {companyMode ? (
+                <CompanyWhatsAppHeader
+                  connection={whatsappConnection}
+                  variant="pane"
+                />
+              ) : null}
               <ChatThread
                 conversation={active}
                 clientId={clientId}

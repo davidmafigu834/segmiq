@@ -20,6 +20,7 @@ type Props = {
   action: NextBestAction | null;
   onCall?: () => void;
   onSchedule?: () => void;
+  scheduleHref?: string;
   onViewQuote?: () => void;
   onCompletePlan?: () => void;
   completing?: boolean;
@@ -34,6 +35,7 @@ export function SalesConversationAssist({
   action,
   onCall,
   onSchedule,
+  scheduleHref,
   onViewQuote,
   onCompletePlan,
   completing = false,
@@ -146,8 +148,15 @@ export function SalesConversationAssist({
                     {completing ? "Saving…" : "Complete"}
                   </button>
                 ) : null}
-                {action.showSchedule && onSchedule ? (
-                  <button type="button" onClick={onSchedule} className="wa-btn-secondary !h-7 !w-auto !px-2 !text-[10px]">
+                {action.showSchedule && (onSchedule || scheduleHref) ? (
+                  <button
+                    type="button"
+                    onClick={
+                      onSchedule ??
+                      (scheduleHref ? () => window.location.assign(scheduleHref) : undefined)
+                    }
+                    className="wa-btn-secondary !h-7 !w-auto !px-2 !text-[10px]"
+                  >
                     <CalendarDays size={12} strokeWidth={1.8} /> Schedule
                   </button>
                 ) : null}

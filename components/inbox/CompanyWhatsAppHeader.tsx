@@ -20,18 +20,12 @@ function relativeSynced(iso: string | null | undefined): string | null {
   return `Last synced ${Math.round(minutes / 60)}h ago`;
 }
 
-export function CompanyWhatsAppHeader({
-  unreadNotifications,
-  notificationRole,
-  userName,
-  avatarUrl,
+function ConnectionStatus({
   connection,
+  compact = false,
 }: {
-  unreadNotifications: number;
-  notificationRole: UserRole;
-  userName: string;
-  avatarUrl?: string | null;
   connection: SafeWhatsAppConnection | null;
+  compact?: boolean;
 }) {
   const connected = connection?.connected === true;
   const pending = Boolean(
@@ -39,6 +33,79 @@ export function CompanyWhatsAppHeader({
   );
   const synced = relativeSynced(connection?.lastSeenAt ?? connection?.connectedAt ?? null);
   const showBroadcast = connected && connection?.capabilities.broadcast;
+
+  return (
+    <div className={`flex shrink-0 items-center gap-2 ${compact ? "flex-wrap justify-end" : "flex-col items-end gap-1"}`}>
+      <div className="text-right">
+        {connected ? (
+          <>
+            <p className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-[#168A42]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#25D366]" aria-hidden />
+              WhatsApp connected
+            </p>
+            {synced ? <p className="mt-0.5 text-[10px] text-sales-text-muted">{synced}</p> : null}
+          </>
+        ) : pending ? (
+          <p className="text-[11px] font-medium text-sales-warning-fg">WhatsApp connecting…</p>
+        ) : (
+          <>
+            <p className="text-[11px] font-semibold text-sales-danger-fg">WhatsApp temporarily offline</p>
+            <Link href="/client/account/whatsapp" className="text-[10px] font-semibold text-sales-link hover:underline">
+              Reconnect
+            </Link>
+          </>
+        )}
+      </div>
+      {showBroadcast ? (
+        <Link
+          href="/client/marketing/campaigns/new"
+          className="inline-flex h-7 shrink-0 items-center gap-1 rounded-[8px] bg-sales-brand px-2.5 text-[10px] font-semibold text-sales-brand-text transition-colors hover:brightness-[0.97]"
+          title="Create an approved-template WhatsApp campaign"
+        >
+          <Send size={13} strokeWidth={1.8} aria-hidden />
+          Broadcast
+          <ChevronDown size={11} strokeWidth={1.8} aria-hidden />
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+export function CompanyWhatsAppHeader({
+  unreadNotifications,
+  notificationRole,
+  userName,
+  avatarUrl,
+  connection,
+  variant = "page",
+}: {
+  unreadNotifications?: number;
+  notificationRole?: UserRole;
+  userName?: string;
+  avatarUrl?: string | null;
+  connection: SafeWhatsAppConnection | null;
+  variant?: "page" | "pane";
+}) {
+  if (variant === "pane") {
+    return (
+      <header className="company-wa-pane-header flex min-h-[44px] shrink-0 items-center justify-between gap-3 border-b border-sales-border bg-sales-surface px-3 py-2 sm:px-4">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="truncate text-[14px] font-semibold tracking-[-0.02em] text-sales-text-primary sm:text-[15px]">
+              WhatsApp Sales Hub
+            </h1>
+            <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-sales-text-secondary">
+              Company
+            </span>
+          </div>
+          <p className="company-wa-pane-header-subtitle mt-0.5 truncate text-[10px] text-sales-text-muted sm:text-[11px]">
+            Manage conversations, customer context and team responses in one place.
+          </p>
+        </div>
+        <ConnectionStatus connection={connection} compact />
+      </header>
+    );
+  }
 
   return (
     <header className="company-wa-page-header flex min-h-[56px] shrink-0 items-start justify-between gap-3 border-b border-sales-border bg-sales-bg px-4 py-2.5 sm:px-5">
@@ -59,12 +126,12 @@ export function CompanyWhatsAppHeader({
       <div className="hidden shrink-0 flex-col items-end gap-1 layout:flex">
         <div className="flex items-center gap-1.5">
           <div className="sd-search-wrap hidden w-[min(24vw,320px)] min-w-[220px] min-[1280px]:block">
-            <GlobalSearch role={notificationRole} placeholder="Search conversations…" />
+            <GlobalSearch role={notificationRole!} placeholder="Search conversations…" />
           </div>
-          <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+          <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole!} />
           <SalesThemeToggle />
           <SalesProfileMenu
-            userName={userName}
+            userName={userName ?? "Manager"}
             userRoleLabel="Company Manager"
             avatarUrl={avatarUrl}
             profileHref="/client/settings/profile"
@@ -72,37 +139,7 @@ export function CompanyWhatsAppHeader({
             helpLabel="Help & Support"
           />
         </div>
-        <div className="flex items-center gap-2">
-          {connected ? (
-            <div className="text-right">
-              <p className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-[#168A42]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#25D366]" aria-hidden />
-                WhatsApp connected
-              </p>
-              {synced ? <p className="text-[10px] text-sales-text-muted">{synced}</p> : null}
-            </div>
-          ) : pending ? (
-            <p className="text-[11px] font-medium text-sales-warning-fg">WhatsApp connecting…</p>
-          ) : (
-            <div className="text-right">
-              <p className="text-[11px] font-semibold text-sales-danger-fg">WhatsApp temporarily offline</p>
-              <Link href="/client/account/whatsapp" className="text-[10px] font-semibold text-sales-link hover:underline">
-                Reconnect
-              </Link>
-            </div>
-          )}
-          {showBroadcast ? (
-            <Link
-              href="/client/marketing/campaigns/new"
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] bg-sales-brand px-3 text-[11px] font-semibold text-sales-brand-text transition-colors hover:brightness-[0.97]"
-              title="Create an approved-template WhatsApp campaign"
-            >
-              <Send size={14} strokeWidth={1.8} aria-hidden />
-              Broadcast Message
-              <ChevronDown size={12} strokeWidth={1.8} aria-hidden />
-            </Link>
-          ) : null}
-        </div>
+        <ConnectionStatus connection={connection} />
       </div>
     </header>
   );

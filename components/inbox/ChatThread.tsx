@@ -33,8 +33,6 @@ import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 import { TransferDialog } from "./TransferDialog";
 import { TransferToSupportDialog } from "./TransferToSupportDialog";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
-import { NextBestActionStrip } from "./NextBestActionStrip";
-import { QualificationStrip } from "./QualificationStrip";
 import { SalesConversationAssist } from "./SalesConversationAssist";
 import { AssetDrawer } from "./AssetDrawer";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
@@ -546,7 +544,7 @@ export function ChatThread({
 
   if (!conversation) {
     return (
-      <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6">
+      <div className="wa-chat-wallpaper flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6">
         <div className="wa-empty-hint max-w-sm text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-sales-border bg-sales-bg text-[#25D366]">
             <SiWhatsapp size={24} aria-hidden />
@@ -599,14 +597,14 @@ export function ChatThread({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       <div
         className={`shrink-0 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))] ${
           isWhatsApp ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
         }`}
       >
         <div className={`flex items-center justify-between gap-2 px-3 sm:px-4 ${
-          salespersonHub && isWhatsApp ? "py-2" : "py-3"
+          (salespersonHub || companyMode) && isWhatsApp ? "py-2" : "py-3"
         }`}>
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             {onBack ? (
@@ -860,24 +858,16 @@ export function ChatThread({
         />
       ) : null}
 
-      {companyMode && alsoSells && canSend && nextBestAction ? (
-        <NextBestActionStrip
+      {companyMode && alsoSells && canSend && !isSupport ? (
+        <SalesConversationAssist
+          conversation={conversation}
+          lead={contextLead}
           action={nextBestAction}
-          condensed={!!onBack}
           onCall={conversation.phone ? () => window.open(`tel:${conversation.phone}`, "_self") : undefined}
-          onSchedule={() => {
-            window.location.href = `/client/calendar?lead=${conversation.id}`;
-          }}
+          scheduleHref={`/client/calendar?lead=${conversation.id}`}
           onViewQuote={dealHref ? () => window.location.assign(dealHref) : undefined}
           onCompletePlan={() => void handleCompletePlanAction()}
           completing={planCompleting}
-        />
-      ) : null}
-
-      {companyMode && alsoSells && canSend && !conversation.activeDealId && !isSupport ? (
-        <QualificationStrip
-          conversation={conversation}
-          lead={contextLead}
           onInsertQuestion={insertComposerText}
           onCreateDeal={() => void openCreateDeal()}
           canCreateDeal={canCreateDeal}

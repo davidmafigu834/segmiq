@@ -7,24 +7,83 @@ function relativeSynced(iso: string | null | undefined): string | null {
   const ms = Date.now() - new Date(iso).getTime();
   if (!Number.isFinite(ms) || ms < 0) return null;
   const seconds = Math.max(1, Math.round(ms / 1000));
-  if (seconds < 60) return `last synced ${seconds} sec ago`;
+  if (seconds < 60) return `Last synced ${seconds} sec ago`;
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `last synced ${minutes} min ago`;
-  return `last synced ${Math.round(minutes / 60)}h ago`;
+  if (minutes < 60) return `Last synced ${minutes} min ago`;
+  return `Last synced ${Math.round(minutes / 60)}h ago`;
 }
 
-export function SalespersonHubHeader({
+function ConnectionStatus({
   connection,
-  title = "WhatsApp Sales Hub",
+  compact = false,
 }: {
   connection: SafeWhatsAppConnection | null;
-  title?: string;
+  compact?: boolean;
 }) {
   const connected = connection?.connected === true;
   const pending = Boolean(
     connection && ["INITIALIZING", "AWAITING_QR", "CONNECTING", "RECONNECTING"].includes(connection.status)
   );
   const synced = relativeSynced(connection?.lastSeenAt ?? connection?.connectedAt ?? null);
+
+  if (connected) {
+    return (
+      <div className={compact ? "text-right" : "shrink-0 pt-1 text-right"}>
+        <p className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-[#168A42]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#25D366]" aria-hidden />
+          WhatsApp connected
+        </p>
+        {synced ? <p className="mt-0.5 text-[10px] text-sales-text-muted">{synced}</p> : null}
+      </div>
+    );
+  }
+
+  if (pending) {
+    return (
+      <p className={`text-[11px] font-medium text-sales-warning-fg ${compact ? "text-right" : ""}`}>
+        WhatsApp connecting…
+      </p>
+    );
+  }
+
+  return (
+    <div className={compact ? "text-right" : "shrink-0 pt-1 text-right"}>
+      <p className="text-[11px] font-semibold text-sales-danger-fg">WhatsApp temporarily offline</p>
+      {!compact ? (
+        <p className="mt-0.5 max-w-[220px] text-[10px] leading-snug text-sales-text-muted">
+          Messages cannot send until your company reconnects WhatsApp.
+        </p>
+      ) : (
+        <p className="mt-0.5 text-[10px] text-sales-text-muted">Messaging unavailable</p>
+      )}
+    </div>
+  );
+}
+
+export function SalespersonHubHeader({
+  connection,
+  title = "WhatsApp Sales Hub",
+  variant = "page",
+}: {
+  connection: SafeWhatsAppConnection | null;
+  title?: string;
+  variant?: "page" | "pane";
+}) {
+  if (variant === "pane") {
+    return (
+      <header className="salesperson-wa-pane-header flex min-h-[44px] shrink-0 items-center justify-between gap-3 border-b border-sales-border bg-sales-surface px-3 py-2 sm:px-4">
+        <div className="min-w-0">
+          <h1 className="truncate text-[14px] font-semibold tracking-[-0.02em] text-sales-text-primary sm:text-[15px]">
+            {title}
+          </h1>
+          <p className="salesperson-wa-pane-header-subtitle truncate text-[10px] text-sales-text-muted sm:text-[11px]">
+            Your selling workspace for WhatsApp
+          </p>
+        </div>
+        <ConnectionStatus connection={connection} compact />
+      </header>
+    );
+  }
 
   return (
     <header className="salesperson-wa-page-header flex min-h-[56px] shrink-0 items-start justify-between gap-3 px-4 py-2.5 sm:px-5">
@@ -36,26 +95,7 @@ export function SalespersonHubHeader({
           Your selling workspace for WhatsApp
         </p>
       </div>
-      <div className="shrink-0 pt-1 text-right">
-        {connected ? (
-          <p className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-[#168A42]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#25D366]" aria-hidden />
-            WhatsApp connected
-          </p>
-        ) : pending ? (
-          <p className="text-[11px] font-medium text-sales-warning-fg">WhatsApp connecting…</p>
-        ) : (
-          <div>
-            <p className="text-[11px] font-semibold text-sales-danger-fg">WhatsApp temporarily offline</p>
-            <p className="mt-0.5 max-w-[220px] text-[10px] leading-snug text-sales-text-muted">
-              Messages cannot send until your company reconnects WhatsApp.
-            </p>
-          </div>
-        )}
-        {connected && synced ? (
-          <p className="mt-0.5 text-[10px] text-sales-text-muted">{synced}</p>
-        ) : null}
-      </div>
+      <ConnectionStatus connection={connection} />
     </header>
   );
 }
