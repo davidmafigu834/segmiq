@@ -737,11 +737,11 @@ export function SalesQuotesClient() {
                                 e.stopPropagation();
                                 setMenuId((id) => (id === quote.id ? null : quote.id));
                               }}
-                              onOpen={() => void openQuote(quote.id, quote.customerPhone)}
+                              onOpen={() => void openQuote(quote.id)}
                               onDownload={() => void downloadPdf(quote.id, quote.quoteNumber)}
                               onCopyLink={() => copyLink(quote.publicToken)}
-                              onDuplicate={() => void duplicateQuote(quote.id, quote.customerPhone)}
-                              onRevise={() => void reviseQuote(quote.id, quote.customerPhone)}
+                              onDuplicate={() => void duplicateQuote(quote.id)}
+                              onRevise={() => void reviseQuote(quote.id)}
                               onMarkAccepted={() => void setQuoteStatus(quote.id, "accepted")}
                               onMarkDeclined={() => void setQuoteStatus(quote.id, "rejected")}
                               onOpenLead={() => openLeadPanel(quote.leadId)}
@@ -771,7 +771,7 @@ export function SalesQuotesClient() {
                       <MobileQuoteCard
                         key={quote.id}
                         quote={quote}
-                        onOpen={() => void openQuote(quote.id, quote.customerPhone)}
+                        onOpen={() => void openQuote(quote.id)}
                       />
                     ))
                   )}
