@@ -66,7 +66,7 @@ export async function loadQuotationWorkspace(
   const full = await loadQuotationWithItems(supabase, quotationId);
   if (!full) return null;
 
-  const quote = full as QuotationRow & { items: QuotationLineItemRow[] };
+  const quote = full as unknown as QuotationRow & { items: QuotationLineItemRow[] };
   const leadId = quote.lead_id;
 
   const [{ data: lead }, { data: client }, { data: settings }] = await Promise.all([
