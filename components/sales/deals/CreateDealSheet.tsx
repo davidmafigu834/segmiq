@@ -112,17 +112,17 @@ export function CreateDealSheet({
   const [error, setError] = useState<string | null>(null);
   const [existingDealId, setExistingDealId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const leadIdRef = useRef(lead.id);
+  const lastFocusedLeadRef = useRef<string | null>(null);
 
-  // Reset / prefill when opening for a lead
-  useEffect(() => {
-    if (!open) return;
-    const hint = parseLeadBudgetHint(lead.budget);
-    setName(suggestDealName(lead));
-    setServiceSummary(lead.project_type?.trim() ?? "");
-    setCustomerNeed(lead.customer_need?.trim() ?? "");
-    setLocation(locationFromLead(lead));
-    setBuyingTimeframe(normalizeBuyingTimeframe(lead.buying_timeframe ?? lead.timeline));
-    setDecisionMakerStatus(lead.decision_maker_status ?? "");
+  function applyLeadDefaults(nextLead: LeadRow) {
+    const hint = parseLeadBudgetHint(nextLead.budget);
+    setName(suggestDealName(nextLead));
+    setServiceSummary(nextLead.project_type?.trim() ?? "");
+    setCustomerNeed(nextLead.customer_need?.trim() ?? "");
+    setLocation(locationFromLead(nextLead));
+    setBuyingTimeframe(normalizeBuyingTimeframe(nextLead.buying_timeframe ?? nextLead.timeline));
+    setDecisionMakerStatus(nextLead.decision_maker_status ?? "");
     setDecisionMakerName("");
     setValueMode(hint.mode);
     setExactValue(hint.exact != null ? String(hint.exact) : "");
@@ -131,27 +131,40 @@ export function CreateDealSheet({
     setExpectedDecisionAt("");
     setNextActionLabel("Follow up");
     setNextActionOther(false);
-    setNextActionAt(toDatetimeLocalValue(lead.follow_up_date));
+    setNextActionAt(toDatetimeLocalValue(nextLead.follow_up_date));
     setAllowWithoutNextAction(false);
     setNotes("");
-    setMoreOpen(Boolean(locationFromLead(lead) || lead.decision_maker_status));
+    setMoreOpen(Boolean(locationFromLead(nextLead) || nextLead.decision_maker_status));
     setSaving(false);
     setError(null);
     setExistingDealId(null);
     setFieldErrors({});
+  }
+
+  // Prefill only when switching to a different lead — keep draft when modal closes/reopens.
+  useEffect(() => {
+    if (lead.id === leadIdRef.current) return;
+    leadIdRef.current = lead.id;
+    lastFocusedLeadRef.current = null;
+    applyLeadDefaults(lead);
+  }, [lead]);
+
+  useEffect(() => {
+    if (!open) return;
+    const isReopen = lastFocusedLeadRef.current === lead.id;
+    lastFocusedLeadRef.current = lead.id;
+    if (isReopen) return;
+
     const t = window.setTimeout(() => {
       const el = nameRef.current;
       if (!el) return;
+      el.focus();
       if (suggestDealName(lead)) {
-        // Prefill present — leave focus on name for quick edit, or skip to value if solid
-        el.focus();
         el.select();
-      } else {
-        el.focus();
       }
     }, 40);
     return () => window.clearTimeout(t);
-  }, [open, lead]);
+  }, [open, lead.id, lead]);
 
   useEffect(() => {
     if (!open) return;
@@ -251,6 +264,8 @@ export function CreateDealSheet({
           title: "Deal created",
           description: "Practice only — your real sales data was not changed.",
         });
+        applyLeadDefaults(lead);
+        lastFocusedLeadRef.current = null;
         onClose();
       }, 450);
       return;
@@ -278,6 +293,8 @@ export function CreateDealSheet({
           return;
         }
         onCreated(data.deal, { alreadyExisted: false });
+        applyLeadDefaults(lead);
+        lastFocusedLeadRef.current = null;
         onClose();
         return;
       }
