@@ -67,10 +67,19 @@ export function formatQuoteNumber(
   quoteNumber: string | null | undefined,
   revisionNumber?: number
 ): string {
-  if (!quoteNumber?.trim()) return "Draft";
+  if (!quoteNumber?.trim()) return "No number";
   const base = quoteNumber.trim();
-  if (revisionNumber != null && revisionNumber > 1) return `${base}-R${revisionNumber}`;
+  // Revision suffix is for display in lists when helpful; workspace shows Version separately.
+  if (revisionNumber != null && revisionNumber > 1) return `${base} · v${revisionNumber}`;
   return base;
+}
+
+/** Identity for headers — never use status as the title. */
+export function formatQuoteIdentity(
+  quoteNumber: string | null | undefined
+): string {
+  if (!quoteNumber?.trim()) return "Quotation";
+  return quoteNumber.trim();
 }
 
 export function formatQuoteAmount(

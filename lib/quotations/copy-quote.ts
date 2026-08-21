@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, format } from "date-fns";
 import { saveItemsAndTotals } from "@/lib/quotations/persist";
+import { allocateQuoteNumber } from "@/lib/quotations/quote-number";
 import type { QuotationLineItemInput, QuotationSectionDef } from "@/types";
 
 type Actor = { id: string; name: string };
@@ -25,6 +26,8 @@ export async function copyQuotationAsDraft(
     parentQuotationId?: string | null;
     revisionNumber?: number;
     revisionNote?: string | null;
+    /** When true (duplicate), always allocate a new company quote number. */
+    allocateNewNumber?: boolean;
   }
 ): Promise<{ id: string } | null> {
   const { data: source } = await supabase
@@ -46,11 +49,19 @@ export async function copyQuotationAsDraft(
     ? (source.valid_until as string)
     : format(addDays(new Date(), 30), "yyyy-MM-dd");
 
+  const isRevision = Boolean(opts.parentQuotationId);
+  const quoteNumber =
+    opts.allocateNewNumber || !isRevision
+      ? await allocateQuoteNumber(supabase, opts.clientId)
+      : ((source.quote_number as string | null) ??
+        (await allocateQuoteNumber(supabase, opts.clientId)));
+
   const insertPayload: Record<string, unknown> = {
     client_id: opts.clientId,
     lead_id: opts.targetLeadId,
     deal_id: source.deal_id ?? null,
     status: "draft",
+    quote_number: quoteNumber,
     customer_name: source.customer_name,
     customer_phone: source.customer_phone,
     customer_email: source.customer_email,
@@ -66,7 +77,6 @@ export async function copyQuotationAsDraft(
     revision_number: opts.revisionNumber ?? 1,
   };
 
-  // Enterprise columns — ignored/null-safe if migration not applied yet via try/catch below
   insertPayload.discount_percent = source.discount_percent ?? 0;
   insertPayload.payment_terms_label = source.payment_terms_label ?? null;
   insertPayload.payment_schedule = source.payment_schedule ?? [];
@@ -84,7 +94,6 @@ export async function copyQuotationAsDraft(
   {
     const { data, error } = await supabase.from("quotations").insert(insertPayload).select("id").single();
     if (error) {
-      // Fallback without enterprise columns
       const { data: legacy, error: legacyErr } = await supabase
         .from("quotations")
         .insert({
@@ -92,6 +101,7 @@ export async function copyQuotationAsDraft(
           lead_id: opts.targetLeadId,
           deal_id: source.deal_id ?? null,
           status: "draft",
+          quote_number: quoteNumber,
           customer_name: source.customer_name,
           customer_phone: source.customer_phone,
           customer_email: source.customer_email,

@@ -51,14 +51,12 @@ export default async function SalesQuoteWorkspacePage({
 
   const Layout = session.clientMode === "solo" ? SoloLayout : SalesLayout;
   const shell = await loadSalesShellProps(session);
-  const number = initial?.quotation.quote_number
-    ? `Quotations / ${initial.quotation.quote_number}`
-    : "Quotations / Draft";
+  const identity = initial?.quotation.quote_number?.trim() || "Quotation";
 
   return (
     <Layout
       breadcrumb="SALES / QUOTATIONS"
-      pageTitle="Quotation"
+      pageTitle={identity}
       hideShellHeader
       hideShellSidebar
       contentFlush
@@ -66,8 +64,9 @@ export default async function SalesQuoteWorkspacePage({
       <SalesAppShell
         {...shell}
         breadcrumb="Sales / Quotations"
-        title={number}
-        description="Build the commercial offer attached to the Deal."
+        title={identity}
+        description={undefined}
+        showDefaultHeader={false}
         searchPlaceholder="Search leads, customers, quotes..."
       >
         <Suspense fallback={<WorkspaceFallback />}>

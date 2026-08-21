@@ -14,10 +14,11 @@ type Props = {
   leadId: string;
   clientId: string;
   leadPhone: string | null;
+  dealId?: string | null;
   onChanged?: () => void;
 };
 
-export function QuotationsPanel({ leadId, clientId, onChanged }: Props) {
+export function QuotationsPanel({ leadId, clientId, dealId, onChanged }: Props) {
   const router = useRouter();
   const [quotes, setQuotes] = useState<QuotationRow[]>([]);
   const [templates, setTemplates] = useState<QuoteTemplateRow[]>([]);
@@ -64,10 +65,14 @@ export function QuotationsPanel({ leadId, clientId, onChanged }: Props) {
       const res = await fetch(`/api/leads/${leadId}/quotations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(templateId ? { templateId } : {}),
+        body: JSON.stringify({
+          ...(templateId ? { templateId } : {}),
+          ...(dealId ? { dealId } : {}),
+        }),
       });
-      const json = (await res.json()) as { quotation?: QuotationWithItems };
+      const json = (await res.json()) as { quotation?: QuotationWithItems; error?: string };
       if (json.quotation) openWorkspace(json.quotation.id);
+      else if (json.error) setCopyToast(json.error);
     } finally {
       setCreating(false);
     }

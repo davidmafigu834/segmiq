@@ -55,7 +55,7 @@ export default async function SalesQuotesPage() {
         {...shell}
         breadcrumb="Sales / Quotations"
         title="Quotations"
-        description="Create, send and track quotations. Turn quotes into won deals."
+        description="Create, send and follow up on commercial offers for active Deals."
         searchPlaceholder="Search leads, customers, quotes..."
       >
         <Suspense fallback={<QuotesFallback />}>

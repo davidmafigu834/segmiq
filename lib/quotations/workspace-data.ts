@@ -12,6 +12,7 @@ export type WorkspaceLinkedDeal = {
   title: string;
   stage: string | null;
   value: number | null;
+  ownerId: string | null;
 };
 
 export type WorkspaceLinkedCustomer = {
@@ -40,7 +41,7 @@ export type QuotationWorkspacePayload = {
   customer: WorkspaceLinkedCustomer;
   deal: WorkspaceLinkedDeal | null;
   companyName: string | null;
-  owner: { id: string | null; name: string | null };
+  owner: { id: string | null; name: string };
   settings: Partial<QuotationSettingsRow> | null;
   versions: WorkspaceVersionSummary[];
   events: QuotationEventRow[];
@@ -54,6 +55,17 @@ export type QuotationWorkspacePayload = {
     canCustomItems: boolean;
   };
 };
+
+async function resolveUserName(
+  supabase: SupabaseClient,
+  userId: string | null | undefined
+): Promise<{ id: string | null; name: string | null }> {
+  if (!userId) return { id: null, name: null };
+  const { data } = await supabase.from("users").select("id, name").eq("id", userId).maybeSingle();
+  if (!data) return { id: userId, name: null };
+  const name = ((data.name as string) || "").trim();
+  return { id: data.id as string, name: name || null };
+}
 
 export async function loadQuotationWorkspace(
   supabase: SupabaseClient,
@@ -84,7 +96,7 @@ export async function loadQuotationWorkspace(
   if (dealId) {
     const { data: d } = await supabase
       .from("deals")
-      .select("id, name, stage, estimated_value, won_value, service_summary")
+      .select("id, name, stage, estimated_value, won_value, service_summary, owner_id")
       .eq("id", dealId)
       .maybeSingle();
     if (d) {
@@ -98,11 +110,36 @@ export async function loadQuotationWorkspace(
             : d.estimated_value != null
               ? Number(d.estimated_value)
               : null,
+        ownerId: (d.owner_id as string) || null,
       };
     }
   }
 
-  // Version chain: walk parent or find siblings by base number
+  // Owner: quotation preparer → Deal owner → lead assignee → Unassigned (never "Unknown")
+  const prepared = await resolveUserName(supabase, quote.prepared_by_id);
+  const dealOwner = deal?.ownerId ? await resolveUserName(supabase, deal.ownerId) : null;
+  const leadOwner = await resolveUserName(supabase, lead?.assigned_to_id as string | null);
+
+  const ownerName =
+    (quote.prepared_by_name || "").trim() ||
+    prepared.name ||
+    dealOwner?.name ||
+    leadOwner.name ||
+    null;
+  const ownerId =
+    quote.prepared_by_id || prepared.id || dealOwner?.id || leadOwner.id || null;
+
+  const owner = {
+    id: ownerId,
+    name:
+      ownerName && ownerName !== "Unknown"
+        ? ownerName
+        : ownerId
+          ? "Unassigned"
+          : "Unassigned",
+  };
+  if (owner.name === "Unknown") owner.name = "Unassigned";
+
   const versions: WorkspaceVersionSummary[] = [];
   const rootId = quote.parent_quotation_id || quote.id;
   const { data: chain } = await supabase
@@ -168,10 +205,7 @@ export async function loadQuotationWorkspace(
     },
     deal,
     companyName: (client?.name as string) || null,
-    owner: {
-      id: quote.prepared_by_id,
-      name: quote.prepared_by_name,
-    },
+    owner,
     settings: s,
     versions,
     events,

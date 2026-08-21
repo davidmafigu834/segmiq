@@ -48,7 +48,7 @@ export { SALES_REPORT_SOURCES as QUOTES_SOURCES };
 export const QUOTES_STATUS_FILTERS: { id: QuotesStatusFilter; label: string }[] = [
   { id: "all", label: "All statuses" },
   { id: "draft", label: "Draft" },
-  { id: "pending", label: "Pending" },
+  { id: "pending", label: "Awaiting customer" },
   { id: "sent", label: "Sent" },
   { id: "viewed", label: "Viewed" },
   { id: "accepted", label: "Accepted" },
@@ -170,6 +170,7 @@ type DbQuote = {
   id: string;
   lead_id: string;
   client_id: string;
+  deal_id?: string | null;
   quote_number: string | null;
   revision_number: number | null;
   status: string;
@@ -204,7 +205,8 @@ type DbLead = {
 function mapQuote(
   row: DbQuote,
   lead: DbLead | undefined,
-  now: Date
+  now: Date,
+  dealTitle?: string | null
 ): QuoteListRow {
   const status = (row.status as QuotationStatus) || "draft";
   const effective = effectiveQuoteStatus(status, row.valid_until, now);
@@ -245,7 +247,7 @@ function mapQuote(
     customerPhone: row.customer_phone ?? lead?.phone ?? null,
     customerEmail: row.customer_email,
     customerSecondary,
-    projectType: lead?.project_type?.trim() || null,
+    projectType: dealTitle?.trim() || lead?.project_type?.trim() || null,
     total: totalNum != null && Number.isFinite(totalNum) ? totalNum : null,
     currency: row.currency || "USD",
     sentAt,
@@ -275,11 +277,15 @@ function matchesStatusFilter(row: QuoteListRow, status: QuotesStatusFilter): boo
 
 function buildKpis(current: QuoteListRow[], previous: QuoteListRow[], periodLabel: string): QuoteKpis {
   const total = current.length;
+  const drafts = current.filter((q) => q.effectiveStatus === "draft").length;
   const pending = current.filter((q) => isPendingStatus(q.effectiveStatus)).length;
+  const expiringSoon = current.filter((q) => q.expiresSoon).length;
   const accepted = current.filter((q) => q.effectiveStatus === "accepted").length;
   const declined = current.filter((q) => q.effectiveStatus === "rejected").length;
 
   const totalPrev = previous.length;
+  const draftsPrev = previous.filter((q) => q.effectiveStatus === "draft").length;
+  void draftsPrev;
   const acceptedPrev = previous.filter((q) => q.effectiveStatus === "accepted").length;
   const declinedPrev = previous.filter((q) => q.effectiveStatus === "rejected").length;
 
@@ -291,9 +297,16 @@ function buildKpis(current: QuoteListRow[], previous: QuoteListRow[], periodLabe
       value: total,
       trend: pctTrend(total, totalPrev, periodLabel),
     },
+    drafts: {
+      value: drafts,
+      pctOfTotal: total > 0 ? Math.round((drafts / total) * 100) : null,
+    },
     pending: {
       value: pending,
       pctOfTotal: total > 0 ? Math.round((pending / total) * 100) : null,
+    },
+    expiringSoon: {
+      value: expiringSoon,
     },
     accepted: {
       value: accepted,
@@ -330,7 +343,7 @@ function buildPerformance(rows: QuoteListRow[]): QuotesPayload["performance"] {
   const order: QuotePerformanceSlice["key"][] = ["accepted", "pending", "declined", "expired"];
   const labels: Record<QuotePerformanceSlice["key"], string> = {
     accepted: "Accepted",
-    pending: "Pending",
+    pending: "Awaiting customer",
     declined: "Declined",
     expired: "Expired",
   };
@@ -352,7 +365,7 @@ function buildActivity(rows: QuoteListRow[], limit = 5): QuoteActivityItem[] {
   const events: QuoteActivityItem[] = [];
 
   for (const q of rows) {
-    const label = q.quoteNumber?.trim() || "Draft";
+    const label = q.quoteNumber?.trim() || "No number";
     const who = q.customerName?.trim() || "Customer";
     const detail = `${label} · ${who}`;
 
@@ -443,7 +456,7 @@ export function buildQuotesCsv(
   const lines = [headers.join(",")];
   for (const q of rows) {
     const cells = [
-      q.quoteNumber ?? "Draft",
+      q.quoteNumber ?? "No number",
       q.customerName ?? "",
       q.projectType ?? "",
       q.total != null ? String(q.total) : "",
@@ -502,13 +515,26 @@ export async function fetchSalespersonQuotes(opts: {
       supabase
         .from("quotations")
         .select(
-          "id, lead_id, client_id, quote_number, revision_number, status, customer_name, customer_phone, customer_email, total, currency, sent_at, valid_until, viewed_at, accepted_at, responded_at, created_at, updated_at, public_token, prepared_by_name"
+          "id, lead_id, client_id, deal_id, quote_number, revision_number, status, customer_name, customer_phone, customer_email, total, currency, sent_at, valid_until, viewed_at, accepted_at, responded_at, created_at, updated_at, public_token, prepared_by_name"
         )
         .in("lead_id", leadIds)
         .order("updated_at", { ascending: false }),
     ]);
     allTimeCount = allRes.count ?? 0;
     quoteRows = (periodRes.data ?? []) as DbQuote[];
+  }
+
+  const dealIds = [...new Set(quoteRows.map((q) => q.deal_id).filter(Boolean))] as string[];
+  const dealTitleById = new Map<string, string>();
+  if (dealIds.length > 0) {
+    const { data: deals } = await supabase
+      .from("deals")
+      .select("id, name, service_summary")
+      .in("id", dealIds);
+    for (const d of deals ?? []) {
+      const title = ((d.name as string) || (d.service_summary as string) || "").trim();
+      if (title) dealTitleById.set(d.id as string, title);
+    }
   }
 
   const clientIds = Array.from(
@@ -524,7 +550,9 @@ export async function fetchSalespersonQuotes(opts: {
     hasTemplates = (count ?? 0) > 0;
   }
 
-  const mappedAll = quoteRows.map((q) => mapQuote(q, leadMap.get(q.lead_id), now));
+  const mappedAll = quoteRows.map((q) =>
+    mapQuote(q, leadMap.get(q.lead_id), now, q.deal_id ? dealTitleById.get(q.deal_id) : null)
+  );
 
   const inRange = (iso: string, from: Date, to: Date) => {
     const t = new Date(iso).getTime();

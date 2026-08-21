@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageQuotationForLead } from "@/lib/quotations/quote-access";
-import { ensureQuotationSettings } from "@/lib/quotations/quote-number";
+import { allocateQuoteNumber, ensureQuotationSettings } from "@/lib/quotations/quote-number";
 import { saveItemsAndTotals, loadQuotationWithItems } from "@/lib/quotations/persist";
 import { loadTemplateWithItems, templateItemsToQuotationInputs } from "@/lib/quotations/templates";
+import { logQuotationEvent } from "@/lib/quotations/events";
 import type { QuotationLineItemInput } from "@/types";
 import { addDays, format } from "date-fns";
 
@@ -68,14 +69,68 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   }
 
   const taxRate = body.tax_rate ?? templateTax ?? (Number(settings.default_tax_rate) || 0);
+  const validDays =
+    templateValidDays ??
+    (settings.default_validity_days != null ? Number(settings.default_validity_days) : 14);
   const validUntil =
-    body.valid_until ??
-    format(addDays(new Date(), templateValidDays ?? 30), "yyyy-MM-dd");
+    body.valid_until ?? format(addDays(new Date(), validDays > 0 ? validDays : 14), "yyyy-MM-dd");
 
   const dealId =
-    (typeof body.dealId === "string" && body.dealId) ||
+    (typeof body.dealId === "string" && body.dealId.trim()) ||
     (lead?.active_deal_id as string | null) ||
     null;
+
+  if (!dealId) {
+    return NextResponse.json(
+      { error: "Select a Deal before creating a quotation" },
+      { status: 400 }
+    );
+  }
+
+  // Verify Deal belongs to this lead/client and resolve owner
+  const { data: deal } = await supabase
+    .from("deals")
+    .select("id, client_id, originating_lead_id, owner_id, name")
+    .eq("id", dealId)
+    .maybeSingle();
+
+  if (!deal || deal.client_id !== access.lead.client_id) {
+    return NextResponse.json({ error: "Deal not found" }, { status: 404 });
+  }
+  if (deal.originating_lead_id !== params.leadId) {
+    return NextResponse.json(
+      { error: "Deal does not belong to this customer/lead" },
+      { status: 400 }
+    );
+  }
+
+  let preparedById = access.actor.id;
+  let preparedByName = access.actor.name;
+  if (deal.owner_id) {
+    const { data: owner } = await supabase
+      .from("users")
+      .select("id, name")
+      .eq("id", deal.owner_id)
+      .maybeSingle();
+    if (owner) {
+      preparedById = owner.id as string;
+      preparedByName = ((owner.name as string) || "").trim() || preparedByName;
+    }
+  }
+  if (!preparedByName || preparedByName === "Unknown") {
+    const { data: actorUser } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", access.actor.id)
+      .maybeSingle();
+    preparedByName = ((actorUser?.name as string) || "").trim() || "Unassigned";
+  }
+
+  // Assign immutable company-scoped identity at creation (not on send).
+  const quoteNumber = await allocateQuoteNumber(supabase, access.lead.client_id);
+
+  const paymentTerms =
+    (settings.default_payment_terms as string | null)?.trim() || null;
 
   const { data: quote, error } = await supabase
     .from("quotations")
@@ -83,36 +138,81 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
       client_id: access.lead.client_id,
       lead_id: params.leadId,
       deal_id: dealId,
+      quote_number: quoteNumber,
       status: "draft",
       customer_name: (lead?.name as string | null) ?? null,
       customer_phone: (lead?.phone as string | null) ?? null,
       customer_email: (lead?.email as string | null) ?? null,
       tax_rate: taxRate,
       other_amount: body.other_amount ?? templateOther ?? 0,
+      currency: (settings.default_currency as string) || "USD",
       valid_until: validUntil,
       notes: body.notes ?? templateNotes ?? null,
       terms: body.terms ?? templateTerms ?? (settings.default_terms as string | null) ?? null,
-      prepared_by_id: access.actor.id,
-      prepared_by_name: access.actor.name,
+      payment_terms_label: paymentTerms,
+      prepared_by_id: preparedById,
+      prepared_by_name: preparedByName,
+      revision_number: 1,
     })
     .select("*")
     .single();
 
-  if (error || !quote) {
-    return NextResponse.json({ error: error?.message ?? "Create failed" }, { status: 500 });
+  let created = quote;
+  if (error || !created) {
+    // Fallback without enterprise columns (pre-migration environments)
+    const { data: legacy, error: legacyErr } = await supabase
+      .from("quotations")
+      .insert({
+        client_id: access.lead.client_id,
+        lead_id: params.leadId,
+        deal_id: dealId,
+        quote_number: quoteNumber,
+        status: "draft",
+        customer_name: (lead?.name as string | null) ?? null,
+        customer_phone: (lead?.phone as string | null) ?? null,
+        customer_email: (lead?.email as string | null) ?? null,
+        tax_rate: taxRate,
+        other_amount: body.other_amount ?? templateOther ?? 0,
+        currency: (settings.default_currency as string) || "USD",
+        valid_until: validUntil,
+        notes: body.notes ?? templateNotes ?? null,
+        terms: body.terms ?? templateTerms ?? (settings.default_terms as string | null) ?? null,
+        prepared_by_id: preparedById,
+        prepared_by_name: preparedByName,
+        revision_number: 1,
+      })
+      .select("*")
+      .single();
+    if (legacyErr || !legacy) {
+      return NextResponse.json(
+        { error: error?.message ?? legacyErr?.message ?? "Create failed" },
+        { status: 500 }
+      );
+    }
+    created = legacy;
   }
 
   const itemsToSave = body.items?.length ? body.items : templateItems;
   if (itemsToSave?.length) {
     await saveItemsAndTotals(
       supabase,
-      quote.id as string,
+      created.id as string,
       itemsToSave,
       taxRate,
       body.other_amount ?? templateOther ?? 0
     );
   }
 
-  const full = await loadQuotationWithItems(supabase, quote.id as string);
+  await logQuotationEvent(supabase, {
+    quotationId: created.id as string,
+    clientId: access.lead.client_id,
+    leadId: params.leadId,
+    dealId,
+    actor: { id: access.actor.id, name: preparedByName },
+    eventType: "CREATED",
+    eventData: { quote_number: quoteNumber, deal_id: dealId },
+  });
+
+  const full = await loadQuotationWithItems(supabase, created.id as string);
   return NextResponse.json({ quotation: full }, { status: 201 });
 }

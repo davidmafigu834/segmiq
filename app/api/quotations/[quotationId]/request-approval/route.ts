@@ -25,14 +25,6 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     );
   }
 
-  const { data: settings } = await supabase
-    .from("quotation_settings")
-    .select(
-      "max_discount_percent, min_margin_percent, approval_value_threshold, require_approval_above_discount"
-    )
-    .eq("client_id", access.clientId)
-    .maybeSingle();
-
   const items = (full.items as QuotationLineItemInput[]) ?? [];
   const totals = totalsForCheck(
     items,
@@ -50,23 +42,19 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     paymentTermsLabel: full.payment_terms_label as string | null,
     items,
     totals,
-    approvalStatus: "not_required",
-    guardrails: {
-      maxDiscountPercent: Number(settings?.max_discount_percent) || 10,
-      minMarginPercent:
-        settings?.min_margin_percent != null ? Number(settings.min_margin_percent) : null,
-      approvalValueThreshold:
-        settings?.approval_value_threshold != null
-          ? Number(settings.approval_value_threshold)
-          : null,
-      requireApprovalAboveDiscount: settings?.require_approval_above_discount !== false,
-    },
   });
 
-  const reasons =
-    check.approvalReasons.length > 0
-      ? check.approvalReasons
-      : ["Manual approval requested"];
+  if (!check.canSend) {
+    return NextResponse.json(
+      {
+        error: "Complete commercial check before requesting approval",
+        blockers: check.items.filter((c) => c.status === "block").map((c) => c.action || c.label),
+      },
+      { status: 400 }
+    );
+  }
+
+  const reasons = ["Manual approval requested"];
 
   await supabase
     .from("quotations")

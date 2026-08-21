@@ -36,7 +36,6 @@ import {
 } from "@/lib/quotations/totals";
 import {
   runCommercialCheck,
-  type CommercialGuardrails,
 } from "@/lib/quotations/commercial-check";
 import {
   LIFECYCLE_LABELS,
@@ -48,7 +47,7 @@ import {
 } from "@/lib/quotations/lifecycle";
 import { quotationEventLabel } from "@/lib/quotations/events";
 import { QUOTE_UNITS } from "@/lib/quotations/units";
-import { formatQuoteNumber, getQuoteStatusTone } from "@/lib/sales/quotes";
+import { formatQuoteIdentity, getQuoteStatusTone } from "@/lib/sales/quotes";
 import type {
   CatalogItemRow,
   QuotationLineItemInput,
@@ -252,23 +251,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     [items, taxRate, otherAmount, discountPercent]
   );
 
-  const guardrails: CommercialGuardrails = useMemo(
-    () => ({
-      maxDiscountPercent: Number(payload?.settings?.max_discount_percent) || 10,
-      minMarginPercent:
-        payload?.settings?.min_margin_percent != null
-          ? Number(payload.settings.min_margin_percent)
-          : null,
-      approvalValueThreshold:
-        payload?.settings?.approval_value_threshold != null
-          ? Number(payload.settings.approval_value_threshold)
-          : null,
-      requireApprovalAboveDiscount:
-        payload?.settings?.require_approval_above_discount !== false,
-    }),
-    [payload?.settings]
-  );
-
   const commercial = useMemo(
     () =>
       runCommercialCheck({
@@ -280,10 +262,8 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         paymentTermsLabel: paymentTerms,
         items,
         totals,
-        approvalStatus: q?.approval_status,
-        guardrails,
       }),
-    [q, payload, currency, validUntil, paymentTerms, items, totals, guardrails]
+    [q, payload, currency, validUntil, paymentTerms, items, totals]
   );
 
   const persist = useCallback(async () => {
@@ -394,8 +374,14 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     };
   }, []);
 
-  const quoteNumberLabel = formatQuoteNumber(q?.quote_number, q?.revision_number);
+  const quoteNumberLabel = formatQuoteIdentity(q?.quote_number);
   const versionLabel = `Version ${q?.revision_number ?? 1}`;
+  const statusLabel = quotationStatusLabel(q?.status ?? "draft");
+  const sendBlocked = !commercial.canSend;
+  const sendHelper =
+    sendBlocked && commercial.blockingCount > 0
+      ? `Complete ${commercial.blockingCount} required item${commercial.blockingCount === 1 ? "" : "s"} before sending.`
+      : undefined;
 
   async function revise() {
     setBusy("revise");
@@ -566,7 +552,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       if (!savedAt) return "Saved";
       const mins = Math.max(0, Math.round((Date.now() - savedAt.getTime()) / 60000));
       if (mins < 1) return "Saved";
-      return `Auto-saved | ${mins}m ago`;
+      return `Auto-saved ${mins}m ago`;
     }
     return "";
   })();
@@ -600,36 +586,44 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   });
 
   return (
-    <div className="relative flex min-h-[calc(100vh-7rem)] flex-col pb-16">
+    <div className="relative flex flex-col pb-16">
       {/* Header */}
       <div className="flex flex-col gap-3 border-b border-sales-border pb-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="truncate text-[18px] font-semibold tracking-tight text-sales-text-primary sm:text-[20px]">
-              <Link href="/sales/quotes" className="text-sales-text-secondary hover:text-sales-text-primary">
-                Quotations
-              </Link>
-              <span className="text-sales-text-muted"> / </span>
-              <span>{quoteNumberLabel}</span>
+              Quotation {quoteNumberLabel}
             </h1>
+            <span className="inline-flex items-center rounded-full bg-sales-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-sales-text-secondary">
+              {statusLabel}
+            </span>
             <span className="inline-flex items-center rounded-full bg-[var(--sales-brand-soft-solid)] px-2.5 py-0.5 text-[11px] font-semibold text-sales-brand-text">
               {versionLabel}
             </span>
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-sales-text-secondary">
+          <p className="mt-1 text-[12.5px] text-sales-text-muted">
+            Build the commercial offer attached to the Deal.
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-sales-text-secondary">
             {payload.deal ? (
               <Link
                 href={`/sales/deals/${payload.deal.id}`}
-                className="hover:text-sales-text-primary hover:underline"
+                className="font-medium text-sales-text-primary hover:underline"
               >
                 Deal: {payload.deal.title}
               </Link>
             ) : (
-              <span>Deal: —</span>
+              <span className="text-sales-danger">No Deal linked</span>
             )}
-            <span className="text-sales-border-strong">|</span>
+            <span className="text-sales-border-strong">·</span>
             <span className="inline-flex items-center gap-1">
-              Customer: {payload.customer.name}
+              Customer:{" "}
+              <Link
+                href={`/sales/leads?leadId=${payload.customer.leadId}`}
+                className="font-medium text-sales-text-primary hover:underline"
+              >
+                {payload.customer.name}
+              </Link>
               {payload.customer.hasWhatsApp ? (
                 <MessageCircle className="h-3.5 w-3.5 text-[var(--sales-whatsapp)]" aria-label="WhatsApp" />
               ) : null}
@@ -666,15 +660,34 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
           <Button variant="secondary" size="sm" leftIcon={<Download className="h-3.5 w-3.5" />} onClick={() => void downloadPdf()} loading={busy === "pdf"}>
             Download PDF
           </Button>
-          <Button
-            size="sm"
-            leftIcon={<Send className="h-3.5 w-3.5" />}
-            onClick={() => setSendOpen(true)}
-            disabled={readOnly && q.status === "accepted"}
-            className="hidden sm:inline-flex"
-          >
-            Send quotation
-          </Button>
+          <div className="hidden flex-col items-end sm:flex">
+            <Button
+              size="sm"
+              leftIcon={<Send className="h-3.5 w-3.5" />}
+              onClick={() => {
+                if (sendBlocked) {
+                  setTab("items");
+                  setRailOpen(true);
+                  toast({
+                    tone: "warning",
+                    title: "Complete commercial check",
+                    description: sendHelper,
+                  });
+                  return;
+                }
+                setSendOpen(true);
+              }}
+              disabled={q.status === "accepted" || q.status === "superseded"}
+              title={sendHelper}
+            >
+              {sendBlocked ? "Complete quotation" : "Send quotation"}
+            </Button>
+            {sendHelper ? (
+              <span className="mt-1 max-w-[220px] text-right text-[11px] text-sales-text-muted">
+                {sendHelper}
+              </span>
+            ) : null}
+          </div>
           <Button
             variant="secondary"
             size="sm"
@@ -728,7 +741,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       </div>
 
       {/* Body */}
-      <div className="mt-4 grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:items-start">
         <div className="min-w-0 space-y-3">
           {tab === "overview" ? (
             <OverviewTab
@@ -843,7 +856,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         </div>
 
         {/* Commercial rail — desktop */}
-        <aside className="hidden lg:block">
+        <aside className="hidden lg:block lg:sticky lg:top-4 lg:self-start">
             <CommercialRail
               payload={payload}
               totals={totals}
@@ -851,6 +864,18 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               validUntil={validUntil}
               daysLeft={daysLeft}
               commercial={commercial}
+              onNavigateTab={(t) => setTab(t)}
+              onOpenSend={() => {
+                if (sendBlocked) {
+                  toast({
+                    tone: "warning",
+                    title: "Complete commercial check",
+                    description: sendHelper,
+                  });
+                  return;
+                }
+                setSendOpen(true);
+              }}
               onViewHistory={() => setHistoryOpen(true)}
               onCall={() => {
                 if (payload.customer.phone) window.open(`tel:${payload.customer.phone}`);
@@ -863,17 +888,34 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       </div>
 
       {/* Lifecycle strip */}
-      <LifecycleStrip
-        stages={lifecycle.stages}
-        activeIndex={lifecycle.activeIndex}
-        terminal={lifecycle.terminal}
-        status={q.status}
-      />
+      <div className="mt-4">
+        <LifecycleStrip
+          stages={lifecycle.stages}
+          activeIndex={lifecycle.activeIndex}
+          terminal={lifecycle.terminal}
+          status={q.status}
+        />
+      </div>
 
       {/* Mobile sticky CTA */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-sales-border bg-sales-surface p-3 sm:hidden">
-        <Button className="w-full" leftIcon={<Send className="h-4 w-4" />} onClick={() => setSendOpen(true)}>
-          Send quotation
+        <Button
+          className="w-full"
+          leftIcon={<Send className="h-4 w-4" />}
+          onClick={() => {
+            if (sendBlocked) {
+              setRailOpen(true);
+              toast({
+                tone: "warning",
+                title: "Complete commercial check",
+                description: sendHelper,
+              });
+              return;
+            }
+            setSendOpen(true);
+          }}
+        >
+          {sendBlocked ? "Complete quotation" : "Send quotation"}
         </Button>
       </div>
 
@@ -895,6 +937,22 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               validUntil={validUntil}
               daysLeft={daysLeft}
               commercial={commercial}
+              onNavigateTab={(t) => {
+                setTab(t);
+                setRailOpen(false);
+              }}
+              onOpenSend={() => {
+                if (sendBlocked) {
+                  toast({
+                    tone: "warning",
+                    title: "Complete commercial check",
+                    description: sendHelper,
+                  });
+                  return;
+                }
+                setRailOpen(false);
+                setSendOpen(true);
+              }}
               onViewHistory={() => setHistoryOpen(true)}
               onCall={() => {
                 if (payload.customer.phone) window.open(`tel:${payload.customer.phone}`);
@@ -1003,6 +1061,8 @@ function CommercialRail({
   validUntil,
   daysLeft,
   commercial,
+  onNavigateTab,
+  onOpenSend,
   onViewHistory,
   onCall,
   onFollowUp,
@@ -1013,13 +1073,15 @@ function CommercialRail({
   validUntil: string;
   daysLeft: number | null;
   commercial: ReturnType<typeof runCommercialCheck>;
+  onNavigateTab: (tab: TabId) => void;
+  onOpenSend: () => void;
   onViewHistory: () => void;
   onCall: () => void;
   onFollowUp: () => void;
 }) {
   const q = payload.quotation;
   const status = q.status;
-  const nba = nextBestAction(payload);
+  const nba = nextBestAction(payload, commercial);
 
   return (
     <div className="space-y-3">
@@ -1031,7 +1093,7 @@ function CommercialRail({
           </Badge>
         }
       >
-        <p className="text-[12px] text-sales-text-muted">Total ({currency})</p>
+        <p className="text-[12px] text-sales-text-muted">Grand total ({currency})</p>
         <p className="mt-0.5 text-[26px] font-bold tracking-tight text-sales-text-primary">
           {formatMoneyCompact(totals.total, currency)}
         </p>
@@ -1047,7 +1109,7 @@ function CommercialRail({
           />
           <Row label={`Tax (${Number(q.tax_rate) || 0}%)`} value={formatMoneyCompact(totals.taxAmount, currency)} />
           <div className="my-2 border-t border-sales-border" />
-          <Row label="Total" value={formatMoneyCompact(totals.total, currency)} bold />
+          <Row label="Grand total" value={formatMoneyCompact(totals.total, currency)} bold />
         </div>
       </RailCard>
 
@@ -1067,12 +1129,12 @@ function CommercialRail({
             <span
               className={cn(
                 "font-medium",
-                daysLeft != null && daysLeft <= 14 ? "text-amber-700" : "text-sales-text-primary"
+                daysLeft != null && daysLeft <= 14 ? "text-amber-700 dark:text-amber-400" : "text-sales-text-primary"
               )}
             >
               {validUntil
                 ? `${formatDisplayDate(validUntil)}${daysLeft != null ? ` (${daysLeft} days left)` : ""}`
-                : "—"}
+                : "Not set"}
             </span>
           </div>
           <div className="flex items-center justify-between gap-2">
@@ -1095,12 +1157,12 @@ function CommercialRail({
           <LinkRow label="Customer" value={payload.customer.name} href={`/sales/leads?leadId=${payload.customer.leadId}`} />
           <LinkRow
             label="Deal"
-            value={payload.deal?.title ?? "—"}
+            value={payload.deal?.title ?? "No Deal linked"}
             href={payload.deal ? `/sales/deals/${payload.deal.id}` : undefined}
           />
           <div className="flex justify-between gap-2">
             <span className="text-sales-text-secondary">Owner</span>
-            <span className="font-medium text-sales-text-primary">{payload.owner.name ?? "—"}</span>
+            <span className="font-medium text-sales-text-primary">{payload.owner.name}</span>
           </div>
           <div className="flex justify-between gap-2">
             <span className="text-sales-text-secondary">Created</span>
@@ -1121,6 +1183,16 @@ function CommercialRail({
           <p className="mt-1 text-[12px] text-sales-text-secondary">{nba.detail}</p>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
+          {nba.goTab ? (
+            <Button size="sm" onClick={() => onNavigateTab(nba.goTab!)}>
+              {nba.title}
+            </Button>
+          ) : null}
+          {nba.send ? (
+            <Button size="sm" leftIcon={<Send className="h-3.5 w-3.5" />} onClick={onOpenSend}>
+              Send quotation
+            </Button>
+          ) : null}
           {nba.actions.map((a) => (
             <Button
               key={a.label}
@@ -1135,53 +1207,106 @@ function CommercialRail({
         </div>
       </RailCard>
 
-      {/* Commercial check compact */}
-      <div className="rounded-sales-md border border-dashed border-sales-border px-3.5 py-3">
-        <p className="mb-2 text-[12px] font-semibold text-sales-text-primary">Commercial Check</p>
-        <ul className="space-y-1">
-          {commercial.items.filter((c) => c.id !== "approval").map((c) => (
-            <li key={c.id} className="flex items-start gap-1.5 text-[12px]">
-              <span
-                className={cn(
-                  "mt-0.5",
-                  c.status === "pass" && "text-sales-success",
-                  c.status === "warn" && "text-amber-600",
-                  c.status === "block" && "text-sales-danger"
+      <div className="rounded-sales-md border border-sales-border bg-sales-surface px-3.5 py-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-[12px] font-semibold text-sales-text-primary">Commercial Check</p>
+          <p className="text-[11px] text-sales-text-muted">
+            {commercial.readyCount} of {commercial.totalCount} ready
+          </p>
+        </div>
+        <ul className="space-y-1.5">
+          {commercial.items.map((c) => {
+            const clickable = c.status !== "pass" && c.tab;
+            const row = (
+              <span className="flex min-w-0 flex-1 items-start gap-1.5">
+                <span
+                  className={cn(
+                    "mt-0.5 shrink-0 text-[12px]",
+                    c.status === "pass" && "text-sales-success",
+                    c.status === "warn" && "text-amber-600 dark:text-amber-400",
+                    c.status === "block" && "text-sales-danger"
+                  )}
+                  aria-hidden
+                >
+                  {c.status === "pass" ? "✓" : c.status === "warn" ? "⚠" : "✕"}
+                </span>
+                <span className="min-w-0">
+                  <span
+                    className={cn(
+                      "text-[12px]",
+                      c.status === "pass" ? "text-sales-text-secondary" : "font-medium text-sales-text-primary"
+                    )}
+                  >
+                    {c.status === "pass" ? c.label : c.action || c.label}
+                  </span>
+                </span>
+              </span>
+            );
+            return (
+              <li key={c.id}>
+                {clickable ? (
+                  <button
+                    type="button"
+                    className="flex w-full rounded-sales-sm px-0.5 py-0.5 text-left hover:bg-sales-surface-hover"
+                    onClick={() => onNavigateTab(c.tab as TabId)}
+                  >
+                    {row}
+                  </button>
+                ) : (
+                  <div className="flex px-0.5 py-0.5">{row}</div>
                 )}
-              >
-                {c.status === "pass" ? "✓" : c.status === "warn" ? "⚠" : "✕"}
-              </span>
-              <span className="text-sales-text-secondary">
-                {c.label}
-                {c.message ? <span className="text-sales-text-muted"> — {c.message}</span> : null}
-              </span>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
+        {commercial.blockingCount > 0 ? (
+          <p className="mt-2 text-[11px] font-medium text-sales-danger">
+            {commercial.blockingCount} item{commercial.blockingCount === 1 ? "" : "s"} need attention
+          </p>
+        ) : (
+          <p className="mt-2 text-[11px] font-medium text-sales-success">Ready to send</p>
+        )}
       </div>
     </div>
   );
 }
 
-function nextBestAction(payload: QuotationWorkspacePayload): {
+function nextBestAction(
+  payload: QuotationWorkspacePayload,
+  commercial: ReturnType<typeof runCommercialCheck>
+): {
   title: string;
   detail?: string;
   actions: { label: string; icon: "phone" | "calendar"; primary?: boolean }[];
+  goTab?: TabId;
+  send?: boolean;
 } {
   const q = payload.quotation;
-  if (q.status === "draft") {
-    if (!q.valid_until) return { title: "Add validity date", actions: [] };
-    if (!q.payment_terms_label) return { title: "Add payment terms", actions: [] };
-    if ((q.items?.length ?? 0) === 0) {
-      return { title: "Complete quotation", detail: "Add your first product or service", actions: [] };
+  const blocker = commercial.items.find((c) => c.status === "block");
+
+  if (q.status === "draft" || q.status === "approved") {
+    if (!payload.deal?.id) {
+      return { title: "Link quotation to Deal", detail: "Quotations belong to a Deal", actions: [], goTab: "overview" };
     }
-    return { title: "Ready to send", detail: "Review commercial check, then send", actions: [] };
+    if (blocker?.id === "items") {
+      return { title: "Add products or services", actions: [], goTab: "items" };
+    }
+    if (blocker?.id === "payment") {
+      return { title: "Add payment terms", actions: [], goTab: "payment" };
+    }
+    if (blocker?.id === "validity") {
+      return { title: "Set validity date", actions: [], goTab: "payment" };
+    }
+    if (blocker) {
+      return { title: blocker.action || blocker.label, actions: [], goTab: (blocker.tab as TabId) || "items" };
+    }
+    return { title: "Send quotation", detail: "Commercial check complete", actions: [], send: true };
   }
   if (q.status === "sent" || q.status === "viewed") {
     const sentAgo = q.sent_at ? relativeDays(q.sent_at) : null;
     const viewed = q.viewed_at ? `Viewed ${relativeDays(q.viewed_at)}` : null;
     return {
-      title: "Follow up on quotation",
+      title: "Schedule follow-up",
       detail: [sentAgo ? `Quotation sent ${sentAgo}` : null, viewed].filter(Boolean).join(" · ") || undefined,
       actions: [
         { label: "Call customer", icon: "phone" },
@@ -1389,6 +1514,7 @@ function ItemsTab(props: {
     totals,
     onEditDetails,
   } = props;
+  const [sectionMenu, setSectionMenu] = useState<string | null>(null);
 
   return (
     <div className="space-y-3">
@@ -1529,7 +1655,12 @@ function ItemsTab(props: {
                 </div>
 
                 {!readOnly ? (
-                  <div className="flex flex-wrap gap-2 border-t border-dashed border-sales-border px-3.5 py-2.5">
+                  <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-sales-border px-3.5 py-2.5">
+                    {sectionItems.length === 0 ? (
+                      <p className="w-full text-[12.5px] text-sales-text-muted">
+                        No items in this section yet.
+                      </p>
+                    ) : null}
                     <button
                       type="button"
                       className="text-[13px] font-semibold text-sales-brand-fg"
@@ -1544,14 +1675,33 @@ function ItemsTab(props: {
                     >
                       Custom item
                     </button>
-                    {sectionItems.length === 0 ? (
-                      <button
-                        type="button"
-                        className="ml-auto text-[12px] text-sales-danger"
-                        onClick={() => props.onRemoveSection(sec.id)}
-                      >
-                        Remove section
-                      </button>
+                    {sectionItems.length === 0 && props.sections.length > 1 ? (
+                      <div className="relative ml-auto">
+                        <button
+                          type="button"
+                          className="rounded p-1 text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
+                          aria-label="Section actions"
+                          onClick={() =>
+                            setSectionMenu((m) => (m === sec.id ? null : sec.id))
+                          }
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                        {sectionMenu === sec.id ? (
+                          <div className="absolute right-0 z-20 mt-1 w-40 rounded-sales-md border border-sales-border bg-sales-surface py-1 shadow-sales-card">
+                            <button
+                              type="button"
+                              className="w-full px-3 py-1.5 text-left text-[12px] text-sales-danger hover:bg-sales-surface-hover"
+                              onClick={() => {
+                                setSectionMenu(null);
+                                props.onRemoveSection(sec.id);
+                              }}
+                            >
+                              Remove section
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
                 ) : null}
@@ -2258,8 +2408,12 @@ function SendModal({
   const { toast } = useSalesToast();
 
   async function send() {
-    if (!commercial.canSend && commercial.items.some((c) => c.status === "block")) {
-      setError("Resolve commercial check blockers before sending");
+    if (!commercial.canSend) {
+      setError(
+        commercial.blockingCount > 0
+          ? `Complete ${commercial.blockingCount} required items before sending`
+          : "Resolve commercial check before sending"
+      );
       return;
     }
     setBusy(true);

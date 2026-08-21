@@ -3,45 +3,46 @@ import { computeQuotationTotals, type QuoteTotals } from "@/lib/quotations/total
 
 export type CommercialCheckItem = {
   id: string;
+  /** Short product label shown in the rail */
   label: string;
   status: "pass" | "warn" | "block";
-  message?: string;
-};
-
-export type CommercialGuardrails = {
-  maxDiscountPercent: number;
-  minMarginPercent: number | null;
-  approvalValueThreshold: number | null;
-  requireApprovalAboveDiscount: boolean;
+  /** Optional short action hint (not developer prose) */
+  action?: string;
+  /** Workspace tab to open when row is clicked */
+  tab?: "items" | "payment" | "overview";
 };
 
 export type CommercialCheckInput = {
   status: QuotationStatus | string;
   customerName: string | null | undefined;
   dealId: string | null | undefined;
-  requireDeal?: boolean;
   currency: string | null | undefined;
   validUntil: string | null | undefined;
   paymentTermsLabel: string | null | undefined;
   items: QuotationLineItemInput[];
   totals: QuoteTotals;
-  approvalStatus: string | null | undefined;
-  guardrails: CommercialGuardrails;
 };
 
 export type CommercialCheckResult = {
   items: CommercialCheckItem[];
   canSend: boolean;
-  approvalRequired: boolean;
-  approvalReasons: string[];
+  blockingCount: number;
+  readyCount: number;
+  totalCount: number;
 };
 
+/**
+ * Phase 1 commercial readiness gate.
+ * No discount-authority / margin / approval rules.
+ */
 export function runCommercialCheck(input: CommercialCheckInput): CommercialCheckResult {
   const checks: CommercialCheckItem[] = [];
-  const approvalReasons: string[] = [];
 
-  const anyItems = (input.items ?? []).filter(
-    (it) => !(it.is_optional) && (it.item_name ?? "").trim().length > 0
+  const pricedItems = (input.items ?? []).filter(
+    (it) =>
+      !it.is_optional &&
+      (it.item_name ?? "").trim().length > 0 &&
+      (Number(it.quantity) || 0) > 0
   );
 
   if ((input.customerName ?? "").trim()) {
@@ -51,38 +52,45 @@ export function runCommercialCheck(input: CommercialCheckInput): CommercialCheck
       id: "customer",
       label: "Customer linked",
       status: "block",
-      message: "Add a customer name before sending",
+      action: "Link a customer",
+      tab: "overview",
     });
   }
 
-  if (input.requireDeal) {
-    if (input.dealId) {
-      checks.push({ id: "deal", label: "Deal linked", status: "pass" });
-    } else {
-      checks.push({
-        id: "deal",
-        label: "Deal linked",
-        status: "warn",
-        message: "Link a Deal when available",
-      });
-    }
+  if (input.dealId) {
+    checks.push({ id: "deal", label: "Deal linked", status: "pass" });
+  } else {
+    checks.push({
+      id: "deal",
+      label: "Deal linked",
+      status: "block",
+      action: "Link a Deal",
+      tab: "overview",
+    });
   }
 
-  if (anyItems.length > 0) {
-    checks.push({ id: "items", label: "Pricing valid", status: "pass" });
+  if (pricedItems.length > 0) {
+    checks.push({ id: "items", label: "Products & services", status: "pass" });
   } else {
     checks.push({
       id: "items",
-      label: "Pricing valid",
+      label: "Products & services",
       status: "block",
-      message: "Add at least one product or service",
+      action: "Add at least one item",
+      tab: "items",
     });
   }
 
   if ((input.currency ?? "").trim()) {
     checks.push({ id: "currency", label: "Currency set", status: "pass" });
   } else {
-    checks.push({ id: "currency", label: "Currency set", status: "block" });
+    checks.push({
+      id: "currency",
+      label: "Currency set",
+      status: "block",
+      action: "Set currency",
+      tab: "items",
+    });
   }
 
   if (input.validUntil) {
@@ -94,7 +102,8 @@ export function runCommercialCheck(input: CommercialCheckInput): CommercialCheck
         id: "validity",
         label: "Validity date",
         status: "block",
-        message: "Valid until date is in the past",
+        action: "Update valid-until date",
+        tab: "payment",
       });
     } else {
       checks.push({ id: "validity", label: "Validity date", status: "pass" });
@@ -103,98 +112,74 @@ export function runCommercialCheck(input: CommercialCheckInput): CommercialCheck
     checks.push({
       id: "validity",
       label: "Validity date",
-      status: "warn",
-      message: "Set a valid until date",
+      status: "block",
+      action: "Set valid until",
+      tab: "payment",
     });
   }
 
   if ((input.paymentTermsLabel ?? "").trim()) {
-    checks.push({ id: "payment", label: "Payment terms set", status: "pass" });
+    checks.push({ id: "payment", label: "Payment terms", status: "pass" });
   } else {
     checks.push({
       id: "payment",
-      label: "Payment terms set",
-      status: "warn",
-      message: "Add payment terms",
+      label: "Payment terms",
+      status: "block",
+      action: "Add payment terms",
+      tab: "payment",
     });
   }
 
-  const maxDisc = Number(input.guardrails.maxDiscountPercent) || 0;
-  const effDisc = input.totals.effectiveDiscountPercent;
-  if (effDisc > maxDisc + 0.001) {
-    checks.push({
-      id: "discount",
-      label: "Discount within authority",
-      status: "warn",
-      message: `Discount ${effDisc}% exceeds max ${maxDisc}%`,
-    });
-    if (input.guardrails.requireApprovalAboveDiscount) {
-      approvalReasons.push(`Discount ${effDisc}% exceeds authority (max ${maxDisc}%)`);
-    }
+  const totalsOk =
+    Number.isFinite(input.totals.total) &&
+    input.totals.total >= 0 &&
+    Number.isFinite(input.totals.subtotal);
+  if (totalsOk) {
+    checks.push({ id: "totals", label: "Totals valid", status: "pass" });
   } else {
     checks.push({
-      id: "discount",
-      label: "Discount within authority",
-      status: "pass",
-      message: maxDisc > 0 ? `Within limit (Max ${maxDisc}%)` : undefined,
+      id: "totals",
+      label: "Totals valid",
+      status: "block",
+      action: "Fix pricing",
+      tab: "items",
     });
   }
 
-  const minMargin = input.guardrails.minMarginPercent;
-  if (
-    minMargin != null &&
-    input.totals.marginPercent != null &&
-    input.totals.marginPercent < minMargin
-  ) {
+  if (input.status === "draft" || input.status === "approved") {
+    checks.push({ id: "editable", label: "Ready to send", status: "pass" });
+  } else if (input.status === "sent" || input.status === "viewed") {
+    checks.push({ id: "editable", label: "Ready to send", status: "pass", action: "Resend allowed" });
+  } else {
     checks.push({
-      id: "margin",
-      label: "Margin policy",
-      status: "warn",
-      message: `Margin ${input.totals.marginPercent}% below minimum ${minMargin}%`,
+      id: "editable",
+      label: "Ready to send",
+      status: "block",
+      action: "Create a revision to change and send",
     });
-    approvalReasons.push(`Margin below company minimum (${minMargin}%)`);
   }
 
-  const threshold = input.guardrails.approvalValueThreshold;
-  if (threshold != null && input.totals.total >= threshold) {
-    approvalReasons.push(`Quotation total exceeds approval threshold (${threshold})`);
-  }
-
-  const approvalStatus = input.approvalStatus ?? "not_required";
-  // Phase 1: approval is architectural only — never block send on approval rules.
-  const approvalRequired = false;
-  void approvalStatus;
-  void approvalReasons;
-
-  const hasBlock = checks.some((c) => c.status === "block" && c.id !== "approval" && c.id !== "margin");
-  const canSend =
-    !hasBlock &&
-    anyItems.length > 0 &&
-    !checks.some((c) => c.id === "customer" && c.status === "block");
+  const blockingCount = checks.filter((c) => c.status === "block").length;
+  const readyCount = checks.filter((c) => c.status === "pass").length;
+  const canSend = blockingCount === 0 && pricedItems.length > 0;
 
   return {
-    items: checks.filter((c) => c.id !== "approval" && c.id !== "margin"),
-    canSend: Boolean(canSend),
-    approvalRequired,
-    approvalReasons: [],
+    items: checks,
+    canSend,
+    blockingCount,
+    readyCount,
+    totalCount: checks.length,
   };
 }
 
-export function marginLabel(
-  marginPercent: number | null,
-  minMargin: number | null
-): { text: string; tone: "healthy" | "near" | "below" | "unknown" } {
-  if (marginPercent == null) return { text: "Unavailable", tone: "unknown" };
-  if (minMargin != null && marginPercent < minMargin) {
-    return { text: "Below policy", tone: "below" };
-  }
-  if (minMargin != null && marginPercent < minMargin + 5) {
-    return { text: "Near minimum", tone: "near" };
-  }
-  return { text: "Healthy", tone: "healthy" };
-}
+/** @deprecated Phase 2 — kept for type compatibility with older call sites */
+export type CommercialGuardrails = {
+  maxDiscountPercent: number;
+  minMarginPercent: number | null;
+  approvalValueThreshold: number | null;
+  requireApprovalAboveDiscount: boolean;
+};
 
-/** Recompute totals helper for check callers that only have raw items. */
 export function totalsForCheck(
   items: QuotationLineItemInput[],
   taxRate: number,

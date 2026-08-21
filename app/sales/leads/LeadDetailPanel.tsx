@@ -433,6 +433,7 @@ export function LeadDetailPanel({
                 leadId={activeLead.id}
                 clientId={activeLead.client_id}
                 leadPhone={activeLead.phone}
+                dealId={activeLead.active_deal_id}
                 onChanged={() => {
                   setTimelineRefresh((k) => k + 1);
                   if (onLeadUpdated) {

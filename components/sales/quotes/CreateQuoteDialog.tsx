@@ -13,31 +13,34 @@ import { cn } from "@/lib/ui/cn";
 
 export type QuotationWithItems = QuotationRow & { items?: QuotationLineItemRow[] };
 
-type Candidate = {
+type DealCandidate = {
   id: string;
-  name: string | null;
-  phone: string | null;
-  projectType: string | null;
+  name: string;
+  leadId: string;
+  leadName: string | null;
+  leadPhone: string | null;
   clientId: string;
-  status: string;
+  stage: string | null;
 };
 
 export function CreateQuoteDialog({
   open,
-  candidates,
   hasTemplates,
-  dealId,
+  dealId: prefDealId,
   onClose,
   onCreated,
 }: {
   open: boolean;
-  candidates: Candidate[];
+  /** @deprecated Lead candidates unused — Deal selection is required */
+  candidates?: unknown[];
   hasTemplates: boolean;
   dealId?: string | null;
   onClose: () => void;
   onCreated: (quotation: QuotationWithItems, leadPhone: string | null) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [deals, setDeals] = useState<DealCandidate[]>([]);
+  const [loadingDeals, setLoadingDeals] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [templateId, setTemplateId] = useState<string | "">("");
   const [templates, setTemplates] = useState<QuoteTemplateRow[]>([]);
@@ -45,7 +48,7 @@ export function CreateQuoteDialog({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
-  const selected = candidates.find((c) => c.id === selectedId) ?? null;
+  const selected = deals.find((d) => d.id === selectedId) ?? null;
 
   useEffect(() => {
     if (!open) {
@@ -55,8 +58,46 @@ export function CreateQuoteDialog({
       setTemplates([]);
       setError("");
       setCreating(false);
+      setDeals([]);
+      return;
     }
-  }, [open]);
+    let cancelled = false;
+    setLoadingDeals(true);
+    fetch("/api/deals?scope=active")
+      .then((r) => r.json())
+      .then((d: { deals?: Array<{
+        deal?: Record<string, unknown>;
+        customerName?: string | null;
+        customerPhone?: string | null;
+      }> }) => {
+        if (cancelled) return;
+        const rows = (d.deals ?? []).map((row) => {
+          const deal = (row.deal ?? {}) as Record<string, unknown>;
+          return {
+            id: String(deal.id ?? ""),
+            name: String(deal.name || deal.service_summary || "Deal"),
+            leadId: String(deal.originating_lead_id ?? ""),
+            leadName: row.customerName ?? null,
+            leadPhone: row.customerPhone ?? null,
+            clientId: String(deal.client_id ?? ""),
+            stage: (deal.stage as string) || null,
+          } satisfies DealCandidate;
+        }).filter((x) => x.id && x.leadId);
+        setDeals(rows);
+        if (prefDealId && rows.some((r) => r.id === prefDealId)) {
+          setSelectedId(prefDealId);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setDeals([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDeals(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, prefDealId]);
 
   useEffect(() => {
     if (!open || !selected || !hasTemplates) {
@@ -84,22 +125,24 @@ export function CreateQuoteDialog({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return candidates;
-    return candidates.filter((c) => {
-      const hay = [c.name, c.phone, c.projectType].filter(Boolean).join(" ").toLowerCase();
+    if (!q) return deals;
+    return deals.filter((d) => {
+      const hay = [d.name, d.leadName, d.leadPhone, d.stage].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q);
     });
-  }, [candidates, query]);
+  }, [deals, query]);
 
   async function create() {
-    if (!selected) return;
+    if (!selected) {
+      setError("Select a Deal to continue");
+      return;
+    }
     setCreating(true);
     setError("");
     try {
-      const body: { templateId?: string; dealId?: string } = {};
+      const body: { templateId?: string; dealId: string } = { dealId: selected.id };
       if (templateId) body.templateId = templateId;
-      if (dealId) body.dealId = dealId;
-      const res = await fetch(`/api/leads/${selected.id}/quotations`, {
+      const res = await fetch(`/api/leads/${selected.leadId}/quotations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -109,7 +152,7 @@ export function CreateQuoteDialog({
         setError(json.error ?? "Couldn't create quote");
         return;
       }
-      onCreated(json.quotation, selected.phone);
+      onCreated(json.quotation, selected.leadPhone);
       onClose();
     } catch {
       setError("Couldn't create quote");
@@ -128,115 +171,79 @@ export function CreateQuoteDialog({
         aria-label="Close"
         onClick={onClose}
       />
-      <div
-        role="dialog"
-        aria-modal
-        aria-labelledby="create-quote-title"
-        className="relative z-[61] flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-[16px] border border-sales-border bg-sales-surface shadow-sales-popover sm:rounded-[16px]"
-      >
-        <div className="flex items-center justify-between border-b border-sales-border-subtle px-5 py-4">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl bg-sales-surface shadow-xl sm:rounded-sales-lg">
+        <div className="flex items-center justify-between border-b border-sales-border px-4 py-3">
           <div>
-            <h2 id="create-quote-title" className="text-[16px] font-semibold text-sales-text-primary">
-              Create quote
-            </h2>
-            <p className="mt-0.5 text-[13px] text-sales-text-secondary">
-              Choose a lead, then open the quotation builder.
+            <h2 className="text-[15px] font-semibold text-sales-text-primary">Create quotation</h2>
+            <p className="text-[12px] text-sales-text-secondary">
+              Select the Deal this commercial offer belongs to.
             </p>
           </div>
-          <button
-            type="button"
-            className="rounded-sales-md p-2 text-sales-text-muted hover:bg-sales-surface-hover"
-            aria-label="Close"
-            onClick={onClose}
-          >
-            <X size={18} strokeWidth={1.8} />
+          <button type="button" onClick={onClose} aria-label="Close">
+            <X className="h-5 w-5 text-sales-text-muted" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+        <div className="space-y-3 overflow-y-auto px-4 py-3">
           <div className="relative">
-            <Search
-              size={16}
-              strokeWidth={1.8}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
-            />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sales-text-muted" />
             <Input
+              className="pl-9"
+              placeholder="Search Deal, customer, phone…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name, phone, project..."
-              className="h-10 pl-9"
               autoFocus
             />
           </div>
 
-          <div className="max-h-[280px] overflow-y-auto rounded-[12px] border border-sales-border">
-            {filtered.length === 0 ? (
-              <div className="px-4 py-8">
-                <EmptyState
-                  size="compact"
-                  title={candidates.length === 0 ? "No active leads" : "No matches"}
-                  description={
-                    candidates.length === 0
-                      ? "Add or claim a lead before creating a quotation."
-                      : "Try another name or phone number."
-                  }
-                />
-              </div>
-            ) : (
-              <ul className="divide-y divide-sales-border-subtle">
-                {filtered.map((c) => {
-                  const active = c.id === selectedId;
-                  return (
-                    <li key={c.id}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedId(c.id)}
-                        className={cn(
-                          "flex w-full items-start gap-3 px-3.5 py-3 text-left transition-colors",
-                          active ? "bg-sales-surface-active" : "hover:bg-sales-surface-hover"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
-                            active
-                              ? "border-sales-brand-fg bg-sales-brand"
-                              : "border-sales-border bg-sales-surface"
-                          )}
-                          aria-hidden
-                        >
-                          {active ? (
-                            <span className="h-1.5 w-1.5 rounded-full bg-sales-brand-text" />
-                          ) : null}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-semibold text-sales-text-primary">
-                            {c.name?.trim() || "Unnamed lead"}
-                          </span>
-                          <span className="mt-0.5 block truncate text-[12px] text-sales-text-muted">
-                            {[c.phone, c.projectType].filter(Boolean).join(" · ") || c.status}
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+          {loadingDeals ? (
+            <div className="space-y-2">
+              <Skeleton className="h-14 w-full rounded-sales-md" />
+              <Skeleton className="h-14 w-full rounded-sales-md" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={<FilePlus2 className="h-5 w-5" />}
+              title="No active Deals"
+              description="Create a Deal first, then build a quotation for it."
+            />
+          ) : (
+            <ul className="max-h-56 space-y-1 overflow-y-auto">
+              {filtered.map((d) => {
+                const active = d.id === selectedId;
+                return (
+                  <li key={d.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(d.id)}
+                      className={cn(
+                        "w-full rounded-sales-md border px-3 py-2.5 text-left transition-colors",
+                        active
+                          ? "border-sales-brand bg-[var(--sales-brand-soft-solid)]"
+                          : "border-sales-border hover:bg-sales-surface-hover"
+                      )}
+                    >
+                      <p className="text-[13px] font-semibold text-sales-text-primary">{d.name}</p>
+                      <p className="text-[12px] text-sales-text-secondary">
+                        {[d.leadName, d.leadPhone].filter(Boolean).join(" · ") || "Customer"}
+                      </p>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           {selected && hasTemplates ? (
             <div>
-              <label className="mb-1.5 block text-[12px] font-medium text-sales-text-secondary">
-                Template (optional)
-              </label>
+              <p className="mb-1 text-[12px] font-medium text-sales-text-secondary">Template (optional)</p>
               {loadingTemplates ? (
-                <Skeleton className="h-10 w-full rounded-[10px]" />
+                <Skeleton className="h-10 w-full rounded-sales-md" />
               ) : (
                 <select
+                  className="w-full rounded-sales-md border border-sales-border-strong bg-sales-surface px-3 py-2 text-[13px]"
                   value={templateId}
                   onChange={(e) => setTemplateId(e.target.value)}
-                  className="h-10 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]"
                 >
                   <option value="">Blank quotation</option>
                   {templates.map((t) => (
@@ -249,27 +256,20 @@ export function CreateQuoteDialog({
             </div>
           ) : null}
 
-          {error ? <p className="text-[13px] text-sales-danger">{error}</p> : null}
+          {error ? <p className="text-[12px] text-sales-danger">{error}</p> : null}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-sales-border-subtle px-5 py-4">
-          <Button variant="secondary" size="md" onClick={onClose} disabled={creating}>
+        <div className="flex justify-end gap-2 border-t border-sales-border px-4 py-3">
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            variant="primary"
-            size="md"
-            disabled={!selected || creating}
+            loading={creating}
+            leftIcon={<FilePlus2 className="h-3.5 w-3.5" />}
             onClick={() => void create()}
-            leftIcon={
-              creating ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <FilePlus2 size={16} strokeWidth={1.8} />
-              )
-            }
+            disabled={!selected}
           >
-            {creating ? "Creating…" : "Create quote"}
+            Create quotation
           </Button>
         </div>
       </div>

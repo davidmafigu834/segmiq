@@ -13,6 +13,9 @@ import { persistLeadScore } from "@/lib/lead-scoring";
 import { formatMoney } from "@/lib/quotations/totals";
 import { getPublicBaseUrl } from "@/lib/constants";
 import { sendQuotationOnWhatsApp } from "@/lib/whatsapp/send-quotation";
+import { loadQuotationWithItems } from "@/lib/quotations/persist";
+import { validateQuotationForSend } from "@/lib/quotations/send-validation";
+import type { QuotationLineItemInput } from "@/types";
 
 const ADVANCE_FROM = new Set(["NEW", "CONTACTED", "NEGOTIATING"]);
 
@@ -40,19 +43,27 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   }
 
   const supabase = createAdminClient();
-  const { data: quote } = await supabase
-    .from("quotations")
-    .select("*")
-    .eq("id", params.quotationId)
-    .single();
-  if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const full = await loadQuotationWithItems(supabase, params.quotationId);
+  if (!full) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const quote = full;
 
-  const { count: itemCount } = await supabase
-    .from("quotation_line_items")
-    .select("id", { count: "exact", head: true })
-    .eq("quotation_id", params.quotationId);
-  if (!itemCount) {
-    return NextResponse.json({ error: "Add at least one line item before sending" }, { status: 400 });
+  const gate = validateQuotationForSend({
+    status: String(quote.status),
+    customer_name: quote.customer_name as string | null,
+    deal_id: quote.deal_id as string | null,
+    currency: quote.currency as string | null,
+    valid_until: quote.valid_until as string | null,
+    payment_terms_label: quote.payment_terms_label as string | null,
+    tax_rate: Number(quote.tax_rate) || 0,
+    other_amount: Number(quote.other_amount) || 0,
+    discount_percent: Number(quote.discount_percent) || 0,
+    items: (quote.items as QuotationLineItemInput[]) ?? [],
+  });
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: gate.error, blockers: gate.blockers },
+      { status: 400 }
+    );
   }
 
   const isResend = quote.status === "sent" || quote.status === "viewed";

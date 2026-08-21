@@ -17,7 +17,6 @@ import {
   MoreVertical,
   Pencil,
   Send,
-  TrendingUp,
 } from "lucide-react";
 import {
   Badge,
@@ -47,7 +46,6 @@ import {
   CreateQuoteDialog,
   type QuotationWithItems,
 } from "@/components/sales/quotes/CreateQuoteDialog";
-import { QuotePerformanceCard } from "@/components/sales/quotes/QuotePerformanceCard";
 import { QuoteActivityCard } from "@/components/sales/quotes/QuoteActivityCard";
 import {
   buildQuotesCsv,
@@ -155,6 +153,19 @@ export function SalesQuotesClient() {
   const [error, setError] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [prefDealId, setPrefDealId] = useState<string | null>(() => searchParams.get("dealId"));
+
+  useEffect(() => {
+    const id = searchParams.get("dealId");
+    if (!id) return;
+    setPrefDealId(id);
+    setCreateOpen(true);
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.delete("dealId");
+    const q = sp.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open once from Deal deep-link
+  }, []);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search), 250);
@@ -613,7 +624,7 @@ export function SalesQuotesClient() {
             <EmptyState
               icon={<FileText size={20} strokeWidth={1.8} />}
               title="No quotations yet"
-              description="Create your first quote and send it directly to a customer."
+              description="Create your first quotation linked to an active Deal."
               action={
                 <Button
                   variant="primary"
@@ -633,18 +644,30 @@ export function SalesQuotesClient() {
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             <ReportKpiCard
-              label="Total quotes"
+              label="Total quotations"
               value={String(data.kpis.total.value)}
               trend={data.kpis.total.trend}
               icon={FileText}
               iconTint="bg-[#F4F3FF] text-[#8B5CF6]"
             />
             <ReportKpiCard
-              label="Pending"
+              label="Drafts"
+              value={String(data.kpis.drafts.value)}
+              supporting={
+                data.kpis.drafts.pctOfTotal != null
+                  ? `${data.kpis.drafts.pctOfTotal}% of total`
+                  : undefined
+              }
+              icon={FileText}
+              iconTint="bg-sales-neutral-100 text-sales-text-secondary"
+              tip="Draft quotations still being built."
+            />
+            <ReportKpiCard
+              label="Awaiting customer"
               value={String(data.kpis.pending.value)}
               supporting={
                 data.kpis.pending.pctOfTotal != null
-                  ? `${data.kpis.pending.pctOfTotal}% of total quotes`
+                  ? `${data.kpis.pending.pctOfTotal}% of total`
                   : undefined
               }
               icon={Clock3}
@@ -652,34 +675,18 @@ export function SalesQuotesClient() {
               tip="Sent or viewed quotes awaiting a customer response."
             />
             <ReportKpiCard
+              label="Expiring soon"
+              value={String(data.kpis.expiringSoon.value)}
+              icon={Clock3}
+              iconTint="bg-sales-warning-soft text-sales-warning-fg"
+              tip="Awaiting-customer quotations within 3 days of valid-until."
+            />
+            <ReportKpiCard
               label="Accepted"
               value={String(data.kpis.accepted.value)}
               trend={data.kpis.accepted.trend}
               icon={CircleCheck}
               iconTint="bg-sales-success-soft text-sales-success-fg"
-            />
-            <ReportKpiCard
-              label="Declined"
-              value={String(data.kpis.declined.value)}
-              trend={data.kpis.declined.trend}
-              icon={CircleX}
-              iconTint="bg-sales-danger-soft text-sales-danger"
-              tip="Fewer declines is better — trends flip colour accordingly."
-            />
-            <ReportKpiCard
-              label="Conversion rate"
-              value={
-                data.kpis.conversionRate.value == null
-                  ? "—"
-                  : `${data.kpis.conversionRate.value}%`
-              }
-              trend={data.kpis.conversionRate.trend}
-              supporting={
-                data.kpis.conversionRate.value == null ? "No quote outcomes yet" : undefined
-              }
-              icon={TrendingUp}
-              iconTint="bg-sales-success-soft text-sales-success-fg"
-              tip={data.kpis.conversionRate.formula}
             />
           </div>
 
@@ -845,17 +852,6 @@ export function SalesQuotesClient() {
             </div>
 
             <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-              <QuotePerformanceCard
-                period={period}
-                onPeriodChange={(v) => {
-                  setPeriod(v);
-                  syncUrl({ period: v });
-                }}
-                slices={data.performance.slices}
-                total={data.performance.total}
-                emptyReason={data.performance.emptyReason}
-                loading={loading}
-              />
               <QuoteActivityCard
                 items={data.activity}
                 loading={loading}
@@ -891,7 +887,7 @@ export function SalesQuotesClient() {
         open={createOpen}
         candidates={data?.createCandidates ?? []}
         hasTemplates={data?.meta.hasTemplates ?? false}
-        dealId={searchParams.get("dealId")}
+        dealId={prefDealId}
         onClose={() => setCreateOpen(false)}
         onCreated={(quotation) => {
           setCreateOpen(false);
@@ -952,7 +948,10 @@ function QuoteTableRow({
       <DataTableTd>
         <div className="min-w-0">
           <p className="truncate text-[13px] font-semibold text-sales-text-primary">
-            {formatQuoteNumber(quote.quoteNumber, quote.revisionNumber)}
+            {formatQuoteNumber(quote.quoteNumber)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-sales-text-muted">
+            Version {quote.revisionNumber || 1}
           </p>
           {quote.needsFollowUp ? (
             <p className="mt-0.5 text-[11px] font-medium text-[#B54708]">Needs follow-up</p>
@@ -1089,8 +1088,9 @@ function MobileQuoteCard({ quote, onOpen }: { quote: QuoteListRow; onOpen: () =>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[14px] font-semibold text-sales-text-primary">
-            {formatQuoteNumber(quote.quoteNumber, quote.revisionNumber)}
+            {formatQuoteNumber(quote.quoteNumber)}
           </p>
+          <p className="text-[11px] text-sales-text-muted">Version {quote.revisionNumber || 1}</p>
           <p className="mt-0.5 truncate text-[13px] text-sales-text-secondary">
             {quote.customerName?.trim() || "—"}
           </p>

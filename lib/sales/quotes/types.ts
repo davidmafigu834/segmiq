@@ -83,7 +83,9 @@ export type QuotePerformanceSlice = {
 
 export type QuoteKpis = {
   total: { value: number; trend: TrendDisplay | null };
+  drafts: { value: number; pctOfTotal: number | null };
   pending: { value: number; pctOfTotal: number | null };
+  expiringSoon: { value: number };
   accepted: { value: number; trend: TrendDisplay | null };
   declined: { value: number; trend: TrendDisplay | null };
   conversionRate: {
