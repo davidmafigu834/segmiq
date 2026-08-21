@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useInboxCompact,
   useInboxExtraWideWorkspace,
@@ -96,8 +96,11 @@ export function TeamInbox({
   const isWideWorkspace = useInboxWideWorkspace();
   const isExtraWideWorkspace = useInboxExtraWideWorkspace();
   const { setHideBottomNav } = useSalesMobileChrome();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const leadFromUrl = searchParams.get("conversation") ?? searchParams.get("lead");
+  const appliedUrlLeadRef = useRef<string | null>(null);
   const whatsappMode = !!backHref;
 
   const loadConversations = useCallback(async (options?: { silent?: boolean }) => {
@@ -135,6 +138,8 @@ export function TeamInbox({
   useEffect(() => {
     if (!leadFromUrl || conversations.length === 0) return;
     if (!conversations.some((c) => c.id === leadFromUrl)) return;
+    if (appliedUrlLeadRef.current === leadFromUrl) return;
+    appliedUrlLeadRef.current = leadFromUrl;
     setActiveId(leadFromUrl);
     try {
       localStorage.setItem(activeConversationStorageKey(clientId, companyMode), leadFromUrl);
@@ -204,6 +209,7 @@ export function TeamInbox({
       const res = await fetch(`/api/leads/${leadId}/claim`, { method: "POST" });
       if (res.ok) {
         await loadConversations();
+        appliedUrlLeadRef.current = leadId;
         setActiveId(leadId);
         setClaimToast("Lead claimed — you can reply now");
         if (isCompact && backHref) setMobilePane("thread");
@@ -245,12 +251,15 @@ export function TeamInbox({
 
   function handleSelect(id: string) {
     setActiveId(id);
+    appliedUrlLeadRef.current = id;
     if (whatsappMode) {
       try {
         localStorage.setItem(activeConversationStorageKey(clientId, companyMode), id);
-        const url = new URL(window.location.href);
-        url.searchParams.set("conversation", id);
-        window.history.replaceState(window.history.state, "", url);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("conversation", id);
+        params.delete("lead");
+        const query = params.toString();
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
       } catch {
         /* selection remains functional without persistence */
       }
