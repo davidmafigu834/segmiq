@@ -243,7 +243,7 @@ export function ConversationList({
                   type="text"
                   value={search}
                   onChange={(e) => onSearchChange?.(e.target.value)}
-                  placeholder="Search conversations..."
+                  placeholder="Search conversations…"
                   className="w-full bg-transparent text-[14px] text-sales-text-primary placeholder:text-sales-text-muted focus:outline-none"
                 />
                 </div>

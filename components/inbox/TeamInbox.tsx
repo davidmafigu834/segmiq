@@ -25,8 +25,10 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
 import { CompanyConversationInsightRail } from "./CompanyConversationInsightRail";
 import { SalesIntelligenceRail } from "./SalesIntelligenceRail";
+import { SupportIntelligenceRail } from "./SupportIntelligenceRail";
+import { SalespersonHubHeader } from "./SalespersonHubHeader";
 import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
-import { WhatsAppConnectionBadge } from "./WhatsAppConnectionBadge";
+import type { SalesActionRecommendation } from "@/lib/sales/intelligence/types";
 
 type Props = {
   userName: string;
@@ -87,6 +89,7 @@ export function TeamInbox({
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [companyName, setCompanyName] = useState("");
   const [whatsappConnection, setWhatsAppConnection] = useState<SafeWhatsAppConnection | null>(null);
+  const [dailyPlanQueue, setDailyPlanQueue] = useState<SalesActionRecommendation[]>([]);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const isMobile = useInboxMobile();
   const isCompact = useInboxCompact();
@@ -211,6 +214,16 @@ export function TeamInbox({
   }
 
   useEffect(() => {
+    if (!whatsappMode || companyMode) return;
+    fetch("/api/sales/daily-plan")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { queue?: SalesActionRecommendation[] } | null) => {
+        setDailyPlanQueue(data?.queue ?? []);
+      })
+      .catch(() => setDailyPlanQueue([]));
+  }, [whatsappMode, companyMode, contextRevision]);
+
+  useEffect(() => {
     if (!whatsappMode) return;
     let cancelled = false;
     const loadConnection = async () => {
@@ -287,8 +300,8 @@ export function TeamInbox({
         }
       : {
           storageKey: SALESPERSON_INBOX_PANEL_WIDTHS_KEY,
-          defaultListWidth: isExtraWideWorkspace ? 350 : 310,
-          defaultIntelWidth: isExtraWideWorkspace ? 410 : 350,
+          defaultListWidth: isExtraWideWorkspace ? 350 : 330,
+          defaultIntelWidth: isExtraWideWorkspace ? 410 : 380,
           allowListCollapse: false,
         }
   );
@@ -328,23 +341,14 @@ export function TeamInbox({
         />
       ) : null}
 
-      {showHubChrome ? (
-        <div className="salesperson-wa-page-header flex min-h-[52px] shrink-0 items-center justify-between gap-3 border-b border-sales-border bg-sales-bg px-4 py-2 layout:px-5 sm:px-5">
-          <h1 className="truncate text-[18px] font-semibold tracking-[-0.03em] text-sales-text-primary sm:text-[20px]">
-            {pageTitle}
-          </h1>
-          {whatsappConnection && !whatsappConnection.connected ? (
-            <WhatsAppConnectionBadge connection={whatsappConnection} compact />
-          ) : null}
-        </div>
-      ) : null}
+      {showHubChrome ? <SalespersonHubHeader connection={whatsappConnection} /> : null}
 
       <div
         className={`min-h-0 flex-1 overflow-hidden ${
           companyMode
             ? "company-wa-workspace wa-hub-shell wa-hub-premium mx-3 mb-3 flex overflow-hidden rounded-[11px] border border-sales-border bg-sales-surface sm:mx-4 sm:mb-4"
             : whatsappMode
-              ? "salesperson-wa-workspace wa-hub-shell wa-hub-premium mx-3 mb-3 flex overflow-hidden rounded-[11px] border border-sales-border bg-sales-surface sm:mx-4 sm:mb-4"
+              ? "salesperson-wa-workspace wa-hub-shell wa-hub-premium flex overflow-hidden border-t border-sales-border bg-sales-surface"
               : "flex"
         }`}
       >
@@ -447,6 +451,9 @@ export function TeamInbox({
                 canClaim={salesCapable}
                 onClaim={(id) => void handleClaim(id)}
                 claiming={claimingId === active?.id}
+                userId={userId}
+                dailyPlanQueue={dailyPlanQueue}
+                salespersonHub={whatsappMode && !companyMode}
               />
             </div>
             {resizable && active ? (
@@ -479,35 +486,59 @@ export function TeamInbox({
                 />
               ) : null
             ) : whatsappMode && active && (!resizable || !intelCollapsed) ? (
-              <SalesIntelligenceRail
-                conversation={active}
-                clientId={clientId}
-                userId={userId}
-                salespeople={salespeople}
-                canReassign={canReassign}
-                canTransfer={canTransfer}
-                canModifyDeal={canUpdateStatus}
-                canCreateDeal={(canReassign || (salesCapable && ownsActive)) && !active.activeDealId}
-                canClaim={salesCapable}
-                claiming={claimingId === active.id}
-                onClaim={(id) => void handleClaim(id)}
-                onUpdated={() => {
-                  setContextRevision((value) => value + 1);
-                  void loadConversations({ silent: true });
-                }}
-                open={intelOpenEffective}
-                onCollapse={() => {
-                  if (paneNav) setMobilePane("thread");
-                  else if (resizable) toggleIntelCollapsed();
-                  else setIntelOpen(false);
-                }}
-                onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
-                mobileFullScreen={paneNav}
-                mobileTopClass={mobileIntelTop}
-                panelWidth={resizable ? intelWidth : undefined}
-                panelAnimated={resizable}
-                refreshKey={contextRevision}
-              />
+              active.conversationType === "SUPPORT" ? (
+                <SupportIntelligenceRail
+                  conversation={active}
+                  salespeople={salespeople}
+                  currentUserId={userId}
+                  canTransfer={canTransfer}
+                  canClaim={salesCapable}
+                  claiming={claimingId === active.id}
+                  onClaim={(id) => void handleClaim(id)}
+                  onUpdated={() => {
+                    setContextRevision((value) => value + 1);
+                    void loadConversations({ silent: true });
+                  }}
+                  open={intelOpenEffective}
+                  onCollapse={() => {
+                    if (paneNav) setMobilePane("thread");
+                    else if (resizable) toggleIntelCollapsed();
+                    else setIntelOpen(false);
+                  }}
+                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  panelWidth={resizable ? intelWidth : undefined}
+                />
+              ) : (
+                <SalesIntelligenceRail
+                  conversation={active}
+                  clientId={clientId}
+                  userId={userId}
+                  salespeople={salespeople}
+                  canReassign={canReassign}
+                  canTransfer={canTransfer}
+                  canModifyDeal={canUpdateStatus}
+                  canCreateDeal={(canReassign || (salesCapable && ownsActive)) && !active.activeDealId}
+                  canClaim={salesCapable}
+                  claiming={claimingId === active.id}
+                  onClaim={(id) => void handleClaim(id)}
+                  onUpdated={() => {
+                    setContextRevision((value) => value + 1);
+                    void loadConversations({ silent: true });
+                  }}
+                  open={intelOpenEffective}
+                  onCollapse={() => {
+                    if (paneNav) setMobilePane("thread");
+                    else if (resizable) toggleIntelCollapsed();
+                    else setIntelOpen(false);
+                  }}
+                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  mobileFullScreen={paneNav}
+                  mobileTopClass={mobileIntelTop}
+                  panelWidth={resizable ? intelWidth : undefined}
+                  panelAnimated={resizable}
+                  refreshKey={contextRevision}
+                />
+              )
             ) : !whatsappMode && (!resizable || !intelCollapsed) ? (
               <LeadIntelligencePanel
                 conversation={active}

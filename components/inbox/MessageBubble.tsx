@@ -100,28 +100,36 @@ export function MessageBubble({ message }: Props) {
 
   if (isSystem) {
     return (
-      <div className="flex justify-center px-2">
-        <span className="wa-system-pill max-w-[90%] text-center">{message.text}</span>
+      <div className="flex justify-center px-2 py-0.5">
+        <div className="wa-timeline-card max-w-[min(92%,520px)] rounded-[10px] border border-[#E4E7EC] bg-[#F8FAFC] px-3.5 py-2.5 text-left">
+          {message.systemTitle ? (
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#475467]">
+              {message.systemTitle}
+            </div>
+          ) : null}
+          <div className="text-[12.5px] leading-snug text-sales-text-primary">{message.text}</div>
+          <div className="mt-1 text-[10px] tabular-nums text-sales-text-muted">{formatTime(message.createdAt)}</div>
+        </div>
       </div>
     );
   }
 
   if (message.kind === "internal") {
+    const author = message.actorName ?? "Team";
     return (
-      <div className="flex justify-center px-2">
-        <span className="max-w-[min(85%,480px)] rounded-[10px] border border-sales-warning/30 bg-sales-warning-soft px-3.5 py-2.5 text-left text-[12px] text-sales-warning-fg">
-          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-warning">
-            Internal note
-          </span>
-          <span>{message.text}</span>
-          <span className="mt-1.5 block text-[10px] text-sales-warning/80">Only your team can see this</span>
-        </span>
+      <div className="flex justify-center px-2 py-0.5">
+        <div className="wa-internal-note max-w-[min(88%,480px)] rounded-[10px] border border-[#E7DCC8] bg-[#FBF7F0] px-3.5 py-2.5 text-left">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8A6D3B]">
+            Internal note · {author} · {formatTime(message.createdAt)}
+          </div>
+          <div className="whitespace-pre-wrap text-[12.5px] leading-snug text-[#3F3A33]">{message.text}</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={`flex px-1 ${isRep ? "justify-end" : "justify-start"}`}>
+    <div className={`flex px-1 py-0.5 ${isRep ? "justify-end" : "justify-start"}`}>
       <div className={`relative max-w-[min(68%,480px)] ${isRep ? "wa-bubble-out" : "wa-bubble-in"}`}>
         <MediaBlock message={message} />
         {showText ? <div className="whitespace-pre-wrap break-words pr-1 text-[13.5px] leading-[1.45] sm:text-[14px]">{message.text}</div> : null}

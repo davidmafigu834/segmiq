@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -8,8 +8,8 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   ChevronDown,
-  Clock,
   FileText,
+  Headphones,
   MoreHorizontal,
   PanelRight,
   Paperclip,
@@ -24,17 +24,23 @@ import type { InboxChatMessage, InboxConversation } from "@/lib/inbox/types";
 import { formatDealValue } from "@/lib/inbox/queue-filters";
 import { formatDealStage } from "@/lib/sales/deals/display";
 import { applyQuickReplyVariables } from "@/lib/inbox/quick-reply-vars";
+import { resolveNextBestAction } from "@/lib/inbox/next-best-action";
+import { CONVERSATION_TYPE_LABEL } from "@/lib/inbox/conversation-type";
+import type { SalesActionRecommendation } from "@/lib/sales/intelligence/types";
 import { LogCallForm } from "@/components/leads/LogCallForm";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button } from "@/components/sales/ui/Button";
 import { TextArea } from "@/components/sales/ui/Input";
 import { groupMessagesByDay, MessageBubble } from "./MessageBubble";
 import { LeadStageBadge } from "./LeadStageBadge";
-import { LeadIntentBadge } from "./LeadIntentBadge";
 import { QuickReplyBar, type QuickReplyAction, type SavedQuickReply } from "./QuickReplyBar";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 import { TransferDialog } from "./TransferDialog";
+import { TransferToSupportDialog } from "./TransferToSupportDialog";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
+import { NextBestActionStrip } from "./NextBestActionStrip";
+import { QualificationStrip } from "./QualificationStrip";
+import { AssetDrawer } from "./AssetDrawer";
 import type { LeadRow } from "@/types";
 import { initials } from "@/lib/inbox/assignee-colors";
 
@@ -64,6 +70,9 @@ type Props = {
   canClaim?: boolean;
   onClaim?: (leadId: string) => void;
   claiming?: boolean;
+  userId?: string;
+  dailyPlanQueue?: SalesActionRecommendation[];
+  salespersonHub?: boolean;
 };
 
 function mergeChatMessages(
@@ -116,6 +125,9 @@ export function ChatThread({
   canClaim = false,
   onClaim,
   claiming = false,
+  userId = "",
+  dailyPlanQueue = [],
+  salespersonHub = false,
 }: Props) {
   const [messages, setMessages] = useState<InboxChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,6 +138,8 @@ export function ChatThread({
   const [pricingPicker, setPricingPicker] = useState<{ id: string; name: string }[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [supportTransferOpen, setSupportTransferOpen] = useState(false);
+  const [assetDrawerOpen, setAssetDrawerOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [composerMoreOpen, setComposerMoreOpen] = useState(false);
   const [savedReplies, setSavedReplies] = useState<SavedQuickReply[]>([]);
@@ -133,9 +147,11 @@ export function ChatThread({
   const [sendError, setSendError] = useState<string | null>(null);
   const [createDealOpen, setCreateDealOpen] = useState(false);
   const [dealLead, setDealLead] = useState<LeadRow | null>(null);
+  const [contextLead, setContextLead] = useState<LeadRow | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
+  const [planCompleting, setPlanCompleting] = useState(false);
   const [hasNewBelow, setHasNewBelow] = useState(false);
   const [hasOlder, setHasOlder] = useState(false);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
@@ -159,8 +175,28 @@ export function ChatThread({
     stickToBottomRef.current = true;
     setQuickActionsOpen(false);
     setMenuOpen(false);
+    setAssetDrawerOpen(false);
     if (!conversation?.id) onSessionChangeRef.current?.(null);
   }, [conversation?.id]);
+
+  useEffect(() => {
+    if (!conversation?.id || !salespersonHub) {
+      setContextLead(null);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/leads/${conversation.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json: { lead?: LeadRow } | null) => {
+        if (!cancelled) setContextLead(json?.lead ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setContextLead(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [conversation?.id, salespersonHub]);
 
   useEffect(() => {
     const focusComposer = () => composerRef.current?.focus();
@@ -495,6 +531,14 @@ export function ChatThread({
     setCreateDealOpen(true);
   }
 
+  const nextBestAction = useMemo(
+    () =>
+      salespersonHub && conversation
+        ? resolveNextBestAction({ conversation, dailyPlan: dailyPlanQueue })
+        : null,
+    [conversation, dailyPlanQueue, salespersonHub]
+  );
+
   if (!conversation) {
     return (
       <div className="wa-chat-wallpaper flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-center px-6">
@@ -517,10 +561,40 @@ export function ChatThread({
   const messageGroups = groupMessagesByDay(messages);
   const isWhatsApp = conversation.source === "WHATSAPP_INBOUND";
   const dealLabel = formatDealValue(conversation.dealValue, conversation.dealCurrency ?? "USD");
-  const sessionClosed = isWhatsApp && !sessionOpen;
+  const sessionClosed = isWhatsApp && !sessionOpen && !salespersonHub;
+  const isSupport = conversation.conversationType === "SUPPORT";
+
+  async function handleCompletePlanAction() {
+    if (!nextBestAction?.dailyPlanKey || planCompleting) return;
+    const planItem = dailyPlanQueue.find((item) => item.idempotencyKey === nextBestAction.dailyPlanKey);
+    if (!planItem) return;
+    setPlanCompleting(true);
+    try {
+      await fetch("/api/sales/daily-plan/actions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idempotencyKey: planItem.idempotencyKey,
+          actionType: planItem.actionType,
+          reasonCode: planItem.reasonCode,
+          sourceEntityType: planItem.sourceEntityType,
+          sourceEntityId: planItem.sourceEntityId,
+          action: "complete",
+        }),
+      });
+      onConversationUpdate?.();
+    } finally {
+      setPlanCompleting(false);
+    }
+  }
+
+  function insertComposerText(text: string) {
+    setInput((current) => (current.trim() ? `${current.trim()} ${text}` : text));
+    composerRef.current?.focus();
+  }
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
+    <div className="relative flex h-full min-h-0 min-w-0 flex-1 flex-col">
       <div
         className={`shrink-0 max-[1099px]:pt-[max(0.75rem,env(safe-area-inset-top))] ${
           isWhatsApp ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
@@ -564,7 +638,32 @@ export function ChatThread({
                     {companyMode && conversation.location ? ` · ${conversation.location}` : ""}
                   </div>
                 ) : null}
-                {!companyMode ? (
+                {!companyMode && salespersonHub ? (
+                  <div className="hidden min-w-0 shrink-0 items-center gap-1.5 overflow-hidden min-[860px]:flex">
+                    {conversation.activeDealId ? (
+                      <>
+                        <span className="inline-flex shrink-0 rounded-full bg-sales-info-soft px-2 py-0.5 text-[10px] font-semibold text-sales-info">
+                          Deal
+                        </span>
+                        {conversation.dealStage ? (
+                          <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-semibold text-sales-text-primary">
+                            {formatDealStage(conversation.dealStage)}
+                          </span>
+                        ) : null}
+                      </>
+                    ) : (
+                      <span
+                        className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] ${
+                          isSupport
+                            ? "bg-[#EFF8FF] text-[#175CD3]"
+                            : "bg-sales-surface-subtle text-sales-text-secondary"
+                        }`}
+                      >
+                        {CONVERSATION_TYPE_LABEL[conversation.conversationType]}
+                      </span>
+                    )}
+                  </div>
+                ) : !companyMode ? (
                   <div className="flex min-w-0 shrink-0 items-center gap-1.5 overflow-hidden">
                     {conversation.activeDealId ? (
                       <>
@@ -580,15 +679,7 @@ export function ChatThread({
                         ) : null}
                       </>
                     ) : (
-                      <>
-                        <LeadStageBadge status={conversation.status} variant="list" className="shrink-0" />
-                        <LeadIntentBadge score={conversation.score} label={conversation.scoreLabel} variant="list" className="shrink-0" />
-                        {conversation.leadBudget ? (
-                          <span className="hidden truncate rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-medium text-sales-text-secondary min-[1280px]:inline-flex">
-                            Budget {conversation.leadBudget}
-                          </span>
-                        ) : null}
-                      </>
+                      <LeadStageBadge status={conversation.status} variant="list" className="shrink-0" />
                     )}
                   </div>
                 ) : null}
@@ -596,6 +687,26 @@ export function ChatThread({
             </div>
           </div>
           <div className="relative flex shrink-0 items-center gap-0.5 sm:gap-1">
+            {salespersonHub && !companyMode ? (
+              <div className="mr-1 hidden min-w-0 items-center gap-2 text-right min-[720px]:flex">
+                <div className="min-w-0">
+                  <div className="text-[9px] uppercase tracking-[0.04em] text-sales-text-muted">Owner</div>
+                  <div className={`truncate text-[11px] font-medium ${conversation.assignee ? "text-sales-text-primary" : "text-[#D97706]"}`}>
+                    {conversation.assignee ? `Assigned to ${conversation.assignee.name.split(" ")[0]}` : "Unassigned"}
+                  </div>
+                </div>
+                {!conversation.assignedToId && canClaim && onClaim ? (
+                  <button
+                    type="button"
+                    disabled={claiming}
+                    onClick={() => onClaim(conversation.id)}
+                    className="rounded-[8px] bg-sales-brand px-2.5 py-1 text-[11px] font-semibold text-sales-brand-text disabled:opacity-50"
+                  >
+                    {claiming ? "Claiming…" : "Claim"}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             {companyMode ? (
               <button
                 type="button"
@@ -676,6 +787,18 @@ export function ChatThread({
                     Transfer conversation
                   </button>
                 ) : null}
+                {salespersonHub && !isSupport ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setSupportTransferOpen(true);
+                    }}
+                    className="flex w-full px-3 py-2.5 text-left text-sm text-sales-text-primary hover:bg-sales-surface-hover"
+                  >
+                    Transfer to Support
+                  </button>
+                ) : null}
                 {companyMode && (canReassign || canUpdateStatus) ? (
                   <button
                     type="button"
@@ -696,7 +819,31 @@ export function ChatThread({
         </div>
       </div>
 
-      {canSend && isWhatsApp && !companyMode ? (
+      {salespersonHub && nextBestAction ? (
+        <NextBestActionStrip
+          action={nextBestAction}
+          condensed={!!onBack}
+          onCall={conversation.phone ? () => window.open(`tel:${conversation.phone}`, "_self") : undefined}
+          onSchedule={() => {
+            window.location.href = `/sales/calendar?lead=${conversation.id}`;
+          }}
+          onViewQuote={dealHref ? () => window.location.assign(dealHref) : undefined}
+          onCompletePlan={() => void handleCompletePlanAction()}
+          completing={planCompleting}
+        />
+      ) : null}
+
+      {salespersonHub && !conversation.activeDealId && !isSupport ? (
+        <QualificationStrip
+          conversation={conversation}
+          lead={contextLead}
+          onInsertQuestion={insertComposerText}
+          onCreateDeal={() => void openCreateDeal()}
+          canCreateDeal={canCreateDeal}
+        />
+      ) : null}
+
+      {canSend && isWhatsApp && salespersonHub && !isSupport ? (
         <div className="wa-action-strip relative min-h-[44px] shrink-0" aria-label="Conversation tools">
           <button
             type="button"
@@ -707,7 +854,7 @@ export function ChatThread({
           >
             <Zap size={14} strokeWidth={1.8} /> Quick replies
           </button>
-          <button type="button" onClick={() => setQuickActionsOpen(true)} className="wa-action-chip max-[520px]:hidden">
+          <button type="button" onClick={() => setAssetDrawerOpen(true)} className="wa-action-chip max-[520px]:hidden">
             <Paperclip size={14} strokeWidth={1.8} /> Send asset
           </button>
           <button type="button" onClick={handleInternalNote} className="wa-action-chip max-[640px]:hidden">
@@ -739,7 +886,7 @@ export function ChatThread({
             <>
               <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close more actions" onClick={() => setComposerMoreOpen(false)} />
               <div className="absolute left-2 top-full z-30 mt-1 min-w-[180px] rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
-                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[521px]:hidden" onClick={() => { setComposerMoreOpen(false); setQuickActionsOpen(true); }}><Paperclip size={14} /> Send asset</button>
+                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[521px]:hidden" onClick={() => { setComposerMoreOpen(false); setAssetDrawerOpen(true); }}><Paperclip size={14} /> Send asset</button>
                 <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[641px]:hidden" onClick={() => { setComposerMoreOpen(false); handleInternalNote(); }}><StickyNote size={14} /> Internal note</button>
                 {leadHref ? (
                   <Link href={leadHref} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[761px]:hidden" onClick={() => setComposerMoreOpen(false)}>
@@ -749,6 +896,27 @@ export function ChatThread({
               </div>
             </>
           ) : null}
+        </div>
+      ) : null}
+
+      {canSend && isWhatsApp && salespersonHub && isSupport ? (
+        <div className="wa-action-strip relative min-h-[44px] shrink-0" aria-label="Support conversation tools">
+          <button type="button" onClick={handleInternalNote} className="wa-action-chip">
+            <StickyNote size={14} strokeWidth={1.8} /> Add note
+          </button>
+          {leadHref ? (
+            <Link href={leadHref} className="wa-action-chip">
+              <UserRound size={14} strokeWidth={1.8} /> View customer
+            </Link>
+          ) : null}
+          {canTransfer ? (
+            <button type="button" onClick={() => setTransferOpen(true)} className="wa-action-chip">
+              <Headphones size={14} strokeWidth={1.8} /> Transfer
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setSupportTransferOpen(true)} className="wa-action-chip max-[640px]:hidden">
+            <Headphones size={14} strokeWidth={1.8} /> Transfer to Support
+          </button>
         </div>
       ) : null}
 
@@ -857,19 +1025,9 @@ export function ChatThread({
             <div className="mx-3 mt-2 flex items-start gap-2 rounded-[9px] border border-sales-danger/30 bg-sales-danger-soft px-3 py-2.5 text-sales-danger-fg">
               <AlertTriangle size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
               <div className="min-w-0">
-                <div className="text-[12px] font-semibold">{connectionLabel} is disconnected</div>
+                <div className="text-[12px] font-semibold">WhatsApp temporarily offline</div>
                 <p className="mt-0.5 text-[11px] leading-snug">
-                  Conversation history and CRM tools remain available. Sending resumes after a company manager reconnects WhatsApp.
-                </p>
-              </div>
-            </div>
-          ) : sessionClosed ? (
-            <div className="wa-session-banner">
-              <Clock size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
-              <div className="min-w-0">
-                <div className="text-[12px] font-semibold">WhatsApp 24h session closed</div>
-                <p className="mt-0.5 text-[11px] leading-snug">
-                  Free-form replies are unavailable until the customer messages again. Your message may send as an approved template when available.
+                  Sending will resume after your company reconnects WhatsApp.
                 </p>
               </div>
             </div>
@@ -930,10 +1088,10 @@ export function ChatThread({
               }}
               placeholder={
                 !transportAvailable
-                  ? "WhatsApp is disconnected"
+                  ? "WhatsApp temporarily offline"
                   : sessionClosed
-                    ? "Free-form replies unavailable — may send as template…"
-                    : companyMode
+                    ? "Type a message…"
+                    : salespersonHub
                       ? "Type a message..."
                       : "Type a WhatsApp reply..."
               }
@@ -961,26 +1119,24 @@ export function ChatThread({
           </div>
         </div>
       ) : (
-        <div className="wa-composer flex shrink-0 items-center justify-between gap-3 bg-sales-surface px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-[11px] font-medium text-sales-text-secondary">
-          Read-only — claim or assign this lead to send messages
-          {!conversation.assignedToId && canClaim && onClaim ? (
-            <button
-              type="button"
-              disabled={claiming}
-              onClick={() => onClaim(conversation.id)}
-              className="shrink-0 rounded-[8px] bg-[#D4FF4F] px-2.5 py-1.5 text-[11px] font-semibold text-[#101828] disabled:opacity-50"
-            >
-              {claiming ? "Claiming..." : "Claim conversation"}
-            </button>
-          ) : null}
-          {isWhatsApp && !transportAvailable ? (
-            <div className="mx-3 mb-1 flex items-start gap-2 rounded-[9px] border border-sales-danger/30 bg-sales-danger-soft px-3 py-2.5 text-sales-danger-fg">
-              <AlertTriangle size={16} strokeWidth={1.8} className="mt-0.5 shrink-0" aria-hidden />
-              <div className="min-w-0">
-                <div className="text-[12px] font-semibold">{connectionLabel} is disconnected</div>
-                <p className="mt-0.5 text-[11px] leading-snug">Conversation history and CRM tools remain available. Sending resumes after a company manager reconnects WhatsApp.</p>
-              </div>
-            </div>
+        <div className="wa-composer flex shrink-0 flex-col gap-2 bg-sales-surface px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-[11px] font-medium text-sales-text-secondary">
+          <div className="flex items-center justify-between gap-3">
+            <span>Read-only — claim this conversation to send messages</span>
+            {!conversation.assignedToId && canClaim && onClaim ? (
+              <button
+                type="button"
+                disabled={claiming}
+                onClick={() => onClaim(conversation.id)}
+                className="shrink-0 rounded-[8px] bg-[#D4FF4F] px-2.5 py-1.5 text-[11px] font-semibold text-[#101828] disabled:opacity-50"
+              >
+                {claiming ? "Claiming..." : "Claim"}
+              </button>
+            ) : null}
+          </div>
+          {!transportAvailable ? (
+            <p className="text-[11px] text-sales-text-muted">
+              WhatsApp temporarily offline. CRM tools and message history remain available.
+            </p>
           ) : null}
         </div>
       )}
@@ -1085,6 +1241,35 @@ export function ChatThread({
         onClose={() => setTransferOpen(false)}
         onTransfer={handleTransfer}
         whatsappMode={isWhatsApp}
+      />
+      {salespersonHub ? (
+        <TransferToSupportDialog
+          open={supportTransferOpen}
+          salespeople={salespeople}
+          currentUserId={userId}
+          onClose={() => setSupportTransferOpen(false)}
+          onTransfer={async (payload) => {
+            const res = await fetch(`/api/inbox/conversations/${conversation.id}/transfer-support`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            const json = (await res.json().catch(() => ({}))) as { error?: string };
+            if (!res.ok) throw new Error(json.error ?? "Transfer failed");
+            onConversationUpdate?.();
+            onMessagesChange();
+          }}
+        />
+      ) : null}
+      <AssetDrawer
+        open={assetDrawerOpen}
+        clientId={clientId}
+        disabled={sending || !transportAvailable}
+        onClose={() => setAssetDrawerOpen(false)}
+        onSendDocument={(id) => void sendAsset("DOCUMENT", id)}
+        onSendPortfolio={() => void sendAsset("PORTFOLIO")}
+        onSendTestimonials={() => void sendAsset("TESTIMONIALS")}
+        onSendPackage={(id) => void sendAsset("PRICING_PACKAGE", id)}
       />
       {dealLead ? (
         <CreateDealSheet

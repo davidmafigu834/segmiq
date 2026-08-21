@@ -1,4 +1,10 @@
 import type { LeadSource, LeadStatus } from "@/types";
+import type {
+  ConversationQueue,
+  ConversationType,
+  SupportCaseStatus,
+  SupportReasonCategory,
+} from "./conversation-type";
 
 export type InboxFilter =
   | "all"
@@ -69,6 +75,16 @@ export type InboxConversation = {
   latestQuoteNumber: string | null;
   latestQuoteStatus: string | null;
   latestQuoteTotal: number | null;
+  latestQuoteViewedAt: string | null;
+  conversationType: ConversationType;
+  conversationQueue: ConversationQueue;
+  collaboratorIds: string[];
+  supportCase: {
+    id: string;
+    status: SupportCaseStatus;
+    reasonCategory: SupportReasonCategory | null;
+    reason: string | null;
+  } | null;
   /** Conversation workflow is intentionally separate from Lead/Deal lifecycle. */
   conversationStatus: "OPEN" | "RESOLVED";
   resolvedAt: string | null;
@@ -79,6 +95,7 @@ export type InboxConversation = {
   dealName: string | null;
   dealStage: string | null;
   dealNextActionAt: string | null;
+  dealNextActionLabel: string | null;
 };
 
 export type CompanyWhatsAppSummary = {
@@ -133,6 +150,8 @@ export type InboxChatMessage = {
   status?: "pending" | "sent" | "delivered" | "read" | "failed" | null;
   mediaUrl?: string | null;
   mediaMimeType?: string | null;
+  actorName?: string | null;
+  systemTitle?: string | null;
 };
 
 export type InboxIntelligence = {

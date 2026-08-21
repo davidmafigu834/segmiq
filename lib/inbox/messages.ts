@@ -84,6 +84,7 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
         text: note,
         createdAt: event.created_at,
         kind: "internal",
+        actorName: event.actor_name || null,
       };
     }
     return {
@@ -92,6 +93,7 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
       text: note,
       createdAt: event.created_at,
       kind: "message",
+      actorName: event.actor_name || null,
     };
   }
 
@@ -126,9 +128,39 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
     return {
       id: event.id,
       direction: "rep",
-      text: `Transferred from ${fromName} to ${toName}${notes}`,
+      text: `${fromName} → ${toName}${notes}`,
       createdAt: event.created_at,
       kind: "system",
+      systemTitle: "Conversation transferred",
+      actorName: event.actor_name || null,
+    };
+  }
+
+  if (event.event_type === "CONVERSATION_TRANSFERRED_TO_SUPPORT") {
+    const toName = String(d.to_name ?? "Support Team");
+    const reason = d.reason ? String(d.reason) : "";
+    return {
+      id: event.id,
+      direction: "rep",
+      text: [event.actor_name ? `${event.actor_name} → ${toName}` : toName, reason]
+        .filter(Boolean)
+        .join(" · "),
+      createdAt: event.created_at,
+      kind: "system",
+      systemTitle: "Transferred to Support",
+      actorName: event.actor_name || null,
+    };
+  }
+
+  if (event.event_type === "SUPPORT_CASE_OPENED") {
+    return {
+      id: event.id,
+      direction: "rep",
+      text: String(d.reason ?? d.reason_category ?? "Support case opened"),
+      createdAt: event.created_at,
+      kind: "system",
+      systemTitle: "Support case opened",
+      actorName: event.actor_name || null,
     };
   }
 
@@ -150,9 +182,11 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
       return {
         id: event.id,
         direction: "rep",
-        text: `Quote sent: ${docName}`,
+        text: [docName, event.actor_name].filter(Boolean).join(" · "),
         createdAt: event.created_at,
         kind: "system",
+        systemTitle: "Quote sent",
+        actorName: event.actor_name || null,
       };
     }
     const text =
@@ -179,6 +213,8 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
       text: `${prefix}: ${outcome}${notes}`.trim(),
       createdAt: event.created_at,
       kind: "system",
+      systemTitle: channel === "whatsapp" ? "WhatsApp contact" : "Call logged",
+      actorName: event.actor_name || null,
     };
   }
 

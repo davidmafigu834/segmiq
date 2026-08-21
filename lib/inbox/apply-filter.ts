@@ -25,6 +25,8 @@ export function applyInboxFilter(
       l.leadBudget,
       l.sourceLabel,
       l.assignee?.name,
+      l.lastMessage,
+      l.conversationType,
     ]
       .filter(Boolean)
       .join(" ")

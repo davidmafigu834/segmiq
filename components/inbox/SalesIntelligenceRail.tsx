@@ -26,9 +26,12 @@ import type { DealTimelineItem } from "@/lib/sales/deals/timeline";
 import {
   DEAL_ACTIVE_STAGES,
   formatDealStage,
+  formatDealValueBasis,
   getDealAttentionState,
   getDealReadiness,
+  getNextDealStage,
 } from "@/lib/sales/deals";
+import { dealHealthFromAttention } from "@/lib/inbox/deal-health-display";
 import { extractQualificationDisplayFields } from "@/lib/inbox/qualification-display";
 import {
   formatCurrencyAmount,
@@ -44,6 +47,7 @@ import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { QuotationBuilder } from "@/components/leads/QuotationBuilder";
 import { ScoreBreakdownBar } from "./ScoreBreakdownBar";
 import { TransferDialog } from "./TransferDialog";
+import { TransferToSupportDialog } from "./TransferToSupportDialog";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 
 type QuotationWithItems = QuotationRow & { items?: QuotationLineItemRow[] };
@@ -194,6 +198,7 @@ export function SalesIntelligenceRail({
   const [customDate, setCustomDate] = useState("");
   const [createDealOpen, setCreateDealOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [supportTransferOpen, setSupportTransferOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState<QuotationWithItems | null>(null);
 
   const dealId = dealData?.deal.id ?? conversation.activeDealId;
@@ -436,6 +441,8 @@ export function SalesIntelligenceRail({
     latestQuote?.currency ?? conversation.dealCurrency ?? "USD"
   );
   const attention = dealData ? getDealAttentionState(dealData.deal) : null;
+  const dealHealthLabel = dealHealthFromAttention(attention);
+  const nextStage = dealData ? getNextDealStage(dealData.deal.stage) : null;
   const dealAge = dealData
     ? Math.max(0, differenceInCalendarDays(new Date(), new Date(dealData.deal.created_at)))
     : null;
@@ -488,6 +495,7 @@ export function SalesIntelligenceRail({
         ) : isDeal && dealData ? (
           <>
             <RailSection>
+              {sectionTitle("Deal & Customer")}
               <div className="flex items-start gap-3">
                 <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />
                 <div className="min-w-0 flex-1">
@@ -495,9 +503,10 @@ export function SalesIntelligenceRail({
                     {dealData.deal.name}
                   </div>
                   <div className="mt-0.5 truncate text-[12.5px] text-sales-text-secondary">{name}</div>
+                  <div className="mt-1 truncate text-[12px] tabular-nums text-sales-whatsapp">{conversation.phone}</div>
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    <MetaChip>Owner · {ownerDisplay}</MetaChip>
-                    <MetaChip>{formatSource(conversation.source as string)}</MetaChip>
+                    <MetaChip>{formatDealStage(dealData.deal.stage)}</MetaChip>
+                    <MetaChip>{dealData.commercial.display}</MetaChip>
                   </div>
                 </div>
                 <Link href={`/sales/deals/${dealData.deal.id}`} className="wa-icon-btn !h-8 !w-8" aria-label="Open full Deal">
@@ -507,29 +516,51 @@ export function SalesIntelligenceRail({
             </RailSection>
 
             <RailSection>
-              {sectionTitle("Commercial summary")}
+              {sectionTitle("Commercial Details")}
               <dl className="-my-1.5 divide-y divide-sales-border-subtle">
                 <Fact label="Deal value" value={dealData.commercial.display} />
+                <Fact
+                  label="Value basis"
+                  value={
+                    dealData.commercial.kind !== "pending" && dealData.commercial.basis
+                      ? formatDealValueBasis(dealData.commercial.basis) || "Not set"
+                      : "Not set"
+                  }
+                />
                 <Fact label="Expected decision" value={formatDate(dealData.deal.expected_decision_at) || "Not set"} />
-                <Fact label="Deal age" value={`${dealAge} day${dealAge === 1 ? "" : "s"}`} />
+                <Fact label="Deal age" value={`${dealAge ?? 0} day${dealAge === 1 ? "" : "s"}`} />
                 <Fact label="Latest activity" value={formatDate(dealData.deal.last_meaningful_activity_at || dealData.deal.updated_at) || "Not recorded"} />
               </dl>
             </RailSection>
 
             <RailSection>
-              {sectionTitle("Deal health")}
-              <div className={`flex items-start gap-2.5 rounded-[10px] border px-3 py-2.5 ${attention?.atRisk ? "border-sales-danger/30 bg-sales-danger-soft" : attention?.needsAttention ? "border-sales-warning/30 bg-sales-warning-soft" : "border-sales-success/30 bg-sales-success-soft"}`}>
-                {attention?.needsAttention ? <AlertTriangle size={16} className="mt-0.5 shrink-0" /> : <Check size={16} className="mt-0.5 shrink-0" />}
+              {sectionTitle("Deal Health")}
+              <div
+                className={`flex items-start gap-2.5 rounded-[10px] border px-3 py-2.5 ${
+                  dealHealthLabel === "At risk"
+                    ? "border-sales-danger/30 bg-sales-danger-soft"
+                    : dealHealthLabel === "Needs attention"
+                      ? "border-sales-warning/30 bg-sales-warning-soft"
+                      : "border-sales-success/30 bg-sales-success-soft"
+                }`}
+              >
+                {dealHealthLabel === "On track" ? (
+                  <Check size={16} className="mt-0.5 shrink-0" />
+                ) : (
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                )}
                 <div>
-                  <div className="text-[13px] font-semibold text-sales-text-primary">{attention?.needsAttention ? attention.badge || "Needs attention" : "On track"}</div>
-                  <p className="mt-0.5 text-[12px] leading-relaxed text-sales-text-secondary">{attention?.reason || "The Deal has a clear next step and no current risk signal."}</p>
+                  <div className="text-[13px] font-semibold text-sales-text-primary">{dealHealthLabel}</div>
+                  <p className="mt-0.5 text-[12px] leading-relaxed text-sales-text-secondary">
+                    {attention?.reason || "The Deal has a clear next step and no current risk signal."}
+                  </p>
                 </div>
               </div>
             </RailSection>
 
             <RailSection courseTarget="whatsapp-deal-stage">
-              {sectionTitle("Pipeline stage")}
-              <div className="grid grid-cols-4 gap-1">
+              {sectionTitle("Pipeline Stage Controls")}
+              <div className="wa-pipeline-stepper flex items-center gap-1 overflow-x-auto pb-1">
                 {DEAL_ACTIVE_STAGES.map((stage, index) => {
                   const currentIndex = DEAL_ACTIVE_STAGES.indexOf(dealData.deal.stage as (typeof DEAL_ACTIVE_STAGES)[number]);
                   const current = stage === dealData.deal.stage;
@@ -540,23 +571,29 @@ export function SalesIntelligenceRail({
                       type="button"
                       disabled={!canModifyDeal || busy || current}
                       onClick={() => void patchDeal({ stage }, `Deal moved to ${formatDealStage(stage)}`)}
-                      className={`min-w-0 rounded-[8px] border px-1 py-2 text-[10px] font-semibold leading-tight transition-colors ${
-                        current
-                          ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
-                          : complete
-                            ? "border-sales-success/30 bg-sales-success-soft text-sales-success"
-                            : "border-sales-border bg-sales-surface text-sales-text-muted hover:bg-sales-surface-hover"
-                      } disabled:cursor-default`}
+                      className={`wa-pipeline-step shrink-0 ${current ? "wa-pipeline-step-current" : complete ? "wa-pipeline-step-complete" : ""}`}
+                      title={formatDealStage(stage)}
                     >
-                      {formatDealStage(stage)}
+                      <Circle size={10} className={current ? "fill-current" : ""} />
+                      <span className="hidden min-[420px]:inline">{formatDealStage(stage)}</span>
                     </button>
                   );
                 })}
               </div>
+              {canModifyDeal && nextStage ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void patchDeal({ stage: nextStage }, `Deal moved to ${formatDealStage(nextStage)}`)}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-[9px] bg-sales-brand px-3 py-2 text-[12px] font-semibold text-sales-brand-text disabled:opacity-50"
+                >
+                  Move to Next Stage
+                </button>
+              ) : null}
             </RailSection>
 
             <RailSection courseTarget="whatsapp-next-action">
-              {sectionTitle("Next action")}
+              {sectionTitle("Next Action")}
               {dealData.nextAction.hasNextAction ? (
                 <div className="flex items-start gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5">
                   <Clock3 size={16} className={`mt-0.5 shrink-0 ${dealData.nextAction.isOverdue ? "text-sales-danger" : "text-sales-text-label"}`} />
@@ -589,7 +626,7 @@ export function SalesIntelligenceRail({
             </RailSection>
 
             <RailSection courseTarget="whatsapp-quotation">
-              {sectionTitle("Quotation")}
+              {sectionTitle("Quotation Status")}
               {quoteNumber || quoteStatus ? (
                 <div className="flex items-center gap-3 rounded-[10px] border border-sales-border bg-sales-surface-subtle p-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[9px] bg-sales-surface text-sales-text-label">
@@ -600,7 +637,7 @@ export function SalesIntelligenceRail({
                       {quoteNumber ? `Quote #${quoteNumber}` : "Quotation"}
                     </div>
                     <div className="mt-0.5 text-[11px] text-sales-text-secondary">
-                      {[quoteStatus, quoteTotal].filter(Boolean).join(" · ")}
+                      {[quoteStatus, quoteTotal, conversation.latestQuoteViewedAt ? "Viewed" : null].filter(Boolean).join(" · ")}
                     </div>
                   </div>
                   <button type="button" disabled={busy} onClick={() => void openQuotation(false)} className="rounded-[8px] border border-sales-border bg-sales-surface px-2.5 py-1.5 text-[11px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover">
@@ -617,11 +654,11 @@ export function SalesIntelligenceRail({
               )}
             </RailSection>
 
-            {dealData.timeline.length > 0 ? (
-              <RailSection>
-                {sectionTitle("Recent Deal activity")}
+            <RailSection>
+              {sectionTitle("Recent Activity")}
+              {dealData.timeline.length > 0 ? (
                 <div className="space-y-3">
-                  {dealData.timeline.slice(0, 3).map((item) => (
+                  {dealData.timeline.slice(0, 5).map((item) => (
                     <div key={item.id} className="flex items-start gap-2.5">
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-sales-brand" />
                       <div className="min-w-0 flex-1">
@@ -631,19 +668,36 @@ export function SalesIntelligenceRail({
                     </div>
                   ))}
                 </div>
-              </RailSection>
-            ) : null}
+              ) : (
+                <p className="text-[13px] text-sales-text-secondary">No recent Deal activity yet.</p>
+              )}
+            </RailSection>
 
             {canTransfer || canReassign ? (
               <RailSection>
-                {sectionTitle("Ownership & handover")}
-                <button
-                  type="button"
-                  onClick={() => setTransferOpen(true)}
-                  className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
-                >
-                  <ArrowLeftRight size={14} /> Transfer with notes
-                </button>
+                {sectionTitle("Ownership & Handover")}
+                <div className="mb-3 flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sales-surface-subtle text-[11px] font-semibold text-sales-text-secondary">
+                    {ownerDisplay.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 text-[13px] font-medium text-sales-text-primary">{ownerDisplay}</div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTransferOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
+                  >
+                    <ArrowLeftRight size={14} /> Transfer conversation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSupportTransferOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-[8px] border border-[#B2DDFF] bg-[#EFF8FF] px-3 py-2 text-[12px] font-semibold text-[#175CD3] hover:bg-[#E0F2FE]"
+                  >
+                    Transfer to Support
+                  </button>
+                </div>
               </RailSection>
             ) : null}
           </>
@@ -848,6 +902,22 @@ export function SalesIntelligenceRail({
 
       {lead ? <CreateDealSheet lead={lead} open={createDealOpen} onClose={() => setCreateDealOpen(false)} onCreated={(deal) => { setCreateDealOpen(false); onUpdated(); void reloadDeal(deal.id); }} currency={conversation.dealCurrency ?? "USD"} /> : null}
       <TransferDialog open={transferOpen} salespeople={salespeople} currentAssigneeId={conversation.assignedToId} onClose={() => setTransferOpen(false)} onTransfer={handleTransfer} whatsappMode />
+      <TransferToSupportDialog
+        open={supportTransferOpen}
+        salespeople={salespeople}
+        currentUserId={userId}
+        onClose={() => setSupportTransferOpen(false)}
+        onTransfer={async (payload) => {
+          const res = await fetch(`/api/inbox/conversations/${conversation.id}/transfer-support`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const json = (await res.json().catch(() => ({}))) as { error?: string };
+          if (!res.ok) throw new Error(json.error ?? "Transfer failed");
+          onUpdated();
+        }}
+      />
       {editingQuote ? <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 sm:items-center"><div className="max-h-[96dvh] w-full max-w-4xl overflow-y-auto rounded-t-2xl border border-sales-border bg-sales-surface p-5 sm:rounded-xl"><QuotationBuilder quotation={editingQuote} clientId={clientId} leadPhone={conversation.phone} whatsappApiSend={conversation.source === "WHATSAPP_INBOUND"} onSaved={(quote) => setEditingQuote(quote)} onSent={() => { setEditingQuote(null); onUpdated(); if (dealId) void reloadDeal(dealId); }} onClose={() => setEditingQuote(null)} /></div></div> : null}
     </aside>
   );

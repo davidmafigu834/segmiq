@@ -14,6 +14,12 @@ import { sortInboxConversations } from "./queue-filters";
 import type { InboxConversation } from "./types";
 import type { DealRow } from "@/types";
 import { getDealCommercialValue } from "@/lib/sales/deals/commercial-value";
+import {
+  parseConversationQueue,
+  parseConversationType,
+  parseSupportCaseStatus,
+  parseSupportReasonCategory,
+} from "./conversation-type";
 
 type LeadRow = {
   id: string;
@@ -38,6 +44,9 @@ type LeadRow = {
   active_deal_id?: string | null;
   whatsapp_conversation_status?: string | null;
   whatsapp_resolved_at?: string | null;
+  whatsapp_conversation_type?: string | null;
+  whatsapp_queue?: string | null;
+  whatsapp_collaborator_ids?: string[] | null;
 };
 
 function extractCompany(formData: Record<string, unknown> | null): string | null {
@@ -113,7 +122,7 @@ export async function fetchInboxConversations(opts: {
 
   const baseSelect =
     "id, client_id, contact_id, assigned_to_id, name, phone, email, source, status, project_type, form_data, score, score_breakdown, follow_up_date, created_at, updated_at, budget, timeline, deal_value, active_deal_id";
-  const select = `${baseSelect}, whatsapp_conversation_status, whatsapp_resolved_at`;
+  const select = `${baseSelect}, whatsapp_conversation_status, whatsapp_resolved_at, whatsapp_conversation_type, whatsapp_queue, whatsapp_collaborator_ids`;
 
   let query = supabase.from("leads").select(select);
 
@@ -147,7 +156,13 @@ export async function fetchInboxConversations(opts: {
   const { data: leads, error } = await query.order("updated_at", { ascending: false }).limit(500);
   if (error) {
     const msg = String(error.message ?? "");
-    if ((msg.includes("is_archived") || msg.includes("whatsapp_conversation")) && clientId) {
+    if (
+      (msg.includes("is_archived") ||
+        msg.includes("whatsapp_conversation") ||
+        msg.includes("whatsapp_queue") ||
+        msg.includes("support_cases")) &&
+      clientId
+    ) {
       let retryQuery = supabase.from("leads").select(baseSelect);
       if (role === "CLIENT_MANAGER") {
         retryQuery = retryQuery.eq("client_id", clientId);
@@ -342,13 +357,19 @@ async function buildConversations(
 
   const { data: quoteRows } = await supabase
     .from("quotations")
-    .select("lead_id, quote_number, status, total, currency, sent_at, created_at")
+    .select("lead_id, quote_number, status, total, currency, sent_at, viewed_at, created_at")
     .in("lead_id", leadIds)
     .order("created_at", { ascending: false });
 
   const latestQuoteByLead = new Map<
     string,
-    { quote_number: string | null; status: string; total: number | null; currency: string | null }
+    {
+      quote_number: string | null;
+      status: string;
+      total: number | null;
+      currency: string | null;
+      viewed_at: string | null;
+    }
   >();
   for (const q of quoteRows ?? []) {
     const lid = q.lead_id as string;
@@ -358,6 +379,35 @@ async function buildConversations(
         status: (q.status as string) ?? "draft",
         total: typeof q.total === "number" ? q.total : Number(q.total) || null,
         currency: (q.currency as string | null) ?? "USD",
+        viewed_at: (q.viewed_at as string | null) ?? null,
+      });
+    }
+  }
+
+  const supportByLead = new Map<
+    string,
+    {
+      id: string;
+      status: ReturnType<typeof parseSupportCaseStatus>;
+      reasonCategory: ReturnType<typeof parseSupportReasonCategory>;
+      reason: string | null;
+    }
+  >();
+  const { data: supportRows, error: supportError } = await supabase
+    .from("support_cases")
+    .select("id, lead_id, status, reason_category, reason")
+    .in("lead_id", leadIds)
+    .neq("status", "RESOLVED")
+    .order("created_at", { ascending: false });
+  if (!supportError) {
+    for (const row of supportRows ?? []) {
+      const lid = row.lead_id as string;
+      if (supportByLead.has(lid)) continue;
+      supportByLead.set(lid, {
+        id: row.id as string,
+        status: parseSupportCaseStatus(row.status),
+        reasonCategory: parseSupportReasonCategory(row.reason_category),
+        reason: (row.reason as string | null) ?? null,
       });
     }
   }
@@ -476,6 +526,13 @@ async function buildConversations(
       latestQuoteNumber: latestQuote?.quote_number ?? null,
       latestQuoteStatus: latestQuote?.status ?? null,
       latestQuoteTotal: latestQuote?.total ?? null,
+      latestQuoteViewedAt: latestQuote?.viewed_at ?? null,
+      conversationType: parseConversationType(lead.whatsapp_conversation_type),
+      conversationQueue: parseConversationQueue(lead.whatsapp_queue),
+      collaboratorIds: Array.isArray(lead.whatsapp_collaborator_ids)
+        ? lead.whatsapp_collaborator_ids.filter((id): id is string => typeof id === "string")
+        : [],
+      supportCase: supportByLead.get(lead.id) ?? null,
       conversationStatus:
         lead.whatsapp_conversation_status === "RESOLVED" ? "RESOLVED" : "OPEN",
       resolvedAt: lead.whatsapp_resolved_at ?? null,
@@ -486,6 +543,7 @@ async function buildConversations(
       dealName: activeDeal?.name ?? null,
       dealStage: activeDeal?.stage ?? null,
       dealNextActionAt: activeDeal?.next_action_at ?? null,
+      dealNextActionLabel: activeDeal?.next_action_label ?? null,
     };
   });
 

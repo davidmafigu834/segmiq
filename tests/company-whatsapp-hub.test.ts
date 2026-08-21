@@ -49,6 +49,12 @@ function conversation(
     dealName: null,
     dealStage: null,
     dealNextActionAt: null,
+    dealNextActionLabel: null,
+    conversationType: "SALES",
+    conversationQueue: "SALES",
+    collaboratorIds: [],
+    supportCase: null,
+    latestQuoteViewedAt: null,
     ...overrides,
   };
 }
