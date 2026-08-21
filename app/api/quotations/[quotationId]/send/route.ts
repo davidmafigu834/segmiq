@@ -56,23 +56,11 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   }
 
   const isResend = quote.status === "sent" || quote.status === "viewed";
-  const canSendFresh =
-    quote.status === "draft" || quote.status === "approved";
+  // Phase 1: drafts (and legacy approved rows) can send. Pending approval is Phase 2.
+  const canSendFresh = quote.status === "draft" || quote.status === "approved";
   if (!isResend && !canSendFresh) {
     return NextResponse.json(
-      {
-        error:
-          quote.status === "pending_approval"
-            ? "This quotation is pending approval and cannot be sent yet"
-            : "This quotation cannot be sent again in its current status",
-      },
-      { status: 400 }
-    );
-  }
-
-  if (quote.approval_status === "pending") {
-    return NextResponse.json(
-      { error: "Approval is still pending — wait for manager approval before sending" },
+      { error: "This quotation cannot be sent in its current status" },
       { status: 400 }
     );
   }

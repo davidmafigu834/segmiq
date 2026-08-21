@@ -40,9 +40,6 @@ export function runCommercialCheck(input: CommercialCheckInput): CommercialCheck
   const checks: CommercialCheckItem[] = [];
   const approvalReasons: string[] = [];
 
-  const pricedItems = (input.items ?? []).filter(
-    (it) => !(it.is_optional) && (it.item_name ?? "").trim() && (Number(it.unit_price) || 0) * (Number(it.quantity) || 0) !== 0
-  );
   const anyItems = (input.items ?? []).filter(
     (it) => !(it.is_optional) && (it.item_name ?? "").trim().length > 0
   );
@@ -164,41 +161,22 @@ export function runCommercialCheck(input: CommercialCheckInput): CommercialCheck
   }
 
   const approvalStatus = input.approvalStatus ?? "not_required";
-  const approvalRequired = approvalReasons.length > 0 || approvalStatus === "pending";
+  // Phase 1: approval is architectural only — never block send on approval rules.
+  const approvalRequired = false;
+  void approvalStatus;
+  void approvalReasons;
 
-  if (approvalRequired) {
-    if (approvalStatus === "approved") {
-      checks.push({ id: "approval", label: "Approval", status: "pass", message: "Approved" });
-    } else if (approvalStatus === "pending") {
-      checks.push({
-        id: "approval",
-        label: "Approval",
-        status: "block",
-        message: "Pending approval",
-      });
-    } else {
-      checks.push({
-        id: "approval",
-        label: "Approval",
-        status: "block",
-        message: "Approval required",
-      });
-    }
-  } else {
-    checks.push({ id: "approval", label: "Approval", status: "pass", message: "Not required" });
-  }
-
-  const hasBlock = checks.some((c) => c.status === "block");
+  const hasBlock = checks.some((c) => c.status === "block" && c.id !== "approval" && c.id !== "margin");
   const canSend =
     !hasBlock &&
-    pricedItems.length + anyItems.length > 0 &&
-    (approvalStatus === "approved" || approvalStatus === "not_required" || !approvalRequired);
+    anyItems.length > 0 &&
+    !checks.some((c) => c.id === "customer" && c.status === "block");
 
   return {
-    items: checks,
-    canSend: Boolean(canSend && anyItems.length > 0 && !checks.some((c) => c.id === "customer" && c.status === "block")),
-    approvalRequired: approvalReasons.length > 0 && approvalStatus !== "approved",
-    approvalReasons,
+    items: checks.filter((c) => c.id !== "approval" && c.id !== "margin"),
+    canSend: Boolean(canSend),
+    approvalRequired,
+    approvalReasons: [],
   };
 }
 

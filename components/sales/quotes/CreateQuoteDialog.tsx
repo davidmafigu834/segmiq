@@ -26,12 +26,14 @@ export function CreateQuoteDialog({
   open,
   candidates,
   hasTemplates,
+  dealId,
   onClose,
   onCreated,
 }: {
   open: boolean;
   candidates: Candidate[];
   hasTemplates: boolean;
+  dealId?: string | null;
   onClose: () => void;
   onCreated: (quotation: QuotationWithItems, leadPhone: string | null) => void;
 }) {
@@ -94,10 +96,13 @@ export function CreateQuoteDialog({
     setCreating(true);
     setError("");
     try {
+      const body: { templateId?: string; dealId?: string } = {};
+      if (templateId) body.templateId = templateId;
+      if (dealId) body.dealId = dealId;
       const res = await fetch(`/api/leads/${selected.id}/quotations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(templateId ? { templateId } : {}),
+        body: JSON.stringify(body),
       });
       const json = (await res.json()) as { quotation?: QuotationWithItems; error?: string };
       if (!res.ok || !json.quotation) {

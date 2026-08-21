@@ -1,10 +1,13 @@
 import type { QuotationStatus } from "@/types";
 
-/** Canonical quotation lifecycle stages (Deal Won is NOT included). */
+/**
+ * Phase 1 quotation lifecycle stages shown in the workspace strip.
+ * Approval stages are Phase 2 — not shown here.
+ * "Viewed" only highlights when real view tracking exists (caller passes hasViewTracking).
+ * Deal Won is never a quotation status.
+ */
 export const QUOTATION_LIFECYCLE_STAGES = [
   "draft",
-  "pending_approval",
-  "approved",
   "sent",
   "viewed",
   "accepted",
@@ -14,8 +17,6 @@ export type QuotationLifecycleStage = (typeof QUOTATION_LIFECYCLE_STAGES)[number
 
 export const LIFECYCLE_LABELS: Record<QuotationLifecycleStage, string> = {
   draft: "Draft",
-  pending_approval: "Pending approval",
-  approved: "Approved",
   sent: "Sent",
   viewed: "Viewed",
   accepted: "Accepted",
@@ -29,7 +30,7 @@ export function quotationStatusLabel(status: string): string {
     case "draft":
       return "Draft";
     case "pending_approval":
-      return "Pending approval";
+      return "Draft"; // Phase 2 status — surface as draft in Phase 1 UI
     case "approved":
       return "Approved";
     case "sent":
@@ -54,9 +55,8 @@ export function quotationStatusTone(
 ): "neutral" | "amber" | "lime" | "blue" | "green" | "red" | "muted" {
   switch (status) {
     case "draft":
-      return "neutral";
     case "pending_approval":
-      return "amber";
+      return "neutral";
     case "approved":
       return "lime";
     case "sent":
@@ -77,27 +77,37 @@ export function quotationStatusTone(
 }
 
 /**
- * Map current status onto the lifecycle strip.
- * Viewed only highlights when real viewed_at / status=viewed exists.
+ * Map current status onto the Phase 1 lifecycle strip.
+ * Viewed only appears when hasViewTracking is true; otherwise Sent covers it.
  */
 export function resolveLifecycleIndex(
   status: QuotationStatus | string,
   opts?: { hasViewTracking?: boolean }
-): { activeIndex: number; terminal?: string } {
+): { activeIndex: number; terminal?: string; stages: readonly QuotationLifecycleStage[] } {
   if (status === "rejected" || status === "expired" || status === "superseded") {
-    return { activeIndex: -1, terminal: status };
+    return { activeIndex: -1, terminal: status, stages: QUOTATION_LIFECYCLE_STAGES };
   }
-  const order = QUOTATION_LIFECYCLE_STAGES as readonly string[];
-  let idx = order.indexOf(status);
-  if (status === "viewed" && opts?.hasViewTracking === false) {
-    idx = order.indexOf("sent");
+
+  const showViewed = opts?.hasViewTracking === true;
+  const stages = showViewed
+    ? QUOTATION_LIFECYCLE_STAGES
+    : (["draft", "sent", "accepted"] as const);
+
+  let normalized = status as string;
+  if (normalized === "pending_approval" || normalized === "approved") {
+    normalized = "draft";
   }
+  if (normalized === "viewed" && !showViewed) {
+    normalized = "sent";
+  }
+
+  let idx = (stages as readonly string[]).indexOf(normalized);
   if (idx < 0) idx = 0;
-  return { activeIndex: idx };
+  return { activeIndex: idx, stages };
 }
 
 export function isQuotationImmutable(status: string): boolean {
-  return !["draft", "pending_approval"].includes(status);
+  return status !== "draft" && status !== "pending_approval";
 }
 
 export function isQuotationEditable(status: string): boolean {

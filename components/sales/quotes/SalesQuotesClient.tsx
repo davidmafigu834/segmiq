@@ -891,6 +891,7 @@ export function SalesQuotesClient() {
         open={createOpen}
         candidates={data?.createCandidates ?? []}
         hasTemplates={data?.meta.hasTemplates ?? false}
+        dealId={searchParams.get("dealId")}
         onClose={() => setCreateOpen(false)}
         onCreated={(quotation) => {
           setCreateOpen(false);

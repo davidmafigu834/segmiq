@@ -36,16 +36,15 @@ import {
 } from "@/lib/quotations/totals";
 import {
   runCommercialCheck,
-  marginLabel,
   type CommercialGuardrails,
 } from "@/lib/quotations/commercial-check";
 import {
-  QUOTATION_LIFECYCLE_STAGES,
   LIFECYCLE_LABELS,
   resolveLifecycleIndex,
   quotationStatusLabel,
   daysUntil,
   isQuotationEditable,
+  type QuotationLifecycleStage,
 } from "@/lib/quotations/lifecycle";
 import { quotationEventLabel } from "@/lib/quotations/events";
 import { QUOTE_UNITS } from "@/lib/quotations/units";
@@ -161,7 +160,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
-  const [approvalOpen, setApprovalOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState<{ sectionId: string } | null>(null);
@@ -481,6 +479,18 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     setCollapsed((c) => ({ ...c, [id]: false }));
   }
 
+  function moveSection(id: string, dir: -1 | 1) {
+    setSections((prev) => {
+      const sorted = [...prev].sort((a, b) => a.sort_order - b.sort_order);
+      const idx = sorted.findIndex((s) => s.id === id);
+      const swap = idx + dir;
+      if (idx < 0 || swap < 0 || swap >= sorted.length) return prev;
+      const next = [...sorted];
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      return next.map((s, i) => ({ ...s, sort_order: i }));
+    });
+  }
+
   function addNoteBlock() {
     setNoteBlocks((prev) => [
       ...prev,
@@ -548,8 +558,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const optionItems = items.filter((it) => it.is_optional);
 
   const daysLeft = daysUntil(validUntil);
-  const margin = marginLabel(totals.marginPercent, guardrails.minMarginPercent);
-  const primaryIsApproval = commercial.approvalRequired && q?.approval_status !== "approved";
 
   const autoSaveLabel = (() => {
     if (saveState === "saving") return "Saving...";
@@ -658,26 +666,15 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
           <Button variant="secondary" size="sm" leftIcon={<Download className="h-3.5 w-3.5" />} onClick={() => void downloadPdf()} loading={busy === "pdf"}>
             Download PDF
           </Button>
-          {primaryIsApproval ? (
-            <Button
-              size="sm"
-              leftIcon={<ShieldCheck className="h-3.5 w-3.5" />}
-              onClick={() => setApprovalOpen(true)}
-              className="hidden sm:inline-flex"
-            >
-              Request approval
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              leftIcon={<Send className="h-3.5 w-3.5" />}
-              onClick={() => setSendOpen(true)}
-              disabled={!commercial.canSend && q.status === "draft"}
-              className="hidden sm:inline-flex"
-            >
-              Send quotation
-            </Button>
-          )}
+          <Button
+            size="sm"
+            leftIcon={<Send className="h-3.5 w-3.5" />}
+            onClick={() => setSendOpen(true)}
+            disabled={readOnly && q.status === "accepted"}
+            className="hidden sm:inline-flex"
+          >
+            Send quotation
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -739,7 +736,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               currency={currency}
               paymentTerms={paymentTerms}
               validUntil={validUntil}
-              commercial={commercial}
               status={q.status}
               version={q.revision_number}
             />
@@ -774,6 +770,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               onAddCustom={(sectionId) => addCustomItem(sectionId)}
               onUpdateItem={updateItem}
               onRemoveItem={removeItem}
+              onMoveSection={moveSection}
               onAddSection={addSection}
               onAddNote={addNoteBlock}
               onUpdateNote={(id, patch) =>
@@ -847,28 +844,27 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
 
         {/* Commercial rail — desktop */}
         <aside className="hidden lg:block">
-          <CommercialRail
-            payload={payload}
-            totals={totals}
-            currency={currency}
-            validUntil={validUntil}
-            daysLeft={daysLeft}
-            commercial={commercial}
-            margin={margin}
-            guardrails={guardrails}
-            onViewHistory={() => setHistoryOpen(true)}
-            onCall={() => {
-              if (payload.customer.phone) window.open(`tel:${payload.customer.phone}`);
-            }}
-            onFollowUp={() => {
-              router.push(`/sales/tasks?leadId=${payload.customer.leadId}`);
-            }}
-          />
+            <CommercialRail
+              payload={payload}
+              totals={totals}
+              currency={currency}
+              validUntil={validUntil}
+              daysLeft={daysLeft}
+              commercial={commercial}
+              onViewHistory={() => setHistoryOpen(true)}
+              onCall={() => {
+                if (payload.customer.phone) window.open(`tel:${payload.customer.phone}`);
+              }}
+              onFollowUp={() => {
+                router.push(`/sales/tasks?leadId=${payload.customer.leadId}`);
+              }}
+            />
         </aside>
       </div>
 
       {/* Lifecycle strip */}
       <LifecycleStrip
+        stages={lifecycle.stages}
         activeIndex={lifecycle.activeIndex}
         terminal={lifecycle.terminal}
         status={q.status}
@@ -876,15 +872,9 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
 
       {/* Mobile sticky CTA */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-sales-border bg-sales-surface p-3 sm:hidden">
-        {primaryIsApproval ? (
-          <Button className="w-full" leftIcon={<ShieldCheck className="h-4 w-4" />} onClick={() => setApprovalOpen(true)}>
-            Request approval
-          </Button>
-        ) : (
-          <Button className="w-full" leftIcon={<Send className="h-4 w-4" />} onClick={() => setSendOpen(true)}>
-            Send quotation
-          </Button>
-        )}
+        <Button className="w-full" leftIcon={<Send className="h-4 w-4" />} onClick={() => setSendOpen(true)}>
+          Send quotation
+        </Button>
       </div>
 
       {/* Mobile rail sheet */}
@@ -905,8 +895,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               validUntil={validUntil}
               daysLeft={daysLeft}
               commercial={commercial}
-              margin={margin}
-              guardrails={guardrails}
               onViewHistory={() => setHistoryOpen(true)}
               onCall={() => {
                 if (payload.customer.phone) window.open(`tel:${payload.customer.phone}`);
@@ -966,38 +954,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         />
       ) : null}
 
-      {approvalOpen ? (
-        <ApprovalModal
-          quoteNumber={quoteNumberLabel}
-          deal={payload.deal?.title}
-          customer={payload.customer.name}
-          total={formatMoneyCompact(totals.total, currency)}
-          discount={`${totals.effectiveDiscountPercent}%`}
-          margin={
-            payload.permissions.canSeeMargin && totals.marginPercent != null
-              ? `${totals.marginPercent}%`
-              : null
-          }
-          paymentTerms={paymentTerms}
-          reasons={commercial.approvalReasons}
-          onClose={() => setApprovalOpen(false)}
-          onSubmit={async (note) => {
-            const res = await fetch(`/api/quotations/${quotationId}/request-approval`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ note }),
-            });
-            if (!res.ok) {
-              const j = (await res.json()) as { error?: string };
-              throw new Error(j.error || "Failed");
-            }
-            setApprovalOpen(false);
-            toast({ tone: "success", title: "Submitted for approval" });
-            void load();
-          }}
-        />
-      ) : null}
-
       {historyOpen ? (
         <HistoryModal versions={payload.versions} onClose={() => setHistoryOpen(false)} currency={currency} />
       ) : null}
@@ -1047,8 +1003,6 @@ function CommercialRail({
   validUntil,
   daysLeft,
   commercial,
-  margin,
-  guardrails,
   onViewHistory,
   onCall,
   onFollowUp,
@@ -1059,8 +1013,6 @@ function CommercialRail({
   validUntil: string;
   daysLeft: number | null;
   commercial: ReturnType<typeof runCommercialCheck>;
-  margin: ReturnType<typeof marginLabel>;
-  guardrails: CommercialGuardrails;
   onViewHistory: () => void;
   onCall: () => void;
   onFollowUp: () => void;
@@ -1101,49 +1053,6 @@ function CommercialRail({
 
       <RailCard title="Commercial Overview">
         <div className="space-y-2.5 text-[12.5px]">
-          {payload.permissions.canSeeMargin && totals.marginPercent != null ? (
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sales-text-secondary">Margin (est.)</span>
-              <span className="inline-flex items-center gap-1.5 font-medium">
-                {totals.marginPercent}%
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
-                    margin.tone === "healthy" && "bg-[var(--sales-brand-soft-solid)] text-sales-brand-text",
-                    margin.tone === "near" && "bg-amber-50 text-amber-700",
-                    margin.tone === "below" && "bg-red-50 text-red-700"
-                  )}
-                >
-                  {margin.text}
-                </span>
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sales-text-secondary">Margin</span>
-              <span className="text-sales-text-muted">Within company policy</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sales-text-secondary">Discount</span>
-            <span className="text-right font-medium">
-              {totals.effectiveDiscountPercent}%
-              <span className="mt-0.5 block text-[11px] font-normal text-amber-700">
-                Within limit (Max {guardrails.maxDiscountPercent}%)
-              </span>
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sales-text-secondary">Approval</span>
-            <span className="inline-flex items-center gap-1 font-medium">
-              {commercial.approvalRequired && q.approval_status !== "approved"
-                ? "Required"
-                : "Not required"}
-              {!commercial.approvalRequired || q.approval_status === "approved" ? (
-                <Check className="h-3.5 w-3.5 text-sales-success" />
-              ) : null}
-            </span>
-          </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-sales-text-secondary">Version</span>
             <span className="inline-flex items-center gap-2 font-medium">
@@ -1164,6 +1073,18 @@ function CommercialRail({
               {validUntil
                 ? `${formatDisplayDate(validUntil)}${daysLeft != null ? ` (${daysLeft} days left)` : ""}`
                 : "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sales-text-secondary">Discount</span>
+            <span className="font-medium">{totals.effectiveDiscountPercent}%</span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sales-text-secondary">Last activity</span>
+            <span className="font-medium">
+              {payload.events[0]?.created_at
+                ? formatDisplayDate(payload.events[0].created_at)
+                : formatDisplayDate(q.updated_at)}
             </span>
           </div>
         </div>
@@ -1218,7 +1139,7 @@ function CommercialRail({
       <div className="rounded-sales-md border border-dashed border-sales-border px-3.5 py-3">
         <p className="mb-2 text-[12px] font-semibold text-sales-text-primary">Commercial Check</p>
         <ul className="space-y-1">
-          {commercial.items.map((c) => (
+          {commercial.items.filter((c) => c.id !== "approval").map((c) => (
             <li key={c.id} className="flex items-start gap-1.5 text-[12px]">
               <span
                 className={cn(
@@ -1251,14 +1172,10 @@ function nextBestAction(payload: QuotationWorkspacePayload): {
   if (q.status === "draft") {
     if (!q.valid_until) return { title: "Add validity date", actions: [] };
     if (!q.payment_terms_label) return { title: "Add payment terms", actions: [] };
-    if (q.approval_status === "pending") return { title: "Waiting for approval", actions: [] };
     if ((q.items?.length ?? 0) === 0) {
       return { title: "Complete quotation", detail: "Add your first product or service", actions: [] };
     }
     return { title: "Ready to send", detail: "Review commercial check, then send", actions: [] };
-  }
-  if (q.status === "pending_approval") {
-    return { title: "Approval required", detail: "Waiting for manager approval", actions: [] };
   }
   if (q.status === "sent" || q.status === "viewed") {
     const sentAgo = q.sent_at ? relativeDays(q.sent_at) : null;
@@ -1330,17 +1247,19 @@ function LinkRow({ label, value, href }: { label: string; value: string; href?: 
 }
 
 function LifecycleStrip({
+  stages,
   activeIndex,
   terminal,
   status,
 }: {
+  stages: readonly QuotationLifecycleStage[];
   activeIndex: number;
   terminal?: string;
   status: string;
 }) {
   if (terminal) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-sales-border bg-sales-surface/95 px-4 py-2 backdrop-blur sm:static sm:mt-4 sm:rounded-sales-md sm:border sm:px-3 sm:py-2.5">
+      <div className="mt-4 rounded-sales-md border border-sales-border bg-sales-surface px-3 py-2.5">
         <p className="text-center text-[12.5px] font-medium text-sales-text-secondary">
           Status: {quotationStatusLabel(status)}
         </p>
@@ -1351,9 +1270,13 @@ function LifecycleStrip({
   return (
     <div className="mt-4 hidden overflow-x-auto rounded-sales-md border border-sales-border bg-sales-surface px-2 py-2 sm:block">
       <div className="flex min-w-max items-center gap-1">
-        {QUOTATION_LIFECYCLE_STAGES.map((stage, idx) => {
+        {stages.map((stage, idx) => {
           const done = idx < activeIndex;
           const active = idx === activeIndex;
+          const label =
+            stage in LIFECYCLE_LABELS
+              ? LIFECYCLE_LABELS[stage as QuotationLifecycleStage]
+              : stage;
           return (
             <div
               key={stage}
@@ -1374,7 +1297,7 @@ function LifecycleStrip({
               >
                 {done ? <Check className="h-3 w-3" /> : active ? <ShieldCheck className="h-3 w-3" /> : idx + 1}
               </span>
-              {LIFECYCLE_LABELS[stage]}
+              {label}
               {active && stage === "draft" ? (
                 <span className="text-[10px] font-normal text-sales-text-muted">(You)</span>
               ) : null}
@@ -1393,7 +1316,6 @@ function OverviewTab({
   currency,
   paymentTerms,
   validUntil,
-  commercial,
   status,
   version,
 }: {
@@ -1401,7 +1323,6 @@ function OverviewTab({
   currency: string;
   paymentTerms: string;
   validUntil: string;
-  commercial: ReturnType<typeof runCommercialCheck>;
   status: string;
   version: number;
 }) {
@@ -1415,14 +1336,6 @@ function OverviewTab({
         <Meta label="Currency" value={currency} />
         <Meta label="Valid until" value={validUntil ? formatDisplayDate(validUntil) : "—"} />
         <Meta label="Payment terms" value={paymentTerms || "—"} />
-        <Meta
-          label="Approval"
-          value={
-            commercial.approvalRequired
-              ? commercial.approvalReasons[0] ?? "Required"
-              : "Not required"
-          }
-        />
         <Meta label="Effective discount" value={`${totals.effectiveDiscountPercent}%`} />
       </div>
     </div>
@@ -1453,6 +1366,7 @@ function ItemsTab(props: {
   onToggleSection: (id: string) => void;
   onRenameSection: (id: string, title: string) => void;
   onRemoveSection: (id: string) => void;
+  onMoveSection?: (id: string, dir: -1 | 1) => void;
   onAddItem: (sectionId: string) => void;
   onAddCustom: (sectionId: string) => void;
   onUpdateItem: (key: string, patch: Partial<EditorItem>) => void;
@@ -1539,6 +1453,28 @@ function ItemsTab(props: {
               {isCollapsed ? (
                 <span className="text-[13px] font-medium text-sales-text-secondary">
                   {formatMoneyCompact(sub, currency)}
+                </span>
+              ) : null}
+              {!readOnly && props.onMoveSection ? (
+                <span className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="rounded p-1 text-sales-text-muted hover:bg-sales-surface-hover disabled:opacity-30"
+                    disabled={idx === 0}
+                    aria-label="Move section up"
+                    onClick={() => props.onMoveSection?.(sec.id, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded p-1 text-sales-text-muted hover:bg-sales-surface-hover disabled:opacity-30"
+                    disabled={idx === sections.length - 1}
+                    aria-label="Move section down"
+                    onClick={() => props.onMoveSection?.(sec.id, 1)}
+                  >
+                    ↓
+                  </button>
                 </span>
               ) : null}
             </button>
@@ -2404,75 +2340,6 @@ function ChannelChip({ active, onClick, label }: { active: boolean; onClick: () 
     >
       {label}
     </button>
-  );
-}
-
-function ApprovalModal({
-  quoteNumber,
-  deal,
-  customer,
-  total,
-  discount,
-  margin,
-  paymentTerms,
-  reasons,
-  onClose,
-  onSubmit,
-}: {
-  quoteNumber: string;
-  deal?: string;
-  customer: string;
-  total: string;
-  discount: string;
-  margin: string | null;
-  paymentTerms: string;
-  reasons: string[];
-  onClose: () => void;
-  onSubmit: (note: string) => Promise<void>;
-}) {
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  return (
-    <Modal title="Request approval" onClose={onClose}>
-      <dl className="mb-3 space-y-1.5 text-[13px]">
-        <div className="flex justify-between"><dt className="text-sales-text-secondary">Quotation</dt><dd>{quoteNumber}</dd></div>
-        {deal ? <div className="flex justify-between"><dt className="text-sales-text-secondary">Deal</dt><dd>{deal}</dd></div> : null}
-        <div className="flex justify-between"><dt className="text-sales-text-secondary">Customer</dt><dd>{customer}</dd></div>
-        <div className="flex justify-between"><dt className="text-sales-text-secondary">Total</dt><dd>{total}</dd></div>
-        <div className="flex justify-between"><dt className="text-sales-text-secondary">Discount</dt><dd>{discount}</dd></div>
-        {margin ? <div className="flex justify-between"><dt className="text-sales-text-secondary">Margin</dt><dd>{margin}</dd></div> : null}
-        <div className="flex justify-between"><dt className="text-sales-text-secondary">Payment terms</dt><dd className="text-right">{paymentTerms || "—"}</dd></div>
-      </dl>
-      {reasons.length ? (
-        <div className="mb-3 rounded-sales-sm bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
-          <p className="font-semibold">Why approval is required</p>
-          <ul className="mt-1 list-disc pl-4">
-            {reasons.map((r) => (
-              <li key={r}>{r}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-      <Field label="Add note for approver">
-        <textarea className={cn(FIELD, "w-full")} rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
-      </Field>
-      {error ? <p className="mt-2 text-[12px] text-sales-danger">{error}</p> : null}
-      <div className="mt-4 flex justify-end gap-2">
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button
-          loading={busy}
-          onClick={() => {
-            setBusy(true);
-            void onSubmit(note)
-              .catch((e) => setError(e instanceof Error ? e.message : "Failed"))
-              .finally(() => setBusy(false));
-          }}
-        >
-          Submit for approval
-        </Button>
-      </div>
-    </Modal>
   );
 }
 
