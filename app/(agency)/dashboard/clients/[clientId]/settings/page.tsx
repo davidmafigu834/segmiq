@@ -7,6 +7,7 @@ import { ClientDetailView } from "../ClientDetailView";
 import { getPublicLandingPageUrl } from "@/lib/public-url";
 import { ClientSettingsClient } from "@/components/client-settings/ClientSettingsClient";
 import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
+import { isTemporaryWhatsAppFeatureEnabled } from "@/lib/whatsapp/feature-flags";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,7 @@ export default async function ClientSettingsPage({
     profileSlug
   );
   const initialTab = typeof searchParams.tab === "string" ? searchParams.tab : undefined;
+  const globalWhatsAppQuickConnectEnabled = isTemporaryWhatsAppFeatureEnabled();
 
   return (
     <AgencyLayout
@@ -83,6 +85,7 @@ export default async function ClientSettingsPage({
           initialInstantForms={(instantForms ?? []) as { id: string; name: string; status: string }[]}
           agencyDefaultHours={agency.default_response_time_limit_hours}
           initialTab={initialTab}
+          globalWhatsAppQuickConnectEnabled={globalWhatsAppQuickConnectEnabled}
         />
       </ClientDetailView>
     </AgencyLayout>

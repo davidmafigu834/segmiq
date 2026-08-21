@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireWhatsAppConnectionAdmin } from "@/lib/whatsapp/connection-auth";
 import { ensureTemporaryWebConnection, getPrimaryWhatsAppConnection } from "@/lib/whatsapp/connections";
 import { assertTemporaryWhatsAppRuntimeConfigured, isTemporaryWhatsAppFeatureEnabled } from "@/lib/whatsapp/feature-flags";
@@ -16,6 +17,15 @@ export async function POST(req: Request) {
   const auth = await requireWhatsAppConnectionAdmin();
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
   if (!isTemporaryWhatsAppFeatureEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const supabase = createAdminClient();
+  const { data: client } = await supabase
+    .from("clients")
+    .select("whatsapp_temporary_web_enabled")
+    .eq("id", auth.admin.clientId)
+    .maybeSingle();
+  if (!client?.whatsapp_temporary_web_enabled) {
+    return NextResponse.json({ error: "This company is not enrolled in the quick connection beta" }, { status: 403 });
+  }
   const current = await getPrimaryWhatsAppConnection(auth.admin.clientId);
   if (!current || current.providerType !== "TEMPORARY_WEB") {
     return NextResponse.json({ error: "No quick connection exists" }, { status: 404 });

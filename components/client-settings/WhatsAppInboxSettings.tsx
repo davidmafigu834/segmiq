@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Check, Copy, ExternalLink } from "lucide-react";
 
+import { WhatsAppQuickConnectToggle } from "@/components/clients/WhatsAppQuickConnectToggle";
+
 type Props = {
   clientId: string;
   clientName: string;
@@ -12,6 +14,8 @@ type Props = {
   initialAssignmentMode: "direct" | "pool" | "round_robin";
   initialQualificationEnabled: boolean;
   initialInstantFormId: string | null;
+  initialWhatsAppQuickConnectEnabled: boolean;
+  globalWhatsAppQuickConnectEnabled: boolean;
   instantForms: { id: string; name: string; status: string }[];
   webhookBaseUrl: string;
   saving: boolean;
@@ -76,6 +80,8 @@ export function WhatsAppInboxSettings({
   initialAssignmentMode,
   initialQualificationEnabled,
   initialInstantFormId,
+  initialWhatsAppQuickConnectEnabled,
+  globalWhatsAppQuickConnectEnabled,
   instantForms,
   webhookBaseUrl,
   saving,
@@ -140,6 +146,12 @@ export function WhatsAppInboxSettings({
           individual reps.
         </p>
       </div>
+
+      <WhatsAppQuickConnectToggle
+        clientId={clientId}
+        enabled={initialWhatsAppQuickConnectEnabled}
+        globalFeatureEnabled={globalWhatsAppQuickConnectEnabled}
+      />
 
       <section className="rounded-xl border border-accent/30 bg-accent/5 p-4 text-sm text-ink-secondary">
         <p>

@@ -122,6 +122,8 @@ export interface ClientRow {
   agency_managed?: boolean;
   agency_managed_changed_at?: string | null;
   agency_managed_changed_by?: string | null;
+  /** Super Admin enrolment for WhatsApp Sales Hub QR (temporary web) connection. */
+  whatsapp_temporary_web_enabled?: boolean;
   created_at: string;
   updated_at: string;
   fb_access_token: string | null;

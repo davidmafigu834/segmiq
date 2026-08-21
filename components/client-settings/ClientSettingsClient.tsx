@@ -70,6 +70,7 @@ export function ClientSettingsClient({
   initialInstantForms = [],
   agencyDefaultHours,
   initialTab,
+  globalWhatsAppQuickConnectEnabled = false,
 }: {
   clientId: string;
   initialClient: ClientRow;
@@ -78,6 +79,7 @@ export function ClientSettingsClient({
   initialInstantForms?: { id: string; name: string; status: string }[];
   agencyDefaultHours: number;
   initialTab?: string;
+  globalWhatsAppQuickConnectEnabled?: boolean;
 }) {
   const TEMP_PASS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
   const tempPassStorageKey = `client-settings-temp-pass:${clientId}`;
@@ -1221,6 +1223,8 @@ export function ClientSettingsClient({
             }
             initialQualificationEnabled={client.whatsapp_qualification_enabled !== false}
             initialInstantFormId={(client.whatsapp_instant_form_id as string | null) ?? null}
+            initialWhatsAppQuickConnectEnabled={Boolean(client.whatsapp_temporary_web_enabled)}
+            globalWhatsAppQuickConnectEnabled={globalWhatsAppQuickConnectEnabled}
             instantForms={initialInstantForms}
             webhookBaseUrl={getPublicBaseUrl()}
             saving={saving}
