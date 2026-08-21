@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FilePlus2, Loader2, Search, X } from "lucide-react";
+import { FilePlus2, Search, X } from "lucide-react";
 import {
   Button,
   EmptyState,
