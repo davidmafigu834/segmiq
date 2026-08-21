@@ -341,7 +341,7 @@ export function TeamInbox({
         />
       ) : null}
 
-      {showHubChrome ? <SalespersonHubHeader connection={whatsappConnection} /> : null}
+      {showHubChrome ? <SalespersonHubHeader connection={whatsappConnection} title={pageTitle} /> : null}
 
       <div
         className={`min-h-0 flex-1 overflow-hidden ${
@@ -416,7 +416,6 @@ export function TeamInbox({
                 companyName={companyName}
                 canSend={canSend}
                 transportAvailable={whatsappConnection ? whatsappConnection.connected : true}
-                connectionLabel={whatsappConnection?.providerLabel ?? "WhatsApp"}
                 canTransfer={canTransfer}
                 canUpdateStatus={canUpdateStatus}
                 salespeople={salespeople}

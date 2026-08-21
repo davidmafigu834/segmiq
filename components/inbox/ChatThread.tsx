@@ -51,7 +51,6 @@ type Props = {
   companyName?: string;
   canSend: boolean;
   transportAvailable?: boolean;
-  connectionLabel?: string;
   canTransfer?: boolean;
   canUpdateStatus?: boolean;
   salespeople?: { id: string; name: string }[];
@@ -106,7 +105,6 @@ export function ChatThread({
   companyName = "",
   canSend,
   transportAvailable = true,
-  connectionLabel = "WhatsApp",
   canTransfer = false,
   canUpdateStatus = false,
   salespeople = [],

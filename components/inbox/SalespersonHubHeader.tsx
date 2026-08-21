@@ -15,8 +15,10 @@ function relativeSynced(iso: string | null | undefined): string | null {
 
 export function SalespersonHubHeader({
   connection,
+  title = "WhatsApp Sales Hub",
 }: {
   connection: SafeWhatsAppConnection | null;
+  title?: string;
 }) {
   const connected = connection?.connected === true;
   const pending = Boolean(
@@ -28,7 +30,7 @@ export function SalespersonHubHeader({
     <header className="salesperson-wa-page-header flex min-h-[56px] shrink-0 items-start justify-between gap-3 px-4 py-2.5 sm:px-5">
       <div className="min-w-0">
         <h1 className="truncate text-[18px] font-semibold tracking-[-0.03em] text-sales-text-primary sm:text-[20px]">
-          WhatsApp Sales Hub
+          {title}
         </h1>
         <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">
           Your selling workspace for WhatsApp
