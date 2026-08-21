@@ -1637,6 +1637,13 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
       radial-gradient(circle at 82% 72%, rgba(16, 24, 40, 0.03) 0, transparent 38%);
   }
 
+  html:not([data-crm-theme="light"]) .salesperson-wa-workspace .wa-chat-wallpaper {
+    background-color: #0f1110 !important;
+    background-image:
+      radial-gradient(circle at 18% 14%, rgba(37, 211, 102, 0.06) 0, transparent 40%),
+      radial-gradient(circle at 84% 78%, rgba(255, 255, 255, 0.03) 0, transparent 36%);
+  }
+
   .salesperson-wa-workspace .wa-pipeline-stepper {
     scrollbar-width: none;
   }
@@ -1749,6 +1756,117 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     border-color: var(--sales-brand-border, rgba(150, 190, 40, 0.55));
     background: var(--sales-brand-soft, #eef4d8);
     color: var(--sales-text-primary, #14180f);
+  }
+
+  .wa-composer-toolbar {
+    border-top: 1px solid var(--sales-border, #e4e7ec);
+    background: linear-gradient(
+      180deg,
+      var(--sales-surface-subtle, #f7f8f6) 0%,
+      var(--sales-surface, #ffffff) 100%
+    );
+    padding: 0.5rem 0.625rem 0.375rem;
+  }
+
+  .wa-composer-toolbar-scroll {
+    display: flex;
+    align-items: stretch;
+    gap: 0.375rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.125rem;
+  }
+
+  .wa-composer-toolbar-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .wa-composer-tool {
+    display: inline-flex;
+    min-width: 4.5rem;
+    max-width: 6.75rem;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0.375rem 0.5rem;
+    text-align: center;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+  }
+
+  .wa-composer-tool:hover {
+    background: var(--sales-surface-hover, #eef0ea);
+    border-color: var(--sales-border, #e4e7ec);
+  }
+
+  .wa-composer-tool:active {
+    transform: scale(0.98);
+  }
+
+  .wa-composer-tool-icon {
+    display: flex;
+    height: 2rem;
+    width: 2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid var(--sales-border, #e4e7ec);
+    background: var(--sales-surface, #ffffff);
+    color: var(--sales-text-secondary, #667085);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  }
+
+  .wa-composer-tool-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.625rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    color: var(--sales-text-secondary, #667085);
+    white-space: nowrap;
+  }
+
+  .wa-composer-tool-active .wa-composer-tool-icon,
+  .wa-composer-tool-accent .wa-composer-tool-icon {
+    border-color: var(--sales-brand-border, rgba(150, 190, 40, 0.55));
+    background: var(--sales-brand-soft, #eef4d8);
+    color: var(--sales-text-primary, #14180f);
+  }
+
+  .wa-composer-tool-active .wa-composer-tool-label,
+  .wa-composer-tool-accent .wa-composer-tool-label {
+    color: var(--sales-text-primary, #14180f);
+  }
+
+  .wa-hub-premium .wa-composer-toolbar {
+    border-top-color: var(--sales-border);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
+  }
+
+  html:not([data-crm-theme="light"]) .wa-hub-premium .wa-composer-tool-icon {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: var(--sales-text-secondary);
+  }
+
+  html:not([data-crm-theme="light"]) .wa-hub-premium .wa-composer-tool:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  html:not([data-crm-theme="light"]) .wa-hub-premium .wa-composer-tool-active .wa-composer-tool-icon,
+  html:not([data-crm-theme="light"]) .wa-hub-premium .wa-composer-tool-accent .wa-composer-tool-icon {
+    background: rgba(212, 255, 79, 0.12);
+    border-color: rgba(212, 255, 79, 0.35);
+    color: #d4ff4f;
   }
 
   .wa-session-banner {

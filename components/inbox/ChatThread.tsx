@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   ChevronDown,
   FileText,
-  Headphones,
   MoreHorizontal,
   PanelRight,
   Paperclip,
@@ -41,6 +40,7 @@ import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { NextBestActionStrip } from "./NextBestActionStrip";
 import { QualificationStrip } from "./QualificationStrip";
 import { AssetDrawer } from "./AssetDrawer";
+import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import type { LeadRow } from "@/types";
 import { initials } from "@/lib/inbox/assignee-colors";
 
@@ -139,7 +139,6 @@ export function ChatThread({
   const [supportTransferOpen, setSupportTransferOpen] = useState(false);
   const [assetDrawerOpen, setAssetDrawerOpen] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
-  const [composerMoreOpen, setComposerMoreOpen] = useState(false);
   const [savedReplies, setSavedReplies] = useState<SavedQuickReply[]>([]);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -841,83 +840,6 @@ export function ChatThread({
         />
       ) : null}
 
-      {canSend && isWhatsApp && salespersonHub && !isSupport ? (
-        <div className="wa-action-strip relative min-h-[44px] shrink-0" aria-label="Conversation tools">
-          <button
-            type="button"
-            onClick={() => setQuickActionsOpen((value) => !value)}
-            aria-expanded={quickActionsOpen}
-            className={`wa-action-chip ${quickActionsOpen ? "wa-action-chip-active" : ""}`}
-            data-course-target="whatsapp-quick-replies"
-          >
-            <Zap size={14} strokeWidth={1.8} /> Quick replies
-          </button>
-          <button type="button" onClick={() => setAssetDrawerOpen(true)} className="wa-action-chip max-[520px]:hidden">
-            <Paperclip size={14} strokeWidth={1.8} /> Send asset
-          </button>
-          <button type="button" onClick={handleInternalNote} className="wa-action-chip max-[640px]:hidden">
-            <StickyNote size={14} strokeWidth={1.8} /> Internal note
-          </button>
-          {showLogCall ? (
-            <button type="button" onClick={() => setLogCallOpen(true)} className="wa-action-chip" data-course-target="whatsapp-log-call">
-              <Phone size={14} strokeWidth={1.8} /> Log call
-            </button>
-          ) : null}
-          {leadHref ? (
-            <Link href={leadHref} className="wa-action-chip max-[760px]:hidden">
-              <UserRound size={14} strokeWidth={1.8} /> View Lead
-            </Link>
-          ) : null}
-          {dealHref ? (
-            <Link href={dealHref} className="wa-action-chip">
-              <BriefcaseBusiness size={14} strokeWidth={1.8} /> View Deal
-            </Link>
-          ) : canCreateDeal ? (
-            <button type="button" onClick={() => void openCreateDeal()} className="wa-action-chip wa-action-chip-active">
-              <BriefcaseBusiness size={14} strokeWidth={1.8} /> Create Deal
-            </button>
-          ) : null}
-          <button type="button" onClick={() => setComposerMoreOpen((value) => !value)} aria-expanded={composerMoreOpen} className="wa-action-chip min-[761px]:hidden">
-            More <ChevronDown size={14} strokeWidth={1.8} />
-          </button>
-          {composerMoreOpen ? (
-            <>
-              <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close more actions" onClick={() => setComposerMoreOpen(false)} />
-              <div className="absolute left-2 top-full z-30 mt-1 min-w-[180px] rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]">
-                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[521px]:hidden" onClick={() => { setComposerMoreOpen(false); setAssetDrawerOpen(true); }}><Paperclip size={14} /> Send asset</button>
-                <button type="button" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[641px]:hidden" onClick={() => { setComposerMoreOpen(false); handleInternalNote(); }}><StickyNote size={14} /> Internal note</button>
-                {leadHref ? (
-                  <Link href={leadHref} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover min-[761px]:hidden" onClick={() => setComposerMoreOpen(false)}>
-                    <UserRound size={14} /> View Lead
-                  </Link>
-                ) : null}
-              </div>
-            </>
-          ) : null}
-        </div>
-      ) : null}
-
-      {canSend && isWhatsApp && salespersonHub && isSupport ? (
-        <div className="wa-action-strip relative min-h-[44px] shrink-0" aria-label="Support conversation tools">
-          <button type="button" onClick={handleInternalNote} className="wa-action-chip">
-            <StickyNote size={14} strokeWidth={1.8} /> Add note
-          </button>
-          {leadHref ? (
-            <Link href={leadHref} className="wa-action-chip">
-              <UserRound size={14} strokeWidth={1.8} /> View customer
-            </Link>
-          ) : null}
-          {canTransfer ? (
-            <button type="button" onClick={() => setTransferOpen(true)} className="wa-action-chip">
-              <Headphones size={14} strokeWidth={1.8} /> Transfer
-            </button>
-          ) : null}
-          <button type="button" onClick={() => setSupportTransferOpen(true)} className="wa-action-chip max-[640px]:hidden">
-            <Headphones size={14} strokeWidth={1.8} /> Transfer to Support
-          </button>
-        </div>
-      ) : null}
-
       {companyMode ? (
         <div className="flex min-h-[44px] shrink-0 items-center gap-1.5 overflow-x-auto border-b border-sales-border bg-sales-surface px-3 py-1.5 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {canSend || canReassign ? (
@@ -1030,11 +952,36 @@ export function ChatThread({
               </div>
             </div>
           ) : null}
+          {salespersonHub && isWhatsApp && !isSupport ? (
+            <SalespersonComposerToolbar
+              variant="sales"
+              quickActionsOpen={quickActionsOpen}
+              onToggleQuickActions={() => setQuickActionsOpen((value) => !value)}
+              onOpenAssetDrawer={() => setAssetDrawerOpen(true)}
+              onInternalNote={handleInternalNote}
+              onLogCall={() => setLogCallOpen(true)}
+              onOpenCreateDeal={() => void openCreateDeal()}
+              leadHref={leadHref}
+              dealHref={dealHref}
+              canCreateDeal={canCreateDeal}
+              showLogCall={showLogCall}
+            />
+          ) : null}
+          {salespersonHub && isWhatsApp && isSupport ? (
+            <SalespersonComposerToolbar
+              variant="support"
+              onInternalNote={handleInternalNote}
+              onTransfer={canTransfer ? () => setTransferOpen(true) : undefined}
+              onTransferSupport={() => setSupportTransferOpen(true)}
+              leadHref={leadHref}
+              canTransfer={canTransfer}
+            />
+          ) : null}
           <div
             className={`flex items-center gap-2 px-2 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:px-3 ${
               companyMode ? "py-1.5" : "py-2.5"
             } ${
-              isWhatsApp ? "" : "border-t border-[var(--border)]"
+              isWhatsApp && !salespersonHub ? "" : isWhatsApp ? "" : "border-t border-[var(--border)]"
             }`}
           >
             {!isWhatsApp ? (
