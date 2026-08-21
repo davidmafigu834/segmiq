@@ -137,7 +137,7 @@ type Props = {
 
 export function QuotationWorkspace({ quotationId, initial }: Props) {
   const router = useRouter();
-  const toast = useSalesToast();
+  const { toast } = useSalesToast();
   const [payload, setPayload] = useState<QuotationWorkspacePayload | null>(initial ?? null);
   const [loading, setLoading] = useState(!initial);
   const [tab, setTab] = useState<TabId>("items");
@@ -2319,7 +2319,7 @@ function SendModal({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const toast = useSalesToast();
+  const { toast } = useSalesToast();
 
   async function send() {
     if (!commercial.canSend && commercial.items.some((c) => c.status === "block")) {
