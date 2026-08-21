@@ -225,10 +225,16 @@ export function ChatThread({
       setMessages([]);
       setHasOlder(false);
       setNextBefore(null);
+      setLoading(false);
       return;
     }
     const conversationId = conversation.id;
     const conversationSource = conversation.source;
+    setMessages([]);
+    setLoading(true);
+    setHasOlder(false);
+    setNextBefore(null);
+    setHasNewBelow(false);
     let cancelled = false;
     let requestInFlight = false;
 
@@ -887,8 +893,18 @@ export function ChatThread({
           </div>
         ) : null}
         {loading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <span className="wa-empty-hint">Loading messages…</span>
+          <div className="flex flex-1 flex-col justify-center gap-3 px-2 py-6">
+            {[0, 1, 2].map((index) => (
+              <div
+                key={index}
+                className={`flex ${index % 2 === 0 ? "justify-start" : "justify-end"}`}
+              >
+                <div
+                  className="h-10 animate-pulse rounded-[14px] bg-sales-surface-hover/80"
+                  style={{ width: `${42 + index * 12}%`, maxWidth: "280px" }}
+                />
+              </div>
+            ))}
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-1 items-start justify-center pt-16">

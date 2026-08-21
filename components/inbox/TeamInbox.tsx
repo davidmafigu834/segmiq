@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   useInboxCompact,
@@ -101,6 +101,7 @@ export function TeamInbox({
   const searchParams = useSearchParams();
   const leadFromUrl = searchParams.get("conversation") ?? searchParams.get("lead");
   const appliedUrlLeadRef = useRef<string | null>(null);
+  const pendingSelectionRef = useRef<string | null>(null);
   const whatsappMode = !!backHref;
 
   const loadConversations = useCallback(async (options?: { silent?: boolean }) => {
@@ -136,9 +137,16 @@ export function TeamInbox({
   }, [loadConversations]);
 
   useEffect(() => {
+    if (pendingSelectionRef.current && leadFromUrl === pendingSelectionRef.current) {
+      pendingSelectionRef.current = null;
+    }
+  }, [leadFromUrl]);
+
+  useEffect(() => {
     if (!leadFromUrl || conversations.length === 0) return;
     if (!conversations.some((c) => c.id === leadFromUrl)) return;
     if (appliedUrlLeadRef.current === leadFromUrl) return;
+    if (pendingSelectionRef.current && pendingSelectionRef.current !== leadFromUrl) return;
     appliedUrlLeadRef.current = leadFromUrl;
     setActiveId(leadFromUrl);
     try {
@@ -209,6 +217,7 @@ export function TeamInbox({
       const res = await fetch(`/api/leads/${leadId}/claim`, { method: "POST" });
       if (res.ok) {
         await loadConversations();
+        pendingSelectionRef.current = leadId;
         appliedUrlLeadRef.current = leadId;
         setActiveId(leadId);
         setClaimToast("Lead claimed — you can reply now");
@@ -250,8 +259,10 @@ export function TeamInbox({
   }, [whatsappMode]);
 
   function handleSelect(id: string) {
-    setActiveId(id);
+    if (id === activeId) return;
+    pendingSelectionRef.current = id;
     appliedUrlLeadRef.current = id;
+    setActiveId(id);
     if (whatsappMode) {
       try {
         localStorage.setItem(activeConversationStorageKey(clientId, companyMode), id);
@@ -259,7 +270,9 @@ export function TeamInbox({
         params.set("conversation", id);
         params.delete("lead");
         const query = params.toString();
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+        startTransition(() => {
+          router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+        });
       } catch {
         /* selection remains functional without persistence */
       }
