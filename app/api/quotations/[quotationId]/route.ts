@@ -3,7 +3,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageQuotation } from "@/lib/quotations/quote-access";
 import { proposalDealValueUpdate } from "@/lib/deal-value";
 import { saveItemsAndTotals, loadQuotationWithItems } from "@/lib/quotations/persist";
-import type { QuotationLineItemInput, QuotationStatus } from "@/types";
+import { logQuotationEvent } from "@/lib/quotations/events";
+import { isQuotationEditable } from "@/lib/quotations/lifecycle";
+import type {
+  QuotationLineItemInput,
+  QuotationNoteBlock,
+  QuotationPaymentScheduleRow,
+  QuotationSectionDef,
+  QuotationStatus,
+  QuotationTimelineMilestone,
+} from "@/types";
 
 export async function GET(req: Request, { params }: { params: { quotationId: string } }) {
   const access = await canManageQuotation(params.quotationId, req);
@@ -29,17 +38,31 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     terms: string | null;
     tax_rate: number;
     other_amount: number;
+    discount_percent: number;
+    currency: string;
+    payment_terms_label: string | null;
+    payment_schedule: QuotationPaymentScheduleRow[];
+    delivery_terms: string | null;
+    warranty_terms: string | null;
+    commercial_notes: string | null;
+    customer_obligations: string | null;
+    sections: QuotationSectionDef[];
+    note_blocks: QuotationNoteBlock[];
+    timeline_milestones: QuotationTimelineMilestone[];
     items: QuotationLineItemInput[];
     status: QuotationStatus;
+    declined_reason: string | null;
+    deal_id: string | null;
+    silent: boolean;
   }>;
 
   const { data: current } = await supabase
     .from("quotations")
-    .select("tax_rate, other_amount, total, status")
+    .select("tax_rate, other_amount, discount_percent, total, status, sections, deal_id")
     .eq("id", params.quotationId)
     .single();
 
-  const isDraft = (current?.status as string | undefined) === "draft";
+  const isDraft = isQuotationEditable(String(current?.status ?? ""));
   const hasContentChanges =
     body.customer_name !== undefined ||
     body.customer_phone !== undefined ||
@@ -49,7 +72,19 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     body.terms !== undefined ||
     body.tax_rate !== undefined ||
     body.other_amount !== undefined ||
-    body.items !== undefined;
+    body.discount_percent !== undefined ||
+    body.currency !== undefined ||
+    body.payment_terms_label !== undefined ||
+    body.payment_schedule !== undefined ||
+    body.delivery_terms !== undefined ||
+    body.warranty_terms !== undefined ||
+    body.commercial_notes !== undefined ||
+    body.customer_obligations !== undefined ||
+    body.sections !== undefined ||
+    body.note_blocks !== undefined ||
+    body.timeline_milestones !== undefined ||
+    body.items !== undefined ||
+    body.deal_id !== undefined;
 
   if (!isDraft && hasContentChanges) {
     return NextResponse.json(
@@ -59,9 +94,29 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
   }
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
-  for (const key of ["customer_name", "customer_phone", "customer_email", "valid_until", "notes", "terms"] as const) {
+  for (const key of [
+    "customer_name",
+    "customer_phone",
+    "customer_email",
+    "valid_until",
+    "notes",
+    "terms",
+    "payment_terms_label",
+    "delivery_terms",
+    "warranty_terms",
+    "commercial_notes",
+    "customer_obligations",
+    "declined_reason",
+    "deal_id",
+  ] as const) {
     if (body[key] !== undefined) updates[key] = body[key];
   }
+  if (body.currency !== undefined) updates.currency = body.currency;
+  if (body.discount_percent !== undefined) updates.discount_percent = Number(body.discount_percent) || 0;
+  if (body.payment_schedule !== undefined) updates.payment_schedule = body.payment_schedule;
+  if (body.sections !== undefined) updates.sections = body.sections;
+  if (body.note_blocks !== undefined) updates.note_blocks = body.note_blocks;
+  if (body.timeline_milestones !== undefined) updates.timeline_milestones = body.timeline_milestones;
 
   if (body.status !== undefined) {
     updates.status = body.status;
@@ -72,6 +127,25 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
       if (proposalValue) {
         await supabase.from("leads").update(proposalValue).eq("id", access.leadId);
       }
+      await logQuotationEvent(supabase, {
+        quotationId: params.quotationId,
+        clientId: access.clientId,
+        leadId: access.leadId,
+        dealId: (current?.deal_id as string) || null,
+        actor: { id: access.actor.id, name: access.actor.name },
+        eventType: "ACCEPTED",
+      });
+    }
+    if (body.status === "rejected") {
+      await logQuotationEvent(supabase, {
+        quotationId: params.quotationId,
+        clientId: access.clientId,
+        leadId: access.leadId,
+        dealId: (current?.deal_id as string) || null,
+        actor: { id: access.actor.id, name: access.actor.name },
+        eventType: "DECLINED",
+        eventData: { reason: body.declined_reason ?? null },
+      });
     }
   }
 
@@ -79,25 +153,37 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     await supabase.from("quotations").update(updates).eq("id", params.quotationId);
   }
 
+  const taxRate = body.tax_rate ?? (Number(current?.tax_rate) || 0);
+  const other = body.other_amount ?? (Number(current?.other_amount) || 0);
+  const discountPercent =
+    body.discount_percent ?? (Number(current?.discount_percent) || 0);
+  const sections =
+    body.sections ?? ((current?.sections as QuotationSectionDef[] | null) ?? undefined);
+
   if (body.items !== undefined) {
-    const taxRate = body.tax_rate ?? (Number(current?.tax_rate) || 0);
-    const other = body.other_amount ?? (Number(current?.other_amount) || 0);
-    await saveItemsAndTotals(supabase, params.quotationId, body.items, taxRate, other);
-  } else if (body.tax_rate !== undefined || body.other_amount !== undefined) {
-    // Totals depend on tax/other even without item changes — reload items and recompute.
+    await saveItemsAndTotals(supabase, params.quotationId, body.items, taxRate, other, {
+      discountPercent,
+      sections,
+    });
+  } else if (
+    body.tax_rate !== undefined ||
+    body.other_amount !== undefined ||
+    body.discount_percent !== undefined
+  ) {
     const { data: items } = await supabase
       .from("quotation_line_items")
-      .select("unit_price, quantity, item_name, description, group_label, catalog_item_id")
+      .select(
+        "unit_price, quantity, item_name, description, group_label, catalog_item_id, section_id, unit, sku, discount_percent, discount_amount, tax_rate, tax_inclusive, is_optional, option_group, cost_price, image_url"
+      )
       .eq("quotation_id", params.quotationId)
       .order("sort_order", { ascending: true });
-    const taxRate = body.tax_rate ?? (Number(current?.tax_rate) || 0);
-    const other = body.other_amount ?? (Number(current?.other_amount) || 0);
     await saveItemsAndTotals(
       supabase,
       params.quotationId,
       (items ?? []) as QuotationLineItemInput[],
       taxRate,
-      other
+      other,
+      { discountPercent, sections }
     );
   }
 

@@ -23,11 +23,14 @@ export type QuoteStatusTone =
 
 export const QUOTE_STATUS_LABEL: Record<QuotationStatus, string> = {
   draft: "Draft",
+  pending_approval: "Pending approval",
+  approved: "Approved",
   sent: "Sent",
   viewed: "Viewed",
   accepted: "Accepted",
   rejected: "Declined",
   expired: "Expired",
+  superseded: "Superseded",
 };
 
 export function formatQuoteStatus(status: QuotationStatus | null | undefined): string {
@@ -39,6 +42,10 @@ export function getQuoteStatusTone(status: QuotationStatus): QuoteStatusTone {
   switch (status) {
     case "draft":
       return "neutral";
+    case "pending_approval":
+      return "warning";
+    case "approved":
+      return "brand";
     case "sent":
       return "info";
     case "viewed":
@@ -49,6 +56,8 @@ export function getQuoteStatusTone(status: QuotationStatus): QuoteStatusTone {
       return "danger";
     case "expired":
       return "warning";
+    case "superseded":
+      return "neutral";
     default:
       return "neutral";
   }

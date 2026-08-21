@@ -7,6 +7,7 @@ import { buildQuotationPdfData } from "@/lib/quotations/build-pdf-data";
 import { renderQuotationPdf } from "@/lib/quotations/quotation-pdf";
 import { putObject, getPublicUrl, isR2Configured } from "@/lib/storage/r2";
 import { logDocumentSent, logStatusChanged } from "@/lib/lead-events";
+import { logQuotationEvent } from "@/lib/quotations/events";
 import { proposalDealValueUpdate } from "@/lib/deal-value";
 import { persistLeadScore } from "@/lib/lead-scoring";
 import { formatMoney } from "@/lib/quotations/totals";
@@ -55,9 +56,23 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   }
 
   const isResend = quote.status === "sent" || quote.status === "viewed";
-  if (!isResend && quote.status !== "draft") {
+  const canSendFresh =
+    quote.status === "draft" || quote.status === "approved";
+  if (!isResend && !canSendFresh) {
     return NextResponse.json(
-      { error: "This quotation cannot be sent again in its current status" },
+      {
+        error:
+          quote.status === "pending_approval"
+            ? "This quotation is pending approval and cannot be sent yet"
+            : "This quotation cannot be sent again in its current status",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (quote.approval_status === "pending") {
+    return NextResponse.json(
+      { error: "Approval is still pending — wait for manager approval before sending" },
       { status: 400 }
     );
   }
@@ -273,12 +288,12 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     await supabase
       .from("quotations")
       .update({
-        status: "expired",
+        status: "superseded",
         superseded_by_id: params.quotationId,
         updated_at: sentAt,
       })
       .eq("id", parentId)
-      .in("status", ["sent", "viewed"]);
+      .in("status", ["sent", "viewed", "approved", "expired"]);
   }
 
   // Timeline event.
@@ -290,6 +305,33 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     documentName: `Quotation ${quoteNumber} — ${formatMoney(Number(quote.total) || 0, (quote.currency as string) || "USD")}`,
     url: pdfUrl ?? `${getPublicBaseUrl()}/quote/${publicToken}`,
   });
+
+  await logQuotationEvent(supabase, {
+    quotationId: params.quotationId,
+    clientId: access.clientId,
+    leadId: access.leadId,
+    dealId: (quote.deal_id as string) || null,
+    actor: { id: access.actor.id, name: access.actor.name },
+    eventType: "SENT",
+    eventData: {
+      quote_number: quoteNumber,
+      revision_number: quote.revision_number,
+      total: Number(quote.total) || 0,
+      channel: sendViaWhatsApp ? "whatsapp" : "link",
+    },
+  });
+
+  if (parentId) {
+    await logQuotationEvent(supabase, {
+      quotationId: parentId,
+      clientId: access.clientId,
+      leadId: access.leadId,
+      dealId: (quote.deal_id as string) || null,
+      actor: { id: access.actor.id, name: access.actor.name },
+      eventType: "SUPERSEDED",
+      eventData: { superseded_by_id: params.quotationId },
+    });
+  }
 
   // Advance the pipeline to "Proposal sent" if the lead is earlier in the funnel.
   // Optionally capture expected_close_date (forecast input) at send time.

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { addDays, format } from "date-fns";
 import { saveItemsAndTotals } from "@/lib/quotations/persist";
-import type { QuotationLineItemInput } from "@/types";
+import type { QuotationLineItemInput, QuotationSectionDef } from "@/types";
 
 type Actor = { id: string; name: string };
 
@@ -24,6 +24,7 @@ export async function copyQuotationAsDraft(
     actor: Actor;
     parentQuotationId?: string | null;
     revisionNumber?: number;
+    revisionNote?: string | null;
   }
 ): Promise<{ id: string } | null> {
   const { data: source } = await supabase
@@ -35,7 +36,9 @@ export async function copyQuotationAsDraft(
 
   const { data: sourceItems } = await supabase
     .from("quotation_line_items")
-    .select("catalog_item_id, item_name, description, unit_price, quantity, group_label, sort_order")
+    .select(
+      "catalog_item_id, item_name, description, unit_price, quantity, group_label, sort_order, section_id, unit, sku, discount_percent, discount_amount, tax_rate, tax_inclusive, is_optional, option_group, cost_price, image_url"
+    )
     .eq("quotation_id", opts.sourceQuotationId)
     .order("sort_order", { ascending: true });
 
@@ -43,30 +46,76 @@ export async function copyQuotationAsDraft(
     ? (source.valid_until as string)
     : format(addDays(new Date(), 30), "yyyy-MM-dd");
 
-  const { data: created, error } = await supabase
-    .from("quotations")
-    .insert({
-      client_id: opts.clientId,
-      lead_id: opts.targetLeadId,
-      status: "draft",
-      customer_name: source.customer_name,
-      customer_phone: source.customer_phone,
-      customer_email: source.customer_email,
-      tax_rate: source.tax_rate,
-      other_amount: source.other_amount,
-      currency: source.currency,
-      valid_until: validUntil,
-      notes: source.notes,
-      terms: source.terms,
-      prepared_by_id: opts.actor.id,
-      prepared_by_name: opts.actor.name,
-      parent_quotation_id: opts.parentQuotationId ?? null,
-      revision_number: opts.revisionNumber ?? 1,
-    })
-    .select("id")
-    .single();
+  const insertPayload: Record<string, unknown> = {
+    client_id: opts.clientId,
+    lead_id: opts.targetLeadId,
+    deal_id: source.deal_id ?? null,
+    status: "draft",
+    customer_name: source.customer_name,
+    customer_phone: source.customer_phone,
+    customer_email: source.customer_email,
+    tax_rate: source.tax_rate,
+    other_amount: source.other_amount,
+    currency: source.currency,
+    valid_until: validUntil,
+    notes: source.notes,
+    terms: source.terms,
+    prepared_by_id: opts.actor.id,
+    prepared_by_name: opts.actor.name,
+    parent_quotation_id: opts.parentQuotationId ?? null,
+    revision_number: opts.revisionNumber ?? 1,
+  };
 
-  if (error || !created) return null;
+  // Enterprise columns — ignored/null-safe if migration not applied yet via try/catch below
+  insertPayload.discount_percent = source.discount_percent ?? 0;
+  insertPayload.payment_terms_label = source.payment_terms_label ?? null;
+  insertPayload.payment_schedule = source.payment_schedule ?? [];
+  insertPayload.delivery_terms = source.delivery_terms ?? null;
+  insertPayload.warranty_terms = source.warranty_terms ?? null;
+  insertPayload.commercial_notes = source.commercial_notes ?? null;
+  insertPayload.customer_obligations = source.customer_obligations ?? null;
+  insertPayload.sections = source.sections ?? [];
+  insertPayload.note_blocks = source.note_blocks ?? [];
+  insertPayload.timeline_milestones = source.timeline_milestones ?? [];
+  insertPayload.revision_note = opts.revisionNote ?? null;
+  insertPayload.approval_status = "not_required";
+
+  let created: { id: string } | null = null;
+  {
+    const { data, error } = await supabase.from("quotations").insert(insertPayload).select("id").single();
+    if (error) {
+      // Fallback without enterprise columns
+      const { data: legacy, error: legacyErr } = await supabase
+        .from("quotations")
+        .insert({
+          client_id: opts.clientId,
+          lead_id: opts.targetLeadId,
+          deal_id: source.deal_id ?? null,
+          status: "draft",
+          customer_name: source.customer_name,
+          customer_phone: source.customer_phone,
+          customer_email: source.customer_email,
+          tax_rate: source.tax_rate,
+          other_amount: source.other_amount,
+          currency: source.currency,
+          valid_until: validUntil,
+          notes: source.notes,
+          terms: source.terms,
+          prepared_by_id: opts.actor.id,
+          prepared_by_name: opts.actor.name,
+          parent_quotation_id: opts.parentQuotationId ?? null,
+          revision_number: opts.revisionNumber ?? 1,
+        })
+        .select("id")
+        .single();
+      if (legacyErr || !legacy) return null;
+      created = legacy as { id: string };
+    } else {
+      created = data as { id: string };
+    }
+  }
+
+  if (!created) return null;
 
   const items: QuotationLineItemInput[] = (sourceItems ?? []).map((it) => ({
     catalog_item_id: it.catalog_item_id as string | null,
@@ -75,17 +124,32 @@ export async function copyQuotationAsDraft(
     unit_price: Number(it.unit_price) || 0,
     quantity: Number(it.quantity) || 1,
     group_label: (it.group_label as string | null) ?? null,
+    section_id: (it.section_id as string | null) ?? null,
+    unit: (it.unit as string | null) ?? "Each",
+    sku: (it.sku as string | null) ?? null,
+    discount_percent: Number(it.discount_percent) || 0,
+    discount_amount: Number(it.discount_amount) || 0,
+    tax_rate: it.tax_rate != null ? Number(it.tax_rate) : null,
+    tax_inclusive: Boolean(it.tax_inclusive),
+    is_optional: Boolean(it.is_optional),
+    option_group: (it.option_group as string | null) ?? null,
+    cost_price: it.cost_price != null ? Number(it.cost_price) : null,
+    image_url: (it.image_url as string | null) ?? null,
   }));
 
   if (items.length > 0) {
     await saveItemsAndTotals(
       supabase,
-      created.id as string,
+      created.id,
       items,
       Number(source.tax_rate) || 0,
-      Number(source.other_amount) || 0
+      Number(source.other_amount) || 0,
+      {
+        discountPercent: Number(source.discount_percent) || 0,
+        sections: (source.sections as QuotationSectionDef[] | null) ?? undefined,
+      }
     );
   }
 
-  return { id: created.id as string };
+  return { id: created.id };
 }

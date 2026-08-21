@@ -424,7 +424,70 @@ export interface NotificationRow {
   created_at: string;
 }
 
-export type QuotationStatus = "draft" | "sent" | "viewed" | "accepted" | "rejected" | "expired";
+export type QuotationStatus =
+  | "draft"
+  | "pending_approval"
+  | "approved"
+  | "sent"
+  | "viewed"
+  | "accepted"
+  | "rejected"
+  | "expired"
+  | "superseded";
+
+export type QuotationApprovalStatus = "not_required" | "pending" | "approved" | "rejected";
+
+export type QuotationSectionDef = {
+  id: string;
+  title: string;
+  sort_order: number;
+  collapsed?: boolean;
+};
+
+export type QuotationNoteBlock = {
+  id: string;
+  title: string;
+  body: string;
+  sort_order: number;
+  section_id?: string | null;
+};
+
+export type QuotationPaymentScheduleRow = {
+  id: string;
+  label: string;
+  percent: number | null;
+  amount: number | null;
+  trigger: string | null;
+  sort_order: number;
+};
+
+export type QuotationTimelineMilestone = {
+  id: string;
+  title: string;
+  due_date: string | null;
+  sort_order: number;
+  payment_percent?: number | null;
+  notes?: string | null;
+};
+
+export type QuotationEventType =
+  | "CREATED"
+  | "EDITED"
+  | "APPROVAL_REQUESTED"
+  | "APPROVED"
+  | "CHANGES_REQUESTED"
+  | "SENT"
+  | "VIEWED"
+  | "CUSTOMER_RESPONDED"
+  | "REVISION_CREATED"
+  | "ACCEPTED"
+  | "DECLINED"
+  | "EXPIRED"
+  | "SUPERSEDED"
+  | "PDF_DOWNLOADED"
+  | "FOLLOW_UP_SCHEDULED"
+  | "DUPLICATED"
+  | "CANCELLED";
 
 export interface CatalogItemRow {
   id: string;
@@ -438,6 +501,12 @@ export interface CatalogItemRow {
   display_order: number;
   created_at: string;
   updated_at: string;
+  sku?: string | null;
+  unit?: string | null;
+  cost_price?: number | null;
+  tax_rate?: number | null;
+  image_url?: string | null;
+  warranty?: string | null;
 }
 
 /** Personal reusable quote items saved by a salesperson (or manager). */
@@ -468,6 +537,16 @@ export interface QuotationSettingsRow {
   default_tax_rate: number;
   created_at: string;
   updated_at: string;
+  default_currency?: string;
+  default_validity_days?: number;
+  default_payment_terms?: string | null;
+  max_discount_percent?: number;
+  min_margin_percent?: number | null;
+  approval_value_threshold?: number | null;
+  require_approval_above_discount?: boolean;
+  supported_currencies?: string[];
+  salesperson_can_see_margin?: boolean;
+  salesperson_can_see_cost?: boolean;
 }
 
 export interface QuotationLineItemRow {
@@ -482,6 +561,17 @@ export interface QuotationLineItemRow {
   group_label: string | null;
   sort_order: number;
   created_at: string;
+  section_id?: string | null;
+  unit?: string;
+  sku?: string | null;
+  discount_percent?: number;
+  discount_amount?: number;
+  tax_rate?: number | null;
+  tax_inclusive?: boolean;
+  is_optional?: boolean;
+  option_group?: string | null;
+  cost_price?: number | null;
+  image_url?: string | null;
 }
 
 export interface QuotationRow {
@@ -517,6 +607,38 @@ export interface QuotationRow {
   accepted_at: string | null;
   created_at: string;
   updated_at: string;
+  payment_terms_label?: string | null;
+  payment_schedule?: QuotationPaymentScheduleRow[];
+  delivery_terms?: string | null;
+  warranty_terms?: string | null;
+  commercial_notes?: string | null;
+  customer_obligations?: string | null;
+  sections?: QuotationSectionDef[];
+  note_blocks?: QuotationNoteBlock[];
+  timeline_milestones?: QuotationTimelineMilestone[];
+  discount_percent?: number;
+  approval_status?: QuotationApprovalStatus;
+  approval_required_reasons?: string[];
+  approval_note?: string | null;
+  approval_requested_at?: string | null;
+  approval_requested_by_id?: string | null;
+  approved_at?: string | null;
+  approved_by_id?: string | null;
+  revision_note?: string | null;
+  declined_reason?: string | null;
+}
+
+export interface QuotationEventRow {
+  id: string;
+  quotation_id: string;
+  client_id: string;
+  lead_id: string | null;
+  deal_id: string | null;
+  actor_id: string | null;
+  actor_name: string;
+  event_type: QuotationEventType | string;
+  event_data: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface QuoteTemplateLineItemRow {
@@ -557,6 +679,17 @@ export interface QuotationLineItemInput {
   unit_price: number;
   quantity: number;
   group_label?: string | null;
+  section_id?: string | null;
+  unit?: string | null;
+  sku?: string | null;
+  discount_percent?: number | null;
+  discount_amount?: number | null;
+  tax_rate?: number | null;
+  tax_inclusive?: boolean | null;
+  is_optional?: boolean | null;
+  option_group?: string | null;
+  cost_price?: number | null;
+  image_url?: string | null;
 }
 
 // ---------------------------------------------------------------------------

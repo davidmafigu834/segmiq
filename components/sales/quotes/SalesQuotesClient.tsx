@@ -41,7 +41,6 @@ import {
 } from "@/components/sales/ui";
 import { ReportKpiCard } from "@/components/sales/reports/ReportKpiCard";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { QuotationBuilder } from "@/components/leads/QuotationBuilder";
 import { LeadDetailPanel } from "@/app/sales/leads/LeadDetailPanel";
 import { openLeadPanel } from "@/store/uiStore";
 import {
@@ -156,10 +155,6 @@ export function SalesQuotesClient() {
   const [error, setError] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [editing, setEditing] = useState<{
-    quotation: QuotationWithItems;
-    leadPhone: string | null;
-  } | null>(null);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedSearch(search), 250);
@@ -285,21 +280,8 @@ export function SalesQuotesClient() {
   const periodEmpty =
     !loading && data && data.meta.allTimeCount > 0 && data.quotes.length === 0 && !debouncedSearch;
 
-  async function openQuote(quoteId: string, leadPhone?: string | null) {
-    try {
-      const res = await fetch(`/api/quotations/${quoteId}`);
-      const json = (await res.json()) as { quotation?: QuotationWithItems; error?: string };
-      if (!res.ok || !json.quotation) {
-        toast({ tone: "error", title: "Couldn't open quote", description: json.error });
-        return;
-      }
-      setEditing({
-        quotation: json.quotation,
-        leadPhone: leadPhone ?? json.quotation.customer_phone,
-      });
-    } catch {
-      toast({ tone: "error", title: "Couldn't open quote" });
-    }
+  async function openQuote(quoteId: string, _leadPhone?: string | null) {
+    router.push(`/sales/quotes/${quoteId}`);
   }
 
   async function downloadPdf(quoteId: string, quoteNumber: string | null) {
@@ -343,27 +325,25 @@ export function SalesQuotesClient() {
     }
   }
 
-  async function duplicateQuote(quoteId: string, leadPhone: string | null) {
+  async function duplicateQuote(quoteId: string, _leadPhone: string | null) {
     try {
       const res = await fetch(`/api/quotations/${quoteId}/duplicate`, { method: "POST" });
       const json = (await res.json()) as { quotation?: QuotationWithItems; error?: string };
       if (!res.ok || !json.quotation) throw new Error(json.error ?? "fail");
-      setEditing({ quotation: json.quotation, leadPhone });
       toast({ tone: "success", title: "Quote duplicated", description: "A new draft was created." });
-      void load();
+      router.push(`/sales/quotes/${json.quotation.id}`);
     } catch {
       toast({ tone: "error", title: "Couldn't duplicate quote" });
     }
   }
 
-  async function reviseQuote(quoteId: string, leadPhone: string | null) {
+  async function reviseQuote(quoteId: string, _leadPhone: string | null) {
     try {
       const res = await fetch(`/api/quotations/${quoteId}/revise`, { method: "POST" });
       const json = (await res.json()) as { quotation?: QuotationWithItems; error?: string };
       if (!res.ok || !json.quotation) throw new Error(json.error ?? "fail");
-      setEditing({ quotation: json.quotation, leadPhone });
       toast({ tone: "success", title: "Revision started", description: "Edit and send the revised quote." });
-      void load();
+      router.push(`/sales/quotes/${json.quotation.id}`);
     } catch {
       toast({ tone: "error", title: "Couldn't create revision" });
     }
@@ -394,43 +374,6 @@ export function SalesQuotesClient() {
 
   function onActivityOpen(item: QuoteActivityItem) {
     void openQuote(item.quoteId);
-  }
-
-  if (editing) {
-    const q = editing.quotation;
-    const readOnly = q.status !== "draft";
-    return (
-      <div className="w-full">
-        <QuotationBuilder
-          quotation={q}
-          clientId={q.client_id}
-          leadPhone={editing.leadPhone}
-          readOnly={readOnly}
-          onSaved={(updated) => setEditing({ quotation: updated, leadPhone: editing.leadPhone })}
-          onSent={() => {
-            setEditing(null);
-            toast({
-              tone: "success",
-              title: "Quote sent",
-              description: q.customer_name
-                ? `Quotation sent to ${q.customer_name}.`
-                : "Quotation was sent.",
-            });
-            void load();
-          }}
-          onClose={() => {
-            setEditing(null);
-            void load();
-          }}
-          onRevise={
-            readOnly
-              ? () => void reviseQuote(q.id, editing.leadPhone)
-              : undefined
-          }
-          onDuplicate={() => void duplicateQuote(q.id, editing.leadPhone)}
-        />
-      </div>
-    );
   }
 
   return (
@@ -949,14 +892,14 @@ export function SalesQuotesClient() {
         candidates={data?.createCandidates ?? []}
         hasTemplates={data?.meta.hasTemplates ?? false}
         onClose={() => setCreateOpen(false)}
-        onCreated={(quotation, leadPhone) => {
-          setEditing({ quotation, leadPhone });
+        onCreated={(quotation) => {
+          setCreateOpen(false);
           toast({
             tone: "success",
             title: "Quote created",
             description: "Draft saved — add line items and send when ready.",
           });
-          void load();
+          router.push(`/sales/quotes/${quotation.id}`);
         }}
       />
 
