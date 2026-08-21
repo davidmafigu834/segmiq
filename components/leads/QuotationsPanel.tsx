@@ -17,7 +17,7 @@ type Props = {
   onChanged?: () => void;
 };
 
-export function QuotationsPanel({ leadId, clientId, leadPhone: _leadPhone, onChanged }: Props) {
+export function QuotationsPanel({ leadId, clientId, onChanged }: Props) {
   const router = useRouter();
   const [quotes, setQuotes] = useState<QuotationRow[]>([]);
   const [templates, setTemplates] = useState<QuoteTemplateRow[]>([]);

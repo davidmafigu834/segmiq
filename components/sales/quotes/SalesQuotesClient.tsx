@@ -280,7 +280,7 @@ export function SalesQuotesClient() {
   const periodEmpty =
     !loading && data && data.meta.allTimeCount > 0 && data.quotes.length === 0 && !debouncedSearch;
 
-  async function openQuote(quoteId: string, _leadPhone?: string | null) {
+  async function openQuote(quoteId: string) {
     router.push(`/sales/quotes/${quoteId}`);
   }
 
@@ -325,7 +325,7 @@ export function SalesQuotesClient() {
     }
   }
 
-  async function duplicateQuote(quoteId: string, _leadPhone: string | null) {
+  async function duplicateQuote(quoteId: string) {
     try {
       const res = await fetch(`/api/quotations/${quoteId}/duplicate`, { method: "POST" });
       const json = (await res.json()) as { quotation?: QuotationWithItems; error?: string };
@@ -337,7 +337,7 @@ export function SalesQuotesClient() {
     }
   }
 
-  async function reviseQuote(quoteId: string, _leadPhone: string | null) {
+  async function reviseQuote(quoteId: string) {
     try {
       const res = await fetch(`/api/quotations/${quoteId}/revise`, { method: "POST" });
       const json = (await res.json()) as { quotation?: QuotationWithItems; error?: string };

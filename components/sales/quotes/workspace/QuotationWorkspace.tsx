@@ -159,7 +159,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [savedAt, setSavedAt] = useState<Date | null>(null);
-  const [saveError, setSaveError] = useState("");
   const [moreOpen, setMoreOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
   const [approvalOpen, setApprovalOpen] = useState(false);
@@ -292,7 +291,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const persist = useCallback(async () => {
     if (readOnly || !q) return;
     setSaveState("saving");
-    setSaveError("");
     try {
       const body = {
         customer_name: payload?.customer.name ?? q.customer_name,
@@ -312,7 +310,11 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         sections,
         note_blocks: noteBlocks,
         timeline_milestones: milestones,
-        items: items.map(({ key: _k, ...rest }) => rest),
+        items: items.map((it) => {
+          const { key, ...rest } = it;
+          void key;
+          return rest;
+        }),
         silent: true,
       };
       const res = await fetch(`/api/quotations/${quotationId}`, {
@@ -330,7 +332,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       }
     } catch (e) {
       setSaveState("error");
-      setSaveError(e instanceof Error ? e.message : "Changes not saved");
+      console.error("[quotation autosave]", e);
     }
   }, [
     readOnly,
