@@ -65,17 +65,24 @@ export function ConversationList({
   const [sortOpen, setSortOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [ownerFilter, setOwnerFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "SALES" | "SUPPORT" | "GENERAL">("all");
   const [page, setPage] = useState(1);
   const [visibleCount, setVisibleCount] = useState(50);
 
   const filtered = useMemo(() => {
     const base = applyInboxFilter(conversations, filter, search, currentUserId).filter((row) => {
-      if (ownerFilter === "all") return true;
-      if (ownerFilter === "unassigned") return !row.assignedToId;
-      return row.assignedToId === ownerFilter;
+      if (ownerFilter === "all") {
+        /* keep */
+      } else if (ownerFilter === "unassigned") {
+        if (row.assignedToId) return false;
+      } else if (row.assignedToId !== ownerFilter) {
+        return false;
+      }
+      if (typeFilter !== "all" && row.conversationType !== typeFilter) return false;
+      return true;
     });
     return sortConversationsClient(base, sort);
-  }, [conversations, filter, search, currentUserId, ownerFilter, sort]);
+  }, [conversations, filter, search, currentUserId, ownerFilter, typeFilter, sort]);
 
   const pageSize = companyMode ? 8 : Math.max(filtered.length, 1);
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -110,7 +117,7 @@ export function ConversationList({
   useEffect(() => {
     setPage(1);
     setVisibleCount(50);
-  }, [filter, ownerFilter, search, sort]);
+  }, [filter, ownerFilter, typeFilter, search, sort]);
 
   useEffect(() => {
     if (filter === "unassigned") setOwnerFilter("all");
@@ -137,7 +144,7 @@ export function ConversationList({
     panelWidth != null
       ? "shrink-0"
       : companyMode
-        ? "w-full min-w-0 min-[1100px]:w-[clamp(300px,24vw,320px)] min-[1100px]:shrink-0"
+        ? "w-full min-w-0 min-[1100px]:w-[clamp(320px,24vw,360px)] min-[1100px]:shrink-0"
         : whatsappMode
           ? "w-[310px] min-[1536px]:w-[350px]"
           : "w-[360px]";
@@ -251,17 +258,19 @@ export function ConversationList({
                   <div className="relative">
                     <button
                       type="button"
-                      className={`wa-icon-btn !h-[38px] !w-[38px] ${
+                      className={`wa-icon-btn !h-[38px] !min-w-[38px] !w-auto !px-2.5 gap-1.5 ${
                         !companyMode && salespersonAdvancedFilters.includes(filter)
                           ? "!border-sales-brand-border !bg-sales-brand-soft text-sales-text-primary"
-                          : "border-sales-border"
+                          : companyMode && (ownerFilter !== "all" || typeFilter !== "all")
+                            ? "!border-sales-brand-border !bg-sales-brand-soft text-sales-text-primary"
+                            : "border-sales-border"
                       }`}
                       onClick={() => setFilterOpen((value) => !value)}
                       aria-label="Filter conversations"
                       aria-expanded={filterOpen}
-                      aria-pressed={!companyMode && salespersonAdvancedFilters.includes(filter)}
                     >
                       <SlidersHorizontal size={15} strokeWidth={1.8} />
+                      {companyMode ? <span className="text-[11px] font-medium">Filters</span> : null}
                     </button>
                     {filterOpen ? (
                       <>
@@ -278,6 +287,30 @@ export function ConversationList({
                           ))}
                           {companyMode ? (
                             <>
+                              <div className="my-1 border-t border-sales-border px-3 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                                Conversation type
+                              </div>
+                              {(
+                                [
+                                  { id: "all", name: "All types" },
+                                  { id: "SALES", name: "Sales" },
+                                  { id: "SUPPORT", name: "Support" },
+                                  { id: "GENERAL", name: "General" },
+                                ] as const
+                              ).map((item) => (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[11px] text-sales-text-primary hover:bg-sales-surface-hover"
+                                  onClick={() => {
+                                    setTypeFilter(item.id);
+                                    setFilterOpen(false);
+                                  }}
+                                >
+                                  <span className="truncate">{item.name}</span>
+                                  {typeFilter === item.id ? <Check size={13} className="shrink-0 text-[#4D7C0F]" /> : null}
+                                </button>
+                              ))}
                               <div className="my-1 border-t border-sales-border px-3 pb-1 pt-2 text-[9px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
                                 Owner
                               </div>

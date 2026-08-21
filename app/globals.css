@@ -1530,8 +1530,40 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .company-wa-workspace .wa-conv-row {
-    min-height: 74px;
-    padding: 0.375rem 0.75rem;
+    min-height: 80px;
+    padding: 0.5rem 0.875rem;
+  }
+
+  .company-wa-workspace .wa-conv-row-active,
+  .company-wa-workspace .wa-conv-row-company.wa-conv-row-active {
+    background: rgba(212, 255, 79, 0.12) !important;
+    box-shadow: inset 3px 0 0 #b7e432;
+  }
+
+  .manager-workflow-strip {
+    background: var(--sales-surface);
+  }
+
+  .manager-workflow-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 8px;
+    border: 1px solid var(--sales-border);
+    background: var(--sales-surface);
+    padding: 0.375rem 0.625rem;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--sales-text-primary);
+    transition: background-color 0.15s ease;
+  }
+
+  .manager-workflow-chip:hover {
+    background: var(--sales-surface-hover);
+  }
+
+  .company-wa-page-header {
+    background: var(--sales-bg) !important;
   }
 
   .company-wa-workspace #convPanel > .wa-panel-header > div:first-child {

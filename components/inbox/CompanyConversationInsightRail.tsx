@@ -4,17 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
-  BriefcaseBusiness,
   CalendarDays,
+  ChevronDown,
   ChevronRight,
-  FileText,
   Mail,
   MapPin,
   MoreHorizontal,
   Phone,
-  UserRound,
 } from "lucide-react";
 import type { CompanyConversationContext, InboxConversation } from "@/lib/inbox/types";
+import { supportStageLabel } from "@/lib/inbox/conversation-type";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
 
 function formatDateTime(value: string): { date: string; time: string } {
@@ -32,12 +31,24 @@ function relativeDate(value: string): string {
   const sameDay = date.toDateString() === now.toDateString();
   const time = new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(date);
   if (sameDay) return `Today, ${time}`;
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
+  if (diffDays === 1) return `Yesterday, ${time}`;
+  if (diffDays > 1 && diffDays < 7) return `${diffDays} days ago`;
   return new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+function relativeFirstContact(value: string): string {
+  const date = new Date(value);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (24 * 60 * 60 * 1000));
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "1 day ago";
+  return `${diffDays} days ago`;
 }
 
 function duration(seconds: number | null): string {
@@ -55,22 +66,34 @@ function statusLabel(value: CompanyConversationContext["insights"]["status"]): s
     .join(" ");
 }
 
-function RailSection({
+function AccordionSection({
+  index,
   title,
-  action,
+  defaultOpen = true,
   children,
 }: {
+  index: number;
   title: string;
-  action?: React.ReactNode;
+  defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className="border-b border-sales-border-subtle px-4 py-3.5 last:border-b-0">
-      <div className="mb-2.5 flex items-center justify-between gap-3">
-        <h3 className="text-[11px] font-semibold text-sales-text-primary">{title}</h3>
-        {action}
-      </div>
-      {children}
+    <section className="border-b border-sales-border-subtle">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left hover:bg-sales-surface-hover"
+        aria-expanded={open}
+      >
+        <span className="text-[10px] font-semibold tabular-nums text-sales-text-muted">{index}.</span>
+        <span className="min-w-0 flex-1 text-[12px] font-semibold text-sales-text-primary">{title}</span>
+        <ChevronDown
+          size={14}
+          className={`shrink-0 text-sales-text-muted transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open ? <div className="px-4 pb-3.5">{children}</div> : null}
     </section>
   );
 }
@@ -92,6 +115,7 @@ export function CompanyConversationInsightRail({
 }) {
   const [context, setContext] = useState<CompanyConversationContext | null>(null);
   const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState<"context" | "activity">("context");
 
   useEffect(() => {
     if (!conversation?.id) {
@@ -132,13 +156,17 @@ export function CompanyConversationInsightRail({
 
   const name = context?.contact.name ?? displayContactName(conversation);
   const phone = context?.contact.phone ?? conversation.phone;
-  const firstContact = formatDateTime(context?.insights.firstContactAt ?? conversation.firstContactAt);
-  const status = context?.insights.status ??
+  const firstContactAt = context?.insights.firstContactAt ?? conversation.firstContactAt;
+  const status =
+    context?.insights.status ??
     (conversation.conversationStatus === "RESOLVED"
       ? "RESOLVED"
       : conversation.lastMessageDirection === "inbound"
         ? "WAITING_ON_TEAM"
         : "WAITING_ON_CUSTOMER");
+  const isSupport = conversation.conversationType === "SUPPORT";
+  const quoteCount = context?.quoteCount ?? 0;
+  const quoteTotal = conversation.latestQuoteTotal;
 
   return (
     <aside
@@ -151,14 +179,27 @@ export function CompanyConversationInsightRail({
             <ArrowLeft size={19} strokeWidth={1.8} />
           </button>
         ) : null}
-        <h2 className="min-w-0 flex-1 text-[13px] font-semibold text-sales-text-primary">Customer Overview</h2>
+        <div className="flex min-w-0 flex-1 border-b border-transparent">
+          {(["context", "activity"] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTab(key)}
+              className={`relative flex-1 px-2 py-1.5 text-[12px] font-medium capitalize ${
+                tab === key ? "text-sales-text-primary" : "text-sales-text-secondary"
+              }`}
+            >
+              {key}
+              {tab === key ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-sales-brand" /> : null}
+            </button>
+          ))}
+        </div>
         {onCollapse ? (
           <button
             type="button"
             onClick={onCollapse}
             className="wa-icon-btn-muted max-[1099px]:hidden"
             aria-label="Collapse customer context"
-            title="Collapse customer context"
           >
             <ChevronRight size={17} strokeWidth={1.8} />
           </button>
@@ -166,122 +207,207 @@ export function CompanyConversationInsightRail({
       </div>
 
       <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto">
-        <section className="border-b border-sales-border-subtle px-4 py-3.5">
-          <div className="flex items-start gap-3">
-            <WhatsAppAvatar name={name} phone={phone} size="md" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</div>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="rounded-[5px] bg-[rgba(37,211,102,0.1)] px-1.5 py-0.5 text-[9px] font-semibold text-[#168A42]">Lead</span>
-                <span className="text-[10px] text-sales-text-muted">
-                  {context?.contact.lifecycle
-                    ? context.contact.lifecycle.replace(/_/g, " ")
-                    : conversation.stageLabel}
-                </span>
+        {tab === "activity" ? (
+          <div className="px-4 py-3.5">
+            {loading ? (
+              <div className="space-y-2">
+                {[0, 1, 2, 3].map((item) => (
+                  <div key={item} className="h-10 animate-pulse rounded-[7px] bg-sales-surface-hover" />
+                ))}
               </div>
-              <div className="mt-2 space-y-1.5 text-[10.5px] text-sales-text-secondary">
-                {phone ? (
-                  <div className="flex items-center gap-2"><Phone size={12} /><span className="truncate tabular-nums">{phone}</span></div>
-                ) : null}
-                {context?.contact.email ? (
-                  <div className="flex items-center gap-2"><Mail size={12} /><span className="truncate">{context.contact.email}</span></div>
-                ) : null}
-                {(context?.contact.location ?? conversation.location) ? (
-                  <div className="flex items-center gap-2"><MapPin size={12} /><span className="truncate">{context?.contact.location ?? conversation.location}</span></div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <RailSection title="Conversation Insights">
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: "First Contact", value: firstContact.date, helper: firstContact.time },
-              { label: "Messages", value: String(context?.insights.messageCount ?? conversation.messageCount), helper: "Inbound + outbound" },
-              { label: "Response Time", value: duration(context?.insights.firstResponseSeconds ?? conversation.firstResponseSeconds), helper: "First response" },
-              { label: "Status", value: statusLabel(status), helper: status === "WAITING_ON_TEAM" ? "Response required" : "Conversation workflow" },
-            ].map((metric) => (
-              <div key={metric.label} className="min-w-0 rounded-[8px] bg-sales-surface-subtle p-2.5">
-                <div className="text-[9px] font-medium text-sales-text-muted">{metric.label}</div>
-                <div className={`mt-1 truncate text-[12px] font-semibold ${status === "WAITING_ON_TEAM" && metric.label === "Status" ? "text-[#D97706]" : "text-sales-text-primary"}`}>
-                  {metric.value}
-                </div>
-                <div className="mt-0.5 truncate text-[8.5px] text-sales-text-muted">{metric.helper}</div>
-              </div>
-            ))}
-          </div>
-        </RailSection>
-
-        <RailSection title="Related Records">
-          <div className="space-y-0.5">
-            <Link href={`/client/leads?lead=${conversation.id}`} className="flex min-h-8 items-center gap-2 rounded-[7px] px-1.5 text-[10.5px] text-sales-text-secondary hover:bg-sales-surface-hover">
-              <UserRound size={13} className="shrink-0" />
-              <span className="font-medium text-sales-text-primary">Lead</span>
-              <span className="min-w-0 flex-1 truncate">{name}</span>
-              <span className="font-medium text-sales-link">View</span>
-            </Link>
-            {context?.deal ? (
-              <Link href={`/client/deals/${context.deal.id}`} className="flex min-h-8 items-center gap-2 rounded-[7px] px-1.5 text-[10.5px] text-sales-text-secondary hover:bg-sales-surface-hover">
-                <BriefcaseBusiness size={13} className="shrink-0" />
-                <span className="font-medium text-sales-text-primary">Active Deal</span>
-                <span className="min-w-0 flex-1 truncate">{context.deal.name}</span>
-                <span className="font-medium text-sales-link">View</span>
-              </Link>
-            ) : (
-              <div className="flex min-h-8 items-center gap-2 px-1.5 text-[10.5px] text-sales-text-muted">
-                <BriefcaseBusiness size={13} /><span className="font-medium">No Deal yet</span>
-              </div>
-            )}
-            {(context?.quoteCount ?? 0) > 0 ? (
-              <Link href={`/client/leads?lead=${conversation.id}`} className="flex min-h-8 items-center gap-2 rounded-[7px] px-1.5 text-[10.5px] text-sales-text-secondary hover:bg-sales-surface-hover">
-                <FileText size={13} />
-                <span className="font-medium text-sales-text-primary">Quotes Sent</span>
-                <span className="flex-1">{context?.quoteCount}</span>
-                <span className="font-medium text-sales-link">View</span>
-              </Link>
-            ) : null}
-          </div>
-        </RailSection>
-
-        <RailSection title="Team Activity">
-          {loading ? (
-            <div className="space-y-2">
-              {[0, 1, 2].map((item) => <div key={item} className="h-9 animate-pulse rounded-[7px] bg-sales-surface-hover" />)}
-            </div>
-          ) : context?.activity.length ? (
-            <div className="space-y-2.5">
-              {context.activity.map((item) => (
-                <div key={item.id} className="flex items-start gap-2.5">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sales-surface-hover text-[9px] font-semibold text-sales-text-primary">
-                    {item.actorName.split(/\s+/).slice(0, 2).map((part) => part[0]).join("")}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[10px] font-semibold text-sales-text-primary">{item.actorName}</div>
-                    <div className="text-[9.5px] text-sales-text-secondary">{item.label}</div>
+            ) : context?.activity.length ? (
+              <div className="space-y-3">
+                {context.activity.map((item) => (
+                  <div key={item.id} className="border-b border-sales-border-subtle pb-2.5 last:border-0">
+                    <div className="text-[11px] font-semibold text-sales-text-primary">{item.label}</div>
+                    <div className="mt-0.5 text-[10px] text-sales-text-muted">{relativeDate(item.createdAt)}</div>
                   </div>
-                  <span className="shrink-0 text-[8.5px] text-sales-text-muted">{relativeDate(item.createdAt)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[10.5px] text-sales-text-muted">No team activity recorded yet.</p>
-          )}
-        </RailSection>
-
-        <RailSection title="Quick Actions">
-          <div className="grid grid-cols-3 gap-2">
-            <a href={phone ? `tel:${phone}` : undefined} aria-disabled={!phone} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover aria-disabled:pointer-events-none aria-disabled:opacity-45">
-              <Phone size={13} /> Call
-            </a>
-            <Link href={`/client/calendar?lead=${conversation.id}`} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
-              <CalendarDays size={13} /> Schedule
-            </Link>
-            <Link href={`/client/leads?lead=${conversation.id}`} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
-              <MoreHorizontal size={13} /> More
-            </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] text-sales-text-muted">No activity recorded yet.</p>
+            )}
           </div>
-        </RailSection>
+        ) : (
+          <>
+            <AccordionSection index={1} title="Customer Overview">
+              <div className="flex items-start gap-3">
+                <WhatsAppAvatar name={name} phone={phone} size="md" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</span>
+                    {!isSupport ? (
+                      <span className="rounded-[5px] bg-[rgba(37,211,102,0.1)] px-1.5 py-0.5 text-[9px] font-semibold text-[#168A42]">
+                        Lead
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-2 space-y-1.5 text-[11px] text-sales-text-secondary">
+                    {phone ? (
+                      <div className="flex items-center gap-2">
+                        <Phone size={12} />
+                        <span className="truncate tabular-nums">{phone}</span>
+                      </div>
+                    ) : null}
+                    {(context?.contact.location ?? conversation.location) ? (
+                      <div className="flex items-center gap-2">
+                        <MapPin size={12} />
+                        <span className="truncate">{context?.contact.location ?? conversation.location}</span>
+                      </div>
+                    ) : null}
+                    {context?.contact.email ? (
+                      <div className="flex items-center gap-2">
+                        <Mail size={12} />
+                        <span className="truncate">{context.contact.email}</span>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </AccordionSection>
+
+            {isSupport && conversation.supportCase ? (
+              <AccordionSection index={2} title="Support Case">
+                <div className="space-y-1.5 text-[11px]">
+                  <div className="font-semibold text-sales-text-primary">
+                    {conversation.supportCase.reason || conversation.supportCase.reasonCategory?.replace(/_/g, " ") || "Support request"}
+                  </div>
+                  <div className="text-sales-text-secondary">
+                    Status: {supportStageLabel(conversation.supportCase.status)}
+                  </div>
+                </div>
+              </AccordionSection>
+            ) : null}
+
+            <AccordionSection index={isSupport && conversation.supportCase ? 3 : 2} title="Conversation Insights">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "First contact", value: relativeFirstContact(firstContactAt) },
+                  { label: "Messages", value: String(context?.insights.messageCount ?? conversation.messageCount) },
+                  {
+                    label: "First response",
+                    value: duration(context?.insights.firstResponseSeconds ?? conversation.firstResponseSeconds),
+                  },
+                  {
+                    label: "Status",
+                    value: statusLabel(status),
+                    tone: status === "WAITING_ON_TEAM" ? "text-[#D97706]" : undefined,
+                  },
+                ].map((metric) => (
+                  <div key={metric.label} className="min-w-0 rounded-[8px] border border-sales-border-subtle bg-sales-surface-subtle p-2.5">
+                    <div className="text-[9px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                      {metric.label}
+                    </div>
+                    <div className={`mt-1 truncate text-[12px] font-semibold ${metric.tone ?? "text-sales-text-primary"}`}>
+                      {metric.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </AccordionSection>
+
+            <AccordionSection index={isSupport && conversation.supportCase ? 4 : 3} title="Related Records">
+              <div className="space-y-1">
+                {!isSupport ? (
+                  <Link
+                    href={`/client/leads?lead=${conversation.id}`}
+                    className="flex min-h-9 items-center gap-2 rounded-[7px] px-1 text-[11px] hover:bg-sales-surface-hover"
+                  >
+                    <span className="w-12 font-medium text-sales-text-muted">Lead</span>
+                    <span className="min-w-0 flex-1 truncate text-sales-text-primary">{name}</span>
+                  </Link>
+                ) : null}
+                {context?.deal ? (
+                  <Link
+                    href={`/client/deals/${context.deal.id}`}
+                    className="flex min-h-9 items-center gap-2 rounded-[7px] px-1 text-[11px] hover:bg-sales-surface-hover"
+                  >
+                    <span className="w-12 font-medium text-sales-text-muted">Deal</span>
+                    <span className="min-w-0 flex-1 truncate text-sales-text-primary">{context.deal.name}</span>
+                  </Link>
+                ) : !isSupport ? (
+                  <div className="flex min-h-9 items-center gap-2 px-1 text-[11px] text-sales-text-muted">
+                    <span className="w-12 font-medium">Deal</span>
+                    <span>No active deal</span>
+                  </div>
+                ) : null}
+                {quoteCount > 0 ? (
+                  <Link
+                    href={`/client/leads?lead=${conversation.id}`}
+                    className="flex min-h-9 items-center gap-2 rounded-[7px] px-1 text-[11px] hover:bg-sales-surface-hover"
+                  >
+                    <span className="w-12 font-medium text-sales-text-muted">Quotes</span>
+                    <span className="min-w-0 flex-1 truncate text-sales-text-primary">
+                      {quoteCount} sent
+                      {quoteTotal != null ? ` · ${new Intl.NumberFormat("en", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(quoteTotal)}` : ""}
+                    </span>
+                  </Link>
+                ) : null}
+                {isSupport ? (
+                  <Link
+                    href={`/client/leads?lead=${conversation.id}`}
+                    className="flex min-h-9 items-center gap-2 rounded-[7px] px-1 text-[11px] hover:bg-sales-surface-hover"
+                  >
+                    <span className="w-12 font-medium text-sales-text-muted">Customer</span>
+                    <span className="min-w-0 flex-1 truncate text-sales-text-primary">{name}</span>
+                  </Link>
+                ) : null}
+              </div>
+            </AccordionSection>
+
+            <AccordionSection index={isSupport && conversation.supportCase ? 5 : 4} title="Team Activity">
+              {loading ? (
+                <div className="space-y-2">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="h-9 animate-pulse rounded-[7px] bg-sales-surface-hover" />
+                  ))}
+                </div>
+              ) : context?.activity.length ? (
+                <div className="space-y-2.5">
+                  {context.activity.slice(0, 5).map((item) => (
+                    <div key={item.id}>
+                      <div className="text-[11px] font-medium text-sales-text-primary">{item.label}</div>
+                      <div className="text-[10px] text-sales-text-muted">{relativeDate(item.createdAt)}</div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setTab("activity")}
+                    className="text-[10px] font-semibold text-sales-link hover:underline"
+                  >
+                    View all activity
+                  </button>
+                </div>
+              ) : (
+                <p className="text-[11px] text-sales-text-muted">No team activity recorded yet.</p>
+              )}
+            </AccordionSection>
+
+            <AccordionSection index={isSupport && conversation.supportCase ? 6 : 5} title="Quick Actions" defaultOpen={false}>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <a
+                  href={phone ? `tel:${phone}` : undefined}
+                  aria-disabled={!phone}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover aria-disabled:pointer-events-none aria-disabled:opacity-45"
+                >
+                  <Phone size={13} /> Call customer
+                </a>
+                <Link
+                  href={`/client/calendar?lead=${conversation.id}`}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+                >
+                  <CalendarDays size={13} /> Schedule follow-up
+                </Link>
+                <Link
+                  href={`/client/leads?lead=${conversation.id}`}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-[8px] border border-sales-border bg-sales-surface text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+                >
+                  <MoreHorizontal size={13} /> More actions
+                </Link>
+              </div>
+            </AccordionSection>
+          </>
+        )}
       </div>
     </aside>
   );

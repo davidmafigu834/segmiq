@@ -41,6 +41,9 @@ import { NextBestActionStrip } from "./NextBestActionStrip";
 import { QualificationStrip } from "./QualificationStrip";
 import { AssetDrawer } from "./AssetDrawer";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
+import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
+import { ManagerWorkflowStrip } from "./ManagerWorkflowStrip";
+import { ConversationTypeBadge } from "./ConversationTypeBadge";
 import type { LeadRow } from "@/types";
 import { initials } from "@/lib/inbox/assignee-colors";
 
@@ -72,6 +75,7 @@ type Props = {
   userId?: string;
   dailyPlanQueue?: SalesActionRecommendation[];
   salespersonHub?: boolean;
+  alsoSells?: boolean;
 };
 
 function mergeChatMessages(
@@ -126,6 +130,7 @@ export function ChatThread({
   userId = "",
   dailyPlanQueue = [],
   salespersonHub = false,
+  alsoSells = false,
 }: Props) {
   const [messages, setMessages] = useState<InboxChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -177,7 +182,7 @@ export function ChatThread({
   }, [conversation?.id]);
 
   useEffect(() => {
-    if (!conversation?.id || !salespersonHub) {
+    if (!conversation?.id || (!salespersonHub && !(companyMode && alsoSells))) {
       setContextLead(null);
       return;
     }
@@ -193,7 +198,7 @@ export function ChatThread({
     return () => {
       cancelled = true;
     };
-  }, [conversation?.id, salespersonHub]);
+  }, [conversation?.id, salespersonHub, companyMode, alsoSells]);
 
   useEffect(() => {
     const focusComposer = () => composerRef.current?.focus();
@@ -536,10 +541,10 @@ export function ChatThread({
 
   const nextBestAction = useMemo(
     () =>
-      salespersonHub && conversation
+      (salespersonHub || (companyMode && alsoSells && canSend)) && conversation
         ? resolveNextBestAction({ conversation, dailyPlan: dailyPlanQueue })
         : null,
-    [conversation, dailyPlanQueue, salespersonHub]
+    [conversation, dailyPlanQueue, salespersonHub, companyMode, alsoSells, canSend]
   );
 
   if (!conversation) {
@@ -790,7 +795,7 @@ export function ChatThread({
                     Transfer conversation
                   </button>
                 ) : null}
-                {salespersonHub && !isSupport ? (
+                {(salespersonHub || companyMode) && !isSupport ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -822,6 +827,22 @@ export function ChatThread({
         </div>
       </div>
 
+      {companyMode ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-sales-border bg-sales-surface px-3 py-2 sm:px-4">
+          <ConversationTypeBadge type={conversation.conversationType} />
+          {conversation.activeDealId ? (
+            <span className="inline-flex rounded-full bg-sales-info-soft px-2 py-0.5 text-[10px] font-semibold text-sales-info">
+              Deal
+            </span>
+          ) : null}
+          {conversation.dealStage ? (
+            <span className="inline-flex rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-semibold text-sales-text-primary">
+              {formatDealStage(conversation.dealStage)}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
       {salespersonHub && nextBestAction ? (
         <NextBestActionStrip
           action={nextBestAction}
@@ -846,28 +867,44 @@ export function ChatThread({
         />
       ) : null}
 
-      {companyMode ? (
-        <div className="flex min-h-[44px] shrink-0 items-center gap-1.5 overflow-x-auto border-b border-sales-border bg-sales-surface px-3 py-1.5 inbox-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {canSend || canReassign ? (
-            <button type="button" onClick={() => void handleInternalNote()} className="wa-btn-secondary shrink-0 !h-8 !w-auto !px-3 !text-[10px] max-[520px]:hidden">
-              <StickyNote size={13} strokeWidth={1.8} /> Add Note
-            </button>
-          ) : null}
-          {dealHref ? (
-            <Link href={dealHref} className="wa-btn-secondary shrink-0 !h-8 !w-auto !px-3 !text-[10px]">
-              <BriefcaseBusiness size={13} strokeWidth={1.8} /> View Deal
-            </Link>
-          ) : canCreateDeal ? (
-            <button type="button" onClick={() => void openCreateDeal()} className="wa-btn-secondary shrink-0 !h-8 !w-auto !px-3 !text-[10px] text-[#4D7C0F]">
-              <BriefcaseBusiness size={13} strokeWidth={1.8} /> Create Deal
-            </button>
-          ) : null}
-          {leadHref ? (
-            <Link href={leadHref} className="wa-btn-secondary shrink-0 !h-8 !w-auto !px-3 !text-[10px] max-[480px]:hidden">
-              <UserRound size={13} strokeWidth={1.8} /> View Lead
-            </Link>
-          ) : null}
-        </div>
+      {companyMode && alsoSells && canSend && nextBestAction ? (
+        <NextBestActionStrip
+          action={nextBestAction}
+          condensed={!!onBack}
+          onCall={conversation.phone ? () => window.open(`tel:${conversation.phone}`, "_self") : undefined}
+          onSchedule={() => {
+            window.location.href = `/client/calendar?lead=${conversation.id}`;
+          }}
+          onViewQuote={dealHref ? () => window.location.assign(dealHref) : undefined}
+          onCompletePlan={() => void handleCompletePlanAction()}
+          completing={planCompleting}
+        />
+      ) : null}
+
+      {companyMode && alsoSells && canSend && !conversation.activeDealId && !isSupport ? (
+        <QualificationStrip
+          conversation={conversation}
+          lead={contextLead}
+          onInsertQuestion={insertComposerText}
+          onCreateDeal={() => void openCreateDeal()}
+          canCreateDeal={canCreateDeal}
+        />
+      ) : null}
+
+      {companyMode && !(alsoSells && canSend) ? (
+        <ManagerWorkflowStrip
+          conversation={conversation}
+          canReassign={canReassign}
+          onAssign={canReassign ? () => setTransferOpen(true) : undefined}
+          onTransfer={canReassign ? () => setTransferOpen(true) : undefined}
+          onNote={handleInternalNote}
+          onResolve={
+            canReassign || canUpdateStatus
+              ? () => void handleConversationStatus(conversation.conversationStatus === "RESOLVED" ? "OPEN" : "RESOLVED")
+              : undefined
+          }
+          resolving={statusUpdating}
+        />
       ) : null}
 
       {campaignContext ? (
@@ -940,7 +977,7 @@ export function ChatThread({
         ) : null}
       </div>
 
-      {canSend ? (
+      {canSend || companyMode ? (
         <div className={`shrink-0 bg-sales-surface ${isWhatsApp ? "wa-composer" : "border-t border-[var(--border)]"}`}>
           {sendError ? (
             <div role="alert" className="border-b border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-center text-xs text-[var(--danger-fg)]">
@@ -993,11 +1030,31 @@ export function ChatThread({
               canTransfer={canTransfer}
             />
           ) : null}
+          {companyMode && isWhatsApp ? (
+            <ManagerComposerToolbar
+              canSend={canSend}
+              alsoSells={alsoSells}
+              quickActionsOpen={quickActionsOpen}
+              onToggleQuickActions={() => setQuickActionsOpen((value) => !value)}
+              onOpenAssetDrawer={() => setAssetDrawerOpen(true)}
+              onInternalNote={handleInternalNote}
+              onLogCall={() => setLogCallOpen(true)}
+              onTransfer={canReassign ? () => setTransferOpen(true) : undefined}
+              onTransferSupport={!isSupport ? () => setSupportTransferOpen(true) : undefined}
+              leadHref={leadHref}
+              dealHref={dealHref}
+              canCreateDeal={canCreateDeal}
+              onOpenCreateDeal={() => void openCreateDeal()}
+              showLogCall={showLogCall}
+              isSupport={isSupport}
+            />
+          ) : null}
+          {canSend ? (
           <div
             className={`flex items-center gap-2 px-2 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:px-3 ${
               companyMode ? "py-1.5" : "py-2.5"
             } ${
-              isWhatsApp && !salespersonHub ? "" : isWhatsApp ? "" : "border-t border-[var(--border)]"
+              isWhatsApp && !salespersonHub && !companyMode ? "" : isWhatsApp ? "" : "border-t border-[var(--border)]"
             }`}
           >
             {!isWhatsApp ? (
@@ -1015,29 +1072,6 @@ export function ChatThread({
               >
                 <FileText size={18} />
               </button>
-            ) : null}
-            {isWhatsApp && companyMode ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setQuickActionsOpen((open) => !open)}
-                  aria-expanded={quickActionsOpen}
-                  aria-label="Quick replies"
-                  title="Quick replies"
-                  className={`wa-icon-btn-muted shrink-0 ${quickActionsOpen ? "!border-sales-brand-border !bg-sales-brand-soft" : ""}`}
-                >
-                  <Zap size={16} strokeWidth={1.8} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickActionsOpen(true)}
-                  aria-label="Send asset"
-                  title="Send asset"
-                  className="wa-icon-btn-muted shrink-0"
-                >
-                  <Paperclip size={16} strokeWidth={1.8} />
-                </button>
-              </>
             ) : null}
             <input
               ref={composerRef}
@@ -1078,6 +1112,17 @@ export function ChatThread({
               <Send size={18} strokeWidth={1.8} />
             </button>
           </div>
+          ) : companyMode ? (
+            <div className="border-t border-sales-border-subtle px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-[11px] text-sales-text-secondary">
+              {conversation.assignee ? (
+                <span>
+                  Assigned to <strong className="text-sales-text-primary">{conversation.assignee.name}</strong> — only the conversation owner can reply.
+                </span>
+              ) : (
+                <span>This conversation is unassigned — assign an owner before sending messages.</span>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className="wa-composer flex shrink-0 flex-col gap-2 bg-sales-surface px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-[11px] font-medium text-sales-text-secondary">
@@ -1203,7 +1248,7 @@ export function ChatThread({
         onTransfer={handleTransfer}
         whatsappMode={isWhatsApp}
       />
-      {salespersonHub ? (
+      {(salespersonHub || companyMode) ? (
         <TransferToSupportDialog
           open={supportTransferOpen}
           salespeople={salespeople}

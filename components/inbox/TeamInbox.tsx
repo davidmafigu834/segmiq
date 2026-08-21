@@ -316,8 +316,8 @@ export function TeamInbox({
     companyMode
       ? {
           storageKey: COMPANY_INBOX_PANEL_WIDTHS_KEY,
-          defaultListWidth: 330,
-          defaultIntelWidth: 350,
+          defaultListWidth: isExtraWideWorkspace ? 360 : 340,
+          defaultIntelWidth: isExtraWideWorkspace ? 400 : 360,
           allowListCollapse: false,
         }
       : {
@@ -368,7 +368,7 @@ export function TeamInbox({
       <div
         className={`min-h-0 flex-1 overflow-hidden ${
           companyMode
-            ? "company-wa-workspace wa-hub-shell wa-hub-premium mx-3 mb-3 flex overflow-hidden rounded-[11px] border border-sales-border bg-sales-surface sm:mx-4 sm:mb-4"
+            ? "company-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
             : whatsappMode
               ? "salesperson-wa-workspace wa-hub-shell wa-hub-premium flex overflow-hidden border-t border-sales-border bg-sales-surface"
               : "flex"
@@ -475,6 +475,7 @@ export function TeamInbox({
                 userId={userId}
                 dailyPlanQueue={dailyPlanQueue}
                 salespersonHub={whatsappMode && !companyMode}
+                alsoSells={alsoSells}
               />
             </div>
             {resizable && active ? (
