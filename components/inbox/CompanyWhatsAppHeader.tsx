@@ -84,25 +84,20 @@ export function CompanyWhatsAppHeader({
   userName?: string;
   avatarUrl?: string | null;
   connection: SafeWhatsAppConnection | null;
-  variant?: "page" | "pane";
+  variant?: "page" | "list";
 }) {
-  if (variant === "pane") {
+  if (variant === "list") {
     return (
-      <header className="company-wa-pane-header flex min-h-[44px] shrink-0 items-center justify-between gap-3 border-b border-sales-border bg-sales-surface px-3 py-2 sm:px-4">
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2">
-            <h1 className="truncate text-[14px] font-semibold tracking-[-0.02em] text-sales-text-primary sm:text-[15px]">
-              WhatsApp Sales Hub
-            </h1>
-            <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-sales-text-secondary">
-              Company
-            </span>
-          </div>
-          <p className="company-wa-pane-header-subtitle mt-0.5 truncate text-[10px] text-sales-text-muted sm:text-[11px]">
-            Manage conversations, customer context and team responses in one place.
-          </p>
+      <header className="company-wa-list-header shrink-0 border-b border-sales-border bg-sales-surface px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
+            WhatsApp Sales Hub
+          </h1>
+          <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-sales-text-secondary">
+            Company
+          </span>
         </div>
-        <ConnectionStatus connection={connection} compact />
+        <ConnectionStatus connection={connection} />
       </header>
     );
   }

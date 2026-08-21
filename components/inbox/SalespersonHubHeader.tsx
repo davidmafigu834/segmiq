@@ -28,8 +28,8 @@ function ConnectionStatus({
 
   if (connected) {
     return (
-      <div className={compact ? "text-right" : "shrink-0 pt-1 text-right"}>
-        <p className="flex items-center justify-end gap-1.5 text-[11px] font-medium text-[#168A42]">
+      <div className={compact ? "text-right" : "mt-1.5 shrink-0 text-left"}>
+        <p className={`flex items-center gap-1.5 text-[11px] font-medium text-[#168A42] ${compact ? "justify-end" : ""}`}>
           <span className="h-1.5 w-1.5 rounded-full bg-[#25D366]" aria-hidden />
           WhatsApp connected
         </p>
@@ -67,20 +67,15 @@ export function SalespersonHubHeader({
 }: {
   connection: SafeWhatsAppConnection | null;
   title?: string;
-  variant?: "page" | "pane";
+  variant?: "page" | "list";
 }) {
-  if (variant === "pane") {
+  if (variant === "list") {
     return (
-      <header className="salesperson-wa-pane-header flex min-h-[44px] shrink-0 items-center justify-between gap-3 border-b border-sales-border bg-sales-surface px-3 py-2 sm:px-4">
-        <div className="min-w-0">
-          <h1 className="truncate text-[14px] font-semibold tracking-[-0.02em] text-sales-text-primary sm:text-[15px]">
-            {title}
-          </h1>
-          <p className="salesperson-wa-pane-header-subtitle truncate text-[10px] text-sales-text-muted sm:text-[11px]">
-            Your selling workspace for WhatsApp
-          </p>
-        </div>
-        <ConnectionStatus connection={connection} compact />
+      <header className="salesperson-wa-list-header shrink-0 border-b border-sales-border bg-sales-surface px-4 py-3">
+        <h1 className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
+          {title}
+        </h1>
+        <ConnectionStatus connection={connection} />
       </header>
     );
   }

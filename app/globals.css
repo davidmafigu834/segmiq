@@ -1529,17 +1529,19 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     }
   }
 
-  .company-wa-pane-header {
+  .company-wa-list-header,
+  .salesperson-wa-list-header {
     background: var(--sales-surface) !important;
   }
 
-  .company-wa-chat-pane.wa-hub-conversation-focused .company-wa-pane-header {
-    min-height: 40px;
-    padding-block: 0.375rem;
+  .company-wa-list-header .text-right,
+  .salesperson-wa-list-header .text-right {
+    text-align: left;
   }
 
-  .company-wa-chat-pane.wa-hub-conversation-focused .company-wa-pane-header-subtitle {
-    display: none;
+  .company-wa-list-header p.flex,
+  .salesperson-wa-list-header p.flex {
+    justify-content: flex-start;
   }
 
   .company-wa-workspace .wa-composer-input {
@@ -1750,21 +1752,8 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     padding-block: 0.45rem;
   }
 
-  .salesperson-wa-pane-header {
+  .salesperson-wa-list-header {
     background: var(--sales-surface) !important;
-  }
-
-  .company-wa-chat-pane.wa-hub-conversation-focused .salesperson-wa-pane-header {
-    min-height: 40px;
-    padding-block: 0.375rem;
-  }
-
-  .company-wa-chat-pane.wa-hub-conversation-focused .salesperson-wa-pane-header h1 {
-    font-size: 13px;
-  }
-
-  .company-wa-chat-pane.wa-hub-conversation-focused .salesperson-wa-pane-header-subtitle {
-    display: none;
   }
 
   .salesperson-wa-workspace.wa-hub-conversation-focused .wa-chat-wallpaper {

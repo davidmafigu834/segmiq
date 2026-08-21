@@ -10,6 +10,9 @@ import {
   type ConversationSort,
 } from "@/lib/inbox/format-display";
 import { ConversationRow } from "./ConversationRow";
+import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
+import { SalespersonHubHeader } from "./SalespersonHubHeader";
+import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
 import { ArrowUpDown, Check, ChevronLeft, ChevronRight, Search, SlidersHorizontal } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 
@@ -36,6 +39,9 @@ type Props = {
   panelAnimated?: boolean;
   chromeInParent?: boolean;
   companyMode?: boolean;
+  hubConnection?: SafeWhatsAppConnection | null;
+  hubTitle?: string;
+  showHubBranding?: boolean;
 };
 
 export function ConversationList({
@@ -60,6 +66,9 @@ export function ConversationList({
   panelAnimated = false,
   chromeInParent = false,
   companyMode = false,
+  hubConnection = null,
+  hubTitle = "WhatsApp Sales Hub",
+  showHubBranding = false,
 }: Props) {
   const [sort, setSort] = useState<ConversationSort>("newest");
   const [sortOpen, setSortOpen] = useState(false);
@@ -183,18 +192,26 @@ export function ConversationList({
     >
       {whatsappMode ? (
         <div className="sticky top-0 z-10 shrink-0 bg-sales-surface wa-panel-header max-[1099px]:pt-[env(safe-area-inset-top)]">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <div className="text-[15px] font-semibold tracking-tight text-sales-text-primary">
-                  Conversations
+          {showHubBranding ? (
+            companyMode ? (
+              <CompanyWhatsAppHeader connection={hubConnection} variant="list" />
+            ) : (
+              <SalespersonHubHeader connection={hubConnection} title={hubTitle} variant="list" />
+            )
+          ) : (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <div className="text-[15px] font-semibold tracking-tight text-sales-text-primary">
+                    Conversations
+                  </div>
+                  <span className="rounded-md bg-sales-surface-subtle px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-secondary">
+                    {conversations.length}
+                  </span>
                 </div>
-                <span className="rounded-md bg-sales-surface-subtle px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-secondary">
-                  {conversations.length}
-                </span>
               </div>
             </div>
-          </div>
+          )}
           {companyMode && filterCounts && onFilterChange ? (
             <div className="flex border-t border-sales-border px-3">
               {COMPANY_INBOX_FILTER_ORDER.map((key) => {

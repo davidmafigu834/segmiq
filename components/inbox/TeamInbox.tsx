@@ -340,6 +340,8 @@ export function TeamInbox({
   const showCompanyPageHeader =
     companyMode && paneNav && mobilePane === "list" && !activeId;
 
+  const showListHubBranding = (whatsappMode || companyMode) && !paneNav;
+
   return (
     <div
       className={
@@ -417,6 +419,9 @@ export function TeamInbox({
                 panelAnimated={resizable}
                 chromeInParent={false}
                 companyMode={companyMode}
+                hubConnection={whatsappConnection}
+                hubTitle={pageTitle}
+                showHubBranding={showListHubBranding}
               />
             ) : null}
             {resizable ? (
@@ -435,19 +440,6 @@ export function TeamInbox({
               } ${activeId ? "wa-hub-conversation-focused" : ""}`}
               data-course-target={whatsappMode && !companyMode ? "whatsapp-chat" : undefined}
             >
-              {whatsappMode && !companyMode ? (
-                <SalespersonHubHeader
-                  connection={whatsappConnection}
-                  title={pageTitle}
-                  variant="pane"
-                />
-              ) : null}
-              {companyMode ? (
-                <CompanyWhatsAppHeader
-                  connection={whatsappConnection}
-                  variant="pane"
-                />
-              ) : null}
               <ChatThread
                 conversation={active}
                 clientId={clientId}
