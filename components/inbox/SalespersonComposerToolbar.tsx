@@ -99,12 +99,14 @@ export function SalespersonComposerToolbar({
   showLogCall = false,
   canTransfer = false,
 }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
-      setCollapsed(localStorage.getItem(COLLAPSED_STORAGE_KEY) === "1");
+      if (localStorage.getItem(COLLAPSED_STORAGE_KEY) === "0") {
+        setCollapsed(false);
+      }
     } catch {
       /* ignore unavailable storage */
     }

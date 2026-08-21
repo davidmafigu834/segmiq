@@ -1706,8 +1706,30 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .salesperson-wa-workspace .wa-composer-input {
-    min-height: 40px;
-    padding-block: 0.55rem;
+    min-height: 36px;
+    padding-block: 0.45rem;
+  }
+
+  .salesperson-wa-workspace.wa-hub-conversation-focused .wa-chat-wallpaper {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .salesperson-wa-workspace.wa-hub-conversation-focused .wa-panel-header {
+    min-height: 0;
+  }
+
+  .salesperson-wa-workspace.wa-hub-conversation-focused .wa-composer-toolbar-collapsed {
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+  }
+
+  .salesperson-wa-workspace.wa-hub-conversation-focused .wa-composer-toolbar-head {
+    min-height: 1.5rem;
+  }
+
+  .wa-sales-assist button[aria-expanded="false"] {
+    min-height: 2rem;
   }
 
   .wa-hub-premium .wa-empty-hint {

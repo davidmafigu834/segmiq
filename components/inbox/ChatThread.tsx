@@ -35,6 +35,7 @@ import { TransferToSupportDialog } from "./TransferToSupportDialog";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { NextBestActionStrip } from "./NextBestActionStrip";
 import { QualificationStrip } from "./QualificationStrip";
+import { SalesConversationAssist } from "./SalesConversationAssist";
 import { AssetDrawer } from "./AssetDrawer";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
@@ -604,7 +605,9 @@ export function ChatThread({
           isWhatsApp ? "wa-panel-header" : "border-b border-[var(--border)] bg-[var(--bg-primary)]"
         }`}
       >
-        <div className="flex items-center justify-between gap-2 px-3 py-3 sm:px-4">
+        <div className={`flex items-center justify-between gap-2 px-3 sm:px-4 ${
+          salespersonHub && isWhatsApp ? "py-2" : "py-3"
+        }`}>
           <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
             {onBack ? (
               <button
@@ -839,10 +842,11 @@ export function ChatThread({
         </div>
       ) : null}
 
-      {salespersonHub && nextBestAction ? (
-        <NextBestActionStrip
+      {salespersonHub && !isSupport ? (
+        <SalesConversationAssist
+          conversation={conversation}
+          lead={contextLead}
           action={nextBestAction}
-          condensed={!!onBack}
           onCall={conversation.phone ? () => window.open(`tel:${conversation.phone}`, "_self") : undefined}
           onSchedule={() => {
             window.location.href = `/sales/calendar?lead=${conversation.id}`;
@@ -850,13 +854,6 @@ export function ChatThread({
           onViewQuote={dealHref ? () => window.location.assign(dealHref) : undefined}
           onCompletePlan={() => void handleCompletePlanAction()}
           completing={planCompleting}
-        />
-      ) : null}
-
-      {salespersonHub && !conversation.activeDealId && !isSupport ? (
-        <QualificationStrip
-          conversation={conversation}
-          lead={contextLead}
           onInsertQuestion={insertComposerText}
           onCreateDeal={() => void openCreateDeal()}
           canCreateDeal={canCreateDeal}

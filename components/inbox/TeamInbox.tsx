@@ -322,8 +322,8 @@ export function TeamInbox({
         }
       : {
           storageKey: SALESPERSON_INBOX_PANEL_WIDTHS_KEY,
-          defaultListWidth: isExtraWideWorkspace ? 350 : 330,
-          defaultIntelWidth: isExtraWideWorkspace ? 410 : 380,
+          defaultListWidth: isExtraWideWorkspace ? 320 : 300,
+          defaultIntelWidth: isExtraWideWorkspace ? 360 : 320,
           allowListCollapse: false,
         }
   );
@@ -334,7 +334,8 @@ export function TeamInbox({
       ? !intelCollapsed
       : intelOpen;
 
-  const showHubChrome = whatsappMode && !companyMode && (!paneNav || mobilePane === "list");
+  const showHubChrome =
+    whatsappMode && !companyMode && (!paneNav || mobilePane === "list") && !activeId;
 
   return (
     <div
@@ -370,7 +371,9 @@ export function TeamInbox({
           companyMode
             ? "company-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface"
             : whatsappMode
-              ? "salesperson-wa-workspace wa-hub-shell wa-hub-premium flex overflow-hidden border-t border-sales-border bg-sales-surface"
+              ? `salesperson-wa-workspace wa-hub-shell wa-hub-premium flex min-h-0 flex-1 overflow-hidden border-t border-sales-border bg-sales-surface ${
+                  activeId ? "wa-hub-conversation-focused" : ""
+                }`
               : "flex"
         }`}
       >
