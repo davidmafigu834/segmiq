@@ -119,6 +119,8 @@ export function QuoteTemplatesManager({
       flash(json.error ?? "Couldn't duplicate");
     }
   }
+
+  async function removeTemplate(id: string) {
     await fetch(`/api/clients/${clientId}/quote-templates/${id}`, { method: "DELETE" });
     setTemplates((prev) => prev.filter((t) => t.id !== id));
     flash("Template removed");

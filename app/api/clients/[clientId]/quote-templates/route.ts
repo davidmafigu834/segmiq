@@ -122,7 +122,6 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
-  const supabase = createAdminClient();
   const { data: template, error } = await supabase
     .from("quote_templates")
     .insert({
