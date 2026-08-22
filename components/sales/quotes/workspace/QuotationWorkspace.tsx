@@ -18,12 +18,14 @@ import {
   MessageCircle,
   AlertCircle,
   Loader2,
+  Briefcase,
   Calendar,
   X,
 } from "lucide-react";
 import {
   Badge,
   Button,
+  IconButton,
   Skeleton,
   useSalesToast,
 } from "@/components/sales/ui";
@@ -173,6 +175,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState<{ sectionId: string } | null>(null);
+  const [dealPickerOpen, setDealPickerOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItemRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -463,6 +466,30 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     setSendOpen(true);
   }
 
+  async function linkDeal(dealId: string) {
+    setBusy("deal");
+    try {
+      const res = await fetch(`/api/quotations/${quotationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ deal_id: dealId }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || "Could not link Deal");
+      setDealPickerOpen(false);
+      toast({ tone: "success", title: "Deal linked" });
+      await load();
+    } catch (e) {
+      toast({
+        tone: "error",
+        title: "Couldn't link Deal",
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const primaryCtaLabel = approvalPending
     ? "Approval pending"
     : needsRequestApproval
@@ -715,101 +742,115 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
 
   return (
     <div className="relative flex flex-col pb-16">
-      {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-sales-border pb-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-[18px] font-semibold tracking-tight text-sales-text-primary sm:text-[20px]">
-              Quotation {quoteNumberLabel}
-            </h1>
-            <span className="inline-flex items-center rounded-full bg-sales-neutral-100 px-2.5 py-0.5 text-[11px] font-semibold text-sales-text-secondary">
-              {statusLabel}
-            </span>
-            <span className="inline-flex items-center rounded-full bg-[var(--sales-brand-soft-solid)] px-2.5 py-0.5 text-[11px] font-semibold text-sales-brand-text">
-              {versionLabel}
-            </span>
-            {q.approval_status && q.approval_status !== "not_required" ? (
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                  q.approval_status === "approved" && "bg-sales-success-soft text-sales-success",
-                  q.approval_status === "pending" && "bg-sales-warning-soft text-sales-warning",
-                  q.approval_status === "changes_requested" && "bg-sales-warning-soft text-sales-warning",
-                  q.approval_status === "rejected" && "bg-sales-danger-soft text-sales-danger",
-                  q.approval_status === "required" && "bg-sales-warning-soft text-sales-warning"
-                )}
-              >
-                {approvalStatusLabel(q.approval_status)}
-              </span>
-            ) : null}
-          </div>
-          {approvalPending ? (
-            <p className="mt-2 rounded-sales-sm border border-sales-warning/30 bg-sales-warning-soft px-3 py-2 text-[12.5px] text-sales-text-secondary">
-              Commercial changes are locked while approval is pending. Create a revision or wait for the decision.
-            </p>
-          ) : null}
-          <p className="mt-1 text-[12.5px] text-sales-text-muted">
-            Build the commercial offer attached to the Deal.
-          </p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-sales-text-secondary">
-            {payload.deal ? (
-              <Link
-                href={`/sales/deals/${payload.deal.id}`}
-                className="font-medium text-sales-text-primary hover:underline"
-              >
-                Deal: {payload.deal.title}
-              </Link>
-            ) : (
-              <span className="text-sales-danger">No Deal linked</span>
-            )}
-            <span className="text-sales-border-strong">·</span>
-            <span className="inline-flex items-center gap-1">
-              Customer:{" "}
+      <div className="border-b border-sales-border pb-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <h1 className="truncate text-[18px] font-semibold tracking-tight text-sales-text-primary sm:text-[20px]">
+                Quotation {quoteNumberLabel}
+              </h1>
+              <Badge tone={getQuoteStatusToneSafe(q.status)} appearance="soft" className="shrink-0">
+                {statusLabel}
+              </Badge>
+              <Badge tone="brand" appearance="soft" className="hidden shrink-0 sm:inline-flex">
+                {versionLabel}
+              </Badge>
+              {q.approval_status && q.approval_status !== "not_required" ? (
+                <Badge
+                  tone={
+                    q.approval_status === "approved"
+                      ? "success"
+                      : q.approval_status === "rejected"
+                        ? "danger"
+                        : "warning"
+                  }
+                  appearance="soft"
+                  className="hidden shrink-0 sm:inline-flex"
+                >
+                  {approvalStatusLabel(q.approval_status)}
+                </Badge>
+              ) : null}
+            </div>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <Link
                 href={`/sales/leads?leadId=${payload.customer.leadId}`}
-                className="font-medium text-sales-text-primary hover:underline"
+                className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full bg-sales-neutral-100 px-2.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
               >
-                {payload.customer.name}
+                <span className="truncate">{payload.customer.name}</span>
+                {payload.customer.hasWhatsApp ? (
+                  <MessageCircle className="h-3.5 w-3.5 shrink-0 text-[var(--sales-whatsapp)]" aria-label="WhatsApp" />
+                ) : null}
               </Link>
-              {payload.customer.hasWhatsApp ? (
-                <MessageCircle className="h-3.5 w-3.5 text-[var(--sales-whatsapp)]" aria-label="WhatsApp" />
-              ) : null}
-            </span>
+              {payload.deal ? (
+                <Link
+                  href={`/sales/deals/${payload.deal.id}`}
+                  className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full bg-sales-neutral-100 px-2.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+                >
+                  <Briefcase className="h-3.5 w-3.5 shrink-0 text-sales-text-muted" />
+                  <span className="truncate">{payload.deal.title}</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => setDealPickerOpen(true)}
+                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-sales-border-strong bg-sales-surface px-2.5 text-[12px] font-semibold text-sales-text-secondary hover:border-sales-brand hover:text-sales-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Link a Deal
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Button
-              variant="secondary"
+          <div className="flex shrink-0 items-center gap-2">
+            <IconButton
+              aria-label="Preview quotation"
               size="sm"
-              leftIcon={<MoreHorizontal className="h-3.5 w-3.5" />}
-              onClick={() => setMoreOpen((o) => !o)}
+              onClick={() => void preview()}
+              disabled={busy === "pdf"}
             >
-              More actions
-            </Button>
-            {moreOpen ? (
-              <div className="absolute right-0 z-30 mt-1 w-52 rounded-sales-md border border-sales-border bg-sales-surface py-1 shadow-sales-card">
-                <MoreItem label="Duplicate quotation" onClick={() => void duplicate()} />
-                {readOnly ? (
-                  <MoreItem label="Create revision" onClick={() => void revise()} />
-                ) : null}
-                <MoreItem label="View version history" onClick={() => { setHistoryOpen(true); setMoreOpen(false); }} />
-                {payload.permissions.canDeleteDraft ? (
-                  <MoreItem label="Delete draft" danger onClick={() => void deleteDraft()} />
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-          <Button variant="secondary" size="sm" leftIcon={<Eye className="h-3.5 w-3.5" />} onClick={() => void preview()} loading={busy === "pdf"}>
-            Preview
-          </Button>
-          <Button variant="secondary" size="sm" leftIcon={<Download className="h-3.5 w-3.5" />} onClick={() => void downloadPdf()} loading={busy === "pdf"}>
-            Download PDF
-          </Button>
-          <div className="hidden flex-col items-end sm:flex">
+              <Eye />
+            </IconButton>
+            <IconButton
+              aria-label="Download PDF"
+              size="sm"
+              onClick={() => void downloadPdf()}
+              disabled={busy === "pdf"}
+            >
+              <Download />
+            </IconButton>
+            <div className="relative">
+              <IconButton
+                aria-label="More actions"
+                size="sm"
+                active={moreOpen}
+                onClick={() => setMoreOpen((o) => !o)}
+              >
+                <MoreHorizontal />
+              </IconButton>
+              {moreOpen ? (
+                <div className="absolute right-0 z-30 mt-1 w-52 rounded-sales-md border border-sales-border bg-sales-surface py-1 shadow-sales-card">
+                  <MoreItem label="Duplicate quotation" onClick={() => void duplicate()} />
+                  {readOnly ? (
+                    <MoreItem label="Create revision" onClick={() => void revise()} />
+                  ) : null}
+                  <MoreItem
+                    label="View version history"
+                    onClick={() => {
+                      setHistoryOpen(true);
+                      setMoreOpen(false);
+                    }}
+                  />
+                  {payload.permissions.canDeleteDraft ? (
+                    <MoreItem label="Delete draft" danger onClick={() => void deleteDraft()} />
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
             <Button
               size="sm"
+              className="hidden sm:inline-flex"
               leftIcon={needsRequestApproval ? <ShieldCheck className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
               onClick={onPrimaryCta}
               disabled={q.status === "accepted" || q.status === "superseded" || approvalPending}
@@ -817,21 +858,18 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
             >
               {primaryCtaLabel}
             </Button>
-            {sendHelper ? (
-              <span className="mt-1 max-w-[220px] text-right text-[11px] text-sales-text-muted">
-                {sendHelper}
-              </span>
-            ) : null}
+            <Button variant="secondary" size="sm" className="lg:hidden" onClick={() => setRailOpen(true)}>
+              Summary
+            </Button>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setRailOpen(true)}
-          >
-            Summary
-          </Button>
         </div>
+        {approvalPending ? (
+          <p className="mt-3 rounded-sales-sm border border-sales-warning/30 bg-sales-warning-soft px-3 py-2 text-[12.5px] text-sales-text-secondary">
+            Commercial changes are locked while approval is pending. Create a revision or wait for the decision.
+          </p>
+        ) : sendHelper ? (
+          <p className="mt-2 text-[12px] text-sales-text-muted lg:text-right">{sendHelper}</p>
+        ) : null}
       </div>
 
       {/* Tabs + autosave */}
@@ -1012,6 +1050,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               onFollowUp={() => {
                 router.push(`/sales/tasks?leadId=${payload.customer.leadId}`);
               }}
+              onLinkDeal={() => setDealPickerOpen(true)}
             />
         </aside>
       </div>
@@ -1070,6 +1109,10 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
                 if (payload.customer.phone) window.open(`tel:${payload.customer.phone}`);
               }}
               onFollowUp={() => router.push(`/sales/tasks?leadId=${payload.customer.leadId}`)}
+              onLinkDeal={() => {
+                setRailOpen(false);
+                setDealPickerOpen(true);
+              }}
             />
           </div>
         </div>
@@ -1103,6 +1146,15 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
             addCustomItem(pickerOpen.sectionId, tab === "options");
             setPickerOpen(null);
           }}
+        />
+      ) : null}
+
+      {dealPickerOpen ? (
+        <DealPickerModal
+          leadId={payload.customer.leadId}
+          busy={busy === "deal"}
+          onClose={() => setDealPickerOpen(false)}
+          onSelect={(id) => void linkDeal(id)}
         />
       ) : null}
 
@@ -1200,6 +1252,7 @@ function CommercialRail({
   onViewHistory,
   onCall,
   onFollowUp,
+  onLinkDeal,
 }: {
   payload: QuotationWorkspacePayload;
   totals: QuoteTotals;
@@ -1213,6 +1266,7 @@ function CommercialRail({
   onViewHistory: () => void;
   onCall: () => void;
   onFollowUp: () => void;
+  onLinkDeal: () => void;
 }) {
   const q = payload.quotation;
   const status = q.status;
@@ -1369,11 +1423,21 @@ function CommercialRail({
       <RailCard title="Linked Records">
         <div className="space-y-2 text-[12.5px]">
           <LinkRow label="Customer" value={payload.customer.name} href={`/sales/leads?leadId=${payload.customer.leadId}`} />
-          <LinkRow
-            label="Deal"
-            value={payload.deal?.title ?? "No Deal linked"}
-            href={payload.deal ? `/sales/deals/${payload.deal.id}` : undefined}
-          />
+          {payload.deal ? (
+            <LinkRow label="Deal" value={payload.deal.title} href={`/sales/deals/${payload.deal.id}`} />
+          ) : (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sales-text-secondary">Deal</span>
+              <button
+                type="button"
+                onClick={onLinkDeal}
+                className="inline-flex h-7 items-center gap-1 rounded-full border border-dashed border-sales-border-strong px-2.5 text-[12px] font-semibold text-sales-text-secondary hover:border-sales-brand hover:text-sales-text-primary"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Link a Deal
+              </button>
+            </div>
+          )}
           <div className="flex justify-between gap-2">
             <span className="text-sales-text-secondary">Owner</span>
             <span className="font-medium text-sales-text-primary">{payload.owner.name}</span>
@@ -1397,7 +1461,11 @@ function CommercialRail({
           <p className="mt-1 text-[12px] text-sales-text-secondary">{nba.detail}</p>
         ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
-          {nba.goTab ? (
+          {nba.linkDeal ? (
+            <Button size="sm" onClick={onLinkDeal}>
+              Link a Deal
+            </Button>
+          ) : nba.goTab ? (
             <Button size="sm" onClick={() => onNavigateTab(nba.goTab!)}>
               {nba.title}
             </Button>
@@ -1462,7 +1530,7 @@ function CommercialRail({
                   <button
                     type="button"
                     className="flex w-full rounded-sales-sm px-0.5 py-0.5 text-left hover:bg-sales-surface-hover"
-                    onClick={() => onNavigateTab(c.tab as TabId)}
+                    onClick={() => (c.id === "deal" ? onLinkDeal() : onNavigateTab(c.tab as TabId))}
                   >
                     {row}
                   </button>
@@ -1496,6 +1564,7 @@ function nextBestAction(
   actions: { label: string; icon: "phone" | "calendar"; primary?: boolean }[];
   goTab?: TabId;
   send?: boolean;
+  linkDeal?: boolean;
 } {
   const q = payload.quotation;
   const blocker = commercial.items.find((c) => c.status === "block");
@@ -1514,7 +1583,7 @@ function nextBestAction(
       return { title: "Request commercial approval", detail: "This offer is outside current authority", actions: [] };
     }
     if (!payload.deal?.id) {
-      return { title: "Link quotation to Deal", detail: "Quotations belong to a Deal", actions: [], goTab: "overview" };
+      return { title: "Link quotation to Deal", detail: "Quotations belong to a Deal", actions: [], linkDeal: true };
     }
     if (blocker?.id === "items") {
       return { title: "Add products or services", actions: [], goTab: "items" };
@@ -1589,7 +1658,7 @@ function LinkRow({ label, value, href }: { label: string; value: string; href?: 
     <div className="flex justify-between gap-2">
       <span className="text-sales-text-secondary">{label}</span>
       {href ? (
-        <Link href={href} className="text-right font-medium text-blue-600 hover:underline">
+        <Link href={href} className="text-right font-medium text-sales-text-primary hover:underline">
           {value}
         </Link>
       ) : (
@@ -2978,6 +3047,89 @@ function HistoryModal({
           ) : null}
         </div>
       ) : null}
+    </Modal>
+  );
+}
+
+function DealPickerModal({
+  leadId,
+  busy,
+  onClose,
+  onSelect,
+}: {
+  leadId: string;
+  busy: boolean;
+  onClose: () => void;
+  onSelect: (dealId: string) => void;
+}) {
+  const [deals, setDeals] = useState<Array<{ id: string; name: string; stage: string }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/deals?scope=active")
+      .then((r) => r.json())
+      .then((json: { deals?: Array<{ deal?: { id: string; name: string; stage: string; originating_lead_id: string } }> }) => {
+        if (cancelled) return;
+        const rows = (json.deals ?? [])
+          .map((row) => row.deal)
+          .filter((d): d is { id: string; name: string; stage: string; originating_lead_id: string } => Boolean(d))
+          .filter((d) => d.originating_lead_id === leadId)
+          .map((d) => ({ id: d.id, name: d.name || "Deal", stage: d.stage }));
+        setDeals(rows);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [leadId]);
+
+  return (
+    <Modal title="Link a Deal" onClose={onClose}>
+      <p className="mb-3 text-[13px] text-sales-text-secondary">
+        Choose the Deal this quotation is offering to win.
+      </p>
+      {loading ? (
+        <p className="py-6 text-center text-[13px] text-sales-text-muted">Loading deals…</p>
+      ) : deals.length === 0 ? (
+        <div className="rounded-sales-md border border-sales-border bg-sales-surface-subtle px-3 py-5 text-center">
+          <p className="text-[13px] font-medium text-sales-text-primary">No Deal for this customer yet</p>
+          <p className="mt-1 text-[12.5px] text-sales-text-secondary">
+            Create a Deal from the customer first, then link it here.
+          </p>
+          <Button
+            className="mt-3"
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              window.location.href = `/sales/deals?leadId=${leadId}`;
+            }}
+          >
+            Open Deals
+          </Button>
+        </div>
+      ) : (
+        <ul className="max-h-64 space-y-1.5 overflow-y-auto">
+          {deals.map((d) => (
+            <li key={d.id}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onSelect(d.id)}
+                className="flex w-full items-center justify-between rounded-sales-md border border-sales-border px-3 py-2.5 text-left hover:bg-sales-surface-hover disabled:opacity-60"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-[13px] font-medium text-sales-text-primary">{d.name}</span>
+                  <span className="text-[11px] capitalize text-sales-text-muted">{d.stage.replace(/_/g, " ").toLowerCase()}</span>
+                </span>
+                <Briefcase className="h-4 w-4 shrink-0 text-sales-text-muted" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </Modal>
   );
 }
