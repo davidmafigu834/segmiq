@@ -13,6 +13,7 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { formatMoneyCompact } from "@/lib/quotations/totals";
+import { QUOTATION_FONT_FAMILY, registerQuotationFonts } from "@/lib/quotations/fonts/register-roboto";
 import type { QuoteDocumentModel } from "./types";
 import { TEMPLATE_CHARCOAL, TEMPLATE_INK, TEMPLATE_LINE, TEMPLATE_MUTED } from "./types";
 import { isSvgSrc, fetchRasterDataUri } from "./resolve-image";
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 36,
     fontSize: 8,
     color: TEMPLATE_INK,
-    fontFamily: "Helvetica",
+    fontFamily: QUOTATION_FONT_FAMILY,
     backgroundColor: "#FFFFFF",
   },
   header: { flexDirection: "row", alignItems: "flex-start", minHeight: 52 },
@@ -630,6 +631,7 @@ export function ResidentialPremiumSolarDocument({ model }: { model: QuoteDocumen
 }
 
 export async function renderLayoutPdf(model: QuoteDocumentModel): Promise<Buffer> {
+  registerQuotationFonts();
   const heroSrc = await fetchRasterDataUri(model.hero.imageSrc);
   const logoSrc = model.company.logoDataUri ?? (await fetchRasterDataUri(model.company.logoUrl));
   const prepared: QuoteDocumentModel = {

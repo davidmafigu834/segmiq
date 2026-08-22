@@ -205,7 +205,7 @@ export function PublicQuotationView({ data }: { data: PublicQuotationData }) {
   const solarDoc = data.document && isSolarLayout(data.document.layoutKey) ? data.document : null;
 
   return (
-    <div className="min-h-screen bg-[#f4f4f5] px-3 py-6 sm:px-4 sm:py-10">
+    <div className="min-h-screen bg-[#f4f4f5] px-3 py-6 font-quotation sm:px-4 sm:py-10">
       <div className={`mx-auto w-full ${solarDoc ? "max-w-4xl" : "max-w-2xl"}`}>
         <article className="overflow-hidden rounded-2xl border border-[#e4e4e7] bg-white shadow-sm">
           {!solarDoc ? (

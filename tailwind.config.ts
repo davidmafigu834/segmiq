@@ -27,6 +27,7 @@ const config: Config = {
         display: ["var(--font-instrument-serif)", "ui-serif", "Georgia", "serif"],
         serif: ["var(--font-instrument-serif)", "ui-serif", "Georgia", "serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
+        quotation: ["var(--font-quotation)", "Roboto", "sans-serif"],
       },
       colors: {
         surface: {

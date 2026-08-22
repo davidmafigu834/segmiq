@@ -29,6 +29,10 @@ function cloudRewrites(host) {
 }
 
 const nextConfig = {
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./lib/quotations/fonts/roboto/**/*"],
+    "/dev/**/*": ["./lib/quotations/fonts/roboto/**/*"],
+  },
   // Avoid webpack splitting issues with Supabase in Server Components / RSC (missing vendor-chunks).
   experimental: {
     serverComponentsExternalPackages: [

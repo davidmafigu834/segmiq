@@ -8,6 +8,7 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { formatMoney } from "@/lib/quotations/totals";
+import { QUOTATION_FONT_FAMILY, registerQuotationFonts } from "@/lib/quotations/fonts/register-roboto";
 
 const INK = "#0A0A0A";
 const MUTED = "#6B7280";
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     fontSize: 9.5,
     color: INK,
-    fontFamily: "Helvetica",
+    fontFamily: QUOTATION_FONT_FAMILY,
     backgroundColor: "#FFFFFF",
   },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
@@ -296,5 +297,6 @@ function QuotationDocument({ data }: { data: QuotationPdfData }) {
 }
 
 export async function renderQuotationPdf(data: QuotationPdfData): Promise<Buffer> {
+  registerQuotationFonts();
   return renderToBuffer(<QuotationDocument data={data} />);
 }

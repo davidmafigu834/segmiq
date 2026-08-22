@@ -99,7 +99,7 @@ export function ResidentialPremiumSolarDigital({
   const emptyScope = model.sections.length === 0 || model.sections.every((s) => s.items.length === 0);
 
   return (
-    <article className="overflow-hidden bg-white text-[#1A1A1A]">
+    <article className="overflow-hidden bg-white font-quotation text-[#1A1A1A]">
       <header className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:px-7">
         <div className="min-w-0 sm:w-1/2">
           {logoSrc ? (
