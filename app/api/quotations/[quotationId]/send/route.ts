@@ -15,7 +15,6 @@ import { getPublicBaseUrl } from "@/lib/constants";
 import { sendQuotationOnWhatsApp } from "@/lib/whatsapp/send-quotation";
 import { loadQuotationWithItems } from "@/lib/quotations/persist";
 import { gateQuotationSend } from "@/lib/quotations/evaluate-send";
-import type { QuotationLineItemInput } from "@/types";
 
 const ADVANCE_FROM = new Set(["NEW", "CONTACTED", "NEGOTIATING"]);
 

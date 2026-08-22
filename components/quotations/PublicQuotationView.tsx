@@ -271,7 +271,7 @@ export function PublicQuotationView({ data }: { data: PublicQuotationData }) {
                 <h2 className="text-[15px] font-semibold text-[#09090b]">Optional items</h2>
                 <p className="mt-1 text-[12.5px] text-[#71717a]">These are not included unless you select them.</p>
                 <ul className="mt-3 space-y-2">
-                  {optionalItems.map((it, idx) => {
+                  {optionalItems.map((it) => {
                     const key = it.id ?? it.item_name;
                     const on = selectedOptional.includes(key);
                     return (
