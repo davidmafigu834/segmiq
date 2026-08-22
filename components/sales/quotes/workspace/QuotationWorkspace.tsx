@@ -2622,10 +2622,28 @@ function ProductPicker({
   onCustom,
 }: {
   catalog: CatalogItemRow[];
-  packages: Array<{ id: string; name: string; description: string | null; components?: unknown[] }>;
+  packages: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    pricing_model?: string;
+    flexibility?: string;
+    fixed_price?: number | null;
+    discount_percent?: number;
+    components?: Array<Record<string, unknown>>;
+  }>;
   onClose: () => void;
   onSelect: (c: CatalogItemRow) => void;
-  onSelectPackage: (pkg: { id: string; name: string; description: string | null; components?: unknown[] }) => void;
+  onSelectPackage: (pkg: {
+    id: string;
+    name: string;
+    description: string | null;
+    pricing_model?: string;
+    flexibility?: string;
+    fixed_price?: number | null;
+    discount_percent?: number;
+    components?: Array<Record<string, unknown>>;
+  }) => void;
   onCustom: () => void;
 }) {
   const [q, setQ] = useState("");
