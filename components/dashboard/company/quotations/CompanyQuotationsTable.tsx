@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  AlertTriangle,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   Copy,
   Download,
   ExternalLink,
@@ -14,20 +14,21 @@ import {
   FileText,
   Filter,
   MoreHorizontal,
-  Rows3,
   Search,
-  Send,
-  SlidersHorizontal,
 } from "lucide-react";
-import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { Avatar, Badge, Button, Checkbox } from "@/components/sales/ui";
 import {
   COMPANY_QUOTATIONS_PAGE_SIZE,
-  COMPANY_QUOTATION_TABS,
   DEFAULT_COMPANY_QUOTATION_FILTERS,
+  companyQuotationApprovalLabel,
+  companyQuotationCommercialLabel,
+  companyQuotationEngagement,
+  companyQuotationEngagementLabel,
+  companyQuotationIsPendingApproval,
   companyQuotationMoreFiltersActive,
+  companyQuotationNextAction,
   companyQuotationPageItems,
-  companyQuotationSendLabel,
   type CompanyQuotationEmptyKind,
   type CompanyQuotationFilters,
   type CompanyQuotationsSort,
@@ -35,69 +36,45 @@ import {
 import {
   formatQuoteAmount,
   formatQuoteStatus,
+  formatQuoteValidity,
   getQuoteStatusTone,
 } from "@/lib/sales/quotes";
 import { cn } from "@/lib/ui/cn";
 import type {
+  CompanyQuotationPermissions,
   CompanyQuotationRow,
   CompanyQuotationTab,
   CompanyQuotationsPageData,
 } from "./types";
 
-export type QuotationDensity = "compact" | "comfortable";
-
 function displayQuoteNumber(row: CompanyQuotationRow): string {
-  if (!row.quoteNumber?.trim()) return "Draft";
-  if (row.revisionNumber > 1 && !/-R\d+$/i.test(row.quoteNumber)) {
-    return `${row.quoteNumber}-R${row.revisionNumber}`;
-  }
-  return row.quoteNumber;
+  return row.quoteNumber?.trim() || "Draft";
 }
 
-function updatedLabel(value: string): string {
+function relativeTime(value: string | null | undefined): string {
+  if (!value) return "—";
   const date = parseISO(value);
   if (Number.isNaN(date.getTime())) return "—";
-  if (isToday(date)) return `Today, ${format(date, "h:mm a")}`;
-  if (isYesterday(date)) return `Yesterday, ${format(date, "h:mm a")}`;
-  return format(date, "MMM d, yyyy");
+  return formatDistanceToNowStrict(date, { addSuffix: true });
 }
 
-function SelectFilter({
-  value,
-  onChange,
-  label,
-  options,
-  className,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  label: string;
-  options: Array<{ id: string; label: string }>;
-  className?: string;
-}) {
-  return (
-    <label className={cn("relative min-w-0", className)}>
-      <span className="sr-only">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full appearance-none rounded-[8px] border border-sales-border bg-sales-surface py-0 pl-3 pr-8 text-[12px] font-medium text-sales-text-secondary outline-none transition-colors hover:border-sales-border-strong focus:border-sales-brand-border focus:shadow-[var(--sales-focus-ring)]"
-      >
-        <option value="all">{label}</option>
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        size={14}
-        strokeWidth={1.8}
-        className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-sales-text-muted"
-        aria-hidden
-      />
-    </label>
-  );
+function approvalTone(status: string | null | undefined): "neutral" | "warning" | "success" | "danger" | "brand" {
+  const value = (status || "not_required").replace(/-/g, "_");
+  if (value === "pending" || value === "required") return "warning";
+  if (value === "approved") return "brand";
+  if (value === "changes_requested") return "warning";
+  if (value === "rejected") return "danger";
+  return "neutral";
+}
+
+function engagementTone(
+  state: ReturnType<typeof companyQuotationEngagement>
+): "neutral" | "info" | "warning" | "success" | "danger" {
+  if (state === "viewed") return "info";
+  if (state === "changes_requested") return "warning";
+  if (state === "accepted") return "success";
+  if (state === "declined") return "danger";
+  return "neutral";
 }
 
 function SearchableFilter({
@@ -193,16 +170,20 @@ function SearchableFilter({
   );
 }
 
-function MoreFilters({
+function FiltersPopover({
+  data,
   filters,
   onChange,
 }: {
+  data: CompanyQuotationsPageData;
   filters: CompanyQuotationFilters;
   onChange: (filters: CompanyQuotationFilters) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const active = companyQuotationMoreFiltersActive(filters);
+  const active = companyQuotationMoreFiltersActive(filters) || filters.ownerId !== "all";
+  const field =
+    "h-9 w-full rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[12px] text-sales-text-primary outline-none focus:border-sales-brand-border";
 
   useEffect(() => {
     if (!open) return;
@@ -212,9 +193,6 @@ function MoreFilters({
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
-
-  const field =
-    "h-9 w-full rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[12px] text-sales-text-primary outline-none focus:border-sales-brand-border";
 
   return (
     <div className="relative" ref={ref}>
@@ -226,89 +204,230 @@ function MoreFilters({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
       >
-        More Filters
+        Filters
         {active ? (
           <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-sales-brand px-1 text-[9px] font-bold text-sales-brand-text">
             {
               [
-                filters.exceptionalStatus !== "all",
-                filters.dealPresence !== "all",
-                filters.amountMin !== "",
-                filters.amountMax !== "",
-                filters.dateFrom !== "",
-                filters.dateTo !== "",
+                filters.ownerId !== "all",
+                filters.customerId !== "all",
+                filters.dealId !== "all",
+                filters.quoteStatus !== "all",
+                filters.approval !== "all",
+                filters.commercial !== "all",
+                filters.engagement !== "all",
+                filters.expiry !== "all",
+                filters.currency !== "all",
               ].filter(Boolean).length
             }
           </span>
         ) : null}
       </Button>
       {open ? (
-        <div className="absolute left-0 top-11 z-40 w-[min(320px,calc(100vw-32px))] rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-popover sm:left-auto sm:right-0">
+        <div className="absolute right-0 top-11 z-40 w-[min(360px,calc(100vw-32px))] rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-popover">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-[13px] font-semibold text-sales-text-primary">More filters</p>
+            <p className="text-[13px] font-semibold text-sales-text-primary">Filters</p>
             <button
               type="button"
               className="text-[12px] font-medium text-sales-brand-fg hover:underline"
-              onClick={() => onChange({ ...DEFAULT_COMPANY_QUOTATION_FILTERS, ownerId: filters.ownerId, customerId: filters.customerId, dealId: filters.dealId })}
+              onClick={() => onChange(DEFAULT_COMPANY_QUOTATION_FILTERS)}
             >
               Clear
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <label className="col-span-2">
+              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Salesperson</span>
+              <SearchableFilter
+                value={filters.ownerId}
+                onChange={(ownerId) => onChange({ ...filters, ownerId })}
+                label="All salespeople"
+                options={data.owners.map((owner) => ({ id: owner.id, label: owner.name }))}
+              />
+            </label>
+            <label>
               <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Status</span>
               <select
                 className={field}
-                value={filters.exceptionalStatus}
-                onChange={(event) =>
-                  onChange({ ...filters, exceptionalStatus: event.target.value as "all" | "expired" })
-                }
-              >
-                <option value="all">Any status</option>
-                <option value="expired">Expired</option>
-              </select>
-            </label>
-            <label className="col-span-2">
-              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Deal relationship</span>
-              <select
-                className={field}
-                value={filters.dealPresence}
+                value={filters.quoteStatus}
                 onChange={(event) =>
                   onChange({
                     ...filters,
-                    dealPresence: event.target.value as "all" | "with" | "without",
+                    quoteStatus: event.target.value as CompanyQuotationFilters["quoteStatus"],
                   })
                 }
               >
-                <option value="all">All quotations</option>
-                <option value="with">Has Deal</option>
-                <option value="without">No Deal</option>
+                <option value="all">Any status</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="viewed">Viewed</option>
+                <option value="accepted">Accepted</option>
+                <option value="declined">Declined</option>
+                <option value="expired">Expired</option>
+                <option value="superseded">Superseded</option>
               </select>
             </label>
             <label>
-              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Minimum amount</span>
-              <input
-                type="number"
-                min="0"
+              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Approval</span>
+              <select
                 className={field}
-                placeholder="0"
-                value={filters.amountMin}
-                onChange={(event) => onChange({ ...filters, amountMin: event.target.value })}
-              />
+                value={filters.approval}
+                onChange={(event) =>
+                  onChange({
+                    ...filters,
+                    approval: event.target.value as CompanyQuotationFilters["approval"],
+                  })
+                }
+              >
+                <option value="all">Any approval</option>
+                <option value="not_required">Not required</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="changes_requested">Changes requested</option>
+                <option value="rejected">Rejected</option>
+              </select>
             </label>
             <label>
-              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Maximum amount</span>
-              <input
-                type="number"
-                min="0"
+              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Commercial</span>
+              <select
                 className={field}
-                placeholder="Any"
-                value={filters.amountMax}
-                onChange={(event) => onChange({ ...filters, amountMax: event.target.value })}
-              />
+                value={filters.commercial}
+                onChange={(event) =>
+                  onChange({
+                    ...filters,
+                    commercial: event.target.value as CompanyQuotationFilters["commercial"],
+                  })
+                }
+              >
+                <option value="all">Any commercial</option>
+                <option value="margin_below">Margin below policy</option>
+                <option value="margin_near">Margin near minimum</option>
+                <option value="discount_exception">Discount exception</option>
+              </select>
             </label>
             <label>
-              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Quote date from</span>
+              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Customer</span>
+              <select
+                className={field}
+                value={filters.engagement}
+                onChange={(event) =>
+                  onChange({
+                    ...filters,
+                    engagement: event.target.value as CompanyQuotationFilters["engagement"],
+                  })
+                }
+              >
+                <option value="all">Any engagement</option>
+                <option value="not_viewed">Not viewed</option>
+                <option value="viewed">Viewed</option>
+                <option value="changes_requested">Changes requested</option>
+                <option value="accepted">Accepted</option>
+              </select>
+            </label>
+            <label>
+              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Expiry</span>
+              <select
+                className={field}
+                value={filters.expiry}
+                onChange={(event) =>
+                  onChange({
+                    ...filters,
+                    expiry: event.target.value as CompanyQuotationFilters["expiry"],
+                  })
+                }
+              >
+                <option value="all">Any expiry</option>
+                <option value="expiring_soon">Expiring soon</option>
+                <option value="expired">Expired</option>
+              </select>
+            </label>
+            {data.currencies.length > 1 ? (
+              <label>
+                <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Currency</span>
+                <select
+                  className={field}
+                  value={filters.currency}
+                  onChange={(event) => onChange({ ...filters, currency: event.target.value })}
+                >
+                  <option value="all">All currencies</option>
+                  {data.currencies.map((currency) => (
+                    <option key={currency} value={currency}>
+                      {currency}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            <label className={data.currencies.length > 1 ? "" : "col-span-2"}>
+              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Deal</span>
+              <SearchableFilter
+                value={filters.dealId}
+                onChange={(dealId) => onChange({ ...filters, dealId })}
+                label="All Deals"
+                options={data.deals}
+              />
+            </label>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function DatePopover({
+  filters,
+  onChange,
+}: {
+  filters: CompanyQuotationFilters;
+  onChange: (filters: CompanyQuotationFilters) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const active = Boolean(filters.dateFrom || filters.dateTo);
+  const field =
+    "h-9 w-full rounded-[8px] border border-sales-border bg-sales-surface px-2.5 text-[12px] text-sales-text-primary outline-none focus:border-sales-brand-border";
+
+  useEffect(() => {
+    if (!open) return;
+    function close(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <Button
+        variant="secondary"
+        size="sm"
+        className={cn("h-9", active && "border-sales-brand-border bg-sales-brand-soft")}
+        onClick={() => setOpen((value) => !value)}
+      >
+        Date
+      </Button>
+      {open ? (
+        <div className="absolute right-0 top-11 z-40 w-[min(280px,calc(100vw-32px))] rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-popover">
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Date field</span>
+            <select
+              className={field}
+              value={filters.dateField}
+              onChange={(event) =>
+                onChange({
+                  ...filters,
+                  dateField: event.target.value as CompanyQuotationFilters["dateField"],
+                })
+              }
+            >
+              <option value="created">Created</option>
+              <option value="sent">Sent</option>
+              <option value="response">Response</option>
+            </select>
+          </label>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <label>
+              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">From</span>
               <input
                 type="date"
                 className={field}
@@ -317,7 +436,7 @@ function MoreFilters({
               />
             </label>
             <label>
-              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Quote date to</span>
+              <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">To</span>
               <input
                 type="date"
                 className={field}
@@ -335,29 +454,27 @@ function MoreFilters({
 function RowMenu({
   row,
   alignUp,
+  alsoSells,
   onView,
   onPdf,
   onEdit,
-  onSend,
   onDuplicate,
   onRevise,
-  onMarkAccepted,
-  onMarkDeclined,
   onOpenDeal,
   onOpenCustomer,
+  onOpenWorkspace,
 }: {
   row: CompanyQuotationRow;
   alignUp: boolean;
+  alsoSells: boolean;
   onView: () => void;
   onPdf: () => void;
   onEdit: () => void;
-  onSend: () => void;
   onDuplicate: () => void;
   onRevise: () => void;
-  onMarkAccepted: () => void;
-  onMarkDeclined: () => void;
   onOpenDeal: () => void;
   onOpenCustomer: () => void;
+  onOpenWorkspace: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -371,10 +488,7 @@ function RowMenu({
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
-  const isDraft = row.effectiveStatus === "draft";
   const canRevise = ["sent", "viewed", "rejected", "expired"].includes(row.effectiveStatus);
-  const canOutcome = ["sent", "viewed"].includes(row.effectiveStatus);
-  const sendLabel = companyQuotationSendLabel(row.effectiveStatus);
 
   function action(icon: ReactNode, label: string, handler: () => void) {
     return (
@@ -410,21 +524,17 @@ function RowMenu({
         <div
           role="menu"
           className={cn(
-            "absolute right-0 z-40 w-52 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover",
+            "absolute right-0 z-40 w-56 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover",
             alignUp ? "bottom-9" : "top-9"
           )}
           onClick={(event) => event.stopPropagation()}
         >
-          {action(<ExternalLink />, "View quotation", onView)}
-          {isDraft ? action(<FilePenLine />, "Edit", onEdit) : null}
-          {sendLabel
-            ? action(<Send />, sendLabel === "Send" ? "Send quotation" : "Send again", onSend)
-            : null}
+          {action(<ExternalLink />, "Open quotation", onView)}
+          {alsoSells ? action(<FilePenLine />, "Open quotation workspace", onOpenWorkspace) : null}
+          {alsoSells && row.effectiveStatus === "draft" ? action(<FilePenLine />, "Edit", onEdit) : null}
           {action(<Download />, "View PDF", onPdf)}
-          {canRevise ? action(<FilePlus2 />, "Create revision", onRevise) : null}
-          {action(<Copy />, "Duplicate", onDuplicate)}
-          {canOutcome ? action(<FileText />, "Mark accepted", onMarkAccepted) : null}
-          {canOutcome ? action(<FileText />, "Mark declined", onMarkDeclined) : null}
+          {alsoSells && canRevise ? action(<FilePlus2 />, "Create revision", onRevise) : null}
+          {alsoSells ? action(<Copy />, "Duplicate", onDuplicate) : null}
           {row.dealId ? action(<ExternalLink />, "Open Deal", onOpenDeal) : null}
           {row.contactId ? action(<ExternalLink />, "Open customer", onOpenCustomer) : null}
         </div>
@@ -441,7 +551,7 @@ function emptyCopy(
   if (kind === "search") {
     return {
       title: `No quotations match “${searchQuery}”`,
-      body: "Try a different quotation number, Customer, Deal, or owner.",
+      body: "Try a different quotation number, customer or Deal.",
     };
   }
   if (kind === "filters") {
@@ -451,29 +561,72 @@ function emptyCopy(
     };
   }
   if (kind === "tab") {
-    if (tab === "draft") return { title: "No Draft quotations.", body: "Drafts you create will appear here." };
-    if (tab === "sent") return { title: "No Sent quotations yet.", body: "Quotations delivered to customers appear here." };
-    if (tab === "viewed") return { title: "No Viewed quotations.", body: "Quotes opened on a tracked public link appear here." };
-    if (tab === "accepted") return { title: "No Accepted quotations.", body: "Customer-accepted quotes appear here." };
-    if (tab === "declined") return { title: "No Declined quotations.", body: "Quotes declined by the customer appear here." };
+    if (tab === "pending_approval") {
+      return {
+        title: "No quotations waiting for approval",
+        body: "Your commercial approval queue is clear.",
+      };
+    }
+    if (tab === "needs_attention") {
+      return {
+        title: "Nothing needs attention",
+        body: "There are no quotation exceptions or customer actions requiring review.",
+      };
+    }
+    if (tab === "sent") return { title: "No sent quotations.", body: "Offers waiting on the customer appear here." };
+    if (tab === "accepted") return { title: "No accepted quotations.", body: "Customer-accepted offers appear here." };
+    if (tab === "declined") return { title: "No declined quotations.", body: "Customer-declined offers appear here." };
+    if (tab === "expired") return { title: "No expired quotations.", body: "Offers past their validity date appear here." };
   }
   return {
-    title: "No quotations yet.",
-    body: "Create your first quotation to send a professional offer to a customer.",
+    title: "No quotations yet",
+    body: "Your team's commercial offers will appear here.",
   };
+}
+
+function CommercialCell({
+  row,
+  permissions,
+}: {
+  row: CompanyQuotationRow;
+  permissions: CompanyQuotationPermissions;
+}) {
+  const commercial = companyQuotationCommercialLabel(row, permissions.canSeeMarginPercent);
+  return (
+    <div className="min-w-0">
+      <p
+        className={cn(
+          "truncate text-[11px] font-medium",
+          commercial.tone === "danger" && "text-sales-danger",
+          commercial.tone === "warning" && "text-sales-warning-fg",
+          commercial.tone === "success" && "text-sales-success-fg",
+          commercial.tone === "neutral" && "text-sales-text-secondary"
+        )}
+      >
+        {commercial.primary}
+      </p>
+      {commercial.secondary ? (
+        <p className="mt-0.5 truncate text-[10px] text-sales-text-muted">{commercial.secondary}</p>
+      ) : row.discountPercent != null && row.discountPercent > 0 && row.marginHealth !== "healthy" ? (
+        <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-sales-text-muted">
+          {row.discountPercent}%
+          {row.discountExceedsAuthority ? (
+            <AlertTriangle size={10} className="text-sales-warning-fg" aria-label="Discount above authority" />
+          ) : null}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function CompanyQuotationsTable({
   data,
   rows,
   tab,
-  onTabChange,
   search,
   onSearchChange,
   filters,
   onFiltersChange,
-  density,
-  onDensityChange,
   page,
   pageCount,
   pageSize,
@@ -492,13 +645,11 @@ export function CompanyQuotationsTable({
   onSelect,
   onViewPdf,
   onEdit,
-  onSend,
   onDuplicate,
   onRevise,
-  onMarkAccepted,
-  onMarkDeclined,
   onOpenDeal,
   onOpenCustomer,
+  onOpenWorkspace,
   onExportSelected,
   onClearSearch,
   onClear,
@@ -508,13 +659,10 @@ export function CompanyQuotationsTable({
   data: CompanyQuotationsPageData;
   rows: CompanyQuotationRow[];
   tab: CompanyQuotationTab;
-  onTabChange: (tab: CompanyQuotationTab) => void;
   search: string;
   onSearchChange: (value: string) => void;
   filters: CompanyQuotationFilters;
   onFiltersChange: (filters: CompanyQuotationFilters) => void;
-  density: QuotationDensity;
-  onDensityChange: (density: QuotationDensity) => void;
   page: number;
   pageCount: number;
   pageSize: number;
@@ -533,13 +681,11 @@ export function CompanyQuotationsTable({
   onSelect: (id: string) => void;
   onViewPdf: (row: CompanyQuotationRow) => void;
   onEdit: (row: CompanyQuotationRow) => void;
-  onSend: (row: CompanyQuotationRow) => void;
   onDuplicate: (row: CompanyQuotationRow) => void;
   onRevise: (row: CompanyQuotationRow) => void;
-  onMarkAccepted: (row: CompanyQuotationRow) => void;
-  onMarkDeclined: (row: CompanyQuotationRow) => void;
   onOpenDeal: (row: CompanyQuotationRow) => void;
   onOpenCustomer: (row: CompanyQuotationRow) => void;
+  onOpenWorkspace: (row: CompanyQuotationRow) => void;
   onExportSelected: () => void;
   onClearSearch: () => void;
   onClear: () => void;
@@ -549,44 +695,17 @@ export function CompanyQuotationsTable({
   const allPageSelected = rows.length > 0 && rows.every((row) => selectedIds.has(row.id));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
-  const rowHeight = density === "compact" ? "h-[54px]" : "h-[62px]";
   const empty = emptyCopy(tab, emptyKind, searchQuery);
-  const OwnerFilter = data.owners.length > 8 ? SearchableFilter : SelectFilter;
+  const approvalQueue = tab === "pending_approval";
+  const permissions = data.permissions;
 
   return (
     <section
       className="min-w-0 max-w-full overflow-visible rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
       data-course-target="company-quotations-table"
     >
-      <div
-        className="overflow-x-auto border-b border-sales-border-subtle px-4 pt-1 sm:px-5"
-        data-course-target="company-quotations-tabs"
-      >
-        <div className="flex min-w-max items-end gap-6">
-          {COMPANY_QUOTATION_TABS.map((item) => (
-            <button
-              type="button"
-              key={item.id}
-              className={cn(
-                "relative flex h-11 items-center gap-2 whitespace-nowrap text-[12px] font-medium text-sales-text-secondary",
-                tab === item.id && "font-semibold text-sales-text-primary"
-              )}
-              onClick={() => onTabChange(item.id)}
-            >
-              {item.label}
-              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-sales-neutral-100 px-1.5 py-0.5 text-[10px] tabular-nums text-sales-text-secondary">
-                {data.counts[item.id]}
-              </span>
-              {tab === item.id ? (
-                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-sales-brand" />
-              ) : null}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex min-w-0 flex-col gap-2 border-b border-sales-border-subtle px-3 py-3 sm:px-4 xl:flex-row xl:items-center">
-        <div className="relative min-w-0 flex-1 xl:max-w-[240px]">
+      <div className="flex min-w-0 flex-col gap-2 border-b border-sales-border-subtle px-3 py-3 sm:px-4 sm:flex-row sm:items-center">
+        <div className="relative min-w-0 flex-1">
           <Search
             size={15}
             strokeWidth={1.8}
@@ -595,59 +714,13 @@ export function CompanyQuotationsTable({
           <input
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search quotations..."
+            placeholder="Search quotations, customers or Deals..."
             className="h-9 w-full rounded-[8px] border border-sales-border bg-sales-surface pl-9 pr-3 text-[12px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-brand-border focus:shadow-[var(--sales-focus-ring)]"
           />
         </div>
-        <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 xl:flex xl:flex-1">
-          <OwnerFilter
-            className="xl:w-[132px]"
-            value={filters.ownerId}
-            onChange={(ownerId) => onFiltersChange({ ...filters, ownerId })}
-            label="All Owners"
-            options={data.owners.map((owner) => ({ id: owner.id, label: owner.name }))}
-          />
-          <SearchableFilter
-            className="xl:w-[150px]"
-            value={filters.customerId}
-            onChange={(customerId) => onFiltersChange({ ...filters, customerId })}
-            label="All Customers"
-            options={data.customers}
-          />
-          <SearchableFilter
-            className="xl:w-[132px]"
-            value={filters.dealId}
-            onChange={(dealId) => onFiltersChange({ ...filters, dealId })}
-            label="All Deals"
-            options={data.deals}
-          />
-          <MoreFilters filters={filters} onChange={onFiltersChange} />
-        </div>
-        <div className="hidden shrink-0 items-center rounded-[8px] border border-sales-border bg-sales-surface p-0.5 min-[1100px]:flex">
-          <button
-            type="button"
-            title="Comfortable rows"
-            aria-label="Comfortable rows"
-            className={cn(
-              "inline-flex h-7 w-8 items-center justify-center rounded-[6px] text-sales-text-muted",
-              density === "comfortable" && "bg-sales-neutral-100 text-sales-text-primary"
-            )}
-            onClick={() => onDensityChange("comfortable")}
-          >
-            <SlidersHorizontal size={14} strokeWidth={1.8} />
-          </button>
-          <button
-            type="button"
-            title="Compact rows"
-            aria-label="Compact rows"
-            className={cn(
-              "inline-flex h-7 w-8 items-center justify-center rounded-[6px] text-sales-text-muted",
-              density === "compact" && "bg-sales-neutral-100 text-sales-text-primary"
-            )}
-            onClick={() => onDensityChange("compact")}
-          >
-            <Rows3 size={15} strokeWidth={1.8} />
-          </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <FiltersPopover data={data} filters={filters} onChange={onFiltersChange} />
+          <DatePopover filters={filters} onChange={onFiltersChange} />
         </div>
       </div>
 
@@ -668,7 +741,7 @@ export function CompanyQuotationsTable({
 
       {rows.length > 0 && !loadError ? (
       <div className="hidden min-w-0 max-w-full overflow-x-auto lg:block">
-        <table className="w-full min-w-[860px] border-collapse text-left">
+        <table className="w-full min-w-[980px] border-collapse text-left">
           <thead className="bg-sales-surface-subtle">
             <tr className="h-10 border-b border-sales-border-subtle text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
               <th className="w-10 px-3 text-center">
@@ -680,154 +753,168 @@ export function CompanyQuotationsTable({
                   />
                 </span>
               </th>
-              <th className="w-[18%] px-2">Quotation</th>
-              <th className="w-[17%] px-2">Customer</th>
-              <th className="hidden w-[17%] px-2 xl:table-cell">Deal</th>
-              <th className="w-[12%] px-2">Amount</th>
-              <th className="w-[10%] px-2">Status</th>
-              <th className="hidden w-[10%] px-2 lg:table-cell">Approval</th>
-              <th className="hidden w-[8%] px-2 xl:table-cell">Discount</th>
-              <th className="w-[13%] px-2">Owner</th>
-              <th className="w-[14%] px-2">
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 uppercase tracking-[0.04em]"
-                  onClick={() =>
-                    onSortChange(sort === "updated_desc" ? "updated_asc" : "updated_desc")
-                  }
-                >
-                  Updated
-                  {sort === "updated_desc" ? (
-                    <ChevronDown size={11} strokeWidth={2} />
-                  ) : (
-                    <ChevronUp size={11} strokeWidth={2} />
-                  )}
-                </button>
-              </th>
+              <th className="w-[14%] px-2">Quote</th>
+              <th className="w-[16%] px-2">Customer / Deal</th>
+              <th className="w-[13%] px-2">Salesperson</th>
+              <th className="w-[10%] px-2">Value</th>
+              {approvalQueue ? (
+                <>
+                  <th className="w-[8%] px-2">Discount</th>
+                  {permissions.canSeeMargin ? <th className="w-[8%] px-2">Margin</th> : null}
+                  <th className="w-[14%] px-2">Why approval</th>
+                  <th className="w-[10%] px-2">Submitted</th>
+                  <th className="w-[8%] px-2">Status</th>
+                </>
+              ) : (
+                <>
+                  <th className="w-[11%] px-2">Commercial</th>
+                  <th className="w-[10%] px-2">Approval</th>
+                  <th className="w-[10%] px-2">Customer</th>
+                  <th className="w-[10%] px-2">Valid until</th>
+                  <th className="w-[9%] px-2">Next action</th>
+                </>
+              )}
               <th className="w-10 px-2" />
             </tr>
           </thead>
           <tbody>
             {rows.map((row, index) => {
               const selected = row.id === selectedId;
+              const validity = formatQuoteValidity(row.validUntil, { status: row.effectiveStatus });
+              const engagement = companyQuotationEngagement(row);
               return (
                 <tr
                   key={row.id}
                   data-course-target="company-quotation-row"
                   className={cn(
-                    rowHeight,
-                    "cursor-pointer border-b border-sales-border-subtle transition-colors last:border-b-0 hover:bg-sales-surface-hover",
+                    "h-[74px] cursor-pointer border-b border-sales-border-subtle transition-colors last:border-b-0 hover:bg-sales-surface-hover",
                     selected && "bg-sales-brand-soft hover:bg-sales-brand-soft"
                   )}
                   onClick={() => onSelect(row.id)}
                   aria-selected={selected}
                 >
-                  <td className="px-3 text-center" onClick={(event) => event.stopPropagation()}>
+                  <td className="relative px-3 text-center" onClick={(event) => event.stopPropagation()}>
+                    {selected ? (
+                      <span className="absolute inset-y-0 left-0 w-0.5 bg-sales-brand" aria-hidden />
+                    ) : null}
                     <Checkbox
                       checked={selectedIds.has(row.id)}
                       onCheckedChange={(checked) => onToggleRow(row.id, checked)}
                       aria-label={`Select ${displayQuoteNumber(row)}`}
                     />
                   </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sales-neutral-100 text-sales-text-secondary">
-                        <FileText size={13} strokeWidth={1.8} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-[12px] font-semibold text-sales-text-primary">
-                          {displayQuoteNumber(row)}
-                        </p>
-                        <p className="mt-0.5 truncate text-[10px] text-sales-text-muted">
-                          {row.title}
-                        </p>
-                      </div>
-                    </div>
+                  <td className="px-2 py-2">
+                    <p className="truncate text-[12px] font-semibold text-sales-text-primary">
+                      {displayQuoteNumber(row)}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-sales-text-muted">Version {row.revisionNumber}</p>
                   </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Avatar name={row.customerName} size="xs" />
-                      <div className="min-w-0">
-                        <p className="truncate text-[12px] font-medium text-sales-text-primary">
-                          {row.customerName}
-                        </p>
-                        <p className="mt-0.5 truncate text-[10px] text-sales-text-muted">
-                          {row.customerPhone || row.customerEmail || "No contact details"}
-                        </p>
-                      </div>
-                    </div>
+                  <td className="px-2 py-2">
+                    <p className="truncate text-[12px] font-medium text-sales-text-primary">{row.customerName}</p>
+                    <p className="mt-0.5 truncate text-[10px] text-sales-text-muted">
+                      {row.dealName || row.title}
+                    </p>
                   </td>
-                  <td className="hidden px-2 py-1.5 xl:table-cell">
-                    {row.dealName ? (
-                      <div className="min-w-0">
-                        <p className="truncate text-[11px] font-medium text-sales-text-primary">
-                          {row.dealName}
-                        </p>
-                        <p className="mt-0.5 truncate text-[10px] text-sales-text-muted">
-                          {row.dealValue != null
-                            ? formatQuoteAmount(row.dealValue, row.currency)
-                            : "Value pending"}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-[11px] text-sales-text-muted">No Deal</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-1.5 text-[11px] font-semibold tabular-nums text-sales-text-primary">
-                    {formatQuoteAmount(row.amount, row.currency, {
-                      draftUnset: row.effectiveStatus === "draft",
-                    })}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Badge
-                      tone={getQuoteStatusTone(row.effectiveStatus)}
-                      appearance="soft"
-                      className="!px-2 !py-0.5 !text-[10px]"
-                    >
-                      {formatQuoteStatus(row.effectiveStatus)}
-                    </Badge>
-                  </td>
-                  <td className="hidden px-2 py-1.5 lg:table-cell">
-                    {row.approvalStatus && row.approvalStatus !== "not_required" ? (
-                      <span className="text-[11px] capitalize text-sales-text-secondary">
-                        {row.approvalStatus.replace(/_/g, " ")}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-sales-text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="hidden px-2 py-1.5 tabular-nums text-[11px] text-sales-text-secondary xl:table-cell">
-                    {row.discountPercent != null ? `${row.discountPercent}%` : "—"}
-                  </td>
-                  <td className="px-2 py-1.5">
+                  <td className="px-2 py-2">
                     {row.owner ? (
                       <div className="flex min-w-0 items-center gap-1.5">
                         <Avatar name={row.owner.name} src={row.owner.avatarUrl} size="xs" />
-                        <span className="truncate text-[11px] text-sales-text-primary">
-                          {row.owner.name}
-                        </span>
+                        <span className="truncate text-[11px] text-sales-text-primary">{row.owner.name}</span>
                       </div>
                     ) : (
                       <span className="text-[11px] text-sales-text-muted">Unassigned</span>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-2 py-1.5 text-[10px] text-sales-text-secondary">
-                    {updatedLabel(row.updatedAt)}
+                  <td className="px-2 py-2 text-[12px] font-semibold tabular-nums text-sales-text-primary">
+                    {formatQuoteAmount(row.amount, row.currency, {
+                      draftUnset: row.effectiveStatus === "draft",
+                    })}
                   </td>
-                  <td className="px-2 py-1.5 text-right" onClick={(event) => event.stopPropagation()}>
+                  {approvalQueue ? (
+                    <>
+                      <td className="px-2 py-2 text-[11px] tabular-nums text-sales-text-secondary">
+                        <span className="inline-flex items-center gap-1">
+                          {row.discountPercent != null ? `${row.discountPercent}%` : "—"}
+                          {row.discountExceedsAuthority ? (
+                            <AlertTriangle size={11} className="text-sales-warning-fg" aria-label="Above authority" />
+                          ) : null}
+                        </span>
+                      </td>
+                      {permissions.canSeeMargin ? (
+                        <td className="px-2 py-2 text-[11px] tabular-nums text-sales-text-secondary">
+                          {row.marginPercent != null ? `${row.marginPercent}%` : "—"}
+                        </td>
+                      ) : null}
+                      <td className="px-2 py-2">
+                        <p className="line-clamp-2 text-[11px] text-sales-text-secondary">
+                          {row.approvalReasons[0] || (companyQuotationIsPendingApproval(row) ? "Approval required" : "—")}
+                        </p>
+                      </td>
+                      <td className="whitespace-nowrap px-2 py-2 text-[10px] text-sales-text-secondary">
+                        {relativeTime(row.approvalRequestedAt || row.updatedAt)}
+                      </td>
+                      <td className="px-2 py-2">
+                        <Badge tone="warning" appearance="soft" className="!px-2 !py-0.5 !text-[10px]">
+                          Pending
+                        </Badge>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-2 py-2">
+                        <CommercialCell row={row} permissions={permissions} />
+                      </td>
+                      <td className="px-2 py-2">
+                        <Badge
+                          tone={approvalTone(row.approvalStatus)}
+                          appearance="soft"
+                          className="!px-2 !py-0.5 !text-[10px]"
+                        >
+                          {companyQuotationApprovalLabel(row.approvalStatus)}
+                        </Badge>
+                      </td>
+                      <td className="px-2 py-2">
+                        <Badge
+                          tone={engagementTone(engagement)}
+                          appearance="soft"
+                          className="!px-2 !py-0.5 !text-[10px]"
+                        >
+                          {companyQuotationEngagementLabel(engagement)}
+                        </Badge>
+                      </td>
+                      <td className="px-2 py-2">
+                        <p className="text-[11px] text-sales-text-primary">{validity.primary}</p>
+                        {validity.secondary ? (
+                          <p
+                            className={cn(
+                              "mt-0.5 text-[10px]",
+                              validity.tone === "danger" && "text-sales-danger",
+                              validity.tone === "warning" && "text-sales-warning-fg",
+                              validity.tone === "ok" && "text-sales-text-muted"
+                            )}
+                          >
+                            {validity.secondary.replace(/^in /, "").replace(/^Expires in /, "")}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-2 text-[11px] font-medium text-sales-text-secondary">
+                        {companyQuotationNextAction(row)}
+                      </td>
+                    </>
+                  )}
+                  <td className="px-2 py-2 text-right" onClick={(event) => event.stopPropagation()}>
                     <RowMenu
                       row={row}
                       alignUp={index >= Math.max(4, rows.length - 3)}
+                      alsoSells={permissions.alsoSells}
                       onView={() => onSelect(row.id)}
                       onPdf={() => onViewPdf(row)}
                       onEdit={() => onEdit(row)}
-                      onSend={() => onSend(row)}
                       onDuplicate={() => onDuplicate(row)}
                       onRevise={() => onRevise(row)}
-                      onMarkAccepted={() => onMarkAccepted(row)}
-                      onMarkDeclined={() => onMarkDeclined(row)}
                       onOpenDeal={() => onOpenDeal(row)}
                       onOpenCustomer={() => onOpenCustomer(row)}
+                      onOpenWorkspace={() => onOpenWorkspace(row)}
                     />
                   </td>
                 </tr>
@@ -840,54 +927,52 @@ export function CompanyQuotationsTable({
 
       {rows.length > 0 && !loadError ? (
       <div className="space-y-2 p-3 lg:hidden">
-        {rows.map((row) => (
-          <button
-            type="button"
-            key={row.id}
-            data-course-target="company-quotation-row"
-            className={cn(
-              "w-full rounded-[12px] border border-sales-border bg-sales-surface p-3.5 text-left shadow-sales-card transition-colors hover:bg-sales-surface-hover",
-              selectedId === row.id && "border-sales-brand-border bg-sales-brand-soft"
-            )}
-            onClick={() => onSelect(row.id)}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-semibold text-sales-text-primary">
-                  {displayQuoteNumber(row)}
-                </p>
-                <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">
-                  {row.customerName}
-                </p>
-                <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
-                  {row.dealName || row.title}
-                </p>
-                {row.owner ? (
-                  <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">{row.owner.name}</p>
-                ) : null}
-              </div>
-              <Badge tone={getQuoteStatusTone(row.effectiveStatus)} appearance="soft">
-                {formatQuoteStatus(row.effectiveStatus)}
-              </Badge>
-            </div>
-            <div className="mt-3 flex items-end justify-between gap-3 border-t border-sales-border-subtle pt-3">
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.04em] text-sales-text-muted">Amount</p>
-                <p className="mt-0.5 text-[13px] font-semibold tabular-nums text-sales-text-primary">
-                  {formatQuoteAmount(row.amount, row.currency, {
-                    draftUnset: row.effectiveStatus === "draft",
-                  })}
+        {rows.map((row) => {
+          const engagement = companyQuotationEngagement(row);
+          const commercial = companyQuotationCommercialLabel(row, permissions.canSeeMarginPercent);
+          return (
+            <button
+              type="button"
+              key={row.id}
+              data-course-target="company-quotation-row"
+              className={cn(
+                "w-full rounded-[12px] border border-sales-border bg-sales-surface p-3.5 text-left shadow-sales-card transition-colors hover:bg-sales-surface-hover",
+                selectedId === row.id && "border-sales-brand-border bg-sales-brand-soft"
+              )}
+              onClick={() => onSelect(row.id)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                    {displayQuoteNumber(row)}
+                  </p>
+                  <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{row.customerName}</p>
+                  {row.owner ? (
+                    <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">{row.owner.name}</p>
+                  ) : null}
+                </div>
+                <p className="shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-primary">
+                  {formatQuoteAmount(row.amount, row.currency)}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] uppercase tracking-[0.04em] text-sales-text-muted">Updated</p>
-                <p className="mt-0.5 text-[11px] text-sales-text-secondary">
-                  {updatedLabel(row.updatedAt)}
-                </p>
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-sales-border-subtle pt-3">
+                <Badge tone={getQuoteStatusTone(row.effectiveStatus)} appearance="soft" className="!text-[10px]">
+                  {formatQuoteStatus(row.effectiveStatus)}
+                </Badge>
+                <Badge tone={approvalTone(row.approvalStatus)} appearance="soft" className="!text-[10px]">
+                  {companyQuotationApprovalLabel(row.approvalStatus)}
+                </Badge>
+                {commercial.tone !== "neutral" || commercial.primary !== "—" ? (
+                  <span className="text-[10px] text-sales-text-muted">{commercial.primary}</span>
+                ) : (
+                  <span className="text-[10px] text-sales-text-muted">
+                    {companyQuotationEngagementLabel(engagement)}
+                  </span>
+                )}
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
       ) : null}
 
@@ -913,9 +998,9 @@ export function CompanyQuotationsTable({
           </span>
           <h3 className="mt-3 text-[14px] font-semibold text-sales-text-primary">{empty.title}</h3>
           <p className="mt-1 max-w-sm text-[12px] text-sales-text-muted">{empty.body}</p>
-          {emptyKind === "none" ? (
-            <Button variant="primary" size="sm" className="mt-4" onClick={onCreate}>
-              New Quotation
+          {emptyKind === "none" && permissions.alsoSells ? (
+            <Button variant="secondary" size="sm" className="mt-4" onClick={onCreate}>
+              Create quotation
             </Button>
           ) : emptyKind === "search" ? (
             <Button variant="secondary" size="sm" className="mt-4" onClick={onClearSearch}>
@@ -925,11 +1010,11 @@ export function CompanyQuotationsTable({
             <Button variant="secondary" size="sm" className="mt-4" onClick={onClear}>
               View all quotations
             </Button>
-          ) : (
+          ) : emptyKind !== "none" ? (
             <Button variant="secondary" size="sm" className="mt-4" onClick={onClear}>
               Clear filters
             </Button>
-          )}
+          ) : null}
         </div>
       ) : null}
 

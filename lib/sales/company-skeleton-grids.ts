@@ -9,7 +9,7 @@ export const COMPANY_KPI_GRID = {
   pipeline: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6",
   team: "grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-5",
   customers: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
-  quotations: "grid w-full min-w-0 grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7",
+  quotations: "grid w-full min-w-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   calendar: "grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6",
   reports:
     "grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:grid-cols-[repeat(3,minmax(0,1fr))] layout:grid-cols-[repeat(6,minmax(0,1fr))]",
@@ -21,7 +21,7 @@ export const COMPANY_KPI_COUNTS = {
   pipeline: 6,
   team: 5,
   customers: 5,
-  quotations: 7,
+  quotations: 5,
   calendar: 6,
   reports: 6,
 } as const;

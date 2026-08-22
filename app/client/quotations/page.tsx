@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getCompanyQuotationsPageData } from "@/lib/sales/get-company-quotations-page-data";
+import {
+  emptyCompanyQuotationAttention,
+  emptyCompanyQuotationCounts,
+} from "@/lib/sales/company-quotations";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CompanyQuotationsPage } from "@/components/dashboard/company/quotations/CompanyQuotationsPage";
@@ -39,6 +43,7 @@ export default async function ClientQuotationsPage({
         userId: session.userId,
         role: session.role,
         clientId: session.clientId,
+        alsoSells: Boolean(session.alsoSells),
       },
     })
       .then((data) => ({ ok: true as const, data }))
@@ -64,23 +69,24 @@ export default async function ClientQuotationsPage({
         clientId,
         clientName,
         currency: "USD",
+        currencies: [],
         viewedTrackingEnabled: true,
         rows: [],
-        counts: {
-          all: 0,
-          draft: 0,
-          pending_approval: 0,
-          sent: 0,
-          viewed: 0,
-          accepted: 0,
-          declined: 0,
-          expired: 0,
-        },
+        counts: emptyCompanyQuotationCounts(),
+        attention: emptyCompanyQuotationAttention(),
         totalValue: 0,
         owners: [],
         customers: [],
         deals: [],
         hasTemplates: false,
+        permissions: {
+          alsoSells: Boolean(session.alsoSells),
+          canApprove: true,
+          canSeeMargin: true,
+          canSeeCost: true,
+          canSeeMarginPercent: true,
+          canManageSettings: true,
+        },
         createCandidates: [],
       };
 

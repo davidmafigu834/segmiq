@@ -3,48 +3,43 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  AlertTriangle,
   CircleCheck,
-  CircleX,
+  Clock3,
   Download,
-  Eye,
-  FileText,
   Plus,
   Send,
+  Settings2,
   WalletCards,
 } from "lucide-react";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
 import { Button, Skeleton, useSalesToast } from "@/components/sales/ui";
-import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import {
-  CreateQuoteDialog,
-  type QuotationWithItems,
-} from "@/components/sales/quotes/CreateQuoteDialog";
-import { QuotationBuilder } from "@/components/leads/QuotationBuilder";
+import { CreateQuoteDialog } from "@/components/sales/quotes/CreateQuoteDialog";
 import { CompanyQuotationKpi } from "./CompanyQuotationKpi";
 import { CompanyQuotationDetailPanel } from "./CompanyQuotationDetailPanel";
-import {
-  CompanyQuotationsTable,
-  type QuotationDensity,
-} from "./CompanyQuotationsTable";
+import { CompanyQuotationsTable } from "./CompanyQuotationsTable";
 import {
   COMPANY_QUOTATIONS_PAGE_SIZE,
+  COMPANY_QUOTATION_TABS,
   DEFAULT_COMPANY_QUOTATION_FILTERS,
   buildCompanyQuotationsCsv,
   companyQuotationEmptyKind,
   companyQuotationFiltersActive,
+  companyQuotationIsPendingApproval,
   companyQuotationMatchesFilters,
   companyQuotationMatchesSearch,
   companyQuotationMatchesTab,
-  companyQuotationSendLabel,
+  formatAttentionValue,
   sortCompanyQuotations,
   type CompanyQuotationFilters,
   type CompanyQuotationsSort,
 } from "@/lib/sales/company-quotations";
-import { formatQuoteAmount } from "@/lib/sales/quotes";
 import { fetchQuotationPdfBlob } from "@/lib/share-quotation-pdf";
-import type { QuotationStatus, UserRole } from "@/types";
+import { cn } from "@/lib/ui/cn";
+import type { QuotationWorkspacePayload } from "@/lib/quotations/workspace-data";
+import type { UserRole } from "@/types";
 import type {
   CompanyQuotationRow,
   CompanyQuotationTab,
@@ -76,6 +71,7 @@ export function CompanyQuotationsPage({
   const { toast } = useSalesToast();
   const overlayPanel = useMediaQuery("(max-width: 1279px)");
   const stackedPanel = useMediaQuery("(max-width: 767px)");
+  const permissions = data.permissions;
 
   const [tab, setTab] = useState<CompanyQuotationTab>("all");
   const [search, setSearch] = useState("");
@@ -84,19 +80,13 @@ export function CompanyQuotationsPage({
     DEFAULT_COMPANY_QUOTATION_FILTERS
   );
   const [sort, setSort] = useState<CompanyQuotationsSort>("updated_desc");
-  const [density, setDensity] = useState<QuotationDensity>("compact");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(COMPANY_QUOTATIONS_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [detail, setDetail] = useState<QuotationWithItems | null>(null);
+  const [workspace, setWorkspace] = useState<QuotationWorkspacePayload | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [editing, setEditing] = useState<{
-    quotation: QuotationWithItems;
-    leadPhone: string | null;
-  } | null>(null);
-  const [sendingId, setSendingId] = useState<string | null>(null);
 
   const selectedId = searchParams.get("quotation");
   const selectedRow = useMemo(
@@ -152,20 +142,17 @@ export function CompanyQuotationsPage({
     }
   }, [data.rows, selectedId, setQuotationParam]);
 
-  const loadDetail = useCallback(async (id: string) => {
+  const loadWorkspace = useCallback(async (id: string) => {
     setDetailLoading(true);
     setDetailError(false);
     try {
-      const response = await fetch(`/api/quotations/${id}`);
-      const json = (await response.json()) as {
-        quotation?: QuotationWithItems;
-        error?: string;
-      };
+      const response = await fetch(`/api/quotations/${id}/workspace`);
+      const json = (await response.json()) as QuotationWorkspacePayload & { error?: string };
       if (!response.ok || !json.quotation) throw new Error(json.error || "Failed");
-      setDetail(json.quotation);
-      return json.quotation;
+      setWorkspace(json);
+      return json;
     } catch {
-      setDetail(null);
+      setWorkspace(null);
       setDetailError(true);
       return null;
     } finally {
@@ -175,71 +162,57 @@ export function CompanyQuotationsPage({
 
   useEffect(() => {
     if (!selectedId) {
-      setDetail(null);
+      setWorkspace(null);
       setDetailError(false);
       return;
     }
-    void loadDetail(selectedId);
-  }, [selectedId, loadDetail]);
+    void loadWorkspace(selectedId);
+  }, [selectedId, loadWorkspace]);
 
-  const pct = (count: number) =>
-    data.counts.all > 0 ? `${Math.round((count / data.counts.all) * 100)}% of total` : "0% of total";
-
+  const attention = data.attention;
   const kpis = [
     {
-      label: "Total Quotations",
-      value: String(data.counts.all),
-      supporting: "All time",
-      icon: FileText,
-      tone: "blue" as const,
-      onClick: () => setTab("all"),
+      label: "Pending approval",
+      value: String(attention.pendingApproval),
+      supporting:
+        attention.pendingApproval > 0
+          ? `${formatAttentionValue(attention.pendingApprovalValue, data.currency)} awaiting approval`
+          : "Queue is clear",
+      icon: Clock3,
+      tone: "warning" as const,
+      onClick: () => setTab("pending_approval"),
     },
     {
-      label: "Draft",
-      value: String(data.counts.draft),
-      supporting: pct(data.counts.draft),
-      icon: WalletCards,
+      label: "Needs attention",
+      value: String(attention.needsAttention),
+      supporting: "Follow-up, expiry or changes",
+      icon: AlertTriangle,
       tone: "neutral" as const,
-      onClick: () => setTab("draft"),
+      onClick: () => setTab("needs_attention"),
     },
     {
-      label: "Sent",
-      value: String(data.counts.sent),
-      supporting: pct(data.counts.sent),
+      label: "Awaiting customer",
+      value: String(attention.awaitingCustomer),
+      supporting: "Sent or viewed",
       icon: Send,
       tone: "blue" as const,
       onClick: () => setTab("sent"),
     },
     {
-      label: "Viewed",
-      value: String(data.counts.viewed),
-      supporting: pct(data.counts.viewed),
-      icon: Eye,
-      tone: "purple" as const,
-      onClick: () => setTab("viewed"),
-    },
-    {
-      label: "Accepted",
-      value: String(data.counts.accepted),
-      supporting: pct(data.counts.accepted),
+      label: "Accepted quotation value",
+      value: formatAttentionValue(attention.acceptedValue, data.currency),
+      supporting: "Accepted offers, not revenue",
       icon: CircleCheck,
       tone: "success" as const,
       onClick: () => setTab("accepted"),
     },
     {
-      label: "Declined",
-      value: String(data.counts.declined),
-      supporting: pct(data.counts.declined),
-      icon: CircleX,
-      tone: "danger" as const,
-      onClick: () => setTab("declined"),
-    },
-    {
-      label: "Total Value",
-      value: formatQuoteAmount(data.totalValue, data.currency),
-      supporting: "Quoted · all time",
+      label: "Expiring soon",
+      value: String(attention.expiringSoon),
+      supporting: "Next 7 days",
       icon: WalletCards,
-      tone: "brand" as const,
+      tone: "warning" as const,
+      onClick: () => setTab("needs_attention"),
     },
   ];
 
@@ -260,31 +233,13 @@ export function CompanyQuotationsPage({
     toast({ title: `${rows.length} quotations exported`, tone: "success" });
   }
 
-  async function quotationFor(row: CompanyQuotationRow) {
-    if (detail?.id === row.id) return detail;
-    return loadDetail(row.id);
-  }
-
-  async function openBuilder(row: CompanyQuotationRow) {
-    const quotation = await quotationFor(row);
-    if (!quotation) {
-      toast({ title: "Couldn’t open quotation", tone: "error" });
-      return;
-    }
-    setEditing({ quotation, leadPhone: row.customerPhone });
-  }
-
   async function duplicate(row: CompanyQuotationRow) {
     try {
       const response = await fetch(`/api/quotations/${row.id}/duplicate`, { method: "POST" });
-      const json = (await response.json()) as {
-        quotation?: QuotationWithItems;
-        error?: string;
-      };
+      const json = (await response.json()) as { quotation?: { id: string }; error?: string };
       if (!response.ok || !json.quotation) throw new Error(json.error || "Failed");
-      setEditing({ quotation: json.quotation, leadPhone: row.customerPhone });
       toast({ title: "Draft duplicated", tone: "success" });
-      router.refresh();
+      router.push(`/sales/quotes/${json.quotation.id}`);
     } catch {
       toast({ title: "Couldn’t duplicate quotation", tone: "error" });
     }
@@ -293,38 +248,12 @@ export function CompanyQuotationsPage({
   async function revise(row: CompanyQuotationRow) {
     try {
       const response = await fetch(`/api/quotations/${row.id}/revise`, { method: "POST" });
-      const json = (await response.json()) as {
-        quotation?: QuotationWithItems;
-        error?: string;
-      };
+      const json = (await response.json()) as { quotation?: { id: string }; error?: string };
       if (!response.ok || !json.quotation) throw new Error(json.error || "Failed");
-      setEditing({ quotation: json.quotation, leadPhone: row.customerPhone });
       toast({ title: "Revision created", description: "The original remains locked.", tone: "success" });
-      router.refresh();
+      router.push(`/sales/quotes/${json.quotation.id}`);
     } catch {
       toast({ title: "Couldn’t create a revision", tone: "error" });
-    }
-  }
-
-  async function setStatus(row: CompanyQuotationRow, status: QuotationStatus) {
-    try {
-      const response = await fetch(`/api/quotations/${row.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) throw new Error("Failed");
-      toast({
-        title: status === "accepted" ? "Quotation accepted" : "Quotation declined",
-        description:
-          status === "accepted"
-            ? "The related Deal was not automatically marked Won."
-            : "The related Deal remains independent and was not marked Lost.",
-        tone: "success",
-      });
-      router.refresh();
-    } catch {
-      toast({ title: "Couldn’t update quotation", tone: "error" });
     }
   }
 
@@ -342,62 +271,32 @@ export function CompanyQuotationsPage({
     }
   }
 
-  async function sendOrResend(row: CompanyQuotationRow) {
-    const label = companyQuotationSendLabel(row.effectiveStatus);
-    if (!label) return;
-    if (row.effectiveStatus === "draft") {
-      await openBuilder(row);
-      return;
-    }
-    setSendingId(row.id);
-    try {
-      const response = await fetch(`/api/quotations/${row.id}/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sendViaWhatsApp: true }),
-      });
-      const json = (await response.json().catch(() => ({}))) as {
-        error?: string;
-        whatsappSent?: boolean;
-      };
-      if (!response.ok || json.whatsappSent === false) {
-        toast({
-          title: json.error || "Quotation was not delivered.",
-          description: "The quotation status was not changed.",
-          tone: "error",
-        });
-        return;
-      }
-      toast({ title: "Quotation sent on WhatsApp", tone: "success" });
-      router.refresh();
-    } catch {
-      toast({ title: "Quotation was not delivered.", tone: "error" });
-    } finally {
-      setSendingId(null);
-    }
-  }
-
   const openDeal = (row: CompanyQuotationRow) => {
     if (row.dealId) router.push(`/client/deals/${row.dealId}`);
   };
   const openCustomer = (row: CompanyQuotationRow) => {
     if (row.contactId) router.push(`/client/contacts/${row.contactId}`);
   };
+  const openWorkspace = (row: CompanyQuotationRow) => {
+    if (permissions.alsoSells) {
+      router.push(`/sales/quotes/${row.id}`);
+      return;
+    }
+    setQuotationParam(row.id, true);
+  };
 
   const selectedRows = data.rows.filter((row) => selectedIds.has(row.id));
+  const approvalSelected = selectedRow ? companyQuotationIsPendingApproval(selectedRow) : false;
 
   const table = (
     <CompanyQuotationsTable
       data={data}
       rows={pageRows}
       tab={tab}
-      onTabChange={setTab}
       search={search}
       onSearchChange={setSearch}
       filters={filters}
       onFiltersChange={setFilters}
-      density={density}
-      onDensityChange={setDensity}
       page={safePage}
       pageCount={pageCount}
       pageSize={pageSize}
@@ -433,14 +332,12 @@ export function CompanyQuotationsPage({
       }
       onSelect={(id) => setQuotationParam(id, true)}
       onViewPdf={viewPdf}
-      onEdit={(row) => void openBuilder(row)}
-      onSend={(row) => void sendOrResend(row)}
+      onEdit={(row) => openWorkspace(row)}
       onDuplicate={(row) => void duplicate(row)}
       onRevise={(row) => void revise(row)}
-      onMarkAccepted={(row) => void setStatus(row, "accepted")}
-      onMarkDeclined={(row) => void setStatus(row, "rejected")}
       onOpenDeal={openDeal}
       onOpenCustomer={openCustomer}
+      onOpenWorkspace={openWorkspace}
       onExportSelected={() => downloadCsv(selectedRows, "selected")}
       onClearSearch={() => setSearch("")}
       onClear={() => {
@@ -454,22 +351,22 @@ export function CompanyQuotationsPage({
   const panel = selectedRow ? (
     <CompanyQuotationDetailPanel
       row={selectedRow}
-      detail={detail}
+      workspace={workspace}
       loading={detailLoading}
       error={detailError}
       overlay={overlayPanel}
       stacked={stackedPanel}
-      sending={sendingId === selectedRow.id}
-      onRetry={() => void loadDetail(selectedRow.id)}
+      permissions={permissions}
+      onRetry={() => void loadWorkspace(selectedRow.id)}
       onClose={() => setQuotationParam(null)}
       onViewPdf={() => viewPdf(selectedRow)}
-      onSend={() => void sendOrResend(selectedRow)}
-      onEdit={() => void openBuilder(selectedRow)}
-      onDuplicate={() => void duplicate(selectedRow)}
-      onRevise={() => void revise(selectedRow)}
       onOpenDeal={() => openDeal(selectedRow)}
       onOpenCustomer={() => openCustomer(selectedRow)}
-      onViewFull={() => void openBuilder(selectedRow)}
+      onOpenWorkspace={() => openWorkspace(selectedRow)}
+      onDecided={() => {
+        void loadWorkspace(selectedRow.id);
+        router.refresh();
+      }}
     />
   ) : null;
 
@@ -491,7 +388,7 @@ export function CompanyQuotationsPage({
         canAddLead
         breadcrumb="Company / Quotations"
         title="Quotations"
-        description="Create, manage and track all sales quotations in one place."
+        description="Manage your team's commercial offers, approvals and customer responses."
         primaryAction={
           <>
             <Button
@@ -503,29 +400,44 @@ export function CompanyQuotationsPage({
             >
               Export
             </Button>
-            <Button
-              variant="primary"
-              size="md"
-              leftIcon={<Plus size={16} />}
-              data-course-target="quotation-create"
-              onClick={() => setCreateOpen(true)}
-            >
-              New Quotation
-            </Button>
+            {permissions.canManageSettings ? (
+              <Button
+                variant="secondary"
+                size="md"
+                className="hidden min-[1180px]:inline-flex"
+                leftIcon={<Settings2 size={15} />}
+                onClick={() => router.push("/client/quote-settings")}
+              >
+                Quotation settings
+              </Button>
+            ) : null}
+            {permissions.alsoSells ? (
+              <Button
+                variant="secondary"
+                size="md"
+                leftIcon={<Plus size={16} />}
+                data-course-target="quotation-create"
+                onClick={() => setCreateOpen(true)}
+              >
+                Create quotation
+              </Button>
+            ) : null}
           </>
         }
       />
 
       <div className="flex items-center gap-2 layout:hidden">
-        <Button
-          variant="primary"
-          size="md"
-          className="flex-1"
-          leftIcon={<Plus size={16} />}
-          onClick={() => setCreateOpen(true)}
-        >
-          New Quotation
-        </Button>
+        {permissions.alsoSells ? (
+          <Button
+            variant="secondary"
+            size="md"
+            className="flex-1"
+            leftIcon={<Plus size={16} />}
+            onClick={() => setCreateOpen(true)}
+          >
+            Create quotation
+          </Button>
+        ) : null}
         <Button
           variant="secondary"
           size="md"
@@ -534,34 +446,71 @@ export function CompanyQuotationsPage({
         >
           Export
         </Button>
+        {permissions.canManageSettings ? (
+          <Button
+            variant="secondary"
+            size="md"
+            leftIcon={<Settings2 size={15} />}
+            onClick={() => router.push("/client/quote-settings")}
+          >
+            Settings
+          </Button>
+        ) : null}
       </div>
 
       <div
-        className="grid w-full min-w-0 grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7"
+        className="overflow-x-auto"
+        data-course-target="company-quotations-tabs"
+      >
+        <div className="flex min-w-max items-end gap-5 border-b border-sales-border-subtle">
+          {COMPANY_QUOTATION_TABS.map((item) => (
+            <button
+              type="button"
+              key={item.id}
+              className={cn(
+                "relative flex h-10 items-center gap-2 whitespace-nowrap text-[12px] font-medium text-sales-text-secondary",
+                tab === item.id && "font-semibold text-sales-text-primary"
+              )}
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+              <span className="inline-flex min-w-4 items-center justify-center text-[11px] tabular-nums text-sales-text-muted">
+                {data.counts[item.id]}
+              </span>
+              {tab === item.id ? (
+                <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-sales-brand" />
+              ) : null}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="grid w-full min-w-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5"
         data-course-target="company-quotations-kpis"
       >
         {loadError
           ? kpis.map((item) => (
               <article
                 key={item.label}
-                className="sd-card flex h-full min-h-[104px] min-w-0 flex-col justify-between p-3.5 sm:min-h-[120px] sm:p-4"
+                className="sd-card flex h-full min-h-[76px] min-w-0 flex-col justify-between p-3 sm:min-h-[84px] sm:p-3.5"
               >
-                <div className="flex justify-end">
-                  <Skeleton className="h-8 w-8 rounded-sales-sm" />
-                </div>
-                <div>
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="mt-2 h-7 w-16" />
-                </div>
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-6 w-12" />
               </article>
             ))
-          : kpis.map((item) => (
-              <CompanyQuotationKpi key={item.label} {...item} />
-            ))}
+          : kpis.map((item) => <CompanyQuotationKpi key={item.label} {...item} />)}
       </div>
 
       {selectedRow && !overlayPanel ? (
-        <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(330px,352px)]">
+        <div
+          className={cn(
+            "grid min-w-0 grid-cols-1 items-start gap-4",
+            approvalSelected
+              ? "xl:grid-cols-[minmax(0,1fr)_minmax(400px,460px)]"
+              : "xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]"
+          )}
+        >
           <div className="min-w-0 max-w-full">{table}</div>
           <div className="min-h-0 min-w-0 xl:sticky xl:top-0">{panel}</div>
         </div>
@@ -571,64 +520,22 @@ export function CompanyQuotationsPage({
 
       {selectedRow && overlayPanel ? panel : null}
 
-      <CreateQuoteDialog
-        open={createOpen}
-        candidates={data.createCandidates}
-        hasTemplates={data.hasTemplates}
-        onClose={() => setCreateOpen(false)}
-        onCreated={(quotation, leadPhone) => {
-          setEditing({ quotation, leadPhone });
-          toast({
-            title: "Quotation draft created",
-            description: "Add items and send when it is ready.",
-            tone: "success",
-          });
-          router.refresh();
-        }}
-      />
-
-      {editing ? (
-        <PremiumSheet
-          title={editing.quotation.quote_number ? `Quotation ${editing.quotation.quote_number}` : "New quotation"}
-          description={
-            editing.quotation.status === "draft"
-              ? "Build the quotation using the canonical SegmiQ quote workflow."
-              : "Sent quotations are locked; create a revision to change their contents."
-          }
-          size="lg"
-          maxWidthClass="max-w-5xl"
-          contentClassName="p-4 sm:p-5"
-          onClose={() => setEditing(null)}
-        >
-          <QuotationBuilder
-            quotation={editing.quotation}
-            clientId={data.clientId}
-            leadPhone={editing.leadPhone}
-            readOnly={editing.quotation.status !== "draft"}
-            onSaved={(quotation) => {
-              setEditing((current) => (current ? { ...current, quotation } : current));
-              router.refresh();
-            }}
-            onSent={() => {
-              setEditing(null);
-              toast({ title: "Quotation sent", tone: "success" });
-              router.refresh();
-            }}
-            onClose={() => setEditing(null)}
-            onRevise={
-              editing.quotation.status !== "draft"
-                ? () => {
-                    const row = data.rows.find((item) => item.id === editing.quotation.id);
-                    if (row) void revise(row);
-                  }
-                : undefined
-            }
-            onDuplicate={() => {
-              const row = data.rows.find((item) => item.id === editing.quotation.id);
-              if (row) void duplicate(row);
-            }}
-          />
-        </PremiumSheet>
+      {permissions.alsoSells ? (
+        <CreateQuoteDialog
+          open={createOpen}
+          candidates={data.createCandidates}
+          hasTemplates={data.hasTemplates}
+          onClose={() => setCreateOpen(false)}
+          onCreated={(quotation) => {
+            setCreateOpen(false);
+            toast({
+              title: "Quotation draft created",
+              description: "Continue in the quotation workspace.",
+              tone: "success",
+            });
+            router.push(`/sales/quotes/${quotation.id}`);
+          }}
+        />
       ) : null}
     </CompanyWorkspaceShell>
   );

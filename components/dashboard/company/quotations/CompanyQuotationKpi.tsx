@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
-import { MetricValue } from "@/components/sales/ui/DataDisplay";
 
 const tones = {
   blue: "bg-sales-info-soft text-sales-info-fg",
@@ -8,6 +7,7 @@ const tones = {
   purple: "bg-sales-purple-soft text-sales-purple-fg",
   success: "bg-sales-success-soft text-sales-success-fg",
   danger: "bg-sales-danger-soft text-sales-danger-fg",
+  warning: "bg-sales-warning-soft text-sales-warning-fg",
   brand: "bg-sales-brand-soft-solid text-sales-brand-fg",
 } as const;
 
@@ -26,10 +26,9 @@ export function CompanyQuotationKpi({
   tone: keyof typeof tones;
   onClick?: () => void;
 }) {
-  const compactValue = value.length > 10;
   const className = cn(
-    "sd-card group flex h-full w-full min-h-[104px] min-w-0 flex-col justify-between p-3.5 text-left",
-    "transition-[border-color,box-shadow] duration-150 sm:min-h-[120px] sm:p-4",
+    "sd-card group flex h-full w-full min-h-[76px] min-w-0 flex-col justify-between p-3 text-left",
+    "transition-[border-color,box-shadow] duration-150 sm:min-h-[84px] sm:p-3.5",
     onClick &&
       "hover:border-sales-border-strong hover:shadow-sales-card-hover focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]"
   );
@@ -37,24 +36,23 @@ export function CompanyQuotationKpi({
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 pr-1 text-[12px] font-medium leading-snug text-sales-text-secondary">
+        <p className="min-w-0 pr-1 text-[11px] font-medium leading-snug text-sales-text-secondary">
           {label}
         </p>
         <span
           className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-sales-sm sm:h-8 sm:w-8",
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px]",
             tones[tone]
           )}
         >
-          <Icon size={16} strokeWidth={1.8} aria-hidden className="sm:size-[18px]" />
+          <Icon size={13} strokeWidth={1.8} aria-hidden />
         </span>
       </div>
       <div className="min-w-0">
-        <MetricValue
-          value={value}
-          className={compactValue ? "text-[18px] sm:text-[22px] layout:text-[24px]" : undefined}
-        />
-        <p className="mt-2 truncate text-[12px] leading-snug text-sales-text-muted">{supporting}</p>
+        <p className="truncate text-[18px] font-semibold tabular-nums leading-none text-sales-text-primary sm:text-[20px]">
+          {value}
+        </p>
+        <p className="mt-1.5 truncate text-[11px] leading-snug text-sales-text-muted">{supporting}</p>
       </div>
     </>
   );
