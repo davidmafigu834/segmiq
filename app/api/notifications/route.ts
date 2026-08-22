@@ -39,7 +39,7 @@ export async function GET(req: Request) {
       .eq("user_id", auth.userId)
       .order("created_at", { ascending: false })
       .limit(limit);
-    data = fallback.data;
+    data = (fallback.data ?? []).map((row) => ({ ...row, quotation_id: null })) as typeof data;
     error = fallback.error;
   }
 
