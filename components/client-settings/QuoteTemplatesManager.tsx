@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button, Input, TextArea } from "@/components/sales/ui";
 import type { QuoteTemplateRow, QuotationLineItemInput } from "@/types";
+import { RESIDENTIAL_PREMIUM_SOLAR_KEY } from "@/lib/quotations/layouts/types";
+import { QuoteTemplatePreviewDialog } from "@/components/client-settings/QuoteTemplatePreviewDialog";
 
 type TemplateItemDraft = QuotationLineItemInput & { key: string };
 
@@ -28,6 +30,7 @@ export function QuoteTemplatesManager({
 
   const [newName, setNewName] = useState("");
   const [adding, setAdding] = useState(false);
+  const [preview, setPreview] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     fetch(`/api/clients/${clientId}/quote-templates?all=1`)
@@ -134,7 +137,7 @@ export function QuoteTemplatesManager({
         <div>
           <h3 className="text-[15px] font-semibold text-sales-text-primary">Quote templates</h3>
           <p className="mt-0.5 text-[13px] text-sales-text-secondary">
-            Pre-built quotations your team can start from — items, tax, terms and validity in one click.
+            Starting points for common offers. Click Residential Premium Solar to preview the full populated layout.
           </p>
         </div>
       )}
@@ -171,6 +174,11 @@ export function QuoteTemplatesManager({
               template={t}
               expanded={expandedId === t.id}
               saving={saving}
+              onPreview={
+                t.layout_key === RESIDENTIAL_PREMIUM_SOLAR_KEY || t.builtin_key === RESIDENTIAL_PREMIUM_SOLAR_KEY
+                  ? () => setPreview({ id: t.id, name: t.name })
+                  : undefined
+              }
               onToggle={() => {
                 setExpandedId((cur) => (cur === t.id ? null : t.id));
                 if (expandedId !== t.id) void loadOne(t.id);
@@ -186,6 +194,15 @@ export function QuoteTemplatesManager({
         </ul>
       )}
 
+      {preview ? (
+        <QuoteTemplatePreviewDialog
+          clientId={clientId}
+          templateId={preview.id}
+          templateName={preview.name}
+          onClose={() => setPreview(null)}
+        />
+      ) : null}
+
       {toast ? <p className="text-[12px] text-sales-success-fg">{toast}</p> : null}
     </section>
   );
@@ -195,6 +212,7 @@ function TemplateEditorRow({
   template,
   expanded,
   saving,
+  onPreview,
   onToggle,
   onSave,
   onRemove,
@@ -204,6 +222,7 @@ function TemplateEditorRow({
   template: QuoteTemplateRow;
   expanded: boolean;
   saving: boolean;
+  onPreview?: () => void;
   onToggle: () => void;
   onSave: (items: TemplateItemDraft[]) => void;
   onRemove: () => void;
@@ -235,23 +254,48 @@ function TemplateEditorRow({
 
   return (
     <li className="rounded-[10px] border border-sales-border">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-sales-surface-hover"
-      >
-        <span className="text-[13px] font-semibold text-sales-text-primary">
-          {template.name}
-          {template.is_builtin ? (
-            <span className="ml-2 rounded-full bg-sales-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted">
-              Built-in
-            </span>
+      <div className="flex items-stretch">
+        <button
+          type="button"
+          onClick={onPreview ?? onToggle}
+          className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left hover:bg-sales-surface-hover"
+        >
+          {template.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={template.thumbnail}
+              alt=""
+              className="h-14 w-10 shrink-0 rounded border border-sales-border-subtle bg-[#F3F3F3] object-cover object-top"
+            />
           ) : null}
-        </span>
-        <span className="text-[12px] text-sales-text-muted">
-          {template.is_active ? `${template.items?.length ?? 0} items` : "Archived"}
-        </span>
-      </button>
+          <span className="min-w-0">
+            <span className="block text-[13px] font-semibold text-sales-text-primary">
+              {template.name}
+              {template.is_builtin ? (
+                <span className="ml-2 rounded-full bg-sales-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted">
+                  Built-in
+                </span>
+              ) : null}
+            </span>
+            <span className="mt-0.5 block text-[12px] text-sales-text-muted">
+              {onPreview
+                ? "Click to preview the full populated quotation"
+                : template.is_active
+                  ? `${template.items?.length ?? 0} items`
+                  : "Archived"}
+            </span>
+          </span>
+        </button>
+        {onPreview ? (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="shrink-0 px-3 text-[12px] font-medium text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
+          >
+            {expanded ? "Hide details" : "Details"}
+          </button>
+        ) : null}
+      </div>
 
       {expanded ? (
         <div className="space-y-3 border-t border-sales-border-subtle px-4 py-4">
@@ -396,6 +440,11 @@ function TemplateEditorRow({
               <p className="w-full text-[12px] text-sales-text-secondary">
                 Built-in templates cannot be edited. Duplicate to customise hero, headline and accent.
               </p>
+            ) : null}
+            {onPreview ? (
+              <Button variant={template.is_builtin ? "primary" : "secondary"} size="sm" onClick={onPreview}>
+                Preview
+              </Button>
             ) : null}
             {!template.is_builtin ? (
               <Button variant="primary" size="sm" loading={saving} onClick={() => onSave(items)}>

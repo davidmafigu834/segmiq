@@ -1,5 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { saveTemplateItems } from "@/lib/quotations/templates";
+import { ensureQuotationSettings } from "@/lib/quotations/quote-number";
 import { BUILTIN_TEMPLATES, getBuiltinTemplate } from "./registry";
+import {
+  SOLAR_BUILTIN_PAYMENT_LABEL,
+  SOLAR_BUILTIN_STARTER_ITEMS,
+  SOLAR_BUILTIN_TERMS,
+  SOLAR_BUILTIN_WARRANTY,
+} from "./builtin-starter";
 import { RESIDENTIAL_PREMIUM_SOLAR_KEY } from "./types";
 
 export const BUILTIN_TEMPLATE_ID_PREFIX = "builtin:";
@@ -26,10 +34,30 @@ export type PickerTemplate = {
   recommended?: boolean;
 };
 
+async function populateSolarBuiltin(
+  supabase: SupabaseClient,
+  templateId: string,
+  taxRate: number
+) {
+  await supabase
+    .from("quote_templates")
+    .update({
+      tax_rate: taxRate,
+      terms: SOLAR_BUILTIN_TERMS,
+      payment_terms_label: SOLAR_BUILTIN_PAYMENT_LABEL,
+      warranty_terms: SOLAR_BUILTIN_WARRANTY,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", templateId);
+  await saveTemplateItems(supabase, templateId, SOLAR_BUILTIN_STARTER_ITEMS, taxRate, 0);
+}
+
 export async function ensureBuiltinQuoteTemplates(
   supabase: SupabaseClient,
   clientId: string
 ): Promise<Array<Record<string, unknown>>> {
+  const settings = await ensureQuotationSettings(supabase, clientId).catch(() => null);
+  const taxRate = Number(settings?.default_tax_rate) || 0;
   const ensured: Array<Record<string, unknown>> = [];
   for (const def of BUILTIN_TEMPLATES) {
     const { data: existing } = await supabase
@@ -39,7 +67,15 @@ export async function ensureBuiltinQuoteTemplates(
       .eq("builtin_key", def.key)
       .maybeSingle();
     if (existing) {
-      ensured.push(existing);
+      const { count } = await supabase
+        .from("quote_template_line_items")
+        .select("id", { count: "exact", head: true })
+        .eq("template_id", existing.id as string);
+      if (!count && def.key === RESIDENTIAL_PREMIUM_SOLAR_KEY) {
+        await populateSolarBuiltin(supabase, existing.id as string, taxRate);
+      }
+      const full = await supabase.from("quote_templates").select("*").eq("id", existing.id as string).maybeSingle();
+      ensured.push(full.data ?? existing);
       continue;
     }
     const { data: created, error } = await supabase
@@ -56,13 +92,21 @@ export async function ensureBuiltinQuoteTemplates(
         builtin_key: def.key,
         layout_version: def.layoutVersion,
         is_active: true,
-        tax_rate: 0,
+        tax_rate: taxRate,
         other_amount: 0,
         valid_for_days: 30,
+        terms: SOLAR_BUILTIN_TERMS,
+        payment_terms_label: SOLAR_BUILTIN_PAYMENT_LABEL,
+        warranty_terms: SOLAR_BUILTIN_WARRANTY,
       })
       .select("*")
       .single();
-    if (!error && created) ensured.push(created);
+    if (!error && created) {
+      if (def.key === RESIDENTIAL_PREMIUM_SOLAR_KEY) {
+        await saveTemplateItems(supabase, created.id as string, SOLAR_BUILTIN_STARTER_ITEMS, taxRate, 0);
+      }
+      ensured.push(created);
+    }
   }
   return ensured;
 }

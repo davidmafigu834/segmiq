@@ -57,6 +57,8 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   let templateNotes: string | null | undefined;
   let templateTerms: string | null | undefined;
   let templateValidDays: number | undefined;
+  let templatePayment: string | null | undefined;
+  let templateWarranty: string | null | undefined;
   let resolvedTemplateId: string | null = null;
   let templateLayoutKey: string | null = null;
   let templateLayoutVersion: number | null = null;
@@ -100,6 +102,8 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
         templateNotes = (template.notes as string | null) ?? null;
         templateTerms = (template.terms as string | null) ?? null;
         templateValidDays = Number(template.valid_for_days) || 30;
+        templatePayment = (template.payment_terms_label as string | null) ?? null;
+        templateWarranty = (template.warranty_terms as string | null) ?? null;
       }
     }
   }
@@ -185,7 +189,8 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
       valid_until: validUntil,
       notes: body.notes ?? templateNotes ?? null,
       terms: body.terms ?? templateTerms ?? (settings.default_terms as string | null) ?? null,
-      payment_terms_label: paymentTerms,
+      payment_terms_label: templatePayment || paymentTerms,
+      warranty_terms: templateWarranty ?? null,
       prepared_by_id: preparedById,
       prepared_by_name: preparedByName,
       revision_number: 1,

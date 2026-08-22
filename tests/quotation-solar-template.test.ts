@@ -146,4 +146,10 @@ describe("residential premium solar template mapping", () => {
     assert.equal(minimal.site.length, 0);
     assert.equal(minimal.sections.flatMap((s) => s.items).length, 2);
   });
+
+  it("ships a starter catalogue for the built-in solar template", async () => {
+    const { SOLAR_BUILTIN_STARTER_ITEMS } = await import("../lib/quotations/layouts/builtin-starter");
+    assert.equal(SOLAR_BUILTIN_STARTER_ITEMS.length, 7);
+    assert.ok(SOLAR_BUILTIN_STARTER_ITEMS.every((it) => it.item_name && it.unit_price > 0));
+  });
 });

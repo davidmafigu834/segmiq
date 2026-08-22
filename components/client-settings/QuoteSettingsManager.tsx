@@ -69,7 +69,7 @@ const SECTION_COPY: Record<QuoteSettingsTab, { title: string; description: strin
   },
   templates: {
     title: "Templates",
-    description: "Starting points for common offers — items, tax, terms and validity.",
+    description: "Starting points for common offers. Preview Residential Premium Solar as a full populated quotation.",
   },
   customer: {
     title: "Customer experience",

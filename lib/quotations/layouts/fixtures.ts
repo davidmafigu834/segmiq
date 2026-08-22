@@ -10,6 +10,7 @@ import {
   type QuoteDocumentModel,
 } from "./types";
 import { solarMetrics, siteRows } from "./map-fields";
+import { SOLAR_BUILTIN_STARTER_ITEMS } from "./builtin-starter";
 
 type FixtureKind = "populated" | "minimal" | "long" | "multipage";
 
@@ -104,57 +105,15 @@ function commercialFrom(
 
 function populatedItems() {
   return moneyItems(
-    [
-      {
-        name: "550W Mono PERC Modules",
-        description: "High-efficiency rooftop array",
-        brandModel: "JA Solar JAM72S30",
-        quantity: 12,
-        unit: "Pcs",
-        unitPrice: 185,
-        sectionTitle: "Equipment",
-      },
-      {
-        name: "Hybrid Inverter 5kW",
-        brandModel: "Deye SUN-5K-SG",
-        quantity: 1,
-        unitPrice: 980,
-        sectionTitle: "Equipment",
-      },
-      {
-        name: "Lithium Battery 5.12kWh",
-        brandModel: "Dyness 5.12",
-        quantity: 1,
-        unitPrice: 1420,
-        sectionTitle: "Equipment",
-      },
-      {
-        name: "Roof mounting kit",
-        quantity: 1,
-        unitPrice: 340,
-        sectionTitle: "Equipment",
-      },
-      {
-        name: "DC/AC cabling & protection",
-        quantity: 1,
-        unitPrice: 260,
-        sectionTitle: "Equipment",
-      },
-      {
-        name: "Design & engineering",
-        quantity: 1,
-        unit: "Lot",
-        unitPrice: 220,
-        sectionTitle: "Installation",
-      },
-      {
-        name: "Install, test & commission",
-        quantity: 1,
-        unit: "Lot",
-        unitPrice: 890,
-        sectionTitle: "Installation",
-      },
-    ],
+    SOLAR_BUILTIN_STARTER_ITEMS.map((it) => ({
+      name: it.item_name,
+      description: it.description ?? undefined,
+      brandModel: it.sku ?? undefined,
+      quantity: it.quantity,
+      unit: it.unit ?? undefined,
+      unitPrice: it.unit_price,
+      sectionTitle: it.group_label ?? null,
+    })),
     15
   );
 }

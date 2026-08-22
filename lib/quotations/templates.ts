@@ -19,6 +19,9 @@ export async function saveTemplateItems(
       unit_price: Number(it.unit_price) || 0,
       quantity: Number(it.quantity) || 0,
       group_label: it.group_label?.trim() || null,
+      unit: it.unit?.trim() || "Each",
+      sku: it.sku?.trim() || null,
+      is_optional: Boolean(it.is_optional),
       sort_order: idx,
     }));
 
