@@ -3,8 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageQuotation } from "@/lib/quotations/quote-access";
 import { allocateQuoteNumber } from "@/lib/quotations/quote-number";
 import { baseQuoteNumber, revisionQuoteNumber } from "@/lib/quotations/copy-quote";
-import { buildQuotationPdfData } from "@/lib/quotations/build-pdf-data";
-import { renderQuotationPdf } from "@/lib/quotations/quotation-pdf";
+import { renderQuotationOutput } from "@/lib/quotations/layouts/render-output";
+import { capturePresentationSnapshot } from "@/lib/quotations/layouts/build-document-model";
 import { putObject, getPublicUrl, isR2Configured } from "@/lib/storage/r2";
 import { logDocumentSent, logStatusChanged } from "@/lib/lead-events";
 import { logQuotationEvent } from "@/lib/quotations/events";
@@ -101,12 +101,12 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
         .eq("id", params.quotationId);
     }
 
-    const pdfData = await buildQuotationPdfData(supabase, params.quotationId);
-    if (!pdfData) return NextResponse.json({ error: "Failed to assemble quotation" }, { status: 500 });
+    const output = await renderQuotationOutput(supabase, params.quotationId, getPublicBaseUrl());
+    if (!output) return NextResponse.json({ error: "Failed to assemble quotation" }, { status: 500 });
 
     let pdfBuffer: Buffer;
     try {
-      pdfBuffer = await renderQuotationPdf(pdfData);
+      pdfBuffer = output.buffer;
     } catch (err) {
       console.error("[quotation resend] PDF render error:", err);
       return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
@@ -256,12 +256,23 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     .eq("id", params.quotationId);
 
   // Render branded PDF first — don't mark as sent until this succeeds.
-  const pdfData = await buildQuotationPdfData(supabase, params.quotationId);
-  if (!pdfData) return NextResponse.json({ error: "Failed to assemble quotation" }, { status: 500 });
+  let presentationSnapshot: Record<string, unknown> | null = null;
+  try {
+    presentationSnapshot = await capturePresentationSnapshot(
+      supabase,
+      params.quotationId,
+      getPublicBaseUrl()
+    );
+  } catch (err) {
+    console.error("[quotation send] presentation snapshot error:", err);
+  }
+
+  const output = await renderQuotationOutput(supabase, params.quotationId, getPublicBaseUrl());
+  if (!output) return NextResponse.json({ error: "Failed to assemble quotation" }, { status: 500 });
 
   let pdfBuffer: Buffer;
   try {
-    pdfBuffer = await renderQuotationPdf(pdfData);
+    pdfBuffer = output.buffer;
   } catch (err) {
     console.error("[quotation send] PDF render error:", err);
     return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
@@ -296,6 +307,13 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       updated_at: sentAt,
     })
     .eq("id", params.quotationId);
+
+  if (presentationSnapshot) {
+    await supabase
+      .from("quotations")
+      .update({ presentation_snapshot: presentationSnapshot })
+      .eq("id", params.quotationId);
+  }
 
   // Supersede the parent revision when sending an updated quote.
   const parentId = quote.parent_quotation_id as string | null;

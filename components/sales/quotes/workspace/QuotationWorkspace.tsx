@@ -68,6 +68,9 @@ import type {
   QuotationTimelineMilestone,
 } from "@/types";
 import type { QuotationWorkspacePayload } from "@/lib/quotations/workspace-data";
+import { SolarTemplateFieldsPanel } from "@/components/sales/quotes/workspace/SolarTemplateFieldsPanel";
+import { isSolarLayout } from "@/lib/quotations/layouts/registry";
+import { solarMetrics } from "@/lib/quotations/layouts/map-fields";
 
 function getQuoteStatusToneSafe(status: string) {
   return getQuoteStatusTone(status as QuotationStatus);
@@ -165,6 +168,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const [warrantyTerms, setWarrantyTerms] = useState("");
   const [commercialNotes, setCommercialNotes] = useState("");
   const [offerOptions, setOfferOptions] = useState<QuotationOfferOption[]>([]);
+  const [templateFields, setTemplateFields] = useState<Record<string, unknown>>({});
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -234,6 +238,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     setWarrantyTerms(quote.warranty_terms ?? "");
     setCommercialNotes(quote.commercial_notes ?? "");
     setOfferOptions(quote.offer_options ?? []);
+    setTemplateFields((quote.template_fields as Record<string, unknown> | undefined) ?? {});
     setSavedAt(quote.updated_at ? new Date(quote.updated_at) : null);
     dirtyRef.current = false;
     skipFirstSave.current = true;
@@ -315,6 +320,18 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     [q, payload, currency, validUntil, paymentTerms, items, totals, governance, approvalEval]
   );
 
+  const templateReadiness = useMemo(() => {
+    if (!q || !isSolarLayout(q.template_layout_key)) return null;
+    const metrics = solarMetrics(templateFields, true);
+    return [
+      { id: "customer", label: "Customer information", ok: Boolean(payload?.customer.name), optional: false },
+      { id: "items", label: "Equipment", ok: items.filter((it) => !it.is_optional).length > 0, optional: false },
+      { id: "payment", label: "Payment terms", ok: Boolean(paymentTerms), optional: false },
+      { id: "summary", label: "Project information", ok: Boolean(templateFields.project_summary), optional: true },
+      { id: "metrics", label: "Solar generation estimate not provided", ok: metrics.length > 0, optional: true },
+    ];
+  }, [q, payload, items, paymentTerms, templateFields]);
+
   const persist = useCallback(async () => {
     if (readOnly || !q) return;
     setSaveState("saving");
@@ -338,6 +355,8 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         note_blocks: noteBlocks,
         timeline_milestones: milestones,
         offer_options: offerOptions,
+        template_fields: templateFields,
+        project_summary: (templateFields.project_summary as string | undefined) || null,
         expected_updated_at: q.updated_at,
         items: items.map((it) => {
           const { key, ...rest } = it;
@@ -379,6 +398,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     warrantyTerms,
     commercialNotes,
     offerOptions,
+    templateFields,
     sections,
     noteBlocks,
     milestones,
@@ -419,6 +439,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     warrantyTerms,
     commercialNotes,
     offerOptions,
+    templateFields,
   ]);
 
   useEffect(() => {
@@ -549,11 +570,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   }
 
   async function preview() {
-    if (q?.public_token) {
-      window.open(`/quote/${q.public_token}`, "_blank");
-      return;
-    }
-    await downloadPdf();
+    window.open(`/api/quotations/${quotationId}/pdf`, "_blank");
   }
 
   async function deleteDraft() {
@@ -927,6 +944,9 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               offerOptions={offerOptions}
               readOnly={readOnly}
               onChangeOptions={(next) => setOfferOptions(next)}
+              solarLayout={isSolarLayout(q.template_layout_key)}
+              templateFields={templateFields}
+              onChangeTemplateFields={setTemplateFields}
             />
           ) : null}
 
@@ -1051,6 +1071,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
                 router.push(`/sales/tasks?leadId=${payload.customer.leadId}`);
               }}
               onLinkDeal={() => setDealPickerOpen(true)}
+              templateReadiness={templateReadiness}
             />
         </aside>
       </div>
@@ -1113,6 +1134,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
                 setRailOpen(false);
                 setDealPickerOpen(true);
               }}
+              templateReadiness={templateReadiness}
             />
           </div>
         </div>
@@ -1253,6 +1275,7 @@ function CommercialRail({
   onCall,
   onFollowUp,
   onLinkDeal,
+  templateReadiness,
 }: {
   payload: QuotationWorkspacePayload;
   totals: QuoteTotals;
@@ -1267,6 +1290,7 @@ function CommercialRail({
   onCall: () => void;
   onFollowUp: () => void;
   onLinkDeal: () => void;
+  templateReadiness?: Array<{ id: string; label: string; ok: boolean; optional: boolean }> | null;
 }) {
   const q = payload.quotation;
   const status = q.status;
@@ -1551,6 +1575,25 @@ function CommercialRail({
           <p className="mt-2 text-[11px] font-medium text-sales-success">Ready to send</p>
         )}
       </div>
+
+      {templateReadiness ? (
+        <div className="rounded-sales-md border border-sales-border bg-sales-surface px-3.5 py-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-[12px] font-semibold text-sales-text-primary">Template readiness</p>
+            <p className="text-[11px] text-sales-text-muted">Presentation only</p>
+          </div>
+          <ul className="space-y-1.5 text-[12.5px]">
+            {templateReadiness.map((row) => (
+              <li key={row.id} className="flex items-start gap-1.5">
+                <span className={row.ok ? "text-sales-success" : "text-amber-600"}>{row.ok ? "✓" : "○"}</span>
+                <span className="text-sales-text-secondary">
+                  {row.ok && row.id === "metrics" ? "Solar generation estimate" : row.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1743,6 +1786,9 @@ function OverviewTab({
   offerOptions,
   readOnly,
   onChangeOptions,
+  solarLayout,
+  templateFields,
+  onChangeTemplateFields,
 }: {
   totals: QuoteTotals;
   currency: string;
@@ -1753,6 +1799,9 @@ function OverviewTab({
   offerOptions: QuotationOfferOption[];
   readOnly: boolean;
   onChangeOptions: (next: QuotationOfferOption[]) => void;
+  solarLayout?: boolean;
+  templateFields?: Record<string, unknown>;
+  onChangeTemplateFields?: (next: Record<string, unknown>) => void;
 }) {
   function enableOptions() {
     onChangeOptions([
@@ -1763,6 +1812,13 @@ function OverviewTab({
   }
   return (
     <div className="space-y-3">
+      {solarLayout && templateFields && onChangeTemplateFields ? (
+        <SolarTemplateFieldsPanel
+          fields={templateFields}
+          readOnly={readOnly}
+          onChange={onChangeTemplateFields}
+        />
+      ) : null}
       <div className="space-y-3 rounded-sales-md border border-sales-border bg-sales-surface p-4">
         <h2 className="text-[15px] font-semibold">Commercial summary</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

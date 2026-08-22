@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageQuotation } from "@/lib/quotations/quote-access";
-import { buildQuotationPdfData } from "@/lib/quotations/build-pdf-data";
-import { renderQuotationPdf } from "@/lib/quotations/quotation-pdf";
+import { renderQuotationOutput } from "@/lib/quotations/layouts/render-output";
+import { getPublicBaseUrl } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -12,16 +12,15 @@ export async function GET(req: Request, { params }: { params: { quotationId: str
   if (!access.allowed) return NextResponse.json({ error: access.reason }, { status: access.status });
 
   const supabase = createAdminClient();
-  const data = await buildQuotationPdfData(supabase, params.quotationId);
-  if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const origin = new URL(req.url).origin || getPublicBaseUrl();
+  const output = await renderQuotationOutput(supabase, params.quotationId, origin);
+  if (!output) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const buffer = await renderQuotationPdf(data);
-  const filename = `quotation-${data.quoteNumber || "draft"}.pdf`;
-  return new NextResponse(new Uint8Array(buffer), {
+  return new NextResponse(new Uint8Array(output.buffer), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${filename}"`,
+      "Content-Disposition": `inline; filename="${output.filename}"`,
       "Cache-Control": "no-store",
     },
   });

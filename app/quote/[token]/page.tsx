@@ -6,6 +6,9 @@ import { recordCustomerView } from "@/lib/quotations/engagement";
 import { computeQuotationTotals } from "@/lib/quotations/totals";
 import { notifyQuotationAlert } from "@/lib/quotations/notify";
 import type { QuotationLineItemInput } from "@/types";
+import { buildQuoteDocumentModel } from "@/lib/quotations/layouts/build-document-model";
+import { isSolarLayout } from "@/lib/quotations/layouts/registry";
+import { getPublicBaseUrl } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -123,6 +126,11 @@ export default async function PublicQuotePage({ params }: { params: { token: str
     discountPercent: Number(quote.discount_percent) || 0,
   });
 
+  const documentModel = await buildQuoteDocumentModel(supabase, quote.id as string, {
+    origin: getPublicBaseUrl(),
+    preferUrls: true,
+  }).catch(() => null);
+
   const data: PublicQuotationData = {
     token: params.token,
     status: expired ? "expired" : (quote.status as PublicQuotationData["status"]),
@@ -176,6 +184,7 @@ export default async function PublicQuotePage({ params }: { params: { token: str
       companyAddress: (settings?.company_address as string | null) ?? null,
       footerNote: (settings?.brand_footer as string | null) ?? (settings?.footer_note as string | null) ?? null,
     },
+    document: documentModel && isSolarLayout(documentModel.layoutKey) ? documentModel : null,
   };
 
   return <PublicQuotationView data={data} />;

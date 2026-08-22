@@ -93,6 +93,7 @@ export function QuoteTemplatesManager({
               quantity: i.quantity,
               group_label: i.group_label,
             })),
+          presentation: template.presentation,
         }),
       });
       await loadOne(template.id);
@@ -102,7 +103,22 @@ export function QuoteTemplatesManager({
     }
   }
 
-  async function removeTemplate(id: string) {
+  async function duplicateTemplate(template: QuoteTemplateRow) {
+    const name = `${template.name} — copy`;
+    const res = await fetch(`/api/clients/${clientId}/quote-templates`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ duplicate_from: template.id, name }),
+    });
+    const json = (await res.json()) as { template?: QuoteTemplateRow; error?: string };
+    if (json.template) {
+      setTemplates((prev) => [...prev, json.template!]);
+      setExpandedId(json.template.id);
+      flash("Template duplicated");
+    } else {
+      flash(json.error ?? "Couldn't duplicate");
+    }
+  }
     await fetch(`/api/clients/${clientId}/quote-templates/${id}`, { method: "DELETE" });
     setTemplates((prev) => prev.filter((t) => t.id !== id));
     flash("Template removed");
@@ -159,6 +175,7 @@ export function QuoteTemplatesManager({
               }}
               onSave={(items) => void saveTemplate(t, items)}
               onRemove={() => void removeTemplate(t.id)}
+              onDuplicate={() => void duplicateTemplate(t)}
               onChange={(patch) =>
                 setTemplates((prev) => prev.map((row) => (row.id === t.id ? { ...row, ...patch } : row)))
               }
@@ -179,6 +196,7 @@ function TemplateEditorRow({
   onToggle,
   onSave,
   onRemove,
+  onDuplicate,
   onChange,
 }: {
   template: QuoteTemplateRow;
@@ -187,6 +205,7 @@ function TemplateEditorRow({
   onToggle: () => void;
   onSave: (items: TemplateItemDraft[]) => void;
   onRemove: () => void;
+  onDuplicate: () => void;
   onChange: (patch: Partial<QuoteTemplateRow>) => void;
 }) {
   const [items, setItems] = useState<TemplateItemDraft[]>([]);
@@ -219,7 +238,14 @@ function TemplateEditorRow({
         onClick={onToggle}
         className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-sales-surface-hover"
       >
-        <span className="text-[13px] font-semibold text-sales-text-primary">{template.name}</span>
+        <span className="text-[13px] font-semibold text-sales-text-primary">
+          {template.name}
+          {template.is_builtin ? (
+            <span className="ml-2 rounded-full bg-sales-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted">
+              Built-in
+            </span>
+          ) : null}
+        </span>
         <span className="text-[12px] text-sales-text-muted">
           {template.is_active ? `${template.items?.length ?? 0} items` : "Archived"}
         </span>
@@ -261,7 +287,44 @@ function TemplateEditorRow({
             placeholder="Default terms"
             value={template.terms ?? ""}
             onChange={(e) => onChange({ terms: e.target.value })}
+            disabled={template.is_builtin}
           />
+          {template.layout_key === "residential-premium-solar" && !template.is_builtin ? (
+            <div className="space-y-2 rounded-[10px] border border-sales-border-subtle p-3">
+              <p className="text-[12px] font-semibold">Presentation</p>
+              <Input
+                compact
+                placeholder="Hero headline"
+                value={String(template.presentation?.heroHeadline ?? "")}
+                onChange={(e) =>
+                  onChange({ presentation: { ...(template.presentation ?? {}), heroHeadline: e.target.value } })
+                }
+              />
+              <TextArea
+                placeholder="Hero supporting copy"
+                value={String(template.presentation?.heroSubcopy ?? "")}
+                onChange={(e) =>
+                  onChange({ presentation: { ...(template.presentation ?? {}), heroSubcopy: e.target.value } })
+                }
+              />
+              <Input
+                compact
+                placeholder="Accent colour #A3C639"
+                value={String(template.presentation?.accent ?? "")}
+                onChange={(e) =>
+                  onChange({ presentation: { ...(template.presentation ?? {}), accent: e.target.value } })
+                }
+              />
+              <Input
+                compact
+                placeholder="Default hero image URL"
+                value={String(template.presentation?.heroImageUrl ?? "")}
+                onChange={(e) =>
+                  onChange({ presentation: { ...(template.presentation ?? {}), heroImageUrl: e.target.value } })
+                }
+              />
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             {items.map((it) => (
@@ -327,11 +390,21 @@ function TemplateEditorRow({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button variant="primary" size="sm" loading={saving} onClick={() => onSave(items)}>
-              Save template
+            {template.is_builtin ? (
+              <p className="w-full text-[12px] text-sales-text-secondary">
+                Built-in templates cannot be edited. Duplicate to customise hero, headline and accent.
+              </p>
+            ) : null}
+            {!template.is_builtin ? (
+              <Button variant="primary" size="sm" loading={saving} onClick={() => onSave(items)}>
+                Save template
+              </Button>
+            ) : null}
+            <Button variant="secondary" size="sm" onClick={onDuplicate}>
+              Duplicate / customise
             </Button>
             <Button variant="ghost" size="sm" className="text-sales-danger" onClick={onRemove}>
-              Remove
+              {template.is_builtin ? "Hide" : "Remove"}
             </Button>
           </div>
         </div>

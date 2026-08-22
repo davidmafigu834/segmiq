@@ -49,10 +49,37 @@ export async function PATCH(
     is_active: boolean;
     display_order: number;
     items: QuotationLineItemInput[];
+    presentation: Record<string, unknown>;
+    category: string | null;
   }>;
 
   const supabase = createAdminClient();
+  const { data: existing } = await supabase
+    .from("quote_templates")
+    .select("is_builtin, client_id")
+    .eq("id", params.templateId)
+    .maybeSingle();
+  if (!existing || existing.client_id !== params.clientId) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (existing.is_builtin) {
+    if (body.is_active !== undefined) updates.is_active = body.is_active;
+    if (Object.keys(updates).length > 1) {
+      const { error } = await supabase
+        .from("quote_templates")
+        .update(updates)
+        .eq("id", params.templateId)
+        .eq("client_id", params.clientId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    const full = await loadTemplateWithItems(supabase, params.templateId);
+    return NextResponse.json({
+      template: full,
+      notice: "Built-in templates cannot be edited. Duplicate to customise.",
+    });
+  }
   for (const key of [
     "name",
     "description",
@@ -68,6 +95,8 @@ export async function PATCH(
   if (body.tax_rate !== undefined) updates.tax_rate = Number(body.tax_rate) || 0;
   if (body.other_amount !== undefined) updates.other_amount = Number(body.other_amount) || 0;
   if (body.valid_for_days !== undefined) updates.valid_for_days = body.valid_for_days;
+  if (body.presentation !== undefined) updates.presentation = body.presentation;
+  if (body.category !== undefined) updates.category = body.category;
 
   if (Object.keys(updates).length > 1) {
     const { error } = await supabase

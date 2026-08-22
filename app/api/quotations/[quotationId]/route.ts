@@ -56,6 +56,9 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     silent: boolean;
     expected_updated_at?: string;
     offer_options?: Array<{ id: string; label: string; description?: string | null }>;
+    template_fields?: Record<string, unknown>;
+    project_summary?: string | null;
+    template_layout_key?: string | null;
   }>;
 
   const { data: current } = await supabase
@@ -96,7 +99,9 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     body.timeline_milestones !== undefined ||
     body.offer_options !== undefined ||
     body.items !== undefined ||
-    body.deal_id !== undefined;
+    body.deal_id !== undefined ||
+    body.template_fields !== undefined ||
+    body.project_summary !== undefined;
 
   if (!isDraft && hasContentChanges) {
     return NextResponse.json(
@@ -130,6 +135,9 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
   if (body.note_blocks !== undefined) updates.note_blocks = body.note_blocks;
   if (body.timeline_milestones !== undefined) updates.timeline_milestones = body.timeline_milestones;
   if (body.offer_options !== undefined) updates.offer_options = body.offer_options;
+  if (body.template_fields !== undefined) updates.template_fields = body.template_fields;
+  if (body.project_summary !== undefined) updates.project_summary = body.project_summary;
+  if (body.template_layout_key !== undefined) updates.template_layout_key = body.template_layout_key;
 
   if (body.status !== undefined) {
     updates.status = body.status;
@@ -163,7 +171,13 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
   }
 
   if (Object.keys(updates).length > 1) {
-    await supabase.from("quotations").update(updates).eq("id", params.quotationId);
+    const { error } = await supabase.from("quotations").update(updates).eq("id", params.quotationId);
+    if (error && (updates.template_fields !== undefined || updates.project_summary !== undefined || updates.template_layout_key !== undefined)) {
+      delete updates.template_fields;
+      delete updates.project_summary;
+      delete updates.template_layout_key;
+      await supabase.from("quotations").update(updates).eq("id", params.quotationId);
+    }
   }
 
   const taxRate = body.tax_rate ?? (Number(current?.tax_rate) || 0);

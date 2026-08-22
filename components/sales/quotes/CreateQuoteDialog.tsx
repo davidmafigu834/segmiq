@@ -10,6 +10,8 @@ import {
 } from "@/components/sales/ui";
 import type { QuoteTemplateRow, QuotationLineItemRow, QuotationRow } from "@/types";
 import { cn } from "@/lib/ui/cn";
+import { recommendSolarTemplate } from "@/lib/quotations/layouts/map-fields";
+import { RESIDENTIAL_PREMIUM_SOLAR_KEY } from "@/lib/quotations/layouts/types";
 
 export type QuotationWithItems = QuotationRow & { items?: QuotationLineItemRow[] };
 
@@ -25,7 +27,7 @@ type DealCandidate = {
 
 export function CreateQuoteDialog({
   open,
-  hasTemplates,
+  hasTemplates: _hasTemplates,
   dealId: prefDealId,
   onClose,
   onCreated,
@@ -100,7 +102,7 @@ export function CreateQuoteDialog({
   }, [open, prefDealId]);
 
   useEffect(() => {
-    if (!open || !selected || !hasTemplates) {
+    if (!open || !selected) {
       setTemplates([]);
       setTemplateId("");
       return;
@@ -110,7 +112,16 @@ export function CreateQuoteDialog({
     fetch(`/api/clients/${selected.clientId}/quote-templates`)
       .then((r) => r.json())
       .then((d: { templates?: QuoteTemplateRow[] }) => {
-        if (!cancelled) setTemplates((d.templates ?? []).filter((t) => t.is_active !== false));
+        if (cancelled) return;
+        const rows = (d.templates ?? []).filter((t) => t.is_active !== false);
+        const solarFirst = recommendSolarTemplate(selected.name);
+        const sorted = [...rows].sort((a, b) => {
+          const aSolar = a.layout_key === RESIDENTIAL_PREMIUM_SOLAR_KEY || a.builtin_key === RESIDENTIAL_PREMIUM_SOLAR_KEY;
+          const bSolar = b.layout_key === RESIDENTIAL_PREMIUM_SOLAR_KEY || b.builtin_key === RESIDENTIAL_PREMIUM_SOLAR_KEY;
+          if (solarFirst && aSolar !== bSolar) return aSolar ? -1 : 1;
+          return 0;
+        });
+        setTemplates(sorted);
       })
       .catch(() => {
         if (!cancelled) setTemplates([]);
@@ -121,7 +132,7 @@ export function CreateQuoteDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, selected, hasTemplates]);
+  }, [open, selected]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -171,7 +182,7 @@ export function CreateQuoteDialog({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl bg-sales-surface shadow-xl sm:rounded-sales-lg">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-2xl flex-col rounded-t-2xl bg-sales-surface shadow-xl sm:rounded-sales-lg">
         <div className="flex items-center justify-between border-b border-sales-border px-4 py-3">
           <div>
             <h2 className="text-[15px] font-semibold text-sales-text-primary">Create quotation</h2>
@@ -234,24 +245,70 @@ export function CreateQuoteDialog({
             </ul>
           )}
 
-          {selected && hasTemplates ? (
+          {selected ? (
             <div>
-              <p className="mb-1 text-[12px] font-medium text-sales-text-secondary">Template (optional)</p>
+              <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Choose quotation template</p>
               {loadingTemplates ? (
-                <Skeleton className="h-10 w-full rounded-sales-md" />
+                <Skeleton className="h-28 w-full rounded-sales-md" />
               ) : (
-                <select
-                  className="w-full rounded-sales-md border border-sales-border-strong bg-sales-surface px-3 py-2 text-[13px]"
-                  value={templateId}
-                  onChange={(e) => setTemplateId(e.target.value)}
-                >
-                  <option value="">Blank quotation</option>
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setTemplateId("")}
+                    className={cn(
+                      "rounded-sales-md border px-3 py-3 text-left",
+                      templateId === ""
+                        ? "border-sales-brand bg-[var(--sales-brand-soft-solid)]"
+                        : "border-sales-border hover:bg-sales-surface-hover"
+                    )}
+                  >
+                    <p className="text-[13px] font-semibold">Blank quotation</p>
+                    <p className="mt-0.5 text-[12px] text-sales-text-secondary">Standard commercial layout.</p>
+                  </button>
+                  {templates.map((t) => {
+                    const solar = t.layout_key === RESIDENTIAL_PREMIUM_SOLAR_KEY || t.builtin_key === RESIDENTIAL_PREMIUM_SOLAR_KEY;
+                    const recommended = solar && recommendSolarTemplate(selected.name);
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setTemplateId(t.id)}
+                        className={cn(
+                          "rounded-sales-md border px-3 py-3 text-left",
+                          templateId === t.id
+                            ? "border-sales-brand bg-[var(--sales-brand-soft-solid)]"
+                            : "border-sales-border hover:bg-sales-surface-hover"
+                        )}
+                      >
+                        {t.thumbnail ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={t.thumbnail} alt="" className="mb-2 h-16 w-full rounded object-cover object-top bg-[#F3F3F3]" />
+                        ) : null}
+                        <div className="flex items-center gap-2">
+                          <p className="text-[13px] font-semibold">{t.name}</p>
+                          {t.is_builtin ? (
+                            <span className="rounded-full bg-sales-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted">
+                              Built-in
+                            </span>
+                          ) : null}
+                          {recommended ? (
+                            <span className="rounded-full px-1.5 py-0.5 text-[10px] font-medium" style={{ background: "#A3C639" }}>
+                              Suggested
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
+                          {t.category || (solar ? "Solar" : "Template")}
+                          {solar ? " · Visual" : ""}
+                        </p>
+                        <p className="mt-1 text-[12px] text-sales-text-secondary">
+                          {t.description || "Premium visual quotation for residential rooftop solar and battery projects."}
+                        </p>
+                        <p className="mt-2 text-[12px] font-semibold text-sales-text-primary">Use template</p>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
           ) : null}

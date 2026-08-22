@@ -5,6 +5,11 @@ import { allocateQuoteNumber, ensureQuotationSettings } from "@/lib/quotations/q
 import { saveItemsAndTotals, loadQuotationWithItems } from "@/lib/quotations/persist";
 import { loadTemplateWithItems, templateItemsToQuotationInputs } from "@/lib/quotations/templates";
 import { logQuotationEvent } from "@/lib/quotations/events";
+import {
+  ensureBuiltinQuoteTemplates,
+  parseVirtualBuiltinId,
+} from "@/lib/quotations/layouts/ensure-builtin";
+import { getBuiltinTemplate } from "@/lib/quotations/layouts/registry";
 import type { QuotationLineItemInput } from "@/types";
 import { addDays, format } from "date-fns";
 
@@ -52,20 +57,51 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   let templateNotes: string | null | undefined;
   let templateTerms: string | null | undefined;
   let templateValidDays: number | undefined;
+  let resolvedTemplateId: string | null = null;
+  let templateLayoutKey: string | null = null;
+  let templateLayoutVersion: number | null = null;
 
   if (body.templateId) {
-    const template = await loadTemplateWithItems(supabase, body.templateId);
-    if (!template || template.client_id !== access.lead.client_id) {
-      return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    const virtualKey = parseVirtualBuiltinId(body.templateId);
+    let templateId = body.templateId;
+    if (virtualKey) {
+      await ensureBuiltinQuoteTemplates(supabase, access.lead.client_id).catch(() => null);
+      const { data: builtinRow } = await supabase
+        .from("quote_templates")
+        .select("id")
+        .eq("client_id", access.lead.client_id)
+        .eq("builtin_key", virtualKey)
+        .maybeSingle();
+      templateId = (builtinRow?.id as string | undefined) ?? "";
+      templateLayoutKey = virtualKey;
+      templateLayoutVersion = getBuiltinTemplate(virtualKey)?.layoutVersion ?? 1;
     }
-    templateItems = templateItemsToQuotationInputs(
-      (template.items as Record<string, unknown>[]) ?? []
-    );
-    templateTax = Number(template.tax_rate) || 0;
-    templateOther = Number(template.other_amount) || 0;
-    templateNotes = (template.notes as string | null) ?? null;
-    templateTerms = (template.terms as string | null) ?? null;
-    templateValidDays = Number(template.valid_for_days) || 30;
+    if (templateId) {
+      const template = await loadTemplateWithItems(supabase, templateId);
+      if (!template || template.client_id !== access.lead.client_id) {
+        if (!virtualKey) {
+          return NextResponse.json({ error: "Template not found" }, { status: 404 });
+        }
+      } else {
+        resolvedTemplateId = template.id as string;
+        templateLayoutKey =
+          (template.layout_key as string | null) ||
+          (template.builtin_key as string | null) ||
+          templateLayoutKey;
+        templateLayoutVersion =
+          Number(template.layout_version) ||
+          getBuiltinTemplate(templateLayoutKey)?.layoutVersion ||
+          1;
+        templateItems = templateItemsToQuotationInputs(
+          (template.items as Record<string, unknown>[]) ?? []
+        );
+        templateTax = Number(template.tax_rate) || 0;
+        templateOther = Number(template.other_amount) || 0;
+        templateNotes = (template.notes as string | null) ?? null;
+        templateTerms = (template.terms as string | null) ?? null;
+        templateValidDays = Number(template.valid_for_days) || 30;
+      }
+    }
   }
 
   const taxRate = body.tax_rate ?? templateTax ?? (Number(settings.default_tax_rate) || 0);
@@ -153,6 +189,10 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
       prepared_by_id: preparedById,
       prepared_by_name: preparedByName,
       revision_number: 1,
+      template_id: resolvedTemplateId,
+      template_layout_key: templateLayoutKey,
+      template_layout_version: templateLayoutVersion,
+      template_fields: {},
     })
     .select("*")
     .single();

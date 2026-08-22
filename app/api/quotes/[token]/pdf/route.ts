@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { buildQuotationPdfData } from "@/lib/quotations/build-pdf-data";
-import { renderQuotationPdf } from "@/lib/quotations/quotation-pdf";
+import { renderQuotationOutput } from "@/lib/quotations/layouts/render-output";
+import { getPublicBaseUrl } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
 /** Public quotation PDF — used by WhatsApp document links and customer downloads. */
-export async function GET(_req: Request, { params }: { params: { token: string } }) {
+export async function GET(req: Request, { params }: { params: { token: string } }) {
   const supabase = createAdminClient();
   const { data: quote } = await supabase
     .from("quotations")
@@ -18,17 +18,15 @@ export async function GET(_req: Request, { params }: { params: { token: string }
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const pdfData = await buildQuotationPdfData(supabase, quote.id as string);
-  if (!pdfData) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const origin = new URL(req.url).origin || getPublicBaseUrl();
+  const output = await renderQuotationOutput(supabase, quote.id as string, origin);
+  if (!output) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const buffer = await renderQuotationPdf(pdfData);
-  const filename = `quotation-${(quote.quote_number as string | null) || "quote"}.pdf`;
-
-  return new NextResponse(new Uint8Array(buffer), {
+  return new NextResponse(new Uint8Array(output.buffer), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${filename}"`,
+      "Content-Disposition": `inline; filename="${output.filename}"`,
       "Cache-Control": "public, max-age=300",
     },
   });

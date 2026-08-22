@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import { computeCustomerSelectedTotals } from "@/lib/quotations/selected-totals";
 import { formatMoney } from "@/lib/quotations/totals";
+import { ResidentialPremiumSolarDigital } from "@/components/quotations/layouts/ResidentialPremiumSolarDigital";
+import { isSolarLayout } from "@/lib/quotations/layouts/registry";
+import type { QuoteDocumentModel } from "@/lib/quotations/layouts/types";
 
 export type PublicQuoteItem = {
   id?: string;
@@ -59,6 +62,7 @@ export type PublicQuotationData = {
     companyAddress?: string | null;
     footerNote: string | null;
   };
+  document?: QuoteDocumentModel | null;
 };
 
 function formatDate(iso: string | null | undefined): string {
@@ -198,10 +202,13 @@ export function PublicQuotationView({ data }: { data: PublicQuotationData }) {
     }).catch(() => undefined);
   }
 
+  const solarDoc = data.document && isSolarLayout(data.document.layoutKey) ? data.document : null;
+
   return (
     <div className="min-h-screen bg-[#f4f4f5] px-3 py-6 sm:px-4 sm:py-10">
-      <div className="mx-auto w-full max-w-2xl">
+      <div className={`mx-auto w-full ${solarDoc ? "max-w-4xl" : "max-w-2xl"}`}>
         <article className="overflow-hidden rounded-2xl border border-[#e4e4e7] bg-white shadow-sm">
+          {!solarDoc ? (
           <header className="px-5 py-6 sm:px-8 sm:py-7" style={{ background: brand }}>
             <div className="flex items-start justify-between gap-4">
               {data.brand.logoUrl ? (
@@ -220,8 +227,10 @@ export function PublicQuotationView({ data }: { data: PublicQuotationData }) {
             </div>
             <p className="mt-4 text-sm text-white/90">{data.brand.companyName}</p>
           </header>
+          ) : null}
 
-          <div className="space-y-5 px-5 py-5 sm:px-8 sm:py-7">
+          <div className={solarDoc ? "" : "space-y-5 px-5 py-5 sm:px-8 sm:py-7"}>
+            <div className={solarDoc ? "space-y-3 px-4 pt-4 sm:px-7" : "contents"}>
             {superseded ? (
               <StateBanner
                 title="A newer version of this quotation is available."
@@ -242,7 +251,20 @@ export function PublicQuotationView({ data }: { data: PublicQuotationData }) {
               <StateBanner title="Quotation declined" body="Thank you for letting us know." />
             ) : null}
             {doneMessage ? <StateBanner title={doneMessage} tone="ok" /> : null}
+            </div>
 
+            {solarDoc ? (
+              <ResidentialPremiumSolarDigital
+                model={solarDoc}
+                interactiveOptional={canRespond && actions.optionSelection}
+                selectedOptional={selectedOptional}
+                onToggleOptional={toggleOptional}
+                hidePrintAcceptance
+              />
+            ) : null}
+
+            {!solarDoc ? (
+            <>
             <dl className="grid grid-cols-2 gap-3 text-[13px]">
               <Meta label="Prepared for" value={data.customerName || "—"} />
               <Meta label="Date" value={formatDate(data.issuedAt)} />
@@ -370,11 +392,13 @@ export function PublicQuotationView({ data }: { data: PublicQuotationData }) {
                 </details>
               </section>
             ) : null}
+            </>
+            ) : null}
 
-            {error ? <p className="text-[13px] text-red-600">{error}</p> : null}
+            {error ? <p className={`text-[13px] text-red-600 ${solarDoc ? "px-4 sm:px-7" : ""}`}>{error}</p> : null}
 
             {canRespond ? (
-              <div className="sticky bottom-0 -mx-5 space-y-2 border-t border-[#e4e4e7] bg-white px-5 py-4 sm:-mx-8 sm:px-8">
+              <div className={`sticky bottom-0 space-y-2 border-t border-[#e4e4e7] bg-white py-4 ${solarDoc ? "px-4 sm:px-7" : "-mx-5 px-5 sm:-mx-8 sm:px-8"}`}>
                 {actions.accept ? (
                   <button
                     type="button"

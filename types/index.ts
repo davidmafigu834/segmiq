@@ -769,6 +769,11 @@ export interface QuotationRow {
   customer_configuration?: QuotationCustomerConfiguration;
   link_revoked_at?: string | null;
   template_id?: string | null;
+  template_layout_key?: string | null;
+  template_layout_version?: number | null;
+  template_fields?: Record<string, unknown>;
+  project_summary?: string | null;
+  presentation_snapshot?: Record<string, unknown> | null;
   offer_options?: QuotationOfferOption[];
   selected_offer_option_id?: string | null;
   accepted_by_name?: string | null;
@@ -833,6 +838,15 @@ export interface QuoteTemplateRow {
   customer_actions?: Record<string, unknown>;
   discount_percent?: number;
   locked_terms?: boolean;
+  layout_key?: string | null;
+  category?: string | null;
+  presentation?: Record<string, unknown>;
+  field_schema?: unknown;
+  is_builtin?: boolean;
+  builtin_key?: string | null;
+  source_template_id?: string | null;
+  layout_version?: number;
+  thumbnail?: string | null;
 }
 
 /** A line item as sent from / to the quote builder UI. */

@@ -89,6 +89,11 @@ export async function copyQuotationAsDraft(
   insertPayload.timeline_milestones = source.timeline_milestones ?? [];
   insertPayload.revision_note = opts.revisionNote ?? null;
   insertPayload.approval_status = "not_required";
+  insertPayload.template_id = source.template_id ?? null;
+  insertPayload.template_layout_key = source.template_layout_key ?? null;
+  insertPayload.template_layout_version = source.template_layout_version ?? null;
+  insertPayload.template_fields = source.template_fields ?? {};
+  insertPayload.project_summary = source.project_summary ?? null;
 
   let created: { id: string } | null = null;
   {
