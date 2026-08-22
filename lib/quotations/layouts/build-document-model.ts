@@ -85,7 +85,7 @@ export async function buildQuoteDocumentModel(
     fields.project_summary = quote.project_summary;
   }
 
-  let presentation: TemplatePresentation = mergePresentation(
+  const presentation: TemplatePresentation = mergePresentation(
     builtin?.defaultPresentation ?? RESIDENTIAL_PREMIUM_SOLAR_DEFAULTS,
     useFreeze ? (frozen?.presentation as Record<string, unknown>) : livePresentationOverride
   );

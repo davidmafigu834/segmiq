@@ -27,7 +27,6 @@ type DealCandidate = {
 
 export function CreateQuoteDialog({
   open,
-  hasTemplates: _hasTemplates,
   dealId: prefDealId,
   onClose,
   onCreated,
