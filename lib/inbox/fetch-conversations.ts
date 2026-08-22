@@ -485,8 +485,10 @@ async function buildConversations(
     const lastMessage = waLast?.body || formSnippet || "No messages yet";
     const lastMessageAt = waLast?.created_at ?? lead.updated_at ?? lead.created_at;
 
-    const unread =
-      unreadByLead.get(lead.id) ?? (lead.status === "NEW" && lead.assigned_to_id === userId ? 1 : 0);
+    // Unread comes only from unread WHATSAPP_MESSAGE / NEW_LEAD notifications.
+    // Do NOT invent unread=1 for NEW leads — that left the green badge stuck after
+    // the salesperson opened the chat and notifications were marked read.
+    const unread = unreadByLead.get(lead.id) ?? 0;
 
     return {
       id: lead.id,

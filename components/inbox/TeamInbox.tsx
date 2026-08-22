@@ -102,7 +102,12 @@ export function TeamInbox({
   const leadFromUrl = searchParams.get("conversation") ?? searchParams.get("lead");
   const appliedUrlLeadRef = useRef<string | null>(null);
   const pendingSelectionRef = useRef<string | null>(null);
+  const activeIdRef = useRef<string | null>(null);
   const whatsappMode = !!backHref;
+
+  useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
 
   const loadConversations = useCallback(async (options?: { silent?: boolean }) => {
     if (!options?.silent) setLoading(true);
@@ -111,7 +116,12 @@ export function TeamInbox({
       if (!res.ok) throw new Error("Failed");
       const data = (await res.json()) as { conversations?: InboxConversation[] };
       const rows = data.conversations ?? [];
-      setConversations(rows);
+      const currentActive = activeIdRef.current;
+      setConversations(
+        rows.map((r) =>
+          currentActive && r.id === currentActive && r.unread > 0 ? { ...r, unread: 0 } : r
+        )
+      );
       setLoadError(false);
       setActiveId((prev) => {
         if (prev && rows.some((r) => r.id === prev)) return prev;
@@ -149,6 +159,9 @@ export function TeamInbox({
     if (pendingSelectionRef.current && pendingSelectionRef.current !== leadFromUrl) return;
     appliedUrlLeadRef.current = leadFromUrl;
     setActiveId(leadFromUrl);
+    setConversations((prev) =>
+      prev.map((c) => (c.id === leadFromUrl && c.unread > 0 ? { ...c, unread: 0 } : c))
+    );
     try {
       localStorage.setItem(activeConversationStorageKey(clientId, companyMode), leadFromUrl);
     } catch {
@@ -263,6 +276,10 @@ export function TeamInbox({
     pendingSelectionRef.current = id;
     appliedUrlLeadRef.current = id;
     setActiveId(id);
+    // Clear green unread badge immediately; messages fetch marks notifications read.
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id && c.unread > 0 ? { ...c, unread: 0 } : c))
+    );
     if (whatsappMode) {
       try {
         localStorage.setItem(activeConversationStorageKey(clientId, companyMode), id);
