@@ -46,6 +46,14 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   if (!full) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const quote = full;
 
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("name")
+    .eq("id", access.clientId)
+    .maybeSingle();
+  const companyName = (clientRow?.name as string | null)?.trim() || "us";
+  const customerName = (quote.customer_name as string | null) ?? "";
+
   const { gate, approval } = await gateQuotationSend(
     supabase,
     quote as never,
@@ -138,9 +146,9 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     });
 
     const total = formatMoney(Number(quote.total) || 0, (quote.currency as string) || "USD");
-    const firstName = pdfData.customerName?.split(" ")[0] || "there";
+    const firstName = customerName.split(" ")[0] || "there";
     const link = `${getPublicBaseUrl()}/quote/${publicToken}`;
-    const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${pdfData.companyName} — total ${total}. View and respond here: ${link}`;
+    const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${companyName} — total ${total}. View and respond here: ${link}`;
 
     const { data: leadForWhatsApp } = await supabase
       .from("leads")
@@ -403,9 +411,9 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   void persistLeadScore(access.leadId);
 
   const total = formatMoney(Number(quote.total) || 0, (quote.currency as string) || "USD");
-  const firstName = pdfData.customerName?.split(" ")[0] || "there";
+  const firstName = customerName.split(" ")[0] || "there";
   const link = `${getPublicBaseUrl()}/quote/${publicToken}`;
-  const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${pdfData.companyName} — total ${total}. View and respond here: ${link}`;
+  const waMessage = `Hi ${firstName}, please find your quotation ${quoteNumber} from ${companyName} — total ${total}. View and respond here: ${link}`;
 
   let whatsappSent = false;
   let whatsappError: string | undefined;
