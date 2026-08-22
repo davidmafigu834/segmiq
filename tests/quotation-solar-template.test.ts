@@ -8,10 +8,14 @@ import { quotationPdfFilename } from "../lib/quotations/layouts/filename";
 import {
   brandModelFromItem,
   paymentsFromQuote,
+  signatoryParts,
   siteRows,
   solarMetrics,
+  splitHeroLines,
+  termsNeedOwnPage,
   warrantyFromQuote,
 } from "../lib/quotations/layouts/map-fields";
+import { solarTemplateFixture } from "../lib/quotations/layouts/fixtures";
 import { TEMPLATE_LIME } from "../lib/quotations/layouts/types";
 
 describe("residential premium solar template mapping", () => {
@@ -52,7 +56,9 @@ describe("residential premium solar template mapping", () => {
     });
     assert.equal(rows.length, 3);
     assert.equal(rows[0].label, "Deposit");
-    assert.match(rows[0].detail ?? "", /20%/);
+    assert.equal(rows[0].amountLabel, "20%");
+    assert.equal(rows[0].detail, null);
+    assert.equal(rows[2].detail, "On commissioning");
   });
 
   it("omits warranty when none is configured", () => {
@@ -95,5 +101,49 @@ describe("residential premium solar template mapping", () => {
   it("falls back to template lime when company accent fails contrast", () => {
     assert.equal(resolveDocumentAccent("#FFFF00", TEMPLATE_LIME), TEMPLATE_LIME);
     assert.equal(resolveDocumentAccent("#0F7A4F", TEMPLATE_LIME), "#0F7A4F");
+  });
+
+  it("keeps the built-in hero as three lines", () => {
+    const lines = splitHeroLines("Powering\nSmarter Homes.\nSustainably.");
+    assert.deepEqual(lines, ["Powering", "Smarter Homes.", "Sustainably."]);
+  });
+
+  it("does not duplicate company name on the signatory block", () => {
+    const parts = signatoryParts({
+      name: "Adlense Network",
+      signatoryName: "Adlense Network",
+      signatoryRole: "Adlense Network",
+    });
+    assert.equal(parts.name, "Authorised Signatory");
+    assert.equal(parts.role, null);
+    assert.equal(parts.company, "Adlense Network");
+  });
+
+  it("moves long terms onto their own page", () => {
+    assert.equal(termsNeedOwnPage("Guarantee from it"), false);
+    assert.equal(termsNeedOwnPage("a\nb\nc\nd\ne"), true);
+  });
+
+  it("populated fixture uses canonical totals and does not invent empty KPIs", () => {
+    const full = solarTemplateFixture("populated");
+    const expected = computeQuotationTotals(
+      full.sections.flatMap((s) => s.items).map((it) => ({
+        unit_price: it.unitPrice,
+        quantity: it.quantity,
+        is_optional: it.optional,
+      })),
+      { fallbackTaxRate: 15 }
+    );
+    assert.equal(full.commercial.total, expected.total);
+    assert.equal(full.metrics.length, 4);
+    assert.equal(full.sections.flatMap((s) => s.items).length, 7);
+    assert.equal(full.paymentTerms.length, 3);
+    assert.equal(full.warranty.length, 3);
+
+    const minimal = solarTemplateFixture("minimal");
+    assert.equal(minimal.metrics.length, 0);
+    assert.equal(minimal.warranty.length, 0);
+    assert.equal(minimal.site.length, 0);
+    assert.equal(minimal.sections.flatMap((s) => s.items).length, 2);
   });
 });

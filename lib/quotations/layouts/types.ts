@@ -79,6 +79,7 @@ export type QuoteDocumentSection = {
 export type QuoteDocumentPayment = {
   label: string;
   detail: string | null;
+  amountLabel?: string | null;
 };
 
 export type QuoteDocumentWarranty = {

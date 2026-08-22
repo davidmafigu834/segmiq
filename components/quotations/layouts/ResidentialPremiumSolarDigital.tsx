@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Fragment } from "react";
 import {
-  BatteryCharging,
+  BarChart3,
   Leaf,
   Mail,
   MapPin,
@@ -10,11 +11,15 @@ import {
   Sun,
   User,
   Globe,
-  Home,
-  Gauge,
+  LayoutGrid,
+  Zap,
+  CreditCard,
+  Shield,
+  FileText,
 } from "lucide-react";
-import { formatMoney } from "@/lib/quotations/totals";
+import { formatMoneyCompact } from "@/lib/quotations/totals";
 import type { QuoteDocumentModel } from "@/lib/quotations/layouts/types";
+import { signatoryParts, splitHeroLines, termsNeedOwnPage } from "@/lib/quotations/layouts/map-fields";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -24,9 +29,9 @@ function formatDate(iso: string | null): string {
 }
 
 const METRIC_ICONS = {
-  size: Sun,
-  gen: BatteryCharging,
-  pr: Gauge,
+  size: LayoutGrid,
+  gen: Zap,
+  pr: BarChart3,
   co2: Leaf,
 } as const;
 
@@ -39,16 +44,28 @@ function Headline({
   accentWord: string | null;
   accent: string;
 }) {
-  if (!accentWord || !text.toLowerCase().includes(accentWord.toLowerCase())) {
-    return <>{text}</>;
-  }
-  const idx = text.toLowerCase().indexOf(accentWord.toLowerCase());
+  const lines = splitHeroLines(text);
+  const accentLc = (accentWord || "").trim().toLowerCase();
   return (
     <>
-      {text.slice(0, idx)}
-      <span style={{ color: accent }}>{text.slice(idx, idx + accentWord.length)}</span>
-      {text.slice(idx + accentWord.length)}
+      {lines.map((line) => {
+        const emphasised = Boolean(accentLc) && line.toLowerCase().includes(accentLc);
+        return (
+          <span key={line} className="block" style={emphasised ? { color: accent } : undefined}>
+            {line}
+          </span>
+        );
+      })}
     </>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2 text-[12px] leading-5">
+      <span className="w-[38%] shrink-0 text-[#6B6B6B]">{label}</span>
+      <span className="min-w-0 font-semibold">{value}</span>
+    </div>
   );
 }
 
@@ -67,51 +84,66 @@ export function ResidentialPremiumSolarDigital({
 }) {
   const accent = model.accent;
   const currency = model.quote.currency;
+  const money = (n: number) => formatMoneyCompact(n, currency);
   const logoSrc = model.company.logoUrl || model.company.logoDataUri;
+  const signatory = signatoryParts(model.company);
+  const longTerms = termsNeedOwnPage(model.terms);
   let running = 0;
   const selected = new Set(selectedOptional ?? []);
+  const hasCustomer = Boolean(
+    model.customer.name || model.customer.phone || model.customer.email || model.customer.address
+  );
+  const infoCount = [hasCustomer, model.site.length > 0, Boolean(model.projectSummary)].filter(Boolean).length;
+  const infoGrid =
+    infoCount === 3 ? "sm:grid-cols-3" : infoCount === 2 ? "sm:grid-cols-2" : "sm:grid-cols-1";
+  const emptyScope = model.sections.length === 0 || model.sections.every((s) => s.items.length === 0);
 
   return (
     <article className="overflow-hidden bg-white text-[#1A1A1A]">
-      <header className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-7">
-        <div className="min-w-0">
+      <header className="flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:px-7">
+        <div className="min-w-0 sm:w-1/2">
           {logoSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoSrc} alt={model.company.name} className="h-9 w-auto max-w-[160px] object-contain" />
+            <img src={logoSrc} alt={model.company.name} className="h-8 w-auto max-w-[160px] object-contain object-left" />
           ) : (
-            <p className="text-[22px] font-bold tracking-tight">{model.company.name}</p>
+            <div>
+              <p className="text-[20px] font-bold tracking-wide">{model.company.name}</p>
+              <span className="mt-1 block h-[2px] w-7" style={{ background: accent }} />
+            </div>
           )}
           {model.company.tagline ? (
             <p className="mt-1 text-[11px] text-[#6B6B6B]">{model.company.tagline}</p>
           ) : null}
-          {logoSrc ? <p className="mt-1 text-[12px] text-[#6B6B6B]">{model.company.name}</p> : null}
         </div>
-        <div className="sm:text-right">
+        <div className="hidden pt-3 text-center sm:block sm:w-1/4">
+          <h1 className="text-[20px] font-bold tracking-[0.08em]">QUOTATION</h1>
+        </div>
+        <div className="sm:w-1/4 sm:text-right">
           {model.badge ? (
             <span
-              className="inline-block rounded px-2 py-0.5 text-[10px] font-bold tracking-[0.08em]"
+              className="inline-block rounded-[2px] px-1.5 py-0.5 text-[9px] font-bold tracking-[0.08em]"
               style={{ background: accent, color: "#1A1A1A" }}
             >
               {model.badge}
             </span>
           ) : null}
-          <h1 className="mt-1 text-[26px] font-bold tracking-wide">QUOTATION</h1>
-          <dl className="mt-1 space-y-0.5 text-[12px]">
-            <div className="flex gap-3 sm:justify-end">
+          <h1 className="mt-1 text-[20px] font-bold tracking-[0.08em] sm:hidden">QUOTATION</h1>
+          <dl className="mt-1 space-y-0.5 text-[11px]">
+            <div className="flex gap-2 sm:justify-end">
               <dt className="text-[#6B6B6B]">Quotation No.</dt>
               <dd className="font-semibold">{model.quote.number}</dd>
             </div>
             {model.quote.version > 1 ? (
-              <div className="flex gap-3 sm:justify-end">
+              <div className="flex gap-2 sm:justify-end">
                 <dt className="text-[#6B6B6B]">Version</dt>
                 <dd className="font-semibold">{model.quote.version}</dd>
               </div>
             ) : null}
-            <div className="flex gap-3 sm:justify-end">
+            <div className="flex gap-2 sm:justify-end">
               <dt className="text-[#6B6B6B]">Date</dt>
               <dd className="font-semibold">{formatDate(model.quote.issuedAt)}</dd>
             </div>
-            <div className="flex gap-3 sm:justify-end">
+            <div className="flex gap-2 sm:justify-end">
               <dt className="text-[#6B6B6B]">Valid Until</dt>
               <dd className="font-semibold">{formatDate(model.quote.validUntil)}</dd>
             </div>
@@ -119,65 +151,79 @@ export function ResidentialPremiumSolarDigital({
         </div>
       </header>
 
-      <section className="relative h-[180px] overflow-hidden sm:h-[220px]" aria-label="Project hero">
+      <section className="relative h-[168px] overflow-hidden sm:h-[200px]" aria-label="Project hero">
         {model.hero.imageSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={model.hero.imageSrc}
             alt="Residential solar installation"
-            className="h-full w-full object-cover object-center"
+            className="h-full w-full object-cover object-[78%_42%]"
           />
         ) : (
           <div className="h-full w-full bg-[#2B2B2B]" />
         )}
-        <div className="absolute inset-y-0 left-0 flex w-[88%] max-w-md flex-col justify-center bg-gradient-to-r from-black/75 via-black/50 to-transparent px-5 sm:w-[58%] sm:px-7">
-          <p className="text-[22px] font-bold leading-tight text-white sm:text-[28px]">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 38%, rgba(0,0,0,0.08) 72%, rgba(0,0,0,0) 100%)",
+          }}
+        />
+        <div className="absolute inset-y-0 left-0 flex w-[70%] max-w-md flex-col justify-center px-5 sm:w-[48%] sm:px-7">
+          <p className="text-[22px] font-bold leading-[1.15] text-white sm:text-[26px]">
             <Headline text={model.hero.headline} accentWord={model.hero.accentWord} accent={accent} />
           </p>
+          <span className="mt-2 block h-[2px] w-8" style={{ background: accent }} />
           {model.hero.subcopy ? (
-            <p className="mt-2 max-w-xs text-[12px] leading-5 text-white/85">{model.hero.subcopy}</p>
+            <p className="mt-2 max-w-[220px] text-[11px] leading-4 text-white/90">{model.hero.subcopy}</p>
           ) : null}
         </div>
       </section>
 
-      <div className="grid gap-2 px-4 py-4 sm:grid-cols-3 sm:px-7">
-        <InfoCard accent={accent} icon={User} title="Customer Information">
-          {model.customer.name ? <p className="font-semibold">{model.customer.name}</p> : null}
-          {model.customer.phone ? <p>{model.customer.phone}</p> : null}
-          {model.customer.email ? <p>{model.customer.email}</p> : null}
-          {model.customer.address ? <p>{model.customer.address}</p> : null}
-        </InfoCard>
-        {model.site.length > 0 ? (
-          <InfoCard accent={accent} icon={Home} title="Site / Property Information">
-            {model.site.map((row) => (
-              <p key={row.label}>
-                <span className="text-[#6B6B6B]">{row.label}: </span>
-                {row.value}
-              </p>
-            ))}
-          </InfoCard>
-        ) : null}
-        {model.projectSummary ? (
-          <InfoCard accent={accent} icon={Sun} title="Project Summary">
-            <p>{model.projectSummary}</p>
-          </InfoCard>
-        ) : null}
-      </div>
+      {infoCount > 0 ? (
+        <div className={`grid gap-2 px-4 py-3 sm:px-7 ${infoGrid}`}>
+          {hasCustomer ? (
+            <InfoCard accent={accent} icon={User} title="Customer Information">
+              {model.customer.name ? <Field label="Name" value={model.customer.name} /> : null}
+              {model.customer.phone ? <Field label="Phone" value={model.customer.phone} /> : null}
+              {model.customer.email ? <Field label="Email" value={model.customer.email} /> : null}
+              {model.customer.address ? <Field label="Address" value={model.customer.address} /> : null}
+            </InfoCard>
+          ) : null}
+          {model.site.length > 0 ? (
+            <InfoCard accent={accent} icon={MapPin} title="Site / Property Information">
+              {model.site.slice(0, 8).map((row) => (
+                <Field key={row.label} label={row.label} value={row.value} />
+              ))}
+            </InfoCard>
+          ) : null}
+          {model.projectSummary ? (
+            <InfoCard accent={accent} icon={Sun} title="Project Summary">
+              <p>{model.projectSummary}</p>
+            </InfoCard>
+          ) : null}
+        </div>
+      ) : null}
 
       {model.metrics.length > 0 ? (
-        <div className="mx-4 mb-4 grid grid-cols-2 overflow-hidden rounded-[6px] border border-[#E4E4E4] sm:mx-7 sm:grid-cols-4">
+        <div
+          className={`mx-4 mb-3 grid grid-cols-2 border-y border-[#E4E4E4] sm:mx-7 ${
+            model.metrics.length >= 4
+              ? "sm:grid-cols-4"
+              : model.metrics.length === 3
+                ? "sm:grid-cols-3"
+                : "sm:grid-cols-2"
+          }`}
+        >
           {model.metrics.map((m, i) => {
             const Icon = METRIC_ICONS[m.id as keyof typeof METRIC_ICONS] ?? Sun;
             return (
-              <div
-                key={m.id}
-                className={`px-3 py-3 ${i > 0 ? "border-t border-[#E4E4E4] sm:border-l sm:border-t-0" : ""}`}
-              >
+              <div key={m.id} className={`px-3 py-2.5 ${i > 0 ? "border-l border-[#E4E4E4]" : ""}`}>
                 <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: accent }}>
                   <Icon className="h-3 w-3" aria-hidden />
                   {m.label}
                 </p>
-                <p className="mt-1 text-[16px] font-bold">{m.value}</p>
+                <p className="mt-0.5 text-[15px] font-bold">{m.value}</p>
                 {m.secondary ? <p className="text-[11px] text-[#6B6B6B]">{m.secondary}</p> : null}
               </div>
             );
@@ -186,60 +232,78 @@ export function ResidentialPremiumSolarDigital({
       ) : null}
 
       <section className="px-4 sm:px-7" aria-labelledby="scope-heading">
-        <div className="bg-[#2A2A2A] px-3 py-2">
-          <h2 id="scope-heading" className="text-[12px] font-bold tracking-[0.08em] text-white">
+        <div className="bg-[#2A2A2A] px-3 py-1.5">
+          <h2 id="scope-heading" className="text-[11px] font-bold tracking-[0.1em] text-white">
             EQUIPMENT & SCOPE OF SUPPLY
           </h2>
         </div>
         <div className="hidden overflow-x-auto sm:block">
-          <table className="w-full text-left text-[12px]">
+          <table className="w-full table-fixed text-left text-[12px]">
+            <colgroup>
+              <col className="w-[4%]" />
+              <col className="w-[26%]" />
+              <col className="w-[20%]" />
+              <col className="w-[8%]" />
+              <col className="w-[8%]" />
+              <col className="w-[16%]" />
+              <col className="w-[18%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-[#E4E4E4] text-[10px] uppercase tracking-wide text-[#6B6B6B]">
-                <th className="px-2 py-2">#</th>
-                <th className="px-2 py-2">Description</th>
-                <th className="px-2 py-2">Brand / Model</th>
-                <th className="px-2 py-2 text-right">Qty</th>
-                <th className="px-2 py-2 text-right">Unit</th>
-                <th className="px-2 py-2 text-right">Unit Price</th>
-                <th className="px-2 py-2 text-right">Amount</th>
+                <th className="px-2 py-1.5">#</th>
+                <th className="px-2 py-1.5">Description</th>
+                <th className="px-2 py-1.5">Brand / Model</th>
+                <th className="px-2 py-1.5 text-right">Qty</th>
+                <th className="px-2 py-1.5 text-right">Unit</th>
+                <th className="px-2 py-1.5 text-right">Unit Price</th>
+                <th className="px-2 py-1.5 text-right">Amount</th>
               </tr>
             </thead>
             <tbody>
-              {model.sections.map((section) => (
-                <tbody key={section.title || "main"}>
-                  {section.title ? (
-                    <tr key={`s-${section.title}`} className="bg-[#F6F6F6]">
-                      <td colSpan={7} className="px-2 py-1.5 font-semibold">
-                        {section.title}
-                      </td>
-                    </tr>
-                  ) : null}
-                  {section.items.map((it) => {
-                    running += 1;
-                    return (
-                      <tr key={it.id ?? `${section.title}-${it.index}`} className="border-b border-[#E4E4E4] align-top">
-                        <td className="px-2 py-2 text-[#6B6B6B]">{running}</td>
-                        <td className="px-2 py-2">
-                          <p className="font-semibold">{it.name}</p>
-                          {it.description ? <p className="text-[#6B6B6B]">{it.description}</p> : null}
+              {emptyScope ? (
+                <tr>
+                  <td colSpan={7} className="px-2 py-3 text-[#6B6B6B]">
+                    No equipment listed yet.
+                  </td>
+                </tr>
+              ) : (
+                model.sections.map((section) => (
+                  <Fragment key={section.title || "main"}>
+                    {section.title ? (
+                      <tr className="bg-[#F4F4F4]">
+                        <td colSpan={7} className="px-2 py-1 text-[11px] font-semibold uppercase">
+                          {section.title}
                         </td>
-                        <td className="px-2 py-2 text-[#6B6B6B]">{it.brandModel || ""}</td>
-                        <td className="px-2 py-2 text-right">{it.quantity}</td>
-                        <td className="px-2 py-2 text-right text-[#6B6B6B]">{it.unit}</td>
-                        <td className="px-2 py-2 text-right text-[#6B6B6B]">{formatMoney(it.unitPrice, currency)}</td>
-                        <td className="px-2 py-2 text-right font-semibold">{formatMoney(it.amount, currency)}</td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              ))}
+                    ) : null}
+                    {section.items.map((it) => {
+                      running += 1;
+                      return (
+                        <tr key={it.id ?? `${section.title}-${it.index}`} className="border-b border-[#E4E4E4] align-top">
+                          <td className="px-2 py-1.5 text-[#6B6B6B]">{running}</td>
+                          <td className="px-2 py-1.5">
+                            <p className="font-semibold">{it.name}</p>
+                            {it.description ? <p className="text-[11px] text-[#6B6B6B]">{it.description}</p> : null}
+                          </td>
+                          <td className="px-2 py-1.5 text-[#6B6B6B]">{it.brandModel || ""}</td>
+                          <td className="px-2 py-1.5 text-right">{it.quantity}</td>
+                          <td className="px-2 py-1.5 text-right text-[#6B6B6B]">{it.unit}</td>
+                          <td className="px-2 py-1.5 text-right text-[#6B6B6B]">{money(it.unitPrice)}</td>
+                          <td className="px-2 py-1.5 text-right font-semibold">{money(it.amount)}</td>
+                        </tr>
+                      );
+                    })}
+                  </Fragment>
+                ))
+              )}
             </tbody>
           </table>
         </div>
         <ul className="divide-y divide-[#E4E4E4] sm:hidden">
+          {emptyScope ? <li className="px-1 py-3 text-[12px] text-[#6B6B6B]">No equipment listed yet.</li> : null}
           {model.sections.flatMap((section) =>
             section.items.map((it, idx) => (
-              <li key={`${section.title}-${it.index}`} className="px-1 py-3">
+              <li key={`${section.title}-${it.index}`} className="px-1 py-2.5">
                 {section.title && idx === 0 ? (
                   <p className="mb-1 text-[11px] font-bold uppercase text-[#6B6B6B]">{section.title}</p>
                 ) : null}
@@ -248,10 +312,10 @@ export function ResidentialPremiumSolarDigital({
                     <p className="text-[13px] font-semibold">{it.name}</p>
                     {it.brandModel ? <p className="text-[12px] text-[#6B6B6B]">{it.brandModel}</p> : null}
                     <p className="text-[12px] text-[#6B6B6B]">
-                      {it.quantity} {it.unit} · {formatMoney(it.unitPrice, currency)}
+                      {it.quantity} {it.unit} · {money(it.unitPrice)}
                     </p>
                   </div>
-                  <p className="text-[13px] font-semibold">{formatMoney(it.amount, currency)}</p>
+                  <p className="text-[13px] font-semibold">{money(it.amount)}</p>
                 </div>
               </li>
             ))
@@ -260,8 +324,8 @@ export function ResidentialPremiumSolarDigital({
       </section>
 
       {model.optionalItems.length > 0 ? (
-        <section className="px-4 py-4 sm:px-7">
-          <h2 className="text-[12px] font-bold tracking-[0.08em] text-[#6B6B6B]">OPTIONAL UPGRADES</h2>
+        <section className="px-4 py-3 sm:px-7">
+          <h2 className="text-[11px] font-bold tracking-[0.08em] text-[#6B6B6B]">OPTIONAL UPGRADES</h2>
           <ul className="mt-2 space-y-2">
             {model.optionalItems.map((it) => {
               const key = it.id ?? `${it.index}-${it.name}`;
@@ -272,7 +336,7 @@ export function ResidentialPremiumSolarDigital({
                     <p className="text-[13px] font-semibold">{it.name}</p>
                     <p className="text-[12px] text-[#6B6B6B]">Optional</p>
                   </div>
-                  <p className="text-[13px] font-semibold">+{formatMoney(it.amount, currency)}</p>
+                  <p className="text-[13px] font-semibold">+{money(it.amount)}</p>
                 </div>
               );
               if (!interactiveOptional || !onToggleOptional) return <li key={key}>{inner}</li>;
@@ -292,58 +356,81 @@ export function ResidentialPremiumSolarDigital({
         </section>
       ) : null}
 
-      <div className="grid gap-2 px-4 py-4 sm:grid-cols-2 lg:grid-cols-4 sm:px-7">
+      <div
+        className={`grid gap-2 px-4 py-3 sm:px-7 ${
+          model.paymentTerms.length > 0 && model.warranty.length > 0
+            ? "sm:grid-cols-2 lg:grid-cols-[23fr_23fr_23fr_31fr]"
+            : "sm:grid-cols-2 lg:grid-cols-3"
+        }`}
+      >
         {model.paymentTerms.length > 0 ? (
-          <InfoCard accent={accent} title="Payment Terms">
+          <InfoCard accent={accent} icon={CreditCard} title="Payment Terms">
             {model.paymentTerms.map((p) => (
-              <p key={p.label}>
-                {p.label}
-                {p.detail ? ` — ${p.detail}` : ""}
-              </p>
+              <div key={p.label} className="flex justify-between gap-2">
+                <span className="font-semibold">
+                  {p.label}
+                  {p.amountLabel ? ` (${p.amountLabel})` : ""}
+                </span>
+                <span className="text-[#6B6B6B]">{p.detail || ""}</span>
+              </div>
             ))}
           </InfoCard>
         ) : null}
         {model.warranty.length > 0 ? (
-          <InfoCard accent={accent} title="Warranty">
+          <InfoCard accent={accent} icon={Shield} title="Warranty">
             {model.warranty.map((w) => (
-              <p key={w.label}>
-                {w.label}: {w.detail}
-              </p>
+              <div key={w.label} className="flex justify-between gap-2">
+                <span className="text-[#6B6B6B]">{w.label}</span>
+                <span className="font-semibold">{w.detail}</span>
+              </div>
             ))}
           </InfoCard>
         ) : null}
-        <InfoCard accent={accent} title="Commercial Summary">
-          <p>Subtotal {formatMoney(model.commercial.subtotal, currency)}</p>
+        <InfoCard accent={accent} icon={FileText} title="Commercial Summary">
+          <div className="flex justify-between">
+            <span className="text-[#6B6B6B]">Subtotal</span>
+            <span className="font-semibold">{money(model.commercial.subtotal)}</span>
+          </div>
           {model.commercial.discountTotal > 0 ? (
-            <p>Discount {formatMoney(model.commercial.discountTotal, currency)}</p>
+            <div className="flex justify-between">
+              <span className="text-[#6B6B6B]">Discount</span>
+              <span className="font-semibold">{money(model.commercial.discountTotal)}</span>
+            </div>
           ) : null}
           {model.commercial.taxRate > 0 || model.commercial.taxAmount > 0 ? (
-            <p>
-              Tax{model.commercial.taxRate ? ` (${model.commercial.taxRate}%)` : ""}{" "}
-              {formatMoney(model.commercial.taxAmount, currency)}
-            </p>
+            <div className="flex justify-between">
+              <span className="text-[#6B6B6B]">
+                Tax{model.commercial.taxRate ? ` (${model.commercial.taxRate}%)` : ""}
+              </span>
+              <span className="font-semibold">{money(model.commercial.taxAmount)}</span>
+            </div>
           ) : null}
         </InfoCard>
-        <div className="rounded-[6px] border-[1.5px] p-3" style={{ borderColor: accent }}>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B6B]">
+        <div className="rounded-[6px] border-[1.5px] px-3 py-2.5" style={{ borderColor: accent }}>
+          <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: accent }}>
             Total amount ({currency})
           </p>
-          <p className="mt-1 break-words text-[22px] font-bold leading-tight" style={{ color: accent }}>
-            {formatMoney(model.commercial.total, currency)}
+          <p className="mt-1 break-words text-[22px] font-bold leading-tight tabular-nums" style={{ color: accent }}>
+            {money(model.commercial.total)}
           </p>
           {model.commercial.amountInWords ? (
-            <p className="mt-1 text-[11px] text-[#6B6B6B]">{model.commercial.amountInWords}</p>
+            <p className="mt-1 text-[11px] text-[#6B6B6B]">({model.commercial.amountInWords})</p>
           ) : null}
         </div>
       </div>
 
       {model.showAcceptance && !hidePrintAcceptance ? (
-        <div className="grid gap-6 px-4 pb-4 sm:grid-cols-2 sm:px-7">
+        <div className="grid gap-6 px-4 pb-3 sm:grid-cols-2 sm:px-7">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: accent }}>
+            <p className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: accent }}>
+              <User className="h-3 w-3" aria-hidden />
               Accepted by
             </p>
-            <p className="mt-2 text-[12px] text-[#6B6B6B]">Use Accept quotation below to record your response.</p>
+            <AcceptanceLine label="Name" />
+            <AcceptanceLine label="Designation" />
+            <AcceptanceLine label="Date" />
+            <p className="mt-2 text-[11px] text-[#6B6B6B]">Signature & Seal</p>
+            <div className="mt-1 h-9 rounded-[3px] border border-[#E4E4E4]" />
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wide" style={{ color: accent }}>
@@ -352,22 +439,37 @@ export function ResidentialPremiumSolarDigital({
             {model.company.signatureDataUri ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={model.company.signatureDataUri} alt="" className="mt-2 h-10 w-auto object-contain" />
-            ) : null}
-            <p className="mt-2 text-[12px] text-[#6B6B6B]">
-              {[model.company.signatoryName, model.company.signatoryRole, model.company.name].filter(Boolean).join(" · ")}
-            </p>
+            ) : (
+              <div className="mt-6 border-b border-[#E4E4E4]" />
+            )}
+            <p className="mt-2 text-[12px] font-semibold">{signatory.name}</p>
+            {signatory.role ? <p className="text-[12px] text-[#6B6B6B]">{signatory.role}</p> : null}
+            <p className="text-[12px] text-[#6B6B6B]">{signatory.company}</p>
           </div>
         </div>
       ) : null}
 
       {model.terms ? (
-        <details className="px-4 pb-4 sm:px-7">
-          <summary className="cursor-pointer text-[13px] font-semibold">Terms</summary>
-          <p className="mt-2 whitespace-pre-wrap text-[12.5px] leading-6 text-[#3f3f46]">{model.terms}</p>
-        </details>
+        longTerms ? (
+          <section className="border-t border-[#E4E4E4] px-4 py-4 sm:px-7">
+            <h2 className="text-[11px] font-bold uppercase tracking-wide" style={{ color: accent }}>
+              Terms &amp; conditions
+            </h2>
+            <div className="mt-2 space-y-2 whitespace-pre-wrap text-[12.5px] leading-6 text-[#3f3f46]">
+              {model.terms}
+            </div>
+          </section>
+        ) : (
+          <section className="mx-4 mb-3 rounded-[6px] border border-[#E4E4E4] p-3 sm:mx-7">
+            <h2 className="text-[10px] font-bold uppercase tracking-wide" style={{ color: accent }}>
+              Terms
+            </h2>
+            <p className="mt-1 whitespace-pre-wrap text-[12.5px] leading-5 text-[#3f3f46]">{model.terms}</p>
+          </section>
+        )
       ) : null}
 
-      <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#E4E4E4] px-4 py-3 text-[11px] text-[#6B6B6B] sm:px-7">
+      <footer className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#E4E4E4] px-4 py-2.5 text-[11px] text-[#6B6B6B] sm:px-7">
         {model.footerContacts.map((c) => (
           <span key={`${c.kind}-${c.value}`} className="inline-flex items-center gap-1">
             {c.kind === "phone" ? <Phone className="h-3 w-3" aria-hidden /> : null}
@@ -383,6 +485,15 @@ export function ResidentialPremiumSolarDigital({
   );
 }
 
+function AcceptanceLine({ label }: { label: string }) {
+  return (
+    <div className="mt-1.5 flex items-end gap-2">
+      <span className="w-20 text-[11px] text-[#6B6B6B]">{label}</span>
+      <span className="h-4 flex-1 border-b border-[#E4E4E4]" />
+    </div>
+  );
+}
+
 function InfoCard({
   accent,
   title,
@@ -395,7 +506,7 @@ function InfoCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[6px] border border-[#E4E4E4] p-3 text-[12px] leading-5">
+    <section className="rounded-[6px] border border-[#E4E4E4] p-2.5 text-[12px] leading-5">
       <h2 className="mb-1.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide" style={{ color: accent }}>
         {Icon ? <Icon className="h-3 w-3" aria-hidden /> : null}
         {title}

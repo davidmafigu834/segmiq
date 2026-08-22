@@ -91,15 +91,14 @@ export function paymentsFromQuote(quote: Record<string, unknown>): QuoteDocument
       const percent = num(r.percent) ?? num(r.percentage);
       const amount = num(r.amount);
       const trigger = str(r.trigger) ?? str(r.timing) ?? str(r.condition);
-      const detail = [percent != null ? `${percent}%` : null, amount != null ? String(amount) : null, trigger]
-        .filter(Boolean)
-        .join(" · ");
-      return { label, detail: detail || null };
+      const amountLabel =
+        percent != null ? `${percent}%` : amount != null ? String(amount) : null;
+      return { label, detail: trigger, amountLabel } as QuoteDocumentPayment;
     })
-    .filter((row): row is QuoteDocumentPayment => Boolean(row));
+    .filter((row): row is QuoteDocumentPayment => row != null);
   if (structured.length) return structured;
   const label = str(quote.payment_terms_label);
-  return label ? [{ label, detail: null }] : [];
+  return label ? [{ label, detail: null, amountLabel: null }] : [];
 }
 
 const WARRANTY_FIELD_MAP: Array<[string, string]> = [
@@ -160,4 +159,36 @@ export function brandModelFromItem(name: string, sku: string | null, description
 export function recommendSolarTemplate(dealName: string | null | undefined, serviceSummary?: string | null): boolean {
   const hay = `${dealName ?? ""} ${serviceSummary ?? ""}`.toLowerCase();
   return /\b(solar|pv|photovolta|rooftop|inverter|battery storage|kWp)\b/i.test(hay);
+}
+
+export function splitHeroLines(headline: string): string[] {
+  const lines = headline
+    .split(/\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return lines.length ? lines : [headline];
+}
+
+export function signatoryParts(company: {
+  name: string;
+  signatoryName: string | null;
+  signatoryRole: string | null;
+}): { name: string; role: string | null; company: string } {
+  const companyName = company.name.trim();
+  const person = company.signatoryName?.trim() || null;
+  const role = company.signatoryRole?.trim() || null;
+  const personIsCompany = person && person.toLowerCase() === companyName.toLowerCase();
+  const roleIsCompany = role && role.toLowerCase() === companyName.toLowerCase();
+  return {
+    name: person && !personIsCompany ? person : "Authorised Signatory",
+    role: role && !roleIsCompany ? role : null,
+    company: companyName,
+  };
+}
+
+export const TERMS_PAGE_THRESHOLD = 240;
+
+export function termsNeedOwnPage(terms: string | null): boolean {
+  if (!terms) return false;
+  return terms.length > TERMS_PAGE_THRESHOLD || terms.split(/\n/).filter(Boolean).length > 4;
 }

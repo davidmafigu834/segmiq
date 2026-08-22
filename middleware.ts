@@ -467,6 +467,7 @@ function localBlogDevRewrite(path: string): string | null {
     "dashboard",
     "client",
     "sales",
+    "dev",
     "solo",
     "cloud",
     "blog",

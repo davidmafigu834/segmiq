@@ -65,9 +65,9 @@ export const SOLAR_FIELD_SCHEMA: TemplateFieldDef[] = [
 export const RESIDENTIAL_PREMIUM_SOLAR_DEFAULTS: TemplatePresentation = {
   badge: "RESIDENTIAL PREMIUM",
   showBadge: true,
-  heroHeadline: "Powering smarter homes.",
-  heroSubcopy: "A reliable solar solution designed around your home and energy needs.",
-  heroAccentWord: "smarter",
+  heroHeadline: "Powering\nSmarter Homes.\nSustainably.",
+  heroSubcopy: "High-performance solar solutions built for your home and future.",
+  heroAccentWord: "Smarter Homes.",
   heroImageUrl: null,
   showSite: true,
   showSummary: true,
@@ -110,11 +110,11 @@ export function mergePresentation(
     showBadge: override.showBadge !== false,
     heroHeadline:
       typeof override.heroHeadline === "string" && override.heroHeadline.trim()
-        ? override.heroHeadline
+        ? upgradeLegacyHeadline(override.heroHeadline)
         : base.heroHeadline,
     heroSubcopy:
       typeof override.heroSubcopy === "string" && override.heroSubcopy.trim()
-        ? override.heroSubcopy
+        ? upgradeLegacySubcopy(override.heroSubcopy)
         : base.heroSubcopy,
     heroAccentWord:
       typeof override.heroAccentWord === "string" ? override.heroAccentWord : base.heroAccentWord,
@@ -135,4 +135,20 @@ export function mergePresentation(
 
 export function isSolarLayout(layoutKey: string | null | undefined): boolean {
   return layoutKey === RESIDENTIAL_PREMIUM_SOLAR_KEY;
+}
+
+function upgradeLegacyHeadline(value: string): string {
+  const compact = value.replace(/\s+/g, " ").trim().toLowerCase();
+  if (compact === "powering smarter homes." || compact === "powering smarter homes") {
+    return RESIDENTIAL_PREMIUM_SOLAR_DEFAULTS.heroHeadline;
+  }
+  return value;
+}
+
+function upgradeLegacySubcopy(value: string): string {
+  const compact = value.replace(/\s+/g, " ").trim().toLowerCase();
+  if (compact === "a reliable solar solution designed around your home and energy needs.") {
+    return RESIDENTIAL_PREMIUM_SOLAR_DEFAULTS.heroSubcopy;
+  }
+  return value;
 }

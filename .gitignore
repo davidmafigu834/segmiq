@@ -36,5 +36,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# local render artifacts
+/tmp
+
 build*.log
 .env*
