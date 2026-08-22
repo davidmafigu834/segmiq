@@ -5,6 +5,7 @@ import { canReadLead } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { eventsToChatMessages, isWhatsAppRowVisibleInChat, messageLogsToChatMessages, whatsappRowsToChatMessages } from "@/lib/inbox/messages";
 import type { InboxChatMessage } from "@/lib/inbox/types";
+import { HUB_QUOTATION_EVENT_TYPES, quotationEventsToChatMessages } from "@/lib/quotations/hub-events";
 import { isWhatsAppSessionOpen } from "@/lib/whatsapp/inbound";
 import { getCampaignContextForLead } from "@/lib/marketing/campaign-reply";
 
@@ -90,8 +91,17 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       .eq("channel", "whatsapp")
       .eq("notification_type", "WHATSAPP_SESSION")
       .eq("status", "sent");
+    const quoteEventQuery = supabase
+      .from("quotation_events")
+      .select("id, event_type, event_data, created_at, quotation_id")
+      .eq("lead_id", params.leadId)
+      .in("event_type", [...HUB_QUOTATION_EVENT_TYPES]);
+    const quoteQuery = supabase
+      .from("quotations")
+      .select("id, quote_number, revision_number, total, currency, deal_id")
+      .eq("lead_id", params.leadId);
 
-    const [{ data: waRows }, { data: timelineEvents }, { data: messageEvents }, { data: sessionLogs }] =
+    const [{ data: waRows }, { data: timelineEvents }, { data: messageEvents }, { data: sessionLogs }, { data: quoteEvents }, { data: quoteRows }] =
       await Promise.all([
       (before ? waQuery.lt("created_at", before) : waQuery)
         .order("created_at", { ascending: false })
@@ -105,9 +115,13 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       (before ? sessionLogQuery.lt("created_at", before) : sessionLogQuery)
         .order("created_at", { ascending: false })
         .limit(fetchLimit),
+      (before ? quoteEventQuery.lt("created_at", before) : quoteEventQuery)
+        .order("created_at", { ascending: false })
+        .limit(fetchLimit),
+      quoteQuery,
     ]);
 
-    hasMore = [waRows, timelineEvents, messageEvents, sessionLogs].some(
+    hasMore = [waRows, timelineEvents, messageEvents, sessionLogs, quoteEvents].some(
       (rows) => (rows?.length ?? 0) > pageLimit
     );
 
@@ -197,14 +211,37 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       })
     );
 
+    const quoteHub = quotationEventsToChatMessages(
+      (quoteEvents ?? []).map((e) => ({
+        id: e.id as string,
+        event_type: e.event_type as string,
+        event_data: (e.event_data as Record<string, unknown>) ?? {},
+        created_at: e.created_at as string,
+        quotation_id: e.quotation_id as string,
+      })),
+      {
+        quotes: (quoteRows ?? []).map((q) => ({
+          id: q.id as string,
+          quote_number: (q.quote_number as string | null) ?? null,
+          revision_number: Number(q.revision_number) || 1,
+          total: Number(q.total) || 0,
+          currency: (q.currency as string | null) ?? "USD",
+          deal_id: (q.deal_id as string | null) ?? null,
+        })),
+        role: session?.role,
+      }
+    );
+    const hasCanonicalQuoteSent = quoteHub.some((m) => m.systemTitle === "Quote sent");
+
     const dedupedSystem = system.filter((m) => {
+      if (hasCanonicalQuoteSent && m.systemTitle === "Quote sent") return false;
       if (m.kind !== "system" && m.kind !== "message") return true;
       const text = m.text.trim();
       if (text.startsWith("Sent ") && outboundBodies.has(text.replace(/^Sent /, ""))) return false;
       return !outboundBodies.has(text);
     });
 
-    const merged = [...chat, ...dedupedSystem, ...legacyMessages, ...logFallback].sort(
+    const merged = [...chat, ...dedupedSystem, ...legacyMessages, ...logFallback, ...quoteHub].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
     if (merged.length > pageLimit) hasMore = true;
@@ -217,29 +254,65 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       .select("id, event_type, event_data, actor_name, actor_role, channel, created_at")
       .eq("lead_id", params.leadId)
       .in("event_type", ["DOCUMENT_SENT", "NOTE_ADDED", "CALL_LOGGED", "LEAD_CREATED", "MESSAGE_RECEIVED", "MESSAGE_SENT"]);
-    const { data: events, error } = await (before
-      ? eventQuery.lt("created_at", before)
-      : eventQuery
-    )
-      .order("created_at", { ascending: false })
-      .limit(fetchLimit);
+    const quoteEventQuery = supabase
+      .from("quotation_events")
+      .select("id, event_type, event_data, created_at, quotation_id")
+      .eq("lead_id", params.leadId)
+      .in("event_type", [...HUB_QUOTATION_EVENT_TYPES]);
+    const [{ data: events, error }, { data: quoteEvents }, { data: quoteRows }] = await Promise.all([
+      (before ? eventQuery.lt("created_at", before) : eventQuery)
+        .order("created_at", { ascending: false })
+        .limit(fetchLimit),
+      (before ? quoteEventQuery.lt("created_at", before) : quoteEventQuery)
+        .order("created_at", { ascending: false })
+        .limit(fetchLimit),
+      supabase
+        .from("quotations")
+        .select("id, quote_number, revision_number, total, currency, deal_id")
+        .eq("lead_id", params.leadId),
+    ]);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    hasMore = (events?.length ?? 0) > pageLimit;
-    messages = eventsToChatMessages(
-      (events ?? []).map((e) => ({
+    const quoteHub = quotationEventsToChatMessages(
+      (quoteEvents ?? []).map((e) => ({
         id: e.id as string,
         event_type: e.event_type as string,
         event_data: (e.event_data as Record<string, unknown>) ?? {},
-        actor_name: (e.actor_name as string) ?? "Unknown",
-        actor_role: (e.actor_role as string) ?? "SYSTEM",
-        channel: e.channel as string | null,
         created_at: e.created_at as string,
-      }))
-    )
+        quotation_id: e.quotation_id as string,
+      })),
+      {
+        quotes: (quoteRows ?? []).map((q) => ({
+          id: q.id as string,
+          quote_number: (q.quote_number as string | null) ?? null,
+          revision_number: Number(q.revision_number) || 1,
+          total: Number(q.total) || 0,
+          currency: (q.currency as string | null) ?? "USD",
+          deal_id: (q.deal_id as string | null) ?? null,
+        })),
+        role: session?.role,
+      }
+    );
+    const hasCanonicalQuoteSent = quoteHub.some((m) => m.systemTitle === "Quote sent");
+
+    hasMore = (events?.length ?? 0) > pageLimit || (quoteEvents?.length ?? 0) > pageLimit;
+    messages = [
+      ...eventsToChatMessages(
+        (events ?? []).map((e) => ({
+          id: e.id as string,
+          event_type: e.event_type as string,
+          event_data: (e.event_data as Record<string, unknown>) ?? {},
+          actor_name: (e.actor_name as string) ?? "Unknown",
+          actor_role: (e.actor_role as string) ?? "SYSTEM",
+          channel: e.channel as string | null,
+          created_at: e.created_at as string,
+        }))
+      ).filter((m) => !(hasCanonicalQuoteSent && m.systemTitle === "Quote sent")),
+      ...quoteHub,
+    ]
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
       .slice(-pageLimit);
 

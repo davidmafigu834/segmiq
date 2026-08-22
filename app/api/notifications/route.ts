@@ -25,12 +25,23 @@ export async function GET(req: Request) {
     console.error("[notifications GET count]", countError.message);
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("notifications")
-    .select("id, type, message, read, lead_id, client_id, created_at")
+    .select("id, type, message, read, lead_id, client_id, quotation_id, created_at")
     .eq("user_id", auth.userId)
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (error) {
+    const fallback = await supabase
+      .from("notifications")
+      .select("id, type, message, read, lead_id, client_id, created_at")
+      .eq("user_id", auth.userId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) {
     console.error("[notifications GET]", error.message, error.details, error.hint);

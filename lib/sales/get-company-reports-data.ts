@@ -865,13 +865,24 @@ async function fetchQuotationsTab(opts: {
     granularity,
   };
   const errors: Partial<Record<string, string>> = {};
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("quotations")
-    .select("id, status, total, currency, sent_at, viewed_at, valid_until, created_at, prepared_by_id, discount_percent, approval_status")
+    .select("id, status, total, currency, sent_at, viewed_at, valid_until, created_at, prepared_by_id, prepared_by_name, discount_percent, approval_status, accepted_at, responded_at")
     .eq("client_id", opts.clientId)
     .gte("created_at", prev.from.toISOString())
     .lt("created_at", opts.to.toISOString())
     .limit(4000);
+  if (error) {
+    const fallback = await supabase
+      .from("quotations")
+      .select("id, status, total, currency, sent_at, viewed_at, valid_until, created_at, prepared_by_id, discount_percent, approval_status")
+      .eq("client_id", opts.clientId)
+      .gte("created_at", prev.from.toISOString())
+      .lt("created_at", opts.to.toISOString())
+      .limit(4000);
+    data = (fallback.data ?? []) as typeof data;
+    error = fallback.error;
+  }
   if (error) errors.quotations = error.message;
   let rows = (data ?? []) as Array<{
     status: import("@/types").QuotationStatus;
@@ -881,8 +892,11 @@ async function fetchQuotationsTab(opts: {
     valid_until: string | null;
     created_at: string;
     prepared_by_id: string | null;
+    prepared_by_name?: string | null;
     discount_percent?: number | null;
     approval_status?: string | null;
+    accepted_at?: string | null;
+    responded_at?: string | null;
   }>;
   if (opts.ownerId) rows = rows.filter((r) => r.prepared_by_id === opts.ownerId);
   const current = rows.filter((r) => inRange(r.created_at, opts.from, opts.to));
@@ -904,6 +918,41 @@ async function fetchQuotationsTab(opts: {
   const avgDiscount = discounts.length ? Math.round((discounts.reduce((s, n) => s + n, 0) / discounts.length) * 10) / 10 : null;
   const viewRate = sent > 0 ? Math.round((viewed / sent) * 1000) / 10 : null;
   const acceptance = sent > 0 ? Math.round((accepted / sent) * 1000) / 10 : null;
+  const responseDays = current
+    .map((r) => {
+      if (!r.sent_at) return null;
+      const end = r.accepted_at || r.responded_at;
+      if (!end) return null;
+      const ms = Date.parse(end) - Date.parse(r.sent_at);
+      if (!Number.isFinite(ms) || ms < 0) return null;
+      return ms / 86400000;
+    })
+    .filter((n): n is number => n != null);
+  const avgResponseDays =
+    responseDays.length > 0
+      ? Math.round((responseDays.reduce((s, n) => s + n, 0) / responseDays.length) * 10) / 10
+      : null;
+  const byPerson = new Map<
+    string,
+    { name: string; created: number; quotedValue: number; accepted: number; acceptedValue: number }
+  >();
+  for (const row of current) {
+    const id = row.prepared_by_id || "unassigned";
+    const cur = byPerson.get(id) ?? {
+      name: row.prepared_by_name?.trim() || (id === "unassigned" ? "Unassigned" : "Salesperson"),
+      created: 0,
+      quotedValue: 0,
+      accepted: 0,
+      acceptedValue: 0,
+    };
+    cur.created += 1;
+    cur.quotedValue += Number(row.total) || 0;
+    if (statusOf(row) === "accepted") {
+      cur.accepted += 1;
+      cur.acceptedValue += Number(row.total) || 0;
+    }
+    byPerson.set(id, cur);
+  }
   const byStatusMap = new Map<string, number>();
   for (const row of current) {
     const st = statusOf(row);
@@ -937,12 +986,24 @@ async function fetchQuotationsTab(opts: {
       kpi("expired", "Expired", String(expired), expired, { direction: "none", pct: null, label: "Validity passed" }, []),
       kpi("avg_discount", "Average discount", avgDiscount == null ? "—" : `${avgDiscount}%`, avgDiscount, { direction: "none", pct: null, label: "Document discount on created quotes" }, []),
       kpi("approvals", "Approval requests", String(approvalRequests), approvalRequests, { direction: "none", pct: null, label: approvalRate == null ? "No approval volume" : `${approvalRate}% approved` }, []),
+      kpi("avg_response", "Avg days to customer response", avgResponseDays == null ? "—" : String(avgResponseDays), avgResponseDays, { direction: "none", pct: null, label: "Accepted or declined after send" }, []),
     ],
     byStatus: Array.from(byStatusMap.entries()).map(([status, count]) => ({
       status,
       label: labels[status] ?? status,
       count,
     })),
+    bySalesperson: Array.from(byPerson.entries())
+      .map(([userId, row]) => ({
+        userId,
+        name: row.name,
+        created: row.created,
+        quotedValue: row.quotedValue,
+        accepted: row.accepted,
+        acceptedValue: row.acceptedValue,
+        acceptRate: row.created > 0 ? Math.round((row.accepted / row.created) * 1000) / 10 : null,
+      }))
+      .sort((a, b) => b.quotedValue - a.quotedValue),
     errors,
   };
 }

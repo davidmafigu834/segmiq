@@ -177,6 +177,24 @@ export function ReportTabView({
               </ul>
             )}
           </ReportChartCard>
+          <ReportChartCard
+            title="By salesperson"
+            hint="Accepted quotation value is not salesperson revenue."
+          >
+            {(data.bySalesperson ?? []).length === 0 ? (
+              <p className="py-8 text-center text-[13px] text-sales-text-muted">No quotations in this period.</p>
+            ) : (
+              <ul className="divide-y divide-sales-border-subtle">
+                {(data.bySalesperson ?? []).map((row) => (
+                  <MetricRow
+                    key={row.userId}
+                    label={row.name}
+                    value={`${row.created} created · ${row.accepted} accepted`}
+                  />
+                ))}
+              </ul>
+            )}
+          </ReportChartCard>
         </>
       ) : null}
 

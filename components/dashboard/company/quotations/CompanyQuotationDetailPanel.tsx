@@ -48,6 +48,7 @@ const MEANINGFUL_EVENTS = new Set([
   "ACCEPTED",
   "DECLINED",
   "REVISION_CREATED",
+  "LINK_REVOKED",
 ]);
 
 function quoteNumber(row: CompanyQuotationRow): string {
@@ -141,7 +142,7 @@ export function CompanyQuotationDetailPanel({
 
   const pending = companyQuotationIsPendingApproval(row);
   const approvalWidth = pending ? "w-[min(460px,94vw)]" : "w-[min(400px,94vw)]";
-  const canDecide = permissions.canApprove && pending && !error;
+  const canDecide = pending && !error && !loading && Boolean(workspace?.permissions.canDecideApproval);
   const fullScreenApproval = stacked && pending;
 
   const body = (
@@ -266,6 +267,19 @@ function DetailRail({
   const accepted = row.effectiveStatus === "accepted";
   const declined = row.effectiveStatus === "rejected";
   const changesRequested = row.approvalStatus === "changes_requested";
+  const [revoking, setRevoking] = useState(false);
+  const [revoked, setRevoked] = useState(false);
+
+  async function revokeLink() {
+    if (revoking) return;
+    setRevoking(true);
+    try {
+      const res = await fetch(`/api/quotations/${row.id}/revoke-link`, { method: "POST" });
+      if (res.ok) setRevoked(true);
+    } finally {
+      setRevoking(false);
+    }
+  }
 
   return (
     <>
@@ -394,6 +408,18 @@ function DetailRail({
                 {row.dealStage ? <Meta label="Deal stage">{formatDealStage(row.dealStage)}</Meta> : null}
                 <Meta label="Salesperson">{row.owner?.name || "Unassigned"}</Meta>
               </dl>
+              {workspace?.permissions.canRevokeSecureLink && !revoked ? (
+                <button
+                  type="button"
+                  className="mt-3 text-[12px] font-medium text-sales-text-muted hover:text-sales-danger"
+                  disabled={revoking}
+                  onClick={() => void revokeLink()}
+                >
+                  {revoking ? "Revoking link…" : "Revoke customer link"}
+                </button>
+              ) : revoked ? (
+                <p className="mt-3 text-[12px] text-sales-text-muted">Customer link revoked.</p>
+              ) : null}
             </Section>
 
             <Section title="Next action">
@@ -690,7 +716,9 @@ function ApprovalRail({
           </div>
         ) : (
           <p className="text-center text-[12px] text-sales-text-muted">
-            {error ? "Approval actions are disabled until this quotation reloads safely." : "Awaiting approval from an authorised manager."}
+            {error
+              ? "Approval actions are disabled until this quotation reloads safely."
+              : workspace?.permissions.awaitingApproverLabel || "Awaiting approval from an authorised manager."}
           </p>
         )}
         <button

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Checkbox, Input, Select, Skeleton, Switch, TextArea, FieldLabel } from "@/components/sales/ui";
+import { humanReadablePolicy } from "@/lib/quotations/approval-engine";
 
 type Settings = Record<string, unknown> & {
   default_currency?: string;
@@ -119,7 +120,7 @@ export function QuotationCommercialSettings({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: p.id }),
     });
-    setPolicies((prev) => prev.filter((x) => x.id !== p.id));
+    setPolicies((prev) => prev.map((x) => (x.id === p.id ? { ...x, is_active: false } : x)));
   }
 
   async function togglePolicy(p: Policy) {
@@ -260,9 +261,9 @@ export function QuotationCommercialSettings({
                 <div key={p.id} className="grid grid-cols-12 items-center gap-2 border-t border-sales-border-subtle px-3 py-2.5 text-[13px]">
                   <span className="col-span-3 font-medium text-sales-text-primary">{p.name}</span>
                   <span className="col-span-3 text-sales-text-secondary">
-                    {p.trigger_type.replace(/_/g, " ")} {p.operator} {p.threshold_numeric ?? ""}
+                    {humanReadablePolicy(p)}
                   </span>
-                  <span className="col-span-3 text-sales-text-secondary">{p.approver_role ?? "Manager"}</span>
+                  <span className="col-span-3 text-sales-text-secondary">{p.approver_role === "SUPER_ADMIN" ? "Admin" : "Sales Manager"}</span>
                   <div className="col-span-3 flex items-center gap-3">
                     <Switch checked={p.is_active} onCheckedChange={() => void togglePolicy(p)} aria-label={`${p.name} active`} />
                     <button
@@ -270,7 +271,7 @@ export function QuotationCommercialSettings({
                       className="text-[12px] text-sales-text-muted hover:text-sales-danger"
                       onClick={() => void deletePolicy(p)}
                     >
-                      Delete
+                      Deactivate
                     </button>
                   </div>
                 </div>
@@ -280,24 +281,29 @@ export function QuotationCommercialSettings({
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
             <Input compact placeholder="Policy name" value={newPolicy.name} onChange={(e) => setNewPolicy({ ...newPolicy, name: e.target.value })} />
             <Select value={newPolicy.trigger_type} onChange={(e) => setNewPolicy({ ...newPolicy, trigger_type: e.target.value })}>
-              <option value="discount">Discount</option>
-              <option value="margin">Margin</option>
-              <option value="quotation_value">Quotation value</option>
-              <option value="payment_terms">Payment terms</option>
-              <option value="price_override">Price override</option>
-              <option value="custom_item">Custom item</option>
+              <option value="discount">When discount</option>
+              <option value="margin">When margin</option>
+              <option value="quotation_value">When quotation value</option>
+              <option value="payment_terms">When payment terms</option>
+              <option value="price_override">When price override</option>
+              <option value="custom_item">When custom item</option>
+              <option value="special_product">When restricted product</option>
+              <option value="special_package">When restricted package</option>
             </Select>
             <Select value={newPolicy.operator} onChange={(e) => setNewPolicy({ ...newPolicy, operator: e.target.value })}>
-              <option value="gt">greater than</option>
-              <option value="gte">at least</option>
-              <option value="lt">less than</option>
-              <option value="lte">at most</option>
+              <option value="gt">is greater than</option>
+              <option value="gte">is at least</option>
+              <option value="lt">is less than</option>
+              <option value="lte">is at most</option>
             </Select>
             <Input compact type="number" value={newPolicy.threshold_numeric} onChange={(e) => setNewPolicy({ ...newPolicy, threshold_numeric: Number(e.target.value) })} />
             <Button variant="secondary" size="sm" onClick={() => void addPolicy()}>
               Add policy
             </Button>
           </div>
+          <p className="text-[12px] text-sales-text-secondary">
+            {humanReadablePolicy(newPolicy)}
+          </p>
         </div>
       ) : null}
 

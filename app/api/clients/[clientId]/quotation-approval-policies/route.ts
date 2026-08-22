@@ -119,11 +119,13 @@ export async function DELETE(req: Request, { params }: { params: { clientId: str
   const body = (await req.json()) as { id?: string };
   if (!body.id) return NextResponse.json({ error: "id required" }, { status: 400 });
   const supabase = createAdminClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("quotation_approval_policies")
-    .delete()
+    .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq("id", body.id)
-    .eq("client_id", params.clientId);
+    .eq("client_id", params.clientId)
+    .select("id")
+    .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, deactivated: true, id: data?.id ?? body.id });
 }

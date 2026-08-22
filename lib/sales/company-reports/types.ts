@@ -171,6 +171,15 @@ export type CompanyReportQuotationsTab = {
   owners: CompanyReportOverview["owners"];
   kpis: ReportKpi[];
   byStatus: Array<{ status: string; label: string; count: number }>;
+  bySalesperson: Array<{
+    userId: string;
+    name: string;
+    created: number;
+    quotedValue: number;
+    accepted: number;
+    acceptedValue: number;
+    acceptRate: number | null;
+  }>;
   errors: Partial<Record<string, string>>;
 };
 

@@ -6,6 +6,7 @@ export * from "./create-deal";
 export * from "./create-deal-form";
 export * from "./close-deal";
 export * from "./timeline";
+export * from "./current-quotation";
 export * from "./permissions";
 export * from "./customer-deals";
 export * from "./attention";

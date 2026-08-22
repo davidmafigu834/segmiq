@@ -73,6 +73,8 @@ function policyTriggered(
       return ctx.items.some(lineHasPriceOverride);
     case "special_product":
       return ctx.items.some((it) => it.catalog_item_id && (it as { requires_approval?: boolean }).requires_approval);
+    case "special_package":
+      return ctx.items.some((it) => Boolean(it.package_id) && (it as { requires_approval?: boolean }).requires_approval);
     case "custom_item":
       return ctx.items.some((it) => !it.catalog_item_id && !it.package_id && !it.is_optional);
     default:
@@ -214,6 +216,52 @@ export function evaluateApprovalRequirement(opts: {
     rules,
     reasons: stillRequired.map((r) => r.reason),
   };
+}
+
+export function humanReadablePolicy(policy: {
+  trigger_type: string;
+  operator?: string | null;
+  threshold_numeric?: number | null;
+  threshold_text?: string | null;
+  approver_role?: string | null;
+}): string {
+  const approver =
+    policy.approver_role === "SUPER_ADMIN"
+      ? "Admin"
+      : policy.approver_role && policy.approver_role !== "CLIENT_MANAGER"
+        ? policy.approver_role.replace(/_/g, " ")
+        : "Sales Manager";
+  const n = policy.threshold_numeric;
+  const op =
+    policy.operator === "gte"
+      ? "at least"
+      : policy.operator === "lt"
+        ? "below"
+        : policy.operator === "lte"
+          ? "at most"
+          : policy.operator === "eq"
+            ? "equal to"
+            : "above";
+  switch (policy.trigger_type) {
+    case "discount":
+      return `Quotes with discount ${op} ${n ?? 0}% require ${approver} approval.`;
+    case "margin":
+      return `Quotes with margin ${op} ${n ?? 0}% require ${approver} approval.`;
+    case "quotation_value":
+      return `Quotes with value ${op} ${n ?? 0} require ${approver} approval.`;
+    case "payment_terms":
+      return `Quotes with non-standard payment terms require ${approver} approval.`;
+    case "price_override":
+      return `Quotes with a catalogue price override require ${approver} approval.`;
+    case "special_product":
+      return `Quotes containing a restricted product require ${approver} approval.`;
+    case "special_package":
+      return `Quotes containing a restricted package require ${approver} approval.`;
+    case "custom_item":
+      return `Quotes with a custom item require ${approver} approval.`;
+    default:
+      return `This rule requires ${approver} approval.`;
+  }
 }
 
 function describePolicy(policy: QuotationApprovalPolicyRow, totals: QuoteTotals): string {

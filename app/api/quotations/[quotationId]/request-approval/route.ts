@@ -7,7 +7,7 @@ import { loadQuotationWithItems } from "@/lib/quotations/persist";
 import { evaluateQuoteGovernance } from "@/lib/quotations/evaluate-send";
 import { commercialFingerprint } from "@/lib/quotations/fingerprint";
 import { buildCommercialSnapshot } from "@/lib/quotations/approval-engine";
-import { notifyClientManagers } from "@/lib/quotations/notify";
+import { notifyApprovers } from "@/lib/quotations/notify";
 import type { QuotationLineItemInput } from "@/types";
 
 export async function POST(req: Request, { params }: { params: { quotationId: string } }) {
@@ -163,11 +163,16 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     },
   });
 
-  await notifyClientManagers({
+  await notifyApprovers({
     clientId: access.clientId,
     leadId: access.leadId,
+    quotationId: params.quotationId,
     excludeUserId: access.actor.id,
     message: `Approval requested for ${(full.quote_number as string) || "quotation"} (${totals.total})`,
+    targets: evald.approval.rules.map((rule) => ({
+      approverRole: rule.approverRole,
+      approverUserId: rule.approverUserId,
+    })),
   });
 
   const updated = await loadQuotationWithItems(supabase, params.quotationId);

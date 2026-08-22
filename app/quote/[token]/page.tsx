@@ -72,6 +72,7 @@ export default async function PublicQuotePage({ params }: { params: { token: str
       await notifyQuotationAlert({
         userId: quote.prepared_by_id as string,
         leadId: quote.lead_id as string,
+        quotationId: quote.id as string,
         message: `${quote.quote_number || "Quotation"} was viewed`,
       });
     }

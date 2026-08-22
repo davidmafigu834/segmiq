@@ -3,6 +3,7 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { quotationEventLabel } from "@/lib/quotations/events";
 import type { QuotationRow } from "@/types";
 
 export type DealTimelineItem = {
@@ -79,7 +80,7 @@ export async function getDealTimeline(opts: {
   const supabase = createAdminClient();
   const limit = opts.limit ?? 80;
 
-  const [{ data: events }, { data: quotes }] = await Promise.all([
+  const [{ data: events }, { data: quotes }, { data: quoteEvents }] = await Promise.all([
     supabase
       .from("lead_events")
       .select("id, created_at, event_type, event_data, deal_id")
@@ -92,6 +93,23 @@ export async function getDealTimeline(opts: {
       .or(`deal_id.eq.${opts.dealId},and(lead_id.eq.${opts.originatingLeadId},deal_id.is.null)`)
       .order("created_at", { ascending: false })
       .limit(40),
+    supabase
+      .from("quotation_events")
+      .select("id, created_at, event_type, event_data, quotation_id")
+      .or(`deal_id.eq.${opts.dealId},lead_id.eq.${opts.originatingLeadId}`)
+      .in("event_type", [
+        "SENT",
+        "VIEWED",
+        "CUSTOMER_SELECTED_OPTION",
+        "CUSTOMER_REQUESTED_CHANGES",
+        "CUSTOMER_ASKED_QUESTION",
+        "ACCEPTED",
+        "DECLINED",
+        "APPROVED",
+        "CHANGES_REQUESTED",
+      ])
+      .order("created_at", { ascending: false })
+      .limit(limit),
   ]);
 
   const items: DealTimelineItem[] = [];
@@ -129,6 +147,8 @@ export async function getDealTimeline(opts: {
       eventType: "QUOTE_CREATED",
       source: "quote",
     });
+    const hasCanonicalEvents = (quoteEvents ?? []).length > 0;
+    if (hasCanonicalEvents) continue;
     if (q.sent_at) {
       items.push({
         id: `quote-sent-${q.id}`,
@@ -169,6 +189,17 @@ export async function getDealTimeline(opts: {
         source: "quote",
       });
     }
+  }
+
+  for (const ev of quoteEvents ?? []) {
+    items.push({
+      id: `qevt-${ev.id}`,
+      at: ev.created_at as string,
+      label: quotationEventLabel(String(ev.event_type)),
+      detail: null,
+      eventType: String(ev.event_type),
+      source: "quote",
+    });
   }
 
   items.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));

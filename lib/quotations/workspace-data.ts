@@ -8,6 +8,11 @@ import {
   salespersonMayEditCatalogPrice,
   stripCostFromUnknown,
 } from "@/lib/quotations/governance";
+import {
+  actorCanApproveTargets,
+  awaitingApproverLabel,
+  targetsFromUnknownRules,
+} from "@/lib/quotations/approver-authority";
 import type {
   QuotationApprovalPolicyRow,
   QuotationEventRow,
@@ -59,6 +64,7 @@ export type QuotationWorkspacePayload = {
     canEdit: boolean;
     canSend: boolean;
     canApprove: boolean;
+    canDecideApproval: boolean;
     canSeeMargin: boolean;
     canSeeCost: boolean;
     canSeeMarginPercent: boolean;
@@ -70,6 +76,8 @@ export type QuotationWorkspacePayload = {
     canCreatePackage: boolean;
     canCreateTemplate: boolean;
     canCopySecureLink: boolean;
+    canRevokeSecureLink: boolean;
+    awaitingApproverLabel: string | null;
   };
   marginVisibility: "none" | "health" | "percent" | "full";
 };
@@ -211,6 +219,34 @@ export async function loadQuotationWorkspace(
   if (!evErr && ev) events = ev as QuotationEventRow[];
 
   const isManager = opts.role === "CLIENT_MANAGER" || opts.role === "SUPER_ADMIN";
+  const pendingApproval =
+    quote.approval_status === "pending" || quote.status === "pending_approval";
+  let canDecideApproval = isManager && pendingApproval;
+  let approverLabel: string | null = pendingApproval ? awaitingApproverLabel([]) : null;
+  if (pendingApproval) {
+    const { data: requests } = await supabase
+      .from("quotation_approval_requests")
+      .select("id, triggered_rules")
+      .eq("quotation_id", quotationId)
+      .eq("status", "pending");
+    const requestIds = (requests ?? []).map((row) => row.id as string);
+    let targets = (requests ?? []).flatMap((row) => targetsFromUnknownRules(row.triggered_rules));
+    if (requestIds.length > 0) {
+      const { data: steps } = await supabase
+        .from("quotation_approval_steps")
+        .select("approver_role, approver_user_id, status")
+        .in("request_id", requestIds)
+        .eq("status", "pending");
+      if (steps && steps.length > 0) {
+        targets = steps.map((step) => ({
+          approverRole: (step.approver_role as string | null) ?? null,
+          approverUserId: (step.approver_user_id as string | null) ?? null,
+        }));
+      }
+    }
+    canDecideApproval = actorCanApproveTargets({ id: opts.userId, role: opts.role }, targets);
+    approverLabel = awaitingApproverLabel(targets);
+  }
   const s = (settings ?? {}) as Partial<QuotationSettingsRow>;
   const vis = resolveMarginVisibility(s, isManager);
   const canSeeMargin = vis === "percent" || vis === "full";
@@ -242,6 +278,7 @@ export async function loadQuotationWorkspace(
       canEdit: isQuotationEditable(quote.status),
       canSend: ["draft", "approved", "sent", "viewed", "pending_approval"].includes(quote.status),
       canApprove: isManager,
+      canDecideApproval,
       canSeeMargin,
       canSeeCost,
       canSeeMarginPercent: canSeeMargin,
@@ -253,6 +290,8 @@ export async function loadQuotationWorkspace(
       canCreatePackage: isManager || Boolean(s.salesperson_can_create_package),
       canCreateTemplate: isManager,
       canCopySecureLink: Boolean(quote.public_token) && !quote.link_revoked_at,
+      canRevokeSecureLink: isManager && Boolean(quote.public_token) && !quote.link_revoked_at,
+      awaitingApproverLabel: approverLabel,
     },
   };
 

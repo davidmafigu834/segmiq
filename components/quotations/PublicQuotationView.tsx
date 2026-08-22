@@ -360,8 +360,14 @@ export function PublicQuotationView({ data }: { data: PublicQuotationData }) {
             ) : null}
             {data.terms ? (
               <section>
-                <h2 className="text-[15px] font-semibold">Terms</h2>
-                <p className="mt-1 whitespace-pre-wrap text-[13.5px] leading-6 text-[#3f3f46]">{data.terms}</p>
+                <details className="group">
+                  <summary className="cursor-pointer list-none text-[15px] font-semibold">
+                    Terms
+                    <span className="ml-2 text-[12px] font-normal text-[#71717a] group-open:hidden">Show</span>
+                    <span className="ml-2 hidden text-[12px] font-normal text-[#71717a] group-open:inline">Hide</span>
+                  </summary>
+                  <p className="mt-2 whitespace-pre-wrap text-[13.5px] leading-6 text-[#3f3f46]">{data.terms}</p>
+                </details>
               </section>
             ) : null}
 

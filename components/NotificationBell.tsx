@@ -24,6 +24,7 @@ type NotificationRow = {
   read: boolean;
   lead_id: string | null;
   client_id?: string | null;
+  quotation_id?: string | null;
   created_at: string;
 };
 
@@ -106,6 +107,10 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
 
   function leadHref(n: NotificationRow): string {
     if (n.type === "QUOTATION_ALERT") {
+      if (n.quotation_id) {
+        if (role === "SALESPERSON") return `/sales/quotes/${n.quotation_id}`;
+        return `/client/quotations?quotation=${n.quotation_id}`;
+      }
       if (role === "CLIENT_MANAGER") return "/client/quotations";
       if (n.lead_id && role === "SALESPERSON") return `/sales/quotes?leadId=${n.lead_id}`;
       return role === "SALESPERSON" ? "/sales/quotes" : "/client/quotations";

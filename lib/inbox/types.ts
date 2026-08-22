@@ -152,6 +152,8 @@ export type InboxChatMessage = {
   mediaMimeType?: string | null;
   actorName?: string | null;
   systemTitle?: string | null;
+  href?: string | null;
+  hrefLabel?: string | null;
 };
 
 export type InboxIntelligence = {

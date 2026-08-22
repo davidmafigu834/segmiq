@@ -108,7 +108,17 @@ export function MessageBubble({ message }: Props) {
             </div>
           ) : null}
           <div className="text-[12.5px] leading-snug text-sales-text-primary">{message.text}</div>
-          <div className="mt-1 text-[10px] tabular-nums text-sales-text-muted">{formatTime(message.createdAt)}</div>
+          <div className="mt-1.5 flex items-center justify-between gap-3">
+            <span className="text-[10px] tabular-nums text-sales-text-muted">{formatTime(message.createdAt)}</span>
+            {message.href ? (
+              <a
+                href={message.href}
+                className="text-[11px] font-medium text-sales-text-secondary underline-offset-2 hover:text-sales-text-primary hover:underline"
+              >
+                {message.hrefLabel || "Open"}
+              </a>
+            ) : null}
+          </div>
         </div>
       </div>
     );

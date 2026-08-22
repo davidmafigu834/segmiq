@@ -4,6 +4,11 @@ import { canManageQuotation } from "@/lib/quotations/quote-access";
 import { logQuotationEvent } from "@/lib/quotations/events";
 import { loadQuotationWithItems } from "@/lib/quotations/persist";
 import { notifyQuotationAlert } from "@/lib/quotations/notify";
+import {
+  actorCanApproveTargets,
+  awaitingApproverLabel,
+  targetsFromUnknownRules,
+} from "@/lib/quotations/approver-authority";
 
 /** Manager approves, requests changes, or rejects a pending quotation. */
 export async function POST(req: Request, { params }: { params: { quotationId: string } }) {
@@ -34,6 +39,33 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
 
   if (!quote || (quote.approval_status !== "pending" && quote.status !== "pending_approval")) {
     return NextResponse.json({ error: "Quotation is not pending approval" }, { status: 400 });
+  }
+
+  const { data: pendingRequests } = await supabase
+    .from("quotation_approval_requests")
+    .select("id, triggered_rules")
+    .eq("quotation_id", params.quotationId)
+    .eq("status", "pending");
+  const requestIds = (pendingRequests ?? []).map((row) => row.id as string);
+  let targets = (pendingRequests ?? []).flatMap((row) => targetsFromUnknownRules(row.triggered_rules));
+  if (requestIds.length > 0) {
+    const { data: steps } = await supabase
+      .from("quotation_approval_steps")
+      .select("approver_role, approver_user_id, status")
+      .in("request_id", requestIds)
+      .eq("status", "pending");
+    if (steps && steps.length > 0) {
+      targets = steps.map((step) => ({
+        approverRole: (step.approver_role as string | null) ?? null,
+        approverUserId: (step.approver_user_id as string | null) ?? null,
+      }));
+    }
+  }
+  if (!actorCanApproveTargets({ id: access.actor.id, role: access.actor.role }, targets)) {
+    return NextResponse.json(
+      { error: awaitingApproverLabel(targets) },
+      { status: 403 }
+    );
   }
 
   const now = new Date().toISOString();
@@ -79,6 +111,7 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       await notifyQuotationAlert({
         userId: salespersonId,
         leadId: access.leadId,
+        quotationId: params.quotationId,
         message: `${quoteLabel} was approved. You can send it now.`,
       });
     }
@@ -118,6 +151,7 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       await notifyQuotationAlert({
         userId: salespersonId,
         leadId: access.leadId,
+        quotationId: params.quotationId,
         message: `Changes requested on ${quoteLabel}${note ? `: ${note}` : ""}`,
       });
     }
@@ -157,6 +191,7 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       await notifyQuotationAlert({
         userId: salespersonId,
         leadId: access.leadId,
+        quotationId: params.quotationId,
         message: `${quoteLabel} was rejected${note ? `: ${note}` : ""}`,
       });
     }

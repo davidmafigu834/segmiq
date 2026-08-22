@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { notFound, redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
+import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
@@ -131,6 +132,8 @@ export default async function CompanyDealWorkspacePage({
           repName={session.user?.name ?? ""}
           backHref="/client/leads/pipeline"
           backLabel="Back to Pipeline"
+          quoteHrefMode="company"
+          canCreateQuote={canActAsSalesperson(session)}
         />
       </CompanyWorkspaceShell>
     </ClientManagerLayout>

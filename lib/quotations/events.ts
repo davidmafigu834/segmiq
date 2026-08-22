@@ -63,6 +63,7 @@ export function quotationEventLabel(type: string): string {
     MATERIAL_CHANGE: "Material commercial change",
     DUPLICATED: "Duplicated",
     CANCELLED: "Cancelled",
+    LINK_REVOKED: "Secure link revoked",
   };
   return map[type] ?? type.replace(/_/g, " ").toLowerCase();
 }

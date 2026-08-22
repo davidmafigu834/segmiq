@@ -15,6 +15,7 @@ import type { DealCompletenessResult } from "@/lib/sales/deals/completeness";
 import { getDealCompleteness } from "@/lib/sales/deals/completeness";
 import type { DealTimelineItem } from "@/lib/sales/deals/timeline";
 import { getDealNextActionState } from "@/lib/sales/deals/timeline";
+import { canCreateDealRevision, classifyDealQuotations } from "@/lib/sales/deals/current-quotation";
 import {
   DEAL_ACTIVE_STAGES,
   DEAL_STAGE_LABEL,
@@ -82,6 +83,8 @@ export function DealWorkspaceClient({
   repName,
   backHref = "/sales/pipeline",
   backLabel = "Back to pipeline",
+  quoteHrefMode = "sales",
+  canCreateQuote = true,
 }: {
   initialDeal: DealRow;
   lead: LeadRow | null;
@@ -94,11 +97,24 @@ export function DealWorkspaceClient({
   repName: string;
   backHref?: string;
   backLabel?: string;
+  quoteHrefMode?: "sales" | "company";
+  canCreateQuote?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [deal, setDeal] = useState(initialDeal);
-  const [quotes] = useState(initialQuotes);
+  const [quotes, setQuotes] = useState(initialQuotes);
+  const { current: currentQuote, previous: previousQuotes } = useMemo(
+    () => classifyDealQuotations(quotes),
+    [quotes]
+  );
+  const [revising, setRevising] = useState(false);
+
+  function quoteHref(id: string) {
+    return quoteHrefMode === "company"
+      ? `/client/quotations?quotation=${id}`
+      : `/sales/quotes/${id}`;
+  }
   const [commercial, setCommercial] = useState(initialCommercial);
   const [completeness, setCompleteness] = useState(initialCompleteness);
   const [nextAction, setNextAction] = useState(initialNext);
@@ -236,6 +252,20 @@ export function DealWorkspaceClient({
       await patchDeal({ stage });
     } finally {
       setMoving(false);
+    }
+  }
+
+  async function createRevision(quoteId: string) {
+    if (revising) return;
+    setRevising(true);
+    try {
+      const res = await fetch(`/api/quotations/${quoteId}/revise`, { method: "POST" });
+      const json = (await res.json().catch(() => ({}))) as { quotation?: QuotationRow; error?: string };
+      if (!res.ok || !json.quotation) return;
+      setQuotes((prev) => [json.quotation!, ...prev.filter((q) => q.id !== json.quotation!.id)]);
+      router.push(quoteHref(json.quotation.id));
+    } finally {
+      setRevising(false);
     }
   }
 
@@ -543,7 +573,7 @@ export function DealWorkspaceClient({
           <Card>
             <CardHeader
               action={
-                !closed && lead ? (
+                !closed && lead && canCreateQuote ? (
                   <Button
                     variant="link"
                     size="sm"
@@ -551,7 +581,7 @@ export function DealWorkspaceClient({
                       router.push(`/sales/quotes?leadId=${lead.id}&dealId=${deal.id}`)
                     }
                   >
-                    Create quote
+                    New quotation
                   </Button>
                 ) : null
               }
@@ -564,46 +594,100 @@ export function DealWorkspaceClient({
                   No quotation created yet.
                 </p>
               ) : (
-                <ul className="space-y-2">
-                  {quotes.map((q) => (
-                    <li
-                      key={q.id}
-                      className="flex items-center justify-between gap-3 rounded-sales-lg border border-sales-border-subtle bg-sales-surface-subtle px-3 py-2.5"
-                    >
-                      <div className="min-w-0">
-                        <Link
-                          href={`/sales/quotes/${q.id}`}
-                          className="truncate text-[13px] font-medium text-sales-text-primary hover:underline"
-                        >
-                          {q.quote_number || "Quote"}
-                        </Link>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          <Badge
-                            tone={quoteStatusTone(q.status)}
-                            appearance="soft"
-                            className=""
+                <div className="space-y-3">
+                  {currentQuote ? (
+                    <div className="rounded-sales-lg border border-sales-border bg-sales-surface px-3 py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                            Current offer
+                          </p>
+                          <Link
+                            href={quoteHref(currentQuote.id)}
+                            className="mt-0.5 block truncate text-[14px] font-semibold text-sales-text-primary hover:underline"
                           >
-                            {formatQuoteStatus(q.status)}
-                          </Badge>
-                          {q.viewed_at ? (
-                            <span className="text-[11px] text-sales-text-muted">
-                              Viewed {new Date(q.viewed_at).toLocaleDateString()}
-                            </span>
-                          ) : q.sent_at ? (
-                            <span className="text-[11px] text-sales-text-muted">Sent, not viewed</span>
+                            {currentQuote.quote_number || "Quote"} · v{currentQuote.revision_number || 1}
+                          </Link>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <Badge tone={quoteStatusTone(currentQuote.status)} appearance="soft">
+                              {formatQuoteStatus(currentQuote.status)}
+                            </Badge>
+                            {currentQuote.approval_status && currentQuote.approval_status !== "not_required" ? (
+                              <span className="text-[11px] text-sales-text-muted">
+                                Approval {currentQuote.approval_status.replace(/_/g, " ")}
+                              </span>
+                            ) : null}
+                            {currentQuote.viewed_at ? (
+                              <span className="text-[11px] text-sales-text-muted">
+                                Viewed {new Date(currentQuote.viewed_at).toLocaleDateString()}
+                              </span>
+                            ) : currentQuote.sent_at ? (
+                              <span className="text-[11px] text-sales-text-muted">Sent, not viewed</span>
+                            ) : null}
+                          </div>
+                          {currentQuote.valid_until ? (
+                            <p className="mt-1 text-[11px] text-sales-text-muted">
+                              Valid until {new Date(`${currentQuote.valid_until}T12:00:00`).toLocaleDateString()}
+                            </p>
                           ) : null}
                         </div>
+                        <p className="shrink-0 text-[14px] font-semibold tabular-nums text-sales-text-primary">
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: currentQuote.currency || "USD",
+                            maximumFractionDigits: 0,
+                          }).format(Number(currentQuote.total) || 0)}
+                        </p>
                       </div>
-                      <p className="shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-primary">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: q.currency || "USD",
-                          maximumFractionDigits: 0,
-                        }).format(Number(q.total) || 0)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                      {!closed && canCreateQuote && canCreateDealRevision(currentQuote) ? (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            loading={revising}
+                            onClick={() => void createRevision(currentQuote.id)}
+                          >
+                            Create revision
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {previousQuotes.length > 0 ? (
+                    <ul className="space-y-2">
+                      {previousQuotes.map((q) => (
+                        <li
+                          key={q.id}
+                          className="flex items-center justify-between gap-3 rounded-sales-lg border border-sales-border-subtle bg-sales-surface-subtle px-3 py-2.5"
+                        >
+                          <div className="min-w-0">
+                            <Link
+                              href={quoteHref(q.id)}
+                              className="truncate text-[13px] font-medium text-sales-text-primary hover:underline"
+                            >
+                              {q.quote_number || "Quote"} · v{q.revision_number || 1}
+                            </Link>
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              <Badge tone={quoteStatusTone(q.status)} appearance="soft">
+                                {formatQuoteStatus(q.status)}
+                              </Badge>
+                              {q.status === "superseded" ? (
+                                <span className="text-[11px] text-sales-text-muted">Superseded</span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <p className="shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-primary">
+                            {new Intl.NumberFormat("en-US", {
+                              style: "currency",
+                              currency: q.currency || "USD",
+                              maximumFractionDigits: 0,
+                            }).format(Number(q.total) || 0)}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
               )}
             </CardContent>
           </Card>

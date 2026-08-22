@@ -587,7 +587,8 @@ export type QuotationEventType =
   | "CUSTOMER_SELECTED_OPTION"
   | "CUSTOMER_REQUESTED_CHANGES"
   | "CUSTOMER_ASKED_QUESTION"
-  | "MATERIAL_CHANGE";
+  | "MATERIAL_CHANGE"
+  | "LINK_REVOKED";
 
 export interface CatalogItemRow {
   id: string;

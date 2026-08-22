@@ -98,6 +98,7 @@ export async function GET(req: Request, { params }: { params: { token: string } 
       await notifyQuotationAlert({
         userId: quote.prepared_by_id as string,
         leadId: quote.lead_id as string,
+        quotationId: quote.id as string,
         message: `${quote.quote_number || "Quotation"} was viewed`,
       });
     }
@@ -241,6 +242,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       await notifyQuotationAlert({
         userId: quote.prepared_by_id as string,
         leadId: quote.lead_id as string,
+        quotationId: quote.id as string,
         message: `Customer selected an option on ${quote.quote_number || "quotation"}`,
       });
     }
@@ -296,6 +298,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       await notifyQuotationAlert({
         userId: quote.prepared_by_id as string,
         leadId: quote.lead_id as string,
+        quotationId: quote.id as string,
         message: `Customer requested changes on ${quote.quote_number || "quotation"}`,
       });
     }
@@ -322,6 +325,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       await notifyQuotationAlert({
         userId: quote.prepared_by_id as string,
         leadId: quote.lead_id as string,
+        quotationId: quote.id as string,
         message: `Customer asked a question on ${quote.quote_number || "quotation"}`,
       });
     }
@@ -422,6 +426,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       await notifyQuotationAlert({
         userId: quote.prepared_by_id as string,
         leadId: quote.lead_id as string,
+        quotationId: quote.id as string,
         message: `${quote.quote_number || "Quotation"} was accepted`,
       });
     }
@@ -459,6 +464,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
       await notifyQuotationAlert({
         userId: quote.prepared_by_id as string,
         leadId: quote.lead_id as string,
+        quotationId: quote.id as string,
         message: `${quote.quote_number || "Quotation"} was declined`,
       });
     }
