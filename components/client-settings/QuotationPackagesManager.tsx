@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, Input, Select } from "@/components/sales/ui";
 import type { CatalogItemRow } from "@/types";
 
 type Component = {
@@ -28,9 +28,13 @@ type Pkg = {
   components: Component[];
 };
 
-const FIELD = "w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px]";
-
-export function QuotationPackagesManager({ clientId }: { clientId: string }) {
+export function QuotationPackagesManager({
+  clientId,
+  embedded = false,
+}: {
+  clientId: string;
+  embedded?: boolean;
+}) {
   const [packages, setPackages] = useState<Pkg[]>([]);
   const [catalog, setCatalog] = useState<CatalogItemRow[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -84,20 +88,21 @@ export function QuotationPackagesManager({ clientId }: { clientId: string }) {
 
   return (
     <section className="space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-display text-lg">Packages</h3>
-          <p className="text-[13px] text-ink-secondary">
-            Reusable commercial assemblies salespeople can add to a quotation.
-          </p>
-        </div>
-        <Button type="button" onClick={() => void createPackage()} disabled={creating}>
-          <Plus className="mr-1 h-4 w-4" />
+      <div className={embedded ? "flex justify-end" : "flex items-start justify-between gap-3"}>
+        {embedded ? null : (
+          <div>
+            <h3 className="text-[15px] font-semibold text-sales-text-primary">Packages</h3>
+            <p className="mt-0.5 text-[13px] text-sales-text-secondary">
+              Reusable commercial assemblies salespeople can add to a quotation.
+            </p>
+          </div>
+        )}
+        <Button variant="secondary" size="sm" leftIcon={<Plus size={14} />} onClick={() => void createPackage()} loading={creating}>
           New package
         </Button>
       </div>
       {packages.length === 0 ? (
-        <p className="rounded-xl border border-border px-4 py-6 text-center text-[13px] text-ink-tertiary">
+        <p className="rounded-[10px] border border-dashed border-sales-border px-4 py-8 text-center text-[13px] text-sales-text-muted">
           No packages created yet.
         </p>
       ) : (
@@ -105,15 +110,15 @@ export function QuotationPackagesManager({ clientId }: { clientId: string }) {
           {packages.map((pkg) => {
             const open = openId === pkg.id;
             return (
-              <li key={pkg.id} className="rounded-xl border border-border">
+              <li key={pkg.id} className="rounded-[10px] border border-sales-border">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-sales-surface-hover"
                   onClick={() => setOpenId(open ? null : pkg.id)}
                 >
                   <span>
-                    <span className="block text-[14px] font-semibold">{pkg.name}</span>
-                    <span className="text-[12px] text-ink-tertiary">
+                    <span className="block text-[13px] font-semibold text-sales-text-primary">{pkg.name}</span>
+                    <span className="text-[12px] text-sales-text-muted">
                       {(pkg.components ?? []).length} items · {pkg.pricing_model.replace("_", " ")} ·{" "}
                       {pkg.is_active ? "Active" : "Inactive"}
                     </span>
@@ -170,53 +175,51 @@ function PackageEditor({
   }
 
   return (
-    <div className="space-y-3 border-t border-border px-4 py-4">
+    <div className="space-y-3 border-t border-sales-border-subtle px-4 py-4">
       <div className="grid gap-2 sm:grid-cols-2">
-        <input className={FIELD} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-        <input
-          className={FIELD}
+        <Input compact value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+        <Input
+          compact
           placeholder="Description"
           value={draft.description ?? ""}
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
         />
-        <select
-          className={FIELD}
+        <Select
           value={draft.pricing_model}
           onChange={(e) => setDraft({ ...draft, pricing_model: e.target.value })}
         >
           <option value="component_total">Component total</option>
           <option value="fixed">Fixed package price</option>
           <option value="discounted_bundle">Discounted bundle</option>
-        </select>
-        <select
-          className={FIELD}
+        </Select>
+        <Select
           value={draft.flexibility}
           onChange={(e) => setDraft({ ...draft, flexibility: e.target.value })}
         >
           <option value="locked">Locked composition</option>
           <option value="flexible">Flexible</option>
           <option value="quantity_adjustable">Quantity-adjustable</option>
-        </select>
+        </Select>
         {draft.pricing_model === "fixed" ? (
-          <input
+          <Input
+            compact
             type="number"
-            className={FIELD}
             placeholder="Fixed price"
             value={draft.fixed_price ?? ""}
             onChange={(e) => setDraft({ ...draft, fixed_price: e.target.value === "" ? null : Number(e.target.value) })}
           />
         ) : null}
         {draft.pricing_model === "discounted_bundle" ? (
-          <input
+          <Input
+            compact
             type="number"
-            className={FIELD}
             placeholder="Bundle discount %"
             value={draft.discount_percent}
             onChange={(e) => setDraft({ ...draft, discount_percent: Number(e.target.value) || 0 })}
           />
         ) : null}
       </div>
-      <label className="flex items-center gap-2 text-[13px]">
+      <label className="flex items-center gap-2 text-[13px] text-sales-text-primary">
         <input
           type="checkbox"
           checked={draft.is_active}
@@ -225,14 +228,15 @@ function PackageEditor({
         Active
       </label>
       <div>
-        <p className="mb-1 text-[12px] font-medium text-ink-secondary">Components</p>
+        <p className="mb-1 text-[12px] font-medium text-sales-text-secondary">Components</p>
         <ul className="space-y-1">
           {draft.components.map((c, idx) => (
             <li key={`${c.item_name}-${idx}`} className="grid grid-cols-12 items-center gap-1">
-              <span className="col-span-5 truncate text-[13px]">{c.item_name}</span>
-              <input
+              <span className="col-span-5 truncate text-[13px] text-sales-text-primary">{c.item_name}</span>
+              <Input
+                compact
                 type="number"
-                className={`${FIELD} col-span-2`}
+                className="col-span-2"
                 value={c.quantity}
                 onChange={(e) => {
                   const next = [...draft.components];
@@ -240,9 +244,10 @@ function PackageEditor({
                   setDraft({ ...draft, components: next });
                 }}
               />
-              <input
+              <Input
+                compact
                 type="number"
-                className={`${FIELD} col-span-3`}
+                className="col-span-3"
                 value={c.unit_price}
                 onChange={(e) => {
                   const next = [...draft.components];
@@ -252,7 +257,7 @@ function PackageEditor({
               />
               <button
                 type="button"
-                className="col-span-2 text-ink-tertiary"
+                className="col-span-2 text-sales-text-muted hover:text-sales-danger"
                 onClick={() => setDraft({ ...draft, components: draft.components.filter((_, i) => i !== idx) })}
               >
                 <Trash2 className="h-4 w-4" />
@@ -260,8 +265,8 @@ function PackageEditor({
             </li>
           ))}
         </ul>
-        <select
-          className={`${FIELD} mt-2`}
+        <Select
+          className="mt-2"
           defaultValue=""
           onChange={(e) => {
             const item = catalog.find((c) => c.id === e.target.value);
@@ -275,13 +280,13 @@ function PackageEditor({
               {c.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       <div className="flex gap-2">
-        <Button type="button" onClick={() => onChange(draft)}>
+        <Button variant="primary" size="sm" onClick={() => onChange(draft)}>
           Save package
         </Button>
-        <Button type="button" variant="ghost" onClick={onDelete}>
+        <Button variant="ghost" size="sm" onClick={onDelete}>
           Delete
         </Button>
       </div>

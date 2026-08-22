@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui";
+import { Button, Checkbox, Input, Select, Skeleton, Switch, TextArea, FieldLabel } from "@/components/sales/ui";
 
 type Settings = Record<string, unknown> & {
   default_currency?: string;
@@ -41,16 +41,29 @@ type Policy = {
   priority: number;
 };
 
-const FIELD = "w-full rounded-lg border border-border bg-surface px-3 py-2 text-[13px]";
+export type CommercialSection =
+  | "general"
+  | "pricing"
+  | "discounts"
+  | "margin"
+  | "approvals"
+  | "customer"
+  | "terms";
 
-export function QuotationCommercialSettings({ clientId }: { clientId: string }) {
-  const [tab, setTab] = useState<"general" | "pricing" | "discounts" | "margin" | "approvals" | "customer" | "terms">(
-    "general"
-  );
+export function QuotationCommercialSettings({
+  clientId,
+  section,
+  hideSave = false,
+}: {
+  clientId: string;
+  section: CommercialSection;
+  hideSave?: boolean;
+}) {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
+  const [error, setError] = useState(false);
   const [newPolicy, setNewPolicy] = useState({
     name: "",
     trigger_type: "discount",
@@ -63,10 +76,13 @@ export function QuotationCommercialSettings({ clientId }: { clientId: string }) 
     Promise.all([
       fetch(`/api/clients/${clientId}/quotation-settings`).then((r) => r.json()),
       fetch(`/api/clients/${clientId}/quotation-approval-policies`).then((r) => r.json()),
-    ]).then(([s, p]: [{ settings?: Settings }, { policies?: Policy[] }]) => {
-      setSettings(s.settings ?? {});
-      setPolicies(p.policies ?? []);
-    });
+    ])
+      .then(([s, p]: [{ settings?: Settings }, { policies?: Policy[] }]) => {
+        setSettings(s.settings ?? {});
+        setPolicies(p.policies ?? []);
+        setError(false);
+      })
+      .catch(() => setError(true));
   }, [clientId]);
 
   async function save() {
@@ -79,7 +95,7 @@ export function QuotationCommercialSettings({ clientId }: { clientId: string }) 
         body: JSON.stringify(settings),
       });
       setToast("Saved");
-      setTimeout(() => setToast(""), 2000);
+      window.setTimeout(() => setToast(""), 2000);
     } finally {
       setSaving(false);
     }
@@ -115,92 +131,73 @@ export function QuotationCommercialSettings({ clientId }: { clientId: string }) 
     setPolicies((prev) => prev.map((x) => (x.id === p.id ? { ...x, is_active: !x.is_active } : x)));
   }
 
-  if (!settings) return <p className="text-sm text-ink-tertiary">Loading commercial settings…</p>;
-
-  const tabs = [
-    ["general", "General"],
-    ["pricing", "Pricing"],
-    ["discounts", "Discounts"],
-    ["margin", "Margin"],
-    ["approvals", "Approvals"],
-    ["customer", "Customer experience"],
-    ["terms", "Terms"],
-  ] as const;
+  if (error) {
+    return <p className="text-[13px] text-sales-text-muted">Commercial settings could not be loaded.</p>;
+  }
+  if (!settings) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-2/3" />
+      </div>
+    );
+  }
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h3 className="font-display text-lg">Commercial policy</h3>
-        <p className="text-[13px] text-ink-secondary">
-          Company rules for pricing, discount authority, margin, approvals, and the customer quotation page.
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-1 border-b border-border pb-2">
-        {tabs.map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            className={`rounded-full px-3 py-1 text-[12px] font-medium ${
-              tab === id ? "bg-ink-primary text-white" : "text-ink-secondary"
-            }`}
-            onClick={() => setTab(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {tab === "general" ? (
+    <div className="space-y-4">
+      {section === "general" ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Default currency">
-            <input className={FIELD} value={String(settings.default_currency ?? "USD")} onChange={(e) => setSettings({ ...settings, default_currency: e.target.value })} />
+            <Input compact value={String(settings.default_currency ?? "USD")} onChange={(e) => setSettings({ ...settings, default_currency: e.target.value })} />
           </Field>
           <Field label="Default validity (days)">
-            <input type="number" className={FIELD} value={Number(settings.default_validity_days) || 14} onChange={(e) => setSettings({ ...settings, default_validity_days: Number(e.target.value) })} />
+            <Input compact type="number" value={Number(settings.default_validity_days) || 14} onChange={(e) => setSettings({ ...settings, default_validity_days: Number(e.target.value) })} />
           </Field>
           <Field label="Default payment terms">
-            <input className={FIELD} value={settings.default_payment_terms ?? ""} onChange={(e) => setSettings({ ...settings, default_payment_terms: e.target.value })} />
-          </Field>
-          <Field label="Default tax rate %">
-            <input type="number" className={FIELD} value={Number(settings.default_tax_rate) || 0} onChange={(e) => setSettings({ ...settings, default_tax_rate: Number(e.target.value) })} />
+            <Input compact value={settings.default_payment_terms ?? ""} onChange={(e) => setSettings({ ...settings, default_payment_terms: e.target.value })} />
           </Field>
         </div>
       ) : null}
 
-      {tab === "pricing" ? (
+      {section === "pricing" ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Salesperson price editing">
-            <select className={FIELD} value={String(settings.price_edit_policy ?? "discount_allowed")} onChange={(e) => setSettings({ ...settings, price_edit_policy: e.target.value })}>
+            <Select value={String(settings.price_edit_policy ?? "discount_allowed")} onChange={(e) => setSettings({ ...settings, price_edit_policy: e.target.value })}>
               <option value="standard_only">Standard only — catalogue price locked</option>
               <option value="discount_allowed">Discount allowed within authority</option>
               <option value="price_override">Price override allowed</option>
               <option value="manager_controlled">Manager controlled — all deviations need approval</option>
-            </select>
+            </Select>
           </Field>
-          <label className="flex items-center gap-2 text-[13px]">
-            <input type="checkbox" checked={settings.salesperson_can_create_custom_item !== false} onChange={(e) => setSettings({ ...settings, salesperson_can_create_custom_item: e.target.checked })} />
-            Salespeople can add custom items
-          </label>
-          <label className="flex items-center gap-2 text-[13px]">
-            <input type="checkbox" checked={Boolean(settings.require_approval_for_custom_items)} onChange={(e) => setSettings({ ...settings, require_approval_for_custom_items: e.target.checked })} />
-            Custom items require approval
-          </label>
-          <label className="flex items-center gap-2 text-[13px]">
-            <input type="checkbox" checked={Boolean(settings.salesperson_can_create_package)} onChange={(e) => setSettings({ ...settings, salesperson_can_create_package: e.target.checked })} />
-            Salespeople can create packages
-          </label>
+          <div className="space-y-2 sm:col-span-2">
+            <ToggleRow
+              label="Salespeople can add custom items"
+              checked={settings.salesperson_can_create_custom_item !== false}
+              onChange={(checked) => setSettings({ ...settings, salesperson_can_create_custom_item: checked })}
+            />
+            <ToggleRow
+              label="Custom items require approval"
+              checked={Boolean(settings.require_approval_for_custom_items)}
+              onChange={(checked) => setSettings({ ...settings, require_approval_for_custom_items: checked })}
+            />
+            <ToggleRow
+              label="Salespeople can create packages"
+              checked={Boolean(settings.salesperson_can_create_package)}
+              onChange={(checked) => setSettings({ ...settings, salesperson_can_create_package: checked })}
+            />
+          </div>
         </div>
       ) : null}
 
-      {tab === "discounts" ? (
+      {section === "discounts" ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Default max discount % (salesperson fallback)">
-            <input type="number" className={FIELD} value={Number(settings.max_discount_percent) || 0} onChange={(e) => setSettings({ ...settings, max_discount_percent: Number(e.target.value) })} />
+            <Input compact type="number" value={Number(settings.max_discount_percent) || 0} onChange={(e) => setSettings({ ...settings, max_discount_percent: Number(e.target.value) })} />
           </Field>
           <Field label="Salesperson max %">
-            <input
+            <Input
+              compact
               type="number"
-              className={FIELD}
               value={settings.discount_authority?.find((r) => r.role === "SALESPERSON")?.max_percent ?? settings.max_discount_percent ?? 5}
               onChange={(e) => {
                 const rest = (settings.discount_authority ?? []).filter((r) => r.role !== "SALESPERSON");
@@ -209,9 +206,9 @@ export function QuotationCommercialSettings({ clientId }: { clientId: string }) 
             />
           </Field>
           <Field label="Manager max % (blank = unrestricted)">
-            <input
+            <Input
+              compact
               type="number"
-              className={FIELD}
               value={settings.discount_authority?.find((r) => r.role === "CLIENT_MANAGER")?.max_percent ?? ""}
               onChange={(e) => {
                 const rest = (settings.discount_authority ?? []).filter((r) => r.role !== "CLIENT_MANAGER");
@@ -223,81 +220,89 @@ export function QuotationCommercialSettings({ clientId }: { clientId: string }) 
         </div>
       ) : null}
 
-      {tab === "margin" ? (
+      {section === "margin" ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Minimum acceptable margin %">
-            <input type="number" className={FIELD} value={settings.min_margin_percent ?? ""} onChange={(e) => setSettings({ ...settings, min_margin_percent: e.target.value === "" ? null : Number(e.target.value) })} />
+            <Input compact type="number" value={settings.min_margin_percent ?? ""} onChange={(e) => setSettings({ ...settings, min_margin_percent: e.target.value === "" ? null : Number(e.target.value) })} />
           </Field>
           <Field label="Warning threshold %">
-            <input type="number" className={FIELD} value={settings.margin_warning_percent ?? ""} onChange={(e) => setSettings({ ...settings, margin_warning_percent: e.target.value === "" ? null : Number(e.target.value) })} />
+            <Input compact type="number" value={settings.margin_warning_percent ?? ""} onChange={(e) => setSettings({ ...settings, margin_warning_percent: e.target.value === "" ? null : Number(e.target.value) })} />
           </Field>
           <Field label="What salespeople can see">
-            <select className={FIELD} value={String(settings.margin_visibility ?? "none")} onChange={(e) => setSettings({ ...settings, margin_visibility: e.target.value })}>
+            <Select value={String(settings.margin_visibility ?? "none")} onChange={(e) => setSettings({ ...settings, margin_visibility: e.target.value })}>
               <option value="none">No margin information</option>
               <option value="health">Margin health only</option>
               <option value="percent">Margin %</option>
               <option value="full">Cost + gross profit + margin</option>
-            </select>
+            </Select>
           </Field>
         </div>
       ) : null}
 
-      {tab === "approvals" ? (
+      {section === "approvals" ? (
         <div className="space-y-4">
           <Field label="Quotation value threshold (optional)">
-            <input type="number" className={FIELD} value={settings.approval_value_threshold ?? ""} onChange={(e) => setSettings({ ...settings, approval_value_threshold: e.target.value === "" ? null : Number(e.target.value) })} />
+            <Input compact type="number" value={settings.approval_value_threshold ?? ""} onChange={(e) => setSettings({ ...settings, approval_value_threshold: e.target.value === "" ? null : Number(e.target.value) })} />
           </Field>
-          <div className="rounded-xl border border-border">
-            <div className="grid grid-cols-12 gap-2 border-b border-border px-3 py-2 text-[10px] uppercase tracking-wider text-ink-tertiary">
+          <div className="overflow-hidden rounded-[10px] border border-sales-border">
+            <div className="grid grid-cols-12 gap-2 border-b border-sales-border-subtle bg-sales-surface-subtle px-3 py-2 text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
               <span className="col-span-3">Name</span>
               <span className="col-span-3">When</span>
               <span className="col-span-3">Approver</span>
-              <span className="col-span-3">Active</span>
+              <span className="col-span-3">Status</span>
             </div>
             {policies.length === 0 ? (
-              <p className="px-3 py-4 text-[13px] text-ink-tertiary">No policies yet. Fallback discount and margin rules still apply.</p>
+              <p className="px-3 py-5 text-[13px] text-sales-text-muted">
+                No policies yet. Fallback discount and margin rules still apply.
+              </p>
             ) : (
               policies.map((p) => (
-                <div key={p.id} className="grid grid-cols-12 items-center gap-2 px-3 py-2 text-[13px]">
-                  <span className="col-span-3">{p.name}</span>
-                  <span className="col-span-3 text-ink-secondary">
-                    {p.trigger_type} {p.operator} {p.threshold_numeric ?? ""}
+                <div key={p.id} className="grid grid-cols-12 items-center gap-2 border-t border-sales-border-subtle px-3 py-2.5 text-[13px]">
+                  <span className="col-span-3 font-medium text-sales-text-primary">{p.name}</span>
+                  <span className="col-span-3 text-sales-text-secondary">
+                    {p.trigger_type.replace(/_/g, " ")} {p.operator} {p.threshold_numeric ?? ""}
                   </span>
-                  <span className="col-span-3">{p.approver_role ?? "Manager"}</span>
-                  <button type="button" className="col-span-2 text-left text-[12px] underline" onClick={() => void togglePolicy(p)}>
-                    {p.is_active ? "Active" : "Disabled"}
-                  </button>
-                  <button type="button" className="col-span-1 text-left text-[12px] text-ink-tertiary" onClick={() => void deletePolicy(p)}>
-                    Delete
-                  </button>
+                  <span className="col-span-3 text-sales-text-secondary">{p.approver_role ?? "Manager"}</span>
+                  <div className="col-span-3 flex items-center gap-3">
+                    <Switch checked={p.is_active} onCheckedChange={() => void togglePolicy(p)} aria-label={`${p.name} active`} />
+                    <button
+                      type="button"
+                      className="text-[12px] text-sales-text-muted hover:text-sales-danger"
+                      onClick={() => void deletePolicy(p)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </div>
-          <div className="grid gap-2 sm:grid-cols-5">
-            <input className={FIELD} placeholder="Policy name" value={newPolicy.name} onChange={(e) => setNewPolicy({ ...newPolicy, name: e.target.value })} />
-            <select className={FIELD} value={newPolicy.trigger_type} onChange={(e) => setNewPolicy({ ...newPolicy, trigger_type: e.target.value })}>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+            <Input compact placeholder="Policy name" value={newPolicy.name} onChange={(e) => setNewPolicy({ ...newPolicy, name: e.target.value })} />
+            <Select value={newPolicy.trigger_type} onChange={(e) => setNewPolicy({ ...newPolicy, trigger_type: e.target.value })}>
               <option value="discount">Discount</option>
               <option value="margin">Margin</option>
               <option value="quotation_value">Quotation value</option>
               <option value="payment_terms">Payment terms</option>
               <option value="price_override">Price override</option>
               <option value="custom_item">Custom item</option>
-            </select>
-            <select className={FIELD} value={newPolicy.operator} onChange={(e) => setNewPolicy({ ...newPolicy, operator: e.target.value })}>
+            </Select>
+            <Select value={newPolicy.operator} onChange={(e) => setNewPolicy({ ...newPolicy, operator: e.target.value })}>
               <option value="gt">greater than</option>
               <option value="gte">at least</option>
               <option value="lt">less than</option>
               <option value="lte">at most</option>
-            </select>
-            <input type="number" className={FIELD} value={newPolicy.threshold_numeric} onChange={(e) => setNewPolicy({ ...newPolicy, threshold_numeric: Number(e.target.value) })} />
-            <Button type="button" onClick={() => void addPolicy()}>Add policy</Button>
+            </Select>
+            <Input compact type="number" value={newPolicy.threshold_numeric} onChange={(e) => setNewPolicy({ ...newPolicy, threshold_numeric: Number(e.target.value) })} />
+            <Button variant="secondary" size="sm" onClick={() => void addPolicy()}>
+              Add policy
+            </Button>
           </div>
         </div>
       ) : null}
 
-      {tab === "customer" ? (
-        <div className="space-y-2 text-[13px]">
+      {section === "customer" ? (
+        <div className="space-y-1">
           {[
             ["customer_allow_accept", "Allow Accept"],
             ["customer_allow_request_changes", "Allow Request changes"],
@@ -307,37 +312,56 @@ export function QuotationCommercialSettings({ clientId }: { clientId: string }) 
             ["require_acceptance_name", "Require acceptance name"],
             ["require_acceptance_checkbox", "Require confirmation checkbox"],
           ].map(([key, label]) => (
-            <label key={key} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={Boolean(settings[key as keyof Settings] ?? (key !== "require_acceptance_name"))}
-                onChange={(e) => setSettings({ ...settings, [key]: e.target.checked })}
-              />
-              {label}
-            </label>
+            <Checkbox
+              key={key}
+              label={label}
+              checked={Boolean(settings[key as keyof Settings] ?? (key !== "require_acceptance_name"))}
+              onCheckedChange={(checked) => setSettings({ ...settings, [key]: checked })}
+            />
           ))}
         </div>
       ) : null}
 
-      {tab === "terms" ? (
+      {section === "terms" ? (
         <Field label="Default terms (snapshotted when a quotation is sent)">
-          <textarea className={FIELD} rows={6} value={settings.default_terms ?? ""} onChange={(e) => setSettings({ ...settings, default_terms: e.target.value })} />
+          <TextArea rows={6} value={settings.default_terms ?? ""} onChange={(e) => setSettings({ ...settings, default_terms: e.target.value })} />
         </Field>
       ) : null}
 
-      <div className="flex items-center gap-3">
-        <Button onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : "Save commercial settings"}</Button>
-        {toast ? <span className="text-[13px] text-ink-secondary">{toast}</span> : null}
-      </div>
-    </section>
+      {hideSave ? null : (
+        <div className="flex items-center gap-3 border-t border-sales-border-subtle pt-4">
+          <Button variant="primary" size="sm" loading={saving} onClick={() => void save()}>
+            Save
+          </Button>
+          {toast ? <span className="text-[12px] text-sales-success-fg">{toast}</span> : null}
+        </div>
+      )}
+    </div>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-[12px] font-medium text-ink-secondary">{label}</span>
+    <div className="min-w-0">
+      <FieldLabel>{label}</FieldLabel>
       {children}
-    </label>
+    </div>
+  );
+}
+
+function ToggleRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[8px] border border-sales-border-subtle px-3 py-2.5">
+      <span className="text-[13px] text-sales-text-primary">{label}</span>
+      <Switch checked={checked} onCheckedChange={onChange} aria-label={label} />
+    </div>
   );
 }
