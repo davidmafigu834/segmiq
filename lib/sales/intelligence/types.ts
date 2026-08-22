@@ -28,6 +28,10 @@ export type SalesActionReasonCode =
   | "FOLLOWUP_OVERDUE"
   | "FOLLOWUP_DUE_TODAY"
   | "QUOTE_WAITING"
+  | "QUOTE_APPROVAL_NEEDED"
+  | "QUOTE_EXPIRING"
+  | "QUOTE_VIEWED"
+  | "QUOTE_CUSTOMER_CHANGES"
   | "DEAL_STALE"
   | "NO_NEXT_ACTION"
   | "LATE_STAGE_NEEDS_ACTION"
@@ -203,6 +207,10 @@ export type LeadIntelligenceSignal = {
     total: number | null;
     status: string;
     sentAt: string | null;
+    approvalStatus?: string | null;
+    viewedAt?: string | null;
+    validUntil?: string | null;
+    customerResponded?: boolean;
   } | null;
   isWhatsAppCapable: boolean;
   /** When set, this signal represents an active Deal (post Lead→Deal conversion). */

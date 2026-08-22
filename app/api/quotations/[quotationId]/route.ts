@@ -54,13 +54,24 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     declined_reason: string | null;
     deal_id: string | null;
     silent: boolean;
+    expected_updated_at?: string;
+    offer_options?: Array<{ id: string; label: string; description?: string | null }>;
   }>;
 
   const { data: current } = await supabase
     .from("quotations")
-    .select("tax_rate, other_amount, discount_percent, total, status, sections, deal_id")
+    .select(
+      "tax_rate, other_amount, discount_percent, total, status, sections, deal_id, approval_status, commercial_fingerprint, payment_terms_label, valid_until, currency, updated_at"
+    )
     .eq("id", params.quotationId)
     .single();
+
+  if (body.expected_updated_at && current?.updated_at && body.expected_updated_at !== current.updated_at) {
+    return NextResponse.json(
+      { error: "This quotation was updated by someone else. Reload and try again." },
+      { status: 409 }
+    );
+  }
 
   const isDraft = isQuotationEditable(String(current?.status ?? ""));
   const hasContentChanges =
@@ -83,6 +94,7 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
     body.sections !== undefined ||
     body.note_blocks !== undefined ||
     body.timeline_milestones !== undefined ||
+    body.offer_options !== undefined ||
     body.items !== undefined ||
     body.deal_id !== undefined;
 
@@ -117,6 +129,7 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
   if (body.sections !== undefined) updates.sections = body.sections;
   if (body.note_blocks !== undefined) updates.note_blocks = body.note_blocks;
   if (body.timeline_milestones !== undefined) updates.timeline_milestones = body.timeline_milestones;
+  if (body.offer_options !== undefined) updates.offer_options = body.offer_options;
 
   if (body.status !== undefined) {
     updates.status = body.status;
@@ -188,6 +201,25 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
   }
 
   const full = await loadQuotationWithItems(supabase, params.quotationId);
+  if (full && hasContentChanges) {
+    const { invalidateApprovalIfStale } = await import("@/lib/quotations/approval-state");
+    await invalidateApprovalIfStale(supabase, {
+      quotationId: params.quotationId,
+      clientId: access.clientId,
+      leadId: access.leadId,
+      dealId: (full.deal_id as string) || null,
+      actor: { id: access.actor.id, name: access.actor.name },
+      currentFingerprint: (current?.commercial_fingerprint as string | null) ?? null,
+      approvalStatus: (current?.approval_status as string | null) ?? null,
+      items: (full.items as QuotationLineItemInput[]) ?? [],
+      discountPercent: Number(full.discount_percent) || 0,
+      otherAmount: Number(full.other_amount) || 0,
+      taxRate: Number(full.tax_rate) || 0,
+      paymentTermsLabel: (full.payment_terms_label as string | null) ?? null,
+      validUntil: (full.valid_until as string | null) ?? null,
+      currency: (full.currency as string | null) ?? null,
+    });
+  }
   return NextResponse.json({ quotation: full });
 }
 

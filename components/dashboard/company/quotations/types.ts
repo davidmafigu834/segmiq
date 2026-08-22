@@ -3,10 +3,12 @@ import type { QuotationStatus } from "@/types";
 export type CompanyQuotationTab =
   | "all"
   | "draft"
+  | "pending_approval"
   | "sent"
   | "viewed"
   | "accepted"
-  | "declined";
+  | "declined"
+  | "expired";
 
 export type CompanyQuotationOwner = {
   id: string;
@@ -41,6 +43,9 @@ export type CompanyQuotationRow = {
   createdAt: string;
   updatedAt: string;
   publicToken: string | null;
+  approvalStatus?: string | null;
+  approvalNote?: string | null;
+  discountPercent?: number | null;
 };
 
 export type CompanyQuotationFilterOption = {

@@ -77,7 +77,8 @@ export type NotificationType =
   | "FOLLOW_UP_PREP"
   | "DEAL_WON"
   | "LEAD_FLAG"
-  | "UNCONTACTED_MANAGER_ALERT";
+  | "UNCONTACTED_MANAGER_ALERT"
+  | "QUOTATION_ALERT";
 
 export interface UserRow {
   id: string;
@@ -435,7 +436,98 @@ export type QuotationStatus =
   | "expired"
   | "superseded";
 
-export type QuotationApprovalStatus = "not_required" | "pending" | "approved" | "rejected";
+export type QuotationApprovalStatus =
+  | "not_required"
+  | "required"
+  | "pending"
+  | "approved"
+  | "changes_requested"
+  | "rejected";
+
+export type MarginVisibility = "none" | "health" | "percent" | "full";
+export type PriceEditPolicy =
+  | "standard_only"
+  | "discount_allowed"
+  | "price_override"
+  | "manager_controlled";
+export type MarginHealthState = "healthy" | "near_minimum" | "below_policy" | "unknown";
+
+export type DiscountAuthorityRule = {
+  role: string;
+  max_percent: number | null;
+};
+
+export type QuotationOfferOption = {
+  id: string;
+  label: string;
+  description?: string | null;
+  is_recommended?: boolean;
+};
+
+export type QuotationCustomerConfiguration = {
+  selected_optional_keys?: string[];
+  declined_optional_keys?: string[];
+  selected_offer_option_id?: string | null;
+  selected_total?: number | null;
+};
+
+export type ApprovalTriggerType =
+  | "discount"
+  | "margin"
+  | "quotation_value"
+  | "payment_terms"
+  | "price_override"
+  | "special_product"
+  | "custom_item";
+
+export interface QuotationApprovalPolicyRow {
+  id: string;
+  client_id: string;
+  name: string;
+  is_active: boolean;
+  trigger_type: ApprovalTriggerType | string;
+  operator: string;
+  threshold_numeric: number | null;
+  threshold_text: string | null;
+  approver_role: string | null;
+  approver_user_id: string | null;
+  sequence_group: number;
+  priority: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuotationPackageRow {
+  id: string;
+  client_id: string;
+  name: string;
+  description: string | null;
+  pricing_model: "component_total" | "fixed" | "discounted_bundle" | string;
+  flexibility: "locked" | "flexible" | "quantity_adjustable" | string;
+  fixed_price: number | null;
+  discount_percent: number;
+  currency: string;
+  notes: string | null;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuotationPackageComponentRow {
+  id: string;
+  package_id: string;
+  catalog_item_id: string | null;
+  item_name: string;
+  description: string | null;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  cost_price: number | null;
+  sku: string | null;
+  is_optional: boolean;
+  sort_order: number;
+}
 
 export type QuotationSectionDef = {
   id: string;
@@ -487,7 +579,15 @@ export type QuotationEventType =
   | "PDF_DOWNLOADED"
   | "FOLLOW_UP_SCHEDULED"
   | "DUPLICATED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "APPROVAL_INVALIDATED"
+  | "RESUBMITTED"
+  | "REJECTED"
+  | "PRICE_OVERRIDE"
+  | "CUSTOMER_SELECTED_OPTION"
+  | "CUSTOMER_REQUESTED_CHANGES"
+  | "CUSTOMER_ASKED_QUESTION"
+  | "MATERIAL_CHANGE";
 
 export interface CatalogItemRow {
   id: string;
@@ -504,9 +604,12 @@ export interface CatalogItemRow {
   sku?: string | null;
   unit?: string | null;
   cost_price?: number | null;
+  min_selling_price?: number | null;
   tax_rate?: number | null;
   image_url?: string | null;
   warranty?: string | null;
+  item_kind?: "product" | "service" | string;
+  requires_approval?: boolean;
 }
 
 /** Personal reusable quote items saved by a salesperson (or manager). */
@@ -547,6 +650,26 @@ export interface QuotationSettingsRow {
   supported_currencies?: string[];
   salesperson_can_see_margin?: boolean;
   salesperson_can_see_cost?: boolean;
+  price_edit_policy?: PriceEditPolicy;
+  margin_warning_percent?: number | null;
+  margin_visibility?: MarginVisibility;
+  discount_authority?: DiscountAuthorityRule[];
+  allow_quotation_discount?: boolean;
+  salesperson_can_create_custom_item?: boolean;
+  salesperson_can_create_package?: boolean;
+  require_approval_for_custom_items?: boolean;
+  customer_allow_accept?: boolean;
+  customer_allow_request_changes?: boolean;
+  customer_allow_ask_question?: boolean;
+  customer_allow_decline?: boolean;
+  customer_allow_option_selection?: boolean;
+  require_acceptance_name?: boolean;
+  require_acceptance_checkbox?: boolean;
+  secure_link_ttl_days?: number | null;
+  brand_footer?: string | null;
+  bank_details?: string | null;
+  tax_registration?: string | null;
+  legal_registration?: string | null;
 }
 
 export interface QuotationLineItemRow {
@@ -572,6 +695,12 @@ export interface QuotationLineItemRow {
   option_group?: string | null;
   cost_price?: number | null;
   image_url?: string | null;
+  catalog_unit_price?: number | null;
+  price_override?: boolean;
+  package_id?: string | null;
+  package_locked?: boolean;
+  offer_option_id?: string | null;
+  option_state?: "available" | "selected" | "declined" | string;
 }
 
 export interface QuotationRow {
@@ -626,6 +755,23 @@ export interface QuotationRow {
   approved_by_id?: string | null;
   revision_note?: string | null;
   declined_reason?: string | null;
+  commercial_fingerprint?: string | null;
+  approval_snapshot?: Record<string, unknown> | null;
+  terms_snapshot?: string | null;
+  view_count?: number;
+  last_viewed_at?: string | null;
+  customer_response_type?: string | null;
+  customer_response_category?: string | null;
+  customer_response_message?: string | null;
+  accepted_total?: number | null;
+  accepted_snapshot?: Record<string, unknown> | null;
+  customer_configuration?: QuotationCustomerConfiguration;
+  link_revoked_at?: string | null;
+  template_id?: string | null;
+  offer_options?: QuotationOfferOption[];
+  selected_offer_option_id?: string | null;
+  accepted_by_name?: string | null;
+  declined_category?: string | null;
 }
 
 export interface QuotationEventRow {
@@ -652,6 +798,14 @@ export interface QuoteTemplateLineItemRow {
   group_label: string | null;
   sort_order: number;
   created_at: string;
+  section_id?: string | null;
+  unit?: string;
+  sku?: string | null;
+  discount_percent?: number;
+  tax_rate?: number | null;
+  is_optional?: boolean;
+  package_id?: string | null;
+  offer_option_id?: string | null;
 }
 
 export interface QuoteTemplateRow {
@@ -669,6 +823,15 @@ export interface QuoteTemplateRow {
   created_at: string;
   updated_at: string;
   items?: QuoteTemplateLineItemRow[];
+  sections?: QuotationSectionDef[];
+  note_blocks?: QuotationNoteBlock[];
+  payment_terms_label?: string | null;
+  warranty_terms?: string | null;
+  delivery_terms?: string | null;
+  package_ids?: string[];
+  customer_actions?: Record<string, unknown>;
+  discount_percent?: number;
+  locked_terms?: boolean;
 }
 
 /** A line item as sent from / to the quote builder UI. */
@@ -690,6 +853,12 @@ export interface QuotationLineItemInput {
   option_group?: string | null;
   cost_price?: number | null;
   image_url?: string | null;
+  catalog_unit_price?: number | null;
+  price_override?: boolean | null;
+  package_id?: string | null;
+  package_locked?: boolean | null;
+  offer_option_id?: string | null;
+  option_state?: "available" | "selected" | "declined" | string | null;
 }
 
 // ---------------------------------------------------------------------------

@@ -685,6 +685,8 @@ export function CompanyQuotationsTable({
               <th className="hidden w-[17%] px-2 xl:table-cell">Deal</th>
               <th className="w-[12%] px-2">Amount</th>
               <th className="w-[10%] px-2">Status</th>
+              <th className="hidden w-[10%] px-2 lg:table-cell">Approval</th>
+              <th className="hidden w-[8%] px-2 xl:table-cell">Discount</th>
               <th className="w-[13%] px-2">Owner</th>
               <th className="w-[14%] px-2">
                 <button
@@ -784,6 +786,18 @@ export function CompanyQuotationsTable({
                     >
                       {formatQuoteStatus(row.effectiveStatus)}
                     </Badge>
+                  </td>
+                  <td className="hidden px-2 py-1.5 lg:table-cell">
+                    {row.approvalStatus && row.approvalStatus !== "not_required" ? (
+                      <span className="text-[11px] capitalize text-sales-text-secondary">
+                        {row.approvalStatus.replace(/_/g, " ")}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-sales-text-muted">—</span>
+                    )}
+                  </td>
+                  <td className="hidden px-2 py-1.5 tabular-nums text-[11px] text-sales-text-secondary xl:table-cell">
+                    {row.discountPercent != null ? `${row.discountPercent}%` : "—"}
                   </td>
                   <td className="px-2 py-1.5">
                     {row.owner ? (

@@ -14,7 +14,7 @@ import { formatMoney } from "@/lib/quotations/totals";
 import { getPublicBaseUrl } from "@/lib/constants";
 import { sendQuotationOnWhatsApp } from "@/lib/whatsapp/send-quotation";
 import { loadQuotationWithItems } from "@/lib/quotations/persist";
-import { validateQuotationForSend } from "@/lib/quotations/send-validation";
+import { gateQuotationSend } from "@/lib/quotations/evaluate-send";
 import type { QuotationLineItemInput } from "@/types";
 
 const ADVANCE_FROM = new Set(["NEW", "CONTACTED", "NEGOTIATING"]);
@@ -47,18 +47,11 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   if (!full) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const quote = full;
 
-  const gate = validateQuotationForSend({
-    status: String(quote.status),
-    customer_name: quote.customer_name as string | null,
-    deal_id: quote.deal_id as string | null,
-    currency: quote.currency as string | null,
-    valid_until: quote.valid_until as string | null,
-    payment_terms_label: quote.payment_terms_label as string | null,
-    tax_rate: Number(quote.tax_rate) || 0,
-    other_amount: Number(quote.other_amount) || 0,
-    discount_percent: Number(quote.discount_percent) || 0,
-    items: (quote.items as QuotationLineItemInput[]) ?? [],
-  });
+  const { gate, approval } = await gateQuotationSend(
+    supabase,
+    quote as never,
+    access.actor.role
+  );
   if (!gate.ok) {
     return NextResponse.json(
       { error: gate.error, blockers: gate.blockers },
@@ -66,9 +59,29 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     );
   }
 
+  const approvalStatus = String(quote.approval_status ?? "not_required");
+  if (
+    approval.required &&
+    approvalStatus !== "approved" &&
+    approvalStatus !== "not_required"
+  ) {
+    return NextResponse.json(
+      { error: "Approval required", blockers: ["Request commercial approval"] },
+      { status: 400 }
+    );
+  }
+  if (approvalStatus === "pending" || quote.status === "pending_approval") {
+    return NextResponse.json(
+      { error: "Approval pending — this quotation cannot be sent yet" },
+      { status: 400 }
+    );
+  }
+
   const isResend = quote.status === "sent" || quote.status === "viewed";
-  // Phase 1: drafts (and legacy approved rows) can send. Pending approval is Phase 2.
-  const canSendFresh = quote.status === "draft" || quote.status === "approved";
+  const canSendFresh =
+    quote.status === "draft" ||
+    quote.status === "approved" ||
+    (quote.status === "draft" && approvalStatus === "approved");
   if (!isResend && !canSendFresh) {
     return NextResponse.json(
       { error: "This quotation cannot be sent in its current status" },
@@ -277,6 +290,10 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       sent_at: sentAt,
       pdf_url: pdfUrl,
       pdf_key: pdfKey,
+      terms_snapshot:
+        (quote.terms as string | null) ||
+        (quote.payment_terms_label as string | null) ||
+        null,
       updated_at: sentAt,
     })
     .eq("id", params.quotationId);
@@ -289,6 +306,7 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       .update({
         status: "superseded",
         superseded_by_id: params.quotationId,
+        link_revoked_at: sentAt,
         updated_at: sentAt,
       })
       .eq("id", parentId)
@@ -405,10 +423,36 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     if (!waResult.ok) whatsappError = waResult.error;
   }
 
+  if (sendViaWhatsApp && !whatsappSent) {
+    await supabase
+      .from("quotations")
+      .update({
+        status: "draft",
+        sent_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", params.quotationId)
+      .eq("status", "sent");
+    return NextResponse.json(
+      {
+        error: whatsappError || "WhatsApp delivery failed",
+        success: false,
+        pdfUrl,
+        quoteNumber,
+        link,
+        waMessage,
+        whatsappSent: false,
+        whatsappMode,
+      },
+      { status: 502 }
+    );
+  }
+
   return NextResponse.json({
     success: true,
     pdfUrl,
     quoteNumber,
+    publicToken,
     link,
     waMessage,
     whatsappSent,

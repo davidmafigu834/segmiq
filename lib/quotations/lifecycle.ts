@@ -30,7 +30,7 @@ export function quotationStatusLabel(status: string): string {
     case "draft":
       return "Draft";
     case "pending_approval":
-      return "Draft"; // Phase 2 status — surface as draft in Phase 1 UI
+      return "Draft";
     case "approved":
       return "Approved";
     case "sent":
@@ -107,11 +107,28 @@ export function resolveLifecycleIndex(
 }
 
 export function isQuotationImmutable(status: string): boolean {
-  return status !== "draft" && status !== "pending_approval";
+  return !isQuotationEditable(status);
 }
 
 export function isQuotationEditable(status: string): boolean {
-  return status === "draft";
+  return status === "draft" || status === "pending_approval" || status === "approved";
+}
+
+export function approvalStatusLabel(status: string | null | undefined): string {
+  switch (status) {
+    case "required":
+      return "Required";
+    case "pending":
+      return "Pending";
+    case "approved":
+      return "Approved";
+    case "changes_requested":
+      return "Changes requested";
+    case "rejected":
+      return "Rejected";
+    default:
+      return "Not required";
+  }
 }
 
 export function daysUntil(dateStr: string | null | undefined): number | null {

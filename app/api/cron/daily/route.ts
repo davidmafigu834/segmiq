@@ -9,6 +9,8 @@ import { processUnprocessedLeads } from "@/lib/lead-intelligence";
 import { seedAllClientSegments } from "@/lib/audience-segments";
 import { runPerformanceAnalysisAllClients } from "@/lib/performance-intelligence";
 import { runBillingDailyCron } from "@/lib/billing/cron";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { expireOverdueQuotations } from "@/lib/quotations/expire";
 
 /**
  * Single daily job for Vercel Hobby (free): cron schedules must run at most once per day.
@@ -99,6 +101,14 @@ export async function GET(req: Request) {
   } catch (e) {
     console.error("[cron daily] runBillingDailyCron", e);
     errors.push(`billing: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  try {
+    const expired = await expireOverdueQuotations(createAdminClient());
+    console.log("[cron daily] Expired quotations", expired);
+  } catch (e) {
+    console.error("[cron daily] expireOverdueQuotations", e);
+    errors.push(`quotations: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   const ok = errors.length === 0;

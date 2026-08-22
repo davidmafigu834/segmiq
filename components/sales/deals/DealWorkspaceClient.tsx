@@ -571,16 +571,28 @@ export function DealWorkspaceClient({
                       className="flex items-center justify-between gap-3 rounded-sales-lg border border-sales-border-subtle bg-sales-surface-subtle px-3 py-2.5"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-medium text-sales-text-primary">
-                          {q.quote_number || "Quote"}
-                        </p>
-                        <Badge
-                          tone={quoteStatusTone(q.status)}
-                          appearance="soft"
-                          className="mt-1"
+                        <Link
+                          href={`/sales/quotes/${q.id}`}
+                          className="truncate text-[13px] font-medium text-sales-text-primary hover:underline"
                         >
-                          {formatQuoteStatus(q.status)}
-                        </Badge>
+                          {q.quote_number || "Quote"}
+                        </Link>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <Badge
+                            tone={quoteStatusTone(q.status)}
+                            appearance="soft"
+                            className=""
+                          >
+                            {formatQuoteStatus(q.status)}
+                          </Badge>
+                          {q.viewed_at ? (
+                            <span className="text-[11px] text-sales-text-muted">
+                              Viewed {new Date(q.viewed_at).toLocaleDateString()}
+                            </span>
+                          ) : q.sent_at ? (
+                            <span className="text-[11px] text-sales-text-muted">Sent, not viewed</span>
+                          ) : null}
+                        </div>
                       </div>
                       <p className="shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-primary">
                         {new Intl.NumberFormat("en-US", {

@@ -3,8 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageQuotation } from "@/lib/quotations/quote-access";
 import { logQuotationEvent } from "@/lib/quotations/events";
 import { loadQuotationWithItems } from "@/lib/quotations/persist";
+import { notifyQuotationAlert } from "@/lib/quotations/notify";
 
-/** Manager approves or requests changes on a pending quotation. */
+/** Manager approves, requests changes, or rejects a pending quotation. */
 export async function POST(req: Request, { params }: { params: { quotationId: string } }) {
   const access = await canManageQuotation(params.quotationId, req);
   if (!access.allowed) {
@@ -16,37 +17,53 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
   }
 
   const body = (await req.json()) as {
-    decision: "approve" | "reject";
+    decision: "approve" | "reject" | "request_changes";
     note?: string;
   };
 
-  if (body.decision !== "approve" && body.decision !== "reject") {
+  if (!["approve", "reject", "request_changes"].includes(body.decision)) {
     return NextResponse.json({ error: "Invalid decision" }, { status: 400 });
   }
 
   const supabase = createAdminClient();
   const { data: quote } = await supabase
     .from("quotations")
-    .select("status, deal_id")
+    .select("status, deal_id, approval_status, prepared_by_id, quote_number, lead_id")
     .eq("id", params.quotationId)
     .single();
 
-  if (!quote || quote.status !== "pending_approval") {
+  if (!quote || (quote.approval_status !== "pending" && quote.status !== "pending_approval")) {
     return NextResponse.json({ error: "Quotation is not pending approval" }, { status: 400 });
   }
+
+  const now = new Date().toISOString();
+  const note = body.note?.trim() || null;
+  const salespersonId = quote.prepared_by_id as string | null;
+  const quoteLabel = (quote.quote_number as string) || "quotation";
 
   if (body.decision === "approve") {
     await supabase
       .from("quotations")
       .update({
-        status: "approved",
+        status: "draft",
         approval_status: "approved",
-        approved_at: new Date().toISOString(),
+        approved_at: now,
         approved_by_id: access.actor.id,
-        approval_note: body.note?.trim() || null,
-        updated_at: new Date().toISOString(),
+        approval_note: note,
+        updated_at: now,
       })
       .eq("id", params.quotationId);
+
+    await supabase
+      .from("quotation_approval_requests")
+      .update({
+        status: "approved",
+        decided_by_id: access.actor.id,
+        decided_at: now,
+        decision_note: note,
+      })
+      .eq("quotation_id", params.quotationId)
+      .eq("status", "pending");
 
     await logQuotationEvent(supabase, {
       quotationId: params.quotationId,
@@ -55,18 +72,37 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       dealId: (quote.deal_id as string) || null,
       actor: { id: access.actor.id, name: access.actor.name },
       eventType: "APPROVED",
-      eventData: { note: body.note?.trim() || null },
+      eventData: { note },
     });
-  } else {
+
+    if (salespersonId) {
+      await notifyQuotationAlert({
+        userId: salespersonId,
+        leadId: access.leadId,
+        message: `${quoteLabel} was approved. You can send it now.`,
+      });
+    }
+  } else if (body.decision === "request_changes") {
     await supabase
       .from("quotations")
       .update({
         status: "draft",
-        approval_status: "rejected",
-        approval_note: body.note?.trim() || null,
-        updated_at: new Date().toISOString(),
+        approval_status: "changes_requested",
+        approval_note: note,
+        updated_at: now,
       })
       .eq("id", params.quotationId);
+
+    await supabase
+      .from("quotation_approval_requests")
+      .update({
+        status: "changes_requested",
+        decided_by_id: access.actor.id,
+        decided_at: now,
+        decision_note: note,
+      })
+      .eq("quotation_id", params.quotationId)
+      .eq("status", "pending");
 
     await logQuotationEvent(supabase, {
       quotationId: params.quotationId,
@@ -75,8 +111,55 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       dealId: (quote.deal_id as string) || null,
       actor: { id: access.actor.id, name: access.actor.name },
       eventType: "CHANGES_REQUESTED",
-      eventData: { note: body.note?.trim() || null },
+      eventData: { note },
     });
+
+    if (salespersonId) {
+      await notifyQuotationAlert({
+        userId: salespersonId,
+        leadId: access.leadId,
+        message: `Changes requested on ${quoteLabel}${note ? `: ${note}` : ""}`,
+      });
+    }
+  } else {
+    await supabase
+      .from("quotations")
+      .update({
+        status: "draft",
+        approval_status: "rejected",
+        approval_note: note,
+        updated_at: now,
+      })
+      .eq("id", params.quotationId);
+
+    await supabase
+      .from("quotation_approval_requests")
+      .update({
+        status: "rejected",
+        decided_by_id: access.actor.id,
+        decided_at: now,
+        decision_note: note,
+      })
+      .eq("quotation_id", params.quotationId)
+      .eq("status", "pending");
+
+    await logQuotationEvent(supabase, {
+      quotationId: params.quotationId,
+      clientId: access.clientId,
+      leadId: access.leadId,
+      dealId: (quote.deal_id as string) || null,
+      actor: { id: access.actor.id, name: access.actor.name },
+      eventType: "REJECTED",
+      eventData: { note },
+    });
+
+    if (salespersonId) {
+      await notifyQuotationAlert({
+        userId: salespersonId,
+        leadId: access.leadId,
+        message: `${quoteLabel} was rejected${note ? `: ${note}` : ""}`,
+      });
+    }
   }
 
   const updated = await loadQuotationWithItems(supabase, params.quotationId);

@@ -38,21 +38,29 @@ import {
   runCommercialCheck,
 } from "@/lib/quotations/commercial-check";
 import {
+  evaluateGovernance,
+  marginHealthLabel,
+} from "@/lib/quotations/governance";
+import { evaluateApprovalRequirement } from "@/lib/quotations/approval-engine";
+import {
   LIFECYCLE_LABELS,
   resolveLifecycleIndex,
   quotationStatusLabel,
+  approvalStatusLabel,
   daysUntil,
   isQuotationEditable,
   type QuotationLifecycleStage,
 } from "@/lib/quotations/lifecycle";
 import { quotationEventLabel } from "@/lib/quotations/events";
 import { QUOTE_UNITS } from "@/lib/quotations/units";
+import { expandPackageToLineItems } from "@/lib/quotations/packages";
 import { formatQuoteIdentity, getQuoteStatusTone } from "@/lib/sales/quotes";
 import type {
   CatalogItemRow,
   QuotationLineItemInput,
   QuotationLineItemRow,
   QuotationNoteBlock,
+  QuotationOfferOption,
   QuotationSectionDef,
   QuotationStatus,
   QuotationTimelineMilestone,
@@ -154,11 +162,14 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const [deliveryTerms, setDeliveryTerms] = useState("");
   const [warrantyTerms, setWarrantyTerms] = useState("");
   const [commercialNotes, setCommercialNotes] = useState("");
+  const [offerOptions, setOfferOptions] = useState<QuotationOfferOption[]>([]);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [sendOpen, setSendOpen] = useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [packages, setPackages] = useState<Array<{ id: string; name: string; description: string | null; pricing_model: string; flexibility: string; fixed_price: number | null; discount_percent: number; components: Array<Record<string, unknown>> }>>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState<{ sectionId: string } | null>(null);
@@ -170,7 +181,8 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const q = payload?.quotation;
-  const readOnly = q ? !isQuotationEditable(q.status) : true;
+  const approvalPending = q?.approval_status === "pending";
+  const readOnly = q ? !isQuotationEditable(q.status) || approvalPending : true;
   const clientId = q?.client_id;
 
   const load = useCallback(async () => {
@@ -218,6 +230,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     setDeliveryTerms(quote.delivery_terms ?? "");
     setWarrantyTerms(quote.warranty_terms ?? "");
     setCommercialNotes(quote.commercial_notes ?? "");
+    setOfferOptions(quote.offer_options ?? []);
     setSavedAt(quote.updated_at ? new Date(quote.updated_at) : null);
     dirtyRef.current = false;
     skipFirstSave.current = true;
@@ -239,6 +252,10 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       .then((r) => r.json())
       .then((j: { items?: CatalogItemRow[] }) => setCatalog(j.items ?? []))
       .catch(() => setCatalog([]));
+    fetch(`/api/clients/${clientId}/quotation-packages`)
+      .then((r) => r.json())
+      .then((j: { packages?: typeof packages }) => setPackages(j.packages ?? []))
+      .catch(() => setPackages([]));
   }, [clientId]);
 
   const totals: QuoteTotals = useMemo(
@@ -251,10 +268,37 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     [items, taxRate, otherAmount, discountPercent]
   );
 
+  const governance = useMemo(
+    () =>
+      evaluateGovernance({
+        items,
+        totals,
+        settings: payload?.settings,
+        role: payload?.permissions.canApprove ? "CLIENT_MANAGER" : "SALESPERSON",
+        paymentTermsLabel: paymentTerms,
+        defaultPaymentTerms: payload?.settings?.default_payment_terms,
+      }),
+    [items, totals, payload, paymentTerms]
+  );
+
+  const approvalEval = useMemo(
+    () =>
+      evaluateApprovalRequirement({
+        items,
+        totals,
+        settings: payload?.settings ?? null,
+        policies: payload?.policies ?? [],
+        role: payload?.permissions.canApprove ? "CLIENT_MANAGER" : "SALESPERSON",
+        paymentTermsLabel: paymentTerms,
+      }),
+    [items, totals, payload, paymentTerms]
+  );
+
   const commercial = useMemo(
     () =>
       runCommercialCheck({
         status: q?.status ?? "draft",
+        approvalStatus: q?.approval_status ?? (approvalEval.required ? "required" : "not_required"),
         customerName: payload?.customer.name,
         dealId: payload?.deal?.id ?? q?.deal_id,
         currency,
@@ -262,8 +306,10 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         paymentTermsLabel: paymentTerms,
         items,
         totals,
+        governance,
+        approval: approvalEval,
       }),
-    [q, payload, currency, validUntil, paymentTerms, items, totals]
+    [q, payload, currency, validUntil, paymentTerms, items, totals, governance, approvalEval]
   );
 
   const persist = useCallback(async () => {
@@ -288,6 +334,8 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         sections,
         note_blocks: noteBlocks,
         timeline_milestones: milestones,
+        offer_options: offerOptions,
+        expected_updated_at: q.updated_at,
         items: items.map((it) => {
           const { key, ...rest } = it;
           void key;
@@ -327,6 +375,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     deliveryTerms,
     warrantyTerms,
     commercialNotes,
+    offerOptions,
     sections,
     noteBlocks,
     milestones,
@@ -366,6 +415,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     deliveryTerms,
     warrantyTerms,
     commercialNotes,
+    offerOptions,
   ]);
 
   useEffect(() => {
@@ -377,9 +427,49 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const quoteNumberLabel = formatQuoteIdentity(q?.quote_number);
   const versionLabel = `Version ${q?.revision_number ?? 1}`;
   const statusLabel = quotationStatusLabel(q?.status ?? "draft");
-  const sendBlocked = !commercial.canSend;
+  const sendBlocked = !commercial.canSend && !commercial.approvalRequired;
+  const needsRequestApproval =
+    commercial.approvalRequired &&
+    q?.approval_status !== "approved" &&
+    q?.approval_status !== "pending";
   const sendHelper =
-    sendBlocked && commercial.blockingCount > 0
+    approvalPending
+      ? "Waiting for commercial approval"
+      : needsRequestApproval
+        ? "Request approval before sending"
+        : sendBlocked && commercial.blockingCount > 0
+          ? commercial.items.find((c) => c.status === "block")?.action ?? "Complete commercial check"
+          : undefined;
+
+  function onPrimaryCta() {
+    if (needsRequestApproval) {
+      setApprovalOpen(true);
+      return;
+    }
+    if (approvalPending) {
+      toast({ tone: "warning", title: "Approval pending", description: "This quotation cannot be sent yet." });
+      return;
+    }
+    if (!commercial.canSend) {
+      setTab("items");
+      setRailOpen(true);
+      toast({
+        tone: "warning",
+        title: "Complete commercial check",
+        description: sendHelper,
+      });
+      return;
+    }
+    setSendOpen(true);
+  }
+
+  const primaryCtaLabel = approvalPending
+    ? "Approval pending"
+    : needsRequestApproval
+      ? "Request approval"
+      : sendBlocked
+        ? "Complete quotation"
+        : "Send quotation";
       ? `Complete ${commercial.blockingCount} required item${commercial.blockingCount === 1 ? "" : "s"} before sending.`
       : undefined;
 
@@ -508,6 +598,44 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     ]);
   }
 
+  function addPackage(sectionId: string, pkg: {
+    id: string;
+    name: string;
+    description: string | null;
+    pricing_model?: string;
+    flexibility?: string;
+    fixed_price?: number | null;
+    discount_percent?: number;
+    components?: Array<Record<string, unknown>>;
+  }) {
+    const comps = (pkg.components ?? []).map((c) => ({
+      catalog_item_id: (c.catalog_item_id as string | null) ?? null,
+      item_name: String(c.item_name ?? ""),
+      description: (c.description as string | null) ?? null,
+      quantity: Number(c.quantity) || 1,
+      unit: String(c.unit ?? "Each"),
+      unit_price: Number(c.unit_price) || 0,
+      cost_price: c.cost_price != null ? Number(c.cost_price) : null,
+      sku: (c.sku as string | null) ?? null,
+      is_optional: Boolean(c.is_optional),
+    }));
+    const lines = expandPackageToLineItems({
+      packageId: pkg.id,
+      packageName: pkg.name,
+      pricingModel: pkg.pricing_model || "component_total",
+      flexibility: pkg.flexibility || "flexible",
+      fixedPrice: pkg.fixed_price ?? null,
+      discountPercent: Number(pkg.discount_percent) || 0,
+      components: comps,
+      sectionId,
+    });
+    setItems((prev) => [
+      ...prev,
+      ...lines.map((it) => ({ ...it, key: nextKey(), is_optional: tab === "options" ? true : it.is_optional })),
+    ]);
+    setPickerOpen(null);
+  }
+
   function addCatalogItem(sectionId: string, cat: CatalogItemRow, optional = false) {
     setItems((prev) => [
       ...prev,
@@ -524,6 +652,8 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         cost_price: cat.cost_price ?? null,
         tax_rate: cat.tax_rate ?? null,
         image_url: cat.image_url ?? null,
+        catalog_unit_price: Number(cat.unit_price) || 0,
+        price_override: false,
         discount_percent: 0,
         discount_amount: 0,
         is_optional: optional,
@@ -600,7 +730,26 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
             <span className="inline-flex items-center rounded-full bg-[var(--sales-brand-soft-solid)] px-2.5 py-0.5 text-[11px] font-semibold text-sales-brand-text">
               {versionLabel}
             </span>
+            {q.approval_status && q.approval_status !== "not_required" ? (
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                  q.approval_status === "approved" && "bg-sales-success-soft text-sales-success",
+                  q.approval_status === "pending" && "bg-sales-warning-soft text-sales-warning",
+                  q.approval_status === "changes_requested" && "bg-sales-warning-soft text-sales-warning",
+                  q.approval_status === "rejected" && "bg-sales-danger-soft text-sales-danger",
+                  q.approval_status === "required" && "bg-sales-warning-soft text-sales-warning"
+                )}
+              >
+                {approvalStatusLabel(q.approval_status)}
+              </span>
+            ) : null}
           </div>
+          {approvalPending ? (
+            <p className="mt-2 rounded-sales-sm border border-sales-warning/30 bg-sales-warning-soft px-3 py-2 text-[12.5px] text-sales-text-secondary">
+              Commercial changes are locked while approval is pending. Create a revision or wait for the decision.
+            </p>
+          ) : null}
           <p className="mt-1 text-[12.5px] text-sales-text-muted">
             Build the commercial offer attached to the Deal.
           </p>
@@ -663,24 +812,12 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
           <div className="hidden flex-col items-end sm:flex">
             <Button
               size="sm"
-              leftIcon={<Send className="h-3.5 w-3.5" />}
-              onClick={() => {
-                if (sendBlocked) {
-                  setTab("items");
-                  setRailOpen(true);
-                  toast({
-                    tone: "warning",
-                    title: "Complete commercial check",
-                    description: sendHelper,
-                  });
-                  return;
-                }
-                setSendOpen(true);
-              }}
-              disabled={q.status === "accepted" || q.status === "superseded"}
+              leftIcon={needsRequestApproval ? <ShieldCheck className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
+              onClick={onPrimaryCta}
+              disabled={q.status === "accepted" || q.status === "superseded" || approvalPending}
               title={sendHelper}
             >
-              {sendBlocked ? "Complete quotation" : "Send quotation"}
+              {primaryCtaLabel}
             </Button>
             {sendHelper ? (
               <span className="mt-1 max-w-[220px] text-right text-[11px] text-sales-text-muted">
@@ -751,6 +888,9 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               validUntil={validUntil}
               status={q.status}
               version={q.revision_number}
+              offerOptions={offerOptions}
+              readOnly={readOnly}
+              onChangeOptions={(next) => setOfferOptions(next)}
             />
           ) : null}
 
@@ -864,18 +1004,9 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               validUntil={validUntil}
               daysLeft={daysLeft}
               commercial={commercial}
+              governance={governance}
               onNavigateTab={(t) => setTab(t)}
-              onOpenSend={() => {
-                if (sendBlocked) {
-                  toast({
-                    tone: "warning",
-                    title: "Complete commercial check",
-                    description: sendHelper,
-                  });
-                  return;
-                }
-                setSendOpen(true);
-              }}
+              onOpenSend={onPrimaryCta}
               onViewHistory={() => setHistoryOpen(true)}
               onCall={() => {
                 if (payload.customer.phone) window.open(`tel:${payload.customer.phone}`);
@@ -901,21 +1032,11 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-sales-border bg-sales-surface p-3 sm:hidden">
         <Button
           className="w-full"
-          leftIcon={<Send className="h-4 w-4" />}
-          onClick={() => {
-            if (sendBlocked) {
-              setRailOpen(true);
-              toast({
-                tone: "warning",
-                title: "Complete commercial check",
-                description: sendHelper,
-              });
-              return;
-            }
-            setSendOpen(true);
-          }}
+          leftIcon={needsRequestApproval ? <ShieldCheck className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+          onClick={onPrimaryCta}
+          disabled={approvalPending}
         >
-          {sendBlocked ? "Complete quotation" : "Send quotation"}
+          {primaryCtaLabel}
         </Button>
       </div>
 
@@ -937,21 +1058,14 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               validUntil={validUntil}
               daysLeft={daysLeft}
               commercial={commercial}
+              governance={governance}
               onNavigateTab={(t) => {
                 setTab(t);
                 setRailOpen(false);
               }}
               onOpenSend={() => {
-                if (sendBlocked) {
-                  toast({
-                    tone: "warning",
-                    title: "Complete commercial check",
-                    description: sendHelper,
-                  });
-                  return;
-                }
                 setRailOpen(false);
-                setSendOpen(true);
+                onPrimaryCta();
               }}
               onViewHistory={() => setHistoryOpen(true)}
               onCall={() => {
@@ -980,11 +1094,13 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       {pickerOpen ? (
         <ProductPicker
           catalog={catalog}
+          packages={packages}
           onClose={() => setPickerOpen(null)}
           onSelect={(cat) => {
             const optional = tab === "options";
             addCatalogItem(pickerOpen.sectionId, cat, optional);
           }}
+          onSelectPackage={(pkg) => addPackage(pickerOpen.sectionId, pkg)}
           onCustom={() => {
             addCustomItem(pickerOpen.sectionId, tab === "options");
             setPickerOpen(null);
@@ -1002,13 +1118,32 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
           hasWhatsApp={payload.customer.hasWhatsApp}
           publicToken={q.public_token}
           commercial={commercial}
+          approvalStatus={q.approval_status}
+          dealId={payload.deal?.id ?? q.deal_id}
+          leadId={payload.customer.leadId}
           onClose={() => setSendOpen(false)}
           onSent={() => {
-            setSendOpen(false);
             toast({ tone: "success", title: "Quotation sent" });
             void load();
           }}
           quotationId={quotationId}
+        />
+      ) : null}
+
+      {approvalOpen && payload && q ? (
+        <ApprovalRequestModal
+          payload={payload}
+          totals={totals}
+          currency={currency}
+          governance={governance}
+          reasons={approvalEval.reasons}
+          quotationId={quotationId}
+          onClose={() => setApprovalOpen(false)}
+          onSubmitted={() => {
+            setApprovalOpen(false);
+            toast({ tone: "success", title: "Submitted for approval" });
+            void load();
+          }}
         />
       ) : null}
 
@@ -1061,6 +1196,7 @@ function CommercialRail({
   validUntil,
   daysLeft,
   commercial,
+  governance,
   onNavigateTab,
   onOpenSend,
   onViewHistory,
@@ -1073,6 +1209,7 @@ function CommercialRail({
   validUntil: string;
   daysLeft: number | null;
   commercial: ReturnType<typeof runCommercialCheck>;
+  governance: ReturnType<typeof evaluateGovernance>;
   onNavigateTab: (tab: TabId) => void;
   onOpenSend: () => void;
   onViewHistory: () => void;
@@ -1141,6 +1278,36 @@ function CommercialRail({
             <span className="text-sales-text-secondary">Discount</span>
             <span className="font-medium">{totals.effectiveDiscountPercent}%</span>
           </div>
+          {payload.permissions.canSeeCost && totals.costTotal != null ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sales-text-secondary">Estimated cost</span>
+              <span className="font-medium">{formatMoneyCompact(totals.costTotal, currency)}</span>
+            </div>
+          ) : null}
+          {payload.permissions.canSeeCost && totals.costTotal != null ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sales-text-secondary">Gross profit</span>
+              <span className="font-medium">{formatMoneyCompact(totals.total - totals.costTotal, currency)}</span>
+            </div>
+          ) : null}
+          {payload.permissions.canSeeMargin && totals.marginPercent != null ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sales-text-secondary">Margin</span>
+              <span className="font-medium">{totals.marginPercent}%</span>
+            </div>
+          ) : null}
+          {payload.permissions.canSeeMarginHealth ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sales-text-secondary">Margin health</span>
+              <span className="font-medium">{marginHealthLabel(governance.marginHealth)}</span>
+            </div>
+          ) : null}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sales-text-secondary">Pricing authority</span>
+            <span className="font-medium">
+              {governance.pricingAuthority === "within_authority" ? "Within authority" : "Approval required"}
+            </span>
+          </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-sales-text-secondary">Last activity</span>
             <span className="font-medium">
@@ -1151,6 +1318,55 @@ function CommercialRail({
           </div>
         </div>
       </RailCard>
+
+      {(payload.quotation.approval_status && payload.quotation.approval_status !== "not_required") ||
+      commercial.approvalRequired ? (
+        <RailCard title="Approval">
+          <div className="space-y-1.5 text-[12.5px]">
+            <Row
+              label="Status"
+              value={approvalStatusLabel(payload.quotation.approval_status ?? (commercial.approvalRequired ? "required" : "not_required"))}
+            />
+            {payload.quotation.approval_note ? (
+              <p className="text-[12px] text-sales-text-secondary">{payload.quotation.approval_note}</p>
+            ) : null}
+          </div>
+        </RailCard>
+      ) : null}
+
+      {payload.quotation.sent_at ? (
+        <RailCard title="Customer Engagement">
+          <div className="space-y-1.5 text-[12.5px]">
+            <Row label="Sent" value={formatDisplayDate(payload.quotation.sent_at)} />
+            <Row
+              label="First viewed"
+              value={payload.quotation.viewed_at ? formatDisplayDate(payload.quotation.viewed_at) : "Not viewed"}
+            />
+            <Row label="Views" value={String(payload.quotation.view_count ?? (payload.quotation.viewed_at ? 1 : 0))} />
+            <Row
+              label="Last viewed"
+              value={
+                payload.quotation.last_viewed_at
+                  ? formatDisplayDate(payload.quotation.last_viewed_at)
+                  : payload.quotation.viewed_at
+                    ? formatDisplayDate(payload.quotation.viewed_at)
+                    : "—"
+              }
+            />
+            <Row
+              label="Response"
+              value={
+                payload.quotation.customer_response_type ||
+                (payload.quotation.status === "accepted"
+                  ? "Accepted"
+                  : payload.quotation.status === "rejected"
+                    ? "Declined"
+                    : "None")
+              }
+            />
+          </div>
+        </RailCard>
+      ) : null}
 
       <RailCard title="Linked Records">
         <div className="space-y-2 text-[12.5px]">
@@ -1263,6 +1479,8 @@ function CommercialRail({
           <p className="mt-2 text-[11px] font-medium text-sales-danger">
             {commercial.blockingCount} item{commercial.blockingCount === 1 ? "" : "s"} need attention
           </p>
+        ) : commercial.approvalRequired ? (
+          <p className="mt-2 text-[11px] font-medium text-amber-700 dark:text-amber-400">Approval required</p>
         ) : (
           <p className="mt-2 text-[11px] font-medium text-sales-success">Ready to send</p>
         )}
@@ -1284,7 +1502,19 @@ function nextBestAction(
   const q = payload.quotation;
   const blocker = commercial.items.find((c) => c.status === "block");
 
+  if (q.approval_status === "pending") {
+    return { title: "Waiting for approval", detail: "Commercial exception is under review", actions: [] };
+  }
+  if (q.approval_status === "changes_requested") {
+    return { title: "Update quotation and resubmit", detail: q.approval_note || "Manager requested changes", actions: [], goTab: "items" };
+  }
+  if (q.approval_status === "rejected") {
+    return { title: "Revise quotation", detail: q.approval_note || "Approval was rejected", actions: [], goTab: "items" };
+  }
   if (q.status === "draft" || q.status === "approved") {
+    if (commercial.approvalRequired && q.approval_status !== "approved") {
+      return { title: "Request commercial approval", detail: "This offer is outside current authority", actions: [] };
+    }
     if (!payload.deal?.id) {
       return { title: "Link quotation to Deal", detail: "Quotations belong to a Deal", actions: [], goTab: "overview" };
     }
@@ -1443,6 +1673,9 @@ function OverviewTab({
   validUntil,
   status,
   version,
+  offerOptions,
+  readOnly,
+  onChangeOptions,
 }: {
   totals: QuoteTotals;
   currency: string;
@@ -1450,18 +1683,83 @@ function OverviewTab({
   validUntil: string;
   status: string;
   version: number;
+  offerOptions: QuotationOfferOption[];
+  readOnly: boolean;
+  onChangeOptions: (next: QuotationOfferOption[]) => void;
 }) {
+  function enableOptions() {
+    onChangeOptions([
+      { id: "essential", label: "Essential", description: "" },
+      { id: "recommended", label: "Recommended", description: "", is_recommended: true },
+      { id: "premium", label: "Premium", description: "" },
+    ]);
+  }
   return (
-    <div className="space-y-3 rounded-sales-md border border-sales-border bg-sales-surface p-4">
-      <h2 className="text-[15px] font-semibold">Commercial summary</h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Meta label="Status" value={quotationStatusLabel(status)} />
-        <Meta label="Version" value={String(version)} />
-        <Meta label="Total" value={formatMoneyCompact(totals.total, currency)} />
-        <Meta label="Currency" value={currency} />
-        <Meta label="Valid until" value={validUntil ? formatDisplayDate(validUntil) : "—"} />
-        <Meta label="Payment terms" value={paymentTerms || "—"} />
-        <Meta label="Effective discount" value={`${totals.effectiveDiscountPercent}%`} />
+    <div className="space-y-3">
+      <div className="space-y-3 rounded-sales-md border border-sales-border bg-sales-surface p-4">
+        <h2 className="text-[15px] font-semibold">Commercial summary</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Meta label="Status" value={quotationStatusLabel(status)} />
+          <Meta label="Version" value={String(version)} />
+          <Meta label="Total" value={formatMoneyCompact(totals.total, currency)} />
+          <Meta label="Currency" value={currency} />
+          <Meta label="Valid until" value={validUntil ? formatDisplayDate(validUntil) : "—"} />
+          <Meta label="Payment terms" value={paymentTerms || "—"} />
+          <Meta label="Effective discount" value={`${totals.effectiveDiscountPercent}%`} />
+        </div>
+      </div>
+      <div className="space-y-3 rounded-sales-md border border-sales-border bg-sales-surface p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-[15px] font-semibold">Commercial alternatives</h2>
+            <p className="mt-0.5 text-[12.5px] text-sales-text-secondary">
+              Optional Good / Better / Best choices for the customer. Not required on every quotation.
+            </p>
+          </div>
+          {offerOptions.length === 0 && !readOnly ? (
+            <Button size="sm" variant="secondary" onClick={enableOptions}>
+              Add options
+            </Button>
+          ) : null}
+        </div>
+        {offerOptions.length === 0 ? (
+          <p className="text-[12.5px] text-sales-text-muted">This quotation uses a single commercial offer.</p>
+        ) : (
+          <ul className="space-y-2">
+            {offerOptions.map((opt, idx) => (
+              <li key={opt.id} className="grid gap-2 sm:grid-cols-[1fr_2fr_auto]">
+                <input
+                  className={FIELD}
+                  disabled={readOnly}
+                  value={opt.label}
+                  onChange={(e) =>
+                    onChangeOptions(offerOptions.map((o, i) => (i === idx ? { ...o, label: e.target.value } : o)))
+                  }
+                />
+                <input
+                  className={FIELD}
+                  disabled={readOnly}
+                  placeholder="What this option includes"
+                  value={opt.description ?? ""}
+                  onChange={(e) =>
+                    onChangeOptions(
+                      offerOptions.map((o, i) => (i === idx ? { ...o, description: e.target.value } : o))
+                    )
+                  }
+                />
+                {!readOnly ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => onChangeOptions(offerOptions.filter((_, i) => i !== idx))}
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -2319,30 +2617,69 @@ function DetailsModal({
 
 function ProductPicker({
   catalog,
+  packages,
   onClose,
   onSelect,
+  onSelectPackage,
   onCustom,
 }: {
   catalog: CatalogItemRow[];
+  packages: Array<{ id: string; name: string; description: string | null; components?: unknown[] }>;
   onClose: () => void;
   onSelect: (c: CatalogItemRow) => void;
+  onSelectPackage: (pkg: { id: string; name: string; description: string | null; components?: unknown[] }) => void;
   onCustom: () => void;
 }) {
   const [q, setQ] = useState("");
+  const [kind, setKind] = useState<"all" | "product" | "service" | "package">("all");
   const filtered = catalog.filter((c) => {
+    if (kind === "package") return false;
+    if (kind === "product" && c.item_kind === "service") return false;
+    if (kind === "service" && c.item_kind !== "service") return false;
     const hay = `${c.name} ${c.sku ?? ""} ${c.category ?? ""} ${c.description ?? ""}`.toLowerCase();
     return hay.includes(q.toLowerCase());
   });
+  const pkgFiltered = (kind === "all" || kind === "package")
+    ? packages.filter((p) => `${p.name} ${p.description ?? ""}`.toLowerCase().includes(q.toLowerCase()))
+    : [];
   return (
     <Modal title="Add item" onClose={onClose}>
+      <div className="mb-2 flex flex-wrap gap-1">
+        {(["all", "product", "service", "package"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            className={cn(
+              "rounded-full px-2.5 py-1 text-[11px] font-medium capitalize",
+              kind === k ? "bg-sales-brand-soft text-sales-brand-text" : "text-sales-text-secondary"
+            )}
+            onClick={() => setKind(k)}
+          >
+            {k === "all" ? "All" : k === "package" ? "Packages" : k === "service" ? "Services" : "Products"}
+          </button>
+        ))}
+      </div>
       <input
         className={cn(FIELD, "mb-3 w-full")}
-        placeholder="Search products & services…"
+        placeholder="Search catalogue…"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         autoFocus
       />
       <div className="max-h-64 space-y-1 overflow-y-auto">
+        {pkgFiltered.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className="flex w-full items-center justify-between rounded-sales-sm px-2 py-2 text-left hover:bg-sales-surface-hover"
+            onClick={() => onSelectPackage(p)}
+          >
+            <span>
+              <span className="block text-[13px] font-medium">{p.name}</span>
+              <span className="text-[11px] text-sales-text-muted">Package · {(p.components ?? []).length} items</span>
+            </span>
+          </button>
+        ))}
         {filtered.map((c) => (
           <button
             key={c.id}
@@ -2353,14 +2690,16 @@ function ProductPicker({
             <span>
               <span className="block text-[13px] font-medium">{c.name}</span>
               <span className="text-[11px] text-sales-text-muted">
-                {[c.sku, c.category].filter(Boolean).join(" · ")}
+                {[c.item_kind === "service" ? "Service" : "Product", c.sku, c.category].filter(Boolean).join(" · ")}
               </span>
             </span>
             <span className="text-[12.5px] font-semibold">{formatMoneyCompact(c.unit_price, c.currency)}</span>
           </button>
         ))}
-        {filtered.length === 0 ? (
-          <p className="py-6 text-center text-[12.5px] text-sales-text-muted">No catalogue matches</p>
+        {filtered.length === 0 && pkgFiltered.length === 0 ? (
+          <p className="py-6 text-center text-[12.5px] text-sales-text-muted">
+            {kind === "package" ? "No packages created yet" : "No catalogue matches"}
+          </p>
         ) : null}
       </div>
       <div className="mt-3 flex justify-between border-t border-sales-border pt-3">
@@ -2385,6 +2724,9 @@ function SendModal({
   publicToken,
   commercial,
   quotationId,
+  approvalStatus,
+  dealId,
+  leadId,
   onClose,
   onSent,
 }: {
@@ -2397,6 +2739,9 @@ function SendModal({
   publicToken: string | null;
   commercial: ReturnType<typeof runCommercialCheck>;
   quotationId: string;
+  approvalStatus?: string | null;
+  dealId?: string | null;
+  leadId?: string | null;
   onClose: () => void;
   onSent: () => void;
 }) {
@@ -2405,6 +2750,8 @@ function SendModal({
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+  const router = useRouter();
   const { toast } = useSalesToast();
 
   async function send() {
@@ -2444,12 +2791,39 @@ function SendModal({
       if (channel === "link" && json.publicToken) {
         await navigator.clipboard.writeText(`${window.location.origin}/quote/${json.publicToken}`);
       }
+      setSent(true);
       onSent();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Send failed");
     } finally {
       setBusy(false);
     }
+  }
+
+  if (sent) {
+    return (
+      <Modal title="Quotation sent" onClose={onClose}>
+        <p className="text-[13.5px] text-sales-text-secondary">
+          {quoteNumber} version {version} is with {customer}.
+        </p>
+        <div className="mt-4 flex flex-col gap-2">
+          <Button onClick={() => router.push(`/sales/tasks?leadId=${leadId ?? ""}`)}>Schedule follow-up</Button>
+          {dealId ? (
+            <Button variant="secondary" onClick={() => router.push(`/sales/deals/${dealId}`)}>
+              Back to Deal
+            </Button>
+          ) : null}
+          {hasWhatsApp ? (
+            <Button variant="secondary" onClick={() => router.push(`/sales/inbox?leadId=${leadId ?? ""}`)}>
+              Open WhatsApp
+            </Button>
+          ) : null}
+          <Button variant="ghost" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </Modal>
+    );
   }
 
   return (
@@ -2460,7 +2834,24 @@ function SendModal({
         <div className="flex justify-between"><dt className="text-sales-text-secondary">Customer</dt><dd className="font-medium">{customer}</dd></div>
         <div className="flex justify-between"><dt className="text-sales-text-secondary">Total</dt><dd className="font-medium">{total}</dd></div>
         <div className="flex justify-between"><dt className="text-sales-text-secondary">Validity</dt><dd className="font-medium">{validUntil ? formatDisplayDate(validUntil) : "—"}</dd></div>
+        <div className="flex justify-between">
+          <dt className="text-sales-text-secondary">Approval</dt>
+          <dd className="font-medium">{approvalStatusLabel(approvalStatus ?? "not_required")}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-sales-text-secondary">Commercial Check</dt>
+          <dd className="font-medium">
+            {commercial.readyCount} of {commercial.totalCount} ready
+          </dd>
+        </div>
       </dl>
+      {commercial.blockingCount > 0 ? (
+        <ul className="mb-3 space-y-1 text-[12.5px] text-sales-danger">
+          {commercial.items.filter((c) => c.status === "block").map((c) => (
+            <li key={c.id}>{c.action || c.label}</li>
+          ))}
+        </ul>
+      ) : null}
       <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Channel</p>
       <div className="mb-4 flex flex-wrap gap-2">
         {hasWhatsApp ? (
@@ -2507,6 +2898,23 @@ function HistoryModal({
   currency: string;
 }) {
   const router = useRouter();
+  const [compare, setCompare] = useState<Array<{ field: string; from: string; to: string }> | null>(null);
+  const [busy, setBusy] = useState(false);
+  const latest = versions[versions.length - 1];
+  const previous = versions.length > 1 ? versions[versions.length - 2] : null;
+
+  async function loadCompare() {
+    if (!latest || !previous) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/quotations/${latest.id}/compare?other=${previous.id}`);
+      const json = (await res.json()) as { diffs?: Array<{ field: string; from: string; to: string }>; error?: string };
+      setCompare(json.diffs ?? []);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <Modal title="Version history" onClose={onClose}>
       <ul className="max-h-72 space-y-2 overflow-y-auto">
@@ -2531,6 +2939,29 @@ function HistoryModal({
           </li>
         ))}
       </ul>
+      {previous && latest ? (
+        <div className="mt-3">
+          <Button size="sm" variant="secondary" loading={busy} onClick={() => void loadCompare()}>
+            Compare version {previous.revision_number} vs {latest.revision_number}
+          </Button>
+          {compare ? (
+            <ul className="mt-3 space-y-1.5 text-[12.5px]">
+              {compare.length === 0 ? (
+                <li className="text-sales-text-muted">No commercial differences.</li>
+              ) : (
+                compare.map((row) => (
+                  <li key={row.field} className="rounded-sales-sm bg-sales-surface-subtle px-2 py-1.5">
+                    <span className="font-medium">{row.field}</span>
+                    <span className="mt-0.5 block text-sales-text-secondary">
+                      V{previous.revision_number}: {row.from} → V{latest.revision_number}: {row.to}
+                    </span>
+                  </li>
+                ))
+              )}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
     </Modal>
   );
 }
@@ -2557,5 +2988,90 @@ function Modal({
         {children}
       </div>
     </div>
+  );
+}
+
+function ApprovalRequestModal({
+  payload,
+  totals,
+  currency,
+  governance,
+  reasons,
+  quotationId,
+  onClose,
+  onSubmitted,
+}: {
+  payload: QuotationWorkspacePayload;
+  totals: QuoteTotals;
+  currency: string;
+  governance: ReturnType<typeof evaluateGovernance>;
+  reasons: string[];
+  quotationId: string;
+  onClose: () => void;
+  onSubmitted: () => void;
+}) {
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const q = payload.quotation;
+
+  async function submit() {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/quotations/${quotationId}/request-approval`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || "Could not submit");
+      onSubmitted();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not submit");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal title="Request approval" onClose={onClose}>
+      <dl className="space-y-1.5 text-[13px]">
+        <div className="flex justify-between"><dt className="text-sales-text-secondary">Quotation</dt><dd className="font-medium">{q.quote_number || "Draft"}</dd></div>
+        <div className="flex justify-between"><dt className="text-sales-text-secondary">Version</dt><dd className="font-medium">{q.revision_number}</dd></div>
+        <div className="flex justify-between"><dt className="text-sales-text-secondary">Customer</dt><dd className="font-medium">{payload.customer.name}</dd></div>
+        <div className="flex justify-between"><dt className="text-sales-text-secondary">Deal</dt><dd className="font-medium">{payload.deal?.title ?? "—"}</dd></div>
+        <div className="flex justify-between"><dt className="text-sales-text-secondary">Owner</dt><dd className="font-medium">{payload.owner.name}</dd></div>
+        <div className="flex justify-between"><dt className="text-sales-text-secondary">Value</dt><dd className="font-medium">{formatMoneyCompact(totals.total, currency)}</dd></div>
+        <div className="flex justify-between"><dt className="text-sales-text-secondary">Discount</dt><dd className="font-medium">{totals.effectiveDiscountPercent}%</dd></div>
+        {payload.permissions.canSeeMargin && totals.marginPercent != null ? (
+          <div className="flex justify-between"><dt className="text-sales-text-secondary">Margin</dt><dd className="font-medium">{totals.marginPercent}%</dd></div>
+        ) : payload.permissions.canSeeMarginHealth ? (
+          <div className="flex justify-between"><dt className="text-sales-text-secondary">Margin</dt><dd className="font-medium">{marginHealthLabel(governance.marginHealth)}</dd></div>
+        ) : null}
+        <div className="flex justify-between"><dt className="text-sales-text-secondary">Payment terms</dt><dd className="max-w-[60%] text-right font-medium">{q.payment_terms_label || "—"}</dd></div>
+      </dl>
+      {reasons.length ? (
+        <ul className="mt-3 list-disc space-y-1 pl-4 text-[12.5px] text-sales-text-secondary">
+          {reasons.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
+      ) : null}
+      <textarea
+        className={cn(FIELD, "mt-3 w-full")}
+        rows={3}
+        placeholder="Explain why this commercial exception is needed..."
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+      />
+      {error ? <p className="mt-2 text-[12.5px] text-sales-danger">{error}</p> : null}
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="secondary" size="sm" onClick={onClose}>Cancel</Button>
+        <Button size="sm" loading={busy} onClick={() => void submit()}>
+          Submit for approval
+        </Button>
+      </div>
+    </Modal>
   );
 }

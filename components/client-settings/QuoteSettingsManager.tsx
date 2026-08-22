@@ -5,6 +5,8 @@ import { Plus, Trash2, Loader2 } from "lucide-react";
 import { formatMoney } from "@/lib/quotations/totals";
 import type { CatalogItemRow } from "@/types";
 import { QuoteTemplatesManager } from "@/components/client-settings/QuoteTemplatesManager";
+import { QuotationCommercialSettings } from "@/components/client-settings/QuotationCommercialSettings";
+import { QuotationPackagesManager } from "@/components/client-settings/QuotationPackagesManager";
 
 const CATEGORIES = ["inverter", "battery", "panel", "accessory", "labour", "other"];
 
@@ -26,7 +28,17 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
   const [savingSettings, setSavingSettings] = useState(false);
   const [toast, setToast] = useState("");
 
-  const [newItem, setNewItem] = useState({ name: "", description: "", unit_price: 0, category: "inverter" });
+  const [newItem, setNewItem] = useState({
+    name: "",
+    description: "",
+    unit_price: 0,
+    category: "inverter",
+    sku: "",
+    item_kind: "product",
+    cost_price: "" as string | number,
+    min_selling_price: "" as string | number,
+    warranty: "",
+  });
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
@@ -53,12 +65,28 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
       const res = await fetch(`/api/clients/${clientId}/catalog`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newItem),
+        body: JSON.stringify({
+          ...newItem,
+          cost_price: newItem.cost_price === "" ? null : Number(newItem.cost_price),
+          min_selling_price: newItem.min_selling_price === "" ? null : Number(newItem.min_selling_price),
+          sku: newItem.sku || null,
+          warranty: newItem.warranty || null,
+        }),
       });
       const json = (await res.json()) as { item?: CatalogItemRow };
       if (json.item) {
         setItems((prev) => [...prev, json.item!]);
-        setNewItem({ name: "", description: "", unit_price: 0, category: newItem.category });
+        setNewItem({
+          name: "",
+          description: "",
+          unit_price: 0,
+          category: newItem.category,
+          sku: "",
+          item_kind: newItem.item_kind,
+          cost_price: "",
+          min_selling_price: "",
+          warranty: "",
+        });
       }
     } finally {
       setAdding(false);
@@ -109,10 +137,11 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
 
         <div className="rounded-xl border border-border">
           <div className="grid grid-cols-12 gap-2 border-b border-border px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-ink-tertiary">
-            <span className="col-span-4">Item</span>
-            <span className="col-span-3">Description</span>
+            <span className="col-span-3">Item</span>
+            <span className="col-span-2">SKU / kind</span>
             <span className="col-span-2">Category</span>
-            <span className="col-span-2 text-right">Unit price</span>
+            <span className="col-span-2 text-right">Selling</span>
+            <span className="col-span-2 text-right">Cost</span>
             <span className="col-span-1" />
           </div>
 
@@ -121,43 +150,90 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
           ) : (
             <ul className="divide-y divide-border">
               {items.map((it) => (
-                <li key={it.id} className={`grid grid-cols-12 items-center gap-2 px-3 py-2 ${it.is_active ? "" : "opacity-50"}`}>
-                  <input
-                    className="input-base col-span-4 h-8 text-[13px]"
-                    defaultValue={it.name}
-                    onBlur={(e) => e.target.value !== it.name && updateItem(it.id, { name: e.target.value })}
-                  />
-                  <input
-                    className="input-base col-span-3 h-8 text-[13px]"
-                    defaultValue={it.description ?? ""}
-                    onBlur={(e) => updateItem(it.id, { description: e.target.value })}
-                  />
-                  <select
-                    className="input-base col-span-2 h-8 text-[12px]"
-                    value={it.category ?? "other"}
-                    onChange={(e) => updateItem(it.id, { category: e.target.value })}
-                  >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    className="input-base col-span-2 h-8 text-right text-[13px]"
-                    defaultValue={it.unit_price}
-                    onBlur={(e) => updateItem(it.id, { unit_price: Number(e.target.value) })}
-                  />
-                  <div className="col-span-1 text-right">
-                    <button
-                      type="button"
-                      onClick={() => void removeItem(it.id)}
-                      className="text-ink-tertiary hover:text-[var(--danger)]"
-                      aria-label="Remove"
+                <li key={it.id} className={`space-y-2 px-3 py-2 ${it.is_active ? "" : "opacity-50"}`}>
+                  <div className="grid grid-cols-12 items-center gap-2">
+                    <input
+                      className="input-base col-span-3 h-8 text-[13px]"
+                      defaultValue={it.name}
+                      onBlur={(e) => e.target.value !== it.name && updateItem(it.id, { name: e.target.value })}
+                    />
+                    <div className="col-span-2 grid grid-cols-1 gap-1">
+                      <input
+                        className="input-base h-8 text-[12px]"
+                        defaultValue={it.sku ?? ""}
+                        placeholder="SKU"
+                        onBlur={(e) => updateItem(it.id, { sku: e.target.value || null })}
+                      />
+                      <select
+                        className="input-base h-8 text-[12px]"
+                        value={it.item_kind ?? "product"}
+                        onChange={(e) => updateItem(it.id, { item_kind: e.target.value })}
+                      >
+                        <option value="product">Product</option>
+                        <option value="service">Service</option>
+                      </select>
+                    </div>
+                    <select
+                      className="input-base col-span-2 h-8 text-[12px]"
+                      value={it.category ?? "other"}
+                      onChange={(e) => updateItem(it.id, { category: e.target.value })}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                      {CATEGORIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      className="input-base col-span-2 h-8 text-right text-[13px]"
+                      defaultValue={it.unit_price}
+                      onBlur={(e) => updateItem(it.id, { unit_price: Number(e.target.value) })}
+                    />
+                    <input
+                      type="number"
+                      className="input-base col-span-2 h-8 text-right text-[13px]"
+                      defaultValue={it.cost_price ?? ""}
+                      placeholder="Cost"
+                      onBlur={(e) =>
+                        updateItem(it.id, { cost_price: e.target.value === "" ? null : Number(e.target.value) })
+                      }
+                    />
+                    <div className="col-span-1 text-right">
+                      <button
+                        type="button"
+                        onClick={() => void removeItem(it.id)}
+                        className="text-ink-tertiary hover:text-[var(--danger)]"
+                        aria-label="Remove"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-12 gap-2">
+                    <input
+                      className="input-base col-span-6 h-8 text-[12px]"
+                      defaultValue={it.description ?? ""}
+                      placeholder="Description"
+                      onBlur={(e) => updateItem(it.id, { description: e.target.value })}
+                    />
+                    <input
+                      type="number"
+                      className="input-base col-span-3 h-8 text-[12px]"
+                      defaultValue={it.min_selling_price ?? ""}
+                      placeholder="Min selling"
+                      onBlur={(e) =>
+                        updateItem(it.id, {
+                          min_selling_price: e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                    />
+                    <input
+                      className="input-base col-span-3 h-8 text-[12px]"
+                      defaultValue={it.warranty ?? ""}
+                      placeholder="Warranty"
+                      onBlur={(e) => updateItem(it.id, { warranty: e.target.value || null })}
+                    />
                   </div>
                 </li>
               ))}
@@ -167,16 +243,16 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
           {/* Add row */}
           <div className="grid grid-cols-12 items-center gap-2 border-t border-border bg-surface-card-alt px-3 py-2">
             <input
-              className="input-base col-span-4 h-8 text-[13px]"
+              className="input-base col-span-3 h-8 text-[13px]"
               placeholder="New item name"
               value={newItem.name}
               onChange={(e) => setNewItem((n) => ({ ...n, name: e.target.value }))}
             />
             <input
-              className="input-base col-span-3 h-8 text-[13px]"
-              placeholder="Description"
-              value={newItem.description}
-              onChange={(e) => setNewItem((n) => ({ ...n, description: e.target.value }))}
+              className="input-base col-span-2 h-8 text-[13px]"
+              placeholder="SKU"
+              value={newItem.sku}
+              onChange={(e) => setNewItem((n) => ({ ...n, sku: e.target.value }))}
             />
             <select
               className="input-base col-span-2 h-8 text-[12px]"
@@ -192,9 +268,16 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
             <input
               type="number"
               className="input-base col-span-2 h-8 text-right text-[13px]"
-              placeholder="0"
+              placeholder="Selling"
               value={newItem.unit_price || ""}
               onChange={(e) => setNewItem((n) => ({ ...n, unit_price: Number(e.target.value) }))}
+            />
+            <input
+              type="number"
+              className="input-base col-span-2 h-8 text-right text-[13px]"
+              placeholder="Cost"
+              value={newItem.cost_price || ""}
+              onChange={(e) => setNewItem((n) => ({ ...n, cost_price: e.target.value }))}
             />
             <div className="col-span-1 text-right">
               <button
@@ -213,6 +296,10 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
           <p className="text-[11px] text-ink-tertiary">Preview: {formatMoney(newItem.unit_price)}</p>
         ) : null}
       </section>
+
+      <QuotationCommercialSettings clientId={clientId} />
+
+      <QuotationPackagesManager clientId={clientId} />
 
       <QuoteTemplatesManager clientId={clientId} />
 

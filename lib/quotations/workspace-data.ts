@@ -1,6 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadQuotationWithItems } from "@/lib/quotations/persist";
+import { isQuotationEditable } from "@/lib/quotations/lifecycle";
+import {
+  priceEditPolicy,
+  resolveMarginVisibility,
+  salespersonMayDiscount,
+  salespersonMayEditCatalogPrice,
+  stripCostFromUnknown,
+} from "@/lib/quotations/governance";
 import type {
+  QuotationApprovalPolicyRow,
   QuotationEventRow,
   QuotationRow,
   QuotationLineItemRow,
@@ -43,6 +52,7 @@ export type QuotationWorkspacePayload = {
   companyName: string | null;
   owner: { id: string | null; name: string };
   settings: Partial<QuotationSettingsRow> | null;
+  policies: QuotationApprovalPolicyRow[];
   versions: WorkspaceVersionSummary[];
   events: QuotationEventRow[];
   permissions: {
@@ -51,9 +61,17 @@ export type QuotationWorkspacePayload = {
     canApprove: boolean;
     canSeeMargin: boolean;
     canSeeCost: boolean;
+    canSeeMarginPercent: boolean;
+    canSeeMarginHealth: boolean;
     canDeleteDraft: boolean;
     canCustomItems: boolean;
+    canEditCatalogPrice: boolean;
+    canApplyDiscount: boolean;
+    canCreatePackage: boolean;
+    canCreateTemplate: boolean;
+    canCopySecureLink: boolean;
   };
+  marginVisibility: "none" | "health" | "percent" | "full";
 };
 
 async function resolveUserName(
@@ -81,7 +99,7 @@ export async function loadQuotationWorkspace(
   const quote = full as unknown as QuotationRow & { items: QuotationLineItemRow[] };
   const leadId = quote.lead_id;
 
-  const [{ data: lead }, { data: client }, { data: settings }] = await Promise.all([
+  const [{ data: lead }, { data: client }, { data: settings }, { data: policies }] = await Promise.all([
     supabase
       .from("leads")
       .select("id, name, phone, email, contact_id, assigned_to_id, project_type, active_deal_id")
@@ -89,6 +107,12 @@ export async function loadQuotationWorkspace(
       .maybeSingle(),
     supabase.from("clients").select("id, name").eq("id", quote.client_id).maybeSingle(),
     supabase.from("quotation_settings").select("*").eq("client_id", quote.client_id).maybeSingle(),
+    supabase
+      .from("quotation_approval_policies")
+      .select("*")
+      .eq("client_id", quote.client_id)
+      .eq("is_active", true)
+      .order("priority", { ascending: true }),
   ]);
 
   let deal: WorkspaceLinkedDeal | null = null;
@@ -188,13 +212,16 @@ export async function loadQuotationWorkspace(
 
   const isManager = opts.role === "CLIENT_MANAGER" || opts.role === "SUPER_ADMIN";
   const s = (settings ?? {}) as Partial<QuotationSettingsRow>;
-  const canSeeMargin = isManager || Boolean(s.salesperson_can_see_margin);
-  const canSeeCost = isManager || Boolean(s.salesperson_can_see_cost);
+  const vis = resolveMarginVisibility(s, isManager);
+  const canSeeMargin = vis === "percent" || vis === "full";
+  const canSeeCost = vis === "full";
+  const canSeeMarginHealth = vis !== "none";
+  const policy = priceEditPolicy(s);
 
   const phone = (quote.customer_phone || lead?.phone || null) as string | null;
 
-  return {
-    quotation: quote,
+  const payload: QuotationWorkspacePayload = {
+    quotation: canSeeCost ? quote : stripCostFromUnknown(quote, false),
     customer: {
       name: (quote.customer_name || lead?.name || "Customer") as string,
       phone,
@@ -206,17 +233,28 @@ export async function loadQuotationWorkspace(
     deal,
     companyName: (client?.name as string) || null,
     owner,
-    settings: s,
+    settings: canSeeCost ? s : stripCostFromUnknown(s, false),
+    policies: (policies ?? []) as QuotationApprovalPolicyRow[],
     versions,
-    events,
+    events: evErr ? [] : (events as QuotationEventRow[]),
+    marginVisibility: vis,
     permissions: {
-      canEdit: quote.status === "draft",
-      canSend: ["draft", "approved", "sent", "viewed"].includes(quote.status),
+      canEdit: isQuotationEditable(quote.status),
+      canSend: ["draft", "approved", "sent", "viewed", "pending_approval"].includes(quote.status),
       canApprove: isManager,
       canSeeMargin,
       canSeeCost,
-      canDeleteDraft: quote.status === "draft",
-      canCustomItems: true,
+      canSeeMarginPercent: canSeeMargin,
+      canSeeMarginHealth,
+      canDeleteDraft: quote.status === "draft" && (quote.approval_status === "not_required" || quote.approval_status === "rejected" || quote.approval_status === "changes_requested" || !quote.approval_status),
+      canCustomItems: isManager || s.salesperson_can_create_custom_item !== false,
+      canEditCatalogPrice: salespersonMayEditCatalogPrice(policy, isManager),
+      canApplyDiscount: salespersonMayDiscount(policy, isManager),
+      canCreatePackage: isManager || Boolean(s.salesperson_can_create_package),
+      canCreateTemplate: isManager,
+      canCopySecureLink: Boolean(quote.public_token) && !quote.link_revoked_at,
     },
   };
+
+  return payload;
 }

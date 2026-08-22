@@ -867,7 +867,7 @@ async function fetchQuotationsTab(opts: {
   const errors: Partial<Record<string, string>> = {};
   const { data, error } = await supabase
     .from("quotations")
-    .select("id, status, total, currency, sent_at, viewed_at, valid_until, created_at, prepared_by_id")
+    .select("id, status, total, currency, sent_at, viewed_at, valid_until, created_at, prepared_by_id, discount_percent, approval_status")
     .eq("client_id", opts.clientId)
     .gte("created_at", prev.from.toISOString())
     .lt("created_at", opts.to.toISOString())
@@ -881,6 +881,8 @@ async function fetchQuotationsTab(opts: {
     valid_until: string | null;
     created_at: string;
     prepared_by_id: string | null;
+    discount_percent?: number | null;
+    approval_status?: string | null;
   }>;
   if (opts.ownerId) rows = rows.filter((r) => r.prepared_by_id === opts.ownerId);
   const current = rows.filter((r) => inRange(r.created_at, opts.from, opts.to));
@@ -890,6 +892,17 @@ async function fetchQuotationsTab(opts: {
   const accepted = current.filter((r) => statusOf(r) === "accepted").length;
   const viewed = current.filter((r) => r.viewed_at || statusOf(r) === "viewed").length;
   const quotedValue = current.reduce((s, r) => s + (Number(r.total) || 0), 0);
+  const acceptedValue = current.filter((r) => statusOf(r) === "accepted").reduce((s, r) => s + (Number(r.total) || 0), 0);
+  const declined = current.filter((r) => statusOf(r) === "rejected").length;
+  const expired = current.filter((r) => statusOf(r) === "expired").length;
+  const approvalRequests = current.filter((r) =>
+    ["pending", "approved", "changes_requested", "rejected"].includes(String(r.approval_status ?? ""))
+  ).length;
+  const approved = current.filter((r) => r.approval_status === "approved").length;
+  const approvalRate = approvalRequests > 0 ? Math.round((approved / approvalRequests) * 1000) / 10 : null;
+  const discounts = current.map((r) => Number(r.discount_percent) || 0);
+  const avgDiscount = discounts.length ? Math.round((discounts.reduce((s, n) => s + n, 0) / discounts.length) * 10) / 10 : null;
+  const viewRate = sent > 0 ? Math.round((viewed / sent) * 1000) / 10 : null;
   const acceptance = sent > 0 ? Math.round((accepted / sent) * 1000) / 10 : null;
   const byStatusMap = new Map<string, number>();
   for (const row of current) {
@@ -917,7 +930,13 @@ async function fetchQuotationsTab(opts: {
       kpi("viewed", "Viewed", String(viewed), viewed, { direction: "none", pct: null, label: "Public link opened" }, []),
       kpi("accepted", "Accepted", String(accepted), accepted, { direction: "none", pct: null, label: "Quote outcome — not Deal Won" }, []),
       kpi("value", "Quoted value", money(quotedValue, "USD"), quotedValue, { direction: "none", pct: null, label: "Not Revenue Won" }, []),
+      kpi("accepted_value", "Accepted quotation value", money(acceptedValue, "USD"), accepted, { direction: "none", pct: null, label: "Not Won Deal Value" }, []),
       kpi("accept_rate", "Acceptance rate", acceptance == null ? "—" : `${acceptance}%`, acceptance, { direction: "none", pct: null, label: "Accepted / sent this period" }, []),
+      kpi("view_rate", "View rate", viewRate == null ? "—" : `${viewRate}%`, viewRate, { direction: "none", pct: null, label: "Viewed / sent" }, []),
+      kpi("declined", "Declined", String(declined), declined, { direction: "none", pct: null, label: "Quotation declined — not Deal Lost" }, []),
+      kpi("expired", "Expired", String(expired), expired, { direction: "none", pct: null, label: "Validity passed" }, []),
+      kpi("avg_discount", "Average discount", avgDiscount == null ? "—" : `${avgDiscount}%`, avgDiscount, { direction: "none", pct: null, label: "Document discount on created quotes" }, []),
+      kpi("approvals", "Approval requests", String(approvalRequests), approvalRequests, { direction: "none", pct: null, label: approvalRate == null ? "No approval volume" : `${approvalRate}% approved` }, []),
     ],
     byStatus: Array.from(byStatusMap.entries()).map(([status, count]) => ({
       status,

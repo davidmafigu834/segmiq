@@ -33,6 +33,9 @@ type DbQuote = {
   created_at: string;
   updated_at: string;
   public_token: string | null;
+  approval_status?: string | null;
+  approval_note?: string | null;
+  discount_percent?: number | null;
   prepared_by_id: string | null;
   prepared_by_name: string | null;
 };
@@ -103,7 +106,7 @@ export async function getCompanyQuotationsPageData({
     supabase
       .from("quotations")
       .select(
-        "id, client_id, lead_id, deal_id, quote_number, revision_number, status, customer_name, customer_phone, customer_email, total, currency, valid_until, sent_at, viewed_at, created_at, updated_at, public_token, prepared_by_id, prepared_by_name"
+        "id, client_id, lead_id, deal_id, quote_number, revision_number, status, customer_name, customer_phone, customer_email, total, currency, valid_until, sent_at, viewed_at, created_at, updated_at, public_token, prepared_by_id, prepared_by_name, approval_status, approval_note, discount_percent"
       )
       .eq("client_id", clientId)
       .order("updated_at", { ascending: false }),
@@ -197,6 +200,9 @@ export async function getCompanyQuotationsPageData({
       createdAt: quote.created_at,
       updatedAt: quote.updated_at,
       publicToken: quote.public_token,
+      approvalStatus: quote.approval_status ?? null,
+      approvalNote: quote.approval_note ?? null,
+      discountPercent: quote.discount_percent != null ? Number(quote.discount_percent) : null,
     };
   });
 
@@ -207,6 +213,8 @@ export async function getCompanyQuotationsPageData({
     viewed: rows.filter((row) => row.effectiveStatus === "viewed").length,
     accepted: rows.filter((row) => row.effectiveStatus === "accepted").length,
     declined: rows.filter((row) => row.effectiveStatus === "rejected").length,
+    pending_approval: rows.filter((row) => row.approvalStatus === "pending" || row.status === "pending_approval").length,
+    expired: rows.filter((row) => row.effectiveStatus === "expired").length,
   };
 
   const owners = Array.from(

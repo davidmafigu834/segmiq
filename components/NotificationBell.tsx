@@ -18,7 +18,8 @@ type NotificationRow = {
     | "UNCONTACTED_MANAGER_ALERT"
     | "FB_TOKEN_EXPIRED"
     | "BACKFILL_COMPLETE"
-    | "WHATSAPP_CONNECTION_ALERT";
+    | "WHATSAPP_CONNECTION_ALERT"
+    | "QUOTATION_ALERT";
   message: string;
   read: boolean;
   lead_id: string | null;
@@ -104,6 +105,11 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
   }
 
   function leadHref(n: NotificationRow): string {
+    if (n.type === "QUOTATION_ALERT") {
+      if (role === "CLIENT_MANAGER") return "/client/quotations";
+      if (n.lead_id && role === "SALESPERSON") return `/sales/quotes?leadId=${n.lead_id}`;
+      return role === "SALESPERSON" ? "/sales/quotes" : "/client/quotations";
+    }
     if (n.lead_id) {
       if (role === "SALESPERSON") return `/sales/call-now?lead=${n.lead_id}`;
       if (role === "CLIENT_MANAGER") return `/client/leads/pipeline?lead=${n.lead_id}`;
@@ -248,6 +254,8 @@ function labelForType(type: string): string {
       return "Facebook issue";
     case "BACKFILL_COMPLETE":
       return "Backfill complete";
+    case "QUOTATION_ALERT":
+      return "Quotation";
     default:
       return type.replace(/_/g, " ").toLowerCase();
   }

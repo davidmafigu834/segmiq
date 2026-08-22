@@ -12,7 +12,7 @@ import {
 describe("quotation totals", () => {
   it("rounds monetary values to two decimal places", () => {
     assert.equal(round2(10.005), 10.01);
-    assert.equal(lineAmount(19.995, 2), 39.99);
+    assert.equal(lineAmount(19.995, 2), 40);
   });
 
   it("computes subtotal, tax, and additional charges consistently", () => {

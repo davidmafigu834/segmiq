@@ -237,6 +237,10 @@ export function CompanyQuotationDetailPanel({
         />
       </div>
 
+      {row.approvalStatus === "pending" || row.status === "pending_approval" ? (
+        <ManagerApprovalActions quotationId={row.id} note={row.approvalNote} />
+      ) : null}
+
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {loading ? (
           <div className="space-y-3 p-4">
@@ -434,5 +438,56 @@ export function CompanyQuotationDetailPanel({
       />
       {body}
     </>
+  );
+}
+
+function ManagerApprovalActions({ quotationId, note }: { quotationId: string; note?: string | null }) {
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  async function decide(decision: "approve" | "request_changes" | "reject") {
+    setBusy(decision);
+    setError("");
+    try {
+      const res = await fetch(`/api/quotations/${quotationId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision, note: comment }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error || "Could not update approval");
+      window.location.reload();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="space-y-2 border-b border-sales-border-subtle px-3 py-3">
+      <p className="text-[12px] font-semibold text-sales-text-primary">Pending approval</p>
+      {note ? <p className="text-[12px] text-sales-text-secondary">{note}</p> : null}
+      <textarea
+        className="w-full rounded-sales-md border border-sales-border px-2 py-1.5 text-[12px]"
+        rows={2}
+        placeholder="Comment for the salesperson…"
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+      />
+      {error ? <p className="text-[12px] text-sales-danger">{error}</p> : null}
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" loading={busy === "approve"} onClick={() => void decide("approve")}>
+          Approve
+        </Button>
+        <Button size="sm" variant="secondary" loading={busy === "request_changes"} onClick={() => void decide("request_changes")}>
+          Request changes
+        </Button>
+        <Button size="sm" variant="secondary" loading={busy === "reject"} onClick={() => void decide("reject")}>
+          Reject
+        </Button>
+      </div>
+    </div>
   );
 }

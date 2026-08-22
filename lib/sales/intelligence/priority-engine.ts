@@ -312,7 +312,87 @@ function generateLeadCandidates(
     }
   }
 
-  // 4. Quote follow-up
+  // 4. Quote follow-up and commercial next actions
+  if (lead.openQuote) {
+    const quote = lead.openQuote;
+    if (quote.approvalStatus === "pending" || quote.approvalStatus === "required") {
+      out.push(
+        baseRec({
+          ctx,
+          lead,
+          actionType: "FOLLOW_UP_QUOTE",
+          reasonCode: "QUOTE_APPROVAL_NEEDED",
+          attentionScore: 86,
+          title: name,
+          subtitle: [quote.quoteNumber, "Request commercial approval"].filter(Boolean).join(" · "),
+          urgencyLabel: "Approval required",
+          dueAt: null,
+          availableActions: ["open_lead"],
+          metadata: { quotationId: quote.id },
+        })
+      );
+    } else if (quote.approvalStatus === "changes_requested" || quote.customerResponded) {
+      out.push(
+        baseRec({
+          ctx,
+          lead,
+          actionType: "FOLLOW_UP_QUOTE",
+          reasonCode: quote.customerResponded ? "QUOTE_CUSTOMER_CHANGES" : "QUOTE_APPROVAL_NEEDED",
+          attentionScore: 88,
+          title: name,
+          subtitle: [quote.quoteNumber, quote.customerResponded ? "Review customer request" : "Update and resubmit"].filter(Boolean).join(" · "),
+          urgencyLabel: "Needs revision",
+          dueAt: null,
+          availableActions: ["open_lead"],
+          metadata: { quotationId: quote.id },
+        })
+      );
+    } else if (quote.validUntil) {
+      const days = Math.ceil((new Date(quote.validUntil).getTime() - now.getTime()) / 86400000);
+      if (days >= 0 && days <= 1 && OPEN_QUOTE_STATUSES.has(quote.status)) {
+        out.push(
+          baseRec({
+            ctx,
+            lead,
+            actionType: "FOLLOW_UP_QUOTE",
+            reasonCode: "QUOTE_EXPIRING",
+            attentionScore: 84,
+            title: name,
+            subtitle: [quote.quoteNumber, "Expires tomorrow"].filter(Boolean).join(" · "),
+            urgencyLabel: "Expiring",
+            dueAt: quote.validUntil,
+            availableActions: contactActions(lead),
+            metadata: { quotationId: quote.id },
+          })
+        );
+      }
+    }
+    if (
+      quote.viewedAt &&
+      OPEN_QUOTE_STATUSES.has(quote.status) &&
+      !lead.hasFutureNextAction
+    ) {
+      const viewedH = hoursSince(quote.viewedAt, now);
+      if (viewedH != null && viewedH <= 24) {
+        out.push(
+          baseRec({
+            ctx,
+            lead,
+            actionType: "FOLLOW_UP_QUOTE",
+            reasonCode: "QUOTE_VIEWED",
+            attentionScore: 80,
+            title: name,
+            subtitle: [quote.quoteNumber, "Customer viewed quotation"].filter(Boolean).join(" · "),
+            urgencyLabel: "Viewed recently",
+            dueAt: null,
+            availableActions: contactActions(lead),
+            metadata: { quotationId: quote.id },
+          })
+        );
+      }
+    }
+  }
+
   if (
     lead.openQuote &&
     OPEN_QUOTE_STATUSES.has(lead.openQuote.status) &&

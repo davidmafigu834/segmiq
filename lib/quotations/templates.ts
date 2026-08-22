@@ -65,6 +65,13 @@ export function templateItemsToQuotationInputs(
     unit_price: Number(it.unit_price) || 0,
     quantity: Number(it.quantity) || 1,
     group_label: (it.group_label as string | null) ?? null,
+    section_id: (it.section_id as string | null) ?? null,
+    unit: (it.unit as string | null) ?? "Each",
+    sku: (it.sku as string | null) ?? null,
+    discount_percent: Number(it.discount_percent) || 0,
+    is_optional: Boolean(it.is_optional),
+    package_id: (it.package_id as string | null) ?? null,
+    offer_option_id: (it.offer_option_id as string | null) ?? null,
   }));
 }
 

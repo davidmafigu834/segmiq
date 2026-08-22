@@ -84,7 +84,15 @@ describe("Company Quotations table behavior", () => {
     );
   });
 
-  it("keeps Expired in More Filters without adding a primary tab", () => {
+  it("matches Pending approval and Expired primary tabs", () => {
+    const pending = quote({ status: "draft", approvalStatus: "pending" });
+    const expired = quote({ status: "sent", effectiveStatus: "expired" });
+    assert.equal(companyQuotationMatchesTab(pending, "pending_approval"), true);
+    assert.equal(companyQuotationMatchesTab(expired, "expired"), true);
+    assert.equal(companyQuotationMatchesTab(expired, "sent"), false);
+  });
+
+  it("keeps Expired filter working alongside the Expired tab", () => {
     const expired = quote({ status: "sent", effectiveStatus: "expired" });
     assert.equal(companyQuotationMatchesTab(expired, "all"), true);
     assert.equal(companyQuotationMatchesTab(expired, "sent"), false);

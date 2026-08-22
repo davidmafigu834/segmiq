@@ -40,7 +40,7 @@ export async function copyQuotationAsDraft(
   const { data: sourceItems } = await supabase
     .from("quotation_line_items")
     .select(
-      "catalog_item_id, item_name, description, unit_price, quantity, group_label, sort_order, section_id, unit, sku, discount_percent, discount_amount, tax_rate, tax_inclusive, is_optional, option_group, cost_price, image_url"
+      "catalog_item_id, item_name, description, unit_price, quantity, group_label, sort_order, section_id, unit, sku, discount_percent, discount_amount, tax_rate, tax_inclusive, is_optional, option_group, cost_price, image_url, catalog_unit_price, price_override, package_id, package_locked, offer_option_id, option_state"
     )
     .eq("quotation_id", opts.sourceQuotationId)
     .order("sort_order", { ascending: true });
@@ -145,6 +145,12 @@ export async function copyQuotationAsDraft(
     option_group: (it.option_group as string | null) ?? null,
     cost_price: it.cost_price != null ? Number(it.cost_price) : null,
     image_url: (it.image_url as string | null) ?? null,
+    catalog_unit_price: it.catalog_unit_price != null ? Number(it.catalog_unit_price) : null,
+    price_override: Boolean(it.price_override),
+    package_id: (it.package_id as string | null) ?? null,
+    package_locked: Boolean(it.package_locked),
+    offer_option_id: (it.offer_option_id as string | null) ?? null,
+    option_state: (it.option_state as string | null) ?? undefined,
   }));
 
   if (items.length > 0) {

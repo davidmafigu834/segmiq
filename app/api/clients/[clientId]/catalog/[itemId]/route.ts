@@ -25,6 +25,15 @@ export async function PATCH(
     category: string | null;
     is_active: boolean;
     display_order: number;
+    sku: string | null;
+    unit: string | null;
+    cost_price: number | null;
+    min_selling_price: number | null;
+    tax_rate: number | null;
+    warranty: string | null;
+    currency: string;
+    item_kind: string;
+    requires_approval: boolean;
   }>;
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -34,6 +43,17 @@ export async function PATCH(
   if (body.category !== undefined) updates.category = body.category;
   if (body.is_active !== undefined) updates.is_active = body.is_active;
   if (body.display_order !== undefined) updates.display_order = body.display_order;
+  if (body.sku !== undefined) updates.sku = body.sku;
+  if (body.unit !== undefined) updates.unit = body.unit;
+  if (body.cost_price !== undefined) updates.cost_price = body.cost_price == null ? null : Number(body.cost_price);
+  if (body.min_selling_price !== undefined) {
+    updates.min_selling_price = body.min_selling_price == null ? null : Number(body.min_selling_price);
+  }
+  if (body.tax_rate !== undefined) updates.tax_rate = body.tax_rate == null ? null : Number(body.tax_rate);
+  if (body.warranty !== undefined) updates.warranty = body.warranty;
+  if (body.currency !== undefined) updates.currency = body.currency;
+  if (body.item_kind !== undefined) updates.item_kind = body.item_kind === "service" ? "service" : "product";
+  if (body.requires_approval !== undefined) updates.requires_approval = Boolean(body.requires_approval);
 
   const supabase = createAdminClient();
   const { data, error } = await supabase

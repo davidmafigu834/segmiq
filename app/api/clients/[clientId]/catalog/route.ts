@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { canManageCatalog } from "@/lib/quotations/quote-access";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
+import { resolveMarginVisibility, stripCostFromUnknown } from "@/lib/quotations/governance";
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const g = await requireClientAccessFromRequest(req, params.clientId);
@@ -24,7 +25,16 @@ export async function GET(req: Request, { params }: { params: { clientId: string
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ items: data ?? [] });
+
+  const { data: settings } = await supabase
+    .from("quotation_settings")
+    .select("margin_visibility, salesperson_can_see_cost, salesperson_can_see_margin")
+    .eq("client_id", params.clientId)
+    .maybeSingle();
+  const isManager = g.session.role === "CLIENT_MANAGER" || g.session.role === "SUPER_ADMIN";
+  const canSeeCost = resolveMarginVisibility(settings ?? {}, isManager) === "full";
+  const items = canSeeCost ? data ?? [] : stripCostFromUnknown(data ?? [], false);
+  return NextResponse.json({ items });
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
@@ -43,6 +53,15 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     unit_price?: number;
     category?: string | null;
     display_order?: number;
+    sku?: string | null;
+    unit?: string | null;
+    cost_price?: number | null;
+    min_selling_price?: number | null;
+    tax_rate?: number | null;
+    warranty?: string | null;
+    currency?: string;
+    item_kind?: string;
+    requires_approval?: boolean;
   };
   if (!body.name?.trim()) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -58,6 +77,15 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
       unit_price: Number(body.unit_price) || 0,
       category: body.category ?? null,
       display_order: body.display_order ?? 0,
+      sku: body.sku ?? null,
+      unit: body.unit ?? "Each",
+      cost_price: body.cost_price != null ? Number(body.cost_price) : null,
+      min_selling_price: body.min_selling_price != null ? Number(body.min_selling_price) : null,
+      tax_rate: body.tax_rate != null ? Number(body.tax_rate) : null,
+      warranty: body.warranty ?? null,
+      currency: body.currency ?? "USD",
+      item_kind: body.item_kind === "service" ? "service" : "product",
+      requires_approval: Boolean(body.requires_approval),
     })
     .select("*")
     .single();

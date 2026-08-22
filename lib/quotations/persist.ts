@@ -86,6 +86,13 @@ export async function saveItemsAndTotals(
         option_group: it.option_group?.trim() || null,
         cost_price: it.cost_price != null ? Number(it.cost_price) : null,
         image_url: it.image_url?.trim() || null,
+        catalog_unit_price:
+          it.catalog_unit_price != null ? Number(it.catalog_unit_price) : null,
+        price_override: Boolean(it.price_override),
+        package_id: it.package_id ?? null,
+        package_locked: Boolean(it.package_locked),
+        offer_option_id: it.offer_option_id?.trim() || null,
+        option_state: it.option_state || (it.is_optional ? "available" : "available"),
         sort_order: idx,
       };
     });

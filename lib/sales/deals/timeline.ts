@@ -88,7 +88,7 @@ export async function getDealTimeline(opts: {
       .limit(limit),
     supabase
       .from("quotations")
-      .select("id, quote_number, status, total, created_at, sent_at, deal_id")
+      .select("id, quote_number, status, total, created_at, sent_at, viewed_at, accepted_at, responded_at, deal_id")
       .or(`deal_id.eq.${opts.dealId},and(lead_id.eq.${opts.originatingLeadId},deal_id.is.null)`)
       .order("created_at", { ascending: false })
       .limit(40),
@@ -111,7 +111,15 @@ export async function getDealTimeline(opts: {
 
   for (const q of (quotes ?? []) as Pick<
     QuotationRow,
-    "id" | "quote_number" | "status" | "total" | "created_at" | "sent_at"
+    | "id"
+    | "quote_number"
+    | "status"
+    | "total"
+    | "created_at"
+    | "sent_at"
+    | "viewed_at"
+    | "accepted_at"
+    | "responded_at"
   >[]) {
     items.push({
       id: `quote-created-${q.id}`,
@@ -128,6 +136,36 @@ export async function getDealTimeline(opts: {
         label: "Quote sent",
         detail: q.quote_number ? `${q.quote_number}` : null,
         eventType: "QUOTE_SENT",
+        source: "quote",
+      });
+    }
+    if (q.viewed_at) {
+      items.push({
+        id: `quote-viewed-${q.id}`,
+        at: q.viewed_at,
+        label: "Quotation viewed",
+        detail: q.quote_number ? `${q.quote_number}` : null,
+        eventType: "QUOTE_VIEWED",
+        source: "quote",
+      });
+    }
+    if (q.status === "accepted" && q.accepted_at) {
+      items.push({
+        id: `quote-accepted-${q.id}`,
+        at: q.accepted_at,
+        label: "Quotation accepted",
+        detail: q.quote_number ? `${q.quote_number} · ${q.total}` : String(q.total),
+        eventType: "QUOTE_ACCEPTED",
+        source: "quote",
+      });
+    }
+    if (q.status === "rejected" && q.responded_at) {
+      items.push({
+        id: `quote-declined-${q.id}`,
+        at: q.responded_at,
+        label: "Quotation declined",
+        detail: q.quote_number,
+        eventType: "QUOTE_DECLINED",
         source: "quote",
       });
     }

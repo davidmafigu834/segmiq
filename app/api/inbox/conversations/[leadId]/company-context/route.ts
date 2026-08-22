@@ -29,6 +29,19 @@ function activityLabel(type: string, data: Record<string, unknown>): string {
       return "Created Deal";
     case "QUOTE_SENT":
       return "Sent quotation";
+    case "QUOTE_VIEWED":
+    case "VIEWED":
+      return "Quotation viewed";
+    case "QUOTE_ACCEPTED":
+    case "ACCEPTED":
+      return "Quotation accepted";
+    case "QUOTE_DECLINED":
+    case "DECLINED":
+      return "Quotation declined";
+    case "CUSTOMER_REQUESTED_CHANGES":
+      return "Customer requested quotation changes";
+    case "CUSTOMER_SELECTED_OPTION":
+      return "Customer selected an option";
     case "CONVERSATION_RESOLVED":
       return "Resolved conversation";
     case "CONVERSATION_REOPENED":

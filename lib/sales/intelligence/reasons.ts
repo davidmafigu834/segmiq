@@ -23,6 +23,10 @@ const REASON_TEMPLATES: Record<
     const age = ctx?.ageLabel ? ` ${ctx.ageLabel}` : "";
     return `The quotation is still open${age} and no next follow-up is scheduled.`;
   },
+  QUOTE_APPROVAL_NEEDED: () => "This quotation needs commercial approval before it can be sent.",
+  QUOTE_EXPIRING: () => "This quotation expires soon and the customer has not responded.",
+  QUOTE_VIEWED: () => "The customer viewed the quotation. Follow up while it is still in front of them.",
+  QUOTE_CUSTOMER_CHANGES: () => "The customer requested quotation changes. Review the request and create a revision.",
   DEAL_STALE: (ctx) => {
     const age = ctx?.ageLabel ? ` for ${ctx.ageLabel}` : "";
     return `This active opportunity has had no meaningful activity${age}.`;

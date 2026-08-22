@@ -40,10 +40,12 @@ export const COMPANY_QUOTATION_TABS: Array<{
 }> = [
   { id: "all", label: "All Quotations" },
   { id: "draft", label: "Draft" },
+  { id: "pending_approval", label: "Pending approval" },
   { id: "sent", label: "Sent" },
   { id: "viewed", label: "Viewed" },
   { id: "accepted", label: "Accepted" },
   { id: "declined", label: "Declined" },
+  { id: "expired", label: "Expired" },
 ];
 
 export function companyQuotationMatchesTab(
@@ -52,6 +54,10 @@ export function companyQuotationMatchesTab(
 ): boolean {
   if (tab === "all") return true;
   if (tab === "declined") return row.effectiveStatus === "rejected";
+  if (tab === "pending_approval") {
+    return row.approvalStatus === "pending" || row.status === "pending_approval";
+  }
+  if (tab === "expired") return row.effectiveStatus === "expired";
   return row.effectiveStatus === tab;
 }
 

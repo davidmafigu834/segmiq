@@ -90,6 +90,12 @@ type QuoteRow = {
   status: string;
   created_at: string;
   updated_at: string;
+  sent_at?: string | null;
+  viewed_at?: string | null;
+  valid_until?: string | null;
+  approval_status?: string | null;
+  responded_at?: string | null;
+  declined_category?: string | null;
 };
 
 type EventRow = {
@@ -547,7 +553,7 @@ export async function fetchDailySalesPlan(opts: {
       .lt("created_at", bounds.toExclusive.toISOString()),
     supabase
       .from("quotations")
-      .select("id, lead_id, deal_id, quote_number, total, status, created_at, updated_at")
+      .select("id, lead_id, deal_id, quote_number, total, status, created_at, updated_at, sent_at, viewed_at, valid_until, approval_status, responded_at")
       .eq("client_id", opts.clientId)
       .in("status", [...OPEN_QUOTE_STATUSES, "draft"])
       .order("updated_at", { ascending: false })
@@ -617,7 +623,11 @@ export async function fetchDailySalesPlan(opts: {
   const openQuoteByLead = new Map<string, QuoteRow>();
   const openQuoteByDeal = new Map<string, QuoteRow>();
   for (const q of allQuotes) {
-    if (!OPEN_QUOTE_STATUSES.has(q.status)) continue;
+    const isOpen = OPEN_QUOTE_STATUSES.has(q.status);
+    const needsApprovalWork =
+      q.status === "draft" &&
+      ["pending", "required", "changes_requested", "rejected"].includes(String(q.approval_status ?? ""));
+    if (!isOpen && !needsApprovalWork) continue;
     if (q.deal_id && !openQuoteByDeal.has(q.deal_id)) openQuoteByDeal.set(q.deal_id, q);
     if (activityLeadIdSet.has(q.lead_id) && !openQuoteByLead.has(q.lead_id)) {
       openQuoteByLead.set(q.lead_id, q);
@@ -715,7 +725,11 @@ export async function fetchDailySalesPlan(opts: {
             quoteNumber: openQuote.quote_number,
             total: openQuote.total != null ? Number(openQuote.total) : null,
             status: openQuote.status,
-            sentAt: openQuote.updated_at || openQuote.created_at,
+            sentAt: openQuote.sent_at || openQuote.updated_at || openQuote.created_at,
+            approvalStatus: openQuote.approval_status ?? null,
+            viewedAt: openQuote.viewed_at ?? null,
+            validUntil: openQuote.valid_until ?? null,
+            customerResponded: Boolean(openQuote.responded_at),
           }
         : null,
       isWhatsAppCapable: Boolean(l.phone) || String(l.source ?? "").includes("WHATSAPP"),
@@ -786,7 +800,11 @@ export async function fetchDailySalesPlan(opts: {
             quoteNumber: openQuote.quote_number,
             total: openQuote.total != null ? Number(openQuote.total) : null,
             status: openQuote.status,
-            sentAt: openQuote.updated_at || openQuote.created_at,
+            sentAt: openQuote.sent_at || openQuote.updated_at || openQuote.created_at,
+            approvalStatus: openQuote.approval_status ?? null,
+            viewedAt: openQuote.viewed_at ?? null,
+            validUntil: openQuote.valid_until ?? null,
+            customerResponded: Boolean(openQuote.responded_at),
           }
         : null,
       isWhatsAppCapable:

@@ -21,6 +21,7 @@ export type QuotationPdfLineItem = {
   quantity: number;
   amount: number;
   group_label: string | null;
+  optional?: boolean;
 };
 
 export type QuotationPdfData = {
@@ -44,6 +45,7 @@ export type QuotationPdfData = {
 
   currency: string;
   items: QuotationPdfLineItem[];
+  optionalItems?: QuotationPdfLineItem[];
   subtotal: number;
   taxRate: number;
   taxAmount: number;
@@ -232,6 +234,25 @@ function QuotationDocument({ data }: { data: QuotationPdfData }) {
             );
           })}
         </View>
+
+        {data.optionalItems && data.optionalItems.length > 0 ? (
+          <View style={styles.table}>
+            <View style={[styles.groupRow, { backgroundColor: ZEBRA }]}>
+              <Text style={styles.groupLabel}>Optional items (not included in total)</Text>
+            </View>
+            {data.optionalItems.map((it, i) => (
+              <View key={`opt-${i}`} style={styles.row} wrap={false}>
+                <View style={styles.cItem}>
+                  <Text style={styles.itemName}>{it.item_name}</Text>
+                </View>
+                <Text style={[styles.cDesc, styles.itemDesc]}>{it.description || "Optional"}</Text>
+                <Text style={[styles.cUnit, styles.cell]}>{formatMoney(it.unit_price, data.currency)}</Text>
+                <Text style={[styles.cQty, styles.cell]}>{it.quantity}</Text>
+                <Text style={[styles.cAmt, styles.itemName]}>{formatMoney(it.amount, data.currency)}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
 
         <View style={styles.totals}>
           <View style={styles.totalsTable}>

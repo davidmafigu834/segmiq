@@ -102,6 +102,17 @@ export async function buildQuotationPdfData(
         amount: Number(it.amount) || 0,
         group_label: (it.group_label as string | null) ?? null,
       })),
+    optionalItems: (items ?? [])
+      .filter((it) => it.is_optional)
+      .map((it) => ({
+        item_name: it.item_name as string,
+        description: (it.description as string | null) ?? null,
+        unit_price: Number(it.unit_price) || 0,
+        quantity: Number(it.quantity) || 0,
+        amount: Number(it.amount) || 0,
+        group_label: (it.group_label as string | null) ?? null,
+        optional: true,
+      })),
     subtotal: totals.subtotal,
     taxRate: Number(quote.tax_rate) || 0,
     taxAmount: totals.taxAmount,
