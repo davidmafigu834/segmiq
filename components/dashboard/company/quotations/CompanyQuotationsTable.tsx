@@ -31,7 +31,6 @@ import {
   companyQuotationPageItems,
   type CompanyQuotationEmptyKind,
   type CompanyQuotationFilters,
-  type CompanyQuotationsSort,
 } from "@/lib/sales/company-quotations";
 import {
   formatQuoteAmount,
@@ -633,8 +632,6 @@ export function CompanyQuotationsTable({
   total,
   onPageChange,
   onPageSizeChange,
-  sort,
-  onSortChange,
   emptyKind,
   loadError,
   searchQuery,
@@ -669,8 +666,6 @@ export function CompanyQuotationsTable({
   total: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
-  sort: CompanyQuotationsSort;
-  onSortChange: (sort: CompanyQuotationsSort) => void;
   emptyKind: CompanyQuotationEmptyKind;
   loadError?: string | null;
   searchQuery: string;

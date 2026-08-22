@@ -34,7 +34,6 @@ import {
   formatAttentionValue,
   sortCompanyQuotations,
   type CompanyQuotationFilters,
-  type CompanyQuotationsSort,
 } from "@/lib/sales/company-quotations";
 import { fetchQuotationPdfBlob } from "@/lib/share-quotation-pdf";
 import { cn } from "@/lib/ui/cn";
@@ -79,7 +78,7 @@ export function CompanyQuotationsPage({
   const [filters, setFilters] = useState<CompanyQuotationFilters>(
     DEFAULT_COMPANY_QUOTATION_FILTERS
   );
-  const [sort, setSort] = useState<CompanyQuotationsSort>("updated_desc");
+  const sort = "updated_desc" as const;
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(COMPANY_QUOTATIONS_PAGE_SIZE);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -134,7 +133,7 @@ export function CompanyQuotationsPage({
   useEffect(() => {
     setPage(1);
     setSelectedIds(new Set());
-  }, [tab, debouncedSearch, filters, pageSize, sort]);
+  }, [tab, debouncedSearch, filters, pageSize]);
 
   useEffect(() => {
     if (selectedId && !data.rows.some((row) => row.id === selectedId)) {
@@ -303,8 +302,6 @@ export function CompanyQuotationsPage({
       total={filtered.length}
       onPageChange={setPage}
       onPageSizeChange={setPageSize}
-      sort={sort}
-      onSortChange={setSort}
       emptyKind={emptyKind}
       loadError={loadError}
       searchQuery={debouncedSearch}

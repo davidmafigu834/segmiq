@@ -98,14 +98,6 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function approvalTone(status: string | null | undefined) {
-  const value = (status || "not_required").replace(/-/g, "_");
-  if (value === "pending" || value === "required" || value === "changes_requested") return "warning" as const;
-  if (value === "approved") return "brand" as const;
-  if (value === "rejected") return "danger" as const;
-  return "neutral" as const;
-}
-
 export function CompanyQuotationDetailPanel({
   row,
   workspace,
@@ -269,7 +261,6 @@ function DetailRail({
   onOpenWorkspace: () => void;
   onCompare: () => void;
 }) {
-  const engagement = companyQuotationEngagement(row);
   const validity = formatQuoteValidity(row.validUntil, { status: row.effectiveStatus });
   const sent = Boolean(row.sentAt);
   const accepted = row.effectiveStatus === "accepted";
