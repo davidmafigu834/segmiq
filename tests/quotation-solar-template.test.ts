@@ -152,4 +152,10 @@ describe("residential premium solar template mapping", () => {
     assert.equal(SOLAR_BUILTIN_STARTER_ITEMS.length, 7);
     assert.ok(SOLAR_BUILTIN_STARTER_ITEMS.every((it) => it.item_name && it.unit_price > 0));
   });
+
+  it("embeds the public solar hero as a raster data URI for PDF", async () => {
+    const { fetchRasterDataUri } = await import("../lib/quotations/layouts/resolve-image");
+    const src = await fetchRasterDataUri("/quotation-templates/residential-premium-solar/hero.png");
+    assert.ok(src?.startsWith("data:image/png"));
+  });
 });

@@ -366,12 +366,12 @@ export function ResidentialPremiumSolarDigital({
         {model.paymentTerms.length > 0 ? (
           <InfoCard accent={accent} icon={CreditCard} title="Payment Terms">
             {model.paymentTerms.map((p) => (
-              <div key={p.label} className="flex justify-between gap-2">
-                <span className="font-semibold">
+              <div key={p.label} className="py-0.5">
+                <p className="font-semibold leading-4">
                   {p.label}
                   {p.amountLabel ? ` (${p.amountLabel})` : ""}
-                </span>
-                <span className="text-[#6B6B6B]">{p.detail || ""}</span>
+                </p>
+                {p.detail ? <p className="text-[#6B6B6B] leading-4">{p.detail}</p> : null}
               </div>
             ))}
           </InfoCard>
@@ -379,9 +379,9 @@ export function ResidentialPremiumSolarDigital({
         {model.warranty.length > 0 ? (
           <InfoCard accent={accent} icon={Shield} title="Warranty">
             {model.warranty.map((w) => (
-              <div key={w.label} className="flex justify-between gap-2">
-                <span className="text-[#6B6B6B]">{w.label}</span>
-                <span className="font-semibold">{w.detail}</span>
+              <div key={w.label} className="py-0.5">
+                <p className="font-semibold leading-4">{w.label}</p>
+                <p className="text-[#6B6B6B] leading-4">{w.detail}</p>
               </div>
             ))}
           </InfoCard>

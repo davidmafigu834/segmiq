@@ -15,7 +15,7 @@ import {
 import { formatMoneyCompact } from "@/lib/quotations/totals";
 import type { QuoteDocumentModel } from "./types";
 import { TEMPLATE_CHARCOAL, TEMPLATE_INK, TEMPLATE_LINE, TEMPLATE_MUTED } from "./types";
-import { isSvgSrc } from "./resolve-image";
+import { isSvgSrc, fetchRasterDataUri } from "./resolve-image";
 import { PdfIcon } from "./pdf-icons";
 import { signatoryParts, splitHeroLines, termsNeedOwnPage } from "./map-fields";
 
@@ -89,9 +89,9 @@ const styles = StyleSheet.create({
   cardLast: { marginRight: 0 },
   cardHead: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
   cardLabel: { fontSize: 6, fontWeight: 700, letterSpacing: 0.6, marginLeft: 3 },
-  fieldRow: { flexDirection: "row", marginTop: 1.5 },
-  fieldLabel: { width: "38%", fontSize: 6.5, color: TEMPLATE_MUTED },
-  fieldValue: { width: "62%", fontSize: 7, fontWeight: 700, lineHeight: 1.25 },
+  fieldRow: { flexDirection: "row", marginTop: 2, alignItems: "flex-start" },
+  fieldLabel: { width: "40%", fontSize: 6.5, color: TEMPLATE_MUTED, paddingRight: 4 },
+  fieldValue: { width: "60%", fontSize: 7, fontWeight: 700, lineHeight: 1.25 },
   summaryText: { fontSize: 7, lineHeight: 1.3 },
   kpi: {
     marginTop: 7,
@@ -162,7 +162,12 @@ const styles = StyleSheet.create({
   totalLabel: { fontSize: 6, fontWeight: 700, letterSpacing: 0.55 },
   totalValue: { fontSize: 13, fontWeight: 700, marginTop: 3 },
   totalWords: { fontSize: 6, color: TEMPLATE_MUTED, marginTop: 4, lineHeight: 1.25 },
-  kv: { flexDirection: "row", justifyContent: "space-between", marginTop: 2 },
+  kv: { flexDirection: "row", marginTop: 3, alignItems: "flex-start" },
+  kvLeft: { width: "46%", paddingRight: 4 },
+  kvRight: { width: "54%" },
+  kvStack: { marginTop: 4 },
+  kvStackLabel: { fontSize: 7, fontWeight: 700, lineHeight: 1.25 },
+  kvStackValue: { fontSize: 6.5, color: TEMPLATE_MUTED, marginTop: 1, lineHeight: 1.25 },
   signRow: { flexDirection: "row", marginTop: 9 },
   signCol: { flex: 1, marginRight: 14 },
   acceptRow: { flexDirection: "row", marginTop: 4, alignItems: "flex-end" },
@@ -470,12 +475,12 @@ export function ResidentialPremiumSolarDocument({ model }: { model: QuoteDocumen
             <View style={[styles.lowerCol, styles.payCol]}>
               <CardHeading icon="pay" label="PAYMENT TERMS" accent={accent} />
               {model.paymentTerms.map((p) => (
-                <View key={p.label} style={styles.kv}>
-                  <Text style={styles.itemName}>
+                <View key={p.label} style={styles.kvStack} wrap={false}>
+                  <Text style={styles.kvStackLabel}>
                     {p.label}
                     {p.amountLabel ? ` (${p.amountLabel})` : ""}
                   </Text>
-                  <Text style={styles.itemDesc}>{p.detail || ""}</Text>
+                  {p.detail ? <Text style={styles.kvStackValue}>{p.detail}</Text> : null}
                 </View>
               ))}
             </View>
@@ -484,9 +489,9 @@ export function ResidentialPremiumSolarDocument({ model }: { model: QuoteDocumen
             <View style={[styles.lowerCol, styles.warCol]}>
               <CardHeading icon="shield" label="WARRANTY" accent={accent} />
               {model.warranty.map((w) => (
-                <View key={w.label} style={styles.kv}>
-                  <Text style={styles.itemDesc}>{w.label}</Text>
-                  <Text style={styles.itemName}>{w.detail}</Text>
+                <View key={w.label} style={styles.kvStack} wrap={false}>
+                  <Text style={styles.kvStackLabel}>{w.label}</Text>
+                  <Text style={styles.kvStackValue}>{w.detail}</Text>
                 </View>
               ))}
             </View>
@@ -494,21 +499,27 @@ export function ResidentialPremiumSolarDocument({ model }: { model: QuoteDocumen
           <View style={[styles.lowerCol, styles.sumCol, !model.showAcceptance && !model.terms ? styles.cardLast : {}]}>
             <CardHeading icon="summary" label="COMMERCIAL SUMMARY" accent={accent} />
             <View style={styles.kv}>
-              <Text style={styles.itemDesc}>Subtotal</Text>
-              <Text style={styles.itemName}>{money(model.commercial.subtotal)}</Text>
+              <Text style={[styles.itemDesc, styles.kvLeft]}>Subtotal</Text>
+              <Text style={[styles.itemName, styles.kvRight, { textAlign: "right" }]}>
+                {money(model.commercial.subtotal)}
+              </Text>
             </View>
             {model.commercial.discountTotal > 0 ? (
               <View style={styles.kv}>
-                <Text style={styles.itemDesc}>Discount</Text>
-                <Text style={styles.itemName}>{money(model.commercial.discountTotal)}</Text>
+                <Text style={[styles.itemDesc, styles.kvLeft]}>Discount</Text>
+                <Text style={[styles.itemName, styles.kvRight, { textAlign: "right" }]}>
+                  {money(model.commercial.discountTotal)}
+                </Text>
               </View>
             ) : null}
             {model.commercial.taxRate > 0 || model.commercial.taxAmount > 0 ? (
               <View style={styles.kv}>
-                <Text style={styles.itemDesc}>
+                <Text style={[styles.itemDesc, styles.kvLeft]}>
                   Tax{model.commercial.taxRate ? ` (${model.commercial.taxRate}%)` : ""}
                 </Text>
-                <Text style={styles.itemName}>{money(model.commercial.taxAmount)}</Text>
+                <Text style={[styles.itemName, styles.kvRight, { textAlign: "right" }]}>
+                  {money(model.commercial.taxAmount)}
+                </Text>
               </View>
             ) : null}
           </View>
@@ -619,5 +630,18 @@ export function ResidentialPremiumSolarDocument({ model }: { model: QuoteDocumen
 }
 
 export async function renderLayoutPdf(model: QuoteDocumentModel): Promise<Buffer> {
-  return renderToBuffer(<ResidentialPremiumSolarDocument model={model} />);
+  const heroSrc = await fetchRasterDataUri(model.hero.imageSrc);
+  const logoSrc = model.company.logoDataUri ?? (await fetchRasterDataUri(model.company.logoUrl));
+  const prepared: QuoteDocumentModel = {
+    ...model,
+    company: {
+      ...model.company,
+      logoDataUri: logoSrc && !isSvgSrc(logoSrc) ? logoSrc : model.company.logoDataUri,
+    },
+    hero: {
+      ...model.hero,
+      imageSrc: heroSrc && !isSvgSrc(heroSrc) ? heroSrc : null,
+    },
+  };
+  return renderToBuffer(<ResidentialPremiumSolarDocument model={prepared} />);
 }
