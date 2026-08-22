@@ -470,8 +470,6 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       : sendBlocked
         ? "Complete quotation"
         : "Send quotation";
-      ? `Complete ${commercial.blockingCount} required item${commercial.blockingCount === 1 ? "" : "s"} before sending.`
-      : undefined;
 
   async function revise() {
     setBusy("revise");
