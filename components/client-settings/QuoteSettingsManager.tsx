@@ -199,7 +199,8 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
       });
       const json = (await res.json().catch(() => ({}))) as { settings?: Settings; error?: string };
       if (!res.ok) throw new Error(json.error ?? "Could not save signature");
-      if (json.settings) setSettings((prev) => ({ ...(prev ?? settings), ...json.settings }));
+      const next = json.settings;
+      if (next) setSettings((prev) => ({ ...(prev ?? next), ...next }));
       flash("Signature saved");
     } finally {
       setSavingSignature(false);
@@ -212,7 +213,8 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
       const res = await fetch(`/api/clients/${clientId}/quotation-settings/signature`, { method: "DELETE" });
       const json = (await res.json().catch(() => ({}))) as { settings?: Settings; error?: string };
       if (!res.ok) throw new Error(json.error ?? "Could not remove signature");
-      if (json.settings) setSettings((prev) => ({ ...(prev ?? settings), ...json.settings }));
+      const next = json.settings;
+      if (next) setSettings((prev) => ({ ...(prev ?? next), ...next }));
       else setSettings((prev) => (prev ? { ...prev, authorised_signature_url: null } : prev));
       flash("Signature removed");
     } finally {
