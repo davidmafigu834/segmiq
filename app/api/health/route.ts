@@ -4,7 +4,7 @@ import { fetchAuthFirstRow } from "@/lib/supabase/auth-rest";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const db = await fetchAuthFirstRow<{ id: string }>("users", "select=id&limit=1", 5_000);
+  const db = await fetchAuthFirstRow<{ id: string }>("users", "select=id&limit=1", 4_000);
   return NextResponse.json({
     ok: db.ok,
     ts: new Date().toISOString(),

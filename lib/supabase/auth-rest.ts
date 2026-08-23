@@ -5,7 +5,8 @@
 
 import { middlewareRestUrl } from "@/lib/supabase/middleware-admin";
 
-export const AUTH_DB_TIMEOUT_MS = 10_000;
+export const AUTH_DB_TIMEOUT_MS = 5_000;
+export const AUTH_CLIENT_MODE_TIMEOUT_MS = 2_000;
 
 export type AuthUserRow = {
   id: string;
@@ -80,12 +81,22 @@ export async function fetchAuthFirstRow<T extends Record<string, unknown>>(
   }
 }
 
-export async function fetchAuthUserByEmail(email: string): Promise<AuthFetchResult<AuthUserRow>> {
-  return fetchAuthFirstRow<AuthUserRow>("users", authUserByEmailQuery(email));
+export async function fetchAuthUserByEmail(
+  email: string,
+  timeoutMs = AUTH_DB_TIMEOUT_MS
+): Promise<AuthFetchResult<AuthUserRow>> {
+  return fetchAuthFirstRow<AuthUserRow>("users", authUserByEmailQuery(email), timeoutMs);
 }
 
-export async function fetchClientMode(clientId: string): Promise<"solo" | "team"> {
-  const result = await fetchAuthFirstRow<{ mode?: string }>("clients", clientModeQuery(clientId));
+export async function fetchClientMode(
+  clientId: string,
+  timeoutMs = AUTH_CLIENT_MODE_TIMEOUT_MS
+): Promise<"solo" | "team"> {
+  const result = await fetchAuthFirstRow<{ mode?: string }>(
+    "clients",
+    clientModeQuery(clientId),
+    timeoutMs
+  );
   if (!result.ok) return "team";
   return result.row.mode === "solo" ? "solo" : "team";
 }

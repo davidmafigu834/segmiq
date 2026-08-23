@@ -109,7 +109,7 @@ function LoginFormInner() {
       });
       if (res?.error || !res?.ok) {
         if (res?.error === "DatabaseUnavailable") {
-          setError("Sign-in is temporarily unavailable. Please try again in a minute.");
+          setError("Sign-in is temporarily unavailable because the database is slow. Please try again in a minute.");
           return;
         }
         setError("Email or password is incorrect.");
@@ -117,7 +117,7 @@ function LoginFormInner() {
       }
       await resolveWorkspace();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Sign-in timed out because the database is responding slowly. Please try again in a minute.");
     } finally {
       setLoading(false);
     }
