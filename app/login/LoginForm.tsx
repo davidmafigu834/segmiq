@@ -108,6 +108,10 @@ function LoginFormInner() {
         password,
       });
       if (res?.error || !res?.ok) {
+        if (res?.error === "DatabaseUnavailable") {
+          setError("Sign-in is temporarily unavailable. Please try again in a minute.");
+          return;
+        }
         setError("Email or password is incorrect.");
         return;
       }
