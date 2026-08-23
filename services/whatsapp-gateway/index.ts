@@ -492,6 +492,7 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   const connectMatch = url.pathname.match(/^\/v1\/connections\/([0-9a-f-]+)\/connect$/i);
   const textMatch = url.pathname.match(/^\/v1\/connections\/([0-9a-f-]+)\/messages\/text$/i);
   const documentMatch = url.pathname.match(/^\/v1\/connections\/([0-9a-f-]+)\/messages\/document$/i);
+  const mediaMatch = url.pathname.match(/^\/v1\/connections\/([0-9a-f-]+)\/messages\/media$/i);
   const deleteMatch = url.pathname.match(/^\/v1\/connections\/([0-9a-f-]+)$/i);
 
   if (request.method === "POST" && connectMatch) {
@@ -519,26 +520,43 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
     json(response, 200, { ok: true, providerId: id });
     return;
   }
-  if (request.method === "POST" && documentMatch) {
-    const session = sessions.get(documentMatch[1]);
+  if (request.method === "POST" && (documentMatch || mediaMatch)) {
+    const connectionId = (documentMatch ?? mediaMatch)?.[1] ?? "";
+    const session = sessions.get(connectionId);
     if (!session) return json(response, 409, { ok: false, error: "Connection is offline", errorCode: "NOT_CONNECTED" });
-    const input = JSON.parse(body) as { to?: string; body?: string; url?: string; filename?: string; mimeType?: string };
+    const input = JSON.parse(body) as {
+      to?: string;
+      body?: string;
+      url?: string;
+      filename?: string;
+      mimeType?: string;
+      messageType?: "image" | "video" | "document";
+    };
     const digits = input.to?.replace(/\D/g, "") ?? "";
     const mediaUrl = new URL(input.url ?? "");
-    if (!digits || !mediaHostAllowed(mediaUrl)) return json(response, 400, { ok: false, error: "Invalid document request" });
+    if (!digits || !mediaHostAllowed(mediaUrl)) return json(response, 400, { ok: false, error: "Invalid media request" });
     if (!maySendManualMessage(session)) {
       return json(response, 429, { ok: false, error: "Too many messages sent. Please wait a moment and try again.", errorCode: "RATE_LIMITED" });
     }
     const mediaResponse = await fetch(mediaUrl, { signal: AbortSignal.timeout(20_000), redirect: "error" });
-    if (!mediaResponse.ok) return json(response, 502, { ok: false, error: "Document download failed" });
+    if (!mediaResponse.ok) return json(response, 502, { ok: false, error: "Media download failed" });
     const bytes = Buffer.from(await mediaResponse.arrayBuffer());
-    if (bytes.length > 20 * 1024 * 1024) return json(response, 413, { ok: false, error: "Document exceeds 20 MB" });
-    const sent = await session.socket.sendMessage(`${digits}@s.whatsapp.net`, {
-      document: bytes,
-      mimetype: input.mimeType ?? "application/pdf",
-      fileName: input.filename ?? "document",
-      caption: input.body?.trim() || undefined,
-    });
+    if (bytes.length > 20 * 1024 * 1024) return json(response, 413, { ok: false, error: "File exceeds 20 MB" });
+    const kind = documentMatch ? "document" : input.messageType ?? "document";
+    const caption = input.body?.trim() || undefined;
+    const mimeType = input.mimeType ?? "application/octet-stream";
+    const payload =
+      kind === "image"
+        ? { image: bytes, caption, mimetype: mimeType }
+        : kind === "video"
+          ? { video: bytes, caption, mimetype: mimeType }
+          : {
+              document: bytes,
+              mimetype: mimeType,
+              fileName: input.filename ?? "document",
+              caption,
+            };
+    const sent = await session.socket.sendMessage(`${digits}@s.whatsapp.net`, payload);
     const id = sent?.key.id ?? randomUUID();
     session.sentByGateway.add(id);
     json(response, 200, { ok: true, providerId: id });

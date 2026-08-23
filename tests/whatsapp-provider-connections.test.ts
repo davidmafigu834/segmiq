@@ -23,6 +23,8 @@ test("provider resolver retains Meta and adds temporary provider without conflat
   assert.equal(providerForType("META_CLOUD").type, "META_CLOUD");
   assert.equal(providerForType("TEMPORARY_WEB").type, "TEMPORARY_WEB");
   assert.equal(providerForType("META_COEXISTENCE").type, "META_COEXISTENCE");
+  assert.equal(typeof providerForType("META_CLOUD").sendMedia, "function");
+  assert.equal(typeof providerForType("TEMPORARY_WEB").sendMedia, "function");
 });
 
 test("connection state machine allows lifecycle transitions and rejects unsafe jumps", () => {

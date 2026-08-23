@@ -11,6 +11,9 @@ export async function persistOutboundWhatsAppMessage(opts: {
   providerType?: "META_CLOUD" | "TEMPORARY_WEB" | "META_COEXISTENCE";
   connectionId?: string | null;
   senderSource?: "SEGMIQ_USER" | "EXTERNAL_BUSINESS_DEVICE" | "SYSTEM";
+  mediaUrl?: string | null;
+  mediaMimeType?: string | null;
+  mediaStorageKey?: string | null;
 }): Promise<{ ok: boolean; id?: string }> {
   const supabase = createAdminClient();
   const now = new Date().toISOString();
@@ -29,6 +32,9 @@ export async function persistOutboundWhatsAppMessage(opts: {
       provider_type: opts.providerType ?? "META_CLOUD",
       connection_id: opts.connectionId ?? null,
       sender_source: opts.senderSource ?? "SEGMIQ_USER",
+      media_url: opts.mediaUrl ?? null,
+      media_mime_type: opts.mediaMimeType ?? null,
+      media_storage_key: opts.mediaStorageKey ?? null,
       created_at: now,
       updated_at: now,
     })

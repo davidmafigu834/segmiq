@@ -200,3 +200,107 @@ export async function sendCanonicalWhatsAppDocument(input: {
   }
   return { ...result, channel: "whatsapp", providerType: provider.type };
 }
+
+export async function sendCanonicalWhatsAppMedia(input: {
+  clientId: string;
+  leadId: string;
+  to: string;
+  body: string;
+  filename: string;
+  mimeType: string;
+  url: string;
+  messageType: "image" | "video" | "document";
+  actorId: string;
+  actorName: string;
+  actorRole: string;
+  mediaId?: string | null;
+  mediaStorageKey?: string | null;
+}): Promise<SendResult & { channel: "whatsapp"; providerType?: string }> {
+  const recipient = await resolveCanonicalLeadRecipient(input);
+  const context: LogMessageParams = {
+    userId: input.actorId,
+    leadId: input.leadId,
+    clientId: input.clientId,
+    channel: "whatsapp",
+    notificationType: "DOCUMENT_SENT",
+    recipient: recipient.ok ? recipient.normalized : "(authorized lead recipient unavailable)",
+    templateKey: null,
+    payloadPreview: input.body.slice(0, 240),
+  };
+  if (!recipient.ok) {
+    const result = { ok: false, error: recipient.error, errorCode: recipient.errorCode } as const;
+    await logMessage(result, context);
+    return { ...result, channel: "whatsapp" };
+  }
+  const { provider, connection } = await resolveWhatsAppProvider(input.clientId);
+  if (!connection || !["CONNECTED", "DEGRADED"].includes(connection.status)) {
+    const result = { ok: false, error: "WhatsApp connection is offline", errorCode: "CONNECTION_UNAVAILABLE" } as const;
+    await logMessage(result, context);
+    return { ...result, channel: "whatsapp", providerType: provider.type };
+  }
+  if (!provider.capabilities.manualDocument) {
+    const result = {
+      ok: false,
+      error: "This WhatsApp connection doesn't support this messaging feature.",
+      errorCode: "UNSUPPORTED",
+    } as const;
+    await logMessage(result, context);
+    return { ...result, channel: "whatsapp", providerType: provider.type };
+  }
+  const mediaInput = {
+    connectionId: connection.id,
+    clientId: input.clientId,
+    leadId: input.leadId,
+    to: recipient.normalized,
+    body: input.body,
+    filename: input.filename,
+    mimeType: input.mimeType,
+    url: input.url,
+    messageType: input.messageType,
+    mediaId: input.mediaId,
+  };
+  const result = provider.sendMedia
+    ? await provider.sendMedia(mediaInput)
+    : input.messageType === "document" && provider.sendDocument
+      ? await provider.sendDocument(mediaInput)
+      : {
+          ok: false as const,
+          error: "This WhatsApp connection doesn't support this messaging feature.",
+          errorCode: "UNSUPPORTED",
+        };
+  await logMessage(result, context);
+  if (result.ok) {
+    await persistOutboundWhatsAppMessage({
+      clientId: input.clientId,
+      leadId: input.leadId,
+      phone: recipient.normalized,
+      body: input.body,
+      actorId: input.actorId,
+      providerId: result.providerId ?? null,
+      providerType: provider.type,
+      connectionId: connection.id,
+      senderSource: "SEGMIQ_USER",
+      messageType: input.messageType,
+      mediaUrl: input.url.startsWith("http") ? input.url : null,
+      mediaMimeType: input.mimeType,
+      mediaStorageKey: input.mediaStorageKey ?? null,
+    });
+    await logLeadEvent({
+      leadId: input.leadId,
+      clientId: input.clientId,
+      actor: { id: input.actorId, name: input.actorName, role: input.actorRole },
+      eventType: "MESSAGE_SENT",
+      eventData: {
+        body: input.body,
+        filename: input.filename,
+        provider_id: result.providerId ?? null,
+        provider_type: provider.type,
+        message_type: input.messageType,
+      },
+      channel: "whatsapp",
+    });
+    const supabase = createAdminClient();
+    await supabase.from("leads").update({ updated_at: new Date().toISOString() }).eq("id", input.leadId);
+  }
+  return { ...result, channel: "whatsapp", providerType: provider.type };
+}

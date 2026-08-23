@@ -44,7 +44,7 @@ Search includes contact identity, message content, Lead budget, Deal name, and D
 
 Before Deal creation, the header shows Lead lifecycle, intent, and budget. After Deal creation, it shows Deal stage and canonical Deal value. Lead lifecycle and Deal stage are never presented as interchangeable states.
 
-The action strip sits immediately below the header and reuses authorized actions: quick replies, send asset, internal note, log call, Lead view, and the canonical create/open Deal flow. The composer includes attachments, session state, and the existing WhatsApp send rules. A closed or unavailable session becomes a compact read-only strip with the permitted recovery or claim action.
+The action strip sits immediately below the header and reuses authorized actions: quick replies, send asset, internal note, log call, Lead view, and the canonical create/open Deal flow. The composer includes a paperclip control to send photos, videos, and files from a phone or computer, plus session state and the existing WhatsApp send rules. A closed or unavailable session becomes a compact read-only strip with the permitted recovery or claim action.
 
 Message loading is paged and bounded. New-message polling merges into already loaded history and cannot overlap an in-flight request, so loading older messages is not discarded by a refresh.
 

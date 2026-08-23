@@ -7,6 +7,7 @@ import type { CatalogItemRow } from "@/types";
 import { QuoteTemplatesManager } from "@/components/client-settings/QuoteTemplatesManager";
 import { QuotationCommercialSettings } from "@/components/client-settings/QuotationCommercialSettings";
 import { QuotationPackagesManager } from "@/components/client-settings/QuotationPackagesManager";
+import { SignatureDrawPad } from "@/components/quotations/SignatureDrawPad";
 import { SettingsSectionCard } from "@/components/dashboard/company/settings/SettingsSectionCard";
 import { Button, Input, Select, Skeleton, Tabs, TextArea, FieldLabel } from "@/components/sales/ui";
 
@@ -36,12 +37,15 @@ type Settings = {
   footer_note: string | null;
   quote_prefix: string;
   default_tax_rate: number;
+  authorised_signatory_name?: string | null;
+  authorised_signatory_role?: string | null;
+  authorised_signature_url?: string | null;
 };
 
 const SECTION_COPY: Record<QuoteSettingsTab, { title: string; description: string }> = {
   general: {
     title: "General",
-    description: "Company identity and defaults that appear on every quotation.",
+    description: "Company identity, authorised signature, and defaults that appear on every quotation.",
   },
   catalog: {
     title: "Products & services",
@@ -87,6 +91,7 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [savingSignature, setSavingSignature] = useState(false);
   const [toast, setToast] = useState("");
 
   const [newItem, setNewItem] = useState({
@@ -183,6 +188,38 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
     }
   }
 
+  async function saveDrawnSignature(blob: Blob) {
+    setSavingSignature(true);
+    try {
+      const body = new FormData();
+      body.append("file", blob, "authorised-signature.png");
+      const res = await fetch(`/api/clients/${clientId}/quotation-settings/signature`, {
+        method: "POST",
+        body,
+      });
+      const json = (await res.json().catch(() => ({}))) as { settings?: Settings; error?: string };
+      if (!res.ok) throw new Error(json.error ?? "Could not save signature");
+      if (json.settings) setSettings((prev) => ({ ...(prev ?? settings), ...json.settings }));
+      flash("Signature saved");
+    } finally {
+      setSavingSignature(false);
+    }
+  }
+
+  async function clearSavedSignature() {
+    setSavingSignature(true);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/quotation-settings/signature`, { method: "DELETE" });
+      const json = (await res.json().catch(() => ({}))) as { settings?: Settings; error?: string };
+      if (!res.ok) throw new Error(json.error ?? "Could not remove signature");
+      if (json.settings) setSettings((prev) => ({ ...(prev ?? settings), ...json.settings }));
+      else setSettings((prev) => (prev ? { ...prev, authorised_signature_url: null } : prev));
+      flash("Signature removed");
+    } finally {
+      setSavingSignature(false);
+    }
+  }
+
   const copy = SECTION_COPY[tab];
 
   return (
@@ -256,6 +293,38 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
                   onChange={(e) => setSettings({ ...settings, footer_note: e.target.value })}
                 />
               </Field>
+              <div className="space-y-3 rounded-[10px] border border-sales-border bg-sales-surface-subtle/60 p-4">
+                <div>
+                  <h3 className="text-[14px] font-semibold text-sales-text-primary">Authorised signature</h3>
+                  <p className="mt-0.5 text-[12.5px] text-sales-text-secondary">
+                    Draw the company authorised signature. It appears on every quotation this company sends.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Signatory name">
+                    <Input
+                      compact
+                      value={settings.authorised_signatory_name ?? ""}
+                      onChange={(e) => setSettings({ ...settings, authorised_signatory_name: e.target.value })}
+                      placeholder="e.g. Maya Petersen"
+                    />
+                  </Field>
+                  <Field label="Signatory role">
+                    <Input
+                      compact
+                      value={settings.authorised_signatory_role ?? ""}
+                      onChange={(e) => setSettings({ ...settings, authorised_signatory_role: e.target.value })}
+                      placeholder="e.g. Director"
+                    />
+                  </Field>
+                </div>
+                <SignatureDrawPad
+                  savedUrl={settings.authorised_signature_url ?? null}
+                  busy={savingSignature}
+                  onSave={saveDrawnSignature}
+                  onClearSaved={clearSavedSignature}
+                />
+              </div>
               <SaveRow saving={savingSettings} label="Save general settings" toast={toast} onSave={() => void saveSettings()} />
               <QuotationCommercialSettings clientId={clientId} section="general" hideSave={false} />
             </div>

@@ -563,7 +563,7 @@ export function ResidentialPremiumSolarDocument({ model }: { model: QuoteDocumen
               <CardHeading icon="summary" label="AUTHORISED SIGNATORY" accent={accent} />
               {model.company.signatureDataUri ? (
                 // eslint-disable-next-line jsx-a11y/alt-text
-                <Image src={model.company.signatureDataUri} style={{ width: 90, height: 28, marginTop: 8, objectFit: "contain" }} />
+                <Image src={model.company.signatureDataUri} style={{ width: 132, height: 44, marginTop: 8, objectFit: "contain" }} />
               ) : (
                 <View style={[styles.acceptLine, { marginTop: 22 }]} />
               )}

@@ -22,6 +22,8 @@ const TEXT_KEYS = [
   "bank_details",
   "tax_registration",
   "legal_registration",
+  "authorised_signatory_name",
+  "authorised_signatory_role",
 ] as const;
 
 const NUM_KEYS = [

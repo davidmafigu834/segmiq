@@ -84,6 +84,11 @@ export type ProviderSendDocumentInput = ProviderSendTextInput & {
   url: string;
 };
 
+export type ProviderSendMediaInput = ProviderSendDocumentInput & {
+  messageType: "image" | "video" | "document";
+  mediaId?: string | null;
+};
+
 export type ProviderSendResult = {
   ok: boolean;
   providerId?: string;
@@ -118,4 +123,5 @@ export interface WhatsAppProvider {
   readonly capabilities: WhatsAppCapabilities;
   sendText(input: ProviderSendTextInput): Promise<ProviderSendResult>;
   sendDocument?(input: ProviderSendDocumentInput): Promise<ProviderSendResult>;
+  sendMedia?(input: ProviderSendMediaInput): Promise<ProviderSendResult>;
 }

@@ -28,6 +28,7 @@ export async function buildSolarTemplatePreviewModel(
   const logoUrl = str(client?.logo_url);
   const signatoryName = str(settings.authorised_signatory_name);
   const signatoryRole = str(settings.authorised_signatory_role);
+  const signatureDataUri = str(settings.authorised_signature_url);
 
   return {
     ...model,
@@ -43,6 +44,7 @@ export async function buildSolarTemplatePreviewModel(
       address: address ?? model.company.address,
       signatoryName: signatoryName ?? (companyName === model.company.name ? model.company.signatoryName : null),
       signatoryRole: signatoryRole ?? (companyName === model.company.name ? model.company.signatoryRole : null),
+      signatureDataUri: signatureDataUri ?? model.company.signatureDataUri,
     },
     quote: {
       ...model.quote,

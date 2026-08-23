@@ -8,11 +8,13 @@ import {
   ChevronDown,
   FileText,
   MoreHorizontal,
+  Paperclip,
   PanelRight,
   Phone,
   Send,
   StickyNote,
   UserRound,
+  X,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import type { InboxChatMessage, InboxConversation } from "@/lib/inbox/types";
@@ -41,6 +43,21 @@ import { ManagerWorkflowStrip } from "./ManagerWorkflowStrip";
 import { ConversationTypeBadge } from "./ConversationTypeBadge";
 import type { LeadRow } from "@/types";
 import { initials } from "@/lib/inbox/assignee-colors";
+import { sendComposerMedia } from "@/lib/inbox/send-composer-media";
+import {
+  classifyWhatsAppOutboundMedia,
+  resolveOutboundMediaContentType,
+  validateWhatsAppOutboundMedia,
+} from "@/lib/whatsapp/outbound-media";
+
+type ComposerAttachment = {
+  file: File;
+  previewUrl: string | null;
+  kind: "image" | "video" | "document";
+};
+
+const COMPOSER_ACCEPT =
+  "image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip";
 
 type Props = {
   conversation: InboxConversation | null;
@@ -81,11 +98,13 @@ function mergeChatMessages(
   for (const message of incoming) {
     if (!message.id.startsWith("pending-")) {
       for (const [id, pending] of Array.from(byId.entries())) {
-        if (
-          id.startsWith("pending-") &&
-          pending.direction === message.direction &&
-          pending.text === message.text
-        ) {
+        if (!id.startsWith("pending-") || pending.direction !== message.direction) continue;
+        const sameText = pending.text === message.text;
+        const sameMedia =
+          Boolean(pending.messageType) &&
+          pending.messageType === message.messageType &&
+          (sameText || (!pending.text && !message.text));
+        if (sameText || sameMedia) {
           byId.delete(id);
         }
       }
@@ -131,6 +150,7 @@ export function ChatThread({
   const [loading, setLoading] = useState(false);
   const [sessionOpen, setSessionOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [attachment, setAttachment] = useState<ComposerAttachment | null>(null);
   const [sending, setSending] = useState(false);
   const [logCallOpen, setLogCallOpen] = useState(false);
   const [pricingPicker, setPricingPicker] = useState<{ id: string; name: string }[] | null>(null);
@@ -162,6 +182,9 @@ export function ChatThread({
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const composerRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachmentRef = useRef<ComposerAttachment | null>(null);
+  attachmentRef.current = attachment;
   const onMessagesChangeRef = useRef(onMessagesChange);
   const onSessionChangeRef = useRef(onSessionChange);
   const loadOlderRef = useRef<() => void>(() => {});
@@ -173,6 +196,7 @@ export function ChatThread({
     setQuickActionsOpen(false);
     setMenuOpen(false);
     setAssetDrawerOpen(false);
+    clearAttachment();
     if (!conversation?.id) onSessionChangeRef.current?.(null);
   }, [conversation?.id]);
 
@@ -343,7 +367,38 @@ export function ChatThread({
     if (messages.length > 0) setHasNewBelow(true);
   }, [messages, conversation?.id]);
 
+  function clearAttachment() {
+    const current = attachmentRef.current;
+    if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+    setAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function attachFile(file: File | null | undefined) {
+    if (!file) return;
+    const validated = validateWhatsAppOutboundMedia({
+      filename: file.name,
+      mimeType: file.type,
+      size: file.size,
+    });
+    if (!validated.ok) {
+      setSendError(validated.error);
+      return;
+    }
+    const current = attachmentRef.current;
+    if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl);
+    const mime = resolveOutboundMediaContentType(file.name, file.type) ?? file.type;
+    const kind = classifyWhatsAppOutboundMedia(mime);
+    const previewUrl = kind === "image" || kind === "video" ? URL.createObjectURL(file) : null;
+    setSendError(null);
+    setAttachment({ file, previewUrl, kind });
+  }
+
   async function sendCustomMessage(text: string) {
+    if (attachment) {
+      await sendAttachedMedia(text);
+      return;
+    }
     if (!conversation || !text.trim() || sending || !transportAvailable) return;
     setSending(true);
     setSendError(null);
@@ -391,6 +446,56 @@ export function ChatThread({
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         setSendError(err.error ?? "Could not send message");
       }
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function sendAttachedMedia(caption: string) {
+    if (!conversation || !attachment || sending || !transportAvailable) return;
+    const pending = attachment;
+    setSending(true);
+    setSendError(null);
+    try {
+      const result = await sendComposerMedia({
+        leadId: conversation.id,
+        file: pending.file,
+        caption,
+      });
+      if (!result.ok) {
+        setSendError(result.error);
+        return;
+      }
+      setInput("");
+      setAttachment(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setQuickActionsOpen(false);
+      stickToBottomRef.current = true;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `pending-${Date.now()}`,
+          direction: "rep",
+          text: caption.trim(),
+          createdAt: new Date().toISOString(),
+          kind: "message",
+          status: "sent",
+          messageType: result.messageType,
+          mediaUrl: pending.previewUrl,
+          mediaMimeType: pending.file.type || null,
+        },
+      ]);
+      onMessagesChange();
+      const msgRes = await fetch(`/api/inbox/conversations/${conversation.id}/messages?limit=80`);
+      const data = (await msgRes.json()) as {
+        messages?: InboxChatMessage[];
+        sessionOpen?: boolean;
+      };
+      setMessages((current) => mergeChatMessages(current, data.messages ?? []));
+      if (pending.previewUrl) URL.revokeObjectURL(pending.previewUrl);
+      const open = data.sessionOpen === true;
+      setSessionOpen(open);
+      onSessionChangeRef.current?.(open);
     } finally {
       setSending(false);
     }
@@ -1034,12 +1139,59 @@ export function ChatThread({
           ) : null}
           {canSend ? (
           <div
-            className={`flex items-center gap-2 px-2 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:px-3 ${
-              companyMode ? "py-1.5" : "py-2.5"
-            } ${
+            className={`${
               isWhatsApp && !salespersonHub && !companyMode ? "" : isWhatsApp ? "" : "border-t border-[var(--border)]"
             }`}
+            onDragOver={(e) => {
+              if (!isWhatsApp || sending || !transportAvailable) return;
+              e.preventDefault();
+            }}
+            onDrop={(e) => {
+              if (!isWhatsApp || sending || !transportAvailable) return;
+              e.preventDefault();
+              attachFile(e.dataTransfer.files?.[0]);
+            }}
           >
+            {isWhatsApp && attachment ? (
+              <div className="wa-attach-preview mx-2 mt-2 sm:mx-3">
+                {attachment.kind === "image" && attachment.previewUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={attachment.previewUrl} alt="" className="wa-attach-thumb" />
+                ) : attachment.kind === "video" && attachment.previewUrl ? (
+                  <video src={attachment.previewUrl} className="wa-attach-thumb" muted />
+                ) : (
+                  <div className="wa-attach-file">
+                    <FileText size={16} />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[12px] font-medium text-sales-text-primary">
+                    {attachment.file.name}
+                  </div>
+                  <div className="text-[11px] text-sales-text-muted">
+                    {attachment.kind === "image"
+                      ? "Photo"
+                      : attachment.kind === "video"
+                        ? "Video"
+                        : "File"}{" "}
+                    · add a caption if you want
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearAttachment}
+                  className="wa-attach-remove"
+                  aria-label="Remove attachment"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : null}
+            <div
+              className={`flex items-center gap-2 px-2 pb-[max(0.375rem,env(safe-area-inset-bottom))] sm:px-3 ${
+                companyMode ? "py-1.5" : "py-2.5"
+              }`}
+            >
             {!isWhatsApp ? (
               <button
                 type="button"
@@ -1055,7 +1207,30 @@ export function ChatThread({
               >
                 <FileText size={18} />
               </button>
-            ) : null}
+            ) : (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={COMPOSER_ACCEPT}
+                  className="sr-only"
+                  onChange={(e) => {
+                    attachFile(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={sending || !transportAvailable}
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach a photo, video, or file"
+                  aria-label="Attach a photo, video, or file"
+                  className={`wa-plus-btn ${attachment ? "wa-plus-btn-open" : ""}`}
+                >
+                  <Paperclip size={18} strokeWidth={1.8} />
+                </button>
+              </>
+            )}
             <input
               ref={composerRef}
               type="text"
@@ -1064,14 +1239,22 @@ export function ChatThread({
               onKeyDown={(e) => {
                 if (e.key === "Enter") void sendCustomMessage(input);
               }}
+              onPaste={(e) => {
+                const file = Array.from(e.clipboardData.files ?? [])[0];
+                if (!file || !isWhatsApp) return;
+                e.preventDefault();
+                attachFile(file);
+              }}
               placeholder={
                 !transportAvailable
                   ? "WhatsApp temporarily offline"
-                  : sessionClosed
-                    ? "Type a message…"
-                    : salespersonHub
-                      ? "Type a message..."
-                      : "Type a WhatsApp reply..."
+                  : attachment
+                    ? "Add a caption…"
+                    : sessionClosed
+                      ? "Type a message…"
+                      : salespersonHub
+                        ? "Type a message..."
+                        : "Type a WhatsApp reply..."
               }
               disabled={sending || !transportAvailable}
               aria-label="Type a WhatsApp reply"
@@ -1083,7 +1266,7 @@ export function ChatThread({
             />
             <button
               type="button"
-              disabled={!input.trim() || sending || !transportAvailable}
+              disabled={(!input.trim() && !attachment) || sending || !transportAvailable}
               onClick={() => void sendCustomMessage(input)}
               aria-label="Send WhatsApp message"
               className={
@@ -1094,6 +1277,7 @@ export function ChatThread({
             >
               <Send size={18} strokeWidth={1.8} />
             </button>
+            </div>
           </div>
           ) : companyMode ? (
             <div className="border-t border-sales-border-subtle px-4 py-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] text-[11px] text-sales-text-secondary">

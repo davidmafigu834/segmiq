@@ -97,6 +97,14 @@ export async function buildQuoteDocumentModel(
   const logoDataUri =
     str(companyFrozen?.logoDataUri) ??
     (useFreeze ? null : opts?.preferUrls ? liveLogo : await fetchRasterDataUri(liveLogo));
+  const liveSignatureUrl = str(settings.authorised_signature_url);
+  const signatureDataUri =
+    str(companyFrozen?.signatureDataUri) ??
+    (useFreeze
+      ? null
+      : opts?.preferUrls
+        ? liveSignatureUrl
+        : await fetchRasterDataUri(liveSignatureUrl));
   const accent = resolveDocumentAccent(
     str(companyFrozen?.accent) ?? (client?.primary_color as string | null),
     presentation.accent
@@ -216,7 +224,7 @@ export async function buildQuoteDocumentModel(
       address,
       signatoryName: str((settings as Record<string, unknown>).authorised_signatory_name) ?? str(quote.prepared_by_name),
       signatoryRole: str((settings as Record<string, unknown>).authorised_signatory_role),
-      signatureDataUri: str(companyFrozen?.signatureDataUri) ?? null,
+      signatureDataUri,
     },
     quote: {
       number: str(quote.quote_number) || "DRAFT",

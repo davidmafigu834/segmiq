@@ -99,6 +99,16 @@ export function generateVideoKey(clientId: string, projectId: string, filename: 
   return `clients/${clientId}/projects/${projectId}/videos/${timestamp}.${ext}`;
 }
 
+export function generateWhatsAppOutboundKey(
+  clientId: string,
+  leadId: string,
+  filename: string
+): string {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "bin";
+  const safeExt = ext.replace(/[^a-z0-9]/g, "") || "bin";
+  return `whatsapp/${clientId}/outbound/${leadId}/${Date.now()}.${safeExt}`;
+}
+
 export async function getObject(key: string): Promise<Buffer> {
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
   if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");

@@ -438,7 +438,7 @@ export function ResidentialPremiumSolarDigital({
             </p>
             {model.company.signatureDataUri ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={model.company.signatureDataUri} alt="" className="mt-2 h-10 w-auto object-contain" />
+              <img src={model.company.signatureDataUri} alt="" className="mt-2 h-12 w-auto max-w-[220px] object-contain" />
             ) : (
               <div className="mt-6 border-b border-[#E4E4E4]" />
             )}
