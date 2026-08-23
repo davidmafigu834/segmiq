@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { homeForRole } from "@/lib/auth/impersonation";
 import { isSuperAdminRole, normalizeUserRole } from "@/lib/auth/roles";
+import {
+  fetchMiddlewareCrmSubscriptionStatus,
+  fetchMiddlewareSessionVersion,
+} from "@/lib/supabase/middleware-admin";
 import type { ClientMode, UserRole } from "@/types";
 
 export async function middleware(req: NextRequest) {
@@ -113,20 +116,8 @@ export async function middleware(req: NextRequest) {
       }
       const tokenSv = Number((token as { sessionVersion?: number }).sessionVersion ?? 0);
       const uid = (token as { realUserId?: string | null }).realUserId ?? (token as { userId?: string }).userId;
-      if (uid) {
-        try {
-          const supabase = createAdminClient();
-          const { data: row } = await supabase.from("users").select("session_version").eq("id", uid).maybeSingle();
-          const dbSv = Number((row as { session_version?: number } | null)?.session_version ?? 0);
-          if (dbSv !== tokenSv) {
-            const signOut = new URL("/api/auth/signout", req.url);
-            signOut.searchParams.set("callbackUrl", "/login?reason=session");
-            return NextResponse.redirect(signOut);
-          }
-        } catch {
-          /* fail open */
-        }
-      }
+      const staleSession = await staleSessionRedirect(req, uid, tokenSv);
+      if (staleSession) return staleSession;
     }
 
     // Rewrite to the internal /cloud/* path — this avoids app/page.tsx running
@@ -235,25 +226,30 @@ export async function middleware(req: NextRequest) {
 
   const tokenSv = Number((token as { sessionVersion?: number }).sessionVersion ?? 0);
   const uid = (token as { realUserId?: string | null }).realUserId ?? (token as { userId?: string }).userId;
-  if (uid) {
-    try {
-      const supabase = createAdminClient();
-      const { data: row } = await supabase.from("users").select("session_version").eq("id", uid).maybeSingle();
-      const dbSv = Number((row as { session_version?: number } | null)?.session_version ?? 0);
-      if (dbSv !== tokenSv) {
-        const signOut = new URL("/api/auth/signout", req.url);
-        signOut.searchParams.set("callbackUrl", "/login?reason=session");
-        return NextResponse.redirect(signOut);
-      }
-    } catch {
-      /* fail open */
-    }
-  }
-
   const role = (normalizeUserRole(token.role as string) ?? (token.role as UserRole)) as UserRole;
   const clientMode = (token as { clientMode?: ClientMode }).clientMode ?? "team";
   const alsoSells = Boolean((token as { alsoSells?: boolean }).alsoSells);
   const isImpersonating = Boolean((token as { realUserId?: string | null }).realUserId);
+  const cid = (token as { clientId?: string | null }).clientId;
+  const isGatedRole = role === "CLIENT_MANAGER" || role === "SALESPERSON";
+  const gateExempt =
+    path === "/client/blocked" ||
+    path === "/sales/blocked" ||
+    path === "/solo/blocked" ||
+    path === "/client/billing" ||
+    path.startsWith("/client/billing/") ||
+    path === "/solo/billing" ||
+    path.startsWith("/solo/billing/");
+  const needBilling = isGatedRole && !isImpersonating && !gateExempt && Boolean(cid);
+
+  const [dbSv, subStatus] = await Promise.all([
+    uid ? fetchMiddlewareSessionVersion(uid) : Promise.resolve(null),
+    needBilling && cid ? fetchMiddlewareCrmSubscriptionStatus(cid) : Promise.resolve(null),
+  ]);
+
+  if (uid && dbSv !== null && dbSv !== tokenSv) {
+    return sessionExpiredRedirect(req);
+  }
 
   if (path.startsWith("/dashboard")) {
     if (!isSuperAdminRole(role) || isImpersonating) {
@@ -288,43 +284,18 @@ export async function middleware(req: NextRequest) {
   // Billing access gate. A suspended subscription locks manager and salespeople
   // out of their portals. Exempt blocked screens and billing pages so clients can
   // pay and upload proof. Agency admins impersonating bypass the gate for support.
-  const isGatedRole = role === "CLIENT_MANAGER" || role === "SALESPERSON";
-  if (isGatedRole && !isImpersonating) {
-    const gateExempt =
-      path === "/client/blocked" ||
-      path === "/sales/blocked" ||
-      path === "/solo/blocked" ||
-      path === "/client/billing" ||
-      path.startsWith("/client/billing/") ||
-      path === "/solo/billing" ||
-      path.startsWith("/solo/billing/");
-    const cid = (token as { clientId?: string | null }).clientId;
-    if (!gateExempt && cid) {
-      try {
-        const supabase = createAdminClient();
-        const { data: sub } = await supabase
-          .from("subscriptions")
-          .select("status")
-          .eq("client_id", cid)
-          .eq("product", "crm")
-          .limit(1)
-          .maybeSingle();
-        if ((sub as { status?: string } | null)?.status === "suspended") {
-          if (role === "CLIENT_MANAGER") {
-            if (alsoSells && path.startsWith("/sales")) {
-              return NextResponse.redirect(new URL("/sales/blocked", req.url));
-            }
-            return NextResponse.redirect(new URL("/client/blocked", req.url));
-          }
-          if (role === "SALESPERSON" && clientMode === "solo") {
-            return NextResponse.redirect(new URL("/solo/blocked", req.url));
-          }
-          return NextResponse.redirect(new URL("/sales/blocked", req.url));
-        }
-      } catch {
-        /* fail open — never lock users out due to a transient DB error */
+  // A timed-out or failed read fails open so Edge middleware cannot hang.
+  if (needBilling && subStatus === "suspended") {
+    if (role === "CLIENT_MANAGER") {
+      if (alsoSells && path.startsWith("/sales")) {
+        return NextResponse.redirect(new URL("/sales/blocked", req.url));
       }
+      return NextResponse.redirect(new URL("/client/blocked", req.url));
     }
+    if (role === "SALESPERSON" && clientMode === "solo") {
+      return NextResponse.redirect(new URL("/solo/blocked", req.url));
+    }
+    return NextResponse.redirect(new URL("/sales/blocked", req.url));
   }
 
   return NextResponse.next();
@@ -353,6 +324,23 @@ const CLOUD_RESERVED_SEGMENTS = new Set([
   "blog",
   "_next",
 ]);
+
+function sessionExpiredRedirect(req: NextRequest): NextResponse {
+  const signOut = new URL("/api/auth/signout", req.url);
+  signOut.searchParams.set("callbackUrl", "/login?reason=session");
+  return NextResponse.redirect(signOut);
+}
+
+async function staleSessionRedirect(
+  req: NextRequest,
+  uid: string | undefined,
+  tokenSv: number
+): Promise<NextResponse | null> {
+  if (!uid) return null;
+  const dbSv = await fetchMiddlewareSessionVersion(uid);
+  if (dbSv === null || dbSv === tokenSv) return null;
+  return sessionExpiredRedirect(req);
+}
 
 function cloudDashboardPath(isCloudSubdomain: boolean): string {
   return isCloudSubdomain ? "/dashboard" : "/cloud/dashboard";
