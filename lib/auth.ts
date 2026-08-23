@@ -2,13 +2,24 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPassword } from "@/lib/password";
+import { withTimeout } from "@/lib/with-timeout";
 import type { ClientMode, UserRole } from "@/types";
+
+const AUTH_DB_TIMEOUT_MS = 4_000;
 
 export async function resolveClientMode(clientId: string | null): Promise<ClientMode> {
   if (!clientId) return "team";
-  const supabase = createAdminClient();
-  const { data } = await supabase.from("clients").select("mode").eq("id", clientId).maybeSingle();
-  return (data as { mode?: string } | null)?.mode === "solo" ? "solo" : "team";
+  try {
+    const supabase = createAdminClient();
+    const { data } = await withTimeout(
+      supabase.from("clients").select("mode").eq("id", clientId).maybeSingle(),
+      AUTH_DB_TIMEOUT_MS,
+      "client mode lookup timed out"
+    );
+    return (data as { mode?: string } | null)?.mode === "solo" ? "solo" : "team";
+  } catch {
+    return "team";
+  }
 }
 
 export type VerifiedUser = {
@@ -29,11 +40,23 @@ export async function verifyCredentials(
 ): Promise<VerifiedUser | null> {
   const normalizedEmail = email.toLowerCase().trim();
   const supabase = createAdminClient();
-  const { data: user, error } = await supabase
-    .from("users")
-    .select("id, name, email, password, role, client_id, is_active, session_version, also_sells")
-    .eq("email", normalizedEmail)
-    .maybeSingle();
+  let user: Record<string, unknown> | null = null;
+  let error: { message?: string } | null = null;
+  try {
+    const result = await withTimeout(
+      supabase
+        .from("users")
+        .select("id, name, email, password, role, client_id, is_active, session_version, also_sells")
+        .eq("email", normalizedEmail)
+        .maybeSingle(),
+      AUTH_DB_TIMEOUT_MS,
+      "user lookup timed out"
+    );
+    user = (result.data as Record<string, unknown> | null) ?? null;
+    error = result.error;
+  } catch {
+    return null;
+  }
   const dev = process.env.NODE_ENV === "development";
   const supabaseHost = (() => {
     try {
@@ -135,8 +158,6 @@ export const authOptions: NextAuthOptions = {
       if ((token.role as string) === "AGENCY_ADMIN") {
         token.role = "SUPER_ADMIN";
       }
-      const clientId = (token.clientId as string | null) ?? null;
-      token.clientMode = clientId ? await resolveClientMode(clientId) : "team";
       return token;
     },
     async session({ session, token }) {

@@ -28,7 +28,7 @@ function CloudLoginFormInner() {
     router.replace(target);
   }, [callbackUrl, router, session?.user, status]);
 
-  if (status === "loading" || session?.user) {
+  if (session?.user) {
     return (
       <div className="flex w-full items-center justify-center py-16 text-[var(--marketing-text-muted)]">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />

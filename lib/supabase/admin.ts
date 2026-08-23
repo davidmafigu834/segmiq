@@ -15,7 +15,11 @@ export function createAdminClient(): SupabaseClient {
     // admin GETs (e.g. clients list) can stay stale after inserts.
     global: {
       fetch: (input: RequestInfo | URL, init?: RequestInit) =>
-        fetch(input, { ...init, cache: "no-store" }),
+        fetch(input, {
+          ...init,
+          cache: "no-store",
+          signal: init?.signal ?? AbortSignal.timeout(8_000),
+        }),
     },
   });
   return cached;

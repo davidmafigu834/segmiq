@@ -122,7 +122,7 @@ function LoginFormInner() {
   return (
     <>
       <SegmiQPreloader
-        active={status === "loading" || status === "authenticated" || workspaceState !== "idle"}
+        active={status === "authenticated" || workspaceState !== "idle"}
         state={workspaceState === "idle" ? "loading" : workspaceState}
         onRetry={retryWorkspace}
         onSignOut={leaveWorkspace}
