@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock } from "lucide-react";
-import { getPostBySlug, getAllSlugs, getPublishedPosts, BLOG_CATEGORY_NAV } from "@/lib/blog";
+import { getPostBySlug, getPublishedPosts, BLOG_CATEGORY_NAV } from "@/lib/blog";
 import { fmtDateLong } from "@/lib/blog-utils";
 import { BlogMarkdown } from "@/components/blog/BlogMarkdown";
 import PostCard from "@/components/blog/PostCard";
@@ -19,14 +19,9 @@ import type { PostCategory } from "@/lib/blog-types";
 import { getBlogPathPrefix } from "@/lib/blog-links-server";
 import { blogHomeHref, blogCategoryHref } from "@/lib/blog-links";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 const BLOG_URL = "https://blog.segmiq.com";
-
-export async function generateStaticParams() {
-  const slugs = await getAllSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

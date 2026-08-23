@@ -18,13 +18,9 @@ import NewsSidebar from "@/components/blog/NewsSidebar";
 import { getBlogPathPrefix } from "@/lib/blog-links-server";
 import { blogHomeHref, blogCategoryHref } from "@/lib/blog-links";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 const VALID_CATEGORIES = new Set<string>(["insight", "product", "client", "intelligence", "announcement"]);
-
-export async function generateStaticParams() {
-  return BLOG_CATEGORY_NAV.map(({ category }) => ({ category }));
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
   const { category } = await params;

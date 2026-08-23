@@ -17,7 +17,7 @@ import PostCard from "@/components/blog/PostCard";
 import { getBlogPathPrefix } from "@/lib/blog-links-server";
 import { blogCategoryHref } from "@/lib/blog-links";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 const SECTION_ORDER: PostCategory[] = ["announcement", "product", "intelligence", "insight", "client"];
 

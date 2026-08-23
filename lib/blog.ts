@@ -100,6 +100,25 @@ function supabaseConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
+/** Keep blog reads off the Vercel build/request critical path if Supabase hangs. */
+export const BLOG_FETCH_TIMEOUT_MS = 4_000;
+
+export function withBlogFetchTimeout<T>(promise: Promise<T>, ms = BLOG_FETCH_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("blog fetch timeout")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
 const supabaseImpl = {
   async getPublished(): Promise<Post[]> {
     const supabase = createAdminClient();
@@ -119,7 +138,7 @@ async function fetchPublishedPosts(): Promise<Post[]> {
     return [...SEED_POSTS].sort(sortNewest);
   }
   try {
-    return await supabaseImpl.getPublished();
+    return await withBlogFetchTimeout(supabaseImpl.getPublished());
   } catch {
     return [...SEED_POSTS].sort(sortNewest);
   }
