@@ -11,7 +11,7 @@ export async function resolveClientMode(clientId: string | null): Promise<Client
   if (!clientId) return "team";
   try {
     const supabase = createAdminClient();
-    const { data } = await withTimeout(
+    const { data } = await withTimeout<{ data: { mode?: string } | null }>(
       supabase.from("clients").select("mode").eq("id", clientId).maybeSingle(),
       AUTH_DB_TIMEOUT_MS,
       "client mode lookup timed out"
@@ -43,7 +43,10 @@ export async function verifyCredentials(
   let user: Record<string, unknown> | null = null;
   let error: { message?: string } | null = null;
   try {
-    const result = await withTimeout(
+    const result = await withTimeout<{
+      data: Record<string, unknown> | null;
+      error: { message?: string } | null;
+    }>(
       supabase
         .from("users")
         .select("id, name, email, password, role, client_id, is_active, session_version, also_sells")
