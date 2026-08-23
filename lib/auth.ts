@@ -1,19 +1,14 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyPassword } from "@/lib/password";
-import { fetchAuthUserByEmail, fetchClientMode } from "@/lib/supabase/auth-rest";
 import type { ClientMode, UserRole } from "@/types";
-
-export class AuthDatabaseUnavailableError extends Error {
-  constructor(message = "DatabaseUnavailable") {
-    super(message);
-    this.name = "AuthDatabaseUnavailableError";
-  }
-}
 
 export async function resolveClientMode(clientId: string | null): Promise<ClientMode> {
   if (!clientId) return "team";
-  return fetchClientMode(clientId);
+  const supabase = createAdminClient();
+  const { data } = await supabase.from("clients").select("mode").eq("id", clientId).maybeSingle();
+  return (data as { mode?: string } | null)?.mode === "solo" ? "solo" : "team";
 }
 
 export type VerifiedUser = {
@@ -33,7 +28,12 @@ export async function verifyCredentials(
   password: string
 ): Promise<VerifiedUser | null> {
   const normalizedEmail = email.toLowerCase().trim();
-  const lookup = await fetchAuthUserByEmail(normalizedEmail);
+  const supabase = createAdminClient();
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("id, name, email, password, role, client_id, is_active, session_version, also_sells")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
   const dev = process.env.NODE_ENV === "development";
   const supabaseHost = (() => {
     try {
@@ -42,29 +42,21 @@ export async function verifyCredentials(
       return "(invalid NEXT_PUBLIC_SUPABASE_URL)";
     }
   })();
-
-  if (!lookup.ok) {
-    if (lookup.reason === "not_found") {
-      if (dev) {
-        console.error(
-          "[auth] No row in public.users for",
-          JSON.stringify(normalizedEmail),
-          "— app is using Supabase host:",
-          supabaseHost
-        );
-      }
-      return null;
-    }
-    console.error("[auth] Supabase user lookup failed:", {
-      reason: lookup.reason,
-      status: lookup.status,
-      detail: lookup.detail,
-      host: supabaseHost,
-    });
-    throw new AuthDatabaseUnavailableError();
+  if (error) {
+    if (dev) console.error("[auth] Supabase users lookup failed:", error.message, error);
+    return null;
   }
-
-  const user = lookup.row;
+  if (!user) {
+    if (dev) {
+      console.error(
+        "[auth] No row in public.users for",
+        JSON.stringify(normalizedEmail),
+        "— app is using Supabase host:",
+        supabaseHost
+      );
+    }
+    return null;
+  }
   if (!user.is_active) {
     if (dev) console.warn("[auth] User inactive:", normalizedEmail);
     return null;
@@ -73,17 +65,17 @@ export async function verifyCredentials(
   const ok = await verifyPassword(password, hash);
   if (!ok && dev) console.error("[auth] Password did not match stored hash for:", normalizedEmail);
   if (!ok) return null;
-  const clientId = user.client_id ?? null;
+  const clientId = (user.client_id as string | null) ?? null;
   const clientMode = await resolveClientMode(clientId);
   return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
+    id: user.id as string,
+    name: user.name as string,
+    email: user.email as string,
     role: user.role as UserRole,
     clientId,
     clientMode,
-    alsoSells: Boolean(user.also_sells),
-    sessionVersion: Number(user.session_version ?? 0),
+    alsoSells: Boolean((user as { also_sells?: boolean }).also_sells),
+    sessionVersion: Number((user as { session_version?: number }).session_version ?? 0),
   };
 }
 
@@ -143,6 +135,8 @@ export const authOptions: NextAuthOptions = {
       if ((token.role as string) === "AGENCY_ADMIN") {
         token.role = "SUPER_ADMIN";
       }
+      // clientMode is set once at sign-in (see verifyCredentials). Do not re-query Supabase
+      // on every JWT refresh — that was causing login and page loads to hang or time out.
       return token;
     },
     async session({ session, token }) {
