@@ -12,7 +12,7 @@ import type {
  */
 
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
+const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_RETRIES = 2;
 
@@ -30,7 +30,11 @@ type GeminiPart = {
 type GeminiContent = { role: "user" | "model"; parts: GeminiPart[] };
 
 export function getGeminiModel(): string {
-  return process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
+  const requested = process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
+  if (requested === "gemini-2.5-flash" || requested === "gemini-2.5-flash-lite") {
+    return DEFAULT_GEMINI_MODEL;
+  }
+  return requested;
 }
 
 function sleep(ms: number): Promise<void> {
