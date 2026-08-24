@@ -28,7 +28,26 @@ type Visibility = "hidden" | "waiting" | "visible" | "exiting";
 const SHOW_DELAY_MS = 180;
 const EXIT_DURATION_MS = 200;
 
+function PulseRing({
+  delay,
+  from,
+  to,
+}: {
+  delay: string;
+  from: number;
+  to: number;
+}) {
+  return (
+    <circle className={styles.pulseRing} cx="320" cy="45" r={from} opacity="0">
+      <animate attributeName="r" values={`${from};${to}`} dur="2.2s" begin={delay} repeatCount="indefinite" />
+      <animate attributeName="opacity" values="0;0.2;0" dur="2.2s" begin={delay} repeatCount="indefinite" />
+    </circle>
+  );
+}
+
 function PipelineJourney() {
+  const beat = "M330 45H350L357 36L365 54L374 25L383 55L391 40L399 45H422";
+
   return (
     <div className={styles.pipelineWrap} aria-hidden="true">
       <svg
@@ -48,46 +67,82 @@ function PipelineJourney() {
         <path className={styles.baseLine} d="M48 45H592" />
         <path className={styles.liveLine} d="M320 45H456" />
 
-        <g className={styles.inactiveNode} transform="translate(48 45)">
-          <circle className={styles.nodeOuter} r="10" />
-          <circle className={styles.nodeInnerStrong} r="5" />
-        </g>
-        <g className={styles.inactiveNode} transform="translate(184 45)">
-          <circle className={styles.nodeOuter} r="10" />
-          <circle className={styles.nodeInnerStrong} r="5" />
-        </g>
+        <circle className={styles.nodeOuter} cx="48" cy="45" r="10" />
+        <circle className={styles.nodeInnerStrong} cx="48" cy="45" r="5" />
+        <circle className={styles.nodeOuter} cx="184" cy="45" r="10" />
+        <circle className={styles.nodeInnerStrong} cx="184" cy="45" r="5" />
 
-        <g className={styles.activeRings} transform="translate(320 45)">
-          <circle className={`${styles.pulseRing} ${styles.pulseRingOne}`} r="18" />
-          <circle className={`${styles.pulseRing} ${styles.pulseRingTwo}`} r="29" />
-          <circle className={`${styles.pulseRing} ${styles.pulseRingThree}`} r="41" />
-        </g>
-        <g className={styles.activeNode} transform="translate(320 45)">
-          <circle className={styles.activeHalo} r="15" />
-          <circle className={styles.activeOuter} r="11" />
-          <circle className={styles.activeInner} r="6" />
-        </g>
+        <PulseRing delay="0s" from={12} to={22} />
+        <PulseRing delay="0.36s" from={16} to={32} />
+        <PulseRing delay="0.72s" from={22} to={42} />
 
-        <g className={styles.inactiveNode} transform="translate(456 45)">
-          <circle className={styles.nodeOuter} r="10" />
-          <circle className={styles.nodeInner} r="4.5" />
-          <circle className={styles.receiveGlow} r="13" />
-        </g>
-        <g className={styles.futureNode} transform="translate(592 45)">
-          <circle className={styles.futureOuter} r="10" />
-          <circle className={styles.futureInner} r="3.5" />
-        </g>
+        <circle className={styles.activeHalo} cx="320" cy="45" r="15" />
+        <circle className={styles.activeOuter} cx="320" cy="45" r="11" />
+        <circle className={styles.activeInner} cx="320" cy="45" r="6" />
 
-        <path
-          className={styles.heartbeatBase}
-          d="M330 45H350L357 36L365 54L374 25L383 55L391 40L399 45H422"
-        />
+        <circle className={styles.receiveGlow} cx="456" cy="45" r="10">
+          <animate
+            attributeName="r"
+            values="10;18;10"
+            dur="2.45s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0;0;0.28;0;0"
+            keyTimes="0;0.58;0.67;0.84;1"
+            dur="2.45s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle className={styles.nodeOuter} cx="456" cy="45" r="10" />
+        <circle className={styles.nodeInner} cx="456" cy="45" r="4.5" />
+
+        <circle className={styles.futureOuter} cx="592" cy="45" r="10" />
+        <circle className={styles.futureInner} cx="592" cy="45" r="3.5" />
+
+        <path className={styles.heartbeatBase} d={beat} />
         <path
           className={styles.heartbeat}
           pathLength="1"
-          d="M330 45H350L357 36L365 54L374 25L383 55L391 40L399 45H422"
-        />
-        <circle className={styles.signalDot} cx="48" cy="45" r="3.5" />
+          strokeDasharray="1"
+          strokeDashoffset="1"
+          d={beat}
+        >
+          <animate
+            attributeName="stroke-dashoffset"
+            values="1;1;0;-1;-1"
+            keyTimes="0;0.16;0.62;0.78;1"
+            dur="2.45s"
+            repeatCount="indefinite"
+          />
+          <animate
+            attributeName="opacity"
+            values="0;0;1;1;0;0"
+            keyTimes="0;0.16;0.28;0.62;0.78;1"
+            dur="2.45s"
+            repeatCount="indefinite"
+          />
+        </path>
+
+        <g opacity="0">
+          <animate
+            attributeName="opacity"
+            values="0;0;0.9;0.9;0;0"
+            keyTimes="0;0.08;0.14;0.48;0.55;1"
+            dur="6s"
+            repeatCount="indefinite"
+          />
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values="0 0;0 0;544 0;544 0"
+            keyTimes="0;0.08;0.55;1"
+            dur="6s"
+            repeatCount="indefinite"
+          />
+          <circle className={styles.signalDot} cx="48" cy="45" r="3.5" />
+        </g>
 
         <g className={styles.stageLabels}>
           <text x="48" y="105" textAnchor="middle">
@@ -182,6 +237,7 @@ export function SegmiQPreloader({
       className={styles.root}
       data-visibility={visibility}
       data-loader-state={state}
+      data-allow-motion=""
       role="status"
       aria-live="polite"
       aria-busy={isLoading}

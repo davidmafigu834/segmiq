@@ -172,18 +172,6 @@
   fill: none;
   stroke: var(--preloader-lime-bright);
   stroke-width: 1.2;
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ring-breathe 2.2s ease-out infinite;
-}
-
-.pulseRingTwo {
-  animation-delay: 360ms;
-}
-
-.pulseRingThree {
-  animation-delay: 720ms;
 }
 
 .heartbeatBase,
@@ -199,25 +187,15 @@
   opacity: 0.2;
 }
 
-.heartbeat {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: heartbeat-draw 2.45s ease-in-out infinite;
-}
-
 .signalDot {
   fill: var(--preloader-lime-bright);
-  opacity: 0;
   filter: drop-shadow(0 0 3px rgba(155, 213, 21, 0.3));
-  animation: signal-travel 6s ease-in-out infinite;
 }
 
 .receiveGlow {
   fill: none;
   stroke: var(--preloader-lime-bright);
   stroke-width: 1.2;
-  opacity: 0;
-  animation: receive-signal 2.45s ease-out infinite;
 }
 
 .stageLabels text {
@@ -655,26 +633,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .root,
-  .content,
-  .pulseRing,
-  .heartbeat,
-  .signalDot,
-  .receiveGlow,
-  .statusDots span {
-    animation: none !important;
-    transition: none !important;
-  }
-
-  .heartbeat,
-  .heartbeatBase,
-  .signalDot,
-  .receiveGlow,
-  .pulseRing {
-    display: none;
-  }
-
-  .statusDots span:nth-child(2) {
-    background: var(--preloader-lime);
+  .root[data-visibility="visible"] .content {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }

@@ -2126,6 +2126,16 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+
+    /* Loading indicators must still move — Windows often reports reduced motion. */
+    [data-allow-motion],
+    [data-allow-motion] *,
+    [data-allow-motion]::before,
+    [data-allow-motion]::after {
+      animation-duration: unset !important;
+      animation-iteration-count: unset !important;
+      transition-duration: unset !important;
+    }
   }
 
   .safe-bottom {
