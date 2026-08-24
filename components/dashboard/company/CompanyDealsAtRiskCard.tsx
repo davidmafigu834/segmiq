@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CardShell } from "@/components/dashboard/sales/KpiCard";
+import { CompanyDashCard, CompanyDashEmpty, DashLink } from "./CompanyDashCard";
 import type { CompanyAtRiskDeal } from "./types";
 
 export function CompanyDealsAtRiskCard({
@@ -16,58 +16,35 @@ export function CompanyDealsAtRiskCard({
   hasActiveDeals: boolean;
 }) {
   return (
-    <CardShell
-      title="Deals at Risk"
-      action={
-        total > 0 ? (
-          <Link
-            href={viewAllHref}
-            className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
-          >
-            View all at-risk Deals
-          </Link>
-        ) : null
-      }
+    <CompanyDashCard
+      title="Deals at risk"
+      action={total > 0 ? <DashLink href={viewAllHref}>View all at-risk Deals</DashLink> : null}
     >
       {!hasActiveDeals ? (
-        <div className="px-5 py-8 text-center">
-          <p className="text-[13px] font-medium text-sales-text-primary">No active Deals yet</p>
-          <p className="mt-1 text-[12px] text-sales-text-muted">
-            Qualified opportunities will appear here once your sales team creates Deals from Leads.
-          </p>
-          <Link
-            href="/client/leads"
-            className="mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-brand-fg hover:underline"
-          >
-            View Leads
-          </Link>
-        </div>
+        <CompanyDashEmpty
+          title="No active Deals yet"
+          description="Qualified opportunities will appear here once your sales team creates Deals from Leads."
+          action={<DashLink href="/client/leads">View Leads</DashLink>}
+        />
       ) : items.length === 0 ? (
-        <div className="px-5 py-8 text-center">
-          <p className="text-[13px] font-medium text-sales-text-primary">
-            No active Deals currently need risk attention.
-          </p>
-          <p className="mt-1 text-[12px] text-sales-text-muted">
-            Stale Deals and missing next actions will surface here.
-          </p>
-        </div>
+        <CompanyDashEmpty
+          title="No Deals currently need risk attention"
+          description="Stale Deals and missing next actions will surface here."
+        />
       ) : (
         <ul className="divide-y divide-sales-border-subtle">
           {items.map((item) => (
             <li key={item.id}>
               <Link
                 href={item.href}
-                className="flex min-h-[64px] items-start justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                className="relative flex min-h-[68px] items-start justify-between gap-3 py-3.5 pl-5 pr-5 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
               >
+                <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-sales-danger" aria-hidden />
                 <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold text-sales-text-primary">
-                    {item.name}
-                  </p>
+                  <p className="truncate text-[13px] font-semibold text-sales-text-primary">{item.name}</p>
                   <p className="mt-0.5 text-[12px] text-sales-text-muted">{item.reason}</p>
                   {item.ownerName ? (
-                    <p className="mt-1 text-[11px] text-sales-text-muted">
-                      Owner · {item.ownerName}
-                    </p>
+                    <p className="mt-1 text-[11px] text-sales-text-muted">Owner · {item.ownerName}</p>
                   ) : null}
                 </div>
                 <div className="shrink-0 text-right">
@@ -81,6 +58,6 @@ export function CompanyDealsAtRiskCard({
           ))}
         </ul>
       )}
-    </CardShell>
+    </CompanyDashCard>
   );
 }

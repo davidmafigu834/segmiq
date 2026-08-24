@@ -3,14 +3,15 @@
 import Link from "next/link";
 import {
   AlertTriangle,
+  CircleCheck,
+  CircleDollarSign,
   Flame,
   Inbox,
   ListTodo,
   UserPlus,
-  CircleDollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
-import { CardShell } from "@/components/dashboard/sales/KpiCard";
+import { CompanyDashCard, DashLink } from "./CompanyDashCard";
 import type { CompanyFocusSignal } from "./types";
 
 const SEVERITY_ICON = {
@@ -25,6 +26,13 @@ const SEVERITY_TINT: Record<CompanyFocusSignal["severity"], string> = {
   high: "bg-sales-warning-soft text-sales-warning-fg",
   medium: "bg-sales-info-soft text-sales-info-fg",
   info: "bg-sales-brand-soft-solid text-sales-brand-fg",
+};
+
+const SEVERITY_RAIL: Record<CompanyFocusSignal["severity"], string> = {
+  critical: "bg-sales-danger",
+  high: "bg-sales-warning",
+  medium: "bg-sales-info",
+  info: "bg-sales-brand",
 };
 
 function signalIcon(id: string, severity: CompanyFocusSignal["severity"]) {
@@ -45,35 +53,31 @@ export function CompanyFocusAreasCard({
   const isOnboarding = signals.length === 1 && signals[0]?.id === "onboarding";
 
   return (
-    <CardShell
-      title="Focus areas that need attention"
-      className="bg-[rgba(212,255,79,0.035)]"
-      action={
-        !isOnboarding ? (
-          <Link
-            href={viewAllHref}
-            className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
-          >
-            View all alerts
-          </Link>
-        ) : null
-      }
+    <CompanyDashCard
+      title="Needs attention"
+      action={!isOnboarding && signals.length > 0 ? <DashLink href={viewAllHref}>View all alerts</DashLink> : null}
     >
       {signals.length === 0 ? (
-        <div className="px-5 py-5 text-center">
-          <p className="text-[13px] font-medium text-sales-text-primary">
-            No operational issues need attention right now.
-          </p>
+        <div className="flex items-center gap-3 px-5 py-4">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-success-soft text-sales-success-fg">
+            <CircleCheck size={18} strokeWidth={1.8} aria-hidden />
+          </span>
+          <div>
+            <p className="text-[13px] font-semibold text-sales-text-primary">Operation is clear</p>
+            <p className="text-[12px] text-sales-text-muted">
+              No overdue follow-ups, at-risk Deals, or hot enquiries need you right now.
+            </p>
+          </div>
         </div>
       ) : isOnboarding ? (
         <div className="px-5 py-4">
-          <p className="text-[14px] font-semibold text-sales-text-primary">
+          <p className="text-[15px] font-semibold tracking-[-0.02em] text-sales-text-primary">
             {signals[0]!.label}
           </p>
-          <p className="mt-1 max-w-xl text-[12px] leading-relaxed text-sales-text-secondary">
+          <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-sales-text-secondary">
             {signals[0]!.supporting}
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href="/client/team"
               className="inline-flex min-h-10 items-center rounded-[10px] bg-sales-brand px-3.5 text-[12px] font-semibold text-sales-brand-fg"
@@ -89,41 +93,41 @@ export function CompanyFocusAreasCard({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 divide-y divide-sales-border-subtle sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-3 sm:p-3">
           {signals.map((signal) => {
             const Icon = signalIcon(signal.id, signal.severity);
             return (
               <Link
                 key={signal.id}
                 href={signal.href}
-                className="flex min-h-[64px] items-center gap-2.5 px-4 py-2.5 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                className="relative flex min-h-[84px] items-start gap-3 overflow-hidden rounded-[12px] bg-sales-surface-subtle px-3.5 py-3 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
               >
                 <span
+                  className={cn("absolute inset-y-0 left-0 w-[3px]", SEVERITY_RAIL[signal.severity])}
+                  aria-hidden
+                />
+                <span
                   className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
+                    "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
                     SEVERITY_TINT[signal.severity]
                   )}
                 >
                   <Icon size={15} strokeWidth={1.8} aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-[18px] font-semibold tabular-nums tracking-[-0.03em] text-sales-text-primary">
-                      {signal.count}
-                    </p>
-                    <p className="truncate text-[12px] font-semibold text-sales-text-primary">
-                      {signal.label}
-                    </p>
-                  </div>
-                  <p className="truncate text-[11px] text-sales-text-muted">
-                    {signal.supporting}
+                  <p className="text-[22px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-sales-text-primary">
+                    {signal.count}
                   </p>
+                  <p className="mt-1.5 truncate text-[12px] font-semibold text-sales-text-primary">
+                    {signal.label}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">{signal.supporting}</p>
                 </div>
               </Link>
             );
           })}
         </div>
       )}
-    </CardShell>
+    </CompanyDashCard>
   );
 }

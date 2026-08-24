@@ -2,7 +2,7 @@
 
 import { Footprints, Globe2, MoreHorizontal, UserRoundPlus } from "lucide-react";
 import { SiFacebook, SiWhatsapp } from "react-icons/si";
-import { CardShell } from "@/components/dashboard/sales/KpiCard";
+import { CompanyDashCard, CompanyDashEmpty, PeriodChip } from "./CompanyDashCard";
 import type { CompanyLeadSourceItem } from "./types";
 
 const BRAND_COLORS: Record<CompanyLeadSourceItem["brand"], string> = {
@@ -14,23 +14,22 @@ const BRAND_COLORS: Record<CompanyLeadSourceItem["brand"], string> = {
   other: "#94A3B8",
 };
 
+const BRAND_TINT: Record<CompanyLeadSourceItem["brand"], string> = {
+  whatsapp: "bg-[rgba(37,211,102,0.12)]",
+  facebook: "bg-[rgba(24,119,242,0.12)]",
+  referral: "bg-sales-purple-soft",
+  website: "bg-sales-info-soft",
+  walkin: "bg-sales-warning-soft",
+  other: "bg-sales-neutral-100",
+};
+
 function SourceIcon({ brand }: { brand: CompanyLeadSourceItem["brand"] }) {
-  if (brand === "whatsapp") {
-    return <SiWhatsapp size={14} className="text-[#25D366]" aria-hidden />;
-  }
-  if (brand === "facebook") {
-    return <SiFacebook size={14} className="text-[#1877F2]" aria-hidden />;
-  }
-  if (brand === "referral") {
-    return <UserRoundPlus size={14} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
-  }
-  if (brand === "walkin") {
-    return <Footprints size={14} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
-  }
-  if (brand === "website") {
-    return <Globe2 size={14} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
-  }
-  return <MoreHorizontal size={14} strokeWidth={2} className="text-sales-text-secondary" aria-hidden />;
+  if (brand === "whatsapp") return <SiWhatsapp size={13} className="text-[#25D366]" aria-hidden />;
+  if (brand === "facebook") return <SiFacebook size={13} className="text-[#1877F2]" aria-hidden />;
+  if (brand === "referral") return <UserRoundPlus size={13} strokeWidth={2} aria-hidden />;
+  if (brand === "walkin") return <Footprints size={13} strokeWidth={2} aria-hidden />;
+  if (brand === "website") return <Globe2 size={13} strokeWidth={2} aria-hidden />;
+  return <MoreHorizontal size={13} strokeWidth={2} aria-hidden />;
 }
 
 export function CompanyLeadSourcesCard({
@@ -43,42 +42,42 @@ export function CompanyLeadSourcesCard({
   const max = Math.max(...sources.map((s) => s.count), 1);
 
   return (
-    <CardShell
-      title="Top Lead Sources"
-      action={<span className="text-[12px] font-medium text-sales-text-muted">This month</span>}
-    >
-      <div className="px-4 py-4 sm:px-5">
-        {empty || sources.length === 0 ? (
-          <p className="py-6 text-center text-[13px] text-sales-text-muted">
-            No Lead source data yet
-          </p>
-        ) : (
-          <ul className="space-y-3.5" aria-label="Lead sources this month">
-            {sources.map((s) => (
-              <li key={s.id}>
-                <div className="mb-1.5 flex items-center justify-between gap-3 text-[12px]">
-                  <span className="inline-flex min-w-0 items-center gap-2 text-sales-text-primary">
-                    <SourceIcon brand={s.brand} />
-                    <span className="truncate font-medium">{s.label}</span>
+    <CompanyDashCard title="Top Lead sources" action={<PeriodChip>This month</PeriodChip>}>
+      {empty || sources.length === 0 ? (
+        <CompanyDashEmpty title="No Lead source data yet" description="Sources will appear as enquiries arrive from WhatsApp, Facebook, website and referrals." />
+      ) : (
+        <ul className="space-y-3.5 px-4 py-4 sm:px-5" aria-label="Lead sources this month">
+          {sources.map((source) => (
+            <li key={source.id} className="flex items-center gap-3">
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] ${BRAND_TINT[source.brand]}`}
+              >
+                <SourceIcon brand={source.brand} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="mb-1.5 flex items-center justify-between gap-3">
+                  <span className="truncate text-[12px] font-semibold text-sales-text-primary">
+                    {source.label}
                   </span>
-                  <span className="shrink-0 tabular-nums text-sales-text-secondary">
-                    {s.count} · {s.pct}%
+                  <span className="shrink-0 text-[12px] tabular-nums text-sales-text-secondary">
+                    {source.count}
+                    <span className="text-sales-text-muted"> · {source.pct}%</span>
                   </span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-sales-neutral-100">
                   <div
-                    className="h-full rounded-full transition-[width] duration-300"
+                    className="h-full rounded-full"
                     style={{
-                      width: `${Math.max(4, Math.round((s.count / max) * 100))}%`,
-                      backgroundColor: BRAND_COLORS[s.brand],
+                      width: `${Math.max(6, Math.round((source.count / max) * 100))}%`,
+                      backgroundColor: BRAND_COLORS[source.brand],
                     }}
                   />
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </CardShell>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </CompanyDashCard>
   );
 }

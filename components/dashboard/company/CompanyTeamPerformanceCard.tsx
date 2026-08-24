@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/ui/cn";
-import { CardShell } from "@/components/dashboard/sales/KpiCard";
+import { Avatar, Badge, Progress } from "@/components/sales/ui";
+import { formatDealValue } from "@/lib/sales/sales-dashboard-display";
+import { CompanyDashCard, CompanyDashEmpty, DashLink, PeriodChip } from "./CompanyDashCard";
 import type { CompanyTeamMemberRow } from "./types";
 
 function GoalCell({ row }: { row: CompanyTeamMemberRow }) {
@@ -11,56 +13,39 @@ function GoalCell({ row }: { row: CompanyTeamMemberRow }) {
   }
   const pct = row.goalProgressPct;
   return (
-    <div className="min-w-[120px]">
+    <div className="min-w-[108px]">
       <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="text-[12px] font-semibold tabular-nums text-sales-text-primary">
-          {pct}%
-        </span>
+        <span className="text-[12px] font-semibold tabular-nums text-sales-text-primary">{pct}%</span>
       </div>
-      <div
-        className="h-1.5 overflow-hidden rounded-full bg-sales-neutral-100"
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label={`${row.name} goal progress ${pct}%`}
-      >
-        <div
-          className="h-full rounded-full bg-sales-brand"
-          style={{ width: `${Math.min(100, pct)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function Avatar({ row }: { row: CompanyTeamMemberRow }) {
-  if (row.avatarUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={row.avatarUrl}
-        alt=""
-        className="h-9 w-9 shrink-0 rounded-full object-cover"
+      <Progress
+        value={pct}
+        tone={pct >= 100 ? "success" : pct >= 60 ? "brand" : "warning"}
+        className="h-1.5"
       />
-    );
-  }
-  return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-neutral-100 text-[11px] font-semibold text-sales-text-secondary">
-      {row.initials}
-    </span>
+    </div>
   );
 }
 
 function MemberIdentity({ row }: { row: CompanyTeamMemberRow }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <Avatar row={row} />
+      <Avatar name={row.name} src={row.avatarUrl} size="sm" />
       <div className="min-w-0">
         <p className="truncate text-[13px] font-semibold text-sales-text-primary">{row.name}</p>
         <p className="truncate text-[11px] text-sales-text-muted">{row.roleLabel}</p>
       </div>
     </div>
+  );
+}
+
+function FollowUpCell({ count }: { count: number }) {
+  if (count <= 0) {
+    return <span className="text-[13px] tabular-nums text-sales-text-secondary">0</span>;
+  }
+  return (
+    <Badge tone="warning" appearance="soft">
+      {count}
+    </Badge>
   );
 }
 
@@ -73,72 +58,57 @@ export function CompanyTeamPerformanceCard({
   teamTotal: number;
   viewAllHref: string;
 }) {
+  const totals = {
+    activeDeals: rows.reduce((sum, row) => sum + row.activeDeals, 0),
+    pipeline: rows.reduce((sum, row) => sum + row.pipelineValueKnown, 0),
+    dealsWon: rows.reduce((sum, row) => sum + row.dealsWon, 0),
+    followUpsDue: rows.reduce((sum, row) => sum + row.followUpsDue, 0),
+  };
+
   return (
-    <CardShell
+    <CompanyDashCard
       title="Team performance"
-      action={<span className="text-[12px] font-medium text-sales-text-muted">This month</span>}
+      action={<PeriodChip>This month</PeriodChip>}
     >
       {rows.length === 0 ? (
-        <div className="px-5 py-8 text-center">
-          <p className="text-[13px] font-medium text-sales-text-primary">
-            No salespeople added yet
-          </p>
-          <p className="mt-1 text-[12px] text-sales-text-muted">
-            Add team members to track Deals, Goals and follow-ups.
-          </p>
-          <Link
-            href={viewAllHref}
-            className="mt-3 inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-brand-fg hover:underline"
-          >
-            Add team member
-          </Link>
-        </div>
+        <CompanyDashEmpty
+          title="No salespeople added yet"
+          description="Add team members to track Deals, Goals and follow-ups."
+          action={<DashLink href={viewAllHref}>Add team member</DashLink>}
+        />
       ) : (
         <>
-          {/* Desktop table */}
           <div className="hidden overflow-x-auto layout:block">
             <table className="w-full min-w-[640px] text-left">
               <thead>
-                <tr className="border-b border-sales-border-subtle bg-[var(--sales-neutral-100)] text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
                   <th className="px-5 py-2.5 font-semibold">Salesperson</th>
-                  <th className="px-3 py-2.5 font-semibold">Active Deals</th>
-                  <th className="px-3 py-2.5 font-semibold">Pipeline Value</th>
-                  <th className="px-3 py-2.5 font-semibold">Deals Won</th>
-                  <th className="px-3 py-2.5 font-semibold">Follow-ups due</th>
-                  <th className="px-5 py-2.5 font-semibold">Goal progress</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Active Deals</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Pipeline</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Won</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Follow-ups</th>
+                  <th className="px-5 py-2.5 font-semibold">Goal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-sales-border-subtle">
                 {rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="transition-colors hover:bg-sales-surface-hover"
-                  >
+                  <tr key={row.id} className="transition-colors hover:bg-sales-surface-hover">
                     <td className="px-5 py-3">
                       <Link href={row.href} className="block min-w-0">
                         <MemberIdentity row={row} />
                       </Link>
                     </td>
-                    <td className="px-3 py-3 text-[13px] tabular-nums text-sales-text-primary">
+                    <td className="px-3 py-3 text-right text-[13px] tabular-nums text-sales-text-primary">
                       {row.activeDeals}
                     </td>
-                    <td className="px-3 py-3 text-[13px] tabular-nums text-sales-text-primary">
+                    <td className="px-3 py-3 text-right text-[13px] tabular-nums text-sales-text-primary">
                       {row.pipelineValueLabel}
                     </td>
-                    <td className="px-3 py-3 text-[13px] tabular-nums text-sales-text-primary">
+                    <td className="px-3 py-3 text-right text-[13px] tabular-nums text-sales-text-primary">
                       {row.dealsWon}
                     </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={cn(
-                          "text-[13px] tabular-nums",
-                          row.followUpsDue > 0
-                            ? "font-semibold text-sales-warning-fg"
-                            : "text-sales-text-primary"
-                        )}
-                      >
-                        {row.followUpsDue}
-                      </span>
+                    <td className="px-3 py-3 text-right">
+                      <FollowUpCell count={row.followUpsDue} />
                     </td>
                     <td className="px-5 py-3">
                       <GoalCell row={row} />
@@ -146,10 +116,29 @@ export function CompanyTeamPerformanceCard({
                   </tr>
                 ))}
               </tbody>
+              <tfoot>
+                <tr className="border-t border-sales-border-subtle bg-sales-surface-subtle">
+                  <td className="px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                    Team total
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-[12px] font-semibold tabular-nums text-sales-text-primary">
+                    {totals.activeDeals}
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-[12px] font-semibold tabular-nums text-sales-text-primary">
+                    {formatDealValue(totals.pipeline, { compact: true })}
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-[12px] font-semibold tabular-nums text-sales-text-primary">
+                    {totals.dealsWon}
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-[12px] font-semibold tabular-nums text-sales-text-primary">
+                    {totals.followUpsDue}
+                  </td>
+                  <td className="px-5 py-2.5" />
+                </tr>
+              </tfoot>
             </table>
           </div>
 
-          {/* Mobile / tablet cards */}
           <ul className="divide-y divide-sales-border-subtle layout:hidden">
             {rows.map((row) => (
               <li key={row.id}>
@@ -161,58 +150,58 @@ export function CompanyTeamPerformanceCard({
                     <MemberIdentity row={row} />
                     <GoalCell row={row} />
                   </div>
-                  <dl className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
-                    <div>
-                      <dt className="text-sales-text-muted">Active Deals</dt>
-                      <dd className="font-semibold tabular-nums text-sales-text-primary">
+                  <dl className="mt-3 grid grid-cols-4 gap-2 text-center">
+                    <div className="rounded-[10px] bg-sales-surface-subtle px-1.5 py-2">
+                      <dt className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                        Deals
+                      </dt>
+                      <dd className="mt-0.5 text-[13px] font-semibold tabular-nums text-sales-text-primary">
                         {row.activeDeals}
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-sales-text-muted">Pipeline</dt>
-                      <dd className="font-semibold tabular-nums text-sales-text-primary">
+                    <div className="rounded-[10px] bg-sales-surface-subtle px-1.5 py-2">
+                      <dt className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                        Pipeline
+                      </dt>
+                      <dd className="mt-0.5 truncate text-[13px] font-semibold tabular-nums text-sales-text-primary">
                         {row.pipelineValueLabel}
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-sales-text-muted">Won</dt>
-                      <dd className="font-semibold tabular-nums text-sales-text-primary">
+                    <div className="rounded-[10px] bg-sales-surface-subtle px-1.5 py-2">
+                      <dt className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                        Won
+                      </dt>
+                      <dd className="mt-0.5 text-[13px] font-semibold tabular-nums text-sales-text-primary">
                         {row.dealsWon}
                       </dd>
                     </div>
-                    <div>
-                      <dt className="text-sales-text-muted">Follow-ups due</dt>
+                    <div className="rounded-[10px] bg-sales-surface-subtle px-1.5 py-2">
+                      <dt className="text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                        Due
+                      </dt>
                       <dd
                         className={cn(
-                          "font-semibold tabular-nums",
-                          row.followUpsDue > 0
-                            ? "text-sales-warning-fg"
-                            : "text-sales-text-primary"
+                          "mt-0.5 text-[13px] font-semibold tabular-nums",
+                          row.followUpsDue > 0 ? "text-sales-warning-fg" : "text-sales-text-primary"
                         )}
                       >
                         {row.followUpsDue}
                       </dd>
                     </div>
                   </dl>
-                  <p className="mt-3 text-[12px] font-medium text-sales-brand-fg">
-                    View performance
-                  </p>
                 </Link>
               </li>
             ))}
           </ul>
 
           <div className="border-t border-sales-border-subtle px-5 py-3">
-            <Link
-              href={viewAllHref}
-              className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
-            >
+            <DashLink href={viewAllHref}>
               View full team report
               {teamTotal > rows.length ? ` (${teamTotal})` : ""}
-            </Link>
+            </DashLink>
           </div>
         </>
       )}
-    </CardShell>
+    </CompanyDashCard>
   );
 }

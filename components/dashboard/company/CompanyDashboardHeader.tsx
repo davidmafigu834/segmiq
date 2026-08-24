@@ -21,7 +21,7 @@ export function CompanyDashboardHeader({
   canAddLead,
   breadcrumb = "Company / Dashboard",
   title,
-  description = "Overview of your sales operation and team performance.",
+  description = "Company health, team performance, and where to intervene.",
   primaryAction,
 }: {
   unreadNotifications: number;

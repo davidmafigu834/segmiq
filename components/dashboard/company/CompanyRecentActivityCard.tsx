@@ -3,62 +3,52 @@
 import Link from "next/link";
 import { Activity, BriefcaseBusiness, Inbox, Phone, Trophy } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import { CardShell } from "@/components/dashboard/sales/KpiCard";
+import { cn } from "@/lib/ui/cn";
+import { CompanyDashCard, CompanyDashEmpty } from "./CompanyDashCard";
 import type { CompanyActivityItem } from "./types";
 
 function ActivityIcon({ kind }: { kind: CompanyActivityItem["kind"] }) {
-  if (kind === "whatsapp") {
-    return <SiWhatsapp size={16} className="text-sales-whatsapp" aria-hidden />;
-  }
-  if (kind === "quote") {
-    return <BriefcaseBusiness size={16} strokeWidth={2} className="text-[#60A5FA]" aria-hidden />;
-  }
-  if (kind === "call") {
-    return <Phone size={16} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
-  }
-  if (kind === "won") {
-    return <Trophy size={16} strokeWidth={2} className="text-sales-success" aria-hidden />;
-  }
-  if (kind === "deal") {
-    return <BriefcaseBusiness size={16} strokeWidth={2} className="text-sales-teal-fg" aria-hidden />;
-  }
-  if (kind === "lead") {
-    return <Inbox size={16} strokeWidth={2} className="text-sales-info-fg" aria-hidden />;
-  }
-  return <Activity size={16} strokeWidth={2} className="text-sales-text-secondary" aria-hidden />;
+  if (kind === "whatsapp") return <SiWhatsapp size={14} className="text-sales-whatsapp" aria-hidden />;
+  if (kind === "quote") return <BriefcaseBusiness size={14} strokeWidth={2} className="text-sales-info-fg" aria-hidden />;
+  if (kind === "call") return <Phone size={14} strokeWidth={2} aria-hidden />;
+  if (kind === "won") return <Trophy size={14} strokeWidth={2} className="text-sales-success-fg" aria-hidden />;
+  if (kind === "deal") return <BriefcaseBusiness size={14} strokeWidth={2} className="text-sales-teal-fg" aria-hidden />;
+  if (kind === "lead") return <Inbox size={14} strokeWidth={2} className="text-sales-info-fg" aria-hidden />;
+  return <Activity size={14} strokeWidth={2} className="text-sales-text-secondary" aria-hidden />;
 }
 
 export function CompanyRecentActivityCard({ items }: { items: CompanyActivityItem[] }) {
-  const display = items.slice(0, 5);
+  const display = items.slice(0, 6);
 
   return (
-    <CardShell title="Recent team activity">
+    <CompanyDashCard title="Recent team activity">
       {display.length === 0 ? (
-        <div className="flex flex-col items-center justify-center px-5 py-10 text-center">
-          <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-[8px] bg-[var(--sales-neutral-100)] text-sales-text-muted">
-            <Activity size={18} strokeWidth={1.8} aria-hidden />
-          </span>
-          <p className="text-[13px] font-medium text-sales-text-primary">No recent team activity yet</p>
-          <p className="mt-1 max-w-[240px] text-[12px] text-sales-text-muted">
-            Quotes sent, Deals Won and follow-ups completed will appear here.
-          </p>
-        </div>
+        <CompanyDashEmpty
+          title="No recent team activity yet"
+          description="Quotes sent, Deals Won and follow-ups completed will appear here."
+        />
       ) : (
-        <ul className="divide-y divide-sales-border-subtle">
-          {display.map((item) => {
+        <ul className="px-5 py-3">
+          {display.map((item, idx) => {
             const body = (
-              <div className="flex items-start gap-3 px-5 py-3 transition-colors duration-150 hover:bg-sales-surface-hover">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[var(--sales-neutral-100)]">
-                  <ActivityIcon kind={item.kind} />
-                </span>
-                <div className="min-w-0 flex-1">
+              <div className="flex gap-3 py-2.5">
+                <div className="relative flex w-8 shrink-0 flex-col items-center">
+                  <span className="z-[1] flex h-8 w-8 items-center justify-center rounded-full bg-sales-neutral-100 ring-4 ring-sales-surface">
+                    <ActivityIcon kind={item.kind} />
+                  </span>
+                  {idx < display.length - 1 ? (
+                    <span className="absolute top-8 bottom-[-14px] w-px bg-sales-border-subtle" aria-hidden />
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1 pt-0.5">
                   <p className="text-[13px] font-medium text-sales-text-primary">{item.title}</p>
                   {item.detail ? (
-                    <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">
-                      {item.detail}
-                    </p>
+                    <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{item.detail}</p>
                   ) : null}
-                  <p className="mt-1 text-[11px] text-sales-text-muted">{item.timeLabel}</p>
+                  <p className={cn("mt-1 text-[11px] text-sales-text-muted")}>
+                    {item.actorName ? `${item.actorName} · ` : ""}
+                    {item.timeLabel}
+                  </p>
                 </div>
               </div>
             );
@@ -67,7 +57,7 @@ export function CompanyRecentActivityCard({ items }: { items: CompanyActivityIte
                 {item.href ? (
                   <Link
                     href={item.href}
-                    className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                    className="-mx-2 block rounded-[10px] px-2 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
                   >
                     {body}
                   </Link>
@@ -79,6 +69,6 @@ export function CompanyRecentActivityCard({ items }: { items: CompanyActivityIte
           })}
         </ul>
       )}
-    </CardShell>
+    </CompanyDashCard>
   );
 }

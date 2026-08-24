@@ -61,7 +61,7 @@ export function PageHeaderSkeleton({
 
 export function KpiCardSkeleton() {
   return (
-    <article className="sd-card flex h-full min-h-[104px] min-w-0 flex-col justify-between p-3.5 sm:min-h-[120px] sm:p-4">
+    <article className="sd-card relative flex h-full min-h-[118px] min-w-0 flex-col justify-between overflow-hidden p-3.5 sm:min-h-[128px] sm:p-4">
       <div className="flex items-start justify-between gap-2">
         <Skeleton className="h-3 w-[72%] max-w-[7.5rem]" />
         <Skeleton className="h-7 w-7 shrink-0 rounded-sales-sm sm:h-8 sm:w-8" />
