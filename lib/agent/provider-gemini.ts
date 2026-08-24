@@ -19,6 +19,7 @@ const MAX_RETRIES = 2;
 type GeminiPart = {
   text?: string;
   thought?: boolean;
+  thoughtSignature?: string;
   functionCall?: { name?: string; args?: Record<string, unknown>; id?: string };
   functionResponse?: {
     name: string;
@@ -99,12 +100,20 @@ function geminiCallIdFromCallId(id: string): string | undefined {
   return sep === -1 ? undefined : id.slice(0, sep);
 }
 
+function isGeminiContent(value: unknown): value is GeminiContent {
+  return Boolean(value && typeof value === "object" && Array.isArray((value as GeminiContent).parts));
+}
+
 function toGeminiContents(messages: AgentChatMessage[]): GeminiContent[] {
   const out: GeminiContent[] = [];
   for (const msg of messages) {
     if (msg.role === "user") {
       out.push({ role: "user", parts: [{ text: msg.text }] });
     } else if (msg.role === "assistant") {
+      if (isGeminiContent(msg.echo)) {
+        out.push(msg.echo);
+        continue;
+      }
       const parts: GeminiPart[] = [];
       if (msg.text?.trim()) parts.push({ text: msg.text });
       for (const call of msg.toolCalls) {
@@ -232,7 +241,8 @@ export class GeminiAgentProvider implements AgentModelProvider {
           throw new Error(`Gemini blocked the prompt: ${data.promptFeedback.blockReason}`);
         }
 
-        const parts = data.candidates?.[0]?.content?.parts ?? [];
+        const modelContent = data.candidates?.[0]?.content;
+        const parts = modelContent?.parts ?? [];
         const textParts: string[] = [];
         const toolCalls: ModelToolCall[] = [];
         for (const part of parts) {
@@ -265,6 +275,7 @@ export class GeminiAgentProvider implements AgentModelProvider {
             outputTokens: data.usageMetadata?.candidatesTokenCount ?? 0,
           },
           model: data.modelVersion ?? this.modelId,
+          echo: modelContent ?? undefined,
         };
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));

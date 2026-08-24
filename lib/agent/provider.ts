@@ -23,7 +23,13 @@ export type ModelToolCall = {
 /** Neutral conversation shape used between runtime and provider. */
 export type AgentChatMessage =
   | { role: "user"; text: string }
-  | { role: "assistant"; text: string | null; toolCalls: ModelToolCall[] }
+  | {
+      role: "assistant";
+      text: string | null;
+      toolCalls: ModelToolCall[];
+      /** Opaque provider payload that must be echoed on the next turn. */
+      echo?: unknown;
+    }
   | {
       role: "toolResult";
       results: Array<{ toolCallId: string; content: string; isError?: boolean }>;
@@ -35,6 +41,7 @@ export type ModelResponse = {
   stopReason: "end" | "tool_use" | "max_tokens" | "other";
   usage: AgentModelUsage;
   model: string;
+  echo?: unknown;
 };
 
 export type GenerateRequest = {

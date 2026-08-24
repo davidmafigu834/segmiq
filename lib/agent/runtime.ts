@@ -462,7 +462,12 @@ async function reasonAndAct(
       break;
     }
 
-    messages.push({ role: "assistant", text: response.text, toolCalls: response.toolCalls });
+    messages.push({
+      role: "assistant",
+      text: response.text,
+      toolCalls: response.toolCalls,
+      echo: response.echo,
+    });
     const results = await executeToolBatch(toolCtx, response.toolCalls, executedCalls, opts);
     messages.push({ role: "toolResult", results });
   }
@@ -501,7 +506,9 @@ async function reasonAndAct(
       system,
       messages: [
         ...messages,
-        ...(finalText ? [{ role: "assistant" as const, text: finalText, toolCalls: [] }] : []),
+        ...(finalText
+          ? [{ role: "assistant" as const, text: finalText, toolCalls: [], echo: undefined }]
+          : []),
         {
           role: "user",
           text: "Your last message was not the required JSON object. Respond now with ONLY the final JSON object described in your instructions.",
