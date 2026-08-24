@@ -18,6 +18,7 @@ import { verifyInternalWhatsAppRequest } from "@/lib/whatsapp/security/verify-in
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 120;
 
 const base = z.object({ connectionId: z.string().uuid() });
 const eventSchema = z.discriminatedUnion("type", [

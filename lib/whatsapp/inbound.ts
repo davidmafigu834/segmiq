@@ -502,24 +502,26 @@ export async function handleInboundWhatsAppMessage(opts: {
     }
   }
 
-  if (getWhatsAppCapabilities(opts.providerType ?? "META_CLOUD").automatedMessages) {
-    try {
-      const { dispatchInboundToAgentOrQualification } = await import("@/lib/agent/inbound-hook");
-      await dispatchInboundToAgentOrQualification({
-        clientId: client.id,
-        clientName: client.name,
-        leadId,
-        contactId,
-        ownerId: assignedToId,
-        messageId: persisted.id as string,
-        messageType: message.type || "text",
-        body,
-        phone,
-        timestamp: now,
-        isNewLead,
-      });
-    } catch (err) {
-      console.error("[whatsapp] automated handling error:", err);
-    }
+  try {
+    const { dispatchInboundToAgentOrQualification } = await import("@/lib/agent/inbound-hook");
+    const allowLegacyQualification = getWhatsAppCapabilities(
+      opts.providerType ?? "META_CLOUD"
+    ).automatedMessages;
+    await dispatchInboundToAgentOrQualification({
+      clientId: client.id,
+      clientName: client.name,
+      leadId,
+      contactId,
+      ownerId: assignedToId,
+      messageId: persisted.id as string,
+      messageType: message.type || "text",
+      body,
+      phone,
+      timestamp: now,
+      isNewLead,
+      allowLegacyQualification,
+    });
+  } catch (err) {
+    console.error("[whatsapp] automated handling error:", err);
   }
 }

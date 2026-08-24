@@ -22,6 +22,8 @@ export async function dispatchInboundToAgentOrQualification(opts: {
   phone: string;
   timestamp: string;
   isNewLead: boolean;
+  /** False on linked personal WhatsApp — agent may run, the old qualifier must not. */
+  allowLegacyQualification?: boolean;
 }): Promise<void> {
   let agentActive = false;
   if (isAgentGloballyEnabled()) {
@@ -51,6 +53,8 @@ export async function dispatchInboundToAgentOrQualification(opts: {
     background("segmiqAgentRun", () => handleAgentInboundMessage(event));
     return;
   }
+
+  if (opts.allowLegacyQualification === false) return;
 
   await processWhatsAppQualification({
     clientId: opts.clientId,
