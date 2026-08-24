@@ -41,13 +41,40 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function toGeminiParameters(schema: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
-  if (!schema || typeof schema !== "object") return undefined;
-  const properties = schema.properties;
-  if (!properties || (typeof properties === "object" && Object.keys(properties as object).length === 0)) {
-    return undefined;
+function sanitizeGeminiSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sanitizeGeminiSchema);
+  if (!value || typeof value !== "object") return value;
+  const input = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(input)) {
+    if (
+      key === "minimum" ||
+      key === "maximum" ||
+      key === "minLength" ||
+      key === "maxLength" ||
+      key === "minItems" ||
+      key === "maxItems" ||
+      key === "default" ||
+      key === "$schema" ||
+      key === "additionalProperties"
+    ) {
+      continue;
+    }
+    out[key] = sanitizeGeminiSchema(child);
   }
-  return schema;
+  return out;
+}
+
+function toGeminiParameters(schema: Record<string, unknown> | undefined): Record<string, unknown> {
+  const cleaned = (sanitizeGeminiSchema(schema ?? { type: "object", properties: {} }) ?? {}) as Record<
+    string,
+    unknown
+  >;
+  if (!cleaned.type) cleaned.type = "object";
+  if (!cleaned.properties || typeof cleaned.properties !== "object") {
+    cleaned.properties = {};
+  }
+  return cleaned;
 }
 
 function parseToolResultContent(content: string): Record<string, unknown> {
@@ -124,40 +151,40 @@ export class GeminiAgentProvider implements AgentModelProvider {
     const tools = req.tools?.length
       ? [
           {
-            functionDeclarations: req.tools.map((t) => {
-              const parameters = toGeminiParameters(t.inputSchema);
-              return {
-                name: t.name,
-                description: t.description,
-                ...(parameters ? { parameters } : {}),
-              };
-            }),
+            functionDeclarations: req.tools.map((t) => ({
+              name: t.name,
+              description: t.description,
+              parameters: toGeminiParameters(t.inputSchema),
+            })),
           },
         ]
       : undefined;
 
+    const isGemini3 = this.modelId.startsWith("gemini-3");
+    const generationConfig: Record<string, unknown> = {
+      maxOutputTokens: req.maxTokens ?? 2048,
+    };
+    if (isGemini3) {
+      generationConfig.thinkingConfig = { thinkingLevel: "minimal" };
+    } else {
+      generationConfig.temperature = req.temperature ?? 0.2;
+      generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    }
+
     const body: Record<string, unknown> = {
       systemInstruction: { parts: [{ text: req.system }] },
       contents: toGeminiContents(req.messages),
-      generationConfig: {
-        temperature: req.temperature ?? 0.2,
-        maxOutputTokens: req.maxTokens ?? 2048,
-        // Flash thinking tokens eat the free quota and slow tool loops.
-        thinkingConfig: { thinkingBudget: 0 },
-      },
+      generationConfig,
       ...(tools ? { tools } : {}),
     };
 
     let lastError: Error | null = null;
-    let omitThinking = false;
+    let strippedConfig = false;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      const payload = omitThinking
+      const payload = strippedConfig
         ? {
             ...body,
-            generationConfig: {
-              temperature: req.temperature ?? 0.2,
-              maxOutputTokens: req.maxTokens ?? 2048,
-            },
+            generationConfig: { maxOutputTokens: req.maxTokens ?? 2048 },
           }
         : body;
       const controller = new AbortController();
@@ -178,17 +205,17 @@ export class GeminiAgentProvider implements AgentModelProvider {
 
         if (!response.ok) {
           const errText = await response.text().catch(() => "");
-          if (!omitThinking && response.status === 400 && /thinking/i.test(errText)) {
-            omitThinking = true;
-            lastError = new Error(`Gemini API ${response.status}: ${errText.slice(0, 300)}`);
+          if (!strippedConfig && response.status === 400) {
+            strippedConfig = true;
+            lastError = new Error(`Gemini API ${response.status}: ${errText.slice(0, 500)}`);
             continue;
           }
           if ((response.status === 429 || response.status >= 500) && attempt < MAX_RETRIES) {
-            lastError = new Error(`Gemini API ${response.status}: ${errText.slice(0, 300)}`);
+            lastError = new Error(`Gemini API ${response.status}: ${errText.slice(0, 500)}`);
             await sleep(750 * Math.pow(2, attempt));
             continue;
           }
-          throw new Error(`Gemini API ${response.status}: ${errText.slice(0, 300)}`);
+          throw new Error(`Gemini API ${response.status}: ${errText.slice(0, 500)}`);
         }
 
         const data = (await response.json()) as {
