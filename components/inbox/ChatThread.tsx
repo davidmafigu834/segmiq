@@ -38,6 +38,7 @@ import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { SalesConversationAssist } from "./SalesConversationAssist";
 import { AssetDrawer } from "./AssetDrawer";
 import { AgentComposerAssist } from "./AgentComposerAssist";
+import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
 import { ManagerWorkflowStrip } from "./ManagerWorkflowStrip";
 import { ConversationTypeBadge } from "./ConversationTypeBadge";
