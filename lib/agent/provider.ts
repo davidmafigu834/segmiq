@@ -1,4 +1,5 @@
 import { getAnthropicModel } from "@/lib/ai/claude";
+import { GeminiAgentProvider } from "./provider-gemini";
 import type { AgentModelUsage } from "./types";
 
 /**
@@ -198,6 +199,18 @@ export class AnthropicAgentProvider implements AgentModelProvider {
   }
 }
 
+export function getAgentLlmProviderName(): "gemini" | "anthropic" {
+  const explicit = process.env.AGENT_LLM_PROVIDER?.trim().toLowerCase();
+  if (explicit === "gemini" || explicit === "anthropic") return explicit;
+  if (process.env.GEMINI_API_KEY?.trim() && !process.env.ANTHROPIC_API_KEY?.trim()) {
+    return "gemini";
+  }
+  return "anthropic";
+}
+
 export function getAgentModelProvider(): AgentModelProvider {
+  if (getAgentLlmProviderName() === "gemini") {
+    return new GeminiAgentProvider();
+  }
   return new AnthropicAgentProvider();
 }

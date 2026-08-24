@@ -7,7 +7,7 @@ import type { AgentCompanySettings } from "./types";
  */
 export function isAgentGloballyEnabled(): boolean {
   if (process.env.SEGMIQ_AGENT_DISABLED === "true") return false;
-  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  return Boolean(process.env.ANTHROPIC_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim());
 }
 
 export const AGENT_SETTINGS_DEFAULTS: Omit<AgentCompanySettings, "clientId"> = {
