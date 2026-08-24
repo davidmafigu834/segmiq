@@ -45,7 +45,7 @@ export default async function SalesQuotesPage() {
 
   return (
     <Layout
-      breadcrumb="SALES / QUOTATIONS"
+      breadcrumb="Sales / QUOTATIONS"
       pageTitle="Quotations"
       hideShellHeader
       hideShellSidebar

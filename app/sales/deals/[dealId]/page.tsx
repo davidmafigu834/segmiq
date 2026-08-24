@@ -73,7 +73,7 @@ export default async function DealWorkspacePage({
 
   return (
     <Layout
-      breadcrumb="SALES / DEAL"
+      breadcrumb="Sales / DEAL"
       pageTitle={dealRow.name}
       hideShellHeader
       hideShellSidebar

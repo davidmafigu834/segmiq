@@ -60,7 +60,7 @@ export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingEle
   return (
     <h2
       className={cn(
-        "text-[15px] font-semibold tracking-[-0.01em] text-sales-text-primary",
+        "text-[15px] font-semibold tracking-[-0.02em] text-sales-text-primary",
         className
       )}
       {...props}

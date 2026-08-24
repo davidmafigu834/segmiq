@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export default function SalesHotLeadsPage() {
   return (
     <SalesInboxPageView
-      breadcrumb="SALES / WHATSAPP SALES HUB"
+      breadcrumb="Sales / WHATSAPP SALES HUB"
       pageTitle="WhatsApp Sales Hub"
       initialFilter="hot"
     />

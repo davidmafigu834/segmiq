@@ -54,7 +54,7 @@ export default async function SalesDashboardPage() {
 
   return (
     <SalesLayout
-      breadcrumb="SALES / DASHBOARD"
+      breadcrumb="Sales / DASHBOARD"
       pageTitle="Dashboard"
       hideShellHeader
       hideShellSidebar

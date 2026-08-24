@@ -18,7 +18,7 @@ function TasksFallback() {
       <Skeleton className="h-10 w-full max-w-xl rounded-sales-md" />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-[110px] rounded-sales-xl" />
+          <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
         ))}
       </div>
       <Skeleton className="h-[420px] rounded-sales-xl" />
@@ -35,7 +35,7 @@ export default async function SalesTasksPage() {
 
   return (
     <Layout
-      breadcrumb="SALES / TASKS"
+      breadcrumb="Sales / TASKS"
       pageTitle="Tasks"
       hideShellHeader
       hideShellSidebar

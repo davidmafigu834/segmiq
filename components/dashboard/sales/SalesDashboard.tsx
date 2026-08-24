@@ -274,7 +274,7 @@ function SalesDashboardSkeletonShell() {
       <div className="shimmer mb-5 h-20 rounded-[14px]" />
       <div className="mb-4 grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="shimmer h-[110px] rounded-[14px]" />
+          <div key={i} className="shimmer h-[118px] rounded-[14px]" />
         ))}
       </div>
       <div className="shimmer mb-4 h-[120px] rounded-[14px]" />

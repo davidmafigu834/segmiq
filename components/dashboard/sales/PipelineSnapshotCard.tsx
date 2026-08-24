@@ -17,7 +17,7 @@ export function PipelineSnapshotCard({
       title="Pipeline snapshot"
       action={
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
             Deals only
           </span>
           <Link

@@ -24,14 +24,14 @@ export function ReportCard({
   return (
     <section
       className={cn(
-        "flex flex-col overflow-hidden rounded-sales-xl border border-sales-border bg-sales-surface shadow-sales-card",
+        "sd-card flex flex-col overflow-hidden border-sales-border-subtle",
         equalHeight ? "h-full" : "h-auto",
         className
       )}
     >
-      <header className="flex shrink-0 items-start justify-between gap-3 px-4 py-3 sm:px-[16px]">
+      <header className="flex shrink-0 items-start justify-between gap-3 border-b border-sales-border-subtle px-4 py-3 sm:px-5 sm:py-3.5">
         <div className="min-w-0">
-          <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-sales-text-primary">
+          <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-sales-text-primary">
             {title}
           </h3>
           {description ? (

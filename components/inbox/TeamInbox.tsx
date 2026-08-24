@@ -390,7 +390,15 @@ export function TeamInbox({
       ) : null}
 
       {showHubChrome ? (
-        <SalespersonHubHeader connection={whatsappConnection} title={pageTitle} agentActive={agentActive} />
+        <SalespersonHubHeader
+          connection={whatsappConnection}
+          title={pageTitle}
+          agentActive={agentActive}
+          unreadNotifications={unreadNotifications}
+          notificationRole={role}
+          userName={userName}
+          avatarUrl={avatarUrl}
+        />
       ) : null}
 
       <div

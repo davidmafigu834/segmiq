@@ -53,7 +53,7 @@ export default async function SalesToolboxPage() {
 
   return (
     <Layout
-      breadcrumb="SALES / TOOLBOX"
+      breadcrumb="Sales / TOOLBOX"
       pageTitle="Toolbox"
       hideShellHeader
       hideShellSidebar

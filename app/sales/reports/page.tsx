@@ -21,7 +21,7 @@ export default async function SalesReportsPage() {
 
   return (
     <Layout
-      breadcrumb="SALES / REPORTS"
+      breadcrumb="Sales / REPORTS"
       pageTitle="Reports"
       hideShellHeader
       hideShellSidebar

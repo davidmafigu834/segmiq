@@ -1,5 +1,10 @@
 "use client";
 
+import { GlobalSearch } from "@/components/shell/GlobalSearch";
+import { NotificationBell } from "@/components/NotificationBell";
+import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
+import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
+import type { UserRole } from "@/types";
 import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
 
 function relativeSynced(iso: string | null | undefined): string | null {
@@ -65,11 +70,19 @@ export function SalespersonHubHeader({
   title = "WhatsApp Sales Hub",
   variant = "page",
   agentActive = false,
+  unreadNotifications,
+  notificationRole,
+  userName,
+  avatarUrl,
 }: {
   connection: SafeWhatsAppConnection | null;
   title?: string;
   variant?: "page" | "list";
   agentActive?: boolean;
+  unreadNotifications?: number;
+  notificationRole?: UserRole;
+  userName?: string;
+  avatarUrl?: string | null;
 }) {
   if (variant === "list") {
     return (
@@ -78,6 +91,9 @@ export function SalespersonHubHeader({
           <h1 className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
             {title}
           </h1>
+          <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-sales-text-secondary">
+            Sales
+          </span>
           {agentActive ? (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
@@ -90,18 +106,52 @@ export function SalespersonHubHeader({
     );
   }
 
+  const showTools = Boolean(notificationRole);
+
   return (
-    <header className="salesperson-wa-page-header flex min-h-[56px] shrink-0 items-start justify-between gap-3 px-4 py-2.5 sm:px-5">
-      <div className="min-w-0">
-        <h1 className="truncate text-[18px] font-semibold tracking-[-0.03em] text-sales-text-primary sm:text-[20px]">
-          {title}
-        </h1>
+    <header className="salesperson-wa-page-header flex min-h-[56px] shrink-0 items-start justify-between gap-3 border-b border-sales-border bg-sales-bg px-4 py-2.5 sm:px-5">
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="truncate text-[18px] font-semibold tracking-[-0.03em] text-sales-text-primary sm:text-[20px]">
+            {title}
+          </h1>
+          <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface px-2 py-0.5 text-[10px] font-semibold text-sales-text-secondary">
+            Sales
+          </span>
+          {agentActive ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+              SegmiQ Agent active
+            </span>
+          ) : null}
+        </div>
         <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">
           Your selling workspace for WhatsApp
-          {agentActive ? " · SegmiQ Agent active" : ""}
         </p>
       </div>
-      <ConnectionStatus connection={connection} />
+
+      {showTools ? (
+        <div className="hidden shrink-0 flex-col items-end gap-1 layout:flex">
+          <div className="flex items-center gap-2">
+            <div className="sd-search-wrap hidden w-[min(24vw,320px)] min-w-[220px] min-[1280px]:block">
+              <GlobalSearch role={notificationRole!} placeholder="Search conversations..." />
+            </div>
+            <div className="flex items-center gap-1">
+              <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole!} />
+              <SalesThemeToggle />
+            </div>
+            <SalesProfileMenu
+              userName={userName ?? "Sales"}
+              userRoleLabel="Sales Executive"
+              avatarUrl={avatarUrl}
+              compact
+            />
+          </div>
+          <ConnectionStatus connection={connection} compact />
+        </div>
+      ) : (
+        <ConnectionStatus connection={connection} />
+      )}
     </header>
   );
 }

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   ChevronDown,
+  ChevronRight,
   FileText,
   Phone,
   UserPlus,
@@ -34,46 +35,84 @@ import { Button } from "@/components/sales/ui/Button";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import type { UserRole } from "@/types";
 
+function prettyCrumb(part: string) {
+  const trimmed = part.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed)) {
+    return trimmed
+      .toLowerCase()
+      .replace(/\bwhatsapp\b/g, "WhatsApp")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .replace(/\bWhatsapp\b/g, "WhatsApp");
+  }
+  return trimmed;
+}
+
+function BreadcrumbTrail({ value }: { value: string }) {
+  const parts = value.split(/\s*\/\s*/).map(prettyCrumb).filter(Boolean);
+  if (parts.length === 0) return null;
+
+  return (
+    <nav aria-label="Breadcrumb" className="min-w-0">
+      <ol className="flex min-w-0 items-center gap-1 text-[12px] leading-none text-sales-text-muted">
+        {parts.map((part, index) => {
+          const last = index === parts.length - 1;
+          return (
+            <li key={`${part}-${index}`} className="flex min-w-0 items-center gap-1">
+              {index > 0 ? (
+                <ChevronRight size={12} strokeWidth={1.8} className="shrink-0 opacity-45" aria-hidden />
+              ) : null}
+              <span className={`truncate ${last ? "font-medium text-sales-text-secondary" : "font-medium"}`}>
+                {part}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 export function SalesPageHeader({
   breadcrumb,
   title,
   description,
   actions,
+  titleActions,
 }: {
   breadcrumb?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
+  titleActions?: ReactNode;
 }) {
   return (
-    <div className="space-y-2 layout:space-y-1.5">
-      {/* Desktop only — avoids empty min-h spacer pushing the title down on mobile */}
-      <div className="hidden min-h-10 items-center justify-between gap-3 layout:flex">
-        {breadcrumb ? (
-          <p className="min-w-0 truncate text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
-            {breadcrumb}
-          </p>
-        ) : (
-          <span className="min-w-0" />
-        )}
+    <header className="min-w-0">
+      <div className="hidden items-center gap-3 layout:flex">
+        {breadcrumb ? <BreadcrumbTrail value={breadcrumb} /> : <span className="min-w-0" />}
         {actions ? (
-          <div className="ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-2">
-            {actions}
-          </div>
+          <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-2">{actions}</div>
         ) : null}
       </div>
 
-      <div className="min-w-0">
-        <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[26px] layout:text-[30px]">
-          {title}
-        </h1>
-        {description ? (
-          <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary sm:mt-1.5 sm:text-[14px]">
-            {description}
-          </p>
-        ) : null}
+      <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pt-4">
+        <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[24px] layout:text-[26px]">
+              {title}
+            </h1>
+            {description ? (
+              <p className="mt-1 max-w-[42rem] text-[13px] leading-snug text-sales-text-secondary sm:mt-1.5 sm:text-[14px]">
+                {description}
+              </p>
+            ) : null}
+          </div>
+          {titleActions ? (
+            <div className="flex shrink-0 flex-wrap items-center gap-2 layout:justify-end">{titleActions}</div>
+          ) : null}
+        </div>
       </div>
-    </div>
+    </header>
   );
 }
 
@@ -190,6 +229,7 @@ function SalesAppShellInner({
   description,
   dense = false,
   headerActions,
+  titleActions,
   showDefaultHeader = true,
   showSearch = true,
   showQuickActions = true,
@@ -213,6 +253,7 @@ function SalesAppShellInner({
   description?: string;
   dense?: boolean;
   headerActions?: ReactNode;
+  titleActions?: ReactNode;
   showDefaultHeader?: boolean;
   showSearch?: boolean;
   showQuickActions?: boolean;
@@ -235,9 +276,11 @@ function SalesAppShellInner({
         </div>
       ) : null}
       {headerActions}
-      <div className="hidden shrink-0 items-center gap-1.5 layout:flex">
-        <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
-        <SalesThemeToggle />
+      <div className="hidden shrink-0 items-center gap-2 layout:flex">
+        <div className="flex items-center gap-1">
+          <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+          <SalesThemeToggle />
+        </div>
         {showQuickActions ? (
           <SalesQuickActions onAddLead={openAddHubSheet} onLogCall={onLogCall} />
         ) : null}
@@ -245,6 +288,7 @@ function SalesAppShellInner({
           userName={userName}
           userRoleLabel={userRoleLabel}
           avatarUrl={avatarUrl}
+          compact
         />
       </div>
     </>
@@ -297,6 +341,7 @@ function SalesAppShellInner({
               title={title}
               description={description}
               actions={desktopActions}
+              titleActions={titleActions}
             />
           ) : null}
           {children}

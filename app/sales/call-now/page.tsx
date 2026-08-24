@@ -59,7 +59,7 @@ export default async function SalesLeadsDirectoryPage() {
 
   return (
     <Layout
-      breadcrumb="SALES / LEADS"
+      breadcrumb="Sales / LEADS"
       pageTitle="Leads"
       hideShellHeader
       hideShellSidebar

@@ -40,14 +40,17 @@ export function DashboardHeader({
           <div className="sd-search-wrap hidden min-w-0 shrink layout:inline-flex">
             <GlobalSearch role={notificationRole} />
           </div>
-          <div className="hidden shrink-0 items-center gap-1.5 layout:flex">
-            <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
-            <SalesThemeToggle />
+          <div className="hidden shrink-0 items-center gap-2 layout:flex">
+            <div className="flex items-center gap-1">
+              <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
+              <SalesThemeToggle />
+            </div>
             <SalesQuickActions onAddLead={onAddLead} onLogCall={onOpenLog} />
             <SalesProfileMenu
               userName={userName}
               userRoleLabel="Sales Executive"
               avatarUrl={avatarUrl}
+              compact
             />
           </div>
         </>

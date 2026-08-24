@@ -134,7 +134,7 @@ export function NewEnquiriesCard({
                 <col className="w-[24%]" />
               </colgroup>
               <thead>
-                <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
                   <th className="px-5 py-2.5 font-semibold">Name</th>
                   <th className="px-3 py-2.5 font-semibold">Source</th>
                   <th className="px-3 py-2.5 font-semibold">Intent</th>

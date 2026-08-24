@@ -164,7 +164,7 @@ export default async function SalesPipelinePage() {
 
   return (
     <SalesLayout
-      breadcrumb="SALES / PIPELINE"
+      breadcrumb="Sales / PIPELINE"
       pageTitle="My pipeline"
       hideShellHeader
       hideShellSidebar
@@ -178,7 +178,7 @@ export default async function SalesPipelinePage() {
         whatsappBadge={whatsappBadge}
         tasksBadge={tasksBadge}
         isSolo={session.clientMode === "solo"}
-        breadcrumb="SALES / PIPELINE"
+        breadcrumb="Sales / Pipeline"
         title="My pipeline"
         description="Track and manage the Deals you're actively working to win."
       >

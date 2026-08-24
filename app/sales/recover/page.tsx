@@ -26,7 +26,7 @@ export default async function RecoverPage() {
 
   return (
     <SalesLayout
-      breadcrumb="SALES / RECOVER"
+      breadcrumb="Sales / RECOVER"
       pageTitle="Recover"
       hideShellHeader
       hideShellSidebar

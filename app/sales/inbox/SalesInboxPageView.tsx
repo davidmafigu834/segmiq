@@ -63,7 +63,15 @@ export async function SalesInboxPageView({
     (async () => {
       const { createAdminClient } = await import("@/lib/supabase/admin");
       const supabase = createAdminClient();
-      return supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle();
+      const [profile, unread] = await Promise.all([
+        supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
+        supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.userId)
+          .eq("read", false),
+      ]);
+      return { profile, unreadCount: unread.count ?? 0 };
     })(),
   ]);
 
@@ -72,7 +80,8 @@ export async function SalesInboxPageView({
     (navBadges.needsReply || 0) +
     (navBadges.followUpDue || 0);
   const tasksBadge = navBadges.followUpsToday || navBadges.callNow || 0;
-  const avatarUrl = (userRes.data?.avatar_url as string | null) ?? null;
+  const avatarUrl = (userRes.profile.data?.avatar_url as string | null) ?? null;
+  const unreadNotifications = userRes.unreadCount;
 
   return (
     <Layout
@@ -86,6 +95,8 @@ export async function SalesInboxPageView({
         userName={session.user?.name ?? "Sales"}
         userRoleLabel={isSolo ? "Owner" : "Sales Executive"}
         avatarUrl={avatarUrl}
+        unreadNotifications={unreadNotifications}
+        notificationRole={session.role}
         whatsappBadge={whatsappBadge}
         tasksBadge={tasksBadge}
         isSolo={isSolo}
@@ -106,6 +117,8 @@ export async function SalesInboxPageView({
             backHref={dashboardHref}
             pageTitle={pageTitle}
             breadcrumb={breadcrumb}
+            unreadNotifications={unreadNotifications}
+            avatarUrl={avatarUrl}
           />
         </Suspense>
       </WhatsAppSalesHubShell>

@@ -38,7 +38,7 @@ export default async function SalesGoalsPage() {
 
   return (
     <Layout
-      breadcrumb="SALES / GOALS"
+      breadcrumb="Sales / GOALS"
       pageTitle="My goal"
       hideShellHeader
       hideShellSidebar

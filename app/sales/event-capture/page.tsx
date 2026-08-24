@@ -27,7 +27,7 @@ export default async function SalesEventCapturePage() {
 
   return (
     <SalesLayout
-      breadcrumb="SALES / EVENT CAPTURE"
+      breadcrumb="Sales / EVENT CAPTURE"
       pageTitle="Event Capture"
       hideShellHeader
       hideShellSidebar

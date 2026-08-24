@@ -276,7 +276,7 @@ export default async function SalesCalendarRoutePage({
 
   return (
     <SalesLayout
-      breadcrumb="SALES / CALENDAR"
+      breadcrumb="Sales / CALENDAR"
       pageTitle="Calendar"
       hideShellHeader
       hideShellSidebar
@@ -290,7 +290,7 @@ export default async function SalesCalendarRoutePage({
         whatsappBadge={whatsappBadge}
         tasksBadge={tasksBadge}
         isSolo={session.clientMode === "solo"}
-        breadcrumb="SALES / CALENDAR"
+        breadcrumb="Sales / Calendar"
         title="Calendar"
         description="Plan follow-ups, site visits, calls, and quote meetings."
         dense

@@ -23,8 +23,8 @@ export function CardShell({
 }) {
   return (
     <Card className={`sd-card overflow-hidden border-0 shadow-none ${className}`.trim()}>
-      <CardHeader action={action} className="border-sales-border px-5 py-3.5">
-        <CardTitle>{title}</CardTitle>
+      <CardHeader action={action} className="border-sales-border-subtle px-5 py-3.5">
+        <CardTitle className="tracking-[-0.02em]">{title}</CardTitle>
       </CardHeader>
       {children}
     </Card>
