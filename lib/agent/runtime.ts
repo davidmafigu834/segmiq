@@ -18,7 +18,7 @@ import {
   parseAgentFinalOutput,
   type AgentFinalOutput,
 } from "./prompt";
-import { getAgentModelProvider, type AgentChatMessage, type ModelToolCall } from "./provider";
+import { getAgentModelProvider, AgentLlmRateLimitError, type AgentChatMessage, type ModelToolCall } from "./provider";
 import { getAgentCompanySettings, isAgentGloballyEnabled } from "./settings";
 import { runAgentTool, type ExecutedToolCall } from "./tools/execute";
 import { ASSIST_SAFE_TOOLS, TOOL_METADATA, buildToolDefinitions, type AgentToolName } from "./tools/registry";
@@ -336,14 +336,15 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    const rateLimited = err instanceof AgentLlmRateLimitError || /Gemini API 429/.test(message);
     console.error("[agent] execution failed", err);
     await finishExecution(executionId, {
       state: "FAILED",
-      error_code: "RUNTIME_ERROR",
+      error_code: rateLimited ? "RATE_LIMITED" : "RUNTIME_ERROR",
       error_message: message.slice(0, 500),
       latency_ms: Date.now() - startedAt,
     });
-    if (!opts.testMode) {
+    if (!opts.testMode && !rateLimited) {
       await createAgentEscalation({
         clientId: opts.clientId,
         leadId: opts.leadId,
@@ -353,6 +354,9 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
         ownerId: null,
         escalationUserId: opts.settings.escalationUserId,
       });
+    } else if (!opts.testMode && rateLimited) {
+      await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
+      log("skip.llm_rate_limited", { leadId: opts.leadId, executionId });
     }
     return emptyResult(executionId, "FAILED");
   } finally {

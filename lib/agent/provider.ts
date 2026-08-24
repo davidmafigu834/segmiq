@@ -52,6 +52,13 @@ export type GenerateRequest = {
   temperature?: number;
 };
 
+export class AgentLlmRateLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AgentLlmRateLimitError";
+  }
+}
+
 export interface AgentModelProvider {
   readonly modelId: string;
   generate(req: GenerateRequest): Promise<ModelResponse>;

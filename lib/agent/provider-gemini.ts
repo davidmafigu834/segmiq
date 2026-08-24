@@ -1,9 +1,10 @@
-import type {
-  AgentChatMessage,
-  AgentModelProvider,
-  GenerateRequest,
-  ModelResponse,
-  ModelToolCall,
+import {
+  AgentLlmRateLimitError,
+  type AgentChatMessage,
+  type AgentModelProvider,
+  type GenerateRequest,
+  type ModelResponse,
+  type ModelToolCall,
 } from "./provider";
 
 /**
@@ -14,7 +15,7 @@ import type {
 const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
 const REQUEST_TIMEOUT_MS = 60_000;
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 4;
 
 type GeminiPart = {
   text?: string;
@@ -40,6 +41,14 @@ export function getGeminiModel(): string {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryAfterMs(errText: string, attempt: number): number {
+  const match = errText.match(/retry in ([\d.]+)\s*s/i);
+  if (match) {
+    return Math.min(Math.ceil(Number(match[1]) * 1000) + 400, 40_000);
+  }
+  return Math.min(2_000 * Math.pow(2, attempt), 16_000);
 }
 
 function sanitizeGeminiSchema(value: unknown): unknown {
@@ -219,7 +228,15 @@ export class GeminiAgentProvider implements AgentModelProvider {
             lastError = new Error(`Gemini API ${response.status}: ${errText.slice(0, 500)}`);
             continue;
           }
-          if ((response.status === 429 || response.status >= 500) && attempt < MAX_RETRIES) {
+          if (response.status === 429) {
+            lastError = new AgentLlmRateLimitError(`Gemini API 429: ${errText.slice(0, 400)}`);
+            if (attempt < MAX_RETRIES) {
+              await sleep(retryAfterMs(errText, attempt));
+              continue;
+            }
+            throw lastError;
+          }
+          if (response.status >= 500 && attempt < MAX_RETRIES) {
             lastError = new Error(`Gemini API ${response.status}: ${errText.slice(0, 500)}`);
             await sleep(750 * Math.pow(2, attempt));
             continue;
