@@ -11,6 +11,7 @@ import {
   type SupportCaseStatus,
 } from "@/lib/inbox/conversation-type";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
+import { AgentConversationCard } from "./AgentConversationCard";
 import { TransferDialog } from "./TransferDialog";
 import { TransferToSupportDialog } from "./TransferToSupportDialog";
 
@@ -124,6 +125,7 @@ export function SupportIntelligenceRail({
       </header>
 
       <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto">
+        <AgentConversationCard leadId={conversation.id} conversation={conversation} />
         <section className="border-b border-sales-border-subtle px-4 py-4">
           <div className="flex items-start gap-3">
             <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />

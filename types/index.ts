@@ -78,7 +78,8 @@ export type NotificationType =
   | "DEAL_WON"
   | "LEAD_FLAG"
   | "UNCONTACTED_MANAGER_ALERT"
-  | "QUOTATION_ALERT";
+  | "QUOTATION_ALERT"
+  | "AGENT_ALERT";
 
 export interface UserRow {
   id: string;

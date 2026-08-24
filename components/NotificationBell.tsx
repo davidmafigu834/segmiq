@@ -19,7 +19,8 @@ type NotificationRow = {
     | "FB_TOKEN_EXPIRED"
     | "BACKFILL_COMPLETE"
     | "WHATSAPP_CONNECTION_ALERT"
-    | "QUOTATION_ALERT";
+    | "QUOTATION_ALERT"
+    | "AGENT_ALERT";
   message: string;
   read: boolean;
   lead_id: string | null;
@@ -114,6 +115,11 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
       if (role === "CLIENT_MANAGER") return "/client/quotations";
       if (n.lead_id && role === "SALESPERSON") return `/sales/quotes?leadId=${n.lead_id}`;
       return role === "SALESPERSON" ? "/sales/quotes" : "/client/quotations";
+    }
+    if (n.type === "AGENT_ALERT" && n.lead_id) {
+      if (role === "SALESPERSON") return `/sales/inbox?lead=${n.lead_id}`;
+      if (role === "CLIENT_MANAGER") return `/client/inbox?lead=${n.lead_id}`;
+      return `/sales/inbox?lead=${n.lead_id}`;
     }
     if (n.lead_id) {
       if (role === "SALESPERSON") return `/sales/call-now?lead=${n.lead_id}`;
@@ -261,6 +267,8 @@ function labelForType(type: string): string {
       return "Backfill complete";
     case "QUOTATION_ALERT":
       return "Quotation";
+    case "AGENT_ALERT":
+      return "SegmiQ Agent";
     default:
       return type.replace(/_/g, " ").toLowerCase();
   }

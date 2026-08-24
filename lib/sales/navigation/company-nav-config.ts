@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  Bot,
   CalendarDays,
   Columns3,
   CreditCard,
@@ -22,6 +23,7 @@ export type CompanyNavIconId =
   | "quotations"
   | "calendar"
   | "customers"
+  | "agent"
   | "reports"
   | "billing"
   | "settings";
@@ -54,6 +56,7 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   quotations: FileText,
   calendar: CalendarDays,
   customers: UsersRound,
+  agent: Bot,
   reports: BarChart3,
   billing: CreditCard,
   settings: Settings,
@@ -148,6 +151,16 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "company",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/customers"),
+  },
+  {
+    id: "agent",
+    label: "SegmiQ Agent",
+    href: "/client/agent",
+    icon: "agent",
+    section: "tools",
+    mobileSlot: "more",
+    mobileLabel: "Agent",
+    match: (p) => exactOrChild(p, "/client/agent"),
   },
   {
     id: "reports",

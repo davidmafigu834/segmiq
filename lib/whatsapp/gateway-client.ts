@@ -62,7 +62,32 @@ export async function callWhatsAppGateway<T>(input: {
     cache: "no-store",
     signal: AbortSignal.timeout(input.timeoutMs ?? GATEWAY_SEND_TIMEOUT_MS),
   });
-  const data = (await response.json().catch(() => ({}))) as T & { error?: string };
-  if (!response.ok) throw new Error(data.error ?? `WhatsApp gateway returned HTTP ${response.status}`);
+  const data = (await response.json().catch(() => ({}))) as T & { error?: string; errorCode?: string | number };
+  if (!response.ok) {
+    throw new GatewayRequestError(
+      data.error ?? `WhatsApp gateway returned HTTP ${response.status}`,
+      response.status,
+      data.errorCode
+    );
+  }
   return data;
+}
+
+export class GatewayRequestError extends Error {
+  readonly status: number;
+  readonly errorCode?: string | number;
+
+  constructor(message: string, status: number, errorCode?: string | number) {
+    super(message);
+    this.name = "GatewayRequestError";
+    this.status = status;
+    this.errorCode = errorCode;
+  }
+}
+
+/** True when the live gateway has not been redeployed with this route yet. */
+export function isMissingGatewayRoute(error: unknown): boolean {
+  if (error instanceof GatewayRequestError && error.status === 404) return true;
+  const message = error instanceof Error ? error.message.trim() : "";
+  return /^not found$/i.test(message);
 }

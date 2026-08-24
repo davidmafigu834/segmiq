@@ -34,5 +34,14 @@ export async function GET(req: Request) {
     alsoSells: session.alsoSells,
   });
 
-  return NextResponse.json({ conversations });
+  let agentEnabled = false;
+  try {
+    const { getAgentCompanySettings } = await import("@/lib/agent/settings");
+    const settings = await getAgentCompanySettings(clientId);
+    agentEnabled = settings.enabled;
+  } catch {
+    agentEnabled = false;
+  }
+
+  return NextResponse.json({ conversations, agentEnabled });
 }

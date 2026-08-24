@@ -37,7 +37,7 @@ import { TransferToSupportDialog } from "./TransferToSupportDialog";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { SalesConversationAssist } from "./SalesConversationAssist";
 import { AssetDrawer } from "./AssetDrawer";
-import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
+import { AgentComposerAssist } from "./AgentComposerAssist";
 import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
 import { ManagerWorkflowStrip } from "./ManagerWorkflowStrip";
 import { ConversationTypeBadge } from "./ConversationTypeBadge";
@@ -748,6 +748,21 @@ export function ChatThread({
                     {companyMode && conversation.location ? ` · ${conversation.location}` : ""}
                   </div>
                 ) : null}
+                {conversation.agentStatus === "HUMAN_NEEDED" ? (
+                  <span className="inline-flex w-fit rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                    Human needed
+                    {conversation.agentHumanNeededReason ? ` · ${conversation.agentHumanNeededReason}` : ""}
+                  </span>
+                ) : conversation.agentStatus === "AI_HANDLING" ||
+                  conversation.agentStatus === "WAITING_ON_CUSTOMER" ? (
+                  <span className="inline-flex w-fit rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    SegmiQ Agent handling
+                  </span>
+                ) : conversation.agentStatus === "PAUSED" ? (
+                  <span className="inline-flex w-fit rounded-full bg-sales-surface-subtle px-2 py-0.5 text-[10px] font-semibold text-sales-text-muted">
+                    Agent paused
+                  </span>
+                ) : null}
                 {!companyMode && salespersonHub ? (
                   <div className="hidden min-w-0 shrink-0 items-center gap-1.5 overflow-hidden min-[860px]:flex">
                     {conversation.activeDealId ? (
@@ -1092,6 +1107,27 @@ export function ChatThread({
                 </p>
               </div>
             </div>
+          ) : null}
+          {isWhatsApp && conversation ? (
+            <AgentComposerAssist
+              leadId={conversation.id}
+              canSend={canSend}
+              onEditDraft={(text) => {
+                setInput(text);
+                composerRef.current?.focus();
+              }}
+              onSent={() => {
+                onMessagesChange();
+                void fetch(`/api/inbox/conversations/${conversation.id}/messages?limit=80`)
+                  .then((res) => (res.ok ? res.json() : null))
+                  .then((data: { messages?: InboxChatMessage[] } | null) => {
+                    if (data?.messages) {
+                      setMessages((current) => mergeChatMessages(current, data.messages ?? []));
+                    }
+                  })
+                  .catch(() => {});
+              }}
+            />
           ) : null}
           {salespersonHub && isWhatsApp && !isSupport ? (
             <SalespersonComposerToolbar

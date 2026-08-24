@@ -78,6 +78,7 @@ export function CompanyWhatsAppHeader({
   avatarUrl,
   connection,
   variant = "page",
+  agentActive = false,
 }: {
   unreadNotifications?: number;
   notificationRole?: UserRole;
@@ -85,6 +86,7 @@ export function CompanyWhatsAppHeader({
   avatarUrl?: string | null;
   connection: SafeWhatsAppConnection | null;
   variant?: "page" | "list";
+  agentActive?: boolean;
 }) {
   if (variant === "list") {
     return (
@@ -96,6 +98,12 @@ export function CompanyWhatsAppHeader({
           <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface-subtle px-2 py-0.5 text-[9px] font-semibold text-sales-text-secondary">
             Company
           </span>
+          {agentActive ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+              SegmiQ Agent active
+            </span>
+          ) : null}
         </div>
         <ConnectionStatus connection={connection} />
       </header>
@@ -112,6 +120,12 @@ export function CompanyWhatsAppHeader({
           <span className="inline-flex shrink-0 rounded-full border border-sales-border bg-sales-surface px-2 py-0.5 text-[10px] font-semibold text-sales-text-secondary">
             Company
           </span>
+          {agentActive ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+              SegmiQ Agent active
+            </span>
+          ) : null}
         </div>
         <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">
           Manage conversations, customer context and team responses in one place.

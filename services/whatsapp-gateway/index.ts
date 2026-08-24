@@ -464,6 +464,19 @@ function mediaHostAllowed(url: URL): boolean {
   return hosts.includes(url.hostname.toLowerCase());
 }
 
+function outboundMediaKind(input: {
+  messageType?: string;
+  mimeType?: string;
+}): "image" | "video" | "document" {
+  if (input.messageType === "image" || input.messageType === "video" || input.messageType === "document") {
+    return input.messageType;
+  }
+  const mime = (input.mimeType ?? "").toLowerCase();
+  if (mime.startsWith("image/")) return "image";
+  if (mime.startsWith("video/")) return "video";
+  return "document";
+}
+
 async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
   const url = new URL(request.url ?? "/", "http://gateway.local");
   if (request.method === "GET" && url.pathname === "/health") {
@@ -542,7 +555,7 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
     if (!mediaResponse.ok) return json(response, 502, { ok: false, error: "Media download failed" });
     const bytes = Buffer.from(await mediaResponse.arrayBuffer());
     if (bytes.length > 20 * 1024 * 1024) return json(response, 413, { ok: false, error: "File exceeds 20 MB" });
-    const kind = documentMatch ? "document" : input.messageType ?? "document";
+    const kind = outboundMediaKind(input);
     const caption = input.body?.trim() || undefined;
     const mimeType = input.mimeType ?? "application/octet-stream";
     const payload =

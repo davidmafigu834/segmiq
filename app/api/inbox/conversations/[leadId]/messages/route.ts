@@ -78,6 +78,9 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
         "STATUS_CHANGED",
         "NOTE_ADDED",
         "DOCUMENT_SENT",
+        "DEAL_CREATED",
+        "SUPPORT_CASE_OPENED",
+        "CONVERSATION_TRANSFERRED_TO_SUPPORT",
       ]);
     const messageEventQuery = supabase
       .from("lead_events")

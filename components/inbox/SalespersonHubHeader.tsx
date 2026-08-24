@@ -64,17 +64,27 @@ export function SalespersonHubHeader({
   connection,
   title = "WhatsApp Sales Hub",
   variant = "page",
+  agentActive = false,
 }: {
   connection: SafeWhatsAppConnection | null;
   title?: string;
   variant?: "page" | "list";
+  agentActive?: boolean;
 }) {
   if (variant === "list") {
     return (
       <header className="salesperson-wa-list-header shrink-0 border-b border-sales-border bg-sales-surface px-4 py-3">
-        <h1 className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
-          {title}
-        </h1>
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
+            {title}
+          </h1>
+          {agentActive ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+              Agent active
+            </span>
+          ) : null}
+        </div>
         <ConnectionStatus connection={connection} />
       </header>
     );
@@ -88,6 +98,7 @@ export function SalespersonHubHeader({
         </h1>
         <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">
           Your selling workspace for WhatsApp
+          {agentActive ? " · SegmiQ Agent active" : ""}
         </p>
       </div>
       <ConnectionStatus connection={connection} />

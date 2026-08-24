@@ -26,6 +26,7 @@ import {
   NotificationsAlertsSection,
 } from "./ProfileSettingsViews";
 import { TeamMembersSection } from "./TeamSettingsViews";
+import { AgentSettingsSection } from "./AgentSettingsViews";
 import {
   IntegrationsAppsSection,
   IntegrationsWebsiteSection,
@@ -266,13 +267,16 @@ function CompanySettingsPageInner({
               <IntegrationsWebsiteSection clientId={data.clientId} />
             ) : null}
 
-            {category === "automation" ? (
+            {category === "automation" && activeSection === "assignment" ? (
               <CompanyAutomationSection
                 clientId={data.clientId}
                 profile={profile}
                 onProfileChange={onProfileChange}
                 toast={toast}
               />
+            ) : null}
+            {category === "automation" && activeSection === "agent" ? (
+              <AgentSettingsSection clientId={data.clientId} toast={toast} />
             ) : null}
 
             {category === "data" ? <CompanyDataSection /> : null}

@@ -42,6 +42,7 @@ type Props = {
   hubConnection?: SafeWhatsAppConnection | null;
   hubTitle?: string;
   showHubBranding?: boolean;
+  agentActive?: boolean;
 };
 
 export function ConversationList({
@@ -69,6 +70,7 @@ export function ConversationList({
   hubConnection = null,
   hubTitle = "WhatsApp Sales Hub",
   showHubBranding = false,
+  agentActive = false,
 }: Props) {
   const [sort, setSort] = useState<ConversationSort>("newest");
   const [sortOpen, setSortOpen] = useState(false);
@@ -104,6 +106,7 @@ export function ConversationList({
     "all",
     ...(showMine ? (["mine"] as InboxFilter[]) : []),
     "awaiting_reply",
+    "human_needed",
     "follow_up_due",
   ];
   const salespersonAdvancedFilters: InboxFilter[] = [
@@ -194,9 +197,9 @@ export function ConversationList({
         <div className="sticky top-0 z-10 shrink-0 bg-sales-surface wa-panel-header max-[1099px]:pt-[env(safe-area-inset-top)]">
           {showHubBranding ? (
             companyMode ? (
-              <CompanyWhatsAppHeader connection={hubConnection} variant="list" />
+              <CompanyWhatsAppHeader connection={hubConnection} variant="list" agentActive={agentActive} />
             ) : (
-              <SalespersonHubHeader connection={hubConnection} title={hubTitle} variant="list" />
+              <SalespersonHubHeader connection={hubConnection} title={hubTitle} variant="list" agentActive={agentActive} />
             )
           ) : (
             <div className="flex items-center gap-3 px-4 py-3">
@@ -225,7 +228,7 @@ export function ConversationList({
                       active ? "text-sales-text-primary" : "text-sales-text-secondary hover:text-sales-text-primary"
                     }`}
                   >
-                    {key === "awaiting_reply" ? "Waiting" : INBOX_FILTER_LABELS[key]}
+                    {key === "awaiting_reply" ? "Waiting" : key === "human_needed" ? "Needed" : INBOX_FILTER_LABELS[key]}
                     <span className="text-[9px] tabular-nums text-sales-text-muted">{filterCounts[key] ?? 0}</span>
                     {active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#B7E432]" /> : null}
                   </button>
@@ -294,7 +297,7 @@ export function ConversationList({
                         <button type="button" className="fixed inset-0 z-20 cursor-default" aria-label="Close filters" onClick={() => setFilterOpen(false)} />
                         <div className="absolute right-0 z-30 mt-1 max-h-[min(70vh,420px)] w-56 overflow-y-auto rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)] inbox-scroll">
                           {(companyMode
-                            ? (["all", "unassigned", "awaiting_reply", "waiting_customer", "unread", "resolved", "quotes_sent"] as InboxFilter[])
+                            ? (["all", "unassigned", "awaiting_reply", "human_needed", "waiting_customer", "unread", "resolved", "quotes_sent"] as InboxFilter[])
                             : salespersonAdvancedFilters
                           ).map((key) => (
                             <button key={key} type="button" className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] text-sales-text-primary hover:bg-sales-surface-hover" onClick={() => { onFilterChange(key); setFilterOpen(false); }}>

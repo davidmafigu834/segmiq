@@ -38,7 +38,7 @@ Configure it as follows. Render will detect Next.js and suggest `npm run build` 
 
 `--omit=dev` is deliberate. It skips `canvas`, which needs native compilation that can fail on a slim build image, and it now works because `tsx` and `@next/env` are real dependencies. The build still installs the full application dependency tree, so expect two to four minutes.
 
-**Turn auto-deploy off.** This is the setting that matters most. Render and Vercel deploy from the same repository, so with auto-deploy on, every frontend commit would restart the gateway and drop every client's WhatsApp socket. Deploy manually, and only when gateway code actually changes.
+**Turn auto-deploy off.** This is the setting that matters most. Render and Vercel deploy from the same repository, so with auto-deploy on, every frontend commit would restart the gateway and drop every client's WhatsApp socket. Deploy manually, and only when gateway code actually changes. Composer photo and video send uses `/v1/connections/:id/messages/media`; until that deploy lands the app falls back to the older `/messages/document` route so the file still arrives.
 
 Set the health check path to `/health`. That route is intentionally public and returns only `{"ok":true,"activeConnections":N}` — every other route rejects unsigned requests with `401`.
 

@@ -5,6 +5,7 @@ import { normalizeToE164 } from "@/lib/phone-validate";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { persistOutboundWhatsAppMessage } from "./persist-outbound";
 import { resolveWhatsAppProvider } from "./providers/resolver";
+import { isHumanWhatsAppActor, markConversationHumanTakeover } from "@/lib/agent/human-takeover";
 
 async function resolveCanonicalLeadRecipient(input: {
   clientId: string;
@@ -34,6 +35,20 @@ async function resolveCanonicalLeadRecipient(input: {
   }
 
   return { ok: true, normalized };
+}
+
+function outboundSenderSource(input: { actorId: string | null; actorRole: string }) {
+  return isHumanWhatsAppActor(input) ? "SEGMIQ_USER" : "SYSTEM";
+}
+
+async function afterHumanOutbound(input: {
+  clientId: string;
+  leadId: string;
+  actorId: string | null;
+  actorRole: string;
+}) {
+  if (!isHumanWhatsAppActor(input)) return;
+  await markConversationHumanTakeover({ clientId: input.clientId, leadId: input.leadId });
 }
 
 export async function sendCanonicalWhatsAppText(input: {
@@ -107,7 +122,7 @@ export async function sendCanonicalWhatsAppText(input: {
       providerId: result.providerId ?? null,
       providerType: provider.type,
       connectionId: connection?.id ?? null,
-      senderSource: "SEGMIQ_USER",
+      senderSource: outboundSenderSource(input),
     });
     await logLeadEvent({
       leadId: input.leadId,
@@ -122,6 +137,7 @@ export async function sendCanonicalWhatsAppText(input: {
       channel: "whatsapp",
     });
     await supabase.from("leads").update({ updated_at: new Date().toISOString() }).eq("id", input.leadId);
+    await afterHumanOutbound(input);
   }
   return { ...result, channel: "whatsapp", providerType: provider.type };
 }
@@ -186,7 +202,7 @@ export async function sendCanonicalWhatsAppDocument(input: {
       providerId: result.providerId ?? null,
       providerType: provider.type,
       connectionId: connection.id,
-      senderSource: "SEGMIQ_USER",
+      senderSource: outboundSenderSource(input),
       messageType: "document",
     });
     await logLeadEvent({
@@ -197,6 +213,7 @@ export async function sendCanonicalWhatsAppDocument(input: {
       eventData: { body: input.body, filename: input.filename, provider_id: result.providerId ?? null, provider_type: provider.type, message_type: "document" },
       channel: "whatsapp",
     });
+    await afterHumanOutbound(input);
   }
   return { ...result, channel: "whatsapp", providerType: provider.type };
 }
@@ -279,7 +296,7 @@ export async function sendCanonicalWhatsAppMedia(input: {
       providerId: result.providerId ?? null,
       providerType: provider.type,
       connectionId: connection.id,
-      senderSource: "SEGMIQ_USER",
+      senderSource: outboundSenderSource(input),
       messageType: input.messageType,
       mediaUrl: input.url.startsWith("http") ? input.url : null,
       mediaMimeType: input.mimeType,
@@ -301,6 +318,7 @@ export async function sendCanonicalWhatsAppMedia(input: {
     });
     const supabase = createAdminClient();
     await supabase.from("leads").update({ updated_at: new Date().toISOString() }).eq("id", input.leadId);
+    await afterHumanOutbound(input);
   }
   return { ...result, channel: "whatsapp", providerType: provider.type };
 }

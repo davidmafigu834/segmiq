@@ -15,6 +15,7 @@ import {
 import type { CompanyConversationContext, InboxConversation } from "@/lib/inbox/types";
 import { supportStageLabel } from "@/lib/inbox/conversation-type";
 import { displayContactName, WhatsAppAvatar } from "./WhatsAppAvatar";
+import { AgentConversationCard } from "./AgentConversationCard";
 
 function relativeDate(value: string): string {
   const date = new Date(value);
@@ -221,6 +222,7 @@ export function CompanyConversationInsightRail({
           </div>
         ) : (
           <>
+            <AgentConversationCard leadId={conversation.id} conversation={conversation} activityHref="/client/agent" />
             <AccordionSection index={1} title="Customer Overview">
               <div className="flex items-start gap-3">
                 <WhatsAppAvatar name={name} phone={phone} size="md" />

@@ -89,6 +89,7 @@ export function TeamInbox({
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [companyName, setCompanyName] = useState("");
   const [whatsappConnection, setWhatsAppConnection] = useState<SafeWhatsAppConnection | null>(null);
+  const [agentActive, setAgentActive] = useState(false);
   const [dailyPlanQueue, setDailyPlanQueue] = useState<SalesActionRecommendation[]>([]);
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const isMobile = useInboxMobile();
@@ -114,8 +115,9 @@ export function TeamInbox({
     try {
       const res = await fetch("/api/inbox/conversations");
       if (!res.ok) throw new Error("Failed");
-      const data = (await res.json()) as { conversations?: InboxConversation[] };
+      const data = (await res.json()) as { conversations?: InboxConversation[]; agentEnabled?: boolean };
       const rows = data.conversations ?? [];
+      setAgentActive(data.agentEnabled === true);
       const currentActive = activeIdRef.current;
       setConversations(
         rows.map((r) =>
@@ -383,10 +385,13 @@ export function TeamInbox({
           userName={userName}
           avatarUrl={avatarUrl}
           connection={whatsappConnection}
+          agentActive={agentActive}
         />
       ) : null}
 
-      {showHubChrome ? <SalespersonHubHeader connection={whatsappConnection} title={pageTitle} /> : null}
+      {showHubChrome ? (
+        <SalespersonHubHeader connection={whatsappConnection} title={pageTitle} agentActive={agentActive} />
+      ) : null}
 
       <div
         className={`min-h-0 flex-1 overflow-hidden ${
@@ -439,6 +444,7 @@ export function TeamInbox({
                 hubConnection={whatsappConnection}
                 hubTitle={pageTitle}
                 showHubBranding={showListHubBranding}
+                agentActive={agentActive}
               />
             ) : null}
             {resizable ? (

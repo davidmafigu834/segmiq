@@ -55,6 +55,8 @@ function conversation(overrides: Partial<InboxConversation> = {}): InboxConversa
     collaboratorIds: [],
     supportCase: null,
     latestQuoteViewedAt: null,
+    agentStatus: null,
+    agentHumanNeededReason: null,
     ...overrides,
   };
 }
@@ -83,6 +85,13 @@ test("quote and Deal filters use relationship data rather than message text", ()
   assert.equal(matchesInboxFilter(deal, "quotes_sent", "rep-1"), true);
   assert.equal(matchesInboxFilter(deal, "deal_proposal_sent", "rep-1"), true);
   assert.equal(matchesInboxFilter(deal, "no_deal", "rep-1"), false);
+});
+
+test("human needed filter uses agent state, not conversation workflow", () => {
+  const needed = conversation({ agentStatus: "HUMAN_NEEDED" });
+  const handling = conversation({ agentStatus: "AI_HANDLING" });
+  assert.equal(matchesInboxFilter(needed, "human_needed", "rep-1"), true);
+  assert.equal(matchesInboxFilter(handling, "human_needed", "rep-1"), false);
 });
 
 test("intent filters use the shared score thresholds", () => {

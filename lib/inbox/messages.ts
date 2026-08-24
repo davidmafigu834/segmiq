@@ -76,6 +76,17 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
   if (event.event_type === "NOTE_ADDED") {
     const note = String(d.note ?? "").trim();
     if (!note) return null;
+    if (d.agent === true) {
+      return {
+        id: event.id,
+        direction: "rep",
+        text: note.replace(/^Qualification updated by SegmiQ Agent:\s*/i, "Qualified ").replace(/^SegmiQ Agent requested human help — /i, ""),
+        createdAt: event.created_at,
+        kind: "system",
+        systemTitle: "SegmiQ Agent",
+        actorName: event.actor_name || null,
+      };
+    }
     const isInternal = d.internal === true || d.visibility === "internal";
     if (isInternal) {
       return {
@@ -214,6 +225,19 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
       createdAt: event.created_at,
       kind: "system",
       systemTitle: channel === "whatsapp" ? "WhatsApp contact" : "Call logged",
+      actorName: event.actor_name || null,
+    };
+  }
+
+  if (event.event_type === "DEAL_CREATED") {
+    const dealName = String(d.deal_name ?? d.name ?? "Deal").trim();
+    return {
+      id: event.id,
+      direction: "rep",
+      text: dealName,
+      createdAt: event.created_at,
+      kind: "system",
+      systemTitle: event.actor_name === "SegmiQ Agent" ? "SegmiQ Agent created Deal" : "Deal created",
       actorName: event.actor_name || null,
     };
   }

@@ -25,7 +25,8 @@ export type InboxFilter =
   | "follow_up_due"
   | "awaiting_reply"
   | "waiting_customer"
-  | "quotes_sent";
+  | "quotes_sent"
+  | "human_needed";
 
 export type InboxAssignee = {
   id: string;
@@ -96,6 +97,17 @@ export type InboxConversation = {
   dealStage: string | null;
   dealNextActionAt: string | null;
   dealNextActionLabel: string | null;
+  /** SegmiQ Agent state — independent of conversation workflow status. */
+  agentStatus:
+    | "IDLE"
+    | "AI_HANDLING"
+    | "HUMAN_NEEDED"
+    | "PAUSED"
+    | "WAITING_ON_CUSTOMER"
+    | "FOLLOW_UP_SCHEDULED"
+    | "HUMAN_HANDLING"
+    | null;
+  agentHumanNeededReason: string | null;
 };
 
 export type CompanyWhatsAppSummary = {

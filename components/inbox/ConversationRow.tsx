@@ -115,9 +115,30 @@ export function ConversationRow({
                 >
                   {name}
                 </span>
+                {!companyMode && conversation.agentStatus === "HUMAN_NEEDED" ? (
+                  <span className="inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 bg-amber-500/10">
+                    Human needed
+                  </span>
+                ) : !companyMode &&
+                  (conversation.agentStatus === "AI_HANDLING" ||
+                    conversation.agentStatus === "WAITING_ON_CUSTOMER") ? (
+                  <span className="inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-500/10">
+                    AI
+                  </span>
+                ) : null}
                 {companyMode ? (
                   <>
                     <ConversationTypeBadge type={conversation.conversationType} />
+                    {conversation.agentStatus === "HUMAN_NEEDED" ? (
+                      <span className="inline-flex max-w-full truncate rounded px-1.5 py-0.5 text-[9px] font-semibold text-amber-700 bg-amber-500/10">
+                        Human needed
+                      </span>
+                    ) : conversation.agentStatus === "AI_HANDLING" ||
+                      conversation.agentStatus === "WAITING_ON_CUSTOMER" ? (
+                      <span className="inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold text-emerald-700 bg-emerald-500/10">
+                        AI
+                      </span>
+                    ) : null}
                     {stageBadge ? (
                       <span className="inline-flex max-w-full truncate rounded px-1.5 py-0.5 text-[9px] font-semibold text-sales-text-secondary bg-sales-surface-subtle">
                         {stageBadge}

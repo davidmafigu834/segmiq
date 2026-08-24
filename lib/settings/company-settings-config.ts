@@ -48,7 +48,10 @@ export const SETTINGS_SECTIONS: Record<SettingsCategory, SettingsSection[]> = {
     { id: "apps", label: "Connected Apps", icon: "plug" },
     { id: "whatsapp", label: "WhatsApp", icon: "whatsapp" },
   ],
-  automation: [{ id: "assignment", label: "Lead Assignment", icon: "git" }],
+  automation: [
+    { id: "assignment", label: "Lead Assignment", icon: "git" },
+    { id: "agent", label: "SegmiQ Agent", icon: "bot" },
+  ],
   data: [{ id: "export", label: "Export", icon: "download" }],
   security: [{ id: "authentication", label: "Authentication", icon: "shield" }],
 };

@@ -45,6 +45,7 @@ import { formatSource } from "@/lib/inbox/format-source";
 import type { InboxConversation } from "@/lib/inbox/types";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { QuotationBuilder } from "@/components/leads/QuotationBuilder";
+import { AgentConversationCard } from "./AgentConversationCard";
 import { ScoreBreakdownBar } from "./ScoreBreakdownBar";
 import { TransferDialog } from "./TransferDialog";
 import { TransferToSupportDialog } from "./TransferToSupportDialog";
@@ -471,6 +472,7 @@ export function SalesIntelligenceRail({
       </header>
 
       <div className="inbox-scroll min-h-0 flex-1 overflow-y-auto bg-sales-surface pb-[env(safe-area-inset-bottom)]">
+        {!loading ? <AgentConversationCard leadId={conversation.id} conversation={conversation} /> : null}
         {loading ? (
           <div className="space-y-3 p-4" aria-busy aria-label="Loading sales intelligence">
             <div className="h-20 animate-pulse rounded-[10px] bg-sales-surface-hover" />

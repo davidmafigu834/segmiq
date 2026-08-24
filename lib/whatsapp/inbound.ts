@@ -8,7 +8,6 @@ import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { findOpenLeadByPhone } from "@/lib/leads/findOpenLeadByPhone";
 import { pickAssigneeForInbound } from "./assignment";
 import { fetchWhatsAppMediaAsset } from "./media";
-import { processWhatsAppQualification } from "./qualification";
 import { resolveClientFromWhatsAppPhoneNumberId } from "./resolve-client";
 import {
   findRecentCampaignRecipient,
@@ -505,16 +504,22 @@ export async function handleInboundWhatsAppMessage(opts: {
 
   if (getWhatsAppCapabilities(opts.providerType ?? "META_CLOUD").automatedMessages) {
     try {
-      await processWhatsAppQualification({
+      const { dispatchInboundToAgentOrQualification } = await import("@/lib/agent/inbound-hook");
+      await dispatchInboundToAgentOrQualification({
         clientId: client.id,
         clientName: client.name,
         leadId,
+        contactId,
+        ownerId: assignedToId,
+        messageId: persisted.id as string,
+        messageType: message.type || "text",
+        body,
         phone,
-        inboundBody: body,
+        timestamp: now,
         isNewLead,
       });
     } catch (err) {
-      console.error("[whatsapp] qualification error:", err);
+      console.error("[whatsapp] automated handling error:", err);
     }
   }
 }

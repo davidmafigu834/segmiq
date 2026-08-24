@@ -55,6 +55,8 @@ function conversation(
     collaboratorIds: [],
     supportCase: null,
     latestQuoteViewedAt: null,
+    agentStatus: null,
+    agentHumanNeededReason: null,
     ...overrides,
   };
 }

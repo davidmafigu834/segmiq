@@ -21,6 +21,7 @@ export const INBOX_FILTER_LABELS: Record<InboxFilter, string> = {
   awaiting_reply: "Needs reply",
   waiting_customer: "Waiting for customer",
   quotes_sent: "Quotes sent",
+  human_needed: "Human needed",
 };
 
 export const INBOX_FILTER_ORDER: InboxFilter[] = [
@@ -29,6 +30,7 @@ export const INBOX_FILTER_ORDER: InboxFilter[] = [
   "unassigned",
   "hot",
   "awaiting_reply",
+  "human_needed",
   "follow_up_due",
   "waiting_customer",
   "quotes_sent",
@@ -38,6 +40,7 @@ export const COMPANY_INBOX_FILTER_ORDER: InboxFilter[] = [
   "all",
   "open",
   "awaiting_reply",
+  "human_needed",
   "resolved",
 ];
 
@@ -105,6 +108,8 @@ export function matchesInboxFilter(
       return isWaitingForCustomer(c);
     case "quotes_sent":
       return hasQuoteSent(c);
+    case "human_needed":
+      return c.agentStatus === "HUMAN_NEEDED";
     default:
       return true;
   }

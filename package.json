@@ -30,6 +30,7 @@
     "@whiskeysockets/baileys": "7.0.0-rc14",
     "archiver": "^8.0.0",
     "bcryptjs": "^2.4.3",
+    "chrono-node": "^2.10.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
     "geist": "^1.7.0",

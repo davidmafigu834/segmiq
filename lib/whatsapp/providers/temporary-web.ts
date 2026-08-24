@@ -1,4 +1,4 @@
-import { callWhatsAppGateway } from "../gateway-client";
+import { callWhatsAppGateway, isMissingGatewayRoute } from "../gateway-client";
 import { getWhatsAppCapabilities } from "./capabilities";
 import type { ProviderSendResult, WhatsAppProvider } from "./types";
 
@@ -41,6 +41,7 @@ async function sendTemporaryDocument(input: {
   filename: string;
   mimeType: string;
   url: string;
+  messageType?: "image" | "video" | "document";
 }): Promise<ProviderSendResult> {
   if (!input.connectionId) {
     return { ok: false, error: "Quick connection is unavailable", errorCode: "NOT_CONNECTED" };
@@ -48,6 +49,7 @@ async function sendTemporaryDocument(input: {
   try {
     return await callWhatsAppGateway<ProviderSendResult>({
       path: `/v1/connections/${encodeURIComponent(input.connectionId)}/messages/document`,
+      timeoutMs: input.messageType && input.messageType !== "document" ? 45_000 : undefined,
       body: {
         to: input.to,
         body: input.body,
@@ -55,14 +57,11 @@ async function sendTemporaryDocument(input: {
         filename: input.filename,
         mimeType: input.mimeType,
         url: input.url,
+        messageType: input.messageType,
       },
     });
   } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Quick connection send failed",
-      errorCode: "GATEWAY_UNAVAILABLE",
-    };
+    return gatewaySendFailure(error);
   }
 }
 
@@ -94,10 +93,27 @@ async function sendTemporaryMedia(input: {
       },
     });
   } catch (error) {
+    // Render auto-deploy is off, so production often still has the older
+    // gateway that only knows /messages/document. Send the file there so
+    // the salesperson is not stuck with a raw "Not found" error.
+    if (isMissingGatewayRoute(error)) {
+      return sendTemporaryDocument(input);
+    }
+    return gatewaySendFailure(error);
+  }
+}
+
+function gatewaySendFailure(error: unknown): ProviderSendResult {
+  if (isMissingGatewayRoute(error)) {
     return {
       ok: false,
-      error: error instanceof Error ? error.message : "Quick connection send failed",
-      errorCode: "GATEWAY_UNAVAILABLE",
+      error: "The WhatsApp service needs an update before photos can be sent. Ask a company manager to redeploy the WhatsApp gateway.",
+      errorCode: "GATEWAY_OUTDATED",
     };
   }
+  return {
+    ok: false,
+    error: error instanceof Error ? error.message : "Quick connection send failed",
+    errorCode: "GATEWAY_UNAVAILABLE",
+  };
 }

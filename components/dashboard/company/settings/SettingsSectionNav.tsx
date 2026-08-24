@@ -3,6 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Bell,
+  Bot,
   Briefcase,
   Building2,
   Crown,
@@ -38,6 +39,7 @@ const ICONS: Record<string, LucideIcon> = {
   git: GitBranch,
   download: Download,
   shield: Shield,
+  bot: Bot,
 };
 
 export function SettingsSectionNav({

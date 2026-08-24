@@ -412,6 +412,25 @@ async function buildConversations(
     }
   }
 
+  const agentStateByLead = new Map<
+    string,
+    { status: InboxConversation["agentStatus"]; reason: string | null; humanTakeover: boolean }
+  >();
+  const { data: agentStateRows, error: agentStateError } = await supabase
+    .from("agent_conversation_state")
+    .select("lead_id, status, human_needed_reason, human_takeover")
+    .eq("client_id", clientId)
+    .in("lead_id", leadIds);
+  if (!agentStateError) {
+    for (const row of agentStateRows ?? []) {
+      agentStateByLead.set(row.lead_id as string, {
+        status: (row.status as InboxConversation["agentStatus"]) ?? "IDLE",
+        reason: (row.human_needed_reason as string | null) ?? null,
+        humanTakeover: row.human_takeover === true,
+      });
+    }
+  }
+
   const { data: unreadNotes } = await supabase
     .from("notifications")
     .select("lead_id")
@@ -546,6 +565,13 @@ async function buildConversations(
       dealStage: activeDeal?.stage ?? null,
       dealNextActionAt: activeDeal?.next_action_at ?? null,
       dealNextActionLabel: activeDeal?.next_action_label ?? null,
+      agentStatus: (() => {
+        const agent = agentStateByLead.get(lead.id);
+        if (!agent) return null;
+        if (agent.humanTakeover) return "HUMAN_HANDLING";
+        return agent.status;
+      })(),
+      agentHumanNeededReason: agentStateByLead.get(lead.id)?.reason ?? null,
     };
   });
 

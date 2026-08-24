@@ -6,7 +6,12 @@ import { canTransitionWhatsAppConnection } from "../lib/whatsapp/providers/state
 import { isSupportedTemporaryChat } from "../lib/whatsapp/normalized-inbound";
 import { decryptWhatsAppSecret, encryptWhatsAppSecret } from "../lib/whatsapp/security/secret-envelope";
 import { signGatewayRequest, verifyGatewayRequest } from "../lib/whatsapp/security/gateway-auth";
-import { gatewayUserError, isGatewayTimeoutError } from "../lib/whatsapp/gateway-client";
+import {
+  GatewayRequestError,
+  gatewayUserError,
+  isGatewayTimeoutError,
+  isMissingGatewayRoute,
+} from "../lib/whatsapp/gateway-client";
 
 test("temporary provider advertises only the supported beta capabilities", () => {
   const capabilities = getWhatsAppCapabilities("TEMPORARY_WEB");
@@ -77,6 +82,13 @@ test("gateway timeouts are explained instead of a raw abort message", () => {
   assert.equal(isGatewayTimeoutError(timeout), true);
   assert.match(gatewayUserError(timeout), /still starting/i);
   assert.equal(isGatewayTimeoutError(new Error("Unauthorized")), false);
+});
+
+test("an older gateway missing /messages/media is detected so photos can fall back", () => {
+  assert.equal(isMissingGatewayRoute(new GatewayRequestError("Not found", 404)), true);
+  assert.equal(isMissingGatewayRoute(new Error("Not found")), true);
+  assert.equal(isMissingGatewayRoute(new GatewayRequestError("Connection is offline", 409)), false);
+  assert.equal(isMissingGatewayRoute(new Error("Unauthorized")), false);
 });
 
 test("gateway request signatures bind method, path, body, nonce and time", async () => {
