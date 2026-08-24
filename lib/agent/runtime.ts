@@ -270,6 +270,9 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     });
     if (!context) {
       await finishExecution(executionId, { state: "FAILED", error_code: "CONTEXT_UNAVAILABLE" });
+      if (!opts.testMode) {
+        await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
+      }
       return emptyResult(executionId, "FAILED");
     }
     await supabase

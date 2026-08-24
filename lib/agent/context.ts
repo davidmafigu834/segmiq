@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveClientSalesTimezone } from "@/lib/sales/intelligence/daily-plan-service";
+import { locationFromFormData } from "@/lib/sales/calendar/location";
 import { loadQualificationFlow } from "@/lib/whatsapp/load-qualification-flow";
 import { formatLocalDateTime } from "./dates";
 import { loadCustomerMemory, memoryForContext } from "./memory";
@@ -97,11 +98,12 @@ export async function assembleAgentContext(opts: {
 }): Promise<AgentContext | null> {
   const supabase = createAdminClient();
 
-  const [{ data: lead }, { data: client }, timezone] = await Promise.all([
+  const [{ data: lead, error: leadError }, { data: client, error: clientError }, timezone] =
+    await Promise.all([
     supabase
       .from("leads")
       .select(
-        "id, client_id, name, phone, status, source, contact_id, assigned_to_id, active_deal_id, budget, project_type, timeline, location, customer_need, buying_timeframe, follow_up_date, whatsapp_conversation_type, whatsapp_conversation_status, whatsapp_queue, created_at, form_data"
+        "id, client_id, name, phone, status, source, contact_id, assigned_to_id, active_deal_id, budget, project_type, timeline, customer_need, buying_timeframe, follow_up_date, whatsapp_conversation_type, whatsapp_conversation_status, whatsapp_queue, created_at, form_data"
       )
       .eq("id", opts.leadId)
       .eq("client_id", opts.clientId)
@@ -109,7 +111,15 @@ export async function assembleAgentContext(opts: {
     supabase.from("clients").select("id, name, industry").eq("id", opts.clientId).maybeSingle(),
     resolveClientSalesTimezone(opts.clientId),
   ]);
-  if (!lead || !client) return null;
+  if (!lead || !client) {
+    console.error("[agent] context unavailable", {
+      leadId: opts.leadId,
+      clientId: opts.clientId,
+      leadError: leadError?.message ?? null,
+      clientError: clientError?.message ?? null,
+    });
+    return null;
+  }
 
   const contactId = (lead.contact_id as string | null) ?? null;
   const ownerId = (lead.assigned_to_id as string | null) ?? null;
@@ -210,7 +220,10 @@ export async function assembleAgentContext(opts: {
   for (const core of CORE_QUALIFICATION_FIELDS) {
     if (seen.has(core.field)) continue;
     seen.add(core.field);
-    const value = leadRecord[core.column];
+    const value =
+      core.field === "location"
+        ? locationFromFormData(formData)
+        : leadRecord[core.column];
     fields.push({
       field: core.field,
       label: core.label,

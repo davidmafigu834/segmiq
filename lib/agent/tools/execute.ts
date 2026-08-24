@@ -118,7 +118,7 @@ const QUALIFICATION_COLUMN_MAP: Record<string, string | null> = {
   budget: "budget",
   project_type: "project_type",
   timeline: "timeline",
-  location: "location",
+  location: null, // no leads.location column; stored in form_data
   customer_need: "customer_need",
   buying_timeframe: "buying_timeframe",
 };
@@ -132,7 +132,7 @@ async function executeUpdateQualification(
   const supabase = createAdminClient();
   const { data: lead } = await supabase
     .from("leads")
-    .select("id, form_data, budget, project_type, timeline, location, customer_need, buying_timeframe")
+    .select("id, form_data, budget, project_type, timeline, customer_need, buying_timeframe")
     .eq("id", ctx.leadId)
     .eq("client_id", ctx.clientId)
     .maybeSingle();
@@ -160,9 +160,11 @@ async function executeUpdateQualification(
   const changes: Array<{ field: string; from: unknown; to: string }> = [];
   for (const update of confident) {
     const column = QUALIFICATION_COLUMN_MAP[update.field];
-    if (!column) continue;
-    const previous = (lead as Record<string, unknown>)[column];
-    columnPatch[column] = update.value;
+    if (column === undefined) continue;
+    const previous = column
+      ? (lead as Record<string, unknown>)[column]
+      : formData[update.field];
+    if (column) columnPatch[column] = update.value;
     formData[update.field] = update.value;
     changes.push({ field: update.field, from: previous ?? null, to: update.value });
   }
