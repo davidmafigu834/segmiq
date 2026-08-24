@@ -15,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
+import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button, SegmentedControl, ToastProvider, useSalesToast } from "@/components/sales/ui";
 import { cn } from "@/lib/ui/cn";
@@ -217,29 +218,28 @@ function AgentActivityInner({
       whatsappBadge={whatsappBadge}
     >
       <div className="flex min-w-0 flex-col gap-4 pb-8">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-sales-brand-soft text-sales-brand">
-              <Bot size={19} />
-            </span>
-            <div>
-              <h1 className="text-[18px] font-semibold text-sales-text-primary">SegmiQ Agent</h1>
-              <p className="text-[12px] text-sales-text-secondary">
-                {counts.today ?? 0} runs today · every action logged and explainable
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" leftIcon={<RefreshCw size={13} />} onClick={() => void load()}>
-              Refresh
-            </Button>
+        <CompanyDashboardHeader
+          unreadNotifications={unreadNotifications}
+          notificationRole={notificationRole}
+          userName={userName}
+          avatarUrl={avatarUrl}
+          canAddLead={false}
+          breadcrumb="Company / Agent"
+          title="SegmiQ Agent"
+          description={`${counts.today ?? 0} runs today · every action logged and explainable`}
+          primaryAction={
             <Link href="/client/settings/automation/agent">
-              <Button variant="secondary" size="sm" leftIcon={<Settings2 size={13} />}>
+              <Button variant="secondary" size="md" leftIcon={<Settings2 size={15} />}>
                 Agent settings
               </Button>
             </Link>
-          </div>
-        </header>
+          }
+          titleActions={
+            <Button variant="secondary" size="sm" leftIcon={<RefreshCw size={13} />} onClick={() => void load()}>
+              Refresh
+            </Button>
+          }
+        />
 
         {escalations.length ? (
           <section className="rounded-[12px] border border-amber-300/50 bg-amber-50/60 dark:border-amber-500/25 dark:bg-amber-500/[0.06]">

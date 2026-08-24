@@ -21,12 +21,12 @@ import type { CompanyReportOverview } from "@/lib/sales/company-reports/types";
 import type { ReportGranularity } from "@/lib/sales/company-reports/range";
 
 const KPI_META = [
-  { icon: CircleDollarSign, iconClass: "bg-sales-success-soft text-sales-success-fg", spark: "#22C55E" },
-  { icon: Trophy, iconClass: "bg-sales-warning-soft text-sales-warning-fg", spark: "#F59E0B" },
-  { icon: Inbox, iconClass: "bg-sales-purple-soft text-sales-purple-fg", spark: "#8B5CF6" },
-  { icon: Target, iconClass: "bg-sales-teal-soft text-sales-teal-fg", spark: "#14B8A6" },
-  { icon: BriefcaseBusiness, iconClass: "bg-sales-warning-soft text-sales-warning-fg", spark: "#22C55E" },
-  { icon: Clock3, iconClass: "bg-sales-info-soft text-sales-info-fg", spark: "#3B82F6" },
+  { icon: CircleDollarSign, iconClass: "bg-sales-success-soft text-sales-success-fg", spark: "#22C55E", accentClass: "bg-sales-success" },
+  { icon: Trophy, iconClass: "bg-sales-warning-soft text-sales-warning-fg", spark: "#F59E0B", accentClass: "bg-sales-warning" },
+  { icon: Inbox, iconClass: "bg-sales-purple-soft text-sales-purple-fg", spark: "#8B5CF6", accentClass: "bg-sales-purple" },
+  { icon: Target, iconClass: "bg-sales-teal-soft text-sales-teal-fg", spark: "#14B8A6", accentClass: "bg-sales-teal" },
+  { icon: BriefcaseBusiness, iconClass: "bg-sales-warning-soft text-sales-warning-fg", spark: "#22C55E", accentClass: "bg-sales-warning" },
+  { icon: Clock3, iconClass: "bg-sales-info-soft text-sales-info-fg", spark: "#3B82F6", accentClass: "bg-sales-info" },
 ] as const;
 
 export function ReportOverview({
@@ -73,6 +73,7 @@ export function ReportOverview({
               iconClass={meta.iconClass}
               sparkline={item.sparkline}
               sparkColor={meta.spark}
+              accentClass={meta.accentClass}
               tip={item.tip}
             />
           );

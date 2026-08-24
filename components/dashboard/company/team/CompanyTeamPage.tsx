@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { KpiCard } from "@/components/dashboard/sales/KpiCard";
+import { CompanyKpiCard } from "../CompanyKpiCard";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { CompanyTeamTableCard } from "./CompanyTeamTableCard";
@@ -241,7 +241,7 @@ export function CompanyTeamPage({
 
       <div className="grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-5">
         {data.kpis.map((item) => (
-          <KpiCard key={item.id} item={item} />
+          <CompanyKpiCard key={item.id} item={item} />
         ))}
       </div>
 

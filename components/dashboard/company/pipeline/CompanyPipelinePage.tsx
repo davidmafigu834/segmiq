@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
-import { KpiCard } from "@/components/dashboard/sales/KpiCard";
+import { CompanyKpiCard } from "../CompanyKpiCard";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { CompanyPipelineTableCard } from "./CompanyPipelineTableCard";
@@ -326,7 +326,7 @@ export function CompanyPipelinePage({
         data-course-target="company-pipeline-kpis"
       >
         {data.kpis.map((item) => (
-          <KpiCard key={item.id} item={item} />
+          <CompanyKpiCard key={item.id} item={item} />
         ))}
       </div>
 

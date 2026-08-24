@@ -27,7 +27,7 @@ export function BillingCurrentPlan({
   if (loadError) {
     return (
       <section
-        className="rounded-[12px] border border-sales-border bg-sales-surface p-5"
+        className="sd-card overflow-hidden p-5"
         data-course-target="billing-current-plan"
       >
         <p className="text-[15px] font-semibold text-sales-text-primary">Current Plan</p>
@@ -46,7 +46,7 @@ export function BillingCurrentPlan({
   if (!subscription) {
     return (
       <section
-        className="rounded-[12px] border border-sales-border bg-sales-surface p-5"
+        className="sd-card overflow-hidden p-5"
         data-course-target="billing-current-plan"
       >
         <p className="text-[15px] font-semibold text-sales-text-primary">Current Plan</p>
@@ -68,7 +68,7 @@ export function BillingCurrentPlan({
 
   return (
     <section
-      className="rounded-[12px] border border-sales-border bg-sales-surface px-5 py-4 sm:py-[18px]"
+      className="sd-card overflow-hidden px-5 py-4 sm:py-[18px]"
       data-course-target="billing-current-plan"
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

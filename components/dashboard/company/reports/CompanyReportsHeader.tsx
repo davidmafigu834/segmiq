@@ -3,10 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { addDays, format, startOfDay, subDays } from "date-fns";
 import { CalendarDays, Download, Filter } from "lucide-react";
-import { NotificationBell } from "@/components/NotificationBell";
-import { GlobalSearch } from "@/components/shell/GlobalSearch";
-import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
-import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
+import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { Button } from "@/components/sales/ui";
 import {
   COMPANY_REPORT_PRESETS,
@@ -45,46 +42,27 @@ export function CompanyReportsHeader({
   onExport: () => void;
 }) {
   return (
-    <div className="space-y-3">
-      <div className="hidden min-h-10 items-center justify-between gap-3 layout:flex">
-        <p className="min-w-0 truncate text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
-          REPORTS
-        </p>
-        <div className="ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-2">
-          <div className="sd-search-wrap min-w-0 shrink">
-            <GlobalSearch role={notificationRole} />
-          </div>
-          <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
-          <SalesThemeToggle />
-          <SalesProfileMenu
-            userName={userName}
-            userRoleLabel="Company Manager"
-            avatarUrl={avatarUrl}
-            profileHref="/client/settings/profile"
-            helpHref="/client/settings/profile"
-            helpLabel="Help & Support"
-          />
-        </div>
-      </div>
-
-      <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[26px] layout:text-[28px]">
-            Reports
-          </h1>
-          <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary sm:text-[14px]">
-            Track performance, measure results and make data-driven decisions.
-          </p>
-        </div>
-        <div className="flex min-w-0 flex-wrap items-center gap-2 layout:justify-end">
+    <CompanyDashboardHeader
+      unreadNotifications={unreadNotifications}
+      notificationRole={notificationRole}
+      userName={userName}
+      avatarUrl={avatarUrl}
+      canAddLead={false}
+      breadcrumb="Company / Reports"
+      title="Reports"
+      description="Track performance, measure results and make data-driven decisions."
+      primaryAction={
+        <Button variant="primary" size="md" leftIcon={<Download size={15} />} onClick={onExport}>
+          Export
+        </Button>
+      }
+      titleActions={
+        <>
           <DateRangeControl from={from} to={to} preset={preset} onRange={onRange} />
           <FiltersControl ownerId={ownerId} owners={owners} onOwner={onOwner} />
-          <Button variant="primary" size="sm" leftIcon={<Download size={14} />} onClick={onExport}>
-            Export
-          </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 }
 

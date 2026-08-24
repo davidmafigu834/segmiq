@@ -53,6 +53,7 @@ export function CompanyDashboardHeader({
   title,
   description = "Company health, team performance, and where to intervene.",
   primaryAction,
+  titleActions,
 }: {
   unreadNotifications: number;
   notificationRole: UserRole;
@@ -62,8 +63,10 @@ export function CompanyDashboardHeader({
   breadcrumb?: string;
   title?: string;
   description?: string;
-  /** Replaces the default Quick actions control (e.g. Pipeline Create Deal). */
+  /** Replaces the default Quick actions control. Pass `null` to hide it. */
   primaryAction?: ReactNode;
+  /** Filters, dates, or help links shown beside the page title. */
+  titleActions?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
@@ -86,7 +89,9 @@ export function CompanyDashboardHeader({
               <SalesThemeToggle />
             </div>
 
-            {primaryAction ?? (
+            {primaryAction !== undefined ? (
+              primaryAction
+            ) : (
               <div className="relative">
                 <Button
                   variant="primary"
@@ -158,14 +163,23 @@ export function CompanyDashboardHeader({
         </div>
 
         <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pt-4">
-          <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[24px] layout:text-[26px]">
-            {greeting}
-          </h1>
-          {description ? (
-            <p className="mt-1 max-w-[42rem] text-[13px] leading-snug text-sales-text-secondary sm:mt-1.5 sm:text-[14px]">
-              {description}
-            </p>
-          ) : null}
+          <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[24px] layout:text-[26px]">
+                {greeting}
+              </h1>
+              {description ? (
+                <p className="mt-1 max-w-[42rem] text-[13px] leading-snug text-sales-text-secondary sm:mt-1.5 sm:text-[14px]">
+                  {description}
+                </p>
+              ) : null}
+            </div>
+            {titleActions ? (
+              <div className="flex shrink-0 flex-wrap items-center gap-2 layout:justify-end">
+                {titleActions}
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
       {hubSheet}

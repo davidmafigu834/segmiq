@@ -48,7 +48,7 @@ export function DataTableHead({
   return (
     <thead
       className={cn(
-        "border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted",
+        "border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted",
         className
       )}
       {...props}

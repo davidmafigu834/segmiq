@@ -133,19 +133,22 @@ export function CompanyWhatsAppHeader({
       </div>
 
       <div className="hidden shrink-0 flex-col items-end gap-1 layout:flex">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <div className="sd-search-wrap hidden w-[min(24vw,320px)] min-w-[220px] min-[1280px]:block">
             <GlobalSearch role={notificationRole!} placeholder="Search conversations…" />
           </div>
-          <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole!} />
-          <SalesThemeToggle />
+          <div className="flex items-center gap-1">
+            <NotificationBell initialUnread={unreadNotifications ?? 0} role={notificationRole!} />
+            <SalesThemeToggle />
+          </div>
           <SalesProfileMenu
             userName={userName ?? "Manager"}
             userRoleLabel="Company Manager"
             avatarUrl={avatarUrl}
-            profileHref="/client/settings/profile"
-            helpHref="/client/settings/profile"
+            profileHref="/client/account"
+            helpHref="/client/account"
             helpLabel="Help & Support"
+            compact
           />
         </div>
         <ConnectionStatus connection={connection} />

@@ -18,7 +18,7 @@ import {
 import { SiWhatsapp } from "react-icons/si";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
-import { KpiCard } from "@/components/dashboard/sales/KpiCard";
+import { CompanyKpiCard } from "../CompanyKpiCard";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
   Avatar,
@@ -233,7 +233,7 @@ export function CompanyCustomerProfilePage({
         </div>
       </section>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{kpis.map((item) => <KpiCard key={item.id} item={item} />)}</div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">{kpis.map((item) => <CompanyKpiCard key={item.id} item={item} />)}</div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.8fr)]">
         <div className="space-y-4">

@@ -58,7 +58,7 @@ export function BillingInvoiceTable({
   return (
     <section
       id="billing-invoices"
-      className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface"
+      className="sd-card overflow-hidden"
       data-course-target="billing-invoices"
     >
       <header className="flex items-center gap-2 px-5 py-4">
@@ -98,7 +98,7 @@ export function BillingInvoiceTable({
                   <DataTableTh>Date</DataTableTh>
                   <DataTableTh>Status</DataTableTh>
                   <DataTableTh>Plan</DataTableTh>
-                  <DataTableTh>Amount</DataTableTh>
+                  <DataTableTh className="text-right">Amount</DataTableTh>
                   <DataTableTh>Payment Method</DataTableTh>
                   <DataTableTh className="w-12 text-right">Download</DataTableTh>
                 </tr>
@@ -118,7 +118,7 @@ export function BillingInvoiceTable({
                       </Badge>
                     </DataTableTd>
                     <DataTableTd className="text-sales-text-secondary">{invoice.planLabel} Plan</DataTableTd>
-                    <DataTableTd className="tabular-nums">
+                    <DataTableTd className="text-right tabular-nums">
                       {formatBillingMoney(invoice.amount, invoice.currency)}
                     </DataTableTd>
                     <DataTableTd className="text-sales-text-secondary">

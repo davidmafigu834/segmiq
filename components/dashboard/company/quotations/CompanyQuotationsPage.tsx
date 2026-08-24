@@ -490,7 +490,7 @@ export function CompanyQuotationsPage({
           ? kpis.map((item) => (
               <article
                 key={item.label}
-                className="sd-card flex h-full min-h-[76px] min-w-0 flex-col justify-between p-3 sm:min-h-[84px] sm:p-3.5"
+                className="sd-card flex h-full min-h-[118px] min-w-0 flex-col justify-between p-3.5 sm:min-h-[128px] sm:p-4"
               >
                 <Skeleton className="h-3 w-20" />
                 <Skeleton className="h-6 w-12" />

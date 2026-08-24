@@ -390,8 +390,8 @@ export function CompanyCustomersTableCard({
                   <DataTableTh>Location</DataTableTh>
                   <DataTableTh>Owner</DataTableTh>
                   <DataTableTh>Last Interaction</DataTableTh>
-                  <DataTableTh className="text-center">Active Deals</DataTableTh>
-                  <DataTableTh>Customer Value</DataTableTh>
+                  <DataTableTh className="text-right">Active Deals</DataTableTh>
+                  <DataTableTh className="text-right">Customer Value</DataTableTh>
                   <DataTableTh className="w-12">Actions</DataTableTh>
                 </tr>
               </DataTableHead>
@@ -413,8 +413,8 @@ export function CompanyCustomersTableCard({
                     <DataTableTd className="max-w-[150px] truncate text-[12px]">{row.location ?? "Not recorded"}</DataTableTd>
                     <DataTableTd>{row.ownerId ? <div className="flex items-center gap-1.5"><Avatar name={row.ownerName ?? "Owner"} src={row.ownerAvatarUrl} size="xs" /><span className="max-w-[90px] truncate text-[12px]">{row.ownerName}</span></div> : <span className="text-[12px] text-sales-text-muted">Unassigned</span>}</DataTableTd>
                     <DataTableTd className="min-w-[130px]"><p className="text-[12px]">{row.lastInteractionLabel}</p>{row.lastInteractionChannel ? <p className="mt-0.5 text-[11px] text-sales-text-muted">{row.lastInteractionChannel}</p> : null}</DataTableTd>
-                    <DataTableTd className="text-center tabular-nums">{row.activeDeals}</DataTableTd>
-                    <DataTableTd className="max-w-[145px] truncate text-[12px] font-medium tabular-nums" title={row.customerValueLabel}>{row.customerValueLabel}</DataTableTd>
+                    <DataTableTd className="text-right tabular-nums">{row.activeDeals}</DataTableTd>
+                    <DataTableTd className="max-w-[145px] truncate text-right text-[12px] font-medium tabular-nums" title={row.customerValueLabel}>{row.customerValueLabel}</DataTableTd>
                     <DataTableTd onClick={(event) => event.stopPropagation()}><RowMenu row={row} onView={() => onSelect(row.id)} onCall={() => onCall(row)} onWhatsApp={() => onWhatsApp(row)} onViewDeals={() => onViewDeals(row)} /></DataTableTd>
                   </DataTableRow>
                 ))}

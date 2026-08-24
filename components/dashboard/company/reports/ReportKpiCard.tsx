@@ -28,6 +28,7 @@ export function ReportKpiCard({
   sparkline,
   sparkColor,
   tip,
+  accentClass = "bg-sales-brand",
 }: {
   label: string;
   value: string;
@@ -37,32 +38,34 @@ export function ReportKpiCard({
   sparkline: number[];
   sparkColor: string;
   tip?: string;
+  accentClass?: string;
 }) {
   const shortTrend = trend.label.split(" vs")[0] ?? trend.label;
   const hover = [trend.label, tip].filter(Boolean).join(" · ");
 
   return (
-    <article className="flex h-full min-h-[135px] min-w-0 flex-col overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface p-3.5 shadow-sales-card sm:min-h-[142px] sm:p-4">
-      <div className="flex min-w-0 items-center gap-2.5">
+    <article className="sd-card relative flex h-full min-h-[128px] min-w-0 flex-col overflow-hidden p-3.5 sm:min-h-[136px] sm:p-4">
+      <span className={cn("absolute inset-x-0 top-0 h-[2px]", accentClass)} aria-hidden />
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          {label}
+        </p>
         <span
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:h-9 sm:w-9",
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-sales-sm",
             iconClass
           )}
         >
-          <Icon size={15} strokeWidth={1.8} aria-hidden />
+          <Icon size={14} strokeWidth={1.8} aria-hidden />
         </span>
-        <p className="min-w-0 flex-1 truncate text-[12px] font-medium leading-snug text-sales-text-secondary">
-          {label}
-        </p>
       </div>
       <p
-        className="mt-2.5 truncate text-[22px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-sales-text-primary sm:text-[24px]"
+        className="mt-3 truncate text-[24px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-sales-text-primary sm:text-[26px]"
         title={value}
       >
         {value}
       </p>
-      <div className="mt-auto flex min-w-0 items-end justify-between gap-2 pt-2">
+      <div className="mt-auto flex min-w-0 items-end justify-between gap-2 pt-3">
         <TrendChip trend={trend} shortLabel={shortTrend} hover={hover} />
         <div className="w-[56px] shrink-0 sm:w-[72px]">
           <ReportSparkline data={sparkline} color={sparkColor} />
@@ -81,22 +84,29 @@ function TrendChip({
   shortLabel: string;
   hover: string;
 }) {
-  const tone =
-    trend.direction === "up"
-      ? "text-sales-success"
-      : trend.direction === "down"
-        ? "text-sales-danger"
-        : "text-sales-text-muted";
+  if (trend.direction === "up" || trend.direction === "down") {
+    const up = trend.direction === "up";
+    const Icon = up ? ArrowUpRight : ArrowDownRight;
+    return (
+      <span
+        className={cn(
+          "inline-flex max-w-full items-center gap-0.5 truncate rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+          up ? "bg-sales-success-soft text-sales-success-fg" : "bg-sales-danger-soft text-sales-danger-fg"
+        )}
+        title={hover}
+      >
+        <Icon size={12} strokeWidth={2} className="shrink-0" aria-hidden />
+        <span className="truncate">{shortLabel}</span>
+      </span>
+    );
+  }
+
   return (
-    <p
-      className={cn("flex min-w-0 flex-1 items-center gap-0.5 text-[11px] font-medium sm:text-[12px]", tone)}
+    <span
+      className="inline-flex max-w-full truncate rounded-full bg-sales-neutral-100 px-1.5 py-0.5 text-[11px] font-medium text-sales-text-muted"
       title={hover}
     >
-      {trend.direction === "up" ? <ArrowUpRight size={13} strokeWidth={1.8} className="shrink-0" aria-hidden /> : null}
-      {trend.direction === "down" ? (
-        <ArrowDownRight size={13} strokeWidth={1.8} className="shrink-0" aria-hidden />
-      ) : null}
-      <span className="min-w-0 truncate tabular-nums">{shortLabel}</span>
-    </p>
+      {shortLabel}
+    </span>
   );
 }

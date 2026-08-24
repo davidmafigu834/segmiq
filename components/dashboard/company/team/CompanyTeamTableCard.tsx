@@ -395,10 +395,10 @@ export function CompanyTeamTableCard({
                 <tr>
                   <DataTableTh className="w-[24%] px-5">Team member</DataTableTh>
                   <DataTableTh className="w-[12%]">Role</DataTableTh>
-                  <DataTableTh className="w-[9%] hidden lg:table-cell">Active Deals</DataTableTh>
-                  <DataTableTh className="w-[12%]">Pipeline Value</DataTableTh>
-                  <DataTableTh className="w-[9%] hidden xl:table-cell">Deals Won</DataTableTh>
-                  <DataTableTh className="w-[10%] hidden xl:table-cell">Follow-ups Due</DataTableTh>
+                  <DataTableTh className="hidden w-[9%] text-right lg:table-cell">Active Deals</DataTableTh>
+                  <DataTableTh className="w-[12%] text-right">Pipeline Value</DataTableTh>
+                  <DataTableTh className="hidden w-[9%] text-right xl:table-cell">Deals Won</DataTableTh>
+                  <DataTableTh className="hidden w-[10%] text-right xl:table-cell">Follow-ups Due</DataTableTh>
                   <DataTableTh className="w-[15%]">Goal Progress</DataTableTh>
                   <DataTableTh className="w-[9%]">Attention</DataTableTh>
                   <DataTableTh className="w-10 px-2">
@@ -431,14 +431,14 @@ export function CompanyTeamTableCard({
                     <DataTableTd className="text-[13px] text-sales-text-secondary">
                       {row.roleColumn}
                     </DataTableTd>
-                    <DataTableTd className="hidden tabular-nums lg:table-cell">
+                    <DataTableTd className="hidden text-right tabular-nums lg:table-cell">
                       {row.activeDeals}
                     </DataTableTd>
-                    <DataTableTd className="tabular-nums">{row.pipelineValueLabel}</DataTableTd>
-                    <DataTableTd className="hidden tabular-nums xl:table-cell">
+                    <DataTableTd className="text-right tabular-nums">{row.pipelineValueLabel}</DataTableTd>
+                    <DataTableTd className="hidden text-right tabular-nums xl:table-cell">
                       {row.dealsWon}
                     </DataTableTd>
-                    <DataTableTd className="hidden xl:table-cell">
+                    <DataTableTd className="hidden text-right xl:table-cell">
                       <span
                         className={cn(
                           "tabular-nums",

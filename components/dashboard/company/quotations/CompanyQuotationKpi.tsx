@@ -11,6 +11,16 @@ const tones = {
   brand: "bg-sales-brand-soft-solid text-sales-brand-fg",
 } as const;
 
+const accents = {
+  blue: "bg-sales-info",
+  neutral: "bg-sales-text-muted",
+  purple: "bg-sales-purple",
+  success: "bg-sales-success",
+  danger: "bg-sales-danger",
+  warning: "bg-sales-warning",
+  brand: "bg-sales-brand",
+} as const;
+
 export function CompanyQuotationKpi({
   label,
   value,
@@ -27,33 +37,32 @@ export function CompanyQuotationKpi({
   onClick?: () => void;
 }) {
   const className = cn(
-    "sd-card group flex h-full w-full min-h-[76px] min-w-0 flex-col justify-between p-3 text-left",
-    "transition-[border-color,box-shadow] duration-150 sm:min-h-[84px] sm:p-3.5",
+    "sd-card group relative flex h-full w-full min-h-[118px] min-w-0 flex-col overflow-hidden p-3.5 text-left",
+    "transition-[border-color,box-shadow] duration-150 sm:min-h-[128px] sm:p-4",
     onClick &&
       "hover:border-sales-border-strong hover:shadow-sales-card-hover focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]"
   );
 
   const body = (
     <>
+      <span className={cn("absolute inset-x-0 top-0 h-[2px]", accents[tone])} aria-hidden />
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 pr-1 text-[11px] font-medium leading-snug text-sales-text-secondary">
+        <p className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
           {label}
         </p>
         <span
           className={cn(
-            "flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px]",
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-sales-sm",
             tones[tone]
           )}
         >
-          <Icon size={13} strokeWidth={1.8} aria-hidden />
+          <Icon size={14} strokeWidth={1.8} aria-hidden />
         </span>
       </div>
-      <div className="min-w-0">
-        <p className="truncate text-[18px] font-semibold tabular-nums leading-none text-sales-text-primary sm:text-[20px]">
-          {value}
-        </p>
-        <p className="mt-1.5 truncate text-[11px] leading-snug text-sales-text-muted">{supporting}</p>
-      </div>
+      <p className="mt-3 truncate text-[24px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-sales-text-primary sm:text-[26px]">
+        {value}
+      </p>
+      <p className="mt-auto truncate pt-3 text-[11px] leading-4 text-sales-text-muted">{supporting}</p>
     </>
   );
 

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
-import { KpiCard } from "@/components/dashboard/sales/KpiCard";
+import { CompanyKpiCard } from "../CompanyKpiCard";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { CompanyCustomersTableCard } from "./CompanyCustomersTableCard";
@@ -145,7 +145,7 @@ export function CompanyCustomersPage({ data, unreadNotifications, notificationRo
 
   return <CompanyWorkspaceShell companyName={data.clientName} companyLogoUrl={companyLogoUrl} userName={userName} avatarUrl={avatarUrl} unreadNotifications={unreadNotifications} notificationRole={notificationRole} whatsappBadge={whatsappBadge}>
     <CompanyDashboardHeader unreadNotifications={unreadNotifications} notificationRole={notificationRole} userName={userName} avatarUrl={avatarUrl} canAddLead={false} breadcrumb="Company / Customers" title="Customers" description="Manage your customers and track all interactions in one place." primaryAction={<Button variant="primary" size="md" leftIcon={<Plus size={16} />} onClick={openAddHubSheet}>Add Customer</Button>} />
-    <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5" data-course-target="company-customers-kpis">{data.kpis.map((item) => { const href = notificationRole === "SUPER_ADMIN" && item.href ? `${item.href}${item.href.includes("?") ? "&" : "?"}clientId=${encodeURIComponent(data.clientId)}` : item.href; return <KpiCard key={item.id} item={href === item.href ? item : { ...item, href }} />; })}</div>
+    <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5" data-course-target="company-customers-kpis">{data.kpis.map((item) => { const href = notificationRole === "SUPER_ADMIN" && item.href ? `${item.href}${item.href.includes("?") ? "&" : "?"}clientId=${encodeURIComponent(data.clientId)}` : item.href; return <CompanyKpiCard key={item.id} item={href === item.href ? item : { ...item, href }} />; })}</div>
     {selectedId && !overlayPanel ? <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(370px,30%)]">{table}<div className="min-h-0 xl:sticky xl:top-0">{panel}</div></div> : table}
     {selectedId && overlayPanel ? panel : null}
     {hubSheet}

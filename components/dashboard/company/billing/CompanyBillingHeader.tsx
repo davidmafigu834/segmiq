@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
-import { NotificationBell } from "@/components/NotificationBell";
-import { GlobalSearch } from "@/components/shell/GlobalSearch";
-import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
-import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
+import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import type { UserRole } from "@/types";
 
 export function CompanyBillingHeader({
@@ -20,37 +17,17 @@ export function CompanyBillingHeader({
   avatarUrl?: string | null;
 }) {
   return (
-    <div className="space-y-3">
-      <div className="hidden min-h-10 items-center justify-between gap-3 layout:flex">
-        <p className="min-w-0 truncate text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
-          BILLING
-        </p>
-        <div className="ml-auto flex shrink-0 flex-nowrap items-center justify-end gap-2">
-          <div className="sd-search-wrap min-w-0 shrink">
-            <GlobalSearch role={notificationRole} />
-          </div>
-          <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
-          <SalesThemeToggle />
-          <SalesProfileMenu
-            userName={userName}
-            userRoleLabel="Company Manager"
-            avatarUrl={avatarUrl}
-            profileHref="/client/settings/profile"
-            helpHref="/client/settings/profile"
-            helpLabel="Help & Support"
-          />
-        </div>
-      </div>
-
-      <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[26px] layout:text-[28px]">
-            Billing
-          </h1>
-          <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary sm:text-[14px]">
-            Manage your subscription, payment methods and billing history.
-          </p>
-        </div>
+    <CompanyDashboardHeader
+      unreadNotifications={unreadNotifications}
+      notificationRole={notificationRole}
+      userName={userName}
+      avatarUrl={avatarUrl}
+      canAddLead={false}
+      breadcrumb="Company / Billing"
+      title="Billing"
+      description="Manage your subscription, payment methods and billing history."
+      primaryAction={null}
+      titleActions={
         <Link
           href="/client/settings/company"
           className="inline-flex h-9 shrink-0 items-center gap-1.5 text-[13px] font-medium text-sales-text-secondary hover:text-sales-text-primary"
@@ -61,7 +38,7 @@ export function CompanyBillingHeader({
             <ExternalLink size={13} strokeWidth={1.8} aria-hidden />
           </span>
         </Link>
-      </div>
-    </div>
+      }
+    />
   );
 }

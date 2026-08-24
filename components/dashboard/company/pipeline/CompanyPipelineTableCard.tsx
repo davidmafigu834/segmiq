@@ -670,7 +670,7 @@ export function CompanyPipelineTableCard({
                   <DataTableTh className="w-[22%] px-5">Deal</DataTableTh>
                   <DataTableTh className="w-[16%]">Customer</DataTableTh>
                   <DataTableTh className="w-[12%]">{closed ? "Outcome" : "Stage"}</DataTableTh>
-                  <DataTableTh className="w-[12%]">{tab === "WON" ? "Final Value" : "Deal Value"}</DataTableTh>
+                  <DataTableTh className="w-[12%] text-right">{tab === "WON" ? "Final Value" : "Deal Value"}</DataTableTh>
                   <DataTableTh className="hidden w-[12%] lg:table-cell">
                     {closed ? "Closed Date" : "Expected Decision"}
                   </DataTableTh>
@@ -888,7 +888,7 @@ function GroupRows({
           <DataTableTd>
             <StageBadge stage={row.stage} />
           </DataTableTd>
-          <DataTableTd className="tabular-nums text-[13px] font-medium">
+          <DataTableTd className="text-right text-[13px] font-medium tabular-nums">
             {tab === "WON" && row.wonValue != null
               ? row.valueLabel
               : row.valueLabel}

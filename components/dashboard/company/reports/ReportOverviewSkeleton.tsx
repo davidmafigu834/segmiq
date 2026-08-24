@@ -10,7 +10,7 @@ export function ReportOverviewSkeleton() {
         {Array.from({ length: 6 }).map((_, i) => (
           <article
             key={i}
-            className="flex h-full min-h-[135px] min-w-0 flex-col overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface p-3.5 sm:min-h-[142px] sm:p-4"
+            className="sd-card relative flex h-full min-h-[128px] min-w-0 flex-col overflow-hidden p-3.5 sm:min-h-[136px] sm:p-4"
           >
             <div className="flex items-center gap-2.5">
               <Skeleton className="h-8 w-8 shrink-0 rounded-full sm:h-9 sm:w-9" />

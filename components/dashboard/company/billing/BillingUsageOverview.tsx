@@ -19,7 +19,7 @@ export function BillingUsageOverview({
   if (loadError) {
     return (
       <section
-        className="rounded-[12px] border border-sales-border bg-sales-surface p-5"
+        className="sd-card overflow-hidden p-5"
         data-course-target="billing-usage"
       >
         <h2 className="text-[15px] font-semibold text-sales-text-primary">Usage Overview</h2>
@@ -39,7 +39,7 @@ export function BillingUsageOverview({
 
   return (
     <section
-      className="rounded-[12px] border border-sales-border bg-sales-surface p-5"
+      className="sd-card overflow-hidden p-5"
       data-course-target="billing-usage"
     >
       <div className="flex items-start justify-between gap-3">

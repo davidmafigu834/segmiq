@@ -27,7 +27,7 @@ export function ReportChartCard({
   return (
     <section
       className={cn(
-        "flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface shadow-sales-card",
+        "flex h-full min-h-0 min-w-0 flex-col overflow-hidden sd-card shadow-none",
         className
       )}
     >

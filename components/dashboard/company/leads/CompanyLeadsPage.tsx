@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
-import { KpiCard } from "@/components/dashboard/sales/KpiCard";
+import { CompanyKpiCard } from "../CompanyKpiCard";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { CompanyLeadsTableCard } from "./CompanyLeadsTableCard";
@@ -450,7 +450,7 @@ export function CompanyLeadsPage({
             notificationRole === "SUPER_ADMIN" && item.href
               ? `${item.href}${item.href.includes("?") ? "&" : "?"}clientId=${encodeURIComponent(data.clientId)}`
               : item.href;
-          return <KpiCard key={item.id} item={href === item.href ? item : { ...item, href }} />;
+          return <CompanyKpiCard key={item.id} item={href === item.href ? item : { ...item, href }} />;
         })}
       </div>
 
