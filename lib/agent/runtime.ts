@@ -24,6 +24,7 @@ import { runAgentTool, type ExecutedToolCall } from "./tools/execute";
 import { ASSIST_SAFE_TOOLS, TOOL_METADATA, buildToolDefinitions, type AgentToolName } from "./tools/registry";
 import type { ToolExecutionContext } from "./tools/context";
 import type { AgentCompanySettings, InboundConversationEvent } from "./types";
+import { asRow } from "./rows";
 
 /**
  * AgentRuntime — receives conversation events, decides whether the agent
@@ -218,7 +219,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
   const startedAt = Date.now();
 
   // Execution record first — the unique trigger index is the replay guard.
-  const { data: execution, error: executionError } = await supabase
+  const { data: executionData, error: executionError } = await supabase
     .from("agent_executions")
     .insert({
       client_id: opts.clientId,
@@ -231,6 +232,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     })
     .select("id")
     .single();
+  const execution = asRow<{ id: string }>(executionData);
   if (executionError || !execution) {
     if (executionError?.code === "23505") {
       log("skip.duplicate_trigger", { leadId: opts.leadId, trigger: opts.triggerMessageId });
@@ -239,7 +241,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     }
     return emptyResult(null, "SKIPPED");
   }
-  const executionId = execution.id as string;
+  const executionId = execution.id;
 
   const locked = await acquireConversationLock({
     clientId: opts.clientId,

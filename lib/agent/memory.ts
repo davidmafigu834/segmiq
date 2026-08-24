@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentCustomerMemory, AgentMemoryEntry } from "./types";
+import { asRow } from "./rows";
 
 /**
  * Structured customer memory, keyed by contact.
@@ -109,7 +110,7 @@ export async function loadCustomerMemory(
     .eq("client_id", clientId)
     .eq("contact_id", contactId)
     .maybeSingle();
-  return ((data?.memory as AgentCustomerMemory | null) ?? {}) as AgentCustomerMemory;
+  return asRow<{ memory: AgentCustomerMemory | null }>(data)?.memory ?? {};
 }
 
 export async function saveCustomerMemoryUpdates(opts: {

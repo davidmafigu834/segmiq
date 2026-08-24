@@ -101,9 +101,7 @@ export async function assembleAgentContext(opts: {
     supabase
       .from("leads")
       .select(
-        "id, client_id, name, phone, status, source, contact_id, assigned_to_id, active_deal_id, " +
-          "budget, project_type, timeline, location, customer_need, buying_timeframe, follow_up_date, " +
-          "whatsapp_conversation_type, whatsapp_conversation_status, whatsapp_queue, created_at, form_data"
+        "id, client_id, name, phone, status, source, contact_id, assigned_to_id, active_deal_id, budget, project_type, timeline, location, customer_need, buying_timeframe, follow_up_date, whatsapp_conversation_type, whatsapp_conversation_status, whatsapp_queue, created_at, form_data"
       )
       .eq("id", opts.leadId)
       .eq("client_id", opts.clientId)

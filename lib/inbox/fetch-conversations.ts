@@ -20,6 +20,7 @@ import {
   parseSupportCaseStatus,
   parseSupportReasonCategory,
 } from "./conversation-type";
+import { asRows } from "@/lib/agent/rows";
 
 type LeadRow = {
   id: string;
@@ -422,10 +423,15 @@ async function buildConversations(
     .eq("client_id", clientId)
     .in("lead_id", leadIds);
   if (!agentStateError) {
-    for (const row of agentStateRows ?? []) {
-      agentStateByLead.set(row.lead_id as string, {
-        status: (row.status as InboxConversation["agentStatus"]) ?? "IDLE",
-        reason: (row.human_needed_reason as string | null) ?? null,
+    for (const row of asRows<{
+      lead_id: string;
+      status: InboxConversation["agentStatus"] | null;
+      human_needed_reason: string | null;
+      human_takeover: boolean | null;
+    }>(agentStateRows)) {
+      agentStateByLead.set(row.lead_id, {
+        status: row.status ?? "IDLE",
+        reason: row.human_needed_reason ?? null,
         humanTakeover: row.human_takeover === true,
       });
     }

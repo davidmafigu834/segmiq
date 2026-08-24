@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
+import { asRows } from "@/lib/agent/rows";
 
 export const dynamic = "force-dynamic";
 
@@ -38,15 +39,34 @@ export async function GET(req: Request) {
   let query = supabase
     .from("agent_executions")
     .select(
-      "id, lead_id, state, intents, confidence, decision_summary, customer_reply, reply_status, " +
-        "autonomy_mode, model, tool_call_count, latency_ms, error_code, test_mode, created_at, completed_at"
+      "id, lead_id, state, intents, confidence, decision_summary, customer_reply, reply_status, autonomy_mode, model, tool_call_count, latency_ms, error_code, test_mode, created_at, completed_at"
     )
     .eq("client_id", clientId)
     .in("state", states)
     .order("created_at", { ascending: false })
     .limit(limit);
   if (leadId) query = query.eq("lead_id", leadId);
-  const { data: executions } = await query;
+  const { data: executionsData } = await query;
+
+  type ExecutionRow = {
+    id: string;
+    lead_id: string;
+    state: string;
+    intents: string[] | null;
+    confidence: number | null;
+    decision_summary: string | null;
+    customer_reply: string | null;
+    reply_status: string | null;
+    autonomy_mode: string | null;
+    model: string | null;
+    tool_call_count: number | null;
+    latency_ms: number | null;
+    error_code: string | null;
+    test_mode: boolean | null;
+    created_at: string;
+    completed_at: string | null;
+  };
+  const executions = asRows<ExecutionRow>(executionsData);
 
   // Tab counters + lead labels for the rows.
   const dayStart = new Date();
@@ -68,13 +88,15 @@ export async function GET(req: Request) {
     .eq("client_id", clientId)
     .gte("created_at", dayStart.toISOString());
 
-  const leadIds = Array.from(new Set((executions ?? []).map((e) => e.lead_id as string)));
-  const { data: leads } = leadIds.length
+  const leadIds = Array.from(new Set(executions.map((e) => e.lead_id)));
+  const { data: leadsData } = leadIds.length
     ? await supabase.from("leads").select("id, name, phone").in("id", leadIds)
     : { data: [] as Array<Record<string, unknown>> };
-  const leadById = new Map((leads ?? []).map((l) => [l.id as string, l]));
+  const leadById = new Map(
+    asRows<{ id: string; name: string | null; phone: string | null }>(leadsData).map((l) => [l.id, l])
+  );
 
-  const { data: openEscalations } = await supabase
+  const { data: openEscalationsData } = await supabase
     .from("agent_escalations")
     .select("id, lead_id, execution_id, reason, severity, summary, status, created_at")
     .eq("client_id", clientId)
@@ -83,14 +105,14 @@ export async function GET(req: Request) {
     .limit(50);
 
   return NextResponse.json({
-    executions: (executions ?? []).map((e) => {
-      const lead = leadById.get(e.lead_id as string);
+    executions: executions.map((e) => {
+      const lead = leadById.get(e.lead_id);
       return {
         ...e,
-        customer_name: (lead?.name as string | null) ?? (lead?.phone as string | null) ?? "Unknown",
+        customer_name: lead?.name ?? lead?.phone ?? "Unknown",
       };
     }),
     counts: { ...counts, today: todayCount ?? 0 },
-    openEscalations: openEscalations ?? [],
+    openEscalations: asRows(openEscalationsData),
   });
 }

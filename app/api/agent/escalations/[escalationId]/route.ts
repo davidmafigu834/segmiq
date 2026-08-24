@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
 import { updateConversationAgentState } from "@/lib/agent/conversation-state";
+import { asRow } from "@/lib/agent/rows";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +18,17 @@ export async function PATCH(req: Request, { params }: { params: { escalationId: 
   if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createAdminClient();
-  const { data: escalation } = await supabase
+  const { data: escalationData } = await supabase
     .from("agent_escalations")
     .select("id, client_id, lead_id, status")
     .eq("id", params.escalationId)
     .maybeSingle();
+  const escalation = asRow<{ id: string; client_id: string; lead_id: string; status: string }>(
+    escalationData
+  );
   if (!escalation) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const clientId = escalation.client_id as string;
+  const clientId = escalation.client_id;
   if (auth.role !== "SUPER_ADMIN" && auth.clientId !== clientId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -42,7 +46,7 @@ export async function PATCH(req: Request, { params }: { params: { escalationId: 
   await supabase.from("agent_escalations").update(update).eq("id", params.escalationId);
 
   if (parsed.data.status === "RESOLVED") {
-    await updateConversationAgentState(clientId, escalation.lead_id as string, {
+    await updateConversationAgentState(clientId, escalation.lead_id, {
       status: parsed.data.resumeAgent ? "IDLE" : "HUMAN_HANDLING",
       humanNeededReason: null,
       ...(parsed.data.resumeAgent ? { humanTakeover: false } : {}),

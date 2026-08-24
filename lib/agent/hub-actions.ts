@@ -5,6 +5,7 @@ import { getAgentCompanySettings } from "./settings";
 import { runAgentTool } from "./tools/execute";
 import { TOOL_DISPLAY_NAMES, TOOL_METADATA, type AgentToolName, isRegisteredTool } from "./tools/registry";
 import type { ToolExecutionContext } from "./tools/context";
+import { asRow, asRows } from "./rows";
 
 const SUGGESTABLE_TOOLS = new Set<AgentToolName>([
   "deal_create",
@@ -35,7 +36,7 @@ async function latestDraftedExecution(leadId: string, clientId: string) {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  return data;
+  return asRow<{ id: string; customer_reply: string | null; reply_status: string | null }>(data);
 }
 
 export async function sendAgentDraft(opts: {
@@ -44,7 +45,7 @@ export async function sendAgentDraft(opts: {
   reply?: string;
 }): Promise<{ ok: true; reply: string } | { ok: false; error: string }> {
   const execution = await latestDraftedExecution(opts.leadId, opts.clientId);
-  const reply = (opts.reply ?? (execution?.customer_reply as string | null) ?? "").trim();
+  const reply = (opts.reply ?? execution?.customer_reply ?? "").trim();
   if (!reply) return { ok: false, error: "No drafted reply to send" };
 
   const sendResult = await sendCanonicalWhatsAppText({
@@ -128,7 +129,7 @@ export async function applySuggestedAgentActions(opts: {
   leadId: string;
 }): Promise<{ applied: string[]; failed: string[] }> {
   const supabase = createAdminClient();
-  const { data: execution } = await supabase
+  const { data: executionData } = await supabase
     .from("agent_executions")
     .select("id")
     .eq("lead_id", opts.leadId)
@@ -136,21 +137,28 @@ export async function applySuggestedAgentActions(opts: {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  const execution = asRow<{ id: string }>(executionData);
   if (!execution?.id) return { applied: [], failed: [] };
 
-  const { data: actions } = await supabase
+  const { data: actionsData } = await supabase
     .from("agent_execution_actions")
     .select("id, tool_name, input_summary, status")
     .eq("execution_id", execution.id)
     .eq("status", "BLOCKED");
+  const actions = asRows<{
+    id: string;
+    tool_name: string;
+    input_summary: Record<string, unknown> | null;
+    status: string;
+  }>(actionsData);
 
   const ctx = await buildToolContext(opts);
   if ("error" in ctx) return { applied: [], failed: [ctx.error] };
 
   const applied: string[] = [];
   const failed: string[] = [];
-  for (const action of actions ?? []) {
-    const toolName = action.tool_name as string;
+  for (const action of actions) {
+    const toolName = action.tool_name;
     if (!isRegisteredTool(toolName) || !SUGGESTABLE_TOOLS.has(toolName)) continue;
     const executed = await runAgentTool(ctx, toolName, action.input_summary ?? {}, {
       humanApproved: true,

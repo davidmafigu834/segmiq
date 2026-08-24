@@ -3,6 +3,7 @@ import { logLeadEvent } from "@/lib/lead-events";
 import { notifyAgentAlert, notifyOwnerOrManagers } from "./notifications";
 import { escalationSeverity } from "./policy";
 import type { AgentEscalationReason } from "./types";
+import { asRow } from "./rows";
 
 const REASON_LABELS: Record<AgentEscalationReason, string> = {
   LOW_CONFIDENCE: "Agent was not confident how to proceed",
@@ -96,5 +97,5 @@ export async function createAgentEscalation(input: CreateEscalationInput): Promi
     });
   }
 
-  return escalation?.id as string | null;
+  return asRow<{ id: string }>(escalation)?.id ?? null;
 }

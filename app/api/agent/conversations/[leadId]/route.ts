@@ -14,6 +14,7 @@ import {
   sendAgentDraft,
   suggestedActionsFromRows,
 } from "@/lib/agent/hub-actions";
+import { asRow, asRows } from "@/lib/agent/rows";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,18 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     .limit(1)
     .maybeSingle();
 
-  const latest = recentExecutions?.[0] ?? null;
+  type ExecutionPreview = {
+    id: string;
+    state: string;
+    intents: string[] | null;
+    confidence: number | null;
+    decision_summary: string | null;
+    customer_reply: string | null;
+    reply_status: string | null;
+    created_at: string;
+  };
+  const executions = asRows<ExecutionPreview>(recentExecutions);
+  const latest = executions[0] ?? null;
   let suggestedActions: ReturnType<typeof suggestedActionsFromRows> = [];
   if (latest?.id) {
     const { data: actionRows } = await supabase
@@ -69,25 +81,25 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       .select("id, tool_name, status, input_summary")
       .eq("execution_id", latest.id);
     suggestedActions = suggestedActionsFromRows(
-      (actionRows ?? []) as Array<{
+      asRows<{
         id: string;
         tool_name: string;
         status: string;
         input_summary: Record<string, unknown> | null;
-      }>
+      }>(actionRows)
     );
   }
 
-  const drafted = (recentExecutions ?? []).find((run) => run.reply_status === "DRAFTED");
+  const drafted = executions.find((run) => run.reply_status === "DRAFTED");
 
   return NextResponse.json({
     agentEnabledForCompany: settings.enabled,
     autonomyMode: settings.autonomyMode,
     state,
-    recentExecutions: recentExecutions ?? [],
-    openEscalation: openEscalation ?? null,
+    recentExecutions: executions,
+    openEscalation: asRow(openEscalation) ?? null,
     draftedReply: drafted?.customer_reply
-      ? { executionId: drafted.id, text: drafted.customer_reply as string }
+      ? { executionId: drafted.id, text: drafted.customer_reply }
       : null,
     suggestedActions,
   });

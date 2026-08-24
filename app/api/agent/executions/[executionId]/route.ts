@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
+import { asRow, asRows } from "@/lib/agent/rows";
 
 export const dynamic = "force-dynamic";
 
@@ -9,14 +10,17 @@ export async function GET(req: Request, { params }: { params: { executionId: str
   if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const supabase = createAdminClient();
-  const { data: execution } = await supabase
+  const { data: executionData } = await supabase
     .from("agent_executions")
     .select("*")
     .eq("id", params.executionId)
     .maybeSingle();
+  const execution = asRow<{ client_id: string; lead_id: string } & Record<string, unknown>>(
+    executionData
+  );
   if (!execution) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const clientId = execution.client_id as string;
+  const clientId = execution.client_id;
   const inTenant = auth.role === "SUPER_ADMIN" || auth.clientId === clientId;
   if (!inTenant) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -29,7 +33,7 @@ export async function GET(req: Request, { params }: { params: { executionId: str
     supabase
       .from("leads")
       .select("id, name, phone, status, assigned_to_id")
-      .eq("id", execution.lead_id as string)
+      .eq("id", execution.lead_id)
       .maybeSingle(),
     supabase
       .from("agent_escalations")
@@ -39,8 +43,8 @@ export async function GET(req: Request, { params }: { params: { executionId: str
 
   return NextResponse.json({
     execution,
-    actions: actions ?? [],
-    escalations: escalations ?? [],
+    actions: asRows(actions),
+    escalations: asRows(escalations),
     lead: lead
       ? { id: lead.id, name: lead.name ?? lead.phone ?? "Unknown", status: lead.status }
       : null,
