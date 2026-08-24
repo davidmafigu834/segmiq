@@ -41,18 +41,18 @@ export function PageHeaderSkeleton({
   showPrimaryAction?: boolean;
 }) {
   return (
-    <div className="space-y-2 layout:space-y-1.5">
+    <div className="min-w-0">
       <div className="hidden min-h-10 items-center justify-between gap-3 layout:flex">
-        <Skeleton className="h-3 w-40" />
+        <Skeleton className="h-3 w-36" />
         <div className="ml-auto flex shrink-0 items-center justify-end gap-2">
           <Skeleton className="h-10 w-[220px] rounded-sales-md" />
-          <Skeleton className="h-10 w-10 rounded-sales-md" />
-          <Skeleton className="h-10 w-10 rounded-sales-md" />
-          {showPrimaryAction ? <Skeleton className="h-10 w-36 rounded-sales-md" /> : null}
+          <Skeleton className="h-10 w-[84px] rounded-sales-md" />
+          {showPrimaryAction ? <Skeleton className="h-10 w-32 rounded-sales-md" /> : null}
+          <Skeleton className="h-8 w-8 rounded-full" />
         </div>
       </div>
-      <div className="min-w-0">
-        <Skeleton className={cn("h-8 max-w-full sm:h-9 layout:h-10", titleWidth)} />
+      <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pt-4">
+        <Skeleton className={cn("h-7 max-w-full sm:h-8 layout:h-8", titleWidth)} />
         <Skeleton className={cn("mt-2 h-3.5 max-w-full sm:h-4", subtitleWidth)} />
       </div>
     </div>
