@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
-import { runManagerTurn, confirmManagerAction, getManagerAttention } from "@/lib/agent/manager";
+import { runManagerTurn, getManagerAttention } from "@/lib/agent/manager";
 import type { ManagerActor } from "@/lib/agent/manager/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 

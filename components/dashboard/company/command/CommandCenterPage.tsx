@@ -53,7 +53,6 @@ export function CommandCenterPage({
   const [loading, setLoading] = useState(false);
   const [phase, setPhase] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const abortRef = useRef(false);
 
   useEffect(() => {
     void fetch(`/api/agent/manager/chat?clientId=${clientId}`)
@@ -72,7 +71,6 @@ export function CommandCenterPage({
     async (text: string) => {
       const message = text.trim();
       if (!message || loading) return;
-      abortRef.current = false;
       setInput("");
       setMessages((prev) => [
         ...prev,
