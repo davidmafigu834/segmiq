@@ -2,6 +2,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveClientSalesTimezone } from "@/lib/sales/intelligence/daily-plan-service";
 import { locationFromFormData } from "@/lib/sales/calendar/location";
 import { loadQualificationFlow } from "@/lib/whatsapp/load-qualification-flow";
+import {
+  assembleCompanyBrainContext,
+  serializeCompanyBrainContext,
+} from "@/lib/company-brain";
+import type { BrainSource, CompanyBrainContext, QualificationPlaybook } from "@/lib/company-brain/types";
 import { formatLocalDateTime } from "./dates";
 import { loadCustomerMemory, memoryForContext } from "./memory";
 import type { AgentCompanySettings, AgentCustomerMemory } from "./types";
@@ -33,6 +38,9 @@ export type AgentContext = {
     name: string;
     industry: string | null;
     timezone: string;
+    workingDays: number[];
+    workStartTime: string;
+    workEndTime: string;
   };
   customer: {
     name: string | null;
@@ -81,6 +89,15 @@ export type AgentContext = {
   rawMemory: AgentCustomerMemory;
   contactId: string | null;
   settings: AgentCompanySettings;
+  companyBrain: {
+    serialized: string;
+    sources: BrainSource[];
+    retrievalFailed: boolean;
+    playbook: QualificationPlaybook | null;
+    operationalKeys: string[];
+    why: string[];
+    context: CompanyBrainContext;
+  } | null;
 };
 
 const CORE_QUALIFICATION_FIELDS: Array<{ field: string; label: string; column: string }> = [
@@ -95,6 +112,7 @@ export async function assembleAgentContext(opts: {
   clientId: string;
   leadId: string;
   settings: AgentCompanySettings;
+  overlayCustomerMessage?: string;
 }): Promise<AgentContext | null> {
   const supabase = createAdminClient();
 
@@ -244,11 +262,91 @@ export async function assembleAgentContext(opts: {
     Date.now() - new Date(lead.created_at as string).getTime() < 10 * 60 * 1000 &&
     totalCount <= 3;
 
+  const latestCustomerText =
+    opts.overlayCustomerMessage?.trim() ||
+    [...recent].reverse().find((m) => m.direction === "inbound")?.body ||
+    "";
+  let companyBrain: AgentContext["companyBrain"] = null;
+  let workingDays = [1, 2, 3, 4, 5];
+  let workStartTime = "08:00";
+  let workEndTime = "17:00";
+  try {
+    const assembled = await assembleCompanyBrainContext({
+      clientId: opts.clientId,
+      customerMessage: latestCustomerText,
+      conversationType: (lead.whatsapp_conversation_type as string | null) ?? "SALES",
+      productInterest:
+        (typeof lead.customer_need === "string" && lead.customer_need) ||
+        (typeof lead.project_type === "string" && lead.project_type) ||
+        null,
+    });
+    const playbook = assembled.context.playbook;
+    workingDays = assembled.snapshot.canonical.workingDays;
+    workStartTime = assembled.snapshot.canonical.workStartTime;
+    workEndTime = assembled.snapshot.canonical.workEndTime;
+    if (playbook) {
+      const brainAnswers = (formData._brain_qualification as Record<string, unknown> | undefined) ?? {};
+      for (const field of playbook.fields) {
+        if (seen.has(field.internalKey) || seen.has(field.crmMapping ?? "")) continue;
+        seen.add(field.internalKey);
+        const mapped = field.crmMapping ? leadRecord[field.crmMapping] : null;
+        const stored = brainAnswers[field.internalKey];
+        const current =
+          (typeof mapped === "string" && mapped.trim()) ||
+          (typeof stored === "string" && stored.trim()) ||
+          null;
+        fields.push({ field: field.internalKey, label: field.label, currentValue: current });
+      }
+    }
+    companyBrain = {
+      serialized: serializeCompanyBrainContext(assembled),
+      sources: assembled.context.sources,
+      retrievalFailed: assembled.context.retrievalFailed,
+      playbook,
+      operationalKeys: assembled.snapshot.rules
+        .filter((r) => r.enabled && r.structuredKey)
+        .map((r) => r.structuredKey as string),
+      why: assembled.context.why,
+      context: assembled.context,
+    };
+  } catch (err) {
+    console.error("[agent] company brain assembly failed", err);
+    companyBrain = {
+      serialized:
+        "=== COMPANY BRAIN (retrieval failed — treat as missing) ===\nCompany-specific facts are unavailable this turn. Do not invent policies, coverage, prices, warranties or payment terms from general knowledge. Tell the customer you will confirm with the team.",
+      sources: [],
+      retrievalFailed: true,
+      playbook: null,
+      operationalKeys: [],
+      why: ["Company Brain assembly failed."],
+      context: {
+        bundles: ["COMPANY_IDENTITY"],
+        facts: [],
+        sources: [],
+        playbook: null,
+        playbookAmbiguous: false,
+        playbookCandidates: [],
+        serviceAreaMatch: null,
+        serviceAreasUnconfigured: true,
+        faqs: [],
+        knowledgeChunks: [],
+        conflicts: [],
+        retrievalFailed: true,
+        why: ["Company Brain assembly failed."],
+      },
+    };
+  }
+
+  const missingAfterBrain = fields.filter((f) => !f.currentValue).map((f) => f.field);
+
   return {
     company: {
       name: client.name as string,
       industry: (client.industry as string | null) ?? null,
       timezone,
+      workingDays,
+      workStartTime,
+      workEndTime,
     },
     customer: {
       name: (lead.name as string | null) ?? null,
@@ -276,7 +374,7 @@ export async function assembleAgentContext(opts: {
       ownerName: (owner?.name as string | null) ?? null,
       followUpDate: (lead.follow_up_date as string | null) ?? null,
     },
-    qualification: { fields, missing },
+    qualification: { fields, missing: missingAfterBrain },
     deal: deal
       ? {
           id: deal.id as string,
@@ -300,5 +398,6 @@ export async function assembleAgentContext(opts: {
     rawMemory: memory,
     contactId,
     settings: opts.settings,
+    companyBrain,
   };
 }

@@ -402,6 +402,20 @@ function AgentActivityInner({
                   Customer said: “{String(detail.execution.evidence)}”
                 </p>
               ) : null}
+              {Array.isArray(detail?.execution?.sources) && detail.execution.sources.length ? (
+                <div className="mt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+                    Sources used
+                  </p>
+                  <ul className="mt-1 flex flex-col gap-1">
+                    {(detail.execution.sources as Array<{ label?: string; type?: string }>).map((source, i) => (
+                      <li key={i} className="text-[12px] text-sales-text-secondary">
+                        {source.label || source.type || "Source"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               {selected.confidence != null ? (
                 <p className="mt-1 text-[12px] text-sales-text-muted">
                   Confidence {Math.round(selected.confidence * 100)}%

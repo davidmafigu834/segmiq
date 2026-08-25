@@ -67,6 +67,7 @@ export const AGENT_ESCALATION_REASONS = [
   "SYSTEM_FAILURE",
   "RATE_LIMITED",
   "ATTACHMENT_REVIEW",
+  "KNOWLEDGE_CONFLICT",
 ] as const;
 export type AgentEscalationReason = (typeof AGENT_ESCALATION_REASONS)[number];
 

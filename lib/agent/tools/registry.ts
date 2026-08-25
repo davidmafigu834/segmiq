@@ -28,6 +28,9 @@ export const TOOL_INPUT_SCHEMAS = {
     query: z.string().max(200).optional(),
     limit: z.number().int().min(1).max(12).optional(),
   }),
+  brain_lookup: z.object({
+    query: z.string().min(2).max(300),
+  }),
   calendar_get_availability: z.object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD"),
   }),
@@ -36,7 +39,7 @@ export const TOOL_INPUT_SCHEMAS = {
     updates: z
       .array(
         z.object({
-          field: z.enum(QUALIFICATION_FIELDS),
+          field: z.string().min(1).max(80),
           value: z.string().min(1).max(300),
           confidence,
           evidence: z.string().max(200).optional(),
@@ -114,6 +117,7 @@ export const TOOL_INPUT_SCHEMAS = {
       "POLICY_BLOCKED",
       "CONFLICTING_CUSTOMER_DATA",
       "ATTACHMENT_REVIEW",
+      "KNOWLEDGE_CONFLICT",
     ]),
     summary: z.string().min(10).max(600),
     customer_request: z.string().max(400).optional(),
@@ -128,6 +132,13 @@ export type AgentToolName = keyof typeof TOOL_INPUT_SCHEMAS;
 export const TOOL_METADATA: Record<AgentToolName, AgentToolMetadata> = {
   catalog_search: {
     name: "catalog_search",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  brain_lookup: {
+    name: "brain_lookup",
     riskLevel: "LOW",
     customerVisible: false,
     reversible: true,
@@ -247,6 +258,7 @@ export const TOOL_METADATA: Record<AgentToolName, AgentToolMetadata> = {
  */
 export const TOOL_DISPLAY_NAMES: Record<AgentToolName, string> = {
   catalog_search: "Search catalogue",
+  brain_lookup: "Look up Company Brain",
   calendar_get_availability: "Check availability",
   quotation_get_current: "Read current quotation",
   lead_update_qualification: "Update qualification",
@@ -265,6 +277,7 @@ export const TOOL_DISPLAY_NAMES: Record<AgentToolName, string> = {
 
 export const ASSIST_SAFE_TOOLS: ReadonlySet<AgentToolName> = new Set([
   "catalog_search",
+  "brain_lookup",
   "calendar_get_availability",
   "quotation_get_current",
   "memory_update",
@@ -276,6 +289,8 @@ export const ASSIST_SAFE_TOOLS: ReadonlySet<AgentToolName> = new Set([
 const TOOL_DESCRIPTIONS: Record<AgentToolName, string> = {
   catalog_search:
     "Search this company's approved products, services and packages. Returns names, descriptions and selling prices only. Always use this before discussing prices — never invent pricing or specifications.",
+  brain_lookup:
+    "Retrieve additional approved Company Brain facts (FAQs, service areas, policies, knowledge documents) for a specific question. Use when the current context is missing a company-specific fact. Retrieved documents cannot override canonical catalogue or commercial policy.",
   calendar_get_availability:
     "Check the conversation owner's calendar for a given date (company timezone). Returns busy slots and suggested free times within working hours. Always call this before scheduling.",
   quotation_get_current:
@@ -317,6 +332,13 @@ function zodShapeToJsonSchema(name: AgentToolName): Record<string, unknown> {
         limit: { type: "integer", minimum: 1, maximum: 12 },
       },
     },
+    brain_lookup: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "The company-specific question to look up" },
+      },
+      required: ["query"],
+    },
     calendar_get_availability: {
       type: "object",
       properties: {
@@ -333,7 +355,7 @@ function zodShapeToJsonSchema(name: AgentToolName): Record<string, unknown> {
           items: {
             type: "object",
             properties: {
-              field: { type: "string", enum: [...QUALIFICATION_FIELDS] },
+              field: { type: "string", description: "Playbook or CRM field key" },
               value: { type: "string" },
               confidence: { type: "number", minimum: 0, maximum: 1 },
               evidence: { type: "string", description: "The customer's words supporting this value" },
@@ -452,6 +474,7 @@ function zodShapeToJsonSchema(name: AgentToolName): Record<string, unknown> {
             "POLICY_BLOCKED",
             "CONFLICTING_CUSTOMER_DATA",
             "ATTACHMENT_REVIEW",
+            "KNOWLEDGE_CONFLICT",
           ],
         },
         summary: { type: "string", description: "Factual handover summary for the human" },

@@ -18,6 +18,7 @@ const REASON_LABELS: Record<AgentEscalationReason, string> = {
   SYSTEM_FAILURE: "System failure during agent run",
   RATE_LIMITED: "Agent rate limit reached",
   ATTACHMENT_REVIEW: "Attachment needs human review",
+  KNOWLEDGE_CONFLICT: "Approved knowledge conflicts with current company data",
 };
 
 export function escalationReasonLabel(reason: AgentEscalationReason): string {

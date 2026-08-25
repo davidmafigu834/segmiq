@@ -51,6 +51,7 @@ export const SETTINGS_SECTIONS: Record<SettingsCategory, SettingsSection[]> = {
   automation: [
     { id: "assignment", label: "Lead Assignment", icon: "git" },
     { id: "agent", label: "SegmiQ Agent", icon: "bot" },
+    { id: "company-brain", label: "Company Brain", icon: "brain" },
   ],
   data: [{ id: "export", label: "Export", icon: "download" }],
   security: [{ id: "authentication", label: "Authentication", icon: "shield" }],

@@ -1,3 +1,4 @@
+import { resolveWorkdayState, type OperatingHours } from "@/lib/sales/intelligence/operating-hours";
 import type {
   AgentCompanySettings,
   AgentEscalationReason,
@@ -177,9 +178,15 @@ function localHourAndDay(now: Date, timezone: string): { hour: number; weekday: 
 export function evaluateBusinessHours(
   settings: Pick<AgentCompanySettings, "businessHoursPolicy">,
   timezone: string,
-  now = new Date()
+  now = new Date(),
+  hours?: OperatingHours
 ): BusinessHoursDecision {
   if (settings.businessHoursPolicy === "ALWAYS") return "RESPOND";
+  if (hours) {
+    const state = resolveWorkdayState(now, timezone, hours);
+    if (state.withinHours) return "RESPOND";
+    return settings.businessHoursPolicy === "AFTER_HOURS_ACK" ? "AFTER_HOURS_ACK" : "SUPPRESS";
+  }
   const { hour, weekday } = localHourAndDay(now, timezone);
   const withinHours = weekday >= 1 && weekday <= 6 && hour >= DEFAULT_OPEN_HOUR && hour < DEFAULT_CLOSE_HOUR;
   if (withinHours) return "RESPOND";

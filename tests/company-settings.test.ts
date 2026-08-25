@@ -72,7 +72,8 @@ describe("company settings routing", () => {
   it("switches left-nav sections with the top category", () => {
     assert.ok(SETTINGS_SECTIONS.company.some((s) => s.id === "information"));
     assert.ok(!SETTINGS_SECTIONS.security.some((s) => s.id === "information"));
-    assert.ok(!SETTINGS_SECTIONS.team.some((s) => s.id === "branding"));
+    assert.ok(SETTINGS_SECTIONS.automation.some((s) => s.id === "company-brain"));
+    assert.equal(parseSettingsSlug(["automation", "company-brain"]).section, "company-brain");
     assert.deepEqual(
       SETTINGS_CATEGORIES,
       ["company", "profile", "team", "notifications", "integrations", "automation", "data", "security"]

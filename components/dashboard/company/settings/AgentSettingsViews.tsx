@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Bot, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, Bot, Brain, Loader2 } from "lucide-react";
 import { Button, Switch, SegmentedControl, Select, Input } from "@/components/sales/ui";
 import { SettingsSectionCard } from "./SettingsSectionCard";
 
@@ -161,6 +162,27 @@ export function AgentSettingsSection({
           Settings can be prepared but the agent will not run.
         </div>
       ) : null}
+
+      <SettingsSectionCard
+        title="Company Brain"
+        description="Teach SegmiQ how this business sells, serves customers and makes decisions. Autonomy settings below only work as well as the operating context you provide."
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-sales-brand-soft text-sales-brand">
+              <Brain size={17} />
+            </span>
+            <p className="text-[13px] text-sales-text-secondary">
+              Business profile, qualification playbooks, service areas, FAQs, agent rules and knowledge.
+            </p>
+          </div>
+          <Link href="/client/settings/automation/company-brain">
+            <Button variant="secondary" size="sm">
+              Open Company Brain
+            </Button>
+          </Link>
+        </div>
+      </SettingsSectionCard>
 
       <SettingsSectionCard
         title="SegmiQ Agent"

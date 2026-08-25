@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Bell,
   Bot,
+  Brain,
   Briefcase,
   Building2,
   Crown,
@@ -40,6 +41,7 @@ const ICONS: Record<string, LucideIcon> = {
   download: Download,
   shield: Shield,
   bot: Bot,
+  brain: Brain,
 };
 
 export function SettingsSectionNav({

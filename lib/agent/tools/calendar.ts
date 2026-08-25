@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logFollowUpSet } from "@/lib/lead-events";
 import { followUpDateFromCallbackAt } from "@/lib/call-log-constants";
+import { isWorkingDate, timeToMinutes } from "@/lib/sales/intelligence/operating-hours";
 import { formatLocalDateTime, wallTimeToUtc } from "../dates";
 import { AGENT_ACTOR, toolFailure, toolSuccess, type ToolExecutionContext, type ToolResult } from "./context";
 
@@ -97,9 +98,14 @@ export async function getOwnerAvailability(
     }).format(new Date(slot.startIso))
   );
 
+  const workStart = ctx.workStartTime ? timeToMinutes(ctx.workStartTime) : WORK_START_HOUR * 60;
+  const workEnd = ctx.workEndTime ? timeToMinutes(ctx.workEndTime) : WORK_END_HOUR * 60;
+  const startHour = Math.floor(workStart / 60);
+  const endHour = Math.max(startHour + 1, Math.ceil(workEnd / 60));
+
   const suggestions: string[] = [];
   const now = Date.now();
-  for (let hour = WORK_START_HOUR; hour < WORK_END_HOUR && suggestions.length < 4; hour++) {
+  for (let hour = startHour; hour < endHour && suggestions.length < 4; hour++) {
     const slotUtc = wallTimeToUtc(ctx.timezone, y, m, d, hour, 0);
     if (slotUtc.getTime() <= now) continue;
     if (!overlaps(slotUtc.toISOString(), busy)) {
@@ -120,6 +126,17 @@ export async function executeGetAvailability(
   ctx: ToolExecutionContext,
   input: { date: string }
 ): Promise<ToolResult> {
+  if (ctx.workingDays?.length && !isWorkingDate(input.date, ctx.workingDays)) {
+    return toolSuccess({
+      date: input.date,
+      timezone: ctx.timezone,
+      owner: ctx.ownerName ?? "unassigned",
+      busy_times: [],
+      available_times: [],
+      working_hours: `${ctx.workStartTime ?? "08:00"}-${ctx.workEndTime ?? "17:00"}`,
+      note: "That date is outside company working days. Offer a working day instead.",
+    });
+  }
   const availability = await getOwnerAvailability(ctx, input.date);
   return toolSuccess({
     date: availability.date,
@@ -127,7 +144,7 @@ export async function executeGetAvailability(
     owner: availability.ownerName ?? "unassigned",
     busy_times: availability.busyLocalTimes,
     available_times: availability.suggestedLocalTimes,
-    working_hours: `${WORK_START_HOUR}:00-${WORK_END_HOUR}:00`,
+    working_hours: `${ctx.workStartTime ?? `${WORK_START_HOUR}:00`}-${ctx.workEndTime ?? `${WORK_END_HOUR}:00`}`,
   });
 }
 
@@ -162,6 +179,16 @@ export async function executeScheduleCallback(
   ctx: ToolExecutionContext,
   input: { date: string; time: string; purpose: string }
 ): Promise<ToolResult> {
+  if (ctx.operationalRuleKeys?.includes("NEVER_BOOK_SUNDAY")) {
+    const [y, m, d] = input.date.split("-").map(Number);
+    const utc = Date.UTC(y, m - 1, d);
+    if (new Date(utc).getUTCDay() === 0) {
+      return toolFailure("Company rule: Sunday appointments cannot be booked.");
+    }
+  }
+  if (ctx.workingDays?.length && !isWorkingDate(input.date, ctx.workingDays)) {
+    return toolFailure("That date is outside company working days. Offer a working day instead.");
+  }
   if (!ctx.ownerId) {
     return toolFailure(
       "No salesperson owns this conversation yet, so a callback cannot be booked. Escalate instead."
@@ -242,6 +269,13 @@ export async function executeRescheduleCallback(
   ctx: ToolExecutionContext,
   input: { date: string; time: string; reason?: string }
 ): Promise<ToolResult> {
+  if (ctx.operationalRuleKeys?.includes("NEVER_BOOK_SUNDAY")) {
+    const [y, m, d] = input.date.split("-").map(Number);
+    const utc = Date.UTC(y, m - 1, d);
+    if (new Date(utc).getUTCDay() === 0) {
+      return toolFailure("Company rule: Sunday appointments cannot be booked.");
+    }
+  }
   const supabase = createAdminClient();
   const { data: upcoming } = await supabase
     .from("call_logs")

@@ -17,6 +17,13 @@ export type ToolExecutionContext = {
   settings: AgentCompanySettings;
   /** Test mode: read-only tools run; mutating tools are simulated. */
   testMode: boolean;
+  operationalRuleKeys?: string[];
+  workingDays?: number[];
+  workStartTime?: string;
+  workEndTime?: string;
+  playbookFieldKeys?: string[];
+  playbookRequiredKeys?: string[];
+  standalone?: boolean;
 };
 
 export type ToolResult = {

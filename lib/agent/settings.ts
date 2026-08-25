@@ -1,3 +1,6 @@
+import { quotationAutomationBlockers } from "@/lib/company-brain/readiness";
+import { loadCompanyBrainSnapshot } from "@/lib/company-brain/store";
+import { invalidateBrainCache } from "@/lib/company-brain/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentCompanySettings } from "./types";
 
@@ -132,6 +135,25 @@ export async function updateAgentCompanySettings(
   clientId: string,
   patch: AgentSettingsPatch
 ): Promise<AgentCompanySettings> {
+  if (patch.sendQuotations === true) {
+    const current = await getAgentCompanySettings(clientId);
+    if (!current.sendQuotations) {
+      try {
+        const snapshot = await loadCompanyBrainSnapshot(clientId);
+        const missing = quotationAutomationBlockers(snapshot);
+        if (missing.length) {
+          throw new Error(
+            `Complete these ${missing.length} item${missing.length === 1 ? "" : "s"} before enabling autonomous quotation sending: ${missing.join(", ")}.`
+          );
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message.startsWith("Complete these")) throw err;
+        throw new Error(
+          "Company Brain quotation readiness could not be verified. Complete quotation setup before enabling autonomous sending."
+        );
+      }
+    }
+  }
   const supabase = createAdminClient();
   const update: Record<string, unknown> = { client_id: clientId, updated_at: new Date().toISOString() };
   for (const [key, column] of Object.entries(PATCH_COLUMN_MAP) as Array<
@@ -145,5 +167,6 @@ export async function updateAgentCompanySettings(
     .select("*")
     .single();
   if (error) throw new Error(`Failed to update agent settings: ${error.message}`);
+  invalidateBrainCache(clientId);
   return rowToSettings(clientId, data as SettingsRow);
 }

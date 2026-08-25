@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assembleCompanyBrainContext } from "@/lib/company-brain";
 import { logFollowUpSet, logLeadEvent } from "@/lib/lead-events";
 import { createDealFromLead } from "@/lib/sales/deals/create-deal";
 import { parseLeadFields } from "@/lib/lead-helpers";
@@ -114,6 +115,57 @@ async function executeCatalogSearch(
   });
 }
 
+async function executeBrainLookup(
+  ctx: ToolExecutionContext,
+  input: { query: string }
+): Promise<ToolResult> {
+  try {
+    const assembled = await assembleCompanyBrainContext({
+      clientId: ctx.clientId,
+      customerMessage: input.query,
+    });
+    if (assembled.context.retrievalFailed) {
+      return toolFailure(
+        "Company Brain lookup failed. Do not invent the answer from general knowledge. Confirm with the team."
+      );
+    }
+    return toolSuccess({
+      faqs: assembled.context.faqs.map((row) => ({
+        question: row.faq.question,
+        answer: row.faq.approvedAnswer,
+      })),
+      service_area: assembled.context.serviceAreaMatch
+        ? {
+            place: [
+              assembled.context.serviceAreaMatch.area.city,
+              assembled.context.serviceAreaMatch.area.region,
+              assembled.context.serviceAreaMatch.area.country,
+            ]
+              .filter(Boolean)
+              .join(", "),
+            status: assembled.context.serviceAreaMatch.area.status,
+            confirmation_required:
+              assembled.context.serviceAreaMatch.area.status === "CONFIRMATION_REQUIRED" ||
+              assembled.context.serviceAreaMatch.area.managerConfirmationRequired,
+          }
+        : assembled.context.serviceAreasUnconfigured
+          ? { status: "UNCONFIGURED" }
+          : null,
+      documents: assembled.context.knowledgeChunks.map((chunk) => ({
+        title: chunk.documentTitle ?? "Document",
+        excerpt: chunk.content.slice(0, 400),
+      })),
+      conflicts: assembled.context.conflicts,
+      note: "Canonical catalogue and commercial policy still override these documents.",
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return toolFailure(
+      `Company Brain lookup failed (${message.slice(0, 120)}). Do not invent company-specific facts.`
+    );
+  }
+}
+
 const QUALIFICATION_COLUMN_MAP: Record<string, string | null> = {
   budget: "budget",
   project_type: "project_type",
@@ -156,17 +208,32 @@ async function executeUpdateQualification(
   }
 
   const formData = ((lead.form_data as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+  const brainQual =
+    formData._brain_qualification && typeof formData._brain_qualification === "object"
+      ? { ...(formData._brain_qualification as Record<string, unknown>) }
+      : {};
   const columnPatch: Record<string, unknown> = {};
   const changes: Array<{ field: string; from: unknown; to: string }> = [];
+  const allowedExtra = new Set(ctx.playbookFieldKeys ?? []);
   for (const update of confident) {
     const column = QUALIFICATION_COLUMN_MAP[update.field];
-    if (column === undefined) continue;
+    const extra = allowedExtra.has(update.field);
+    if (column === undefined && !extra) continue;
     const previous = column
       ? (lead as Record<string, unknown>)[column]
-      : formData[update.field];
+      : extra
+        ? brainQual[update.field]
+        : formData[update.field];
     if (column) columnPatch[column] = update.value;
     formData[update.field] = update.value;
+    if (extra) brainQual[update.field] = update.value;
     changes.push({ field: update.field, from: previous ?? null, to: update.value });
+  }
+  if (Object.keys(brainQual).length) formData._brain_qualification = brainQual;
+  if (!changes.length) {
+    return toolFailure(
+      "None of the fields are recognised on this company's qualification playbook or CRM schema."
+    );
   }
 
   // Reuse canonical parsing so budget/timeline normalization stays consistent.
@@ -256,6 +323,32 @@ async function executeCreateDeal(
     reason: string;
   }
 ): Promise<ToolResult> {
+  if (ctx.playbookRequiredKeys?.length) {
+    const supabase = createAdminClient();
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("form_data, budget, project_type, timeline, customer_need, buying_timeframe")
+      .eq("id", ctx.leadId)
+      .eq("client_id", ctx.clientId)
+      .maybeSingle();
+    const formData = ((lead?.form_data as Record<string, unknown> | null) ?? {}) as Record<string, unknown>;
+    const brainQual =
+      formData._brain_qualification && typeof formData._brain_qualification === "object"
+        ? (formData._brain_qualification as Record<string, string>)
+        : {};
+    const answers: Record<string, string | null> = { ...brainQual };
+    for (const key of ["budget", "project_type", "timeline", "customer_need", "buying_timeframe", "location"]) {
+      const v = (lead as Record<string, unknown> | null)?.[key] ?? formData[key];
+      if (typeof v === "string" && v.trim()) answers[key] = v;
+    }
+    const missing = ctx.playbookRequiredKeys.filter((key) => !String(answers[key] ?? "").trim());
+    if (missing.length) {
+      return toolFailure(
+        `Deal is not ready: qualification playbook still missing ${missing.join(", ")}. Continue qualifying instead of creating a Deal.`
+      );
+    }
+  }
+
   if (!ctx.ownerId) {
     return toolFailure(
       "No salesperson owns this conversation, so a Deal cannot be created. Escalate so a manager can assign an owner."
@@ -514,6 +607,7 @@ type Executor = (ctx: ToolExecutionContext, input: never) => Promise<ToolResult>
 
 const EXECUTORS: Record<AgentToolName, Executor> = {
   catalog_search: executeCatalogSearch as Executor,
+  brain_lookup: executeBrainLookup as Executor,
   calendar_get_availability: executeGetAvailability as Executor,
   quotation_get_current: executeGetCurrentQuotation as Executor,
   lead_update_qualification: executeUpdateQualification as Executor,
@@ -558,6 +652,22 @@ export async function runAgentTool(
   }
 
   const metadata = TOOL_METADATA[toolName];
+
+  if (ctx.operationalRuleKeys?.includes("NEVER_SEND_QUOTE") && toolName === "quotation_send") {
+    return {
+      toolName,
+      status: "BLOCKED",
+      riskLevel: metadata.riskLevel,
+      blockedReason: "Company Brain rule NEVER_SEND_QUOTE blocks autonomous quotation sending.",
+      result: toolFailure("Company rule blocks sending quotations. Escalate instead."),
+    };
+  }
+  if (ctx.operationalRuleKeys?.includes("NEVER_APPLY_DISCOUNT") && toolName === "quotation_prepare_draft") {
+    // Drafts are still allowed; discounts remain impossible via tools.
+  }
+  if (ctx.operationalRuleKeys?.includes("NEVER_CHANGE_DEAL_STAGE")) {
+    // No deal-stage tools exist; keep the restriction documented for policy.
+  }
 
   const validation = validateToolInput(toolName, rawInput);
   if (!validation.ok) {
@@ -607,6 +717,21 @@ export async function runAgentTool(
         };
       }
     }
+  }
+
+  // Company Brain Test Agent: mutating tools never touch CRM / WhatsApp, even
+  // when there is no real lead. Read-only lookups still run.
+  if (ctx.standalone && !metadata.readOnly) {
+    return {
+      toolName,
+      status: "SIMULATED",
+      riskLevel: metadata.riskLevel,
+      result: toolSuccess({
+        simulated: true,
+        would_call: toolName,
+        arguments: validation.data as Record<string, unknown>,
+      }),
+    };
   }
 
   try {

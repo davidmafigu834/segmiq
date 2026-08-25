@@ -83,6 +83,12 @@ export async function PATCH(req: Request) {
     );
   }
 
-  const settings = await updateAgentCompanySettings(access.clientId, parsed.data);
-  return NextResponse.json({ settings });
+  try {
+    const settings = await updateAgentCompanySettings(access.clientId, parsed.data);
+    return NextResponse.json({ settings });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to save settings";
+    const blocked = /Complete these|quotation readiness/i.test(message);
+    return NextResponse.json({ error: message }, { status: blocked ? 400 : 500 });
+  }
 }

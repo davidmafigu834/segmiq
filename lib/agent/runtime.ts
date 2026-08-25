@@ -97,7 +97,20 @@ export async function handleAgentInboundMessage(event: InboundConversationEvent)
       return;
     }
 
-    const hoursDecision = evaluateBusinessHours(settings, await conversationTimezone(event.clientId));
+    const { loadCachedCompanyBrainSnapshot } = await import("@/lib/company-brain");
+    const tz = await conversationTimezone(event.clientId);
+    let hours: { workingDays: number[]; workStartTime: string; workEndTime: string } | undefined;
+    try {
+      const snapshot = await loadCachedCompanyBrainSnapshot(event.clientId);
+      hours = {
+        workingDays: snapshot.canonical.workingDays,
+        workStartTime: snapshot.canonical.workStartTime,
+        workEndTime: snapshot.canonical.workEndTime,
+      };
+    } catch {
+      hours = undefined;
+    }
+    const hoursDecision = evaluateBusinessHours(settings, tz, new Date(), hours);
     if (hoursDecision === "SUPPRESS") {
       log("skip.outside_business_hours", { leadId: event.leadId });
       return;
@@ -212,6 +225,8 @@ export type AgentRunResult = {
     riskLevel: string;
     summary: Record<string, unknown>;
   }>;
+  sources?: Array<{ type: string; key: string; label: string; authority: number }>;
+  why?: string[];
 };
 
 export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResult> {
@@ -267,6 +282,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       clientId: opts.clientId,
       leadId: opts.leadId,
       settings: opts.settings,
+      overlayCustomerMessage: opts.simulatedCustomerMessage,
     });
     if (!context) {
       await finishExecution(executionId, { state: "FAILED", error_code: "CONTEXT_UNAVAILABLE" });
@@ -289,6 +305,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       confidence: outcome.final?.confidence ?? null,
       decision_summary: outcome.final?.decisionSummary ?? null,
       evidence: outcome.final?.evidence ?? null,
+      sources: context.companyBrain?.sources ?? null,
       customer_reply: outcome.reply,
       reply_status: outcome.replyStatus,
       model: outcome.model,
@@ -333,6 +350,8 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
         riskLevel: c.riskLevel,
         summary: c.result.summary,
       })),
+      sources: context.companyBrain?.sources ?? [],
+      why: context.companyBrain?.why ?? [],
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -422,6 +441,13 @@ async function reasonAndAct(
     timezone: context.company.timezone,
     settings,
     testMode: opts.testMode,
+    operationalRuleKeys: context.companyBrain?.operationalKeys ?? [],
+    workingDays: context.company.workingDays,
+    workStartTime: context.company.workStartTime,
+    workEndTime: context.company.workEndTime,
+    playbookFieldKeys: context.companyBrain?.playbook?.fields.map((f) => f.internalKey) ?? [],
+    playbookRequiredKeys:
+      context.companyBrain?.playbook?.fields.filter((f) => f.required).map((f) => f.internalKey) ?? [],
   };
 
   // Expose only tools the current policy could ever allow, so the model does

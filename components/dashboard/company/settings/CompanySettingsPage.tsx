@@ -27,6 +27,7 @@ import {
 } from "./ProfileSettingsViews";
 import { TeamMembersSection } from "./TeamSettingsViews";
 import { AgentSettingsSection } from "./AgentSettingsViews";
+import { CompanyBrainSettingsSection } from "./CompanyBrainSettingsViews";
 import {
   IntegrationsAppsSection,
   IntegrationsWebsiteSection,
@@ -108,7 +109,8 @@ function CompanySettingsPageInner({
   const hideRail =
     category === "team" ||
     (category === "integrations" && activeSection === "whatsapp") ||
-    (category === "integrations" && activeSection === "website");
+    (category === "integrations" && activeSection === "website") ||
+    (category === "automation" && activeSection === "company-brain");
 
   function go(nextCategory: SettingsCategory, nextSection?: string) {
     router.push(settingsPath(nextCategory, nextSection, previewClientId));
@@ -277,6 +279,9 @@ function CompanySettingsPageInner({
             ) : null}
             {category === "automation" && activeSection === "agent" ? (
               <AgentSettingsSection clientId={data.clientId} toast={toast} />
+            ) : null}
+            {category === "automation" && activeSection === "company-brain" ? (
+              <CompanyBrainSettingsSection clientId={data.clientId} toast={toast} />
             ) : null}
 
             {category === "data" ? <CompanyDataSection /> : null}
