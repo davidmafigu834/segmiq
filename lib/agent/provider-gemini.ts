@@ -233,7 +233,8 @@ export class GeminiAgentProvider implements AgentModelProvider {
             const quotaExhausted = /exceeded your current quota|quota exceeded|resource_exhausted/i.test(
               errText
             );
-            if (!quotaExhausted && attempt < MAX_RETRIES) {
+            // One retry on transient RPM limits, then throw so FailoverAgentProvider can use Groq.
+            if (!quotaExhausted && attempt < 1) {
               await sleep(retryAfterMs(errText, attempt));
               continue;
             }

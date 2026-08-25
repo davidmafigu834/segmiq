@@ -281,31 +281,30 @@ export function describeAgentLlm(): {
   return { provider, fallback: getAgentLlmFallbackName(), model };
 }
 
+const FALLBACK_EXHAUSTED_RETRY_MS = 8_000;
+
 /**
- * Tries the primary provider, then sticks to the fallback for the rest of this
- * instance (one agent run) after a rate-limit error.
+ * Tries the primary provider on every call. A 429 fails over to the secondary
+ * for that call only — Groq's free TPM is too small to pin a whole tool loop
+ * onto after Gemini rate-limits. If the fallback also 429s, wait briefly and
+ * retry the primary once (it often recovers while Groq is still exhausted).
  */
 export class FailoverAgentProvider implements AgentModelProvider {
-  private usingFallback = false;
-
   constructor(
     private readonly primary: AgentModelProvider,
-    private readonly fallback: AgentModelProvider
+    private readonly fallback: AgentModelProvider,
+    private readonly exhaustedRetryMs: number = FALLBACK_EXHAUSTED_RETRY_MS
   ) {}
 
   get modelId(): string {
-    return this.usingFallback ? this.fallback.modelId : this.primary.modelId;
+    return this.primary.modelId;
   }
 
   async generate(req: GenerateRequest): Promise<ModelResponse> {
-    if (this.usingFallback) {
-      return this.fallback.generate(req);
-    }
     try {
       return await this.primary.generate(req);
     } catch (err) {
       if (!isAgentLlmRateLimitError(err)) throw err;
-      this.usingFallback = true;
       const message = err instanceof Error ? err.message : String(err);
       console.log(
         JSON.stringify({
@@ -317,7 +316,27 @@ export class FailoverAgentProvider implements AgentModelProvider {
           reason: message.slice(0, 240),
         })
       );
-      return this.fallback.generate(req);
+      try {
+        return await this.fallback.generate(req);
+      } catch (fallbackErr) {
+        if (!isAgentLlmRateLimitError(fallbackErr)) throw fallbackErr;
+        const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+        console.log(
+          JSON.stringify({
+            ts: new Date().toISOString(),
+            scope: "agent",
+            event: "llm.fallback.exhausted",
+            primary: this.primary.modelId,
+            fallback: this.fallback.modelId,
+            retryMs: this.exhaustedRetryMs,
+            reason: fallbackMessage.slice(0, 240),
+          })
+        );
+        if (this.exhaustedRetryMs > 0) {
+          await sleep(this.exhaustedRetryMs);
+        }
+        return this.primary.generate(req);
+      }
     }
   }
 }

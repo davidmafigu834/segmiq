@@ -104,14 +104,15 @@ describe("Groq message conversion", () => {
 });
 
 describe("LLM failover", () => {
-  it("switches to Groq after a Gemini rate-limit and stays there", async () => {
+  it("falls over to Groq for a rate-limited call, then tries Gemini again on the next call", async () => {
     let geminiCalls = 0;
     let groqCalls = 0;
     const gemini: AgentModelProvider = {
       modelId: "gemini-3.6-flash",
       async generate() {
         geminiCalls += 1;
-        throw new AgentLlmRateLimitError("Gemini API 429");
+        if (geminiCalls === 1) throw new AgentLlmRateLimitError("Gemini API 429");
+        return dummyResponse("gemini-3.6-flash");
       },
     };
     const groq: AgentModelProvider = {
@@ -121,14 +122,39 @@ describe("LLM failover", () => {
         return dummyResponse("openai/gpt-oss-20b");
       },
     };
-    const provider = new FailoverAgentProvider(gemini, groq);
+    const provider = new FailoverAgentProvider(gemini, groq, 0);
     const req = { system: "s", messages: [{ role: "user" as const, text: "hi" }] } satisfies GenerateRequest;
     const first = await provider.generate(req);
     const second = await provider.generate(req);
     assert.equal(first.model, "openai/gpt-oss-20b");
-    assert.equal(second.model, "openai/gpt-oss-20b");
-    assert.equal(geminiCalls, 1);
-    assert.equal(groqCalls, 2);
+    assert.equal(second.model, "gemini-3.6-flash");
+    assert.equal(geminiCalls, 2);
+    assert.equal(groqCalls, 1);
+  });
+
+  it("retries Gemini after Groq is also rate-limited", async () => {
+    let geminiCalls = 0;
+    const gemini: AgentModelProvider = {
+      modelId: "gemini-3.6-flash",
+      async generate() {
+        geminiCalls += 1;
+        if (geminiCalls === 1) throw new AgentLlmRateLimitError("Gemini API 429");
+        return dummyResponse("gemini-3.6-flash");
+      },
+    };
+    const groq: AgentModelProvider = {
+      modelId: "openai/gpt-oss-20b",
+      async generate() {
+        throw new AgentLlmRateLimitError("Groq API 429");
+      },
+    };
+    const provider = new FailoverAgentProvider(gemini, groq, 0);
+    const result = await provider.generate({
+      system: "s",
+      messages: [{ role: "user", text: "hi" }],
+    });
+    assert.equal(result.model, "gemini-3.6-flash");
+    assert.equal(geminiCalls, 2);
   });
 
   it("does not fall back on non-rate-limit errors", async () => {

@@ -44,7 +44,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function retryAfterMs(response: Response, attempt: number): number {
+function retryAfterMs(response: Response, attempt: number, errText: string): number {
   const header = response.headers.get("retry-after");
   if (header) {
     const seconds = Number(header);
@@ -52,7 +52,11 @@ function retryAfterMs(response: Response, attempt: number): number {
       return Math.min(Math.ceil(seconds * 1000) + 250, 20_000);
     }
   }
-  return Math.min(750 * Math.pow(2, attempt), 8_000);
+  const match = errText.match(/try again in ([\d.]+)\s*s/i);
+  if (match) {
+    return Math.min(Math.ceil(Number(match[1]) * 1000) + 400, 20_000);
+  }
+  return Math.min(1_500 * Math.pow(2, attempt), 12_000);
 }
 
 function parseToolArguments(raw: string | Record<string, unknown> | undefined): Record<string, unknown> {
@@ -179,7 +183,7 @@ export class GroqAgentProvider implements AgentModelProvider {
           if (response.status === 429) {
             lastError = new AgentLlmRateLimitError(`Groq API 429: ${errText.slice(0, 400)}`);
             if (attempt < MAX_RETRIES) {
-              await sleep(retryAfterMs(response, attempt));
+              await sleep(retryAfterMs(response, attempt, errText));
               continue;
             }
             throw lastError;

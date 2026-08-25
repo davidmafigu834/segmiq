@@ -35,6 +35,7 @@ import { asRow } from "./rows";
 const MAX_MODEL_TURNS = 8;
 const MAX_TOOL_CALLS = 14;
 const MAX_RUN_MS = 120_000;
+const LLM_RATE_LIMIT_RETRY_MS = 15_000;
 
 function log(event: string, data: Record<string, unknown>): void {
   console.log(JSON.stringify({ ts: new Date().toISOString(), scope: "agent", event, ...data }));
@@ -124,6 +125,7 @@ export async function handleAgentInboundMessage(event: InboundConversationEvent)
       afterHoursAck: hoursDecision === "AFTER_HOURS_ACK",
       testMode: settings.testMode,
       retryOnStaleContext: true,
+      retryOnLlmRateLimit: true,
     });
   } catch (err) {
     console.error("[agent] inbound handling failed", err);
@@ -207,6 +209,8 @@ type RunOptions = {
   afterHoursAck: boolean;
   testMode: boolean;
   retryOnStaleContext: boolean;
+  /** Re-run once after both LLM providers 429, so the customer is not left unanswered. */
+  retryOnLlmRateLimit?: boolean;
   /** Simulation only: extra customer message appended to the transcript. */
   simulatedCustomerMessage?: string;
 };
@@ -269,6 +273,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     return emptyResult(executionId, "SKIPPED");
   }
 
+  let retryRateLimit = false;
   try {
     await supabase
       .from("agent_executions")
@@ -373,14 +378,39 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
         ownerId: null,
         escalationUserId: opts.settings.escalationUserId,
       });
-    } else if (!opts.testMode && rateLimited) {
+    } else if (!opts.testMode && rateLimited && opts.retryOnLlmRateLimit) {
+      // Unique trigger index would otherwise block a retry of this inbound message.
+      await supabase
+        .from("agent_executions")
+        .update({ trigger_message_id: null })
+        .eq("id", executionId);
+      retryRateLimit = true;
       await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
+      log("retry.llm_rate_limited", { leadId: opts.leadId, executionId, waitMs: LLM_RATE_LIMIT_RETRY_MS });
+    } else if (!opts.testMode && rateLimited) {
+      await createAgentEscalation({
+        clientId: opts.clientId,
+        leadId: opts.leadId,
+        executionId,
+        reason: "RATE_LIMITED",
+        summary:
+          "The agent could not answer this customer message because the language model was rate-limited. The customer's last message has NOT been answered.",
+        ownerId: null,
+        escalationUserId: opts.settings.escalationUserId,
+      });
       log("skip.llm_rate_limited", { leadId: opts.leadId, executionId });
     }
-    return emptyResult(executionId, "FAILED");
+    if (!retryRateLimit) return emptyResult(executionId, "FAILED");
   } finally {
     await releaseConversationLock({ clientId: opts.clientId, leadId: opts.leadId, executionId });
   }
+
+  await new Promise((resolve) => setTimeout(resolve, LLM_RATE_LIMIT_RETRY_MS));
+  return runAgentExecution({
+    ...opts,
+    retryOnLlmRateLimit: false,
+    retryOnStaleContext: false,
+  });
 }
 
 function emptyResult(executionId: string | null, state: string): AgentRunResult {
