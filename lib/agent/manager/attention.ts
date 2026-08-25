@@ -376,7 +376,7 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
     supportOpen: asRows(supportRes.data).length,
   };
 
-  const groups: AttentionSnapshot["groups"] = [
+  const allGroups: AttentionSnapshot["groups"] = [
     { type: "QUOTE_APPROVAL", label: "Quotations awaiting approval", count: brief.quoteApprovals, severity: "HIGH" },
     { type: "CUSTOMER_WAITING", label: "Customers waiting", count: brief.customersWaiting, severity: "HIGH" },
     { type: "DEAL_NO_NEXT_ACTION", label: "Deals with no next action", count: brief.dealsNoNextAction, severity: "NORMAL" },
@@ -385,7 +385,8 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
     { type: "AGENT_HUMAN_NEEDED", label: "Agent handoffs", count: brief.humanNeeded, severity: "HIGH" },
     { type: "PROACTIVE_FAILED", label: "Failed proactive actions", count: brief.failedProactive, severity: "HIGH" },
     { type: "SUPPORT_OPEN", label: "Open support", count: brief.supportOpen, severity: "NORMAL" },
-  ].filter((g) => g.count > 0);
+  ];
+  const groups = allGroups.filter((g) => g.count > 0);
 
   return {
     asOf: at.toISOString(),
