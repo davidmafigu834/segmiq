@@ -11,7 +11,8 @@ import { getAgentCompanySettings, isAgentGloballyEnabled } from "@/lib/agent/set
 import { runAgentTool } from "@/lib/agent/tools/execute";
 import { ASSIST_SAFE_TOOLS, TOOL_METADATA, buildToolDefinitions, type AgentToolName } from "@/lib/agent/tools/registry";
 import type { ToolExecutionContext } from "@/lib/agent/tools/context";
-import { assembleCompanyBrainContext, serializeCompanyBrainContext } from "./context-service";
+import { assembleCompanyBrainContext } from "./context-service";
+import { serializeCompanyBrainContext } from "./serialize";
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 

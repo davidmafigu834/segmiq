@@ -248,7 +248,6 @@ export async function assembleAgentContext(opts: {
       currentValue: typeof value === "string" && value.trim() ? value : null,
     });
   }
-  const missing = fields.filter((f) => !f.currentValue).map((f) => f.field);
 
   const quote = quotes?.[0] ?? null;
   const appointment = upcoming?.[0]

@@ -2,6 +2,17 @@
 -- Canonical CRM (products, deals, quotations, hours, teams) is not duplicated.
 -- Agent-specific operating context lives here and is tenant-scoped by client_id.
 
+-- array_to_string() is STABLE, so it cannot be used in a generated column.
+-- This wrapper is safe for text[] aliases used in FAQ search.
+CREATE OR REPLACE FUNCTION public.company_brain_array_to_string(arr text[], sep text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+  SELECT array_to_string(arr, sep);
+$$;
+
 -- ---------------------------------------------------------------------------
 -- 1:1 company brain settings (identity, selling guidance, voice, support, payments).
 CREATE TABLE IF NOT EXISTS public.company_brain_settings (
@@ -201,9 +212,9 @@ CREATE TABLE IF NOT EXISTS public.company_brain_faqs (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   search_vector tsvector GENERATED ALWAYS AS (
-    setweight(to_tsvector('simple', coalesce(question, '')), 'A') ||
-    setweight(to_tsvector('simple', coalesce(array_to_string(aliases, ' '), '')), 'A') ||
-    setweight(to_tsvector('simple', coalesce(approved_answer, '')), 'B')
+    setweight(to_tsvector('simple'::regconfig, coalesce(question, '')), 'A') ||
+    setweight(to_tsvector('simple'::regconfig, coalesce(public.company_brain_array_to_string(aliases, ' '), '')), 'A') ||
+    setweight(to_tsvector('simple'::regconfig, coalesce(approved_answer, '')), 'B')
   ) STORED
 );
 
@@ -325,7 +336,7 @@ CREATE TABLE IF NOT EXISTS public.company_brain_knowledge_chunks (
   page_ref text,
   category text,
   search_vector tsvector GENERATED ALWAYS AS (
-    to_tsvector('simple', coalesce(content, ''))
+    to_tsvector('simple'::regconfig, coalesce(content, ''))
   ) STORED,
   created_at timestamptz NOT NULL DEFAULT now()
 );
