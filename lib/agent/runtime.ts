@@ -355,7 +355,7 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    const rateLimited = err instanceof AgentLlmRateLimitError || /Gemini API 429/.test(message);
+    const rateLimited = err instanceof AgentLlmRateLimitError || /\b429\b/.test(message);
     console.error("[agent] execution failed", err);
     await finishExecution(executionId, {
       state: "FAILED",

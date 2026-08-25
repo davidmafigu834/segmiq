@@ -1,5 +1,6 @@
 import { getAnthropicModel } from "@/lib/ai/claude";
-import { GeminiAgentProvider } from "./provider-gemini";
+import { GeminiAgentProvider, getGeminiModel } from "./provider-gemini";
+import { GroqAgentProvider, getGroqModel } from "./provider-groq";
 import type { AgentModelUsage } from "./types";
 
 /**
@@ -213,18 +214,117 @@ export class AnthropicAgentProvider implements AgentModelProvider {
   }
 }
 
-export function getAgentLlmProviderName(): "gemini" | "anthropic" {
+export const AGENT_LLM_PROVIDERS = ["gemini", "groq", "anthropic"] as const;
+export type AgentLlmProviderName = (typeof AGENT_LLM_PROVIDERS)[number];
+
+export function isAgentLlmRateLimitError(err: unknown): boolean {
+  if (err instanceof AgentLlmRateLimitError) return true;
+  return err instanceof Error && /\b429\b/.test(err.message);
+}
+
+export function isAgentLlmProviderConfigured(name: AgentLlmProviderName): boolean {
+  if (name === "gemini") return Boolean(process.env.GEMINI_API_KEY?.trim());
+  if (name === "groq") return Boolean(process.env.GROQ_API_KEY?.trim());
+  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+}
+
+export function getAgentLlmProviderName(): AgentLlmProviderName {
   const explicit = process.env.AGENT_LLM_PROVIDER?.trim().toLowerCase();
-  if (explicit === "gemini" || explicit === "anthropic") return explicit;
+  if (explicit === "gemini" || explicit === "groq" || explicit === "anthropic") return explicit;
   if (process.env.GEMINI_API_KEY?.trim() && !process.env.ANTHROPIC_API_KEY?.trim()) {
     return "gemini";
+  }
+  if (process.env.GROQ_API_KEY?.trim() && !process.env.ANTHROPIC_API_KEY?.trim()) {
+    return "groq";
   }
   return "anthropic";
 }
 
-export function getAgentModelProvider(): AgentModelProvider {
-  if (getAgentLlmProviderName() === "gemini") {
-    return new GeminiAgentProvider();
+/**
+ * Secondary provider used when the primary returns HTTP 429.
+ * Default: Groq if Gemini is primary (or Gemini if Groq is primary), when that key exists.
+ * Set AGENT_LLM_FALLBACK=none to disable.
+ */
+export function getAgentLlmFallbackName(): AgentLlmProviderName | null {
+  const primary = getAgentLlmProviderName();
+  const raw = process.env.AGENT_LLM_FALLBACK?.trim().toLowerCase();
+  if (raw === "none" || raw === "off" || raw === "false") return null;
+
+  let fallback: AgentLlmProviderName | null = null;
+  if (raw === "gemini" || raw === "groq" || raw === "anthropic") {
+    fallback = raw;
+  } else if (primary === "gemini" && isAgentLlmProviderConfigured("groq")) {
+    fallback = "groq";
+  } else if (primary === "groq" && isAgentLlmProviderConfigured("gemini")) {
+    fallback = "gemini";
   }
+
+  if (!fallback || fallback === primary) return null;
+  if (!isAgentLlmProviderConfigured(fallback)) return null;
+  return fallback;
+}
+
+export function createAgentModelProvider(name: AgentLlmProviderName): AgentModelProvider {
+  if (name === "gemini") return new GeminiAgentProvider();
+  if (name === "groq") return new GroqAgentProvider();
   return new AnthropicAgentProvider();
+}
+
+export function describeAgentLlm(): {
+  provider: AgentLlmProviderName;
+  fallback: AgentLlmProviderName | null;
+  model: string;
+} {
+  const provider = getAgentLlmProviderName();
+  const model =
+    provider === "gemini" ? getGeminiModel() : provider === "groq" ? getGroqModel() : getAnthropicModel();
+  return { provider, fallback: getAgentLlmFallbackName(), model };
+}
+
+/**
+ * Tries the primary provider, then sticks to the fallback for the rest of this
+ * instance (one agent run) after a rate-limit error.
+ */
+export class FailoverAgentProvider implements AgentModelProvider {
+  private usingFallback = false;
+
+  constructor(
+    private readonly primary: AgentModelProvider,
+    private readonly fallback: AgentModelProvider
+  ) {}
+
+  get modelId(): string {
+    return this.usingFallback ? this.fallback.modelId : this.primary.modelId;
+  }
+
+  async generate(req: GenerateRequest): Promise<ModelResponse> {
+    if (this.usingFallback) {
+      return this.fallback.generate(req);
+    }
+    try {
+      return await this.primary.generate(req);
+    } catch (err) {
+      if (!isAgentLlmRateLimitError(err)) throw err;
+      this.usingFallback = true;
+      const message = err instanceof Error ? err.message : String(err);
+      console.log(
+        JSON.stringify({
+          ts: new Date().toISOString(),
+          scope: "agent",
+          event: "llm.fallback",
+          from: this.primary.modelId,
+          to: this.fallback.modelId,
+          reason: message.slice(0, 240),
+        })
+      );
+      return this.fallback.generate(req);
+    }
+  }
+}
+
+export function getAgentModelProvider(): AgentModelProvider {
+  const primary = createAgentModelProvider(getAgentLlmProviderName());
+  const fallbackName = getAgentLlmFallbackName();
+  if (!fallbackName) return primary;
+  return new FailoverAgentProvider(primary, createAgentModelProvider(fallbackName));
 }

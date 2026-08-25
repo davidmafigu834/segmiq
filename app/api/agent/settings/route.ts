@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
+import { describeAgentLlm } from "@/lib/agent/provider";
 import {
   getAgentCompanySettings,
   updateAgentCompanySettings,
@@ -35,7 +36,11 @@ export async function GET(req: Request) {
   const access = await resolveManagerClient(req);
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
   const settings = await getAgentCompanySettings(access.clientId);
-  return NextResponse.json({ settings, globallyEnabled: isAgentGloballyEnabled() });
+  return NextResponse.json({
+    settings,
+    globallyEnabled: isAgentGloballyEnabled(),
+    llm: describeAgentLlm(),
+  });
 }
 
 const patchSchema = z

@@ -230,7 +230,10 @@ export class GeminiAgentProvider implements AgentModelProvider {
           }
           if (response.status === 429) {
             lastError = new AgentLlmRateLimitError(`Gemini API 429: ${errText.slice(0, 400)}`);
-            if (attempt < MAX_RETRIES) {
+            const quotaExhausted = /exceeded your current quota|quota exceeded|resource_exhausted/i.test(
+              errText
+            );
+            if (!quotaExhausted && attempt < MAX_RETRIES) {
               await sleep(retryAfterMs(errText, attempt));
               continue;
             }

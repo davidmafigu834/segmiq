@@ -42,6 +42,13 @@ const MODE_COPY: Record<AgentSettings["autonomyMode"], string> = {
     "The agent additionally sends quotations autonomously — only within the value limit below, and only when the Commercial Check passes and no approval is required.",
 };
 
+function llmProviderLabel(name: string): string {
+  if (name === "gemini") return "Gemini";
+  if (name === "groq") return "Groq";
+  if (name === "anthropic") return "Claude";
+  return name;
+}
+
 function ToggleRow({
   label,
   hint,
@@ -75,6 +82,9 @@ export function AgentSettingsSection({
 }) {
   const [settings, setSettings] = useState<AgentSettings | null>(null);
   const [globallyEnabled, setGloballyEnabled] = useState(true);
+  const [llm, setLlm] = useState<{ provider: string; fallback: string | null; model: string } | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -90,6 +100,13 @@ export function AgentSettingsSection({
         if (!cancelled && res.ok) {
           setSettings(data.settings);
           setGloballyEnabled(Boolean(data.globallyEnabled));
+          if (data.llm && typeof data.llm.provider === "string") {
+            setLlm({
+              provider: data.llm.provider,
+              fallback: typeof data.llm.fallback === "string" ? data.llm.fallback : null,
+              model: typeof data.llm.model === "string" ? data.llm.model : "",
+            });
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -202,6 +219,14 @@ export function AgentSettingsSection({
                   ? "Inbound WhatsApp conversations are handled by the agent under the rules below."
                   : "Conversations use your existing scripted qualification flow."}
               </p>
+              {llm ? (
+                <p className="mt-1 text-[11px] text-sales-text-muted">
+                  Model: {llmProviderLabel(llm.provider)} ({llm.model || "default"})
+                  {llm.fallback
+                    ? ` · falls back to ${llmProviderLabel(llm.fallback)} if the primary hits its rate limit`
+                    : null}
+                </p>
+              ) : null}
             </div>
           </div>
           <Switch checked={settings.enabled} onCheckedChange={(v) => patch({ enabled: v })} />
