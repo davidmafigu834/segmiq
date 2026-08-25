@@ -67,7 +67,7 @@ type ActionRow = {
   performed_at: string;
 };
 
-type Tab = "human" | "completed" | "failed" | "active" | "proactive";
+type Tab = "human" | "completed" | "failed" | "active" | "proactive" | "manager";
 
 const STATE_STYLES: Record<string, string> = {
   COMPLETED: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
@@ -222,6 +222,7 @@ function AgentActivityInner({
       { value: "completed" as const, label: "Completed", badge: counts.completed || undefined },
       { value: "failed" as const, label: "Failed / skipped", badge: counts.failed || undefined },
       { value: "proactive" as const, label: "Proactive", badge: counts.proactive || undefined },
+      { value: "manager" as const, label: "Command Center", badge: counts.manager || undefined },
       { value: "active" as const, label: "Active", badge: counts.active || undefined },
     ],
     [counts]

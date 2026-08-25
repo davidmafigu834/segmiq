@@ -7,6 +7,7 @@ import {
   CreditCard,
   FileText,
   LayoutDashboard,
+  ScanSearch,
   Settings,
   Users,
   UsersRound,
@@ -24,6 +25,7 @@ export type CompanyNavIconId =
   | "calendar"
   | "customers"
   | "agent"
+  | "command"
   | "reports"
   | "billing"
   | "settings";
@@ -57,6 +59,7 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   calendar: CalendarDays,
   customers: UsersRound,
   agent: Bot,
+  command: ScanSearch,
   reports: BarChart3,
   billing: CreditCard,
   settings: Settings,
@@ -151,6 +154,16 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "company",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/customers"),
+  },
+  {
+    id: "command",
+    label: "Command Center",
+    href: "/client/command",
+    icon: "command",
+    section: "tools",
+    mobileSlot: "more",
+    mobileLabel: "Command",
+    match: (p) => exactOrChild(p, "/client/command"),
   },
   {
     id: "agent",

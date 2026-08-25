@@ -11,6 +11,7 @@ const TAB_STATES: Record<string, string[]> = {
   completed: ["COMPLETED"],
   failed: ["FAILED", "CANCELLED", "SKIPPED"],
   proactive: [],
+  manager: [],
 };
 
 export async function GET(req: Request) {
@@ -47,6 +48,8 @@ export async function GET(req: Request) {
     .limit(limit);
   if (tab === "proactive") {
     query = query.eq("trigger_kind", "PROACTIVE");
+  } else if (tab === "manager") {
+    query = query.eq("trigger_kind", "MANAGER");
   } else {
     query = query.in("state", states.length ? states : TAB_STATES.completed);
   }
@@ -81,12 +84,12 @@ export async function GET(req: Request) {
   const counts: Record<string, number> = {};
   await Promise.all(
     Object.entries(TAB_STATES).map(async ([key, tabStates]) => {
-      if (key === "proactive") {
+      if (key === "proactive" || key === "manager") {
         const { count } = await supabase
           .from("agent_executions")
           .select("id", { count: "exact", head: true })
           .eq("client_id", clientId)
-          .eq("trigger_kind", "PROACTIVE");
+          .eq("trigger_kind", key === "proactive" ? "PROACTIVE" : "MANAGER");
         counts[key] = count ?? 0;
         return;
       }
@@ -104,7 +107,7 @@ export async function GET(req: Request) {
     .eq("client_id", clientId)
     .gte("created_at", dayStart.toISOString());
 
-  const leadIds = Array.from(new Set(executions.map((e) => e.lead_id)));
+  const leadIds = Array.from(new Set(executions.map((e) => e.lead_id).filter(Boolean))) as string[];
   const { data: leadsData } = leadIds.length
     ? await supabase.from("leads").select("id, name, phone").in("id", leadIds)
     : { data: [] as Array<Record<string, unknown>> };
@@ -125,7 +128,7 @@ export async function GET(req: Request) {
       const lead = leadById.get(e.lead_id);
       return {
         ...e,
-        customer_name: lead?.name ?? lead?.phone ?? "Unknown",
+        customer_name: e.trigger_kind === "MANAGER" ? "Command Center" : lead?.name ?? lead?.phone ?? "Unknown",
       };
     }),
     counts: { ...counts, today: todayCount ?? 0 },
