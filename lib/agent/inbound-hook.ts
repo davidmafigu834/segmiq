@@ -3,6 +3,7 @@ import { processWhatsAppQualification } from "@/lib/whatsapp/qualification";
 import { handleAgentInboundMessage } from "./runtime";
 import { getAgentCompanySettings, isAgentGloballyEnabled } from "./settings";
 import type { InboundConversationEvent } from "./types";
+import { isProactiveOptOutMessage } from "@/lib/agent/proactive/opt-out";
 
 /**
  * Inbound integration point. When SegmiQ Agent is enabled for the company it
@@ -51,6 +52,24 @@ export async function dispatchInboundToAgentOrQualification(opts: {
       isNewLead: opts.isNewLead,
     };
     background("segmiqAgentRun", () => handleAgentInboundMessage(event));
+    background("segmiqProactiveInbound", async () => {
+      const { hookCustomerMessage, hookCustomerOptOut } = await import("@/lib/agent/proactive");
+      if (opts.contactId && isProactiveOptOutMessage(opts.body)) {
+        await hookCustomerOptOut({
+          clientId: opts.clientId,
+          contactId: opts.contactId,
+          leadId: opts.leadId,
+          reason: "Customer requested no further messages",
+        });
+      }
+      await hookCustomerMessage({
+        clientId: opts.clientId,
+        leadId: opts.leadId,
+        text: opts.body,
+        contactId: opts.contactId,
+        actorId: opts.messageId,
+      });
+    });
     return;
   }
 

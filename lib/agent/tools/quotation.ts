@@ -408,6 +408,18 @@ export async function executeSendQuotation(
     channel: "whatsapp",
   });
 
+  const { hookQuotationSent } = await import("@/lib/agent/proactive");
+  void hookQuotationSent({
+    clientId: ctx.clientId,
+    quotationId: input.quotation_id,
+    leadId: ctx.leadId,
+    dealId: (full.deal_id as string) || null,
+    revisionNumber: Number(full.revision_number) || 1,
+    validUntil: (full.valid_until as string) || null,
+    quoteNumber,
+    actorType: "AGENT",
+  });
+
   return toolSuccess(
     { sent: true, quote_number: quoteNumber, total: evaluation.total, link },
     { type: "quotation_send", id: input.quotation_id }

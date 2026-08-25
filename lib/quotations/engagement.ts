@@ -75,5 +75,12 @@ export async function recordCustomerView(
     });
   }
 
-  return { firstView: Boolean(firstView || !opts.viewedAt), viewCount: nextCount };
+  const viewed = { firstView: Boolean(firstView || !opts.viewedAt), viewCount: nextCount };
+  const { hookQuotationViewed } = await import("@/lib/agent/proactive");
+  void hookQuotationViewed({
+    clientId: opts.clientId,
+    quotationId: opts.quotationId,
+    firstView: viewed.firstView,
+  });
+  return viewed;
 }

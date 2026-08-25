@@ -111,6 +111,15 @@ export async function GET(req: Request) {
     errors.push(`quotations: ${e instanceof Error ? e.message : String(e)}`);
   }
 
+  try {
+    const { reconcileProactiveJobs } = await import("@/lib/agent/proactive");
+    const proactive = await reconcileProactiveJobs();
+    console.log("[cron daily] Proactive reconciliation", proactive);
+  } catch (e) {
+    console.error("[cron daily] reconcileProactiveJobs", e);
+    errors.push(`proactive: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
   const ok = errors.length === 0;
   const body: Record<string, unknown> = { ok, uncontacted, followUp, billing };
   if (errors.length > 0) body.errors = errors;

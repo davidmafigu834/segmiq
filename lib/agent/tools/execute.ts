@@ -441,7 +441,12 @@ async function executeCreateFollowUp(
 
   const { error } = await supabase
     .from("leads")
-    .update({ follow_up_date: input.date, updated_at: new Date().toISOString() })
+    .update({
+      follow_up_date: input.date,
+      follow_up_source: input.source === "CUSTOMER_REQUEST" ? "CUSTOMER_COMMITMENT" : "AGENT_CREATED",
+      follow_up_execution_mode: "AGENT_ALLOWED",
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", ctx.leadId)
     .eq("client_id", ctx.clientId);
   if (error) return toolFailure(`Failed to create follow-up: ${error.message}`);
@@ -463,6 +468,15 @@ async function executeCreateFollowUp(
     },
     { onConflict: "lead_id" }
   );
+
+  const { hookFollowUpSet } = await import("@/lib/agent/proactive");
+  void hookFollowUpSet({
+    clientId: ctx.clientId,
+    leadId: ctx.leadId,
+    dueDate: input.date,
+    source: input.source === "CUSTOMER_REQUEST" ? "CUSTOMER_COMMITMENT" : "AGENT_CREATED",
+    actorType: input.source === "CUSTOMER_REQUEST" ? "CUSTOMER" : "AGENT",
+  });
 
   return toolSuccess(
     { date: input.date, description: input.description, source: input.source },
@@ -519,6 +533,16 @@ async function executeTransferSupport(
         .single();
       caseId = (created?.id as string) ?? null;
     }
+  }
+
+  if (caseId) {
+    const { hookSupportCaseCreated } = await import("@/lib/agent/proactive");
+    void hookSupportCaseCreated({
+      clientId: ctx.clientId,
+      caseId,
+      leadId: ctx.leadId,
+      actorType: "AGENT",
+    });
   }
 
   await logLeadEvent({

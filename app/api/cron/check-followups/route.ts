@@ -16,7 +16,9 @@ export async function GET(req: Request) {
 
   try {
     const followUpCallbacks = await executeFollowUpReminders({ t30Only: true });
-    return NextResponse.json({ ok: true, followUpCallbacks });
+    const { runProactiveWorker } = await import("@/lib/agent/proactive");
+    const proactive = await runProactiveWorker();
+    return NextResponse.json({ ok: true, followUpCallbacks, proactive });
   } catch (e) {
     console.error("[cron check-followups] executeFollowUpReminders", e);
     return NextResponse.json(

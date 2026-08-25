@@ -32,6 +32,13 @@ type AgentConversationData = {
     summary: string;
     briefing: Record<string, unknown> | null;
   } | null;
+  nextProactive?: {
+    id: string;
+    triggerType: string;
+    scheduledAt: string;
+    status: string;
+    decisionSummary: string | null;
+  } | null;
 };
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
@@ -46,7 +53,7 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
 
 type MenuAction =
   | { action: "pause"; pauseFor: "indefinite" | "1h" | "tomorrow"; label: string }
-  | { action: "resume" | "takeover" | "release" | "escalate"; label: string };
+  | { action: "resume" | "takeover" | "release" | "escalate" | "cancel_proactive"; label: string };
 
 /**
  * Agent status + briefing + controls for one conversation.
@@ -116,6 +123,7 @@ export function AgentConversationCard({
         { action: "pause", pauseFor: "1h", label: "Pause for 1 hour" },
         { action: "pause", pauseFor: "tomorrow", label: "Pause until tomorrow" },
         { action: "pause", pauseFor: "indefinite", label: "Pause until resumed" },
+        { action: "cancel_proactive", label: "I'll handle the next follow-up" },
         status === "HUMAN_HANDLING"
           ? { action: "release", label: "Let agent handle" }
           : { action: "takeover", label: "I'll take over" },
@@ -191,6 +199,22 @@ export function AgentConversationCard({
         </div>
       </div>
 
+      {data.nextProactive ? (
+        <div className="mt-2 rounded-[8px] border border-sales-border-subtle bg-sales-neutral-100/60 px-2.5 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+            Next Agent action
+          </p>
+          <p className="mt-0.5 text-[12px] font-medium text-sales-text-primary">
+            {proactiveTriggerLabel(data.nextProactive.triggerType)}
+          </p>
+          <p className="text-[11px] text-sales-text-secondary">
+            {formatWhen(data.nextProactive.scheduledAt)}
+            {data.nextProactive.status === "WAITING_FOR_CHANNEL" ? " · waiting for WhatsApp" : ""}
+            {data.nextProactive.status === "WAITING_FOR_HUMAN" ? " · waiting for approval" : ""}
+          </p>
+        </div>
+      ) : null}
+
       {data.openEscalation ? (
         <div className="mt-2 rounded-[8px] border border-amber-300/50 bg-amber-50/60 px-2.5 py-2 text-[11px] leading-relaxed text-amber-900 dark:border-amber-500/25 dark:bg-amber-500/[0.07] dark:text-amber-200">
           <span className="font-semibold">
@@ -239,3 +263,27 @@ export function AgentConversationCard({
     </section>
   );
 }
+
+function proactiveTriggerLabel(type: string): string {
+  if (type.includes("quotation.followup")) return "Follow up quotation";
+  if (type.includes("customer.followup")) return "Customer requested follow-up";
+  if (type.includes("appointment.reminder")) return "Appointment reminder";
+  if (type.includes("deal.inactive")) return "Inactive Deal review";
+  if (type.includes("expiring")) return "Quote expiry review";
+  return type.replace(/[._]/g, " ");
+}
+
+function formatWhen(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      weekday: "short",
+      hour: "numeric",
+      minute: "2-digit",
+      day: "numeric",
+      month: "short",
+    });
+  } catch {
+    return iso;
+  }
+}
+

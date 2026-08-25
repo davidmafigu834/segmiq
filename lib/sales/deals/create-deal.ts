@@ -246,5 +246,14 @@ export async function createDealFromLead(
     };
   }
 
+  const { hookDealCreated } = await import("@/lib/agent/proactive");
+  void hookDealCreated({
+    clientId: (deal as DealRow).client_id,
+    dealId: (deal as DealRow).id,
+    leadId: (deal as DealRow).originating_lead_id,
+    stage: (deal as DealRow).stage,
+    actorType: "HUMAN",
+  });
+
   return { ok: true, deal: deal as DealRow, alreadyExisted: false };
 }

@@ -10,6 +10,7 @@ const TAB_STATES: Record<string, string[]> = {
   human: ["WAITING_FOR_HUMAN"],
   completed: ["COMPLETED"],
   failed: ["FAILED", "CANCELLED", "SKIPPED"],
+  proactive: [],
 };
 
 export async function GET(req: Request) {
@@ -39,12 +40,16 @@ export async function GET(req: Request) {
   let query = supabase
     .from("agent_executions")
     .select(
-      "id, lead_id, state, intents, confidence, decision_summary, customer_reply, reply_status, autonomy_mode, model, tool_call_count, latency_ms, error_code, test_mode, created_at, completed_at"
+      "id, lead_id, state, intents, confidence, decision_summary, customer_reply, reply_status, autonomy_mode, model, tool_call_count, latency_ms, error_code, test_mode, created_at, completed_at, trigger_kind, reason_code"
     )
     .eq("client_id", clientId)
-    .in("state", states)
     .order("created_at", { ascending: false })
     .limit(limit);
+  if (tab === "proactive") {
+    query = query.eq("trigger_kind", "PROACTIVE");
+  } else {
+    query = query.in("state", states.length ? states : TAB_STATES.completed);
+  }
   if (leadId) query = query.eq("lead_id", leadId);
   const { data: executionsData } = await query;
 
@@ -65,6 +70,8 @@ export async function GET(req: Request) {
     test_mode: boolean | null;
     created_at: string;
     completed_at: string | null;
+    trigger_kind?: string | null;
+    reason_code?: string | null;
   };
   const executions = asRows<ExecutionRow>(executionsData);
 
@@ -74,6 +81,15 @@ export async function GET(req: Request) {
   const counts: Record<string, number> = {};
   await Promise.all(
     Object.entries(TAB_STATES).map(async ([key, tabStates]) => {
+      if (key === "proactive") {
+        const { count } = await supabase
+          .from("agent_executions")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", clientId)
+          .eq("trigger_kind", "PROACTIVE");
+        counts[key] = count ?? 0;
+        return;
+      }
       const { count } = await supabase
         .from("agent_executions")
         .select("id", { count: "exact", head: true })

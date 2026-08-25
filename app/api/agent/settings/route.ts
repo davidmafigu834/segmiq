@@ -7,6 +7,7 @@ import {
   updateAgentCompanySettings,
   isAgentGloballyEnabled,
 } from "@/lib/agent/settings";
+import { getProactiveSettings, updateProactiveSettings } from "@/lib/agent/proactive/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,10 @@ export async function GET(req: Request) {
   const access = await resolveManagerClient(req);
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
   const settings = await getAgentCompanySettings(access.clientId);
+  const proactive = await getProactiveSettings(access.clientId);
   return NextResponse.json({
     settings,
+    proactive,
     globallyEnabled: isAgentGloballyEnabled(),
     llm: describeAgentLlm(),
   });
@@ -72,6 +75,15 @@ const patchSchema = z
     dailyExecutionLimit: z.number().int().min(1).max(10_000),
     conversationHourlyLimit: z.number().int().min(1).max(100),
     testMode: z.boolean(),
+    proactive: z
+      .object({
+        enabled: z.boolean(),
+        shadowMode: z.boolean(),
+        customerMessaging: z.boolean(),
+        internalActions: z.boolean(),
+        config: z.record(z.unknown()).optional(),
+      })
+      .partial(),
   })
   .partial();
 
@@ -89,8 +101,20 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const settings = await updateAgentCompanySettings(access.clientId, parsed.data);
-    return NextResponse.json({ settings });
+    const { proactive: proactivePatch, ...agentPatch } = parsed.data;
+    const settings = Object.keys(agentPatch).length
+      ? await updateAgentCompanySettings(access.clientId, agentPatch)
+      : await getAgentCompanySettings(access.clientId);
+    const proactive = proactivePatch
+      ? await updateProactiveSettings(access.clientId, {
+          enabled: proactivePatch.enabled,
+          shadowMode: proactivePatch.shadowMode,
+          customerMessaging: proactivePatch.customerMessaging,
+          internalActions: proactivePatch.internalActions,
+          config: proactivePatch.config as Parameters<typeof updateProactiveSettings>[1]["config"],
+        })
+      : await getProactiveSettings(access.clientId);
+    return NextResponse.json({ settings, proactive });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to save settings";
     const blocked = /Complete these|quotation readiness/i.test(message);

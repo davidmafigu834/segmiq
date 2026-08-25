@@ -98,7 +98,10 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
 
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (parsed.data.status) updates.status = parsed.data.status as LeadStatus;
-  if (parsed.data.follow_up_date !== undefined) updates.follow_up_date = parsed.data.follow_up_date;
+  if (parsed.data.follow_up_date !== undefined) {
+    updates.follow_up_date = parsed.data.follow_up_date;
+    updates.follow_up_source = parsed.data.follow_up_date ? "HUMAN_CREATED" : null;
+  }
   if (parsed.data.expected_close_date !== undefined) {
     updates.expected_close_date = parsed.data.expected_close_date;
   }
@@ -204,6 +207,17 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
           followUpDate: parsed.data.follow_up_date as string,
         })
       );
+      background("proactiveFollowUp", async () => {
+        const { hookFollowUpSet } = await import("@/lib/agent/proactive");
+        await hookFollowUpSet({
+          clientId,
+          leadId: params.leadId,
+          dueDate: parsed.data.follow_up_date as string,
+          source: "HUMAN_CREATED",
+          actorType: "HUMAN",
+          actorId: actor.id,
+        });
+      });
     }
 
     if (

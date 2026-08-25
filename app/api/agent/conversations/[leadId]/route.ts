@@ -91,6 +91,8 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
   }
 
   const drafted = executions.find((run) => run.reply_status === "DRAFTED");
+  const { upcomingJobForLead } = await import("@/lib/agent/proactive");
+  const nextProactive = await upcomingJobForLead(access.clientId, access.leadId);
 
   return NextResponse.json({
     agentEnabledForCompany: settings.enabled,
@@ -102,6 +104,15 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       ? { executionId: drafted.id, text: drafted.customer_reply }
       : null,
     suggestedActions,
+    nextProactive: nextProactive
+      ? {
+          id: nextProactive.id,
+          triggerType: nextProactive.triggerType,
+          scheduledAt: nextProactive.scheduledAt,
+          status: nextProactive.status,
+          decisionSummary: nextProactive.decisionSummary,
+        }
+      : null,
   });
 }
 
@@ -117,6 +128,7 @@ const actionSchema = z.object({
     "reject_draft",
     "apply_suggestions",
     "escalate",
+    "cancel_proactive",
   ]),
   pauseMinutes: z.number().int().min(5).max(7 * 24 * 60).optional(),
   pauseFor: z.enum(["indefinite", "1h", "tomorrow"]).optional(),
@@ -155,6 +167,15 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
         humanTakeover: false,
         humanNeededReason: null,
       });
+      {
+        const { hookAgentResumed } = await import("@/lib/agent/proactive");
+        void hookAgentResumed({
+          clientId: access.clientId,
+          leadId: access.leadId,
+          actorType: "HUMAN",
+          actorId: access.auth.userId,
+        });
+      }
       break;
     case "disable":
       await updateConversationAgentState(access.clientId, access.leadId, {
@@ -176,6 +197,15 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
         status: "HUMAN_HANDLING",
         lastHumanMessageAt: now,
       });
+      {
+        const { hookHumanTakeover } = await import("@/lib/agent/proactive");
+        void hookHumanTakeover({
+          clientId: access.clientId,
+          leadId: access.leadId,
+          actorType: "HUMAN",
+          actorId: access.auth.userId,
+        });
+      }
       break;
     case "release":
       await updateConversationAgentState(access.clientId, access.leadId, {
@@ -183,7 +213,26 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
         status: "IDLE",
         humanNeededReason: null,
       });
+      {
+        const { hookAgentResumed } = await import("@/lib/agent/proactive");
+        void hookAgentResumed({
+          clientId: access.clientId,
+          leadId: access.leadId,
+          actorType: "HUMAN",
+          actorId: access.auth.userId,
+        });
+      }
       break;
+    case "cancel_proactive": {
+      const { cancelJobs } = await import("@/lib/agent/proactive");
+      await cancelJobs({
+        clientId: access.clientId,
+        leadId: access.leadId,
+        reason: reason?.trim() || "Salesperson is handling this.",
+        cancelledById: access.auth.userId,
+      });
+      break;
+    }
     case "send_draft": {
       const sent = await sendAgentDraft({
         clientId: access.clientId,

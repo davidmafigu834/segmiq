@@ -31,6 +31,14 @@ export async function expireOverdueQuotations(supabase: SupabaseClient): Promise
       eventType: "EXPIRED",
       eventData: { quote_number: q.quote_number },
     });
+    const { hookQuotationTerminal, DOMAIN_EVENT_TYPES } = await import("@/lib/agent/proactive");
+    void hookQuotationTerminal({
+      clientId: q.client_id as string,
+      quotationId: q.id as string,
+      type: DOMAIN_EVENT_TYPES.QUOTATION_EXPIRED,
+      leadId: (q.lead_id as string) || null,
+      actorType: "SYSTEM",
+    });
   }
   return count;
 }

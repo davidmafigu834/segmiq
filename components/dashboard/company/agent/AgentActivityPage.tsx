@@ -39,6 +39,8 @@ type ExecutionRow = {
   created_at: string;
   completed_at: string | null;
   customer_name: string;
+  trigger_kind?: string | null;
+  reason_code?: string | null;
 };
 
 type EscalationRow = {
@@ -65,7 +67,7 @@ type ActionRow = {
   performed_at: string;
 };
 
-type Tab = "human" | "completed" | "failed" | "active";
+type Tab = "human" | "completed" | "failed" | "active" | "proactive";
 
 const STATE_STYLES: Record<string, string> = {
   COMPLETED: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
@@ -139,6 +141,9 @@ function AgentActivityInner({
   const [tab, setTab] = useState<Tab>("human");
   const [executions, setExecutions] = useState<ExecutionRow[]>([]);
   const [escalations, setEscalations] = useState<EscalationRow[]>([]);
+  const [upcoming, setUpcoming] = useState<
+    Array<{ id: string; triggerType: string; scheduledAt: string; status: string; leadId: string | null }>
+  >([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ExecutionRow | null>(null);
@@ -148,15 +153,29 @@ function AgentActivityInner({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/agent/activity?tab=${tab}&clientId=${encodeURIComponent(clientId)}`,
-        { cache: "no-store" }
-      );
+      const [res, jobsRes] = await Promise.all([
+        fetch(`/api/agent/activity?tab=${tab}&clientId=${encodeURIComponent(clientId)}`, { cache: "no-store" }),
+        fetch(`/api/agent/proactive/jobs?view=upcoming&clientId=${encodeURIComponent(clientId)}`, {
+          cache: "no-store",
+        }),
+      ]);
       const data = await res.json();
       if (res.ok) {
         setExecutions(data.executions ?? []);
         setCounts(data.counts ?? {});
         setEscalations(data.openEscalations ?? []);
+      }
+      if (jobsRes.ok) {
+        const jobsData = await jobsRes.json();
+        setUpcoming(
+          (jobsData.jobs ?? []).slice(0, 8).map((j: { id: string; triggerType: string; scheduledAt: string; status: string; leadId: string | null }) => ({
+            id: j.id,
+            triggerType: j.triggerType,
+            scheduledAt: j.scheduledAt,
+            status: j.status,
+            leadId: j.leadId,
+          }))
+        );
       }
     } finally {
       setLoading(false);
@@ -202,6 +221,7 @@ function AgentActivityInner({
       { value: "human" as const, label: "Human needed", badge: counts.human || undefined },
       { value: "completed" as const, label: "Completed", badge: counts.completed || undefined },
       { value: "failed" as const, label: "Failed / skipped", badge: counts.failed || undefined },
+      { value: "proactive" as const, label: "Proactive", badge: counts.proactive || undefined },
       { value: "active" as const, label: "Active", badge: counts.active || undefined },
     ],
     [counts]
@@ -240,6 +260,43 @@ function AgentActivityInner({
             </Button>
           }
         />
+
+        {upcoming.length ? (
+          <section className="rounded-[12px] border border-sales-border bg-sales-surface">
+            <header className="border-b border-sales-border-subtle px-4 py-3">
+              <h2 className="text-[13px] font-semibold text-sales-text-primary">Upcoming Agent actions</h2>
+              <p className="text-[12px] text-sales-text-secondary">
+                Scheduled evaluations — SegmiQ will re-check current state before acting.
+              </p>
+            </header>
+            <ul className="divide-y divide-sales-border-subtle">
+              {upcoming.map((job) => (
+                <li key={job.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] text-sales-text-primary">
+                      {job.triggerType.replace(/[._]/g, " ")}
+                    </p>
+                    <p className="text-[11px] text-sales-text-muted">
+                      {new Date(job.scheduledAt).toLocaleString(undefined, {
+                        weekday: "short",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        day: "numeric",
+                        month: "short",
+                      })}
+                      {job.status !== "SCHEDULED" ? ` · ${job.status.replace(/_/g, " ").toLowerCase()}` : ""}
+                    </p>
+                  </div>
+                  {job.leadId ? (
+                    <Link href={`/client/inbox?lead=${job.leadId}`} className="text-[12px] text-sales-text-secondary">
+                      Open
+                    </Link>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {escalations.length ? (
           <section className="rounded-[12px] border border-amber-300/50 bg-amber-50/60 dark:border-amber-500/25 dark:bg-amber-500/[0.06]">
@@ -342,7 +399,7 @@ function AgentActivityInner({
                         ))}
                       </p>
                       <p className="mt-0.5 line-clamp-1 text-[12px] text-sales-text-secondary">
-                        {row.decision_summary ?? row.error_code ?? row.state.toLowerCase()}
+                        {row.decision_summary ?? row.reason_code ?? row.error_code ?? row.state.toLowerCase()}
                       </p>
                     </div>
                     <div className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">

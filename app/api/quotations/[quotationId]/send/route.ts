@@ -176,6 +176,18 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
     }
 
     if (!shouldSendWhatsApp) {
+      const { hookQuotationSent } = await import("@/lib/agent/proactive");
+      void hookQuotationSent({
+        clientId: access.clientId,
+        quotationId: params.quotationId,
+        leadId: access.leadId,
+        dealId: (quote.deal_id as string) || null,
+        revisionNumber: Number(quote.revision_number) || 1,
+        validUntil: (quote.valid_until as string) || null,
+        quoteNumber,
+        actorType: "HUMAN",
+        actorId: access.actor.id,
+      });
       return NextResponse.json({
         success: true,
         pdfUrl,
@@ -215,6 +227,19 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
         { status: 502 }
       );
     }
+
+    const { hookQuotationSent } = await import("@/lib/agent/proactive");
+    void hookQuotationSent({
+      clientId: access.clientId,
+      quotationId: params.quotationId,
+      leadId: access.leadId,
+      dealId: (quote.deal_id as string) || null,
+      revisionNumber: Number(quote.revision_number) || 1,
+      validUntil: (quote.valid_until as string) || null,
+      quoteNumber,
+      actorType: "HUMAN",
+      actorId: access.actor.id,
+    });
 
     return NextResponse.json({
       success: true,
@@ -471,6 +496,31 @@ export async function POST(req: Request, { params }: { params: { quotationId: st
       },
       { status: 502 }
     );
+  }
+
+  const { hookQuotationSent, hookQuotationTerminal, DOMAIN_EVENT_TYPES } = await import(
+    "@/lib/agent/proactive"
+  );
+  void hookQuotationSent({
+    clientId: access.clientId,
+    quotationId: params.quotationId,
+    leadId: access.leadId,
+    dealId: (quote.deal_id as string) || null,
+    revisionNumber: Number(quote.revision_number) || 1,
+    validUntil: (quote.valid_until as string) || null,
+    quoteNumber,
+    actorType: "HUMAN",
+    actorId: access.actor.id,
+  });
+  if (parentId) {
+    void hookQuotationTerminal({
+      clientId: access.clientId,
+      quotationId: parentId,
+      type: DOMAIN_EVENT_TYPES.QUOTATION_SUPERSEDED,
+      leadId: access.leadId,
+      actorType: "HUMAN",
+      actorId: access.actor.id,
+    });
   }
 
   return NextResponse.json({

@@ -156,6 +156,15 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
         actor: { id: access.actor.id, name: access.actor.name },
         eventType: "ACCEPTED",
       });
+      const { hookQuotationTerminal, DOMAIN_EVENT_TYPES } = await import("@/lib/agent/proactive");
+      void hookQuotationTerminal({
+        clientId: access.clientId,
+        quotationId: params.quotationId,
+        type: DOMAIN_EVENT_TYPES.QUOTATION_ACCEPTED,
+        leadId: access.leadId,
+        actorType: "HUMAN",
+        actorId: access.actor.id,
+      });
     }
     if (body.status === "rejected") {
       await logQuotationEvent(supabase, {
@@ -166,6 +175,15 @@ export async function PATCH(req: Request, { params }: { params: { quotationId: s
         actor: { id: access.actor.id, name: access.actor.name },
         eventType: "DECLINED",
         eventData: { reason: body.declined_reason ?? null },
+      });
+      const { hookQuotationTerminal, DOMAIN_EVENT_TYPES } = await import("@/lib/agent/proactive");
+      void hookQuotationTerminal({
+        clientId: access.clientId,
+        quotationId: params.quotationId,
+        type: DOMAIN_EVENT_TYPES.QUOTATION_DECLINED,
+        leadId: access.leadId,
+        actorType: "HUMAN",
+        actorId: access.actor.id,
       });
     }
   }

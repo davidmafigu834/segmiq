@@ -252,6 +252,16 @@ export async function executeScheduleCallback(
     notes: `Callback ${label} — ${input.purpose} (scheduled by SegmiQ Agent, requested by customer on WhatsApp)`,
   });
 
+  const { hookAppointmentCreated } = await import("@/lib/agent/proactive");
+  void hookAppointmentCreated({
+    clientId: ctx.clientId,
+    appointmentId: callLog.id as string,
+    leadId: ctx.leadId,
+    callbackAt: callbackIso,
+    purpose: input.purpose,
+    actorType: "AGENT",
+  });
+
   return toolSuccess(
     {
       scheduled_for: label,
@@ -340,6 +350,15 @@ export async function executeRescheduleCallback(
     actor: AGENT_ACTOR,
     followUpDate,
     notes: `Rescheduled by SegmiQ Agent: ${previousLabel} → ${newLabel}${input.reason ? ` (${input.reason})` : ""}`,
+  });
+
+  const { hookAppointmentRescheduled } = await import("@/lib/agent/proactive");
+  void hookAppointmentRescheduled({
+    clientId: ctx.clientId,
+    appointmentId: upcoming[0].id as string,
+    leadId: ctx.leadId,
+    callbackAt: newIso,
+    actorType: "AGENT",
   });
 
   return toolSuccess(

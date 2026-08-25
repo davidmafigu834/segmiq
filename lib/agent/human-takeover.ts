@@ -14,6 +14,9 @@ export async function markConversationHumanTakeover(opts: {
       status: "HUMAN_HANDLING",
       lastHumanMessageAt: new Date().toISOString(),
     });
+    const { hookHumanTakeover, hookHumanOutbound } = await import("@/lib/agent/proactive");
+    void hookHumanTakeover({ clientId: opts.clientId, leadId: opts.leadId, actorType: "HUMAN" });
+    void hookHumanOutbound({ clientId: opts.clientId, leadId: opts.leadId, actorType: "HUMAN" });
   } catch (err) {
     console.error("[agent] human takeover mark failed", err);
   }

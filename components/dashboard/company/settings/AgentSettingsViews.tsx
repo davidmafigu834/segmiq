@@ -5,6 +5,8 @@ import Link from "next/link";
 import { AlertTriangle, Bot, Brain, Loader2 } from "lucide-react";
 import { Button, Switch, SegmentedControl, Select, Input } from "@/components/sales/ui";
 import { SettingsSectionCard } from "./SettingsSectionCard";
+import { ProactiveSettingsSection } from "./ProactiveSettingsSection";
+import type { ProactiveSettings } from "@/lib/agent/proactive/types";
 
 type AgentSettings = {
   enabled: boolean;
@@ -81,6 +83,7 @@ export function AgentSettingsSection({
   toast: (opts: { tone?: "success" | "info" | "warning" | "error"; title: string; description?: string }) => void;
 }) {
   const [settings, setSettings] = useState<AgentSettings | null>(null);
+  const [proactive, setProactive] = useState<ProactiveSettings | null>(null);
   const [globallyEnabled, setGloballyEnabled] = useState(true);
   const [llm, setLlm] = useState<{ provider: string; fallback: string | null; model: string } | null>(
     null
@@ -99,6 +102,7 @@ export function AgentSettingsSection({
         const data = await res.json();
         if (!cancelled && res.ok) {
           setSettings(data.settings);
+          if (data.proactive) setProactive(data.proactive);
           setGloballyEnabled(Boolean(data.globallyEnabled));
           if (data.llm && typeof data.llm.provider === "string") {
             setLlm({
@@ -129,11 +133,12 @@ export function AgentSettingsSection({
       const res = await fetch(`/api/agent/settings?clientId=${encodeURIComponent(clientId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({ ...settings, ...(proactive ? { proactive } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed");
       setSettings(data.settings);
+      if (data.proactive) setProactive(data.proactive);
       setDirty(false);
       toast({ title: "SegmiQ Agent settings saved", tone: "success" });
     } catch (err) {
@@ -144,7 +149,7 @@ export function AgentSettingsSection({
     } finally {
       setSaving(false);
     }
-  }, [clientId, settings, toast]);
+  }, [clientId, settings, proactive, toast]);
 
   const modeOptions = useMemo(
     () => [
@@ -403,6 +408,16 @@ export function AgentSettingsSection({
           />
         </label>
       </SettingsSectionCard>
+
+      {proactive ? (
+        <ProactiveSettingsSection
+          value={proactive}
+          onChange={(next) => {
+            setProactive(next);
+            setDirty(true);
+          }}
+        />
+      ) : null}
 
       <div className="flex justify-end">
         <Button onClick={save} disabled={!dirty || saving} loading={saving}>

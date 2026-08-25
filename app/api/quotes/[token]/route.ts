@@ -302,6 +302,14 @@ export async function POST(req: Request, { params }: { params: { token: string }
         message: `Customer requested changes on ${quote.quote_number || "quotation"}`,
       });
     }
+    const { hookQuotationTerminal, DOMAIN_EVENT_TYPES } = await import("@/lib/agent/proactive");
+    void hookQuotationTerminal({
+      clientId: quote.client_id as string,
+      quotationId: quote.id as string,
+      type: DOMAIN_EVENT_TYPES.QUOTATION_CHANGE_REQUESTED,
+      leadId: quote.lead_id as string,
+      actorType: "CUSTOMER",
+    });
     return NextResponse.json({ success: true, status: "request_changes" });
   }
 
@@ -430,6 +438,14 @@ export async function POST(req: Request, { params }: { params: { token: string }
         message: `${quote.quote_number || "Quotation"} was accepted`,
       });
     }
+    const { hookQuotationTerminal, DOMAIN_EVENT_TYPES } = await import("@/lib/agent/proactive");
+    void hookQuotationTerminal({
+      clientId: quote.client_id as string,
+      quotationId: quote.id as string,
+      type: DOMAIN_EVENT_TYPES.QUOTATION_ACCEPTED,
+      leadId: quote.lead_id as string,
+      actorType: "CUSTOMER",
+    });
     return NextResponse.json({ success: true, status: "accepted" });
   }
 
@@ -468,6 +484,14 @@ export async function POST(req: Request, { params }: { params: { token: string }
         message: `${quote.quote_number || "Quotation"} was declined`,
       });
     }
+    const { hookQuotationTerminal, DOMAIN_EVENT_TYPES } = await import("@/lib/agent/proactive");
+    void hookQuotationTerminal({
+      clientId: quote.client_id as string,
+      quotationId: quote.id as string,
+      type: DOMAIN_EVENT_TYPES.QUOTATION_DECLINED,
+      leadId: quote.lead_id as string,
+      actorType: "CUSTOMER",
+    });
     return NextResponse.json({ success: true, status: "rejected" });
   }
 

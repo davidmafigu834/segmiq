@@ -91,6 +91,17 @@ export async function updateDealStage(opts: {
     eventData: { from_stage: prev.stage, to_stage: opts.stage },
   });
 
+  const { hookDealStageChanged } = await import("@/lib/agent/proactive");
+  void hookDealStageChanged({
+    clientId: prev.client_id,
+    dealId: opts.dealId,
+    leadId: prev.originating_lead_id,
+    fromStage: prev.stage,
+    toStage: opts.stage,
+    actorType: "HUMAN",
+    actorId: opts.actorId,
+  });
+
   return { ok: true, deal: updated as DealRow };
 }
 
@@ -170,6 +181,16 @@ export async function closeDealWon(opts: {
     console.error("[closeDealWon] win_analysis", e);
   }
 
+  const { hookDealClosed } = await import("@/lib/agent/proactive");
+  void hookDealClosed({
+    clientId: prev.client_id,
+    dealId: opts.dealId,
+    leadId: prev.originating_lead_id,
+    stage: "WON",
+    actorType: "HUMAN",
+    actorId: opts.actorId,
+  });
+
   return { ok: true, deal: updated as DealRow };
 }
 
@@ -226,6 +247,16 @@ export async function closeDealLost(opts: {
     actorId: opts.actorId,
     eventType: "DEAL_LOST",
     eventData: { lost_reason: reason, notes: opts.notes ?? null },
+  });
+
+  const { hookDealClosed } = await import("@/lib/agent/proactive");
+  void hookDealClosed({
+    clientId: prev.client_id,
+    dealId: opts.dealId,
+    leadId: prev.originating_lead_id,
+    stage: "LOST",
+    actorType: "HUMAN",
+    actorId: opts.actorId,
   });
 
   return { ok: true, deal: updated as DealRow };
