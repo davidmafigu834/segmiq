@@ -39,7 +39,7 @@ The global flag defaults off. Turning it off stops new QR enrolment while preser
 
 On startup the gateway calls `GET /api/internal/whatsapp/connections/restorable`. SegmiQ returns every primary `TEMPORARY_WEB` connection that still holds an encrypted session bundle and was live before the restart, moving each one to `RECONNECTING` so a stale `CONNECTED` row never advertises a socket that no longer exists. The gateway then re-opens each session from stored credentials, staggered by 1.5 seconds, and a normal restart requires no new QR scan.
 
-A QR code is only ever published for an admin-initiated connect or reconnect. If WhatsApp asks an unattended restore or automatic reconnect to pair again, the stored session is no longer authorized: the gateway closes the socket and reports `RECONNECT_REQUIRED` rather than issuing codes nobody is waiting to scan.
+A QR code is only ever published for an admin-initiated connect or reconnect. That path discards any stored session first: a logged-out Baileys bundle 401s immediately and never emits a code. If WhatsApp asks an unattended restore or automatic reconnect to pair again, the stored session is no longer authorized: the gateway closes the socket and reports `RECONNECT_REQUIRED` rather than issuing codes nobody is waiting to scan.
 
 `RECONNECT_REQUIRED` raises an in-app notification for the company's managers, throttled to one alert per connection per six hours so a flapping connection cannot spam them. Salespeople are excluded — they cannot manage the connection and already see a reconnection notice in the Sales Hub.
 

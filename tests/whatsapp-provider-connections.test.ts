@@ -12,6 +12,12 @@ import {
   isGatewayTimeoutError,
   isMissingGatewayRoute,
 } from "../lib/whatsapp/gateway-client";
+import {
+  pairingAfterLoggedOut,
+  pairingForAdminConnect,
+  pairingForAutoRetry,
+  pairingForRestore,
+} from "../lib/whatsapp/pairing-policy";
 
 test("temporary provider advertises only the supported beta capabilities", () => {
   const capabilities = getWhatsAppCapabilities("TEMPORARY_WEB");
@@ -75,6 +81,27 @@ test("a restore whose stored session is rejected ends in RECONNECT_REQUIRED, not
   // An admin-initiated reconnect resets the record first and starts over.
   assert.equal(canTransitionWhatsAppConnection("RECONNECT_REQUIRED", "INITIALIZING"), true);
   assert.equal(canTransitionWhatsAppConnection("INITIALIZING", "AWAITING_QR"), true);
+});
+
+test("admin connect always starts a fresh QR pairing instead of reusing a logged-out session", () => {
+  assert.deepEqual(pairingForAdminConnect(), { allowQr: true, freshPairing: true });
+  assert.deepEqual(pairingForRestore(), { allowQr: false, freshPairing: false });
+  assert.deepEqual(pairingForAutoRetry({ allowQr: true, freshPairing: true }), {
+    allowQr: true,
+    freshPairing: false,
+  });
+  assert.deepEqual(pairingForAutoRetry({ allowQr: false, freshPairing: false }), {
+    allowQr: false,
+    freshPairing: false,
+  });
+  // A logged-out restore must not emit a QR. An admin pair that still had old
+  // creds should throw those away and pair again.
+  assert.equal(pairingAfterLoggedOut({ allowQr: false, freshPairing: false }), null);
+  assert.deepEqual(pairingAfterLoggedOut({ allowQr: true, freshPairing: false }), {
+    allowQr: true,
+    freshPairing: true,
+  });
+  assert.equal(pairingAfterLoggedOut({ allowQr: true, freshPairing: true }), null);
 });
 
 test("gateway timeouts are explained instead of a raw abort message", () => {

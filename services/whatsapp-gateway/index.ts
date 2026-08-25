@@ -24,6 +24,13 @@ import {
   phoneFromWhatsAppKey,
   unwrapWhatsAppContent,
 } from "../../lib/whatsapp/gateway-message";
+import {
+  pairingAfterLoggedOut,
+  pairingForAdminConnect,
+  pairingForAutoRetry,
+  pairingForRestore,
+  type WhatsAppPairingDecision,
+} from "../../lib/whatsapp/pairing-policy";
 // The shared signing module lives in the CommonJS half of the repository, so
 // Node cannot statically see its named exports from this ES module. Requiring
 // it keeps the gateway on exactly the implementation the web app verifies
@@ -57,6 +64,7 @@ type ManagedSession = {
    * authorizes the device and the connection needs admin attention instead.
    */
   allowQr: boolean;
+  freshPairing: boolean;
   sentByGateway: Set<string>;
   recentManualSendTimestamps: number[];
   recentMessages: Map<string, WAMessage["message"]>;
@@ -156,6 +164,7 @@ function parseAuth(raw: string | null): StoredAuth {
 }
 
 async function persistAuth(session: ManagedSession): Promise<void> {
+  if (session.closing) return;
   await appRequest(
     `/api/internal/whatsapp/connections/${encodeURIComponent(session.connectionId)}/session`,
     "PUT",
@@ -303,7 +312,7 @@ function disconnectCode(error: unknown): number | undefined {
 async function startConnection(
   connectionId: string,
   reconnectAttempts = 0,
-  allowQr = true
+  pairing: WhatsAppPairingDecision = pairingForAdminConnect()
 ): Promise<void> {
   const existing = sessions.get(connectionId);
   if (existing) {
@@ -315,8 +324,21 @@ async function startConnection(
     `/api/internal/whatsapp/connections/${encodeURIComponent(connectionId)}/session`,
     "GET"
   );
-  const auth = parseAuth(stored.serializedSession);
-  const placeholder = { connectionId, clientId: stored.clientId, auth } as ManagedSession;
+  if (pairing.freshPairing && stored.serializedSession) {
+    await appRequest(
+      `/api/internal/whatsapp/connections/${encodeURIComponent(connectionId)}/session`,
+      "DELETE"
+    ).catch(() => {});
+  }
+  const auth = parseAuth(pairing.freshPairing ? null : stored.serializedSession);
+  const placeholder = {
+    connectionId,
+    clientId: stored.clientId,
+    auth,
+    closing: false,
+    allowQr: pairing.allowQr,
+    freshPairing: pairing.freshPairing,
+  } as ManagedSession;
   const state = authenticationState(auth, () => persistAuth(placeholder));
   const recentMessages = new Map<string, WAMessage["message"]>();
   const socket = makeWASocket({
@@ -341,7 +363,8 @@ async function startConnection(
     reconnectAttempts,
     closing: false,
     open: false,
-    allowQr,
+    allowQr: pairing.allowQr,
+    freshPairing: pairing.freshPairing,
     sentByGateway: new Set<string>(),
     recentManualSendTimestamps: [],
     recentMessages,
@@ -349,6 +372,7 @@ async function startConnection(
   sessions.set(connectionId, session);
 
   socket.ev.on("creds.update", async (updates) => {
+    if (session.closing) return;
     Object.assign(auth.creds, updates);
     await persistAuth(session).catch((error) => console.error("[whatsapp-gateway] auth persist failed", error));
   });
@@ -424,9 +448,25 @@ async function startConnection(
     }
     if (update.connection === "close" && !session.closing) {
       const code = disconnectCode(update.lastDisconnect?.error);
+      session.closing = true;
       session.open = false;
       sessions.delete(connectionId);
       if (code === DisconnectReason.loggedOut || code === DisconnectReason.badSession) {
+        const retryPairing = pairingAfterLoggedOut({
+          allowQr: session.allowQr,
+          freshPairing: session.freshPairing,
+        });
+        if (retryPairing) {
+          void startConnection(connectionId, 0, retryPairing).catch(async (error) => {
+            await emit(connectionId, {
+              type: "STATUS",
+              state: "ERROR",
+              errorCode: "INITIALIZE_FAILED",
+              errorMessage: error instanceof Error ? error.message : "Initialization failed",
+            }).catch(() => {});
+          });
+          return;
+        }
         await emit(connectionId, {
           type: "STATUS",
           state: "RECONNECT_REQUIRED",
@@ -447,7 +487,11 @@ async function startConnection(
       }
       await emit(connectionId, { type: "STATUS", state: "RECONNECTING" }).catch(() => {});
       const delay = Math.min(30_000, 1_000 * 2 ** (session.reconnectAttempts - 1));
-      setTimeout(() => void startConnection(connectionId, session.reconnectAttempts, false).catch(async (error) => {
+      setTimeout(() => void startConnection(
+        connectionId,
+        session.reconnectAttempts,
+        pairingForAutoRetry({ allowQr: session.allowQr, freshPairing: session.freshPairing })
+      ).catch(async (error) => {
         await emit(connectionId, {
           type: "STATUS", state: "ERROR", errorCode: "RECONNECT_FAILED",
           errorMessage: error instanceof Error ? error.message : "Reconnect failed",
@@ -509,7 +553,7 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   const deleteMatch = url.pathname.match(/^\/v1\/connections\/([0-9a-f-]+)$/i);
 
   if (request.method === "POST" && connectMatch) {
-    void startConnection(connectMatch[1]).catch(async (error) => {
+    void startConnection(connectMatch[1], 0, pairingForAdminConnect()).catch(async (error) => {
       await emit(connectMatch[1], {
         type: "STATUS", state: "ERROR", errorCode: "INITIALIZE_FAILED",
         errorMessage: error instanceof Error ? error.message : "Initialization failed",
@@ -613,7 +657,7 @@ async function restoreSessions(): Promise<void> {
   console.info(`[whatsapp-gateway] restoring ${restorable.length} connection(s)`);
   for (const [index, entry] of restorable.entries()) {
     setTimeout(() => {
-      void startConnection(entry.connectionId, 0, false).catch(async (error) => {
+      void startConnection(entry.connectionId, 0, pairingForRestore()).catch(async (error) => {
         await emit(entry.connectionId, {
           type: "STATUS",
           state: "RECONNECT_REQUIRED",

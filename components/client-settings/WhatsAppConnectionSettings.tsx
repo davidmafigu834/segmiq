@@ -269,7 +269,9 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
                 <div className="mx-auto flex h-[280px] w-[280px] flex-col items-center justify-center rounded-xl border border-sales-border bg-sales-surface-subtle text-sales-text-secondary">
                   {connection.status === "ERROR" || connection.status === "RECONNECT_REQUIRED" ? <AlertTriangle size={38} /> : <Loader2 size={38} className="animate-spin" />}
                   <p className="mt-4 text-sm font-medium">{STATE_LABELS[connection.status]}</p>
-                  {busy || connection.status === "INITIALIZING" ? (
+                  {connection.error?.message ? (
+                    <p className="mt-2 max-w-[240px] text-xs leading-relaxed text-sales-text-muted">{connection.error.message}</p>
+                  ) : busy || connection.status === "INITIALIZING" ? (
                     <p className="mt-2 max-w-[220px] text-xs leading-relaxed text-sales-text-muted">
                       Starting the WhatsApp service. This usually takes a few seconds after a deploy.
                     </p>

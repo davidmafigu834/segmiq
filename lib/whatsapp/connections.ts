@@ -190,6 +190,11 @@ export async function createOrResetTemporaryConnection(input: {
     last_error_message: null,
     reconnect_attempts: 0,
     updated_at: now,
+    // A logged-out Baileys bundle 401s on connect and never emits a QR. Admin
+    // pairing has to start from empty credentials so WhatsApp issues a code.
+    session_ciphertext: null,
+    session_iv: null,
+    session_auth_tag: null,
   };
   const query = existing
     ? supabase.from("whatsapp_connections").update(payload).eq("id", existing.id)
@@ -198,6 +203,7 @@ export async function createOrResetTemporaryConnection(input: {
     .select("id, client_id, provider_type, status, is_primary, display_name, phone_number, provider_account_id, connected_at, last_seen_at, last_error_code, last_error_message")
     .single();
   if (error || !data) throw new Error(error?.message ?? "Could not create WhatsApp connection");
+  await deleteWhatsAppQr(data.id as string);
   await recordWhatsAppConnectionEvent({
     connectionId: data.id as string,
     clientId: input.clientId,
