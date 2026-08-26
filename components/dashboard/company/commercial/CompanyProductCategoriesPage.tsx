@@ -17,17 +17,16 @@ export function CompanyProductCategoriesPage({
   const { toast } = useSalesToast();
   const [items, setItems] = useState<Cat[]>([]);
   const [name, setName] = useState("");
-  const [q, setQ] = useState("");
 
   async function reload() {
-    const res = await fetch(`/api/clients/${clientId}/products/categories?q=${encodeURIComponent(q)}`);
+    const res = await fetch(`/api/clients/${clientId}/products/categories`);
     const json = (await res.json()) as { categories?: Cat[] };
     setItems(json.categories ?? []);
   }
   useEffect(() => {
     void reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId, q]);
+  }, [clientId]);
 
   async function create() {
     const res = await fetch(`/api/clients/${clientId}/products/categories`, {

@@ -88,6 +88,7 @@ export async function getPackage(clientId: string, packageId: string, canSeeCost
       price_override: i.price_override,
       variant_mode: i.variant_mode,
       product,
+      isService,
       selling_price: i.price_override != null ? Number(i.price_override) : Number(product?.selling_price) || 0,
       cost_price: product?.cost_price ?? null,
     };
@@ -100,7 +101,7 @@ export async function getPackage(clientId: string, packageId: string, canSeeCost
         name: String(product?.name ?? "Item"),
         requiredQty: Number(c.quantity) || 1,
         trackInventory: Boolean(product?.track_inventory) && c.item_type !== "SERVICE",
-        isService: c.item_type === "SERVICE",
+        isService: c.isService,
         optional: Boolean(c.optional),
         variantUnresolved: c.variant_mode !== "FIXED_VARIANT" && !c.variant_id,
         available: avail.get(`${c.product_id}:${c.variant_id ?? ""}`) ?? 0,

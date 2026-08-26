@@ -1,5 +1,5 @@
 import { commercialContext, jsonErr, jsonOk } from "@/lib/commercial/api";
-import { adjustStock, getAvailability, listMovements, transferStock } from "@/lib/inventory/service";
+import { adjustStock, listMovements, transferStock } from "@/lib/inventory/service";
 import { resolveInventoryProvider } from "@/lib/inventory/service";
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {

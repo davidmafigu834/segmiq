@@ -661,6 +661,6 @@ export async function attentionItems(clientId: string) {
       status,
     });
   }
-  items.sort((a, b) => (a.status === "OUT_OF_STOCK" ? -1 : 1));
+  items.sort((a, b) => Number(b.status === "OUT_OF_STOCK") - Number(a.status === "OUT_OF_STOCK"));
   return items.slice(0, 40);
 }
