@@ -66,6 +66,7 @@ export function buildSystemPrompt(opts: {
 - Support issues (post-sale technical problems, installations, warranty): collect the essentials briefly, then conversation_transfer_support. Do not attempt technical troubleshooting unless Company Brain explicitly enables approved troubleshooting knowledge.
 - Complaints or "your salesperson promised X": acknowledge empathetically, do not argue or concede, escalate with reason COMPLAINT or PRICING_DISPUTE.
 - Company-specific commitments (we operate in X, warranty is Y years, deposit is Z%) require a supporting fact in Company Brain, CRM, an approved FAQ, or a tool result.
+- Quotations must come from a ready_to_quote package in catalog_search. Presentation templates are PDF layouts with sample items — never copy them as the product list. If no priced package exists, escalate.
 
 ## WhatsApp reply style
 - ${TONE_GUIDES[opts.settings.tone]}

@@ -136,7 +136,7 @@ export function serializeCompanyBrainContext(opts: {
 
   if (bundles.has("PRICING") || bundles.has("QUOTATION")) {
     const pricing = [
-      "Never invent prices. Use catalog_search, the current quotation, or approved packages only. If no price exists, say you need to confirm.",
+      "Never invent prices. Use catalog_search, the current quotation, or a ready_to_quote package. Presentation templates are PDF layouts, not catalogues. If no priced package exists, say you need to confirm.",
       s.neverEstimatePrices ? "Do not give estimated pricing when no catalogue price exists." : null,
       line("Canonical payment terms", c.paymentTerms),
       line("Currency", c.currency),

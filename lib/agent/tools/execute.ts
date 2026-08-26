@@ -15,9 +15,12 @@ import {
 } from "./calendar";
 import { AGENT_ACTOR, toolFailure, toolSuccess, type ToolExecutionContext, type ToolResult } from "./context";
 import {
+  catalogSearchNote,
   executeGetCurrentQuotation,
   executePrepareQuotationDraft,
   executeSendQuotation,
+  isBuiltinQuoteTemplate,
+  packageHasSellableComponents,
 } from "./quotation";
 import {
   ASSIST_SAFE_TOOLS,
@@ -61,7 +64,7 @@ async function executeCatalogSearch(
       .limit(50),
     supabase
       .from("quote_templates")
-      .select("id, name, description")
+      .select("id, name, description, is_builtin, builtin_key")
       .eq("client_id", ctx.clientId)
       .limit(25),
   ]);
@@ -87,31 +90,61 @@ async function executeCatalogSearch(
       warranty: p.warranty,
       kind: p.item_kind,
     }));
-  const packageResults = (packages ?? [])
+  const matchedPackages = (packages ?? [])
     .filter((p) => matches(`${p.name} ${p.description ?? ""}`))
-    .slice(0, limit)
-    .map((p) => ({
-      type: "package",
+    .slice(0, limit);
+  const packageIds = matchedPackages.map((p) => p.id as string);
+  const { data: packageComponents } = packageIds.length
+    ? await supabase
+        .from("quotation_package_components")
+        .select("package_id, unit_price")
+        .in("package_id", packageIds)
+    : { data: [] as Array<{ package_id: string; unit_price: number | string | null }> };
+
+  const componentsByPackage = new Map<string, Array<{ unit_price?: number | string | null }>>();
+  for (const row of packageComponents ?? []) {
+    const id = row.package_id as string;
+    const list = componentsByPackage.get(id) ?? [];
+    list.push({ unit_price: row.unit_price });
+    componentsByPackage.set(id, list);
+  }
+
+  const packageResults = matchedPackages.map((p) => {
+    const fixedPrice = p.fixed_price == null ? null : Number(p.fixed_price);
+    const ready = packageHasSellableComponents(componentsByPackage.get(p.id as string) ?? [], fixedPrice);
+    return {
+      type: "package" as const,
       id: p.id,
       name: p.name,
       description: (p.description as string | null)?.slice(0, 200) ?? null,
       pricing_model: p.pricing_model,
-      fixed_price: p.fixed_price == null ? null : Number(p.fixed_price),
+      fixed_price: fixedPrice,
       currency: p.currency,
-    }));
+      ready_to_quote: ready,
+    };
+  });
   const templateResults = (templates ?? [])
+    .filter((t) => !isBuiltinQuoteTemplate(t))
     .filter((t) => matches(`${t.name} ${t.description ?? ""}`))
     .slice(0, 5)
-    .map((t) => ({ type: "template", id: t.id, name: t.name }));
+    .map((t) => ({
+      type: "template" as const,
+      id: t.id,
+      name: t.name,
+      layout_only: true,
+    }));
+
+  const readyPackageCount = packageResults.filter((p) => p.ready_to_quote).length;
 
   return toolSuccess({
     packages: packageResults,
     products: productResults,
     templates: templateResults,
-    note:
-      packageResults.length || productResults.length
-        ? "Prefer an approved package for quotations. Prices are company selling prices."
-        : "No matching approved catalogue items. Do not invent prices — confirm with the team.",
+    note: catalogSearchNote({
+      readyPackageCount,
+      packageCount: packageResults.length,
+      productCount: productResults.length,
+    }),
   });
 }
 

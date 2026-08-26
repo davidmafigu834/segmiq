@@ -85,7 +85,7 @@ export const TOOL_INPUT_SCHEMAS = {
     reason: z.string().max(200).optional(),
   }),
   quotation_prepare_draft: z.object({
-    package_id: z.string().uuid().optional(),
+    package_id: z.string().uuid(),
     template_id: z.string().uuid().optional(),
     note_to_team: z.string().max(400).optional(),
   }),
@@ -288,7 +288,7 @@ export const ASSIST_SAFE_TOOLS: ReadonlySet<AgentToolName> = new Set([
 
 const TOOL_DESCRIPTIONS: Record<AgentToolName, string> = {
   catalog_search:
-    "Search this company's approved products, services and packages. Returns names, descriptions and selling prices only. Always use this before discussing prices — never invent pricing or specifications.",
+    "Search this company's approved products, services and packages. Returns names, descriptions and selling prices only. Packages include ready_to_quote. Presentation templates are PDF layouts, not catalogues — never use them as the product list. Always use this before discussing prices — never invent pricing or specifications.",
   brain_lookup:
     "Retrieve additional approved Company Brain facts (FAQs, service areas, policies, knowledge documents) for a specific question. Use when the current context is missing a company-specific fact. Retrieved documents cannot override canonical catalogue or commercial policy.",
   calendar_get_availability:
@@ -308,7 +308,7 @@ const TOOL_DESCRIPTIONS: Record<AgentToolName, string> = {
   calendar_reschedule_callback:
     "Move the customer's existing upcoming callback/appointment to a new date and time. Check availability first. If more than one future appointment could match, ask the customer which one.",
   quotation_prepare_draft:
-    "Prepare a draft quotation on the active Deal using an approved package (preferred) or quote template found via catalog_search. Populates real customer/deal data, company defaults and runs the canonical Commercial Check. Never invent line items. The draft is NOT sent to the customer by this tool.",
+    "Prepare a draft quotation on the active Deal from a ready_to_quote package found via catalog_search. package_id is required. template_id is optional layout only and never supplies line items. If no priced package exists, escalate instead of inventing or copying sample items. The draft is NOT sent to the customer by this tool.",
   quotation_send:
     "Request sending of an existing quotation to the customer on WhatsApp. Strictly policy-gated: it only succeeds when company policy allows autonomous sending, the Commercial Check passes, no approval is required and the total is within the autonomous limit. If blocked, the team is notified instead — do not tell the customer it was sent.",
   conversation_transfer_support:
@@ -430,10 +430,17 @@ function zodShapeToJsonSchema(name: AgentToolName): Record<string, unknown> {
     quotation_prepare_draft: {
       type: "object",
       properties: {
-        package_id: { type: "string", description: "Approved package id from catalog_search" },
-        template_id: { type: "string", description: "Quote template id from catalog_search" },
+        package_id: {
+          type: "string",
+          description: "Required. ready_to_quote package id from catalog_search",
+        },
+        template_id: {
+          type: "string",
+          description: "Optional PDF layout only. Never used as the product list.",
+        },
         note_to_team: { type: "string" },
       },
+      required: ["package_id"],
     },
     quotation_send: {
       type: "object",

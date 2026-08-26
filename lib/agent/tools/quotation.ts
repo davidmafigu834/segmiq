@@ -10,7 +10,7 @@ import { loadPolicies } from "@/lib/quotations/evaluate-send";
 import { expandPackageToLineItems, type PackageComponentInput } from "@/lib/quotations/packages";
 import { loadQuotationWithItems, saveItemsAndTotals } from "@/lib/quotations/persist";
 import { allocateQuoteNumber, ensureQuotationSettings } from "@/lib/quotations/quote-number";
-import { loadTemplateWithItems, templateItemsToQuotationInputs } from "@/lib/quotations/templates";
+import { loadTemplateWithItems } from "@/lib/quotations/templates";
 import { sendCanonicalWhatsAppText } from "@/lib/whatsapp/message-service";
 import { getSafeWhatsAppConnection } from "@/lib/whatsapp/connections";
 import type { QuotationLineItemInput } from "@/types";
@@ -25,6 +25,35 @@ import { AGENT_ACTOR, toolFailure, toolSuccess, type ToolExecutionContext, type 
  */
 
 const AGENT_GOVERNANCE_ROLE = "SALESPERSON";
+
+export function isBuiltinQuoteTemplate(row: {
+  is_builtin?: boolean | null;
+  builtin_key?: string | null;
+}): boolean {
+  return Boolean(row.is_builtin) || Boolean(row.builtin_key);
+}
+
+export function packageHasSellableComponents(
+  components: Array<{ unit_price?: number | string | null }>,
+  fixedPrice: number | null
+): boolean {
+  if (fixedPrice != null && Number(fixedPrice) > 0) return true;
+  return components.some((c) => Number(c.unit_price) > 0);
+}
+
+export function catalogSearchNote(opts: {
+  readyPackageCount: number;
+  packageCount: number;
+  productCount: number;
+}): string {
+  if (opts.readyPackageCount > 0) {
+    return "Quote only from a ready_to_quote package. Presentation templates are PDF layouts, not product catalogues — never copy their sample line items.";
+  }
+  if (opts.packageCount > 0 || opts.productCount > 0) {
+    return "No priced package is ready to quote. Escalate — do not invent prices or use a presentation template as the product list.";
+  }
+  return "No matching approved catalogue items. Do not invent prices — confirm with the team.";
+}
 
 type CheckSummary = {
   can_send: boolean;
@@ -122,7 +151,7 @@ export async function executeGetCurrentQuotation(ctx: ToolExecutionContext): Pro
 
 export async function executePrepareQuotationDraft(
   ctx: ToolExecutionContext,
-  input: { package_id?: string; template_id?: string; note_to_team?: string }
+  input: { package_id: string; template_id?: string; note_to_team?: string }
 ): Promise<ToolResult> {
   const supabase = createAdminClient();
 
@@ -150,17 +179,45 @@ export async function executePrepareQuotationDraft(
     return toolFailure("The active Deal could not be verified for this customer.");
   }
 
-  if (!input.package_id && !input.template_id) {
+  if (!input.package_id) {
     return toolFailure(
-      "Provide a package_id (preferred) or template_id from catalog_search. The agent cannot invent line items."
+      "Quotations must be built from an approved package with priced components. Do not use a presentation template as the product list. If no suitable package exists, escalate."
     );
   }
 
   const settings = await ensureQuotationSettings(supabase, ctx.clientId);
 
-  // Resolve line items from an approved package or a template — never free-form.
-  let items: QuotationLineItemInput[] = [];
-  let sourceLabel = "";
+  const { data: pkg } = await supabase
+    .from("quotation_packages")
+    .select("*")
+    .eq("id", input.package_id)
+    .eq("client_id", ctx.clientId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!pkg) return toolFailure("Package not found in this company's approved catalogue.");
+  const { data: components } = await supabase
+    .from("quotation_package_components")
+    .select("*")
+    .eq("package_id", pkg.id as string)
+    .order("display_order", { ascending: true });
+  const componentRows = (components ?? []) as unknown as PackageComponentInput[];
+  if (!packageHasSellableComponents(componentRows, pkg.fixed_price == null ? null : Number(pkg.fixed_price))) {
+    return toolFailure(
+      `Package "${pkg.name as string}" has no priced components. Add products and selling prices in the catalogue, then retry — do not quote from a presentation template.`
+    );
+  }
+  const items = expandPackageToLineItems({
+    packageId: pkg.id as string,
+    packageName: pkg.name as string,
+    pricingModel: pkg.pricing_model as string,
+    flexibility: pkg.flexibility as string,
+    fixedPrice: pkg.fixed_price == null ? null : Number(pkg.fixed_price),
+    discountPercent: Number(pkg.discount_percent) || 0,
+    components: componentRows,
+  });
+  if (!items.length) return toolFailure("The selected package has no components. Escalate for human review.");
+  const sourceLabel = `package "${pkg.name as string}"`;
+
   let templateId: string | null = null;
   let taxRate = Number(settings.default_tax_rate) || 0;
   let otherAmount = 0;
@@ -168,47 +225,27 @@ export async function executePrepareQuotationDraft(
   let validDays = settings.default_validity_days != null ? Number(settings.default_validity_days) : 14;
   let notes: string | null = null;
   let terms: string | null = (settings.default_terms as string | null) ?? null;
+  let templateLayoutKey: string | null = null;
+  let templateLayoutVersion: number | null = null;
 
-  if (input.package_id) {
-    const { data: pkg } = await supabase
-      .from("quotation_packages")
-      .select("*")
-      .eq("id", input.package_id)
-      .eq("client_id", ctx.clientId)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!pkg) return toolFailure("Package not found in this company's approved catalogue.");
-    const { data: components } = await supabase
-      .from("quotation_package_components")
-      .select("*")
-      .eq("package_id", pkg.id as string)
-      .order("display_order", { ascending: true });
-    items = expandPackageToLineItems({
-      packageId: pkg.id as string,
-      packageName: pkg.name as string,
-      pricingModel: pkg.pricing_model as string,
-      flexibility: pkg.flexibility as string,
-      fixedPrice: pkg.fixed_price == null ? null : Number(pkg.fixed_price),
-      discountPercent: Number(pkg.discount_percent) || 0,
-      components: (components ?? []) as unknown as PackageComponentInput[],
-    });
-    sourceLabel = `package "${pkg.name as string}"`;
-    if (!items.length) return toolFailure("The selected package has no components. Escalate for human review.");
-  } else if (input.template_id) {
+  if (input.template_id) {
     const template = await loadTemplateWithItems(supabase, input.template_id);
     if (!template || template.client_id !== ctx.clientId) {
       return toolFailure("Template not found for this company.");
     }
     templateId = template.id as string;
-    items = templateItemsToQuotationInputs((template.items as Record<string, unknown>[]) ?? []);
-    taxRate = Number(template.tax_rate) || taxRate;
-    otherAmount = Number(template.other_amount) || 0;
-    notes = (template.notes as string | null) ?? null;
-    terms = (template.terms as string | null) ?? terms;
-    validDays = Number(template.valid_for_days) || validDays;
-    paymentTerms = ((template.payment_terms_label as string | null) ?? "").trim() || paymentTerms;
-    sourceLabel = `template "${(template.name as string) ?? "quote template"}"`;
-    if (!items.length) return toolFailure("The selected template has no line items. Escalate for human review.");
+    templateLayoutKey = (template.layout_key as string | null) ?? null;
+    templateLayoutVersion =
+      template.layout_version == null ? null : Number(template.layout_version);
+    // Builtin layouts are presentation only — never copy sample BOM, notes, or demo terms.
+    if (!isBuiltinQuoteTemplate(template)) {
+      taxRate = Number(template.tax_rate) || taxRate;
+      otherAmount = Number(template.other_amount) || 0;
+      notes = (template.notes as string | null) ?? notes;
+      terms = (template.terms as string | null) ?? terms;
+      validDays = Number(template.valid_for_days) || validDays;
+      paymentTerms = ((template.payment_terms_label as string | null) ?? "").trim() || paymentTerms;
+    }
   }
 
   if (ctx.testMode) {
@@ -248,6 +285,8 @@ export async function executePrepareQuotationDraft(
       prepared_by_name: preparedByName,
       revision_number: 1,
       template_id: templateId,
+      template_layout_key: templateLayoutKey,
+      template_layout_version: templateLayoutVersion,
       template_fields: {},
     })
     .select("*")
