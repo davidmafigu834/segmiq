@@ -111,6 +111,7 @@ export async function executeCatalogSearch(
         pricing_model: String(p.pricing_model ?? ""),
         fixed_price: fixedPrice,
         currency: (p.currency as string) ?? "USD",
+        description: (p.description as string | null) ?? null,
         ready_to_quote: packageHasSellableComponents(byPkg.get(p.id as string) ?? [], fixedPrice),
       });
     }
