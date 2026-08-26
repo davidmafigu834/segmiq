@@ -230,6 +230,11 @@ export function isAgentLlmRateLimitError(err: unknown): boolean {
   return err instanceof Error && /\b429\b/.test(err.message);
 }
 
+export function isAgentLlmFailoverError(err: unknown): boolean {
+  if (isAgentLlmRateLimitError(err)) return true;
+  return err instanceof Error && /thought_signature/i.test(err.message);
+}
+
 export function isAgentLlmProviderConfigured(name: AgentLlmProviderName): boolean {
   if (name === "gemini") return Boolean(process.env.GEMINI_API_KEY?.trim());
   if (name === "groq") return Boolean(process.env.GROQ_API_KEY?.trim());
@@ -323,7 +328,7 @@ export class FailoverAgentProvider implements AgentModelProvider {
     try {
       return await this.primary.generate(req);
     } catch (err) {
-      if (!isAgentLlmRateLimitError(err)) throw err;
+      if (!isAgentLlmFailoverError(err)) throw err;
       const message = err instanceof Error ? err.message : String(err);
       console.log(
         JSON.stringify({
@@ -338,7 +343,7 @@ export class FailoverAgentProvider implements AgentModelProvider {
       try {
         return await this.fallback.generate(req);
       } catch (fallbackErr) {
-        if (!isAgentLlmRateLimitError(fallbackErr)) throw fallbackErr;
+        if (!isAgentLlmFailoverError(fallbackErr)) throw fallbackErr;
         const fallbackMessage = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
         console.log(
           JSON.stringify({

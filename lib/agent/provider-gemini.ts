@@ -21,6 +21,7 @@ type GeminiPart = {
   text?: string;
   thought?: boolean;
   thoughtSignature?: string;
+  thought_signature?: string;
   functionCall?: { name?: string; args?: Record<string, unknown>; id?: string };
   functionResponse?: {
     name: string;
@@ -30,6 +31,27 @@ type GeminiPart = {
 };
 
 type GeminiContent = { role: "user" | "model"; parts: GeminiPart[] };
+
+/** Gemini 3 rejects tool-call history that omits the original thought signature. */
+export const GEMINI_SKIP_THOUGHT_SIGNATURE = "skip_thought_signature_validator";
+
+function partThoughtSignature(part: GeminiPart): string | undefined {
+  const sig = part.thoughtSignature?.trim() || part.thought_signature?.trim();
+  return sig || undefined;
+}
+
+export function withGeminiThoughtSignatures(content: GeminiContent): GeminiContent {
+  return {
+    role: "model",
+    parts: (content.parts ?? []).map((part) => {
+      if (!part.functionCall) return part;
+      return {
+        ...part,
+        thoughtSignature: partThoughtSignature(part) ?? GEMINI_SKIP_THOUGHT_SIGNATURE,
+      };
+    }),
+  };
+}
 
 export function getGeminiModel(): string {
   const requested = process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
@@ -120,7 +142,7 @@ function toGeminiContents(messages: AgentChatMessage[]): GeminiContent[] {
       out.push({ role: "user", parts: [{ text: msg.text }] });
     } else if (msg.role === "assistant") {
       if (isGeminiContent(msg.echo)) {
-        out.push(msg.echo);
+        out.push(withGeminiThoughtSignatures(msg.echo));
         continue;
       }
       const parts: GeminiPart[] = [];
@@ -133,6 +155,7 @@ function toGeminiContents(messages: AgentChatMessage[]): GeminiContent[] {
             args: call.input,
             ...(nativeId ? { id: nativeId } : {}),
           },
+          thoughtSignature: GEMINI_SKIP_THOUGHT_SIGNATURE,
         });
       }
       if (parts.length) out.push({ role: "model", parts });
@@ -223,7 +246,7 @@ export class GeminiAgentProvider implements AgentModelProvider {
 
         if (!response.ok) {
           const errText = await response.text().catch(() => "");
-          if (!strippedConfig && response.status === 400) {
+          if (!strippedConfig && response.status === 400 && !/thought_signature/i.test(errText)) {
             strippedConfig = true;
             lastError = new Error(`Gemini API ${response.status}: ${errText.slice(0, 500)}`);
             continue;
@@ -296,7 +319,7 @@ export class GeminiAgentProvider implements AgentModelProvider {
             outputTokens: data.usageMetadata?.candidatesTokenCount ?? 0,
           },
           model: data.modelVersion ?? this.modelId,
-          echo: modelContent ?? undefined,
+          echo: modelContent ? withGeminiThoughtSignatures(modelContent as GeminiContent) : undefined,
         };
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
