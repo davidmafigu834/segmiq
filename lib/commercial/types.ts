@@ -33,6 +33,8 @@ export type CommercialSearchResult = {
   itemCount?: number;
   serviceCount?: number;
   hasVariants?: boolean;
+  description?: string | null;
+  pricingMode?: PackagePricingMode | null;
 };
 
 export const COST_FIELD_NAMES = new Set([

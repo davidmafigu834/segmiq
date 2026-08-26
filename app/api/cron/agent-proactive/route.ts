@@ -3,7 +3,7 @@ import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { runProactiveWorker } from "@/lib/agent/proactive";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 /** Manual / ops trigger. Minute execution piggybacks on `/api/cron/check-followups`. */
 export async function GET(req: Request) {
@@ -15,7 +15,9 @@ export async function GET(req: Request) {
   }
   try {
     const result = await runProactiveWorker();
-    return NextResponse.json({ ok: true, ...result });
+    const { recoverStaleAgentConversations } = await import("@/lib/agent/stale-resume");
+    const staleAgent = await recoverStaleAgentConversations();
+    return NextResponse.json({ ok: true, ...result, staleAgent });
   } catch (e) {
     console.error("[cron agent-proactive]", e);
     return NextResponse.json(

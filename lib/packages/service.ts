@@ -157,6 +157,7 @@ export async function createPackage(clientId: string, actorId: string, input: Re
       customer_facing_description: input.customer_facing_description ?? null,
       internal_notes: input.internal_notes ?? null,
       image_url: input.image_url ?? null,
+      image_key: input.image_key ?? null,
       pricing_mode: input.pricing_mode === "FIXED_PRICE" ? "FIXED_PRICE" : "SUM_OF_ITEMS",
       fixed_price: input.fixed_price == null ? null : Number(input.fixed_price),
       currency: input.currency ?? "USD",
@@ -190,6 +191,7 @@ export async function updatePackage(
     "customer_facing_description",
     "internal_notes",
     "image_url",
+    "image_key",
     "pricing_mode",
     "fixed_price",
     "currency",
@@ -308,7 +310,7 @@ export async function expandCommercialPackage(opts: {
     };
   });
   const pricingModel = pkg.pricing_mode === "FIXED_PRICE" ? "fixed" : "component_total";
-  const lines = expandPackageToLineItems({
+  const expanded = expandPackageToLineItems({
     packageId: opts.packageId,
     packageName: String(pkg.name),
     pricingModel,
@@ -318,8 +320,9 @@ export async function expandCommercialPackage(opts: {
     components,
     sectionId: opts.sectionId,
     scale: opts.scale,
-  }).map((line, i) => {
-    const src = items[i];
+  });
+  const lines = expanded.map((line, i) => {
+    const src = expanded.length === items.length ? items[i] : undefined;
     return {
       ...line,
       source_type: "PACKAGE" as const,

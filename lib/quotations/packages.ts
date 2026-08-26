@@ -34,6 +34,34 @@ export function expandPackageToLineItems(opts: {
     (sum, c) => sum + (Number(c.unit_price) || 0) * (Number(c.quantity) || 0) * scale,
     0
   );
+  const fixedPrice = opts.fixedPrice == null ? null : Number(opts.fixedPrice);
+  const included = components
+    .filter((c) => !c.is_optional)
+    .map((c) => `${Number(c.quantity) || 1} × ${c.item_name}`)
+    .join("; ");
+
+  // FIXED_PRICE packages may have unpriced components (selling_price default 0).
+  // Do not invent component catalogue prices; snapshot the published package price.
+  if (opts.pricingModel === "fixed" && fixedPrice != null && fixedPrice > 0 && componentTotal <= 0) {
+    return [
+      {
+        catalog_item_id: null,
+        item_name: opts.packageName,
+        description: included ? `Includes: ${included}.` : null,
+        unit_price: Math.round((fixedPrice + Number.EPSILON) * 100) / 100,
+        quantity: scale,
+        unit: "Package",
+        sku: null,
+        cost_price: null,
+        is_optional: false,
+        catalog_unit_price: 0,
+        package_id: opts.packageId,
+        package_locked: locked,
+        section_id: opts.sectionId ?? null,
+        option_group: opts.packageName,
+      },
+    ];
+  }
 
   return components.map((c) => {
     const baseQty = Number(c.quantity) || 1;
@@ -42,9 +70,9 @@ export function expandPackageToLineItems(opts: {
     if (opts.pricingModel === "discounted_bundle" && opts.discountPercent > 0) {
       unitPrice = unitPrice * (1 - Number(opts.discountPercent) / 100);
     }
-    if (opts.pricingModel === "fixed" && opts.fixedPrice != null && componentTotal > 0) {
+    if (opts.pricingModel === "fixed" && fixedPrice != null && componentTotal > 0) {
       const share = ((Number(c.unit_price) || 0) * baseQty * (qtyAdjustable ? scale : 1)) / componentTotal;
-      const lineTarget = Number(opts.fixedPrice) * share;
+      const lineTarget = fixedPrice * share;
       unitPrice = qty > 0 ? lineTarget / qty : 0;
     }
     return {

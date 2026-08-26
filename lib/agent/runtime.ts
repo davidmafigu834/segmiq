@@ -44,7 +44,20 @@ function log(event: string, data: Record<string, unknown>): void {
 // ---------------------------------------------------------------------------
 // Entry point — called (via background()) after an inbound message persists.
 
-export async function handleAgentInboundMessage(event: InboundConversationEvent): Promise<void> {
+export type HandleAgentInboundOptions = {
+  /** Skip the aggregation sleep (already waited, e.g. stale-lock resume). Still drops if a newer inbound exists. */
+  skipDebounceWait?: boolean;
+  retryOnLlmRateLimit?: boolean;
+  /** When false, a 429 leaves the thread idle so a later cool-down resume can try again. */
+  escalateOnLlmRateLimit?: boolean;
+};
+
+export async function handleAgentInboundMessage(
+  event: InboundConversationEvent,
+  inboundOpts: HandleAgentInboundOptions = {}
+): Promise<void> {
+  const retryOnLlmRateLimit = inboundOpts.retryOnLlmRateLimit ?? true;
+  const escalateOnLlmRateLimit = inboundOpts.escalateOnLlmRateLimit ?? true;
   try {
     if (!isAgentGloballyEnabled()) return;
 
@@ -71,8 +84,10 @@ export async function handleAgentInboundMessage(event: InboundConversationEvent)
     }
 
     // Aggregation window: rapid consecutive messages collapse into one run.
-    if (settings.debounceSeconds > 0) {
+    if (settings.debounceSeconds > 0 && !inboundOpts.skipDebounceWait) {
       await new Promise((resolve) => setTimeout(resolve, settings.debounceSeconds * 1000));
+    }
+    if (settings.debounceSeconds > 0 || inboundOpts.skipDebounceWait) {
       const newest = await latestInboundMessageId(event.clientId, event.leadId);
       if (newest && newest !== event.messageId) {
         log("skip.debounced", { leadId: event.leadId, supersededBy: newest });
@@ -125,7 +140,8 @@ export async function handleAgentInboundMessage(event: InboundConversationEvent)
       afterHoursAck: hoursDecision === "AFTER_HOURS_ACK",
       testMode: settings.testMode,
       retryOnStaleContext: true,
-      retryOnLlmRateLimit: true,
+      retryOnLlmRateLimit,
+      escalateOnLlmRateLimit,
     });
   } catch (err) {
     console.error("[agent] inbound handling failed", err);
@@ -211,6 +227,8 @@ type RunOptions = {
   retryOnStaleContext: boolean;
   /** Re-run once after both LLM providers 429, so the customer is not left unanswered. */
   retryOnLlmRateLimit?: boolean;
+  /** When false, a 429 does not create an escalation (stale resume will try again after cool-down). */
+  escalateOnLlmRateLimit?: boolean;
   /** Simulation only: extra customer message appended to the transcript. */
   simulatedCustomerMessage?: string;
 };
@@ -388,16 +406,23 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
       log("retry.llm_rate_limited", { leadId: opts.leadId, executionId, waitMs: LLM_RATE_LIMIT_RETRY_MS });
     } else if (!opts.testMode && rateLimited) {
-      await createAgentEscalation({
-        clientId: opts.clientId,
-        leadId: opts.leadId,
-        executionId,
-        reason: "RATE_LIMITED",
-        summary:
-          "The agent could not answer this customer message because the language model was rate-limited. The customer's last message has NOT been answered.",
-        ownerId: null,
-        escalationUserId: opts.settings.escalationUserId,
-      });
+      await supabase
+        .from("agent_executions")
+        .update({ trigger_message_id: null })
+        .eq("id", executionId);
+      if (opts.escalateOnLlmRateLimit !== false) {
+        await updateConversationAgentState(opts.clientId, opts.leadId, { status: "IDLE" });
+        await createAgentEscalation({
+          clientId: opts.clientId,
+          leadId: opts.leadId,
+          executionId,
+          reason: "RATE_LIMITED",
+          summary:
+            "The agent could not answer this customer message because the language model was rate-limited. The customer's last message has NOT been answered.",
+          ownerId: null,
+          escalationUserId: opts.settings.escalationUserId,
+        });
+      }
       log("skip.llm_rate_limited", { leadId: opts.leadId, executionId });
     }
     if (!retryRateLimit) return emptyResult(executionId, "FAILED");

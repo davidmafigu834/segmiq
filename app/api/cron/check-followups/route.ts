@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { executeFollowUpReminders } from "@/lib/follow-up-reminders";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 120;
+
 /**
  * Timed T-30 follow-up WhatsApp reminders (rep + lead), once each.
  * Morning digests run on `/api/cron/daily` at 06:00.
+ * Also resumes agent threads left in AI_HANDLING after a timed-out LLM run.
  */
 export async function GET(req: Request) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -17,8 +21,10 @@ export async function GET(req: Request) {
   try {
     const followUpCallbacks = await executeFollowUpReminders({ t30Only: true });
     const { runProactiveWorker } = await import("@/lib/agent/proactive");
+    const { recoverStaleAgentConversations } = await import("@/lib/agent/stale-resume");
     const proactive = await runProactiveWorker();
-    return NextResponse.json({ ok: true, followUpCallbacks, proactive });
+    const staleAgent = await recoverStaleAgentConversations();
+    return NextResponse.json({ ok: true, followUpCallbacks, proactive, staleAgent });
   } catch (e) {
     console.error("[cron check-followups] executeFollowUpReminders", e);
     return NextResponse.json(

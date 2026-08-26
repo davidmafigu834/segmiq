@@ -30,7 +30,7 @@ export async function searchCommercialItems(opts: CommercialSearchQuery): Promis
     let query = supabase
       .from("products")
       .select(
-        "id, name, sku, brand, item_type, selling_price, currency, status, primary_image_url, track_inventory, cost_price, can_be_quoted"
+        "id, name, sku, brand, item_type, selling_price, currency, status, primary_image_url, track_inventory, cost_price, can_be_quoted, description, quotation_description"
       )
       .eq("client_id", opts.clientId)
       .eq("can_be_quoted", true)
@@ -76,6 +76,7 @@ export async function searchCommercialItems(opts: CommercialSearchQuery): Promis
         image: (p.primary_image_url as string | null) ?? null,
         status: p.status as string,
         hasVariants: (variantCount.get(p.id as string) ?? 0) > 0,
+        description: (p.quotation_description as string | null) ?? (p.description as string | null) ?? null,
       });
     }
   }
@@ -83,7 +84,7 @@ export async function searchCommercialItems(opts: CommercialSearchQuery): Promis
   if (types.includes("PACKAGE")) {
     let query = supabase
       .from("commercial_packages")
-      .select("id, name, status, pricing_mode, fixed_price, currency, image_url, can_be_quoted")
+      .select("id, name, status, pricing_mode, fixed_price, currency, image_url, can_be_quoted, description, customer_facing_description")
       .eq("client_id", opts.clientId)
       .eq("can_be_quoted", true)
       .limit(limit);
@@ -162,6 +163,9 @@ export async function searchCommercialItems(opts: CommercialSearchQuery): Promis
         status: pkg.status as string,
         itemCount: pkgItems.filter((i) => i.item_type !== "SERVICE").length,
         serviceCount: pkgItems.filter((i) => i.item_type === "SERVICE").length,
+        description:
+          (pkg.customer_facing_description as string | null) ?? (pkg.description as string | null) ?? null,
+        pricingMode: (pkg.pricing_mode as CommercialSearchResult["pricingMode"]) ?? null,
       });
     }
   }

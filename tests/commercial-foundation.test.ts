@@ -63,6 +63,26 @@ describe("package availability", () => {
     });
     assert.equal(lines[0]?.quantity, 120);
   });
+
+  it("FIXED_PRICE with unpriced components snapshots the package price, not invented item prices", () => {
+    const lines = expandPackageToLineItems({
+      packageId: "lite",
+      packageName: "3kVA Lite",
+      pricingModel: "fixed",
+      flexibility: "flexible",
+      fixedPrice: 930,
+      discountPercent: 0,
+      components: [
+        { catalog_item_id: null, item_name: "450W Mono Panel", description: null, quantity: 2, unit: "Each", unit_price: 0, cost_price: null, sku: null, is_optional: false },
+        { catalog_item_id: null, item_name: "3kVA Inverter", description: null, quantity: 1, unit: "Each", unit_price: 0, cost_price: null, sku: null, is_optional: false },
+      ],
+    });
+    assert.equal(lines.length, 1);
+    assert.equal(lines[0]?.item_name, "3kVA Lite");
+    assert.equal(lines[0]?.unit_price, 930);
+    assert.equal(lines[0]?.quantity, 1);
+    assert.match(String(lines[0]?.description), /2 × 450W Mono Panel/);
+  });
 });
 
 describe("inventory math", () => {

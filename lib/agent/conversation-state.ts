@@ -1,8 +1,10 @@
+import { now } from "@/lib/clock";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentConversationState, AgentConversationStatus } from "./types";
+import { STALE_RESUME_AFTER_MS } from "./stale-resume-policy";
 
 /** Stale lock recovery: a run holding the lock longer than this is dead. */
-const LOCK_STALE_MS = 3 * 60 * 1000;
+export const LOCK_STALE_MS = STALE_RESUME_AFTER_MS;
 
 type StateRow = Record<string, unknown>;
 
@@ -66,11 +68,11 @@ export async function acquireConversationLock(opts: {
 }): Promise<boolean> {
   const supabase = createAdminClient();
   await ensureConversationAgentState(opts.clientId, opts.leadId);
-  const now = new Date().toISOString();
+  const ts = now().toISOString();
 
   const { data: claimed } = await supabase
     .from("agent_conversation_state")
-    .update({ pending_execution_id: opts.executionId, lock_acquired_at: now, updated_at: now })
+    .update({ pending_execution_id: opts.executionId, lock_acquired_at: ts, updated_at: ts })
     .eq("lead_id", opts.leadId)
     .eq("client_id", opts.clientId)
     .is("pending_execution_id", null)
@@ -78,10 +80,10 @@ export async function acquireConversationLock(opts: {
   if (claimed?.length) return true;
 
   // Steal only demonstrably stale locks.
-  const staleBefore = new Date(Date.now() - LOCK_STALE_MS).toISOString();
+  const staleBefore = new Date(now().getTime() - LOCK_STALE_MS).toISOString();
   const { data: stolen } = await supabase
     .from("agent_conversation_state")
-    .update({ pending_execution_id: opts.executionId, lock_acquired_at: now, updated_at: now })
+    .update({ pending_execution_id: opts.executionId, lock_acquired_at: ts, updated_at: ts })
     .eq("lead_id", opts.leadId)
     .eq("client_id", opts.clientId)
     .not("pending_execution_id", "is", null)

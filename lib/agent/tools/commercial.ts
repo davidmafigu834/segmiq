@@ -60,9 +60,10 @@ export async function executeCatalogSearch(
       type: "package" as const,
       id: r.id,
       name: r.name,
-      pricing_model: "sum_of_items",
+      pricing_model: r.pricingMode === "FIXED_PRICE" ? "fixed" : "sum_of_items",
       fixed_price: r.price ?? null,
       currency: r.currency ?? "USD",
+      description: r.description ?? null,
       ready_to_quote: readyToQuote(r),
     }));
 
@@ -206,6 +207,8 @@ export async function executePackageSearch(
       name: r.name,
       price: r.price ?? 0,
       currency: r.currency ?? "USD",
+      description: r.description ?? null,
+      pricing_mode: r.pricingMode ?? null,
       availability: r.availability,
       ready_to_quote: readyToQuote(r),
     })),
@@ -227,6 +230,8 @@ export async function executePackageGet(
       pricing_mode: pkg.pricing_mode,
       fixed_price: pkg.fixed_price,
       currency: pkg.currency,
+      description: pkg.customer_facing_description ?? pkg.description ?? null,
+      capability_guidance: pkg.description ?? null,
       availability: pkg.availability,
       items: ((pkg.items as Array<Record<string, unknown>>) ?? []).map((i) => ({
         name: i.snapshot_name ?? (i.product as { name?: string } | undefined)?.name,
