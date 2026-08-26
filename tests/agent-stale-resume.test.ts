@@ -54,6 +54,33 @@ describe("conversationNeedsStaleResume", () => {
     );
   });
 
+  it("resumes a rate-limit HUMAN_NEEDED hold after the cool-down", () => {
+    assert.equal(
+      conversationNeedsStaleResume(
+        row({
+          status: "HUMAN_NEEDED",
+          humanNeededReason: "Agent rate limit reached",
+          lockAcquiredAt: null,
+        }),
+        NOW
+      ),
+      true
+    );
+  });
+
+  it("does not resume a genuine human-needed handoff", () => {
+    assert.equal(
+      conversationNeedsStaleResume(
+        row({
+          status: "HUMAN_NEEDED",
+          humanNeededReason: "Customer asked for a person",
+        }),
+        NOW
+      ),
+      false
+    );
+  });
+
   it("aligns the cool-down window with the conversation lock TTL", () => {
     assert.equal(STALE_RESUME_AFTER_MS, 3 * 60 * 1000);
     assert.ok(MAX_STALE_FAILURES >= 2);

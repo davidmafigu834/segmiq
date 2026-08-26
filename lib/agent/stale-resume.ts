@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { background } from "@/lib/background";
 import { LOCK_STALE_MS } from "./conversation-state";
 import { conversationNeedsStaleResume, MAX_STALE_FAILURES } from "./stale-resume-policy";
-import { createAgentEscalation } from "./escalation";
+import { createAgentEscalation, resolveOpenRateLimitEscalations } from "./escalation";
 import { handleAgentInboundMessage } from "./runtime";
 import { getAgentCompanySettings } from "./settings";
 import type { InboundConversationEvent } from "./types";
@@ -13,7 +13,7 @@ export { conversationNeedsStaleResume, MAX_STALE_FAILURES } from "./stale-resume
 export type { StaleResumeCandidate } from "./stale-resume-policy";
 
 /** One LLM resume per cron tick — a full agent run can take ~60s. */
-const MAX_RESUMES_PER_TICK = 1;
+const MAX_RESUMES_PER_TICK = 2;
 
 type ConversationRow = {
   lead_id: string;
@@ -21,6 +21,7 @@ type ConversationRow = {
   status: string;
   agent_enabled: boolean;
   human_takeover: boolean;
+  human_needed_reason: string | null;
   last_customer_message_at: string | null;
   last_agent_message_at: string | null;
   lock_acquired_at: string | null;
@@ -73,18 +74,35 @@ export async function recoverStaleAgentConversations(): Promise<{
       .in("state", ["RUNNING", "QUEUED"])
       .select("id, lead_id, client_id");
     finalizedRows = asRows<{ id: string; lead_id: string; client_id: string }>(zombies);
+    await supabase
+      .from("agent_conversation_state")
+      .update({
+        pending_execution_id: null,
+        lock_acquired_at: null,
+        updated_at: at.toISOString(),
+      })
+      .in("pending_execution_id", staleExecIds);
+  }
+  for (const lock of staleLockRows) {
+    if (finalizedRows.some((z) => z.lead_id === lock.lead_id)) continue;
+    finalizedRows.push({
+      id: lock.pending_execution_id,
+      lead_id: lock.lead_id,
+      client_id: lock.client_id,
+    });
   }
   const finalized = finalizedRows.length;
 
   const { data: handling } = await supabase
     .from("agent_conversation_state")
     .select(
-      "lead_id, client_id, status, agent_enabled, human_takeover, last_customer_message_at, last_agent_message_at, lock_acquired_at, updated_at"
+      "lead_id, client_id, status, agent_enabled, human_takeover, human_needed_reason, last_customer_message_at, last_agent_message_at, lock_acquired_at, updated_at"
     )
-    .eq("status", "AI_HANDLING")
+    .in("status", ["AI_HANDLING", "HUMAN_NEEDED"])
     .eq("agent_enabled", true)
     .eq("human_takeover", false)
     .lt("updated_at", staleBefore)
+    .order("last_customer_message_at", { ascending: false })
     .limit(20);
   const rows = asRows<ConversationRow>(handling);
 
@@ -106,6 +124,7 @@ export async function recoverStaleAgentConversations(): Promise<{
           lastAgentMessageAt: row.last_agent_message_at,
           lockAcquiredAt: row.lock_acquired_at,
           updatedAt: row.updated_at,
+          humanNeededReason: row.human_needed_reason,
         },
         at
       )
@@ -179,14 +198,19 @@ async function queueStaleResume(
       ownerId: null,
       escalationUserId: settings.escalationUserId,
     });
-    const { updateConversationAgentState } = await import("./conversation-state");
-    await updateConversationAgentState(clientId, leadId, { status: "IDLE" });
     log("stale_resume.exhausted", { leadId, failures: count });
     return "exhausted";
   }
 
   const event = await loadInboundEvent(clientId, leadId);
   if (!event) return "skipped";
+
+  await resolveOpenRateLimitEscalations(clientId, leadId);
+  const { updateConversationAgentState } = await import("./conversation-state");
+  await updateConversationAgentState(clientId, leadId, {
+    status: "AI_HANDLING",
+    humanNeededReason: null,
+  });
 
   background("segmiqAgentStaleResume", () =>
     handleAgentInboundMessage(event, {

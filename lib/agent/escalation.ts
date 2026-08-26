@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logLeadEvent } from "@/lib/lead-events";
 import { notifyAgentAlert, notifyOwnerOrManagers } from "./notifications";
 import { escalationSeverity } from "./policy";
+import { RATE_LIMIT_HOLD_REASON } from "./stale-resume-policy";
 import type { AgentEscalationReason } from "./types";
 import { asRow } from "./rows";
 
@@ -16,7 +17,7 @@ const REASON_LABELS: Record<AgentEscalationReason, string> = {
   POLICY_BLOCKED: "Company policy blocked the action",
   CONFLICTING_CUSTOMER_DATA: "Conflicting customer information",
   SYSTEM_FAILURE: "System failure during agent run",
-  RATE_LIMITED: "Agent rate limit reached",
+  RATE_LIMITED: RATE_LIMIT_HOLD_REASON,
   ATTACHMENT_REVIEW: "Attachment needs human review",
   KNOWLEDGE_CONFLICT: "Approved knowledge conflicts with current company data",
 };
@@ -99,4 +100,19 @@ export async function createAgentEscalation(input: CreateEscalationInput): Promi
   }
 
   return asRow<{ id: string }>(escalation)?.id ?? null;
+}
+
+/** Drop transient 429 handoffs so the agent can continue after cool-down. */
+export async function resolveOpenRateLimitEscalations(clientId: string, leadId: string): Promise<void> {
+  const supabase = createAdminClient();
+  await supabase
+    .from("agent_escalations")
+    .update({
+      status: "RESOLVED",
+      resolved_at: new Date().toISOString(),
+    })
+    .eq("client_id", clientId)
+    .eq("lead_id", leadId)
+    .eq("reason", "RATE_LIMITED")
+    .eq("status", "OPEN");
 }

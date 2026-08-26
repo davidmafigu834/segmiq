@@ -8,7 +8,7 @@ import {
   updateConversationAgentState,
 } from "./conversation-state";
 import { assembleAgentContext, type AgentContext } from "./context";
-import { createAgentEscalation } from "./escalation";
+import { createAgentEscalation, resolveOpenRateLimitEscalations } from "./escalation";
 import { notifyOwnerOrManagers } from "./notifications";
 import { canSendCustomerReply, evaluateBusinessHours, evaluateToolPolicy } from "./policy";
 import {
@@ -57,7 +57,8 @@ export async function handleAgentInboundMessage(
   inboundOpts: HandleAgentInboundOptions = {}
 ): Promise<void> {
   const retryOnLlmRateLimit = inboundOpts.retryOnLlmRateLimit ?? true;
-  const escalateOnLlmRateLimit = inboundOpts.escalateOnLlmRateLimit ?? true;
+  // 429s are retried after cool-down; do not park the thread as HUMAN_NEEDED.
+  const escalateOnLlmRateLimit = inboundOpts.escalateOnLlmRateLimit ?? false;
   try {
     if (!isAgentGloballyEnabled()) return;
 
@@ -130,6 +131,14 @@ export async function handleAgentInboundMessage(
     if (hoursDecision === "SUPPRESS") {
       log("skip.outside_business_hours", { leadId: event.leadId });
       return;
+    }
+
+    if (inboundOpts.skipDebounceWait) {
+      const supabase = createAdminClient();
+      await supabase
+        .from("agent_executions")
+        .update({ trigger_message_id: null })
+        .eq("trigger_message_id", event.messageId);
     }
 
     await runAgentExecution({
@@ -353,8 +362,10 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
     }
 
     if (!opts.testMode && outcome.replyStatus === "SENT") {
+      await resolveOpenRateLimitEscalations(opts.clientId, opts.leadId);
       await updateConversationAgentState(opts.clientId, opts.leadId, {
         status: "WAITING_ON_CUSTOMER",
+        humanNeededReason: null,
         lastAgentMessageAt: new Date().toISOString(),
       });
     }

@@ -1,7 +1,7 @@
 import { now } from "@/lib/clock";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentConversationState, AgentConversationStatus } from "./types";
-import { STALE_RESUME_AFTER_MS } from "./stale-resume-policy";
+import { STALE_RESUME_AFTER_MS, isRateLimitHold } from "./stale-resume-policy";
 
 /** Stale lock recovery: a run holding the lock longer than this is dead. */
 export const LOCK_STALE_MS = STALE_RESUME_AFTER_MS;
@@ -164,6 +164,8 @@ export function conversationAllowsAgent(
   } else if (state.pausedUntil && new Date(state.pausedUntil).getTime() > now.getTime()) {
     return { allowed: false, reason: "PAUSED" };
   }
-  if (state.status === "HUMAN_NEEDED") return { allowed: false, reason: "HUMAN_NEEDED" };
+  if (state.status === "HUMAN_NEEDED" && !isRateLimitHold(state.status, state.humanNeededReason)) {
+    return { allowed: false, reason: "HUMAN_NEEDED" };
+  }
   return { allowed: true };
 }
