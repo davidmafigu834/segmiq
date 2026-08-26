@@ -4,6 +4,9 @@ import Link from "next/link";
 const SIZES = {
   sm: { width: 120, height: 20, className: "h-5 w-auto" },
   md: { width: 150, height: 24, className: "h-6 w-auto" },
+  /** Nav / footer lockup — source is 400×100 */
+  lg: { width: 176, height: 44, className: "h-8 w-auto sm:h-9" },
+  xl: { width: 208, height: 52, className: "h-10 w-auto sm:h-11" },
 } as const;
 
 const SRC = {

@@ -8,9 +8,9 @@ export default function FollowUpQuotePreview() {
       <div className="rounded-[10px] border border-[#E4E7EC] bg-white px-2.5 py-2">
         <ul className="space-y-2">
           {[
-            { icon: "wa" as const, label: "WhatsApp replied", time: "10:15 AM" },
-            { icon: "call" as const, label: "Call logged", time: "10:40 AM" },
-            { icon: "quote" as const, label: "Quote sent", time: "11:05 AM" },
+            { icon: "wa" as const, label: "SegmiQ Agent replied", time: "10:15 AM" },
+            { icon: "call" as const, label: "Callback booked", time: "10:40 AM" },
+            { icon: "quote" as const, label: "Quote prepared", time: "11:05 AM" },
           ].map((row) => (
             <li key={row.label} className="flex items-center gap-2">
               <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[#F2F4F7]">
@@ -43,7 +43,7 @@ export default function FollowUpQuotePreview() {
         <div className="shrink-0 text-right">
           <p className="text-[12px] font-semibold tabular-nums text-[#101828]">$6,800</p>
           <span className="mt-0.5 inline-flex rounded-md bg-[#EFF8FF] px-1.5 py-px text-[8px] font-semibold text-[#175CD3]">
-            Sent
+            Prepared
           </span>
         </div>
       </div>

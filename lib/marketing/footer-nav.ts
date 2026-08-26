@@ -35,6 +35,8 @@ export const FOOTER_NAV: FooterNavGroup[] = [
     title: "Product",
     ariaLabel: "Product",
     links: [
+      { label: "SegmiQ Agentic AI", href: ML.agentic },
+      { label: "Company Brain", href: ML.brain },
       { label: "WhatsApp Sales Hub", href: ML.featuresWhatsapp },
       { label: "Lead & Pipeline Management", href: ML.crm },
       { label: "Quotations", href: ML.featuresConvert },

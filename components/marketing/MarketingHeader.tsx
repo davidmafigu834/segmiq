@@ -26,7 +26,7 @@ export default function MarketingHeader() {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/90 text-white backdrop-blur-xl">
       <div className="mx-auto flex h-[58px] max-w-[1180px] items-center justify-between px-5 sm:px-8">
         <div className="flex items-center gap-14">
-          <SegmiqWordmark href="/" priority />
+          <SegmiqWordmark href="/" size="lg" priority />
           <nav className="hidden items-center gap-8 text-[12px] text-white/65 lg:flex">
             {NAV.map((n) =>
               n.href.startsWith("http") ? (

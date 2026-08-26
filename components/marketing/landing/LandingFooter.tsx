@@ -9,6 +9,7 @@ import {
   type FooterLink,
   type FooterNavGroup,
 } from "@/lib/marketing/footer-nav";
+import SegmiQSectionAtmosphere from "@/components/marketing/landing/atmosphere/SegmiQSectionAtmosphere";
 
 function FooterAnchor({ link, className }: { link: FooterLink; className: string }) {
   if (link.external || link.href.startsWith("http") || link.href.startsWith("mailto:")) {
@@ -34,7 +35,7 @@ function FooterAnchor({ link, className }: { link: FooterLink; className: string
 function FooterLinkGroup({ group }: { group: FooterNavGroup }) {
   return (
     <nav aria-label={group.ariaLabel}>
-      <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--marketing-text-muted)] sm:text-[11px]">
+      <p className="mb-4 segmiq-kicker text-[10px] text-[var(--marketing-text-muted)] sm:text-[11px]">
         {group.title}
       </p>
       <ul className="space-y-2.5">
@@ -57,15 +58,16 @@ export default function LandingFooter() {
 
   return (
     <footer className="marketing-halo marketing-halo--footer segmiq-section-rule border-t border-[var(--marketing-border-subtle)] bg-[var(--marketing-footer-bg)]">
+      <SegmiQSectionAtmosphere tone="footer" />
       <div className="mx-auto max-w-[1280px] px-6 pb-6 pt-10 sm:px-10 sm:pb-7 sm:pt-12 lg:px-12 lg:pt-14">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 md:gap-x-8 md:gap-y-10 lg:grid-cols-3 xl:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))_1.15fr] xl:gap-x-8">
           <div className="md:col-span-2 lg:col-span-3 xl:col-span-1">
-            <SegmiqWordmark href="/" theme="auto" size="sm" />
-            <p className="mt-4 max-w-[260px] text-[13px] leading-[1.55] text-[var(--marketing-text-secondary)] sm:text-[14px]">
-              The revenue operating system for service businesses in Africa.
+            <SegmiqWordmark href="/" theme="auto" size="xl" />
+            <p className="mt-4 max-w-[280px] text-[13px] leading-[1.6] text-[var(--marketing-text-secondary)] sm:text-[14px]">
+              Introducing SegmiQ Agentic AI — the agent that sells with your team on WhatsApp.
             </p>
             <p className="mt-3 text-[12px] font-medium text-[var(--marketing-text-label)]">
-              SegmiQ CRM · SegmiQ Cloud
+              SegmiQ Agent · SegmiQ CRM · SegmiQ Cloud
             </p>
 
             {/* Social icons render when FOOTER_SOCIAL_LINKS is populated with verified URLs. */}
@@ -95,7 +97,7 @@ export default function LandingFooter() {
           ))}
 
           <nav aria-label="Get in touch" className="min-w-0 md:col-span-2 lg:col-span-1">
-            <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--marketing-text-muted)] sm:text-[11px]">
+            <p className="mb-4 segmiq-kicker text-[10px] text-[var(--marketing-text-muted)] sm:text-[11px]">
               Get in touch
             </p>
             <ul className="space-y-3">

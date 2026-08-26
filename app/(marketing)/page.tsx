@@ -3,9 +3,9 @@ import JsonLd from "@/components/seo/JsonLd";
 import { organizationLd, pageMetadata, websiteLd } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "Revenue operating system for service businesses",
+  title: "Introducing SegmiQ Agentic AI",
   description:
-    "Segmiq is a revenue operating system for construction, solar, roofing, electrical, and landscaping businesses across Africa — capture, score, and close every lead.",
+    "SegmiQ Agentic AI answers WhatsApp enquiries, qualifies leads, prepares quotes and follows up inside the revenue OS for service businesses in Africa — then brings a human in when judgement is required.",
   path: "/",
 });
 

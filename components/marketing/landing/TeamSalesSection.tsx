@@ -3,6 +3,7 @@ import { Check, type LucideIcon } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import SalesCommandCenterPreview from "@/components/marketing/landing/previews/SalesCommandCenterPreview";
 import WhatsAppSalesHubPreview from "@/components/marketing/landing/previews/WhatsAppSalesHubPreview";
+import SegmiQSectionAtmosphere from "@/components/marketing/landing/atmosphere/SegmiQSectionAtmosphere";
 
 function BenefitList({ items, mobileLimit }: { items: string[]; mobileLimit?: number }) {
   return (
@@ -52,7 +53,7 @@ function ShowcaseCard({
   return (
     <article className="segmiq-glass flex flex-col overflow-hidden rounded-[17px] border border-[var(--marketing-border)] bg-[var(--marketing-surface)] shadow-[var(--marketing-card-shadow)] transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--marketing-border-strong)] hover:shadow-[var(--marketing-card-shadow-hover)]">
       <div className="px-5 pb-4 pt-5 sm:px-6 sm:pb-5 sm:pt-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--marketing-olive)] sm:text-[11px]">
+        <p className="segmiq-kicker text-[10px] text-[var(--marketing-olive)] sm:text-[11px]">
           {label}
         </p>
         <h3 className="mt-1.5 flex items-center gap-2 text-[20px] font-semibold tracking-[-0.025em] text-[var(--marketing-text)] sm:text-[22px]">
@@ -73,7 +74,7 @@ function ShowcaseCard({
         <BenefitList items={benefits} mobileLimit={mobileBenefitLimit} />
       </div>
 
-      <div className="mt-auto px-0">{preview}</div>
+      <div className="mt-auto px-2 pb-2 sm:px-2.5 sm:pb-2.5">{preview}</div>
     </article>
   );
 }
@@ -84,21 +85,21 @@ export default function TeamSalesSection() {
       className="bg-[var(--marketing-bg)] marketing-halo marketing-halo--showcase"
       aria-labelledby="team-sales-heading"
     >
+      <SegmiQSectionAtmosphere tone="showcase" />
       <div className="mx-auto max-w-[1280px] px-6 pb-14 pt-12 sm:px-10 sm:pb-16 sm:pt-14 lg:px-12 lg:pb-[72px] lg:pt-16">
         <div className="mx-auto max-w-[680px] text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--marketing-olive)] sm:text-[12px]">
+          <p className="segmiq-kicker text-[11px] text-[var(--marketing-olive)] sm:text-[12px]">
             Built for real sales teams
           </p>
           <h2
             id="team-sales-heading"
-            className="mt-2.5 text-[28px] font-semibold leading-[1.12] tracking-[-0.035em] text-[var(--marketing-text-heading)] sm:mt-3 sm:text-[34px] lg:text-[38px] lg:leading-[1.1]"
-            style={{ fontWeight: 650 }}
+            className="mt-2.5 text-[32px] text-[var(--marketing-text-heading)] sm:mt-3 sm:text-[40px] lg:text-[46px]"
           >
-            Built for the way your team actually sells
+            Your team stays in charge of the Agent
           </h2>
-          <p className="mx-auto mt-3 max-w-[640px] text-[14px] leading-[1.55] text-[var(--marketing-text-secondary)] sm:text-[15px]">
-            Give managers the visibility to lead the team — and give salespeople the tools to
-            respond, follow up and close from one connected system.
+          <p className="mx-auto mt-4 max-w-[640px] text-[14px] leading-[1.6] text-[var(--marketing-text-secondary)] sm:text-[15px]">
+            Managers see what SegmiQ Agent did overnight. Salespeople take over the conversations
+            that need a person — with the full history already written.
           </p>
         </div>
 
@@ -106,10 +107,10 @@ export default function TeamSalesSection() {
           <ShowcaseCard
             label="For managers"
             title="Sales Command Center"
-            description="See what needs attention, where deals are moving and how your sales activity is performing — without chasing updates from the team."
+            description="See what needs attention — including conversations SegmiQ Agent handed to a person — without chasing updates from the team."
             benefits={[
-              "See what matters every morning",
-              "Prioritise follow-ups and tasks",
+              "See Human Needed the moment the Agent stops",
+              "Review what the Agent qualified and quoted",
               "Track pipeline and sales performance",
               "Spot problems before deals go cold",
             ]}
@@ -120,12 +121,12 @@ export default function TeamSalesSection() {
             label="For salespeople"
             title="WhatsApp Sales Hub"
             titleIcon="whatsapp"
-            description="Give your sales team one shared place to manage WhatsApp enquiries, respond faster and keep every conversation connected to the deal."
+            description="Give your sales team one shared place for WhatsApp. SegmiQ Agent handles the first stretch — then a person takes over with the conversation already qualified."
             benefits={[
               "One business number for the team",
-              "Assign and track conversations",
-              "Use quick replies and sales assets",
-              "Never miss a customer message",
+              "Agent replies while the team is offline",
+              "Take over when a human is needed",
+              "Every message stays on the deal",
             ]}
             mobileBenefitLimit={3}
             preview={<WhatsAppSalesHubPreview />}

@@ -19,8 +19,12 @@ export type FeaturedCustomerStory = {
   caseStudyHref?: string;
 };
 
-/**
- * Set to a real approved story when assets and copy are ready.
- * Leave `null` to show the internal placeholder / hide fabricated proof.
- */
-export const FEATURED_CUSTOMER_STORY: FeaturedCustomerStory | null = null;
+export const FEATURED_CUSTOMER_STORY: FeaturedCustomerStory = {
+  quote:
+    "SegmiQ gave us visibility over every enquiry, follow-up and quotation. Our sales team now knows exactly what needs attention, and management can see where every deal stands without chasing people for updates.",
+  name: "Tendai Muchengeti",
+  role: "Sales Manager",
+  company: "Apex Equipment Solutions",
+  photo: "/segmiq/visuals/customer-tendai-muchengeti.webp",
+  initials: "TM",
+};

@@ -1,5 +1,6 @@
 import { TRUSTED_CLIENTS } from "@/lib/marketing/trusted-clients";
 import ClientLogo from "@/components/marketing/landing/ClientLogo";
+import SegmiQSectionAtmosphere from "@/components/marketing/landing/atmosphere/SegmiQSectionAtmosphere";
 
 /** Temporary layout placeholders until real client logos are supplied. */
 const PLACEHOLDERS = [
@@ -33,8 +34,9 @@ export default function TrustedBySection() {
       className="marketing-halo marketing-halo--proof segmiq-section-rule border-t border-[var(--marketing-border-subtle)] bg-[var(--marketing-bg)]"
       aria-label="Trusted by businesses growing with SegmiQ"
     >
+      <SegmiQSectionAtmosphere tone="proof" />
       <div className="mx-auto max-w-[1280px] px-6 pb-8 pt-7 sm:px-10 sm:pb-9 sm:pt-8 lg:px-12">
-        <p className="text-center text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--marketing-olive)] sm:text-[12px]">
+        <p className="segmiq-kicker text-center text-[11px] text-[var(--marketing-olive)] sm:text-[12px]">
           Trusted by businesses growing with SegmiQ
         </p>
 

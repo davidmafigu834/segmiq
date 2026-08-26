@@ -38,7 +38,7 @@ export default function MarketingFooter() {
       <div className="mx-auto max-w-[1120px] px-5">
         <div className="grid grid-cols-2 gap-8 text-[12px] md:grid-cols-[1.4fr_repeat(4,1fr)]">
           <div className="col-span-2 md:col-span-1">
-            <SegmiqWordmark href="/" />
+            <SegmiqWordmark href="/" size="xl" />
             <p className="mt-3 max-w-[220px] text-[10px] leading-4 text-white/35">
               The revenue operating system for service businesses in Africa.
             </p>

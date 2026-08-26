@@ -1,10 +1,10 @@
 import { Check } from "lucide-react";
 
-const POINTS = ["Quick to set up", "Teams love it", "Built for Africa"] as const;
+const POINTS = ["Human in the loop", "Never invents prices", "Built for Africa"] as const;
 
 export default function HeroTrustPoints() {
   return (
-    <ul className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 sm:mt-6 sm:gap-x-6">
+    <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:mt-6 sm:gap-x-6 lg:justify-start">
       {POINTS.map((label) => (
         <li
           key={label}

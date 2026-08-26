@@ -1,59 +1,77 @@
-import {
-  BriefcaseBusiness,
-  CalendarCheck2,
-  FileCheck2,
-  Inbox,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
+import Image from "next/image";
 import { SiFacebook, SiWhatsapp } from "react-icons/si";
+import SegmiQSectionAtmosphere from "@/components/marketing/landing/atmosphere/SegmiQSectionAtmosphere";
 
 const REASONS: {
   title: string;
   description: string;
-  Icon: LucideIcon;
+  icon: { src: string; alt: string };
   sources?: boolean;
 }[] = [
   {
     title: "One place for every enquiry",
     description:
       "Capture WhatsApp, Facebook, website, referral and field enquiries in one organised sales system.",
-    Icon: Inbox,
+    icon: {
+      src: "/segmiq/visuals/why-icon-inbox.webp",
+      alt: "Glass inbox gathering four channels into one place",
+    },
     sources: true,
   },
   {
-    title: "Faster team response",
+    title: "Agentic AI on WhatsApp",
     description:
-      "Route new enquiries quickly so the right salesperson can respond while the opportunity is still fresh.",
-    Icon: Zap,
+      "SegmiQ Agent answers, qualifies and follows up so the first response is not waiting on someone to pick up the phone.",
+    icon: {
+      src: "/segmiq/visuals/why-icon-agent.webp",
+      alt: "Glass agent node connected to a chat bubble",
+    },
   },
   {
-    title: "Better follow-up discipline",
+    title: "Company Brain, not guesswork",
     description:
-      "Keep calls, tasks and promised follow-ups visible so opportunities do not disappear simply because someone forgot.",
-    Icon: CalendarCheck2,
+      "The Agent sells the way your business sells. It looks up approved facts and the real catalogue — it does not invent prices.",
+    icon: {
+      src: "/segmiq/visuals/why-icon-brain.webp",
+      alt: "Glass Company Brain sphere with lime neural threads",
+    },
   },
   {
-    title: "Quotes connected to the sale",
+    title: "Humans stay in control",
     description:
-      "Create quotations inside the sales workflow and keep the quote, conversation and next action connected to the same opportunity.",
-    Icon: FileCheck2,
+      "You choose how much the Agent can do. Discounts, complaints and anything unsure stop it and brief a person.",
+    icon: {
+      src: "/segmiq/visuals/why-icon-control.webp",
+      alt: "Glass shield with a human silhouette",
+    },
   },
   {
     title: "Built for service businesses",
     description:
       "Designed for teams selling real projects and services across solar, construction, roofing, electrical and related industries.",
-    Icon: BriefcaseBusiness,
+    icon: {
+      src: "/segmiq/visuals/why-icon-industries.webp",
+      alt: "Glass house with lime-edged solar panels",
+    },
   },
 ];
 
-function ReasonIcon({ Icon }: { Icon: LucideIcon }) {
+function ReasonIcon({ src, compact }: { src: string; compact?: boolean }) {
   return (
     <span
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] border border-[rgba(180,220,60,0.22)] bg-[rgba(212,255,79,0.14)] text-[#536600] transition-colors duration-200 group-hover/reason:bg-[rgba(212,255,79,0.22)] sm:h-10 sm:w-10 dark:border-[rgba(212,255,79,0.12)] dark:bg-[rgba(212,255,79,0.10)] dark:text-[#D4FF4F] dark:group-hover/reason:bg-[rgba(212,255,79,0.16)]"
+      className={`relative block shrink-0 ${
+        compact ? "h-12 w-12" : "h-14 w-14 sm:h-16 sm:w-16"
+      }`}
       aria-hidden
     >
-      <Icon className="h-5 w-5" strokeWidth={1.8} />
+      <Image
+        src={src}
+        alt=""
+        width={128}
+        height={128}
+        sizes="64px"
+        className="h-full w-full object-contain drop-shadow-[0_8px_18px_rgba(8,20,48,0.45)]"
+      />
     </span>
   );
 }
@@ -67,7 +85,7 @@ function ReasonContent({
 }) {
   return (
     <>
-      <ReasonIcon Icon={reason.Icon} />
+      <ReasonIcon src={reason.icon.src} compact={compact} />
       <div className={compact ? "min-w-0" : undefined}>
         <h3
           className={`font-semibold leading-snug tracking-[-0.015em] text-[var(--marketing-text)] ${
@@ -113,27 +131,50 @@ function ReasonContent({
 
 export default function WhySegmiQSection() {
   return (
-    <section className="bg-[var(--marketing-bg-subtle)] marketing-halo marketing-halo--industry" aria-labelledby="why-segmiq-heading">
+    <section className="marketing-halo marketing-halo--industry overflow-x-clip bg-[var(--marketing-bg-subtle)]" aria-labelledby="why-segmiq-heading">
+      <SegmiQSectionAtmosphere tone="industry" />
       <div className="mx-auto max-w-[1280px] px-6 pb-14 pt-12 sm:px-10 sm:pb-16 sm:pt-14 lg:px-12 lg:pb-[72px] lg:pt-16">
-        <div className="mx-auto max-w-[720px] text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--marketing-olive)] sm:text-[12px]">
-            Why SegmiQ
-          </p>
-          <h2
-            id="why-segmiq-heading"
-            className="mt-2.5 text-[28px] font-semibold leading-[1.12] tracking-[-0.035em] text-[var(--marketing-text-heading)] sm:mt-3 sm:text-[34px] lg:text-[38px] lg:leading-[1.1]"
-            style={{ fontWeight: 650 }}
-          >
-            Why service businesses in Africa choose SegmiQ
-          </h2>
-          <p className="mx-auto mt-3 max-w-[640px] text-[14px] leading-[1.55] text-[var(--marketing-text-secondary)] sm:text-[15px]">
-            Built around the way service teams actually win work — through conversations, fast
-            follow-up, clear ownership and trust.
-          </p>
+        {/* VISUAL:
+            Type: REAL_PHOTO_CUTOUT
+            Asset: African sales manager holding tablet — mid-thigh crop
+            File: /public/segmiq/visuals/africa-sales-manager-portrait.webp
+            Placement: right of left-aligned heading on all breakpoints
+        */}
+        <div className="relative grid grid-cols-[minmax(0,1.15fr)_minmax(148px,0.95fr)] items-center gap-2 sm:grid-cols-[minmax(0,1.1fr)_minmax(240px,1fr)] sm:gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,1.05fr)] lg:items-end lg:gap-6 xl:gap-8">
+          <div className="relative z-10 min-w-0 self-center text-left lg:pb-8">
+            <p className="segmiq-kicker text-[11px] text-[var(--marketing-olive)] sm:text-[12px]">
+              Why SegmiQ
+            </p>
+            <h2
+              id="why-segmiq-heading"
+              className="mt-2.5 max-w-[18ch] text-[32px] text-[var(--marketing-text-heading)] sm:mt-3 sm:text-[40px] lg:max-w-none lg:text-[46px]"
+            >
+              Why service businesses in Africa choose SegmiQ
+            </h2>
+            <p className="mt-3 max-w-[42ch] text-[14px] leading-[1.6] text-[var(--marketing-text-secondary)] sm:text-[15px]">
+              Built around the way service teams actually win work — conversations, an agent that
+              carries the routine, and a person when it matters.
+            </p>
+          </div>
+
+          <div className="relative z-[2] -mb-10 justify-self-end self-end sm:-mb-14 lg:-mb-20 xl:-mb-[96px]">
+            <div
+              className="pointer-events-none absolute inset-x-[10%] bottom-[8%] h-[30%] rounded-full bg-[rgba(52,88,164,0.32)] blur-3xl"
+              aria-hidden
+            />
+            <Image
+              src="/segmiq/visuals/africa-sales-manager-portrait.webp"
+              alt="African service-business sales manager reviewing work on a tablet"
+              width={819}
+              height={655}
+              sizes="(min-width: 1280px) 540px, (min-width: 1024px) 460px, (min-width: 640px) 340px, 210px"
+              className="relative z-[1] h-[268px] w-auto max-w-none origin-bottom scale-[1.22] object-cover object-[center_8%] sm:h-[360px] sm:scale-[1.16] md:h-[430px] lg:h-[520px] lg:scale-[1.08] xl:h-[580px] xl:scale-[1.06] [mask-image:linear-gradient(to_bottom,#000_52%,transparent_96%)] [-webkit-mask-image:linear-gradient(to_bottom,#000_52%,transparent_96%)]"
+            />
+          </div>
         </div>
 
         {/* XL: five equal columns in one shared container */}
-        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] xl:grid xl:grid-cols-5 segmiq-glass">
+        <ul className="relative z-0 mt-2 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] xl:grid xl:grid-cols-5 segmiq-glass sm:mt-3 lg:mt-4">
           {REASONS.map((reason, index) => (
             <li
               key={reason.title}
@@ -147,7 +188,7 @@ export default function WhySegmiQSection() {
         </ul>
 
         {/* LG: 3 + 2 */}
-        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] lg:grid lg:grid-cols-3 xl:hidden segmiq-glass">
+        <ul className="relative z-0 mt-2 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] lg:mt-4 lg:grid lg:grid-cols-3 xl:hidden segmiq-glass">
           {REASONS.map((reason, index) => (
             <li
               key={reason.title}
@@ -165,7 +206,7 @@ export default function WhySegmiQSection() {
         </ul>
 
         {/* MD tablet: 2 cols, last full-width */}
-        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] md:grid md:grid-cols-2 lg:hidden segmiq-glass">
+        <ul className="relative z-0 mt-2 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] md:mt-3 md:grid md:grid-cols-2 lg:hidden segmiq-glass">
           {REASONS.map((reason, index) => (
             <li
               key={reason.title}
@@ -182,11 +223,11 @@ export default function WhySegmiQSection() {
         </ul>
 
         {/* Mobile compact rows */}
-        <ul className="mt-8 overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] md:hidden segmiq-glass">
+        <ul className="relative z-0 mt-2 overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] md:hidden segmiq-glass">
           {REASONS.map((reason, index) => (
             <li
               key={reason.title}
-              className={`grid grid-cols-[36px_minmax(0,1fr)] gap-3.5 px-4 py-5 ${
+              className={`grid grid-cols-[48px_minmax(0,1fr)] gap-3.5 px-4 py-5 ${
                 index > 0 ? "border-t border-[var(--marketing-border-subtle)]" : ""
               }`}
             >

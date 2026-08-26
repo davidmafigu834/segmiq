@@ -5,6 +5,7 @@ import {
   FEATURED_CUSTOMER_STORY,
   type FeaturedCustomerStory,
 } from "@/lib/marketing/featured-customer-story";
+import SegmiQSectionAtmosphere from "@/components/marketing/landing/atmosphere/SegmiQSectionAtmosphere";
 
 function IdentityBlock({
   story,
@@ -76,7 +77,7 @@ function ContextPanel({ story }: { story: FeaturedCustomerStory }) {
     <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-[var(--marketing-border-subtle)] pt-6 sm:grid-cols-3">
       {rows.map((row) => (
         <div key={row.label}>
-          <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--marketing-text-muted)]">
+          <dt className="segmiq-kicker text-[10px] text-[var(--marketing-text-muted)]">
             {row.label}
           </dt>
           <dd className="mt-1 text-[13px] font-medium text-[var(--marketing-text-label)]">{row.value}</dd>
@@ -94,28 +95,31 @@ function StoryContent({ story }: { story: FeaturedCustomerStory }) {
       }`}
     >
       {story.photo ? (
-        <div className="relative aspect-[16/10] w-full lg:aspect-auto lg:min-h-[420px]">
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-[rgba(8,18,42,0.55)] lg:aspect-auto lg:min-h-[420px]">
+          <div
+            className="pointer-events-none absolute inset-x-[12%] bottom-[10%] h-[36%] rounded-full bg-[rgba(52,88,164,0.38)] blur-3xl"
+            aria-hidden
+          />
           <Image
             src={story.photo}
-            alt={`${story.name} at ${story.company}`}
+            alt={`${story.name}, ${story.role} at ${story.company}`}
             fill
-            className="object-cover lg:rounded-l-[17px]"
+            className="object-contain object-[center_18%] drop-shadow-[0_12px_28px_rgba(8,20,48,0.45)] lg:rounded-l-[17px] [mask-image:linear-gradient(to_bottom,#000_78%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,#000_78%,transparent_100%)]"
             sizes="(max-width: 1024px) 100vw, 42vw"
-            priority={false}
           />
         </div>
       ) : null}
 
       <div className="relative px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-10">
         <span
-          className="pointer-events-none absolute left-4 top-3 font-[family-name:var(--font-instrument-serif)] text-[64px] leading-none text-[var(--marketing-quote-mark)] sm:left-6 sm:top-4 sm:text-[72px]"
+          className="pointer-events-none absolute left-4 top-3 text-[64px] font-extrabold leading-none tracking-[-0.05em] text-[var(--marketing-quote-mark)] sm:left-6 sm:top-4 sm:text-[72px]"
           aria-hidden
         >
           “
         </span>
 
         <blockquote className="relative pt-8">
-          <p className="text-[24px] font-medium leading-[1.32] tracking-[-0.025em] text-[var(--marketing-text)] sm:text-[28px] sm:leading-[1.3] lg:text-[32px] lg:leading-[1.28]">
+          <p className="text-[24px] font-medium leading-[1.32] tracking-[-0.02em] text-[var(--marketing-text)] sm:text-[28px] sm:leading-[1.3] lg:text-[32px] lg:leading-[1.28]">
             {story.quote}
           </p>
           <IdentityBlock story={story} showPortrait={!story.photo} />
@@ -140,7 +144,7 @@ function PlaceholderStory() {
     <div className="overflow-hidden rounded-[18px] border border-dashed border-[var(--marketing-border-strong)] bg-[var(--marketing-story-surface)] shadow-[var(--marketing-card-shadow)] segmiq-glass">
       <div className="relative px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
         <span
-          className="pointer-events-none absolute left-4 top-3 font-[family-name:var(--font-instrument-serif)] text-[64px] leading-none text-[var(--marketing-quote-mark)] sm:left-6 sm:text-[72px]"
+          className="pointer-events-none absolute left-4 top-3 text-[64px] font-extrabold leading-none tracking-[-0.05em] text-[var(--marketing-quote-mark)] sm:left-6 sm:text-[72px]"
           aria-hidden
         >
           “
@@ -192,11 +196,12 @@ export default function CustomerStorySection() {
       className="bg-[var(--marketing-bg)] marketing-halo marketing-halo--story"
       aria-labelledby="customer-story-heading"
     >
+      <SegmiQSectionAtmosphere tone="story" />
       <div className="mx-auto max-w-[1280px] px-6 pb-14 pt-12 sm:px-10 sm:pb-16 sm:pt-14 lg:px-12 lg:pb-[72px] lg:pt-16">
         <div className="mx-auto max-w-[1100px]">
           <p
             id="customer-story-heading"
-            className="text-center text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--marketing-olive)] sm:text-[12px]"
+            className="segmiq-kicker text-center text-[11px] text-[var(--marketing-olive)] sm:text-[12px]"
           >
             Customer story
           </p>

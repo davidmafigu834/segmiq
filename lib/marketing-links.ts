@@ -17,6 +17,8 @@ export const ML = {
   cloudHelp: `${SITE.cloudUrl}/help`,
   homePricing: "/#pricing",
   homeSolutions: "/#solutions",
+  agentic: "/#agentic-ai",
+  brain: "/#company-brain",
   featuresIntelligence: "/features#intelligence",
   featuresWhatsapp: "/features#whatsapp",
   featuresConvert: "/features#convert",

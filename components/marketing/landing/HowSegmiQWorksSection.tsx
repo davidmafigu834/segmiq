@@ -1,52 +1,79 @@
-import type { ReactNode } from "react";
+import Image from "next/image";
 import {
   ArrowRight,
   FileText,
-  FolderCheck,
+  Handshake,
   Link2,
   MessageSquareText,
   UserRoundCheck,
 } from "lucide-react";
-import CapturePreview from "@/components/marketing/landing/previews/CapturePreview";
-import QualificationPreview from "@/components/marketing/landing/previews/QualificationPreview";
-import FollowUpQuotePreview from "@/components/marketing/landing/previews/FollowUpQuotePreview";
-import CloseDocumentPreview from "@/components/marketing/landing/previews/CloseDocumentPreview";
+import SegmiQSectionAtmosphere from "@/components/marketing/landing/atmosphere/SegmiQSectionAtmosphere";
 
 const STEPS: {
   title: string;
   description: string;
   Icon: typeof MessageSquareText;
-  preview: ReactNode;
+  visual: {
+    src: string;
+    alt: string;
+  };
 }[] = [
   {
-    title: "Capture enquiries",
+    title: "Enquiry arrives",
     description:
-      "Bring enquiries from WhatsApp, Facebook ads, forms, referrals and field events into SegmiQ.",
+      "WhatsApp, ads, forms and field enquiries land in one conversation — ready for SegmiQ Agent or your team.",
     Icon: MessageSquareText,
-    preview: <CapturePreview />,
+    visual: {
+      src: "/segmiq/visuals/workflow-enquiry.webp",
+      alt: "New lead Tafadzwa Moyo captured from WhatsApp for a 5kW solar installation, score Hot 82.",
+    },
   },
   {
-    title: "Qualify & assign",
+    title: "Agent qualifies",
     description:
-      "Use lead information and intent signals to prioritise the opportunity and route it to the right salesperson.",
+      "SegmiQ Agent asks the next question, writes the answers into the lead, and looks up real packages from the catalogue.",
     Icon: UserRoundCheck,
-    preview: <QualificationPreview />,
+    visual: {
+      src: "/segmiq/visuals/workflow-qualify.webp",
+      alt: "Tafadzwa Moyo agent-qualified with lead score 86, budget, timeline and assigned to Tendai M.",
+    },
   },
   {
-    title: "Follow up & quote",
+    title: "Quotes & follows up",
     description:
-      "Call, WhatsApp, schedule follow-ups and send professional quotations without losing customer context.",
+      "It prepares a quotation, books a callback and sets the next follow-up — all attached to the same opportunity.",
     Icon: FileText,
-    preview: <FollowUpQuotePreview />,
+    visual: {
+      src: "/segmiq/visuals/workflow-quote.webp",
+      alt: "SegmiQ Agent replied, booked a callback, prepared quote Q-2026-045 for $6,800, follow-up tomorrow 09:00.",
+    },
   },
   {
-    title: "Close & document work",
+    title: "Human takes over",
     description:
-      "Record the outcome, keep the project history and turn completed work into proof your team can use again.",
-    Icon: FolderCheck,
-    preview: <CloseDocumentPreview />,
+      "Discounts, complaints and judgement calls stop the Agent. Your team gets a briefing and closes the work.",
+    Icon: Handshake,
+    visual: {
+      src: "/segmiq/visuals/workflow-handover.webp",
+      alt: "Human needed for Chiedza Ndlovu after a discount request. Briefing: pricing is outside Agent authority.",
+    },
   },
 ];
+
+function StepVisual({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="mt-4 overflow-hidden rounded-[12px]">
+      <Image
+        src={src}
+        alt={alt}
+        width={1024}
+        height={1024}
+        sizes="(min-width: 1280px) 260px, (min-width: 640px) 40vw, 88vw"
+        className="h-auto w-full"
+      />
+    </div>
+  );
+}
 
 export default function HowSegmiQWorksSection() {
   return (
@@ -54,21 +81,21 @@ export default function HowSegmiQWorksSection() {
       className="bg-[var(--marketing-bg-subtle)] marketing-halo marketing-halo--workflow"
       aria-labelledby="how-segmiq-works-heading"
     >
+      <SegmiQSectionAtmosphere tone="workflow" />
       <div className="mx-auto max-w-[1280px] px-6 pb-14 pt-12 sm:px-10 sm:pb-16 sm:pt-14 lg:px-12 lg:pb-[72px] lg:pt-16">
         <div className="mx-auto max-w-[720px] text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--marketing-olive)] sm:text-[12px]">
-            How it works
+          <p className="segmiq-kicker text-[11px] text-[var(--marketing-olive)] sm:text-[12px]">
+            How Agentic AI works
           </p>
           <h2
             id="how-segmiq-works-heading"
-            className="mt-2.5 text-[28px] font-semibold leading-[1.12] tracking-[-0.035em] text-[var(--marketing-text-heading)] sm:mt-3 sm:text-[34px] lg:text-[38px] lg:leading-[1.1]"
-            style={{ fontWeight: 650 }}
+            className="mt-2.5 text-[32px] text-[var(--marketing-text-heading)] sm:mt-3 sm:text-[40px] lg:text-[46px]"
           >
-            From first enquiry to finished project — one connected workflow
+            From first WhatsApp to a briefed human — one connected sale
           </h2>
-          <p className="mx-auto mt-3 max-w-[640px] text-[14px] leading-[1.55] text-[var(--marketing-text-secondary)] sm:text-[15px]">
-            SegmiQ keeps every customer interaction connected, so your team always knows what
-            happened, what happens next and who is responsible.
+          <p className="mx-auto mt-4 max-w-[640px] text-[14px] leading-[1.6] text-[var(--marketing-text-secondary)] sm:text-[15px]">
+            SegmiQ Agent carries the routine work. Your team stays in control of the moments that
+            need judgement, relationships and a signature.
           </p>
         </div>
 
@@ -113,7 +140,7 @@ export default function HowSegmiQWorksSection() {
                 <p className="mt-2 text-[14px] leading-[1.55] text-[var(--marketing-text-secondary)]">
                   {step.description}
                 </p>
-                {step.preview}
+                <StepVisual src={step.visual.src} alt={step.visual.alt} />
               </li>
             ))}
           </ol>
@@ -147,7 +174,7 @@ export default function HowSegmiQWorksSection() {
                 <p className="mt-2 text-[14px] leading-[1.55] text-[var(--marketing-text-secondary)]">
                   {step.description}
                 </p>
-                {step.preview}
+                <StepVisual src={step.visual.src} alt={step.visual.alt} />
               </div>
             </li>
           ))}
@@ -159,7 +186,7 @@ export default function HowSegmiQWorksSection() {
             strokeWidth={1.8}
             aria-hidden
           />
-          <span>One customer. One history. Every interaction connected.</span>
+          <span>One customer. One history. Agent and team, connected.</span>
         </p>
       </div>
     </section>

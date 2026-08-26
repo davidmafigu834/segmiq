@@ -1,12 +1,9 @@
-import type { ReactNode } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Cloud, Columns3, FileText, type LucideIcon } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { ML } from "@/lib/marketing-links";
-import MarketingWhatsAppPreview from "@/components/marketing/landing/previews/MarketingWhatsAppPreview";
-import MarketingPipelinePreview from "@/components/marketing/landing/previews/MarketingPipelinePreview";
-import MarketingQuotePreview from "@/components/marketing/landing/previews/MarketingQuotePreview";
-import MarketingCloudPreview from "@/components/marketing/landing/previews/MarketingCloudPreview";
+import SegmiQSectionAtmosphere from "@/components/marketing/landing/atmosphere/SegmiQSectionAtmosphere";
 
 type Capability = {
   title: string;
@@ -15,18 +12,24 @@ type Capability = {
   external?: boolean;
   icon: "whatsapp" | LucideIcon;
   iconTint: string;
-  preview: ReactNode;
+  visual: {
+    src: string;
+    alt: string;
+  };
 };
 
 const CAPABILITIES: Capability[] = [
   {
     title: "WhatsApp Sales Hub",
     description:
-      "Manage WhatsApp conversations from one shared business number. Assign leads, respond faster and keep every sales conversation connected to the customer.",
+      "Manage WhatsApp conversations from one shared business number. SegmiQ Agent can handle the first stretch — every message stays connected to the customer.",
     href: ML.featuresWhatsapp,
     icon: "whatsapp",
     iconTint: "marketing-feature-icon--whatsapp bg-[#ECFDF3] text-[#25D366]",
-    preview: <MarketingWhatsAppPreview />,
+    visual: {
+      src: "/segmiq/visuals/platform-whatsapp.webp",
+      alt: "Sales conversations inbox with Tafadzwa Moyo, Sunharvest, Ruvimbo Tawanda and Memory Phiri on WhatsApp.",
+    },
   },
   {
     title: "Pipeline & Lead Management",
@@ -35,7 +38,10 @@ const CAPABILITIES: Capability[] = [
     href: ML.crm,
     icon: Columns3,
     iconTint: "bg-[#EFF8FF] text-[#175CD3]",
-    preview: <MarketingPipelinePreview />,
+    visual: {
+      src: "/segmiq/visuals/platform-pipeline.webp",
+      alt: "Pipeline stages New, Contacted, Negotiating and Proposal sent with lead values and Kelvin Manyika highlighted.",
+    },
   },
   {
     title: "Quotes & Follow-ups",
@@ -44,7 +50,10 @@ const CAPABILITIES: Capability[] = [
     href: ML.featuresConvert,
     icon: FileText,
     iconTint: "bg-[#F7FEE7] text-[#4D7C0F]",
-    preview: <MarketingQuotePreview />,
+    visual: {
+      src: "/segmiq/visuals/platform-quotes.webp",
+      alt: "Quote Q-2026-045 for Samson Kandare at $18,400 with a follow-up tomorrow at 09:00.",
+    },
   },
   {
     title: "SegmiQ Cloud",
@@ -54,7 +63,10 @@ const CAPABILITIES: Capability[] = [
     external: true,
     icon: Cloud,
     iconTint: "bg-[#F5F3FF] text-[#6941C6]",
-    preview: <MarketingCloudPreview />,
+    visual: {
+      src: "/segmiq/visuals/platform-cloud.webp",
+      alt: "Completed Borrowdale Solar Installation project with site documentation, photos, documents and proposal.",
+    },
   },
 ];
 
@@ -105,8 +117,17 @@ function CapabilityCard({ item }: { item: Capability }) {
         <div className="mt-3">{learnMore}</div>
       </div>
 
-      <div className="mt-auto px-2 pb-0 transition-transform duration-200 ease-out group-hover/card:-translate-y-0.5 sm:px-2.5">
-        {item.preview}
+      <div className="mt-auto px-2 pb-2 sm:px-2.5 sm:pb-2.5">
+        <div className="overflow-hidden rounded-[12px]">
+          <Image
+            src={item.visual.src}
+            alt={item.visual.alt}
+            width={1024}
+            height={1024}
+            sizes="(min-width: 1280px) 280px, (min-width: 640px) 45vw, 92vw"
+            className="h-auto w-full transition-transform duration-200 ease-out group-hover/card:scale-[1.02]"
+          />
+        </div>
       </div>
     </article>
   );
@@ -118,21 +139,21 @@ export default function PlatformCapabilitiesSection() {
       className="bg-[var(--marketing-bg-soft)] marketing-halo marketing-halo--center"
       aria-labelledby="platform-capabilities-heading"
     >
+      <SegmiQSectionAtmosphere tone="platform" />
       <div className="mx-auto max-w-[1280px] px-6 pb-14 pt-12 sm:px-10 sm:pb-16 sm:pt-14 lg:px-12 lg:pb-[72px] lg:pt-16">
         <div className="mx-auto max-w-[720px] text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--marketing-olive)] sm:text-[12px]">
-            The SegmiQ Platform
+          <p className="segmiq-kicker text-[11px] text-[var(--marketing-olive)] sm:text-[12px]">
+            The revenue OS
           </p>
           <h2
             id="platform-capabilities-heading"
-            className="mt-2.5 text-[28px] font-semibold leading-[1.12] tracking-[-0.035em] text-[var(--marketing-text-heading)] sm:mt-3 sm:text-[34px] lg:text-[38px] lg:leading-[1.1]"
-            style={{ fontWeight: 650 }}
+            className="mt-2.5 text-[32px] text-[var(--marketing-text-heading)] sm:mt-3 sm:text-[40px] lg:text-[46px]"
           >
-            Everything you need to run and grow your service business
+            The system Agentic AI runs on
           </h2>
-          <p className="mx-auto mt-3 max-w-[640px] text-[14px] leading-[1.55] text-[var(--marketing-text-secondary)] sm:text-[15px]">
-            Capture the enquiry, manage the conversation, send the quote, close the deal and
-            document the work — without switching between disconnected systems.
+          <p className="mx-auto mt-4 max-w-[640px] text-[14px] leading-[1.6] text-[var(--marketing-text-secondary)] sm:text-[15px]">
+            WhatsApp, pipeline, quotations and project records stay canonical. SegmiQ Agent uses
+            them — it does not replace them.
           </p>
         </div>
 

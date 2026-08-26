@@ -8,6 +8,8 @@ import LandingThemeToggle from "@/components/marketing/landing/LandingThemeToggl
 import { ML } from "@/lib/marketing-links";
 
 const NAV = [
+  { label: "Agentic AI", href: ML.agentic },
+  { label: "Company Brain", href: ML.brain },
   { label: "Product", href: ML.crm, chevron: true },
   { label: "Solutions", href: "/solutions/construction", chevron: true },
   { label: "Pricing", href: ML.pricing },
@@ -22,7 +24,7 @@ export default function MarketingNavbar() {
     <header className="segmiq-nav sticky top-0 z-50 border-b border-[var(--marketing-border-subtle)]">
       <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between px-6 sm:px-10 lg:px-12">
         <div className="flex min-w-0 items-center gap-10 xl:gap-14">
-          <SegmiqWordmark href="/" theme="auto" size="sm" priority />
+          <SegmiqWordmark href="/" theme="auto" size="lg" priority />
           <nav
             className="hidden items-center gap-7 text-[13px] font-medium text-[var(--marketing-text-label)] xl:gap-8 min-[1025px]:flex"
             aria-label="Primary"
@@ -83,7 +85,7 @@ export default function MarketingNavbar() {
 
       <div
         className={`segmiq-nav overflow-hidden border-[var(--marketing-border-subtle)] transition-[max-height] duration-300 ease-out min-[1025px]:hidden ${
-          open ? "max-h-[28rem] border-t" : "max-h-0"
+          open ? "max-h-[32rem] border-t" : "max-h-0"
         }`}
       >
         <nav

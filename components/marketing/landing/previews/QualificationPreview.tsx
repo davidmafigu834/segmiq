@@ -7,8 +7,8 @@ export default function QualificationPreview() {
           <p className="truncate text-[11px] font-semibold text-[#101828]">Tafadzwa Moyo</p>
           <p className="mt-0.5 text-[9px] text-[#667085]">5kW Solar Installation</p>
         </div>
-        <span className="shrink-0 rounded-full bg-[#FEF2F2] px-1.5 py-0.5 text-[8px] font-semibold text-[#B42318]">
-          Hot
+        <span className="shrink-0 rounded-full bg-[#F7FEE7] px-1.5 py-0.5 text-[8px] font-semibold text-[#4D7C0F]">
+          Agent qualified
         </span>
       </div>
 
