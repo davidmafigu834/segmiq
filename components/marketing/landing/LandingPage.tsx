@@ -9,6 +9,7 @@ import WhySegmiQSection from "@/components/marketing/landing/WhySegmiQSection";
 import CustomerStorySection from "@/components/marketing/landing/CustomerStorySection";
 import FinalCTASection from "@/components/marketing/landing/FinalCTASection";
 import LandingFooter from "@/components/marketing/landing/LandingFooter";
+import SegmiQAtmosphere from "@/components/marketing/landing/SegmiQAtmosphere";
 import { MarketingThemeProvider } from "@/components/marketing/MarketingThemeProvider";
 import MarketingThemeScript from "@/components/marketing/MarketingThemeScript";
 import {
@@ -16,18 +17,21 @@ import {
   parseMarketingTheme,
 } from "@/lib/marketing/marketing-theme";
 
-/** Homepage — Soft Lime Halo + scoped light/dark marketing theme. */
+/** Homepage — official SegmiQ navy / indigo / violet atmosphere. */
 export default function LandingPage() {
   const themeCookie = cookies().get(MARKETING_THEME_STORAGE_KEY)?.value;
-  const initialTheme = parseMarketingTheme(themeCookie);
   const hasStoredPreference = themeCookie === "light" || themeCookie === "dark";
+  const initialTheme = hasStoredPreference ? parseMarketingTheme(themeCookie) : "dark";
 
   return (
     <MarketingThemeProvider
       initialTheme={initialTheme}
       hasStoredPreference={hasStoredPreference}
+      pageClassName="segmiq-landing"
+      fallbackTheme="dark"
     >
-      <MarketingThemeScript />
+      <MarketingThemeScript fallback="dark" />
+      <SegmiQAtmosphere />
       <MarketingNavbar />
       <main>
         <HeroSection />

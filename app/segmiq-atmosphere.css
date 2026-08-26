@@ -1,0 +1,625 @@
+/* ============================================================
+   SegmiQ official landing atmosphere
+   Deep navy / indigo / violet lighting + lime energy accents.
+   Scoped to .segmiq-landing so auth and other marketing shells
+   can share colour tokens without inheriting the full stage.
+   ============================================================ */
+
+.segmiq-landing {
+  --segmiq-navy: #06152e;
+  --segmiq-deep-blue: #0b1f49;
+  --segmiq-indigo: #18245e;
+  --segmiq-violet: #38217a;
+  --segmiq-purple: #5b2ba8;
+  --segmiq-soft-blue: #3458a4;
+  --segmiq-lime: #d4ff4f;
+
+  --segmiq-bg-950: #06152e;
+  --segmiq-bg-900: #08142b;
+  --segmiq-blue: #3458a4;
+  --segmiq-text: #ffffff;
+  --segmiq-muted: rgba(255, 255, 255, 0.48);
+  --segmiq-border: rgba(255, 255, 255, 0.1);
+
+  --segmiq-glass: rgba(14, 26, 58, 0.48);
+  --segmiq-glass-elevated: rgba(18, 30, 66, 0.62);
+  --segmiq-glass-blur: 18px;
+  --segmiq-glass-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  --segmiq-lime-glow: 0 0 25px rgba(212, 255, 79, 0.2), 0 0 60px rgba(212, 255, 79, 0.08);
+
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+}
+
+/* Light landing: cool white stage, not lime-washed */
+.marketing-page:not(.dark).segmiq-landing {
+  --marketing-bg: #f7f8fc;
+  --marketing-bg-subtle: #f4f6fb;
+  --marketing-bg-soft: #f5f7fc;
+  --marketing-footer-bg: #f3f5fb;
+  --marketing-halo-soft: rgba(52, 88, 164, 0.035);
+  --marketing-halo: rgba(56, 33, 122, 0.04);
+  --marketing-halo-medium: rgba(52, 88, 164, 0.05);
+  --marketing-halo-strong: rgba(91, 43, 168, 0.055);
+  background-color: #f7f8fc;
+}
+
+/* Official dark landing: one continuous environment */
+.marketing-page.dark.segmiq-landing,
+html[data-marketing-theme="dark"] .segmiq-landing {
+  --marketing-bg: transparent;
+  --marketing-bg-subtle: transparent;
+  --marketing-bg-soft: transparent;
+  --marketing-surface: var(--segmiq-glass);
+  --marketing-surface-elevated: var(--segmiq-glass-elevated);
+  --marketing-text: #ffffff;
+  --marketing-text-heading: #f7f8fc;
+  --marketing-text-secondary: rgba(255, 255, 255, 0.68);
+  --marketing-text-label: rgba(255, 255, 255, 0.72);
+  --marketing-text-muted: rgba(255, 255, 255, 0.48);
+  --marketing-border: rgba(255, 255, 255, 0.1);
+  --marketing-border-subtle: rgba(255, 255, 255, 0.06);
+  --marketing-border-strong: rgba(255, 255, 255, 0.16);
+  --marketing-hover: rgba(255, 255, 255, 0.06);
+  --marketing-brand: #d4ff4f;
+  --marketing-brand-hover: #c7f238;
+  --marketing-brand-ink: #06152e;
+  --marketing-accent-text: #d4ff4f;
+  --marketing-olive: #d4ff4f;
+  --marketing-link: #d4ff4f;
+  --marketing-link-hover: #e2ff79;
+  --marketing-preview-shadow: 0 28px 80px rgba(4, 12, 32, 0.55);
+  --marketing-card-shadow: var(--segmiq-glass-shadow);
+  --marketing-card-shadow-hover: 0 24px 64px rgba(0, 0, 0, 0.28);
+  --marketing-footer-bg: transparent;
+  --marketing-quote-mark: rgba(212, 255, 79, 0.42);
+  --marketing-check-bg: rgba(212, 255, 79, 0.12);
+  --marketing-check-fg: #d4ff4f;
+  --marketing-trust-check: #d4ff4f;
+  --marketing-row-hover: rgba(255, 255, 255, 0.045);
+  --marketing-story-surface: var(--segmiq-glass);
+  background-color: var(--segmiq-navy);
+  color: var(--marketing-text);
+}
+
+html[data-marketing-theme="dark"]:has(.segmiq-landing) {
+  background-color: #06152e;
+}
+
+/* Content sits above the fixed atmosphere */
+.segmiq-landing > *:not(.segmiq-atmosphere) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Page-level lighting stage ---------- */
+
+.segmiq-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.segmiq-atmosphere__base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 14% 6%, rgba(6, 21, 46, 0.92), transparent 58%),
+    radial-gradient(circle at 88% 10%, rgba(113, 47, 203, 0.4), transparent 34%),
+    radial-gradient(circle at 76% 22%, rgba(72, 112, 220, 0.26), transparent 36%),
+    radial-gradient(circle at 58% 72%, rgba(75, 36, 145, 0.2), transparent 42%),
+    radial-gradient(circle at 12% 88%, rgba(11, 31, 73, 0.55), transparent 44%),
+    linear-gradient(158deg, #08142b 0%, #101d46 36%, #242060 66%, #101837 100%);
+}
+
+.marketing-page:not(.dark) .segmiq-atmosphere__base {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(91, 43, 168, 0.08), transparent 32%),
+    radial-gradient(circle at 18% 0%, rgba(52, 88, 164, 0.07), transparent 36%),
+    radial-gradient(circle at 70% 80%, rgba(56, 33, 122, 0.05), transparent 40%),
+    linear-gradient(180deg, #f7f8fc 0%, #eef1f8 48%, #f5f6fb 100%);
+}
+
+.segmiq-atmosphere__mesh {
+  position: absolute;
+  inset: 0;
+  opacity: 0.055;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.45) 0.7px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 22px 22px;
+  mask-image: radial-gradient(ellipse 75% 65% at 72% 28%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 72% 28%, #000 0%, transparent 78%);
+}
+
+.marketing-page:not(.dark) .segmiq-atmosphere__mesh {
+  opacity: 0.028;
+  background-image:
+    linear-gradient(rgba(24, 36, 94, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 36, 94, 0.12) 1px, transparent 1px),
+    radial-gradient(circle, rgba(56, 33, 122, 0.28) 0.7px, transparent 1px);
+}
+
+.segmiq-atmosphere__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+.segmiq-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.22;
+}
+
+.segmiq-orb--violet {
+  top: -8%;
+  right: -12%;
+  width: 640px;
+  height: 640px;
+  background: #5b2ba8;
+  opacity: 0.26;
+}
+
+.segmiq-orb--blue {
+  top: 18%;
+  right: 8%;
+  width: 480px;
+  height: 480px;
+  background: #3458a4;
+  opacity: 0.2;
+}
+
+.segmiq-orb--purple {
+  top: 58%;
+  left: 32%;
+  width: 560px;
+  height: 560px;
+  background: #38217a;
+  opacity: 0.16;
+}
+
+.segmiq-orb--lime {
+  top: 28%;
+  right: 18%;
+  width: 280px;
+  height: 280px;
+  background: #d4ff4f;
+  opacity: 0.045;
+  filter: blur(90px);
+}
+
+.marketing-page:not(.dark) .segmiq-orb--violet {
+  opacity: 0.08;
+}
+.marketing-page:not(.dark) .segmiq-orb--blue {
+  opacity: 0.07;
+}
+.marketing-page:not(.dark) .segmiq-orb--purple {
+  opacity: 0.05;
+}
+.marketing-page:not(.dark) .segmiq-orb--lime {
+  display: none;
+}
+
+.segmiq-atmosphere__network {
+  position: absolute;
+  top: -8%;
+  right: -6%;
+  width: min(72vw, 920px);
+  height: min(70vh, 720px);
+  opacity: 0.07;
+}
+
+.segmiq-atmosphere__network circle {
+  fill: #d4ff4f;
+}
+
+.segmiq-atmosphere__network path {
+  fill: none;
+  stroke: rgba(180, 196, 255, 0.9);
+  stroke-width: 1;
+}
+
+.marketing-page:not(.dark) .segmiq-atmosphere__network {
+  opacity: 0.04;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .segmiq-orb--violet {
+    animation: segmiq-orb-drift 28s ease-in-out infinite;
+  }
+  .segmiq-orb--blue {
+    animation: segmiq-orb-drift 34s ease-in-out infinite reverse;
+  }
+}
+
+@keyframes segmiq-orb-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-2.5%, 3%, 0) scale(1.04);
+  }
+}
+
+/* ---------- Section lighting rhythm ---------- */
+
+.segmiq-landing .marketing-halo {
+  position: relative;
+  isolation: isolate;
+}
+
+.segmiq-landing .marketing-halo::before {
+  content: "";
+  position: absolute;
+  inset: -18% -8%;
+  z-index: -1;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+
+/* Hero: darker left for type, violet/blue around product */
+.segmiq-landing .marketing-halo--hero::before,
+.marketing-page.dark .marketing-halo--hero::before,
+html[data-marketing-theme="dark"] .marketing-halo--hero::before {
+  inset: -12% -6% -8%;
+  background-image:
+    radial-gradient(ellipse 58% 80% at 8% 42%, rgba(6, 21, 46, 0.88) 0%, transparent 68%),
+    radial-gradient(ellipse 52% 70% at 88% 36%, rgba(91, 43, 168, 0.42) 0%, transparent 64%),
+    radial-gradient(ellipse 40% 52% at 74% 58%, rgba(52, 88, 164, 0.28) 0%, transparent 60%),
+    radial-gradient(ellipse 28% 34% at 82% 70%, rgba(212, 255, 79, 0.07) 0%, transparent 58%);
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--hero::before {
+  background-image:
+    radial-gradient(ellipse 50% 70% at 86% 38%, rgba(91, 43, 168, 0.1) 0%, transparent 64%),
+    radial-gradient(ellipse 40% 50% at 72% 58%, rgba(52, 88, 164, 0.08) 0%, transparent 62%);
+}
+
+.segmiq-hero-copy {
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .marketing-page.dark .segmiq-hero-copy::before {
+    content: "";
+    position: absolute;
+    inset: -28% -38% -24% -48%;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at 22% 42%,
+      rgba(6, 21, 46, 0.9) 0%,
+      rgba(6, 21, 46, 0.5) 46%,
+      transparent 74%
+    );
+  }
+}
+
+/* Social proof: calmer navy / blue */
+.segmiq-landing .marketing-halo--proof::before {
+  inset: -30% -10%;
+  background-image: radial-gradient(
+    ellipse 80% 90% at 50% 50%,
+    rgba(11, 31, 73, 0.35) 0%,
+    transparent 70%
+  );
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--proof::before {
+  background-image: radial-gradient(
+    ellipse 80% 90% at 50% 50%,
+    rgba(52, 88, 164, 0.04) 0%,
+    transparent 70%
+  );
+}
+
+/* Platform: indigo + soft violet */
+.segmiq-landing .marketing-halo--center::before {
+  background-image:
+    radial-gradient(ellipse 70% 60% at 50% 58%, rgba(24, 36, 94, 0.42) 0%, transparent 68%),
+    radial-gradient(ellipse 46% 50% at 78% 40%, rgba(91, 43, 168, 0.22) 0%, transparent 62%);
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--center::before {
+  background-image: radial-gradient(
+    ellipse 70% 60% at 50% 58%,
+    rgba(56, 33, 122, 0.06) 0%,
+    transparent 68%
+  );
+}
+
+/* Workflow / agentic: stronger violet-blue */
+.segmiq-landing .marketing-halo--workflow::before {
+  background-image:
+    radial-gradient(ellipse 60% 55% at 18% 40%, rgba(56, 33, 122, 0.32) 0%, transparent 64%),
+    radial-gradient(ellipse 55% 60% at 82% 60%, rgba(52, 88, 164, 0.26) 0%, transparent 62%);
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--workflow::before {
+  background-image: radial-gradient(
+    ellipse 60% 50% at 50% 48%,
+    rgba(52, 88, 164, 0.06) 0%,
+    transparent 68%
+  );
+}
+
+/* Sales / dashboard: deeper navy + blue behind product */
+.segmiq-landing .marketing-halo--showcase::before {
+  background-image:
+    radial-gradient(ellipse 48% 70% at 22% 55%, rgba(6, 21, 46, 0.35) 0%, transparent 68%),
+    radial-gradient(ellipse 52% 65% at 78% 48%, rgba(52, 88, 164, 0.3) 0%, transparent 64%),
+    radial-gradient(ellipse 30% 40% at 70% 70%, rgba(212, 255, 79, 0.05) 0%, transparent 55%);
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--showcase::before {
+  background-image:
+    radial-gradient(ellipse 42% 55% at 22% 55%, rgba(24, 36, 94, 0.05) 0%, transparent 68%),
+    radial-gradient(ellipse 46% 55% at 78% 50%, rgba(52, 88, 164, 0.07) 0%, transparent 68%);
+}
+
+/* Industry: slightly brighter atmospheric blue */
+.segmiq-landing .marketing-halo--industry::before {
+  background-image: radial-gradient(
+    ellipse 80% 70% at 50% 45%,
+    rgba(52, 88, 164, 0.28) 0%,
+    transparent 68%
+  );
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--industry::before {
+  background-image: radial-gradient(
+    ellipse 80% 70% at 50% 45%,
+    rgba(52, 88, 164, 0.055) 0%,
+    transparent 68%
+  );
+}
+
+/* Customer story: soft left ambience */
+.segmiq-landing .marketing-halo--story::before {
+  background-image: radial-gradient(
+    ellipse 55% 70% at 28% 50%,
+    rgba(24, 36, 94, 0.32) 0%,
+    transparent 66%
+  );
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--story::before {
+  background-image: radial-gradient(
+    ellipse 55% 70% at 28% 50%,
+    rgba(56, 33, 122, 0.05) 0%,
+    transparent 66%
+  );
+}
+
+/* CTA: premium violet / indigo */
+.segmiq-landing .marketing-halo--cta::before {
+  inset: -22% -10% -10%;
+  background-image:
+    radial-gradient(ellipse 60% 70% at 18% 50%, rgba(56, 33, 122, 0.45) 0%, transparent 64%),
+    radial-gradient(ellipse 55% 65% at 88% 40%, rgba(91, 43, 168, 0.4) 0%, transparent 62%),
+    radial-gradient(ellipse 36% 44% at 70% 70%, rgba(212, 255, 79, 0.08) 0%, transparent 58%);
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--cta::before {
+  background-image: radial-gradient(
+    ellipse 70% 70% at 80% 40%,
+    rgba(91, 43, 168, 0.08) 0%,
+    transparent 64%
+  );
+}
+
+/* Footer: return to deep navy — no extra stage light */
+.segmiq-landing .marketing-halo--footer::before {
+  background-image: radial-gradient(
+    ellipse 90% 80% at 50% 100%,
+    rgba(6, 21, 46, 0.55) 0%,
+    transparent 70%
+  );
+}
+
+.marketing-page:not(.dark).segmiq-landing .marketing-halo--footer::before {
+  background-image: none;
+}
+
+/* ---------- Glass surfaces ---------- */
+
+.segmiq-glass {
+  background: var(--marketing-surface);
+  border: 1px solid var(--marketing-border);
+  box-shadow: var(--marketing-card-shadow);
+}
+
+.marketing-page.dark.segmiq-landing .segmiq-glass,
+.marketing-page.dark.segmiq-landing .marketing-feature-card {
+  background: var(--segmiq-glass);
+  backdrop-filter: blur(var(--segmiq-glass-blur));
+  -webkit-backdrop-filter: blur(var(--segmiq-glass-blur));
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: var(--segmiq-glass-shadow);
+}
+
+.marketing-page.dark.segmiq-landing .marketing-feature-card:first-child {
+  border-color: rgba(212, 255, 79, 0.2);
+}
+
+/* Hero product rim / studio light */
+.segmiq-hero-visual-glow {
+  background: radial-gradient(circle at 72% 40%, rgba(91, 43, 168, 0.08), transparent 58%);
+}
+
+.marketing-page.dark .segmiq-hero-visual-glow {
+  background:
+    radial-gradient(circle at 72% 38%, rgba(91, 43, 168, 0.32), transparent 58%),
+    radial-gradient(circle at 58% 55%, rgba(52, 88, 164, 0.2), transparent 52%),
+    radial-gradient(circle at 80% 68%, rgba(212, 255, 79, 0.07), transparent 40%);
+}
+
+.marketing-page.dark.segmiq-landing .segmiq-glass--accent {
+  border-color: rgba(212, 255, 79, 0.2);
+}
+
+/* ---------- Nav ---------- */
+
+.segmiq-nav {
+  background-color: var(--marketing-bg);
+}
+
+.marketing-page.dark.segmiq-landing .segmiq-nav {
+  background: rgba(6, 21, 46, 0.62);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.marketing-page:not(.dark).segmiq-landing .segmiq-nav {
+  background: rgba(247, 248, 252, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ---------- Lime energy (buttons, not backgrounds) ---------- */
+
+.segmiq-btn-primary {
+  box-shadow: none;
+}
+
+.marketing-page.dark.segmiq-landing .segmiq-btn-primary {
+  box-shadow: var(--segmiq-lime-glow);
+}
+
+.marketing-page.dark.segmiq-landing .segmiq-btn-primary:hover {
+  box-shadow: 0 0 28px rgba(212, 255, 79, 0.28), 0 0 64px rgba(212, 255, 79, 0.1);
+}
+
+/* ---------- CTA panel ---------- */
+
+.segmiq-cta-panel {
+  background-color: #d4ff4f;
+  background-image: radial-gradient(circle at 88% 20%, rgba(255, 255, 255, 0.28), transparent 42%);
+}
+
+.marketing-page.dark.segmiq-landing .segmiq-cta-panel {
+  background-color: rgba(10, 20, 45, 0.58);
+  background-image:
+    radial-gradient(circle at 88% 18%, rgba(91, 43, 168, 0.38), transparent 44%),
+    radial-gradient(circle at 12% 82%, rgba(52, 88, 164, 0.24), transparent 42%);
+  border: 1px solid rgba(212, 255, 79, 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+}
+
+/* ---------- Product visual rim light ---------- */
+
+.marketing-page.dark.segmiq-landing .marketing-product-chrome {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  box-shadow:
+    0 28px 80px rgba(4, 12, 32, 0.55),
+    0 0 0 1px rgba(212, 255, 79, 0.08),
+    0 0 48px rgba(91, 43, 168, 0.18);
+}
+
+/* ---------- Section seams ---------- */
+
+.marketing-page.dark.segmiq-landing .segmiq-section-rule {
+  border-color: rgba(255, 255, 255, 0.045);
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 1023px) {
+  .segmiq-orb--violet {
+    top: auto;
+    bottom: 18%;
+    right: -16%;
+    width: 420px;
+    height: 420px;
+    filter: blur(72px);
+    opacity: 0.34;
+  }
+
+  .segmiq-orb--blue {
+    top: auto;
+    bottom: 4%;
+    left: -18%;
+    right: auto;
+    width: 300px;
+    height: 300px;
+    filter: blur(64px);
+    opacity: 0.26;
+  }
+
+  .segmiq-orb--purple {
+    display: none;
+  }
+
+  .segmiq-orb--lime,
+  .segmiq-atmosphere__network {
+    display: none;
+  }
+
+  .segmiq-landing .marketing-halo--hero::before,
+  .marketing-page.dark .marketing-halo--hero::before,
+  html[data-marketing-theme="dark"] .marketing-halo--hero::before {
+    background-image:
+      radial-gradient(ellipse 92% 48% at 50% 6%, rgba(6, 21, 46, 0.78) 0%, transparent 70%),
+      radial-gradient(ellipse 90% 62% at 50% 86%, rgba(91, 43, 168, 0.4) 0%, transparent 68%),
+      radial-gradient(ellipse 70% 48% at 82% 72%, rgba(52, 88, 164, 0.26) 0%, transparent 62%);
+  }
+
+  .marketing-page:not(.dark).segmiq-landing .marketing-halo--hero::before {
+    background-image: radial-gradient(
+      ellipse 90% 50% at 50% 78%,
+      rgba(91, 43, 168, 0.08) 0%,
+      transparent 68%
+    );
+  }
+}
+
+@media (max-width: 767px) {
+  .segmiq-atmosphere__mesh,
+  .segmiq-atmosphere__grain {
+    display: none;
+  }
+
+  .segmiq-orb--purple {
+    display: none;
+  }
+
+  .segmiq-orb--violet {
+    width: 340px;
+    height: 340px;
+    filter: blur(60px);
+    opacity: 0.32;
+  }
+
+  .segmiq-orb--blue {
+    width: 240px;
+    height: 240px;
+    filter: blur(56px);
+  }
+
+  .marketing-page.dark.segmiq-landing .segmiq-glass,
+  .marketing-page.dark.segmiq-landing .marketing-feature-card {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmiq-orb--violet,
+  .segmiq-orb--blue {
+    animation: none !important;
+  }
+}

@@ -4,6 +4,7 @@ import { Instrument_Serif, DM_Sans, DM_Serif_Display, Roboto } from "next/font/g
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
+import "./segmiq-atmosphere.css";
 import { Providers } from "./providers";
 import { ServiceWorkerCleanup } from "@/components/ServiceWorkerCleanup";
 import { isCloudRequestHost } from "@/lib/cloud/manifest";

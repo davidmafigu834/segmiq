@@ -28,11 +28,17 @@ export function MarketingThemeProvider({
   children,
   initialTheme = "light",
   hasStoredPreference = false,
+  pageClassName,
+  fallbackTheme = "light",
 }: {
   children: ReactNode;
   initialTheme?: MarketingTheme;
   /** True when a cookie already encoded a user/system choice (SSR-aligned). */
   hasStoredPreference?: boolean;
+  /** Extra class on the marketing page shell (e.g. landing atmosphere). */
+  pageClassName?: string;
+  /** Used when no cookie/localStorage preference exists. */
+  fallbackTheme?: MarketingTheme;
 }) {
   const [theme, setThemeState] = useState<MarketingTheme>(initialTheme);
   const [transitionsReady, setTransitionsReady] = useState(false);
@@ -48,7 +54,12 @@ export function MarketingThemeProvider({
       const prefersDark =
         typeof window !== "undefined" &&
         window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const resolved = resolveInitialMarketingTheme(stored, prefersDark);
+      const resolved =
+        stored === "dark" || stored === "light"
+          ? stored
+          : fallbackTheme === "dark"
+            ? "dark"
+            : resolveInitialMarketingTheme(stored, prefersDark);
       if (resolved !== theme) {
         setThemeState(resolved);
       }
@@ -86,8 +97,8 @@ export function MarketingThemeProvider({
     <MarketingThemeContext.Provider value={value}>
       <div
         className={`marketing-page min-h-screen text-[var(--marketing-text)] antialiased${
-          theme === "dark" ? " dark" : ""
-        }${transitionsReady ? " marketing-theme-ready" : ""}`}
+          pageClassName ? ` ${pageClassName}` : ""
+        }${theme === "dark" ? " dark" : ""}${transitionsReady ? " marketing-theme-ready" : ""}`}
         data-marketing-theme={theme}
         suppressHydrationWarning
       >

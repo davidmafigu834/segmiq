@@ -56,7 +56,7 @@ export default function LandingFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-[var(--marketing-border-subtle)] bg-[var(--marketing-footer-bg)]">
+    <footer className="marketing-halo marketing-halo--footer segmiq-section-rule border-t border-[var(--marketing-border-subtle)] bg-[var(--marketing-footer-bg)]">
       <div className="mx-auto max-w-[1280px] px-6 pb-6 pt-10 sm:px-10 sm:pb-7 sm:pt-12 lg:px-12 lg:pt-14">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2 md:gap-x-8 md:gap-y-10 lg:grid-cols-3 xl:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))_1.15fr] xl:gap-x-8">
           <div className="md:col-span-2 lg:col-span-3 xl:col-span-1">

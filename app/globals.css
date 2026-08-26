@@ -4663,7 +4663,9 @@ html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-
 
 
 
-/* ?? Marketing Soft Lime Halo + theme tokens (landing page) ?? */
+/* ?? Marketing theme tokens (landing + auth).
+   Official landing atmosphere lives in app/segmiq-atmosphere.css
+   and is scoped to .segmiq-landing. ?? */
 .marketing-page {
   --marketing-bg: #ffffff;
   --marketing-bg-subtle: #fafbf8;
@@ -4710,45 +4712,59 @@ html[data-crm]:not([data-crm-theme="light"]) .company-calendar-event[data-event-
 /* `.dark` class (React) + html data attr (pre-hydration script) share dark tokens */
 .marketing-page.dark,
 html[data-marketing-theme="dark"] .marketing-page {
-  --marketing-bg: #0b0d0c;
-  --marketing-bg-subtle: #0e110e;
-  --marketing-bg-soft: #0e110e;
-  --marketing-surface: #111411;
-  --marketing-surface-elevated: #151815;
-  --marketing-text: #f7f8f5;
-  --marketing-text-heading: #f7f8f5;
-  --marketing-text-secondary: #b3b8b0;
-  --marketing-text-label: #b3b8b0;
-  --marketing-text-muted: #7d847a;
-  --marketing-border: #272c27;
-  --marketing-border-subtle: #1e231e;
-  --marketing-border-strong: #2b302b;
-  --marketing-hover: #191d19;
+  --segmiq-navy: #06152e;
+  --segmiq-deep-blue: #0b1f49;
+  --segmiq-indigo: #18245e;
+  --segmiq-violet: #38217a;
+  --segmiq-purple: #5b2ba8;
+  --segmiq-soft-blue: #3458a4;
+  --segmiq-lime: #d4ff4f;
+  --segmiq-bg-950: #06152e;
+  --segmiq-bg-900: #08142b;
+  --segmiq-blue: #3458a4;
+  --segmiq-text: #ffffff;
+  --segmiq-muted: rgba(255, 255, 255, 0.48);
+  --segmiq-border: rgba(255, 255, 255, 0.1);
+
+  --marketing-bg: #06152e;
+  --marketing-bg-subtle: #08142b;
+  --marketing-bg-soft: #0b1f49;
+  --marketing-surface: rgba(12, 22, 48, 0.92);
+  --marketing-surface-elevated: rgba(16, 26, 56, 0.96);
+  --marketing-text: #ffffff;
+  --marketing-text-heading: #f7f8fc;
+  --marketing-text-secondary: rgba(255, 255, 255, 0.68);
+  --marketing-text-label: rgba(255, 255, 255, 0.72);
+  --marketing-text-muted: rgba(255, 255, 255, 0.48);
+  --marketing-border: rgba(255, 255, 255, 0.1);
+  --marketing-border-subtle: rgba(255, 255, 255, 0.06);
+  --marketing-border-strong: rgba(255, 255, 255, 0.16);
+  --marketing-hover: rgba(255, 255, 255, 0.06);
   --marketing-brand: #d4ff4f;
   --marketing-brand-hover: #c7f238;
-  --marketing-brand-ink: #0b0d0c;
+  --marketing-brand-ink: #06152e;
   --marketing-accent-text: #d4ff4f;
-  --marketing-olive: #c5eb42;
+  --marketing-olive: #d4ff4f;
   --marketing-link: #d4ff4f;
   --marketing-link-hover: #e2ff79;
-  --marketing-halo-soft: rgba(212, 255, 79, 0.045);
-  --marketing-halo: rgba(212, 255, 79, 0.09);
-  --marketing-halo-medium: rgba(212, 255, 79, 0.1);
-  --marketing-halo-strong: rgba(212, 255, 79, 0.11);
-  --marketing-preview-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
-  --marketing-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-  --marketing-card-shadow-hover: 0 12px 32px rgba(0, 0, 0, 0.2);
-  --marketing-footer-bg: #090b0a;
-  --marketing-quote-mark: rgba(212, 255, 79, 0.45);
+  --marketing-halo-soft: rgba(52, 88, 164, 0.12);
+  --marketing-halo: rgba(91, 43, 168, 0.16);
+  --marketing-halo-medium: rgba(56, 33, 122, 0.18);
+  --marketing-halo-strong: rgba(91, 43, 168, 0.22);
+  --marketing-preview-shadow: 0 24px 70px rgba(4, 12, 32, 0.45);
+  --marketing-card-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  --marketing-card-shadow-hover: 0 24px 64px rgba(0, 0, 0, 0.28);
+  --marketing-footer-bg: #06152e;
+  --marketing-quote-mark: rgba(212, 255, 79, 0.42);
   --marketing-check-bg: rgba(212, 255, 79, 0.12);
   --marketing-check-fg: #d4ff4f;
-  --marketing-trust-check: #a8c94a;
-  --marketing-row-hover: #191d19;
-  --marketing-story-surface: #151815;
+  --marketing-trust-check: #d4ff4f;
+  --marketing-row-hover: rgba(255, 255, 255, 0.045);
+  --marketing-story-surface: rgba(12, 22, 48, 0.92);
 }
 
 html[data-marketing-theme="dark"] {
-  background-color: #0b0d0c;
+  background-color: #06152e;
   color-scheme: dark;
 }
 
@@ -4821,8 +4837,8 @@ html[data-marketing-theme="dark"] .marketing-page .marketing-wordmark-dark {
 
 .marketing-page.dark .marketing-feature-card:hover,
 html[data-marketing-theme="dark"] .marketing-feature-card:hover {
-  background-color: #141814;
-  border-color: #333933;
+  background-color: rgba(16, 28, 62, 0.72);
+  border-color: rgba(212, 255, 79, 0.22);
 }
 
 
@@ -4999,23 +5015,23 @@ html[data-marketing-theme="dark"] .auth-shell .marketing-product-chrome {
 
 .marketing-page.dark .auth-input,
 html[data-marketing-theme="dark"] .auth-input {
-  background-color: #111411;
-  border-color: #3a4039;
+  background-color: rgba(12, 22, 48, 0.92);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .marketing-page.dark .auth-input:hover,
 html[data-marketing-theme="dark"] .auth-input:hover {
-  border-color: #4a5249;
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .marketing-page.dark .auth-input::placeholder,
 html[data-marketing-theme="dark"] .auth-input::placeholder {
-  color: #6f766d;
+  color: rgba(255, 255, 255, 0.42);
 }
 
 .marketing-page.dark .auth-shell > main,
 html[data-marketing-theme="dark"] .auth-shell > main {
-  background-color: #0e110e;
+  background-color: #08142b;
 }
 
 /* Auth pages must fit one viewport ? no document scroll */
@@ -5025,3 +5041,4 @@ html[data-marketing-theme="dark"] .auth-shell > main {
   min-height: 0;
   overflow: hidden;
 }
+

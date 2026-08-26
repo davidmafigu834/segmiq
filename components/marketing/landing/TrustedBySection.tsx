@@ -30,7 +30,7 @@ export default function TrustedBySection() {
 
   return (
     <section
-      className="border-t border-[var(--marketing-border-subtle)] bg-[var(--marketing-bg)]"
+      className="marketing-halo marketing-halo--proof segmiq-section-rule border-t border-[var(--marketing-border-subtle)] bg-[var(--marketing-bg)]"
       aria-label="Trusted by businesses growing with SegmiQ"
     >
       <div className="mx-auto max-w-[1280px] px-6 pb-8 pt-7 sm:px-10 sm:pb-9 sm:pt-8 lg:px-12">

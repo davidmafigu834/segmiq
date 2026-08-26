@@ -19,7 +19,7 @@ export default function MarketingNavbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--marketing-border-subtle)] bg-[var(--marketing-bg)]">
+    <header className="segmiq-nav sticky top-0 z-50 border-b border-[var(--marketing-border-subtle)]">
       <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between px-6 sm:px-10 lg:px-12">
         <div className="flex min-w-0 items-center gap-10 xl:gap-14">
           <SegmiqWordmark href="/" theme="auto" size="sm" priority />
@@ -64,7 +64,7 @@ export default function MarketingNavbar() {
           <LandingThemeToggle />
           <Link
             href={ML.contact}
-            className="inline-flex h-10 items-center gap-1.5 rounded-[9px] bg-[var(--marketing-brand)] px-[18px] text-[13px] font-semibold text-[var(--marketing-brand-ink)] transition-colors hover:bg-[var(--marketing-brand-hover)]"
+            className="segmiq-btn-primary inline-flex h-10 items-center gap-1.5 rounded-[9px] bg-[var(--marketing-brand)] px-[18px] text-[13px] font-semibold text-[var(--marketing-brand-ink)] transition-colors hover:bg-[var(--marketing-brand-hover)]"
           >
             Book a demo
             <ArrowRight className="h-3.5 w-3.5" aria-hidden />
@@ -82,7 +82,7 @@ export default function MarketingNavbar() {
       </div>
 
       <div
-        className={`overflow-hidden border-[var(--marketing-border-subtle)] bg-[var(--marketing-bg)] transition-[max-height] duration-300 ease-out min-[1025px]:hidden ${
+        className={`segmiq-nav overflow-hidden border-[var(--marketing-border-subtle)] transition-[max-height] duration-300 ease-out min-[1025px]:hidden ${
           open ? "max-h-[28rem] border-t" : "max-h-0"
         }`}
       >

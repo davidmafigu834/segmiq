@@ -64,14 +64,8 @@ export default function ProductHeroVisual() {
       className="relative mx-auto w-full max-w-[920px] select-none lg:mx-0 lg:max-w-none"
       aria-hidden
     >
-      {/* Soft atmospheric accent — very subtle */}
-      <div
-        className="pointer-events-none absolute -inset-8 -z-0 sm:-inset-12"
-        style={{
-          background:
-            "radial-gradient(circle at 55% 45%, rgba(212,255,79,0.10), transparent 62%)",
-        }}
-      />
+      {/* Soft atmospheric accent behind the product frame */}
+      <div className="segmiq-hero-visual-glow pointer-events-none absolute -inset-8 -z-0 sm:-inset-12" />
 
       {/* Main dashboard frame — light product UI; frame elevates on dark marketing canvas */}
       <div

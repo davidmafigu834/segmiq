@@ -113,7 +113,7 @@ function ReasonContent({
 
 export default function WhySegmiQSection() {
   return (
-    <section className="bg-[var(--marketing-bg-subtle)]" aria-labelledby="why-segmiq-heading">
+    <section className="bg-[var(--marketing-bg-subtle)] marketing-halo marketing-halo--industry" aria-labelledby="why-segmiq-heading">
       <div className="mx-auto max-w-[1280px] px-6 pb-14 pt-12 sm:px-10 sm:pb-16 sm:pt-14 lg:px-12 lg:pb-[72px] lg:pt-16">
         <div className="mx-auto max-w-[720px] text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--marketing-olive)] sm:text-[12px]">
@@ -133,7 +133,7 @@ export default function WhySegmiQSection() {
         </div>
 
         {/* XL: five equal columns in one shared container */}
-        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] xl:grid xl:grid-cols-5">
+        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] xl:grid xl:grid-cols-5 segmiq-glass">
           {REASONS.map((reason, index) => (
             <li
               key={reason.title}
@@ -147,7 +147,7 @@ export default function WhySegmiQSection() {
         </ul>
 
         {/* LG: 3 + 2 */}
-        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] lg:grid lg:grid-cols-3 xl:hidden">
+        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] lg:grid lg:grid-cols-3 xl:hidden segmiq-glass">
           {REASONS.map((reason, index) => (
             <li
               key={reason.title}
@@ -165,7 +165,7 @@ export default function WhySegmiQSection() {
         </ul>
 
         {/* MD tablet: 2 cols, last full-width */}
-        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] md:grid md:grid-cols-2 lg:hidden">
+        <ul className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] md:grid md:grid-cols-2 lg:hidden segmiq-glass">
           {REASONS.map((reason, index) => (
             <li
               key={reason.title}
@@ -182,7 +182,7 @@ export default function WhySegmiQSection() {
         </ul>
 
         {/* Mobile compact rows */}
-        <ul className="mt-8 overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] md:hidden">
+        <ul className="mt-8 overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] md:hidden segmiq-glass">
           {REASONS.map((reason, index) => (
             <li
               key={reason.title}

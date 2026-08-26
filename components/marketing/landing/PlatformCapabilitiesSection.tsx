@@ -81,7 +81,7 @@ function CapabilityCard({ item }: { item: Capability }) {
   );
 
   return (
-    <article className="marketing-feature-card group/card flex h-full flex-col overflow-hidden rounded-[15px] border border-[var(--marketing-border)] bg-[var(--marketing-surface)] shadow-[var(--marketing-card-shadow)] transition-[border-color,box-shadow,transform,background-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-[var(--marketing-border-strong)] hover:shadow-[var(--marketing-card-shadow-hover)]">
+    <article className="marketing-feature-card segmiq-glass group/card flex h-full flex-col overflow-hidden rounded-[15px] border border-[var(--marketing-border)] bg-[var(--marketing-surface)] shadow-[var(--marketing-card-shadow)] transition-[border-color,box-shadow,transform,background-color] duration-200 ease-out hover:-translate-y-0.5 hover:border-[var(--marketing-border-strong)] hover:shadow-[var(--marketing-card-shadow-hover)]">
       <div className="flex flex-1 flex-col px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
         <div className="flex items-center gap-2.5">
           <span

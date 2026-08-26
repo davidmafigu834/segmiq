@@ -30,6 +30,21 @@ const config: Config = {
         quotation: ["var(--font-quotation)", "Roboto", "sans-serif"],
       },
       colors: {
+        segmiq: {
+          navy: "var(--segmiq-navy, #06152E)",
+          "deep-blue": "var(--segmiq-deep-blue, #0B1F49)",
+          indigo: "var(--segmiq-indigo, #18245E)",
+          violet: "var(--segmiq-violet, #38217A)",
+          purple: "var(--segmiq-purple, #5B2BA8)",
+          "soft-blue": "var(--segmiq-soft-blue, #3458A4)",
+          lime: "var(--segmiq-lime, #D4FF4F)",
+          "bg-950": "var(--segmiq-bg-950, #06152E)",
+          "bg-900": "var(--segmiq-bg-900, #08142B)",
+          blue: "var(--segmiq-blue, #3458A4)",
+          text: "var(--segmiq-text, #ffffff)",
+          muted: "var(--segmiq-muted, rgba(255,255,255,.48))",
+          border: "var(--segmiq-border, rgba(255,255,255,.10))",
+        },
         surface: {
           sidebar: "var(--surface-sidebar)",
           "sidebar-elevated": "var(--surface-sidebar-elevated)",

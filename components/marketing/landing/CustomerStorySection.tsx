@@ -89,7 +89,7 @@ function ContextPanel({ story }: { story: FeaturedCustomerStory }) {
 function StoryContent({ story }: { story: FeaturedCustomerStory }) {
   return (
     <div
-      className={`overflow-hidden rounded-[18px] border border-[var(--marketing-border)] bg-[var(--marketing-story-surface)] shadow-[var(--marketing-card-shadow)] ${
+      className={`overflow-hidden rounded-[18px] border border-[var(--marketing-border)] bg-[var(--marketing-story-surface)] shadow-[var(--marketing-card-shadow)] segmiq-glass ${
         story.photo ? "lg:grid lg:grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)]" : ""
       }`}
     >
@@ -137,7 +137,7 @@ function StoryContent({ story }: { story: FeaturedCustomerStory }) {
 
 function PlaceholderStory() {
   return (
-    <div className="overflow-hidden rounded-[18px] border border-dashed border-[var(--marketing-border-strong)] bg-[var(--marketing-story-surface)] shadow-[var(--marketing-card-shadow)]">
+    <div className="overflow-hidden rounded-[18px] border border-dashed border-[var(--marketing-border-strong)] bg-[var(--marketing-story-surface)] shadow-[var(--marketing-card-shadow)] segmiq-glass">
       <div className="relative px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
         <span
           className="pointer-events-none absolute left-4 top-3 font-[family-name:var(--font-instrument-serif)] text-[64px] leading-none text-[var(--marketing-quote-mark)] sm:left-6 sm:text-[72px]"

@@ -13,7 +13,7 @@ export default function HeroSection() {
       <div className="mx-auto max-w-[1280px] px-6 pb-8 pt-8 sm:px-10 sm:pb-10 sm:pt-9 lg:px-12 lg:pb-11 lg:pt-10">
         <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.28fr)] lg:gap-10 xl:gap-12">
           {/* Copy column */}
-          <div className="relative z-10 max-w-[520px]">
+          <div className="segmiq-hero-copy relative z-10 max-w-[520px]">
             <h1
               id="hero-heading"
               className="text-[32px] font-semibold leading-[1.05] tracking-[-0.04em] text-[var(--marketing-text-heading)] sm:text-[40px] sm:leading-[1.04] md:text-[44px] lg:text-[46px] xl:text-[48px] xl:leading-[1.02]"
@@ -32,14 +32,14 @@ export default function HeroSection() {
             <div className="mt-5 flex flex-col gap-2.5 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
               <Link
                 href={ML.contact}
-                className="inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-[9px] bg-[var(--marketing-brand)] px-5 text-[14px] font-semibold text-[var(--marketing-brand-ink)] transition-colors hover:bg-[var(--marketing-brand-hover)] sm:h-12"
+                className="segmiq-btn-primary inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-[9px] bg-[var(--marketing-brand)] px-5 text-[14px] font-semibold text-[var(--marketing-brand-ink)] transition-colors hover:bg-[var(--marketing-brand-hover)] sm:h-12"
               >
                 Book a demo
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
               <Link
                 href={ML.crm}
-                className="inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-[9px] border border-[var(--marketing-border-strong)] bg-[var(--marketing-surface)] px-5 text-[14px] font-semibold text-[var(--marketing-text)] transition-colors hover:bg-[var(--marketing-hover)] sm:h-12"
+                className="inline-flex h-11 min-h-11 items-center justify-center gap-2 rounded-[9px] border border-[var(--marketing-border-strong)] bg-[var(--marketing-surface)] px-5 text-[14px] font-semibold text-[var(--marketing-text)] backdrop-blur-md transition-colors hover:bg-[var(--marketing-hover)] sm:h-12"
               >
                 See the platform
                 <PlayCircle className="h-4 w-4 text-[var(--marketing-text-secondary)]" aria-hidden />

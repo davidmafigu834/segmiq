@@ -73,7 +73,7 @@ export default function HowSegmiQWorksSection() {
         </div>
 
         {/* Desktop / tablet workflow container */}
-        <div className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] shadow-[var(--marketing-card-shadow)] sm:mt-9 sm:block">
+        <div className="mt-8 hidden overflow-hidden rounded-2xl border border-[var(--marketing-border)] bg-[var(--marketing-surface)] shadow-[var(--marketing-card-shadow)] sm:mt-9 sm:block segmiq-glass">
           <ol className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
             {STEPS.map((step, index) => (
               <li
@@ -133,7 +133,7 @@ export default function HowSegmiQWorksSection() {
               <span className="relative z-[1] inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--marketing-brand)] text-[12px] font-bold text-[var(--marketing-brand-ink)]">
                 {index + 1}
               </span>
-              <div className="min-w-0 rounded-[14px] border border-[var(--marketing-border)] bg-[var(--marketing-surface)] p-4 shadow-[var(--marketing-card-shadow)]">
+              <div className="min-w-0 rounded-[14px] border border-[var(--marketing-border)] bg-[var(--marketing-surface)] p-4 shadow-[var(--marketing-card-shadow)] segmiq-glass">
                 <div className="flex items-center gap-2">
                   <step.Icon
                     className="h-5 w-5 text-[var(--marketing-text-secondary)]"

@@ -50,7 +50,7 @@ function ShowcaseCard({
   const TitleIcon = titleIcon && titleIcon !== "whatsapp" ? titleIcon : null;
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-[17px] border border-[var(--marketing-border)] bg-[var(--marketing-surface)] shadow-[var(--marketing-card-shadow)] transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--marketing-border-strong)] hover:shadow-[var(--marketing-card-shadow-hover)]">
+    <article className="segmiq-glass flex flex-col overflow-hidden rounded-[17px] border border-[var(--marketing-border)] bg-[var(--marketing-surface)] shadow-[var(--marketing-card-shadow)] transition-[border-color,box-shadow] duration-200 ease-out hover:border-[var(--marketing-border-strong)] hover:shadow-[var(--marketing-card-shadow-hover)]">
       <div className="px-5 pb-4 pt-5 sm:px-6 sm:pb-5 sm:pt-6">
         <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--marketing-olive)] sm:text-[11px]">
           {label}
