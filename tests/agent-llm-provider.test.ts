@@ -63,14 +63,25 @@ describe("agent LLM provider selection", () => {
     assert.equal(getAgentLlmProviderName(), "vercel");
   });
 
+  it("uses Vercel AI Gateway as primary when AI_GATEWAY_API_KEY is set, even if Gemini and Anthropic keys exist", () => {
+    setEnv({
+      AI_GATEWAY_API_KEY: "vck",
+      GEMINI_API_KEY: "gem",
+      ANTHROPIC_API_KEY: "sk-ant",
+      GROQ_API_KEY: "gsk",
+    });
+    assert.equal(getAgentLlmProviderName(), "vercel");
+    assert.equal(getAgentLlmFallbackName(), "gemini");
+  });
+
   it("keeps Gemini as the implicit default when both Gemini and Groq keys exist", () => {
     setEnv({ GEMINI_API_KEY: "gem", GROQ_API_KEY: "gsk" });
     assert.equal(getAgentLlmProviderName(), "gemini");
     assert.equal(getAgentLlmFallbackName(), "groq");
   });
 
-  it("prefers Vercel AI Gateway as Gemini fallback when that key exists", () => {
-    setEnv({ GEMINI_API_KEY: "gem", AI_GATEWAY_API_KEY: "vck", GROQ_API_KEY: "gsk" });
+  it("uses Vercel AI Gateway as Gemini fallback when AGENT_LLM_PROVIDER=gemini and the Gateway key exists", () => {
+    setEnv({ AGENT_LLM_PROVIDER: "gemini", GEMINI_API_KEY: "gem", AI_GATEWAY_API_KEY: "vck", GROQ_API_KEY: "gsk" });
     assert.equal(getAgentLlmProviderName(), "gemini");
     assert.equal(getAgentLlmFallbackName(), "vercel");
   });

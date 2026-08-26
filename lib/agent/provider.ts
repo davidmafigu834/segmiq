@@ -240,10 +240,11 @@ export function isAgentLlmProviderConfigured(name: AgentLlmProviderName): boolea
 export function getAgentLlmProviderName(): AgentLlmProviderName {
   const explicit = parseAgentLlmProviderName(process.env.AGENT_LLM_PROVIDER?.trim().toLowerCase());
   if (explicit) return explicit;
-  const anthropic = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
-  if (process.env.GEMINI_API_KEY?.trim() && !anthropic) return "gemini";
-  if (getVercelGatewayApiKey() && !anthropic) return "vercel";
-  if (process.env.GROQ_API_KEY?.trim() && !anthropic) return "groq";
+  // An explicit Gateway key means MiniMax (or AI_GATEWAY_MODEL) is the intended agent LLM.
+  // Gemini/Anthropic keys must not steal that — they exist for other app features.
+  if (process.env.AI_GATEWAY_API_KEY?.trim()) return "vercel";
+  if (process.env.GEMINI_API_KEY?.trim()) return "gemini";
+  if (process.env.GROQ_API_KEY?.trim()) return "groq";
   return "anthropic";
 }
 
