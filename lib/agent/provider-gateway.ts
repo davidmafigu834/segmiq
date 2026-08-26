@@ -9,26 +9,31 @@ import {
   mapOpenAiToolCalls,
   openAiStopReason,
   textFromOpenAiContent,
-  toOpenAiChatMessages,
-  type OpenAiChatMessage,
   type OpenAiToolCall,
 } from "./openai-chat";
 
 /**
- * Groq Cloud (OpenAI-compatible Chat Completions).
- * Free developer-plan option for SegmiQ Agent when Gemini is rate-limited.
+ * Vercel AI Gateway (OpenAI-compatible Chat Completions).
+ * One key reaches 200+ models; tool calling matches the Groq path.
+ * Auth: AI_GATEWAY_API_KEY locally, or VERCEL_OIDC_TOKEN on Vercel.
  */
 
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b";
+const DEFAULT_GATEWAY_URL = "https://ai-gateway.vercel.sh/v1";
+const DEFAULT_GATEWAY_MODEL = "minimax/minimax-m3";
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_RETRIES = 2;
 
-export type GroqChatMessage = OpenAiChatMessage;
-export const toGroqMessages = toOpenAiChatMessages;
+export function getVercelGatewayApiKey(): string | undefined {
+  return process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim() || undefined;
+}
 
-export function getGroqModel(): string {
-  return process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
+export function getVercelGatewayModel(): string {
+  return process.env.AI_GATEWAY_MODEL?.trim() || DEFAULT_GATEWAY_MODEL;
+}
+
+function gatewayChatUrl(): string {
+  const base = (process.env.AI_GATEWAY_BASE_URL?.trim() || DEFAULT_GATEWAY_URL).replace(/\/+$/, "");
+  return `${base}/chat/completions`;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -50,16 +55,16 @@ function retryAfterMs(response: Response, attempt: number, errText: string): num
   return Math.min(1_500 * Math.pow(2, attempt), 12_000);
 }
 
-export class GroqAgentProvider implements AgentModelProvider {
+export class VercelGatewayAgentProvider implements AgentModelProvider {
   readonly modelId: string;
 
   constructor(modelId?: string) {
-    this.modelId = modelId ?? getGroqModel();
+    this.modelId = modelId ?? getVercelGatewayModel();
   }
 
   async generate(req: GenerateRequest): Promise<ModelResponse> {
-    const apiKey = process.env.GROQ_API_KEY?.trim();
-    if (!apiKey) throw new Error("GROQ_API_KEY is not configured");
+    const apiKey = getVercelGatewayApiKey();
+    if (!apiKey) throw new Error("AI_GATEWAY_API_KEY is not configured");
 
     const body = buildOpenAiChatBody({
       model: this.modelId,
@@ -69,19 +74,13 @@ export class GroqAgentProvider implements AgentModelProvider {
       maxTokens: req.maxTokens,
       temperature: req.temperature,
     });
-    // gpt-oss puts a long chain-of-thought in `content` unless reasoning is hidden,
-    // which then blows the token budget before the required JSON is emitted.
-    if (/gpt-oss/i.test(this.modelId)) {
-      body.reasoning_format = "hidden";
-      body.reasoning_effort = "low";
-    }
 
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
       try {
-        const response = await fetch(GROQ_API_URL, {
+        const response = await fetch(gatewayChatUrl(), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -94,7 +93,7 @@ export class GroqAgentProvider implements AgentModelProvider {
         if (!response.ok) {
           const errText = await response.text().catch(() => "");
           if (response.status === 429) {
-            lastError = new AgentLlmRateLimitError(`Groq API 429: ${errText.slice(0, 400)}`);
+            lastError = new AgentLlmRateLimitError(`Vercel AI Gateway 429: ${errText.slice(0, 400)}`);
             if (attempt < MAX_RETRIES) {
               await sleep(retryAfterMs(response, attempt, errText));
               continue;
@@ -102,11 +101,11 @@ export class GroqAgentProvider implements AgentModelProvider {
             throw lastError;
           }
           if ((response.status === 408 || response.status >= 500) && attempt < MAX_RETRIES) {
-            lastError = new Error(`Groq API ${response.status}: ${errText.slice(0, 400)}`);
+            lastError = new Error(`Vercel AI Gateway ${response.status}: ${errText.slice(0, 400)}`);
             await sleep(750 * Math.pow(2, attempt));
             continue;
           }
-          throw new Error(`Groq API ${response.status}: ${errText.slice(0, 400)}`);
+          throw new Error(`Vercel AI Gateway ${response.status}: ${errText.slice(0, 400)}`);
         }
 
         const data = (await response.json()) as {
@@ -143,11 +142,11 @@ export class GroqAgentProvider implements AgentModelProvider {
           await sleep(750 * Math.pow(2, attempt));
           continue;
         }
-        throw aborted ? new Error("Groq API timeout") : lastError;
+        throw aborted ? new Error("Vercel AI Gateway timeout") : lastError;
       } finally {
         clearTimeout(timer);
       }
     }
-    throw lastError ?? new Error("Groq API call failed");
+    throw lastError ?? new Error("Vercel AI Gateway call failed");
   }
 }

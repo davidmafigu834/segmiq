@@ -511,11 +511,26 @@ async function reasonAndAct(
       system,
       messages,
       tools: buildToolDefinitions(availableTools),
-      maxTokens: 1600,
+      maxTokens: 2400,
     });
     inputTokens += response.usage.inputTokens;
     outputTokens += response.usage.outputTokens;
     model = response.model;
+
+    if (response.stopReason === "max_tokens" && !response.toolCalls.length) {
+      if (parseAgentFinalOutput(response.text)) {
+        finalText = response.text;
+        break;
+      }
+      if (turn < MAX_MODEL_TURNS - 1) {
+        messages.push({ role: "assistant", text: response.text, toolCalls: [] });
+        messages.push({
+          role: "user",
+          text: "Your previous reply was cut off. Output ONLY the required final JSON object now, with no other text.",
+        });
+        continue;
+      }
+    }
 
     if (response.stopReason !== "tool_use" || !response.toolCalls.length) {
       finalText = response.text;
@@ -560,6 +575,7 @@ async function reasonAndAct(
   }
 
   // Parse structured final output, with one repair attempt.
+  let lastRawText = finalText;
   let final = parseAgentFinalOutput(finalText);
   if (!final) {
     const repair = await provider.generate({
@@ -571,14 +587,14 @@ async function reasonAndAct(
           : []),
         {
           role: "user",
-          text: "Your last message was not the required JSON object. Respond now with ONLY the final JSON object described in your instructions.",
+          text: "Your last message was not the required JSON object. Respond now with ONLY the final JSON object described in your instructions. Do not call tools.",
         },
       ],
-      tools: buildToolDefinitions(availableTools),
-      maxTokens: 800,
+      maxTokens: 1200,
     });
     inputTokens += repair.usage.inputTokens;
     outputTokens += repair.usage.outputTokens;
+    lastRawText = repair.text;
     final = parseAgentFinalOutput(repair.text);
   }
   if (!final) {
@@ -603,6 +619,7 @@ async function reasonAndAct(
       outputTokens,
       model,
       errorCode: "INVALID_MODEL_OUTPUT",
+      errorMessage: (lastRawText ?? "").slice(0, 500),
     };
   }
 

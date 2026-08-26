@@ -252,25 +252,126 @@ export type AgentFinalOutput = {
   reply: string | null;
 };
 
+const INTENT_SET = new Set<string>(AGENT_INTENTS);
+
+/** Strip chain-of-thought wrappers that reasoning models (gpt-oss, MiniMax) put around the answer. */
+export function stripModelReasoning(text: string): string {
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "\n")
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "\n")
+    .replace(/<\|channel\|>thought[\s\S]*?<\|channel\|>/gi, "\n")
+    .replace(/<think>[\s\S]*$/gi, "\n")
+    .trim();
+}
+
+function extractBalancedJsonObjects(text: string): string[] {
+  const objects: string[] = [];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== "{") continue;
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    for (let j = i; j < text.length; j++) {
+      const c = text[j];
+      if (inString) {
+        if (escape) escape = false;
+        else if (c === "\\") escape = true;
+        else if (c === '"') inString = false;
+        continue;
+      }
+      if (c === '"') inString = true;
+      else if (c === "{") depth += 1;
+      else if (c === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          objects.push(text.slice(i, j + 1));
+          i = j;
+          break;
+        }
+      }
+    }
+  }
+  return objects;
+}
+
+function coerceFinalPayload(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
+  const o = raw as Record<string, unknown>;
+  const decision = o.decision_summary ?? o.decisionSummary;
+  const intentsRaw = o.intents;
+  let intents: AgentIntent[] = [];
+  if (Array.isArray(intentsRaw)) {
+    intents = intentsRaw
+      .map((x) => String(x).trim().toUpperCase().replace(/[\s-]+/g, "_"))
+      .filter((x): x is AgentIntent => INTENT_SET.has(x));
+  }
+  if (!intents.length) intents = ["GENERAL_MESSAGE"];
+  let confidence: unknown = o.confidence;
+  if (typeof confidence === "string") confidence = Number(confidence);
+  if (typeof confidence === "number" && Number.isFinite(confidence) && confidence > 1 && confidence <= 100) {
+    confidence = confidence / 100;
+  }
+  let reply: unknown = o.reply ?? null;
+  if (Array.isArray(reply)) {
+    reply = reply.filter((x) => typeof x === "string").join("\n");
+  } else if (typeof reply === "number") {
+    reply = String(reply);
+  }
+  return {
+    intents: intents.slice(0, 5),
+    confidence,
+    decision_summary: typeof decision === "string" ? decision : "",
+    evidence: o.evidence ?? null,
+    reply,
+  };
+}
+
+function toFinalOutput(parsed: z.infer<typeof finalOutputSchema>): AgentFinalOutput {
+  return {
+    intents: parsed.intents,
+    confidence: parsed.confidence,
+    decisionSummary: parsed.decision_summary,
+    evidence: parsed.evidence ?? null,
+    reply: parsed.reply?.trim() || null,
+  };
+}
+
+function recoverReplyFromBrokenJson(text: string): string | null {
+  const match = /"reply"\s*:\s*"((?:\\.|[^"\\])*)"/.exec(text);
+  if (!match) return null;
+  try {
+    const value = JSON.parse(`"${match[1]}"`) as unknown;
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+  } catch {
+    return match[1]?.trim() || null;
+  }
+}
+
 export function parseAgentFinalOutput(text: string | null): AgentFinalOutput | null {
   if (!text?.trim()) return null;
-  let candidate = text.trim();
+  let candidate = stripModelReasoning(text);
   const fenced = /```(?:json)?\s*([\s\S]*?)```/.exec(candidate);
   if (fenced) candidate = fenced[1].trim();
-  const braceStart = candidate.indexOf("{");
-  const braceEnd = candidate.lastIndexOf("}");
-  if (braceStart === -1 || braceEnd <= braceStart) return null;
-  try {
-    const parsed = finalOutputSchema.safeParse(JSON.parse(candidate.slice(braceStart, braceEnd + 1)));
-    if (!parsed.success) return null;
-    return {
-      intents: parsed.data.intents,
-      confidence: parsed.data.confidence,
-      decisionSummary: parsed.data.decision_summary,
-      evidence: parsed.data.evidence ?? null,
-      reply: parsed.data.reply?.trim() || null,
-    };
-  } catch {
-    return null;
+
+  const objects = extractBalancedJsonObjects(candidate);
+  for (let i = objects.length - 1; i >= 0; i--) {
+    try {
+      const parsed = finalOutputSchema.safeParse(coerceFinalPayload(JSON.parse(objects[i])));
+      if (parsed.success) return toFinalOutput(parsed.data);
+    } catch {
+      continue;
+    }
   }
+
+  const recovered = recoverReplyFromBrokenJson(candidate);
+  if (recovered) {
+    return {
+      intents: ["GENERAL_MESSAGE"],
+      confidence: 0.55,
+      decisionSummary: "Recovered the customer reply from incomplete model output.",
+      evidence: null,
+      reply: recovered.slice(0, 2000),
+    };
+  }
+  return null;
 }

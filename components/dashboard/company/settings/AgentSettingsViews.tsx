@@ -48,6 +48,7 @@ function llmProviderLabel(name: string): string {
   if (name === "gemini") return "Gemini";
   if (name === "groq") return "Groq";
   if (name === "anthropic") return "Claude";
+  if (name === "vercel") return "Vercel AI Gateway";
   return name;
 }
 

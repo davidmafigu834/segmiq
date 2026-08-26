@@ -1,6 +1,7 @@
 import { getAnthropicModel } from "@/lib/ai/claude";
 import { GeminiAgentProvider, getGeminiModel } from "./provider-gemini";
 import { GroqAgentProvider, getGroqModel } from "./provider-groq";
+import { VercelGatewayAgentProvider, getVercelGatewayApiKey, getVercelGatewayModel } from "./provider-gateway";
 import type { AgentModelUsage } from "./types";
 
 /**
@@ -214,8 +215,15 @@ export class AnthropicAgentProvider implements AgentModelProvider {
   }
 }
 
-export const AGENT_LLM_PROVIDERS = ["gemini", "groq", "anthropic"] as const;
+export const AGENT_LLM_PROVIDERS = ["gemini", "groq", "anthropic", "vercel"] as const;
 export type AgentLlmProviderName = (typeof AGENT_LLM_PROVIDERS)[number];
+
+function parseAgentLlmProviderName(raw: string | undefined): AgentLlmProviderName | null {
+  if (!raw) return null;
+  if (raw === "gemini" || raw === "groq" || raw === "anthropic" || raw === "vercel") return raw;
+  if (raw === "gateway" || raw === "ai-gateway") return "vercel";
+  return null;
+}
 
 export function isAgentLlmRateLimitError(err: unknown): boolean {
   if (err instanceof AgentLlmRateLimitError) return true;
@@ -225,24 +233,35 @@ export function isAgentLlmRateLimitError(err: unknown): boolean {
 export function isAgentLlmProviderConfigured(name: AgentLlmProviderName): boolean {
   if (name === "gemini") return Boolean(process.env.GEMINI_API_KEY?.trim());
   if (name === "groq") return Boolean(process.env.GROQ_API_KEY?.trim());
+  if (name === "vercel") return Boolean(getVercelGatewayApiKey());
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
 }
 
 export function getAgentLlmProviderName(): AgentLlmProviderName {
-  const explicit = process.env.AGENT_LLM_PROVIDER?.trim().toLowerCase();
-  if (explicit === "gemini" || explicit === "groq" || explicit === "anthropic") return explicit;
-  if (process.env.GEMINI_API_KEY?.trim() && !process.env.ANTHROPIC_API_KEY?.trim()) {
-    return "gemini";
-  }
-  if (process.env.GROQ_API_KEY?.trim() && !process.env.ANTHROPIC_API_KEY?.trim()) {
-    return "groq";
-  }
+  const explicit = parseAgentLlmProviderName(process.env.AGENT_LLM_PROVIDER?.trim().toLowerCase());
+  if (explicit) return explicit;
+  const anthropic = Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  if (process.env.GEMINI_API_KEY?.trim() && !anthropic) return "gemini";
+  if (getVercelGatewayApiKey() && !anthropic) return "vercel";
+  if (process.env.GROQ_API_KEY?.trim() && !anthropic) return "groq";
   return "anthropic";
+}
+
+function defaultFallbackFor(primary: AgentLlmProviderName): AgentLlmProviderName | null {
+  const order: AgentLlmProviderName[] =
+    primary === "gemini"
+      ? ["vercel", "groq"]
+      : primary === "vercel"
+        ? ["gemini", "groq"]
+        : primary === "groq"
+          ? ["vercel", "gemini"]
+          : ["vercel", "gemini", "groq"];
+  return order.find((name) => isAgentLlmProviderConfigured(name)) ?? null;
 }
 
 /**
  * Secondary provider used when the primary returns HTTP 429.
- * Default: Groq if Gemini is primary (or Gemini if Groq is primary), when that key exists.
+ * Default: Vercel AI Gateway if that key exists, otherwise Groq/Gemini.
  * Set AGENT_LLM_FALLBACK=none to disable.
  */
 export function getAgentLlmFallbackName(): AgentLlmProviderName | null {
@@ -250,15 +269,7 @@ export function getAgentLlmFallbackName(): AgentLlmProviderName | null {
   const raw = process.env.AGENT_LLM_FALLBACK?.trim().toLowerCase();
   if (raw === "none" || raw === "off" || raw === "false") return null;
 
-  let fallback: AgentLlmProviderName | null = null;
-  if (raw === "gemini" || raw === "groq" || raw === "anthropic") {
-    fallback = raw;
-  } else if (primary === "gemini" && isAgentLlmProviderConfigured("groq")) {
-    fallback = "groq";
-  } else if (primary === "groq" && isAgentLlmProviderConfigured("gemini")) {
-    fallback = "gemini";
-  }
-
+  const fallback = parseAgentLlmProviderName(raw) ?? defaultFallbackFor(primary);
   if (!fallback || fallback === primary) return null;
   if (!isAgentLlmProviderConfigured(fallback)) return null;
   return fallback;
@@ -267,6 +278,7 @@ export function getAgentLlmFallbackName(): AgentLlmProviderName | null {
 export function createAgentModelProvider(name: AgentLlmProviderName): AgentModelProvider {
   if (name === "gemini") return new GeminiAgentProvider();
   if (name === "groq") return new GroqAgentProvider();
+  if (name === "vercel") return new VercelGatewayAgentProvider();
   return new AnthropicAgentProvider();
 }
 
@@ -277,7 +289,13 @@ export function describeAgentLlm(): {
 } {
   const provider = getAgentLlmProviderName();
   const model =
-    provider === "gemini" ? getGeminiModel() : provider === "groq" ? getGroqModel() : getAnthropicModel();
+    provider === "gemini"
+      ? getGeminiModel()
+      : provider === "groq"
+        ? getGroqModel()
+        : provider === "vercel"
+          ? getVercelGatewayModel()
+          : getAnthropicModel();
   return { provider, fallback: getAgentLlmFallbackName(), model };
 }
 

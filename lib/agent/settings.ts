@@ -13,7 +13,9 @@ export function isAgentGloballyEnabled(): boolean {
   return Boolean(
     process.env.ANTHROPIC_API_KEY?.trim() ||
       process.env.GEMINI_API_KEY?.trim() ||
-      process.env.GROQ_API_KEY?.trim()
+      process.env.GROQ_API_KEY?.trim() ||
+      process.env.AI_GATEWAY_API_KEY?.trim() ||
+      process.env.VERCEL_OIDC_TOKEN?.trim()
   );
 }
 

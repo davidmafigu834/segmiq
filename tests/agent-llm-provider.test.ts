@@ -17,6 +17,8 @@ const ENV_KEYS = [
   "GEMINI_API_KEY",
   "GROQ_API_KEY",
   "ANTHROPIC_API_KEY",
+  "AI_GATEWAY_API_KEY",
+  "VERCEL_OIDC_TOKEN",
 ] as const;
 
 const originalEnv: Record<string, string | undefined> = {};
@@ -54,10 +56,29 @@ describe("agent LLM provider selection", () => {
     assert.equal(getAgentLlmProviderName(), "groq");
   });
 
+  it("honours AGENT_LLM_PROVIDER=vercel and the gateway alias", () => {
+    setEnv({ AGENT_LLM_PROVIDER: "vercel", AI_GATEWAY_API_KEY: "vck_test" });
+    assert.equal(getAgentLlmProviderName(), "vercel");
+    setEnv({ AGENT_LLM_PROVIDER: "gateway", AI_GATEWAY_API_KEY: "vck_test" });
+    assert.equal(getAgentLlmProviderName(), "vercel");
+  });
+
   it("keeps Gemini as the implicit default when both Gemini and Groq keys exist", () => {
     setEnv({ GEMINI_API_KEY: "gem", GROQ_API_KEY: "gsk" });
     assert.equal(getAgentLlmProviderName(), "gemini");
     assert.equal(getAgentLlmFallbackName(), "groq");
+  });
+
+  it("prefers Vercel AI Gateway as Gemini fallback when that key exists", () => {
+    setEnv({ GEMINI_API_KEY: "gem", AI_GATEWAY_API_KEY: "vck", GROQ_API_KEY: "gsk" });
+    assert.equal(getAgentLlmProviderName(), "gemini");
+    assert.equal(getAgentLlmFallbackName(), "vercel");
+  });
+
+  it("uses Vercel AI Gateway when it is the only key", () => {
+    setEnv({ AI_GATEWAY_API_KEY: "vck" });
+    assert.equal(getAgentLlmProviderName(), "vercel");
+    assert.equal(getAgentLlmFallbackName(), null);
   });
 
   it("uses Groq when it is the only free-tier key", () => {
