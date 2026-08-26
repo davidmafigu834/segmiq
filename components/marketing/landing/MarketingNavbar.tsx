@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
 import SegmiqWordmark from "@/components/marketing/SegmiqWordmark";
-import LandingThemeToggle from "@/components/marketing/landing/LandingThemeToggle";
 import { ML } from "@/lib/marketing-links";
 
 const NAV = [
@@ -63,7 +62,6 @@ export default function MarketingNavbar() {
           >
             Log in
           </Link>
-          <LandingThemeToggle />
           <Link
             href={ML.contact}
             className="segmiq-btn-primary inline-flex h-10 items-center gap-1.5 rounded-[9px] bg-[var(--marketing-brand)] px-[18px] text-[13px] font-semibold text-[var(--marketing-brand-ink)] transition-colors hover:bg-[var(--marketing-brand-hover)]"
