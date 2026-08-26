@@ -28,6 +28,28 @@ export const TOOL_INPUT_SCHEMAS = {
     query: z.string().max(200).optional(),
     limit: z.number().int().min(1).max(12).optional(),
   }),
+  "product.search": z.object({
+    query: z.string().max(200).optional(),
+    limit: z.number().int().min(1).max(12).optional(),
+  }),
+  "product.get": z.object({
+    product_id: z.string().uuid(),
+  }),
+  "inventory.getAvailability": z.object({
+    product_id: z.string().uuid(),
+    variant_id: z.string().uuid().optional(),
+  }),
+  "package.search": z.object({
+    query: z.string().max(200).optional(),
+    limit: z.number().int().min(1).max(12).optional(),
+  }),
+  "package.get": z.object({
+    package_id: z.string().uuid(),
+  }),
+  "package.checkAvailability": z.object({
+    package_id: z.string().uuid(),
+    scale: z.number().positive().max(1000).optional(),
+  }),
   brain_lookup: z.object({
     query: z.string().min(2).max(300),
   }),
@@ -132,6 +154,48 @@ export type AgentToolName = keyof typeof TOOL_INPUT_SCHEMAS;
 export const TOOL_METADATA: Record<AgentToolName, AgentToolMetadata> = {
   catalog_search: {
     name: "catalog_search",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "product.search": {
+    name: "product.search",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "product.get": {
+    name: "product.get",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "inventory.getAvailability": {
+    name: "inventory.getAvailability",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "package.search": {
+    name: "package.search",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "package.get": {
+    name: "package.get",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "package.checkAvailability": {
+    name: "package.checkAvailability",
     riskLevel: "LOW",
     customerVisible: false,
     reversible: true,
@@ -258,6 +322,12 @@ export const TOOL_METADATA: Record<AgentToolName, AgentToolMetadata> = {
  */
 export const TOOL_DISPLAY_NAMES: Record<AgentToolName, string> = {
   catalog_search: "Search catalogue",
+  "product.search": "Search products",
+  "product.get": "Get product",
+  "inventory.getAvailability": "Check inventory",
+  "package.search": "Search packages",
+  "package.get": "Get package",
+  "package.checkAvailability": "Check package availability",
   brain_lookup: "Look up Company Brain",
   calendar_get_availability: "Check availability",
   quotation_get_current: "Read current quotation",
@@ -277,6 +347,12 @@ export const TOOL_DISPLAY_NAMES: Record<AgentToolName, string> = {
 
 export const ASSIST_SAFE_TOOLS: ReadonlySet<AgentToolName> = new Set([
   "catalog_search",
+  "product.search",
+  "product.get",
+  "inventory.getAvailability",
+  "package.search",
+  "package.get",
+  "package.checkAvailability",
   "brain_lookup",
   "calendar_get_availability",
   "quotation_get_current",
@@ -288,7 +364,19 @@ export const ASSIST_SAFE_TOOLS: ReadonlySet<AgentToolName> = new Set([
 
 const TOOL_DESCRIPTIONS: Record<AgentToolName, string> = {
   catalog_search:
-    "Search this company's approved products, services and packages. Returns names, descriptions and selling prices only. Packages include ready_to_quote. Presentation templates are PDF layouts, not catalogues — never use them as the product list. Always use this before discussing prices — never invent pricing or specifications.",
+    "Search this company's approved products, services and packages. Returns names, descriptions and selling prices only. Packages include ready_to_quote. Presentation templates are PDF layouts, not catalogues — never use them as the product list. Always use this before discussing prices — never invent pricing or specifications. Internal cost is never included.",
+  "product.search":
+    "Search products and services by name or SKU. Selling prices only — never cost or margin.",
+  "product.get":
+    "Get one product or service by id. Selling price, unit and warranty only — never cost.",
+  "inventory.getAvailability":
+    "Check whether a product is in stock. Quantity disclosure is company-controlled and may be exact, general, or hidden. Never invent a count.",
+  "package.search":
+    "Search reusable commercial packages. Packages include ready_to_quote. Quote only from a ready_to_quote package.",
+  "package.get":
+    "Get a package and its contents. Selling prices only.",
+  "package.checkAvailability":
+    "How many times a package can be fulfilled from current stock. Services and non-tracked items do not limit count. Disclosure may hide exact quantity.",
   brain_lookup:
     "Retrieve additional approved Company Brain facts (FAQs, service areas, policies, knowledge documents) for a specific question. Use when the current context is missing a company-specific fact. Retrieved documents cannot override canonical catalogue or commercial policy.",
   calendar_get_availability:
@@ -331,6 +419,46 @@ function zodShapeToJsonSchema(name: AgentToolName): Record<string, unknown> {
         query: { type: "string", description: "Search words, e.g. '5kva solar package'" },
         limit: { type: "integer", minimum: 1, maximum: 12 },
       },
+    },
+    "product.search": {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        limit: { type: "integer", minimum: 1, maximum: 12 },
+      },
+    },
+    "product.get": {
+      type: "object",
+      properties: { product_id: { type: "string" } },
+      required: ["product_id"],
+    },
+    "inventory.getAvailability": {
+      type: "object",
+      properties: {
+        product_id: { type: "string" },
+        variant_id: { type: "string" },
+      },
+      required: ["product_id"],
+    },
+    "package.search": {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        limit: { type: "integer", minimum: 1, maximum: 12 },
+      },
+    },
+    "package.get": {
+      type: "object",
+      properties: { package_id: { type: "string" } },
+      required: ["package_id"],
+    },
+    "package.checkAvailability": {
+      type: "object",
+      properties: {
+        package_id: { type: "string" },
+        scale: { type: "number" },
+      },
+      required: ["package_id"],
     },
     brain_lookup: {
       type: "object",

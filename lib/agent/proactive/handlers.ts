@@ -171,6 +171,10 @@ export async function handleDomainEvent(event: DomainEvent): Promise<void> {
         reason: "DEAL_HAS_NEXT_ACTION",
       });
       return;
+    case DOMAIN_EVENT_TYPES.INVENTORY_LOW_STOCK:
+    case DOMAIN_EVENT_TYPES.INVENTORY_OUT_OF_STOCK:
+      await notifyInventoryManagers(event);
+      return;
     default:
       return;
   }
@@ -415,4 +419,30 @@ async function maybeScheduleSla(event: DomainEvent): Promise<void> {
     actorOrigin: "CUSTOMER",
     causationId: event.id,
   });
+}
+
+async function notifyInventoryManagers(event: DomainEvent): Promise<void> {
+  const { getInventorySettings } = await import("@/lib/inventory/service");
+  const settings = await getInventorySettings(event.clientId);
+  if (!settings.lowStockNotifications) return;
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const supabase = createAdminClient();
+  const { data: managers } = await supabase
+    .from("users")
+    .select("id")
+    .eq("client_id", event.clientId)
+    .eq("role", "CLIENT_MANAGER")
+    .eq("is_active", true);
+  const kind = event.type === DOMAIN_EVENT_TYPES.INVENTORY_OUT_OF_STOCK ? "out of stock" : "low stock";
+  const message = `Inventory ${kind}: product ${String(event.payload.productId ?? event.entityId)}. Available: ${String(event.payload.available ?? "n/a")}.`;
+  await Promise.all(
+    (managers ?? []).map((m) =>
+      supabase.from("notifications").insert({
+        user_id: m.id,
+        type: "INVENTORY_ALERT",
+        message: message.slice(0, 500),
+        read: false,
+      })
+    )
+  );
 }

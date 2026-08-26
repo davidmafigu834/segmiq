@@ -40,7 +40,7 @@ export async function copyQuotationAsDraft(
   const { data: sourceItems } = await supabase
     .from("quotation_line_items")
     .select(
-      "catalog_item_id, item_name, description, unit_price, quantity, group_label, sort_order, section_id, unit, sku, discount_percent, discount_amount, tax_rate, tax_inclusive, is_optional, option_group, cost_price, image_url, catalog_unit_price, price_override, package_id, package_locked, offer_option_id, option_state"
+      "catalog_item_id, item_name, description, unit_price, quantity, group_label, sort_order, section_id, unit, sku, discount_percent, discount_amount, tax_rate, tax_inclusive, is_optional, option_group, cost_price, image_url, catalog_unit_price, price_override, package_id, package_locked, offer_option_id, option_state, source_type, product_id, variant_id, package_expansion, warranty_snapshot"
     )
     .eq("quotation_id", opts.sourceQuotationId)
     .order("sort_order", { ascending: true });

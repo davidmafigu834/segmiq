@@ -15,6 +15,8 @@ export type CommercialCheckItem = {
   tab?: "items" | "payment" | "overview";
 };
 
+export type CommercialCheckInventoryPolicy = "off" | "warn" | "block";
+
 export type CommercialCheckInput = {
   status: QuotationStatus | string;
   approvalStatus?: string | null;
@@ -27,6 +29,9 @@ export type CommercialCheckInput = {
   totals: QuoteTotals;
   governance?: CommercialGovernance | null;
   approval?: ApprovalEvaluation | null;
+  inventoryShortages?: Array<{ name: string; requested: number; available: number }>;
+  inventoryPolicy?: CommercialCheckInventoryPolicy;
+  priceFreshnessWarnings?: string[];
 };
 
 export type CommercialCheckResult = {
@@ -252,6 +257,37 @@ export function runCommercialCheck(input: CommercialCheckInput): CommercialCheck
     });
   } else {
     checks.push({ id: "approval", label: "Approval not required", status: "pass" });
+  }
+
+  const inventoryPolicy = input.inventoryPolicy ?? "warn";
+  const shortages = input.inventoryShortages ?? [];
+  if (inventoryPolicy !== "off" && shortages.length > 0) {
+    const label = shortages
+      .slice(0, 3)
+      .map((s) => `${s.name} (need ${s.requested}, available ${s.available})`)
+      .join("; ");
+    checks.push({
+      id: "inventory",
+      label: "Inventory availability",
+      status: inventoryPolicy === "block" ? "block" : "warn",
+      action: label,
+      tab: "items",
+    });
+  } else {
+    checks.push({ id: "inventory", label: "Inventory availability", status: "pass" });
+  }
+
+  const priceWarnings = input.priceFreshnessWarnings ?? [];
+  if (priceWarnings.length > 0) {
+    checks.push({
+      id: "price_freshness",
+      label: "Source price unchanged",
+      status: "warn",
+      action: priceWarnings[0],
+      tab: "items",
+    });
+  } else {
+    checks.push({ id: "price_freshness", label: "Source price unchanged", status: "pass" });
   }
 
   const sendable =

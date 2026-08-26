@@ -15,12 +15,18 @@ import {
 } from "./calendar";
 import { AGENT_ACTOR, toolFailure, toolSuccess, type ToolExecutionContext, type ToolResult } from "./context";
 import {
-  catalogSearchNote,
+  executeCatalogSearch,
+  executeInventoryGetAvailability,
+  executePackageCheckAvailability,
+  executePackageGet,
+  executePackageSearch,
+  executeProductGet,
+  executeProductSearch,
+} from "./commercial";
+import {
   executeGetCurrentQuotation,
   executePrepareQuotationDraft,
   executeSendQuotation,
-  isBuiltinQuoteTemplate,
-  packageHasSellableComponents,
 } from "./quotation";
 import {
   ASSIST_SAFE_TOOLS,
@@ -38,115 +44,6 @@ import {
 
 // ---------------------------------------------------------------------------
 // Individual executors.
-
-async function executeCatalogSearch(
-  ctx: ToolExecutionContext,
-  input: { query?: string; limit?: number }
-): Promise<ToolResult> {
-  const supabase = createAdminClient();
-  const limit = input.limit ?? 8;
-  const terms = (input.query ?? "").trim().toLowerCase().split(/\s+/).filter(Boolean);
-
-  const [{ data: products }, { data: packages }, { data: templates }] = await Promise.all([
-    supabase
-      .from("product_catalog")
-      .select("id, name, description, unit_price, category, unit, warranty, item_kind")
-      .eq("client_id", ctx.clientId)
-      .eq("is_active", true)
-      .order("display_order", { ascending: true })
-      .limit(200),
-    supabase
-      .from("quotation_packages")
-      .select("id, name, description, pricing_model, fixed_price, currency")
-      .eq("client_id", ctx.clientId)
-      .eq("is_active", true)
-      .order("display_order", { ascending: true })
-      .limit(50),
-    supabase
-      .from("quote_templates")
-      .select("id, name, description, is_builtin, builtin_key")
-      .eq("client_id", ctx.clientId)
-      .limit(25),
-  ]);
-
-  const matches = (text: string | null | undefined): boolean => {
-    if (!terms.length) return true;
-    const haystack = (text ?? "").toLowerCase();
-    return terms.some((t) => haystack.includes(t));
-  };
-
-  // Internal cost, margin and supplier data are never included.
-  const productResults = (products ?? [])
-    .filter((p) => matches(`${p.name} ${p.description ?? ""} ${p.category ?? ""}`))
-    .slice(0, limit)
-    .map((p) => ({
-      type: "product",
-      id: p.id,
-      name: p.name,
-      description: (p.description as string | null)?.slice(0, 200) ?? null,
-      price: Number(p.unit_price) || 0,
-      unit: p.unit,
-      category: p.category,
-      warranty: p.warranty,
-      kind: p.item_kind,
-    }));
-  const matchedPackages = (packages ?? [])
-    .filter((p) => matches(`${p.name} ${p.description ?? ""}`))
-    .slice(0, limit);
-  const packageIds = matchedPackages.map((p) => p.id as string);
-  const { data: packageComponents } = packageIds.length
-    ? await supabase
-        .from("quotation_package_components")
-        .select("package_id, unit_price")
-        .in("package_id", packageIds)
-    : { data: [] as Array<{ package_id: string; unit_price: number | string | null }> };
-
-  const componentsByPackage = new Map<string, Array<{ unit_price?: number | string | null }>>();
-  for (const row of packageComponents ?? []) {
-    const id = row.package_id as string;
-    const list = componentsByPackage.get(id) ?? [];
-    list.push({ unit_price: row.unit_price });
-    componentsByPackage.set(id, list);
-  }
-
-  const packageResults = matchedPackages.map((p) => {
-    const fixedPrice = p.fixed_price == null ? null : Number(p.fixed_price);
-    const ready = packageHasSellableComponents(componentsByPackage.get(p.id as string) ?? [], fixedPrice);
-    return {
-      type: "package" as const,
-      id: p.id,
-      name: p.name,
-      description: (p.description as string | null)?.slice(0, 200) ?? null,
-      pricing_model: p.pricing_model,
-      fixed_price: fixedPrice,
-      currency: p.currency,
-      ready_to_quote: ready,
-    };
-  });
-  const templateResults = (templates ?? [])
-    .filter((t) => !isBuiltinQuoteTemplate(t))
-    .filter((t) => matches(`${t.name} ${t.description ?? ""}`))
-    .slice(0, 5)
-    .map((t) => ({
-      type: "template" as const,
-      id: t.id,
-      name: t.name,
-      layout_only: true,
-    }));
-
-  const readyPackageCount = packageResults.filter((p) => p.ready_to_quote).length;
-
-  return toolSuccess({
-    packages: packageResults,
-    products: productResults,
-    templates: templateResults,
-    note: catalogSearchNote({
-      readyPackageCount,
-      packageCount: packageResults.length,
-      productCount: productResults.length,
-    }),
-  });
-}
 
 async function executeBrainLookup(
   ctx: ToolExecutionContext,
@@ -664,6 +561,12 @@ type Executor = (ctx: ToolExecutionContext, input: never) => Promise<ToolResult>
 
 const EXECUTORS: Record<AgentToolName, Executor> = {
   catalog_search: executeCatalogSearch as Executor,
+  "product.search": executeProductSearch as Executor,
+  "product.get": executeProductGet as Executor,
+  "inventory.getAvailability": executeInventoryGetAvailability as Executor,
+  "package.search": executePackageSearch as Executor,
+  "package.get": executePackageGet as Executor,
+  "package.checkAvailability": executePackageCheckAvailability as Executor,
   brain_lookup: executeBrainLookup as Executor,
   calendar_get_availability: executeGetAvailability as Executor,
   quotation_get_current: executeGetCurrentQuotation as Executor,

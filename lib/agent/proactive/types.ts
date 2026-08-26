@@ -32,6 +32,8 @@ export const ENTITY_TYPES = [
   "TASK",
   "CONVERSATION",
   "SUPPORT_CASE",
+  "PRODUCT",
+  "INVENTORY",
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 

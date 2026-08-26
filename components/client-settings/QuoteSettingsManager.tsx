@@ -333,15 +333,14 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
           ) : null}
 
           {tab === "catalog" ? (
-            <CatalogEditor
-              items={items}
-              newItem={newItem}
-              adding={adding}
-              onNewItemChange={setNewItem}
-              onAdd={() => void addItem()}
-              onUpdate={updateItem}
-              onRemove={(id) => void removeItem(id)}
-            />
+            <div className="space-y-3">
+              <p className="text-[13px] text-sales-text-secondary">
+                Products and services now live in the Products module. Quotation settings keep pricing, discounts, margin and approval rules.
+              </p>
+              <Button size="sm" onClick={() => (window.location.href = "/client/products")}>
+                Open Products
+              </Button>
+            </div>
           ) : null}
 
           {tab === "pricing" || tab === "discounts" || tab === "margin" || tab === "approvals" || tab === "customer" ? (
@@ -351,7 +350,16 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
             />
           ) : null}
 
-          {tab === "packages" ? <QuotationPackagesManager clientId={clientId} embedded /> : null}
+          {tab === "packages" ? (
+            <div className="space-y-3">
+              <p className="text-[13px] text-sales-text-secondary">
+                Selling packages are managed as first-class Packages. This is separate from marketing send packages.
+              </p>
+              <Button size="sm" onClick={() => (window.location.href = "/client/packages")}>
+                Open Packages
+              </Button>
+            </div>
+          ) : null}
           {tab === "templates" ? <QuoteTemplatesManager clientId={clientId} embedded /> : null}
 
           {tab === "terms" && settings ? (

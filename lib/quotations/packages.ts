@@ -37,7 +37,7 @@ export function expandPackageToLineItems(opts: {
 
   return components.map((c) => {
     const baseQty = Number(c.quantity) || 1;
-    const qty = qtyAdjustable ? baseQty * scale : baseQty;
+    const qty = baseQty * scale;
     let unitPrice = Number(c.unit_price) || 0;
     if (opts.pricingModel === "discounted_bundle" && opts.discountPercent > 0) {
       unitPrice = unitPrice * (1 - Number(opts.discountPercent) / 100);

@@ -825,3 +825,92 @@ export async function explainDeal(actor: ManagerActor, dealId: string) {
     recentEvents: asRows(events).length,
   };
 }
+
+export async function searchProducts(
+  actor: ManagerActor,
+  q: string
+): Promise<TableBlock> {
+  const { results } = await import("@/lib/products/search").then((m) =>
+    m.searchCommercialItems({
+      clientId: actor.clientId,
+      q,
+      types: ["PRODUCT", "SERVICE"],
+      limit: 12,
+      canSeeCost: true,
+    })
+  );
+  return {
+    type: "table",
+    entityType: "PRODUCT",
+    title: "Products",
+    columns: [
+      { key: "title", label: "Name" },
+      { key: "subtitle", label: "SKU" },
+      { key: "status", label: "Type" },
+      { key: "valueLabel", label: "Price" },
+    ],
+    rows: results.map((r) => ({
+      id: r.id,
+      entityType: "PRODUCT" as const,
+      title: r.name,
+      subtitle: r.sku ?? null,
+      status: r.type,
+      valueLabel: r.price != null ? formatDealValue(r.price) : null,
+      ownerName: null,
+      ownerId: null,
+      href: `/client/products/${r.id}`,
+      meta: {},
+    })),
+    truncated: false,
+    totalMatched: results.length,
+    filtersLabel: q || null,
+  };
+}
+
+export async function searchPackages(
+  actor: ManagerActor,
+  q: string
+): Promise<TableBlock> {
+  const { results } = await import("@/lib/products/search").then((m) =>
+    m.searchCommercialItems({
+      clientId: actor.clientId,
+      q,
+      types: ["PACKAGE"],
+      limit: 12,
+      canSeeCost: true,
+    })
+  );
+  return {
+    type: "table",
+    entityType: "PACKAGE",
+    title: "Packages",
+    columns: [
+      { key: "title", label: "Name" },
+      { key: "subtitle", label: "Availability" },
+      { key: "valueLabel", label: "Price" },
+    ],
+    rows: results.map((r) => ({
+      id: r.id,
+      entityType: "PACKAGE" as const,
+      title: r.name,
+      subtitle: r.availability ?? null,
+      status: r.status,
+      valueLabel: r.price != null ? formatDealValue(r.price) : null,
+      ownerName: null,
+      ownerId: null,
+      href: `/client/packages/${r.id}`,
+      meta: {},
+    })),
+    truncated: false,
+    totalMatched: results.length,
+    filtersLabel: q || null,
+  };
+}
+
+export async function getInventoryAvailability(
+  actor: ManagerActor,
+  productId: string
+) {
+  const { getAvailability } = await import("@/lib/inventory/service");
+  return getAvailability({ clientId: actor.clientId, productId });
+}

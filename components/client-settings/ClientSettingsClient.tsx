@@ -117,6 +117,7 @@ export function ClientSettingsClient({
   });
 
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [resetCrmConfirm, setResetCrmConfirm] = useState("");
 
   const [inviteSalesOpen, setInviteSalesOpen] = useState(false);
   const [inviteMgrOpen, setInviteMgrOpen] = useState(false);
@@ -319,6 +320,37 @@ export function ClientSettingsClient({
         primary_color: brandForm.primary_color,
       });
       setToast("Saved branding.");
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : "Error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function resetCrm() {
+    const confirmName = resetCrmConfirm.trim();
+    if (!confirmName || confirmName !== savedClientName) {
+      setToast("Type the exact client name to confirm the reset.");
+      return;
+    }
+    if (
+      !window.confirm(
+        `This permanently deletes leads, customers, deals, quotations, WhatsApp conversations, and related history for ${savedClientName}. Team logins, catalog, quote settings, profile, and connections stay. Continue?`
+      )
+    ) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/reset-crm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmName }),
+      });
+      const j = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(j.error ?? "Reset failed");
+      setResetCrmConfirm("");
+      setToast("Sales data reset. The company can start with a clean CRM.");
     } catch (e) {
       setToast(e instanceof Error ? e.message : "Error");
     } finally {
@@ -900,6 +932,28 @@ export function ClientSettingsClient({
             <div className="mt-12 border-t border-[var(--danger-border)] pt-8 pb-8">
               <h3 className="text-sm font-semibold text-[var(--danger-fg)]">Danger zone</h3>
               <p className="mt-2 text-sm text-ink-secondary">
+                Reset sales data for <strong>{savedClientName || "—"}</strong>. This deletes leads, customers, deals,
+                quotations, WhatsApp conversations, and related history. Team logins, catalog, quote settings, profile,
+                Facebook, WhatsApp connection, and billing stay.
+              </p>
+              <input
+                className="mt-3 max-w-md rounded-md border border-border bg-surface-card px-3 py-2 text-sm text-ink-primary placeholder:text-ink-tertiary"
+                placeholder="Client name"
+                value={resetCrmConfirm}
+                onChange={(e) => setResetCrmConfirm(e.target.value)}
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="mt-3 block rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-4 py-2 text-sm text-[var(--danger-fg)]"
+                disabled={
+                  saving || !savedClientName || profileNameDirty || resetCrmConfirm.trim() !== savedClientName
+                }
+                onClick={() => void resetCrm()}
+              >
+                Reset sales data
+              </button>
+              <p className="mt-8 text-sm text-ink-secondary">
                 Type the client name <strong>{savedClientName || "—"}</strong> to archive and hide this client from
                 lists.
                 {profileNameDirty ? (

@@ -15,16 +15,57 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   const includeInactive = url.searchParams.get("all") === "1";
 
   const supabase = createAdminClient();
-  let query = supabase
-    .from("product_catalog")
-    .select("*")
-    .eq("client_id", params.clientId)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: true });
-  if (!includeInactive) query = query.eq("is_active", true);
+  const { data: client } = await supabase.from("clients").select("commercial_flags").eq("id", params.clientId).maybeSingle();
+  const flags = (client?.commercial_flags ?? {}) as Record<string, unknown>;
+  const productsV2 = flags["products.v2.enabled"] !== false;
 
-  const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  let items: unknown[] = [];
+  if (productsV2) {
+    let pq = supabase
+      .from("products")
+      .select("*")
+      .eq("client_id", params.clientId)
+      .order("name", { ascending: true });
+    if (!includeInactive) pq = pq.eq("status", "ACTIVE");
+    const { data: products, error: pErr } = await pq;
+    if (!pErr && (products?.length ?? 0) > 0) {
+      items = (products ?? []).map((p) => ({
+        id: p.legacy_catalog_item_id ?? p.id,
+        client_id: p.client_id,
+        name: p.name,
+        description: p.quotation_description ?? p.description,
+        unit_price: p.selling_price,
+        category: null,
+        currency: p.currency,
+        is_active: p.status === "ACTIVE",
+        display_order: 0,
+        created_at: p.created_at,
+        updated_at: p.updated_at,
+        sku: p.sku,
+        unit: p.unit,
+        cost_price: p.cost_price,
+        min_selling_price: p.min_selling_price,
+        tax_rate: p.tax_rate,
+        image_url: p.primary_image_url,
+        warranty: p.warranty,
+        item_kind: p.item_type === "SERVICE" ? "service" : "product",
+        requires_approval: p.requires_technical_confirmation,
+        product_id: p.id,
+      }));
+    }
+  }
+  if (items.length === 0) {
+    let query = supabase
+      .from("product_catalog")
+      .select("*")
+      .eq("client_id", params.clientId)
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (!includeInactive) query = query.eq("is_active", true);
+    const { data, error } = await query;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    items = data ?? [];
+  }
 
   const { data: settings } = await supabase
     .from("quotation_settings")
@@ -33,8 +74,8 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     .maybeSingle();
   const isManager = g.session.role === "CLIENT_MANAGER" || g.session.role === "SUPER_ADMIN";
   const canSeeCost = resolveMarginVisibility(settings ?? {}, isManager) === "full";
-  const items = canSeeCost ? data ?? [] : stripCostFromUnknown(data ?? [], false);
-  return NextResponse.json({ items });
+  const safe = canSeeCost ? items : stripCostFromUnknown(items, false);
+  return NextResponse.json({ items: safe });
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
@@ -91,5 +132,26 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const { createProduct } = await import("@/lib/products/service");
+    await createProduct(params.clientId, session.userId, {
+      name: body.name.trim(),
+      description: body.description ?? null,
+      quotation_description: body.description ?? null,
+      selling_price: Number(body.unit_price) || 0,
+      sku: body.sku ?? null,
+      unit: body.unit ?? "Each",
+      cost_price: body.cost_price,
+      min_selling_price: body.min_selling_price,
+      tax_rate: body.tax_rate,
+      warranty: body.warranty,
+      currency: body.currency ?? "USD",
+      item_type: body.item_kind === "service" ? "SERVICE" : "PRODUCT",
+      track_inventory: false,
+      legacy_catalog_item_id: data.id,
+    });
+  } catch {
+    /* adapter best-effort */
+  }
   return NextResponse.json({ item: data }, { status: 201 });
 }

@@ -77,7 +77,7 @@ describe("manager policy", () => {
 
   it("caps bulk size at 100", () => {
     const blocked = assertBulkSize(MAX_BULK + 1);
-    assert.equal(blocked?.code, "BULK_LIMIT");
+    assert.equal(blocked && !blocked.allowed ? blocked.code : null, "BULK_LIMIT");
   });
 });
 

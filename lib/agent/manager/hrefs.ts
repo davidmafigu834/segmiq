@@ -21,6 +21,12 @@ export function managerHref(entityType: ManagerEntityType, id: string): string {
     case "PROACTIVE_ACTION":
     case "AGENT_ACTIVITY":
       return `/client/agent`;
+    case "PRODUCT":
+      return `/client/products/${id}`;
+    case "PACKAGE":
+      return `/client/packages/${id}`;
+    case "INVENTORY":
+      return `/client/inventory`;
     default:
       return `/client/dashboard`;
   }

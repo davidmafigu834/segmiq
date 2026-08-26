@@ -47,6 +47,11 @@ export const DOMAIN_EVENT_TYPES = {
   SUPPORT_CASE_RESOLVED: "support.case_resolved",
   CUSTOMER_OPTED_OUT: "customer.opted_out",
   CUSTOMER_COMMITMENT: "customer.commitment_created",
+  INVENTORY_LOW_STOCK: "inventory.low_stock",
+  INVENTORY_OUT_OF_STOCK: "inventory.out_of_stock",
+  INVENTORY_STOCK_RECEIVED: "inventory.stock_received",
+  INVENTORY_ADJUSTED: "inventory.stock_adjusted",
+  INVENTORY_TRANSFERRED: "inventory.transferred",
 } as const;
 
 export const TEMPORAL_TRIGGER_TYPES = {
@@ -208,6 +213,28 @@ export const TRIGGER_REGISTRY: Record<string, TriggerDef> = {
       DOMAIN_EVENT_TYPES.CONVERSATION_AGENT_MESSAGE,
       DOMAIN_EVENT_TYPES.CONVERSATION_AGENT_RESUMED,
     ],
+  },
+  inventory_low_stock: {
+    eventType: DOMAIN_EVENT_TYPES.INVENTORY_LOW_STOCK,
+    sourceEntity: "INVENTORY",
+    risk: "LOW",
+    customerFacing: false,
+    defaultAction: "NOTIFY",
+    policyCategory: "inventory",
+    needsModel: false,
+    description: "On-hand crossed the reorder level. Notify managers only — never the customer.",
+    invalidatedBy: [DOMAIN_EVENT_TYPES.INVENTORY_STOCK_RECEIVED],
+  },
+  inventory_out_of_stock: {
+    eventType: DOMAIN_EVENT_TYPES.INVENTORY_OUT_OF_STOCK,
+    sourceEntity: "INVENTORY",
+    risk: "LOW",
+    customerFacing: false,
+    defaultAction: "NOTIFY",
+    policyCategory: "inventory",
+    needsModel: false,
+    description: "Available quantity reached zero. Notify managers only.",
+    invalidatedBy: [DOMAIN_EVENT_TYPES.INVENTORY_STOCK_RECEIVED],
   },
 };
 

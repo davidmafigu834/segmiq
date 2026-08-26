@@ -20,7 +20,9 @@ type NotificationRow = {
     | "BACKFILL_COMPLETE"
     | "WHATSAPP_CONNECTION_ALERT"
     | "QUOTATION_ALERT"
-    | "AGENT_ALERT";
+    | "AGENT_ALERT"
+    | "INVENTORY_ALERT"
+    | "COMMERCIAL_IMPORT";
   message: string;
   read: boolean;
   lead_id: string | null;

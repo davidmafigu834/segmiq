@@ -21,6 +21,9 @@ import {
   searchProactive,
   searchQuotations,
   searchSupport,
+  searchProducts,
+  searchPackages,
+  getInventoryAvailability,
 } from "./query";
 import { previousComparableRange, resolveDatePreset, isDatePreset } from "./dates";
 import {
@@ -83,6 +86,10 @@ export const MANAGER_TOOL_DEFINITIONS: AgentToolDefinition[] = [
   { name: "search_leads", description: "Search Leads with structured filters. Never invent scores.", inputSchema: { type: "object", properties: { status: { type: "array", items: { type: "string" } }, ownerName: { type: "string" }, hot: { type: "boolean" }, uncontacted: { type: "boolean" }, unassigned: { type: "boolean" }, facebook: { type: "boolean" }, hasDeal: { type: "boolean" }, createdPreset: { type: "string" } } } },
   { name: "search_deals", description: "Search Deals. Value is quoted/estimated Deal value, never called revenue unless stage is Won.", inputSchema: { type: "object", properties: { stage: { type: "array", items: { type: "string" } }, ownerName: { type: "string" }, minValue: { type: "number" }, noNextAction: { type: "boolean" }, noQuotation: { type: "boolean" }, inactiveDays: { type: "number" } } } },
   { name: "search_quotations", description: "Search quotations. Use pendingApproval for the approval queue.", inputSchema: { type: "object", properties: { pendingApproval: { type: "boolean" }, status: { type: "array", items: { type: "string" } }, minTotal: { type: "number" }, expiringDays: { type: "number" }, declined: { type: "boolean" }, sentPreset: { type: "string" } } } },
+  { name: "search_products", description: "Search products and services. Selling prices are live catalogue prices.", inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
+  { name: "search_packages", description: "Search commercial packages.", inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
+  { name: "get_inventory_availability", description: "Stock on hand / reserved / available for a product.", inputSchema: { type: "object", properties: { productId: { type: "string" } }, required: ["productId"] } },
+  { name: "adjust_inventory", description: "Adjust on-hand stock. Always requires confirmation. Does not change quotations.", inputSchema: { type: "object", properties: { productId: { type: "string" }, locationId: { type: "string" }, delta: { type: "number" }, reason: { type: "string" }, note: { type: "string" } }, required: ["productId", "locationId", "delta", "reason"] } },
   { name: "search_follow_ups", description: "Canonical follow-up work on leads.follow_up_date.", inputSchema: { type: "object", properties: { overdue: { type: "boolean" }, ownerName: { type: "string" } } } },
   { name: "search_appointments", description: "Callbacks on call_logs.callback_at.", inputSchema: { type: "object", properties: { preset: { type: "string" } } } },
   { name: "search_conversations", description: "WhatsApp conversations / Agent state.", inputSchema: { type: "object", properties: { waiting: { type: "boolean" }, humanNeeded: { type: "boolean" }, support: { type: "boolean" } } } },
@@ -190,6 +197,35 @@ async function maybeConfirm(opts: {
   return opts.execute();
 }
 
+async function runInventoryAdjust(
+  actor: ManagerActor,
+  opts: { productId: string; locationId: string; delta: number; reason: string; note: string | null }
+): Promise<ToolRun> {
+  const { adjustStock } = await import("@/lib/inventory/service");
+  const result = await adjustStock({
+    clientId: actor.clientId,
+    productId: opts.productId,
+    locationId: opts.locationId,
+    delta: opts.delta,
+    reason: opts.reason,
+    note: opts.note,
+    actorId: actor.userId,
+  });
+  return {
+    name: "adjust_inventory",
+    ok: !result.error,
+    summary: result as unknown as Record<string, unknown>,
+    blocks: [
+      {
+        type: "status",
+        kind: result.error ? "error" : "done",
+        message: result.error ?? `On hand is now ${result.onHand}. Available ${result.available}.`,
+      },
+    ],
+    phase: "Adjusting inventory",
+  };
+}
+
 export async function executeManagerTool(opts: {
   actor: ManagerActor;
   sessionId: string;
@@ -251,6 +287,55 @@ export async function executeManagerTool(opts: {
       sentRange: args.sentPreset && isDatePreset(args.sentPreset) ? resolveDatePreset(args.sentPreset) : undefined,
     });
     return { name, ok: true, summary: { count: block.totalMatched }, blocks: [block, { type: "text", text: tableReply(block) }], phase: "Reviewing quotations" };
+  }
+
+  if (name === "search_products") {
+    const q = String(input.query ?? "");
+    const block = await searchProducts(actor, q);
+    return { name, ok: true, summary: { matched: block.totalMatched }, blocks: [{ type: "text", text: tableReply(block) }, block], phase: "Searching products" };
+  }
+  if (name === "search_packages") {
+    const q = String(input.query ?? "");
+    const block = await searchPackages(actor, q);
+    return { name, ok: true, summary: { matched: block.totalMatched }, blocks: [{ type: "text", text: tableReply(block) }, block], phase: "Searching packages" };
+  }
+  if (name === "get_inventory_availability") {
+    const productId = String(input.productId ?? "");
+    const avail = await getInventoryAvailability(actor, productId);
+    return {
+      name,
+      ok: true,
+      summary: { available: avail.available, onHand: avail.onHand, reserved: avail.reserved, status: avail.status },
+      blocks: [
+        {
+          type: "text",
+          text: avail.trackInventory
+            ? `${avail.available} available (${avail.onHand} on hand, ${avail.reserved} reserved).`
+            : "This product is not stock-tracked.",
+        },
+      ],
+      phase: "Inventory",
+    };
+  }
+  if (name === "adjust_inventory") {
+    const productId = String(input.productId ?? "");
+    const locationId = String(input.locationId ?? "");
+    const delta = Number(input.delta);
+    const reason = String(input.reason ?? "");
+    const note = typeof input.note === "string" ? input.note : null;
+    return maybeConfirm({
+      actor,
+      sessionId: opts.sessionId,
+      toolName: name,
+      args: { productId, locationId, delta, reason, note },
+      preview: {
+        title: "Adjust inventory",
+        summary: `Change on-hand by ${delta} for this product. Quotations are not reserved or deducted.`,
+        records: [{ id: productId, label: productId }],
+        risk: "HIGH",
+      },
+      execute: () => runInventoryAdjust(actor, { productId, locationId, delta, reason, note }),
+    });
   }
 
   if (name === "search_follow_ups") {
@@ -603,6 +688,15 @@ export async function executeConfirmedTool(opts: {
   if (toolName === "cancel_proactive_job") {
     const result = await cancelProactiveAction({ actor, jobId: String(args.jobId) });
     return { name: toolName, ok: result.ok, summary: result as unknown as Record<string, unknown>, blocks: [{ type: "status", kind: result.ok ? "done" : "error", message: result.message }], phase: "Cancelling scheduled action" };
+  }
+  if (toolName === "adjust_inventory") {
+    return runInventoryAdjust(actor, {
+      productId: String(args.productId),
+      locationId: String(args.locationId),
+      delta: Number(args.delta),
+      reason: String(args.reason ?? ""),
+      note: typeof args.note === "string" ? args.note : null,
+    });
   }
   return {
     name: toolName,

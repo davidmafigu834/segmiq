@@ -80,6 +80,9 @@ export type QuotationWorkspacePayload = {
     awaitingApproverLabel: string | null;
   };
   marginVisibility: "none" | "health" | "percent" | "full";
+  commercialFlags: {
+    productPickerV2: boolean;
+  };
 };
 
 async function resolveUserName(
@@ -113,7 +116,7 @@ export async function loadQuotationWorkspace(
       .select("id, name, phone, email, contact_id, assigned_to_id, project_type, active_deal_id")
       .eq("id", leadId)
       .maybeSingle(),
-    supabase.from("clients").select("id, name").eq("id", quote.client_id).maybeSingle(),
+    supabase.from("clients").select("id, name, commercial_flags").eq("id", quote.client_id).maybeSingle(),
     supabase.from("quotation_settings").select("*").eq("client_id", quote.client_id).maybeSingle(),
     supabase
       .from("quotation_approval_policies")
@@ -292,6 +295,11 @@ export async function loadQuotationWorkspace(
       canCopySecureLink: Boolean(quote.public_token) && !quote.link_revoked_at,
       canRevokeSecureLink: isManager && Boolean(quote.public_token) && !quote.link_revoked_at,
       awaitingApproverLabel: approverLabel,
+    },
+    commercialFlags: {
+      productPickerV2: (client as { commercial_flags?: Record<string, unknown> } | null)?.commercial_flags?.[
+        "quotation.productPickerV2"
+      ] !== false,
     },
   };
 

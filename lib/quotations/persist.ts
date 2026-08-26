@@ -93,6 +93,11 @@ export async function saveItemsAndTotals(
         package_locked: Boolean(it.package_locked),
         offer_option_id: it.offer_option_id?.trim() || null,
         option_state: it.option_state || (it.is_optional ? "available" : "available"),
+        source_type: it.source_type ?? null,
+        product_id: it.product_id ?? null,
+        variant_id: it.variant_id ?? null,
+        package_expansion: it.package_expansion ?? null,
+        warranty_snapshot: it.warranty_snapshot ?? null,
         sort_order: idx,
       };
     });

@@ -138,6 +138,7 @@ export function CompanySidebar({
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
   const companyItems = companyNavBySection(COMPANY_NAVIGATION, "company");
+  const productsItems = companyNavBySection(COMPANY_NAVIGATION, "products");
   const toolsItems = companyNavBySection(COMPANY_NAVIGATION, "tools");
 
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {
@@ -230,6 +231,20 @@ export function CompanySidebar({
               />
             ))}
           </SalesNavSection>
+
+          <div className={cn(collapsedMode ? "mt-4" : "mt-5")}>
+            <SalesNavSection label="Products" collapsed={collapsedMode}>
+              {productsItems.map((item) => (
+                <CompanyNavItem
+                  key={item.id}
+                  item={item}
+                  active={item.match(pathname)}
+                  collapsed={collapsedMode}
+                  onNavigate={onCloseMobile}
+                />
+              ))}
+            </SalesNavSection>
+          </div>
 
           <div className={cn(collapsedMode ? "mt-4" : "mt-5")}>
             <SalesNavSection label="Tools" collapsed={collapsedMode}>

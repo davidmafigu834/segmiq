@@ -7,6 +7,7 @@ import { runCommercialCheck, totalsForCheck } from "@/lib/quotations/commercial-
 import { logQuotationEvent } from "@/lib/quotations/events";
 import { evaluateGovernance } from "@/lib/quotations/governance";
 import { loadPolicies } from "@/lib/quotations/evaluate-send";
+import { expandCommercialPackage } from "@/lib/packages/service";
 import { expandPackageToLineItems, type PackageComponentInput } from "@/lib/quotations/packages";
 import { loadQuotationWithItems, saveItemsAndTotals } from "@/lib/quotations/persist";
 import { allocateQuoteNumber, ensureQuotationSettings } from "@/lib/quotations/quote-number";
@@ -187,36 +188,49 @@ export async function executePrepareQuotationDraft(
 
   const settings = await ensureQuotationSettings(supabase, ctx.clientId);
 
-  const { data: pkg } = await supabase
-    .from("quotation_packages")
-    .select("*")
-    .eq("id", input.package_id)
-    .eq("client_id", ctx.clientId)
-    .eq("is_active", true)
-    .maybeSingle();
-  if (!pkg) return toolFailure("Package not found in this company's approved catalogue.");
-  const { data: components } = await supabase
-    .from("quotation_package_components")
-    .select("*")
-    .eq("package_id", pkg.id as string)
-    .order("display_order", { ascending: true });
-  const componentRows = (components ?? []) as unknown as PackageComponentInput[];
-  if (!packageHasSellableComponents(componentRows, pkg.fixed_price == null ? null : Number(pkg.fixed_price))) {
-    return toolFailure(
-      `Package "${pkg.name as string}" has no priced components. Add products and selling prices in the catalogue, then retry — do not quote from a presentation template.`
-    );
-  }
-  const items = expandPackageToLineItems({
-    packageId: pkg.id as string,
-    packageName: pkg.name as string,
-    pricingModel: pkg.pricing_model as string,
-    flexibility: pkg.flexibility as string,
-    fixedPrice: pkg.fixed_price == null ? null : Number(pkg.fixed_price),
-    discountPercent: Number(pkg.discount_percent) || 0,
-    components: componentRows,
+  let items: QuotationLineItemInput[] = [];
+  let sourceLabel = "";
+
+  const commercial = await expandCommercialPackage({
+    clientId: ctx.clientId,
+    packageId: input.package_id,
   });
+  if (!commercial.error && commercial.lines.length) {
+    items = commercial.lines;
+    const named = commercial.lines[0]?.item_name;
+    sourceLabel = `package "${named ?? input.package_id}"`;
+  } else {
+    const { data: pkg } = await supabase
+      .from("quotation_packages")
+      .select("*")
+      .eq("id", input.package_id)
+      .eq("client_id", ctx.clientId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!pkg) return toolFailure("Package not found in this company's approved catalogue.");
+    const { data: components } = await supabase
+      .from("quotation_package_components")
+      .select("*")
+      .eq("package_id", pkg.id as string)
+      .order("display_order", { ascending: true });
+    const componentRows = (components ?? []) as unknown as PackageComponentInput[];
+    if (!packageHasSellableComponents(componentRows, pkg.fixed_price == null ? null : Number(pkg.fixed_price))) {
+      return toolFailure(
+        `Package "${pkg.name as string}" has no priced components. Add products and selling prices in the catalogue, then retry — do not quote from a presentation template.`
+      );
+    }
+    items = expandPackageToLineItems({
+      packageId: pkg.id as string,
+      packageName: pkg.name as string,
+      pricingModel: pkg.pricing_model as string,
+      flexibility: pkg.flexibility as string,
+      fixedPrice: pkg.fixed_price == null ? null : Number(pkg.fixed_price),
+      discountPercent: Number(pkg.discount_percent) || 0,
+      components: componentRows,
+    });
+    sourceLabel = `package "${pkg.name as string}"`;
+  }
   if (!items.length) return toolFailure("The selected package has no components. Escalate for human review.");
-  const sourceLabel = `package "${pkg.name as string}"`;
 
   let templateId: string | null = null;
   let taxRate = Number(settings.default_tax_rate) || 0;

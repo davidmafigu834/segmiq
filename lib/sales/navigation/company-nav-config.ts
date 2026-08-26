@@ -2,15 +2,18 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   Bot,
+  Box,
   CalendarDays,
   Columns3,
   CreditCard,
   FileText,
   LayoutDashboard,
+  Package,
   ScanSearch,
   Settings,
   Users,
   UsersRound,
+  Warehouse,
 } from "lucide-react";
 
 export type CompanyNavBadgeKey = "whatsapp";
@@ -28,9 +31,12 @@ export type CompanyNavIconId =
   | "command"
   | "reports"
   | "billing"
-  | "settings";
+  | "settings"
+  | "products"
+  | "inventory"
+  | "packages";
 
-export type CompanyNavSectionId = "company" | "tools";
+export type CompanyNavSectionId = "company" | "products" | "tools";
 export type CompanyNavMobileSlot = "primary" | "more";
 
 export type CompanyNavItemConfig = {
@@ -63,6 +69,9 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   reports: BarChart3,
   billing: CreditCard,
   settings: Settings,
+  products: Box,
+  inventory: Warehouse,
+  packages: Package,
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -154,6 +163,33 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "company",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/customers"),
+  },
+  {
+    id: "products",
+    label: "Products",
+    href: "/client/products",
+    icon: "products",
+    section: "products",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/products"),
+  },
+  {
+    id: "inventory",
+    label: "Inventory",
+    href: "/client/inventory",
+    icon: "inventory",
+    section: "products",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/inventory"),
+  },
+  {
+    id: "packages",
+    label: "Packages",
+    href: "/client/packages",
+    icon: "packages",
+    section: "products",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/packages"),
   },
   {
     id: "command",

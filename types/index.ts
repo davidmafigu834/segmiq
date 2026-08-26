@@ -79,7 +79,9 @@ export type NotificationType =
   | "LEAD_FLAG"
   | "UNCONTACTED_MANAGER_ALERT"
   | "QUOTATION_ALERT"
-  | "AGENT_ALERT";
+  | "AGENT_ALERT"
+  | "INVENTORY_ALERT"
+  | "COMMERCIAL_IMPORT";
 
 export interface UserRow {
   id: string;
@@ -703,6 +705,11 @@ export interface QuotationLineItemRow {
   package_locked?: boolean;
   offer_option_id?: string | null;
   option_state?: "available" | "selected" | "declined" | string;
+  source_type?: "PRODUCT" | "SERVICE" | "PACKAGE" | "CUSTOM" | string | null;
+  product_id?: string | null;
+  variant_id?: string | null;
+  package_expansion?: Record<string, unknown> | null;
+  warranty_snapshot?: string | null;
 }
 
 export interface QuotationRow {
@@ -875,6 +882,11 @@ export interface QuotationLineItemInput {
   package_locked?: boolean | null;
   offer_option_id?: string | null;
   option_state?: "available" | "selected" | "declined" | string | null;
+  source_type?: "PRODUCT" | "SERVICE" | "PACKAGE" | "CUSTOM" | string | null;
+  product_id?: string | null;
+  variant_id?: string | null;
+  package_expansion?: Record<string, unknown> | null;
+  warranty_snapshot?: string | null;
 }
 
 // ---------------------------------------------------------------------------

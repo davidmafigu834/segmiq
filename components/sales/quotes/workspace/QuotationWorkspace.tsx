@@ -115,6 +115,15 @@ function toEditorItems(items: QuotationLineItemRow[] | undefined): EditorItem[] 
     option_group: it.option_group ?? null,
     cost_price: it.cost_price ?? null,
     image_url: it.image_url ?? null,
+    catalog_unit_price: it.catalog_unit_price != null ? Number(it.catalog_unit_price) : null,
+    price_override: Boolean(it.price_override),
+    package_id: it.package_id ?? null,
+    package_locked: Boolean(it.package_locked),
+    source_type: it.source_type ?? null,
+    product_id: it.product_id ?? null,
+    variant_id: it.variant_id ?? null,
+    package_expansion: it.package_expansion ?? null,
+    warranty_snapshot: it.warranty_snapshot ?? null,
   }));
 }
 
@@ -183,6 +192,11 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const [railOpen, setRailOpen] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItemRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [inventoryShortages, setInventoryShortages] = useState<
+    Array<{ name: string; requested: number; available: number }>
+  >([]);
+  const [priceFreshnessWarnings, setPriceFreshnessWarnings] = useState<string[]>([]);
+  const [inventoryPolicy, setInventoryPolicy] = useState<"off" | "warn" | "block">("warn");
   const dirtyRef = useRef(false);
   const skipFirstSave = useRef(true);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -256,15 +270,26 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
 
   useEffect(() => {
     if (!clientId) return;
-    fetch(`/api/clients/${clientId}/catalog`)
+    const pickerV2 = payload?.commercialFlags?.productPickerV2 !== false;
+    if (!pickerV2) {
+      fetch(`/api/clients/${clientId}/catalog`)
+        .then((r) => r.json())
+        .then((j: { items?: CatalogItemRow[] }) => setCatalog(j.items ?? []))
+        .catch(() => setCatalog([]));
+      fetch(`/api/clients/${clientId}/quotation-packages`)
+        .then((r) => r.json())
+        .then((j: { packages?: typeof packages }) => setPackages(j.packages ?? []))
+        .catch(() => setPackages([]));
+    }
+    fetch(`/api/clients/${clientId}/inventory`)
       .then((r) => r.json())
-      .then((j: { items?: CatalogItemRow[] }) => setCatalog(j.items ?? []))
-      .catch(() => setCatalog([]));
-    fetch(`/api/clients/${clientId}/quotation-packages`)
-      .then((r) => r.json())
-      .then((j: { packages?: typeof packages }) => setPackages(j.packages ?? []))
-      .catch(() => setPackages([]));
-  }, [clientId]);
+      .then((j: { settings?: { warnInsufficientStock?: boolean; blockInsufficientStock?: boolean } }) => {
+        if (j.settings?.blockInsufficientStock) setInventoryPolicy("block");
+        else if (j.settings?.warnInsufficientStock === false) setInventoryPolicy("off");
+        else setInventoryPolicy("warn");
+      })
+      .catch(() => setInventoryPolicy("warn"));
+  }, [clientId, payload?.commercialFlags?.productPickerV2]);
 
   const totals: QuoteTotals = useMemo(
     () =>
@@ -316,9 +341,53 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
         totals,
         governance,
         approval: approvalEval,
+        inventoryShortages,
+        inventoryPolicy,
+        priceFreshnessWarnings,
       }),
-    [q, payload, currency, validUntil, paymentTerms, items, totals, governance, approvalEval]
+    [q, payload, currency, validUntil, paymentTerms, items, totals, governance, approvalEval, inventoryShortages, inventoryPolicy, priceFreshnessWarnings]
   );
+
+  useEffect(() => {
+    if (!clientId || payload?.commercialFlags?.productPickerV2 === false) return;
+    const t = window.setTimeout(() => {
+      const body = items
+        .filter((it) => it.product_id)
+        .map((it) => ({
+          item_name: it.item_name,
+          quantity: it.quantity,
+          unit_price: it.unit_price,
+          catalog_unit_price: it.catalog_unit_price,
+          product_id: it.product_id,
+          variant_id: it.variant_id,
+          is_optional: it.is_optional,
+        }));
+      if (!body.length) {
+        setInventoryShortages([]);
+        setPriceFreshnessWarnings([]);
+        return;
+      }
+      fetch(`/api/clients/${clientId}/quote-items/live-check`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: body }),
+      })
+        .then((r) => r.json())
+        .then(
+          (j: {
+            inventoryShortages?: Array<{ name: string; requested: number; available: number }>;
+            priceFreshnessWarnings?: string[];
+          }) => {
+            setInventoryShortages(j.inventoryShortages ?? []);
+            setPriceFreshnessWarnings(j.priceFreshnessWarnings ?? []);
+          }
+        )
+        .catch(() => {
+          /* live check is advisory */
+        });
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [clientId, items, payload?.commercialFlags?.productPickerV2]);
 
   const templateReadiness = useMemo(() => {
     if (!q || !isSolarLayout(q.template_layout_key)) return null;
@@ -674,6 +743,19 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
     setItems((prev) => [
       ...prev,
       ...lines.map((it) => ({ ...it, key: nextKey(), is_optional: tab === "options" ? true : it.is_optional })),
+    ]);
+    setPickerOpen(null);
+  }
+
+  function addResolvedLines(sectionId: string, lines: QuotationLineItemInput[], optional = false) {
+    setItems((prev) => [
+      ...prev,
+      ...lines.map((it) => ({
+        ...it,
+        key: nextKey(),
+        section_id: it.section_id ?? sectionId,
+        is_optional: optional || Boolean(it.is_optional),
+      })),
     ]);
     setPickerOpen(null);
   }
@@ -1156,6 +1238,8 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
 
       {pickerOpen ? (
         <ProductPicker
+          clientId={q.client_id}
+          pickerV2={payload.commercialFlags?.productPickerV2 !== false}
           catalog={catalog}
           packages={packages}
           onClose={() => setPickerOpen(null)}
@@ -1164,6 +1248,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
             addCatalogItem(pickerOpen.sectionId, cat, optional);
           }}
           onSelectPackage={(pkg) => addPackage(pickerOpen.sectionId, pkg)}
+          onResolved={(lines) => addResolvedLines(pickerOpen.sectionId, lines, tab === "options")}
           onCustom={() => {
             addCustomItem(pickerOpen.sectionId, tab === "options");
             setPickerOpen(null);
@@ -2739,13 +2824,18 @@ function DetailsModal({
 }
 
 function ProductPicker({
+  clientId,
+  pickerV2,
   catalog,
   packages,
   onClose,
   onSelect,
   onSelectPackage,
+  onResolved,
   onCustom,
 }: {
+  clientId: string;
+  pickerV2: boolean;
   catalog: CatalogItemRow[];
   packages: Array<{
     id: string;
@@ -2769,10 +2859,80 @@ function ProductPicker({
     discount_percent?: number;
     components?: Array<Record<string, unknown>>;
   }) => void;
+  onResolved: (lines: QuotationLineItemInput[]) => void;
   onCustom: () => void;
 }) {
   const [q, setQ] = useState("");
   const [kind, setKind] = useState<"all" | "product" | "service" | "package">("all");
+  const [hits, setHits] = useState<
+    Array<{
+      id: string;
+      type: string;
+      name: string;
+      sku?: string | null;
+      price?: number | null;
+      currency?: string | null;
+      hasVariants?: boolean;
+      availability?: string | null;
+      availableQty?: number | null;
+      itemCount?: number;
+    }>
+  >([]);
+  const [variantFor, setVariantFor] = useState<{ id: string; name: string } | null>(null);
+  const [variants, setVariants] = useState<Array<{ id: string; name: string; sku?: string | null }>>([]);
+  const [busy, setBusy] = useState(false);
+  const { toast } = useSalesToast();
+
+  useEffect(() => {
+    if (!pickerV2) return;
+    const t = window.setTimeout(() => {
+      const type = kind === "all" ? "" : kind === "package" ? "PACKAGE" : kind === "service" ? "SERVICE" : "PRODUCT";
+      const params = new URLSearchParams({ q, limit: "12" });
+      if (type) params.set("type", type);
+      fetch(`/api/clients/${clientId}/commercial-search?${params}`)
+        .then((r) => r.json())
+        .then((j: { results?: typeof hits }) => setHits(j.results ?? []))
+        .catch(() => setHits([]));
+    }, 250);
+    return () => window.clearTimeout(t);
+  }, [clientId, q, kind, pickerV2]);
+
+  async function resolveHit(hit: (typeof hits)[0], variantId?: string) {
+    if (hit.hasVariants && hit.type !== "PACKAGE" && !variantId) {
+      const res = await fetch(`/api/clients/${clientId}/products/${hit.id}`);
+      const json = (await res.json()) as { product?: { variants?: Array<{ id: string; name: string; sku?: string | null; status?: string }> } };
+      const active = (json.product?.variants ?? []).filter((v) => v.status !== "INACTIVE");
+      setVariants(active);
+      setVariantFor({ id: hit.id, name: hit.name });
+      return;
+    }
+    setBusy(true);
+    try {
+      const sourceType = hit.type === "PACKAGE" ? "PACKAGE" : hit.type === "SERVICE" ? "SERVICE" : "PRODUCT";
+      const res = await fetch(`/api/clients/${clientId}/quote-items/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceType,
+          productId: sourceType === "PACKAGE" ? undefined : hit.id,
+          packageId: sourceType === "PACKAGE" ? hit.id : undefined,
+          variantId,
+          quantity: 1,
+        }),
+      });
+      const json = (await res.json()) as { lines?: QuotationLineItemInput[]; error?: string; warnings?: string[] };
+      if (!res.ok) {
+        toast({ title: json.error || "Could not add item", tone: "error" });
+        return;
+      }
+      if (json.warnings?.length) toast({ title: json.warnings[0], tone: "warning" });
+      onResolved(json.lines ?? []);
+    } finally {
+      setBusy(false);
+      setVariantFor(null);
+    }
+  }
+
   const filtered = catalog.filter((c) => {
     if (kind === "package") return false;
     if (kind === "product" && c.item_kind === "service") return false;
@@ -2780,9 +2940,11 @@ function ProductPicker({
     const hay = `${c.name} ${c.sku ?? ""} ${c.category ?? ""} ${c.description ?? ""}`.toLowerCase();
     return hay.includes(q.toLowerCase());
   });
-  const pkgFiltered = (kind === "all" || kind === "package")
-    ? packages.filter((p) => `${p.name} ${p.description ?? ""}`.toLowerCase().includes(q.toLowerCase()))
-    : [];
+  const pkgFiltered =
+    kind === "all" || kind === "package"
+      ? packages.filter((p) => `${p.name} ${p.description ?? ""}`.toLowerCase().includes(q.toLowerCase()))
+      : [];
+
   return (
     <Modal title="Add item" onClose={onClose}>
       <div className="mb-2 flex flex-wrap gap-1">
@@ -2807,37 +2969,78 @@ function ProductPicker({
         onChange={(e) => setQ(e.target.value)}
         autoFocus
       />
+      {variantFor ? (
+        <div className="mb-3 rounded-sales-sm border border-sales-border p-2">
+          <p className="mb-2 text-[12px] font-medium">Select a variant for {variantFor.name}</p>
+          {variants.map((v) => (
+            <button
+              key={v.id}
+              type="button"
+              className="flex w-full items-center justify-between rounded-sales-sm px-2 py-2 text-left text-[13px] hover:bg-sales-surface-hover"
+              onClick={() => void resolveHit({ id: variantFor.id, type: "PRODUCT", name: variantFor.name }, v.id)}
+              disabled={busy}
+            >
+              <span>{v.name}</span>
+              <span className="text-sales-text-muted">{v.sku}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="max-h-64 space-y-1 overflow-y-auto">
-        {pkgFiltered.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            className="flex w-full items-center justify-between rounded-sales-sm px-2 py-2 text-left hover:bg-sales-surface-hover"
-            onClick={() => onSelectPackage(p)}
-          >
-            <span>
-              <span className="block text-[13px] font-medium">{p.name}</span>
-              <span className="text-[11px] text-sales-text-muted">Package · {(p.components ?? []).length} items</span>
-            </span>
-          </button>
-        ))}
-        {filtered.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className="flex w-full items-center justify-between rounded-sales-sm px-2 py-2 text-left hover:bg-sales-surface-hover"
-            onClick={() => onSelect(c)}
-          >
-            <span>
-              <span className="block text-[13px] font-medium">{c.name}</span>
-              <span className="text-[11px] text-sales-text-muted">
-                {[c.item_kind === "service" ? "Service" : "Product", c.sku, c.category].filter(Boolean).join(" · ")}
-              </span>
-            </span>
-            <span className="text-[12.5px] font-semibold">{formatMoneyCompact(c.unit_price, c.currency)}</span>
-          </button>
-        ))}
-        {filtered.length === 0 && pkgFiltered.length === 0 ? (
+        {pickerV2
+          ? hits.map((h) => (
+              <button
+                key={`${h.type}-${h.id}`}
+                type="button"
+                className="flex w-full items-center justify-between rounded-sales-sm px-2 py-2 text-left hover:bg-sales-surface-hover"
+                onClick={() => void resolveHit(h)}
+                disabled={busy}
+              >
+                <span>
+                  <span className="block text-[13px] font-medium">{h.name}</span>
+                  <span className="text-[11px] text-sales-text-muted">
+                    {[h.type, h.sku, h.availability, h.hasVariants ? "variants" : null].filter(Boolean).join(" · ")}
+                  </span>
+                </span>
+                <span className="text-[12.5px] font-semibold">
+                  {h.price != null ? formatMoneyCompact(h.price, h.currency ?? "USD") : ""}
+                </span>
+              </button>
+            ))
+          : [
+              ...pkgFiltered.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-sales-sm px-2 py-2 text-left hover:bg-sales-surface-hover"
+                  onClick={() => onSelectPackage(p)}
+                >
+                  <span>
+                    <span className="block text-[13px] font-medium">{p.name}</span>
+                    <span className="text-[11px] text-sales-text-muted">
+                      Package · {(p.components ?? []).length} items
+                    </span>
+                  </span>
+                </button>
+              )),
+              ...filtered.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-sales-sm px-2 py-2 text-left hover:bg-sales-surface-hover"
+                  onClick={() => onSelect(c)}
+                >
+                  <span>
+                    <span className="block text-[13px] font-medium">{c.name}</span>
+                    <span className="text-[11px] text-sales-text-muted">
+                      {[c.item_kind === "service" ? "Service" : "Product", c.sku, c.category].filter(Boolean).join(" · ")}
+                    </span>
+                  </span>
+                  <span className="text-[12.5px] font-semibold">{formatMoneyCompact(c.unit_price, c.currency)}</span>
+                </button>
+              )),
+            ]}
+        {(pickerV2 ? hits.length === 0 : filtered.length === 0 && pkgFiltered.length === 0) ? (
           <p className="py-6 text-center text-[12.5px] text-sales-text-muted">
             {kind === "package" ? "No packages created yet" : "No catalogue matches"}
           </p>

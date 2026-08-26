@@ -318,22 +318,22 @@ async function loadCanonical(clientId: string): Promise<CanonicalSignals> {
       .eq("client_id", clientId)
       .maybeSingle(),
     supabase
-      .from("product_catalog")
+      .from("products")
       .select("id", { count: "exact", head: true })
       .eq("client_id", clientId)
-      .eq("is_active", true)
-      .eq("item_kind", "product"),
+      .eq("status", "ACTIVE")
+      .eq("item_type", "PRODUCT"),
     supabase
-      .from("product_catalog")
+      .from("products")
       .select("id", { count: "exact", head: true })
       .eq("client_id", clientId)
-      .eq("is_active", true)
-      .eq("item_kind", "service"),
+      .eq("status", "ACTIVE")
+      .eq("item_type", "SERVICE"),
     supabase
-      .from("quotation_packages")
+      .from("commercial_packages")
       .select("id", { count: "exact", head: true })
       .eq("client_id", clientId)
-      .eq("is_active", true),
+      .eq("status", "ACTIVE"),
     supabase
       .from("quote_templates")
       .select("id", { count: "exact", head: true })
