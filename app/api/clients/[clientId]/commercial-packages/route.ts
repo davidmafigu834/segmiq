@@ -9,6 +9,7 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     clientId: params.clientId,
     q: url.searchParams.get("q") ?? undefined,
     status: url.searchParams.get("status") ?? undefined,
+    productId: url.searchParams.get("productId") ?? undefined,
     canSeeCost: ctx.canSeeCost,
   });
   if (result.error) return jsonErr(result.error, 500);

@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Box, Plus } from "lucide-react";
 import { CommercialModulePage } from "./CommercialModulePage";
 import {
-  Badge,
   Button,
   DataTable,
   DataTableBody,
@@ -16,10 +15,13 @@ import {
   DataTableTh,
   EmptyState,
   SearchInput,
+  SegmentedControl,
   Select,
   Skeleton,
+  StatusDot,
 } from "@/components/sales/ui";
 import { formatMoney } from "@/lib/quotations/totals";
+import { statusLabel } from "./product-detail/types";
 import type { UserRole } from "@/types";
 
 type ProductRow = {
@@ -33,6 +35,10 @@ type ProductRow = {
   status: string;
   track_inventory: boolean;
   category_id: string | null;
+  category_name?: string | null;
+  primary_image_url?: string | null;
+  available_qty?: number | null;
+  inventory_status?: string;
 };
 
 export function CompanyProductsPage({
@@ -53,12 +59,18 @@ export function CompanyProductsPage({
   const router = useRouter();
   const [q, setQ] = useState("");
   const [dq, setDq] = useState("");
-  const [type, setType] = useState("ALL");
+  const [type, setType] = useState<"ALL" | "PRODUCT" | "SERVICE">("ALL");
   const [status, setStatus] = useState("ACTIVE");
+  const [categoryId, setCategoryId] = useState("");
+  const [brand, setBrand] = useState("");
+  const [inventory, setInventory] = useState("ALL");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ProductRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [typeCounts, setTypeCounts] = useState({ all: 0, products: 0, services: 0 });
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [brands, setBrands] = useState<string[]>([]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDq(q), 300);
@@ -67,7 +79,18 @@ export function CompanyProductsPage({
 
   useEffect(() => {
     setPage(1);
-  }, [dq, type, status]);
+  }, [dq, type, status, categoryId, brand, inventory]);
+
+  useEffect(() => {
+    fetch(`/api/clients/${clientId}/products/categories`)
+      .then((r) => r.json())
+      .then((j: { categories?: Array<{ id: string; name: string }> }) => setCategories(j.categories ?? []))
+      .catch(() => undefined);
+    fetch(`/api/clients/${clientId}/products?brands=1&limit=1`)
+      .then((r) => r.json())
+      .then((j: { brands?: string[] }) => setBrands(j.brands ?? []))
+      .catch(() => undefined);
+  }, [clientId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,12 +102,16 @@ export function CompanyProductsPage({
       page: String(page),
       limit: "50",
     });
+    if (categoryId) params.set("categoryId", categoryId);
+    if (brand) params.set("brand", brand);
+    if (inventory !== "ALL") params.set("inventory", inventory);
     fetch(`/api/clients/${clientId}/products?${params}`)
       .then((r) => r.json())
-      .then((j: { items?: ProductRow[]; total?: number }) => {
+      .then((j: { items?: ProductRow[]; total?: number; typeCounts?: { all: number; products: number; services: number } }) => {
         if (cancelled) return;
         setItems(j.items ?? []);
         setTotal(j.total ?? 0);
+        if (j.typeCounts) setTypeCounts(j.typeCounts);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -92,14 +119,10 @@ export function CompanyProductsPage({
     return () => {
       cancelled = true;
     };
-  }, [clientId, dq, type, status, page]);
+  }, [clientId, dq, type, status, categoryId, brand, inventory, page]);
 
   const pages = Math.max(1, Math.ceil(total / 50));
-
-  const empty = useMemo(
-    () => !loading && items.length === 0,
-    [loading, items.length]
-  );
+  const empty = useMemo(() => !loading && items.length === 0, [loading, items.length]);
 
   return (
     <CommercialModulePage
@@ -109,9 +132,6 @@ export function CompanyProductsPage({
       description="Manage the products and services your team sells."
       primaryAction={
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="md" onClick={() => router.push("/client/products/categories")}>
-            Categories
-          </Button>
           <Button variant="secondary" size="md" onClick={() => router.push("/client/products/import")}>
             Import
           </Button>
@@ -125,27 +145,56 @@ export function CompanyProductsPage({
             Export
           </Button>
           <Button size="md" leftIcon={<Plus size={15} />} onClick={() => router.push("/client/products/new")}>
-            New Product
+            New product
           </Button>
         </div>
       }
     >
       <div className="mt-4 flex flex-col gap-3">
+        <SearchInput value={q} onChange={setQ} placeholder="Search name, SKU, barcode or brand…" />
+        <SegmentedControl
+          aria-label="Product type"
+          value={type}
+          onChange={setType}
+          options={[
+            { value: "ALL", label: "All", badge: typeCounts.all },
+            { value: "PRODUCT", label: "Products", badge: typeCounts.products },
+            { value: "SERVICE", label: "Services", badge: typeCounts.services },
+          ]}
+        />
         <div className="flex flex-wrap items-center gap-2">
-          <div className="min-w-[220px] flex-1">
-            <SearchInput value={q} onChange={setQ} placeholder="Search name, SKU, barcode, brand…" />
-          </div>
-          <Select value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="ALL">All types</option>
-            <option value="PRODUCT">Products</option>
-            <option value="SERVICE">Services</option>
+          <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-auto min-w-[140px]">
+            <option value="">Category</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
           </Select>
-          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="ALL">All statuses</option>
+          <Select value={brand} onChange={(e) => setBrand(e.target.value)} className="w-auto min-w-[140px]">
+            <option value="">Brand</option>
+            {brands.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </Select>
+          <Select value={inventory} onChange={(e) => setInventory(e.target.value)} className="w-auto min-w-[140px]">
+            <option value="ALL">Inventory</option>
+            <option value="IN_STOCK">In stock</option>
+            <option value="LOW_STOCK">Low stock</option>
+            <option value="OUT_OF_STOCK">Out of stock</option>
+            <option value="NOT_TRACKED">Not tracked</option>
+          </Select>
+          <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-auto min-w-[140px]">
             <option value="ACTIVE">Active</option>
             <option value="INACTIVE">Inactive</option>
             <option value="ARCHIVED">Archived</option>
+            <option value="ALL">All statuses</option>
           </Select>
+          <Button variant="ghost" size="sm" onClick={() => router.push("/client/products/categories")}>
+            Categories
+          </Button>
         </div>
 
         {loading ? (
@@ -167,49 +216,66 @@ export function CompanyProductsPage({
           />
         ) : (
           <DataTable>
-            <DataTableEl>
-              <DataTableHead>
-                <DataTableRow>
-                  <DataTableTh>Product</DataTableTh>
-                  <DataTableTh>SKU</DataTableTh>
-                  <DataTableTh>Brand</DataTableTh>
-                  <DataTableTh className="text-right">Selling price</DataTableTh>
-                  <DataTableTh className="text-right">Available</DataTableTh>
-                  <DataTableTh>Status</DataTableTh>
-                </DataTableRow>
-              </DataTableHead>
-              <DataTableBody>
-                {items.map((p) => (
-                  <DataTableRow
-                    key={p.id}
-                    className="cursor-pointer hover:bg-sales-surface-subtle"
-                    onClick={() => router.push(`/client/products/${p.id}`)}
-                  >
-                    <DataTableTd>
-                      <div className="min-w-0">
-                        <div className="truncate text-[13px] font-medium text-sales-text-primary">{p.name}</div>
-                        <div className="mt-0.5 flex items-center gap-1.5">
-                          <Badge tone={p.item_type === "SERVICE" ? "info" : "neutral"} appearance="outline">
-                            {p.item_type === "SERVICE" ? "SERVICE" : "PRODUCT"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </DataTableTd>
-                    <DataTableTd className="font-mono text-[12px]">{p.sku || "—"}</DataTableTd>
-                    <DataTableTd>{p.brand || "—"}</DataTableTd>
-                    <DataTableTd className="text-right tabular-nums">
-                      {formatMoney(Number(p.selling_price) || 0, p.currency)}
-                    </DataTableTd>
-                    <DataTableTd className="text-right tabular-nums">
-                      {p.item_type === "SERVICE" || !p.track_inventory ? "—" : ""}
-                    </DataTableTd>
-                    <DataTableTd>
-                      <Badge tone={p.status === "ACTIVE" ? "success" : p.status === "ARCHIVED" ? "neutral" : "warning"}>
-                        {p.status}
-                      </Badge>
-                    </DataTableTd>
+              <DataTableEl>
+                <DataTableHead>
+                  <DataTableRow>
+                    <DataTableTh>Product</DataTableTh>
+                    <DataTableTh>SKU</DataTableTh>
+                    <DataTableTh>Category</DataTableTh>
+                    <DataTableTh className="text-right">Selling price</DataTableTh>
+                    <DataTableTh className="text-right">Available</DataTableTh>
+                    <DataTableTh>Status</DataTableTh>
                   </DataTableRow>
-                ))}
+                </DataTableHead>
+                <DataTableBody>
+                  {items.map((p) => (
+                    <DataTableRow
+                      key={p.id}
+                      className="cursor-pointer hover:bg-sales-surface-subtle"
+                      onClick={() => router.push(`/client/products/${p.id}`)}
+                    >
+                      <DataTableTd>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-sales-border bg-sales-surface-subtle">
+                            {p.primary_image_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={p.primary_image_url} alt="" className="h-full w-full object-contain" />
+                            ) : (
+                              <Box size={16} className="text-sales-text-muted" />
+                            )}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="truncate text-[13px] font-medium text-sales-text-primary">{p.name}</div>
+                            <div className="mt-0.5 text-[11px] text-sales-text-muted">
+                              {p.item_type === "SERVICE" ? "Service" : "Product"}
+                              {p.brand ? ` · ${p.brand}` : ""}
+                            </div>
+                          </div>
+                        </div>
+                      </DataTableTd>
+                      <DataTableTd className="font-mono text-[12px]">{p.sku || "—"}</DataTableTd>
+                      <DataTableTd>{p.category_name || "—"}</DataTableTd>
+                      <DataTableTd className="text-right tabular-nums">
+                        {formatMoney(Number(p.selling_price) || 0, p.currency)}
+                      </DataTableTd>
+                      <DataTableTd className="text-right tabular-nums">
+                        {p.item_type === "SERVICE" || !p.track_inventory
+                          ? "—"
+                          : p.available_qty == null
+                            ? "—"
+                            : Number(p.available_qty).toLocaleString()}
+                      </DataTableTd>
+                      <DataTableTd>
+                        <span className="inline-flex items-center gap-1.5 text-[12px] font-medium">
+                          <StatusDot
+                            tone={p.status === "ACTIVE" ? "brand" : p.status === "ARCHIVED" ? "neutral" : "warning"}
+                            size={6}
+                          />
+                          {statusLabel(p.status)}
+                        </span>
+                      </DataTableTd>
+                    </DataTableRow>
+                  ))}
               </DataTableBody>
             </DataTableEl>
           </DataTable>

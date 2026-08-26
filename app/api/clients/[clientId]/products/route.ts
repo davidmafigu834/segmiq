@@ -1,5 +1,5 @@
 import { commercialContext, jsonErr, jsonOk } from "@/lib/commercial/api";
-import { createProduct, listBrands, listProducts } from "@/lib/products/service";
+import { createProduct, listBrands, listProducts, listUnits } from "@/lib/products/service";
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const ctx = await commercialContext(req, params.clientId, "products.view");
@@ -20,6 +20,10 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   if (url.searchParams.get("brands") === "1") {
     const brands = await listBrands(params.clientId);
     return jsonOk({ ...result, brands });
+  }
+  if (url.searchParams.get("units") === "1") {
+    const units = await listUnits(params.clientId);
+    return jsonOk({ ...result, ...units });
   }
   return jsonOk(result);
 }

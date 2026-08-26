@@ -54,6 +54,7 @@ export function CompanyDashboardHeader({
   description = "Company health, team performance, and where to intervene.",
   primaryAction,
   titleActions,
+  hideTitleBlock = false,
 }: {
   unreadNotifications: number;
   notificationRole: UserRole;
@@ -67,6 +68,8 @@ export function CompanyDashboardHeader({
   primaryAction?: ReactNode;
   /** Filters, dates, or help links shown beside the page title. */
   titleActions?: ReactNode;
+  /** Product record workspaces put identity inside the content card. */
+  hideTitleBlock?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
@@ -162,6 +165,7 @@ export function CompanyDashboardHeader({
           </div>
         </div>
 
+        {hideTitleBlock ? null : (
         <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pt-4">
           <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
             <div className="min-w-0">
@@ -181,6 +185,7 @@ export function CompanyDashboardHeader({
             ) : null}
           </div>
         </div>
+        )}
       </header>
       {hubSheet}
     </>

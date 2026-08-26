@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { omitCostFields } from "@/lib/commercial/money";
+import { availableQty, stockStatus } from "@/lib/inventory/math";
 import type { ProductItemType, ProductStatus } from "@/lib/commercial/types";
 
 export type ProductListQuery = {
@@ -51,38 +52,87 @@ export async function listProducts(opts: ProductListQuery) {
   const { data, error, count } = await query;
   if (error) return { error: error.message, items: [], total: 0, page, limit };
 
-  let items = data ?? [];
-  if (opts.inventoryStatus && opts.inventoryStatus !== "ALL") {
-    const ids = items.filter((p) => p.track_inventory).map((p) => p.id as string);
-    const avail = new Map<string, number>();
-    if (ids.length) {
-      const { data: balances } = await supabase
-        .from("inventory_balances")
-        .select("product_id, on_hand, reserved, reorder_level")
-        .eq("client_id", opts.clientId)
-        .in("product_id", ids);
-      for (const b of balances ?? []) {
-        const id = b.product_id as string;
-        const a = (Number(b.on_hand) || 0) - (Number(b.reserved) || 0);
-        avail.set(id, (avail.get(id) ?? 0) + a);
-      }
-    }
-    items = items.filter((p) => {
-      if (!p.track_inventory || p.item_type === "SERVICE") return opts.inventoryStatus === "NOT_TRACKED";
-      const a = avail.get(p.id as string) ?? 0;
-      if (opts.inventoryStatus === "OUT_OF_STOCK") return a <= 0;
-      if (opts.inventoryStatus === "IN_STOCK") return a > 0;
-      if (opts.inventoryStatus === "LOW_STOCK") return a > 0 && a <= 5;
-      return true;
-    });
+  let items = (data ?? []) as Array<Record<string, unknown>>;
+  const categoryIds = [...new Set(items.map((p) => p.category_id as string | null).filter(Boolean))] as string[];
+  const catNames = new Map<string, string>();
+  if (categoryIds.length) {
+    const { data: cats } = await supabase.from("product_categories").select("id, name").in("id", categoryIds);
+    for (const c of cats ?? []) catNames.set(c.id as string, c.name as string);
   }
+
+  const trackedIds = items.filter((p) => p.track_inventory && p.item_type !== "SERVICE").map((p) => p.id as string);
+  const onHandMap = new Map<string, number>();
+  const reservedMap = new Map<string, number>();
+  const reorderMap = new Map<string, number | null>();
+  if (trackedIds.length) {
+    const { data: balances } = await supabase
+      .from("inventory_balances")
+      .select("product_id, on_hand, reserved, reorder_level")
+      .eq("client_id", opts.clientId)
+      .in("product_id", trackedIds);
+    for (const b of balances ?? []) {
+      const id = b.product_id as string;
+      onHandMap.set(id, (onHandMap.get(id) ?? 0) + (Number(b.on_hand) || 0));
+      reservedMap.set(id, (reservedMap.get(id) ?? 0) + (Number(b.reserved) || 0));
+      const reorder = b.reorder_level == null ? null : Number(b.reorder_level);
+      const prev = reorderMap.get(id);
+      if (reorder != null && (prev == null || reorder < prev)) reorderMap.set(id, reorder);
+    }
+  }
+
+  items = items.map((p) => {
+    const id = p.id as string;
+    const track = Boolean(p.track_inventory) && p.item_type !== "SERVICE";
+    const onHand = onHandMap.get(id) ?? 0;
+    const reserved = reservedMap.get(id) ?? 0;
+    const available = availableQty(onHand, reserved);
+    return {
+      ...p,
+      category_name: p.category_id ? catNames.get(p.category_id as string) ?? null : null,
+      on_hand: track ? onHand : null,
+      reserved: track ? reserved : null,
+      available_qty: track ? available : null,
+      inventory_status: stockStatus({
+        trackInventory: track,
+        available,
+        reorderLevel: reorderMap.get(id) ?? null,
+      }),
+    };
+  });
+
+  if (opts.inventoryStatus && opts.inventoryStatus !== "ALL") {
+    items = items.filter((p) => p.inventory_status === opts.inventoryStatus);
+  }
+
+  const typeCounts = await countProductTypes(opts);
 
   return {
     items: omitCostFields(items, opts.canSeeCost),
     total: count ?? items.length,
     page,
     limit,
+    typeCounts,
   };
+}
+
+async function countProductTypes(opts: ProductListQuery) {
+  const supabase = createAdminClient();
+  async function countFor(type?: ProductItemType) {
+    let q = supabase
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", opts.clientId);
+    if (opts.status && opts.status !== "ALL") q = q.eq("status", opts.status);
+    else q = q.neq("status", "ARCHIVED");
+    if (opts.categoryId) q = q.eq("category_id", opts.categoryId);
+    if (opts.brand) q = q.ilike("brand", opts.brand);
+    if (type) q = q.eq("item_type", type);
+    q = applySearchFilter(q, opts.q);
+    const { count } = await q;
+    return count ?? 0;
+  }
+  const [all, products, services] = await Promise.all([countFor(), countFor("PRODUCT"), countFor("SERVICE")]);
+  return { all, products, services };
 }
 
 export async function getProduct(clientId: string, productId: string, canSeeCost: boolean) {
@@ -100,9 +150,66 @@ export async function getProduct(clientId: string, productId: string, canSeeCost
     supabase.from("product_attribute_defs").select("*").eq("product_id", productId).order("sort_order"),
     supabase.from("inventory_balances").select("*").eq("client_id", clientId).eq("product_id", productId),
   ]);
+  const categoryId = data.category_id as string | null;
+  const [{ data: category }, { data: packageItems }, { data: locations }] = await Promise.all([
+    categoryId
+      ? supabase.from("product_categories").select("id, name").eq("id", categoryId).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("commercial_package_items").select("package_id").eq("product_id", productId),
+    supabase.from("inventory_locations").select("id, name, status").eq("client_id", clientId),
+  ]);
+  const packageIds = [...new Set((packageItems ?? []).map((i) => i.package_id as string))];
+  const { data: usedPackages } = packageIds.length
+    ? await supabase
+        .from("commercial_packages")
+        .select("id, name, status")
+        .eq("client_id", clientId)
+        .in("id", packageIds)
+        .neq("status", "ARCHIVED")
+    : { data: [] as Array<{ id: string; name: string; status: string }> };
+  const locName = new Map((locations ?? []).map((l) => [l.id as string, l.name as string]));
+  const locationRows = (balances ?? []).map((b) => {
+    const onHand = Number(b.on_hand) || 0;
+    const reserved = Number(b.reserved) || 0;
+    return {
+      locationId: b.location_id as string,
+      name: locName.get(b.location_id as string) ?? "Location",
+      onHand,
+      reserved,
+      available: availableQty(onHand, reserved),
+      reorderLevel: b.reorder_level == null ? null : Number(b.reorder_level),
+    };
+  });
+  const onHand = locationRows.reduce((s, l) => s + l.onHand, 0);
+  const reserved = locationRows.reduce((s, l) => s + l.reserved, 0);
+  const available = availableQty(onHand, reserved);
+  const track = Boolean(data.track_inventory) && data.item_type !== "SERVICE";
+  const reorderLevels = locationRows.map((l) => l.reorderLevel).filter((n): n is number => n != null);
+  const inventory = {
+    trackInventory: track,
+    onHand: track ? onHand : null,
+    reserved: track ? reserved : null,
+    available: track ? available : null,
+    reorderLevel: reorderLevels.length ? Math.min(...reorderLevels) : null,
+    status: stockStatus({
+      trackInventory: track,
+      available,
+      reorderLevel: reorderLevels.length ? Math.min(...reorderLevels) : null,
+    }),
+    locations: track ? locationRows : [],
+  };
   return {
     product: omitCostFields(
-      { ...data, variants: variants ?? [], attributeDefs: attrDefs ?? [], balances: balances ?? [] },
+      {
+        ...data,
+        variants: variants ?? [],
+        attributeDefs: attrDefs ?? [],
+        balances: balances ?? [],
+        category: category ?? null,
+        usedInPackages: usedPackages ?? [],
+        packageCount: (usedPackages ?? []).length,
+        inventory,
+      },
       canSeeCost
     ),
   };
@@ -215,6 +322,23 @@ export async function updateProduct(
   assign("category_id", input.category_id === undefined ? undefined : input.category_id || null);
   assign("description", input.description);
   assign("quotation_description", input.quotation_description);
+  if (input.item_type === "SERVICE" || input.item_type === "PRODUCT") {
+    if (input.item_type === "SERVICE" && existing.item_type !== "SERVICE") {
+      const { data: stockRows } = await supabase
+        .from("inventory_balances")
+        .select("on_hand")
+        .eq("client_id", clientId)
+        .eq("product_id", productId);
+      const onHand = (stockRows ?? []).reduce((s, r) => s + (Number(r.on_hand) || 0), 0);
+      if (onHand > 0) {
+        return { error: "Cannot convert to a Service while stock is on hand. Adjust inventory to zero first.", status: 409 as const };
+      }
+      updates.item_type = "SERVICE";
+      updates.track_inventory = false;
+    } else {
+      updates.item_type = input.item_type;
+    }
+  }
   if (input.status === "ACTIVE" || input.status === "INACTIVE" || input.status === "ARCHIVED") {
     updates.status = input.status;
   }
@@ -228,9 +352,10 @@ export async function updateProduct(
   if (input.min_selling_price !== undefined) {
     updates.min_selling_price = input.min_selling_price == null ? null : Number(input.min_selling_price);
   }
-  if (input.track_inventory !== undefined && existing.item_type !== "SERVICE") {
+  if (input.track_inventory !== undefined && existing.item_type !== "SERVICE" && updates.item_type !== "SERVICE") {
     updates.track_inventory = Boolean(input.track_inventory);
   }
+  if (updates.item_type === "SERVICE") updates.track_inventory = false;
   if (input.allow_fractional_qty !== undefined) updates.allow_fractional_qty = Boolean(input.allow_fractional_qty);
   assign("warranty", input.warranty);
   if (input.can_be_quoted !== undefined) updates.can_be_quoted = Boolean(input.can_be_quoted);
@@ -267,6 +392,11 @@ export async function updateProduct(
   }
   if (input.status === "ARCHIVED") {
     await logProductActivity(clientId, productId, actorId, "product.archived", {});
+  } else if (input.status && input.status !== existing.status) {
+    await logProductActivity(clientId, productId, actorId, "product.status_changed", {
+      old: existing.status,
+      new: input.status,
+    });
   }
   return { product: data };
 }
@@ -380,4 +510,71 @@ export async function listBrands(clientId: string): Promise<string[]> {
     if (b) set.add(b);
   }
   return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+export async function listUnits(clientId: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("units_of_measure")
+    .select("id, code, name, allow_fractional, is_builtin, client_id")
+    .or(`client_id.is.null,client_id.eq.${clientId}`)
+    .order("name");
+  if (error) return { error: error.message, units: [] as Array<Record<string, unknown>> };
+  return { units: data ?? [] };
+}
+
+export async function listProductActivity(clientId: string, productId: string, limit = 80) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("product_activity_events")
+    .select("id, event_type, event_data, actor_id, actor_name, created_at, package_id")
+    .eq("client_id", clientId)
+    .eq("product_id", productId)
+    .order("created_at", { ascending: false })
+    .limit(Math.min(200, limit));
+  if (error) return { error: error.message, events: [] as Array<Record<string, unknown>> };
+  const actorIds = [...new Set((data ?? []).map((e) => e.actor_id as string | null).filter(Boolean))] as string[];
+  const names = new Map<string, string>();
+  if (actorIds.length) {
+    const { data: users } = await supabase.from("users").select("id, name").in("id", actorIds);
+    for (const u of users ?? []) names.set(u.id as string, u.name as string);
+  }
+  return {
+    events: (data ?? []).map((e) => ({
+      ...e,
+      actor_name: e.actor_name || (e.actor_id ? names.get(e.actor_id as string) ?? null : null),
+    })),
+  };
+}
+
+export async function upsertAttributeDef(
+  clientId: string,
+  productId: string,
+  input: { id?: string; name: string; options?: string[]; sort_order?: number }
+) {
+  const name = input.name.trim();
+  if (!name) return { error: "Attribute name is required", status: 400 as const };
+  const supabase = createAdminClient();
+  const row = {
+    client_id: clientId,
+    product_id: productId,
+    name,
+    attr_type: "SELECT" as const,
+    options: input.options ?? [],
+    sort_order: input.sort_order ?? 0,
+  };
+  if (input.id) {
+    const { data, error } = await supabase
+      .from("product_attribute_defs")
+      .update(row)
+      .eq("id", input.id)
+      .eq("client_id", clientId)
+      .select("*")
+      .single();
+    if (error) return { error: error.message };
+    return { attributeDef: data };
+  }
+  const { data, error } = await supabase.from("product_attribute_defs").insert(row).select("*").single();
+  if (error) return { error: error.message };
+  return { attributeDef: data };
 }

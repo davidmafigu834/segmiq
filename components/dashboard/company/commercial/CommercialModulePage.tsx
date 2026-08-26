@@ -13,6 +13,7 @@ export function CommercialModulePage({
   description,
   primaryAction,
   titleActions,
+  hideTitleBlock = false,
   children,
 }: {
   chrome: {
@@ -25,10 +26,11 @@ export function CommercialModulePage({
     whatsappBadge?: number;
   };
   breadcrumb: string;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   primaryAction?: ReactNode;
   titleActions?: ReactNode;
+  hideTitleBlock?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -53,6 +55,7 @@ export function CommercialModulePage({
           description={description}
           primaryAction={primaryAction}
           titleActions={titleActions}
+          hideTitleBlock={hideTitleBlock}
         />
         {children}
       </CompanyWorkspaceShell>

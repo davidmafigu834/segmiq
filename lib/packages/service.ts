@@ -10,6 +10,7 @@ export async function listPackages(opts: {
   clientId: string;
   q?: string;
   status?: string;
+  productId?: string;
   canSeeCost: boolean;
 }) {
   const supabase = createAdminClient();
@@ -23,11 +24,20 @@ export async function listPackages(opts: {
   if (opts.q?.trim()) q = q.ilike("name", `%${opts.q.trim()}%`);
   const { data, error } = await q;
   if (error) return { error: error.message, packages: [] };
-  const ids = (data ?? []).map((p) => p.id as string);
+  let rows = data ?? [];
+  if (opts.productId) {
+    const { data: items } = await supabase
+      .from("commercial_package_items")
+      .select("package_id")
+      .eq("product_id", opts.productId);
+    const ids = new Set((items ?? []).map((i) => i.package_id as string));
+    rows = rows.filter((p) => ids.has(p.id as string));
+  }
+  const ids = rows.map((p) => p.id as string);
   const { data: items } = ids.length
     ? await supabase.from("commercial_package_items").select("*").in("package_id", ids).order("sort_order")
     : { data: [] as Array<Record<string, unknown>> };
-  const packages = (data ?? []).map((pkg) => {
+  const packages = rows.map((pkg) => {
     const pkgItems = (items ?? []).filter((i) => i.package_id === pkg.id);
     return {
       ...pkg,

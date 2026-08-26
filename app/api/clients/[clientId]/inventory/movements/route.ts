@@ -59,6 +59,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     reason: String(body.reason ?? ""),
     note: (body.note as string | null) ?? null,
     actorId: ctx.actor.userId,
+    movementType: typeof body.movementType === "string" ? body.movementType : undefined,
   });
   if (result.error) return jsonErr(result.error, result.status ?? 400);
   return jsonOk(result);
