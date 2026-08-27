@@ -228,7 +228,7 @@ export async function fetchSalespersonTasks(opts: {
   const { data: openLeadsRaw, error: openErr } = await supabase
     .from("leads")
     .select(
-      "id, name, phone, source, status, follow_up_date, assigned_to_id, score, manual_priority, project_type, form_data, clients ( name )"
+      "id, name, phone, source, status, follow_up_date, assigned_to_id, score, manual_priority, project_type, form_data, clients!leads_client_id_fkey ( name )"
     )
     .eq("assigned_to_id", opts.userId)
     .not("follow_up_date", "is", null)
@@ -300,7 +300,7 @@ export async function fetchSalespersonTasks(opts: {
     const { data: completedLeads } = await supabase
       .from("leads")
       .select(
-        "id, name, phone, source, status, follow_up_date, assigned_to_id, score, manual_priority, project_type, form_data, clients ( name )"
+        "id, name, phone, source, status, follow_up_date, assigned_to_id, score, manual_priority, project_type, form_data, clients!leads_client_id_fkey ( name )"
       )
       .in("id", completedLeadIds)
       .eq("assigned_to_id", opts.userId);

@@ -11,7 +11,7 @@ async function leadClientMap(
   if (leadIds.length === 0) return {};
   const { data } = await supabase
     .from("leads")
-    .select("id, name, created_at, clients ( name )")
+    .select("id, name, created_at, clients!leads_client_id_fkey ( name )")
     .in("id", leadIds);
   const out: Record<string, { name: string; clientName: string; createdAt: string }> = {};
   for (const row of data ?? []) {
@@ -37,7 +37,7 @@ export async function fetchActivityEvents(limit = 15): Promise<ActivityEventDTO[
   ] = await Promise.all([
     supabase
       .from("leads")
-      .select("id, name, created_at, clients ( name )")
+      .select("id, name, created_at, clients!leads_client_id_fkey ( name )")
       .order("created_at", { ascending: false })
       .limit(40),
     supabase

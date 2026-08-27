@@ -21,6 +21,7 @@ import { computeWhatsAppHubReport, type WhatsAppHubReport } from "@/lib/whatsapp
 import { buildSoloBusinessPulseMetrics, type PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 import { classifyLeadLane, parseBudgetValue } from "@/lib/lead-lanes";
 import { getDailyMirrorCoachingLine } from "@/lib/ai/mirror-coaching";
+import { LEADS_CLIENTS_EMBED } from "@/lib/supabase/embeds";
 
 // Raw campaign_qualifiers row shape (read-only; table added in migration 037).
 type CampaignQualifierRow = {
@@ -307,7 +308,31 @@ async function fetchActiveClientsForDashboard(
     .order("name");
 }
 
-export async function fetchAgencyDashboardData() {
+const EMPTY_AGENCY_DASHBOARD = {
+  leadsToday: 0,
+  leadsYesterday: 0,
+  dayDeltaPct: 0,
+  leadsDeltaNeutral: true,
+  contactRate: 0,
+  contactRateLastWeek: 0,
+  contactRateDeltaPts: 0,
+  dealsWonMTD: { count: 0, valueSum: 0 },
+  avgResponseTime: null as number | null,
+  avgResponseDeltaMinutes: null as number | null,
+  uncontactedFlags: [] as UncontactedFlagRow[],
+  recentLeads: [] as RecentLeadRow[],
+  clientPerf: [] as ClientPerfRow[],
+  pipelineByStatus: {
+    NEW: 0,
+    CONTACTED: 0,
+    QUALIFIED: 0,
+    NEGOTIATING: 0,
+    WON: 0,
+    LOST: 0,
+  },
+};
+
+async function loadAgencyDashboardData() {
   const supabase = createAdminClient();
   const now = new Date();
   const todayStartD = startOfTodayLocal();
@@ -350,12 +375,12 @@ export async function fetchAgencyDashboardData() {
     supabase.from("leads").select("id, deal_value").eq("status", "WON").gte("updated_at", monthStart),
     supabase
       .from("leads")
-      .select("id, created_at, client_id, clients ( name, response_time_limit_hours )")
+      .select(`id, created_at, client_id, ${LEADS_CLIENTS_EMBED} ( name, response_time_limit_hours )`)
       .eq("status", "NEW"),
     supabase.from("clients").select("id, name, response_time_limit_hours").eq("is_active", true),
     supabase
       .from("leads")
-      .select("id, name, phone, budget, source, status, created_at, assigned_to_id, clients ( name )")
+      .select(`id, name, phone, budget, source, status, created_at, assigned_to_id, ${LEADS_CLIENTS_EMBED} ( name )`)
       .order("created_at", { ascending: false })
       .limit(10),
     supabase
@@ -384,29 +409,7 @@ export async function fetchAgencyDashboardData() {
     pipelineLeadsRes.error;
   if (batchErr) {
     console.error("[dashboard-data] batch 1 failed:", batchErr.message);
-    return {
-      leadsToday: 0,
-      leadsYesterday: 0,
-      dayDeltaPct: 0,
-      leadsDeltaNeutral: true,
-      contactRate: 0,
-      contactRateLastWeek: 0,
-      contactRateDeltaPts: 0,
-      dealsWonMTD: { count: 0, valueSum: 0 },
-      avgResponseTime: null,
-      avgResponseDeltaMinutes: null,
-      uncontactedFlags: [],
-      recentLeads: [],
-      clientPerf: [],
-      pipelineByStatus: {
-        NEW: 0,
-        CONTACTED: 0,
-        QUALIFIED: 0,
-        NEGOTIATING: 0,
-        WON: 0,
-        LOST: 0,
-      },
-    };
+    return EMPTY_AGENCY_DASHBOARD;
   }
 
   const monthLeadRows = monthLeadsAllRes.data ?? [];
@@ -610,16 +613,26 @@ export async function fetchAgencyDashboardData() {
   };
 }
 
+export async function fetchAgencyDashboardData() {
+  try {
+    return await loadAgencyDashboardData();
+  } catch (e) {
+    console.error("[dashboard-data] uncaught:", e);
+    return EMPTY_AGENCY_DASHBOARD;
+  }
+}
+
 export async function fetchRecentLeadsForClient(clientId: string): Promise<RecentLeadRow[]> {
   const supabase = createAdminClient();
   const { data: recentRaw, error } = await supabase
     .from("leads")
-    .select("id, name, phone, budget, source, status, created_at, assigned_to_id, clients ( name )")
+    .select(`id, name, phone, budget, source, status, created_at, assigned_to_id, ${LEADS_CLIENTS_EMBED} ( name )`)
     .eq("client_id", clientId)
     .order("created_at", { ascending: false })
     .limit(10);
   if (error) {
-    throw new Error(`Recent leads (client): ${error.message}`);
+    console.error("[dashboard-data] recent leads (client):", error.message);
+    return [];
   }
   if (!recentRaw?.length) return [];
   const assigneeIds = Array.from(new Set(recentRaw.map((l) => l.assigned_to_id).filter(Boolean))) as string[];

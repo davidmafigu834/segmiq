@@ -47,7 +47,9 @@ export function reasonText(
   code: SalesActionReasonCode,
   ctx?: Record<string, string | number | null | undefined>
 ): string {
-  return REASON_TEMPLATES[code](ctx);
+  const template = REASON_TEMPLATES[code];
+  if (!template) return "";
+  return template(ctx);
 }
 
 export function actionTypeLabel(type: SalesActionType): string {

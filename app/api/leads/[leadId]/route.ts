@@ -23,7 +23,7 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
   const supabase = createAdminClient();
   const { data: lead } = await supabase
     .from("leads")
-    .select("*, clients ( name, industry )")
+    .select("*, clients!leads_client_id_fkey ( name, industry )")
     .eq("id", params.leadId)
     .maybeSingle();
   if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     const { data: leads } = await supabase
       .from("leads")
       .select(
-        "id, name, phone, email, budget, project_type, source, status, deal_value, created_at, updated_at, follow_up_date, assigned_to_id, client_id, form_data, magic_token, clients ( id, name, slug, logo_url, response_time_limit_hours )"
+        "id, name, phone, email, budget, project_type, source, status, deal_value, created_at, updated_at, follow_up_date, assigned_to_id, client_id, form_data, magic_token, clients!leads_client_id_fkey ( id, name, slug, logo_url, response_time_limit_hours )"
       )
       .in("id", idList)
       .eq("is_archived", false);

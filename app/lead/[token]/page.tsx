@@ -33,7 +33,7 @@ export default async function MagicLeadPage({ params }: { params: { token: strin
     .select(
       `id, name, phone, email, source, status, budget, project_type, timeline,
       form_data, created_at, magic_token_expires_at, client_id, assigned_to_id,
-      clients (id, name, slug),
+      clients!leads_client_id_fkey (id, name, slug),
       assigned_to:users!assigned_to_id (id, name),
       call_logs (id, outcome, notes, follow_up_date, created_at, users (name))`
     )

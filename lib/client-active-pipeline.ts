@@ -18,7 +18,7 @@ export async function getActivePipelineLeads(clientId: string, limit = 50): Prom
   const { data, error } = await supabase
     .from("leads")
     .select(
-      `*, clients ( response_time_limit_hours ), assigned_to:users!assigned_to_id ( name )`
+      `*, clients!leads_client_id_fkey ( response_time_limit_hours ), assigned_to:users!assigned_to_id ( name )`
     )
     .eq("client_id", clientId)
     .in("status", ["NEW", "CONTACTED", "NEGOTIATING", "PROPOSAL_SENT"])

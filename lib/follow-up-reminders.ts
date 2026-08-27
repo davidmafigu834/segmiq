@@ -165,7 +165,7 @@ async function fetchTodaysFollowUps(
 
   let byDateQuery = supabase
     .from("leads")
-    .select("*, clients ( name, twilio_whatsapp_override )")
+    .select("*, clients!leads_client_id_fkey ( name, twilio_whatsapp_override )")
     .eq("follow_up_date", todayStr)
     .in("status", [...ACTIVE_STATUSES])
     .not("assigned_to_id", "is", null);
@@ -175,7 +175,7 @@ async function fetchTodaysFollowUps(
   let callbackQuery = supabase
     .from("call_logs")
     .select(
-      "id, lead_id, callback_at, created_at, leads!inner ( *, clients ( name, twilio_whatsapp_override ) )"
+      "id, lead_id, callback_at, created_at, leads!inner ( *, clients!leads_client_id_fkey ( name, twilio_whatsapp_override ) )"
     )
     .not("callback_at", "is", null)
     .gte("callback_at", dayStart)
@@ -236,7 +236,7 @@ async function fetchT30Candidates(leadIdFilter?: string): Promise<
   let query = supabase
     .from("call_logs")
     .select(
-      "id, lead_id, callback_at, created_at, leads!inner ( *, clients ( name, twilio_whatsapp_override ) )"
+      "id, lead_id, callback_at, created_at, leads!inner ( *, clients!leads_client_id_fkey ( name, twilio_whatsapp_override ) )"
     )
     .not("callback_at", "is", null)
     .gte("callback_at", windowStart)

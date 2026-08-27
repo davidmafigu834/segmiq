@@ -11,13 +11,13 @@ export async function GET() {
   const supabase = createAdminClient();
   const { data: recentLeads } = await supabase
     .from("leads")
-    .select("id, name, status, created_at, client_id, clients ( name )")
+    .select("id, name, status, created_at, client_id, clients!leads_client_id_fkey ( name )")
     .order("created_at", { ascending: false })
     .limit(5);
 
   const { data: won } = await supabase
     .from("leads")
-    .select("id, name, updated_at, clients ( name )")
+    .select("id, name, updated_at, clients!leads_client_id_fkey ( name )")
     .eq("status", "WON")
     .order("updated_at", { ascending: false })
     .limit(5);

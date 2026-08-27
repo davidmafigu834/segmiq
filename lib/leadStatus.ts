@@ -1,6 +1,6 @@
 import type { LeadRow } from "@/types";
 
-/** Lead row with joined client SLA (e.g. Supabase `select('*, clients ( response_time_limit_hours )')`). */
+/** Lead row with joined client SLA (e.g. Supabase `select('*, clients!leads_client_id_fkey ( response_time_limit_hours )')`). */
 export type LeadWithClientResponseLimit = LeadRow & {
   clients: { response_time_limit_hours: number | null } | null;
 };

@@ -282,7 +282,7 @@ async function loadLeadsWithMemoryPipeline(
   const supabase = createAdminClient();
   const { from, to } = dateBounds(f);
   const select =
-    "id, name, phone, email, budget, project_type, source, status, deal_value, created_at, updated_at, follow_up_date, assigned_to_id, client_id, form_data, magic_token, clients ( id, name, slug, logo_url, response_time_limit_hours )";
+    "id, name, phone, email, budget, project_type, source, status, deal_value, created_at, updated_at, follow_up_date, assigned_to_id, client_id, form_data, magic_token, clients!leads_client_id_fkey ( id, name, slug, logo_url, response_time_limit_hours )";
 
   let q = applyCommonFilters(supabase.from("leads").select(select), f, from, to);
   if (f.status !== "all" && f.status !== "uncontacted") q = q.eq("status", f.status);
@@ -345,7 +345,7 @@ export async function fetchFilteredLeads(f: LeadFilters): Promise<FetchResult> {
     const supabase = createAdminClient();
     const { from, to } = dateBounds(f);
     const select =
-      "id, name, phone, email, budget, project_type, source, status, deal_value, created_at, updated_at, follow_up_date, assigned_to_id, client_id, form_data, magic_token, clients ( id, name, slug, logo_url, response_time_limit_hours )";
+      "id, name, phone, email, budget, project_type, source, status, deal_value, created_at, updated_at, follow_up_date, assigned_to_id, client_id, form_data, magic_token, clients!leads_client_id_fkey ( id, name, slug, logo_url, response_time_limit_hours )";
 
     const needsMemorySort =
       f.status === "uncontacted" ||
@@ -391,7 +391,7 @@ export async function fetchLeadsForExport(f: LeadFilters, maxRows = 10_000): Pro
     const supabase = createAdminClient();
     const { from, to } = dateBounds(f);
     const select =
-      "id, name, phone, email, budget, source, status, deal_value, created_at, updated_at, follow_up_date, assigned_to_id, client_id, form_data, magic_token, project_type, clients ( id, name, slug, logo_url, response_time_limit_hours )";
+      "id, name, phone, email, budget, source, status, deal_value, created_at, updated_at, follow_up_date, assigned_to_id, client_id, form_data, magic_token, project_type, clients!leads_client_id_fkey ( id, name, slug, logo_url, response_time_limit_hours )";
 
     const needsMemorySort =
       f.status === "uncontacted" ||
@@ -459,7 +459,7 @@ export async function getStatusCounts(fBase: LeadFilters): Promise<StatusCounts>
     }
 
     const { data: newRows } = await applyCommonFilters(
-      supabase.from("leads").select("id, created_at, clients ( response_time_limit_hours )"),
+      supabase.from("leads").select("id, created_at, clients!leads_client_id_fkey ( response_time_limit_hours )"),
       common,
       from,
       to

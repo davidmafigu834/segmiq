@@ -92,7 +92,7 @@ export async function processLeadIntelligence(leadId: string): Promise<void> {
       form_data,
       created_at,
       client_id,
-      clients (
+      clients!leads_client_id_fkey (
         name,
         industry
       )

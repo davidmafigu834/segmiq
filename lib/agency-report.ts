@@ -366,7 +366,7 @@ export async function computeAgencyReport(
   ) as string[];
   const { data: usersData } =
     assigneeIds.length > 0
-      ? await supabase.from("users").select("id, name, client_id, clients ( name )").in("id", assigneeIds)
+      ? await supabase.from("users").select("id, name, client_id, clients!users_client_id_fkey ( name )").in("id", assigneeIds)
       : { data: [] as { id: string; name: string; client_id: string | null; clients: { name: string } | null }[] };
 
   const userById = Object.fromEntries(

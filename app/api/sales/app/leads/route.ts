@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   const supabase = createAdminClient();
   const first = await supabase
     .from("leads")
-    .select("*, clients ( name, industry, response_time_limit_hours )")
+    .select("*, clients!leads_client_id_fkey ( name, industry, response_time_limit_hours )")
     .eq("assigned_to_id", session!.userId)
     .or("is_archived.is.null,is_archived.eq.false")
     .order("created_at", { ascending: false });
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   if (first.error && String(first.error.message || "").includes("column leads.is_archived does not exist")) {
     const retry = await supabase
       .from("leads")
-      .select("*, clients ( name, industry, response_time_limit_hours )")
+      .select("*, clients!leads_client_id_fkey ( name, industry, response_time_limit_hours )")
       .eq("assigned_to_id", session!.userId)
       .order("created_at", { ascending: false });
     leads = retry.data ?? [];
