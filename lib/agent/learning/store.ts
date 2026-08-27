@@ -121,6 +121,36 @@ async function recountCandidate(candidateId: string, clientId: string): Promise<
     .eq("client_id", clientId);
 }
 
+function evidencePayload(
+  opts: {
+    clientId: string;
+    conversationId: string;
+    salespersonId: string | null;
+    customerId: string | null;
+    dealId: string | null;
+    source: string;
+    excerpt: string;
+    messageIds: string[];
+    segmentStartId?: string | null;
+    segmentEndId?: string | null;
+  },
+  extra: { candidateId: string | null; knowledgeId: string | null; fingerprint: string }
+) {
+  return {
+    clientId: opts.clientId,
+    conversationId: opts.conversationId,
+    salespersonId: opts.salespersonId,
+    customerId: opts.customerId,
+    dealId: opts.dealId,
+    source: opts.source,
+    excerpt: opts.excerpt,
+    messageIds: opts.messageIds,
+    segmentStartId: opts.segmentStartId,
+    segmentEndId: opts.segmentEndId,
+    ...extra,
+  };
+}
+
 export async function ingestObservation(opts: {
   clientId: string;
   observation: LearningObservation;
@@ -147,25 +177,25 @@ export async function ingestObservation(opts: {
   ].join(":");
 
   if (opts.comparison.state === "SUPPORTS_EXISTING" && opts.comparison.existingType === "LEARNED_KNOWLEDGE" && opts.comparison.existingId) {
-    await attachEvidence({
-      clientId: opts.clientId,
-      candidateId: null,
-      knowledgeId: opts.comparison.existingId,
-      fingerprint: evidenceFp,
-      ...opts,
-    });
+    await attachEvidence(
+      evidencePayload(opts, {
+        candidateId: null,
+        knowledgeId: opts.comparison.existingId,
+        fingerprint: evidenceFp,
+      })
+    );
     await reinforceKnowledge(opts.clientId, opts.comparison.existingId);
     return { action: "knowledge_reinforced", id: opts.comparison.existingId };
   }
 
   if (opts.comparison.state === "DUPLICATES" && opts.comparison.existingId) {
-    await attachEvidence({
-      clientId: opts.clientId,
-      candidateId: opts.comparison.existingId,
-      knowledgeId: null,
-      fingerprint: evidenceFp,
-      ...opts,
-    });
+    await attachEvidence(
+      evidencePayload(opts, {
+        candidateId: opts.comparison.existingId,
+        knowledgeId: null,
+        fingerprint: evidenceFp,
+      })
+    );
     await recountCandidate(opts.comparison.existingId, opts.clientId);
     return { action: "reinforced", id: opts.comparison.existingId };
   }
@@ -220,25 +250,25 @@ export async function ingestObservation(opts: {
       .in("status", ["DETECTED", "REVIEWING"])
       .maybeSingle();
     if (existing) {
-      await attachEvidence({
-        clientId: opts.clientId,
-        candidateId: (existing as Row).id as string,
-        knowledgeId: null,
-        fingerprint: evidenceFp,
-        ...opts,
-      });
+      await attachEvidence(
+        evidencePayload(opts, {
+          candidateId: (existing as Row).id as string,
+          knowledgeId: null,
+          fingerprint: evidenceFp,
+        })
+      );
       await recountCandidate((existing as Row).id as string, opts.clientId);
       return { action: "reinforced", id: (existing as Row).id as string };
     }
     const inserted = await insertCandidate(opts, key, previouslyRejected, resurfacedAt);
     if (inserted) {
-      await attachEvidence({
-        clientId: opts.clientId,
-        candidateId: inserted.id,
-        knowledgeId: null,
-        fingerprint: evidenceFp,
-        ...opts,
-      });
+      await attachEvidence(
+        evidencePayload(opts, {
+          candidateId: inserted.id,
+          knowledgeId: null,
+          fingerprint: evidenceFp,
+        })
+      );
       await recountCandidate(inserted.id, opts.clientId);
     }
     return { action: "created", id: inserted?.id ?? null };
@@ -246,13 +276,13 @@ export async function ingestObservation(opts: {
 
   const inserted = await insertCandidate(opts, key, previouslyRejected, resurfacedAt);
   if (inserted) {
-    await attachEvidence({
-      clientId: opts.clientId,
-      candidateId: inserted.id,
-      knowledgeId: null,
-      fingerprint: evidenceFp,
-      ...opts,
-    });
+    await attachEvidence(
+      evidencePayload(opts, {
+        candidateId: inserted.id,
+        knowledgeId: null,
+        fingerprint: evidenceFp,
+      })
+    );
     await recountCandidate(inserted.id, opts.clientId);
     await recordLearningAudit({
       clientId: opts.clientId,
