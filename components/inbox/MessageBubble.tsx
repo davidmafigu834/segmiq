@@ -102,9 +102,9 @@ export function MessageBubble({ message, onTeach }: Props) {
   if (isSystem) {
     return (
       <div className="flex justify-center px-2 py-0.5">
-        <div className="wa-timeline-card max-w-[min(92%,520px)] rounded-[10px] border border-[#E4E7EC] bg-[#F8FAFC] px-3.5 py-2.5 text-left">
+        <div className="wa-timeline-card max-w-[min(92%,520px)] rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3.5 py-2.5 text-left">
           {message.systemTitle ? (
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#475467]">
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
               {message.systemTitle}
             </div>
           ) : null}
@@ -129,11 +129,11 @@ export function MessageBubble({ message, onTeach }: Props) {
     const author = message.actorName ?? "Team";
     return (
       <div className="flex justify-center px-2 py-0.5">
-        <div className="wa-internal-note max-w-[min(88%,480px)] rounded-[10px] border border-[#E7DCC8] bg-[#FBF7F0] px-3.5 py-2.5 text-left">
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8A6D3B]">
+        <div className="wa-internal-note max-w-[min(88%,480px)] rounded-[10px] border border-sales-warning/30 bg-sales-warning-soft px-3.5 py-2.5 text-left">
+          <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-warning-fg">
             Internal note · {author} · {formatTime(message.createdAt)}
           </div>
-          <div className="whitespace-pre-wrap text-[12.5px] leading-snug text-[#3F3A33]">{message.text}</div>
+          <div className="whitespace-pre-wrap text-[12.5px] leading-snug text-sales-text-primary">{message.text}</div>
         </div>
       </div>
     );

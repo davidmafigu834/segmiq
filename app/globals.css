@@ -1399,6 +1399,20 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     color: var(--sales-text-primary) !important;
   }
 
+  .sales-dashboard-premium .wa-timeline-card,
+  .wa-hub-premium .wa-timeline-card {
+    border-color: var(--sales-border) !important;
+    background: var(--sales-surface-subtle) !important;
+    color: var(--sales-text-primary) !important;
+  }
+
+  .sales-dashboard-premium .wa-internal-note,
+  .wa-hub-premium .wa-internal-note {
+    border-color: color-mix(in srgb, var(--sales-warning) 30%, transparent) !important;
+    background: var(--sales-warning-soft) !important;
+    color: var(--sales-text-primary) !important;
+  }
+
   .sales-dashboard-premium .wa-filter-pill-active,
   .wa-hub-premium .wa-filter-pill-active {
     border-color: var(--sales-brand-border) !important;
