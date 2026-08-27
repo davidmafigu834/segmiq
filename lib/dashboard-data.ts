@@ -329,7 +329,7 @@ const EMPTY_AGENCY_DASHBOARD = {
     NEGOTIATING: 0,
     WON: 0,
     LOST: 0,
-  },
+  } as Record<string, number>,
 };
 
 async function loadAgencyDashboardData() {
