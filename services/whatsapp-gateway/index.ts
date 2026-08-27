@@ -49,6 +49,8 @@ type StoredAuth = {
   keys: Partial<Record<keyof SignalDataTypeMap, Record<string, unknown>>>;
 };
 
+const SESSION_PERSIST_DEBOUNCE_MS = 5_000;
+
 type ManagedSession = {
   connectionId: string;
   clientId: string;
@@ -58,6 +60,8 @@ type ManagedSession = {
   reconnectAttempts: number;
   closing: boolean;
   open: boolean;
+  persistTimer: ReturnType<typeof setTimeout> | null;
+  persistQueued: boolean;
   /**
    * Only an admin-initiated connect may surface a QR code. When a restore or
    * automatic reconnect is asked to re-pair, the stored session no longer
@@ -163,12 +167,36 @@ function parseAuth(raw: string | null): StoredAuth {
   return { creds: parsed.creds ?? initAuthCreds(), keys: parsed.keys ?? {} };
 }
 
-async function persistAuth(session: ManagedSession): Promise<void> {
-  if (session.closing) return;
+async function persistAuth(session: ManagedSession, opts?: { force?: boolean }): Promise<void> {
+  if (session.closing && !opts?.force) return;
+  session.persistQueued = false;
   await appRequest(
     `/api/internal/whatsapp/connections/${encodeURIComponent(session.connectionId)}/session`,
     "PUT",
     { serializedSession: serializeAuth(session.auth) }
+  );
+}
+
+function schedulePersistAuth(session: ManagedSession): void {
+  if (session.closing) return;
+  session.persistQueued = true;
+  if (session.persistTimer) return;
+  session.persistTimer = setTimeout(() => {
+    session.persistTimer = null;
+    void persistAuth(session).catch((error) =>
+      console.error("[whatsapp-gateway] auth persist failed", error)
+    );
+  }, SESSION_PERSIST_DEBOUNCE_MS);
+}
+
+async function flushPersistAuth(session: ManagedSession): Promise<void> {
+  if (session.persistTimer) {
+    clearTimeout(session.persistTimer);
+    session.persistTimer = null;
+  }
+  if (!session.persistQueued) return;
+  await persistAuth(session, { force: true }).catch((error) =>
+    console.error("[whatsapp-gateway] auth persist flush failed", error)
   );
 }
 
@@ -192,11 +220,11 @@ function authenticationState(auth: StoredAuth, persist: () => Promise<void>): Au
         }
         auth.keys[category] = bucket;
       }
-      await persist();
+      void persist();
     },
     clear: async () => {
       auth.keys = {};
-      await persist();
+      void persist();
     },
   } as AuthenticationState["keys"];
   return { creds: auth.creds, keys: keyStore };
@@ -316,6 +344,7 @@ async function startConnection(
 ): Promise<void> {
   const existing = sessions.get(connectionId);
   if (existing) {
+    await flushPersistAuth(existing);
     existing.closing = true;
     existing.socket.end(undefined);
     sessions.delete(connectionId);
@@ -338,8 +367,12 @@ async function startConnection(
     closing: false,
     allowQr: pairing.allowQr,
     freshPairing: pairing.freshPairing,
+    persistTimer: null,
+    persistQueued: false,
   } as ManagedSession;
-  const state = authenticationState(auth, () => persistAuth(placeholder));
+  const state = authenticationState(auth, async () => {
+    schedulePersistAuth(placeholder);
+  });
   const recentMessages = new Map<string, WAMessage["message"]>();
   const socket = makeWASocket({
     auth: {
@@ -368,13 +401,15 @@ async function startConnection(
     sentByGateway: new Set<string>(),
     recentManualSendTimestamps: [],
     recentMessages,
+    persistTimer: placeholder.persistTimer,
+    persistQueued: placeholder.persistQueued,
   });
   sessions.set(connectionId, session);
 
-  socket.ev.on("creds.update", async (updates) => {
+  socket.ev.on("creds.update", (updates) => {
     if (session.closing) return;
     Object.assign(auth.creds, updates);
-    await persistAuth(session).catch((error) => console.error("[whatsapp-gateway] auth persist failed", error));
+    schedulePersistAuth(session);
   });
   socket.ev.on("messages.upsert", async ({ messages, type }) => {
     if (!isLiveUpsertType(type)) return;
@@ -405,9 +440,7 @@ async function startConnection(
   socket.ev.on("connection.update", async (update) => {
     if (update.qr) {
       if (!session.allowQr) {
-        // The stored session was rejected during an unattended restore or
-        // reconnect. Pairing again requires an admin, so stop here rather than
-        // issuing QR codes nobody is waiting to scan.
+        await flushPersistAuth(session);
         session.closing = true;
         sessions.delete(connectionId);
         socket.end(undefined);
@@ -448,6 +481,7 @@ async function startConnection(
     }
     if (update.connection === "close" && !session.closing) {
       const code = disconnectCode(update.lastDisconnect?.error);
+      await flushPersistAuth(session);
       session.closing = true;
       session.open = false;
       sessions.delete(connectionId);
@@ -622,6 +656,7 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
   if (request.method === "DELETE" && deleteMatch) {
     const session = sessions.get(deleteMatch[1]);
     if (session) {
+      await flushPersistAuth(session);
       session.closing = true;
       await session.socket.logout().catch(() => session.socket.end(undefined));
       sessions.delete(deleteMatch[1]);
@@ -705,6 +740,7 @@ server.listen(port, "0.0.0.0", () => {
 async function shutdown(): Promise<void> {
   if (heartbeat) clearInterval(heartbeat);
   for (const session of sessions.values()) {
+    await flushPersistAuth(session);
     session.closing = true;
     session.socket.end(undefined);
   }

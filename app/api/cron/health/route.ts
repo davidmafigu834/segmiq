@@ -22,6 +22,9 @@ export async function GET(req: NextRequest) {
       results.map((r) => ({ component_key: r.key, ok: r.ok, latency_ms: r.latencyMs }))
     );
     if (error) throw error;
+    const retainAfter = new Date(Date.now() - 14 * 86_400_000).toISOString();
+    const { error: pruneError } = await supabase.from("status_checks").delete().lt("checked_at", retainAfter);
+    if (pruneError) console.error("status_checks prune failed", pruneError);
   } catch (e) {
     console.error("status_checks insert failed", e);
     return NextResponse.json({ ok: false, error: "persist failed" }, { status: 500 });

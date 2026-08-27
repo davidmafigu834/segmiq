@@ -405,6 +405,12 @@ export async function recordWhatsAppConnectionEvent(input: {
 export async function consumeGatewayNonce(nonce: string, expiresAt: string): Promise<boolean> {
   const supabase = createAdminClient();
   const { error } = await supabase.from("whatsapp_gateway_nonces").insert({ nonce, expires_at: expiresAt });
-  void supabase.from("whatsapp_gateway_nonces").delete().lt("expires_at", new Date().toISOString());
+  const { error: pruneError } = await supabase
+    .from("whatsapp_gateway_nonces")
+    .delete()
+    .lt("expires_at", new Date().toISOString());
+  if (pruneError) {
+    console.error("[whatsapp] gateway nonce prune failed", pruneError.message);
+  }
   return !error;
 }

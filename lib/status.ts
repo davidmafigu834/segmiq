@@ -34,7 +34,7 @@ const DAY = 86_400_000;
 
 async function fromSupabase(): Promise<StatusPage> {
   const supabase = createAdminClient();
-  const since = new Date(Date.now() - 90 * DAY).toISOString();
+  const since = new Date(Date.now() - 14 * DAY).toISOString();
 
   const [{ data: comps }, { data: checks }, { data: incidents }] = await Promise.all([
     supabase.from("status_components").select("*").eq("enabled", true).order("sort_order"),
