@@ -357,12 +357,13 @@ describe("demo fixtures stay out of production", () => {
   });
 
   it("refuses production seeding", () => {
-    const previous = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    const previous = process.env.VERCEL_ENV;
+    process.env.VERCEL_ENV = "production";
     try {
       assert.throws(() => assertNotProductionSeed(), /must not seed production/);
     } finally {
-      process.env.NODE_ENV = previous;
+      if (previous === undefined) delete process.env.VERCEL_ENV;
+      else process.env.VERCEL_ENV = previous;
     }
   });
 });

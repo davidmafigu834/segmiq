@@ -91,6 +91,7 @@ function syntheticContext(opts: {
     rawMemory: {},
     contactId: null,
     settings: opts.settings,
+    learnedKnowledge: { serialized: "", refs: [] },
     companyBrain: {
       serialized: serializeCompanyBrainContext(opts.assembled),
       sources: context.sources,
