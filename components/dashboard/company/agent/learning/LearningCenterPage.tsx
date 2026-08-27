@@ -93,8 +93,12 @@ function LearningCenterInner({
       const data = await res.json();
       if (res.ok) {
         setLearningOn(Boolean(data.settings?.enabled));
-        setCounts(data.counts ?? counts);
-        setSources(data.sources ?? sources);
+        setCounts(
+          data.counts ?? { discoveries: 0, conflicts: 0, approved: 0, rejected: 0 }
+        );
+        setSources(
+          data.sources ?? { sales: 0, support: 0, corrections: 0, teach: 0, managerFeedback: 0 }
+        );
         setCandidates(data.candidates ?? []);
         setKnowledge(data.knowledge ?? []);
         setAnalyzed(
@@ -109,21 +113,7 @@ function LearningCenterInner({
     }
   }, [tab, clientId]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
-    if (!initialCandidateId) return;
-    void openCandidate(initialCandidateId);
-  }, [initialCandidateId]);
-
-  useEffect(() => {
-    if (!initialKnowledgeId) return;
-    void openKnowledge(initialKnowledgeId);
-  }, [initialKnowledgeId]);
-
-  const openCandidate = async (id: string) => {
+  const openCandidate = useCallback(async (id: string) => {
     const res = await fetch(`/api/agent/learning/candidates/${id}?clientId=${encodeURIComponent(clientId)}`, {
       cache: "no-store",
     });
@@ -133,9 +123,9 @@ function LearningCenterInner({
       setEvidence(data.evidence ?? []);
       setEditContent(data.candidate.proposedLearning);
     }
-  };
+  }, [clientId]);
 
-  const openKnowledge = async (id: string) => {
+  const openKnowledge = useCallback(async (id: string) => {
     const res = await fetch(`/api/agent/learning/knowledge/${id}?clientId=${encodeURIComponent(clientId)}`, {
       cache: "no-store",
     });
@@ -144,7 +134,21 @@ function LearningCenterInner({
       setSelectedKnowledge(data.knowledge);
       setKnowledgeVersions(data.versions ?? []);
     }
-  };
+  }, [clientId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!initialCandidateId) return;
+    void openCandidate(initialCandidateId);
+  }, [initialCandidateId, openCandidate]);
+
+  useEffect(() => {
+    if (!initialKnowledgeId) return;
+    void openKnowledge(initialKnowledgeId);
+  }, [initialKnowledgeId, openKnowledge]);
 
   const review = async (action: "approve" | "reject" | "merge") => {
     if (!selected) return;
@@ -271,7 +275,7 @@ function LearningCenterInner({
           <div className="rounded-[12px] border border-sales-border bg-sales-surface px-5 py-8 text-center">
             <p className="text-[14px] font-semibold text-sales-text-primary">Agent Learning is off.</p>
             <p className="mt-1 text-[13px] text-sales-text-secondary">
-              Turn on Learning to let SegmiQ identify useful patterns from your team's customer conversations.
+              Turn on Learning to let SegmiQ identify useful patterns from your team conversations.
             </p>
             <Link href="/client/settings/automation/agent" className="mt-4 inline-block">
               <Button size="sm">Open Learning Settings</Button>

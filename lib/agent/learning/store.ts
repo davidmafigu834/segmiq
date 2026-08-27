@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { asRow, asRows } from "@/lib/agent/rows";
+import { asRows } from "@/lib/agent/rows";
 import { now } from "@/lib/clock";
 import { brainCollections } from "@/lib/company-brain/store";
 import { invalidateBrainCache } from "@/lib/company-brain/cache";

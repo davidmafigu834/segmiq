@@ -53,7 +53,7 @@ export async function assembleLearningContext(opts: {
     .maybeSingle();
   if (!lead) return null;
 
-  let query = supabase
+  const query = supabase
     .from("whatsapp_messages")
     .select("id, direction, sender_source, actor_id, body, created_at")
     .eq("client_id", opts.clientId)
