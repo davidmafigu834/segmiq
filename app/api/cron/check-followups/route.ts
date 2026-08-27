@@ -22,9 +22,11 @@ export async function GET(req: Request) {
     const followUpCallbacks = await executeFollowUpReminders({ t30Only: true });
     const { runProactiveWorker } = await import("@/lib/agent/proactive");
     const { recoverStaleAgentConversations } = await import("@/lib/agent/stale-resume");
+    const { runLearningWorker } = await import("@/lib/agent/learning/worker");
     const proactive = await runProactiveWorker();
     const staleAgent = await recoverStaleAgentConversations();
-    return NextResponse.json({ ok: true, followUpCallbacks, proactive, staleAgent });
+    const learning = await runLearningWorker();
+    return NextResponse.json({ ok: true, followUpCallbacks, proactive, staleAgent, learning });
   } catch (e) {
     console.error("[cron check-followups] executeFollowUpReminders", e);
     return NextResponse.json(

@@ -15,7 +15,8 @@ describe("manager intents", () => {
   });
 
   it("matches approval queue", () => {
-    assert.equal(matchQuickIntent("Show quotations waiting for approval"), "QUOTE_APPROVALS");
+    assert.equal(matchQuickIntent("What has SegmiQ learned this week?"), "LEARNING_WEEK");
+    assert.equal(matchQuickIntent("Where does the sales team contradict Company Brain?"), "LEARNING_CONFLICTS");
   });
 
   it("rejects SQL", () => {
@@ -100,7 +101,7 @@ describe("manager copy and links", () => {
   });
 
   it("deep-links to canonical company routes", () => {
-    assert.equal(managerHref("DEAL", "d1"), "/client/deals/d1");
+    assert.equal(managerHref("LEARNING_CANDIDATE", "c1"), "/client/agent/learning?candidate=c1");
     assert.equal(settingsHref("commercial"), "/client/quote-settings");
   });
 

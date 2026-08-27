@@ -268,6 +268,22 @@ function mapEventToMessage(event: TimelineEvent): InboxChatMessage | null {
     }
   }
 
+  if (event.event_type === "LEARNING_OBSERVED") {
+    const title = String(d.title ?? "Sales pattern");
+    const category = String(d.category ?? "").replace(/_/g, " ");
+    const candidateId = String(d.candidateId ?? "");
+    return {
+      id: event.id,
+      direction: "rep",
+      text: `${category ? `${category}: ` : ""}${String(d.summary ?? title)}`,
+      createdAt: event.created_at,
+      kind: "system",
+      systemTitle: "SegmiQ learned from this conversation",
+      href: candidateId ? `/client/agent/learning?candidate=${encodeURIComponent(candidateId)}` : "/client/agent/learning",
+      hrefLabel: "View learning",
+    };
+  }
+
   if (event.event_type === "MESSAGE_SENT") {
     const body = String(d.body ?? "").trim();
     if (body) {

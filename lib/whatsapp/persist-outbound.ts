@@ -57,5 +57,18 @@ export async function persistOutboundWhatsAppMessage(opts: {
     }, { onConflict: "connection_id,provider_type,provider_message_id" });
   }
 
+  if (opts.senderSource !== "SYSTEM" && data?.id) {
+    try {
+      const { scheduleConversationLearning } = await import("@/lib/agent/learning/schedule");
+      scheduleConversationLearning({
+        clientId: opts.clientId,
+        conversationId: opts.leadId,
+        source: "CONVERSATION_SEGMENT",
+      });
+    } catch {
+      /* learning must never block WhatsApp */
+    }
+  }
+
   return { ok: true, id: data?.id as string | undefined };
 }

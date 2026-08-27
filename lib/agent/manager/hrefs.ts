@@ -27,6 +27,10 @@ export function managerHref(entityType: ManagerEntityType, id: string): string {
       return `/client/packages/${id}`;
     case "INVENTORY":
       return `/client/inventory`;
+    case "LEARNING_CANDIDATE":
+      return `/client/agent/learning?candidate=${id}`;
+    case "LEARNED_KNOWLEDGE":
+      return `/client/agent/learning?knowledge=${id}`;
     default:
       return `/client/dashboard`;
   }

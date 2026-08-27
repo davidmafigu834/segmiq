@@ -47,6 +47,8 @@ export const AGENT_SETTINGS_DEFAULTS: Omit<AgentCompanySettings, "clientId"> = {
   dailyExecutionLimit: 300,
   conversationHourlyLimit: 12,
   testMode: false,
+  learningEnabled: false,
+  suggestReplies: false,
 };
 
 type SettingsRow = Record<string, unknown>;
@@ -92,6 +94,8 @@ function rowToSettings(clientId: string, row: SettingsRow | null): AgentCompanyS
     dailyExecutionLimit: num("daily_execution_limit", d.dailyExecutionLimit),
     conversationHourlyLimit: num("conversation_hourly_limit", d.conversationHourlyLimit),
     testMode: bool("test_mode", d.testMode),
+    learningEnabled: bool("learning_enabled", d.learningEnabled),
+    suggestReplies: bool("suggest_replies", d.suggestReplies),
   };
 }
 
@@ -135,6 +139,8 @@ const PATCH_COLUMN_MAP: Record<keyof AgentSettingsPatch, string> = {
   dailyExecutionLimit: "daily_execution_limit",
   conversationHourlyLimit: "conversation_hourly_limit",
   testMode: "test_mode",
+  learningEnabled: "learning_enabled",
+  suggestReplies: "suggest_replies",
 };
 
 export async function updateAgentCompanySettings(

@@ -93,9 +93,17 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
   const drafted = executions.find((run) => run.reply_status === "DRAFTED");
   const { upcomingJobForLead } = await import("@/lib/agent/proactive");
   const nextProactive = await upcomingJobForLead(access.clientId, access.leadId);
+  const { getLearningSettings } = await import("@/lib/agent/learning/settings");
+  const { conversationLearningSummary } = await import("@/lib/agent/learning/store");
+  const learning = await getLearningSettings(access.clientId);
+  const conversationLearning = learning.enabled
+    ? await conversationLearningSummary(access.clientId, access.leadId)
+    : { evidence: [], candidates: [] };
 
   return NextResponse.json({
     agentEnabledForCompany: settings.enabled,
+    suggestReplies: settings.suggestReplies,
+    learningEnabled: learning.enabled,
     autonomyMode: settings.autonomyMode,
     state,
     recentExecutions: executions,
@@ -113,6 +121,13 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
           decisionSummary: nextProactive.decisionSummary,
         }
       : null,
+    learningSignals: conversationLearning.candidates.length,
+    learningCandidates: conversationLearning.candidates.map((c) => ({
+      id: c.id,
+      title: c.title,
+      category: c.category,
+      status: c.status,
+    })),
   });
 }
 

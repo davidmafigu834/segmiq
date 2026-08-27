@@ -64,8 +64,8 @@ export async function handleAgentInboundMessage(
     if (!isAgentGloballyEnabled()) return;
 
     const settings = await getAgentCompanySettings(event.clientId);
-    if (!settings.enabled) return;
-    if (!settings.respondToEnquiries) return;
+    if (!settings.enabled && !settings.suggestReplies) return;
+    if (settings.enabled && !settings.respondToEnquiries) return;
 
     await updateConversationAgentState(event.clientId, event.leadId, {
       lastCustomerMessageAt: event.timestamp,
@@ -73,13 +73,18 @@ export async function handleAgentInboundMessage(
 
     const state = await ensureConversationAgentState(event.clientId, event.leadId);
     const gate = conversationAllowsAgent(state);
+    const draftOnly = !settings.enabled && settings.suggestReplies;
     if (!gate.allowed) {
-      log("skip.conversation_gate", { leadId: event.leadId, reason: gate.reason });
-      return;
+      const allowDraftAnyway =
+        draftOnly && (gate.reason === "HUMAN_TAKEOVER" || gate.reason === "HUMAN_NEEDED");
+      if (!allowDraftAnyway) {
+        log("skip.conversation_gate", { leadId: event.leadId, reason: gate.reason });
+        return;
+      }
     }
 
     // Human takeover: a team member replied recently — the human is handling.
-    if (await humanRepliedRecently(event.clientId, event.leadId)) {
+    if (!draftOnly && (await humanRepliedRecently(event.clientId, event.leadId))) {
       await updateConversationAgentState(event.clientId, event.leadId, { status: "HUMAN_HANDLING" });
       log("skip.human_handling", { leadId: event.leadId });
       return;
@@ -338,7 +343,16 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       confidence: outcome.final?.confidence ?? null,
       decision_summary: outcome.final?.decisionSummary ?? null,
       evidence: outcome.final?.evidence ?? null,
-      sources: context.companyBrain?.sources ?? null,
+      sources: [
+        ...(context.companyBrain?.sources ?? []),
+        ...(context.learnedKnowledge?.refs ?? []).map((ref) => ({
+          type: ref.type,
+          key: ref.id,
+          label: ref.title,
+          authority: 5,
+        })),
+      ],
+      knowledge_used: context.learnedKnowledge?.refs ?? [],
       customer_reply: outcome.reply,
       reply_status: outcome.replyStatus,
       model: outcome.model,
@@ -349,6 +363,23 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       error_code: outcome.errorCode ?? null,
       error_message: outcome.errorMessage ?? null,
     });
+
+    if (
+      (outcome.replyStatus === "SENT" || outcome.replyStatus === "DRAFTED") &&
+      context.learnedKnowledge?.refs?.length
+    ) {
+      try {
+        const { recordKnowledgeUsage } = await import("@/lib/agent/learning/retrieval");
+        await recordKnowledgeUsage({
+          clientId: opts.clientId,
+          executionId,
+          conversationId: opts.leadId,
+          refs: context.learnedKnowledge.refs,
+        });
+      } catch (err) {
+        console.error("[agent] knowledge usage write failed", err);
+      }
+    }
 
     // Stale context: a newer customer message (or human reply) invalidated the
     // run before send. Re-evaluate once with fresh context.
@@ -391,7 +422,15 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
         riskLevel: c.riskLevel,
         summary: c.result.summary,
       })),
-      sources: context.companyBrain?.sources ?? [],
+      sources: [
+        ...(context.companyBrain?.sources ?? []),
+        ...(context.learnedKnowledge?.refs ?? []).map((ref) => ({
+          type: ref.type,
+          key: ref.id,
+          label: ref.title,
+          authority: 5,
+        })),
+      ],
       why: context.companyBrain?.why ?? [],
     };
   } catch (err) {

@@ -97,6 +97,7 @@ export function evaluateToolPolicy(
 
 /** Whether the final customer reply may be sent (vs drafted for review). */
 export function canSendCustomerReply(settings: AgentCompanySettings): boolean {
+  if (!settings.enabled) return false;
   return settings.autonomyMode !== "ASSIST";
 }
 

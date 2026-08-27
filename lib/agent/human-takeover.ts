@@ -17,6 +17,13 @@ export async function markConversationHumanTakeover(opts: {
     const { hookHumanTakeover, hookHumanOutbound } = await import("@/lib/agent/proactive");
     void hookHumanTakeover({ clientId: opts.clientId, leadId: opts.leadId, actorType: "HUMAN" });
     void hookHumanOutbound({ clientId: opts.clientId, leadId: opts.leadId, actorType: "HUMAN" });
+    const { scheduleConversationLearning } = await import("@/lib/agent/learning/schedule");
+    scheduleConversationLearning({
+      clientId: opts.clientId,
+      conversationId: opts.leadId,
+      source: "HUMAN_TAKEOVER",
+      immediate: true,
+    });
   } catch (err) {
     console.error("[agent] human takeover mark failed", err);
   }

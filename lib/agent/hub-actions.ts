@@ -45,8 +45,34 @@ export async function sendAgentDraft(opts: {
   reply?: string;
 }): Promise<{ ok: true; reply: string } | { ok: false; error: string }> {
   const execution = await latestDraftedExecution(opts.leadId, opts.clientId);
-  const reply = (opts.reply ?? execution?.customer_reply ?? "").trim();
+  const original = (execution?.customer_reply ?? "").trim();
+  const reply = (opts.reply ?? original).trim();
   if (!reply) return { ok: false, error: "No drafted reply to send" };
+
+  if (original && reply && original !== reply) {
+    try {
+      const { classifyEdit, isMeaningfulCorrection } = await import("@/lib/agent/learning/policy");
+      const cls = classifyEdit(original, reply);
+      if (isMeaningfulCorrection(cls)) {
+        const { scheduleLearningJob } = await import("@/lib/agent/learning/jobs");
+        const { getLearningSettings } = await import("@/lib/agent/learning/settings");
+        const { isLearningFlagOn } = await import("@/lib/agent/learning/policy");
+        const learning = await getLearningSettings(opts.clientId);
+        if (isLearningFlagOn(learning, "agent.learning.copilotEdits")) {
+          await scheduleLearningJob({
+            clientId: opts.clientId,
+            conversationId: opts.leadId,
+            source: "HUMAN_CORRECTION",
+            fingerprint: `${opts.clientId}:${opts.leadId}:HUMAN_CORRECTION:${execution?.id ?? "draft"}`,
+            payload: { original, edited: reply, editClass: cls, executionId: execution?.id ?? null },
+            scheduledAt: new Date(),
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[learning] copilot edit capture failed", err);
+    }
+  }
 
   const sendResult = await sendCanonicalWhatsAppText({
     clientId: opts.clientId,

@@ -89,6 +89,10 @@ export type AgentContext = {
   rawMemory: AgentCustomerMemory;
   contactId: string | null;
   settings: AgentCompanySettings;
+  learnedKnowledge: {
+    serialized: string;
+    refs: Array<{ type: "LEARNED_KNOWLEDGE"; id: string; title: string; category?: string }>;
+  };
   companyBrain: {
     serialized: string;
     sources: BrainSource[];
@@ -338,6 +342,23 @@ export async function assembleAgentContext(opts: {
 
   const missingAfterBrain = fields.filter((f) => !f.currentValue).map((f) => f.field);
 
+  let learnedKnowledge: AgentContext["learnedKnowledge"] = { serialized: "", refs: [] };
+  try {
+    const { retrieveApprovedLearning, serializeLearnedKnowledge } = await import(
+      "@/lib/agent/learning/retrieval"
+    );
+    const retrieved = await retrieveApprovedLearning({
+      clientId: opts.clientId,
+      customerMessage: latestCustomerText,
+    });
+    learnedKnowledge = {
+      serialized: serializeLearnedKnowledge(retrieved.items),
+      refs: retrieved.refs,
+    };
+  } catch (err) {
+    console.error("[agent] learned knowledge retrieval failed", err);
+  }
+
   return {
     company: {
       name: client.name as string,
@@ -397,6 +418,7 @@ export async function assembleAgentContext(opts: {
     rawMemory: memory,
     contactId,
     settings: opts.settings,
+    learnedKnowledge,
     companyBrain,
   };
 }

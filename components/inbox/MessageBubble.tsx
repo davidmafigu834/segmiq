@@ -7,6 +7,7 @@ import { Check, CheckCheck, FileText, Mic, Image as ImageIcon } from "lucide-rea
 
 type Props = {
   message: InboxChatMessage;
+  onTeach?: () => void;
 };
 
 function formatTime(iso: string): string {
@@ -89,7 +90,7 @@ function MediaBlock({ message }: { message: InboxChatMessage }) {
   );
 }
 
-export function MessageBubble({ message }: Props) {
+export function MessageBubble({ message, onTeach }: Props) {
   const isRep = message.direction === "rep";
   const isSystem = message.kind === "system";
   const hasMediaUi =
@@ -144,6 +145,15 @@ export function MessageBubble({ message }: Props) {
         <MediaBlock message={message} />
         {showText ? <div className="whitespace-pre-wrap break-words pr-1 text-[13.5px] leading-[1.45] sm:text-[14px]">{message.text}</div> : null}
         <div className="-mb-0.5 mt-0.5 flex items-center justify-end gap-1">
+          {onTeach ? (
+            <button
+              type="button"
+              onClick={onTeach}
+              className="mr-auto text-[10px] font-medium text-sales-text-muted hover:text-sales-text-primary"
+            >
+              Teach SegmiQ
+            </button>
+          ) : null}
           <span className="text-[11px] tabular-nums leading-none text-sales-text-muted">{formatTime(message.createdAt)}</span>
           {isRep ? <StatusTicks status={message.status} /> : null}
         </div>

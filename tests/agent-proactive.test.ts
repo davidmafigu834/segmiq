@@ -64,6 +64,8 @@ function agent(overrides: Partial<AgentCompanySettings> = {}): AgentCompanySetti
     dailyExecutionLimit: 300,
     conversationHourlyLimit: 12,
     testMode: false,
+    learningEnabled: false,
+    suggestReplies: false,
     ...overrides,
   };
 }

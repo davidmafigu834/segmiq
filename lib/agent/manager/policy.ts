@@ -20,6 +20,8 @@ const WRITE_RISK: Record<string, ManagerRiskLevel> = {
   close_deal_won: "HIGH",
   close_deal_lost: "HIGH",
   adjust_inventory: "HIGH",
+  approve_learning_candidate: "HIGH",
+  reject_learning_candidate: "HIGH",
 };
 
 export function riskForTool(toolName: string, recordCount = 1): ManagerRiskLevel {

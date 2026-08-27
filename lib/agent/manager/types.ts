@@ -24,6 +24,8 @@ export const MANAGER_ENTITY_TYPES = [
   "PRODUCT",
   "PACKAGE",
   "INVENTORY",
+  "LEARNING_CANDIDATE",
+  "LEARNED_KNOWLEDGE",
 ] as const;
 export type ManagerEntityType = (typeof MANAGER_ENTITY_TYPES)[number];
 

@@ -101,6 +101,10 @@ export type AgentCompanySettings = {
   dailyExecutionLimit: number;
   conversationHourlyLimit: number;
   testMode: boolean;
+  /** Independent of Customer Agent. Observe eligible human conversations. */
+  learningEnabled: boolean;
+  /** Copilot / suggest-reply. May be on while Customer Agent is off. */
+  suggestReplies: boolean;
 };
 
 /** Per-conversation agent state (agent_conversation_state row, camelCased). */

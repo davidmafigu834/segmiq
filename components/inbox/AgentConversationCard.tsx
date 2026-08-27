@@ -7,6 +7,10 @@ import type { InboxConversation } from "@/lib/inbox/types";
 
 type AgentConversationData = {
   agentEnabledForCompany: boolean;
+  suggestReplies?: boolean;
+  learningEnabled?: boolean;
+  learningSignals?: number;
+  learningCandidates?: Array<{ id: string; title: string; category: string; status: string }>;
   autonomyMode: string;
   state: {
     status: string;
@@ -104,12 +108,15 @@ export function AgentConversationCard({
     [leadId, load]
   );
 
-  if (!data?.agentEnabledForCompany) return null;
+  if (!data?.agentEnabledForCompany && !data?.learningEnabled && !data?.suggestReplies) return null;
 
+  const learningOnly = !data.agentEnabledForCompany && Boolean(data.learningEnabled);
   const status = data.state?.humanTakeover
     ? "HUMAN_HANDLING"
     : data.state?.status ?? "IDLE";
-  const statusMeta = STATUS_LABELS[status] ?? STATUS_LABELS.IDLE;
+  const statusMeta = learningOnly
+    ? { label: "Not responding", className: "bg-sales-neutral-100 text-sales-text-muted" }
+    : STATUS_LABELS[status] ?? STATUS_LABELS.IDLE;
   const isPaused = status === "PAUSED" || data.state?.agentEnabled === false;
   const lastRun = data.recentExecutions.find((run) => run.decision_summary);
   const briefing = data.openEscalation?.briefing ?? null;
@@ -139,10 +146,26 @@ export function AgentConversationCard({
           </span>
           <span className="text-[12px] font-semibold text-sales-text-primary">SegmiQ Agent</span>
           <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${statusMeta.className}`}>
-            {isPaused ? "Paused" : statusMeta.label}
+            {learningOnly ? "Not responding" : isPaused ? "Paused" : statusMeta.label}
           </span>
+          {data.learningEnabled ? (
+            <span
+              className="rounded-full bg-sales-brand-soft px-1.5 py-0.5 text-[10px] font-semibold text-sales-brand"
+              title="SegmiQ is not responding to this customer. It may learn approved sales patterns from eligible human conversations."
+            >
+              Learning active
+            </span>
+          ) : null}
         </div>
-        <div className="relative">
+        {learningOnly ? (
+          <Link
+            href="/client/agent/learning"
+            className="text-[10px] font-medium text-sales-text-secondary hover:text-sales-text-primary"
+          >
+            Learning
+          </Link>
+        ) : (
+          <div className="relative">
           <button
             type="button"
             disabled={busy}
@@ -197,7 +220,17 @@ export function AgentConversationCard({
             </>
           ) : null}
         </div>
+        )}
       </div>
+
+      {typeof data.learningSignals === "number" && data.learningSignals > 0 ? (
+        <Link
+          href="/client/agent/learning"
+          className="mt-2 block text-[11px] text-sales-text-secondary hover:text-sales-text-primary"
+        >
+          {data.learningSignals} learning signal{data.learningSignals === 1 ? "" : "s"}
+        </Link>
+      ) : null}
 
       {data.nextProactive ? (
         <div className="mt-2 rounded-[8px] border border-sales-border-subtle bg-sales-neutral-100/60 px-2.5 py-2">

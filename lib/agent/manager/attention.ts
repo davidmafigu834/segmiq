@@ -69,6 +69,7 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
     callbacksRes,
     jobsFailed,
     jobsHuman,
+    learningRes,
   ] = await Promise.all([
     supabase
       .from("quotations")
@@ -120,6 +121,14 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
       statuses: ["WAITING_FOR_HUMAN"],
       limit: 20,
     }),
+    supabase
+      .from("agent_learning_candidates")
+      .select("id, title, risk_level, comparison_state, conversation_count, salesperson_count, category")
+      .eq("client_id", clientId)
+      .in("status", ["DETECTED", "REVIEWING"])
+      .or("comparison_state.eq.CONFLICTS,risk_level.eq.VERY_HIGH,risk_level.eq.HIGH,type.eq.CORRECTION")
+      .order("last_observed_at", { ascending: false })
+      .limit(8),
   ]);
 
   const nameByUser = new Map(
@@ -361,6 +370,34 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
     });
   }
 
+  for (const c of asRows<{
+    id: string;
+    title: string;
+    risk_level: string;
+    comparison_state: string;
+    conversation_count: number;
+    salesperson_count: number;
+    category: string;
+  }>(learningRes.data)) {
+    const conflict = c.comparison_state === "CONFLICTS";
+    items.push({
+      id: `learn-${c.id}`,
+      type: conflict ? "LEARNING_CONFLICT" : "LEARNING_REVIEW",
+      severity: conflict || c.risk_level === "VERY_HIGH" ? "HIGH" : "NORMAL",
+      entityType: "LEARNING_CANDIDATE",
+      entityId: c.id,
+      title: conflict ? `Learning conflict: ${c.title}` : `Learning needs review: ${c.title}`,
+      reason: `${c.conversation_count} conversations · ${c.salesperson_count} salespeople`,
+      ownerName: null,
+      ownerId: null,
+      valueLabel: c.category,
+      waitingLabel: null,
+      href: managerHref("LEARNING_CANDIDATE", c.id),
+      recommendedActions: ["Open Learning Center"],
+      rank: rank(conflict || c.risk_level === "VERY_HIGH" ? "HIGH" : "NORMAL", 20),
+    });
+  }
+
   items.sort((a, b) => b.rank - a.rank);
   const top = items.slice(0, 40);
 
@@ -385,6 +422,12 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
     { type: "AGENT_HUMAN_NEEDED", label: "Agent handoffs", count: brief.humanNeeded, severity: "HIGH" },
     { type: "PROACTIVE_FAILED", label: "Failed proactive actions", count: brief.failedProactive, severity: "HIGH" },
     { type: "SUPPORT_OPEN", label: "Open support", count: brief.supportOpen, severity: "NORMAL" },
+    {
+      type: "LEARNING_REVIEW",
+      label: "Learning needs review",
+      count: top.filter((i) => i.type === "LEARNING_REVIEW" || i.type === "LEARNING_CONFLICT").length,
+      severity: "NORMAL",
+    },
   ];
   const groups = allGroups.filter((g) => g.count > 0);
 

@@ -6,7 +6,9 @@ import { AlertTriangle, Bot, Brain, Loader2 } from "lucide-react";
 import { Button, Switch, SegmentedControl, Select, Input } from "@/components/sales/ui";
 import { SettingsSectionCard } from "./SettingsSectionCard";
 import { ProactiveSettingsSection } from "./ProactiveSettingsSection";
+import { AgentSectionNav } from "@/components/dashboard/company/agent/AgentSectionNav";
 import type { ProactiveSettings } from "@/lib/agent/proactive/types";
+import type { LearningSettings } from "@/lib/agent/learning/types";
 
 type AgentSettings = {
   enabled: boolean;
@@ -31,8 +33,10 @@ type AgentSettings = {
   tone: "professional" | "friendly" | "concise";
   languagePreference: string | null;
   maxQuestionsPerMessage: number;
-  debounceSeconds: number;
+  conversationHourlyLimit: number;
   testMode: boolean;
+  learningEnabled: boolean;
+  suggestReplies: boolean;
 };
 
 const MODE_COPY: Record<AgentSettings["autonomyMode"], string> = {
@@ -50,6 +54,17 @@ function llmProviderLabel(name: string): string {
   if (name === "anthropic") return "Claude";
   if (name === "vercel") return "Vercel AI Gateway";
   return name;
+}
+
+function StatusCell({ label, value, on }: { label: string; value: string; on: boolean }) {
+  return (
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">{label}</p>
+      <p className={`mt-0.5 text-[13px] font-semibold ${on ? "text-sales-text-primary" : "text-sales-text-secondary"}`}>
+        {value}
+      </p>
+    </div>
+  );
 }
 
 function ToggleRow({
@@ -85,6 +100,7 @@ export function AgentSettingsSection({
 }) {
   const [settings, setSettings] = useState<AgentSettings | null>(null);
   const [proactive, setProactive] = useState<ProactiveSettings | null>(null);
+  const [learning, setLearning] = useState<LearningSettings | null>(null);
   const [globallyEnabled, setGloballyEnabled] = useState(true);
   const [llm, setLlm] = useState<{ provider: string; fallback: string | null; model: string } | null>(
     null
@@ -104,6 +120,7 @@ export function AgentSettingsSection({
         if (!cancelled && res.ok) {
           setSettings(data.settings);
           if (data.proactive) setProactive(data.proactive);
+          if (data.learning) setLearning(data.learning);
           setGloballyEnabled(Boolean(data.globallyEnabled));
           if (data.llm && typeof data.llm.provider === "string") {
             setLlm({
@@ -134,12 +151,25 @@ export function AgentSettingsSection({
       const res = await fetch(`/api/agent/settings?clientId=${encodeURIComponent(clientId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...settings, ...(proactive ? { proactive } : {}) }),
+        body: JSON.stringify({
+          ...settings,
+          ...(proactive ? { proactive } : {}),
+          ...(learning
+            ? {
+                learning: {
+                  enabled: learning.enabled,
+                  suggestReplies: learning.suggestReplies,
+                  config: learning.config,
+                },
+              }
+            : {}),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Save failed");
       setSettings(data.settings);
       if (data.proactive) setProactive(data.proactive);
+      if (data.learning) setLearning(data.learning);
       setDirty(false);
       toast({ title: "SegmiQ Agent settings saved", tone: "success" });
     } catch (err) {
@@ -150,7 +180,7 @@ export function AgentSettingsSection({
     } finally {
       setSaving(false);
     }
-  }, [clientId, settings, proactive, toast]);
+  }, [clientId, settings, proactive, learning, toast]);
 
   const modeOptions = useMemo(
     () => [
@@ -178,6 +208,7 @@ export function AgentSettingsSection({
 
   return (
     <div className="flex flex-col gap-4">
+      <AgentSectionNav />
       {!globallyEnabled ? (
         <div className="flex items-start gap-2.5 rounded-[10px] border border-amber-300/50 bg-amber-50 px-4 py-3 text-[13px] text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
           <AlertTriangle size={15} className="mt-0.5 shrink-0" />
@@ -207,6 +238,64 @@ export function AgentSettingsSection({
         </div>
       </SettingsSectionCard>
 
+      <div className="grid gap-2 rounded-[12px] border border-sales-border bg-sales-surface px-4 py-3 sm:grid-cols-3">
+        <StatusCell
+          label="Customer Agent"
+          value={settings.enabled ? "Responding" : "Not responding"}
+          on={settings.enabled}
+        />
+        <StatusCell
+          label="Proactive Agent"
+          value={proactive?.enabled ? "Active" : "Paused"}
+          on={Boolean(proactive?.enabled)}
+        />
+        <StatusCell
+          label="Learning"
+          value={learning?.enabled || settings.learningEnabled ? "Active" : "Off"}
+          on={Boolean(learning?.enabled || settings.learningEnabled)}
+        />
+      </div>
+
+      <SettingsSectionCard
+        title="Presets"
+        description="Optional starting points. Autonomy never changes unless you save."
+      >
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              patch({ enabled: false, suggestReplies: false, learningEnabled: true });
+              setLearning((prev) =>
+                prev ? { ...prev, enabled: true, suggestReplies: false } : prev
+              );
+              setProactive((prev) => (prev ? { ...prev, enabled: false } : prev));
+              setDirty(true);
+            }}
+          >
+            Learn First
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              patch({ enabled: false, suggestReplies: true, learningEnabled: true, autonomyMode: "ASSIST" });
+              setLearning((prev) =>
+                prev ? { ...prev, enabled: true, suggestReplies: true } : prev
+              );
+              setProactive((prev) => (prev ? { ...prev, enabled: false } : prev));
+              setDirty(true);
+            }}
+          >
+            Assist
+          </Button>
+        </div>
+        <p className="mt-2 text-[12px] text-sales-text-secondary">
+          Learn First: your team keeps handling customers while SegmiQ observes eligible conversations. Assist: suggest
+          replies without sending, and learn from edits.
+        </p>
+      </SettingsSectionCard>
+
       <SettingsSectionCard
         title="SegmiQ Agent"
         description="An AI teammate that handles WhatsApp conversations: understands customers, qualifies, schedules, prepares quotations and hands over to your team when judgement is needed."
@@ -223,7 +312,9 @@ export function AgentSettingsSection({
               <p className="text-[12px] text-sales-text-secondary">
                 {settings.enabled
                   ? "Inbound WhatsApp conversations are handled by the agent under the rules below."
-                  : "Conversations use your existing scripted qualification flow."}
+                  : learning?.enabled || settings.learningEnabled
+                    ? "SegmiQ is not responding to customers. Salespeople handle WhatsApp while Learning observes eligible conversations."
+                    : "Conversations use your existing scripted qualification flow."}
               </p>
               {llm ? (
                 <p className="mt-1 text-[11px] text-sales-text-muted">
@@ -409,6 +500,73 @@ export function AgentSettingsSection({
           />
         </label>
       </SettingsSectionCard>
+
+      {learning ? (
+        <SettingsSectionCard
+          title="Learning"
+          description="SegmiQ observes eligible salesperson conversations to identify qualification patterns, common customer questions, response styles and sales practices that can improve future Agent behaviour. Learning does not retrain the underlying model."
+        >
+          <ToggleRow
+            label="Learn from team conversations"
+            hint="Independent of Customer Agent. Observation creates evidence. Managers approve what becomes company truth."
+            checked={learning.enabled}
+            onChange={(v) => {
+              setLearning({ ...learning, enabled: v });
+              patch({ learningEnabled: v });
+            }}
+          />
+          <ToggleRow
+            label="Sales conversations"
+            checked={learning.config.sales}
+            onChange={(v) => {
+              setLearning({ ...learning, config: { ...learning.config, sales: v } });
+              setDirty(true);
+            }}
+          />
+          <ToggleRow
+            label="Support conversations"
+            checked={learning.config.support}
+            onChange={(v) => {
+              setLearning({ ...learning, config: { ...learning.config, support: v } });
+              setDirty(true);
+            }}
+          />
+          <ToggleRow
+            label="Human edits to Agent drafts"
+            checked={learning.config.copilotEdits}
+            onChange={(v) => {
+              setLearning({ ...learning, config: { ...learning.config, copilotEdits: v } });
+              setDirty(true);
+            }}
+          />
+          <ToggleRow
+            label="Teach SegmiQ submissions"
+            checked={learning.config.teach}
+            onChange={(v) => {
+              setLearning({ ...learning, config: { ...learning.config, teach: v } });
+              setDirty(true);
+            }}
+          />
+          <ToggleRow
+            label="Internal notes"
+            hint="Off by default. Internal notes are not used as customer-facing evidence."
+            checked={learning.config.internalNotes}
+            onChange={(v) => {
+              setLearning({ ...learning, config: { ...learning.config, internalNotes: v } });
+              setDirty(true);
+            }}
+          />
+          <ToggleRow
+            label="Suggest replies (Copilot)"
+            hint="May stay on while Customer Agent is off. Drafts are never sent automatically."
+            checked={settings.suggestReplies || learning.suggestReplies}
+            onChange={(v) => {
+              patch({ suggestReplies: v });
+              setLearning({ ...learning, suggestReplies: v });
+            }}
+          />
+        </SettingsSectionCard>
+      ) : null}
 
       {proactive ? (
         <ProactiveSettingsSection

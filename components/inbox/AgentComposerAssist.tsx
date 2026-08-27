@@ -76,7 +76,7 @@ export function AgentComposerAssist({
     [leadId, load, onSent]
   );
 
-  if (!data?.agentEnabledForCompany) return null;
+  if (!data?.agentEnabledForCompany && !data?.suggestReplies) return null;
   const draft = data.draftedReply?.text?.trim() ?? "";
   const suggestions = data.suggestedActions ?? [];
   if (!draft && suggestions.length === 0) return null;

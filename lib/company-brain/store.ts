@@ -497,6 +497,15 @@ export async function upsertBrainSettings(
     .single();
   if (error) throw new Error(`Failed to save Company Brain: ${error.message}`);
   invalidateBrainCache(clientId);
+  try {
+    const { background } = await import("@/lib/background");
+    background("learningBrainUpdated", async () => {
+      const { flagLearnedKnowledgeAgainstBrain } = await import("@/lib/agent/learning/comparator");
+      await flagLearnedKnowledgeAgainstBrain(clientId);
+    });
+  } catch {
+    /* learning conflict check is best-effort */
+  }
   return settingsFromRow(clientId, asRow<Row>(data));
 }
 

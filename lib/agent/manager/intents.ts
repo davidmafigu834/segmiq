@@ -10,7 +10,11 @@ export type QuickIntent =
   | "TEAM_PERFORMANCE"
   | "OVERDUE_TASKS"
   | "HUMAN_NEEDED"
-  | "SUPPORT_OPEN";
+  | "SUPPORT_OPEN"
+  | "LEARNING_WEEK"
+  | "LEARNING_CONFLICTS"
+  | "LEARNING_CORRECTIONS"
+  | "LEARNING_FAQS";
 
 const QUICK: Array<{ intent: QuickIntent; re: RegExp }> = [
   { intent: "OPERATIONAL_SUMMARY", re: /what needs (my )?attention|needs attention today|^attention$/i },
@@ -25,6 +29,10 @@ const QUICK: Array<{ intent: QuickIntent; re: RegExp }> = [
   { intent: "OVERDUE_TASKS", re: /overdue (tasks?|follow-?ups?)/i },
   { intent: "HUMAN_NEEDED", re: /human needed|waiting for human|handoffs?/i },
   { intent: "SUPPORT_OPEN", re: /support cases?|unresolved support/i },
+  { intent: "LEARNING_WEEK", re: /what (has|did) (the )?(segmiq |agent )?learn|learned (this week|from (the )?sales)|new (learning|qualification) patterns/i },
+  { intent: "LEARNING_CONFLICTS", re: /contradict company brain|learning conflicts?|where does the (sales )?team contradict/i },
+  { intent: "LEARNING_CORRECTIONS", re: /agent corrections?|copilot corrections?|human corrections?/i },
+  { intent: "LEARNING_FAQS", re: /customer questions are increasing|faq (candidates?|learning)|common (customer )?questions/i },
 ];
 
 export function matchQuickIntent(text: string): QuickIntent | null {
@@ -43,6 +51,10 @@ const UNSUPPORTED = [
   {
     re: /\b(change|set|increase|raise).{0,40}(discount|max discount|pricing policy|margin)\b/i,
     message: "Pricing and discount policy are controlled in Commercial Settings, not Command Center.",
+  },
+  {
+    re: /\b(rewrite|replace|ignore).{0,40}(company brain|credit policy|payment terms)\b/i,
+    message: "Company Brain and commercial policy cannot be rewritten from Command Center. Review Learning Center or Company Brain instead.",
   },
   {
     re: /\b(create admin|grant role|change password|elevate permission)\b/i,

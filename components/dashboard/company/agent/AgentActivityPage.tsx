@@ -18,7 +18,7 @@ import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWor
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button, SegmentedControl, ToastProvider, useSalesToast } from "@/components/sales/ui";
-import { cn } from "@/lib/ui/cn";
+import { AgentSectionNav } from "@/components/dashboard/company/agent/AgentSectionNav";
 import type { UserRole } from "@/types";
 
 type ExecutionRow = {
@@ -262,6 +262,8 @@ function AgentActivityInner({
           }
         />
 
+        <AgentSectionNav />
+
         {upcoming.length ? (
           <section className="rounded-[12px] border border-sales-border bg-sales-surface">
             <header className="border-b border-sales-border-subtle px-4 py-3">
@@ -463,12 +465,21 @@ function AgentActivityInner({
               {Array.isArray(detail?.execution?.sources) && detail.execution.sources.length ? (
                 <div className="mt-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
-                    Sources used
+                    Knowledge used
                   </p>
                   <ul className="mt-1 flex flex-col gap-1">
-                    {(detail.execution.sources as Array<{ label?: string; type?: string }>).map((source, i) => (
+                    {(
+                      (detail.execution.knowledge_used as Array<{ title?: string; type?: string; category?: string }>) ??
+                      (detail.execution.sources as Array<{ label?: string; type?: string }>)
+                    ).map((source, i) => (
                       <li key={i} className="text-[12px] text-sales-text-secondary">
-                        {source.label || source.type || "Source"}
+                        {source.type === "LEARNED_KNOWLEDGE" || source.type === "learned_knowledge"
+                          ? "Learned Knowledge"
+                          : source.type === "COMPANY_BRAIN" || source.type === "company_brain"
+                            ? "Company Brain"
+                            : source.type?.replace(/_/g, " ") || "Source"}
+                        {" · "}
+                        {"title" in source ? source.title : source.label || source.category || ""}
                       </li>
                     ))}
                   </ul>

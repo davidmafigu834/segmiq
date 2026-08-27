@@ -199,6 +199,15 @@ export async function hookDealStageChanged(
     idempotencyKey: `deal-stage:${opts.dealId}:${opts.toStage}:${nowKey()}`,
     payload: { leadId: opts.leadId, fromStage: opts.fromStage, toStage: opts.toStage },
   });
+  if (opts.leadId) {
+    const { scheduleConversationLearning } = await import("@/lib/agent/learning/schedule");
+    scheduleConversationLearning({
+      clientId: opts.clientId,
+      conversationId: opts.leadId,
+      source: "DEAL_PROGRESS",
+      immediate: true,
+    });
+  }
 }
 
 export async function hookDealClosed(

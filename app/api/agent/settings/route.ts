@@ -8,6 +8,8 @@ import {
   isAgentGloballyEnabled,
 } from "@/lib/agent/settings";
 import { getProactiveSettings, updateProactiveSettings } from "@/lib/agent/proactive/settings";
+import { getLearningSettings, updateLearningSettings } from "@/lib/agent/learning/settings";
+import { isLearningGloballyEnabled, presetPatch } from "@/lib/agent/learning/policy";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +40,13 @@ export async function GET(req: Request) {
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
   const settings = await getAgentCompanySettings(access.clientId);
   const proactive = await getProactiveSettings(access.clientId);
+  const learning = await getLearningSettings(access.clientId);
   return NextResponse.json({
     settings,
     proactive,
+    learning,
     globallyEnabled: isAgentGloballyEnabled(),
+    learningGloballyEnabled: isLearningGloballyEnabled(),
     llm: describeAgentLlm(),
   });
 }
@@ -75,6 +80,16 @@ const patchSchema = z
     dailyExecutionLimit: z.number().int().min(1).max(10_000),
     conversationHourlyLimit: z.number().int().min(1).max(100),
     testMode: z.boolean(),
+    learningEnabled: z.boolean(),
+    suggestReplies: z.boolean(),
+    learning: z
+      .object({
+        enabled: z.boolean(),
+        suggestReplies: z.boolean(),
+        config: z.record(z.unknown()).optional(),
+        preset: z.enum(["LEARN_FIRST", "ASSIST"]),
+      })
+      .partial(),
     proactive: z
       .object({
         enabled: z.boolean(),
@@ -101,20 +116,40 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const { proactive: proactivePatch, ...agentPatch } = parsed.data;
+    const { proactive: proactivePatch, learning: learningPatch, ...agentPatch } = parsed.data;
+    let nextProactive = proactivePatch;
+    if (learningPatch?.preset) {
+      const preset = presetPatch(learningPatch.preset);
+      agentPatch.enabled = preset.enabled;
+      agentPatch.suggestReplies = preset.suggestReplies;
+      agentPatch.learningEnabled = preset.learningEnabled;
+      if (preset.autonomyMode) agentPatch.autonomyMode = preset.autonomyMode;
+      learningPatch.enabled = preset.learningEnabled;
+      learningPatch.suggestReplies = preset.suggestReplies;
+      nextProactive = { ...(proactivePatch ?? {}), enabled: preset.proactiveEnabled };
+    }
+    if (learningPatch?.enabled !== undefined) agentPatch.learningEnabled = learningPatch.enabled;
+    if (learningPatch?.suggestReplies !== undefined) agentPatch.suggestReplies = learningPatch.suggestReplies;
     const settings = Object.keys(agentPatch).length
       ? await updateAgentCompanySettings(access.clientId, agentPatch)
       : await getAgentCompanySettings(access.clientId);
-    const proactive = proactivePatch
+    const proactive = nextProactive
       ? await updateProactiveSettings(access.clientId, {
-          enabled: proactivePatch.enabled,
-          shadowMode: proactivePatch.shadowMode,
-          customerMessaging: proactivePatch.customerMessaging,
-          internalActions: proactivePatch.internalActions,
-          config: proactivePatch.config as Parameters<typeof updateProactiveSettings>[1]["config"],
+          enabled: nextProactive.enabled,
+          shadowMode: nextProactive.shadowMode,
+          customerMessaging: nextProactive.customerMessaging,
+          internalActions: nextProactive.internalActions,
+          config: nextProactive.config as Parameters<typeof updateProactiveSettings>[1]["config"],
         })
       : await getProactiveSettings(access.clientId);
-    return NextResponse.json({ settings, proactive });
+    const learning = learningPatch
+      ? await updateLearningSettings(access.clientId, {
+          enabled: learningPatch.enabled ?? agentPatch.learningEnabled,
+          suggestReplies: learningPatch.suggestReplies ?? agentPatch.suggestReplies,
+          config: learningPatch.config as Parameters<typeof updateLearningSettings>[1]["config"],
+        })
+      : await getLearningSettings(access.clientId);
+    return NextResponse.json({ settings, proactive, learning });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to save settings";
     const blocked = /Complete these|quotation readiness/i.test(message);

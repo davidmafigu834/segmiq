@@ -42,6 +42,7 @@ import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
 import { ManagerWorkflowStrip } from "./ManagerWorkflowStrip";
 import { ConversationTypeBadge } from "./ConversationTypeBadge";
+import { LearningConversationMenuItems, LearningConversationSheets } from "./LearningConversationSheets";
 import type { LeadRow } from "@/types";
 import { initials } from "@/lib/inbox/assignee-colors";
 import { sendComposerMedia } from "@/lib/inbox/send-composer-media";
@@ -169,6 +170,10 @@ export function ChatThread({
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
+  const [teachOpen, setTeachOpen] = useState(false);
+  const [excludeLearningOpen, setExcludeLearningOpen] = useState(false);
+  const [fromChatOpen, setFromChatOpen] = useState(false);
+  const [teachMessageIds, setTeachMessageIds] = useState<string[]>([]);
   const [planCompleting, setPlanCompleting] = useState(false);
   const [hasNewBelow, setHasNewBelow] = useState(false);
   const [hasOlder, setHasOlder] = useState(false);
@@ -936,7 +941,25 @@ export function ChatThread({
                     {conversation.conversationStatus === "RESOLVED" ? "Reopen conversation" : "Resolve conversation"}
                   </button>
                 ) : null}
-                {!canTransfer && !canUpdateStatus && !canSend && !canReassign && !showLogCall ? (
+                {isWhatsApp ? (
+                  <LearningConversationMenuItems
+                    onTeach={() => {
+                      setMenuOpen(false);
+                      const lastHuman = [...messages].reverse().find((m) => m.direction === "rep" && m.kind !== "system");
+                      setTeachMessageIds(lastHuman ? [lastHuman.id] : []);
+                      setTeachOpen(true);
+                    }}
+                    onExclude={() => {
+                      setMenuOpen(false);
+                      setExcludeLearningOpen(true);
+                    }}
+                    onFromChat={() => {
+                      setMenuOpen(false);
+                      setFromChatOpen(true);
+                    }}
+                  />
+                ) : null}
+                {!canTransfer && !canUpdateStatus && !canSend && !canReassign && !showLogCall && !isWhatsApp ? (
                   <div className="px-3 py-2 text-xs text-sales-text-muted">No actions available</div>
                 ) : null}
               </div>
@@ -1060,7 +1083,18 @@ export function ChatThread({
                 </div>
               </div>
               {group.messages.map((m) => (
-                <MessageBubble key={m.id} message={m} />
+                <MessageBubble
+                  key={m.id}
+                  message={m}
+                  onTeach={
+                    m.direction === "rep" && m.kind !== "system" && m.kind !== "internal"
+                      ? () => {
+                          setTeachMessageIds([m.id]);
+                          setTeachOpen(true);
+                        }
+                      : undefined
+                  }
+                />
               ))}
             </div>
           ))
@@ -1491,6 +1525,20 @@ export function ChatThread({
             onConversationUpdate?.();
           }}
           currency={conversation.dealCurrency ?? "USD"}
+        />
+      ) : null}
+      {conversation ? (
+        <LearningConversationSheets
+          leadId={conversation.id}
+          teachOpen={teachOpen}
+          excludeOpen={excludeLearningOpen}
+          fromChatOpen={fromChatOpen}
+          messageIds={teachMessageIds}
+          onClose={() => {
+            setTeachOpen(false);
+            setExcludeLearningOpen(false);
+            setFromChatOpen(false);
+          }}
         />
       ) : null}
     </div>

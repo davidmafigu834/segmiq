@@ -24,6 +24,8 @@ import {
   searchProducts,
   searchPackages,
   getInventoryAvailability,
+  searchLearning,
+  getLearningSummary,
 } from "./query";
 import { previousComparableRange, resolveDatePreset, isDatePreset } from "./dates";
 import {
@@ -111,6 +113,10 @@ export const MANAGER_TOOL_DEFINITIONS: AgentToolDefinition[] = [
   { name: "pause_agent", description: "Pause SegmiQ Agent on a conversation.", inputSchema: { type: "object", properties: { leadId: { type: "string" } }, required: ["leadId"] } },
   { name: "resume_agent", description: "Let the Agent handle the conversation again.", inputSchema: { type: "object", properties: { leadId: { type: "string" } }, required: ["leadId"] } },
   { name: "cancel_proactive_job", description: "Cancel a scheduled Proactive evaluation.", inputSchema: { type: "object", properties: { jobId: { type: "string" } }, required: ["jobId"] } },
+  { name: "search_learning", description: "Search Learning Center candidates. Use conflicts, corrections, or faqs filters. Never invent evidence counts.", inputSchema: { type: "object", properties: { conflicts: { type: "boolean" }, corrections: { type: "boolean" }, faqs: { type: "boolean" }, sinceDays: { type: "number" } } } },
+  { name: "get_learning_summary", description: "Grounded summary of what SegmiQ observed from the sales team. Counts only, no fake readiness scores.", inputSchema: { type: "object", properties: { sinceDays: { type: "number" } } } },
+  { name: "approve_learning_candidate", description: "Approve a LOW or MEDIUM risk Learning Candidate after confirmation. High-risk commercial learning must use Learning Center.", inputSchema: { type: "object", properties: { candidateId: { type: "string" } }, required: ["candidateId"] } },
+  { name: "reject_learning_candidate", description: "Reject a Learning Candidate after confirmation.", inputSchema: { type: "object", properties: { candidateId: { type: "string" }, reason: { type: "string" } }, required: ["candidateId"] } },
 ];
 
 function tableReply(block: TableBlock): string {
@@ -223,6 +229,74 @@ async function runInventoryAdjust(
       },
     ],
     phase: "Adjusting inventory",
+  };
+}
+
+async function runApproveLearning(actor: ManagerActor, candidateId: string): Promise<ToolRun> {
+  const { getCandidate, approveCandidate } = await import("@/lib/agent/learning/store");
+  const candidate = await getCandidate(actor.clientId, candidateId);
+  if (!candidate) {
+    return {
+      name: "approve_learning_candidate",
+      ok: false,
+      summary: {},
+      blocks: [{ type: "status", kind: "error", message: "Learning candidate not found in this company." }],
+      phase: "Approving learning",
+    };
+  }
+  if (candidate.riskLevel === "HIGH" || candidate.riskLevel === "VERY_HIGH") {
+    return {
+      name: "approve_learning_candidate",
+      ok: false,
+      summary: { href: `/client/agent/learning?candidate=${candidateId}` },
+      blocks: [
+        {
+          type: "status",
+          kind: "denied",
+          message: "High-risk commercial learning must be reviewed in Learning Center. Command Center cannot silently change policy.",
+        },
+      ],
+      phase: "Approving learning",
+    };
+  }
+  const knowledge = await approveCandidate({
+    clientId: actor.clientId,
+    candidateId,
+    actorId: actor.userId,
+    destination: "LEARNED_KNOWLEDGE",
+  });
+  return {
+    name: "approve_learning_candidate",
+    ok: Boolean(knowledge),
+    summary: { knowledgeId: knowledge?.id ?? null },
+    blocks: [
+      {
+        type: "status",
+        kind: knowledge ? "done" : "error",
+        message: knowledge
+          ? `Approved as Learned Knowledge: ${knowledge.title}. Company Brain was not rewritten.`
+          : "Could not approve this candidate.",
+      },
+    ],
+    phase: "Approving learning",
+  };
+}
+
+async function runRejectLearning(actor: ManagerActor, candidateId: string, reason: string): Promise<ToolRun> {
+  const { rejectCandidate } = await import("@/lib/agent/learning/store");
+  await rejectCandidate({
+    clientId: actor.clientId,
+    candidateId,
+    actorId: actor.userId,
+    reason,
+    feedback: null,
+  });
+  return {
+    name: "reject_learning_candidate",
+    ok: true,
+    summary: { candidateId },
+    blocks: [{ type: "status", kind: "done", message: "Candidate rejected. Similar suggestions will be suppressed." }],
+    phase: "Rejecting learning",
   };
 }
 
@@ -629,6 +703,77 @@ export async function executeManagerTool(opts: {
     });
   }
 
+  if (name === "search_learning") {
+    const block = await searchLearning(actor, {
+      conflicts: Boolean(input.conflicts),
+      corrections: Boolean(input.corrections),
+      faqs: Boolean(input.faqs),
+      sinceDays: typeof input.sinceDays === "number" ? input.sinceDays : 7,
+    });
+    return {
+      name,
+      ok: true,
+      summary: { count: block.totalMatched },
+      blocks: [block, { type: "text", text: tableReply(block) }, { type: "suggestions", actions: [{ label: "Open Learning Center", prompt: "Show learning conflicts" }] }],
+      phase: "Reviewing Agent Learning",
+    };
+  }
+
+  if (name === "get_learning_summary") {
+    const summary = await getLearningSummary(actor, typeof input.sinceDays === "number" ? input.sinceDays : 7);
+    return {
+      name,
+      ok: true,
+      summary: summary as unknown as Record<string, unknown>,
+      blocks: [
+        { type: "text", text: summary.text },
+        {
+          type: "suggestions",
+          actions: [
+            { label: "Review candidates", prompt: "Show new qualification patterns" },
+            { label: "Conflicts", prompt: "Where does the sales team contradict Company Brain?" },
+          ],
+        },
+      ],
+      phase: "Summarising Agent Learning",
+    };
+  }
+
+  if (name === "approve_learning_candidate") {
+    const candidateId = String(input.candidateId ?? "");
+    return maybeConfirm({
+      actor,
+      sessionId: opts.sessionId,
+      toolName: name,
+      args: { candidateId },
+      preview: {
+        title: "Approve learning",
+        summary: "Approve this LOW/MEDIUM learning as Learned Knowledge. Company Brain is not rewritten. High-risk commercial learning is blocked.",
+        records: [{ id: candidateId, label: candidateId }],
+        risk: "HIGH",
+      },
+      execute: () => runApproveLearning(actor, candidateId),
+    });
+  }
+
+  if (name === "reject_learning_candidate") {
+    const candidateId = String(input.candidateId ?? "");
+    const reason = typeof input.reason === "string" ? input.reason : "Rejected from Command Center";
+    return maybeConfirm({
+      actor,
+      sessionId: opts.sessionId,
+      toolName: name,
+      args: { candidateId, reason },
+      preview: {
+        title: "Reject learning",
+        summary: "Reject this candidate. Similar suggestions will be suppressed until stronger evidence appears.",
+        records: [{ id: candidateId, label: candidateId }],
+        risk: "HIGH",
+      },
+      execute: () => runRejectLearning(actor, candidateId, reason),
+    });
+  }
+
   return {
     name,
     ok: false,
@@ -697,6 +842,16 @@ export async function executeConfirmedTool(opts: {
       reason: String(args.reason ?? ""),
       note: typeof args.note === "string" ? args.note : null,
     });
+  }
+  if (toolName === "approve_learning_candidate") {
+    return runApproveLearning(actor, String(args.candidateId));
+  }
+  if (toolName === "reject_learning_candidate") {
+    return runRejectLearning(
+      actor,
+      String(args.candidateId),
+      typeof args.reason === "string" ? args.reason : "Rejected from Command Center"
+    );
   }
   return {
     name: toolName,

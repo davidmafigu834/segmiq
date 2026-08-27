@@ -100,6 +100,10 @@ async function runQuick(opts: {
     OVERDUE_TASKS: { name: "search_follow_ups", input: { overdue: true } },
     HUMAN_NEEDED: { name: "search_conversations", input: { humanNeeded: true } },
     SUPPORT_OPEN: { name: "search_support", input: {} },
+    LEARNING_WEEK: { name: "get_learning_summary", input: { sinceDays: 7 } },
+    LEARNING_CONFLICTS: { name: "search_learning", input: { conflicts: true } },
+    LEARNING_CORRECTIONS: { name: "search_learning", input: { corrections: true } },
+    LEARNING_FAQS: { name: "search_learning", input: { faqs: true } },
   };
   const spec = map[opts.intent] ?? map.OPERATIONAL_SUMMARY;
   const run = await executeManagerTool({

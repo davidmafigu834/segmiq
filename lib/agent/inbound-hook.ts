@@ -27,30 +27,42 @@ export async function dispatchInboundToAgentOrQualification(opts: {
   allowLegacyQualification?: boolean;
 }): Promise<void> {
   let agentActive = false;
+  let suggestReplies = false;
   if (isAgentGloballyEnabled()) {
     try {
       const settings = await getAgentCompanySettings(opts.clientId);
       agentActive = settings.enabled;
+      suggestReplies = settings.suggestReplies;
     } catch (err) {
       console.error("[agent] settings load failed; falling back to legacy flow", err);
     }
   }
 
-  if (agentActive) {
-    const event: InboundConversationEvent = {
-      messageId: opts.messageId,
+  const event: InboundConversationEvent = {
+    messageId: opts.messageId,
+    clientId: opts.clientId,
+    leadId: opts.leadId,
+    contactId: opts.contactId,
+    channel: "whatsapp",
+    messageType: opts.messageType,
+    text: opts.body,
+    hasAttachment: opts.messageType !== "text",
+    timestamp: opts.timestamp,
+    ownerId: opts.ownerId,
+    conversationType: "SALES",
+    isNewLead: opts.isNewLead,
+  };
+
+  background("segmiqLearningInbound", async () => {
+    const { scheduleConversationLearning } = await import("@/lib/agent/learning/schedule");
+    scheduleConversationLearning({
       clientId: opts.clientId,
-      leadId: opts.leadId,
-      contactId: opts.contactId,
-      channel: "whatsapp",
-      messageType: opts.messageType,
-      text: opts.body,
-      hasAttachment: opts.messageType !== "text",
-      timestamp: opts.timestamp,
-      ownerId: opts.ownerId,
-      conversationType: "SALES",
-      isNewLead: opts.isNewLead,
-    };
+      conversationId: opts.leadId,
+      source: "CONVERSATION_SEGMENT",
+    });
+  });
+
+  if (agentActive || suggestReplies) {
     background("segmiqAgentRun", () => handleAgentInboundMessage(event));
     background("segmiqProactiveInbound", async () => {
       const { hookCustomerMessage, hookCustomerOptOut } = await import("@/lib/agent/proactive");
@@ -71,6 +83,15 @@ export async function dispatchInboundToAgentOrQualification(opts: {
       });
     });
     return;
+  }
+
+  // Learning-on / agent-off: humans handle WhatsApp. Do not run scripted qualification replies.
+  try {
+    const { getLearningSettings } = await import("@/lib/agent/learning/settings");
+    const learning = await getLearningSettings(opts.clientId);
+    if (learning.enabled) return;
+  } catch {
+    /* continue to legacy */
   }
 
   if (opts.allowLegacyQualification === false) return;

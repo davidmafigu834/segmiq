@@ -19,7 +19,8 @@ type EventType =
   | "SUPPORT_CASE_OPENED"
   | "SUPPORT_CASE_UPDATED"
   | "CAMPAIGN_RESPONSE"
-  | "RE_ENQUIRY";
+  | "RE_ENQUIRY"
+  | "LEARNING_OBSERVED";
 
 type Actor = {
   id: string | null;

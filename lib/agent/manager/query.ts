@@ -914,3 +914,100 @@ export async function getInventoryAvailability(
   const { getAvailability } = await import("@/lib/inventory/service");
   return getAvailability({ clientId: actor.clientId, productId });
 }
+
+export async function searchLearning(
+  actor: ManagerActor,
+  filters: {
+    conflicts?: boolean;
+    corrections?: boolean;
+    faqs?: boolean;
+    sinceDays?: number;
+  } = {}
+): Promise<TableBlock> {
+  const supabase = createAdminClient();
+  const since = new Date(now().getTime() - (filters.sinceDays ?? 7) * 86_400_000).toISOString();
+  let q = supabase
+    .from("agent_learning_candidates")
+    .select("id, title, category, type, comparison_state, confidence_level, conversation_count, salesperson_count, risk_level, last_observed_at, summary")
+    .eq("client_id", actor.clientId)
+    .in("status", ["DETECTED", "REVIEWING"])
+    .gte("last_observed_at", since)
+    .order("last_observed_at", { ascending: false })
+    .limit(MAX_QUERY_ROWS);
+  if (filters.conflicts) q = q.eq("comparison_state", "CONFLICTS");
+  if (filters.corrections) q = q.eq("type", "CORRECTION");
+  if (filters.faqs) q = q.eq("category", "FAQ");
+  const { data } = await q;
+  const rows: ResultRow[] = asRows<{
+    id: string;
+    title: string;
+    category: string;
+    type: string;
+    comparison_state: string;
+    confidence_level: string;
+    conversation_count: number;
+    salesperson_count: number;
+    risk_level: string;
+    summary: string | null;
+  }>(data).map((c) => ({
+    id: c.id,
+    entityType: "LEARNING_CANDIDATE",
+    title: c.title,
+    subtitle: c.summary,
+    status: c.comparison_state === "CONFLICTS" ? "CONFLICT" : c.category,
+    valueLabel: `${c.conversation_count} conversations · ${c.salesperson_count} salespeople`,
+    ownerName: null,
+    ownerId: null,
+    href: managerHref("LEARNING_CANDIDATE", c.id),
+    meta: { risk: c.risk_level, confidence: c.confidence_level },
+  }));
+  return {
+    type: "table",
+    entityType: "LEARNING_CANDIDATE",
+    title: filters.conflicts ? "Learning conflicts" : filters.corrections ? "Agent corrections" : "Learning candidates",
+    columns: [
+      { key: "title", label: "Learning" },
+      { key: "status", label: "Category" },
+      { key: "valueLabel", label: "Evidence" },
+    ],
+    rows,
+    truncated: false,
+    totalMatched: rows.length,
+    filtersLabel: null,
+  };
+}
+
+export async function getLearningSummary(actor: ManagerActor, sinceDays = 7): Promise<{
+  text: string;
+  candidates: number;
+  byCategory: Record<string, number>;
+  highest: { title: string; conversations: number; salespeople: number } | null;
+}> {
+  const block = await searchLearning(actor, { sinceDays });
+  const byCategory: Record<string, number> = {};
+  for (const row of block.rows) {
+    const cat = row.status ?? "OTHER";
+    byCategory[cat] = (byCategory[cat] ?? 0) + 1;
+  }
+  const highest = block.rows[0]
+    ? {
+        title: block.rows[0].title,
+        conversations: Number(String(block.rows[0].valueLabel ?? "").split(" ")[0]) || 0,
+        salespeople: Number(String(block.rows[0].valueLabel ?? "").match(/·\s*(\d+)/)?.[1] ?? 0),
+      }
+    : null;
+  const catLines = Object.entries(byCategory)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, v]) => `${k}\n${v}`)
+    .join("\n\n");
+  const text = [
+    `${block.totalMatched} new learning candidates.`,
+    catLines,
+    highest
+      ? `Highest-confidence discovery:\n${highest.title}\n\nObserved in:\n${highest.conversations} conversations\n${highest.salespeople} salespeople`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  return { text, candidates: block.totalMatched, byCategory, highest };
+}
