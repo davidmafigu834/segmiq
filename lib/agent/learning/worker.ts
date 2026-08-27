@@ -1,5 +1,4 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { asRow } from "@/lib/agent/rows";
 import { logLeadEvent } from "@/lib/lead-events";
 import { assembleLearningContext } from "./context";
 import { extractLearningObservations } from "./extractor";
@@ -301,5 +300,3 @@ export async function excludeConversation(opts: {
 export async function isConversationExcluded(clientId: string, conversationId: string): Promise<boolean> {
   return isExcluded(clientId, conversationId);
 }
-
-export { asRow };

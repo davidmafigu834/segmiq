@@ -7,6 +7,7 @@ type SuggestedAction = { id: string; toolName: string; label: string };
 
 type AgentComposerData = {
   agentEnabledForCompany: boolean;
+  suggestReplies?: boolean;
   draftedReply: { executionId: string; text: string } | null;
   suggestedActions: SuggestedAction[];
 };
