@@ -19,6 +19,7 @@ import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDa
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button, SegmentedControl, ToastProvider, useSalesToast } from "@/components/sales/ui";
 import { AgentSectionNav } from "@/components/dashboard/company/agent/AgentSectionNav";
+import { cn } from "@/lib/ui/cn";
 import type { UserRole } from "@/types";
 
 type ExecutionRow = {
