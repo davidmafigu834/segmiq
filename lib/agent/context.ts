@@ -10,6 +10,7 @@ import type { BrainSource, CompanyBrainContext, QualificationPlaybook } from "@/
 import { formatLocalDateTime } from "./dates";
 import { loadCustomerMemory, memoryForContext } from "./memory";
 import type { AgentCompanySettings, AgentCustomerMemory } from "./types";
+import type { KnowledgeUsedRef } from "@/lib/agent/learning/types";
 
 /**
  * Context assembly — a compact, tenant-scoped snapshot the model reasons on.
@@ -91,7 +92,7 @@ export type AgentContext = {
   settings: AgentCompanySettings;
   learnedKnowledge: {
     serialized: string;
-    refs: Array<{ type: "LEARNED_KNOWLEDGE"; id: string; title: string; category?: string }>;
+    refs: KnowledgeUsedRef[];
   };
   companyBrain: {
     serialized: string;
