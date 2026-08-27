@@ -98,8 +98,20 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function intentLabel(intent: string): string {
-  return intent.replace(/_/g, " ").toLowerCase();
+type KnowledgeUsedItem = {
+  title?: string;
+  label?: string;
+  type?: string;
+  category?: string;
+};
+
+function knowledgeUsedItems(execution: Record<string, unknown> | undefined): KnowledgeUsedItem[] {
+  if (!execution) return [];
+  const used = execution.knowledge_used;
+  const sources = execution.sources;
+  if (Array.isArray(used) && used.length) return used as KnowledgeUsedItem[];
+  if (Array.isArray(sources) && sources.length) return sources as KnowledgeUsedItem[];
+  return [];
 }
 
 export function AgentActivityPage(props: {
@@ -463,16 +475,13 @@ function AgentActivityInner({
                   Customer said: “{String(detail.execution.evidence)}”
                 </p>
               ) : null}
-              {Array.isArray(detail?.execution?.sources) && detail.execution.sources.length ? (
+              {knowledgeUsedItems(detail?.execution).length ? (
                 <div className="mt-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
                     Knowledge used
                   </p>
                   <ul className="mt-1 flex flex-col gap-1">
-                    {(
-                      (detail.execution.knowledge_used as Array<{ title?: string; type?: string; category?: string }>) ??
-                      (detail.execution.sources as Array<{ label?: string; type?: string }>)
-                    ).map((source, i) => (
+                    {knowledgeUsedItems(detail?.execution).map((source, i) => (
                       <li key={i} className="text-[12px] text-sales-text-secondary">
                         {source.type === "LEARNED_KNOWLEDGE" || source.type === "learned_knowledge"
                           ? "Learned Knowledge"
@@ -480,7 +489,7 @@ function AgentActivityInner({
                             ? "Company Brain"
                             : source.type?.replace(/_/g, " ") || "Source"}
                         {" · "}
-                        {"title" in source ? source.title : source.label || source.category || ""}
+                        {source.title || source.label || source.category || ""}
                       </li>
                     ))}
                   </ul>
