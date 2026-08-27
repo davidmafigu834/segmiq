@@ -98,6 +98,10 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+function intentLabel(intent: string): string {
+  return intent.replace(/_/g, " ").toLowerCase();
+}
+
 type KnowledgeUsedItem = {
   title?: string;
   label?: string;
