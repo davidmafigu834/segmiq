@@ -404,7 +404,7 @@ const TOOL_DESCRIPTIONS: Record<AgentToolName, string> = {
   conversation_add_internal_note:
     "Add an internal note to the conversation timeline for the team. The customer never sees internal notes.",
   agent_escalate:
-    "Stop autonomous handling and bring a human in. Marks the conversation HUMAN NEEDED with your summary and notifies the owner. Use immediately when the customer asks for a person, disputes pricing, complains, or when you are not confident how to proceed.",
+    "Stop autonomous handling and bring a human in. Marks the conversation HUMAN NEEDED and notifies the owner. REQUIRED in the same turn whenever your reply says you will ask, check, or confirm with the team. Also use when the customer asks for a person, disputes pricing, complains, or you are not confident how to proceed.",
   agent_notify_owner:
     "Send a short internal notification to the conversation owner without stopping the conversation.",
 };

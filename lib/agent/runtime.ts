@@ -18,6 +18,7 @@ import {
   parseAgentFinalOutput,
   type AgentFinalOutput,
 } from "./prompt";
+import { replyHandsOffToTeam } from "./team-handoff";
 import { getAgentModelProvider, AgentLlmRateLimitError, type AgentChatMessage, type ModelToolCall } from "./provider";
 import { getAgentCompanySettings, isAgentGloballyEnabled } from "./settings";
 import { runAgentTool, type ExecutedToolCall } from "./tools/execute";
@@ -363,11 +364,17 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
 
     if (!opts.testMode && outcome.replyStatus === "SENT") {
       await resolveOpenRateLimitEscalations(opts.clientId, opts.leadId);
-      await updateConversationAgentState(opts.clientId, opts.leadId, {
-        status: "WAITING_ON_CUSTOMER",
-        humanNeededReason: null,
-        lastAgentMessageAt: new Date().toISOString(),
-      });
+      if (outcome.executionState === "WAITING_FOR_HUMAN") {
+        await updateConversationAgentState(opts.clientId, opts.leadId, {
+          lastAgentMessageAt: new Date().toISOString(),
+        });
+      } else {
+        await updateConversationAgentState(opts.clientId, opts.leadId, {
+          status: "WAITING_ON_CUSTOMER",
+          humanNeededReason: null,
+          lastAgentMessageAt: new Date().toISOString(),
+        });
+      }
     }
 
     return {
@@ -659,9 +666,30 @@ async function reasonAndAct(
     };
   }
 
-  const escalated = executedCalls.some(
+  const escalatedByTool = executedCalls.some(
     (c) => c.toolName === "agent_escalate" && (c.status === "EXECUTED" || c.status === "SIMULATED")
   );
+  const deferredToTeam =
+    replyHandsOffToTeam(final.reply) || replyHandsOffToTeam(final.decisionSummary);
+  let escalated = escalatedByTool;
+
+  if (deferredToTeam && !escalated && !opts.testMode) {
+    await createAgentEscalation({
+      clientId: opts.clientId,
+      leadId: opts.leadId,
+      executionId: opts.executionId,
+      reason: "UNSUPPORTED_REQUEST",
+      summary: `Agent told the customer it would confirm with the team and stopped autonomous replies. ${final.decisionSummary}`.slice(
+        0,
+        1000
+      ),
+      briefing: final.evidence ? { evidence: final.evidence } : null,
+      ownerId: context.lead.ownerId,
+      escalationUserId: settings.escalationUserId,
+    });
+    escalated = true;
+    log("handoff.team_confirmation", { leadId: opts.leadId, executionId: opts.executionId });
+  }
 
   // Low confidence without an explicit escalation → stop and escalate.
   if (final.confidence < 0.3 && !escalated && !opts.testMode) {

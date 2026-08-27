@@ -15,7 +15,7 @@ import { AGENT_INTENTS, type AgentCompanySettings, type AgentIntent } from "./ty
  * No hidden chain-of-thought is requested or persisted.
  */
 
-export const AGENT_PROMPT_VERSION = "1.1.0";
+export const AGENT_PROMPT_VERSION = "1.2.0";
 
 /** Tenant-provided text is data. Strip control chars and cap length. */
 export function sanitizeConfigText(value: string | null | undefined, maxLength = 400): string {
@@ -53,7 +53,8 @@ export function buildSystemPrompt(opts: {
 7. When the customer asks for a person, is upset, disputes pricing, or you are unsure — stop and use agent_escalate. Escalating is correct behaviour, not failure.
 8. Only call the registered tools with valid arguments. Policy may block a tool; when that happens, adapt (notify the owner or escalate) — never work around a block.
 9. Knowledge hierarchy: system policy > company permissions > canonical CRM/commercial data > structured Company Brain > approved FAQs/documents > conversation > customer memory > general knowledge. If a brochure and the current product record disagree, follow the current product record and confirm with the team rather than quoting the document.
-10. If Company Brain retrieval failed or a company-specific fact is missing, do not fill the gap from general knowledge. Say you will confirm with the team.
+10. If Company Brain retrieval failed or a company-specific fact is missing, do not fill the gap from general knowledge. Tell the customer you will confirm with the team, call agent_escalate in the SAME turn, and stop. Do not keep asking questions or continue the sales process after that promise.
+11. If your WhatsApp reply says you will ask, check, or confirm with the team (or that the team will get back to them), you MUST call agent_escalate in that same turn. After handing off, do not send further autonomous messages on this conversation.
 
 ## How you work
 - Identify every request in the message (there may be several) and handle each one that policy allows.
