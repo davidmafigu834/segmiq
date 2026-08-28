@@ -30,12 +30,12 @@ export function CourseResumeCard() {
   return (
     <div
       data-course-target="dashboard-course-card"
-      className="rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card"
+      className="dashboard-panel dashboard-panel--onboarding overflow-hidden border-0 shadow-none"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-sales-text-primary">{title}</p>
-          <p className="mt-1 text-[12px] text-sales-text-secondary">
+      <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8 sm:px-6">
+        <div className="min-w-0 sm:max-w-[640px]">
+          <p className="dashboard-section-title">{title}</p>
+          <p className="mt-2.5 text-[13px] leading-relaxed text-sales-text-secondary">
             {done} of {total} lessons complete
             {nextLesson ? (
               <>
@@ -44,8 +44,15 @@ export function CourseResumeCard() {
               </>
             ) : null}
           </p>
+          <p className="mt-3 text-[12px] leading-relaxed text-sales-text-muted">
+            Always available under{" "}
+            <Link href="/sales/training" className="underline hover:text-sales-text-secondary">
+              Help & Support → Training
+            </Link>
+            .
+          </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-3 sm:self-center">
           <Button
             type="button"
             variant="primary"
@@ -59,20 +66,13 @@ export function CourseResumeCard() {
           </Button>
           <button
             type="button"
-            className="text-[11px] text-sales-text-muted hover:text-sales-text-secondary"
+            className="px-1 text-[12px] text-sales-text-muted hover:text-sales-text-secondary"
             onClick={hideCard}
           >
             Hide
           </button>
         </div>
       </div>
-      <p className="mt-2 text-[11px] text-sales-text-muted">
-        Always available under{" "}
-        <Link href="/sales/training" className="underline hover:text-sales-text-secondary">
-          Help & Support → Training
-        </Link>
-        .
-      </p>
     </div>
   );
 }

@@ -155,7 +155,7 @@ function SalesDashboardInner({
           ) : null}
 
           {!data.hasAnyLeads && !data.hasAnyDeals ? (
-            <div className="rounded-[14px] border border-sales-border bg-sales-surface p-5">
+            <div className="dashboard-panel overflow-hidden border-0 p-5 shadow-none">
               <p className="text-[15px] font-semibold text-sales-text-primary">
                 No enquiries or Deals yet
               </p>

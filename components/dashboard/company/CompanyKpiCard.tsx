@@ -58,7 +58,7 @@ function TrendChip({
 
   if (trend.direction === "alert") {
     return (
-      <span className="inline-flex max-w-full items-center truncate rounded-full bg-sales-danger-soft px-1.5 py-0.5 text-[11px] font-medium text-sales-danger-fg">
+      <span className="dashboard-kpi-pill inline-flex max-w-full items-center truncate rounded-full bg-sales-danger-soft px-1.5 py-0.5 text-[11px] font-medium text-sales-danger-fg">
         {trend.label}
       </span>
     );
@@ -66,7 +66,7 @@ function TrendChip({
 
   if (trend.direction === "flat") {
     return (
-      <span className="inline-flex max-w-full truncate rounded-full bg-sales-neutral-100 px-1.5 py-0.5 text-[11px] font-medium text-sales-text-muted">
+      <span className="dashboard-kpi-pill inline-flex max-w-full truncate rounded-full bg-sales-neutral-100 px-1.5 py-0.5 text-[11px] font-medium text-sales-text-muted">
         {trend.label}
       </span>
     );
@@ -77,7 +77,7 @@ function TrendChip({
   return (
     <span
       className={cn(
-        "inline-flex max-w-full items-center gap-0.5 truncate rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+        "dashboard-kpi-pill inline-flex max-w-full items-center gap-0.5 truncate rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
         up ? "bg-sales-success-soft text-sales-success-fg" : "bg-sales-danger-soft text-sales-danger-fg"
       )}
     >

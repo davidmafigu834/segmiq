@@ -4086,14 +4086,14 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-brand-fg: #d4ff4f;
 
   /* Sidebar — slightly deeper than the canvas */
-  --sales-sidebar-bg: rgba(3, 12, 28, 0.96);
+  --sales-sidebar-bg: #020c1a;
   --sales-sidebar-border: rgba(127, 149, 194, 0.1);
   --sales-sidebar-divider: rgba(127, 149, 194, 0.08);
   --sales-sidebar-text: #8799bb;
   --sales-sidebar-text-hover: #f8fafc;
   --sales-sidebar-text-active: #f8fafc;
   --sales-sidebar-muted: #7182a7;
-  --sales-sidebar-icon: #7a8cb0;
+  --sales-sidebar-icon: #7d8fb4;
   --sales-sidebar-icon-active: #d4ff4f;
   --sales-sidebar-hover: rgba(255, 255, 255, 0.025);
   --sales-sidebar-active: rgba(212, 255, 79, 0.12);
