@@ -9,7 +9,7 @@ import type { SalesActor, SalesPageContext } from "@/lib/agent/sales/types";
 
 export const dynamic = "force-dynamic";
 
-export async function resolveSalesActor(req: Request): Promise<
+async function resolveSalesActor(req: Request): Promise<
   | { ok: true; actor: SalesActor }
   | { ok: false; status: number; error: string }
 > {
