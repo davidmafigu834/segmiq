@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { CompanyDashCard, CompanyDashEmpty, DashLink, PeriodChip } from "./CompanyDashCard";
 import type { SalesPipelineSnapshotStage } from "@/components/dashboard/sales/types";
+import type { CSSProperties } from "react";
 
 export function CompanyPipelineSnapshotCard({
   stages,
@@ -16,6 +18,7 @@ export function CompanyPipelineSnapshotCard({
   return (
     <CompanyDashCard
       title="Pipeline snapshot"
+      className="dashboard-panel--analytics"
       action={
         <div className="flex items-center gap-2.5">
           <PeriodChip>Deals only</PeriodChip>
@@ -37,7 +40,7 @@ export function CompanyPipelineSnapshotCard({
           }
         />
       ) : (
-        <div className="px-4 py-4 sm:px-5">
+        <div className="px-5 py-5">
           {totalKnown > 0 ? (
             <div className="mb-4 flex h-2.5 overflow-hidden rounded-full bg-sales-neutral-100" aria-hidden>
               {stages.map((stage) => {
@@ -55,37 +58,36 @@ export function CompanyPipelineSnapshotCard({
           ) : null}
 
           <div
-            className="grid grid-cols-2 gap-2 sm:grid-cols-3 layout:grid-cols-4 xl:grid-cols-5"
+            className="flex flex-wrap items-stretch gap-2 layout:flex-nowrap layout:overflow-x-auto"
             role="list"
             aria-label="Active Deal stages"
           >
-            {stages.map((stage) => (
-              <Link
-                key={stage.id}
-                href={stage.href}
-                role="listitem"
-                className="dashboard-card min-w-0 px-3 py-3 transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
-              >
-                <div className="mb-2 flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: stage.color }}
-                    aria-hidden
-                  />
-                  <p className="truncate text-[12px] font-semibold text-sales-text-primary">{stage.label}</p>
-                </div>
-                <p className="text-[16px] font-semibold tabular-nums tracking-[-0.03em] text-sales-text-primary">
-                  {stage.valueLabel}
-                </p>
-                <p className="mt-0.5 text-[11px] tabular-nums text-sales-text-muted">
-                  {stage.dealCount} {stage.dealCount === 1 ? "deal" : "deals"}
-                </p>
-                {stage.awaitingEstimate > 0 ? (
-                  <p className="mt-1 text-[10px] text-sales-text-muted">
-                    {stage.awaitingEstimate} awaiting estimate
+            {stages.map((stage, idx) => (
+              <div key={stage.id} className="flex min-w-0 flex-[1_1_140px] items-stretch gap-2">
+                <Link
+                  href={stage.href}
+                  role="listitem"
+                  className="dashboard-stage-card min-w-0 transition-colors hover:border-sales-border-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
+                  style={{ ["--stage-accent" as string]: stage.color } as CSSProperties}
+                >
+                  <span className="dashboard-stage-accent" aria-hidden />
+                  <p className="truncate text-[12px] font-semibold text-sales-text-secondary">{stage.label}</p>
+                  <p className="mt-2 text-[20px] font-bold tabular-nums tracking-[-0.04em] text-sales-text-primary">
+                    {stage.valueLabel}
                   </p>
+                  <p className="dashboard-activity-detail mt-1 text-[11px] tabular-nums">
+                    {stage.dealCount} {stage.dealCount === 1 ? "deal" : "deals"}
+                  </p>
+                  {stage.awaitingEstimate > 0 ? (
+                    <p className="mt-1 text-[10px] text-sales-text-muted">
+                      {stage.awaitingEstimate} awaiting estimate
+                    </p>
+                  ) : null}
+                </Link>
+                {idx < stages.length - 1 ? (
+                  <ChevronRight size={16} className="dashboard-stage-arrow" aria-hidden />
                 ) : null}
-              </Link>
+              </div>
             ))}
           </div>
         </div>

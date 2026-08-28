@@ -13,8 +13,8 @@ const FUNNEL_COLOR: Record<SalesFunnelStage["icon"], string> = {
   enquiries: "var(--sales-info)",
   contacted: "#6b7cff",
   qualified: "var(--sales-cyan)",
-  deals: "var(--sales-purple)",
-  proposal: "var(--sales-success)",
+  deals: "var(--sales-success)",
+  proposal: "var(--sales-purple)",
   won: "var(--sales-brand)",
 };
 
@@ -30,7 +30,11 @@ export function CompanyFunnelCard({
   const peak = Math.max(...stages.map((stage) => stage.count), 1);
 
   return (
-    <CompanyDashCard title="Lead → Deal funnel" action={<PeriodChip>This month</PeriodChip>}>
+    <CompanyDashCard
+      title="Lead → Deal funnel"
+      className="dashboard-panel--analytics"
+      action={<PeriodChip>This month</PeriodChip>}
+    >
       <div className="grid gap-0 sm:grid-cols-[132px_minmax(0,1fr)]">
         <div className="flex flex-col justify-center border-b border-sales-border-subtle px-5 py-4 sm:border-b-0 sm:border-r">
           <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
@@ -42,7 +46,7 @@ export function CompanyFunnelCard({
           <p className="mt-2 text-[11px] leading-snug text-sales-text-muted">Overall conversion</p>
         </div>
 
-        <div className="px-4 py-4 sm:px-5">
+        <div className="px-5 py-5 sm:px-5">
           <ol className="space-y-2.5" aria-label="Lead to Deal funnel this month">
             {stages.map((stage, idx) => {
               const prev = idx > 0 ? stages[idx - 1]! : null;

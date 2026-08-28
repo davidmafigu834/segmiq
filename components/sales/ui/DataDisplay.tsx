@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
 import type { SalesKpiItem } from "@/components/dashboard/sales/types";
+import type { CSSProperties } from "react";
 
 const ICON_MAP = {
   customers: UsersRound,
@@ -31,31 +32,69 @@ const ICON_MAP = {
   deals: BriefcaseBusiness,
 } as const;
 
-const ICON_TINT: Record<SalesKpiItem["icon"], string> = {
-  customers: "bg-sales-brand-soft-solid text-sales-brand-fg",
-  companies: "bg-sales-success-soft text-sales-success-fg",
-  individuals: "bg-sales-info-soft text-sales-info-fg",
-  followups: "bg-sales-warning-soft text-sales-warning-fg",
-  pipeline: "bg-sales-success-soft text-sales-success-fg",
-  won: "bg-sales-brand-soft-solid text-sales-brand-fg",
-  conversion: "bg-sales-teal-soft text-sales-teal-fg",
-  response: "bg-sales-neutral-100 text-sales-text-secondary",
-  enquiries: "bg-sales-info-soft text-sales-info-fg",
-  deals: "bg-sales-purple-soft text-sales-purple-fg",
+const KPI_ACCENT: Record<SalesKpiItem["icon"], string> = {
+  customers: "var(--sales-brand)",
+  companies: "var(--sales-success)",
+  individuals: "var(--sales-info)",
+  followups: "var(--sales-warning)",
+  pipeline: "var(--sales-success)",
+  won: "var(--sales-brand)",
+  conversion: "var(--sales-cyan)",
+  response: "var(--sales-orange)",
+  enquiries: "var(--sales-info)",
+  deals: "var(--sales-purple)",
 };
 
-const ACCENT: Record<SalesKpiItem["icon"], string> = {
-  customers: "bg-sales-brand",
-  companies: "bg-sales-success",
-  individuals: "bg-sales-info",
-  followups: "bg-sales-warning",
-  pipeline: "bg-sales-success",
-  won: "bg-sales-brand",
-  conversion: "bg-sales-teal",
-  response: "bg-sales-warning",
-  enquiries: "bg-sales-info",
-  deals: "bg-sales-purple",
-};
+export function KpiStat({ item }: { item: SalesKpiItem }) {
+  const Icon = ICON_MAP[item.icon];
+  const style = { ["--kpi-accent" as string]: KPI_ACCENT[item.icon] } as CSSProperties;
+  const body = (
+    <>
+      <span className="dashboard-kpi-accent" aria-hidden />
+      <div className="flex items-start justify-between gap-2">
+        <p className="dashboard-kpi-label min-w-0">{item.label}</p>
+        <span className="dashboard-kpi-icon">
+          <Icon size={14} strokeWidth={1.8} aria-hidden />
+        </span>
+      </div>
+      <p className="dashboard-kpi-value mt-3 truncate">{item.value || "—"}</p>
+      <div className="mt-auto pt-3">
+        {item.trend ? (
+          <TrendChip direction={item.trend.direction} label={item.trend.label} />
+        ) : (
+          <p className="truncate text-[11px] leading-4 text-sales-text-muted">{item.supporting}</p>
+        )}
+      </div>
+    </>
+  );
+
+  const className =
+    "dashboard-kpi group relative flex h-full min-h-[118px] min-w-0 flex-col p-[18px] sm:min-h-[128px]";
+
+  if (item.href) {
+    return (
+      <Link
+        href={item.href}
+        style={style}
+        data-course-target={item.id ? `dashboard-kpi-${item.id}` : undefined}
+        className={cn(className, "focus:outline-none")}
+        aria-label={`View ${item.label}`}
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <article
+      className={className}
+      style={style}
+      data-course-target={item.id ? `dashboard-kpi-${item.id}` : undefined}
+    >
+      {body}
+    </article>
+  );
+}
 
 export function Trend({
   direction,
@@ -141,67 +180,6 @@ function TrendChip({
       <Icon size={12} strokeWidth={2} className="shrink-0" aria-hidden />
       <span className="truncate">{label}</span>
     </span>
-  );
-}
-
-export function KpiStat({ item }: { item: SalesKpiItem }) {
-  const Icon = ICON_MAP[item.icon];
-  const body = (
-    <>
-      <span className={cn("absolute inset-x-0 top-0 h-[2px]", ACCENT[item.icon])} aria-hidden />
-      <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
-          {item.label}
-        </p>
-        <span
-          className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-sales-sm",
-            ICON_TINT[item.icon]
-          )}
-        >
-          <Icon size={14} strokeWidth={1.8} aria-hidden />
-        </span>
-      </div>
-      <p className="mt-3 truncate text-[24px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-sales-text-primary sm:text-[26px]">
-        {item.value || "—"}
-      </p>
-      <div className="mt-auto pt-3">
-        {item.trend ? (
-          <TrendChip direction={item.trend.direction} label={item.trend.label} />
-        ) : (
-          <p className="truncate text-[11px] leading-4 text-sales-text-muted">{item.supporting}</p>
-        )}
-      </div>
-    </>
-  );
-
-  const className =
-    "sd-card group relative flex h-full min-h-[118px] min-w-0 flex-col overflow-hidden p-3.5 sm:min-h-[128px] sm:p-4";
-
-  if (item.href) {
-    return (
-      <Link
-        href={item.href}
-        data-course-target={item.id ? `dashboard-kpi-${item.id}` : undefined}
-        className={cn(
-          className,
-          "hover:border-sales-border-strong hover:shadow-sales-card-hover",
-          "focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]"
-        )}
-        aria-label={`View ${item.label}`}
-      >
-        {body}
-      </Link>
-    );
-  }
-
-  return (
-    <article
-      className={className}
-      data-course-target={item.id ? `dashboard-kpi-${item.id}` : undefined}
-    >
-      {body}
-    </article>
   );
 }
 

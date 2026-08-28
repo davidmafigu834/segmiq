@@ -12,20 +12,20 @@
 /* ---------- Dark canvas (level 0) ---------- */
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium.dashboard-shell {
-  background-color: var(--app-bg, #061126);
+  background-color: #050f22;
   background-image:
-    radial-gradient(700px circle at 72% -10%, rgba(94, 57, 210, 0.13), transparent 65%),
-    radial-gradient(800px circle at 96% 68%, rgba(60, 68, 200, 0.08), transparent 70%),
-    linear-gradient(135deg, #050e20 0%, #07142c 45%, #091a39 100%);
+    radial-gradient(700px circle at 78% 8%, rgba(91, 43, 168, 0.1), transparent 68%),
+    radial-gradient(900px circle at 92% 80%, rgba(52, 88, 164, 0.07), transparent 72%),
+    linear-gradient(165deg, #050f22 0%, #061126 55%, #07142c 100%);
 }
 
 html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium),
 html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium) body {
-  background-color: #061126;
+  background-color: #050f22;
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboard-premium) {
-  background-color: #061126 !important;
+  background-color: #050f22 !important;
 }
 
 .dashboard-canvas {
@@ -48,8 +48,8 @@ html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboar
 
 .segmiq-ambient-glow {
   background:
-    radial-gradient(640px circle at 78% -8%, rgba(94, 57, 210, 0.1), transparent 62%),
-    radial-gradient(560px circle at 100% 78%, rgba(60, 68, 200, 0.07), transparent 68%);
+    radial-gradient(700px circle at 78% 8%, rgba(91, 43, 168, 0.1), transparent 68%),
+    radial-gradient(900px circle at 92% 80%, rgba(52, 88, 164, 0.07), transparent 72%);
 }
 
 html[data-crm-theme="light"] .segmiq-ambient-glow {
@@ -60,37 +60,38 @@ html[data-crm-theme="light"] .segmiq-ambient-glow {
 
 .segmiq-dot-wave {
   overflow: hidden;
+  opacity: 1;
 }
 
 .segmiq-dot-wave svg {
   position: absolute;
-  width: 48%;
-  height: 46%;
-  max-width: 640px;
+  width: 56%;
+  height: 52%;
+  max-width: 720px;
 }
 
 .segmiq-dot-wave__tr {
-  top: -4%;
-  right: -2%;
-  mask-image: radial-gradient(ellipse 70% 75% at 78% 28%, #000 0%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 75% at 78% 28%, #000 0%, transparent 78%);
+  top: -6%;
+  right: -3%;
+  mask-image: radial-gradient(ellipse 68% 72% at 82% 22%, #000 8%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 68% 72% at 82% 22%, #000 8%, transparent 78%);
 }
 
 .segmiq-dot-wave__br {
-  right: -4%;
-  bottom: -6%;
-  width: 42%;
-  height: 42%;
-  mask-image: radial-gradient(ellipse 65% 70% at 82% 72%, #000 0%, transparent 76%);
-  -webkit-mask-image: radial-gradient(ellipse 65% 70% at 82% 72%, #000 0%, transparent 76%);
+  right: -5%;
+  bottom: -8%;
+  width: 50%;
+  height: 48%;
+  mask-image: radial-gradient(ellipse 70% 68% at 86% 78%, #000 6%, transparent 76%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 68% at 86% 78%, #000 6%, transparent 76%);
 }
 
 .segmiq-dot-wave .segmiq-dot {
-  fill: #7ea2ff;
+  fill: rgb(76, 115, 220);
 }
 
 .segmiq-dot-wave .segmiq-dot--violet {
-  fill: #9366ff;
+  fill: rgb(110, 92, 255);
 }
 
 .segmiq-dot-wave .segmiq-dot--lime {
@@ -107,7 +108,7 @@ html[data-crm-theme="light"] .segmiq-ambient-glow {
 }
 
 html[data-crm-theme="light"] .segmiq-dot-wave {
-  opacity: 0.35;
+  opacity: 0.16;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -132,14 +133,34 @@ html[data-crm-theme="light"] .segmiq-dot-wave {
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel,
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-card:not(.dashboard-kpi) {
-  background: linear-gradient(145deg, rgba(11, 27, 59, 0.96), rgba(8, 21, 47, 0.98));
-  border-color: rgba(126, 150, 205, 0.12);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(145deg, rgba(10, 28, 59, 0.94), rgba(7, 21, 46, 0.97));
+  border-color: rgba(128, 151, 200, 0.11);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--attention {
-  background: rgba(10, 26, 57, 0.9);
-  border-color: var(--border-soft, rgba(126, 150, 205, 0.13));
+  background: linear-gradient(145deg, rgba(14, 32, 64, 0.96), rgba(10, 24, 50, 0.98));
+  border-color: rgba(128, 151, 200, 0.16);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--analytics {
+  background: linear-gradient(145deg, rgba(9, 24, 52, 0.92), rgba(6, 18, 40, 0.96));
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--table {
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.015);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--feed {
+  background: linear-gradient(180deg, rgba(10, 26, 56, 0.94), rgba(7, 20, 44, 0.97));
+}
+
+.sales-dashboard-premium .dashboard-panel-header {
+  padding: 16px 20px;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel-header {
+  border-bottom-color: rgba(128, 151, 200, 0.08);
 }
 
 .dashboard-group {
@@ -180,20 +201,9 @@ html[data-crm-theme="light"] .dashboard-group::after {
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-kpi {
-  background: linear-gradient(145deg, rgba(14, 32, 67, 0.95), rgba(8, 23, 51, 0.96));
-  border-color: rgba(115, 142, 199, 0.14);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px rgba(255, 255, 255, 0.025);
-}
-
-.dashboard-kpi-accent {
-  position: absolute;
-  top: 0;
-  left: 10%;
-  right: 10%;
-  height: 2px;
-  pointer-events: none;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, var(--kpi-accent), transparent);
+  background: linear-gradient(145deg, rgba(15, 34, 70, 0.98), rgba(8, 23, 50, 0.98));
+  border-color: rgba(122, 148, 198, 0.13);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .dashboard-kpi-icon {
@@ -207,6 +217,18 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard
   color: var(--kpi-accent);
   background: color-mix(in srgb, var(--kpi-accent) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--kpi-accent) 15%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--kpi-accent) 5%, transparent);
+}
+
+.dashboard-kpi-accent {
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  pointer-events: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--kpi-accent), transparent);
 }
 
 .sales-dashboard-premium a.dashboard-kpi {
@@ -267,21 +289,110 @@ html[data-crm]:not([data-crm-theme="light"]) .dashboard-alert {
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .dashboard-card {
-  background: rgba(14, 35, 73, 0.55);
+  background: #0d2143;
   border-color: rgba(126, 150, 205, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.dashboard-stage-card {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1 1 140px;
+  border-radius: 12px;
+  padding: 14px 14px 12px;
+  background: var(--sales-surface-subtle);
+  border: 1px solid var(--sales-border-subtle);
+  box-shadow: 0 6px 16px rgba(16, 24, 64, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-stage-card {
+  background: #0d2143;
+  border-color: rgba(122, 148, 198, 0.12);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.dashboard-stage-accent {
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--stage-accent, var(--sales-info)), transparent);
+}
+
+.dashboard-stage-arrow {
+  display: none;
+  flex-shrink: 0;
+  align-self: center;
+  color: #60759d;
+  opacity: 0.55;
+}
+
+.dashboard-stage-arrow--inline {
+  display: block;
+}
+
+@media (min-width: 1100px) {
+  .dashboard-stage-arrow {
+    display: block;
+  }
 }
 
 .dashboard-list-row {
-  min-height: 52px;
+  min-height: 60px;
   transition: background-color 120ms ease;
 }
 
 .dashboard-list-row:hover {
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.dashboard-activity-icon {
+  display: flex;
+  height: 36px;
+  width: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(90, 119, 184, 0.09);
+  border: 1px solid rgba(128, 151, 200, 0.08);
+}
+
+.dashboard-activity-title {
+  font-weight: 600;
+  color: var(--sales-text-primary);
+}
+
+.dashboard-activity-detail {
+  color: var(--sales-text-secondary);
+}
+
+.dashboard-activity-time {
+  color: var(--sales-text-muted);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-activity-title {
+  color: #f7f9fc;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-activity-detail {
+  color: #9aaccc;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-activity-time {
+  color: #60759d;
 }
 
 html[data-crm-theme="light"] .dashboard-list-row:hover {
   background: var(--sales-surface-hover);
+}
+
+html[data-crm-theme="light"] .dashboard-activity-icon {
+  background: var(--sales-neutral-100);
+  border-color: var(--sales-border-subtle);
 }
 
 .dashboard-date-chip {
@@ -316,33 +427,108 @@ html[data-crm-theme="light"] .dashboard-list-row:hover {
 /* ---------- Funnel bars ---------- */
 
 .dashboard-funnel-track {
-  height: 8px;
+  height: 10px;
   overflow: hidden;
   border-radius: 999px;
   background: var(--sales-neutral-100);
 }
 
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-funnel-track {
+  background: rgba(8, 20, 44, 0.85);
+}
+
 .dashboard-funnel-fill {
+  box-sizing: border-box;
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--funnel-color) 90%, #fff),
-    color-mix(in srgb, var(--funnel-color) 62%, #061126)
+    color-mix(in srgb, var(--funnel-color) 60%, transparent),
+    color-mix(in srgb, var(--funnel-color) 28%, transparent)
   );
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px color-mix(in srgb, var(--funnel-color) 30%, transparent);
+}
+
+.dashboard-funnel-step {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--funnel-color) 60%, transparent),
+    color-mix(in srgb, var(--funnel-color) 28%, transparent)
+  );
+  border: 1px solid color-mix(in srgb, var(--funnel-color) 30%, transparent);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.dashboard-funnel-step--idle {
+  background: color-mix(in srgb, var(--funnel-color) 10%, transparent);
+  border-color: color-mix(in srgb, var(--funnel-color) 16%, transparent);
+  box-shadow: none;
+}
+
+/* ---------- Tables / actions ---------- */
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-table thead tr,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--table thead tr {
+  background: rgba(6, 16, 36, 0.72);
+  border-bottom-color: rgba(125, 148, 194, 0.07);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-table tbody,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--table tbody {
+  border-color: rgba(125, 148, 194, 0.07);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-table tbody tr,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--table tbody tr {
+  background: transparent;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-table tbody tr:hover,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-table tbody td,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--table tbody td {
+  border-color: rgba(125, 148, 194, 0.07);
+}
+
+.dashboard-action-btn {
+  background: var(--sales-surface);
+  border: 1px solid var(--sales-border);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-action-btn {
+  background: rgba(11, 29, 59, 0.7);
+  border-color: rgba(126, 150, 205, 0.16);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-action-btn:hover {
+  background: rgba(16, 38, 76, 0.86);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-action-btn--next {
+  background: rgba(16, 38, 76, 0.92);
+  border-color: rgba(126, 150, 205, 0.28);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-action-btn--wa {
+  border-color: rgba(37, 211, 102, 0.28);
+  color: #25d366;
 }
 
 /* ---------- Sidebar ---------- */
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium aside.fixed {
-  background: rgba(4, 14, 33, 0.94);
-  border-right-color: rgba(132, 151, 190, 0.13);
+  background: rgba(3, 12, 28, 0.96);
+  border-right-color: rgba(127, 149, 194, 0.1);
 }
 
 .sales-dashboard-premium .sales-nav-item-active {
-  background: linear-gradient(90deg, rgba(212, 255, 79, 0.12), rgba(212, 255, 79, 0.035));
-  color: var(--sales-sidebar-text-active);
+  background: linear-gradient(90deg, rgba(212, 255, 79, 0.12), rgba(212, 255, 79, 0.025));
+  color: #f8fafc;
   font-weight: 600;
 }
 
@@ -354,7 +540,8 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium aside.fixe
   height: 24px;
   transform: translateY(-50%);
   border-radius: 999px;
-  background: var(--sales-sidebar-active-indicator);
+  background: #d4ff4f;
+  box-shadow: 0 0 14px rgba(212, 255, 79, 0.13);
 }
 
 /* ---------- Search / primary CTA ---------- */
@@ -372,9 +559,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-search
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-btn-primary:hover:not(:disabled) {
-  box-shadow:
-    0 0 0 1px rgba(212, 255, 79, 0.25),
-    0 8px 24px rgba(212, 255, 79, 0.1);
+  box-shadow: 0 0 14px rgba(212, 255, 79, 0.13);
 }
 
 .sales-dashboard-premium .sales-btn-primary:focus-visible {

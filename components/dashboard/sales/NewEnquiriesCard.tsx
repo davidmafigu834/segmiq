@@ -64,7 +64,7 @@ function EnquiryActions({ item }: { item: SalesEnquiryPriorityItem }) {
         <a
           href={`tel:${item.phone}`}
           aria-label={`Call ${item.name}`}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-sales-md border border-sales-border px-2.5 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover sm:min-h-9 sm:min-w-0"
+          className="dashboard-action-btn dashboard-action-btn--next inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-sales-md px-2.5 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover sm:min-h-9 sm:min-w-0"
         >
           <Phone size={14} aria-hidden />
           <span className="hidden sm:inline">Call</span>
@@ -76,7 +76,7 @@ function EnquiryActions({ item }: { item: SalesEnquiryPriorityItem }) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`WhatsApp ${item.name}`}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-sales-md border border-sales-border px-2.5 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover sm:min-h-9 sm:min-w-0"
+          className="dashboard-action-btn dashboard-action-btn--next dashboard-action-btn--wa inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-sales-md px-2.5 text-[12px] font-semibold hover:bg-sales-surface-hover sm:min-h-9 sm:min-w-0"
         >
           <SiWhatsapp size={14} className="text-[#25D366]" aria-hidden />
           <span className="hidden sm:inline">WhatsApp</span>
@@ -85,7 +85,7 @@ function EnquiryActions({ item }: { item: SalesEnquiryPriorityItem }) {
       <Link
         href={item.href}
         aria-label={`Open lead ${item.name}`}
-        className="inline-flex min-h-11 items-center justify-center rounded-sales-md border border-sales-border px-2.5 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover sm:min-h-9"
+        className="dashboard-action-btn inline-flex min-h-11 items-center justify-center rounded-sales-md px-2.5 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover sm:min-h-9"
       >
         Open lead
       </Link>
@@ -103,6 +103,7 @@ export function NewEnquiriesCard({
   return (
     <CardShell
       title="New enquiries needing action"
+      className="dashboard-panel--table"
       action={
         <Link
           href="/sales/call-now"
@@ -113,7 +114,7 @@ export function NewEnquiriesCard({
       }
     >
       {items.length === 0 ? (
-        <div className="px-5 py-8 text-center">
+        <div className="px-5 py-5 text-center">
           <p className="text-[13px] font-medium text-sales-text-primary">
             No new enquiries need attention.
           </p>
@@ -125,7 +126,7 @@ export function NewEnquiriesCard({
         <>
           {/* Desktop table — full width */}
           <div className="hidden w-full md:block">
-            <table className="w-full table-fixed text-left">
+            <table className="dashboard-table w-full table-fixed text-left">
               <colgroup>
                 <col className="w-[34%]" />
                 <col className="w-[16%]" />
@@ -142,11 +143,11 @@ export function NewEnquiriesCard({
                   <th className="px-5 py-2.5 font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-sales-border-subtle">
+              <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
                 {items.map((item) => (
                   <tr
                     key={item.id}
-                    className="h-[54px] transition-colors hover:bg-sales-surface-hover"
+                    className="dashboard-list-row h-[54px]"
                   >
                     <td className="px-5 py-2">
                       <Link href={item.href} className="block min-w-0">

@@ -48,7 +48,11 @@ export function CompanyTeamCalendarCard({
   const groups = groupByDay(upcoming);
 
   return (
-    <CompanyDashCard title="Team calendar" action={<PeriodChip>Next 7 days</PeriodChip>}>
+    <CompanyDashCard
+      title="Team calendar"
+      className="dashboard-panel--feed h-full"
+      action={<PeriodChip>Next 7 days</PeriodChip>}
+    >
       <div className="px-4 py-3 sm:px-5">
         {overdue.length > 0 ? (
           <div className="mb-3 rounded-[12px] border border-sales-danger/20 bg-sales-danger-soft px-3 py-2.5">

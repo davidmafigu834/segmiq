@@ -11,6 +11,7 @@ import {
 import type { SalesFunnelStage } from "./types";
 import { CardShell } from "./KpiCard";
 import { cn } from "@/lib/ui/cn";
+import type { CSSProperties } from "react";
 
 const FUNNEL_ICONS = {
   enquiries: Inbox,
@@ -24,13 +25,23 @@ const FUNNEL_ICONS = {
 /** Progressive width for a classic funnel silhouette (top → bottom). */
 const FUNNEL_WIDTHS = ["100%", "88%", "76%", "64%", "52%", "40%"] as const;
 
+const FUNNEL_COLOR: Record<SalesFunnelStage["icon"], string> = {
+  enquiries: "var(--sales-info)",
+  contacted: "#6b7cff",
+  qualified: "var(--sales-cyan)",
+  deals: "var(--sales-success)",
+  proposal: "var(--sales-purple)",
+  won: "var(--sales-brand)",
+};
+
 export function LeadDealFunnelCard({ stages }: { stages: SalesFunnelStage[] }) {
   return (
     <CardShell
       title="Lead → Deal funnel"
+      className="dashboard-panel--analytics"
       action={<span className="text-[12px] font-medium text-sales-text-muted">This month</span>}
     >
-      <div className="px-4 py-4 sm:px-5">
+      <div className="px-5 py-5">
         <p className="mb-4 text-[11px] leading-relaxed text-sales-text-muted">
           How enquiries become commercial outcomes (period counts).
         </p>
@@ -56,30 +67,27 @@ export function LeadDealFunnelCard({ stages }: { stages: SalesFunnelStage[] }) {
               >
                 <div
                   className={cn(
-                    "flex min-h-[48px] items-center justify-between gap-2 border border-sales-border px-3 py-2.5",
+                    "dashboard-funnel-step flex min-h-[48px] items-center justify-between gap-2 px-3 py-2.5",
                     isFirst && "rounded-t-[12px]",
                     isLast && "rounded-b-[12px]",
-                    !isFirst && !isLast && "rounded-none",
-                    isWon && hasActivity
-                      ? "border-sales-success/35 bg-sales-success-soft"
-                      : hasActivity
-                        ? "bg-sales-surface-raised"
-                        : "bg-[var(--sales-neutral-100)]/60"
+                    !hasActivity && "dashboard-funnel-step--idle"
                   )}
-                  style={{
-                    width,
-                    // Trapezoid step — classic funnel taper without 3D/gradients
-                    clipPath: isLast
-                      ? "polygon(0 0, 100% 0, 100% 100%, 0 100%)"
-                      : "polygon(0 0, 100% 0, 96.5% 100%, 3.5% 100%)",
-                  }}
+                  style={
+                    {
+                      width,
+                      ["--funnel-color" as string]: FUNNEL_COLOR[stage.icon],
+                      clipPath: isLast
+                        ? "polygon(0 0, 100% 0, 100% 100%, 0 100%)"
+                        : "polygon(0 0, 100% 0, 96.5% 100%, 3.5% 100%)",
+                    } as CSSProperties
+                  }
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span
                       className={cn(
                         "flex h-7 w-7 shrink-0 items-center justify-center rounded-sales-sm",
                         isWon && hasActivity
-                          ? "bg-sales-success/15 text-sales-success-fg"
+                          ? "bg-sales-brand-soft text-sales-brand-fg"
                           : "bg-sales-neutral-100 text-sales-text-secondary"
                       )}
                     >

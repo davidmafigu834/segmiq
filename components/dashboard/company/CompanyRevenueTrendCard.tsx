@@ -30,7 +30,11 @@ export function CompanyRevenueTrendCard({
   const colors = useSalesChartColors();
 
   return (
-    <CompanyDashCard title="Revenue trend" action={<PeriodChip>Last 6 months</PeriodChip>}>
+    <CompanyDashCard
+      title="Revenue trend"
+      className="dashboard-panel--analytics h-full"
+      action={<PeriodChip>Last 6 months</PeriodChip>}
+    >
       <div className="px-4 pb-4 pt-3 sm:px-5">
         {!hasHistory ? (
           <CompanyDashEmpty

@@ -64,7 +64,7 @@ export function CompanyDashboard({
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
 
-      <div className="grid w-full grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-5">
+      <div className="grid w-full grid-cols-1 items-start gap-4 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-5">
         <CompanyTeamCalendarCard items={data.teamCalendar} overdueCount={data.teamCalendarOverdueCount} />
         <div className="hidden layout:block">
           <CompanyFunnelCard
@@ -75,7 +75,7 @@ export function CompanyDashboard({
         </div>
       </div>
 
-      <div className="grid w-full grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.95fr)] layout:gap-5">
+      <div className="grid w-full grid-cols-1 items-start gap-4 layout:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.95fr)] layout:gap-5">
         <CompanyTeamPerformanceCard
           rows={data.team}
           teamTotal={data.teamTotal}
@@ -95,7 +95,7 @@ export function CompanyDashboard({
 
       <CompanyPipelineSnapshotCard stages={data.pipelineSnapshot} />
 
-      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 layout:gap-5">
+      <div className="grid w-full grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3 layout:gap-5">
         <CompanyDealsAtRiskCard
           items={data.atRiskDeals}
           total={data.atRiskTotal}

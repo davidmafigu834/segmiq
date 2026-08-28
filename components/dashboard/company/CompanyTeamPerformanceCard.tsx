@@ -68,6 +68,7 @@ export function CompanyTeamPerformanceCard({
   return (
     <CompanyDashCard
       title="Team performance"
+      className="dashboard-panel--table"
       action={<PeriodChip>This month</PeriodChip>}
     >
       {rows.length === 0 ? (
@@ -79,7 +80,7 @@ export function CompanyTeamPerformanceCard({
       ) : (
         <>
           <div className="hidden overflow-x-auto layout:block">
-            <table className="w-full min-w-[640px] text-left">
+            <table className="dashboard-table w-full min-w-[640px] text-left">
               <thead>
                 <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
                   <th className="px-5 py-2.5 font-semibold">Salesperson</th>
@@ -90,7 +91,7 @@ export function CompanyTeamPerformanceCard({
                   <th className="px-5 py-2.5 font-semibold">Goal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-sales-border-subtle">
+              <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
                 {rows.map((row) => (
                   <tr key={row.id} className="dashboard-list-row">
                     <td className="px-5 py-3">

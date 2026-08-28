@@ -8,10 +8,10 @@ import type { CompanyLeadSourceItem } from "./types";
 const BRAND_COLORS: Record<CompanyLeadSourceItem["brand"], string> = {
   whatsapp: "#25D366",
   facebook: "#1877F2",
-  referral: "#64748B",
-  website: "#0EA5E9",
-  walkin: "#78716C",
-  other: "#94A3B8",
+  referral: "#9366FF",
+  website: "#38BDF8",
+  walkin: "#64748B",
+  other: "#7B8BA8",
 };
 
 const BRAND_TINT: Record<CompanyLeadSourceItem["brand"], string> = {
@@ -26,9 +26,9 @@ const BRAND_TINT: Record<CompanyLeadSourceItem["brand"], string> = {
 function SourceIcon({ brand }: { brand: CompanyLeadSourceItem["brand"] }) {
   if (brand === "whatsapp") return <SiWhatsapp size={13} className="text-[#25D366]" aria-hidden />;
   if (brand === "facebook") return <SiFacebook size={13} className="text-[#1877F2]" aria-hidden />;
-  if (brand === "referral") return <UserRoundPlus size={13} strokeWidth={2} aria-hidden />;
+  if (brand === "referral") return <UserRoundPlus size={13} strokeWidth={2} className="text-[#9366FF]" aria-hidden />;
   if (brand === "walkin") return <Footprints size={13} strokeWidth={2} aria-hidden />;
-  if (brand === "website") return <Globe2 size={13} strokeWidth={2} aria-hidden />;
+  if (brand === "website") return <Globe2 size={13} strokeWidth={2} className="text-[#38BDF8]" aria-hidden />;
   return <MoreHorizontal size={13} strokeWidth={2} aria-hidden />;
 }
 
@@ -42,11 +42,15 @@ export function CompanyLeadSourcesCard({
   const max = Math.max(...sources.map((s) => s.count), 1);
 
   return (
-    <CompanyDashCard title="Top Lead sources" action={<PeriodChip>This month</PeriodChip>}>
+    <CompanyDashCard
+      title="Top Lead sources"
+      className="dashboard-panel--analytics"
+      action={<PeriodChip>This month</PeriodChip>}
+    >
       {empty || sources.length === 0 ? (
         <CompanyDashEmpty title="No Lead source data yet" description="Sources will appear as enquiries arrive from WhatsApp, Facebook, website and referrals." />
       ) : (
-        <ul className="space-y-3.5 px-4 py-4 sm:px-5" aria-label="Lead sources this month">
+        <ul className="space-y-3.5 px-5 py-5" aria-label="Lead sources this month">
           {sources.map((source) => (
             <li key={source.id} className="flex items-center gap-3">
               <span

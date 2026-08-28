@@ -18,6 +18,7 @@ export function CompanyDealsAtRiskCard({
   return (
     <CompanyDashCard
       title="Deals at risk"
+      className="dashboard-panel--attention h-full"
       action={total > 0 ? <DashLink href={viewAllHref}>View all at-risk Deals</DashLink> : null}
     >
       {!hasActiveDeals ? (
@@ -32,7 +33,7 @@ export function CompanyDealsAtRiskCard({
           description="Stale Deals and missing next actions will surface here."
         />
       ) : (
-        <ul className="divide-y divide-sales-border-subtle">
+        <ul className="divide-y divide-[rgba(128,151,200,0.07)]">
           {items.map((item) => (
             <li key={item.id}>
               <Link

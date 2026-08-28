@@ -23,13 +23,13 @@ function SourceIcon({ brand }: { brand: SalesLeadSourceItem["brand"] }) {
     return <SiFacebook size={14} className="text-[#1877F2]" aria-hidden />;
   }
   if (brand === "referral") {
-    return <UserRoundPlus size={14} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
+    return <UserRoundPlus size={14} strokeWidth={2} className="text-[#9366FF]" aria-hidden />;
   }
   if (brand === "walkin") {
     return <Footprints size={14} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
   }
   if (brand === "website") {
-    return <Globe2 size={14} strokeWidth={2} className="text-sales-text-primary" aria-hidden />;
+    return <Globe2 size={14} strokeWidth={2} className="text-[#38BDF8]" aria-hidden />;
   }
   return <MoreHorizontal size={14} strokeWidth={2} className="text-sales-text-secondary" aria-hidden />;
 }
@@ -37,10 +37,10 @@ function SourceIcon({ brand }: { brand: SalesLeadSourceItem["brand"] }) {
 const BRAND_COLORS: Record<SalesLeadSourceItem["brand"], string> = {
   whatsapp: "#25D366",
   facebook: "#1877F2",
-  referral: "#64748B",
-  website: "#0EA5E9",
-  walkin: "#78716C",
-  other: "#94A3B8",
+  referral: "#9366FF",
+  website: "#38BDF8",
+  walkin: "#64748B",
+  other: "#7B8BA8",
 };
 
 export function SourceMixCard({ data }: { data: SalesDashboardRaw }) {
@@ -53,6 +53,7 @@ export function SourceMixCard({ data }: { data: SalesDashboardRaw }) {
   return (
     <CardShell
       title="Source mix"
+      className="dashboard-panel--analytics"
       action={
         <MenuSelect
           aria-label="Source mix date range"
@@ -67,7 +68,7 @@ export function SourceMixCard({ data }: { data: SalesDashboardRaw }) {
         />
       }
     >
-      <div className="px-4 py-4 sm:px-5">
+      <div className="px-5 py-5">
         {total === 0 ? (
           <p className="py-6 text-center text-[13px] text-sales-text-muted">No enquiries in this period</p>
         ) : (
@@ -82,7 +83,8 @@ export function SourceMixCard({ data }: { data: SalesDashboardRaw }) {
                     innerRadius={48}
                     outerRadius={72}
                     paddingAngle={2}
-                    stroke="none"
+                    stroke={chartColors.surfaceRaised}
+                    strokeWidth={1}
                   >
                     {chartData.map((s) => (
                       <Cell key={s.id} fill={BRAND_COLORS[s.brand]} />
@@ -104,7 +106,7 @@ export function SourceMixCard({ data }: { data: SalesDashboardRaw }) {
                 </PieChart>
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-[20px] font-semibold tabular-nums text-sales-text-primary">{total}</p>
+                <p className="text-[24px] font-bold tabular-nums tracking-[-0.04em] text-sales-text-primary">{total}</p>
                 <p className="text-[10px] font-medium text-sales-text-muted">Enquiries</p>
               </div>
             </div>

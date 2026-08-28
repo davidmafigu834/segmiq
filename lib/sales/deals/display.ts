@@ -27,7 +27,7 @@ export const DEAL_STAGE_LABEL: Record<DealStage, string> = {
 
 export const DEAL_STAGE_ACCENT: Record<DealActiveStage, string> = {
   QUALIFIED: "#2684FF",
-  SCOPING: "#14B8A6",
+  SCOPING: "#20D4D2",
   PROPOSAL_SENT: "#8B5CF6",
   NEGOTIATING: "#F59E0B",
 };

@@ -4036,21 +4036,21 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
     Keep the landing navy; lift cards enough to read against it; nest panels one step higher.
     No glass / orbs — this is a work surface.
   */
-  --app-bg: #061126;
+  --app-bg: #050f22;
   --app-bg-deep: #040d1d;
-  --surface-1: #091832;
-  --surface-2: #0c1d3d;
-  --surface-3: #102449;
+  --surface-1: #081831;
+  --surface-2: #0d2143;
+  --surface-3: #10264c;
   --border-soft: rgba(126, 150, 205, 0.13);
   --border-medium: rgba(126, 150, 205, 0.2);
 
-  --sales-bg: #061126;
+  --sales-bg: #050f22;
   --sales-bg-subtle: #040d1d;
-  --sales-surface: #091832;
-  --sales-surface-subtle: #0c1d3d;
-  --sales-surface-hover: #102449;
-  --sales-surface-active: #132a52;
-  --sales-surface-raised: #0e2349;
+  --sales-surface: #081831;
+  --sales-surface-subtle: #0d2143;
+  --sales-surface-hover: #12264c;
+  --sales-surface-active: #152a54;
+  --sales-surface-raised: #10264c;
   --sales-surface-selected: #173056;
 
   /* Neutral scale */
@@ -4086,21 +4086,21 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-brand-fg: #d4ff4f;
 
   /* Sidebar — slightly deeper than the canvas */
-  --sales-sidebar-bg: rgba(4, 14, 33, 0.94);
-  --sales-sidebar-border: rgba(132, 151, 190, 0.13);
-  --sales-sidebar-divider: rgba(132, 151, 190, 0.1);
-  --sales-sidebar-text: #90a1c3;
-  --sales-sidebar-text-hover: #f7f9fc;
-  --sales-sidebar-text-active: #f7f9fc;
+  --sales-sidebar-bg: rgba(3, 12, 28, 0.96);
+  --sales-sidebar-border: rgba(127, 149, 194, 0.1);
+  --sales-sidebar-divider: rgba(127, 149, 194, 0.08);
+  --sales-sidebar-text: #8799bb;
+  --sales-sidebar-text-hover: #f8fafc;
+  --sales-sidebar-text-active: #f8fafc;
   --sales-sidebar-muted: #7182a7;
-  --sales-sidebar-icon: #7d8fb3;
+  --sales-sidebar-icon: #7a8cb0;
   --sales-sidebar-icon-active: #d4ff4f;
-  --sales-sidebar-hover: rgba(255, 255, 255, 0.035);
+  --sales-sidebar-hover: rgba(255, 255, 255, 0.025);
   --sales-sidebar-active: rgba(212, 255, 79, 0.12);
   --sales-sidebar-active-gradient: linear-gradient(
     90deg,
     rgba(212, 255, 79, 0.12),
-    rgba(212, 255, 79, 0.035)
+    rgba(212, 255, 79, 0.025)
   );
   --sales-sidebar-active-indicator: #d4ff4f;
   --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.14);
@@ -4485,12 +4485,12 @@ html:has(.sales-dashboard-premium) body {
 }
 html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium),
 html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium) body {
-  background-color: #061126;
+  background-color: #050f22;
   background-image: var(--crm-canvas-atmosphere);
 }
 html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboard-premium),
 html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.calendar-premium) {
-  background-color: #061126 !important;
+  background-color: #050f22 !important;
   background-image: var(--crm-canvas-atmosphere);
 }
 

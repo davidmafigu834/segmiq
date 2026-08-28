@@ -57,12 +57,12 @@ export const SALES_COLORS = {
 
 /** Dark sales palette (mirrors CSS dark overrides). Prefer CSS vars / useSalesChartColors in UI. */
 export const SALES_COLORS_DARK = {
-  bg: "#061126",
+  bg: "#050F22",
   bgSubtle: "#040D1D",
-  sidebarBg: "#040E21",
-  surface: "#091832",
-  surfaceRaised: "#0E2349",
-  surfaceHover: "#102449",
+  sidebarBg: "#030C1C",
+  surface: "#081831",
+  surfaceRaised: "#10264C",
+  surfaceHover: "#12264C",
   surfaceSelected: "#173056",
   textPrimary: "#F7F9FC",
   textSecondary: "#A8B5D0",

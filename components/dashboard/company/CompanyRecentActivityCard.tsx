@@ -21,27 +21,27 @@ export function CompanyRecentActivityCard({ items }: { items: CompanyActivityIte
   const display = items.slice(0, 6);
 
   return (
-    <CompanyDashCard title="Recent team activity">
+    <CompanyDashCard title="Recent team activity" className="dashboard-panel--feed h-full">
       {display.length === 0 ? (
         <CompanyDashEmpty
           title="No recent team activity yet"
           description="Quotes sent, Deals Won and follow-ups completed will appear here."
         />
       ) : (
-        <ul className="divide-y divide-sales-border-subtle px-2 py-1">
+        <ul className="divide-y divide-[rgba(128,151,200,0.07)] px-2 py-1">
           {display.map((item) => {
             const body = (
-              <div className="dashboard-list-row flex items-center gap-3 px-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sales-neutral-100">
+              <div className="dashboard-list-row flex items-center gap-3 px-4 py-3">
+                <span className="dashboard-activity-icon">
                   <ActivityIcon kind={item.kind} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-medium text-sales-text-primary">{item.title}</p>
+                  <p className="dashboard-activity-title truncate text-[13px]">{item.title}</p>
                   {item.detail ? (
-                    <p className="truncate text-[12px] text-sales-text-muted">{item.detail}</p>
+                    <p className="dashboard-activity-detail truncate text-[12px]">{item.detail}</p>
                   ) : null}
                 </div>
-                <p className={cn("shrink-0 text-[11px] text-sales-text-muted")}>
+                <p className={cn("dashboard-activity-time shrink-0 text-[11px]")}>
                   {item.actorName ? `${item.actorName} · ` : ""}
                   {item.timeLabel}
                 </p>

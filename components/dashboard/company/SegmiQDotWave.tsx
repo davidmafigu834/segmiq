@@ -11,52 +11,50 @@ function mulberry32(seed: number) {
 
 type Dot = { cx: number; cy: number; r: number; o: number; lime?: boolean; violet?: boolean };
 
-function sampleBand(
-  rng: () => number,
-  band: { y: number; amp: number; freq: number; phase: number; x0: number; x1: number; weight: number }
+function buildWave(
+  seed: number,
+  opts: { rows: number; y0: number; amp: number; freq: number; phase: number }
 ): Dot[] {
-  const dots: Dot[] = [];
-  let i = 0;
-  for (let x = band.x0; x <= band.x1; x += 26 + Math.round(rng() * 4)) {
-    const y =
-      band.y +
-      band.amp * Math.sin(x * band.freq + band.phase) +
-      band.amp * 0.26 * Math.sin(x * band.freq * 2.1 + band.phase * 0.55) +
-      (rng() * 5 - 2.5);
-    const edge = Math.min((x - band.x0) / 80, (band.x1 - x) / 90, 1);
-    const o = Math.max(0.06, Math.min(0.15, band.weight * (0.4 + 0.6 * edge) * (0.7 + rng() * 0.3)));
-    dots.push({
-      cx: x + (rng() - 0.5) * 3.5,
-      cy: y,
-      r: 0.85 + rng() * 0.7,
-      o,
-      violet: i % 7 === 0,
-    });
-    i += 1;
-  }
-  return dots;
-}
-
-function buildField(seed: number, bands: Parameters<typeof sampleBand>[1][]): Dot[] {
   const rng = mulberry32(seed);
-  const dots = bands.flatMap((band) => sampleBand(rng, band));
-  const bright = dots.filter((d) => d.o > 0.11);
-  if (bright[0]) bright[0].lime = true;
-  if (bright[8]) bright[8].lime = true;
+  const dots: Dot[] = [];
+  const x0 = 6;
+  const x1 = 574;
+  const step = 16;
+  for (let row = 0; row < opts.rows; row++) {
+    const yBase = opts.y0 + row * 15.2;
+    const amp = opts.amp + (row % 4) * 2.4;
+    const freq = opts.freq + row * 0.00028;
+    const phase = opts.phase + row * 0.38;
+    const offset = (row % 2) * (step / 2);
+    let col = 0;
+    for (let x = x0 + offset; x <= x1; x += step) {
+      const y =
+        yBase +
+        amp * Math.sin(x * freq + phase) +
+        amp * 0.28 * Math.sin(x * freq * 2.05 + phase * 0.62) +
+        (rng() - 0.5) * 1.8;
+      const nx = (x - x0) / (x1 - x0);
+      const ny = opts.rows <= 1 ? 1 : row / (opts.rows - 1);
+      const edge = Math.min(nx * 3.6, (1 - nx) * 2.8, ny * 2.4, (1 - ny) * 2.2, 1);
+      const o = Math.max(0.2, Math.min(0.34, 0.21 + 0.13 * edge * (0.82 + rng() * 0.18)));
+      dots.push({
+        cx: x + (rng() - 0.5) * 2.1,
+        cy: y,
+        r: 0.7 + rng() * 0.5,
+        o,
+        violet: (row + col) % 3 !== 1,
+      });
+      col += 1;
+    }
+  }
+  const mid = dots.filter((d) => d.o > 0.28);
+  if (mid[4]) mid[4].lime = true;
+  if (mid[21]) mid[21].lime = true;
   return dots;
 }
 
-const TOP_RIGHT = buildField(19, [
-  { y: 78, amp: 22, freq: 0.0082, phase: 0.4, x0: 40, x1: 560, weight: 0.7 },
-  { y: 138, amp: 28, freq: 0.0074, phase: 1.15, x0: 20, x1: 560, weight: 0.85 },
-  { y: 204, amp: 20, freq: 0.0078, phase: 0.2, x0: 70, x1: 560, weight: 0.55 },
-]);
-
-const BOTTOM_RIGHT = buildField(41, [
-  { y: 90, amp: 18, freq: 0.0068, phase: 1.7, x0: 80, x1: 560, weight: 0.5 },
-  { y: 156, amp: 24, freq: 0.0072, phase: 0.55, x0: 40, x1: 560, weight: 0.65 },
-  { y: 228, amp: 16, freq: 0.008, phase: 2.05, x0: 120, x1: 560, weight: 0.4 },
-]);
+const TOP_RIGHT = buildWave(19, { rows: 15, y0: 18, amp: 20, freq: 0.0108, phase: 0.45 });
+const BOTTOM_RIGHT = buildWave(41, { rows: 14, y0: 22, amp: 17, freq: 0.0096, phase: 1.62 });
 
 function DotField({ dots, className }: { dots: Dot[]; className: string }) {
   return (
@@ -70,14 +68,14 @@ function DotField({ dots, className }: { dots: Dot[]; className: string }) {
           cx={dot.cx.toFixed(1)}
           cy={dot.cy.toFixed(1)}
           r={dot.r.toFixed(2)}
-          opacity={dot.lime ? Math.min(dot.o, 0.12).toFixed(3) : dot.o.toFixed(3)}
+          opacity={dot.lime ? "0.16" : dot.o.toFixed(3)}
         />
       ))}
     </svg>
   );
 }
 
-/** Sparse topographic dots for empty canvas regions. Decorative only. */
+/** Flowing sinusoidal dot-wave for empty canvas regions. Decorative only. */
 export function SegmiQDotWave() {
   return (
     <div className="segmiq-dot-wave" aria-hidden>

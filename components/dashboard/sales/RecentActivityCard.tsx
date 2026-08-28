@@ -32,6 +32,7 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
   return (
     <CardShell
       title="Recent activity"
+      className="dashboard-panel--feed"
       action={
         <Link
           href="/sales/pipeline"
@@ -42,7 +43,7 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
       }
     >
       {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center px-5 py-10 text-center">
+        <div className="flex flex-col items-center justify-center px-5 py-6 text-center">
           <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-[8px] bg-[var(--sales-neutral-100)] text-sales-text-muted">
             <Activity size={18} strokeWidth={1.8} aria-hidden />
           </span>
@@ -52,20 +53,20 @@ export function RecentActivityCard({ items }: { items: SalesActivityItem[] }) {
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-sales-border-subtle">
+        <ul className="divide-y divide-[rgba(128,151,200,0.07)]">
           {items.map((item) => {
             const body = (
-              <div className="flex items-start gap-3 px-5 py-3 transition-colors duration-150 hover:bg-sales-surface-hover">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-[var(--sales-neutral-100)]">
+              <div className="dashboard-list-row flex items-center gap-3 px-4 py-3">
+                <span className="dashboard-activity-icon">
                   <ActivityIcon kind={item.kind} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-sales-text-primary">{item.title}</p>
+                  <p className="dashboard-activity-title text-[13px]">{item.title}</p>
                   {item.detail ? (
-                    <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{item.detail}</p>
+                    <p className="dashboard-activity-detail mt-0.5 truncate text-[12px]">{item.detail}</p>
                   ) : null}
-                  <p className="mt-1 text-[11px] text-sales-text-muted">{item.timeLabel}</p>
                 </div>
+                <p className="dashboard-activity-time shrink-0 text-[11px]">{item.timeLabel}</p>
               </div>
             );
             return (

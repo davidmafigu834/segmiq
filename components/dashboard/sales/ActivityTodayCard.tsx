@@ -6,10 +6,10 @@ import { Progress } from "@/components/sales/ui";
 
 export function ActivityTodayCard({ metrics }: { metrics: SalesActivityTodayMetric[] }) {
   return (
-    <CardShell title="My activity today">
-      <ul className="divide-y divide-sales-border-subtle px-1">
+    <CardShell title="My activity today" className="dashboard-panel--feed">
+      <ul className="divide-y divide-[rgba(128,151,200,0.07)] px-1">
         {metrics.length === 0 ? (
-          <li className="px-4 py-6 text-center text-[13px] text-sales-text-muted">
+          <li className="px-5 py-5 text-center text-[13px] text-sales-text-muted">
             No activity logged yet today.
           </li>
         ) : (
@@ -19,7 +19,7 @@ export function ActivityTodayCard({ metrics }: { metrics: SalesActivityTodayMetr
               ? Math.min(100, Math.round((m.completed / m.target!) * 100))
               : null;
             return (
-              <li key={m.id} className="px-4 py-3">
+              <li key={m.id} className="dashboard-list-row px-5 py-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="text-[13px] font-medium text-sales-text-primary">{m.label}</p>
                   <p className="text-[13px] font-semibold tabular-nums text-sales-text-primary">

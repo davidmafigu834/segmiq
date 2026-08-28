@@ -68,8 +68,7 @@ export function TodaysFocusCard({
     <Card
       data-course-target="dashboard-todays-focus"
       className={cn(
-        "border-sales-border",
-        "bg-[color-mix(in_srgb,var(--sales-brand)_4%,var(--sales-surface))]"
+        "dashboard-panel dashboard-panel--attention border-0 shadow-none"
       )}
     >
       <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">

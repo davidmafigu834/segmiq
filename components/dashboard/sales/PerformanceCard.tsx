@@ -10,6 +10,7 @@ export function PerformanceCard({ performance }: { performance: SalesPerformance
   return (
     <CardShell
       title="My performance"
+      className="dashboard-panel--analytics"
       action={<span className="text-[12px] font-medium text-sales-text-muted">This month</span>}
     >
       <div className="px-5 py-4">

@@ -23,6 +23,7 @@ export function DealsAttentionCard({
   return (
     <CardShell
       title="Deals requiring attention"
+      className="dashboard-panel--attention dashboard-panel--table"
       action={
         <Link
           href="/sales/pipeline"
@@ -33,7 +34,7 @@ export function DealsAttentionCard({
       }
     >
       {!hasAnyDeals ? (
-        <div className="px-5 py-8 text-center">
+        <div className="px-5 py-5 text-center">
           <p className="text-[13px] font-medium text-sales-text-primary">No active Deals yet.</p>
           <p className="mt-1 text-[12px] text-sales-text-muted">
             Qualify your enquiries and create a Deal when a genuine opportunity is confirmed.
@@ -46,7 +47,7 @@ export function DealsAttentionCard({
           </Link>
         </div>
       ) : items.length === 0 ? (
-        <div className="px-5 py-8 text-center">
+        <div className="px-5 py-5 text-center">
           <p className="text-[13px] font-medium text-sales-text-primary">
             No Deals need attention right now.
           </p>
@@ -57,7 +58,7 @@ export function DealsAttentionCard({
       ) : (
         <>
           <div className="hidden w-full md:block">
-            <table className="w-full table-fixed text-left">
+            <table className="dashboard-table w-full table-fixed text-left">
               <colgroup>
                 <col className="w-[22%]" />
                 <col className="w-[14%]" />
@@ -76,11 +77,11 @@ export function DealsAttentionCard({
                   <th className="px-5 py-2.5 font-semibold">Why it needs attention</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-sales-border-subtle">
+              <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
                 {items.map((item) => (
                   <tr
                     key={item.id}
-                    className="h-[56px] transition-colors hover:bg-sales-surface-hover"
+                    className="dashboard-list-row h-[56px]"
                   >
                     <td className="px-5 py-2">
                       <Link
@@ -179,7 +180,7 @@ export function DealsAttentionCard({
                 </Link>
                 <Link
                   href={item.href}
-                  className="mt-3 inline-flex min-h-11 items-center rounded-sales-md border border-sales-border px-3 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
+                  className="dashboard-action-btn dashboard-action-btn--next mt-3 inline-flex min-h-11 items-center rounded-sales-md px-3 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
                 >
                   Open deal
                 </Link>
