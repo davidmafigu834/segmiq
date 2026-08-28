@@ -55,6 +55,7 @@ export function SalesCommandWorkspace({
   if (pageContext?.dealId) qs.set("dealId", pageContext.dealId);
   if (pageContext?.quotationId) qs.set("quotationId", pageContext.quotationId);
   if (pageContext?.customerId) qs.set("customerId", pageContext.customerId);
+  if (pageContext?.companyId) qs.set("companyId", pageContext.companyId);
 
   useEffect(() => {
     void fetch(`/api/agent/sales/command?${qs.toString()}`)
@@ -81,7 +82,7 @@ export function SalesCommandWorkspace({
       })
       .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap once per page context
-  }, [pageContext?.conversationId, pageContext?.leadId, pageContext?.dealId, pageContext?.quotationId]);
+  }, [pageContext?.conversationId, pageContext?.leadId, pageContext?.dealId, pageContext?.quotationId, pageContext?.companyId]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });

@@ -90,12 +90,24 @@ export function looksLikeCancel(text: string): boolean {
   return /^(no|n|cancel|stop|never mind|nevermind)\b/i.test(text.trim());
 }
 
+export function sameRecordId(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false;
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
 export function actorOwnsLead(assignedToId: string | null, actor: SalesActor): boolean {
-  return assignedToId === actor.userId;
+  return sameRecordId(assignedToId, actor.userId);
 }
 
 export function actorOwnsDeal(ownerId: string | null, actor: SalesActor): boolean {
-  return ownerId === actor.userId;
+  return sameRecordId(ownerId, actor.userId);
+}
+
+function tenantMatches(leadClientId: string | null, actor: SalesActor, pageCompanyId?: string | null): boolean {
+  if (!leadClientId) return false;
+  if (sameRecordId(leadClientId, actor.clientId)) return true;
+  if (pageCompanyId && sameRecordId(leadClientId, pageCompanyId)) return true;
+  return false;
 }
 
 /** Matches Sales Hub visibility: assigned, unassigned pool, collaborators, or company managers. */
@@ -104,12 +116,25 @@ export function salesActorCanAccessLead(opts: {
   clientId: string | null;
   assignedToId: string | null;
   collaboratorIds?: string[] | null;
+  pageCompanyId?: string | null;
+  /** Lead currently open in Sales Hub / Command drawer. */
+  openLeadId?: string | null;
+  leadId?: string | null;
 }): boolean {
-  if (!opts.clientId || opts.clientId !== opts.actor.clientId) return false;
-  if (opts.actor.role === "SUPER_ADMIN" || opts.actor.role === "CLIENT_MANAGER") return true;
-  if (opts.assignedToId === opts.actor.userId) return true;
+  if (opts.actor.role === "SUPER_ADMIN") {
+    if (opts.pageCompanyId) return sameRecordId(opts.clientId, opts.pageCompanyId);
+    if (opts.actor.clientId) return sameRecordId(opts.clientId, opts.actor.clientId);
+    return Boolean(opts.clientId);
+  }
+  if (!tenantMatches(opts.clientId, opts.actor, opts.pageCompanyId)) return false;
+  if (opts.actor.role === "CLIENT_MANAGER") return true;
+  if (sameRecordId(opts.assignedToId, opts.actor.userId)) return true;
   if (!opts.assignedToId) return true;
-  return Boolean(opts.collaboratorIds?.includes(opts.actor.userId));
+  if (opts.collaboratorIds?.some((id) => sameRecordId(id, opts.actor.userId))) return true;
+  // The Hub already showed this thread. Don't fail quoting because assignment
+  // ids differ by case or the salesperson is helping on an open conversation.
+  if (opts.openLeadId && opts.leadId && sameRecordId(opts.openLeadId, opts.leadId)) return true;
+  return false;
 }
 
 /** Quote against a Deal the actor can already work in Sales Hub. */
@@ -118,10 +143,16 @@ export function salesActorCanAccessDeal(opts: {
   clientId: string | null;
   ownerId: string | null;
   originatingLeadAccessible: boolean;
+  pageCompanyId?: string | null;
 }): boolean {
-  if (!opts.clientId || opts.clientId !== opts.actor.clientId) return false;
-  if (opts.actor.role === "SUPER_ADMIN" || opts.actor.role === "CLIENT_MANAGER") return true;
-  if (opts.ownerId === opts.actor.userId) return true;
+  if (opts.actor.role === "SUPER_ADMIN") {
+    if (opts.pageCompanyId) return sameRecordId(opts.clientId, opts.pageCompanyId);
+    if (opts.actor.clientId) return sameRecordId(opts.clientId, opts.actor.clientId);
+    return Boolean(opts.clientId);
+  }
+  if (!tenantMatches(opts.clientId, opts.actor, opts.pageCompanyId)) return false;
+  if (opts.actor.role === "CLIENT_MANAGER") return true;
+  if (sameRecordId(opts.ownerId, opts.actor.userId)) return true;
   if (!opts.ownerId && opts.originatingLeadAccessible) return true;
   return opts.originatingLeadAccessible;
 }

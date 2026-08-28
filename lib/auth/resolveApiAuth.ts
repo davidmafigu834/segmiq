@@ -8,6 +8,7 @@ export type ApiAuth = {
   role: UserRole;
   clientId: string | null;
   alsoSells?: boolean;
+  isImpersonating?: boolean;
 };
 
 function getSecret(): Uint8Array | null {
@@ -53,6 +54,7 @@ export async function resolveApiAuth(req: Request): Promise<ApiAuth | null> {
       role: session.role,
       clientId: session.clientId ?? null,
       alsoSells: session.alsoSells,
+      isImpersonating: Boolean(session.isImpersonating),
     };
   }
   return verifyBearerToken(req);

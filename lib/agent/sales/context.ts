@@ -26,14 +26,12 @@ export async function loadSalesContextCard(
 
   const supabase = createAdminClient();
   const leadId = page.leadId ?? page.conversationId ?? null;
-  let leadAssignedToId: string | null = null;
 
   if (leadId) {
     const { data } = await supabase
       .from("leads")
-      .select("id, name, project_type, assigned_to_id, contact_id, active_deal_id, client_id")
+      .select("id, name, project_type, assigned_to_id, contact_id, active_deal_id, client_id, whatsapp_collaborator_ids")
       .eq("id", leadId)
-      .eq("client_id", actor.clientId)
       .maybeSingle();
     const lead = asRow<{
       id: string;
@@ -42,18 +40,23 @@ export async function loadSalesContextCard(
       assigned_to_id: string | null;
       contact_id: string | null;
       active_deal_id: string | null;
+      client_id: string | null;
+      whatsapp_collaborator_ids?: string[] | null;
     }>(data);
     if (lead) {
       if (
         !salesActorCanAccessLead({
           actor,
-          clientId: actor.clientId,
+          clientId: lead.client_id,
           assignedToId: lead.assigned_to_id,
+          collaboratorIds: Array.isArray(lead.whatsapp_collaborator_ids) ? lead.whatsapp_collaborator_ids : [],
+          pageCompanyId: page.companyId,
+          openLeadId: leadId,
+          leadId: lead.id,
         })
       ) {
         return empty;
       }
-      leadAssignedToId = lead.assigned_to_id;
       empty.leadId = lead.id;
       empty.customerName = lead.name;
       empty.projectType = lead.project_type;
@@ -66,9 +69,8 @@ export async function loadSalesContextCard(
   if (empty.dealId) {
     const { data } = await supabase
       .from("deals")
-      .select("id, name, stage, owner_id, originating_lead_id")
+      .select("id, name, stage, owner_id, originating_lead_id, client_id")
       .eq("id", empty.dealId)
-      .eq("client_id", actor.clientId)
       .maybeSingle();
     const deal = asRow<{
       id: string;
@@ -76,22 +78,17 @@ export async function loadSalesContextCard(
       stage: string | null;
       owner_id: string | null;
       originating_lead_id: string | null;
+      client_id: string | null;
     }>(data);
     if (deal) {
-      const leadOk = Boolean(
-        empty.leadId &&
-          salesActorCanAccessLead({
-            actor,
-            clientId: actor.clientId,
-            assignedToId: leadAssignedToId,
-          })
-      );
+      const leadOk = Boolean(empty.customerName || empty.leadId);
       if (
         !salesActorCanAccessDeal({
           actor,
-          clientId: actor.clientId,
+          clientId: deal.client_id,
           ownerId: deal.owner_id,
           originatingLeadAccessible: leadOk,
+          pageCompanyId: page.companyId,
         })
       ) {
         empty.dealId = null;

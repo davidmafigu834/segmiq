@@ -243,4 +243,54 @@ describe("sales access scope", () => {
       true
     );
   });
+
+  it("lets a salesperson quote the conversation they have open", () => {
+    assert.equal(
+      salesActorCanAccessLead({
+        actor: salesperson,
+        clientId: "co-1",
+        assignedToId: "someone-else",
+        leadId: "lead-1",
+        openLeadId: "lead-1",
+      }),
+      true
+    );
+  });
+
+  it("does not treat a guessed lead as open context", () => {
+    assert.equal(
+      salesActorCanAccessLead({
+        actor: salesperson,
+        clientId: "co-1",
+        assignedToId: "someone-else",
+        leadId: "lead-2",
+        openLeadId: "lead-1",
+      }),
+      false
+    );
+  });
+
+  it("matches assigned_to ids case-insensitively", () => {
+    assert.equal(
+      salesActorCanAccessLead({
+        actor: { ...salesperson, userId: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA" },
+        clientId: "co-1",
+        assignedToId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      }),
+      true
+    );
+  });
+
+  it("lets a super admin quote a lead in the impersonated company", () => {
+    const admin = { ...salesperson, userId: "admin-1", role: "SUPER_ADMIN" as const };
+    assert.equal(
+      salesActorCanAccessLead({
+        actor: admin,
+        clientId: "co-1",
+        assignedToId: "rep-1",
+        pageCompanyId: "co-1",
+      }),
+      true
+    );
+  });
 });

@@ -33,6 +33,19 @@ export function canActAsSalesperson(session: SalesCapableSession): boolean {
   return session.role === "CLIENT_MANAGER" && Boolean(session.alsoSells);
 }
 
+/** Sales Command Center API: salespeople, company managers, or super admin with a company. */
+export function canUseSalesCommand(
+  session: SalesCapableSession & { clientId?: string | null; isImpersonating?: boolean }
+): boolean {
+  if (!session?.userId) return false;
+  if (canActAsSalesperson(session)) return true;
+  if (session.role === "CLIENT_MANAGER") return true;
+  if (session.role === "SUPER_ADMIN") {
+    return Boolean(session.clientId || session.isImpersonating);
+  }
+  return false;
+}
+
 export function isRoundRobinEligibleUser(user: {
   role: string;
   also_sells?: boolean | null;

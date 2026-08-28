@@ -449,6 +449,8 @@ export async function runCreateQuotation(opts: {
   pageLeadId?: string | null;
   pageDealId?: string | null;
   pageConversationId?: string | null;
+  pageCompanyId?: string | null;
+  pageCustomerId?: string | null;
   commandText: string;
   selectedId?: string | null;
   flags: { quotationCreation: boolean; contextualExtraction: boolean };
@@ -470,16 +472,20 @@ export async function runCreateQuotation(opts: {
     step("check", "Commercial Check complete", "pending"),
   ];
 
+  const openConversationId = opts.pageLeadId || opts.pageConversationId || null;
   const customer = await resolveCustomer({
     actor: opts.actor,
     page: {
       leadId: opts.pageLeadId,
       conversationId: opts.pageConversationId,
       dealId: opts.pageDealId,
+      companyId: opts.pageCompanyId,
+      customerId: opts.pageCustomerId,
     },
-    source: opts.intent.customerReference?.source,
-    query: opts.intent.customerReference?.query,
-    id: opts.selectedId ?? opts.intent.customerReference?.id,
+    // Hub IDs are authoritative. Don't let a SEARCH parse skip the open chat.
+    source: openConversationId ? "CURRENT_CONTEXT" : opts.intent.customerReference?.source,
+    query: openConversationId ? undefined : opts.intent.customerReference?.query,
+    id: openConversationId ? undefined : (opts.selectedId ?? opts.intent.customerReference?.id),
   });
   if (customer.kind === "none") {
     progress[0] = step("customer", "Customer identified", "failed", "Not found or not in your records");
@@ -516,6 +522,13 @@ export async function runCreateQuotation(opts: {
     actor: opts.actor,
     leadId: cust.leadId,
     preferredDealId: opts.intent.dealReference?.id ?? opts.pageDealId ?? cust.dealId,
+    page: {
+      leadId: opts.pageLeadId,
+      conversationId: opts.pageConversationId,
+      dealId: opts.pageDealId,
+      companyId: opts.pageCompanyId,
+      customerId: opts.pageCustomerId,
+    },
   });
   if (deals.kind === "none") {
     progress[1] = step("deal", "Deal identified", "failed", "No active Deal");

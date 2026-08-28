@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
-import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
+import { canUseSalesCommand } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cancelSalesCommand, loadSalesCommandBootstrap, runSalesCommand } from "@/lib/agent/sales";
 import { getSalesAgentFlags } from "@/lib/agent/sales/settings";
@@ -9,16 +9,20 @@ import type { SalesActor, SalesPageContext } from "@/lib/agent/sales/types";
 
 export const dynamic = "force-dynamic";
 
-async function resolveSalesActor(req: Request): Promise<
+async function resolveSalesActor(
+  req: Request,
+  companyFallback?: string | null
+): Promise<
   | { ok: true; actor: SalesActor }
   | { ok: false; status: number; error: string }
 > {
   const auth = await resolveApiAuth(req);
   if (!auth) return { ok: false, status: 401, error: "Unauthorized" };
-  if (!canActAsSalesperson(auth)) {
+  if (!canUseSalesCommand({ ...auth, clientId: auth.clientId || companyFallback || null })) {
     return { ok: false, status: 403, error: "Sales Command Center is available to salespeople." };
   }
-  if (!auth.clientId) return { ok: false, status: 400, error: "Company context required" };
+  const clientId = auth.clientId || companyFallback || null;
+  if (!clientId) return { ok: false, status: 400, error: "Company context required" };
   const supabase = createAdminClient();
   const { data: user } = await supabase.from("users").select("name").eq("id", auth.userId).maybeSingle();
   return {
@@ -26,7 +30,7 @@ async function resolveSalesActor(req: Request): Promise<
     actor: {
       userId: auth.userId,
       role: auth.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : auth.role === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON",
-      clientId: auth.clientId,
+      clientId,
       name: (user as { name?: string } | null)?.name || "Salesperson",
     },
   };
@@ -34,7 +38,7 @@ async function resolveSalesActor(req: Request): Promise<
 
 const optionalUuid = z.preprocess(
   (value) => (value === "" || value === undefined ? null : value),
-  z.string().uuid().nullable().optional()
+  z.string().uuid().nullable().optional().catch(null)
 );
 
 const pageContextSchema = z
@@ -55,7 +59,7 @@ const postSchema = z.object({
   message: z.string().min(1).max(2000),
   sessionId: z.string().uuid().nullable().optional(),
   pageContext: pageContextSchema,
-  commandId: z.string().uuid().nullable().optional(),
+  commandId: z.string().uuid().nullable().optional().catch(null),
   surface: z.enum(["command_center", "drawer"]).optional(),
   selection: z
     .object({
@@ -67,10 +71,10 @@ const postSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const access = await resolveSalesActor(req);
-  if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
   const parsed = postSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  const access = await resolveSalesActor(req, parsed.data.pageContext?.companyId);
+  if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
 
   const supabase = createAdminClient();
   const { data: client } = await supabase.from("clients").select("name").eq("id", access.actor.clientId).maybeSingle();
@@ -94,9 +98,9 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const access = await resolveSalesActor(req);
-  if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
   const url = new URL(req.url);
+  const access = await resolveSalesActor(req, url.searchParams.get("companyId"));
+  if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
   if (url.searchParams.get("flagsOnly") === "1") {
     const flags = await getSalesAgentFlags(access.actor.clientId);
     return NextResponse.json({ flags });
@@ -107,6 +111,7 @@ export async function GET(req: Request) {
     customerId: url.searchParams.get("customerId"),
     dealId: url.searchParams.get("dealId"),
     quotationId: url.searchParams.get("quotationId"),
+    companyId: url.searchParams.get("companyId"),
   };
   const bootstrap = await loadSalesCommandBootstrap(access.actor, page);
   return NextResponse.json(bootstrap);
