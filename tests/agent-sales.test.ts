@@ -118,6 +118,15 @@ describe("sales intent parsing", () => {
     assert.equal(intent?.extractFromConversation, true);
   });
 
+  it("keeps this customer as current context when naming a package", () => {
+    const intent = heuristicParseSalesIntent(
+      "Create a quote for this customer using the solar package Package.",
+      tendaiPage
+    );
+    assert.equal(intent?.intent, "CREATE_QUOTATION");
+    assert.equal(intent?.customerReference?.source, "CURRENT_CONTEXT");
+  });
+
   it("sets sendRequested but still CREATE_QUOTATION", () => {
     const intent = heuristicParseSalesIntent("Create and send it.", tendaiPage);
     assert.equal(intent?.intent, "CREATE_QUOTATION");

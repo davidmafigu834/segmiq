@@ -10,7 +10,6 @@ type LeadAccessRow = {
   id: string;
   name: string | null;
   project_type: string | null;
-  location: string | null;
   assigned_to_id: string | null;
   contact_id: string | null;
   active_deal_id: string | null;
@@ -61,17 +60,28 @@ export async function resolveCustomer(opts: {
   id?: string;
 }): Promise<MatchResult<ResolvedCustomer> & { choices?: SalesChoice[] }> {
   const supabase = createAdminClient();
-  const contextLeadId = opts.page.leadId ?? opts.page.conversationId ?? null;
+  const candidateIds = [opts.page.leadId, opts.page.conversationId].filter(
+    (id, i, all): id is string => Boolean(id) && all.indexOf(id) === i
+  );
   const useOpenConversation =
     opts.source === "CURRENT_CONTEXT" ||
-    ((opts.source === undefined || opts.source === "SEARCH") && !opts.query && Boolean(contextLeadId));
+    ((opts.source === undefined || opts.source === "SEARCH") && !opts.query && candidateIds.length > 0);
 
-  if (useOpenConversation && contextLeadId) {
-    const one = await loadAccessibleLead(opts.actor, contextLeadId, opts.page);
-    if (one) return { kind: "one", value: one };
+  if (useOpenConversation && candidateIds.length) {
+    for (const id of candidateIds) {
+      const one = await loadAccessibleLead(opts.actor, id, opts.page);
+      if (one) return { kind: "one", value: one };
+    }
     if (opts.page.customerId) {
       const byContact = await loadAccessibleLeadByContact(opts.actor, opts.page.customerId, opts.page);
       if (byContact) return { kind: "one", value: byContact };
+    }
+    if (opts.page.dealId) {
+      const fromDeal = await loadAccessibleDeal(opts.actor, opts.page.dealId, true, opts.page);
+      if (fromDeal?.leadId) {
+        const one = await loadAccessibleLead(opts.actor, fromDeal.leadId, opts.page);
+        if (one) return { kind: "one", value: one };
+      }
     }
     if (opts.source === "CURRENT_CONTEXT" || !opts.query) return { kind: "none" };
   }
@@ -87,7 +97,7 @@ export async function resolveCustomer(opts: {
 
   let query = supabase
     .from("leads")
-    .select("id, name, project_type, location, assigned_to_id, contact_id, active_deal_id, client_id")
+    .select("id, name, project_type, assigned_to_id, contact_id, active_deal_id, client_id")
     .eq("client_id", opts.actor.clientId)
     .ilike("name", `%${q.replace(/[%_,]/g, "")}%`)
     .limit(8);
@@ -99,7 +109,6 @@ export async function resolveCustomer(opts: {
     id: string;
     name: string | null;
     project_type: string | null;
-    location: string | null;
     assigned_to_id: string | null;
     contact_id: string | null;
     active_deal_id: string | null;
@@ -124,7 +133,7 @@ export async function resolveCustomer(opts: {
       contactId: row.contact_id,
       name: row.name || "Customer",
       projectType: row.project_type,
-      location: row.location,
+      location: null,
       dealId: deal?.id ?? row.active_deal_id,
       dealName: deal?.name ?? null,
       dealStage: deal?.stageLabel ?? null,
@@ -176,7 +185,7 @@ async function mapLeadRow(actor: SalesActor, data: LeadAccessRow, page?: SalesPa
     contactId: data.contact_id,
     name: data.name || "Customer",
     projectType: data.project_type,
-    location: data.location,
+    location: null,
     dealId: deal?.id ?? data.active_deal_id,
     dealName: deal?.name ?? null,
     dealStage: deal?.stageLabel ?? null,
@@ -184,17 +193,17 @@ async function mapLeadRow(actor: SalesActor, data: LeadAccessRow, page?: SalesPa
   };
 }
 
+/** Leads have no `location` column — that lives on contacts / form_data. */
 const LEAD_SELECT =
-  "id, name, project_type, location, assigned_to_id, contact_id, active_deal_id, client_id, whatsapp_collaborator_ids";
+  "id, name, project_type, assigned_to_id, contact_id, active_deal_id, client_id, whatsapp_collaborator_ids";
 const LEAD_SELECT_FALLBACK =
-  "id, name, project_type, location, assigned_to_id, contact_id, active_deal_id, client_id";
+  "id, name, project_type, assigned_to_id, contact_id, active_deal_id, client_id";
 
 async function fetchLeadById(leadId: string): Promise<LeadAccessRow | null> {
   const supabase = createAdminClient();
   const full = await supabase.from("leads").select(LEAD_SELECT).eq("id", leadId).maybeSingle();
   if (full.data) return full.data as LeadAccessRow;
-  const msg = String(full.error?.message ?? "");
-  if (msg.includes("whatsapp_collaborator")) {
+  if (full.error) {
     const retry = await supabase.from("leads").select(LEAD_SELECT_FALLBACK).eq("id", leadId).maybeSingle();
     return (retry.data as LeadAccessRow | null) ?? null;
   }

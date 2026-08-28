@@ -36,21 +36,21 @@ async function resolveSalesActor(
   };
 }
 
-const optionalUuid = z.preprocess(
-  (value) => (value === "" || value === undefined ? null : value),
-  z.string().uuid().nullable().optional().catch(null)
+const optionalId = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() ? value.trim() : value === null ? null : undefined),
+  z.string().min(1).max(80).nullable().optional()
 );
 
 const pageContextSchema = z
   .object({
-    conversationId: optionalUuid,
-    leadId: optionalUuid,
-    customerId: optionalUuid,
-    dealId: optionalUuid,
-    quotationId: optionalUuid,
-    ownerId: optionalUuid,
-    companyId: optionalUuid,
-    currentUserId: optionalUuid,
+    conversationId: optionalId,
+    leadId: optionalId,
+    customerId: optionalId,
+    dealId: optionalId,
+    quotationId: optionalId,
+    ownerId: optionalId,
+    companyId: optionalId,
+    currentUserId: optionalId,
   })
   .nullable()
   .optional();
