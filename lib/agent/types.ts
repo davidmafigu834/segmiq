@@ -8,11 +8,17 @@
 export const AGENT_AUTONOMY_MODES = ["ASSIST", "COPILOT", "AUTOPILOT"] as const;
 export type AgentAutonomyMode = (typeof AGENT_AUTONOMY_MODES)[number];
 
+/** Shared intelligence foundation. Each mode has different context, tools, and authority. */
+export const AGENT_MODES = ["CUSTOMER", "SALESPERSON", "MANAGER"] as const;
+export type AgentMode = (typeof AGENT_MODES)[number];
+
 export const AGENT_EXECUTION_STATES = [
   "QUEUED",
   "RUNNING",
   "WAITING_FOR_TOOL",
   "WAITING_FOR_HUMAN",
+  "WAITING_FOR_INPUT",
+  "WAITING_FOR_CONFIRMATION",
   "COMPLETED",
   "FAILED",
   "CANCELLED",
@@ -105,6 +111,16 @@ export type AgentCompanySettings = {
   learningEnabled: boolean;
   /** Copilot / suggest-reply. May be on while Customer Agent is off. */
   suggestReplies: boolean;
+  /**
+   * Sales Agent — internal work commands for salespeople.
+   * Independent of Customer Agent. Does not send messages to customers.
+   */
+  salesAgentEnabled: boolean;
+  salesAgentCommandCenter: boolean;
+  salesAgentSalesHubCommand: boolean;
+  salesAgentQuotationCreation: boolean;
+  salesAgentQuotationUpdate: boolean;
+  salesAgentContextualExtraction: boolean;
 };
 
 /** Per-conversation agent state (agent_conversation_state row, camelCased). */

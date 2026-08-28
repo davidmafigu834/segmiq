@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Check, Circle, FileText, Phone } from "lucide-react";
+import { ArrowLeft, Check, Circle, FileText, MessageSquare, Phone } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import type { DealRow, LeadRow, QuotationRow } from "@/types";
 import type { DealCommercialValue } from "@/lib/sales/deals/commercial-value";
@@ -43,6 +43,7 @@ import {
   DealDetailsEditorSheet,
   type DealDetailsFocus,
 } from "@/components/sales/deals/DealDetailsEditorSheet";
+import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
 
 type NextActionState = {
   hasNextAction: boolean;
@@ -128,6 +129,7 @@ export function DealWorkspaceClient({
   const [closing, setClosing] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsFocus, setDetailsFocus] = useState<DealDetailsFocus>(null);
+  const [commandOpen, setCommandOpen] = useState(false);
 
   useEffect(() => {
     const edit = searchParams.get("edit");
@@ -403,6 +405,16 @@ export function DealWorkspaceClient({
                 >
                   WhatsApp
                 </Button>
+                {lead ? (
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    leftIcon={<MessageSquare size={16} strokeWidth={1.8} />}
+                    onClick={() => setCommandOpen(true)}
+                  >
+                    Command SegmiQ
+                  </Button>
+                ) : null}
                 {lead ? (
                   <Button
                     variant="primary"
@@ -1002,6 +1014,21 @@ export function DealWorkspaceClient({
             }
           }}
           onSaved={(updated) => applyDealUpdate(updated)}
+        />
+      ) : null}
+
+      {lead ? (
+        <SalesCommandDrawer
+          open={commandOpen}
+          onClose={() => setCommandOpen(false)}
+          customerName={customerName}
+          pageContext={{
+            leadId: lead.id,
+            customerId: lead.contact_id,
+            dealId: deal.id,
+            conversationId: lead.id,
+            ownerId: deal.owner_id,
+          }}
         />
       ) : null}
     </div>

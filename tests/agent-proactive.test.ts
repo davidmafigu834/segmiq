@@ -66,6 +66,12 @@ function agent(overrides: Partial<AgentCompanySettings> = {}): AgentCompanySetti
     testMode: false,
     learningEnabled: false,
     suggestReplies: false,
+    salesAgentEnabled: false,
+    salesAgentCommandCenter: true,
+    salesAgentSalesHubCommand: true,
+    salesAgentQuotationCreation: true,
+    salesAgentQuotationUpdate: true,
+    salesAgentContextualExtraction: true,
     ...overrides,
   };
 }

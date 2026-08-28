@@ -6,6 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   ListTodo,
+  MessageSquare,
   Target,
   Trophy,
   UsersRound,
@@ -22,6 +23,7 @@ export type SalesNavIconId =
   | "quotes"
   | "calendar"
   | "tasks"
+  | "command"
   | "reports"
   | "wonLost"
   | "goals"
@@ -57,6 +59,7 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   quotes: FileText,
   calendar: CalendarDays,
   tasks: ListTodo,
+  command: MessageSquare,
   reports: BarChart3,
   wonLost: Trophy,
   goals: Target,
@@ -147,6 +150,15 @@ export const SALES_NAVIGATION: SalesNavItemConfig[] = [
       exactOrChild(p, "/sales/tasks") ||
       p === "/sales/followups" ||
       p.startsWith("/sales/followups"),
+  },
+  {
+    id: "command",
+    label: "Command",
+    href: "/sales/command",
+    icon: "command",
+    section: "sales",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/sales/command"),
   },
   {
     id: "reports",

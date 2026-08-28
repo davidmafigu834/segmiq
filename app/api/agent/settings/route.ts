@@ -82,6 +82,7 @@ const patchSchema = z
     testMode: z.boolean(),
     learningEnabled: z.boolean(),
     suggestReplies: z.boolean(),
+    salesAgentEnabled: z.boolean(),
     learning: z
       .object({
         enabled: z.boolean(),

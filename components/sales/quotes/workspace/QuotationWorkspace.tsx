@@ -69,6 +69,7 @@ import type {
 } from "@/types";
 import type { QuotationWorkspacePayload } from "@/lib/quotations/workspace-data";
 import { SolarTemplateFieldsPanel } from "@/components/sales/quotes/workspace/SolarTemplateFieldsPanel";
+import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
 import { isSolarLayout } from "@/lib/quotations/layouts/registry";
 import { solarMetrics } from "@/lib/quotations/layouts/map-fields";
 
@@ -189,6 +190,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState<{ sectionId: string } | null>(null);
   const [dealPickerOpen, setDealPickerOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItemRow[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -931,6 +933,13 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               {moreOpen ? (
                 <div className="absolute right-0 z-30 mt-1 w-52 rounded-sales-md border border-sales-border bg-sales-surface py-1 shadow-sales-card">
                   <MoreItem label="Duplicate quotation" onClick={() => void duplicate()} />
+                  <MoreItem
+                    label="Command SegmiQ"
+                    onClick={() => {
+                      setCommandOpen(true);
+                      setMoreOpen(false);
+                    }}
+                  />
                   {readOnly ? (
                     <MoreItem label="Create revision" onClick={() => void revise()} />
                   ) : null}
@@ -1307,6 +1316,19 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
       {historyOpen ? (
         <HistoryModal versions={payload.versions} onClose={() => setHistoryOpen(false)} currency={currency} />
       ) : null}
+
+      <SalesCommandDrawer
+        open={commandOpen}
+        onClose={() => setCommandOpen(false)}
+        customerName={payload.customer.name}
+        pageContext={{
+          leadId: payload.customer.leadId,
+          customerId: payload.customer.contactId,
+          dealId: payload.deal?.id ?? q.deal_id,
+          quotationId,
+          conversationId: payload.customer.leadId,
+        }}
+      />
     </div>
   );
 }

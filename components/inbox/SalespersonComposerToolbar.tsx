@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Headphones,
+  MessageSquare,
   Paperclip,
   Phone,
   StickyNote,
@@ -74,6 +75,7 @@ type Props = {
   onInternalNote: () => void;
   onLogCall?: () => void;
   onOpenCreateDeal?: () => void;
+  onCommandSegmiq?: () => void;
   onTransfer?: () => void;
   onTransferSupport?: () => void;
   leadHref?: string;
@@ -91,6 +93,7 @@ export function SalespersonComposerToolbar({
   onInternalNote,
   onLogCall,
   onOpenCreateDeal,
+  onCommandSegmiq,
   onTransfer,
   onTransferSupport,
   leadHref,
@@ -195,6 +198,9 @@ export function SalespersonComposerToolbar({
                 ) : null}
                 {onOpenAssetDrawer ? (
                   <ComposerTool icon={Paperclip} label="Send asset" onClick={onOpenAssetDrawer} />
+                ) : null}
+                {onCommandSegmiq ? (
+                  <ComposerTool icon={MessageSquare} label="Command SegmiQ" onClick={onCommandSegmiq} />
                 ) : null}
                 <ComposerTool icon={StickyNote} label="Internal note" onClick={onInternalNote} />
                 {showLogCall && onLogCall ? (

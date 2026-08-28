@@ -12,6 +12,7 @@ const TAB_STATES: Record<string, string[]> = {
   failed: ["FAILED", "CANCELLED", "SKIPPED"],
   proactive: [],
   manager: [],
+  sales: [],
 };
 
 export async function GET(req: Request) {
@@ -50,6 +51,8 @@ export async function GET(req: Request) {
     query = query.eq("trigger_kind", "PROACTIVE");
   } else if (tab === "manager") {
     query = query.eq("trigger_kind", "MANAGER");
+  } else if (tab === "sales") {
+    query = query.eq("trigger_kind", "SALESPERSON");
   } else {
     query = query.in("state", states.length ? states : TAB_STATES.completed);
   }
@@ -84,12 +87,15 @@ export async function GET(req: Request) {
   const counts: Record<string, number> = {};
   await Promise.all(
     Object.entries(TAB_STATES).map(async ([key, tabStates]) => {
-      if (key === "proactive" || key === "manager") {
+      if (key === "proactive" || key === "manager" || key === "sales") {
         const { count } = await supabase
           .from("agent_executions")
           .select("id", { count: "exact", head: true })
           .eq("client_id", clientId)
-          .eq("trigger_kind", key === "proactive" ? "PROACTIVE" : "MANAGER");
+          .eq(
+            "trigger_kind",
+            key === "proactive" ? "PROACTIVE" : key === "manager" ? "MANAGER" : "SALESPERSON"
+          );
         counts[key] = count ?? 0;
         return;
       }
@@ -128,7 +134,12 @@ export async function GET(req: Request) {
       const lead = leadById.get(e.lead_id);
       return {
         ...e,
-        customer_name: e.trigger_kind === "MANAGER" ? "Command Center" : lead?.name ?? lead?.phone ?? "Unknown",
+        customer_name:
+          e.trigger_kind === "MANAGER"
+            ? "Command Center"
+            : e.trigger_kind === "SALESPERSON"
+              ? e.decision_summary?.slice(0, 80) || "Sales Command"
+              : lead?.name ?? lead?.phone ?? "Unknown",
       };
     }),
     counts: { ...counts, today: todayCount ?? 0 },

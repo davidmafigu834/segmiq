@@ -49,6 +49,12 @@ export const AGENT_SETTINGS_DEFAULTS: Omit<AgentCompanySettings, "clientId"> = {
   testMode: false,
   learningEnabled: false,
   suggestReplies: false,
+  salesAgentEnabled: false,
+  salesAgentCommandCenter: true,
+  salesAgentSalesHubCommand: true,
+  salesAgentQuotationCreation: true,
+  salesAgentQuotationUpdate: true,
+  salesAgentContextualExtraction: true,
 };
 
 type SettingsRow = Record<string, unknown>;
@@ -96,6 +102,15 @@ function rowToSettings(clientId: string, row: SettingsRow | null): AgentCompanyS
     testMode: bool("test_mode", d.testMode),
     learningEnabled: bool("learning_enabled", d.learningEnabled),
     suggestReplies: bool("suggest_replies", d.suggestReplies),
+    salesAgentEnabled: bool("sales_agent_enabled", d.salesAgentEnabled),
+    salesAgentCommandCenter: bool("sales_agent_command_center", d.salesAgentCommandCenter),
+    salesAgentSalesHubCommand: bool("sales_agent_sales_hub_command", d.salesAgentSalesHubCommand),
+    salesAgentQuotationCreation: bool("sales_agent_quotation_creation", d.salesAgentQuotationCreation),
+    salesAgentQuotationUpdate: bool("sales_agent_quotation_update", d.salesAgentQuotationUpdate),
+    salesAgentContextualExtraction: bool(
+      "sales_agent_contextual_extraction",
+      d.salesAgentContextualExtraction
+    ),
   };
 }
 
@@ -141,6 +156,12 @@ const PATCH_COLUMN_MAP: Record<keyof AgentSettingsPatch, string> = {
   testMode: "test_mode",
   learningEnabled: "learning_enabled",
   suggestReplies: "suggest_replies",
+  salesAgentEnabled: "sales_agent_enabled",
+  salesAgentCommandCenter: "sales_agent_command_center",
+  salesAgentSalesHubCommand: "sales_agent_sales_hub_command",
+  salesAgentQuotationCreation: "sales_agent_quotation_creation",
+  salesAgentQuotationUpdate: "sales_agent_quotation_update",
+  salesAgentContextualExtraction: "sales_agent_contextual_extraction",
 };
 
 export async function updateAgentCompanySettings(

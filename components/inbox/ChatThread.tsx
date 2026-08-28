@@ -39,6 +39,7 @@ import { SalesConversationAssist } from "./SalesConversationAssist";
 import { AssetDrawer } from "./AssetDrawer";
 import { AgentComposerAssist } from "./AgentComposerAssist";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
+import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
 import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
 import { ManagerWorkflowStrip } from "./ManagerWorkflowStrip";
 import { ConversationTypeBadge } from "./ConversationTypeBadge";
@@ -173,6 +174,8 @@ export function ChatThread({
   const [teachOpen, setTeachOpen] = useState(false);
   const [excludeLearningOpen, setExcludeLearningOpen] = useState(false);
   const [fromChatOpen, setFromChatOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [salesHubCommand, setSalesHubCommand] = useState(false);
   const [teachMessageIds, setTeachMessageIds] = useState<string[]>([]);
   const [planCompleting, setPlanCompleting] = useState(false);
   const [hasNewBelow, setHasNewBelow] = useState(false);
@@ -224,6 +227,27 @@ export function ChatThread({
       cancelled = true;
     };
   }, [conversation?.id, salespersonHub, companyMode, alsoSells]);
+
+  useEffect(() => {
+    if (!salespersonHub) {
+      setSalesHubCommand(false);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/agent/sales/command?flagsOnly=1")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { flags?: { enabled?: boolean; salesHubCommand?: boolean } } | null) => {
+        if (!cancelled) {
+          setSalesHubCommand(Boolean(j?.flags?.enabled && j.flags.salesHubCommand !== false));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSalesHubCommand(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [salespersonHub]);
 
   useEffect(() => {
     const focusComposer = () => composerRef.current?.focus();
@@ -1173,6 +1197,7 @@ export function ChatThread({
               onInternalNote={handleInternalNote}
               onLogCall={() => setLogCallOpen(true)}
               onOpenCreateDeal={() => void openCreateDeal()}
+              onCommandSegmiq={salesHubCommand ? () => setCommandOpen(true) : undefined}
               leadHref={leadHref}
               dealHref={dealHref}
               canCreateDeal={canCreateDeal}
@@ -1538,6 +1563,22 @@ export function ChatThread({
             setTeachOpen(false);
             setExcludeLearningOpen(false);
             setFromChatOpen(false);
+          }}
+        />
+      ) : null}
+      {salespersonHub && salesHubCommand && conversation ? (
+        <SalesCommandDrawer
+          open={commandOpen}
+          onClose={() => setCommandOpen(false)}
+          customerName={conversation.name}
+          pageContext={{
+            conversationId: conversation.id,
+            leadId: conversation.id,
+            customerId: conversation.contactId,
+            dealId: conversation.activeDealId,
+            ownerId: conversation.assignedToId,
+            companyId: clientId,
+            currentUserId: userId,
           }}
         />
       ) : null}

@@ -37,6 +37,7 @@ type AgentSettings = {
   testMode: boolean;
   learningEnabled: boolean;
   suggestReplies: boolean;
+  salesAgentEnabled: boolean;
 };
 
 const MODE_COPY: Record<AgentSettings["autonomyMode"], string> = {
@@ -238,7 +239,7 @@ export function AgentSettingsSection({
         </div>
       </SettingsSectionCard>
 
-      <div className="grid gap-2 rounded-[12px] border border-sales-border bg-sales-surface px-4 py-3 sm:grid-cols-3">
+      <div className="grid gap-2 rounded-[12px] border border-sales-border bg-sales-surface px-4 py-3 sm:grid-cols-2 layout:grid-cols-4">
         <StatusCell
           label="Customer Agent"
           value={settings.enabled ? "Responding" : "Not responding"}
@@ -248,6 +249,11 @@ export function AgentSettingsSection({
           label="Proactive Agent"
           value={proactive?.enabled ? "Active" : "Paused"}
           on={Boolean(proactive?.enabled)}
+        />
+        <StatusCell
+          label="Sales Agent"
+          value={settings.salesAgentEnabled ? "On" : "Off"}
+          on={Boolean(settings.salesAgentEnabled)}
         />
         <StatusCell
           label="Learning"
@@ -294,6 +300,18 @@ export function AgentSettingsSection({
           Learn First: your team keeps handling customers while SegmiQ observes eligible conversations. Assist: suggest
           replies without sending, and learn from edits.
         </p>
+      </SettingsSectionCard>
+
+      <SettingsSectionCard
+        title="Sales Agent"
+        description="Allow salespeople to tell SegmiQ what work they need done. Independent of the Customer Agent. Does not send messages to customers."
+      >
+        <ToggleRow
+          label="Sales Agent"
+          hint="Salespeople can use Sales Command Center and Command SegmiQ in Sales Hub to prepare Draft quotations. They still review and send in the normal quotation workspace."
+          checked={Boolean(settings.salesAgentEnabled)}
+          onChange={(v) => patch({ salesAgentEnabled: v })}
+        />
       </SettingsSectionCard>
 
       <SettingsSectionCard
