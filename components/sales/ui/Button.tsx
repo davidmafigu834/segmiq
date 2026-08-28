@@ -22,7 +22,7 @@ const focusClass =
 
 const variantClass: Record<SalesButtonVariant, string> = {
   primary:
-    "bg-sales-brand text-sales-brand-text border border-transparent shadow-sales-card hover:bg-sales-brand-hover active:bg-sales-brand-hover active:shadow-none",
+            "bg-sales-brand text-sales-brand-text border border-transparent shadow-sales-card sales-btn-primary hover:bg-sales-brand-hover active:bg-sales-brand-hover active:shadow-none",
   secondary:
     "bg-sales-surface text-sales-text-primary border border-sales-border-strong shadow-sales-card hover:bg-sales-surface-hover active:bg-sales-neutral-100 active:shadow-none",
   ghost:

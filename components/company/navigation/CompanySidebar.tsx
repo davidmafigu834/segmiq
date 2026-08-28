@@ -80,10 +80,7 @@ function CompanyNavItem({
       )}
     >
       {active && !collapsed ? (
-        <span
-          className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[var(--sales-sidebar-active-indicator)]"
-          aria-hidden
-        />
+        <span className="sales-nav-rail" aria-hidden />
       ) : null}
       <NavIcon icon={item.icon} active={active} collapsed={collapsed} />
       {!collapsed ? (
@@ -152,7 +149,7 @@ export function CompanySidebar({
         <div
           className={cn(
             "relative flex shrink-0 items-center",
-            collapsedMode ? "h-[68px] justify-center px-2" : "h-[72px] justify-between gap-2 px-5"
+            collapsedMode ? "h-[76px] justify-center px-2" : "h-[76px] justify-between gap-2 px-5"
           )}
         >
           <Link

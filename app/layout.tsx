@@ -1,14 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { Instrument_Serif, DM_Sans, DM_Serif_Display, Roboto } from "next/font/google";
-import { GeistSans } from "geist/font/sans";
+import { Inter, Instrument_Serif, DM_Sans, DM_Serif_Display, Roboto } from "next/font/google";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import "./segmiq-atmosphere.css";
+import "./company-dashboard.css";
 import { Providers } from "./providers";
 import { ServiceWorkerCleanup } from "@/components/ServiceWorkerCleanup";
 import { isCloudRequestHost } from "@/lib/cloud/manifest";
 import { getMetadataBase, ROOT_METADATA } from "@/lib/seo";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -82,7 +88,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${GeistSans.variable} ${GeistMono.variable} ${dmSans.variable} ${dmSerif.variable} ${quotationRoboto.variable}`}
+      className={`${inter.className} ${inter.variable} ${instrumentSerif.variable} ${GeistMono.variable} ${dmSans.variable} ${dmSerif.variable} ${quotationRoboto.variable}`}
     >
       <head>
         {/* Prevent CRM/sales theme flash before hydration */}
@@ -106,7 +112,7 @@ export default function RootLayout({
         )}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" />
       </head>
-      <body className="min-h-screen bg-surface-canvas font-sans text-sm text-ink-primary antialiased">
+        <body className="min-h-screen bg-surface-canvas font-sans text-sm text-ink-primary antialiased">
         <ServiceWorkerCleanup />
         <Providers>{children}</Providers>
       </body>

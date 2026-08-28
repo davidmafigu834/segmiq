@@ -2,11 +2,21 @@
 
 import { CompanyDashCard, PeriodChip } from "./CompanyDashCard";
 import type { SalesFunnelStage } from "@/components/dashboard/sales/types";
+import type { CSSProperties } from "react";
 
 function stepRate(current: number, previous: number): string | null {
   if (previous <= 0) return null;
   return `${Math.round((current / previous) * 100)}%`;
 }
+
+const FUNNEL_COLOR: Record<SalesFunnelStage["icon"], string> = {
+  enquiries: "var(--sales-info)",
+  contacted: "#6b7cff",
+  qualified: "var(--sales-cyan)",
+  deals: "var(--sales-purple)",
+  proposal: "var(--sales-success)",
+  won: "var(--sales-brand)",
+};
 
 export function CompanyFunnelCard({
   stages,
@@ -26,7 +36,7 @@ export function CompanyFunnelCard({
           <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
             Lead → Won
           </p>
-          <p className="mt-1.5 text-[32px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-sales-text-primary">
+          <p className="mt-1.5 text-[32px] font-bold leading-none tracking-[-0.035em] tabular-nums text-sales-text-primary">
             {conversionRate != null ? `${conversionRate}%` : "—"}
           </p>
           <p className="mt-2 text-[11px] leading-snug text-sales-text-muted">Overall conversion</p>
@@ -55,10 +65,15 @@ export function CompanyFunnelCard({
                       </span>
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-sales-neutral-100">
+                  <div className="dashboard-funnel-track">
                     <div
-                      className="h-full rounded-full bg-sales-brand"
-                      style={{ width: `${width}%`, opacity: 0.45 + (idx / Math.max(stages.length - 1, 1)) * 0.55 }}
+                      className="dashboard-funnel-fill"
+                      style={
+                        {
+                          width: `${width}%`,
+                          ["--funnel-color" as string]: FUNNEL_COLOR[stage.icon],
+                        } as CSSProperties
+                      }
                     />
                   </div>
                 </li>

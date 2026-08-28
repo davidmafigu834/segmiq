@@ -37,7 +37,7 @@ export function CompanyDealsAtRiskCard({
             <li key={item.id}>
               <Link
                 href={item.href}
-                className="relative flex min-h-[68px] items-start justify-between gap-3 py-3.5 pl-5 pr-5 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                className="dashboard-list-row relative flex min-h-[56px] items-start justify-between gap-3 py-3.5 pl-5 pr-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
               >
                 <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-sales-danger" aria-hidden />
                 <div className="min-w-0">

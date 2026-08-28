@@ -28,28 +28,23 @@ export function CompanyRecentActivityCard({ items }: { items: CompanyActivityIte
           description="Quotes sent, Deals Won and follow-ups completed will appear here."
         />
       ) : (
-        <ul className="px-5 py-3">
-          {display.map((item, idx) => {
+        <ul className="divide-y divide-sales-border-subtle px-2 py-1">
+          {display.map((item) => {
             const body = (
-              <div className="flex gap-3 py-2.5">
-                <div className="relative flex w-8 shrink-0 flex-col items-center">
-                  <span className="z-[1] flex h-8 w-8 items-center justify-center rounded-full bg-sales-neutral-100 ring-4 ring-sales-surface">
-                    <ActivityIcon kind={item.kind} />
-                  </span>
-                  {idx < display.length - 1 ? (
-                    <span className="absolute top-8 bottom-[-14px] w-px bg-sales-border-subtle" aria-hidden />
-                  ) : null}
-                </div>
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-[13px] font-medium text-sales-text-primary">{item.title}</p>
+              <div className="dashboard-list-row flex items-center gap-3 px-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sales-neutral-100">
+                  <ActivityIcon kind={item.kind} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium text-sales-text-primary">{item.title}</p>
                   {item.detail ? (
-                    <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{item.detail}</p>
+                    <p className="truncate text-[12px] text-sales-text-muted">{item.detail}</p>
                   ) : null}
-                  <p className={cn("mt-1 text-[11px] text-sales-text-muted")}>
-                    {item.actorName ? `${item.actorName} · ` : ""}
-                    {item.timeLabel}
-                  </p>
                 </div>
+                <p className={cn("shrink-0 text-[11px] text-sales-text-muted")}>
+                  {item.actorName ? `${item.actorName} · ` : ""}
+                  {item.timeLabel}
+                </p>
               </div>
             );
             return (
@@ -57,7 +52,7 @@ export function CompanyRecentActivityCard({ items }: { items: CompanyActivityIte
                 {item.href ? (
                   <Link
                     href={item.href}
-                    className="-mx-2 block rounded-[10px] px-2 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
+                    className="block rounded-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
                   >
                     {body}
                   </Link>

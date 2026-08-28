@@ -4,6 +4,7 @@ import { type CSSProperties, type ReactNode } from "react";
 import { CompanySidebar } from "@/components/company/navigation/CompanySidebar";
 import { CompanyMobileTopBar } from "@/components/company/navigation/CompanyMobileTopBar";
 import { CompanyBottomNav } from "@/components/company/navigation/CompanyBottomNav";
+import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
 import type { UserRole } from "@/types";
 
@@ -41,7 +42,7 @@ export function CompanyWorkspaceShell({
 
   return (
     <div
-      className="sales-dashboard-premium flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
+      className="sales-dashboard-premium dashboard-shell flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideMobileChrome ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
@@ -69,12 +70,18 @@ export function CompanyWorkspaceShell({
         />
       ) : null}
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
+      <div className="dashboard-canvas min-h-0 min-w-0 flex-1 transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
+        {immersive ? null : (
+          <>
+            <div className="segmiq-ambient-glow" aria-hidden />
+            <SegmiQDotWave />
+          </>
+        )}
         <div
           className={
             immersive
-              ? "sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 overflow-hidden"
-              : "sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:space-y-5 sm:px-6 layout:px-8 layout:py-6"
+              ? "relative z-[1] sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 overflow-hidden"
+              : "relative z-[1] sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-6 layout:space-y-6 layout:px-8 layout:py-6"
           }
         >
           {children}

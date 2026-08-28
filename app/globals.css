@@ -9,33 +9,33 @@ body {
 }
 
 :root {
-  /* ?? Backgrounds ?? */
-  --bg-primary: #050505;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #111111;
-  --bg-quaternary: #191919;
+  /* Backgrounds — landing navy family (work surfaces, not the marketing stage) */
+  --bg-primary: #06152e;
+  --bg-secondary: #0c1a3c;
+  --bg-tertiary: #102044;
+  --bg-quaternary: #15264a;
 
-  /* ?? Surfaces (keep legacy names so Tailwind aliases auto-update) ?? */
-  --surface-sidebar: #080808;
-  --surface-sidebar-elevated: #141414;
-  --surface-sidebar-border: rgba(255, 255, 255, 0.09);
-  --surface-canvas: #050505;
-  --surface-card: #0f0f0f;
-  --surface-card-alt: #151515;
-  --surface-overlay: rgba(0, 0, 0, 0.7);
-  --surface-input: #0a0a0a;
-  --surface-modal: #111111;
-  --surface-dropdown: #111111;
+  /* Surfaces (keep legacy names so Tailwind aliases auto-update) */
+  --surface-sidebar: #08142b;
+  --surface-sidebar-elevated: #0c1a3c;
+  --surface-sidebar-border: rgba(176, 196, 255, 0.12);
+  --surface-canvas: #06152e;
+  --surface-card: #0c1a3c;
+  --surface-card-alt: #102044;
+  --surface-overlay: rgba(4, 12, 32, 0.72);
+  --surface-input: #08142b;
+  --surface-modal: #0e1e44;
+  --surface-dropdown: #0e1e44;
   --bg-card: var(--surface-card);
 
-  /* ?? Text ?? */
-  --text-primary: #ededed;
-  --text-secondary: #b4b4b4;
-  --text-tertiary: #858585;
-  --text-disabled: #555555;
-  --text-inverse: #000000;
-  --text-on-dark: #ededed;
-  --text-on-dark-dim: #bbbbbb;
+  /* Text */
+  --text-primary: #f7f8fc;
+  --text-secondary: #b8c4dc;
+  --text-tertiary: #8a97b5;
+  --text-disabled: #6b7894;
+  --text-inverse: #06152e;
+  --text-on-dark: #f7f8fc;
+  --text-on-dark-dim: #b8c4dc;
 
   /* ?? Accent ? lime (Leadstaq brand) ?? */
   --accent: #d4ff4f;
@@ -73,18 +73,18 @@ body {
   --info-muted: rgba(0, 112, 243, 0.1);
   --info-border: rgba(0, 112, 243, 0.2);
 
-  /* ?? Borders ?? */
-  --border: rgba(255, 255, 255, 0.1);
-  --border-hover: rgba(255, 255, 255, 0.2);
-  --border-focus: rgba(255, 255, 255, 0.4);
-  --border-strong: rgba(255, 255, 255, 0.28);
-  --border-dark: rgba(255, 255, 255, 0.15);
+  /* Borders */
+  --border: rgba(176, 196, 255, 0.14);
+  --border-hover: rgba(176, 196, 255, 0.24);
+  --border-focus: rgba(176, 196, 255, 0.42);
+  --border-strong: rgba(176, 196, 255, 0.28);
+  --border-dark: rgba(176, 196, 255, 0.18);
 
-  /* ?? Shadows ?? */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.65);
-  --shadow-modal: 0 16px 64px rgba(0, 0, 0, 0.9);
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(4, 12, 32, 0.45);
+  --shadow-md: 0 8px 24px rgba(4, 12, 32, 0.4);
+  --shadow-lg: 0 16px 48px rgba(4, 12, 32, 0.55);
+  --shadow-modal: 0 16px 64px rgba(4, 12, 32, 0.72);
 
   /* ?? Radius ?? */
   --radius-sm: 4px;
@@ -99,23 +99,23 @@ body {
   /* ?? Sidebar / topbar layout ?? */
   --sidebar-width: 240px;
   --crm-sidebar-width: 240px;
-  --sidebar-bg: #000000;
-  --sidebar-border: rgba(255, 255, 255, 0.15);
+  --sidebar-bg: #08142b;
+  --sidebar-border: rgba(176, 196, 255, 0.14);
   --topbar-height: 56px;
-  --topbar-bg: #000000;
-  --topbar-border: rgba(255, 255, 255, 0.15);
+  --topbar-bg: #08142b;
+  --topbar-border: rgba(176, 196, 255, 0.14);
 
   /* ?? Transitions ?? */
   --transition-fast: 100ms ease;
   --transition-base: 150ms ease;
 
-  /* ?? Legacy aliases ?? */
-  --background: #000000;
-  --foreground: #ededed;
+  /* Legacy aliases */
+  --background: #06152e;
+  --foreground: #f7f8fc;
 
-  /* ?? Font role aliases ?? */
-  --font-serif: var(--font-instrument-serif);
-  --font-sans: var(--font-geist-sans);
+  /* Font role aliases — Inter is the platform sans, matching landing */
+  --font-serif: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 
   /* ?? Status pill tokens (dashboard) ?? */
@@ -152,13 +152,13 @@ body {
   --activity-nq: #555555;
 }
 
-/* CRM / dashboard light mode — warm olive-stone (canvas behind white cards) */
+/* CRM / dashboard light mode — cool white canvas, matching landing light */
 html[data-crm-theme="light"],
 html:has(.crm-theme-light),
 html[data-crm-theme="light"] body,
 html:has(.crm-theme-light) body {
-  background-color: #eeefe8;
-  color: #14180f;
+  background-color: #f7f8fc;
+  color: #101828;
   color-scheme: light;
 }
 
@@ -178,35 +178,35 @@ html:has(.crm-theme-light) body::-webkit-scrollbar-thumb:hover {
 
 html[data-crm-theme="light"],
 .crm-theme-light {
-  --bg-primary: #eeefe8;
+  --bg-primary: #f7f8fc;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f3f4ee;
-  --bg-quaternary: #e4e6dc;
+  --bg-tertiary: #f4f6fb;
+  --bg-quaternary: #e8ecf4;
 
-  --surface-sidebar: #f3f4ee;
-  --surface-sidebar-elevated: #eeefe8;
-  --surface-sidebar-border: rgba(28, 32, 20, 0.1);
-  --surface-canvas: #eeefe8;
+  --surface-sidebar: #f4f6fb;
+  --surface-sidebar-elevated: #f7f8fc;
+  --surface-sidebar-border: rgba(16, 24, 40, 0.08);
+  --surface-canvas: #f7f8fc;
   --surface-card: #ffffff;
-  --surface-card-alt: #f6f7f1;
-  --surface-overlay: rgba(28, 32, 20, 0.45);
+  --surface-card-alt: #f5f7fc;
+  --surface-overlay: rgba(16, 24, 40, 0.45);
   --surface-input: #ffffff;
   --surface-modal: #ffffff;
   --surface-dropdown: #ffffff;
   --bg-card: var(--surface-card);
 
-  --text-primary: #14180f;
-  --text-secondary: #5c6156;
-  --text-tertiary: #8a8f84;
-  --text-disabled: #a8ada2;
+  --text-primary: #101828;
+  --text-secondary: #475467;
+  --text-tertiary: #667085;
+  --text-disabled: #98a2b3;
   --text-inverse: #ffffff;
-  --text-on-dark: #14180f;
-  --text-on-dark-dim: #5c6156;
+  --text-on-dark: #101828;
+  --text-on-dark-dim: #475467;
 
   --accent: #d4ff4f;
   --accent-hover: #c6f23f;
-  --accent-ink: #14180f;
-  --accent-foreground: #14180f;
+  --accent-ink: #101828;
+  --accent-foreground: #101828;
   --accent-fg: #4d7c0f;
   --accent-muted: #eef4d8;
   --accent-border: rgba(77, 124, 15, 0.22);
@@ -237,24 +237,24 @@ html[data-crm-theme="light"],
   --info-muted: rgba(37, 99, 235, 0.08);
   --info-border: rgba(37, 99, 235, 0.18);
 
-  --border: rgba(28, 32, 20, 0.1);
-  --border-hover: rgba(28, 32, 20, 0.16);
-  --border-focus: rgba(28, 32, 20, 0.28);
-  --border-strong: rgba(28, 32, 20, 0.18);
-  --border-dark: rgba(28, 32, 20, 0.14);
+  --border: rgba(16, 24, 40, 0.08);
+  --border-hover: rgba(16, 24, 40, 0.14);
+  --border-focus: rgba(16, 24, 40, 0.24);
+  --border-strong: rgba(16, 24, 40, 0.16);
+  --border-dark: rgba(16, 24, 40, 0.12);
 
-  --shadow-sm: 0 1px 2px rgba(28, 32, 20, 0.05);
-  --shadow-md: 0 8px 24px rgba(28, 32, 20, 0.08);
-  --shadow-lg: 0 16px 48px rgba(28, 32, 20, 0.1);
-  --shadow-modal: 0 16px 64px rgba(28, 32, 20, 0.14);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 64, 0.05);
+  --shadow-md: 0 8px 24px rgba(16, 24, 64, 0.08);
+  --shadow-lg: 0 16px 48px rgba(16, 24, 64, 0.1);
+  --shadow-modal: 0 16px 64px rgba(16, 24, 64, 0.14);
 
-  --sidebar-bg: #f3f4ee;
-  --sidebar-border: rgba(28, 32, 20, 0.1);
-  --topbar-bg: rgba(243, 244, 238, 0.92);
-  --topbar-border: rgba(28, 32, 20, 0.1);
+  --sidebar-bg: #f4f6fb;
+  --sidebar-border: rgba(16, 24, 40, 0.08);
+  --topbar-bg: rgba(244, 246, 251, 0.92);
+  --topbar-border: rgba(16, 24, 40, 0.08);
 
-  --background: #eeefe8;
-  --foreground: #14180f;
+  --background: #f7f8fc;
+  --foreground: #101828;
 
   --status-new-bg: rgba(37, 99, 235, 0.1);
   --status-new-fg: #2563eb;
@@ -264,8 +264,8 @@ html[data-crm-theme="light"],
   --status-followup-fg: #b45309;
   --status-won-bg: rgba(77, 124, 15, 0.1);
   --status-won-fg: #4d7c0f;
-  --status-lost-bg: rgba(28, 32, 20, 0.05);
-  --status-lost-fg: #8a8f84;
+  --status-lost-bg: rgba(16, 24, 40, 0.05);
+  --status-lost-fg: #667085;
   --status-flagged-bg: rgba(220, 38, 38, 0.08);
   --status-flagged-fg: #dc2626;
   --status-negotiating-bg: rgba(217, 119, 6, 0.08);
@@ -273,19 +273,19 @@ html[data-crm-theme="light"],
   --status-proposal-bg: rgba(124, 58, 237, 0.1);
   --status-proposal-fg: #7c3aed;
 
-  --ag-bg: #eeefe8;
+  --ag-bg: #f7f8fc;
   --ag-surface: #ffffff;
-  --ag-surface-2: #f6f7f1;
-  --ag-surface-3: #f3f4ee;
-  --ag-border: rgba(28, 32, 20, 0.1);
-  --ag-border-hover: rgba(28, 32, 20, 0.16);
-  --ag-border-strong: rgba(28, 32, 20, 0.18);
-  --ag-text-primary: #14180f;
-  --ag-text-secondary: #5c6156;
-  --ag-text-tertiary: #8a8f84;
-  --ag-text-muted: #a8ada2;
+  --ag-surface-2: #f5f7fc;
+  --ag-surface-3: #f4f6fb;
+  --ag-border: rgba(16, 24, 40, 0.08);
+  --ag-border-hover: rgba(16, 24, 40, 0.14);
+  --ag-border-strong: rgba(16, 24, 40, 0.16);
+  --ag-text-primary: #101828;
+  --ag-text-secondary: #475467;
+  --ag-text-tertiary: #667085;
+  --ag-text-muted: #98a2b3;
   --ag-lime: #d4ff4f;
-  --ag-lime-fg: #14180f;
+  --ag-lime-fg: #101828;
   --ag-lime-muted: #eef4d8;
   --ag-lime-border: rgba(77, 124, 15, 0.22);
   --ag-success: #15803d;
@@ -299,17 +299,17 @@ html[data-crm-theme="light"],
 }
 
 html[data-crm-theme="light"][data-crm] {
-  --border: rgba(28, 32, 20, 0.1);
-  --border-hover: rgba(28, 32, 20, 0.16);
-  --border-focus: rgba(28, 32, 20, 0.28);
-  --border-strong: rgba(28, 32, 20, 0.18);
-  --border-dark: rgba(28, 32, 20, 0.14);
-  --surface-sidebar-border: rgba(28, 32, 20, 0.1);
-  --sidebar-border: rgba(28, 32, 20, 0.1);
-  --topbar-border: rgba(28, 32, 20, 0.1);
-  --ag-border: rgba(28, 32, 20, 0.1);
-  --ag-border-hover: rgba(28, 32, 20, 0.16);
-  --ag-border-strong: rgba(28, 32, 20, 0.18);
+  --border: rgba(16, 24, 40, 0.08);
+  --border-hover: rgba(16, 24, 40, 0.14);
+  --border-focus: rgba(16, 24, 40, 0.24);
+  --border-strong: rgba(16, 24, 40, 0.16);
+  --border-dark: rgba(16, 24, 40, 0.12);
+  --surface-sidebar-border: rgba(16, 24, 40, 0.08);
+  --sidebar-border: rgba(16, 24, 40, 0.08);
+  --topbar-border: rgba(16, 24, 40, 0.08);
+  --ag-border: rgba(16, 24, 40, 0.08);
+  --ag-border-hover: rgba(16, 24, 40, 0.14);
+  --ag-border-strong: rgba(16, 24, 40, 0.16);
 }
 
 html[data-crm-theme="light"] ::selection,
@@ -351,9 +351,11 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.5;
+    letter-spacing: -0.011em;
+    font-weight: 400;
   }
 
   ::-webkit-scrollbar {
@@ -392,7 +394,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .font-display {
-    font-family: var(--font-instrument-serif), ui-serif, Georgia, serif;
+    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
   }
 
   .font-mono-data {
@@ -439,7 +441,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
 
   .input-base {
     @apply h-9 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-input)] px-3 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors focus:outline-none focus:border-[var(--border-focus)];
-    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
   }
 
   .input-base:focus {
@@ -448,7 +450,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
 
   .textarea-base {
     @apply min-h-[5rem] w-full resize-y rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-input)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-colors focus:outline-none focus:border-[var(--border-focus)];
-    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
   }
 
   .btn-primary {
@@ -538,17 +540,17 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
     --wa-accent: #d4ff4f;
     --wa-accent-strong: #4d7c0f;
     --wa-accent-soft: #eef4d8;
-    --wa-ink: #14180f;
-    --wa-muted: #5c6156;
-    --wa-border: #d5d7cc;
+    --wa-ink: #101828;
+    --wa-muted: #475467;
+    --wa-border: #e2e8f0;
     --wa-surface: #ffffff;
-    --wa-surface-subtle: #eeefe8;
-    --wa-hover: #f9fafb;
-    --wa-input: #f7f8fa;
+    --wa-surface-subtle: #f7f8fc;
+    --wa-hover: #f4f6fb;
+    --wa-input: #f7f8fc;
     --wa-whatsapp: #25d366;
     gap: 0;
     padding: 0;
-    background: #eeefe8;
+    background: #f7f8fc;
   }
 
   .wa-panel {
@@ -981,7 +983,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   html[data-crm-theme="light"] .wa-hub-immersive {
-    background: #eeefe8;
+    background: #f7f8fc;
   }
 
   .sales-dashboard-premium .wa-hub-immersive {
@@ -1770,14 +1772,14 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   }
 
   .salesperson-wa-workspace .wa-chat-wallpaper {
-    background-color: #f7f8f6 !important;
+    background-color: #f4f6fb !important;
     background-image:
       radial-gradient(circle at 20% 18%, rgba(37, 211, 102, 0.04) 0, transparent 42%),
       radial-gradient(circle at 82% 72%, rgba(16, 24, 40, 0.03) 0, transparent 38%);
   }
 
   html:not([data-crm-theme="light"]) .salesperson-wa-workspace .wa-chat-wallpaper {
-    background-color: #0f1110 !important;
+    background-color: #08142b !important;
     background-image:
       radial-gradient(circle at 18% 14%, rgba(37, 211, 102, 0.06) 0, transparent 40%),
       radial-gradient(circle at 84% 78%, rgba(255, 255, 255, 0.03) 0, transparent 36%);
@@ -1914,13 +1916,13 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .wa-action-chip:hover {
     background: var(--sales-surface-hover, #e8eae3);
     border-color: var(--sales-border-strong, #c4c7bb);
-    color: var(--sales-text-primary, #14180f);
+    color: var(--sales-text-primary, #101828);
   }
 
   .wa-action-chip-active {
     border-color: var(--sales-brand-border, rgba(150, 190, 40, 0.55));
     background: var(--sales-brand-soft, #eef4d8);
-    color: var(--sales-text-primary, #14180f);
+    color: var(--sales-text-primary, #101828);
   }
 
   .wa-composer-toolbar {
@@ -2078,12 +2080,12 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   .wa-composer-tool-accent .wa-composer-tool-icon {
     border-color: var(--sales-brand-border, rgba(150, 190, 40, 0.55));
     background: var(--sales-brand-soft, #eef4d8);
-    color: var(--sales-text-primary, #14180f);
+    color: var(--sales-text-primary, #101828);
   }
 
   .wa-composer-tool-active .wa-composer-tool-label,
   .wa-composer-tool-accent .wa-composer-tool-label {
-    color: var(--sales-text-primary, #14180f);
+    color: var(--sales-text-primary, #101828);
   }
 
   .wa-hub-premium .wa-composer-toolbar {
@@ -2203,7 +2205,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   --fw-text-muted:     #B4A898;
   --fw-page-x: 20px;
   --fw-font-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
-  --fw-font-body: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
+  --fw-font-body: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ?? Cloud dashboard design tokens ?? */
@@ -2227,7 +2229,7 @@ html[data-crm]:not([data-crm-theme="light"]) body::-webkit-scrollbar-thumb:hover
   --cloud-danger: #E8602C;
   --cloud-success: #1F8A5B;
   --cloud-font-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
-  --cloud-font-body: var(--font-dm-sans), 'DM Sans', system-ui, sans-serif;
+  --cloud-font-body: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
   --cloud-radius-sm: 10px;
   --cloud-radius-md: 14px;
   --cloud-radius-lg: 18px;
@@ -3373,23 +3375,23 @@ html:has(.cloud-surface-dark) body::-webkit-scrollbar-track {
   display: none;
 }
 
-/* ?? Agency dashboard (CRM) design tokens ? dark system ?? */
+/* Agency dashboard (CRM) design tokens — dark navy, matching landing */
 :root {
-  --ag-bg: #000000;
-  --ag-surface: #0a0a0a;
-  --ag-surface-2: #111111;
-  --ag-surface-3: #1a1a1a;
-  --ag-border: rgba(255, 255, 255, 0.15);
-  --ag-border-hover: rgba(255, 255, 255, 0.24);
-  --ag-border-strong: rgba(255, 255, 255, 0.28);
+  --ag-bg: #06152e;
+  --ag-surface: #0c1a3c;
+  --ag-surface-2: #102044;
+  --ag-surface-3: #15264a;
+  --ag-border: rgba(176, 196, 255, 0.14);
+  --ag-border-hover: rgba(176, 196, 255, 0.24);
+  --ag-border-strong: rgba(176, 196, 255, 0.28);
 
-  --ag-text-primary: #ededed;
-  --ag-text-secondary: #bbbbbb;
-  --ag-text-tertiary: #999999;
-  --ag-text-muted: #777777;
+  --ag-text-primary: #f7f8fc;
+  --ag-text-secondary: #b8c4dc;
+  --ag-text-tertiary: #8a97b5;
+  --ag-text-muted: #6b7894;
 
   --ag-lime: #D4FF4F;
-  --ag-lime-fg: #000000;
+  --ag-lime-fg: #06152e;
   --ag-lime-muted: rgba(212, 255, 79, 0.1);
   --ag-lime-border: rgba(212, 255, 79, 0.25);
 
@@ -3400,23 +3402,50 @@ html:has(.cloud-surface-dark) body::-webkit-scrollbar-track {
   --ag-error: #ff4444;
   --ag-error-muted: rgba(255, 68, 68, 0.1);
 
-  --ag-font-display: var(--font-dm-serif), 'DM Serif Display', Georgia, serif;
-  --ag-font-body: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+  --ag-font-display: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  --ag-font-body: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
-/* ?? CRM: stronger line borders (scoped ? cloud/marketing use their own tokens) ?? */
+/* CRM: readable line borders (scoped — cloud/marketing use their own tokens) */
 html[data-crm] {
-  --border: rgba(255, 255, 255, 0.28);
-  --border-hover: rgba(255, 255, 255, 0.38);
-  --border-focus: rgba(255, 255, 255, 0.52);
-  --border-strong: rgba(255, 255, 255, 0.42);
-  --border-dark: rgba(255, 255, 255, 0.28);
-  --surface-sidebar-border: rgba(255, 255, 255, 0.28);
-  --sidebar-border: rgba(255, 255, 255, 0.28);
-  --topbar-border: rgba(255, 255, 255, 0.28);
-  --ag-border: rgba(255, 255, 255, 0.28);
-  --ag-border-hover: rgba(255, 255, 255, 0.38);
-  --ag-border-strong: rgba(255, 255, 255, 0.42);
+  --border: rgba(176, 196, 255, 0.18);
+  --border-hover: rgba(176, 196, 255, 0.28);
+  --border-focus: rgba(176, 196, 255, 0.42);
+  --border-strong: rgba(176, 196, 255, 0.32);
+  --border-dark: rgba(176, 196, 255, 0.2);
+  --surface-sidebar-border: rgba(176, 196, 255, 0.16);
+  --sidebar-border: rgba(176, 196, 255, 0.16);
+  --topbar-border: rgba(176, 196, 255, 0.16);
+  --ag-border: rgba(176, 196, 255, 0.18);
+  --ag-border-hover: rgba(176, 196, 255, 0.28);
+  --ag-border-strong: rgba(176, 196, 255, 0.32);
+
+  /* Quiet landing-hue wash. Dashboards stay opaque work surfaces, not the marketing stage. */
+  --crm-canvas-atmosphere:
+    radial-gradient(700px circle at 72% -10%, rgba(94, 57, 210, 0.13), transparent 65%),
+    radial-gradient(800px circle at 96% 68%, rgba(60, 68, 200, 0.08), transparent 70%);
+}
+
+html[data-crm-theme="light"] {
+  --crm-canvas-atmosphere:
+    radial-gradient(ellipse 80% 55% at 108% -8%, rgba(91, 43, 168, 0.05) 0%, transparent 58%),
+    radial-gradient(ellipse 58% 48% at -8% 108%, rgba(52, 88, 164, 0.045) 0%, transparent 54%);
+}
+
+html[data-crm] body,
+html[data-crm] .crm-shell-main {
+  background-color: var(--bg-primary);
+  background-image: var(--crm-canvas-atmosphere);
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html[data-crm] .font-display,
+html[data-crm] .font-serif,
+.sales-dashboard-premium {
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ?? Skeleton shimmer animation ?? */
@@ -3787,35 +3816,35 @@ label[for="photo-input"] {
 .pipeline-drawer-light,
 .sales-modal-premium,
 .calendar-modal-premium {
-  /* Surfaces — olive-stone canvas, white cards */
-  --sales-bg: #eeefe8;
+  /* Surfaces — cool canvas from landing, white cards */
+  --sales-bg: #f7f8fc;
   --sales-surface: #ffffff;
-  --sales-surface-subtle: #f6f7f1;
-  --sales-surface-hover: #e8eae3;
-  --sales-surface-active: #eef4d8;
+  --sales-surface-subtle: #f5f7fc;
+  --sales-surface-hover: #eef1f8;
+  --sales-surface-active: #e8edf8;
 
   /* Neutral scale */
-  --sales-neutral-900: #14180f;
-  --sales-neutral-700: #3d4238;
-  --sales-neutral-500: #5c6156;
-  --sales-neutral-400: #8a8f84;
-  --sales-neutral-300: #c4c7bb;
-  --sales-neutral-200: #d5d7cc;
-  --sales-neutral-100: #f3f4ee;
-  --sales-neutral-50: #eeefe8;
+  --sales-neutral-900: #101828;
+  --sales-neutral-700: #344054;
+  --sales-neutral-500: #475467;
+  --sales-neutral-400: #667085;
+  --sales-neutral-300: #d0d5dd;
+  --sales-neutral-200: #e4e7ec;
+  --sales-neutral-100: #f4f6fb;
+  --sales-neutral-50: #f7f8fc;
   --sales-neutral-0: #ffffff;
 
   /* Text */
-  --sales-text-primary: #14180f;
-  --sales-text-secondary: #5c6156;
-  --sales-text-muted: #8a8f84;
-  --sales-text-disabled: #a8ada2;
-  --sales-text-label: #3d4238;
+  --sales-text-primary: #101828;
+  --sales-text-secondary: #475467;
+  --sales-text-muted: #667085;
+  --sales-text-disabled: #98a2b3;
+  --sales-text-label: #344054;
 
   /* Borders */
-  --sales-border: #d5d7cc;
-  --sales-border-subtle: #e2e3db;
-  --sales-border-strong: #c4c7bb;
+  --sales-border: #e2e8f0;
+  --sales-border-subtle: #eef1f6;
+  --sales-border-strong: #d0d7e4;
 
   /* Brand (lime accent — not page background) */
   --sales-brand: #d4ff4f;
@@ -3823,20 +3852,20 @@ label[for="photo-input"] {
   --sales-brand-soft: rgba(212, 255, 79, 0.22);
   --sales-brand-soft-solid: #eef4d8;
   --sales-brand-border: rgba(160, 205, 40, 0.4);
-  --sales-brand-text: #14180f;
+  --sales-brand-text: #101828;
   --sales-brand-fg: #4d7c0f;
 
   /* Sales sidebar — chrome, not white */
-  --sales-sidebar-bg: #f3f4ee;
-  --sales-sidebar-border: #d5d7cc;
-  --sales-sidebar-divider: #e2e3db;
-  --sales-sidebar-text: #5c6156;
-  --sales-sidebar-text-hover: #14180f;
-  --sales-sidebar-text-active: #14180f;
-  --sales-sidebar-muted: #8a8f84;
-  --sales-sidebar-icon: #5c6156;
+  --sales-sidebar-bg: #f4f6fb;
+  --sales-sidebar-border: #e2e8f0;
+  --sales-sidebar-divider: #eef1f6;
+  --sales-sidebar-text: #475467;
+  --sales-sidebar-text-hover: #101828;
+  --sales-sidebar-text-active: #101828;
+  --sales-sidebar-muted: #667085;
+  --sales-sidebar-icon: #475467;
   --sales-sidebar-icon-active: #4e6400;
-  --sales-sidebar-hover: #e8eae3;
+  --sales-sidebar-hover: #eef1f8;
   --sales-sidebar-active: rgba(212, 255, 79, 0.18);
   --sales-sidebar-active-gradient: linear-gradient(
     90deg,
@@ -3880,6 +3909,12 @@ label[for="photo-input"] {
   --sales-teal: #14b8a6;
   --sales-teal-soft: #f0fdfa;
   --sales-teal-fg: #107569;
+  --sales-cyan: #20d4d2;
+  --sales-cyan-soft: #ecfeff;
+  --sales-cyan-fg: #0f766e;
+  --sales-orange: #ea580c;
+  --sales-orange-soft: #fff7ed;
+  --sales-orange-fg: #c2410c;
   --sales-whatsapp: #25d366;
   /* Text placed on a saturated `solid` fill */
   --sales-solid-ink: #ffffff;
@@ -3894,18 +3929,18 @@ label[for="photo-input"] {
   --sales-radius-pill: 999px;
 
   /* Shadows — layered so cards read as separated without looking heavy */
-  --sales-shadow-card: 0 1px 2px rgba(28, 32, 20, 0.04), 0 1px 3px -1px rgba(28, 32, 20, 0.03);
-  --sales-shadow-card-hover: 0 1px 2px rgba(28, 32, 20, 0.05),
-    0 8px 20px -8px rgba(28, 32, 20, 0.12);
-  --sales-shadow-raised: 0 1px 2px rgba(28, 32, 20, 0.05), 0 4px 10px -4px rgba(28, 32, 20, 0.07);
-  --sales-shadow-popover: 0 1px 2px rgba(28, 32, 20, 0.06), 0 12px 28px -8px rgba(28, 32, 20, 0.16);
-  --sales-shadow-modal: 0 2px 6px rgba(28, 32, 20, 0.06), 0 24px 56px -16px rgba(28, 32, 20, 0.22);
-  --sales-shadow-dropdown: 0 1px 2px rgba(28, 32, 20, 0.06),
-    0 8px 20px -6px rgba(28, 32, 20, 0.12);
-  --sales-shadow-sm: 0 1px 2px rgba(28, 32, 20, 0.05);
-  --sales-shadow-md: 0 4px 12px rgba(28, 32, 20, 0.08);
-  --sales-shadow-lg: 0 8px 24px rgba(28, 32, 20, 0.1);
-  --sales-shadow-xl: 0 16px 40px rgba(28, 32, 20, 0.12);
+  --sales-shadow-card: 0 1px 2px rgba(16, 24, 64, 0.04), 0 1px 3px -1px rgba(16, 24, 64, 0.03);
+  --sales-shadow-card-hover: 0 1px 2px rgba(16, 24, 64, 0.05),
+    0 8px 20px -8px rgba(16, 24, 64, 0.12);
+  --sales-shadow-raised: 0 1px 2px rgba(16, 24, 64, 0.05), 0 4px 10px -4px rgba(16, 24, 64, 0.07);
+  --sales-shadow-popover: 0 1px 2px rgba(16, 24, 64, 0.06), 0 12px 28px -8px rgba(16, 24, 64, 0.16);
+  --sales-shadow-modal: 0 2px 6px rgba(16, 24, 64, 0.06), 0 24px 56px -16px rgba(16, 24, 64, 0.22);
+  --sales-shadow-dropdown: 0 1px 2px rgba(16, 24, 64, 0.06),
+    0 8px 20px -6px rgba(16, 24, 64, 0.12);
+  --sales-shadow-sm: 0 1px 2px rgba(16, 24, 64, 0.05);
+  --sales-shadow-md: 0 4px 12px rgba(16, 24, 64, 0.08);
+  --sales-shadow-lg: 0 8px 24px rgba(16, 24, 64, 0.1);
+  --sales-shadow-xl: 0 16px 40px rgba(16, 24, 64, 0.12);
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.25);
@@ -3939,8 +3974,8 @@ label[for="photo-input"] {
   /* Remap CRM tokens so nested widgets stay light */
   --bg-primary: var(--sales-bg);
   --bg-secondary: var(--sales-surface);
-  --bg-tertiary: #f3f4ee;
-  --bg-quaternary: #e4e6dc;
+  --bg-tertiary: #f4f6fb;
+  --bg-quaternary: #e8ecf4;
   --surface-sidebar: var(--sales-sidebar-bg);
   --surface-canvas: var(--sales-bg);
   --sidebar-bg: var(--sales-sidebar-bg);
@@ -3977,15 +4012,15 @@ label[for="photo-input"] {
   color-scheme: light;
 
   /* Chart helpers (light) */
-  --sales-chart-grid: #d5d7cc;
-  --sales-chart-axis: #8a8f84;
-  --sales-chart-track: #e2e3db;
+  --sales-chart-grid: #e2e8f0;
+  --sales-chart-axis: #667085;
+  --sales-chart-track: #eef1f6;
   --sales-surface-raised: #ffffff;
   --sales-surface-selected: #eef4d8;
-  --sales-bg-subtle: #f3f4ee;
-  --sales-overlay: rgba(28, 32, 20, 0.35);
-  --sales-skeleton-base: #d5d7cc;
-  --sales-skeleton-highlight: #f3f4ee;
+  --sales-bg-subtle: #f4f6fb;
+  --sales-overlay: rgba(16, 24, 40, 0.35);
+  --sales-skeleton-base: #e2e8f0;
+  --sales-skeleton-highlight: #f4f6fb;
 }
 
 /*
@@ -3998,128 +4033,142 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-modal-premium,
 html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   /*
     Surface hierarchy (canvas → card → nested → raised):
-    Keep page deep; lift cards enough to read against it; nest panels one step higher.
+    Keep the landing navy; lift cards enough to read against it; nest panels one step higher.
+    No glass / orbs — this is a work surface.
   */
-  --sales-bg: #090b09;
-  --sales-bg-subtle: #0c0e0c;
-  --sales-surface: #171b17;
-  --sales-surface-subtle: #1c211c;
-  --sales-surface-hover: #222822;
-  --sales-surface-active: #262c26;
-  --sales-surface-raised: #1f241f;
-  --sales-surface-selected: #243024;
+  --app-bg: #061126;
+  --app-bg-deep: #040d1d;
+  --surface-1: #091832;
+  --surface-2: #0c1d3d;
+  --surface-3: #102449;
+  --border-soft: rgba(126, 150, 205, 0.13);
+  --border-medium: rgba(126, 150, 205, 0.2);
+
+  --sales-bg: #061126;
+  --sales-bg-subtle: #040d1d;
+  --sales-surface: #091832;
+  --sales-surface-subtle: #0c1d3d;
+  --sales-surface-hover: #102449;
+  --sales-surface-active: #132a52;
+  --sales-surface-raised: #0e2349;
+  --sales-surface-selected: #173056;
 
   /* Neutral scale */
-  --sales-neutral-900: #f7f8f5;
-  --sales-neutral-700: #b1b7ae;
-  --sales-neutral-500: #8a9187;
-  --sales-neutral-400: #6b7269;
-  --sales-neutral-300: #3d453d;
-  --sales-neutral-200: #2e342e;
-  --sales-neutral-100: #222822;
-  --sales-neutral-50: #0c0e0c;
-  --sales-neutral-0: #171b17;
+  --sales-neutral-900: #f7f9fc;
+  --sales-neutral-700: #a8b5d0;
+  --sales-neutral-500: #7182a7;
+  --sales-neutral-400: #5e6e93;
+  --sales-neutral-300: rgba(126, 150, 205, 0.32);
+  --sales-neutral-200: rgba(126, 150, 205, 0.2);
+  --sales-neutral-100: #102449;
+  --sales-neutral-50: #040d1d;
+  --sales-neutral-0: #091832;
 
   /* Text */
-  --sales-text-primary: #f7f8f5;
-  --sales-text-secondary: #c4cac0;
-  --sales-text-muted: #9aa196;
-  --sales-text-disabled: #6a7168;
-  --sales-text-label: #c4cac0;
+  --sales-text-primary: #f7f9fc;
+  --sales-text-secondary: #a8b5d0;
+  --sales-text-muted: #7182a7;
+  --sales-text-disabled: #5e6e93;
+  --sales-text-label: #a8b5d0;
 
-  /* Borders — readable on elevated cards, not lost into the canvas */
-  --sales-border: #2f362f;
-  --sales-border-subtle: #262c26;
-  --sales-border-strong: #3f473f;
+  /* Borders — light + shadow carry hierarchy, not heavy outlines */
+  --sales-border: rgba(126, 150, 205, 0.2);
+  --sales-border-subtle: rgba(126, 150, 205, 0.11);
+  --sales-border-strong: rgba(126, 150, 205, 0.28);
 
   /* Brand */
   --sales-brand: #d4ff4f;
   --sales-brand-hover: #c8f23f;
   --sales-brand-soft: rgba(212, 255, 79, 0.12);
-  --sales-brand-soft-solid: #243024;
+  --sales-brand-soft-solid: #173056;
   --sales-brand-border: rgba(212, 255, 79, 0.28);
   --sales-brand-text: #101828;
   --sales-brand-fg: #d4ff4f;
 
-  /* Sidebar — sits with canvas, not with cards */
-  --sales-sidebar-bg: #0c0e0c;
-  --sales-sidebar-border: #222822;
-  --sales-sidebar-divider: #222822;
-  --sales-sidebar-text: #a3aaa1;
-  --sales-sidebar-text-hover: #f2f4f1;
-  --sales-sidebar-text-active: #f7f8f5;
-  --sales-sidebar-muted: #6b7269;
-  --sales-sidebar-icon: #7d847a;
+  /* Sidebar — slightly deeper than the canvas */
+  --sales-sidebar-bg: rgba(4, 14, 33, 0.94);
+  --sales-sidebar-border: rgba(132, 151, 190, 0.13);
+  --sales-sidebar-divider: rgba(132, 151, 190, 0.1);
+  --sales-sidebar-text: #90a1c3;
+  --sales-sidebar-text-hover: #f7f9fc;
+  --sales-sidebar-text-active: #f7f9fc;
+  --sales-sidebar-muted: #7182a7;
+  --sales-sidebar-icon: #7d8fb3;
   --sales-sidebar-icon-active: #d4ff4f;
-  --sales-sidebar-hover: #171b17;
+  --sales-sidebar-hover: rgba(255, 255, 255, 0.035);
   --sales-sidebar-active: rgba(212, 255, 79, 0.12);
   --sales-sidebar-active-gradient: linear-gradient(
     90deg,
-    rgba(212, 255, 79, 0.16) 0%,
-    rgba(212, 255, 79, 0.09) 75%,
-    rgba(212, 255, 79, 0.03) 100%
+    rgba(212, 255, 79, 0.12),
+    rgba(212, 255, 79, 0.035)
   );
   --sales-sidebar-active-indicator: #d4ff4f;
   --sales-sidebar-badge-bg: rgba(212, 255, 79, 0.14);
   --sales-sidebar-badge-text: #d4ff4f;
 
-  /* Semantic — `-fg` is the accessible text colour on the matching `-soft` fill */
-  --sales-success: #4ade80;
-  --sales-success-soft: rgba(74, 222, 128, 0.1);
-  --sales-success-fg: #86efac;
-  --sales-warning: #fbbf24;
-  --sales-warning-soft: rgba(251, 191, 36, 0.1);
-  --sales-warning-fg: #fcd34d;
-  --sales-danger: #f87171;
-  --sales-danger-soft: rgba(248, 113, 113, 0.1);
-  --sales-danger-fg: #fca5a5;
-  --sales-info: #60a5fa;
-  --sales-info-soft: rgba(96, 165, 250, 0.1);
-  --sales-info-fg: #93c5fd;
-  --sales-purple: #a78bfa;
-  --sales-purple-soft: rgba(167, 139, 250, 0.1);
-  --sales-purple-fg: #c4b5fd;
-  --sales-teal: #2dd4bf;
-  --sales-teal-soft: rgba(45, 212, 191, 0.1);
-  --sales-teal-fg: #5eead4;
+  /* Semantic — restrained, product-grade (not neon) */
+  --sales-success: #3ddc97;
+  --sales-success-soft: rgba(61, 220, 151, 0.1);
+  --sales-success-fg: #7aefb8;
+  --sales-warning: #f5b82e;
+  --sales-warning-soft: rgba(245, 184, 46, 0.1);
+  --sales-warning-fg: #f8d06a;
+  --sales-danger: #ff5d73;
+  --sales-danger-soft: rgba(255, 93, 115, 0.1);
+  --sales-danger-fg: #ff8a9a;
+  --sales-info: #4d8dff;
+  --sales-info-soft: rgba(77, 141, 255, 0.1);
+  --sales-info-fg: #8ab3ff;
+  --sales-purple: #9366ff;
+  --sales-purple-soft: rgba(147, 102, 255, 0.1);
+  --sales-purple-fg: #b99aff;
+  --sales-teal: #20d4d2;
+  --sales-teal-soft: rgba(32, 212, 210, 0.1);
+  --sales-teal-fg: #6ee8e6;
+  --sales-cyan: #20d4d2;
+  --sales-cyan-soft: rgba(32, 212, 210, 0.1);
+  --sales-cyan-fg: #6ee8e6;
+  --sales-orange: #ff9e3d;
+  --sales-orange-soft: rgba(255, 158, 61, 0.1);
+  --sales-orange-fg: #ffc07a;
   --sales-whatsapp: #25d366;
   /* Dark semantic fills are light hues, so solid badges take dark ink */
-  --sales-solid-ink: #0b0d0c;
+  --sales-solid-ink: #061126;
   /* Reads against both the lime "on" track and the neutral "off" track */
-  --sales-switch-thumb: #f7f8f5;
+  --sales-switch-thumb: #f7f8fc;
 
-  /* Shadows — soft lift so bordered cards separate from the canvas */
-  --sales-shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 3px rgba(0, 0, 0, 0.35);
-  --sales-shadow-card-hover: 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 24px -10px rgba(0, 0, 0, 0.55);
-  --sales-shadow-raised: 0 1px 0 rgba(255, 255, 255, 0.05), 0 6px 16px -6px rgba(0, 0, 0, 0.5);
-  --sales-shadow-popover: 0 18px 45px rgba(0, 0, 0, 0.4);
-  --sales-shadow-modal: 0 20px 50px rgba(0, 0, 0, 0.45);
-  --sales-shadow-dropdown: 0 14px 36px rgba(0, 0, 0, 0.4);
-  --sales-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --sales-shadow-md: 0 8px 22px rgba(0, 0, 0, 0.35);
-  --sales-shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.4);
-  --sales-shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.45);
+  /* Shadows — dark, subtle; not marketing float */
+  --sales-shadow-card: 0 8px 26px rgba(0, 0, 0, 0.12);
+  --sales-shadow-card-hover: 0 12px 36px rgba(0, 0, 0, 0.16);
+  --sales-shadow-raised: 0 6px 18px rgba(0, 0, 0, 0.12);
+  --sales-shadow-popover: 0 20px 60px rgba(0, 0, 0, 0.28);
+  --sales-shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.28);
+  --sales-shadow-dropdown: 0 20px 60px rgba(0, 0, 0, 0.28);
+  --sales-shadow-sm: 0 1px 2px rgba(4, 12, 32, 0.35);
+  --sales-shadow-md: 0 8px 22px rgba(4, 12, 32, 0.4);
+  --sales-shadow-lg: 0 14px 36px rgba(4, 12, 32, 0.45);
+  --sales-shadow-xl: 0 20px 50px rgba(4, 12, 32, 0.5);
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.24);
   --sales-focus-ring-danger: 0 0 0 3px rgba(248, 113, 113, 0.2);
-  --sales-focus-outline: #d4ff4f;
+  --sales-focus-outline: rgba(212, 255, 79, 0.75);
 
   /* Charts */
-  --sales-chart-grid: #2a312a;
-  --sales-chart-axis: #8a9187;
-  --sales-chart-track: #2e342e;
+  --sales-chart-grid: rgba(126, 150, 205, 0.12);
+  --sales-chart-axis: #7182a7;
+  --sales-chart-track: #102449;
 
   /* Misc */
-  --sales-overlay: rgba(0, 0, 0, 0.62);
-  --sales-skeleton-base: #1c211c;
-  --sales-skeleton-highlight: #2a312a;
+  --sales-overlay: rgba(4, 12, 32, 0.62);
+  --sales-skeleton-base: #0c1d3d;
+  --sales-skeleton-highlight: #102449;
 
   /* CRM remap inside sales shell */
   --bg-primary: var(--sales-bg);
   --bg-secondary: var(--sales-surface);
-  --bg-tertiary: #1c211c;
-  --bg-quaternary: #222822;
+  --bg-tertiary: #0c1d3d;
+  --bg-quaternary: #102449;
   --surface-card: var(--sales-surface);
   --surface-dropdown: var(--sales-surface-raised);
   --surface-input: var(--sales-surface-raised);
@@ -4190,10 +4239,10 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
 
 /* Sales scrollbars when themed */
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb {
-  background: #303630;
+  background: #31467a;
 }
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb:hover {
-  background: #444b43;
+  background: #3d548c;
 }
 
 /* Typography scale (Sales Design System boards) */
@@ -4422,25 +4471,31 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-icon-b
 /* ?? Premium Calendar workspace ????????????????????????????????????????? */
 .crm-shell-main:has(.sales-dashboard-premium),
 .crm-shell-main:has(.calendar-premium) {
-  background: var(--sales-bg, #eeefe8) !important;
+  background-color: var(--sales-bg, var(--bg-primary)) !important;
 }
 html:has(.sales-dashboard-premium) {
-  background: #eeefe8;
+  background-color: var(--bg-primary);
   height: 100%;
   overflow: hidden;
 }
 html:has(.sales-dashboard-premium) body {
-  background: #eeefe8;
+  background-color: var(--bg-primary);
   height: 100%;
   overflow: hidden;
 }
 html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium),
 html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium) body {
-  background: #0b0d0c;
+  background-color: #061126;
+  background-image: var(--crm-canvas-atmosphere);
 }
 html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboard-premium),
 html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.calendar-premium) {
-  background: #0b0d0c !important;
+  background-color: #061126 !important;
+  background-image: var(--crm-canvas-atmosphere);
+}
+
+html[data-crm] .sales-dashboard-premium {
+  background-image: var(--crm-canvas-atmosphere);
 }
 
 /* Design-system showcase scrolls the document (no app shell scrollport) */

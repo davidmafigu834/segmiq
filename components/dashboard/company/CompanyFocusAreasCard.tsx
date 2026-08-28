@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/ui/cn";
 import { CompanyDashCard, DashLink } from "./CompanyDashCard";
 import type { CompanyFocusSignal } from "./types";
+import type { CSSProperties } from "react";
 
 const SEVERITY_ICON = {
   critical: AlertTriangle,
@@ -26,13 +27,6 @@ const SEVERITY_TINT: Record<CompanyFocusSignal["severity"], string> = {
   high: "bg-sales-warning-soft text-sales-warning-fg",
   medium: "bg-sales-info-soft text-sales-info-fg",
   info: "bg-sales-brand-soft-solid text-sales-brand-fg",
-};
-
-const SEVERITY_RAIL: Record<CompanyFocusSignal["severity"], string> = {
-  critical: "bg-sales-danger",
-  high: "bg-sales-warning",
-  medium: "bg-sales-info",
-  info: "bg-sales-brand",
 };
 
 function signalIcon(id: string, severity: CompanyFocusSignal["severity"]) {
@@ -55,6 +49,7 @@ export function CompanyFocusAreasCard({
   return (
     <CompanyDashCard
       title="Needs attention"
+      className="dashboard-panel--attention"
       action={!isOnboarding && signals.length > 0 ? <DashLink href={viewAllHref}>View all alerts</DashLink> : null}
     >
       {signals.length === 0 ? (
@@ -100,12 +95,21 @@ export function CompanyFocusAreasCard({
               <Link
                 key={signal.id}
                 href={signal.href}
-                className="relative flex min-h-[84px] items-start gap-3 overflow-hidden rounded-[12px] bg-sales-surface-subtle px-3.5 py-3 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                className="dashboard-alert relative flex min-h-[84px] items-start gap-3 px-3.5 py-3 pl-4 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                style={
+                  {
+                    ["--alert-accent" as string]:
+                      signal.severity === "critical"
+                        ? "var(--sales-danger)"
+                        : signal.severity === "high"
+                          ? "var(--sales-warning)"
+                          : signal.severity === "medium"
+                            ? "var(--sales-info)"
+                            : "var(--sales-brand)",
+                  } as CSSProperties
+                }
               >
-                <span
-                  className={cn("absolute inset-y-0 left-0 w-[3px]", SEVERITY_RAIL[signal.severity])}
-                  aria-hidden
-                />
+                <span className="dashboard-alert-rail" aria-hidden />
                 <span
                   className={cn(
                     "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
@@ -115,7 +119,7 @@ export function CompanyFocusAreasCard({
                   <Icon size={15} strokeWidth={1.8} aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[22px] font-semibold leading-none tracking-[-0.04em] tabular-nums text-sales-text-primary">
+                  <p className="text-[22px] font-bold leading-none tracking-[-0.035em] tabular-nums text-sales-text-primary">
                     {signal.count}
                   </p>
                   <p className="mt-1.5 truncate text-[12px] font-semibold text-sales-text-primary">

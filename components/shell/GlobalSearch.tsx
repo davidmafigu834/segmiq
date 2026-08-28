@@ -117,7 +117,7 @@ export function GlobalSearch({
         <button
           type="button"
           onClick={openSearch}
-          className="hidden h-10 w-[220px] shrink-0 items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-left text-[13px] text-sales-text-muted transition-colors hover:border-sales-border-strong xl:w-[260px] lg:inline-flex"
+          className="sd-search-trigger hidden h-10 w-[220px] shrink-0 items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-left text-[13px] text-sales-text-muted transition-colors hover:border-sales-border-strong xl:w-[260px] lg:inline-flex"
         >
           <Search className="h-4 w-4 shrink-0" strokeWidth={1.5} />
           <span className="min-w-0 flex-1 truncate">
@@ -133,7 +133,7 @@ export function GlobalSearch({
         <button
           type="button"
           onClick={openSearch}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface text-sales-text-secondary transition-colors hover:bg-sales-surface-hover lg:hidden"
+          className="sd-search-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface text-sales-text-secondary transition-colors hover:bg-sales-surface-hover lg:hidden"
           aria-label="Search"
         >
           <Search className="h-4 w-4" strokeWidth={1.5} />

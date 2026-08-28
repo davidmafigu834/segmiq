@@ -99,6 +99,7 @@ export function CompanyDashboardHeader({
                 <Button
                   variant="primary"
                   size="md"
+                  className="sales-btn-primary"
                   aria-expanded={open}
                   aria-haspopup="menu"
                   aria-label="Quick actions"
@@ -166,10 +167,10 @@ export function CompanyDashboardHeader({
         </div>
 
         {hideTitleBlock ? null : (
-        <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pt-4">
+        <div className="min-w-0 layout:mt-3.5 layout:border-t layout:border-sales-border-subtle layout:pb-1 layout:pt-5">
           <div className="flex min-w-0 flex-col gap-3 layout:flex-row layout:items-start layout:justify-between">
             <div className="min-w-0">
-              <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[24px] layout:text-[26px]">
+              <h1 className="dashboard-greeting text-[22px] leading-tight text-sales-text-primary sm:text-[24px] layout:text-[26px]">
                 {greeting}
               </h1>
               {description ? (

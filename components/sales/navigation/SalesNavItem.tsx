@@ -76,10 +76,7 @@ export function SalesNavItem({
       )}
     >
       {active && !collapsed ? (
-        <span
-          className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[var(--sales-sidebar-active-indicator)]"
-          aria-hidden
-        />
+        <span className="sales-nav-rail" aria-hidden />
       ) : null}
       <NavIcon icon={item.icon} active={active} collapsed={collapsed} />
       {!collapsed ? (
@@ -121,7 +118,7 @@ export function SalesNavSection({
       ) : (
         <span className="sr-only">{label}</span>
       )}
-      <div className={cn("flex flex-col", collapsed ? "items-center gap-1" : "gap-0.5")}>
+      <div className={cn("flex flex-col", collapsed ? "items-center gap-1" : "gap-1")}>
         {children}
       </div>
     </div>

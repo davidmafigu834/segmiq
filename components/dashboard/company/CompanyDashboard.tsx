@@ -54,7 +54,7 @@ export function CompanyDashboard({
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
 
-      <div className="grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
+      <div className="dashboard-group relative z-[1] grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
         {data.kpis.map((item) => (
           <CompanyKpiCard key={item.id} item={item} />
         ))}

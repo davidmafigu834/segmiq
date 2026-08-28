@@ -92,7 +92,12 @@ export function CompanyTeamCalendarCard({
           <div className="max-h-[280px] space-y-3 overflow-y-auto overscroll-contain pr-0.5">
             {groups.map((group) => (
               <div key={group.key}>
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+                <p
+                  className={cn(
+                    "dashboard-date-chip mb-1.5",
+                    group.label === "Today" && "dashboard-date-chip--today"
+                  )}
+                >
                   {group.label}
                 </p>
                 <ul className="space-y-0.5">
@@ -100,24 +105,24 @@ export function CompanyTeamCalendarCard({
                     <li key={item.id}>
                       <Link
                         href={item.href}
-                        className="flex min-h-10 items-center gap-2.5 rounded-[10px] px-1.5 py-1.5 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
+                        className="dashboard-list-row flex items-center gap-2.5 rounded-[10px] px-1.5 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
                       >
                         <span
                           className={cn(
-                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px]",
+                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
                             kindTint(item.kind)
                           )}
                         >
                           <KindIcon kind={item.kind} />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[12px] font-medium text-sales-text-primary">{item.title}</p>
+                          <p className="truncate text-[13px] font-medium text-sales-text-primary">{item.title}</p>
                           <p className="truncate text-[11px] text-sales-text-muted">
                             {item.ownerName ?? "Unassigned"}
                             {item.customerName ? ` · ${item.customerName}` : ""}
                           </p>
                         </div>
-                        <span className="w-12 shrink-0 text-right text-[11px] tabular-nums text-sales-text-secondary">
+                        <span className="w-12 shrink-0 text-right text-[11px] font-medium tabular-nums text-sales-text-muted">
                           {item.timeLabel}
                         </span>
                       </Link>

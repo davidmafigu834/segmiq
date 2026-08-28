@@ -64,7 +64,7 @@ export function CompanyPipelineSnapshotCard({
                 key={stage.id}
                 href={stage.href}
                 role="listitem"
-                className="min-w-0 rounded-[12px] border border-sales-border-subtle bg-sales-surface-subtle px-3 py-3 transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
+                className="dashboard-card min-w-0 px-3 py-3 transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
               >
                 <div className="mb-2 flex items-center gap-2">
                   <span

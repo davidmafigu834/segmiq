@@ -1,0 +1,439 @@
+/* ============================================================
+   Company workspace visual system
+   Tokens live on .sales-dashboard-premium; these classes express
+   depth, atmosphere, and component chrome without new IA.
+   ============================================================ */
+
+.dashboard-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+/* ---------- Dark canvas (level 0) ---------- */
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium.dashboard-shell {
+  background-color: var(--app-bg, #061126);
+  background-image:
+    radial-gradient(700px circle at 72% -10%, rgba(94, 57, 210, 0.13), transparent 65%),
+    radial-gradient(800px circle at 96% 68%, rgba(60, 68, 200, 0.08), transparent 70%),
+    linear-gradient(135deg, #050e20 0%, #07142c 45%, #091a39 100%);
+}
+
+html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium),
+html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium) body {
+  background-color: #061126;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboard-premium) {
+  background-color: #061126 !important;
+}
+
+.dashboard-canvas {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.segmiq-ambient-glow,
+.segmiq-dot-wave {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.segmiq-ambient-glow {
+  background:
+    radial-gradient(640px circle at 78% -8%, rgba(94, 57, 210, 0.1), transparent 62%),
+    radial-gradient(560px circle at 100% 78%, rgba(60, 68, 200, 0.07), transparent 68%);
+}
+
+html[data-crm-theme="light"] .segmiq-ambient-glow {
+  background:
+    radial-gradient(640px circle at 78% -8%, rgba(91, 43, 168, 0.04), transparent 62%),
+    radial-gradient(560px circle at 100% 78%, rgba(52, 88, 164, 0.035), transparent 68%);
+}
+
+.segmiq-dot-wave {
+  overflow: hidden;
+}
+
+.segmiq-dot-wave svg {
+  position: absolute;
+  width: 48%;
+  height: 46%;
+  max-width: 640px;
+}
+
+.segmiq-dot-wave__tr {
+  top: -4%;
+  right: -2%;
+  mask-image: radial-gradient(ellipse 70% 75% at 78% 28%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 75% at 78% 28%, #000 0%, transparent 78%);
+}
+
+.segmiq-dot-wave__br {
+  right: -4%;
+  bottom: -6%;
+  width: 42%;
+  height: 42%;
+  mask-image: radial-gradient(ellipse 65% 70% at 82% 72%, #000 0%, transparent 76%);
+  -webkit-mask-image: radial-gradient(ellipse 65% 70% at 82% 72%, #000 0%, transparent 76%);
+}
+
+.segmiq-dot-wave .segmiq-dot {
+  fill: #7ea2ff;
+}
+
+.segmiq-dot-wave .segmiq-dot--violet {
+  fill: #9366ff;
+}
+
+.segmiq-dot-wave .segmiq-dot--lime {
+  fill: #d4ff4f;
+}
+
+@media (max-width: 1023.98px) {
+  .segmiq-dot-wave {
+    display: none;
+  }
+  .segmiq-ambient-glow {
+    opacity: 0.5;
+  }
+}
+
+html[data-crm-theme="light"] .segmiq-dot-wave {
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmiq-dot-wave svg {
+    animation: none;
+  }
+}
+
+/* ---------- Depth: panels (level 1) ---------- */
+
+.sales-dashboard-premium .dashboard-panel,
+.sales-dashboard-premium .sd-card:not(.dashboard-kpi) {
+  border: 1px solid var(--sales-border-subtle);
+  border-radius: 14px;
+  background: var(--sales-surface);
+  box-shadow: var(--sales-shadow-card);
+}
+
+.sales-dashboard-premium .dashboard-panel {
+  overflow: visible;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel,
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-card:not(.dashboard-kpi) {
+  background: linear-gradient(145deg, rgba(11, 27, 59, 0.96), rgba(8, 21, 47, 0.98));
+  border-color: rgba(126, 150, 205, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel--attention {
+  background: rgba(10, 26, 57, 0.9);
+  border-color: var(--border-soft, rgba(126, 150, 205, 0.13));
+}
+
+.dashboard-group {
+  position: relative;
+}
+
+.dashboard-group::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -14px;
+  height: 22px;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.05), transparent 70%);
+  z-index: 0;
+}
+
+@media (max-width: 1023.98px) {
+  .dashboard-group::after {
+    display: none;
+  }
+}
+
+html[data-crm-theme="light"] .dashboard-group::after {
+  background: radial-gradient(ellipse at center, rgba(79, 70, 229, 0.03), transparent 70%);
+}
+
+/* ---------- KPI cards (level 2) ---------- */
+
+.sales-dashboard-premium .dashboard-kpi {
+  --kpi-accent: var(--sales-info);
+  position: relative;
+  border: 1px solid rgba(115, 142, 199, 0.14);
+  border-radius: 12px;
+  background: var(--sales-surface-raised, var(--sales-surface));
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.04), inset 0 1px rgba(255, 255, 255, 0.4);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-kpi {
+  background: linear-gradient(145deg, rgba(14, 32, 67, 0.95), rgba(8, 23, 51, 0.96));
+  border-color: rgba(115, 142, 199, 0.14);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.dashboard-kpi-accent {
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  pointer-events: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--kpi-accent), transparent);
+}
+
+.dashboard-kpi-icon {
+  display: flex;
+  height: 28px;
+  width: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--kpi-accent);
+  background: color-mix(in srgb, var(--kpi-accent) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--kpi-accent) 15%, transparent);
+}
+
+.sales-dashboard-premium a.dashboard-kpi {
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.sales-dashboard-premium a.dashboard-kpi:hover {
+  transform: translateY(-1px);
+  border-color: rgba(126, 150, 205, 0.2);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.1);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium a.dashboard-kpi:hover {
+  border-color: rgba(126, 150, 205, 0.22);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
+}
+
+.sales-dashboard-premium a.dashboard-kpi:focus-visible {
+  outline: 2px solid rgba(212, 255, 79, 0.75);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-dashboard-premium a.dashboard-kpi:hover {
+    transform: none;
+  }
+}
+
+/* ---------- Alerts / nested cards / rows ---------- */
+
+.dashboard-alert {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--sales-surface-subtle);
+  border: 1px solid var(--sales-border-subtle);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-alert {
+  background: rgba(17, 39, 80, 0.72);
+  border-color: rgba(130, 151, 198, 0.08);
+}
+
+.dashboard-alert-rail {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--alert-accent, var(--sales-warning));
+}
+
+.dashboard-card {
+  border-radius: 12px;
+  background: var(--sales-surface-subtle);
+  border: 1px solid var(--sales-border-subtle);
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .dashboard-card {
+  background: rgba(14, 35, 73, 0.55);
+  border-color: rgba(126, 150, 205, 0.1);
+}
+
+.dashboard-list-row {
+  min-height: 52px;
+  transition: background-color 120ms ease;
+}
+
+.dashboard-list-row:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+html[data-crm-theme="light"] .dashboard-list-row:hover {
+  background: var(--sales-surface-hover);
+}
+
+.dashboard-date-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sales-text-muted);
+  background: var(--sales-surface-subtle);
+  border: 1px solid transparent;
+}
+
+.dashboard-date-chip--today {
+  color: var(--sales-text-secondary);
+  background: var(--sales-surface-raised, var(--sales-surface-subtle));
+  border-color: var(--sales-border-subtle);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-event-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--event-accent, var(--sales-info));
+}
+
+/* ---------- Funnel bars ---------- */
+
+.dashboard-funnel-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--sales-neutral-100);
+}
+
+.dashboard-funnel-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--funnel-color) 90%, #fff),
+    color-mix(in srgb, var(--funnel-color) 62%, #061126)
+  );
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+/* ---------- Sidebar ---------- */
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium aside.fixed {
+  background: rgba(4, 14, 33, 0.94);
+  border-right-color: rgba(132, 151, 190, 0.13);
+}
+
+.sales-dashboard-premium .sales-nav-item-active {
+  background: linear-gradient(90deg, rgba(212, 255, 79, 0.12), rgba(212, 255, 79, 0.035));
+  color: var(--sales-sidebar-text-active);
+  font-weight: 600;
+}
+
+.sales-dashboard-premium .sales-nav-rail {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 24px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--sales-sidebar-active-indicator);
+}
+
+/* ---------- Search / primary CTA ---------- */
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-search-wrap .sd-search-trigger {
+  background: rgba(13, 30, 63, 0.72);
+  border: 1px solid rgba(126, 150, 205, 0.15);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.02);
+  border-radius: 9px;
+}
+
+.sales-dashboard-premium .sales-btn-primary {
+  border-radius: 9px;
+  font-weight: 650;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-btn-primary:hover:not(:disabled) {
+  box-shadow:
+    0 0 0 1px rgba(212, 255, 79, 0.25),
+    0 8px 24px rgba(212, 255, 79, 0.1);
+}
+
+.sales-dashboard-premium .sales-btn-primary:focus-visible {
+  outline: 2px solid rgba(212, 255, 79, 0.75);
+  outline-offset: 2px;
+}
+
+/* ---------- Scrollbar ---------- */
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(132, 151, 190, 0.28) transparent;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb {
+  background: rgba(132, 151, 190, 0.28);
+  border-radius: 999px;
+}
+
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(132, 151, 190, 0.42);
+}
+
+/* ---------- Section headings ---------- */
+
+.sales-dashboard-premium .dashboard-section-title {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--sales-text-primary);
+}
+
+.sales-dashboard-premium .dashboard-greeting {
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.sales-dashboard-premium .dashboard-kpi-value {
+  font-size: clamp(28px, 2vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--sales-text-primary);
+}
+
+.sales-dashboard-premium .dashboard-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sales-text-muted);
+}

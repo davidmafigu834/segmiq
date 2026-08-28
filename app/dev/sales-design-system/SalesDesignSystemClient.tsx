@@ -198,14 +198,14 @@ function ShowcaseInner() {
             </div>
             <p className="pt-2 text-[12px] font-semibold text-sales-text-secondary">Neutrals</p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Swatch name="Text Primary / 900" value={SALES_COLORS.neutral900} className="bg-[#14180F]" textClassName="text-white" />
-              <Swatch name="700" value={SALES_COLORS.neutral700} className="bg-[#3D4238]" textClassName="text-white" />
-              <Swatch name="500" value={SALES_COLORS.neutral500} className="bg-[#5C6156]" textClassName="text-white" />
-              <Swatch name="400 Muted" value={SALES_COLORS.neutral400} className="bg-[#8A8F84]" />
-              <Swatch name="300 Border Strong" value={SALES_COLORS.neutral300} className="bg-[#C4C7BB]" />
-              <Swatch name="200" value={SALES_COLORS.neutral200} className="bg-[#D5D7CC]" />
-              <Swatch name="100" value={SALES_COLORS.neutral100} className="bg-[#F3F4EE]" />
-              <Swatch name="50 / Bg" value={SALES_COLORS.neutral50} className="bg-[#EEEFE8]" />
+              <Swatch name="Text Primary / 900" value={SALES_COLORS.neutral900} className="bg-[#101828]" textClassName="text-white" />
+              <Swatch name="700" value={SALES_COLORS.neutral700} className="bg-[#344054]" textClassName="text-white" />
+              <Swatch name="500" value={SALES_COLORS.neutral500} className="bg-[#475467]" textClassName="text-white" />
+              <Swatch name="400 Muted" value={SALES_COLORS.neutral400} className="bg-[#667085]" />
+              <Swatch name="300 Border Strong" value={SALES_COLORS.neutral300} className="bg-[#D0D5DD]" />
+              <Swatch name="200" value={SALES_COLORS.neutral200} className="bg-[#E4E7EC]" />
+              <Swatch name="100" value={SALES_COLORS.neutral100} className="bg-[#F4F6FB]" />
+              <Swatch name="50 / Bg" value={SALES_COLORS.neutral50} className="bg-[#F7F8FC]" />
             </div>
             <p className="pt-2 text-[12px] font-semibold text-sales-text-secondary">Semantic</p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -221,7 +221,7 @@ function ShowcaseInner() {
           </Section>
 
           {/* ── Typography ─────────────────────────────────────── */}
-          <Section id="typography" title="Typography" description="Geist Sans in app · board scale mapped to utility classes.">
+          <Section id="typography" title="Typography" description="Inter across the platform · board scale mapped to utility classes.">
             <Card>
               <CardContent className="space-y-4">
                 <div>

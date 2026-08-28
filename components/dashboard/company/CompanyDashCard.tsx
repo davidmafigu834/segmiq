@@ -38,11 +38,13 @@ export function CompanyDashCard({
   bodyClassName?: string;
 }) {
   return (
-    <Card className={cn("sd-card overflow-hidden border-0 shadow-none", className)}>
-      <CardHeader action={action} className="border-sales-border-subtle px-5 py-3.5">
-        <CardTitle className="tracking-[-0.02em]">{title}</CardTitle>
-      </CardHeader>
-      <div className={bodyClassName}>{children}</div>
+    <Card className={cn("dashboard-panel overflow-visible border-0 shadow-none", className)}>
+      <div className="overflow-hidden rounded-[14px]">
+        <CardHeader action={action} className="border-sales-border-subtle px-5 py-[18px]">
+          <CardTitle className="dashboard-section-title">{title}</CardTitle>
+        </CardHeader>
+        <div className={bodyClassName}>{children}</div>
+      </div>
     </Card>
   );
 }

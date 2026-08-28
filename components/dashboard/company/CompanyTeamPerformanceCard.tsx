@@ -92,7 +92,7 @@ export function CompanyTeamPerformanceCard({
               </thead>
               <tbody className="divide-y divide-sales-border-subtle">
                 {rows.map((row) => (
-                  <tr key={row.id} className="transition-colors hover:bg-sales-surface-hover">
+                  <tr key={row.id} className="dashboard-list-row">
                     <td className="px-5 py-3">
                       <Link href={row.href} className="block min-w-0">
                         <MemberIdentity row={row} />
