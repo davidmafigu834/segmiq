@@ -4,7 +4,7 @@ import { searchCommercialItems } from "@/lib/products/search";
 import { hasCommercialPermission } from "@/lib/commercial/permissions";
 import { DEAL_ACTIVE_STAGES, DEAL_STAGE_LABEL, formatDealStage } from "@/lib/sales/deals/display";
 import { PRODUCT_SEARCH_LIMIT, type SalesActor, type SalesChoice, type SalesPageContext } from "./types";
-import { actorOwnsDeal } from "./policy";
+import { salesActorCanAccessDeal, salesActorCanAccessLead } from "./policy";
 
 export type MatchResult<T> =
   | { kind: "none" }
@@ -69,9 +69,7 @@ export async function resolveCustomer(opts: {
     .ilike("name", `%${q.replace(/[%_,]/g, "")}%`)
     .limit(8);
   if (opts.actor.role === "SALESPERSON") {
-    query = query.eq("assigned_to_id", opts.actor.userId);
-  } else {
-    query = query.eq("assigned_to_id", opts.actor.userId);
+    query = query.or(`assigned_to_id.eq.${opts.actor.userId},assigned_to_id.is.null`);
   }
   const { data } = await query;
   const rows = asRows<{
@@ -86,7 +84,16 @@ export async function resolveCustomer(opts: {
 
   const mapped: ResolvedCustomer[] = [];
   for (const row of rows) {
-    const deal = row.active_deal_id ? await loadAccessibleDeal(opts.actor, row.active_deal_id) : null;
+    if (
+      !salesActorCanAccessLead({
+        actor: opts.actor,
+        clientId: opts.actor.clientId,
+        assignedToId: row.assigned_to_id,
+      })
+    ) {
+      continue;
+    }
+    const deal = row.active_deal_id ? await loadAccessibleDeal(opts.actor, row.active_deal_id, true) : null;
     mapped.push({
       leadId: row.id,
       contactId: row.contact_id,
@@ -133,8 +140,16 @@ async function loadAccessibleLead(actor: SalesActor, leadId: string): Promise<Re
     .eq("client_id", actor.clientId)
     .maybeSingle();
   if (!data) return null;
-  if (data.assigned_to_id !== actor.userId) return null;
-  const deal = data.active_deal_id ? await loadAccessibleDeal(actor, data.active_deal_id as string) : null;
+  if (
+    !salesActorCanAccessLead({
+      actor,
+      clientId: (data.client_id as string | null) ?? null,
+      assignedToId: (data.assigned_to_id as string | null) ?? null,
+    })
+  ) {
+    return null;
+  }
+  const deal = data.active_deal_id ? await loadAccessibleDeal(actor, data.active_deal_id as string, true) : null;
   return {
     leadId: data.id as string,
     contactId: (data.contact_id as string | null) ?? null,
@@ -157,7 +172,11 @@ export type ResolvedDeal = {
   leadId: string;
 };
 
-export async function loadAccessibleDeal(actor: SalesActor, dealId: string): Promise<ResolvedDeal | null> {
+export async function loadAccessibleDeal(
+  actor: SalesActor,
+  dealId: string,
+  originatingLeadAccessible = false
+): Promise<ResolvedDeal | null> {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("deals")
@@ -166,7 +185,16 @@ export async function loadAccessibleDeal(actor: SalesActor, dealId: string): Pro
     .eq("client_id", actor.clientId)
     .maybeSingle();
   if (!data) return null;
-  if (!actorOwnsDeal((data.owner_id as string | null) ?? null, actor)) return null;
+  if (
+    !salesActorCanAccessDeal({
+      actor,
+      clientId: (data.client_id as string | null) ?? null,
+      ownerId: (data.owner_id as string | null) ?? null,
+      originatingLeadAccessible,
+    })
+  ) {
+    return null;
+  }
   const stage = (data.stage as string) ?? "";
   return {
     id: data.id as string,
@@ -184,18 +212,21 @@ export async function resolveDealsForCustomer(opts: {
   preferredDealId?: string | null;
 }): Promise<MatchResult<ResolvedDeal> & { choices?: SalesChoice[] }> {
   if (opts.preferredDealId) {
-    const one = await loadAccessibleDeal(opts.actor, opts.preferredDealId);
+    const one = await loadAccessibleDeal(opts.actor, opts.preferredDealId, true);
     if (one && one.leadId === opts.leadId) return { kind: "one", value: one };
   }
   const supabase = createAdminClient();
-  const { data } = await supabase
+  let q = supabase
     .from("deals")
-    .select("id, name, stage, owner_id, originating_lead_id")
+    .select("id, name, stage, owner_id, originating_lead_id, client_id")
     .eq("client_id", opts.actor.clientId)
     .eq("originating_lead_id", opts.leadId)
-    .eq("owner_id", opts.actor.userId)
     .in("stage", [...DEAL_ACTIVE_STAGES])
     .order("updated_at", { ascending: false });
+  if (opts.actor.role === "SALESPERSON") {
+    q = q.or(`owner_id.eq.${opts.actor.userId},owner_id.is.null`);
+  }
+  const { data } = await q;
   const rows = asRows<{
     id: string;
     name: string | null;

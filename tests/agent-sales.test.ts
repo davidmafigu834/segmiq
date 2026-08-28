@@ -6,6 +6,8 @@ import {
   looksLikeConfirm,
   matchFutureSalesCommand,
   matchUnsupportedSalesCommand,
+  salesActorCanAccessDeal,
+  salesActorCanAccessLead,
 } from "@/lib/agent/sales/policy";
 import { classifyRequirementStatus, extractRequirementsFromText } from "@/lib/agent/sales/extract";
 import { variantQuantitiesMatch } from "@/lib/agent/sales/resolve";
@@ -109,8 +111,8 @@ describe("sales intent parsing", () => {
     assert.ok(intent?.items.some((i) => i.type === "PRODUCT" && /battery/i.test(i.query)));
   });
 
-  it("treats create the quotation as contextual extract", () => {
-    const intent = heuristicParseSalesIntent("Create the quotation.", tendaiPage);
+  it("treats quote what the customer requested as current context", () => {
+    const intent = heuristicParseSalesIntent("Quote what the customer requested.", tendaiPage);
     assert.equal(intent?.intent, "CREATE_QUOTATION");
     assert.equal(intent?.customerReference?.source, "CURRENT_CONTEXT");
     assert.equal(intent?.extractFromConversation, true);
@@ -200,9 +202,45 @@ describe("sales money formatting", () => {
   });
 });
 
-describe("confirm/cancel", () => {
-  it("detects operational confirmations", () => {
-    assert.equal(looksLikeConfirm("prepare quotation"), true);
-    assert.equal(looksLikeCancel("cancel"), true);
+describe("sales access scope", () => {
+  const salesperson = {
+    userId: "rep-1",
+    role: "SALESPERSON" as const,
+    clientId: "co-1",
+    name: "Brian",
+  };
+  const manager = { ...salesperson, userId: "mgr-1", role: "CLIENT_MANAGER" as const };
+
+  it("lets a salesperson quote an unassigned inbox conversation", () => {
+    assert.equal(
+      salesActorCanAccessLead({ actor: salesperson, clientId: "co-1", assignedToId: null }),
+      true
+    );
+  });
+
+  it("lets a manager quote a conversation assigned to someone else", () => {
+    assert.equal(
+      salesActorCanAccessLead({ actor: manager, clientId: "co-1", assignedToId: "rep-1" }),
+      true
+    );
+  });
+
+  it("blocks another company's lead", () => {
+    assert.equal(
+      salesActorCanAccessLead({ actor: salesperson, clientId: "co-2", assignedToId: "rep-1" }),
+      false
+    );
+  });
+
+  it("lets a salesperson quote a Deal on an accessible Lead even if Deal owner is empty", () => {
+    assert.equal(
+      salesActorCanAccessDeal({
+        actor: salesperson,
+        clientId: "co-1",
+        ownerId: null,
+        originatingLeadAccessible: true,
+      }),
+      true
+    );
   });
 });

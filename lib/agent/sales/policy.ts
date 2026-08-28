@@ -97,3 +97,31 @@ export function actorOwnsLead(assignedToId: string | null, actor: SalesActor): b
 export function actorOwnsDeal(ownerId: string | null, actor: SalesActor): boolean {
   return ownerId === actor.userId;
 }
+
+/** Matches Sales Hub visibility: assigned, unassigned pool, collaborators, or company managers. */
+export function salesActorCanAccessLead(opts: {
+  actor: SalesActor;
+  clientId: string | null;
+  assignedToId: string | null;
+  collaboratorIds?: string[] | null;
+}): boolean {
+  if (!opts.clientId || opts.clientId !== opts.actor.clientId) return false;
+  if (opts.actor.role === "SUPER_ADMIN" || opts.actor.role === "CLIENT_MANAGER") return true;
+  if (opts.assignedToId === opts.actor.userId) return true;
+  if (!opts.assignedToId) return true;
+  return Boolean(opts.collaboratorIds?.includes(opts.actor.userId));
+}
+
+/** Quote against a Deal the actor can already work in Sales Hub. */
+export function salesActorCanAccessDeal(opts: {
+  actor: SalesActor;
+  clientId: string | null;
+  ownerId: string | null;
+  originatingLeadAccessible: boolean;
+}): boolean {
+  if (!opts.clientId || opts.clientId !== opts.actor.clientId) return false;
+  if (opts.actor.role === "SUPER_ADMIN" || opts.actor.role === "CLIENT_MANAGER") return true;
+  if (opts.ownerId === opts.actor.userId) return true;
+  if (!opts.ownerId && opts.originatingLeadAccessible) return true;
+  return opts.originatingLeadAccessible;
+}

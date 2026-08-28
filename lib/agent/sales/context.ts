@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { asRow } from "@/lib/agent/rows";
 import { DEAL_STAGE_LABEL } from "@/lib/sales/deals/display";
+import { salesActorCanAccessDeal, salesActorCanAccessLead } from "./policy";
 import type { SalesActor, SalesContextCard, SalesPageContext } from "./types";
 
 export async function loadSalesContextCard(
@@ -25,6 +26,7 @@ export async function loadSalesContextCard(
 
   const supabase = createAdminClient();
   const leadId = page.leadId ?? page.conversationId ?? null;
+  let leadAssignedToId: string | null = null;
 
   if (leadId) {
     const { data } = await supabase
@@ -42,9 +44,16 @@ export async function loadSalesContextCard(
       active_deal_id: string | null;
     }>(data);
     if (lead) {
-      if (lead.assigned_to_id && lead.assigned_to_id !== actor.userId && actor.role === "SALESPERSON") {
+      if (
+        !salesActorCanAccessLead({
+          actor,
+          clientId: actor.clientId,
+          assignedToId: lead.assigned_to_id,
+        })
+      ) {
         return empty;
       }
+      leadAssignedToId = lead.assigned_to_id;
       empty.leadId = lead.id;
       empty.customerName = lead.name;
       empty.projectType = lead.project_type;
@@ -69,7 +78,22 @@ export async function loadSalesContextCard(
       originating_lead_id: string | null;
     }>(data);
     if (deal) {
-      if (deal.owner_id && deal.owner_id !== actor.userId && actor.role === "SALESPERSON") {
+      const leadOk = Boolean(
+        empty.leadId &&
+          salesActorCanAccessLead({
+            actor,
+            clientId: actor.clientId,
+            assignedToId: leadAssignedToId,
+          })
+      );
+      if (
+        !salesActorCanAccessDeal({
+          actor,
+          clientId: actor.clientId,
+          ownerId: deal.owner_id,
+          originatingLeadAccessible: leadOk,
+        })
+      ) {
         empty.dealId = null;
       } else {
         empty.dealName = deal.name;

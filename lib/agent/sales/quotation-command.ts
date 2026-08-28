@@ -1098,7 +1098,7 @@ export async function runUpdateDraft(opts: {
     };
   }
   const evaluation = await evaluateDraft(opts.actor.clientId, full, opts.actor);
-  const deal = full.deal_id ? await loadAccessibleDeal(opts.actor, full.deal_id as string) : null;
+  const deal = full.deal_id ? await loadAccessibleDeal(opts.actor, full.deal_id as string, true) : null;
   const preview = await buildPreview({
     quote: full,
     customerName: (full.customer_name as string) || "Customer",

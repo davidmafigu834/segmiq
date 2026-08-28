@@ -100,7 +100,11 @@ function parseQtyItems(text: string): SalesIntentItem[] {
 }
 
 function customerFromText(text: string, page: SalesPageContext | null): SalesIntent["customerReference"] {
-  if (/\b(this customer|this client|this deal|this conversation|this lead)\b/i.test(text)) {
+  if (
+    /\b(this customer|this client|this deal|this conversation|this lead|the customer|the client)\b/i.test(
+      text
+    )
+  ) {
     return { source: "CURRENT_CONTEXT" };
   }
   const named = text.match(
