@@ -100,15 +100,15 @@ export function CompanyKpiCard({ item }: { item: SalesKpiItem }) {
           <Icon size={14} strokeWidth={1.8} aria-hidden />
         </span>
       </div>
-      <p className="dashboard-kpi-value mt-3 truncate">{item.value || "—"}</p>
-      <div className="mt-auto pt-3">
+      <p className="dashboard-kpi-value mt-2 truncate">{item.value || "—"}</p>
+      <div className="mt-auto pt-2">
         <TrendChip trend={item.trend} fallback={item.supporting} />
       </div>
     </>
   );
 
   const className =
-    "dashboard-kpi group relative flex h-full min-h-[118px] min-w-0 flex-col p-[18px] sm:min-h-[128px]";
+    "dashboard-kpi group relative flex h-full min-h-[96px] min-w-0 flex-col p-3.5 sm:min-h-[104px]";
 
   if (href) {
     return (

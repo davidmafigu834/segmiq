@@ -21,7 +21,7 @@ export default async function MarketingAudiencesPage() {
     .order("created_at", { ascending: true });
 
   return (
-    <ClientManagerLayout breadcrumbPage="Audiences" pageTitle="Marketing Hub" hideShellHeader>
+    <ClientManagerLayout breadcrumbPage="Audiences" pageTitle="Marketing Hub" workspaceShell>
       <MarketingHubTabs />
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Audiences</h2>

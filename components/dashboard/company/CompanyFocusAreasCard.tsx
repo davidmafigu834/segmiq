@@ -88,14 +88,14 @@ export function CompanyFocusAreasCard({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2 p-2 sm:grid-cols-3 sm:p-3">
+        <div className="grid grid-cols-1 gap-2 p-1.5 sm:grid-cols-3 sm:p-2">
           {signals.map((signal) => {
             const Icon = signalIcon(signal.id, signal.severity);
             return (
               <Link
                 key={signal.id}
                 href={signal.href}
-                className="dashboard-alert relative flex min-h-[84px] items-start gap-3 px-3.5 py-3 pl-4 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                className="dashboard-alert relative flex items-start gap-3 px-3 py-2.5 pl-4 transition-colors hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
                 style={
                   {
                     ["--alert-accent" as string]:

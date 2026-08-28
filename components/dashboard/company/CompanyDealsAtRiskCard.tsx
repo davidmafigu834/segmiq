@@ -18,7 +18,7 @@ export function CompanyDealsAtRiskCard({
   return (
     <CompanyDashCard
       title="Deals at risk"
-      className="dashboard-panel--attention h-full"
+      className="dashboard-panel--attention"
       action={total > 0 ? <DashLink href={viewAllHref}>View all at-risk Deals</DashLink> : null}
     >
       {!hasActiveDeals ? (
@@ -38,7 +38,7 @@ export function CompanyDealsAtRiskCard({
             <li key={item.id}>
               <Link
                 href={item.href}
-                className="dashboard-list-row relative flex min-h-[56px] items-start justify-between gap-3 py-3.5 pl-5 pr-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
+                className="dashboard-list-row relative flex items-start justify-between gap-3 py-2.5 pl-4 pr-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sales-brand"
               >
                 <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-sales-danger" aria-hidden />
                 <div className="min-w-0">

@@ -50,11 +50,11 @@ export function CompanyLeadSourcesCard({
       {empty || sources.length === 0 ? (
         <CompanyDashEmpty title="No Lead source data yet" description="Sources will appear as enquiries arrive from WhatsApp, Facebook, website and referrals." />
       ) : (
-        <ul className="space-y-3.5 px-5 py-5" aria-label="Lead sources this month">
+        <ul className="space-y-2.5 px-4 py-3" aria-label="Lead sources this month">
           {sources.map((source) => (
             <li key={source.id} className="flex items-center gap-3">
               <span
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] ${BRAND_TINT[source.brand]}`}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] ${BRAND_TINT[source.brand]}`}
               >
                 <SourceIcon brand={source.brand} />
               </span>

@@ -171,7 +171,7 @@ export function SalesSidebar({
                   <CircleHelp
                     size={17}
                     strokeWidth={1.75}
-                    className="shrink-0 text-[var(--sales-sidebar-icon)]"
+                    className="shrink-0 text-current"
                     aria-hidden
                   />
                   Help & Support

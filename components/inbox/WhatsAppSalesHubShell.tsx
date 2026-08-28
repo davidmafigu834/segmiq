@@ -14,6 +14,7 @@ import {
   useSalesMobileChrome,
 } from "@/components/sales/navigation/SalesMobileChromeContext";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
+import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import type { UserRole } from "@/types";
 
@@ -46,7 +47,7 @@ function HubShellInner({
 
   return (
     <div
-      className="sales-dashboard-premium flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
+      className="sales-dashboard-premium dashboard-shell flex h-[100dvh] max-h-[100dvh] flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
@@ -75,8 +76,11 @@ function HubShellInner({
         />
       ) : null}
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+      <div className="dashboard-canvas relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden sales-mobile-scroll">
+          <SegmiQDotWave />
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{children}</div>
+        </div>
       </div>
 
       <SalesBottomNav isSolo={isSolo} whatsappBadge={whatsappBadge} tasksBadge={tasksBadge} />

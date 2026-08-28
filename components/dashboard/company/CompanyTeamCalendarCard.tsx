@@ -50,12 +50,12 @@ export function CompanyTeamCalendarCard({
   return (
     <CompanyDashCard
       title="Team calendar"
-      className="dashboard-panel--feed h-full"
+      className="dashboard-panel--feed"
       action={<PeriodChip>Next 7 days</PeriodChip>}
     >
-      <div className="px-4 py-3 sm:px-5">
+      <div className="px-3 py-2 sm:px-4">
         {overdue.length > 0 ? (
-          <div className="mb-3 rounded-[12px] border border-sales-danger/20 bg-sales-danger-soft px-3 py-2.5">
+          <div className="mb-2.5 rounded-[8px] border border-sales-danger/20 bg-sales-danger-soft px-3 py-2">
             <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-danger-fg">
               Overdue · {overdueCount}
             </p>
@@ -93,7 +93,7 @@ export function CompanyTeamCalendarCard({
             No upcoming items in the next 7 days.
           </p>
         ) : (
-          <div className="max-h-[280px] space-y-3 overflow-y-auto overscroll-contain pr-0.5">
+          <div className="max-h-[220px] space-y-2 overflow-y-auto overscroll-contain pr-0.5">
             {groups.map((group) => (
               <div key={group.key}>
                 <p
@@ -109,7 +109,7 @@ export function CompanyTeamCalendarCard({
                     <li key={item.id}>
                       <Link
                         href={item.href}
-                        className="dashboard-list-row flex items-center gap-2.5 rounded-[10px] px-1.5 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
+                        className="dashboard-list-row flex items-center gap-2.5 rounded-[8px] px-1.5 py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
                       >
                         <span
                           className={cn(

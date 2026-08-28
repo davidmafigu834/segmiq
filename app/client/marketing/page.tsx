@@ -10,7 +10,7 @@ export default async function MarketingPage() {
   if (session.role !== "CLIENT_MANAGER") redirect("/login");
 
   return (
-    <ClientManagerLayout breadcrumbPage="Marketing" pageTitle="Marketing Hub" hideShellHeader>
+    <ClientManagerLayout breadcrumbPage="Marketing" pageTitle="Marketing Hub" workspaceShell>
       <MarketingOverview clientId={session.clientId} />
     </ClientManagerLayout>
   );

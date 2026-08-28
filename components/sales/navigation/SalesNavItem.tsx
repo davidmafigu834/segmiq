@@ -20,7 +20,7 @@ function NavIcon({
 }) {
   const className = cn(
     "shrink-0 transition-colors duration-150",
-    active ? "text-[var(--sales-sidebar-icon-active)]" : "text-[var(--sales-sidebar-icon)]"
+    active ? "text-[var(--sales-sidebar-icon-active)]" : "text-current"
   );
   if (icon === "whatsapp") {
     return (
@@ -70,9 +70,7 @@ export function SalesNavItem({
           ? collapsed
             ? "sales-nav-item-active-collapsed"
             : "sales-nav-item-active"
-          : collapsed
-            ? "text-[var(--sales-sidebar-text)] hover:bg-[var(--sales-sidebar-hover)]"
-            : "font-medium text-[var(--sales-sidebar-text)] hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
+          : "font-medium text-[var(--sales-sidebar-text)] hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
       )}
     >
       {active && !collapsed ? (

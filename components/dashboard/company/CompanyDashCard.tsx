@@ -39,7 +39,7 @@ export function CompanyDashCard({
 }) {
   return (
     <Card className={cn("dashboard-panel overflow-visible border-0 shadow-none", className)}>
-      <div className="overflow-hidden rounded-[14px]">
+      <div className="overflow-hidden rounded-[8px]">
         <CardHeader action={action} className="dashboard-panel-header border-sales-border-subtle">
           <CardTitle className="dashboard-section-title">{title}</CardTitle>
         </CardHeader>
@@ -59,7 +59,7 @@ export function CompanyDashEmpty({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center px-5 py-6 text-center">
+    <div className="flex flex-col items-center justify-center px-4 py-4 text-center">
       <p className="text-[13px] font-semibold text-sales-text-primary">{title}</p>
       {description ? (
         <p className="mt-1 max-w-[280px] text-[12px] leading-relaxed text-sales-text-muted">

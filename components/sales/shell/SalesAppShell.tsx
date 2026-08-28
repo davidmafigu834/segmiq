@@ -32,6 +32,7 @@ import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { ToastProvider } from "@/components/sales/ui/Toast";
 import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount";
 import { Button } from "@/components/sales/ui/Button";
+import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import type { UserRole } from "@/types";
 
@@ -296,7 +297,7 @@ function SalesAppShellInner({
 
   return (
     <div
-      className={`sales-dashboard-premium flex h-full max-h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-sales-bg text-sales-text-primary ${className}`}
+      className={`sales-dashboard-premium dashboard-shell flex h-full max-h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-sales-bg text-sales-text-primary ${className}`}
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
@@ -326,25 +327,28 @@ function SalesAppShellInner({
         />
       ) : null}
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
+      <div className="dashboard-canvas flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
         <div
           className={[
-            "sales-mobile-scroll min-h-0 min-w-0 flex-1 w-full max-w-none overflow-y-auto overscroll-contain",
+            "relative min-h-0 min-w-0 flex-1 w-full max-w-none overflow-y-auto overscroll-contain sales-mobile-scroll",
             dense
-              ? "space-y-4 px-4 pb-4 pt-3 sm:px-6 layout:px-7 layout:py-5"
-              : "space-y-5 px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6",
+              ? "px-4 pb-4 pt-3 sm:px-6 layout:px-7 layout:py-5"
+              : "px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6",
           ].join(" ")}
         >
-          {showDefaultHeader && title ? (
-            <SalesPageHeader
-              breadcrumb={breadcrumb}
-              title={title}
-              description={description}
-              actions={desktopActions}
-              titleActions={titleActions}
-            />
-          ) : null}
-          {children}
+          <SegmiQDotWave />
+          <div className={dense ? "relative space-y-3" : "relative space-y-3 layout:space-y-3"}>
+            {showDefaultHeader && title ? (
+              <SalesPageHeader
+                breadcrumb={breadcrumb}
+                title={title}
+                description={description}
+                actions={desktopActions}
+                titleActions={titleActions}
+              />
+            ) : null}
+            {children}
+          </div>
         </div>
       </div>
 

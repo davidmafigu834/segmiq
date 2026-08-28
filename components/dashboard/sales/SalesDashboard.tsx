@@ -135,9 +135,9 @@ function SalesDashboardInner({
       />
 
       <div className="dashboard-canvas flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
-        <div className="segmiq-ambient-glow" aria-hidden />
-        <SegmiQDotWave />
-        <div className="relative z-[1] sales-mobile-scroll min-h-0 min-w-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:space-y-5 sm:px-6 layout:px-8 layout:py-6">
+        <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain sales-mobile-scroll px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6">
+          <SegmiQDotWave />
+          <div className="relative space-y-3 sm:space-y-3">
           <DashboardHeader
             firstName={firstName}
             userName={fullName}
@@ -239,6 +239,7 @@ function SalesDashboardInner({
           <div className="hidden layout:block">
             <TodaysSalesPlanStrip {...data.planSummary} />
           </div>
+        </div>
         </div>
       </div>
 

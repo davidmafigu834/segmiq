@@ -26,7 +26,7 @@ export default async function ClientListingsPage() {
   }
 
   return (
-    <ClientManagerLayout breadcrumbPage="LISTINGS" pageTitle="Listings" hideShellHeader>
+    <ClientManagerLayout breadcrumbPage="LISTINGS" pageTitle="Listings" workspaceShell>
       <div className="min-w-0 w-full max-w-full pb-16">
         <PageHeader
           className="mb-8"

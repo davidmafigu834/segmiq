@@ -10,7 +10,7 @@ export default async function CampaignDetailPage({ params }: { params: { id: str
   if (session.role !== "CLIENT_MANAGER") redirect("/login");
 
   return (
-    <ClientManagerLayout breadcrumbPage="Campaign" pageTitle="Marketing Hub" hideShellHeader>
+    <ClientManagerLayout breadcrumbPage="Campaign" pageTitle="Marketing Hub" workspaceShell>
       <CampaignDetail clientId={session.clientId} campaignId={params.id} />
     </ClientManagerLayout>
   );

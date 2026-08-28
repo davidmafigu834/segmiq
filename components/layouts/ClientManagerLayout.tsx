@@ -1,7 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { AppShell } from "@/components/shell/AppShell";
+import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 
 export async function ClientManagerLayout({
   children,
@@ -11,6 +13,10 @@ export async function ClientManagerLayout({
   actions,
   hideShellHeader = false,
   hideShellSidebar = false,
+  contentFlush,
+  /** Wrap content in the premium company workspace (sidebar, dot-wave canvas, mobile chrome). */
+  workspaceShell = false,
+  immersive = false,
   /** When agency admin previews a client, pass that client id for sidebar brand + breadcrumb data. */
   navClientId,
 }: {
@@ -21,6 +27,9 @@ export async function ClientManagerLayout({
   actions?: React.ReactNode;
   hideShellHeader?: boolean;
   hideShellSidebar?: boolean;
+  contentFlush?: boolean;
+  workspaceShell?: boolean;
+  immersive?: boolean;
   navClientId?: string | null;
 }) {
   const session = await getServerSession(authOptions);
@@ -60,6 +69,23 @@ export async function ClientManagerLayout({
 
   const isRE = businessType === "real_estate";
 
+  const resolvedHideHeader = workspaceShell || hideShellHeader;
+  const resolvedHideSidebar = workspaceShell || hideShellSidebar;
+  const resolvedContentFlush = contentFlush ?? (workspaceShell || resolvedHideSidebar);
+
+  let avatarUrl: string | null = null;
+  let whatsappBadge = 0;
+
+  if (workspaceShell && session?.userId && cid) {
+    const [userRes, navBadges] = await Promise.all([
+      supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
+      fetchSalesNavBadges(session.userId, cid),
+    ]);
+    avatarUrl = (userRes.data?.avatar_url as string | null) ?? null;
+    whatsappBadge =
+      (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+  }
+
   const primaryNav = [
     { href: "/client/dashboard", label: "Dashboard", icon: "home" as const },
     { href: "/client/team", label: isRE ? "Agents" : "Team", icon: "users" as const },
@@ -90,6 +116,23 @@ export async function ClientManagerLayout({
     { href: "/client/settings", label: "Settings", icon: "settings" as const },
   ];
 
+  const pageContent = workspaceShell ? (
+    <CompanyWorkspaceShell
+      companyName={clientName ?? undefined}
+      companyLogoUrl={logoUrl}
+      userName={session?.user?.name ?? "User"}
+      avatarUrl={avatarUrl}
+      unreadNotifications={unread}
+      notificationRole={session?.role ?? "CLIENT_MANAGER"}
+      whatsappBadge={whatsappBadge}
+      immersive={immersive}
+    >
+      {children}
+    </CompanyWorkspaceShell>
+  ) : (
+    children
+  );
+
   return (
     <AppShell
       homeHref="/client/dashboard"
@@ -104,11 +147,12 @@ export async function ClientManagerLayout({
       unreadNotifications={unread}
       notificationRole={session?.role ?? "CLIENT_MANAGER"}
       sidebarBrand={clientName ? { name: clientName, logoUrl } : null}
-      hideHeader={hideShellHeader}
-      hideSidebar={hideShellSidebar}
+      hideHeader={resolvedHideHeader}
+      hideSidebar={resolvedHideSidebar}
+      contentFlush={resolvedContentFlush}
       profileHref="/client/settings/profile"
     >
-      {children}
+      {pageContent}
     </AppShell>
   );
 }

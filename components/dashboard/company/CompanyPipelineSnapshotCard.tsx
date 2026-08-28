@@ -40,9 +40,9 @@ export function CompanyPipelineSnapshotCard({
           }
         />
       ) : (
-        <div className="px-5 py-5">
+        <div className="px-4 py-3">
           {totalKnown > 0 ? (
-            <div className="mb-4 flex h-2.5 overflow-hidden rounded-full bg-sales-neutral-100" aria-hidden>
+            <div className="mb-3 flex h-2 overflow-hidden rounded-full bg-sales-neutral-100" aria-hidden>
               {stages.map((stage) => {
                 const share = stage.knownValue > 0 ? (stage.knownValue / totalKnown) * 100 : 0;
                 if (share <= 0) return null;
@@ -72,7 +72,7 @@ export function CompanyPipelineSnapshotCard({
                 >
                   <span className="dashboard-stage-accent" aria-hidden />
                   <p className="truncate text-[12px] font-semibold text-sales-text-secondary">{stage.label}</p>
-                  <p className="mt-2 text-[20px] font-bold tabular-nums tracking-[-0.04em] text-sales-text-primary">
+                  <p className="mt-1.5 text-[18px] font-bold tabular-nums tracking-[-0.04em] text-sales-text-primary">
                     {stage.valueLabel}
                   </p>
                   <p className="dashboard-activity-detail mt-1 text-[11px] tabular-nums">

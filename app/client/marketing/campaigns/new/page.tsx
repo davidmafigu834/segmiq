@@ -10,7 +10,7 @@ export default async function NewCampaignPage() {
   if (session.role !== "CLIENT_MANAGER") redirect("/login");
 
   return (
-    <ClientManagerLayout breadcrumbPage="New campaign" pageTitle="Marketing Hub" hideShellHeader>
+    <ClientManagerLayout breadcrumbPage="New campaign" pageTitle="Marketing Hub" workspaceShell>
       <CampaignWizard clientId={session.clientId} />
     </ClientManagerLayout>
   );

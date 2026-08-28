@@ -9,19 +9,19 @@ body {
 }
 
 :root {
-  /* Backgrounds — landing navy family (work surfaces, not the marketing stage) */
-  --bg-primary: #06152e;
-  --bg-secondary: #0c1a3c;
-  --bg-tertiary: #102044;
-  --bg-quaternary: #15264a;
+  /* Backgrounds — purple-tinted navy (work surfaces, not the marketing stage) */
+  --bg-primary: #070814;
+  --bg-secondary: #0f1020;
+  --bg-tertiary: #141522;
+  --bg-quaternary: #18132a;
 
   /* Surfaces (keep legacy names so Tailwind aliases auto-update) */
-  --surface-sidebar: #08142b;
-  --surface-sidebar-elevated: #0c1a3c;
+  --surface-sidebar: #050510;
+  --surface-sidebar-elevated: #0f1020;
   --surface-sidebar-border: rgba(176, 196, 255, 0.12);
-  --surface-canvas: #06152e;
-  --surface-card: #0c1a3c;
-  --surface-card-alt: #102044;
+  --surface-canvas: #070814;
+  --surface-card: #0f1020;
+  --surface-card-alt: #141522;
   --surface-overlay: rgba(4, 12, 32, 0.72);
   --surface-input: #08142b;
   --surface-modal: #0e1e44;
@@ -4033,25 +4033,25 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-modal-premium,
 html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   /*
     Surface hierarchy (canvas → card → nested → raised):
-    Keep the landing navy; lift cards enough to read against it; nest panels one step higher.
+    Purple-tinted navy canvas; cards lift enough to read against it.
     No glass / orbs — this is a work surface.
   */
-  --app-bg: #050f22;
-  --app-bg-deep: #040d1d;
-  --surface-1: #081831;
-  --surface-2: #0d2143;
-  --surface-3: #10264c;
+  --app-bg: #070814;
+  --app-bg-deep: #0c0718;
+  --surface-1: #0f1020;
+  --surface-2: #141522;
+  --surface-3: #18132a;
   --border-soft: rgba(126, 150, 205, 0.13);
   --border-medium: rgba(126, 150, 205, 0.2);
 
-  --sales-bg: #050f22;
-  --sales-bg-subtle: #040d1d;
-  --sales-surface: #081831;
-  --sales-surface-subtle: #0d2143;
-  --sales-surface-hover: #12264c;
-  --sales-surface-active: #152a54;
-  --sales-surface-raised: #10264c;
-  --sales-surface-selected: #173056;
+  --sales-bg: #070814;
+  --sales-bg-subtle: #0c0718;
+  --sales-surface: #0f1020;
+  --sales-surface-subtle: #12131f;
+  --sales-surface-hover: #18132a;
+  --sales-surface-active: #1c1630;
+  --sales-surface-raised: #141522;
+  --sales-surface-selected: #1e1838;
 
   /* Neutral scale */
   --sales-neutral-900: #f7f9fc;
@@ -4065,9 +4065,9 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-neutral-0: #091832;
 
   /* Text */
-  --sales-text-primary: #f7f9fc;
-  --sales-text-secondary: #a8b5d0;
-  --sales-text-muted: #7182a7;
+  --sales-text-primary: #ffffff;
+  --sales-text-secondary: #e4ebf6;
+  --sales-text-muted: #cfd8ea;
   --sales-text-disabled: #5e6e93;
   --sales-text-label: #a8b5d0;
 
@@ -4086,16 +4086,16 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-brand-fg: #d4ff4f;
 
   /* Sidebar — slightly deeper than the canvas */
-  --sales-sidebar-bg: #020c1a;
+  --sales-sidebar-bg: #050510;
   --sales-sidebar-border: rgba(127, 149, 194, 0.1);
   --sales-sidebar-divider: rgba(127, 149, 194, 0.08);
-  --sales-sidebar-text: #8799bb;
-  --sales-sidebar-text-hover: #f8fafc;
-  --sales-sidebar-text-active: #f8fafc;
-  --sales-sidebar-muted: #7182a7;
-  --sales-sidebar-icon: #7d8fb4;
+  --sales-sidebar-text: #cfd8ea;
+  --sales-sidebar-text-hover: #ffffff;
+  --sales-sidebar-text-active: #ffffff;
+  --sales-sidebar-muted: #cfd8ea;
+  --sales-sidebar-icon: #cfd8ea;
   --sales-sidebar-icon-active: #d4ff4f;
-  --sales-sidebar-hover: rgba(255, 255, 255, 0.025);
+  --sales-sidebar-hover: rgba(255, 255, 255, 0.08);
   --sales-sidebar-active: rgba(212, 255, 79, 0.12);
   --sales-sidebar-active-gradient: linear-gradient(
     90deg,

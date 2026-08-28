@@ -71,20 +71,17 @@ export function CompanyWorkspaceShell({
       ) : null}
 
       <div className="dashboard-canvas min-h-0 min-w-0 flex-1 transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
-        {immersive ? null : (
-          <>
-            <div className="segmiq-ambient-glow" aria-hidden />
-            <SegmiQDotWave />
-          </>
-        )}
         <div
           className={
             immersive
-              ? "relative z-[1] sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 overflow-hidden"
-              : "relative z-[1] sales-mobile-scroll min-h-0 min-w-0 w-full max-w-none flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-6 layout:space-y-6 layout:px-8 layout:py-6"
+              ? "relative flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col overflow-hidden sales-mobile-scroll"
+              : "relative min-h-0 min-w-0 w-full max-w-none flex-1 overflow-y-auto overscroll-contain sales-mobile-scroll px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6"
           }
         >
-          {children}
+          <SegmiQDotWave />
+          <div className={immersive ? "relative flex min-h-0 flex-1 flex-col" : "relative space-y-3 layout:space-y-3"}>
+            {children}
+          </div>
         </div>
       </div>
 

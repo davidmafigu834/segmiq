@@ -54,7 +54,7 @@ export function CompanyDashboard({
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
 
-      <div className="dashboard-group relative z-[1] grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
+      <div className="dashboard-group relative z-[1] grid w-full grid-cols-2 gap-2 min-[900px]:grid-cols-3 xl:grid-cols-6">
         {data.kpis.map((item) => (
           <CompanyKpiCard key={item.id} item={item} />
         ))}
@@ -64,7 +64,7 @@ export function CompanyDashboard({
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
 
-      <div className="grid w-full grid-cols-1 items-start gap-4 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-5">
+      <div className="grid w-full grid-cols-1 items-start gap-2.5 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-3">
         <CompanyTeamCalendarCard items={data.teamCalendar} overdueCount={data.teamCalendarOverdueCount} />
         <div className="hidden layout:block">
           <CompanyFunnelCard
@@ -75,13 +75,13 @@ export function CompanyDashboard({
         </div>
       </div>
 
-      <div className="grid w-full grid-cols-1 items-start gap-4 layout:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.95fr)] layout:gap-5">
+      <div className="grid w-full grid-cols-1 items-start gap-2.5 layout:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.95fr)] layout:gap-3">
         <CompanyTeamPerformanceCard
           rows={data.team}
           teamTotal={data.teamTotal}
           viewAllHref={data.teamViewAllHref}
         />
-        <div className="space-y-4 layout:space-y-5">
+          <div className="space-y-2.5 layout:space-y-3">
           <div className="layout:hidden">
             <CompanyFunnelCard
               stages={data.funnel}
@@ -95,7 +95,7 @@ export function CompanyDashboard({
 
       <CompanyPipelineSnapshotCard stages={data.pipelineSnapshot} />
 
-      <div className="grid w-full grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3 layout:gap-5">
+      <div className="grid w-full grid-cols-1 items-start gap-2.5 lg:grid-cols-2 xl:grid-cols-3 layout:gap-3">
         <CompanyDealsAtRiskCard
           items={data.atRiskDeals}
           total={data.atRiskTotal}

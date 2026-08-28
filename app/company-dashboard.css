@@ -12,20 +12,17 @@
 /* ---------- Dark canvas (level 0) ---------- */
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium.dashboard-shell {
-  background-color: #050f22;
-  background-image:
-    radial-gradient(760px circle at 80% 4%, rgba(91, 43, 168, 0.11), transparent 70%),
-    radial-gradient(920px circle at 94% 78%, rgba(52, 88, 164, 0.05), transparent 74%),
-    radial-gradient(680px ellipse at 38% 96%, rgba(70, 102, 168, 0.035), transparent 72%);
+  background-color: #070814;
+  background-image: var(--segmiq-canvas);
 }
 
 html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium),
 html[data-crm]:not([data-crm-theme="light"]):has(.sales-dashboard-premium) body {
-  background-color: #050f22;
+  background-color: #070814;
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboard-premium) {
-  background-color: #050f22 !important;
+  background-color: #070814 !important;
 }
 
 .dashboard-canvas {
@@ -38,97 +35,117 @@ html[data-crm]:not([data-crm-theme="light"]) .crm-shell-main:has(.sales-dashboar
   overflow: hidden;
 }
 
-.segmiq-ambient-glow,
-.segmiq-dot-wave {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-canvas {
+  background-color: #070814;
+  background-image: var(--segmiq-canvas);
 }
 
-.segmiq-ambient-glow {
-  background:
-    radial-gradient(760px circle at 80% 4%, rgba(91, 43, 168, 0.11), transparent 70%),
-    radial-gradient(920px circle at 94% 78%, rgba(52, 88, 164, 0.05), transparent 74%),
-    radial-gradient(680px ellipse at 38% 96%, rgba(70, 102, 168, 0.035), transparent 72%);
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium {
+  --sales-text-primary: #ffffff;
+  --sales-text-secondary: #e4ebf6;
+  --sales-text-muted: #cfd8ea;
+  --sales-text-label: #e4ebf6;
+  --sd-text: #ffffff;
+  --sd-text-secondary: #e4ebf6;
+  --sd-text-muted: #cfd8ea;
+  --text-primary: #ffffff;
+  --text-secondary: #e4ebf6;
+  --text-tertiary: #cfd8ea;
+  --sales-sidebar-text: #cfd8ea;
+  --sales-sidebar-text-hover: #ffffff;
+  --sales-sidebar-text-active: #ffffff;
+  --sales-sidebar-muted: #cfd8ea;
+  --sales-sidebar-icon: #cfd8ea;
+  --sales-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --surface: var(--sales-surface);
+  --surface-hover: var(--sales-surface-hover);
+  --segmiq-canvas:
+    radial-gradient(70% 58% at 50% 32%, #08091c 0%, rgba(8, 9, 28, 0.55) 46%, transparent 74%),
+    radial-gradient(820px circle at 0% -6%, rgba(147, 51, 234, 0.36), transparent 58%),
+    radial-gradient(780px circle at 100% -8%, rgba(124, 58, 237, 0.3), transparent 56%),
+    radial-gradient(1100px circle at 50% 112%, rgba(88, 28, 135, 0.34), transparent 60%),
+    linear-gradient(165deg, #160a28 0%, #070814 42%, #0c0718 100%);
+  color: #ffffff;
 }
 
-html[data-crm-theme="light"] .segmiq-ambient-glow {
-  background:
-    radial-gradient(640px circle at 78% -8%, rgba(91, 43, 168, 0.04), transparent 62%),
-    radial-gradient(560px circle at 100% 78%, rgba(52, 88, 164, 0.035), transparent 68%);
+/*
+  Navy canvas with violet edge tint — dark centre, purple glow at
+  the corners and along the floor, matching the SegmiQ atmosphere.
+*/
+.sales-dashboard-premium .dashboard-canvas > .sales-mobile-scroll,
+.sales-dashboard-premium .sales-mobile-scroll {
+  --segmiq-wave-band: 21.5rem;
+  background-color: #070814;
+  background-image: var(--segmiq-canvas);
+  background-repeat: no-repeat;
 }
 
-.segmiq-dot-wave {
-  overflow: hidden;
-  opacity: 1;
+html[data-crm-theme="light"] .sales-dashboard-premium .dashboard-canvas > .sales-mobile-scroll,
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll {
+  background-color: var(--sales-bg);
+  background-image: none;
 }
 
-.segmiq-dot-wave svg {
-  position: absolute;
-  width: 56%;
-  height: 52%;
-  max-width: 720px;
-}
-
-.segmiq-dot-wave__tr {
-  top: -8%;
-  right: -4%;
-  mask-image:
-    radial-gradient(ellipse 62% 70% at 96% 4%, #000 0%, rgba(0, 0, 0, 0.55) 36%, transparent 74%),
-    linear-gradient(255deg, #000 12%, rgba(0, 0, 0, 0.35) 48%, transparent 82%);
-  -webkit-mask-image:
-    radial-gradient(ellipse 62% 70% at 96% 4%, #000 0%, rgba(0, 0, 0, 0.55) 36%, transparent 74%),
-    linear-gradient(255deg, #000 12%, rgba(0, 0, 0, 0.35) 48%, transparent 82%);
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
-}
-
-.segmiq-dot-wave__br {
-  right: -6%;
-  bottom: -10%;
-  width: 48%;
-  height: 46%;
-  opacity: 0.42;
-  mask-image:
-    radial-gradient(ellipse 58% 62% at 100% 100%, #000 0%, rgba(0, 0, 0, 0.4) 38%, transparent 72%),
-    linear-gradient(310deg, #000 8%, transparent 78%);
-  -webkit-mask-image:
-    radial-gradient(ellipse 58% 62% at 100% 100%, #000 0%, rgba(0, 0, 0, 0.4) 38%, transparent 72%),
-    linear-gradient(310deg, #000 8%, transparent 78%);
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
-}
-
-.segmiq-dot-wave .segmiq-dot {
-  fill: rgb(76, 115, 220);
-}
-
-.segmiq-dot-wave .segmiq-dot--violet {
-  fill: rgb(110, 92, 255);
-}
-
-.segmiq-dot-wave .segmiq-dot--lime {
-  fill: #d4ff4f;
-}
-
-@media (max-width: 1023.98px) {
-  .segmiq-dot-wave {
-    display: none;
+@media (max-width: 1279.98px) {
+  .sales-dashboard-premium .dashboard-canvas > .sales-mobile-scroll,
+  .sales-dashboard-premium .sales-mobile-scroll {
+    --segmiq-wave-band: 17.5rem;
   }
-  .segmiq-ambient-glow {
-    opacity: 0.5;
+}
+
+@media (max-width: 767.98px) {
+  .sales-dashboard-premium .dashboard-canvas > .sales-mobile-scroll,
+  .sales-dashboard-premium .sales-mobile-scroll {
+    --segmiq-wave-band: 13.5rem;
+  }
+  html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll {
+    background-image: none;
+  }
+}
+
+.segmiq-dot-wave {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 0;
+  height: var(--segmiq-wave-band, 21.5rem);
+  pointer-events: none;
+  background-image: url("/segmiq/dot-wave-violet.svg");
+  background-repeat: no-repeat;
+  background-position: left top;
+  background-size: 100% 100%;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 38%,
+    rgba(0, 0, 0, 0.5) 68%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 38%,
+    rgba(0, 0, 0, 0.5) 68%,
+    transparent 100%
+  );
+}
+
+@media (max-width: 767.98px) {
+  .segmiq-dot-wave {
+    opacity: 0.75;
   }
 }
 
 html[data-crm-theme="light"] .segmiq-dot-wave {
-  opacity: 0.16;
+  display: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .segmiq-dot-wave svg {
-    animation: none;
-  }
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .rounded-xl.border {
+  border-radius: 8px;
+  background: linear-gradient(145deg, #081a35, #07162e);
+  border-color: rgba(128, 151, 200, 0.09);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
 
 /* ---------- Depth: panels (level 1) ---------- */
@@ -136,7 +153,7 @@ html[data-crm-theme="light"] .segmiq-dot-wave {
 .sales-dashboard-premium .dashboard-panel,
 .sales-dashboard-premium .sd-card:not(.dashboard-kpi) {
   border: 1px solid var(--sales-border-subtle);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--sales-surface);
   box-shadow: var(--sales-shadow-card);
 }
@@ -177,7 +194,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard
 }
 
 .sales-dashboard-premium .dashboard-panel-header {
-  padding: 15px 20px;
+  padding: 10px 14px;
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel-header {
@@ -232,7 +249,7 @@ html[data-crm-theme="light"] .dashboard-group::after {
   --kpi-accent: var(--sales-info);
   position: relative;
   border: 1px solid rgba(115, 142, 199, 0.14);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--sales-surface-raised, var(--sales-surface));
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.04), inset 0 1px rgba(255, 255, 255, 0.4);
 }
@@ -241,7 +258,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard
   background: linear-gradient(145deg, #0c2146, #0a1c3a);
   border-color: rgba(122, 148, 198, 0.1);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.045);
-  padding: 16px 16px 14px;
+  padding: 12px 12px 10px;
 }
 
 .dashboard-kpi-icon {
@@ -310,7 +327,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium a.dashboar
 .dashboard-alert {
   position: relative;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--sales-surface-subtle);
   border: 1px solid var(--sales-border-subtle);
 }
@@ -322,8 +339,8 @@ html[data-crm]:not([data-crm-theme="light"]) .dashboard-alert {
 
 .dashboard-alert-rail {
   position: absolute;
-  top: 10px;
-  bottom: 10px;
+  top: 8px;
+  bottom: 8px;
   left: 0;
   width: 3px;
   border-radius: 999px;
@@ -331,7 +348,7 @@ html[data-crm]:not([data-crm-theme="light"]) .dashboard-alert {
 }
 
 .dashboard-card {
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--sales-surface-subtle);
   border: 1px solid var(--sales-border-subtle);
 }
@@ -347,8 +364,8 @@ html[data-crm]:not([data-crm-theme="light"]) .dashboard-card {
   overflow: hidden;
   min-width: 0;
   flex: 1 1 140px;
-  border-radius: 12px;
-  padding: 14px 14px 12px;
+  border-radius: 8px;
+  padding: 10px 12px 10px;
   background: var(--sales-surface-subtle);
   border: 1px solid var(--sales-border-subtle);
   box-shadow: 0 6px 16px rgba(16, 24, 64, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.45);
@@ -423,15 +440,15 @@ html[data-crm]:not([data-crm-theme="light"]) .dashboard-stage-card {
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .dashboard-activity-title {
-  color: #f7f9fc;
+  color: #ffffff;
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .dashboard-activity-detail {
-  color: #9aaccc;
+  color: var(--sales-text-secondary);
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .dashboard-activity-time {
-  color: #60759d;
+  color: var(--sales-text-muted);
 }
 
 html[data-crm-theme="light"] .dashboard-list-row:hover {
@@ -576,7 +593,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium aside.fixe
 
 .sales-dashboard-premium .sales-nav-item-active {
   background: linear-gradient(90deg, rgba(212, 255, 79, 0.1), rgba(212, 255, 79, 0.018));
-  color: #f8fafc;
+  color: #ffffff;
   font-weight: 600;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
@@ -595,10 +612,20 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium aside.fixe
 
 .sales-dashboard-premium aside a:not(.sales-nav-item-active):not(.sales-nav-item-active-collapsed) {
   font-weight: 500;
+  color: var(--sales-sidebar-text);
 }
 
 .sales-dashboard-premium aside a:not(.sales-nav-item-active):not(.sales-nav-item-active-collapsed) svg {
-  opacity: 0.78;
+  color: inherit;
+}
+
+.sales-dashboard-premium aside a:not(.sales-nav-item-active):not(.sales-nav-item-active-collapsed):hover {
+  color: var(--sales-sidebar-text-hover);
+  background-color: var(--sales-sidebar-hover);
+}
+
+.sales-dashboard-premium aside a:not(.sales-nav-item-active):not(.sales-nav-item-active-collapsed):hover svg {
+  color: inherit;
 }
 
 /* ---------- Search / primary CTA ---------- */
@@ -669,7 +696,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   letter-spacing: -0.045em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 .sales-dashboard-premium .dashboard-kpi-label {
@@ -677,7 +704,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #8ea0c2;
+  color: #ffffff;
 }
 
 .dashboard-focus-kicker {
@@ -685,7 +712,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #8ea0c2;
+  color: #ffffff;
 }
 
 .dashboard-focus-title {
@@ -693,7 +720,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1.15;
-  color: #f8fafc;
+  color: #ffffff;
 }
 
 .dashboard-focus-icon {

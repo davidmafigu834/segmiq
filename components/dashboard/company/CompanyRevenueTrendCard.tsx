@@ -32,10 +32,10 @@ export function CompanyRevenueTrendCard({
   return (
     <CompanyDashCard
       title="Revenue trend"
-      className="dashboard-panel--analytics h-full"
+      className="dashboard-panel--analytics"
       action={<PeriodChip>Last 6 months</PeriodChip>}
     >
-      <div className="px-4 pb-4 pt-3 sm:px-5">
+      <div className="px-3 pb-3 pt-2.5 sm:px-4">
         {!hasHistory ? (
           <CompanyDashEmpty
             title="Revenue history will appear after Deals are Won"
@@ -52,7 +52,7 @@ export function CompanyRevenueTrendCard({
               </div>
               {compare ? <Trend direction={compare.direction} label={compare.label} /> : null}
             </div>
-            <div className="h-[168px] w-full" aria-label={`Revenue trend totaling ${totalLabel}`}>
+            <div className="h-[128px] w-full" aria-label={`Revenue trend totaling ${totalLabel}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <defs>

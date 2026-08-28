@@ -26,7 +26,7 @@ export default async function ClientContactsPage() {
   const clientName = (clientRow?.name as string) ?? undefined;
 
   return (
-    <ClientManagerLayout breadcrumbPage="CONTACTS" pageTitle="Customer Hub" hideShellHeader>
+    <ClientManagerLayout breadcrumbPage="CONTACTS" pageTitle="Customer Hub" workspaceShell>
       <Suspense fallback={<div className="shimmer h-64 rounded-xl" />}>
         <div className="px-0">
           <HubTabs />

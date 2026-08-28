@@ -25,8 +25,7 @@ export default async function ClientEventCapturePage() {
     <ClientManagerLayout
       breadcrumbPage="EVENT CAPTURE"
       pageTitle="Event Capture"
-      hideShellHeader
-      hideShellSidebar
+      workspaceShell
     >
       <EventCaptureClient
         clientId={session.clientId}

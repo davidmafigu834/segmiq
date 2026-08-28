@@ -10,7 +10,7 @@ export default async function MarketingTemplatesPage() {
   if (session.role !== "CLIENT_MANAGER") redirect("/login");
 
   return (
-    <ClientManagerLayout breadcrumbPage="Templates" pageTitle="Marketing Hub" hideShellHeader>
+    <ClientManagerLayout breadcrumbPage="Templates" pageTitle="Marketing Hub" workspaceShell>
       <TemplateManager clientId={session.clientId} />
     </ClientManagerLayout>
   );

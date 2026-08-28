@@ -108,7 +108,7 @@ export function CompanyTeamPerformanceCard({
                     <td className="px-3 py-3 text-right text-[13px] tabular-nums text-sales-text-primary">
                       {row.dealsWon}
                     </td>
-                    <td className="px-3 py-3 text-right">
+                    <td className="px-3 py-2 text-right">
                       <FollowUpCell count={row.followUpsDue} />
                     </td>
                     <td className="px-5 py-3">

@@ -21,7 +21,7 @@ export function CompanyRecentActivityCard({ items }: { items: CompanyActivityIte
   const display = items.slice(0, 6);
 
   return (
-    <CompanyDashCard title="Recent team activity" className="dashboard-panel--feed h-full">
+    <CompanyDashCard title="Recent team activity" className="dashboard-panel--feed">
       {display.length === 0 ? (
         <CompanyDashEmpty
           title="No recent team activity yet"
@@ -31,7 +31,7 @@ export function CompanyRecentActivityCard({ items }: { items: CompanyActivityIte
         <ul className="divide-y divide-[rgba(128,151,200,0.07)] px-2 py-1">
           {display.map((item) => {
             const body = (
-              <div className="dashboard-list-row flex items-center gap-3 px-4 py-3">
+              <div className="dashboard-list-row flex items-center gap-3 px-3 py-2">
                 <span className="dashboard-activity-icon">
                   <ActivityIcon kind={item.kind} />
                 </span>
@@ -52,7 +52,7 @@ export function CompanyRecentActivityCard({ items }: { items: CompanyActivityIte
                 {item.href ? (
                   <Link
                     href={item.href}
-                    className="block rounded-[10px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
+                    className="block rounded-[8px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
                   >
                     {body}
                   </Link>
