@@ -546,7 +546,6 @@ export async function runCreateQuotation(opts: {
   progress[1] = step("deal", "Deal identified", "done", deal.name);
 
   let intentItems = opts.intent.items;
-  let extractionNotes: string[] = [];
   if ((opts.intent.extractFromConversation || intentItems.length === 0) && opts.flags.contextualExtraction) {
     const extraction = await loadConversationExtraction({ clientId: opts.actor.clientId, leadId: cust.leadId });
     if (intentItems.length === 0) {
@@ -690,7 +689,7 @@ export async function runCreateQuotation(opts: {
   if (opts.intent.validityDays) validDays = opts.intent.validityDays;
   let notes: string | null = opts.intent.note ?? null;
   let terms: string | null = (settings.default_terms as string | null) ?? null;
-  let templateId: string | null = templatePick.id;
+  const templateId: string | null = templatePick.id;
   let templateLayoutKey: string | null = null;
   let templateLayoutVersion: number | null = null;
   if (templateId) {
@@ -837,7 +836,7 @@ async function finalizeCreated(opts: {
     await saveItemsAndTotals(supabase, opts.created.id as string, opts.lines, opts.taxRate, opts.otherAmount, {
       discountPercent: opts.discountPercent,
     });
-  } catch (err) {
+  } catch {
     await supabase.from("quotations").delete().eq("id", opts.created.id as string).eq("status", "draft");
     opts.progress[5] = step("draft", "Draft created", "failed");
     return {
@@ -1027,7 +1026,7 @@ export async function runUpdateDraft(opts: {
     return runUpdateDraft({ ...opts, quotationId: copied.id });
   }
 
-  let items = ((current.items as QuotationLineItemInput[]) ?? []).slice();
+  const items = ((current.items as QuotationLineItemInput[]) ?? []).slice();
   if (opts.intent.items.length) {
     const itemResult = await resolveItemsOrWait({
       actor: opts.actor,
