@@ -9,6 +9,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { ShellIcon } from "./shell-icons";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import SegmiqMark from "@/components/brand/SegmiqMark";
+import { ExitImpersonationMenuItem } from "@/components/agency/ExitImpersonationMenuItem";
 import type { AppShellClientRow, AppShellNavItem } from "./app-shell-types";
 import { isWhatsAppSalesHubPath } from "@/lib/sales/whatsapp-hub-nav";
 
@@ -411,6 +412,7 @@ export function AgencySidebar({
                 Profile
               </Link>
             ) : null}
+            <ExitImpersonationMenuItem className="flex w-full items-center gap-2 px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-60" />
             <button
               type="button"
               className="block w-full px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"

@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AppShell } from "@/components/shell/AppShell";
-import { ImpersonationBanner } from "@/components/agency/ImpersonationBanner";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { buildWhatsAppSalesHubNav } from "@/lib/sales/whatsapp-hub-nav";
 
@@ -95,13 +94,6 @@ export async function SalesLayout({
       showWorkspaceSearch={!contentFlush}
       profileHref="/sales/profile"
     >
-      {session?.isImpersonating ? (
-        <ImpersonationBanner
-          userName={session.user?.name ?? "User"}
-          userRole={session.role}
-          realUserName={session.realUserName}
-        />
-      ) : null}
       {children}
     </AppShell>
   );

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { ChevronDown, CircleHelp, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { ExitImpersonationMenuItem } from "@/components/agency/ExitImpersonationMenuItem";
 import {
   displaySalesName,
   salesNameInitials,
@@ -134,6 +135,10 @@ export function SalesProfileMenu({
             {helpLabel}
           </Link>
           <div className="my-1 border-t border-sales-border-subtle" />
+          <ExitImpersonationMenuItem
+            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-60"
+            onSelect={() => setOpen(false)}
+          />
           <button
             type="button"
             role="menuitem"
