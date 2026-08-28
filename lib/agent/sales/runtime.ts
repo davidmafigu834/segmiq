@@ -4,7 +4,6 @@ import { getAgentModelProvider, type AgentChatMessage } from "@/lib/agent/provid
 import { sanitizeConfigText } from "@/lib/agent/prompt";
 import { asRow } from "@/lib/agent/rows";
 import { assembleCompanyBrainContext, serializeCompanyBrainContext } from "@/lib/company-brain";
-import { loadCompanyBrainSnapshot } from "@/lib/company-brain/store";
 import { retrieveApprovedLearning, serializeLearnedKnowledge } from "@/lib/agent/learning/retrieval";
 import { wrapUntrustedContent } from "@/lib/company-brain/authority";
 import { SALES_PROMPT_VERSION, type SalesActor, type SalesBlock, type SalesIntent, type SalesPageContext, type SalesTurnResult } from "./types";
@@ -123,7 +122,6 @@ async function parseIntentWithModel(opts: {
       clientId: opts.actor.clientId,
       customerMessage: opts.message,
     });
-    const snapshot = await loadCompanyBrainSnapshot(opts.actor.clientId);
     const learning = await retrieveApprovedLearning({
       clientId: opts.actor.clientId,
       customerMessage: opts.message,
@@ -138,7 +136,7 @@ async function parseIntentWithModel(opts: {
         page: opts.page,
         hasPackages: opts.hasPackages,
       }),
-      serializeCompanyBrainContext({ snapshot, context: brain }),
+      serializeCompanyBrainContext(brain),
       serializeLearnedKnowledge(learning.items),
       wrapUntrustedContent("SALESPERSON_COMMAND", opts.message),
     ]
