@@ -150,8 +150,7 @@ export function CompanyProductsPage({
         </div>
       }
     >
-      <div className="mt-4 flex flex-col gap-3">
-        <SearchInput value={q} onChange={setQ} placeholder="Search name, SKU, barcode or brand…" />
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SegmentedControl
           aria-label="Product type"
           value={type}
@@ -162,7 +161,8 @@ export function CompanyProductsPage({
             { value: "SERVICE", label: "Services", badge: typeCounts.services },
           ]}
         />
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
+        <SearchInput value={q} onChange={setQ} placeholder="Search name, SKU, barcode or brand…" className="w-full sm:w-[240px]" />
           <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-auto min-w-[140px]">
             <option value="">Category</option>
             {categories.map((c) => (
@@ -196,6 +196,7 @@ export function CompanyProductsPage({
             Categories
           </Button>
         </div>
+      </div>
 
         {loading ? (
           <Skeleton className="h-64 w-full" />
@@ -293,7 +294,6 @@ export function CompanyProductsPage({
             </Button>
           </div>
         ) : null}
-      </div>
     </CommercialModulePage>
   );
 }

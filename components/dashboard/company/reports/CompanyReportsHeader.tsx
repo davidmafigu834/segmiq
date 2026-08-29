@@ -56,17 +56,11 @@ export function CompanyReportsHeader({
           Export
         </Button>
       }
-      titleActions={
-        <>
-          <DateRangeControl from={from} to={to} preset={preset} onRange={onRange} />
-          <FiltersControl ownerId={ownerId} owners={owners} onOwner={onOwner} />
-        </>
-      }
     />
   );
 }
 
-function DateRangeControl({
+export function DateRangeControl({
   from,
   to,
   preset,
@@ -185,7 +179,7 @@ function DateRangeControl({
   );
 }
 
-function FiltersControl({
+export function FiltersControl({
   ownerId,
   owners,
   onOwner,

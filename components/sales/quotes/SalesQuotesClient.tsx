@@ -419,7 +419,7 @@ export function SalesQuotesClient() {
           </div>
 
           {/* Filters */}
-          <div className="hidden flex-col gap-3 md:flex lg:flex-row lg:h-10 lg:items-center lg:gap-3">
+          <div className="hidden flex-col gap-3 md:flex sm:flex-row sm:items-center sm:justify-between">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <MenuSelect
                 aria-label="Date range"
@@ -457,6 +457,8 @@ export function SalesQuotesClient() {
                   }}
                 />
               </div>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
               <div className="relative">
                 <Button
                   variant="secondary"

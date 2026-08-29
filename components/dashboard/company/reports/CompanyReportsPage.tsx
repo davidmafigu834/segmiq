@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { Tabs } from "@/components/sales/ui";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
-import { CompanyReportsHeader } from "./CompanyReportsHeader";
+import { CompanyReportsHeader, DateRangeControl, FiltersControl } from "./CompanyReportsHeader";
 import { ReportOverview } from "./ReportOverview";
 import { ReportOverviewSkeleton } from "./ReportOverviewSkeleton";
 import { ReportTabView } from "./ReportTabView";
@@ -153,12 +153,30 @@ export function CompanyReportsPage({
         onExport={exportReport}
       />
 
-      <Tabs
-        value={tab}
-        onChange={(id) => setParams({ tab: id })}
-        items={COMPANY_REPORT_TABS.map((t) => ({ id: t.id, label: t.label }))}
-        className="mt-1"
-      />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Tabs
+          value={tab}
+          onChange={(id) => setParams({ tab: id })}
+          items={COMPANY_REPORT_TABS.map((t) => ({ id: t.id, label: t.label }))}
+          className="min-w-0 flex-1 border-b-0"
+        />
+        <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+          <DateRangeControl
+            from={from}
+            to={to}
+            preset={preset}
+            onRange={(nextFrom, nextTo, nextPreset) =>
+              setParams({
+                from: nextFrom.toISOString(),
+                to: nextTo.toISOString(),
+                preset: nextPreset,
+                granularity: suggestGranularity(nextFrom, nextTo),
+              })
+            }
+          />
+          <FiltersControl ownerId={ownerId} owners={owners} onOwner={(id) => setParams({ ownerId: id })} />
+        </div>
+      </div>
 
       {error && !data ? (
         <div className="rounded-[12px] border border-sales-danger/30 bg-sales-danger-soft px-4 py-3 text-sm text-sales-danger">

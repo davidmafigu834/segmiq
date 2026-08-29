@@ -299,15 +299,15 @@ export function CompanyCustomersTableCard({
 
   return (
     <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
-      <div className="overflow-x-auto border-b border-sales-border-subtle px-3 pt-2 sm:px-4">
-        <div className="flex min-w-max items-end gap-4">
+      <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+        <div className="flex min-w-0 flex-1 gap-4 overflow-x-auto">
           {COMPANY_CUSTOMERS_TABS.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => onTabChange(item.id)}
               className={cn(
-                "relative flex h-11 items-center gap-1.5 whitespace-nowrap px-1 text-[12px] font-medium text-sales-text-secondary",
+                "relative flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-1 text-[12px] font-medium text-sales-text-secondary",
                 tab === item.id && "font-semibold text-sales-text-primary after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-sales-brand"
               )}
             >
@@ -316,11 +316,8 @@ export function CompanyCustomersTableCard({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="flex flex-col gap-2 border-b border-sales-border-subtle p-3 sm:p-4 xl:flex-row xl:items-center">
-        <SearchInput value={search} onChange={onSearchChange} placeholder="Search customers…" className="min-w-0 flex-1 xl:max-w-[260px]" />
-        <div className="flex min-w-0 flex-wrap gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
+        <SearchInput value={search} onChange={onSearchChange} placeholder="Search customers…" className="min-w-0 w-full sm:w-[220px]" />
           <FiltersPopover filters={filters} onChange={onFiltersChange} />
           <MenuSelect
             value={filters.customerType}

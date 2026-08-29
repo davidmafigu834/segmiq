@@ -17,7 +17,7 @@ import {
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, SegmentedControl, ToastProvider, useSalesToast } from "@/components/sales/ui";
+import { Button, Tabs, ToastProvider, useSalesToast } from "@/components/sales/ui";
 import { AgentSectionNav } from "@/components/dashboard/company/agent/AgentSectionNav";
 import { cn } from "@/lib/ui/cn";
 import type { UserRole } from "@/types";
@@ -363,9 +363,13 @@ function AgentActivityInner({
           </section>
         ) : null}
 
-        <SegmentedControl options={tabOptions} value={tab} onChange={setTab} aria-label="Agent activity tabs" />
-
-        <section className="rounded-[12px] border border-sales-border bg-sales-surface">
+        <section className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
+          <Tabs
+            items={tabOptions.map((o) => ({ id: o.value, label: o.label }))}
+            value={tab}
+            onChange={(id) => setTab(id as typeof tab)}
+            className="px-4 sm:px-5"
+          />
           {loading ? (
             <div className="flex h-40 items-center justify-center">
               <Loader2 size={18} className="animate-spin text-sales-text-muted" />

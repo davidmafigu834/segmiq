@@ -7,7 +7,7 @@ import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWor
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { AgentSectionNav } from "@/components/dashboard/company/agent/AgentSectionNav";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, SegmentedControl, ToastProvider, useSalesToast } from "@/components/sales/ui";
+import { Button, Tabs, ToastProvider, useSalesToast } from "@/components/sales/ui";
 import { cn } from "@/lib/ui/cn";
 import { CATEGORY_LABELS, type LearningCandidate, type LearnedKnowledge } from "@/lib/agent/learning/types";
 import type { UserRole } from "@/types";
@@ -265,7 +265,12 @@ function LearningCenterInner({
           </p>
         ) : null}
 
-        <SegmentedControl options={tabOptions} value={tab} onChange={setTab} />
+        <Tabs
+          items={tabOptions.map((o) => ({ id: o.value, label: o.label }))}
+          value={tab}
+          onChange={(id) => setTab(id as typeof tab)}
+          className="w-full"
+        />
 
         {loading ? (
           <div className="flex h-40 items-center justify-center rounded-[12px] border border-sales-border bg-sales-surface">

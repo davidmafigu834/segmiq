@@ -228,7 +228,8 @@ export function RealEstateMarketingWorkspace({
 
   return (
     <div className="min-w-0 w-full max-w-full space-y-3">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 flex-wrap gap-2">
         {PRESETS.map((p) => (
           <button
             key={p.id}
@@ -249,6 +250,8 @@ export function RealEstateMarketingWorkspace({
             <input type="date" className={filterClass} value={to} onChange={(e) => setTo(e.target.value)} />
           </>
         ) : null}
+        </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
         <select className={filterClass} value={source} onChange={(e) => setSource(e.target.value)}>
           <option value="">All sources</option>
           {RE_SOURCE_TYPES.map((s) => (
@@ -294,6 +297,7 @@ export function RealEstateMarketingWorkspace({
         >
           Export CSV
         </a>
+        </div>
       </div>
 
       <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">

@@ -35,8 +35,8 @@ import {
   PipelineStageBadge,
   Progress,
   SalesAreaChart,
-  SegmentedControl,
   Skeleton,
+  Tabs,
 } from "@/components/sales/ui";
 import { BrandIcon } from "@/components/sales/ui/BrandIcon";
 import { formatDealCurrency, formatPercent, formatRelativeTime, formatStageLabel } from "@/lib/sales/format";
@@ -155,23 +155,20 @@ export function SalesReportsClient() {
 
   return (
     <div className="w-full space-y-4">
-      {/* Tabs + filters */}
-      <div className="flex flex-col gap-3">
-        <div className="min-w-0 overflow-x-auto">
-          <SegmentedControl
-            aria-label="Report section"
-            value={tab}
-            onChange={setTab}
-            options={[
-              { value: "overview", label: "Overview" },
-              { value: "pipeline", label: "Pipeline" },
-              { value: "sources", label: "Sources" },
-              { value: "activity", label: "Activity" },
-              { value: "forecast", label: "Forecast" },
-            ]}
-          />
-        </div>
-        <div className="flex h-10 min-w-0 flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Tabs
+          items={[
+            { id: "overview", label: "Overview" },
+            { id: "pipeline", label: "Pipeline" },
+            { id: "sources", label: "Sources" },
+            { id: "activity", label: "Activity" },
+            { id: "forecast", label: "Forecast" },
+          ]}
+          value={tab}
+          onChange={(id) => setTab(id as TabId)}
+          className="min-w-0 flex-1 border-b-0"
+        />
+        <div className="flex min-w-0 shrink-0 flex-wrap items-center gap-2 sm:justify-end">
           <MenuSelect
             aria-label="Date range"
             value={period}
@@ -189,7 +186,7 @@ export function SalesReportsClient() {
           <Button
             variant="secondary"
             size="md"
-            className="ml-auto h-10 shrink-0 whitespace-nowrap rounded-[10px]"
+            className="h-10 shrink-0 whitespace-nowrap rounded-[10px]"
             leftIcon={<Download size={16} strokeWidth={1.8} />}
             onClick={exportCsv}
             disabled={!data}

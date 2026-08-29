@@ -52,8 +52,8 @@ export function CompanyPackagesPage({
         </Button>
       }
     >
-      <div className="mt-4 max-w-md">
-        <SearchInput value={q} onChange={setQ} placeholder="Search packages…" />
+      <div className="mt-4 flex justify-end">
+        <SearchInput value={q} onChange={setQ} placeholder="Search packages…" className="w-full sm:w-[280px]" />
       </div>
       {items.length === 0 ? (
         <div className="mt-8">

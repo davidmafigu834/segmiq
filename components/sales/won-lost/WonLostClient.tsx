@@ -253,8 +253,8 @@ export function WonLostClient() {
   return (
     <div className="w-full space-y-4">
       {/* Tabs + filters */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:h-10 lg:items-center lg:gap-3">
-        <div className="min-w-0 flex-1 overflow-x-auto">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 overflow-x-auto">
           <SegmentedControl
             aria-label="Outcome filter"
             value={outcome}
