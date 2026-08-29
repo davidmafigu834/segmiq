@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Handshake } from "lucide-react";
 import { Button, Input, SearchInput } from "@/components/sales/ui";
 import { EmptyState } from "@/components/ui";
+import { WorkspaceUnderlineTabs } from "@/components/real-estate/workspace-chrome";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import type { OfferListRow } from "@/lib/real-estate/offer-service";
 import type { OfferListTab } from "@/lib/real-estate/offer-service";
 import { CreateOfferSheet, type CreateOfferPrefill } from "./CreateOfferSheet";
@@ -88,35 +90,24 @@ export function OffersWorkspace({
   );
 
   return (
-    <div className="min-w-0 w-full max-w-full pb-20">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        {variant === "manager" ? (
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">Sales</p>
-            <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-sales-text-primary">Offers</h1>
-            <p className="mt-1 text-[13px] text-sales-text-secondary">
-              Track property offers, seller responses and negotiations.
-            </p>
-          </div>
-        ) : (
-          <div />
-        )}
-        <Button variant="primary" onClick={() => setCreating({})}>
-          Create offer
-        </Button>
-      </div>
-
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="min-w-0 w-full max-w-full space-y-3">
+      <div className="dashboard-group grid grid-cols-2 gap-3 lg:grid-cols-4">
         {cards.map((c) => (
-          <div key={c.label} className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-3">
-            <p className="text-[11px] font-medium text-sales-text-muted">{c.label}</p>
-            <p className="mt-1 text-[22px] font-semibold tabular-nums tracking-[-0.03em]">{c.value}</p>
-          </div>
+          <CompanyKpiCard
+            key={c.label}
+            item={{
+              id: c.label,
+              label: c.label,
+              value: String(c.value),
+              supporting: "This period",
+              icon: c.label.includes("Accepted") ? "won" : "deals",
+            }}
+          />
         ))}
       </div>
 
       {variant === "manager" && (byAgent.length > 0 || multi.length > 0) ? (
-        <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {byAgent.length > 0 ? (
             <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
               <p className="text-[13px] font-semibold">Offers by agent</p>
@@ -146,24 +137,10 @@ export function OffersWorkspace({
         </div>
       ) : null}
 
-      <div className="mb-4 flex gap-1 overflow-x-auto">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`h-9 shrink-0 rounded-full px-3 text-[12px] font-medium ${
-              tab === t.id
-                ? "bg-sales-text-primary text-white"
-                : "border border-sales-border text-sales-text-secondary"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <WorkspaceUnderlineTabs items={TABS} value={tab} onChange={setTab} />
 
-      <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-2 border-b border-sales-border-subtle px-4 py-3 sm:grid-cols-2 sm:px-5 lg:grid-cols-6">
         <SearchInput
           value={q}
           onChange={setQ}
@@ -187,12 +164,17 @@ export function OffersWorkspace({
         )}
         <Input type="number" placeholder="Min offer" value={min} onChange={(e) => setMin(e.target.value)} />
         <Input type="number" placeholder="Max offer" value={max} onChange={(e) => setMax(e.target.value)} />
+        <div className="flex items-center justify-end">
+          <Button variant="primary" size="md" onClick={() => setCreating({})}>
+            Create offer
+          </Button>
+        </div>
       </div>
 
       {loading ? (
-        <p className="text-[13px] text-sales-text-muted">Loading…</p>
+        <p className="px-4 py-8 text-[13px] text-sales-text-muted sm:px-5">Loading…</p>
       ) : offers.length === 0 ? (
-        <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
+        <div>
           <EmptyState
             icon={Handshake}
             title={tab === "active" ? "No active offers" : "No offers in this view"}
@@ -209,7 +191,7 @@ export function OffersWorkspace({
         </div>
       ) : (
         <>
-          <div className="hidden overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface lg:block">
+          <div className="hidden lg:block">
             <table className="w-full text-left text-[13px]">
               <thead className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
                 <tr>
@@ -256,12 +238,12 @@ export function OffersWorkspace({
             </table>
           </div>
 
-          <ul className="space-y-2 lg:hidden">
+          <ul className="space-y-0 divide-y divide-sales-border-subtle lg:hidden">
             {offers.map((row) => (
               <li key={row.id}>
                 <button
                   type="button"
-                  className="w-full workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 text-left"
+                  className="w-full p-4 text-left hover:bg-sales-surface-hover"
                   onClick={() => setOpenId(row.id)}
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -294,6 +276,7 @@ export function OffersWorkspace({
           </ul>
         </>
       )}
+      </section>
 
       {creating ? (
         <CreateOfferSheet

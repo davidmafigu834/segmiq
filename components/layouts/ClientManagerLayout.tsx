@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { AppShell } from "@/components/shell/AppShell";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
+import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
 import { getTerminology, isRealEstate, normalizeBusinessType } from "@/lib/terminology";
 
@@ -21,6 +22,9 @@ export async function ClientManagerLayout({
   immersive = false,
   /** When agency admin previews a client, pass that client id for sidebar brand + breadcrumb data. */
   navClientId,
+  workspaceTitle,
+  workspaceDescription,
+  workspaceCanAddLead = false,
 }: {
   children: React.ReactNode;
   breadcrumbPage?: string;
@@ -33,6 +37,10 @@ export async function ClientManagerLayout({
   workspaceShell?: boolean;
   immersive?: boolean;
   navClientId?: string | null;
+  /** Company dashboard title block (same chrome as Team / Leads). */
+  workspaceTitle?: string;
+  workspaceDescription?: string;
+  workspaceCanAddLead?: boolean;
 }) {
   const session = await getServerSession(authOptions);
   const supabase = createAdminClient();
@@ -141,6 +149,19 @@ export async function ClientManagerLayout({
       whatsappBadge={whatsappBadge}
       immersive={immersive}
     >
+      {workspaceTitle ? (
+        <CompanyDashboardHeader
+          unreadNotifications={unread}
+          notificationRole={session?.role ?? "CLIENT_MANAGER"}
+          userName={session?.user?.name ?? "User"}
+          avatarUrl={avatarUrl}
+          canAddLead={workspaceCanAddLead}
+          breadcrumb={`Company / ${workspaceTitle}`}
+          title={workspaceTitle}
+          description={workspaceDescription}
+          primaryAction={null}
+        />
+      ) : null}
       {children}
     </CompanyWorkspaceShell>
     </CompanyWorkspaceProvider>

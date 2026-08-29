@@ -23,7 +23,13 @@ export default async function MarketingPage() {
 
   if (client.business_type === "real_estate") {
     return (
-      <ClientManagerLayout breadcrumbPage="Marketing" pageTitle="Marketing" workspaceShell>
+      <ClientManagerLayout
+        breadcrumbPage="Marketing"
+        pageTitle="Marketing"
+        workspaceShell
+        workspaceTitle="Marketing"
+        workspaceDescription="See which channels and campaigns are generating real property opportunities."
+      >
         <RealEstateMarketingWorkspace
           clientId={session.clientId}
           clientName={(client.name as string | null) || "Company"}

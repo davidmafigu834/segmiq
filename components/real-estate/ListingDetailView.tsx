@@ -72,7 +72,7 @@ export function ListingDetailView({
   if (!listing) return <p className="text-[13px] text-sales-text-muted">Listing not found.</p>;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3">
       {toast ? (
         <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
           {toast}

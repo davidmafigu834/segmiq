@@ -10,7 +10,7 @@ import {
   viewingStatusLabel,
   type ViewingWorkspaceTab,
 } from "@/lib/real-estate/viewings";
-import { cn } from "@/lib/ui/cn";
+import { WorkspaceUnderlineTabs } from "@/components/real-estate/workspace-chrome";
 
 export type ViewingWorkspaceRow = {
   id: string;
@@ -87,36 +87,16 @@ export function ViewingsWorkspace({
   }
 
   return (
-    <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
-      <div
-        className="scrollbar-hide flex gap-4 overflow-x-auto border-b border-sales-border-subtle px-4 sm:px-5"
-        role="tablist"
-      >
-        {VIEWING_WORKSPACE_TABS.map((item) => {
-          const active = item.id === tab;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setTab(item.id)}
-              className={cn(
-                "relative h-11 shrink-0 whitespace-nowrap text-[13px] transition-colors duration-150",
-                active
-                  ? "font-semibold text-sales-text-primary"
-                  : "font-medium text-sales-text-secondary hover:text-sales-text-primary"
-              )}
-            >
-              {item.label}
-              <span className="ml-1.5 tabular-nums text-sales-text-muted">{counts[item.id]}</span>
-              {active ? (
-                <span className="absolute inset-x-0 -bottom-px h-[3px] bg-sales-brand" aria-hidden />
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+    <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <WorkspaceUnderlineTabs
+        items={VIEWING_WORKSPACE_TABS.map((item) => ({
+          id: item.id,
+          label: item.label,
+          count: counts[item.id],
+        }))}
+        value={tab}
+        onChange={setTab}
+      />
 
       {filtered.length === 0 ? (
         <div className="px-5 py-14 text-center">

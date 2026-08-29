@@ -5,9 +5,11 @@ import Link from "next/link";
 import { DealSideBadge } from "@/components/real-estate/DealSideBadge";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
+import { WorkspaceUnderlineTabs } from "@/components/real-estate/workspace-chrome";
 import type { RealEstatePipelineData } from "@/lib/sales/get-real-estate-pipeline-data";
 import type { UserRole } from "@/types";
-import { cn } from "@/lib/ui/cn";
+import type { RePipelineStage } from "@/lib/real-estate/pipeline";
 
 export function RealEstatePipelineBoard({
   data,
@@ -32,54 +34,103 @@ export function RealEstatePipelineBoard({
   inquiryBaseHref?: string;
   embedded?: boolean;
 }) {
+  const firstWithItems =
+    data.columns.find((c) => c.count > 0)?.id ?? data.columns[0]?.id ?? "new_inquiry";
+  const [active, setActive] = useState<RePipelineStage>(firstWithItems);
+  const col = data.columns.find((c) => c.id === active) ?? data.columns[0] ?? null;
+
+  const activeInquiries = data.columns.reduce((s, c) => s + c.count, 0);
+  const followUps = data.workload.reduce((s, w) => s + w.followUpsDue, 0);
+  const viewings = data.workload.reduce((s, w) => s + w.viewingsThisWeek, 0);
+
   const inner = (
     <>
-      <div className="layout:hidden">
-        <MobileStageChips data={data} inquiryBaseHref={inquiryBaseHref} />
+      <div className="dashboard-group grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-4">
+        <CompanyKpiCard
+          item={{
+            id: "inquiries",
+            label: "Active inquiries",
+            value: String(activeInquiries),
+            supporting: "Open pipeline",
+            icon: "enquiries",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "followups",
+            label: "Follow-ups due",
+            value: String(followUps),
+            supporting: "Across agents",
+            icon: "followups",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "viewings",
+            label: "Viewings this week",
+            value: String(viewings),
+            supporting: "Scheduled",
+            icon: "customers",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "attention",
+            label: "Needs attention",
+            value: String(data.attention.length),
+            supporting: "Priority work",
+            icon: "deals",
+            href: data.attention[0]
+              ? `${inquiryBaseHref}?lead=${encodeURIComponent(data.attention[0].id)}`
+              : undefined,
+          }}
+        />
       </div>
 
-      <div className="hidden gap-3 overflow-x-auto pb-2 layout:flex">
-        {data.columns.map((col) => (
-          <section
-            key={col.id}
-            className="w-[220px] shrink-0 workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-3 shadow-sales-card"
-          >
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2 className="text-[12px] font-semibold text-sales-text-primary">{col.label}</h2>
-              <span className="text-[11px] tabular-nums text-sales-text-muted">{col.count}</span>
-            </div>
-            {col.items.length === 0 ? (
-              <p className="text-[12px] text-sales-text-muted">None</p>
-            ) : (
-              <ul className="space-y-2">
-                {col.items.map((item) => (
-                  <li key={item.id}>
-                    <Link
-                      href={`${inquiryBaseHref}?lead=${encodeURIComponent(item.id)}`}
-                      className="block rounded-[10px] border border-sales-border-subtle px-2.5 py-2 hover:bg-sales-surface-hover"
-                    >
-                      <p className="truncate text-[13px] font-medium">{item.name}</p>
-                      <div className="mt-1 flex items-center justify-between gap-2">
-                        <DealSideBadge dealSide={item.dealSide} />
-                        <span className="truncate text-[11px] text-sales-text-muted">
-                          {item.ownerName ?? "Unassigned"}
-                        </span>
-                      </div>
+      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+        <WorkspaceUnderlineTabs
+          items={data.columns.map((c) => ({ id: c.id, label: c.label, count: c.count }))}
+          value={col?.id ?? firstWithItems}
+          onChange={setActive}
+        />
+        <div className="p-4 sm:p-5">
+          {!col || col.items.length === 0 ? (
+            <p className="py-8 text-center text-[13px] text-sales-text-muted">
+              No inquiries in this stage.
+            </p>
+          ) : (
+            <ul className="divide-y divide-sales-border-subtle">
+              {col.items.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    href={`${inquiryBaseHref}?lead=${encodeURIComponent(item.id)}`}
+                    className="flex flex-wrap items-center justify-between gap-2 py-3 hover:bg-sales-surface-hover"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-medium text-sales-text-primary">{item.name}</p>
                       {item.complianceLabel ? (
-                        <p className="mt-1 truncate text-[11px] text-sales-text-muted">{item.complianceLabel}</p>
+                        <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
+                          {item.complianceLabel}
+                        </p>
                       ) : null}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ))}
-      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DealSideBadge dealSide={item.dealSide} />
+                      <span className="text-[11px] text-sales-text-muted">
+                        {item.ownerName ?? "Unassigned"}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
-          <h2 className="text-[13px] font-semibold">Agent workload</h2>
+          <h2 className="text-[13px] font-semibold text-sales-text-primary">Agent workload</h2>
           {data.workload.length === 0 ? (
             <p className="mt-3 text-[13px] text-sales-text-secondary">No active agent workload yet.</p>
           ) : (
@@ -109,21 +160,21 @@ export function RealEstatePipelineBoard({
         </section>
 
         <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
-          <h2 className="text-[13px] font-semibold">Needs attention</h2>
+          <h2 className="text-[13px] font-semibold text-sales-text-primary">Needs attention</h2>
           {data.attention.length === 0 ? (
             <p className="mt-3 text-[13px] text-sales-text-secondary">
               No inquiries currently need attention.
             </p>
           ) : (
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 divide-y divide-sales-border-subtle">
               {data.attention.map((item) => (
                 <li key={item.id}>
                   <Link
                     href={`${inquiryBaseHref}?lead=${encodeURIComponent(item.id)}`}
-                    className="block rounded-[10px] border border-sales-border-subtle px-3 py-2 hover:bg-sales-surface-hover"
+                    className="block py-2.5 hover:bg-sales-surface-hover"
                   >
                     <div className="flex items-center gap-2">
-                      <p className="truncate text-[13px] font-medium">{item.name}</p>
+                      <p className="truncate text-[13px] font-medium text-sales-text-primary">{item.name}</p>
                       <DealSideBadge dealSide={item.dealSide} />
                     </div>
                     <p className="mt-0.5 text-[12px] text-sales-text-secondary">{item.why}</p>
@@ -138,7 +189,7 @@ export function RealEstatePipelineBoard({
     </>
   );
 
-  if (embedded) return <div className="space-y-4">{inner}</div>;
+  if (embedded) return <div className="space-y-3">{inner}</div>;
 
   return (
     <CompanyWorkspaceShell
@@ -160,68 +211,9 @@ export function RealEstatePipelineBoard({
         breadcrumb="Company / Pipeline"
         title="Pipeline"
         description="Inquiries by stage, agent workload, and work that needs attention."
+        primaryAction={null}
       />
       {inner}
     </CompanyWorkspaceShell>
-  );
-}
-
-function MobileStageChips({
-  data,
-  inquiryBaseHref,
-}: {
-  data: RealEstatePipelineData;
-  inquiryBaseHref: string;
-}) {
-  const firstWithItems = data.columns.find((c) => c.count > 0)?.id ?? data.columns[0]?.id ?? null;
-  const [active, setActive] = useState(firstWithItems);
-  const col = data.columns.find((c) => c.id === active) ?? data.columns[0];
-  return (
-    <div className="space-y-3">
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {data.columns.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => setActive(c.id)}
-            className={cn(
-              "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium",
-              c.id === col?.id
-                ? "border-sales-brand bg-sales-brand/15 text-sales-text-primary"
-                : "border-sales-border text-sales-text-secondary"
-            )}
-          >
-            {c.label} {c.count}
-          </button>
-        ))}
-      </div>
-      {col ? (
-        <ul className="space-y-2">
-          {col.items.length === 0 ? (
-            <li className="text-[13px] text-sales-text-secondary">No inquiries in this stage.</li>
-          ) : (
-            col.items.map((item) => (
-              <li key={item.id}>
-                <Link
-                  href={`${inquiryBaseHref}?lead=${encodeURIComponent(item.id)}`}
-                  className="block rounded-[12px] border border-sales-border px-3 py-2.5"
-                >
-                  <p className="font-medium">{item.name}</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <DealSideBadge dealSide={item.dealSide} />
-                    <span className="text-[11px] text-sales-text-muted">
-                      {item.ownerName ?? "Unassigned"}
-                    </span>
-                  </div>
-                  {item.complianceLabel ? (
-                    <p className="mt-1 text-[11px] text-sales-text-muted">{item.complianceLabel}</p>
-                  ) : null}
-                </Link>
-              </li>
-            ))
-          )}
-        </ul>
-      ) : null}
-    </div>
   );
 }

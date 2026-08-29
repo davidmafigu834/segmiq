@@ -5,7 +5,7 @@ import { Radio } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 import { getMarketingDashboard } from "@/lib/real-estate/marketing-service";
 import { formatConversionPct } from "@/lib/real-estate/marketing";
@@ -32,19 +32,19 @@ export default async function ClientLeadSourcesPage() {
   });
 
   return (
-    <ClientManagerLayout breadcrumbPage="LEAD SOURCES" pageTitle="Lead Sources" workspaceShell>
-      <div className="min-w-0 w-full max-w-full pb-16">
-        <PageHeader
-          className="mb-8"
-          eyebrow={`${client.name as string} / Marketing`}
-          title="Lead Sources"
-          description="Where this month’s inquiries came from, and whether they progressed to qualification, viewing and offer."
-          actions={
-            <Link href="/client/marketing" className="text-[13px] font-medium underline">
-              Open marketing
-            </Link>
-          }
-        />
+    <ClientManagerLayout
+      breadcrumbPage="LEAD SOURCES"
+      pageTitle="Lead Sources"
+      workspaceShell
+      workspaceTitle="Lead sources"
+      workspaceDescription="Where this month’s inquiries came from, and whether they progressed to qualification, viewing and offer."
+    >
+      <div className="min-w-0 w-full max-w-full space-y-3">
+        <div className="flex justify-end">
+          <Link href="/client/marketing" className="text-[13px] font-medium text-sales-text-secondary underline">
+            Open marketing
+          </Link>
+        </div>
         {dash.sources.length === 0 ? (
           <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
             <EmptyState
@@ -54,7 +54,7 @@ export default async function ClientLeadSourcesPage() {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
+          <div className="overflow-x-auto workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
             <table className="w-full min-w-[640px] text-left">
               <thead>
                 <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">

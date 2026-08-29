@@ -24,7 +24,13 @@ export default async function ClientOffersPage() {
   redirectIfNotRealEstate(client.business_type);
 
   return (
-    <ClientManagerLayout breadcrumbPage="OFFERS" pageTitle="Offers" workspaceShell>
+    <ClientManagerLayout
+      breadcrumbPage="OFFERS"
+      pageTitle="Offers"
+      workspaceShell
+      workspaceTitle="Offers"
+      workspaceDescription="Track property offers, seller responses, and negotiations."
+    >
       <OffersWorkspace
         clientId={session.clientId}
         variant="manager"

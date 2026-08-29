@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatConversionPct, RE_SOURCE_LABEL, RE_SOURCE_TYPES } from "@/lib/real-estate/marketing";
+import { WorkspaceUnderlineTabs } from "@/components/real-estate/workspace-chrome";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 
 type Funnel = {
   inquiries: number;
@@ -139,7 +141,7 @@ function FunnelBlock({ funnel, rates }: { funnel: Funnel; rates: Dashboard["rate
     { label: "Accepted offers", value: funnel.accepted, rate: rates.offerToAccepted },
   ];
   return (
-    <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
+    <div className="rounded-[10px] border border-sales-border-subtle p-4">
       <p className="text-[13px] font-semibold text-sales-text-primary">Acquisition cohort funnel</p>
       <p className="mt-0.5 text-[12px] text-sales-text-muted">
         Same inquiries, tracked through qualification, viewing and offer.
@@ -164,10 +166,9 @@ function FunnelBlock({ funnel, rates }: { funnel: Funnel; rates: Dashboard["rate
 
 export function RealEstateMarketingWorkspace({
   clientId,
-  clientName,
 }: {
   clientId: string;
-  clientName: string;
+  clientName?: string;
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [preset, setPreset] = useState("this_month");
@@ -226,26 +227,16 @@ export function RealEstateMarketingWorkspace({
   const selectedCampaign = data?.campaigns.find((c) => c.id === openCampaign) ?? null;
 
   return (
-    <div className="min-w-0 w-full max-w-full pb-20">
-      <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
-          {clientName} / Marketing
-        </p>
-        <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-sales-text-primary">Marketing</h1>
-        <p className="mt-1 max-w-2xl text-[13px] text-sales-text-secondary">
-          See which channels and campaigns are generating real property opportunities.
-        </p>
-      </div>
-
-      <div className="mb-4 flex flex-wrap gap-2">
+    <div className="min-w-0 w-full max-w-full space-y-3">
+      <div className="flex flex-wrap gap-2">
         {PRESETS.map((p) => (
           <button
             key={p.id}
             type="button"
             onClick={() => setPreset(p.id)}
-            className={`h-9 rounded-full px-3 text-[12px] font-medium ${
+            className={`h-9 rounded-[10px] px-3 text-[12px] font-medium ${
               preset === p.id
-                ? "bg-sales-text-primary text-white"
+                ? "border border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
                 : "border border-sales-border text-sales-text-secondary"
             }`}
           >
@@ -305,30 +296,19 @@ export function RealEstateMarketingWorkspace({
         </a>
       </div>
 
-      <div className="mb-5 flex gap-1 overflow-x-auto">
-        {(
-          [
-            ["overview", "Overview"],
-            ["sources", "Lead sources"],
-            ["campaigns", "Campaigns"],
-            ["properties", "Properties"],
-            ["website", "Website"],
-          ] as Array<[Tab, string]>
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setTab(id)}
-            className={`h-9 shrink-0 rounded-full px-3 text-[12px] font-medium ${
-              tab === id
-                ? "bg-sales-text-primary text-white"
-                : "border border-sales-border text-sales-text-secondary"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <WorkspaceUnderlineTabs
+        items={[
+          { id: "overview" as Tab, label: "Overview" },
+          { id: "sources", label: "Lead sources" },
+          { id: "campaigns", label: "Campaigns" },
+          { id: "properties", label: "Properties" },
+          { id: "website", label: "Website" },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
+      <div className="space-y-3 p-4 sm:p-5">
 
       {loading && !data ? (
         <p className="text-[13px] text-sales-text-muted">Loading marketing…</p>
@@ -339,21 +319,27 @@ export function RealEstateMarketingWorkspace({
           <p className="mb-3 text-[12px] text-sales-text-muted">{data.cohortLabel}</p>
 
           {tab === "overview" || tab === "sources" || tab === "campaigns" || tab === "properties" ? (
-            <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <div className="dashboard-group grid grid-cols-2 gap-3 lg:grid-cols-5">
               {kpis.map((c) => (
-                <div key={c.label} className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-3">
-                  <p className="text-[11px] font-medium text-sales-text-muted">{c.label}</p>
-                  <p className="mt-1 text-[22px] font-semibold tabular-nums tracking-[-0.03em]">{c.value}</p>
-                </div>
+                <CompanyKpiCard
+                  key={c.label}
+                  item={{
+                    id: c.label,
+                    label: c.label,
+                    value: String(c.value),
+                    supporting: data.range.label,
+                    icon: c.label.startsWith("Cost") ? "pipeline" : "enquiries",
+                  }}
+                />
               ))}
             </div>
           ) : null}
 
           {tab === "overview" ? (
-            <div className="space-y-5">
+            <div className="space-y-3">
               <FunnelBlock funnel={data.funnel} rates={data.rates} />
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
+                <div className="rounded-[10px] border border-sales-border-subtle p-4">
                   <p className="text-[13px] font-semibold">Agent handoff</p>
                   <dl className="mt-3 grid grid-cols-2 gap-3 text-[13px]">
                     <div>
@@ -390,7 +376,7 @@ export function RealEstateMarketingWorkspace({
                     messages are excluded.
                   </p>
                 </div>
-                <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
+                <div className="rounded-[10px] border border-sales-border-subtle p-4">
                   <p className="text-[13px] font-semibold">Latest inquiries</p>
                   {data.latest.length === 0 ? (
                     <p className="mt-3 text-[13px] text-sales-text-muted">
@@ -498,6 +484,8 @@ export function RealEstateMarketingWorkspace({
           ) : null}
         </>
       ) : null}
+        </div>
+      </section>
     </div>
   );
 }
@@ -507,7 +495,7 @@ const filterClass =
 
 function EmptyCard({ title, body }: { title: string; body: string }) {
   return (
-    <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-5 py-10 text-center">
+    <div className="px-5 py-10 text-center">
       <p className="text-[15px] font-semibold">{title}</p>
       <p className="mx-auto mt-1 max-w-md text-[13px] text-sales-text-secondary">{body}</p>
     </div>
@@ -516,7 +504,7 @@ function EmptyCard({ title, body }: { title: string; body: string }) {
 
 function SourceTable({ rows }: { rows: SourceRow[] }) {
   return (
-    <div className="overflow-x-auto workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
+    <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-[13px]">
         <thead>
           <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
@@ -556,7 +544,7 @@ function CampaignTable({
 }) {
   return (
     <div className="space-y-3">
-      <div className="hidden overflow-x-auto workspace-card rounded-[14px] border border-sales-border bg-sales-surface md:block">
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[800px] text-left text-[13px]">
           <thead>
             <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
@@ -598,7 +586,7 @@ function CampaignTable({
             key={r.id}
             type="button"
             onClick={() => onOpen(r.id)}
-            className="w-full workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 text-left"
+            className="w-full rounded-[10px] border border-sales-border-subtle p-4 text-left"
           >
             <p className="font-semibold">{r.name}</p>
             <p className="mt-1 text-[12px] text-sales-text-secondary">
@@ -620,7 +608,7 @@ function CampaignDetail({ campaign, onClose }: { campaign: CampaignRow; onClose:
     inquiryToAccepted: pct(campaign.accepted, campaign.inquiries),
   };
   return (
-    <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5">
+    <div className="rounded-[10px] border border-sales-border-subtle p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[18px] font-semibold tracking-[-0.02em]">{campaign.name}</h2>
@@ -670,35 +658,41 @@ function pct(n: number, d: number): number | null {
 
 function PropertyTable({ rows }: { rows: PropertyRow[] }) {
   return (
-    <div className="space-y-3">
-      {rows.map((r) => (
-        <div key={r.listingId} className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <Link href={`/client/listings/${r.listingId}`} className="text-[14px] font-semibold hover:underline">
-                {r.propertyLabel}
-              </Link>
-              <p className="mt-0.5 text-[12px] capitalize text-sales-text-secondary">
-                {r.status.replace(/_/g, " ")}
-                {r.campaigns ? ` · ${r.campaigns} campaign${r.campaigns === 1 ? "" : "s"}` : ""}
-                {r.daysListed != null ? ` · ${r.daysListed} days listed` : ""}
-              </p>
-            </div>
-            {r.insight ? (
-              <span className="rounded-full border border-sales-border px-2.5 py-1 text-[11px] text-sales-text-secondary">
-                {r.insight}
-              </span>
-            ) : null}
-          </div>
-          <dl className="mt-3 grid grid-cols-3 gap-2 text-[12px] sm:grid-cols-6">
-            <Stat label="Inquiries" value={r.inquiries} />
-            <Stat label="Qualified" value={r.qualified} />
-            <Stat label="Viewings" value={r.viewings} />
-            <Stat label="Offers" value={r.offers} />
-            <Stat label="Accepted" value={r.accepted} />
-          </dl>
-        </div>
-      ))}
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[720px] text-left text-[13px]">
+        <thead>
+          <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+            <th className="px-4 py-3">Property</th>
+            <th className="px-4 py-3 text-right">Inquiries</th>
+            <th className="px-4 py-3 text-right">Qualified</th>
+            <th className="px-4 py-3 text-right">Viewings</th>
+            <th className="px-4 py-3 text-right">Offers</th>
+            <th className="px-4 py-3 text-right">Accepted</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-sales-border-subtle">
+          {rows.map((r) => (
+            <tr key={r.listingId}>
+              <td className="px-4 py-3">
+                <Link href={`/client/listings/${r.listingId}`} className="font-medium hover:underline">
+                  {r.propertyLabel}
+                </Link>
+                <p className="mt-0.5 text-[12px] capitalize text-sales-text-muted">
+                  {r.status.replace(/_/g, " ")}
+                  {r.campaigns ? ` · ${r.campaigns} campaign${r.campaigns === 1 ? "" : "s"}` : ""}
+                  {r.daysListed != null ? ` · ${r.daysListed} days listed` : ""}
+                  {r.insight ? ` · ${r.insight}` : ""}
+                </p>
+              </td>
+              <td className="px-4 py-3 text-right tabular-nums">{r.inquiries}</td>
+              <td className="px-4 py-3 text-right tabular-nums">{r.qualified}</td>
+              <td className="px-4 py-3 text-right tabular-nums">{r.viewings}</td>
+              <td className="px-4 py-3 text-right tabular-nums">{r.offers}</td>
+              <td className="px-4 py-3 text-right tabular-nums">{r.accepted}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -706,8 +700,8 @@ function PropertyTable({ rows }: { rows: PropertyRow[] }) {
 function AgentTable({ rows }: { rows: AgentRow[] }) {
   if (rows.length === 0) return null;
   return (
-    <div className="overflow-x-auto workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
-      <p className="px-4 pt-4 text-[13px] font-semibold">Marketing → agent</p>
+    <div className="overflow-x-auto">
+      <p className="px-4 pt-1 text-[13px] font-semibold">Marketing → agent</p>
       <table className="mt-2 w-full min-w-[640px] text-left text-[13px]">
         <thead>
           <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
@@ -734,15 +728,6 @@ function AgentTable({ rows }: { rows: AgentRow[] }) {
           ))}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <dt className="text-sales-text-muted">{label}</dt>
-      <dd className="font-semibold tabular-nums">{value}</dd>
     </div>
   );
 }

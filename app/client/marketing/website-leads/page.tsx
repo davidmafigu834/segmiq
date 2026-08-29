@@ -6,10 +6,11 @@ import { Globe } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 import { getWebsiteLeadMetrics } from "@/lib/real-estate/marketing-service";
 import { WebsiteIntegrationPanel } from "@/components/real-estate/WebsiteIntegrationPanel";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 
 export const dynamic = "force-dynamic";
 
@@ -32,29 +33,62 @@ export default async function ClientWebsiteLeadsPage() {
   const latest = metrics.latest;
 
   return (
-    <ClientManagerLayout breadcrumbPage="WEBSITE LEADS" pageTitle="Website Leads" workspaceShell>
-      <div className="min-w-0 w-full max-w-full space-y-6 pb-16">
-        <PageHeader
-          eyebrow={`${client.name as string} / Marketing`}
-          title="Website Leads"
-          description="Inquiries received through the agency website integration, connected to qualification, viewings and offers."
-        />
-
+    <ClientManagerLayout
+      breadcrumbPage="WEBSITE LEADS"
+      pageTitle="Website Leads"
+      workspaceShell
+      workspaceTitle="Website leads"
+      workspaceDescription="Inquiries received through the agency website integration, connected to qualification, viewings and offers."
+    >
+      <div className="min-w-0 w-full max-w-full space-y-3">
         <WebsiteIntegrationPanel clientId={session.clientId} />
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          {[
-            { label: "Website inquiries this month", value: month.inquiries },
-            { label: "Qualified", value: month.qualified },
-            { label: "Viewings", value: month.viewings },
-            { label: "Offers", value: month.offers },
-            { label: "Accepted offers", value: month.accepted },
-          ].map((c) => (
-            <div key={c.label} className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-3">
-              <p className="text-[11px] font-medium text-sales-text-muted">{c.label}</p>
-              <p className="mt-1 text-[22px] font-semibold tabular-nums tracking-[-0.03em]">{c.value}</p>
-            </div>
-          ))}
+        <div className="dashboard-group grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <CompanyKpiCard
+            item={{
+              id: "inquiries",
+              label: "Website inquiries",
+              value: String(month.inquiries),
+              supporting: "This month",
+              icon: "enquiries",
+            }}
+          />
+          <CompanyKpiCard
+            item={{
+              id: "qualified",
+              label: "Qualified",
+              value: String(month.qualified),
+              supporting: "This month",
+              icon: "customers",
+            }}
+          />
+          <CompanyKpiCard
+            item={{
+              id: "viewings",
+              label: "Viewings",
+              value: String(month.viewings),
+              supporting: "This month",
+              icon: "followups",
+            }}
+          />
+          <CompanyKpiCard
+            item={{
+              id: "offers",
+              label: "Offers",
+              value: String(month.offers),
+              supporting: "This month",
+              icon: "deals",
+            }}
+          />
+          <CompanyKpiCard
+            item={{
+              id: "accepted",
+              label: "Accepted offers",
+              value: String(month.accepted),
+              supporting: "This month",
+              icon: "won",
+            }}
+          />
         </div>
 
         {latest.length === 0 ? (

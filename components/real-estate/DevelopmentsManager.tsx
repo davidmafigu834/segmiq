@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/sales/ui";
 
 type Inventory = {
   total_listed: number;
@@ -128,7 +129,7 @@ export function DevelopmentsManager({ clientId }: { clientId: string }) {
   if (loading) return <p className="text-sm text-sales-text-muted">Loading…</p>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {toast ? (
         <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
           {toast}
@@ -137,10 +138,9 @@ export function DevelopmentsManager({ clientId }: { clientId: string }) {
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-sales-text-secondary">Inventory by development</p>
-        <button type="button" className="btn-primary inline-flex items-center gap-2" onClick={openCreate}>
-          <Plus className="h-4 w-4" />
+        <Button type="button" variant="primary" size="md" onClick={openCreate} leftIcon={<Plus className="h-4 w-4" />}>
           Add development
-        </button>
+        </Button>
       </div>
 
       {showForm ? (
@@ -206,64 +206,68 @@ export function DevelopmentsManager({ clientId }: { clientId: string }) {
         </div>
       ) : null}
 
-      <div className="space-y-3">
+      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
         {rows.length === 0 ? (
-          <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-5 py-8 text-[13px] text-sales-text-muted">
-            No developments yet.
-          </p>
+          <p className="px-5 py-10 text-center text-[13px] text-sales-text-muted">No developments yet.</p>
         ) : (
-          rows.map((d) => (
-            <div
-              key={d.id}
-              className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-[16px] font-semibold text-sales-text-primary">{d.name}</h3>
-                  <p className="mt-1 text-sm text-sales-text-secondary">
-                    {[d.location, d.completion_date].filter(Boolean).join(" · ")}
-                    {d.total_units != null ? ` · ${d.total_units} units planned` : ""}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="rounded-[10px] border border-sales-border p-2 text-sales-text-secondary"
-                    onClick={() => openEdit(d)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-[10px] border border-sales-border p-2 text-sales-text-secondary"
-                    onClick={() => void remove(d.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {(
-                  [
-                    ["Listed", d.inventory.total_listed],
-                    ["Available", d.inventory.available],
-                    ["Reserved", d.inventory.reserved],
-                    ["Sold", d.inventory.sold],
-                    ["Under offer", d.inventory.under_offer],
-                  ] as const
-                ).map(([label, value]) => (
-                  <div key={label} className="rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2">
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-sales-text-muted">
-                      {label}
-                    </p>
-                    <p className="text-[22px] font-semibold tracking-[-0.03em] text-sales-text-primary">{value}</p>
-                  </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-[13px]">
+              <thead className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+                <tr>
+                  <th className="px-5 py-2.5">Development</th>
+                  <th className="px-3 py-2.5">Location</th>
+                  <th className="px-3 py-2.5 text-right">Units</th>
+                  <th className="px-3 py-2.5 text-right">Listed</th>
+                  <th className="px-3 py-2.5 text-right">Available</th>
+                  <th className="px-3 py-2.5 text-right">Reserved</th>
+                  <th className="px-3 py-2.5 text-right">Sold</th>
+                  <th className="px-3 py-2.5 text-right">Under offer</th>
+                  <th className="px-5 py-2.5"> </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-sales-border-subtle">
+                {rows.map((d) => (
+                  <tr key={d.id} className="hover:bg-sales-surface-hover">
+                    <td className="px-5 py-3">
+                      <p className="font-medium text-sales-text-primary">{d.name}</p>
+                      {d.completion_date ? (
+                        <p className="mt-0.5 text-[12px] text-sales-text-muted">{d.completion_date}</p>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-3 text-sales-text-secondary">{d.location ?? "—"}</td>
+                    <td className="px-3 py-3 text-right tabular-nums">{d.total_units ?? "—"}</td>
+                    <td className="px-3 py-3 text-right tabular-nums">{d.inventory.total_listed}</td>
+                    <td className="px-3 py-3 text-right tabular-nums">{d.inventory.available}</td>
+                    <td className="px-3 py-3 text-right tabular-nums">{d.inventory.reserved}</td>
+                    <td className="px-3 py-3 text-right tabular-nums">{d.inventory.sold}</td>
+                    <td className="px-3 py-3 text-right tabular-nums">{d.inventory.under_offer}</td>
+                    <td className="px-5 py-3">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover"
+                          onClick={() => openEdit(d)}
+                          aria-label="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
+                          onClick={() => void remove(d.id)}
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </div>
-            </div>
-          ))
+              </tbody>
+            </table>
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

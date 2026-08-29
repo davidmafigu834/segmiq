@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { PageHeader } from "@/components/ui";
 import { ViewingsWorkspace, type ViewingWorkspaceRow } from "@/components/real-estate/ViewingsWorkspace";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 import { viewingsFetchPlan } from "@/lib/real-estate/viewings";
@@ -87,16 +86,14 @@ export default async function ClientViewingsPage() {
   }
 
   return (
-    <ClientManagerLayout breadcrumbPage="VIEWINGS" pageTitle="Viewings" workspaceShell>
-      <div className="min-w-0 w-full max-w-full pb-16">
-        <PageHeader
-          className="mb-8"
-          eyebrow={`${client.name as string} / Viewings`}
-          title="Viewings"
-          description="Manage upcoming and completed property viewings."
-        />
-        <ViewingsWorkspace clientId={session.clientId} viewings={viewings} />
-      </div>
+    <ClientManagerLayout
+      breadcrumbPage="VIEWINGS"
+      pageTitle="Viewings"
+      workspaceShell
+      workspaceTitle="Viewings"
+      workspaceDescription="Upcoming and completed property viewings."
+    >
+      <ViewingsWorkspace clientId={session.clientId} viewings={viewings} />
     </ClientManagerLayout>
   );
 }

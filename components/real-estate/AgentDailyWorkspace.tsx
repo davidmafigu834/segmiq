@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DealSideBadge } from "@/components/real-estate/DealSideBadge";
 import { RealEstateInquiryWorkspace } from "@/components/real-estate/RealEstateInquiryWorkspace";
 import { Button } from "@/components/sales/ui";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
 import { OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
 import { ComplianceCasePanel } from "@/components/real-estate/compliance/ComplianceCasePanel";
@@ -23,21 +24,53 @@ export function AgentDailyWorkspace({
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <header>
-        <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-sales-text-primary">
+        <h1 className="dashboard-greeting text-[22px] leading-tight text-sales-text-primary sm:text-[24px] layout:text-[26px]">
           Good morning, {firstName}
         </h1>
-        <p className="mt-1 text-[13px] text-sales-text-secondary">
+        <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary">
           Here’s what needs your attention today.
         </p>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <SummaryTile label="New inquiries" value={data.summary.newInquiries} />
-        <SummaryTile label="Follow-ups due" value={data.summary.followUpsDue} />
-        <SummaryTile label="Viewings today" value={data.summary.viewingsToday} />
-        <SummaryTile label="Needs attention" value={data.summary.needingAttention} />
+      <div className="dashboard-group grid grid-cols-2 gap-3 md:grid-cols-4">
+        <CompanyKpiCard
+          item={{
+            id: "new",
+            label: "New inquiries",
+            value: String(data.summary.newInquiries),
+            supporting: "Today",
+            icon: "enquiries",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "followups",
+            label: "Follow-ups due",
+            value: String(data.summary.followUpsDue),
+            supporting: "Today",
+            icon: "followups",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "viewings",
+            label: "Viewings today",
+            value: String(data.summary.viewingsToday),
+            supporting: "Scheduled",
+            icon: "customers",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "attention",
+            label: "Needs attention",
+            value: String(data.summary.needingAttention),
+            supporting: "Priority work",
+            icon: "deals",
+          }}
+        />
       </div>
 
       <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
@@ -249,11 +282,3 @@ export function AgentDailyWorkspace({
   );
 }
 
-function SummaryTile({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-3 py-3 shadow-sales-card">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">{label}</p>
-      <p className="mt-1 text-[22px] font-semibold tabular-nums tracking-[-0.03em]">{value}</p>
-    </div>
-  );
-}

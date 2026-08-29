@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/sales/ui";
 import type { ListingRow, ListingStatus, ListingTransactionType } from "@/types";
 
 type AgentOption = { id: string; name: string };
@@ -207,7 +208,7 @@ export function ListingsManager({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {toast ? (
         <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
           {toast}
@@ -217,10 +218,9 @@ export function ListingsManager({
       <div className="flex items-center justify-between gap-3">
         <p className="text-[13px] text-sales-text-secondary">{listings.length} properties</p>
         {!readOnly ? (
-          <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
-            <Plus className="h-4 w-4" />
+          <Button type="button" variant="primary" size="md" onClick={openCreate} leftIcon={<Plus className="h-4 w-4" />}>
             Add listing
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -420,58 +420,115 @@ export function ListingsManager({
         </div>
       ) : null}
 
-      <div className="space-y-3">
+      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
         {listings.length === 0 ? (
-          <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-5 py-8 text-[13px] text-sales-text-muted">
+          <p className="px-5 py-10 text-center text-[13px] text-sales-text-muted">
             No listings yet. Add your first property.
           </p>
         ) : (
-          listings.map((listing) => (
-            <div
-              key={listing.id}
-              className="workspace-card flex flex-wrap items-start justify-between gap-3 rounded-[14px] border border-sales-border bg-sales-surface p-5"
-            >
-              <div className="min-w-0 flex-1">
-                <Link
-                  href={`/client/listings/${listing.id}`}
-                  className="text-[16px] font-semibold tracking-[-0.02em] text-sales-text-primary hover:underline"
-                >
-                  {listing.address || listing.external_reference || "Untitled listing"}
-                </Link>
-                <p className="mt-1 text-[13px] text-sales-text-secondary">
-                  {[listing.suburb, listing.transaction_type, listing.status]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  {listing.price != null ? ` · $${Number(listing.price).toLocaleString()}` : ""}
-                  {listing.bedrooms != null ? ` · ${listing.bedrooms} bed` : ""}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {!readOnly ? (
-                  <>
-                <button
-                  type="button"
-                  className="rounded-[10px] border border-sales-border p-2 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
-                  onClick={() => openEdit(listing)}
-                  aria-label="Edit"
-                >
-                  <Pencil className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  className="rounded-[10px] border border-sales-border p-2 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
-                  onClick={() => void remove(listing.id)}
-                  aria-label="Delete"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-                  </>
-                ) : null}
-              </div>
+          <>
+            <div className="hidden md:block">
+              <table className="w-full text-left text-[13px]">
+                <thead className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+                  <tr>
+                    <th className="px-5 py-2.5">Property</th>
+                    <th className="px-3 py-2.5">Type</th>
+                    <th className="px-3 py-2.5">Status</th>
+                    <th className="px-3 py-2.5">Price</th>
+                    <th className="px-3 py-2.5">Beds</th>
+                    {!readOnly ? <th className="px-5 py-2.5 text-right"> </th> : null}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-sales-border-subtle">
+                  {listings.map((listing) => (
+                    <tr key={listing.id} className="hover:bg-sales-surface-hover">
+                      <td className="px-5 py-3">
+                        <Link
+                          href={`/client/listings/${listing.id}`}
+                          className="font-medium text-sales-text-primary hover:underline"
+                        >
+                          {listing.address || listing.external_reference || "Untitled listing"}
+                        </Link>
+                        {listing.suburb ? (
+                          <p className="mt-0.5 text-[12px] text-sales-text-muted">{listing.suburb}</p>
+                        ) : null}
+                      </td>
+                      <td className="px-3 py-3 text-sales-text-secondary">{listing.transaction_type}</td>
+                      <td className="px-3 py-3 text-sales-text-secondary">{listing.status.replace("_", " ")}</td>
+                      <td className="px-3 py-3 tabular-nums">
+                        {listing.price != null ? `$${Number(listing.price).toLocaleString()}` : "—"}
+                      </td>
+                      <td className="px-3 py-3 tabular-nums">{listing.bedrooms ?? "—"}</td>
+                      {!readOnly ? (
+                        <td className="px-5 py-3">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
+                              onClick={() => openEdit(listing)}
+                              aria-label="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
+                              onClick={() => void remove(listing.id)}
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      ) : null}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))
+            <ul className="divide-y divide-sales-border-subtle md:hidden">
+              {listings.map((listing) => (
+                <li key={listing.id} className="flex items-start justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <Link
+                      href={`/client/listings/${listing.id}`}
+                      className="text-[13px] font-medium text-sales-text-primary hover:underline"
+                    >
+                      {listing.address || listing.external_reference || "Untitled listing"}
+                    </Link>
+                    <p className="mt-0.5 text-[12px] text-sales-text-secondary">
+                      {[listing.suburb, listing.transaction_type, listing.status.replace("_", " ")]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      {listing.price != null ? ` · $${Number(listing.price).toLocaleString()}` : ""}
+                    </p>
+                  </div>
+                  {!readOnly ? (
+                    <div className="flex shrink-0 gap-1.5">
+                      <button
+                        type="button"
+                        className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary"
+                        onClick={() => openEdit(listing)}
+                        aria-label="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary"
+                        onClick={() => void remove(listing.id)}
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </>
         )}
-      </div>
+      </section>
     </div>
   );
 }

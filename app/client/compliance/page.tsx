@@ -24,7 +24,13 @@ export default async function ClientCompliancePage() {
   redirectIfNotRealEstate(client.business_type);
 
   return (
-    <ClientManagerLayout breadcrumbPage="COMPLIANCE" pageTitle="Compliance" workspaceShell>
+    <ClientManagerLayout
+      breadcrumbPage="COMPLIANCE"
+      pageTitle="Compliance"
+      workspaceShell
+      workspaceTitle="Compliance"
+      workspaceDescription="Review client due diligence and transaction compliance."
+    >
       <ComplianceWorkspace clientId={session.clientId} />
     </ClientManagerLayout>
   );

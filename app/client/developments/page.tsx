@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { DevelopmentsManager } from "@/components/real-estate/DevelopmentsManager";
-import { PageHeader } from "@/components/ui";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export default async function ClientDevelopmentsPage() {
@@ -24,16 +23,14 @@ export default async function ClientDevelopmentsPage() {
   redirectIfNotRealEstate(client.business_type);
 
   return (
-    <ClientManagerLayout breadcrumbPage="DEVELOPMENTS" pageTitle="Developments" workspaceShell>
-      <div className="min-w-0 w-full max-w-full pb-16">
-        <PageHeader
-          className="mb-8"
-          eyebrow={`${client.name as string} / Developments`}
-          title="Developments"
-          description="New-development inventory: sold, available, and reserved units."
-        />
-        <DevelopmentsManager clientId={session.clientId} />
-      </div>
+    <ClientManagerLayout
+      breadcrumbPage="DEVELOPMENTS"
+      pageTitle="Developments"
+      workspaceShell
+      workspaceTitle="Developments"
+      workspaceDescription="New-development inventory: sold, available, and reserved units."
+    >
+      <DevelopmentsManager clientId={session.clientId} />
     </ClientManagerLayout>
   );
 }

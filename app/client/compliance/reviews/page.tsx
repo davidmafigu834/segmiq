@@ -23,7 +23,13 @@ export default async function ClientComplianceReviewsPage() {
   redirectIfNotRealEstate(client.business_type);
 
   return (
-    <ClientManagerLayout breadcrumbPage="REVIEWS" pageTitle="Reviews" workspaceShell>
+    <ClientManagerLayout
+      breadcrumbPage="REVIEWS"
+      pageTitle="Reviews"
+      workspaceShell
+      workspaceTitle="Reviews"
+      workspaceDescription="Cases waiting for compliance review."
+    >
       <ComplianceWorkspace clientId={session.clientId} initialTab="under_review" />
     </ClientManagerLayout>
   );

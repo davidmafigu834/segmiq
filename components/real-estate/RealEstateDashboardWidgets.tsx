@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Building2, Calendar, Tag } from "lucide-react";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 
 type Stats = {
   activeListings: number;
@@ -49,42 +48,38 @@ export function RealEstateDashboardWidgets({ clientId }: { clientId: string }) {
     };
   }, [clientId]);
 
-  const cards = [
-    {
-      label: "Active listings",
-      value: stats?.activeListings ?? "—",
-      icon: Building2,
-      href: "/client/listings",
-    },
-    {
-      label: "Viewings this week",
-      value: stats?.viewingsThisWeek ?? "—",
-      icon: Calendar,
-      href: "/client/viewings",
-    },
-    {
-      label: "Properties Under Offer",
-      value: stats?.underOffer ?? "—",
-      icon: Tag,
-      href: "/client/listings",
-    },
-  ];
-
   return (
-    <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {cards.map((c) => (
-        <Link
-          key={c.label}
-          href={c.href}
-          className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5 transition hover:border-sales-border-strong"
-        >
-          <div className="flex items-center gap-2 text-sales-text-secondary">
-            <c.icon className="h-4 w-4" />
-            <span className="font-mono text-[11px] uppercase tracking-wider">{c.label}</span>
-          </div>
-          <p className="mt-2 text-[28px] font-semibold tracking-[-0.03em] text-sales-text-primary">{c.value}</p>
-        </Link>
-      ))}
+    <div className="dashboard-group mb-3 grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+      <CompanyKpiCard
+        item={{
+          id: "listings",
+          label: "Active listings",
+          value: stats ? String(stats.activeListings) : "—",
+          supporting: "Available stock",
+          icon: "companies",
+          href: "/client/listings",
+        }}
+      />
+      <CompanyKpiCard
+        item={{
+          id: "viewings",
+          label: "Viewings this week",
+          value: stats ? String(stats.viewingsThisWeek) : "—",
+          supporting: "Scheduled",
+          icon: "followups",
+          href: "/client/viewings",
+        }}
+      />
+      <CompanyKpiCard
+        item={{
+          id: "under-offer",
+          label: "Under offer",
+          value: stats ? String(stats.underOffer) : "—",
+          supporting: "Properties",
+          icon: "deals",
+          href: "/client/listings",
+        }}
+      />
     </div>
   );
 }

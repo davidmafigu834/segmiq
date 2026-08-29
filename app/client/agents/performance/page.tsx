@@ -5,7 +5,7 @@ import { Trophy } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { getCompanyTeamPageData } from "@/lib/sales/get-company-team-page-data";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -39,14 +39,14 @@ export default async function ClientAgentPerformancePage() {
   const agents = data.members.filter((m) => m.isActive && m.roleGroup === "salesperson");
 
   return (
-    <ClientManagerLayout breadcrumbPage="AGENT PERFORMANCE" pageTitle="Agent Performance" workspaceShell>
-      <div className="min-w-0 w-full max-w-full pb-16">
-        <PageHeader
-          className="mb-8"
-          eyebrow={`${client.name as string} / Agents`}
-          title="Agent Performance"
-          description="Live activity for agents on this company — deals, pipeline and follow-ups."
-        />
+    <ClientManagerLayout
+      breadcrumbPage="AGENT PERFORMANCE"
+      pageTitle="Agent Performance"
+      workspaceShell
+      workspaceTitle="Agent performance"
+      workspaceDescription="Live activity for agents on this company — deals, pipeline and follow-ups."
+    >
+      <div className="min-w-0 w-full max-w-full">
         {agents.length === 0 ? (
           <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
             <EmptyState

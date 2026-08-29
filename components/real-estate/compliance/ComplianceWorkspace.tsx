@@ -5,6 +5,8 @@ import { Shield } from "lucide-react";
 import { SearchInput } from "@/components/sales/ui";
 import { EmptyState } from "@/components/ui";
 import { Badge } from "@/components/sales/ui";
+import { WorkspaceUnderlineTabs } from "@/components/real-estate/workspace-chrome";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import { COMPLIANCE_RISK_LABEL, type ComplianceSettings } from "@/lib/real-estate/compliance";
 import { ComplianceCasePanel } from "./ComplianceCasePanel";
 
@@ -84,42 +86,26 @@ export function ComplianceWorkspace({
   ];
 
   return (
-    <div className="min-w-0 w-full max-w-full pb-20">
-      <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">Operations</p>
-        <h1 className="text-[22px] font-semibold tracking-[-0.03em]">Compliance</h1>
-        <p className="mt-1 text-[13px] text-sales-text-secondary">
-          Review client due diligence and transaction compliance.
-        </p>
-      </div>
-
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div className="min-w-0 w-full max-w-full space-y-3">
+      <div className="dashboard-group grid grid-cols-2 gap-3 lg:grid-cols-5">
         {cards.map((c) => (
-          <div key={c.label} className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-3">
-            <p className="text-[11px] font-medium text-sales-text-muted">{c.label}</p>
-            <p className="mt-1 text-[22px] font-semibold tabular-nums tracking-[-0.03em]">{c.value}</p>
-          </div>
+          <CompanyKpiCard
+            key={c.label}
+            item={{
+              id: c.label,
+              label: c.label,
+              value: String(c.value),
+              supporting: "Live",
+              icon: c.label.includes("Restricted") ? "followups" : "deals",
+            }}
+          />
         ))}
       </div>
 
-      <div className="mb-4 flex gap-1 overflow-x-auto">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`h-9 shrink-0 rounded-full px-3 text-[12px] font-medium ${
-              tab === t.id
-                ? "bg-sales-text-primary text-white"
-                : "border border-sales-border text-sales-text-secondary"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <WorkspaceUnderlineTabs items={TABS} value={tab} onChange={setTab} />
 
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 border-b border-sales-border-subtle px-4 py-3 sm:flex-row sm:px-5">
         <SearchInput value={q} onChange={setQ} placeholder="Search client, property, agent" />
         <select
           className="h-10 rounded-[10px] border border-sales-border bg-sales-surface px-2 text-[13px]"
@@ -144,22 +130,20 @@ export function ComplianceWorkspace({
       </div>
 
       {loading ? (
-        <p className="text-[13px] text-sales-text-muted">Loading…</p>
+        <p className="px-4 py-8 text-[13px] text-sales-text-muted sm:px-5">Loading…</p>
       ) : cases.length === 0 ? (
-        <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
-          <EmptyState
-            icon={Shield}
-            title="No compliance cases yet"
-            description="Cases appear here when an accepted offer starts client due diligence."
-          />
-        </div>
+        <EmptyState
+          icon={Shield}
+          title="No compliance cases yet"
+          description="Cases appear here when an accepted offer starts client due diligence."
+        />
       ) : (
-        <ul className="space-y-2">
+        <ul className="divide-y divide-sales-border-subtle">
           {cases.map((row) => (
             <li key={row.id}>
               <button
                 type="button"
-                className="w-full workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 text-left"
+                className="w-full p-4 text-left hover:bg-sales-surface-hover"
                 onClick={() => setOpenId(row.id)}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
@@ -186,6 +170,7 @@ export function ComplianceWorkspace({
           ))}
         </ul>
       )}
+      </section>
 
       {openId ? (
         <ComplianceCasePanel
@@ -228,7 +213,7 @@ function ComplianceSettingsPanel({ clientId }: { clientId: string }) {
   }
 
   return (
-    <div className="mt-8 workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
+    <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
       <button type="button" className="text-[13px] font-semibold" onClick={() => setOpen((v) => !v)}>
         Compliance settings
       </button>
