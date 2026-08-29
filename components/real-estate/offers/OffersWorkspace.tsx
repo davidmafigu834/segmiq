@@ -101,7 +101,7 @@ export function OffersWorkspace({
       multiOfferListings?: Array<{ listingId: string; propertyLabel: string; count: number }>;
     };
     setOffers(j.offers ?? []);
-    if (j.summary) setSummary({ closed: 0, ...j.summary });
+    if (j.summary) setSummary(j.summary);
     setAgents(j.agents ?? []);
     setMulti(j.multiOfferListings ?? []);
     setLoading(false);
