@@ -15,6 +15,7 @@ import {
 import { RealEstatePipelineBoard } from "@/components/real-estate/RealEstatePipelineBoard";
 import { getRealEstatePipelineData } from "@/lib/sales/get-real-estate-pipeline-data";
 import { isRealEstate } from "@/lib/terminology";
+import type { DealRow, QuotationRow } from "@/types";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
