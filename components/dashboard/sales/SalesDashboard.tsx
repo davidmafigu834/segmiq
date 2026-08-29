@@ -25,6 +25,7 @@ import {
 import { ToastProvider } from "@/components/sales/ui/Toast";
 import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount";
 import { CourseResumeCard } from "@/components/sales/training/CourseResumeCard";
+import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { DashboardHeader } from "./DashboardHeader";
 import { KpiCard } from "./KpiCard";
 import { PerformanceCard } from "./PerformanceCard";

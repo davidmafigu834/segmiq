@@ -67,8 +67,6 @@ export type RePipelineFacts = {
   markedInterested?: boolean;
 };
 
-const CLOSED_LEAD = new Set(["WON", "LOST", "NOT_QUALIFIED"]);
-
 export function resolveRePipelineStage(facts: RePipelineFacts): RePipelineStage {
   const status = String(facts.leadStatus ?? "NEW").toUpperCase();
   if (status === "NOT_QUALIFIED") return "not_qualified";

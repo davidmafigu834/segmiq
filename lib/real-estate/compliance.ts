@@ -204,7 +204,6 @@ const COLLECTION: ComplianceStatus[] = [
   "more_information_required",
 ];
 const REVIEW: ComplianceStatus[] = ["ready_for_review", "under_review", "edd_required"];
-const DECISION: ComplianceStatus[] = ["approved", "restricted", "rejected", "closed"];
 
 export function compliancePhase(status: ComplianceStatus): "collection" | "review" | "decision" {
   if (COLLECTION.includes(status)) return "collection";

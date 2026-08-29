@@ -227,7 +227,7 @@ export async function createRealEstateOffer(opts: {
   if (!contact) return { ok: false, error: "Contact not found.", status: 404 };
 
   let assignedToId: string | null = null;
-  let leadId: string | null = opts.leadId ?? null;
+  const leadId: string | null = opts.leadId ?? null;
   if (leadId) {
     const { data: lead } = await supabase
       .from("leads")

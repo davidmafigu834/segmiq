@@ -16,7 +16,6 @@ import {
   canViewComplianceCase,
   checklistCompleteness,
   complianceStatusLabel,
-  DEFAULT_COMPLIANCE_SETTINGS,
   deriveComplianceAttention,
   documentTypeLabel,
   evaluateComplianceGate,

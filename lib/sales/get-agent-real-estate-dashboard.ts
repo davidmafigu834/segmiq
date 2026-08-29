@@ -3,7 +3,6 @@ import { listingLabel } from "@/lib/real-estate/helpers";
 import {
   markedInterestedFromFormData,
   resolveRePipelineStage,
-  type RePipelineStage,
 } from "@/lib/real-estate/pipeline";
 import { derivePriorityItem, rankPriorityItems, type PriorityItem } from "@/lib/real-estate/priority";
 import {
