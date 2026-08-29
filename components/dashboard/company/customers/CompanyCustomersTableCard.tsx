@@ -298,7 +298,7 @@ export function CompanyCustomersTableCard({
       : "Try changing your search or clearing the active filters.";
 
   return (
-    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
       <div className="overflow-x-auto border-b border-sales-border-subtle px-3 pt-2 sm:px-4">
         <div className="flex min-w-max items-end gap-4">
           {COMPANY_CUSTOMERS_TABS.map((item) => (

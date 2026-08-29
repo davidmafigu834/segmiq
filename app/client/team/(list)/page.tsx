@@ -69,8 +69,8 @@ export default async function ClientTeamPage({
 
   return (
     <ClientManagerLayout
-      breadcrumbPage="TEAM"
-      pageTitle="Team"
+      breadcrumbPage={data.businessType === "real_estate" ? "AGENTS" : "TEAM"}
+      pageTitle={data.businessType === "real_estate" ? "Agents" : "Team"}
       hideShellHeader
       hideShellSidebar
       navClientId={clientId}

@@ -2,8 +2,10 @@ import type { LucideIcon } from "lucide-react";
 import {
   CalendarDays,
   BarChart3,
+  Building2,
   Columns3,
   FileText,
+  Handshake,
   LayoutDashboard,
   ListTodo,
   MessageSquare,
@@ -12,6 +14,7 @@ import {
   UsersRound,
   Wrench,
 } from "lucide-react";
+import { isRealEstate, type BusinessType } from "@/lib/terminology";
 
 export type SalesNavBadgeKey = "whatsapp" | "tasks";
 
@@ -27,7 +30,9 @@ export type SalesNavIconId =
   | "reports"
   | "wonLost"
   | "goals"
-  | "toolbox";
+  | "toolbox"
+  | "listings"
+  | "offers";
 
 export type SalesNavMobileSlot = "primary" | "more";
 
@@ -64,6 +69,8 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   wonLost: Trophy,
   goals: Target,
   toolbox: Wrench,
+  listings: Building2,
+  offers: Handshake,
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -211,8 +218,11 @@ export function salesMobileMoreItems(items: SalesNavItemConfig[]): SalesNavItemC
   return items.filter((i) => i.mobileSlot === "more");
 }
 
-export function resolveSalesNavItems(isSolo: boolean): SalesNavItemConfig[] {
-  return SALES_NAVIGATION.map((item) => {
+export function resolveSalesNavItems(
+  isSolo: boolean,
+  businessType?: BusinessType | string | null
+): SalesNavItemConfig[] {
+  const items = SALES_NAVIGATION.map((item) => {
     if (item.id === "dashboard") {
       return {
         ...item,
@@ -220,6 +230,32 @@ export function resolveSalesNavItems(isSolo: boolean): SalesNavItemConfig[] {
       };
     }
     return item;
+  });
+  if (!isRealEstate(businessType)) return items;
+  const listingsItem: SalesNavItemConfig = {
+    id: "listings",
+    label: "Listings",
+    href: "/sales/listings",
+    icon: "listings",
+    section: "sales",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/sales/listings"),
+  };
+  const offersItem: SalesNavItemConfig = {
+    id: "offers",
+    label: "Offers",
+    href: "/sales/offers",
+    icon: "offers",
+    section: "sales",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/sales/offers"),
+  };
+  return items.flatMap((item) => {
+    if (item.id === "quotes") return [];
+    if (item.id === "leads") {
+      return [{ ...item, label: "Inquiries" }, listingsItem, offersItem];
+    }
+    return [item];
   });
 }
 

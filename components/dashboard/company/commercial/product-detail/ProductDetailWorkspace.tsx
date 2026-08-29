@@ -107,7 +107,7 @@ export function ProductDetailWorkspace({
 
   if (loadError) {
     return (
-      <div className="rounded-[14px] border border-sales-border bg-sales-surface px-5 py-10 text-center">
+      <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-5 py-10 text-center">
         <p className="text-[15px] font-semibold text-sales-text-primary">This Product could not be loaded.</p>
         <p className="mt-1 text-[13px] text-sales-text-secondary">{loadError}</p>
         <div className="mt-4 flex justify-center gap-2">
@@ -123,7 +123,7 @@ export function ProductDetailWorkspace({
   }
 
   return (
-    <div className="overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface">
+    <div className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
       {loading ? (
         <IdentitySkeleton />
       ) : (
@@ -283,7 +283,7 @@ export function ProductDetailWorkspace({
       {packagesOpen ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center" onClick={() => setPackagesOpen(false)}>
           <div
-            className="w-full max-w-md rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-popover"
+            className="w-full max-w-md workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-popover"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-[15px] font-semibold">Used in packages</h3>
@@ -358,7 +358,7 @@ export function UnsavedChangesDialog({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
-      <div className="w-full max-w-sm rounded-[14px] border border-sales-border bg-sales-surface p-5 shadow-sales-popover">
+      <div className="w-full max-w-sm workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5 shadow-sales-popover">
         <p className="text-[15px] font-semibold text-sales-text-primary">You have unsaved changes.</p>
         <p className="mt-1 text-[13px] text-sales-text-secondary">Discard changes or continue editing this Product.</p>
         <div className="mt-5 flex justify-end gap-2">

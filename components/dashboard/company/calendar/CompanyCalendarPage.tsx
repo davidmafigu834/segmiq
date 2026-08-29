@@ -523,7 +523,7 @@ export function CompanyCalendarPage({
       <CompanyCalendarSummary metrics={metrics} activeAction={summaryAction} scopeLabel={metricScopeLabel} onAction={handleSummaryAction} />
 
       <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]" data-course-target="company-calendar">
-        <section className="min-w-0 overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+        <section className="min-w-0 overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
           <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between" data-course-target="calendar-view-switcher">
             <div className="flex flex-wrap items-center gap-1.5">
               <button type="button" onClick={() => navigate(-1)} className="sd-icon-btn" aria-label={`Previous ${view}`}><ChevronLeft size={17} /></button>

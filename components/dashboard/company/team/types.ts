@@ -1,5 +1,6 @@
 import type { SalesKpiItem } from "@/components/dashboard/sales/types";
 import type { CompanyActivityItem, CompanyRevenuePoint } from "../types";
+import type { BusinessType } from "@/lib/terminology";
 
 export type CompanyTeamTab = "all" | "salespeople" | "managers" | "inactive";
 
@@ -129,6 +130,7 @@ export type CompanyTeamMemberOverview = {
 export type CompanyTeamPageData = {
   clientId: string;
   clientName: string;
+  businessType: BusinessType;
   alsoSells: boolean;
   canManageTeam: boolean;
   canReassignLeads: boolean;

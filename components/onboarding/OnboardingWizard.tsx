@@ -60,6 +60,9 @@ export function OnboardingWizard({ token, mode, ownerEmail, initialProgress, ini
 
   const [companyName, setCompanyName] = useState(initialProgress.company?.name ?? "");
   const [industry, setIndustry] = useState(initialProgress.company?.industry ?? "");
+  const [businessType, setBusinessType] = useState<"trades" | "real_estate">(
+    initialProgress.company?.businessType === "real_estate" ? "real_estate" : "trades"
+  );
   const [country, setCountry] = useState<OnboardingCountryCode>(
     initialProgress.company?.country ?? "ZW"
   );
@@ -166,6 +169,7 @@ export function OnboardingWizard({ token, mode, ownerEmail, initialProgress, ini
         country,
         website: website.trim() || undefined,
         slug: slug.trim().toLowerCase(),
+        businessType,
       };
     } else if (step === "account") {
       payload.data = { ownerName: ownerName.trim(), phone: phone.trim() || undefined };
@@ -456,6 +460,19 @@ export function OnboardingWizard({ token, mode, ownerEmail, initialProgress, ini
                   ) : null}
                 </div>
                 <div>
+                  <label className={labelClass}>Business type</label>
+                  <select
+                    className={inputClass}
+                    value={businessType}
+                    onChange={(e) =>
+                      setBusinessType(e.target.value === "real_estate" ? "real_estate" : "trades")
+                    }
+                  >
+                    <option value="trades">Trade / Service Business</option>
+                    <option value="real_estate">Real Estate Agency</option>
+                  </select>
+                </div>
+                <div>
                   <label className={labelClass}>Country</label>
                   <select
                     className={inputClass}
@@ -690,6 +707,10 @@ export function OnboardingWizard({ token, mode, ownerEmail, initialProgress, ini
               <div className="space-y-4 rounded-[10px] border border-[var(--border)] bg-[var(--bg-secondary)] p-5 text-[14px]">
                 <ReviewRow label="Company" value={companyName} />
                 <ReviewRow label="Industry" value={industry} />
+                <ReviewRow
+                  label="Business type"
+                  value={businessType === "real_estate" ? "Real Estate Agency" : "Trade / Service Business"}
+                />
                 <ReviewRow label="Country" value={ONBOARDING_COUNTRIES.find((c) => c.code === country)?.label ?? country} />
                 {website ? <ReviewRow label="Website" value={website} /> : null}
                 <ReviewRow label="Slug" value={`${cloudDomain}/${slug}`} accent />

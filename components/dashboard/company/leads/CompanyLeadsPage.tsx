@@ -8,6 +8,7 @@ import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { CompanyLeadsTableCard } from "./CompanyLeadsTableCard";
 import { CompanyLeadsLeadPanel } from "./CompanyLeadsLeadPanel";
+import { RealEstateInquiryWorkspace } from "@/components/real-estate/RealEstateInquiryWorkspace";
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
 import { Button, useSalesToast } from "@/components/sales/ui";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
@@ -67,6 +68,7 @@ export function CompanyLeadsPage({
   const { hubSheet } = addHubSheetProps("direct", {
     mode: "manager",
     clientId: data.clientId,
+    realEstate: data.businessType === "real_estate",
   });
 
   const [tab, setTab] = useState<CompanyLeadsTab>(() => {
@@ -192,8 +194,9 @@ export function CompanyLeadsPage({
       setDetailError(null);
       return;
     }
+    if (data.businessType === "real_estate") return;
     void loadDetail(selectedId);
-  }, [selectedId, loadDetail]);
+  }, [selectedId, loadDetail, data.businessType]);
 
   const panelOpen = Boolean(selectedId);
   const tabScoped = data.rows.filter((r) => matchesCompanyLeadsTab(r, tab));
@@ -379,36 +382,49 @@ export function CompanyLeadsPage({
     />
   );
 
-  const panel = (
-    <CompanyLeadsLeadPanel
-      row={selectedRow}
-      detail={detail}
-      loading={detailLoading}
-      error={detailError}
-      onRetry={() => selectedId && void loadDetail(selectedId)}
-      onClose={() => setLeadParam(null)}
-      onCall={() => selectedId && setDialog({ type: "log", leadId: selectedId })}
-      onWhatsApp={() => selectedRow && whatsappFor(selectedRow)}
-      onAssign={() =>
-        selectedRow &&
-        setDialog({ type: "owner", leadIds: [selectedRow.id], ownerId: selectedRow.ownerId })
-      }
-      onSchedule={() => selectedId && setDialog({ type: "schedule", leadId: selectedId })}
-      onNotQualified={() => selectedId && setDialog({ type: "not_qualified", leadId: selectedId })}
-      onCreateDeal={() => selectedId && void openCreateDeal(selectedId)}
-      onOpenDeal={() => {
-        const href = detail?.openDealHref ?? (selectedRow?.activeDealId ? `/client/deals/${selectedRow.activeDealId}` : null);
-        if (href) router.push(href);
-      }}
-      onViewDetails={() => {
-        if (detail?.viewDetailsHref) router.push(detail.viewDetailsHref);
-        else toast({ title: "This Lead is not linked to a contact profile yet.", tone: "info" });
-      }}
-      onCompleteNext={() => selectedId && void patchLead(selectedId, { follow_up_date: null })}
-      overlay={overlayPanel}
-      stacked={stackedSplit}
-    />
-  );
+  const panel =
+    data.businessType === "real_estate" && selectedId ? (
+      <RealEstateInquiryWorkspace
+        clientId={data.clientId}
+        leadId={selectedId}
+        onClose={() => setLeadParam(null)}
+        onCall={() => {
+          if (selectedRow?.phone) window.location.href = `tel:${selectedRow.phone}`;
+        }}
+        onWhatsApp={() => selectedRow && whatsappFor(selectedRow)}
+        overlay={overlayPanel}
+        stacked={stackedSplit}
+      />
+    ) : (
+      <CompanyLeadsLeadPanel
+        row={selectedRow}
+        detail={detail}
+        loading={detailLoading}
+        error={detailError}
+        onRetry={() => selectedId && void loadDetail(selectedId)}
+        onClose={() => setLeadParam(null)}
+        onCall={() => selectedId && setDialog({ type: "log", leadId: selectedId })}
+        onWhatsApp={() => selectedRow && whatsappFor(selectedRow)}
+        onAssign={() =>
+          selectedRow &&
+          setDialog({ type: "owner", leadIds: [selectedRow.id], ownerId: selectedRow.ownerId })
+        }
+        onSchedule={() => selectedId && setDialog({ type: "schedule", leadId: selectedId })}
+        onNotQualified={() => selectedId && setDialog({ type: "not_qualified", leadId: selectedId })}
+        onCreateDeal={() => selectedId && void openCreateDeal(selectedId)}
+        onOpenDeal={() => {
+          const href = detail?.openDealHref ?? (selectedRow?.activeDealId ? `/client/deals/${selectedRow.activeDealId}` : null);
+          if (href) router.push(href);
+        }}
+        onViewDetails={() => {
+          if (detail?.viewDetailsHref) router.push(detail.viewDetailsHref);
+          else toast({ title: "This Lead is not linked to a contact profile yet.", tone: "info" });
+        }}
+        onCompleteNext={() => selectedId && void patchLead(selectedId, { follow_up_date: null })}
+        overlay={overlayPanel}
+        stacked={stackedSplit}
+      />
+    );
 
   return (
     <CompanyWorkspaceShell
@@ -419,6 +435,7 @@ export function CompanyLeadsPage({
       unreadNotifications={unreadNotifications}
       notificationRole={notificationRole}
       whatsappBadge={whatsappBadge}
+      businessType={data.businessType}
     >
       <CompanyDashboardHeader
         unreadNotifications={unreadNotifications}
@@ -426,9 +443,13 @@ export function CompanyLeadsPage({
         userName={userName}
         avatarUrl={avatarUrl}
         canAddLead={data.canAddLead}
-        breadcrumb="Company / Leads"
-        title="Leads"
-        description="Manage and follow up on new business enquiries."
+        breadcrumb={`Company / ${data.businessType === "real_estate" ? "Inquiries" : "Leads"}`}
+        title={data.businessType === "real_estate" ? "Inquiries" : "Leads"}
+        description={
+          data.businessType === "real_estate"
+            ? "Manage and follow up on property inquiries."
+            : "Manage and follow up on new business enquiries."
+        }
         primaryAction={
           <Button
             variant="primary"
@@ -436,7 +457,7 @@ export function CompanyLeadsPage({
             leftIcon={<Plus size={16} strokeWidth={1.8} />}
             onClick={openAddHubSheet}
           >
-            Add Lead
+            Add {data.businessType === "real_estate" ? "Inquiry" : "Lead"}
           </Button>
         }
       />

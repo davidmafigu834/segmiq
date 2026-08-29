@@ -34,6 +34,8 @@ import type {
 } from "./types";
 import { DEFAULT_COMPANY_TEAM_FILTERS } from "./types";
 import { COMPANY_TEAM_PAGE_SIZE, companyTeamFiltersActive } from "@/lib/sales/company-team-metrics";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { displayRoleColumn, displayTitleLabel } from "@/lib/terminology";
 
 const TABS: { id: CompanyTeamTab; label: string }[] = [
   { id: "all", label: "All team" },
@@ -306,15 +308,23 @@ export function CompanyTeamTableCard({
   loading?: boolean;
   emptyKind: "none" | "search" | "filters" | "rows";
 }) {
+  const { businessType, terminology } = useCompanyWorkspace();
+  const tabs = TABS.map((item) =>
+    item.id === "salespeople"
+      ? { ...item, label: terminology.salesperson.plural }
+      : item.id === "all"
+        ? { ...item, label: businessType === "real_estate" ? "All agents" : "All team" }
+        : item
+  );
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <section className="overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+    <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
       <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <Tabs
-          items={TABS}
+          items={tabs}
           value={tab}
           onChange={(id) => onTabChange(id as CompanyTeamTab)}
           className="min-w-0 flex-1 border-b-0"
@@ -323,7 +333,9 @@ export function CompanyTeamTableCard({
           <SearchInput
             value={search}
             onChange={onSearchChange}
-            placeholder="Search team members..."
+            placeholder={
+              businessType === "real_estate" ? "Search agents..." : "Search team members..."
+            }
             className="w-full sm:w-[220px]"
           />
           <FiltersPopover filters={filters} onChange={onFiltersChange} />
@@ -357,20 +369,28 @@ export function CompanyTeamTableCard({
         <EmptyState
           title={
             emptyKind === "none"
-              ? "No team members yet."
+              ? businessType === "real_estate"
+                ? "No agents yet."
+                : "No team members yet."
               : emptyKind === "search"
-                ? "No team members match this search."
-                : "No team members match these filters."
+                ? businessType === "real_estate"
+                  ? "No agents match this search."
+                  : "No team members match this search."
+                : businessType === "real_estate"
+                  ? "No agents match these filters."
+                  : "No team members match these filters."
           }
           description={
             emptyKind === "none"
-              ? "Add your sales team to begin managing Deals and Goals in SegmiQ."
+              ? businessType === "real_estate"
+                ? "Add agents to begin managing inquiries and viewings in SegmiQ."
+                : "Add your sales team to begin managing Deals and Goals in SegmiQ."
               : undefined
           }
           action={
             emptyKind === "none" && canManage ? (
               <Button variant="primary" size="sm" onClick={onInvite}>
-                Add team member
+                {businessType === "real_estate" ? "Add agent" : "Add team member"}
               </Button>
             ) : emptyKind === "search" ? (
               <Button variant="secondary" size="sm" onClick={() => onSearchChange("")}>
@@ -424,12 +444,14 @@ export function CompanyTeamTableCard({
                           <p className="truncate text-[13px] font-semibold text-sales-text-primary">
                             {row.name}
                           </p>
-                          <p className="truncate text-[11px] text-sales-text-muted">{row.titleLabel}</p>
+                          <p className="truncate text-[11px] text-sales-text-muted">
+                            {displayTitleLabel(row.titleLabel, businessType)}
+                          </p>
                         </div>
                       </div>
                     </DataTableTd>
                     <DataTableTd className="text-[13px] text-sales-text-secondary">
-                      {row.roleColumn}
+                      {displayRoleColumn(row.roleColumn, businessType)}
                     </DataTableTd>
                     <DataTableTd className="hidden text-right tabular-nums lg:table-cell">
                       {row.activeDeals}

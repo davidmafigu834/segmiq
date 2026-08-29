@@ -531,7 +531,7 @@ export function CompanyPipelineTableCard({
 
   return (
     <section
-      className="overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
+      className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
       data-course-target="company-pipeline-table"
     >
       <div

@@ -12,7 +12,9 @@ import {
   getDealCommercialValue,
   latestQuoteTotal,
 } from "@/lib/sales/deals";
-import type { DealRow, QuotationRow } from "@/types";
+import { RealEstatePipelineBoard } from "@/components/real-estate/RealEstatePipelineBoard";
+import { getRealEstatePipelineData } from "@/lib/sales/get-real-estate-pipeline-data";
+import { isRealEstate } from "@/lib/terminology";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -47,6 +49,58 @@ export default async function SalesPipelinePage() {
   if (!session?.userId || !canActAsSalesperson(session)) redirect("/login");
 
   const supabase = createAdminClient();
+  const { data: clientRow } = session.clientId
+    ? await supabase.from("clients").select("name, business_type").eq("id", session.clientId).maybeSingle()
+    : { data: null };
+
+  if (session.clientId && isRealEstate(clientRow?.business_type)) {
+    const [reData, navBadges, unreadRes, userRes] = await Promise.all([
+      getRealEstatePipelineData({ clientId: session.clientId, assignedToId: session.userId }),
+      fetchSalesNavBadges(session.userId, session.clientId),
+      supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.userId)
+        .eq("read", false),
+      supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
+    ]);
+    const whatsappBadge =
+      (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+    const tasksBadge = navBadges.followUpsToday || navBadges.callNow || 0;
+    return (
+      <SalesLayout
+        breadcrumb="Sales / PIPELINE"
+        pageTitle="My pipeline"
+        hideShellHeader
+        hideShellSidebar
+        contentFlush
+      >
+        <PipelinePageShell
+          userName={session.user?.name ?? "Sales"}
+          avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
+          unreadNotifications={unreadRes.count ?? 0}
+          notificationRole={session.role}
+          whatsappBadge={whatsappBadge}
+          tasksBadge={tasksBadge}
+          isSolo={session.clientMode === "solo"}
+          breadcrumb="Sales / Pipeline"
+          title="My pipeline"
+          description="Your inquiries by stage, follow-ups, and work that needs attention."
+        >
+          <RealEstatePipelineBoard
+            data={reData}
+            clientName={(clientRow?.name as string) ?? "Company"}
+            unreadNotifications={unreadRes.count ?? 0}
+            notificationRole={session.role}
+            userName={session.user?.name ?? "Sales"}
+            embedded
+            inquiryBaseHref="/sales/call-now"
+          />
+        </PipelinePageShell>
+      </SalesLayout>
+    );
+  }
+
   const [dealsRes, navBadges] = await Promise.all([
     supabase
       .from("deals")

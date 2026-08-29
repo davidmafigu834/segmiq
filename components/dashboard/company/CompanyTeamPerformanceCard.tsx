@@ -6,6 +6,7 @@ import { Avatar, Badge, Progress } from "@/components/sales/ui";
 import { formatDealValue } from "@/lib/sales/sales-dashboard-display";
 import { CompanyDashCard, CompanyDashEmpty, DashLink, PeriodChip } from "./CompanyDashCard";
 import type { CompanyTeamMemberRow } from "./types";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 
 function GoalCell({ row }: { row: CompanyTeamMemberRow }) {
   if (!row.hasGoal || row.goalProgressPct == null) {
@@ -58,6 +59,8 @@ export function CompanyTeamPerformanceCard({
   teamTotal: number;
   viewAllHref: string;
 }) {
+  const { terminology, isRealEstate } = useCompanyWorkspace();
+  const rowLabel = terminology.salesperson.singular;
   const totals = {
     activeDeals: rows.reduce((sum, row) => sum + row.activeDeals, 0),
     pipeline: rows.reduce((sum, row) => sum + row.pipelineValueKnown, 0),
@@ -67,15 +70,19 @@ export function CompanyTeamPerformanceCard({
 
   return (
     <CompanyDashCard
-      title="Team performance"
+      title={isRealEstate ? "Agent performance" : "Team performance"}
       className="dashboard-panel--table"
       action={<PeriodChip>This month</PeriodChip>}
     >
       {rows.length === 0 ? (
         <CompanyDashEmpty
-          title="No salespeople added yet"
-          description="Add team members to track Deals, Goals and follow-ups."
-          action={<DashLink href={viewAllHref}>Add team member</DashLink>}
+          title={isRealEstate ? "No agents added yet" : "No salespeople added yet"}
+          description={
+            isRealEstate
+              ? "Add agents to track inquiries, viewings and follow-ups."
+              : "Add team members to track Deals, Goals and follow-ups."
+          }
+          action={<DashLink href={viewAllHref}>{isRealEstate ? "Add agent" : "Add team member"}</DashLink>}
         />
       ) : (
         <>
@@ -83,7 +90,7 @@ export function CompanyTeamPerformanceCard({
             <table className="dashboard-table w-full min-w-[640px] text-left">
               <thead>
                 <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-                  <th className="px-5 py-2.5 font-semibold">Salesperson</th>
+                  <th className="px-5 py-2.5 font-semibold">{rowLabel}</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Active Deals</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Pipeline</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Won</th>

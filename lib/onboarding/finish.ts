@@ -181,6 +181,7 @@ export async function activateClientFromProgress(input: ActivateClientInput): Pr
         is_active: true,
         onboarding_progress: {},
         response_time_limit_hours: defaultHours,
+        business_type: company.businessType === "real_estate" ? "real_estate" : "trades",
         updated_at: new Date().toISOString(),
       })
       .eq("id", clientId)

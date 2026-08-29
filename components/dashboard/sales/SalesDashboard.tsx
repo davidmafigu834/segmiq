@@ -36,7 +36,7 @@ import { DealsAttentionCard } from "./DealsAttentionCard";
 import { LeadDealFunnelCard } from "./LeadDealFunnelCard";
 import { ActivityTodayCard } from "./ActivityTodayCard";
 import { PipelineSnapshotCard } from "./PipelineSnapshotCard";
-import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
+import { AgentDailyWorkspace } from "@/components/real-estate/AgentDailyWorkspace";
 
 export type SalesDashboardProps = {
   data: SalesDashboardData;
@@ -138,6 +138,14 @@ function SalesDashboardInner({
         <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain sales-mobile-scroll px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6">
           <SegmiQDotWave />
           <div className="relative space-y-3 sm:space-y-3">
+          {data.realEstate && data.clientId ? (
+            <AgentDailyWorkspace
+              clientId={data.clientId}
+              firstName={firstName}
+              data={data.realEstate}
+            />
+          ) : (
+            <>
           <DashboardHeader
             firstName={firstName}
             userName={fullName}
@@ -239,6 +247,8 @@ function SalesDashboardInner({
           <div className="hidden layout:block">
             <TodaysSalesPlanStrip {...data.planSummary} />
           </div>
+            </>
+          )}
         </div>
         </div>
       </div>

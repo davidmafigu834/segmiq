@@ -103,7 +103,7 @@ export function PracticeLeadScenario() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
+      <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
         <p className="text-[12px] font-medium text-sales-text-muted">Practice Lead</p>
         <button
           type="button"
@@ -123,7 +123,7 @@ export function PracticeLeadScenario() {
 
       <div
         data-course-target="practice-lead-discovery"
-        className="rounded-[14px] border border-sales-border bg-sales-surface p-4"
+        className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4"
       >
         <h3 className="text-[15px] font-semibold text-sales-text-primary">Discovery</h3>
         <p className="mt-1 text-[13px] text-sales-text-secondary">

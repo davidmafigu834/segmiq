@@ -16,6 +16,14 @@ import { DEAL_STAGE_LABEL } from "@/lib/sales/deals/display";
 import { getDealCommercialValue } from "@/lib/sales/deals";
 import { formatDealCurrency } from "@/lib/sales/format";
 import { loadResponseSignals } from "@/lib/sales/get-company-team-page-data";
+import { listingLabel } from "@/lib/real-estate/helpers";
+import {
+  markedInterestedFromFormData,
+  resolveRePipelineStage,
+  rePipelineStageLabel,
+} from "@/lib/real-estate/pipeline";
+import { formatBudgetRange, formatRequirementSummary } from "@/lib/real-estate/requirements";
+import { isRealEstate, normalizeBusinessType } from "@/lib/terminology";
 import {
   deriveFirstRespondedAt,
   deriveLastMeaningfulActivityAt,
@@ -85,10 +93,13 @@ type LeadLite = {
   active_deal_id: string | null;
   convert_later_note: string | null;
   is_archived: boolean | null;
+  deal_side: string | null;
+  linked_listing_id: string | null;
+  offer_status: string | null;
 };
 
 const LEAD_SELECT =
-  "id, client_id, assigned_to_id, contact_id, source, status, form_data, name, phone, email, budget, project_type, timeline, not_qualified_reason, follow_up_date, created_at, score, score_breakdown, customer_need, decision_maker_status, buying_timeframe, active_deal_id, convert_later_note, is_archived";
+  "id, client_id, assigned_to_id, contact_id, source, status, form_data, name, phone, email, budget, project_type, timeline, not_qualified_reason, follow_up_date, created_at, score, score_breakdown, customer_need, decision_maker_status, buying_timeframe, active_deal_id, convert_later_note, is_archived, deal_side, linked_listing_id, offer_status";
 
 function enquiryContext(lead: LeadLite): string | null {
   const project = lead.project_type?.trim() || null;
@@ -152,7 +163,132 @@ function mapRow(opts: {
     contactId: lead.contact_id,
     customerWaiting: false,
     canModify,
+    dealSide: lead.deal_side,
   };
+}
+
+async function enrichRealEstateLeadRows(opts: {
+  supabase: ReturnType<typeof createAdminClient>;
+  clientId: string;
+  leads: LeadLite[];
+  rows: CompanyLeadRow[];
+}): Promise<void> {
+  const { supabase, clientId, leads, rows } = opts;
+  const contactIds = [...new Set(leads.map((l) => l.contact_id).filter(Boolean))] as string[];
+  const listingIds = [...new Set(leads.map((l) => l.linked_listing_id).filter(Boolean))] as string[];
+
+  const { data: listingStock } = await supabase
+    .from("listings")
+    .select("id, address, suburb, client_id")
+    .eq("client_id", clientId);
+  const allListingIds = (listingStock ?? []).map((l) => l.id as string);
+
+  const [{ data: contacts }, { data: linkedListings }, { data: viewings }] = await Promise.all([
+    contactIds.length
+      ? supabase
+          .from("contacts")
+          .select(
+            "id, buyer_budget_min, buyer_budget_max, buyer_bedrooms_wanted, buyer_area_preference, interested_listing_ids"
+          )
+          .eq("client_id", clientId)
+          .in("id", contactIds)
+      : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+    listingIds.length
+      ? supabase
+          .from("listings")
+          .select("id, address, suburb")
+          .eq("client_id", clientId)
+          .in("id", listingIds)
+      : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+    allListingIds.length && contactIds.length
+      ? supabase
+          .from("viewings")
+          .select("contact_id, scheduled_at, status")
+          .in("contact_id", contactIds)
+          .in("listing_id", allListingIds)
+          .eq("status", "scheduled")
+          .gte("scheduled_at", new Date().toISOString())
+          .order("scheduled_at", { ascending: true })
+      : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+  ]);
+
+  const contactById = new Map((contacts ?? []).map((c) => [c.id as string, c]));
+  const listingById = new Map((linkedListings ?? []).map((l) => [l.id as string, l]));
+  const nextViewingByContact = new Map<string, string>();
+  for (const v of viewings ?? []) {
+    const cid = v.contact_id as string;
+    if (!nextViewingByContact.has(cid)) nextViewingByContact.set(cid, v.scheduled_at as string);
+  }
+  const completedContactIds = new Set<string>();
+  if (allListingIds.length && contactIds.length) {
+    const { data: completed } = await supabase
+      .from("viewings")
+      .select("contact_id")
+      .in("contact_id", contactIds)
+      .in("listing_id", allListingIds)
+      .eq("status", "completed")
+      .limit(500);
+    for (const v of completed ?? []) completedContactIds.add(v.contact_id as string);
+  }
+
+  const rowById = new Map(rows.map((r) => [r.id, r]));
+  for (const lead of leads) {
+    const row = rowById.get(lead.id);
+    if (!row) continue;
+    const contact = lead.contact_id ? contactById.get(lead.contact_id) : undefined;
+    const interested = Array.isArray(contact?.interested_listing_ids)
+      ? (contact!.interested_listing_ids as unknown[]).length > 0
+      : false;
+    const stage = resolveRePipelineStage({
+      leadStatus: lead.status,
+      offerStatus: lead.offer_status,
+      hasInterestedListing: interested,
+      hasLinkedListing: Boolean(lead.linked_listing_id),
+      hasUpcomingViewing: Boolean(lead.contact_id && nextViewingByContact.has(lead.contact_id)),
+      hasCompletedViewing: Boolean(lead.contact_id && completedContactIds.has(lead.contact_id)),
+      markedInterested: markedInterestedFromFormData(lead.form_data),
+    });
+    const linked = lead.linked_listing_id ? listingById.get(lead.linked_listing_id) : undefined;
+    row.reStage = stage;
+    row.reStageLabel = rePipelineStageLabel(stage);
+    row.requirementSummary = contact
+      ? formatRequirementSummary({
+          buyer_budget_min: contact.buyer_budget_min as number | null,
+          buyer_budget_max: contact.buyer_budget_max as number | null,
+          buyer_bedrooms_wanted: contact.buyer_bedrooms_wanted as number | null,
+          buyer_area_preference: contact.buyer_area_preference as string | null,
+        })
+      : null;
+    row.budgetLabel = contact
+      ? formatBudgetRange(
+          contact.buyer_budget_min as number | null,
+          contact.buyer_budget_max as number | null
+        )
+      : null;
+    row.linkedListingLabel = linked
+      ? listingLabel({
+          address: linked.address as string | null,
+          suburb: linked.suburb as string | null,
+        })
+      : null;
+    const viewingAt = lead.contact_id ? nextViewingByContact.get(lead.contact_id) : undefined;
+    if (viewingAt && !row.nextAction.hasNextAction) {
+      const when = new Date(viewingAt);
+      row.nextAction = {
+        ...row.nextAction,
+        hasNextAction: true,
+        label: "Viewing",
+        at: viewingAt,
+        whenLabel: when.toLocaleString("en-GB", {
+          weekday: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        urgency: "soon",
+        completable: false,
+      };
+    }
+  }
 }
 
 export async function getCompanyLeadsPageData(opts: {
@@ -173,7 +309,7 @@ export async function getCompanyLeadsPageData(opts: {
   const isSuperAdmin = actor.role === "SUPER_ADMIN";
 
   const [clientRes, teamRes, leadsRes] = await Promise.all([
-    supabase.from("clients").select("id, name").eq("id", clientId).maybeSingle(),
+    supabase.from("clients").select("id, name, business_type").eq("id", clientId).maybeSingle(),
     supabase
       .from("users")
       .select("id, name, avatar_url, role, also_sells, is_active")
@@ -192,6 +328,9 @@ export async function getCompanyLeadsPageData(opts: {
   const team = (teamRes.data ?? []) as TeamUser[];
   const teamById = new Map(team.map((u) => [u.id, u]));
   const clientName = (clientRes.data?.name as string) ?? "Company";
+  const businessType = normalizeBusinessType(
+    (clientRes.data as { business_type?: string } | null)?.business_type
+  );
   const leads = ((leadsRes.data ?? []) as LeadLite[]).filter(Boolean);
 
   const ids = leads.map((l) => l.id);
@@ -219,6 +358,10 @@ export async function getCompanyLeadsPageData(opts: {
       now,
     });
   });
+
+  if (isRealEstate(businessType)) {
+    await enrichRealEstateLeadRows({ supabase, clientId, leads, rows });
+  }
 
   const last30 = leads.filter((l) => inPeriod(l.created_at, period30Start));
   const prev30 = leads.filter((l) => inPeriod(l.created_at, period60Start, period30Start));
@@ -287,6 +430,7 @@ export async function getCompanyLeadsPageData(opts: {
   return {
     clientId,
     clientName,
+    businessType,
     actorUserId: actor.userId,
     alsoSells,
     canReassign,

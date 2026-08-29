@@ -10,13 +10,14 @@ import { logFollowUpSet, logWalkInIntake } from "@/lib/lead-events";
 import { notifyDealWon } from "@/lib/notifications";
 import { getManagerPrefs } from "@/lib/notification-prefs";
 import { recordWinAnalysis } from "@/lib/win-analysis";
-import type { LeadRow } from "@/types";
+import type { LeadRow, LeadSource, LeadStatus } from "@/types";
 import {
   isWalkInSource,
   resolveWalkInIntake,
   type WalkInIntakeOutcome,
 } from "@/lib/walk-in-intake";
-import type { LeadStatus } from "@/types";
+import { recordFirstTouchAttribution, leadSourceFromReType } from "@/lib/real-estate/marketing-service";
+import { hubSourceToReType } from "@/lib/real-estate/marketing";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,8 @@ const bodySchema = z.object({
   intakeOutcome: walkInOutcomeSchema.optional(),
   followUpDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   dealValue: z.number().nonnegative().optional(),
+  referredBy: z.string().max(200).optional(),
+  portalName: z.string().max(200).optional(),
   initialStatus: z
     .enum([
       "NEW",
@@ -102,7 +105,7 @@ export async function POST(req: Request) {
 
   const { data: client } = await supabase
     .from("clients")
-    .select("dial_code, assignment_mode")
+    .select("dial_code, assignment_mode, business_type")
     .eq("id", requestedClientId)
     .single();
 
@@ -248,6 +251,9 @@ export async function POST(req: Request) {
   if (b.budget?.trim()) formData.Budget = b.budget.trim();
   if (b.projectType?.trim()) formData["Project type"] = b.projectType.trim();
   if (b.notes?.trim()) formData.Notes = b.notes.trim();
+  formData.hub_source = b.source;
+  if (b.referredBy?.trim()) formData.referred_by = b.referredBy.trim();
+  if (b.portalName?.trim()) formData.portal_name = b.portalName.trim();
 
   let initialStatus: LeadStatus | undefined;
   let manualPriority = b.priority;
@@ -273,9 +279,12 @@ export async function POST(req: Request) {
     initialStatus = "CONTACTED";
   }
 
+  const reType = hubSourceToReType(b.source);
+  const leadSource = leadSourceFromReType(reType) as LeadSource;
+
   const result = await createLead({
     clientId: requestedClientId,
-    source: "MANUAL",
+    source: leadSource,
     formData,
     contactId,
     overrideAssigneeId,
@@ -286,7 +295,7 @@ export async function POST(req: Request) {
     followUpDate: followUpDate ?? null,
     dealValue: dealValue ?? null,
     hubIntake,
-    hubSource: walkIn ? b.source : undefined,
+    hubSource: b.source,
   });
 
   if (!result.ok) {
@@ -294,6 +303,25 @@ export async function POST(req: Request) {
       { error: "Contact saved, but creating the lead failed", detail: result.error },
       { status: 500 }
     );
+  }
+
+  if (client?.business_type === "real_estate" && !result.duplicate) {
+    await recordFirstTouchAttribution({
+      clientId: requestedClientId,
+      leadId: result.leadId,
+      contactId,
+      sourceType: reType,
+      referralSourceName:
+        reType === "referral"
+          ? b.referredBy?.trim() || null
+          : reType === "property_portal"
+            ? b.portalName?.trim() || null
+            : null,
+      rawMetadata: {
+        hub_source: b.source,
+        portal_name: b.portalName?.trim() || null,
+      },
+    });
   }
 
   const actor = {

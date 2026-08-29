@@ -8,7 +8,7 @@ export function PracticeQuoteScenario() {
   const { practice, setPractice } = useGuidedCourse();
 
   return (
-    <div className="rounded-[14px] border border-sales-border bg-sales-surface p-4">
+    <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
       <p className="text-[12px] text-sales-text-muted">Practice Deal · {practice.deal.name}</p>
       <h3 className="mt-2 text-[16px] font-semibold text-sales-text-primary">Create quotation</h3>
       <p className="mt-1 text-[13px] text-sales-text-secondary">

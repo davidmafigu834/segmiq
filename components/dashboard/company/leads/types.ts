@@ -1,6 +1,7 @@
 import type { SalesKpiItem } from "@/components/dashboard/sales/types";
 import type { LeadScoreBand } from "@/lib/sales/format";
 import type { LeadRow, LeadStatus } from "@/types";
+import type { BusinessType } from "@/lib/terminology";
 
 export type CompanyLeadsTab =
   | "all"
@@ -97,6 +98,12 @@ export type CompanyLeadRow = {
   contactId: string | null;
   customerWaiting: boolean;
   canModify: boolean;
+  dealSide?: string | null;
+  reStage?: string | null;
+  reStageLabel?: string | null;
+  requirementSummary?: string | null;
+  budgetLabel?: string | null;
+  linkedListingLabel?: string | null;
 };
 
 export type CompanyLeadRelatedDeal = {
@@ -154,6 +161,7 @@ export type CompanyLeadsTabCounts = Record<CompanyLeadsTab, number>;
 export type CompanyLeadsPageData = {
   clientId: string;
   clientName: string;
+  businessType: BusinessType;
   actorUserId: string;
   alsoSells: boolean;
   canReassign: boolean;

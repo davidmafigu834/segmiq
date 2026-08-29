@@ -6,9 +6,11 @@ import { canAccessClient } from "@/lib/auth/permissions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
+  canManageListings,
   contactMatchesListing,
   type BuyerMatchContact,
 } from "@/lib/real-estate/helpers";
+import { listingMatchesSearch } from "@/lib/real-estate/matching";
 import { notifyPropertyMatch } from "@/lib/real-estate/notifications";
 import { background } from "@/lib/background";
 
@@ -40,18 +42,32 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   const url = new URL(req.url);
   const status = url.searchParams.get("status");
   const developmentId = url.searchParams.get("development_id");
+  const q = url.searchParams.get("q")?.trim().toLowerCase() ?? "";
+  const suburb = url.searchParams.get("suburb")?.trim().toLowerCase() ?? "";
+  const transactionType = url.searchParams.get("transaction_type");
+  const minPrice = url.searchParams.get("min_price");
+  const maxPrice = url.searchParams.get("max_price");
+  const bedrooms = url.searchParams.get("bedrooms");
+  const limitRaw = Number(url.searchParams.get("limit") ?? "80");
+  const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 80;
 
   const supabase = createAdminClient();
-  let q = supabase
+  let query = supabase
     .from("listings")
     .select("*, agent:users!listings_agent_id_fkey(id, name), development:developments(id, name)")
     .eq("client_id", params.clientId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
-  if (status) q = q.eq("status", status);
-  if (developmentId) q = q.eq("development_id", developmentId);
+  if (status) query = query.eq("status", status);
+  if (developmentId) query = query.eq("development_id", developmentId);
+  if (transactionType) query = query.eq("transaction_type", transactionType);
+  if (suburb) query = query.ilike("suburb", `%${suburb}%`);
+  if (minPrice) query = query.gte("price", Number(minPrice));
+  if (maxPrice) query = query.lte("price", Number(maxPrice));
+  if (bedrooms) query = query.gte("bedrooms", Number(bedrooms));
 
-  const { data, error } = await q;
+  const { data, error } = await query;
   if (error) {
     // Fallback without FK embed aliases if PostgREST naming differs
     const fallback = await supabase
@@ -62,10 +78,29 @@ export async function GET(req: Request, { params }: { params: { clientId: string
     if (fallback.error) {
       return NextResponse.json({ error: fallback.error.message }, { status: 500 });
     }
-    return NextResponse.json({ listings: fallback.data ?? [] });
+    let fallbackListings = fallback.data ?? [];
+    fallbackListings = fallbackListings.filter((row) =>
+      listingMatchesSearch(row as Parameters<typeof listingMatchesSearch>[0], {
+        q: q || undefined,
+        suburb: suburb || undefined,
+        transactionType: (transactionType as "sale" | "rental" | "new_development") || undefined,
+        status: status || undefined,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+        bedrooms: bedrooms ? Number(bedrooms) : undefined,
+      })
+    );
+    return NextResponse.json({ listings: fallbackListings.slice(0, limit) });
   }
 
-  return NextResponse.json({ listings: data ?? [] });
+  let listings = data ?? [];
+  if (q) {
+    listings = listings.filter((row) =>
+      listingMatchesSearch(row as Parameters<typeof listingMatchesSearch>[0], { q })
+    );
+  }
+
+  return NextResponse.json({ listings });
 }
 
 export async function POST(req: Request, { params }: { params: { clientId: string } }) {
@@ -73,6 +108,9 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (!canManageListings(session.role)) {
+    return NextResponse.json({ error: "Listing edits are limited to managers" }, { status: 403 });
   }
 
   const parsed = listingBodySchema.safeParse(await req.json().catch(() => ({})));

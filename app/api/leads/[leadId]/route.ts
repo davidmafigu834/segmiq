@@ -13,6 +13,7 @@ import {
 import type { LeadStatus } from "@/types";
 import { z } from "zod";
 import { isRoundRobinEligibleUserId } from "@/lib/auth/sales-capabilities";
+import { assertComplianceProgressAllowed } from "@/lib/real-estate/compliance-service";
 
 export async function GET(req: Request, { params }: { params: { leadId: string } }) {
   const access = await canReadLead(params.leadId, req);
@@ -93,6 +94,16 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
         { error: "Deal value is locked — set from a sent quotation and cannot be overridden manually." },
         { status: 409 }
       );
+    }
+  }
+
+  if (parsed.data.status === "WON" && previousLead?.client_id) {
+    const gate = await assertComplianceProgressAllowed({
+      clientId: previousLead.client_id as string,
+      leadId: params.leadId,
+    });
+    if (!gate.ok) {
+      return NextResponse.json({ error: gate.message, code: gate.code }, { status: 409 });
     }
   }
 

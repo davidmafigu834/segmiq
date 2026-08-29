@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
 import { createLead } from "@/lib/leads/createLead";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  appendInterestedListingIds,
-  phonesMatchLoose,
-} from "@/lib/real-estate/helpers";
+import { appendInterestedListingIds, phonesMatchLoose } from "@/lib/real-estate/helpers";
 import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 import { processLeadIntelligence } from "@/lib/lead-intelligence";
 import { background } from "@/lib/background";
-import type { DealSide, LeadSource } from "@/types";
+import {
+  listingLookupAllowed,
+  mapWebsiteIngestDealSide,
+  mapWebsiteIngestSource,
+  websiteAttributionSourceType,
+  websiteExternalLeadId,
+  websiteUtmFromBody,
+} from "@/lib/real-estate/website-ingest";
+import {
+  applyMappedBuyerRequirements,
+  findExistingExternalLead,
+  matchCampaignForIngest,
+  recordFirstTouchAttribution,
+} from "@/lib/real-estate/marketing-service";
 
 export const dynamic = "force-dynamic";
 
@@ -27,37 +37,6 @@ function softFail(message: string, extra?: Record<string, unknown>): SoftResult 
   };
 }
 
-function mapSource(raw: unknown): LeadSource {
-  const s = String(raw ?? "").toLowerCase().trim();
-  if (s === "facebook_ad" || s === "facebook") return "FACEBOOK_AD";
-  if (s === "website") return "WEBSITE";
-  return "WEBSITE";
-}
-
-/** Map estate-agency website enquiry types → RE deal_side. */
-function mapDealSide(raw: unknown): DealSide | null {
-  const s = String(raw ?? "")
-    .toLowerCase()
-    .trim()
-    .replace(/[\s-]+/g, "_");
-
-  if (
-    s === "buy_side" ||
-    s === "sell_side" ||
-    s === "landlord_side" ||
-    s === "tenant_side"
-  ) {
-    return s;
-  }
-
-  if (s === "property" || s === "buy" || s === "buyer") return "buy_side";
-  if (s === "sell" || s === "seller") return "sell_side";
-  if (s === "landlord" || s === "let_out") return "landlord_side";
-  if (s === "tenant" || s === "to_let" || s === "rent") return "tenant_side";
-  if (s === "general") return null;
-  return null;
-}
-
 function extractApiKey(req: Request, body: Record<string, unknown>): string {
   const fromBody = typeof body.api_key === "string" ? body.api_key.trim() : "";
   if (fromBody) return fromBody;
@@ -71,9 +50,10 @@ function extractApiKey(req: Request, body: Record<string, unknown>): string {
 
 /**
  * POST /api/external-leads/submit
- * Third-party website / ad form ingestion (e.g. Landlords Junction Properties).
+ * Third-party website / ad form ingestion.
  * Auth: `api_key` in JSON body, or `Authorization: Bearer sk_live_…`, or `x-api-key`.
  * Never 500 on partial payloads (soft_fail JSON with HTTP 200).
+ * Trades clients keep generic lead ingest. Listing/agent/deal_side apply only for real_estate.
  */
 export async function POST(req: Request) {
   try {
@@ -105,6 +85,7 @@ export async function POST(req: Request) {
       return NextResponse.json(softFail("Client inactive").body, { status: 200 });
     }
 
+    const isRealEstate = listingLookupAllowed(client.business_type);
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const phoneRaw = typeof body.phone === "string" ? body.phone.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim() : "";
@@ -119,19 +100,34 @@ export async function POST(req: Request) {
         : typeof body.type === "string"
           ? body.type.trim()
           : "";
-    const dealSide =
-      mapDealSide(body.deal_side) ?? mapDealSide(enquiryTypeRaw);
+    const dealSide = isRealEstate
+      ? mapWebsiteIngestDealSide(body.deal_side) ?? mapWebsiteIngestDealSide(enquiryTypeRaw)
+      : null;
+    const utm = websiteUtmFromBody(body);
+    const externalLeadId = websiteExternalLeadId(body);
 
     if (!phoneRaw && !email && !name) {
-      return NextResponse.json(
-        softFail("Need at least name, phone, or email").body,
-        { status: 200 }
-      );
+      return NextResponse.json(softFail("Need at least name, phone, or email").body, { status: 200 });
     }
 
-    // Resolve listing by external_reference (e.g. LJP property slug) or address
+    if (externalLeadId) {
+      const existingLeadId = await findExistingExternalLead({
+        clientId: client.id as string,
+        provider: "website",
+        externalLeadId,
+      });
+      if (existingLeadId) {
+        return NextResponse.json({
+          ok: true,
+          lead_id: existingLeadId,
+          duplicate: true,
+          idempotent: true,
+        });
+      }
+    }
+
     let listingId: string | null = null;
-    if (listingReference) {
+    if (isRealEstate && listingReference) {
       const { data: byRef } = await supabase
         .from("listings")
         .select("id")
@@ -153,9 +149,8 @@ export async function POST(req: Request) {
       }
     }
 
-    // Match agent by phone (LJP agent_reference)
     let overrideAssigneeId: string | null = null;
-    if (agentReference) {
+    if (isRealEstate && agentReference) {
       const { data: agents } = await fetchRoundRobinEligibleUsers(supabase, client.id as string, {
         activeOnly: true,
         select: "id, name, phone, role, also_sells, is_active",
@@ -165,17 +160,32 @@ export async function POST(req: Request) {
       if (match) overrideAssigneeId = match.id;
     }
 
-    const source = mapSource(body.source);
+    const campaign = isRealEstate
+      ? await matchCampaignForIngest({
+          clientId: client.id as string,
+          listingId,
+          externalCampaignId: typeof body.campaign_id === "string" ? body.campaign_id : null,
+        })
+      : null;
+    if (campaign?.listing_id && !listingId) listingId = campaign.listing_id;
+    if (campaign?.default_agent_id && !overrideAssigneeId) {
+      overrideAssigneeId = campaign.default_agent_id;
+    }
+
+    const source = mapWebsiteIngestSource(body.source);
     const formData: Record<string, unknown> = {
       name: name || "Website lead",
       phone: phoneRaw || undefined,
       email: email || undefined,
       message: message || undefined,
-      listing_reference: listingReference || undefined,
-      agent_reference: agentReference || undefined,
+      listing_reference: isRealEstate ? listingReference || undefined : undefined,
+      agent_reference: isRealEstate ? agentReference || undefined : undefined,
       enquiry_type: enquiryTypeRaw || undefined,
       deal_side: dealSide || undefined,
       website_origin: "external",
+      ...Object.fromEntries(
+        Object.entries(utm).filter(([, v]) => Boolean(v))
+      ),
     };
 
     const result = await createLead({
@@ -200,28 +210,64 @@ export async function POST(req: Request) {
 
     const contactId = (leadRow?.contact_id as string | null) ?? null;
 
-    // Link listing + deal_side on the lead
-    const leadPatch: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    };
-    if (listingId) leadPatch.linked_listing_id = listingId;
-    if (dealSide) leadPatch.deal_side = dealSide;
+    if (!result.duplicate) {
+      const leadPatch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (listingId) leadPatch.linked_listing_id = listingId;
+      if (dealSide) leadPatch.deal_side = dealSide;
+      if (Object.keys(leadPatch).length > 1) {
+        await supabase.from("leads").update(leadPatch).eq("id", result.leadId);
+      }
 
-    if (Object.keys(leadPatch).length > 1) {
-      await supabase.from("leads").update(leadPatch).eq("id", result.leadId);
-    }
+      if (listingId && contactId) {
+        const { data: contact } = await supabase
+          .from("contacts")
+          .select("interested_listing_ids")
+          .eq("id", contactId)
+          .eq("client_id", client.id)
+          .maybeSingle();
+        const next = appendInterestedListingIds(contact?.interested_listing_ids, listingId);
+        await supabase
+          .from("contacts")
+          .update({ interested_listing_ids: next, updated_at: new Date().toISOString() })
+          .eq("id", contactId)
+          .eq("client_id", client.id);
+      }
 
-    if (listingId && contactId) {
-      const { data: contact } = await supabase
-        .from("contacts")
-        .select("interested_listing_ids")
-        .eq("id", contactId)
-        .maybeSingle();
-      const next = appendInterestedListingIds(contact?.interested_listing_ids, listingId);
-      await supabase
-        .from("contacts")
-        .update({ interested_listing_ids: next, updated_at: new Date().toISOString() })
-        .eq("id", contactId);
+      let formPrequalified = false;
+      if (isRealEstate && contactId) {
+        const mapped = await applyMappedBuyerRequirements({
+          clientId: client.id as string,
+          contactId,
+          formData: body,
+        });
+        formPrequalified = mapped.formPrequalified;
+      }
+
+      await recordFirstTouchAttribution({
+        clientId: client.id as string,
+        leadId: result.leadId,
+        contactId,
+        sourceType: websiteAttributionSourceType(source, body),
+        campaignId: campaign?.id ?? null,
+        campaignName: campaign?.name ?? (utm.utm_campaign || null),
+        listingId,
+        utm,
+        landingPage: typeof body.landing_page === "string" ? body.landing_page : null,
+        referrer: typeof body.referrer === "string" ? body.referrer : null,
+        provider: "website",
+        externalLeadId,
+        formPrequalified,
+        rawMetadata: {
+          enquiry_type: enquiryTypeRaw || null,
+        },
+      });
+    } else {
+      await recordFirstTouchAttribution({
+        clientId: client.id as string,
+        leadId: result.leadId,
+        contactId,
+        sourceType: websiteAttributionSourceType(source, body),
+      });
     }
 
     background("external-leads-intelligence", async () => {

@@ -158,12 +158,21 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .rounded-x
   box-shadow: var(--sales-shadow-card);
 }
 
+/* Workspace cards — same navy as Team / dashboard panels, 14px radius */
+.sales-dashboard-premium .workspace-card {
+  border: 1px solid var(--sales-border-subtle);
+  border-radius: 14px;
+  background: var(--sales-surface);
+  box-shadow: var(--sales-shadow-card);
+}
+
 .sales-dashboard-premium .dashboard-panel {
   overflow: visible;
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-panel,
-html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-card:not(.dashboard-kpi) {
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-card:not(.dashboard-kpi),
+html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .workspace-card {
   background: linear-gradient(145deg, #081a35, #07162e);
   border-color: rgba(128, 151, 200, 0.09);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.035);

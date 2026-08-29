@@ -1,7 +1,7 @@
 export { Button, IconButton } from "./Button";
 export type { SalesButtonProps, SalesButtonVariant, SalesButtonSize, IconButtonProps } from "./Button";
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./Card";
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, WORKSPACE_CARD } from "./Card";
 export type { SalesCardVariant } from "./Card";
 
 export { Badge, StatusDot, PipelineStageBadge, LeadScoreBadge, MetaPill } from "./Badge";

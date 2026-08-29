@@ -33,6 +33,7 @@ import type {
 } from "./types";
 import { DEFAULT_COMPANY_PIPELINE_FILTERS } from "./types";
 import type { UserRole } from "@/types";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 
 type DialogKind =
   | { type: "log"; leadId: string }
@@ -64,6 +65,7 @@ export function CompanyPipelinePage({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toast } = useSalesToast();
+  const { terminology, isRealEstate } = useCompanyWorkspace();
   const overlayPanel = useMediaQuery("(max-width: 1279px)");
   const stackedSplit = useMediaQuery("(max-width: 767px)");
 
@@ -308,7 +310,11 @@ export function CompanyPipelinePage({
         canAddLead
         breadcrumb="Company / Pipeline"
         title="Pipeline"
-        description="Track and manage active Deals across your sales team."
+        description={
+          isRealEstate
+            ? `Track and manage active deals across your ${terminology.salesperson.plural.toLowerCase()}.`
+            : "Track and manage active Deals across your sales team."
+        }
         primaryAction={
           <Button
             variant="primary"

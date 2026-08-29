@@ -28,6 +28,7 @@ export type OnboardingProgress = {
     country?: OnboardingCountryCode;
     website?: string;
     slug?: string;
+    businessType?: "trades" | "real_estate";
   };
   account?: {
     ownerName?: string;

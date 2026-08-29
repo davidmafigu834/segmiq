@@ -53,7 +53,13 @@ function numOrNull(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function ListingsManager({ clientId }: { clientId: string }) {
+export function ListingsManager({
+  clientId,
+  readOnly = false,
+}: {
+  clientId: string;
+  readOnly?: boolean;
+}) {
   const [listings, setListings] = useState<ListingRow[]>([]);
   const [agents, setAgents] = useState<AgentOption[]>([]);
   const [developments, setDevelopments] = useState<DevelopmentOption[]>([]);
@@ -197,33 +203,35 @@ export function ListingsManager({ clientId }: { clientId: string }) {
   }
 
   if (loading) {
-    return <p className="text-sm text-ink-tertiary">Loading listings…</p>;
+    return <p className="text-[13px] text-sales-text-muted">Loading listings…</p>;
   }
 
   return (
     <div className="space-y-6">
       {toast ? (
-        <p className="rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-4 py-2 text-sm">
+        <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
           {toast}
         </p>
       ) : null}
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-ink-secondary">{listings.length} properties</p>
-        <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add listing
-        </button>
+        <p className="text-[13px] text-sales-text-secondary">{listings.length} properties</p>
+        {!readOnly ? (
+          <button type="button" onClick={openCreate} className="btn-primary inline-flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add listing
+          </button>
+        ) : null}
       </div>
 
-      {showForm ? (
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 space-y-4">
-          <h3 className="font-display text-xl">{editingId ? "Edit listing" : "New listing"}</h3>
+      {showForm && !readOnly ? (
+        <div className="workspace-card space-y-4 rounded-[14px] border border-sales-border bg-sales-surface p-5">
+          <h3 className="text-[16px] font-semibold tracking-[-0.02em] text-sales-text-primary">{editingId ? "Edit listing" : "New listing"}</h3>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
-              <span className="text-ink-secondary">Type</span>
+              <span className="text-sales-text-secondary">Type</span>
               <select
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.transaction_type}
                 onChange={(e) =>
                   setForm((f) => ({
@@ -238,9 +246,9 @@ export function ListingsManager({ clientId }: { clientId: string }) {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Status</span>
+              <span className="text-sales-text-secondary">Status</span>
               <select
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.status}
                 onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ListingStatus }))}
               >
@@ -252,60 +260,60 @@ export function ListingsManager({ clientId }: { clientId: string }) {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Address</span>
+              <span className="text-sales-text-secondary">Address</span>
               <input
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.address}
                 onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
               />
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Suburb</span>
+              <span className="text-sales-text-secondary">Suburb</span>
               <input
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.suburb}
                 onChange={(e) => setForm((f) => ({ ...f, suburb: e.target.value }))}
               />
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Price</span>
+              <span className="text-sales-text-secondary">Price</span>
               <input
                 type="number"
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.price}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
               />
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Beds / Baths / Size m²</span>
+              <span className="text-sales-text-secondary">Beds / Baths / Size m²</span>
               <div className="mt-1 flex gap-2">
                 <input
                   type="number"
                   placeholder="Beds"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                  className="w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                   value={form.bedrooms}
                   onChange={(e) => setForm((f) => ({ ...f, bedrooms: e.target.value }))}
                 />
                 <input
                   type="number"
                   placeholder="Baths"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                  className="w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                   value={form.bathrooms}
                   onChange={(e) => setForm((f) => ({ ...f, bathrooms: e.target.value }))}
                 />
                 <input
                   type="number"
                   placeholder="m²"
-                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                  className="w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                   value={form.size_sqm}
                   onChange={(e) => setForm((f) => ({ ...f, size_sqm: e.target.value }))}
                 />
               </div>
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Agent</span>
+              <span className="text-sales-text-secondary">Agent</span>
               <select
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.agent_id}
                 onChange={(e) => setForm((f) => ({ ...f, agent_id: e.target.value }))}
               >
@@ -318,9 +326,9 @@ export function ListingsManager({ clientId }: { clientId: string }) {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Development</span>
+              <span className="text-sales-text-secondary">Development</span>
               <select
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.development_id}
                 onChange={(e) => setForm((f) => ({ ...f, development_id: e.target.value }))}
               >
@@ -333,9 +341,9 @@ export function ListingsManager({ clientId }: { clientId: string }) {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Mandate</span>
+              <span className="text-sales-text-secondary">Mandate</span>
               <select
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.mandate_type}
                 onChange={(e) =>
                   setForm((f) => ({
@@ -351,48 +359,48 @@ export function ListingsManager({ clientId }: { clientId: string }) {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-ink-secondary">Mandate expiry</span>
+              <span className="text-sales-text-secondary">Mandate expiry</span>
               <input
                 type="date"
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.mandate_expiry_date}
                 onChange={(e) => setForm((f) => ({ ...f, mandate_expiry_date: e.target.value }))}
               />
             </label>
             {form.transaction_type === "rental" ? (
               <label className="block text-sm">
-                <span className="text-ink-secondary">Lease term (months)</span>
+                <span className="text-sales-text-secondary">Lease term (months)</span>
                 <input
                   type="number"
-                  className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                  className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                   value={form.lease_term_months}
                   onChange={(e) => setForm((f) => ({ ...f, lease_term_months: e.target.value }))}
                 />
               </label>
             ) : null}
             <label className="block text-sm">
-              <span className="text-ink-secondary">External reference</span>
+              <span className="text-sales-text-secondary">External reference</span>
               <input
-                className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.external_reference}
                 onChange={(e) => setForm((f) => ({ ...f, external_reference: e.target.value }))}
               />
             </label>
           </div>
           <label className="block text-sm">
-            <span className="text-ink-secondary">Description</span>
+            <span className="text-sales-text-secondary">Description</span>
             <textarea
               rows={3}
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2"
+              className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </label>
           <label className="block text-sm">
-            <span className="text-ink-secondary">Photo URLs (one per line)</span>
+            <span className="text-sales-text-secondary">Photo URLs (one per line)</span>
             <textarea
               rows={3}
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2 font-mono text-xs"
+              className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary font-mono text-xs"
               value={form.photos}
               onChange={(e) => setForm((f) => ({ ...f, photos: e.target.value }))}
             />
@@ -403,7 +411,7 @@ export function ListingsManager({ clientId }: { clientId: string }) {
             </button>
             <button
               type="button"
-              className="btn-ghost border border-[var(--border)]"
+              className="rounded-[10px] border border-sales-border px-3 py-2 text-[13px] text-sales-text-secondary"
               onClick={() => setShowForm(false)}
             >
               Cancel
@@ -414,21 +422,23 @@ export function ListingsManager({ clientId }: { clientId: string }) {
 
       <div className="space-y-3">
         {listings.length === 0 ? (
-          <p className="text-sm text-ink-tertiary">No listings yet. Add your first property.</p>
+          <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-5 py-8 text-[13px] text-sales-text-muted">
+            No listings yet. Add your first property.
+          </p>
         ) : (
           listings.map((listing) => (
             <div
               key={listing.id}
-              className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5"
+              className="workspace-card flex flex-wrap items-start justify-between gap-3 rounded-[14px] border border-sales-border bg-sales-surface p-5"
             >
               <div className="min-w-0 flex-1">
                 <Link
                   href={`/client/listings/${listing.id}`}
-                  className="font-display text-lg text-ink-primary hover:underline"
+                  className="text-[16px] font-semibold tracking-[-0.02em] text-sales-text-primary hover:underline"
                 >
                   {listing.address || listing.external_reference || "Untitled listing"}
                 </Link>
-                <p className="mt-1 text-sm text-ink-secondary">
+                <p className="mt-1 text-[13px] text-sales-text-secondary">
                   {[listing.suburb, listing.transaction_type, listing.status]
                     .filter(Boolean)
                     .join(" · ")}
@@ -437,9 +447,11 @@ export function ListingsManager({ clientId }: { clientId: string }) {
                 </p>
               </div>
               <div className="flex gap-2">
+                {!readOnly ? (
+                  <>
                 <button
                   type="button"
-                  className="rounded-lg border border-[var(--border)] p-2 text-ink-secondary hover:text-ink-primary"
+                  className="rounded-[10px] border border-sales-border p-2 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
                   onClick={() => openEdit(listing)}
                   aria-label="Edit"
                 >
@@ -447,12 +459,14 @@ export function ListingsManager({ clientId }: { clientId: string }) {
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg border border-[var(--border)] p-2 text-ink-secondary hover:text-red-400"
+                  className="rounded-[10px] border border-sales-border p-2 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
                   onClick={() => void remove(listing.id)}
                   aria-label="Delete"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
+                  </>
+                ) : null}
               </div>
             </div>
           ))

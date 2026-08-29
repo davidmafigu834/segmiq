@@ -3,18 +3,29 @@ import {
   BarChart3,
   Bot,
   Box,
+  Building2,
+  CalendarCheck,
   CalendarDays,
+  ClipboardCheck,
   Columns3,
   CreditCard,
   FileText,
+  Globe,
+  Handshake,
   LayoutDashboard,
+  Landmark,
+  Megaphone,
   Package,
+  Radio,
   ScanSearch,
   Settings,
+  Shield,
+  Trophy,
   Users,
   UsersRound,
   Warehouse,
 } from "lucide-react";
+import { isRealEstate, type BusinessType } from "@/lib/terminology";
 
 export type CompanyNavBadgeKey = "whatsapp";
 
@@ -34,9 +45,31 @@ export type CompanyNavIconId =
   | "settings"
   | "products"
   | "inventory"
-  | "packages";
+  | "packages"
+  | "listings"
+  | "developments"
+  | "viewings"
+  | "offers"
+  | "marketing"
+  | "sources"
+  | "website"
+  | "compliance"
+  | "reviews"
+  | "performance";
 
-export type CompanyNavSectionId = "company" | "products" | "tools";
+export type CompanyNavSectionId =
+  | "company"
+  | "products"
+  | "tools"
+  | "overview"
+  | "sales"
+  | "marketing"
+  | "properties"
+  | "team"
+  | "compliance"
+  | "operations"
+  | "system";
+
 export type CompanyNavMobileSlot = "primary" | "more";
 
 export type CompanyNavItemConfig = {
@@ -72,6 +105,44 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   products: Box,
   inventory: Warehouse,
   packages: Package,
+  listings: Building2,
+  developments: Landmark,
+  viewings: CalendarCheck,
+  offers: Handshake,
+  marketing: Megaphone,
+  sources: Radio,
+  website: Globe,
+  compliance: Shield,
+  reviews: ClipboardCheck,
+  performance: Trophy,
+};
+
+export const COMPANY_NAV_SECTION_LABEL: Record<CompanyNavSectionId, string> = {
+  company: "Company",
+  products: "Products",
+  tools: "Tools",
+  overview: "Overview",
+  sales: "Sales",
+  marketing: "Marketing",
+  properties: "Properties",
+  team: "Team",
+  compliance: "Compliance",
+  operations: "Operations",
+  system: "System",
+};
+
+export const COMPANY_NAV_SECTION_ORDER: Record<BusinessType, CompanyNavSectionId[]> = {
+  trades: ["company", "products", "tools"],
+  real_estate: [
+    "overview",
+    "sales",
+    "marketing",
+    "properties",
+    "team",
+    "compliance",
+    "operations",
+    "system",
+  ],
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -79,7 +150,8 @@ function exactOrChild(pathname: string, href: string): boolean {
 }
 
 /**
- * Company / Manager navigation — mirrors salesperson sidebar IA.
+ * Company / Manager navigation — trades information architecture.
+ * Mirrors salesperson sidebar IA. Do not change for real_estate; use REAL_ESTATE_COMPANY_NAVIGATION.
  */
 export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
   {
@@ -242,6 +314,237 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
       exactOrChild(p, "/client/company-profile"),
   },
 ];
+
+/**
+ * Real-estate company IA. Products / Inventory / Packages / Quotations are
+ * intentionally omitted from first-class navigation (routes remain valid).
+ */
+export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    href: "/client/dashboard",
+    icon: "dashboard",
+    section: "overview",
+    mobileSlot: "primary",
+    mobileLabel: "Overview",
+    match: (p) => p === "/client/dashboard",
+  },
+  {
+    id: "inquiries",
+    label: "Inquiries",
+    href: "/client/leads",
+    icon: "leads",
+    section: "sales",
+    mobileSlot: "primary",
+    mobileLabel: "Inquiries",
+    match: (p) =>
+      (p === "/client/leads" || p.startsWith("/client/leads/")) &&
+      !p.startsWith("/client/leads/pipeline") &&
+      !p.startsWith("/client/marketing"),
+  },
+  {
+    id: "pipeline",
+    label: "Pipeline",
+    href: "/client/leads/pipeline",
+    icon: "pipeline",
+    section: "sales",
+    mobileSlot: "primary",
+    mobileLabel: "Pipeline",
+    match: (p) =>
+      exactOrChild(p, "/client/leads/pipeline") || exactOrChild(p, "/client/deals"),
+  },
+  {
+    id: "offers",
+    label: "Offers",
+    href: "/client/offers",
+    icon: "offers",
+    section: "sales",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/offers"),
+  },
+  {
+    id: "viewings",
+    label: "Viewings",
+    href: "/client/viewings",
+    icon: "viewings",
+    section: "sales",
+    mobileSlot: "primary",
+    mobileLabel: "Viewings",
+    match: (p) => exactOrChild(p, "/client/viewings"),
+  },
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    href: "/client/inbox",
+    icon: "whatsapp",
+    section: "sales",
+    badgeKey: "whatsapp",
+    mobileSlot: "primary",
+    mobileLabel: "WhatsApp",
+    match: (p) => exactOrChild(p, "/client/inbox"),
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    href: "/client/marketing",
+    icon: "marketing",
+    section: "marketing",
+    mobileSlot: "more",
+    match: (p) =>
+      p === "/client/marketing" ||
+      (p.startsWith("/client/marketing/") &&
+        !p.startsWith("/client/marketing/sources") &&
+        !p.startsWith("/client/marketing/website-leads")),
+  },
+  {
+    id: "lead-sources",
+    label: "Lead Sources",
+    href: "/client/marketing/sources",
+    icon: "sources",
+    section: "marketing",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/marketing/sources"),
+  },
+  {
+    id: "website-leads",
+    label: "Website Leads",
+    href: "/client/marketing/website-leads",
+    icon: "website",
+    section: "marketing",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/marketing/website-leads"),
+  },
+  {
+    id: "listings",
+    label: "Listings",
+    href: "/client/listings",
+    icon: "listings",
+    section: "properties",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/listings"),
+  },
+  {
+    id: "developments",
+    label: "Developments",
+    href: "/client/developments",
+    icon: "developments",
+    section: "properties",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/developments"),
+  },
+  {
+    id: "agents",
+    label: "Agents",
+    href: "/client/team",
+    icon: "team",
+    section: "team",
+    mobileSlot: "more",
+    match: (p) =>
+      exactOrChild(p, "/client/team") && !p.startsWith("/client/agents"),
+  },
+  {
+    id: "agent-performance",
+    label: "Agent Performance",
+    href: "/client/agents/performance",
+    icon: "performance",
+    section: "team",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/agents/performance"),
+  },
+  {
+    id: "compliance",
+    label: "Compliance Cases",
+    href: "/client/compliance",
+    icon: "compliance",
+    section: "compliance",
+    mobileSlot: "more",
+    match: (p) => p === "/client/compliance",
+  },
+  {
+    id: "reviews",
+    label: "Reviews",
+    href: "/client/compliance/reviews",
+    icon: "reviews",
+    section: "compliance",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/compliance/reviews"),
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    href: "/client/calendar",
+    icon: "calendar",
+    section: "operations",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/calendar"),
+  },
+  {
+    id: "reports",
+    label: "Reports",
+    href: "/client/reports",
+    icon: "reports",
+    section: "operations",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/reports"),
+  },
+  {
+    id: "customers",
+    label: "Customers",
+    href: "/client/customers",
+    icon: "customers",
+    section: "operations",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/customers"),
+  },
+  {
+    id: "settings",
+    label: "Settings",
+    href: "/client/settings",
+    icon: "settings",
+    section: "system",
+    mobileSlot: "more",
+    match: (p) =>
+      exactOrChild(p, "/client/settings") ||
+      exactOrChild(p, "/client/account") ||
+      exactOrChild(p, "/client/company-profile"),
+  },
+  {
+    id: "billing",
+    label: "Billing",
+    href: "/client/billing",
+    icon: "billing",
+    section: "system",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/billing"),
+  },
+];
+
+export function getCompanyNavigation(
+  businessType?: BusinessType | string | null
+): CompanyNavItemConfig[] {
+  return isRealEstate(businessType) ? REAL_ESTATE_COMPANY_NAVIGATION : COMPANY_NAVIGATION;
+}
+
+export function getCompanyNavSectionOrder(
+  businessType?: BusinessType | string | null
+): CompanyNavSectionId[] {
+  return isRealEstate(businessType)
+    ? COMPANY_NAV_SECTION_ORDER.real_estate
+    : COMPANY_NAV_SECTION_ORDER.trades;
+}
+
+export function companyNavHasTradesCatalog(
+  items: CompanyNavItemConfig[] = COMPANY_NAVIGATION
+): boolean {
+  return items.some((i) => i.id === "products" || i.id === "inventory" || i.id === "packages");
+}
+
+export function companyNavHasRealEstateProperties(
+  items: CompanyNavItemConfig[]
+): boolean {
+  return items.some((i) => i.id === "listings") && items.some((i) => i.id === "developments");
+}
 
 export function companyNavBySection(
   items: CompanyNavItemConfig[],

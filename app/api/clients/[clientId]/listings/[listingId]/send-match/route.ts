@@ -6,6 +6,7 @@ import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendInterestedListingIds, listingLabel } from "@/lib/real-estate/helpers";
 import { notifyPropertyMatch } from "@/lib/real-estate/notifications";
+import { logReActivity } from "@/lib/lead-events";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,27 @@ export async function POST(
     .from("contacts")
     .update({ interested_listing_ids: next, updated_at: new Date().toISOString() })
     .eq("id", contact.id);
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("client_id", params.clientId)
+    .eq("contact_id", contact.id)
+    .order("updated_at", { ascending: false })
+    .maybeSingle();
+  if (lead) {
+    await logReActivity({
+      leadId: lead.id as string,
+      clientId: params.clientId,
+      actor: {
+        id: session.userId,
+        name: session.user?.name ?? "Agent",
+        role: session.role,
+      },
+      summary: "Property sent to client",
+      kind: "property_sent",
+    });
+  }
 
   return NextResponse.json({
     ok: true,

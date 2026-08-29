@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { SiFacebook, SiWhatsapp } from "react-icons/si";
 import { cn } from "@/lib/ui/cn";
+import { DealSideBadge } from "@/components/real-estate/DealSideBadge";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import {
   Avatar,
   Badge,
@@ -145,6 +147,7 @@ function RowMenu({
   onOpenDeal: () => void;
   onNotQualified: () => void;
 }) {
+  const { terminology } = useCompanyWorkspace();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -188,7 +191,7 @@ function RowMenu({
               onView();
             }}
           >
-            View Lead
+            View {terminology.lead.singular}
           </button>
           {row.phone ? (
             <button
@@ -239,7 +242,7 @@ function RowMenu({
                 onAssign();
               }}
             >
-              Assign / Reassign
+            Assign / Reassign
             </button>
           ) : null}
           {row.hasDeal ? (
@@ -455,37 +458,38 @@ function pageWindow(page: number, pageCount: number, max = 5): number[] {
 function emptyCopy(
   tab: CompanyLeadsTab,
   kind: "none" | "search" | "filters" | "rows",
-  searchQuery: string
+  searchQuery: string,
+  lead: { singular: string; plural: string }
 ): { title: string; body: string } {
   if (kind === "search") {
     return {
-      title: `No Leads match “${searchQuery}”`,
+      title: `No ${lead.plural} match “${searchQuery}”`,
       body: "Try a different name, phone, or email.",
     };
   }
   if (kind === "filters") {
-    return { title: "No Leads match these filters.", body: "Clear filters to see more results." };
+    return { title: `No ${lead.plural} match these filters.`, body: "Clear filters to see more results." };
   }
   if (tab === "hot") {
-    return { title: "No Hot Leads right now.", body: "High-intent enquiries will appear here." };
+    return { title: `No Hot ${lead.plural} right now.`, body: "High-intent enquiries will appear here." };
   }
   if (tab === "qualified") {
     return {
-      title: "No qualified Leads yet.",
+      title: `No qualified ${lead.plural} yet.`,
       body: "Continue contacting and qualifying enquiries to identify real Deals.",
     };
   }
   if (tab === "not_qualified") {
-    return { title: "No Not Qualified Leads.", body: "Leads marked as not a genuine opportunity appear here." };
+    return { title: `No Not Qualified ${lead.plural}.`, body: `${lead.plural} marked as not a genuine opportunity appear here.` };
   }
   if (tab === "contacted") {
-    return { title: "No contacted Leads.", body: "Leads with a first customer contact appear here." };
+    return { title: `No contacted ${lead.plural}.`, body: `${lead.plural} with a first customer contact appear here.` };
   }
   if (tab === "new") {
-    return { title: "No new Leads.", body: "Fresh enquiries that have not been contacted yet appear here." };
+    return { title: `No new ${lead.plural}.`, body: "Fresh enquiries that have not been contacted yet appear here." };
   }
   return {
-    title: "No Leads yet.",
+    title: `No ${lead.plural} yet.`,
     body: "New enquiries and manually added prospects will appear here.",
   };
 }
@@ -569,17 +573,18 @@ export function CompanyLeadsTableCard({
   emptyKind: "none" | "search" | "filters" | "rows";
   searchQuery: string;
 }) {
+  const { terminology, isRealEstate } = useCompanyWorkspace();
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const pageIds = rows.map((r) => r.id);
   const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
   const somePageSelected = pageIds.some((id) => selectedIds.has(id));
-  const copy = emptyCopy(tab, emptyKind, searchQuery);
+  const copy = emptyCopy(tab, emptyKind, searchQuery, terminology.lead);
 
   return (
     <section
-      className="overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
+      className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
       data-course-target="company-leads-table"
     >
       <div
@@ -604,7 +609,7 @@ export function CompanyLeadsTableCard({
                   : "font-medium text-sales-text-secondary hover:text-sales-text-primary"
               )}
             >
-              {item.label}
+              {item.id === "all" ? `All ${terminology.lead.plural}` : item.label}
               <span className="ml-1.5 tabular-nums text-sales-text-muted">{count}</span>
               {active ? (
                 <span className="absolute inset-x-0 -bottom-px h-[3px] bg-sales-brand" aria-hidden />
@@ -619,7 +624,7 @@ export function CompanyLeadsTableCard({
           <SearchInput
             value={search}
             onChange={onSearchChange}
-            placeholder="Search Leads..."
+            placeholder={terminology.actions.searchLeads}
             className="w-full"
           />
         </div>
@@ -702,7 +707,7 @@ export function CompanyLeadsTableCard({
                 </Button>
               ) : canAddLead && tab === "all" ? (
                 <Button variant="primary" size="sm" onClick={onAddLead}>
-                  Add Lead
+                  Add {terminology.lead.singular}
                 </Button>
               ) : undefined
             }
@@ -723,13 +728,25 @@ export function CompanyLeadsTableCard({
                       />
                     </div>
                   </DataTableTh>
-                  <DataTableTh>Lead</DataTableTh>
+                  <DataTableTh>{terminology.lead.singular}</DataTableTh>
                   <DataTableTh className="w-[120px]">Source</DataTableTh>
-                  <DataTableTh className="hidden w-[160px] xl:table-cell">Contact</DataTableTh>
-                  <DataTableTh className="w-[110px]">Status</DataTableTh>
-                  <DataTableTh className="w-[100px]">Lead score</DataTableTh>
-                  <DataTableTh className="w-[72px]">Owner</DataTableTh>
-                  <DataTableTh className="hidden w-[130px] lg:table-cell">Created</DataTableTh>
+                  {isRealEstate ? (
+                    <>
+                      <DataTableTh className="hidden w-[160px] xl:table-cell">Property</DataTableTh>
+                      <DataTableTh className="w-[110px]">Budget</DataTableTh>
+                      <DataTableTh className="w-[120px]">Stage</DataTableTh>
+                      <DataTableTh className="w-[72px]">Agent</DataTableTh>
+                      <DataTableTh className="hidden w-[140px] lg:table-cell">Next</DataTableTh>
+                    </>
+                  ) : (
+                    <>
+                      <DataTableTh className="hidden w-[160px] xl:table-cell">Contact</DataTableTh>
+                      <DataTableTh className="w-[110px]">Status</DataTableTh>
+                      <DataTableTh className="w-[100px]">Lead score</DataTableTh>
+                      <DataTableTh className="w-[72px]">Owner</DataTableTh>
+                      <DataTableTh className="hidden w-[130px] lg:table-cell">Created</DataTableTh>
+                    </>
+                  )}
                   <DataTableTh className="w-12" />
                 </tr>
               </DataTableHead>
@@ -760,11 +777,14 @@ export function CompanyLeadsTableCard({
                           <p className="truncate text-[13px] font-semibold text-sales-text-primary">
                             {row.identity}
                           </p>
-                          {row.enquiryContext ? (
-                            <p className="truncate text-[11px] text-sales-text-muted">
-                              {row.enquiryContext}
-                            </p>
-                          ) : null}
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                            <DealSideBadge dealSide={row.dealSide} />
+                            {!isRealEstate && row.enquiryContext ? (
+                              <p className="truncate text-[11px] text-sales-text-muted">
+                                {row.enquiryContext}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
                     </DataTableTd>
@@ -775,42 +795,87 @@ export function CompanyLeadsTableCard({
                         sourceRaw={row.sourceRaw}
                       />
                     </DataTableTd>
-                    <DataTableTd className="hidden xl:table-cell">
-                      {row.phone || row.email ? (
-                        <div className="min-w-0">
-                          {row.phone ? (
-                            <p className="truncate text-[12px] text-sales-text-primary">{row.phone}</p>
-                          ) : null}
-                          {row.email ? (
-                            <p className="truncate text-[11px] text-sales-text-muted">{row.email}</p>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <span className="text-[12px] text-sales-text-muted">Contact not added</span>
-                      )}
-                    </DataTableTd>
-                    <DataTableTd>
-                      <LifecycleBadge status={row.lifecycle} label={row.lifecycleLabel} />
-                    </DataTableTd>
-                    <DataTableTd>
-                      <ScoreCell score={row.leadScore} intent={row.intent} />
-                    </DataTableTd>
-                    <DataTableTd>
-                      {row.ownerId ? (
-                        <span title={row.ownerName ?? "Owner"}>
-                          <Avatar
-                            name={row.ownerName ?? "Owner"}
-                            src={row.ownerAvatarUrl}
-                            size="sm"
+                    {isRealEstate ? (
+                      <>
+                        <DataTableTd className="hidden xl:table-cell">
+                          <p className="truncate text-[12px] text-sales-text-primary">
+                            {row.linkedListingLabel
+                              ? row.linkedListingLabel
+                              : row.requirementSummary
+                                ? `Looking for: ${row.requirementSummary}`
+                                : "—"}
+                          </p>
+                        </DataTableTd>
+                        <DataTableTd>
+                          <span className="text-[12px] text-sales-text-secondary">
+                            {row.budgetLabel ?? "—"}
+                          </span>
+                        </DataTableTd>
+                        <DataTableTd>
+                          <LifecycleBadge
+                            status={row.lifecycle}
+                            label={row.reStageLabel ?? row.lifecycleLabel}
                           />
-                        </span>
-                      ) : (
-                        <span className="text-[11px] font-medium text-sales-warning-fg">Unassigned</span>
-                      )}
-                    </DataTableTd>
-                    <DataTableTd className="hidden text-[12px] text-sales-text-secondary lg:table-cell">
-                      {row.createdLabel}
-                    </DataTableTd>
+                        </DataTableTd>
+                        <DataTableTd>
+                          {row.ownerId ? (
+                            <span title={row.ownerName ?? "Agent"}>
+                              <Avatar
+                                name={row.ownerName ?? "Agent"}
+                                src={row.ownerAvatarUrl}
+                                size="sm"
+                              />
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-sales-warning-fg">Unassigned</span>
+                          )}
+                        </DataTableTd>
+                        <DataTableTd className="hidden text-[12px] text-sales-text-secondary lg:table-cell">
+                          {row.nextAction.hasNextAction
+                            ? [row.nextAction.label, row.nextAction.whenLabel].filter(Boolean).join(" · ")
+                            : "No next action"}
+                        </DataTableTd>
+                      </>
+                    ) : (
+                      <>
+                        <DataTableTd className="hidden xl:table-cell">
+                          {row.phone || row.email ? (
+                            <div className="min-w-0">
+                              {row.phone ? (
+                                <p className="truncate text-[12px] text-sales-text-primary">{row.phone}</p>
+                              ) : null}
+                              {row.email ? (
+                                <p className="truncate text-[11px] text-sales-text-muted">{row.email}</p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <span className="text-[12px] text-sales-text-muted">Contact not added</span>
+                          )}
+                        </DataTableTd>
+                        <DataTableTd>
+                          <LifecycleBadge status={row.lifecycle} label={row.lifecycleLabel} />
+                        </DataTableTd>
+                        <DataTableTd>
+                          <ScoreCell score={row.leadScore} intent={row.intent} />
+                        </DataTableTd>
+                        <DataTableTd>
+                          {row.ownerId ? (
+                            <span title={row.ownerName ?? "Owner"}>
+                              <Avatar
+                                name={row.ownerName ?? "Owner"}
+                                src={row.ownerAvatarUrl}
+                                size="sm"
+                              />
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-sales-warning-fg">Unassigned</span>
+                          )}
+                        </DataTableTd>
+                        <DataTableTd className="hidden text-[12px] text-sales-text-secondary lg:table-cell">
+                          {row.createdLabel}
+                        </DataTableTd>
+                      </>
+                    )}
                     <DataTableTd onClick={(e) => e.stopPropagation()}>
                       <RowMenu
                         row={row}
@@ -851,22 +916,46 @@ export function CompanyLeadsTableCard({
                         <p className="truncate text-[13px] font-semibold text-sales-text-primary">
                           {row.identity}
                         </p>
-                        {row.enquiryContext ? (
-                          <p className="truncate text-[11px] text-sales-text-muted">
-                            {row.enquiryContext}
-                          </p>
-                        ) : null}
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                          <DealSideBadge dealSide={row.dealSide} />
+                          {!isRealEstate && row.enquiryContext ? (
+                            <p className="truncate text-[11px] text-sales-text-muted">
+                              {row.enquiryContext}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
-                    <LifecycleBadge status={row.lifecycle} label={row.lifecycleLabel} />
+                    <LifecycleBadge
+                      status={row.lifecycle}
+                      label={isRealEstate ? row.reStageLabel ?? row.lifecycleLabel : row.lifecycleLabel}
+                    />
                   </div>
+                  {isRealEstate ? (
+                    <p className="truncate text-[12px] text-sales-text-secondary">
+                      {row.linkedListingLabel
+                        ? row.linkedListingLabel
+                        : row.requirementSummary
+                          ? `Looking for: ${row.requirementSummary}`
+                          : "No property context yet"}
+                      {row.budgetLabel ? ` · ${row.budgetLabel}` : ""}
+                    </p>
+                  ) : null}
                   <div className="flex items-center justify-between gap-3 text-[12px]">
                     <SourceBadge
                       sourceKey={row.sourceKey}
                       sourceLabel={row.sourceLabel}
                       sourceRaw={row.sourceRaw}
                     />
-                    <ScoreCell score={row.leadScore} intent={row.intent} />
+                    {isRealEstate ? (
+                      <span className="truncate text-[11px] text-sales-text-muted">
+                        {row.nextAction.hasNextAction
+                          ? [row.nextAction.label, row.nextAction.whenLabel].filter(Boolean).join(" · ")
+                          : "No next action"}
+                      </span>
+                    ) : (
+                      <ScoreCell score={row.leadScore} intent={row.intent} />
+                    )}
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -883,7 +972,7 @@ export function CompanyLeadsTableCard({
                     </div>
                     <span className="text-[11px] text-sales-text-muted">{row.createdLabel}</span>
                   </div>
-                  {row.nextAction.hasNextAction ? (
+                  {!isRealEstate && row.nextAction.hasNextAction ? (
                     <p className="text-[11px] text-sales-text-muted">
                       {row.nextAction.label}
                       {row.nextAction.whenLabel ? ` · ${row.nextAction.whenLabel}` : ""}
@@ -901,7 +990,13 @@ export function CompanyLeadsTableCard({
           <p className="text-[12px] text-sales-text-muted">
             {loading
               ? "Loading…"
-              : `Showing ${from} to ${to} of ${total} Lead${total === 1 ? "" : "s"}`}
+              : `Showing ${from} to ${to} of ${total} ${
+                  isRealEstate
+                    ? total === 1
+                      ? "inquiry"
+                      : "inquiries"
+                    : `Lead${total === 1 ? "" : "s"}`
+                }`}
           </p>
           <div className="flex items-center justify-center gap-1">
             <button

@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { AppShell } from "@/components/shell/AppShell";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
+import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
+import { getTerminology, isRealEstate, normalizeBusinessType } from "@/lib/terminology";
 
 export async function ClientManagerLayout({
   children,
@@ -67,7 +69,8 @@ export async function ClientManagerLayout({
         ? `COMPANY / ${clientName}`
         : "COMPANY");
 
-  const isRE = businessType === "real_estate";
+  const isRE = isRealEstate(businessType);
+  const terms = getTerminology(businessType);
 
   const resolvedHideHeader = workspaceShell || hideShellHeader;
   const resolvedHideSidebar = workspaceShell || hideShellSidebar;
@@ -86,29 +89,39 @@ export async function ClientManagerLayout({
       (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
   }
 
-  const primaryNav = [
-    { href: "/client/dashboard", label: "Dashboard", icon: "home" as const },
-    { href: "/client/team", label: isRE ? "Agents" : "Team", icon: "users" as const },
-    { href: "/client/leads/pipeline", label: "Pipeline", icon: "bar-chart-3" as const },
-    { href: "/client/leads", label: "Leads", icon: "users" as const },
-    { href: "/client/inbox", label: "WhatsApp Sales Hub", icon: "inbox" as const },
-    { href: "/client/quotations", label: "Quotations", icon: "file-text" as const },
-    { href: "/client/calendar", label: "Calendar", icon: "calendar" as const },
-    { href: "/client/customers", label: "Customers", icon: "users" as const },
-    ...(isRE
-      ? [
-          { href: "/client/listings", label: "Listings", icon: "building2" as const },
-          { href: "/client/developments", label: "Developments", icon: "building2" as const },
-        ]
-      : []),
-    { href: "/client/event-capture", label: "Event Capture", icon: "calendar" as const },
-    { href: "/client/marketing", label: "Marketing", icon: "megaphone" as const },
-    { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
-    { href: "/client/billing", label: "Billing", icon: "receipt" as const },
-    ...(session?.alsoSells
-      ? [{ href: "/sales/dashboard", label: isRE ? "My inquiries" : "My sales", icon: "phone" as const }]
-      : []),
-  ];
+  const primaryNav = isRE
+    ? [
+        { href: "/client/dashboard", label: "Overview", icon: "home" as const },
+        { href: "/client/leads", label: terms.lead.plural, icon: "users" as const },
+        { href: "/client/leads/pipeline", label: "Pipeline", icon: "bar-chart-3" as const },
+        { href: "/client/offers", label: "Offers", icon: "file-text" as const },
+        { href: "/client/viewings", label: terms.siteVisit.plural, icon: "calendar" as const },
+        { href: "/client/inbox", label: "WhatsApp", icon: "inbox" as const },
+        { href: "/client/listings", label: "Listings", icon: "building2" as const },
+        { href: "/client/developments", label: "Developments", icon: "building2" as const },
+        { href: "/client/team", label: terms.salesperson.plural, icon: "users" as const },
+        { href: "/client/calendar", label: "Calendar", icon: "calendar" as const },
+        { href: "/client/marketing", label: "Marketing", icon: "megaphone" as const },
+        { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
+        { href: "/client/billing", label: "Billing", icon: "receipt" as const },
+      ]
+    : [
+        { href: "/client/dashboard", label: "Dashboard", icon: "home" as const },
+        { href: "/client/team", label: "Team", icon: "users" as const },
+        { href: "/client/leads/pipeline", label: "Pipeline", icon: "bar-chart-3" as const },
+        { href: "/client/leads", label: "Leads", icon: "users" as const },
+        { href: "/client/inbox", label: "WhatsApp Sales Hub", icon: "inbox" as const },
+        { href: "/client/quotations", label: "Quotations", icon: "file-text" as const },
+        { href: "/client/calendar", label: "Calendar", icon: "calendar" as const },
+        { href: "/client/customers", label: "Customers", icon: "users" as const },
+        { href: "/client/event-capture", label: "Event Capture", icon: "calendar" as const },
+        { href: "/client/marketing", label: "Marketing", icon: "megaphone" as const },
+        { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
+        { href: "/client/billing", label: "Billing", icon: "receipt" as const },
+        ...(session?.alsoSells
+          ? [{ href: "/sales/dashboard", label: "My sales", icon: "phone" as const }]
+          : []),
+      ];
 
   const secondaryNav = [
     { href: "/upload", label: "Upload Photos", icon: "camera" as const },
@@ -117,7 +130,8 @@ export async function ClientManagerLayout({
   ];
 
   const pageContent = workspaceShell ? (
-    <CompanyWorkspaceShell
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)}>
+      <CompanyWorkspaceShell
       companyName={clientName ?? undefined}
       companyLogoUrl={logoUrl}
       userName={session?.user?.name ?? "User"}
@@ -129,6 +143,7 @@ export async function ClientManagerLayout({
     >
       {children}
     </CompanyWorkspaceShell>
+    </CompanyWorkspaceProvider>
   ) : (
     children
   );

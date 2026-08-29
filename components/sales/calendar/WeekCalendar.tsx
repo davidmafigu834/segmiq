@@ -34,7 +34,7 @@ export function WeekCalendar({
     now.getHours() <= 17;
 
   return (
-    <div className="overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+    <div className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-sales-border bg-sales-surface-hover">
         <div />
         {days.map((day) => {

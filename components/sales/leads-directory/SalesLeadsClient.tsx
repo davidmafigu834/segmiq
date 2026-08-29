@@ -46,7 +46,9 @@ import {
 import { ReportKpiCard } from "@/components/sales/reports/ReportKpiCard";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { LeadDetailPanel } from "@/app/sales/leads/LeadDetailPanel";
-import { openLeadPanel, useLeadPanel } from "@/store/uiStore";
+import { RealEstateInquiryWorkspace } from "@/components/real-estate/RealEstateInquiryWorkspace";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
+import { openLeadPanel, useLeadPanel, closeLeadPanel } from "@/store/uiStore";
 import { AddToHubSheet } from "@/components/sales/AddToHubSheet";
 import { LeadsBySourceCard } from "@/components/sales/leads-directory/LeadsBySourceCard";
 import { LeadStageOverviewCard } from "@/components/sales/leads-directory/LeadStageOverviewCard";
@@ -141,6 +143,7 @@ export function SalesLeadsClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toast } = useSalesToast();
+  const { isRealEstate } = useCompanyWorkspace();
   const panel = useLeadPanel();
 
   const [period, setPeriod] = useState<LeadsPeriodId>(
@@ -872,6 +875,7 @@ export function SalesLeadsClient({
         <AddToHubSheet
           assignmentMode={assignmentMode}
           mode="salesperson"
+          realEstate={isRealEstate}
           onClose={() => setAddOpen(false)}
           onSuccess={() => {
             setAddOpen(false);
@@ -881,11 +885,34 @@ export function SalesLeadsClient({
         />
       ) : null}
 
-      <LeadDetailPanel
-        leads={panelLeads}
-        onLeadUpdated={() => void load()}
-        onClose={closeLeadUrl}
-      />
+      {isRealEstate && panel.open && panel.leadId ? (
+        <RealEstateInquiryWorkspace
+          clientId={data?.leads.find((l) => l.id === panel.leadId)?.clientId ?? ""}
+          leadId={panel.leadId}
+          onClose={() => {
+            closeLeadPanel();
+            closeLeadUrl();
+          }}
+          onCall={() => {
+            const row =
+              panelLeads.find((l) => l.id === panel.leadId) ??
+              data?.leads.find((l) => l.id === panel.leadId);
+            if (row?.phone) window.location.href = `tel:${row.phone}`;
+          }}
+          onWhatsApp={() => {
+            const row = data?.leads.find((l) => l.id === panel.leadId);
+            if (row) void messageWhatsApp(row);
+          }}
+          overlay
+          stacked
+        />
+      ) : (
+        <LeadDetailPanel
+          leads={panelLeads}
+          onLeadUpdated={() => void load()}
+          onClose={closeLeadUrl}
+        />
+      )}
     </div>
   );
 }

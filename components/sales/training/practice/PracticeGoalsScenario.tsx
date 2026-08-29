@@ -10,7 +10,7 @@ export function PracticeGoalsScenario() {
     <div className="space-y-4">
       <div
         data-course-target="practice-goals-revenue"
-        className="rounded-[14px] border border-sales-border bg-sales-surface p-4"
+        className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4"
       >
         <p className="text-[12px] text-sales-text-muted">Revenue Goal</p>
         <p className="mt-1 text-[24px] font-semibold tabular-nums text-sales-text-primary">
@@ -23,7 +23,7 @@ export function PracticeGoalsScenario() {
 
       <div
         data-course-target="practice-goals-coverage"
-        className="rounded-[14px] border border-sales-border bg-sales-surface p-4"
+        className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4"
       >
         <p className="text-[12px] text-sales-text-muted">Pipeline Coverage</p>
         <p className="mt-1 text-[20px] font-semibold tabular-nums text-sales-text-primary">
@@ -36,7 +36,7 @@ export function PracticeGoalsScenario() {
 
       <div
         data-course-target="practice-goals-commitments"
-        className="rounded-[14px] border border-sales-border bg-sales-surface p-4"
+        className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4"
       >
         <p className="text-[12px] text-sales-text-muted">Daily Commitments</p>
         <ul className="mt-2 space-y-1 text-[13px] text-sales-text-primary">

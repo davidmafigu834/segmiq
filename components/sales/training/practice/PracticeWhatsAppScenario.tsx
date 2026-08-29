@@ -13,7 +13,7 @@ export function PracticeWhatsAppScenario() {
   const { practice, setPractice } = useGuidedCourse();
 
   return (
-    <div className="overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface">
+    <div className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
       <div className="border-b border-sales-border px-4 py-3">
         <p className="text-[14px] font-semibold text-sales-text-primary">Tariro Moyo</p>
         <p className="text-[12px] text-sales-text-muted">Practice chat · not sent via WhatsApp</p>

@@ -4,6 +4,7 @@ import type {
   SalesKpiItem,
   SalesPipelineSnapshotStage,
 } from "@/components/dashboard/sales/types";
+import type { BusinessType } from "@/lib/terminology";
 
 export type CompanyFocusSeverity = "critical" | "high" | "medium" | "info";
 
@@ -93,6 +94,7 @@ export type CompanySalesDashboardData = {
   clientId: string;
   clientName: string;
   alsoSells: boolean;
+  businessType: BusinessType;
   generatedAt: string;
   kpis: SalesKpiItem[];
   focusAreas: CompanyFocusSignal[];

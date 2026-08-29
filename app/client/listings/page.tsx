@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { ListingsManager } from "@/components/real-estate/ListingsManager";
 import { PageHeader } from "@/components/ui";
-import { isRealEstate } from "@/lib/terminology";
+import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 
 export default async function ClientListingsPage() {
   const session = await getServerSession(authOptions);
@@ -21,9 +21,7 @@ export default async function ClientListingsPage() {
     .single();
 
   if (!client) redirect("/login");
-  if (!isRealEstate(client.business_type)) {
-    redirect("/client/dashboard");
-  }
+  redirectIfNotRealEstate(client.business_type);
 
   return (
     <ClientManagerLayout breadcrumbPage="LISTINGS" pageTitle="Listings" workspaceShell>

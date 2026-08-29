@@ -696,7 +696,7 @@ export function CompanyQuotationsTable({
 
   return (
     <section
-      className="min-w-0 max-w-full overflow-visible rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
+      className="min-w-0 max-w-full overflow-visible workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
       data-course-target="company-quotations-table"
     >
       <div className="flex min-w-0 flex-col gap-2 border-b border-sales-border-subtle px-3 py-3 sm:px-4 sm:flex-row sm:items-center">

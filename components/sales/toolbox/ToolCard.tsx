@@ -26,7 +26,7 @@ export function ToolCard({
   featured?: boolean;
 }) {
   const className = cn(
-    "group flex h-full flex-col rounded-[14px] border border-sales-border bg-sales-surface p-5 text-left shadow-sales-card transition-[border-color,box-shadow] duration-150",
+    "group flex h-full flex-col workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5 text-left shadow-sales-card transition-[border-color,box-shadow] duration-150",
     "hover:border-sales-border-strong hover:shadow-[0_2px_8px_rgba(16,24,40,0.06)]",
     "focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
     featured ? "min-h-[190px]" : "min-h-[150px]"

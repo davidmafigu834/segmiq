@@ -7,12 +7,13 @@ import { Ellipsis, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import {
   COMPANY_NAV_LUCIDE,
-  COMPANY_NAVIGATION,
   companyMobileMoreItems,
   companyMobilePrimaryItems,
+  getCompanyNavigation,
   type CompanyNavBadgeKey,
   type CompanyNavIconId,
 } from "@/lib/sales/navigation/company-nav-config";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { cn } from "@/lib/ui/cn";
 
 function NavIcon({
@@ -59,9 +60,11 @@ function NavIcon({
 
 export function CompanyBottomNav({ whatsappBadge = 0 }: { whatsappBadge?: number }) {
   const pathname = usePathname();
+  const { businessType } = useCompanyWorkspace();
+  const navigation = getCompanyNavigation(businessType);
   const [moreOpen, setMoreOpen] = useState(false);
-  const items = companyMobilePrimaryItems(COMPANY_NAVIGATION);
-  const moreItems = companyMobileMoreItems(COMPANY_NAVIGATION);
+  const items = companyMobilePrimaryItems(navigation);
+  const moreItems = companyMobileMoreItems(navigation);
   const badges: Partial<Record<CompanyNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
   };

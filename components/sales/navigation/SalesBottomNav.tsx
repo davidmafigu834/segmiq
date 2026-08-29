@@ -13,6 +13,7 @@ import {
   type SalesNavIconId,
 } from "@/lib/sales/navigation/sales-nav-config";
 import { cn } from "@/lib/ui/cn";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 
 function NavIcon({
   icon,
@@ -67,7 +68,8 @@ export function SalesBottomNav({
 }) {
   const pathname = usePathname();
   const { setMoreOpen, moreOpen } = useSalesMobileChrome();
-  const items = salesMobilePrimaryItems(resolveSalesNavItems(isSolo));
+  const { businessType } = useCompanyWorkspace();
+  const items = salesMobilePrimaryItems(resolveSalesNavItems(isSolo, businessType));
   const badges: Partial<Record<SalesNavBadgeKey, number>> = {
     whatsapp: whatsappBadge,
     tasks: tasksBadge,

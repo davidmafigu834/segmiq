@@ -231,6 +231,35 @@ function EventContent({ event }: { event: TimelineEventRow }) {
     );
   }
 
+  if (event.event_type === "NOTE_ADDED") {
+    const reKind = d.re_kind as string | undefined;
+    const notes = (d.notes as string | null) ?? null;
+    const labels: Record<string, string> = {
+      requirements_updated: "Requirements updated",
+      property_matched: "Property matched",
+      property_sent: "Property sent to client",
+      property_linked: "Property linked",
+      viewing_scheduled: "Viewing scheduled",
+      viewing_completed: "Viewing completed",
+      stage_changed: "Stage changed",
+      offer_created: "Offer created",
+      offer_submitted: "Offer submitted",
+      offer_countered: "Seller countered",
+      offer_revised: "Buyer revised offer",
+      offer_accepted: "Offer accepted",
+      offer_rejected: "Offer rejected",
+      offer_withdrawn: "Offer withdrawn",
+    };
+    const title = (reKind && labels[reKind]) || "Note added";
+    return (
+      <div>
+        <p className="text-[13px] text-ink-primary">{title}</p>
+        {notes ? <p className="mt-0.5 text-[12px] text-ink-secondary">{notes}</p> : null}
+        {jobLabel ? <p className="mt-0.5 text-[12px] text-ink-tertiary">{jobLabel}</p> : null}
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="font-mono text-[11px] uppercase text-ink-secondary">

@@ -6,6 +6,8 @@ import { CompanyMobileTopBar } from "@/components/company/navigation/CompanyMobi
 import { CompanyBottomNav } from "@/components/company/navigation/CompanyBottomNav";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
+import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
+import { normalizeBusinessType, type BusinessType } from "@/lib/terminology";
 import type { UserRole } from "@/types";
 
 export function CompanyWorkspaceShell({
@@ -20,6 +22,7 @@ export function CompanyWorkspaceShell({
   immersive = false,
   hideMobileChrome = false,
   preferCollapsedSidebar = false,
+  businessType,
 }: {
   children: ReactNode;
   companyName?: string;
@@ -35,12 +38,13 @@ export function CompanyWorkspaceShell({
   hideMobileChrome?: boolean;
   /** Workspace routes may prefer the compact sidebar only when no user preference exists yet. */
   preferCollapsedSidebar?: boolean;
+  businessType?: BusinessType | string | null;
 }) {
   const { collapsed, toggleCollapsed, width } = useCompanySidebarCollapsed({
     preferCollapsedOnFirstVisit: preferCollapsedSidebar,
   });
 
-  return (
+  const shell = (
     <div
       className="sales-dashboard-premium dashboard-shell flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
       data-sidebar-collapsed={collapsed ? "true" : "false"}
@@ -87,5 +91,12 @@ export function CompanyWorkspaceShell({
 
       {!hideMobileChrome ? <CompanyBottomNav whatsappBadge={whatsappBadge} /> : null}
     </div>
+  );
+
+  if (businessType == null) return shell;
+  return (
+    <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)}>
+      {shell}
+    </CompanyWorkspaceProvider>
   );
 }

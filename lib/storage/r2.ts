@@ -116,6 +116,15 @@ export async function getObject(key: string): Promise<Buffer> {
   return Buffer.from(await res.Body!.transformToByteArray());
 }
 
+export function generateComplianceDocKey(
+  clientId: string,
+  caseId: string,
+  filename: string
+): string {
+  const ext = filename.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+  return `clients/${clientId}/compliance/${caseId}/${Date.now()}.${ext}`;
+}
+
 export async function putObject(
   key: string,
   body: Buffer,

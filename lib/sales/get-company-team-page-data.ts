@@ -21,6 +21,7 @@ import {
 } from "@/lib/sales/sales-dashboard-display";
 import { formatDealCurrency } from "@/lib/sales/format";
 import type { DealRow, QuotationRow, UserRole } from "@/types";
+import { normalizeBusinessType } from "@/lib/terminology";
 import type { SalesKpiItem } from "@/components/dashboard/sales/types";
 import type {
   CompanyTeamMemberTableRow,
@@ -315,7 +316,7 @@ export async function getCompanyTeamPageData(opts: {
   ] = await Promise.all([
     supabase
       .from("clients")
-      .select("id, name")
+      .select("id, name, business_type")
       .eq("id", clientId)
       .maybeSingle(),
     supabase
@@ -358,6 +359,9 @@ export async function getCompanyTeamPageData(opts: {
   const deals = ((dealsRes.data ?? []) as DealRow[]).filter(Boolean);
   const team = (teamRes.data ?? []) as TeamUser[];
   const clientName = (clientRes.data?.name as string) ?? "Company";
+  const businessType = normalizeBusinessType(
+    (clientRes.data as { business_type?: string } | null)?.business_type
+  );
 
   const activeDeals = deals.filter((d) =>
     (DEAL_ACTIVE_STAGES as readonly string[]).includes(d.stage)
@@ -603,6 +607,7 @@ export async function getCompanyTeamPageData(opts: {
   return {
     clientId,
     clientName,
+    businessType,
     alsoSells,
     canManageTeam: canManage,
     canReassignLeads: canReassign,

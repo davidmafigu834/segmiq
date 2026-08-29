@@ -282,7 +282,7 @@ export function CompanyCalendarAgendaRail({
   onComplete: () => void;
 }) {
   return (
-    <aside className="h-full min-h-[760px] overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card" data-course-target="calendar-right-agenda">
+    <aside className="h-full min-h-[760px] overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card" data-course-target="calendar-right-agenda">
       {selectedEvent ? (
         <EventDetail event={selectedEvent} timezone={timezone} busy={busy} onBack={onBack} onEdit={onEdit} onComplete={onComplete} />
       ) : (

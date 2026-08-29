@@ -8,6 +8,7 @@ import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CompanyLeadsPage } from "@/components/dashboard/company/leads/CompanyLeadsPage";
 import { CompanyLeadsPageSkeleton } from "@/components/dashboard/company/leads/CompanyLeadsPageSkeleton";
+import { getTerminology } from "@/lib/terminology";
 
 export const dynamic = "force-dynamic";
 
@@ -68,11 +69,12 @@ export default async function ClientLeadsPage({
 
   const whatsappBadge =
     (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+  const terms = getTerminology(data.businessType);
 
   return (
     <ClientManagerLayout
-      breadcrumbPage="LEADS"
-      pageTitle="Leads"
+      breadcrumbPage={terms.lead.plural.toUpperCase()}
+      pageTitle={terms.lead.plural}
       hideShellHeader
       hideShellSidebar
       navClientId={clientId}

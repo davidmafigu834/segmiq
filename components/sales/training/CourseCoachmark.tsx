@@ -169,7 +169,7 @@ export function CourseCoachmark({
       role="dialog"
       aria-modal="false"
       aria-label={step.title}
-      className="sales-modal-premium z-[var(--sales-z-course-coach,92)] rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-modal"
+      className="sales-modal-premium z-[var(--sales-z-course-coach,92)] workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-modal"
       style={{ ...style, backgroundColor: "var(--sales-surface, #FFFFFF)" }}
     >
       {body}

@@ -32,6 +32,8 @@ import { timeAgo } from "@/lib/sales-priority-lead";
 import { leadJoinName } from "@/lib/format";
 import type { DealRow, QuotationRow } from "@/types";
 import type { SalesDashboardRaw } from "@/lib/sales/sales-dashboard-view";
+import { getAgentRealEstateDashboard, type AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
+import { isRealEstate, normalizeBusinessType } from "@/lib/terminology";
 import type {
   SalesActivityItem,
   SalesDealAttentionItem,
@@ -98,6 +100,8 @@ export type SalesDashboardData = {
   planSummary: SalesPlanSummary;
   hasAnyDeals: boolean;
   hasAnyLeads: boolean;
+  clientId: string | null;
+  realEstate: AgentReDashboard | null;
 };
 
 function startOfLocalDay(d: Date): Date {
@@ -1102,6 +1106,21 @@ export async function getSalesDashboardData(opts: {
     priorityDeals.length
   );
 
+  let realEstate: AgentReDashboard | null = null;
+  if (opts.clientId) {
+    const { data: clientRow } = await supabase
+      .from("clients")
+      .select("business_type")
+      .eq("id", opts.clientId)
+      .maybeSingle();
+    if (isRealEstate(normalizeBusinessType(clientRow?.business_type))) {
+      realEstate = await getAgentRealEstateDashboard({
+        clientId: opts.clientId,
+        userId: opts.userId,
+      });
+    }
+  }
+
   return {
     legacy: legacy as SalesDashboardData["legacy"],
     commercial,
@@ -1120,5 +1139,7 @@ export async function getSalesDashboardData(opts: {
     planSummary,
     hasAnyDeals: deals.length > 0,
     hasAnyLeads: legacy.numbers.totalActive > 0 || (leadsMonthRes.data?.length ?? 0) > 0,
+    clientId: opts.clientId,
+    realEstate,
   };
 }

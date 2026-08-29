@@ -252,7 +252,7 @@ export function CompanyLeadsLeadPanel({
     <aside
       data-course-target="company-lead-detail"
       className={cn(
-        "flex h-full min-h-0 flex-col overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+        "flex h-full min-h-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
         overlay &&
           "fixed inset-y-0 right-0 z-40 w-full max-w-[400px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
         stacked && overlay && "inset-0 max-w-none rounded-none"

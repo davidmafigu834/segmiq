@@ -19,6 +19,7 @@ import {
 } from "@/lib/walk-in-intake";
 import { MANUAL_LEAD_STAGES } from "@/lib/customer-hub/manual-lead-stages";
 import { IN_PERSON_HUB_SOURCES } from "@/lib/customer-hub/recent-status";
+import { HUB_RE_SOURCES } from "@/lib/real-estate/marketing";
 import type { ContactLifecycle, LeadStatus } from "@/types";
 import { PremiumSheet } from "./PremiumSheet";
 
@@ -55,6 +56,7 @@ export function AddToHubSheet({
   lockType = false,
   hideSourceField = false,
   variant = "default",
+  realEstate = false,
   initialContact,
   defaultForceNew = false,
   onClose,
@@ -68,6 +70,7 @@ export function AddToHubSheet({
   lockType?: boolean;
   hideSourceField?: boolean;
   variant?: "default" | "walk_in";
+  realEstate?: boolean;
   initialContact?: { name?: string | null; phone?: string | null; email?: string | null };
   defaultForceNew?: boolean;
   onClose: () => void;
@@ -80,7 +83,10 @@ export function AddToHubSheet({
   const [location, setLocation] = useState("");
   const [name, setName] = useState(initialContact?.name ?? "");
   const [phone, setPhone] = useState(initialContact?.phone ?? "");
-  const [source, setSource] = useState(defaultSource ?? SOURCES[0]);
+  const sourceOptions = realEstate ? [...HUB_RE_SOURCES] : SOURCES;
+  const [source, setSource] = useState(defaultSource ?? sourceOptions[0]);
+  const [referredBy, setReferredBy] = useState("");
+  const [portalName, setPortalName] = useState("");
   const [priority, setPriority] = useState<"hot" | "warm" | "cold">("warm");
   const [stage, setStage] = useState<LeadStatus>("NEW");
   const [email, setEmail] = useState(initialContact?.email ?? "");
@@ -181,6 +187,8 @@ export function AddToHubSheet({
         budget: budget.trim() || undefined,
         forceNew: forceNew || undefined,
       };
+      if (realEstate && source === "Referral" && referredBy.trim()) body.referredBy = referredBy.trim();
+      if (realEstate && source === "Property Portal" && portalName.trim()) body.portalName = portalName.trim();
       if (clientId) body.clientId = clientId;
       if (!isLead) {
         body.customerType = customerType;
@@ -437,13 +445,15 @@ export function AddToHubSheet({
 
               {!hideSourceField ? (
                 <label className="flex flex-col gap-1.5">
-                  <span className={labelClass}>Source</span>
+                  <span className={labelClass}>
+                    {realEstate ? "How did this client hear about us?" : "Source"}
+                  </span>
                   <select
                     className={fieldClass}
                     value={source}
                     onChange={(e) => setSource(e.target.value)}
                   >
-                    {SOURCES.map((s) => (
+                    {sourceOptions.map((s) => (
                       <option key={s} value={s}>
                         {s}
                       </option>
@@ -453,6 +463,34 @@ export function AddToHubSheet({
               ) : (
                 <input type="hidden" value={source} readOnly />
               )}
+
+              {realEstate && source === "Referral" ? (
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelClass}>Referred by</span>
+                  <input
+                    className={fieldClass}
+                    value={referredBy}
+                    onChange={(e) => setReferredBy(e.target.value)}
+                    placeholder="Existing client or introducer"
+                  />
+                </label>
+              ) : null}
+
+              {realEstate && source === "Property Portal" ? (
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelClass}>Portal</span>
+                  <select
+                    className={fieldClass}
+                    value={portalName}
+                    onChange={(e) => setPortalName(e.target.value)}
+                  >
+                    <option value="">Select portal</option>
+                    <option value="Property24">Property24</option>
+                    <option value="Private Property">Private Property</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+              ) : null}
 
               {isWalkInFlow && (
                 <div className="flex flex-col gap-2">
@@ -747,6 +785,7 @@ export function useAddHubSheet() {
         clientId?: string;
         defaultType?: "lead" | "customer";
         lockType?: boolean;
+        realEstate?: boolean;
       }
     ) => ({
       openAddHubSheet: () => setOpen(true),
@@ -757,6 +796,7 @@ export function useAddHubSheet() {
           clientId={options?.clientId}
           defaultType={options?.defaultType}
           lockType={options?.lockType}
+          realEstate={options?.realEstate}
           onClose={() => setOpen(false)}
           onSuccess={() => router.refresh()}
         />

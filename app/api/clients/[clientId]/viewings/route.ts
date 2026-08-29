@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { appendInterestedListingIds } from "@/lib/real-estate/helpers";
+import { logReActivity } from "@/lib/lead-events";
 import {
   notifyViewingConfirmation,
   notifyViewingFeedbackRequest,
@@ -150,7 +151,44 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     });
   });
 
+  await logViewingActivity({
+    clientId: params.clientId,
+    contactId: contact.id as string,
+    actor: {
+      id: session.userId,
+      name: session.user?.name ?? "Agent",
+      role: session.role,
+    },
+    summary: "Viewing scheduled",
+    kind: "viewing_scheduled",
+  });
+
   return NextResponse.json({ viewing }, { status: 201 });
+}
+
+async function logViewingActivity(opts: {
+  clientId: string;
+  contactId: string;
+  actor: { id: string; name: string; role: string };
+  summary: string;
+  kind: "viewing_scheduled" | "viewing_completed";
+}) {
+  const supabase = createAdminClient();
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("client_id", opts.clientId)
+    .eq("contact_id", opts.contactId)
+    .order("updated_at", { ascending: false })
+    .maybeSingle();
+  if (!lead) return;
+  await logReActivity({
+    leadId: lead.id as string,
+    clientId: opts.clientId,
+    actor: opts.actor,
+    summary: opts.summary,
+    kind: opts.kind,
+  });
 }
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string } }) {
@@ -226,6 +264,17 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     body.status === "completed" && (viewingRow as { status?: string }).status !== "completed";
 
   if (becameCompleted) {
+    await logViewingActivity({
+      clientId: params.clientId,
+      contactId: (updated?.contact_id as string) || (viewingRow as { contact_id?: string }).contact_id || "",
+      actor: {
+        id: session.userId,
+        name: session.user?.name ?? "Agent",
+        role: session.role,
+      },
+      summary: body.feedback_text ? "Viewing completed with feedback" : "Viewing completed",
+      kind: "viewing_completed",
+    });
     background("viewing-feedback-request", async () => {
       const listing =
         (viewingRow as { listing?: { address?: string; suburb?: string } }).listing ??

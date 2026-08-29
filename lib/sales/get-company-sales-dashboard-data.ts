@@ -42,6 +42,7 @@ import type {
 } from "@/components/dashboard/company/types";
 import { resolveFollowUpDateTime } from "@/lib/call-log-constants";
 import { format as formatDate, isToday, isTomorrow, startOfDay, addDays } from "date-fns";
+import { isRealEstate, normalizeBusinessType, type BusinessType } from "@/lib/terminology";
 
 const QUALIFIED_LEAD_STATUSES = new Set([
   "QUALIFIED",
@@ -340,6 +341,74 @@ function buildFocusSignals(opts: {
   }));
 }
 
+function buildRealEstateCompanyKpis(opts: {
+  activeListings: number;
+  upcomingViewings: number;
+  activeInquiries: number;
+  underOffer: number;
+  activeOffers: number;
+  avgResponseMinutes: number | null;
+  avgResponseMinutesPrev: number | null;
+}): SalesKpiItem[] {
+  const responseTrend =
+    opts.avgResponseMinutes != null && opts.avgResponseMinutesPrev != null
+      ? trendVs(opts.avgResponseMinutes, opts.avgResponseMinutesPrev, "vs last 30 days", {
+          invertGood: true,
+        })
+      : undefined;
+
+  return [
+    {
+      id: "active-listings",
+      label: "Active Listings",
+      value: String(opts.activeListings),
+      supporting: "Available stock",
+      icon: "companies",
+      href: "/client/listings",
+    },
+    {
+      id: "upcoming-viewings",
+      label: "Upcoming Viewings",
+      value: String(opts.upcomingViewings),
+      supporting: "Scheduled",
+      icon: "followups",
+      href: "/client/viewings",
+    },
+    {
+      id: "active-inquiries",
+      label: "Active Inquiries",
+      value: String(opts.activeInquiries),
+      supporting: "Open inquiries",
+      icon: "enquiries",
+      href: "/client/leads",
+    },
+    {
+      id: "under-offer",
+      label: "Properties Under Offer",
+      value: String(opts.underOffer),
+      supporting: "Listing status",
+      icon: "deals",
+      href: "/client/listings",
+    },
+    {
+      id: "active-offers",
+      label: "Active Offers",
+      value: String(opts.activeOffers),
+      supporting: "In negotiation",
+      icon: "deals",
+      href: "/client/offers",
+    },
+    {
+      id: "response",
+      label: "Team response time",
+      value: formatResponseTime(opts.avgResponseMinutes),
+      supporting: "Avg. first contact",
+      trend: responseTrend,
+      icon: "response",
+    },
+  ];
+}
+
 function buildCompanyKpis(opts: {
   newEnquiries: number;
   newEnquiriesPrev: number;
@@ -593,6 +662,7 @@ export async function getCompanySalesDashboard(opts: {
   const team = (teamRes.data ?? []) as TeamUser[];
   const clientName = (clientRes.data?.name as string) ?? "Company";
   const assignmentMode = (clientRes.data?.assignment_mode as string) ?? "direct";
+  const businessType: BusinessType = normalizeBusinessType(clientRes.data?.business_type);
 
   const activeDeals = deals.filter((d) =>
     (DEAL_ACTIVE_STAGES as readonly string[]).includes(d.stage)
@@ -1078,20 +1148,55 @@ export async function getCompanySalesDashboard(opts: {
     if (recentActivity.length >= ACTIVITY_LIMIT) break;
   }
 
-  const kpis = buildCompanyKpis({
-    newEnquiries: leadsLast30.length,
-    newEnquiriesPrev: leadsPrev30.length,
-    qualifiedLeads: qualifiedIn(leadsLast30),
-    qualifiedLeadsPrev: qualifiedIn(leadsPrev30),
-    activeDeals: activeDeals.length,
-    pipelineKnown,
-    awaitingEstimate,
-    dealsWon: wonRows.length,
-    dealsWonPrev: (wonLastMonthRes.data ?? []).length,
-    wonValue: wonValueThisMonth,
-    avgResponseMinutes,
-    avgResponseMinutesPrev,
-  });
+  let kpis: SalesKpiItem[];
+  if (isRealEstate(businessType)) {
+    const { data: listingRows } = await supabase
+      .from("listings")
+      .select("id, status")
+      .eq("client_id", clientId);
+    const listings = listingRows ?? [];
+    const listingIds = listings.map((l) => l.id as string);
+    let upcomingViewings = 0;
+    if (listingIds.length > 0) {
+      const { count } = await supabase
+        .from("viewings")
+        .select("id", { count: "exact", head: true })
+        .in("listing_id", listingIds)
+        .eq("status", "scheduled");
+      upcomingViewings = count ?? 0;
+    }
+    const activeInquiryStatuses = new Set(["NEW", "CONTACTED", "QUALIFIED"]);
+    const { count: activeOfferCount, error: offerCountError } = await supabase
+      .from("real_estate_offers")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", clientId)
+      .in("status", ["submitted", "countered", "negotiating"]);
+    const activeOffers = offerCountError ? 0 : activeOfferCount ?? 0;
+    kpis = buildRealEstateCompanyKpis({
+      activeListings: listings.filter((l) => l.status === "available").length,
+      upcomingViewings,
+      activeInquiries: leads.filter((l) => activeInquiryStatuses.has(String(l.status))).length,
+      underOffer: listings.filter((l) => l.status === "under_offer").length,
+      avgResponseMinutes,
+      avgResponseMinutesPrev,
+      activeOffers,
+    });
+  } else {
+    kpis = buildCompanyKpis({
+      newEnquiries: leadsLast30.length,
+      newEnquiriesPrev: leadsPrev30.length,
+      qualifiedLeads: qualifiedIn(leadsLast30),
+      qualifiedLeadsPrev: qualifiedIn(leadsPrev30),
+      activeDeals: activeDeals.length,
+      pipelineKnown,
+      awaitingEstimate,
+      dealsWon: wonRows.length,
+      dealsWonPrev: (wonLastMonthRes.data ?? []).length,
+      wonValue: wonValueThisMonth,
+      avgResponseMinutes,
+      avgResponseMinutesPrev,
+    });
+  }
 
   // --- Team calendar: combined lead follow-ups + deal next actions (7 days) ---
   const calendarStart = startOfDay(now);
@@ -1183,6 +1288,7 @@ export async function getCompanySalesDashboard(opts: {
     clientId,
     clientName,
     alsoSells,
+    businessType,
     generatedAt: now.toISOString(),
     kpis,
     focusAreas,

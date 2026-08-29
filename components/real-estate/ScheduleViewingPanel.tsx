@@ -180,11 +180,11 @@ export function ScheduleViewingPanel({
   const dropdownListings = listingChoices.length > 0 ? listingChoices : listings;
 
   const formBlock = open ? (
-    <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] p-4">
+    <div className="space-y-3 rounded-[14px] border border-sales-border bg-sales-surface-subtle p-4">
       <label className="block text-sm">
-        <span className="text-ink-secondary">Property</span>
+        <span className="text-sales-text-secondary">Property</span>
         <select
-          className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2"
+          className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2 text-sales-text-primary"
           value={listingId}
           onChange={(e) => setListingId(e.target.value)}
         >
@@ -198,7 +198,7 @@ export function ScheduleViewingPanel({
       </label>
 
       <div>
-        <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-ink-secondary">
+        <span className="mb-2 block font-mono text-[11px] uppercase tracking-[0.12em] text-sales-text-secondary">
           When
         </span>
         <div className="flex flex-wrap gap-2">
@@ -211,7 +211,7 @@ export function ScheduleViewingPanel({
                 "rounded-full border px-3 py-1.5 text-[13px]",
                 scheduleOption === opt
                   ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
-                  : "border-[var(--border)] text-ink-secondary",
+                  : "border-sales-border text-sales-text-secondary",
               ].join(" ")}
             >
               {CALLBACK_SCHEDULE_LABELS[opt]}
@@ -222,7 +222,7 @@ export function ScheduleViewingPanel({
           <input
             type="datetime-local"
             min={`${todayLocalISO()}T00:00`}
-            className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-card)] px-3 py-2"
+            className="mt-2 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2 text-sales-text-primary"
             value={customCallback}
             onChange={(e) => setCustomCallback(e.target.value)}
           />
@@ -241,14 +241,14 @@ export function ScheduleViewingPanel({
         {embedded && onCancel ? (
           <button
             type="button"
-            className="rounded-md border border-[var(--border)] px-3 py-2 text-[13px] text-ink-secondary"
+            className="rounded-[10px] border border-sales-border px-3 py-2 text-[13px] text-sales-text-secondary"
             onClick={onCancel}
           >
             Cancel
           </button>
         ) : null}
       </div>
-      {toast ? <p className="text-sm text-ink-secondary">{toast}</p> : null}
+      {toast ? <p className="text-[13px] text-sales-text-secondary">{toast}</p> : null}
     </div>
   ) : null;
 
@@ -257,9 +257,9 @@ export function ScheduleViewingPanel({
   }
 
   return (
-    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5 space-y-4">
+    <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5 space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="font-display text-xl">Viewings</h3>
+        <h3 className="text-[16px] font-semibold text-sales-text-primary">Viewings</h3>
         <button
           type="button"
           className="btn-primary inline-flex items-center gap-1.5 text-sm"
@@ -270,22 +270,22 @@ export function ScheduleViewingPanel({
         </button>
       </div>
 
-      {toast && !open ? <p className="text-sm text-ink-secondary">{toast}</p> : null}
+      {toast && !open ? <p className="text-[13px] text-sales-text-secondary">{toast}</p> : null}
 
       {formBlock}
 
       <ul className="space-y-2">
         {viewings.length === 0 ? (
-          <li className="text-sm text-ink-tertiary">No viewings scheduled.</li>
+          <li className="text-[13px] text-sales-text-muted">No viewings scheduled.</li>
         ) : (
           viewings.map((v) => (
             <li
               key={v.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-sales-border px-3 py-2 text-[13px]"
             >
               <div>
                 <p className="font-medium">{listingLabel(v.listing ?? { address: null, suburb: null })}</p>
-                <p className="text-ink-secondary">
+                <p className="text-sales-text-secondary">
                   {new Date(v.scheduled_at).toLocaleString("en-GB", {
                     dateStyle: "medium",
                     timeStyle: "short",
@@ -296,7 +296,7 @@ export function ScheduleViewingPanel({
               {v.status === "scheduled" ? (
                 <button
                   type="button"
-                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs"
+                  className="inline-flex items-center gap-1 rounded-[10px] border border-sales-border px-2.5 py-1.5 text-[12px] text-sales-text-secondary"
                   onClick={() => void markCompleted(v.id)}
                 >
                   <Check className="h-3.5 w-3.5" />
@@ -321,7 +321,7 @@ export function ScheduleViewingPanel({
                   "rounded-full border px-3 py-1 text-xs capitalize",
                   feedbackSentiment === s
                     ? "border-[var(--accent-border)] bg-[var(--accent-muted)]"
-                    : "border-[var(--border)]",
+                    : "border-sales-border",
                 ].join(" ")}
               >
                 {s}
@@ -331,7 +331,7 @@ export function ScheduleViewingPanel({
           <textarea
             rows={2}
             placeholder="Optional notes…"
-            className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-2 text-sm"
+            className="w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-[13px] text-sales-text-primary"
             value={feedbackText}
             onChange={(e) => setFeedbackText(e.target.value)}
           />
@@ -341,7 +341,7 @@ export function ScheduleViewingPanel({
             </button>
             <button
               type="button"
-              className="btn-ghost border border-[var(--border)]"
+              className="rounded-[10px] border border-sales-border px-3 py-2 text-[13px] text-sales-text-secondary"
               onClick={async () => {
                 if (!feedbackFor) return;
                 setSaving(true);

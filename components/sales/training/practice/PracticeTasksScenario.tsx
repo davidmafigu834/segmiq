@@ -8,7 +8,7 @@ export function PracticeTasksScenario() {
   const { practice, setPractice } = useGuidedCourse();
 
   return (
-    <div className="space-y-4 rounded-[14px] border border-sales-border bg-sales-surface p-4">
+    <div className="space-y-4 workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
       <h3 className="text-[15px] font-semibold text-sales-text-primary">Today&apos;s Focus — MOVE DEALS</h3>
       <p className="text-[13px] text-sales-text-secondary">
         Priority follow-ups rise here. Completing them updates your Daily Sales Plan.

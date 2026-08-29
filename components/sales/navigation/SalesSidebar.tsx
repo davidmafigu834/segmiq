@@ -14,6 +14,7 @@ import {
   type SalesNavBadgeKey,
 } from "@/lib/sales/navigation/sales-nav-config";
 import { cn } from "@/lib/ui/cn";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 
 export function SalesSidebar({
   userName,
@@ -38,11 +39,12 @@ export function SalesSidebar({
   collapsed?: boolean;
   onToggleCollapsed?: () => void;
 }) {
+  const { businessType } = useCompanyWorkspace();
   const pathname = usePathname();
   const crmTheme = useCrmThemeOptional();
   const wordmarkSrc =
     crmTheme?.theme === "light" ? "/segmiq-wordmark-black.png" : "/segmiq-wordmark.png";
-  const items = resolveSalesNavItems(isSolo);
+  const items = resolveSalesNavItems(isSolo, businessType);
   const salesItems = salesNavItemsBySection(items, "sales");
   const toolsItems = salesNavItemsBySection(items, "tools");
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";

@@ -5,7 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { contactMatchesListing, type BuyerMatchContact } from "@/lib/real-estate/helpers";
+import { contactMatchesListing, canManageListings, type BuyerMatchContact } from "@/lib/real-estate/helpers";
+import { assertComplianceProgressAllowed } from "@/lib/real-estate/compliance-service";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,9 @@ export async function PATCH(
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+  if (!canManageListings(session.role)) {
+    return NextResponse.json({ error: "Listing edits are limited to managers" }, { status: 403 });
+  }
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
@@ -85,8 +89,18 @@ export async function PATCH(
   }
 
   const supabase = createAdminClient();
-  const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   const body = parsed.data;
+  if (body.status === "sold" || body.status === "let") {
+    const gate = await assertComplianceProgressAllowed({
+      clientId: params.clientId,
+      listingId: params.listingId,
+    });
+    if (!gate.ok) {
+      return NextResponse.json({ error: gate.message, code: gate.code }, { status: 409 });
+    }
+  }
+
+  const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of Object.keys(body) as (keyof typeof body)[]) {
     if (body[key] !== undefined) update[key] = body[key];
   }
@@ -118,6 +132,9 @@ export async function DELETE(
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (!canManageListings(session.role)) {
+    return NextResponse.json({ error: "Listing edits are limited to managers" }, { status: 403 });
   }
 
   const supabase = createAdminClient();

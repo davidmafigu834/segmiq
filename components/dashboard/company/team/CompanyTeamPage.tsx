@@ -227,6 +227,7 @@ export function CompanyTeamPage({
       unreadNotifications={unreadNotifications}
       notificationRole={notificationRole}
       whatsappBadge={whatsappBadge}
+      businessType={data.businessType}
     >
       <CompanyDashboardHeader
         unreadNotifications={unreadNotifications}
@@ -234,9 +235,13 @@ export function CompanyTeamPage({
         userName={userName}
         avatarUrl={avatarUrl}
         canAddLead
-        breadcrumb="Company / Team"
-        title="Team"
-        description="Manage your sales team, monitor performance, and coach where attention is needed."
+        breadcrumb={data.businessType === "real_estate" ? "Company / Agents" : "Company / Team"}
+        title={data.businessType === "real_estate" ? "Agents" : "Team"}
+        description={
+          data.businessType === "real_estate"
+            ? "Manage your agents, monitor performance, and coach where attention is needed."
+            : "Manage your sales team, monitor performance, and coach where attention is needed."
+        }
       />
 
       <div className="grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-5">

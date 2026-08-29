@@ -4038,7 +4038,7 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   */
   --app-bg: #070814;
   --app-bg-deep: #0c0718;
-  --surface-1: #0f1020;
+  --surface-1: #081a35;
   --surface-2: #141522;
   --surface-3: #18132a;
   --border-soft: rgba(126, 150, 205, 0.13);
@@ -4046,7 +4046,7 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
 
   --sales-bg: #070814;
   --sales-bg-subtle: #0c0718;
-  --sales-surface: #0f1020;
+  --sales-surface: #081a35;
   --sales-surface-subtle: #12131f;
   --sales-surface-hover: #18132a;
   --sales-surface-active: #1c1630;

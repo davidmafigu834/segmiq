@@ -5,6 +5,7 @@ export type LeadgenWebhookClientRow = {
   is_active?: boolean | null;
   is_archived?: boolean | null;
   created_at?: string | null;
+  business_type?: string | null;
 };
 
 /**

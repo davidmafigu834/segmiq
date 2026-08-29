@@ -23,6 +23,7 @@ import {
   type SalesNavItemConfig,
 } from "@/lib/sales/navigation/sales-nav-config";
 import { cn } from "@/lib/ui/cn";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 
 function RowIcon({ icon }: { icon: SalesNavIconId }) {
   if (icon === "whatsapp") {
@@ -77,9 +78,10 @@ export function SalesMoreSheet({
 }) {
   const pathname = usePathname();
   const { moreOpen, setMoreOpen } = useSalesMobileChrome();
+  const { businessType } = useCompanyWorkspace();
   if (!moreOpen) return null;
 
-  const items = resolveSalesNavItems(isSolo);
+  const items = resolveSalesNavItems(isSolo, businessType);
   const more = salesMobileMoreItems(items);
   const salesMore = salesNavItemsBySection(more, "sales");
   const toolsMore = salesNavItemsBySection(more, "tools");

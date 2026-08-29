@@ -11,17 +11,21 @@ export type SalesCardVariant =
 
 const variantClass: Record<SalesCardVariant, string> = {
   standard:
-    "bg-sales-surface border border-sales-border-subtle rounded-sales-xl shadow-sales-card",
+    "workspace-card bg-sales-surface border border-sales-border-subtle rounded-sales-xl shadow-sales-card",
   compact:
-    "bg-sales-surface border border-sales-border-subtle rounded-sales-lg shadow-sales-card",
+    "workspace-card bg-sales-surface border border-sales-border-subtle rounded-sales-lg shadow-sales-card",
   interactive:
-    "bg-sales-surface border border-sales-border-subtle rounded-sales-xl shadow-sales-card transition-[border-color,box-shadow,transform] duration-150 hover:border-sales-border-strong hover:shadow-sales-card-hover active:translate-y-px focus-within:border-sales-brand-border motion-reduce:transition-none motion-reduce:active:translate-y-0",
+    "workspace-card bg-sales-surface border border-sales-border-subtle rounded-sales-xl shadow-sales-card transition-[border-color,box-shadow,transform] duration-150 hover:border-sales-border-strong hover:shadow-sales-card-hover active:translate-y-px focus-within:border-sales-brand-border motion-reduce:transition-none motion-reduce:active:translate-y-0",
   selected:
     "bg-sales-brand-soft-solid border border-sales-brand-border rounded-sales-xl shadow-sales-card",
   attention:
     "bg-sales-danger-soft border border-sales-danger/25 rounded-sales-xl shadow-sales-card",
-  flat: "bg-sales-surface border border-sales-border-subtle rounded-sales-xl",
+  flat: "workspace-card bg-sales-surface border border-sales-border-subtle rounded-sales-xl",
 };
+
+/** Navy panel used on Team, Marketing, Listings and other company workspace cards. */
+export const WORKSPACE_CARD =
+  "workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card";
 
 export function Card({
   variant = "standard",

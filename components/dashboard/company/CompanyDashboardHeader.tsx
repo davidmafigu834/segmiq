@@ -11,6 +11,7 @@ import { Button } from "@/components/sales/ui/Button";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { greetingPart } from "@/lib/sales/sales-dashboard-view";
 import { cn } from "@/lib/ui/cn";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import type { UserRole } from "@/types";
 
 function BreadcrumbTrail({ value }: { value: string }) {
@@ -71,6 +72,7 @@ export function CompanyDashboardHeader({
   /** Product record workspaces put identity inside the content card. */
   hideTitleBlock?: boolean;
 }) {
+  const { terminology } = useCompanyWorkspace();
   const [open, setOpen] = useState(false);
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps("direct");
@@ -134,7 +136,7 @@ export function CompanyDashboardHeader({
                           <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-sales-surface-subtle text-sales-text-secondary">
                             <UserPlus size={14} strokeWidth={1.8} aria-hidden />
                           </span>
-                          Add Lead
+                          {terminology.actions.addLead}
                         </button>
                       ) : null}
                       <Link
@@ -146,7 +148,7 @@ export function CompanyDashboardHeader({
                         <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-sales-surface-subtle text-sales-text-secondary">
                           <Users size={14} strokeWidth={1.8} aria-hidden />
                         </span>
-                        Add salesperson
+                        Add {terminology.salesperson.singular.toLowerCase()}
                       </Link>
                     </div>
                   </>

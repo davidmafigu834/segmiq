@@ -114,7 +114,7 @@ export function TrainingPageClient() {
         </p>
       ) : null}
 
-      <div className="rounded-[14px] border border-sales-border bg-sales-surface-subtle p-4">
+      <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
         <p className="text-[13px] font-medium text-sales-text-primary">Need human help?</p>
         <a
           href="mailto:support@leadstaq.tech"

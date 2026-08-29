@@ -343,3 +343,46 @@ export async function logWalkInIntake({
     channel: "in_person",
   });
 }
+
+/** Real-estate journey notes on the shared timeline (no new event_type enum). */
+export async function logReActivity({
+  leadId,
+  clientId,
+  actor,
+  summary,
+  kind,
+  extra,
+}: {
+  leadId: string;
+  clientId: string;
+  actor: Actor;
+  summary: string;
+  kind:
+    | "requirements_updated"
+    | "property_matched"
+    | "property_sent"
+    | "property_linked"
+    | "viewing_scheduled"
+    | "viewing_completed"
+    | "stage_changed"
+    | "offer_created"
+    | "offer_submitted"
+    | "offer_countered"
+    | "offer_revised"
+    | "offer_accepted"
+    | "offer_rejected"
+    | "offer_withdrawn";
+  extra?: Record<string, unknown>;
+}): Promise<void> {
+  await logLeadEvent({
+    leadId,
+    clientId,
+    actor,
+    eventType: "NOTE_ADDED",
+    eventData: {
+      re_kind: kind,
+      notes: summary,
+      ...(extra ?? {}),
+    },
+  });
+}

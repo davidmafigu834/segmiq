@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { MailCheck } from "lucide-react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button, FieldError, FieldLabel, Input } from "@/components/sales/ui";
+import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 
 export function CompanyTeamInviteDialog({
   clientId,
@@ -14,6 +15,7 @@ export function CompanyTeamInviteDialog({
   onClose: () => void;
   onInvited: () => void;
 }) {
+  const { terminology, isRealEstate } = useCompanyWorkspace();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -94,8 +96,12 @@ export function CompanyTeamInviteDialog({
 
   return (
     <PremiumSheet
-      title="Invite salesperson"
-      description="Add a salesperson so they can manage Leads, Deals and Goals in SegmiQ."
+      title={isRealEstate ? "Invite agent" : "Invite salesperson"}
+      description={
+        isRealEstate
+          ? `Add an ${terminology.salesperson.singular.toLowerCase()} so they can manage inquiries and viewings in SegmiQ.`
+          : "Add a salesperson so they can manage Leads, Deals and Goals in SegmiQ."
+      }
       onClose={onClose}
       size="md"
       footer={
