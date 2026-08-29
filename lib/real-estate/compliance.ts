@@ -332,9 +332,7 @@ export function riskChangeRequiresReason(
   from: ComplianceRiskLevel,
   to: ComplianceRiskLevel
 ): boolean {
-  if (to === "high") return true;
-  if (from === "high" && to !== "high") return true;
-  return false;
+  return to === "high" || from === "high";
 }
 
 const REVIEW_TRANSITIONS: Record<string, ComplianceStatus[]> = {
