@@ -1,13 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2 } from "lucide-react";
-import { Button } from "@/components/sales/ui";
+import { Building2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { PremiumSheet } from "@/components/sales/PremiumSheet";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Input,
+  Select,
+  TextArea,
+} from "@/components/sales/ui";
+import { KpiCard } from "@/components/dashboard/sales/KpiCard";
+import { CardShell } from "@/components/dashboard/sales/KpiCard";
+import { listingLabel } from "@/lib/real-estate/helpers";
 import type { ListingRow, ListingStatus, ListingTransactionType } from "@/types";
+import { cn } from "@/lib/ui/cn";
 
 type AgentOption = { id: string; name: string };
 type DevelopmentOption = { id: string; name: string };
+type StatusTab = "all" | "available" | "under_offer" | "reserved" | "closed";
+type TypeFilter = "all" | ListingTransactionType;
 
 type ListingForm = {
   transaction_type: ListingTransactionType;
@@ -47,6 +61,28 @@ const EMPTY: ListingForm = {
   photos: "",
 };
 
+const TYPE_LABEL: Record<ListingTransactionType, string> = {
+  sale: "Sale",
+  rental: "Rental",
+  new_development: "Development",
+};
+
+const STATUS_LABEL: Record<ListingStatus, string> = {
+  available: "Available",
+  under_offer: "Under offer",
+  reserved: "Reserved",
+  sold: "Sold",
+  let: "Let",
+};
+
+function statusTone(status: ListingStatus): "success" | "warning" | "info" | "neutral" | "purple" {
+  if (status === "available") return "success";
+  if (status === "under_offer") return "warning";
+  if (status === "reserved") return "info";
+  if (status === "let") return "purple";
+  return "neutral";
+}
+
 function numOrNull(v: string): number | null {
   const t = v.trim();
   if (!t) return null;
@@ -54,12 +90,59 @@ function numOrNull(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function money(value: number | null): string {
+  if (value == null) return "—";
+  return `$${Number(value).toLocaleString()}`;
+}
+
+function specLine(listing: ListingRow): string {
+  const parts: string[] = [];
+  if (listing.bedrooms != null) parts.push(`${listing.bedrooms} bed`);
+  if (listing.bathrooms != null) parts.push(`${listing.bathrooms} bath`);
+  if (listing.size_sqm != null) parts.push(`${listing.size_sqm} m²`);
+  return parts.join(" · ");
+}
+
+function firstPhoto(listing: ListingRow): string | null {
+  return Array.isArray(listing.photos) && listing.photos[0] ? listing.photos[0] : null;
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="block min-w-0">
+      <span className="mb-1 block text-[12px] font-medium text-sales-text-secondary">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function ListingThumb({ listing }: { listing: ListingRow }) {
+  const src = firstPhoto(listing);
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt=""
+        className="h-10 w-10 shrink-0 rounded-[8px] object-cover"
+      />
+    );
+  }
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-sales-neutral-100 text-sales-text-muted">
+      <Building2 size={16} strokeWidth={1.8} aria-hidden />
+    </span>
+  );
+}
+
 export function ListingsManager({
   clientId,
   readOnly = false,
+  listingHref,
 }: {
   clientId: string;
   readOnly?: boolean;
+  listingHref?: (id: string) => string;
 }) {
   const [listings, setListings] = useState<ListingRow[]>([]);
   const [agents, setAgents] = useState<AgentOption[]>([]);
@@ -67,9 +150,15 @@ export function ListingsManager({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [statusTab, setStatusTab] = useState<StatusTab>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [form, setForm] = useState<ListingForm>(EMPTY);
+
+  const hrefFor = listingHref ?? (readOnly ? undefined : (id: string) => `/client/listings/${id}`);
 
   useEffect(() => {
     if (!toast) return;
@@ -106,6 +195,34 @@ export function ListingsManager({
   useEffect(() => {
     void load();
   }, [clientId]);
+
+  const counts = useMemo(() => {
+    const available = listings.filter((l) => l.status === "available").length;
+    const underOffer = listings.filter((l) => l.status === "under_offer").length;
+    const reserved = listings.filter((l) => l.status === "reserved").length;
+    const closed = listings.filter((l) => l.status === "sold" || l.status === "let").length;
+    return { available, underOffer, reserved, closed, total: listings.length };
+  }, [listings]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return listings.filter((l) => {
+      if (statusTab === "available" && l.status !== "available") return false;
+      if (statusTab === "under_offer" && l.status !== "under_offer") return false;
+      if (statusTab === "reserved" && l.status !== "reserved") return false;
+      if (statusTab === "closed" && l.status !== "sold" && l.status !== "let") return false;
+      if (typeFilter !== "all" && l.transaction_type !== typeFilter) return false;
+      if (!q) return true;
+      return [l.address, l.suburb, l.external_reference, l.description]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
+    });
+  }, [listings, statusTab, typeFilter, query]);
+
+  const agentName = (id: string | null) => agents.find((a) => a.id === id)?.name ?? null;
+  const preview = listings.find((l) => l.id === previewId) ?? null;
 
   function openCreate() {
     setEditingId(null);
@@ -164,31 +281,20 @@ export function ListingsManager({
     setSaving(true);
     try {
       const payload = buildPayload();
-      if (editingId) {
-        const res = await fetch(`/api/clients/${clientId}/listings/${editingId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string };
-          setToast(j.error ?? "Save failed");
-          return;
-        }
-        setToast("Listing updated");
-      } else {
-        const res = await fetch(`/api/clients/${clientId}/listings`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) {
-          const j = (await res.json().catch(() => ({}))) as { error?: string };
-          setToast(j.error ?? "Create failed");
-          return;
-        }
-        setToast("Listing created");
+      const url = editingId
+        ? `/api/clients/${clientId}/listings/${editingId}`
+        : `/api/clients/${clientId}/listings`;
+      const res = await fetch(url, {
+        method: editingId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setToast(j.error ?? "Save failed");
+        return;
       }
+      setToast(editingId ? "Listing updated" : "Listing created");
       setShowForm(false);
       await load();
     } finally {
@@ -200,55 +306,338 @@ export function ListingsManager({
     if (!window.confirm("Delete this listing?")) return;
     await fetch(`/api/clients/${clientId}/listings/${id}`, { method: "DELETE" });
     setToast("Listing deleted");
+    setShowForm(false);
     await load();
   }
 
+  const statusTabs: Array<{ id: StatusTab; label: string; count: number }> = [
+    { id: "all", label: "All", count: counts.total },
+    { id: "available", label: "Available", count: counts.available },
+    { id: "under_offer", label: "Under offer", count: counts.underOffer },
+    { id: "reserved", label: "Reserved", count: counts.reserved },
+    { id: "closed", label: "Closed", count: counts.closed },
+  ];
+
   if (loading) {
-    return <p className="text-[13px] text-sales-text-muted">Loading listings…</p>;
+    return (
+      <div className="space-y-3" aria-busy aria-label="Loading listings">
+        <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="shimmer h-[96px] rounded-[14px]" />
+          ))}
+        </div>
+        <div className="shimmer h-10 rounded-[10px]" />
+        <div className="shimmer h-[280px] rounded-[14px]" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-3">
       {toast ? (
-        <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
+        <p className="rounded-[10px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
           {toast}
         </p>
       ) : null}
 
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[13px] text-sales-text-secondary">{listings.length} properties</p>
-        {!readOnly ? (
-          <Button type="button" variant="primary" size="md" onClick={openCreate} leftIcon={<Plus className="h-4 w-4" />}>
-            Add listing
-          </Button>
-        ) : null}
+      <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
+        <KpiCard
+          item={{
+            id: "available",
+            label: "Available",
+            value: String(counts.available),
+            supporting: "On the market",
+            icon: "companies",
+          }}
+        />
+        <KpiCard
+          item={{
+            id: "under-offer",
+            label: "Under offer",
+            value: String(counts.underOffer),
+            supporting: "In negotiation",
+            icon: "deals",
+          }}
+        />
+        <KpiCard
+          item={{
+            id: "reserved",
+            label: "Reserved",
+            value: String(counts.reserved),
+            supporting: "Held",
+            icon: "customers",
+          }}
+        />
+        <KpiCard
+          item={{
+            id: "closed",
+            label: "Sold / Let",
+            value: String(counts.closed),
+            supporting: "Closed stock",
+            icon: "won",
+          }}
+        />
       </div>
 
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex gap-2 overflow-x-auto pb-0.5">
+          {statusTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setStatusTab(tab.id)}
+              className={cn(
+                "min-h-10 shrink-0 rounded-full px-3 text-[12px] font-medium transition-colors",
+                statusTab === tab.id
+                  ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand-border"
+                  : "border border-sales-border bg-sales-surface text-sales-text-secondary hover:text-sales-text-primary"
+              )}
+            >
+              {tab.label} · {tab.count}
+            </button>
+          ))}
+        </div>
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <Select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+            aria-label="Listing type"
+            className="sm:!w-40"
+          >
+            <option value="all">All types</option>
+            <option value="sale">Sale</option>
+            <option value="rental">Rental</option>
+            <option value="new_development">Development</option>
+          </Select>
+          <label className="relative block min-w-0 flex-1 sm:w-56">
+            <span className="sr-only">Search listings</span>
+            <Search
+              size={15}
+              strokeWidth={1.8}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
+              aria-hidden
+            />
+            <input
+              type="search"
+              placeholder="Search address, suburb…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-10 w-full rounded-[10px] border border-sales-border bg-sales-surface py-2 pl-9 pr-3 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40"
+            />
+          </label>
+          {!readOnly ? (
+            <Button type="button" variant="primary" size="md" onClick={openCreate} leftIcon={<Plus className="h-4 w-4" />}>
+              Add listing
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      <CardShell title="Inventory" className="dashboard-panel--table">
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={<Building2 className="h-4 w-4" strokeWidth={1.5} />}
+            title={listings.length === 0 ? "No listings yet" : "No listings match these filters"}
+            description={
+              listings.length === 0
+                ? readOnly
+                  ? "Stock added by your manager will appear here."
+                  : "Add the first sale, rental, or development."
+                : "Clear search or switch status to see more."
+            }
+            action={
+              !readOnly && listings.length === 0 ? (
+                <Button type="button" variant="primary" size="sm" onClick={openCreate}>
+                  Add listing
+                </Button>
+              ) : undefined
+            }
+            size="compact"
+          />
+        ) : (
+          <>
+            <div className="hidden w-full md:block">
+              <table className="dashboard-table w-full table-fixed text-left">
+                <colgroup>
+                  <col className="w-[36%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+                    <th className="px-5 py-2.5 font-semibold">Property</th>
+                    <th className="px-3 py-2.5 font-semibold">Type</th>
+                    <th className="px-3 py-2.5 font-semibold">Status</th>
+                    <th className="px-3 py-2.5 font-semibold">Price</th>
+                    <th className="px-3 py-2.5 font-semibold">Agent</th>
+                    <th className="px-5 py-2.5 font-semibold text-right"> </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
+                  {filtered.map((listing) => (
+                    <tr key={listing.id} className="dashboard-list-row h-[56px]">
+                      <td className="px-5 py-2">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <ListingThumb listing={listing} />
+                          <div className="min-w-0">
+                            {hrefFor ? (
+                              <Link
+                                href={hrefFor(listing.id)}
+                                className="block truncate text-[13px] font-semibold text-sales-text-primary hover:underline"
+                              >
+                                {listingLabel(listing)}
+                              </Link>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewId(listing.id)}
+                                className="block truncate text-left text-[13px] font-semibold text-sales-text-primary hover:underline"
+                              >
+                                {listingLabel(listing)}
+                              </button>
+                            )}
+                            <p className="truncate text-[11px] text-sales-text-muted">
+                              {specLine(listing) || listing.suburb || "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-[12px] text-sales-text-secondary">
+                        {TYPE_LABEL[listing.transaction_type]}
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge tone={statusTone(listing.status)} appearance="soft">
+                          {STATUS_LABEL[listing.status]}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-[13px] font-semibold tabular-nums text-sales-text-primary">
+                        {money(listing.price)}
+                      </td>
+                      <td className="px-3 py-2 text-[12px] text-sales-text-secondary">
+                        {agentName(listing.agent_id) ?? "—"}
+                      </td>
+                      <td className="px-5 py-2 text-right">
+                        {readOnly ? (
+                          <button
+                            type="button"
+                            className="text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
+                            onClick={() => setPreviewId(listing.id)}
+                          >
+                            View
+                          </button>
+                        ) : (
+                          <div className="flex justify-end gap-1">
+                            <button
+                              type="button"
+                              className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
+                              onClick={() => openEdit(listing)}
+                              aria-label="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
+                              onClick={() => void remove(listing.id)}
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <ul className="divide-y divide-sales-border-subtle md:hidden">
+              {filtered.map((listing) => (
+                <li key={listing.id} className="flex items-center gap-3 px-4 py-3">
+                  <ListingThumb listing={listing} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                      {listingLabel(listing)}
+                    </p>
+                    <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
+                      {TYPE_LABEL[listing.transaction_type]}
+                      {" · "}
+                      {money(listing.price)}
+                      {specLine(listing) ? ` · ${specLine(listing)}` : ""}
+                    </p>
+                  </div>
+                  <Badge tone={statusTone(listing.status)} appearance="soft" className="shrink-0">
+                    {STATUS_LABEL[listing.status]}
+                  </Badge>
+                  {readOnly ? (
+                    <button
+                      type="button"
+                      className="text-[12px] font-semibold text-sales-text-secondary"
+                      onClick={() => setPreviewId(listing.id)}
+                    >
+                      View
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="text-sales-text-secondary"
+                      onClick={() => openEdit(listing)}
+                      aria-label="Edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </CardShell>
+
       {showForm && !readOnly ? (
-        <div className="workspace-card space-y-4 rounded-[14px] border border-sales-border bg-sales-surface p-5">
-          <h3 className="text-[16px] font-semibold tracking-[-0.02em] text-sales-text-primary">{editingId ? "Edit listing" : "New listing"}</h3>
+        <PremiumSheet
+          size="lg"
+          title={editingId ? "Edit listing" : "New listing"}
+          description="Sale, rental, or development stock."
+          onClose={() => setShowForm(false)}
+          footer={
+            <div className="flex items-center justify-between gap-2">
+              {editingId ? (
+                <Button type="button" variant="ghost" size="sm" onClick={() => void remove(editingId)}>
+                  Delete
+                </Button>
+              ) : (
+                <span />
+              )}
+              <div className="flex gap-2">
+                <Button type="button" variant="secondary" size="md" onClick={() => setShowForm(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" variant="primary" size="md" disabled={saving} onClick={() => void save()}>
+                  {saving ? "Saving…" : "Save listing"}
+                </Button>
+              </div>
+            </div>
+          }
+        >
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Type</span>
-              <select
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
+            <Field label="Type">
+              <Select
                 value={form.transaction_type}
                 onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    transaction_type: e.target.value as ListingTransactionType,
-                  }))
+                  setForm((f) => ({ ...f, transaction_type: e.target.value as ListingTransactionType }))
                 }
               >
                 <option value="sale">Sale</option>
                 <option value="rental">Rental</option>
                 <option value="new_development">New development</option>
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Status</span>
-              <select
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
+              </Select>
+            </Field>
+            <Field label="Status">
+              <Select
                 value={form.status}
                 onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ListingStatus }))}
               >
@@ -257,63 +646,45 @@ export function ListingsManager({
                 <option value="reserved">Reserved</option>
                 <option value="sold">Sold</option>
                 <option value="let">Let</option>
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Address</span>
-              <input
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
-                value={form.address}
-                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Suburb</span>
-              <input
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
-                value={form.suburb}
-                onChange={(e) => setForm((f) => ({ ...f, suburb: e.target.value }))}
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Price</span>
-              <input
+              </Select>
+            </Field>
+            <Field label="Address">
+              <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
+            </Field>
+            <Field label="Suburb">
+              <Input value={form.suburb} onChange={(e) => setForm((f) => ({ ...f, suburb: e.target.value }))} />
+            </Field>
+            <Field label="Price">
+              <Input
                 type="number"
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.price}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
               />
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Beds / Baths / Size m²</span>
-              <div className="mt-1 flex gap-2">
-                <input
+            </Field>
+            <Field label="Beds / baths / m²">
+              <div className="flex gap-2">
+                <Input
                   type="number"
                   placeholder="Beds"
-                  className="w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                   value={form.bedrooms}
                   onChange={(e) => setForm((f) => ({ ...f, bedrooms: e.target.value }))}
                 />
-                <input
+                <Input
                   type="number"
                   placeholder="Baths"
-                  className="w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                   value={form.bathrooms}
                   onChange={(e) => setForm((f) => ({ ...f, bathrooms: e.target.value }))}
                 />
-                <input
+                <Input
                   type="number"
                   placeholder="m²"
-                  className="w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                   value={form.size_sqm}
                   onChange={(e) => setForm((f) => ({ ...f, size_sqm: e.target.value }))}
                 />
               </div>
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Agent</span>
-              <select
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
+            </Field>
+            <Field label="Agent">
+              <Select
                 value={form.agent_id}
                 onChange={(e) => setForm((f) => ({ ...f, agent_id: e.target.value }))}
               >
@@ -323,12 +694,10 @@ export function ListingsManager({
                     {a.name}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Development</span>
-              <select
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
+              </Select>
+            </Field>
+            <Field label="Development">
+              <Select
                 value={form.development_id}
                 onChange={(e) => setForm((f) => ({ ...f, development_id: e.target.value }))}
               >
@@ -338,197 +707,114 @@ export function ListingsManager({
                     {d.name}
                   </option>
                 ))}
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Mandate</span>
-              <select
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
+              </Select>
+            </Field>
+            <Field label="Mandate">
+              <Select
                 value={form.mandate_type}
                 onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    mandate_type: e.target.value as ListingForm["mandate_type"],
-                  }))
+                  setForm((f) => ({ ...f, mandate_type: e.target.value as ListingForm["mandate_type"] }))
                 }
               >
                 <option value="">—</option>
                 <option value="sole">Sole</option>
                 <option value="joint">Joint</option>
                 <option value="open">Open</option>
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">Mandate expiry</span>
-              <input
+              </Select>
+            </Field>
+            <Field label="Mandate expiry">
+              <Input
                 type="date"
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                 value={form.mandate_expiry_date}
                 onChange={(e) => setForm((f) => ({ ...f, mandate_expiry_date: e.target.value }))}
               />
-            </label>
+            </Field>
             {form.transaction_type === "rental" ? (
-              <label className="block text-sm">
-                <span className="text-sales-text-secondary">Lease term (months)</span>
-                <input
+              <Field label="Lease term (months)">
+                <Input
                   type="number"
-                  className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
                   value={form.lease_term_months}
                   onChange={(e) => setForm((f) => ({ ...f, lease_term_months: e.target.value }))}
                 />
-              </label>
+              </Field>
             ) : null}
-            <label className="block text-sm">
-              <span className="text-sales-text-secondary">External reference</span>
-              <input
-                className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
+            <Field label="External reference">
+              <Input
                 value={form.external_reference}
                 onChange={(e) => setForm((f) => ({ ...f, external_reference: e.target.value }))}
               />
-            </label>
+            </Field>
           </div>
-          <label className="block text-sm">
-            <span className="text-sales-text-secondary">Description</span>
-            <textarea
-              rows={3}
-              className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary"
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-sales-text-secondary">Photo URLs (one per line)</span>
-            <textarea
-              rows={3}
-              className="mt-1 w-full rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2 text-sales-text-primary font-mono text-xs"
-              value={form.photos}
-              onChange={(e) => setForm((f) => ({ ...f, photos: e.target.value }))}
-            />
-          </label>
-          <div className="flex gap-2">
-            <button type="button" className="btn-primary" disabled={saving} onClick={() => void save()}>
-              {saving ? "Saving…" : "Save"}
-            </button>
-            <button
-              type="button"
-              className="rounded-[10px] border border-sales-border px-3 py-2 text-[13px] text-sales-text-secondary"
-              onClick={() => setShowForm(false)}
-            >
-              Cancel
-            </button>
+          <div className="mt-3 space-y-3">
+            <Field label="Description">
+              <TextArea
+                rows={3}
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              />
+            </Field>
+            <Field label="Photo URLs (one per line)">
+              <TextArea
+                rows={3}
+                className="font-mono text-[12px]"
+                value={form.photos}
+                onChange={(e) => setForm((f) => ({ ...f, photos: e.target.value }))}
+              />
+            </Field>
           </div>
-        </div>
+        </PremiumSheet>
       ) : null}
 
-      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
-        {listings.length === 0 ? (
-          <p className="px-5 py-10 text-center text-[13px] text-sales-text-muted">
-            No listings yet. Add your first property.
-          </p>
-        ) : (
-          <>
-            <div className="hidden md:block">
-              <table className="w-full text-left text-[13px]">
-                <thead className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
-                  <tr>
-                    <th className="px-5 py-2.5">Property</th>
-                    <th className="px-3 py-2.5">Type</th>
-                    <th className="px-3 py-2.5">Status</th>
-                    <th className="px-3 py-2.5">Price</th>
-                    <th className="px-3 py-2.5">Beds</th>
-                    {!readOnly ? <th className="px-5 py-2.5 text-right"> </th> : null}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-sales-border-subtle">
-                  {listings.map((listing) => (
-                    <tr key={listing.id} className="hover:bg-sales-surface-hover">
-                      <td className="px-5 py-3">
-                        <Link
-                          href={`/client/listings/${listing.id}`}
-                          className="font-medium text-sales-text-primary hover:underline"
-                        >
-                          {listing.address || listing.external_reference || "Untitled listing"}
-                        </Link>
-                        {listing.suburb ? (
-                          <p className="mt-0.5 text-[12px] text-sales-text-muted">{listing.suburb}</p>
-                        ) : null}
-                      </td>
-                      <td className="px-3 py-3 text-sales-text-secondary">{listing.transaction_type}</td>
-                      <td className="px-3 py-3 text-sales-text-secondary">{listing.status.replace("_", " ")}</td>
-                      <td className="px-3 py-3 tabular-nums">
-                        {listing.price != null ? `$${Number(listing.price).toLocaleString()}` : "—"}
-                      </td>
-                      <td className="px-3 py-3 tabular-nums">{listing.bedrooms ?? "—"}</td>
-                      {!readOnly ? (
-                        <td className="px-5 py-3">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
-                              onClick={() => openEdit(listing)}
-                              aria-label="Edit"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              type="button"
-                              className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
-                              onClick={() => void remove(listing.id)}
-                              aria-label="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {preview ? (
+        <PremiumSheet
+          size="md"
+          title={listingLabel(preview)}
+          description={[TYPE_LABEL[preview.transaction_type], STATUS_LABEL[preview.status]].join(" · ")}
+          onClose={() => setPreviewId(null)}
+          footer={
+            hrefFor ? (
+              <Link
+                href={hrefFor(preview.id)}
+                className="inline-flex h-10 items-center justify-center rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text"
+              >
+                Open full listing
+              </Link>
+            ) : undefined
+          }
+        >
+          {firstPhoto(preview) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={firstPhoto(preview)!}
+              alt=""
+              className="mb-3 h-40 w-full rounded-[10px] object-cover"
+            />
+          ) : null}
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+            <div>
+              <dt className="text-[11px] text-sales-text-muted">Price</dt>
+              <dd className="font-semibold tabular-nums">{money(preview.price)}</dd>
             </div>
-            <ul className="divide-y divide-sales-border-subtle md:hidden">
-              {listings.map((listing) => (
-                <li key={listing.id} className="flex items-start justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <Link
-                      href={`/client/listings/${listing.id}`}
-                      className="text-[13px] font-medium text-sales-text-primary hover:underline"
-                    >
-                      {listing.address || listing.external_reference || "Untitled listing"}
-                    </Link>
-                    <p className="mt-0.5 text-[12px] text-sales-text-secondary">
-                      {[listing.suburb, listing.transaction_type, listing.status.replace("_", " ")]
-                        .filter(Boolean)
-                        .join(" · ")}
-                      {listing.price != null ? ` · $${Number(listing.price).toLocaleString()}` : ""}
-                    </p>
-                  </div>
-                  {!readOnly ? (
-                    <div className="flex shrink-0 gap-1.5">
-                      <button
-                        type="button"
-                        className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary"
-                        onClick={() => openEdit(listing)}
-                        aria-label="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary"
-                        onClick={() => void remove(listing.id)}
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </section>
+            <div>
+              <dt className="text-[11px] text-sales-text-muted">Size</dt>
+              <dd>{specLine(preview) || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-sales-text-muted">Agent</dt>
+              <dd>{agentName(preview.agent_id) ?? "Unassigned"}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-sales-text-muted">Reference</dt>
+              <dd>{preview.external_reference || "—"}</dd>
+            </div>
+          </dl>
+          {preview.description ? (
+            <p className="mt-3 whitespace-pre-wrap text-[13px] text-sales-text-secondary">
+              {preview.description}
+            </p>
+          ) : null}
+        </PremiumSheet>
+      ) : null}
     </div>
   );
 }

@@ -2,251 +2,401 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DealSideBadge } from "@/components/real-estate/DealSideBadge";
 import { RealEstateInquiryWorkspace } from "@/components/real-estate/RealEstateInquiryWorkspace";
-import { Button } from "@/components/sales/ui";
-import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
+import { KpiCard, CardShell } from "@/components/dashboard/sales/KpiCard";
 import type { AgentReDashboard } from "@/lib/sales/get-agent-real-estate-dashboard";
 import { OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
 import { ComplianceCasePanel } from "@/components/real-estate/compliance/ComplianceCasePanel";
+import { rePipelineStageLabel } from "@/lib/real-estate/pipeline";
+import type { PriorityReasonId } from "@/lib/real-estate/priority";
+import { cn } from "@/lib/ui/cn";
+
+const PRIORITY_LIMIT = 6;
+const SIDE_LIMIT = 5;
+
+function nameInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+}
+
+function whyTone(reasonId: PriorityReasonId): string {
+  if (reasonId === "overdue_follow_up" || reasonId === "stale_inquiry") {
+    return "bg-sales-danger-soft text-sales-danger-fg";
+  }
+  if (reasonId === "viewing_today" || reasonId === "viewing_awaiting_follow_up") {
+    return "bg-sales-warning-soft text-sales-warning-fg";
+  }
+  if (reasonId === "new_uncontacted") {
+    return "bg-sales-info-soft text-sales-info-fg";
+  }
+  return "bg-sales-neutral-100 text-sales-text-secondary";
+}
+
+function RowAction({
+  label,
+  onClick,
+  primary,
+}: {
+  label: string;
+  onClick: () => void;
+  primary?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "dashboard-action-btn inline-flex min-h-9 items-center justify-center rounded-sales-md px-2.5 text-[12px] font-semibold",
+        primary
+          ? "dashboard-action-btn--next text-sales-text-primary hover:bg-sales-surface-hover"
+          : "text-sales-text-primary hover:bg-sales-surface-hover"
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+function EmptyLine({ children }: { children: string }) {
+  return (
+    <div className="px-5 py-5 text-center">
+      <p className="text-[13px] font-medium text-sales-text-primary">{children}</p>
+    </div>
+  );
+}
 
 export function AgentDailyWorkspace({
   clientId,
-  firstName,
   data,
 }: {
   clientId: string;
-  firstName: string;
+  firstName?: string;
   data: AgentReDashboard;
 }) {
+  const router = useRouter();
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openOfferId, setOpenOfferId] = useState<string | null>(null);
   const [openCaseId, setOpenCaseId] = useState<string | null>(null);
+  const [completingId, setCompletingId] = useState<string | null>(null);
+
+  const priorities = data.priorities.slice(0, PRIORITY_LIMIT);
+  const viewings = data.viewingsToday.slice(0, SIDE_LIMIT);
+  const followUps = data.followUps.slice(0, SIDE_LIMIT);
+  const offers = data.offersNeedingAttention.slice(0, SIDE_LIMIT);
+  const cases = data.complianceActions.slice(0, SIDE_LIMIT);
+
+  async function completeFollowUp(leadId: string) {
+    setCompletingId(leadId);
+    try {
+      await fetch(`/api/clients/${clientId}/leads/${leadId}/real-estate`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ follow_up_date: null }),
+      });
+      router.refresh();
+    } finally {
+      setCompletingId(null);
+    }
+  }
 
   return (
     <div className="space-y-3">
-      <header>
-        <h1 className="dashboard-greeting text-[22px] leading-tight text-sales-text-primary sm:text-[24px] layout:text-[26px]">
-          Good morning, {firstName}
-        </h1>
-        <p className="mt-1 text-[13px] leading-snug text-sales-text-secondary">
-          Here’s what needs your attention today.
-        </p>
-      </header>
-
-      <div className="dashboard-group grid grid-cols-2 gap-3 md:grid-cols-4">
-        <CompanyKpiCard
+      <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
+        <KpiCard
           item={{
             id: "new",
             label: "New inquiries",
             value: String(data.summary.newInquiries),
             supporting: "Today",
             icon: "enquiries",
+            href: "/sales/call-now",
           }}
         />
-        <CompanyKpiCard
+        <KpiCard
           item={{
             id: "followups",
             label: "Follow-ups due",
             value: String(data.summary.followUpsDue),
             supporting: "Today",
             icon: "followups",
+            href: "/sales/tasks",
           }}
         />
-        <CompanyKpiCard
+        <KpiCard
           item={{
             id: "viewings",
             label: "Viewings today",
             value: String(data.summary.viewingsToday),
             supporting: "Scheduled",
             icon: "customers",
+            href: "/sales/calendar",
           }}
         />
-        <CompanyKpiCard
+        <KpiCard
           item={{
             id: "attention",
             label: "Needs attention",
             value: String(data.summary.needingAttention),
             supporting: "Priority work",
             icon: "deals",
+            href: "/sales/pipeline",
           }}
         />
       </div>
 
-      <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
-        <h2 className="text-[13px] font-semibold text-sales-text-primary">Priority customers</h2>
-        {data.priorities.length === 0 ? (
-          <p className="mt-3 text-[13px] text-sales-text-secondary">
-            Nothing queued right now. New inquiries, due follow-ups and today’s viewings will appear here.
-          </p>
+      <CardShell
+        title="Priority inquiries"
+        className="dashboard-panel--table"
+        action={
+          <Link
+            href="/sales/pipeline"
+            className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
+          >
+            View pipeline
+          </Link>
+        }
+      >
+        {priorities.length === 0 ? (
+          <EmptyLine>Nothing queued right now.</EmptyLine>
         ) : (
-          <ul className="mt-3 space-y-2">
-            {data.priorities.map((item) => (
-              <li
-                key={item.id}
-                className="flex flex-col gap-2 rounded-[12px] border border-sales-border-subtle px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-[13px] font-semibold">{item.name}</p>
-                    <DealSideBadge dealSide={item.dealSide} />
-                  </div>
-                  <p className="mt-0.5 text-[12px] text-sales-text-secondary">{item.why}</p>
-                  <p className="text-[11px] text-sales-text-muted">NEXT: {item.nextLabel}</p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  {item.actionId === "find_matches" ? (
-                    <Button variant="primary" size="sm" onClick={() => setOpenLeadId(item.id)}>
-                      Find matches
-                    </Button>
-                  ) : (
-                    <Button variant="secondary" size="sm" onClick={() => setOpenLeadId(item.id)}>
-                      Open inquiry
-                    </Button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
-        <h2 className="text-[13px] font-semibold text-sales-text-primary">Offers needing attention</h2>
-        {data.offersNeedingAttention.length === 0 ? (
-          <p className="mt-3 text-[13px] text-sales-text-secondary">
-            Counters, awaiting seller responses and drafts will appear here.
-          </p>
-        ) : (
-          <ul className="mt-3 space-y-2">
-            {data.offersNeedingAttention.map((o) => (
-              <li
-                key={o.id}
-                className="flex flex-col gap-2 rounded-[12px] border border-sales-border-subtle px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold">{o.buyerName ?? "Buyer"}</p>
-                  <p className="truncate text-[12px] text-sales-text-secondary">{o.propertyLabel}</p>
-                  <p className="mt-0.5 text-[12px] text-sales-text-secondary">
-                    {o.why}
-                    {o.amountLabel ? ` · ${o.amountLabel}` : ""}
-                    {` · ${o.updatedLabel}`}
-                  </p>
-                </div>
-                <Button variant="primary" size="sm" onClick={() => setOpenOfferId(o.id)}>
-                  {o.reason === "counter_received" ? "Review" : "Open"}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {data.complianceActions.length > 0 ? (
-        <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
-          <h2 className="text-[13px] font-semibold text-sales-text-primary">Compliance action required</h2>
-          <ul className="mt-3 space-y-2">
-            {data.complianceActions.map((c) => (
-              <li
-                key={c.id}
-                className="flex flex-col gap-2 rounded-[12px] border border-sales-border-subtle px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold">{c.contactName}</p>
-                  <p className="mt-0.5 text-[12px] text-sales-text-secondary">{c.why}</p>
-                </div>
-                <Button variant="primary" size="sm" onClick={() => setOpenCaseId(c.id)}>
-                  {c.nextLabel.includes("Upload") ? "Upload" : "Open case"}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
-          <h2 className="text-[13px] font-semibold text-sales-text-primary">Today’s viewings</h2>
-          {data.viewingsToday.length === 0 ? (
-            <p className="mt-3 text-[13px] text-sales-text-secondary">No viewings scheduled today.</p>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {data.viewingsToday.map((v) => (
-                <li
-                  key={v.id}
-                  className="flex items-center justify-between gap-3 rounded-[10px] border border-sales-border-subtle px-3 py-2"
-                >
+          <>
+            <div className="hidden w-full md:block">
+              <table className="dashboard-table w-full table-fixed text-left">
+                <colgroup>
+                  <col className="w-[32%]" />
+                  <col className="w-[28%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[18%]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+                    <th className="px-5 py-2.5 font-semibold">Customer</th>
+                    <th className="px-3 py-2.5 font-semibold">Why</th>
+                    <th className="px-3 py-2.5 font-semibold">Next</th>
+                    <th className="px-5 py-2.5 font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
+                  {priorities.map((item) => (
+                    <tr key={item.id} className="dashboard-list-row h-[54px]">
+                      <td className="px-5 py-2">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--sales-neutral-100)] text-[10px] font-semibold text-sales-text-secondary"
+                            aria-hidden
+                          >
+                            {nameInitials(item.name)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                              {item.name}
+                            </p>
+                            <div className="mt-0.5 flex items-center gap-1.5">
+                              <DealSideBadge dealSide={item.dealSide} />
+                              <p className="truncate text-[11px] text-sales-text-muted">
+                                {rePipelineStageLabel(item.stage)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={cn(
+                            "inline-flex max-w-full truncate rounded-sales-sm px-1.5 py-0.5 text-[11px] font-semibold",
+                            whyTone(item.reasonId)
+                          )}
+                        >
+                          {item.why}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-[12px] text-sales-text-secondary">{item.nextLabel}</td>
+                      <td className="px-5 py-2">
+                        <RowAction
+                          label={item.actionId === "find_matches" ? "Find matches" : "Open"}
+                          primary={item.actionId === "find_matches" || item.actionId === "contact"}
+                          onClick={() => setOpenLeadId(item.id)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <ul className="divide-y divide-sales-border-subtle md:hidden">
+              {priorities.map((item) => (
+                <li key={item.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="text-[12px] font-medium text-sales-text-muted">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-[13px] font-semibold text-sales-text-primary">{item.name}</p>
+                      <DealSideBadge dealSide={item.dealSide} />
+                    </div>
+                    <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{item.why}</p>
+                  </div>
+                  <RowAction
+                    label={item.actionId === "find_matches" ? "Match" : "Open"}
+                    primary
+                    onClick={() => setOpenLeadId(item.id)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </CardShell>
+
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
+        <CardShell
+          title="Today’s viewings"
+          action={
+            <Link
+              href="/sales/calendar"
+              className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
+            >
+              Calendar
+            </Link>
+          }
+        >
+          {viewings.length === 0 ? (
+            <EmptyLine>No viewings scheduled today.</EmptyLine>
+          ) : (
+            <ul className="divide-y divide-sales-border-subtle">
+              {viewings.map((v) => (
+                <li key={v.id} className="flex h-[52px] items-center justify-between gap-3 px-5">
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                      {v.contactName ?? "Client"}
+                    </p>
+                    <p className="truncate text-[11px] text-sales-text-muted">
                       {new Date(v.scheduledAt).toLocaleTimeString("en-GB", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
+                      {" · "}
+                      {v.listingLabel}
                     </p>
-                    <p className="truncate text-[13px] font-semibold">{v.contactName ?? "Client"}</p>
-                    <p className="truncate text-[12px] text-sales-text-secondary">{v.listingLabel}</p>
                   </div>
                   {v.leadId ? (
-                    <Button variant="secondary" size="sm" onClick={() => setOpenLeadId(v.leadId)}>
-                      Open
-                    </Button>
+                    <RowAction label="Open" onClick={() => setOpenLeadId(v.leadId)} />
                   ) : (
                     <Link
-                      href={`/client/listings/${v.listingId}`}
-                      className="rounded-[8px] border border-sales-border px-2.5 py-1 text-[11px]"
+                      href="/sales/listings"
+                      className="dashboard-action-btn inline-flex min-h-9 items-center rounded-sales-md px-2.5 text-[12px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
                     >
-                      Open
+                      Listing
                     </Link>
                   )}
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </CardShell>
 
-        <section className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
-          <h2 className="text-[13px] font-semibold text-sales-text-primary">Follow-ups due</h2>
-          {data.followUps.length === 0 ? (
-            <p className="mt-3 text-[13px] text-sales-text-secondary">No follow-ups due today.</p>
+        <CardShell
+          title="Follow-ups due"
+          action={
+            <Link
+              href="/sales/tasks"
+              className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
+            >
+              Tasks
+            </Link>
+          }
+        >
+          {followUps.length === 0 ? (
+            <EmptyLine>No follow-ups due today.</EmptyLine>
           ) : (
-            <ul className="mt-3 space-y-2">
-              {data.followUps.map((f) => (
-                <li
-                  key={f.leadId}
-                  className="flex items-center justify-between gap-3 rounded-[10px] border border-sales-border-subtle px-3 py-2"
-                >
+            <ul className="divide-y divide-sales-border-subtle">
+              {followUps.map((f) => (
+                <li key={f.leadId} className="flex h-[52px] items-center justify-between gap-3 px-5">
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold">{f.name}</p>
-                    <p className="text-[12px] text-sales-text-secondary">
+                    <p className="truncate text-[13px] font-semibold text-sales-text-primary">{f.name}</p>
+                    <p
+                      className={cn(
+                        "truncate text-[11px]",
+                        f.overdue ? "font-medium text-sales-danger-fg" : "text-sales-text-muted"
+                      )}
+                    >
                       {f.overdue ? "Overdue" : "Due today"}
                       {f.note ? ` · ${f.note}` : ""}
                     </p>
                   </div>
-                  <div className="flex gap-1.5">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={async () => {
-                        await fetch(`/api/clients/${clientId}/leads/${f.leadId}/real-estate`, {
-                          method: "PATCH",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ follow_up_date: null }),
-                        });
-                        window.location.reload();
-                      }}
-                    >
-                      Complete
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => setOpenLeadId(f.leadId)}>
-                      Open inquiry
-                    </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <RowAction
+                      label={completingId === f.leadId ? "…" : "Done"}
+                      onClick={() => void completeFollowUp(f.leadId)}
+                    />
+                    <RowAction label="Open" primary onClick={() => setOpenLeadId(f.leadId)} />
                   </div>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </CardShell>
       </div>
+
+      {offers.length > 0 || cases.length > 0 ? (
+        <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
+          {offers.length > 0 ? (
+            <CardShell
+              title="Offers needing attention"
+              action={
+                <Link
+                  href="/sales/offers"
+                  className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
+                >
+                  All offers
+                </Link>
+              }
+            >
+              <ul className="divide-y divide-sales-border-subtle">
+                {offers.map((o) => (
+                  <li key={o.id} className="flex h-[52px] items-center justify-between gap-3 px-5">
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                        {o.buyerName ?? "Buyer"}
+                      </p>
+                      <p className="truncate text-[11px] text-sales-text-muted">
+                        {o.why}
+                        {o.amountLabel ? ` · ${o.amountLabel}` : ""}
+                      </p>
+                    </div>
+                    <RowAction
+                      label={o.reason === "counter_received" ? "Review" : "Open"}
+                      primary
+                      onClick={() => setOpenOfferId(o.id)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </CardShell>
+          ) : null}
+
+          {cases.length > 0 ? (
+            <CardShell title="Compliance">
+              <ul className="divide-y divide-sales-border-subtle">
+                {cases.map((c) => (
+                  <li key={c.id} className="flex h-[52px] items-center justify-between gap-3 px-5">
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-semibold text-sales-text-primary">{c.contactName}</p>
+                      <p className="truncate text-[11px] text-sales-text-muted">{c.why}</p>
+                    </div>
+                    <RowAction
+                      label={c.nextLabel.includes("Upload") ? "Upload" : "Open"}
+                      primary
+                      onClick={() => setOpenCaseId(c.id)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </CardShell>
+          ) : null}
+        </div>
+      ) : null}
 
       {openLeadId ? (
         <RealEstateInquiryWorkspace
@@ -266,7 +416,7 @@ export function AgentDailyWorkspace({
           offerId={openOfferId}
           complianceHref={null}
           onClose={() => setOpenOfferId(null)}
-          onChanged={() => window.location.reload()}
+          onChanged={() => router.refresh()}
         />
       ) : null}
 
@@ -275,10 +425,9 @@ export function AgentDailyWorkspace({
           clientId={clientId}
           caseId={openCaseId}
           onClose={() => setOpenCaseId(null)}
-          onChanged={() => window.location.reload()}
+          onChanged={() => router.refresh()}
         />
       ) : null}
     </div>
   );
 }
-

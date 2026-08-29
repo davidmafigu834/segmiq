@@ -53,7 +53,19 @@ export async function GET(req: Request, { params }: { params: { clientId: string
   const result = await listRealEstateOffers({
     clientId: params.clientId,
     actor: actorFromSession(session),
-    tab: ["active", "accepted", "rejected", "withdrawn", "expired", "all"].includes(tab) ? tab : "active",
+    tab: [
+      "active",
+      "submitted",
+      "negotiating",
+      "accepted",
+      "rejected",
+      "withdrawn",
+      "expired",
+      "closed",
+      "all",
+    ].includes(tab)
+      ? tab
+      : "active",
     listingId: url.searchParams.get("listing_id"),
     contactId: url.searchParams.get("contact_id"),
     leadId: url.searchParams.get("lead_id"),

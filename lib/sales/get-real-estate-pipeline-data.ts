@@ -16,10 +16,14 @@ export type RePipelineColumn = {
   items: Array<{
     id: string;
     name: string;
+    phone: string | null;
     dealSide: string | null;
     ownerName: string | null;
     ownerId: string | null;
     complianceLabel: string | null;
+    stage: RePipelineStage;
+    followUpAt: string | null;
+    updatedAt: string;
   }>;
 };
 
@@ -52,7 +56,7 @@ export async function getRealEstatePipelineData(opts: {
   let leadsQuery = supabase
     .from("leads")
     .select(
-      "id, name, status, deal_side, contact_id, assigned_to_id, follow_up_date, created_at, updated_at, form_data, linked_listing_id, offer_status"
+      "id, name, phone, status, deal_side, contact_id, assigned_to_id, follow_up_date, created_at, updated_at, form_data, linked_listing_id, offer_status"
     )
     .eq("client_id", opts.clientId)
     .or("is_archived.is.null,is_archived.eq.false")
@@ -107,6 +111,7 @@ export async function getRealEstatePipelineData(opts: {
   type Enriched = {
     id: string;
     name: string;
+    phone: string | null;
     dealSide: string | null;
     ownerId: string | null;
     ownerName: string | null;
@@ -153,6 +158,7 @@ export async function getRealEstatePipelineData(opts: {
     return {
       id: lead.id as string,
       name: (lead.name as string | null) || "Inquiry",
+      phone: (lead.phone as string | null) ?? null,
       dealSide: (lead.deal_side as string | null) ?? null,
       ownerId: (lead.assigned_to_id as string | null) ?? null,
       ownerName: (owner?.name as string | null) ?? null,
@@ -176,10 +182,14 @@ export async function getRealEstatePipelineData(opts: {
       items: items.slice(0, 40).map((e) => ({
         id: e.id,
         name: e.name,
+        phone: e.phone,
         dealSide: e.dealSide,
         ownerName: e.ownerName,
         ownerId: e.ownerId,
         complianceLabel: e.stage === "offer_accepted" ? e.complianceLabel ?? "CDD not started" : null,
+        stage: e.stage,
+        followUpAt: e.followUpAt,
+        updatedAt: e.updatedAt,
       })),
     };
   }

@@ -20,9 +20,52 @@ export const RE_ACTIVE_STAGES = [
 
 export const RE_CLOSED_STAGES = ["won", "lost", "not_qualified"] as const;
 
+/** Kanban groups for the agent/company pipeline board (not 13 raw stages). */
+export const RE_BOARD_COLUMNS = [
+  {
+    id: "new",
+    label: "New",
+    accent: "#2684FF",
+    stages: ["new_inquiry", "contacted"],
+  },
+  {
+    id: "qualified",
+    label: "Qualified",
+    accent: "#14B8A6",
+    stages: ["qualified", "property_matched"],
+  },
+  {
+    id: "viewing",
+    label: "Viewing",
+    accent: "#8B5CF6",
+    stages: ["viewing_scheduled", "viewing_completed"],
+  },
+  {
+    id: "interested",
+    label: "Interested",
+    accent: "#F59E0B",
+    stages: ["interested"],
+  },
+  {
+    id: "offer",
+    label: "Offer",
+    accent: "#16A34A",
+    stages: ["offer_submitted", "negotiating", "offer_accepted"],
+  },
+] as const;
+
+export type ReBoardColumnId = (typeof RE_BOARD_COLUMNS)[number]["id"];
+
 export type ReActiveStage = (typeof RE_ACTIVE_STAGES)[number];
 export type ReClosedStage = (typeof RE_CLOSED_STAGES)[number];
 export type RePipelineStage = ReActiveStage | ReClosedStage;
+
+export function reBoardColumnForStage(stage: RePipelineStage): ReBoardColumnId | null {
+  for (const col of RE_BOARD_COLUMNS) {
+    if ((col.stages as readonly string[]).includes(stage)) return col.id;
+  }
+  return null;
+}
 
 export const RE_PIPELINE_STAGE_LABEL: Record<RePipelineStage, string> = {
   new_inquiry: "New Inquiry",

@@ -107,17 +107,22 @@ Import from `@/components/sales/ui`.
 
 ### Buttons
 
+Import `Button`, `IconButton`, `SplitButton` from `@/components/sales/ui`.
+
 | Variant | Spec |
 |---------|------|
-| Primary | Lime `#D4FF4F`, dark text |
-| Secondary | White + `#D0D5DD` border |
-| Ghost | Text only |
-| Danger / Success | **Solid** semantic fill, white text |
-| Link | Text + underline on hover |
+| Primary | Lime `#D4FF4F`, ink `#101828`, 1px ink-alpha border, subtle product shadow — **no glow** |
+| Secondary | Surface + `#98A2B3` border (dark: token surface + restrained border) |
+| Ghost | Transparent until hover; no permanent border |
+| Danger / Success | **Solid** semantic fill, white text — never lime for delete |
+| Link | Text + underline on hover; no box |
+| IconButton | 32 / 36 / 40 square, 8px radius, quiet until hover; `active` = lime-soft |
+| SplitButton | One connected lime control + hairline divider + chevron |
 
-**Sizes:** sm **32** · md **40** · lg **48**. `md` grows to **44** below `sm` so primary actions clear the touch-target minimum on phones.
-
-Solid variants (`primary`, `danger`, `success`) carry `--sales-shadow-card` at rest and drop it on `:active` for a pressed feel.
+**Geometry:** 8px radius on all buttons. **Sizes:** sm **32** · md **40** (44 below `sm`) · lg **48**.  
+**Type:** Inter 12/13/14 · weight 600 · tracking -0.01em.  
+**Loading:** spinner + label (width must not jump). Disabled primary stays lime at ~48% opacity.  
+**Focus:** 2px `#D4FF4F` outline, 2px offset. Active: `translateY(1px)` + reduced shadow.
 
 ### Inputs
 

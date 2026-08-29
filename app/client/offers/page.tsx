@@ -29,7 +29,7 @@ export default async function ClientOffersPage() {
       pageTitle="Offers"
       workspaceShell
       workspaceTitle="Offers"
-      workspaceDescription="Track property offers, seller responses, and negotiations."
+      workspaceDescription="Bids in play — seller response, counters, and accepted next steps."
     >
       <OffersWorkspace
         clientId={session.clientId}

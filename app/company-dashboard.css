@@ -646,19 +646,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-search
   border-radius: 9px;
 }
 
-.sales-dashboard-premium .sales-btn-primary {
-  border-radius: 9px;
-  font-weight: 650;
-}
-
-html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-btn-primary:hover:not(:disabled) {
-  box-shadow: 0 0 14px rgba(212, 255, 79, 0.13);
-}
-
-.sales-dashboard-premium .sales-btn-primary:focus-visible {
-  outline: 2px solid rgba(212, 255, 79, 0.75);
-  outline-offset: 2px;
-}
+/* Primary button chrome is owned by `components/sales/ui/Button.tsx`. */
 
 /* ---------- Scrollbar ---------- */
 

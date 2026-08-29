@@ -79,7 +79,11 @@ function SalesDashboardInner({
   const { openLogSheet, logSheetProps } = useSalesLogSheet();
   const { sheet } = logSheetProps(legacy.allActiveLeads);
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
-  const { hubSheet } = addHubSheetProps(legacy.assignmentMode ?? "direct");
+  const isRealEstate = Boolean(data.realEstate && data.clientId);
+  const roleLabel = isRealEstate ? "Agent" : "Sales Executive";
+  const { hubSheet } = addHubSheetProps(legacy.assignmentMode ?? "direct", {
+    realEstate: isRealEstate,
+  });
 
   const performance = {
     ...buildPerformance(legacy),
@@ -116,7 +120,7 @@ function SalesDashboardInner({
       <div className="hidden layout:contents">
         <SalesSidebar
           userName={fullName}
-          userRoleLabel="Sales Executive"
+          userRoleLabel={roleLabel}
           avatarUrl={avatarUrl}
           isSolo={isSolo}
           whatsappBadge={whatsappBadge}
@@ -129,7 +133,7 @@ function SalesDashboardInner({
       <SalesMobileTopBar
         isSolo={isSolo}
         userName={fullName}
-        userRoleLabel="Sales Executive"
+        userRoleLabel={roleLabel}
         avatarUrl={avatarUrl}
         unreadNotifications={unreadNotifications}
         notificationRole={notificationRole}
@@ -139,12 +143,23 @@ function SalesDashboardInner({
         <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain sales-mobile-scroll px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6">
           <SegmiQDotWave />
           <div className="relative space-y-3 sm:space-y-3">
-          {data.realEstate && data.clientId ? (
-            <AgentDailyWorkspace
-              clientId={data.clientId}
-              firstName={firstName}
-              data={data.realEstate}
-            />
+          {isRealEstate ? (
+            <>
+              <DashboardHeader
+                firstName={firstName}
+                userName={fullName}
+                avatarUrl={avatarUrl}
+                unreadNotifications={unreadNotifications}
+                notificationRole={notificationRole}
+                onOpenLog={() => openLogSheet("")}
+                onAddLead={openAddHubSheet}
+                description="Here's what needs attention across your inquiries and viewings today."
+                userRoleLabel={roleLabel}
+                realEstate
+              />
+              <CourseResumeCard />
+              <AgentDailyWorkspace clientId={data.clientId!} data={data.realEstate!} />
+            </>
           ) : (
             <>
           <DashboardHeader
@@ -261,8 +276,9 @@ function SalesDashboardInner({
         onClose={() => setQuickActionsOpen(false)}
         onAddLead={() => openAddHubSheet()}
         onLogCall={() => openLogSheet("")}
-        onCreateQuote={() => router.push("/sales/quotes")}
+        onCreateQuote={() => router.push(isRealEstate ? "/sales/listings" : "/sales/quotes")}
         onSchedule={() => router.push("/sales/calendar")}
+        realEstate={isRealEstate}
       />
 
       {sheet}

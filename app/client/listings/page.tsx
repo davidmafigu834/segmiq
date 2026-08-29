@@ -28,7 +28,7 @@ export default async function ClientListingsPage() {
       pageTitle="Listings"
       workspaceShell
       workspaceTitle="Listings"
-      workspaceDescription="Sale, rental, and new-development inventory."
+      workspaceDescription="Sale, rental, and development stock — status, price, and who is listing it."
     >
       <ListingsManager clientId={session.clientId} />
     </ClientManagerLayout>

@@ -27,7 +27,26 @@ import {
   type ReOfferStatus,
 } from "@/lib/real-estate/offers";
 
-export type OfferListTab = "active" | "accepted" | "rejected" | "withdrawn" | "expired" | "all";
+export type OfferListTab =
+  | "active"
+  | "submitted"
+  | "negotiating"
+  | "accepted"
+  | "rejected"
+  | "withdrawn"
+  | "expired"
+  | "closed"
+  | "all";
+
+const CLOSED_OFFER_STATUSES = new Set(["rejected", "withdrawn", "expired"]);
+
+export function offerMatchesListTab(status: ReOfferStatus, tab: OfferListTab): boolean {
+  if (tab === "all") return true;
+  if (tab === "active") return isOfferActiveStatus(status);
+  if (tab === "closed") return CLOSED_OFFER_STATUSES.has(status);
+  if (tab === "negotiating") return status === "countered" || status === "negotiating";
+  return status === tab;
+}
 
 export type OfferListRow = {
   id: string;
@@ -497,6 +516,7 @@ export async function listRealEstateOffers(opts: {
     negotiating: number;
     acceptedThisMonth: number;
     accepted: number;
+    closed: number;
   };
   agents: Array<{ id: string; name: string }>;
   byAgent: Array<{ id: string; name: string; count: number }>;
@@ -624,14 +644,10 @@ export async function listRealEstateOffers(opts: {
     : mapped;
 
   const tab = opts.tab ?? "active";
-  const filtered = searched.filter((r) => {
-    if (tab === "all") return true;
-    if (tab === "active") return isOfferActiveStatus(r.status);
-    return r.status === tab;
-  });
+  const filtered = searched.filter((r) => offerMatchesListTab(r.status, tab));
 
   const summary = {
-    active: mapped.filter((r) => ["submitted", "countered", "negotiating"].includes(r.status)).length,
+    active: mapped.filter((r) => isOfferActiveStatus(r.status)).length,
     awaitingSeller: mapped.filter((r) => r.status === "submitted").length,
     negotiating: mapped.filter((r) => r.status === "countered" || r.status === "negotiating").length,
     acceptedThisMonth: all.filter((r) => {
@@ -639,6 +655,7 @@ export async function listRealEstateOffers(opts: {
       return at && new Date(at) >= monthStart && (r.status as string) === "accepted";
     }).length,
     accepted: mapped.filter((r) => r.status === "accepted").length,
+    closed: mapped.filter((r) => CLOSED_OFFER_STATUSES.has(r.status)).length,
   };
 
   const agentCounts = new Map<string, { id: string; name: string; count: number }>();

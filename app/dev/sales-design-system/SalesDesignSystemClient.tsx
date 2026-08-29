@@ -9,6 +9,7 @@ import {
   Phone,
   Plus,
   Search,
+  Zap,
   XCircle,
 } from "lucide-react";
 import {
@@ -37,6 +38,7 @@ import {
   FieldHint,
   FieldLabel,
   IconButton,
+  SplitButton,
   Input,
   KpiStat,
   LeadIdentity,
@@ -109,6 +111,26 @@ function Section({
       </div>
       {children}
     </section>
+  );
+}
+
+function ButtonShowcaseRow({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+        {title}
+      </p>
+      <div className="flex flex-wrap items-end gap-5">{children}</div>
+    </div>
+  );
+}
+
+function PreviewCell({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <span className="text-[11px] text-sales-text-muted">{label}</span>
+      {children}
+    </div>
   );
 }
 
@@ -332,44 +354,139 @@ function ShowcaseInner() {
           </Section>
 
           {/* ── Buttons ────────────────────────────────────────── */}
-          <Section id="buttons" title="Buttons" description="Sizes 32 / 40 / 48 · solid danger & success.">
-            <div className="space-y-4">
+          <Section
+            id="buttons"
+            title="Buttons"
+            description="8px radius · 32 / 40 (44 touch) / 48 · lime primary, no glow. Hover / active rows use previewState (showcase only)."
+          >
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[12px] text-sales-text-secondary">
+                Validate both themes with the page toggle.
+              </p>
+              <SalesThemeToggle />
+            </div>
+            <div className="space-y-8">
+              <ButtonShowcaseRow title="Primary">
+                <PreviewCell label="Default">
+                  <Button leftIcon={<Plus />}>Create deal</Button>
+                </PreviewCell>
+                <PreviewCell label="Hover preview">
+                  <Button previewState="hover" leftIcon={<Plus />}>
+                    Create deal
+                  </Button>
+                </PreviewCell>
+                <PreviewCell label="Active preview">
+                  <Button previewState="active" leftIcon={<Plus />}>
+                    Create deal
+                  </Button>
+                </PreviewCell>
+                <PreviewCell label="Disabled">
+                  <Button disabled leftIcon={<Plus />}>
+                    Create deal
+                  </Button>
+                </PreviewCell>
+                <PreviewCell label="Loading">
+                  <Button loading leftIcon={<Plus />}>
+                    Create deal
+                  </Button>
+                </PreviewCell>
+              </ButtonShowcaseRow>
+
+              <ButtonShowcaseRow title="Secondary">
+                <PreviewCell label="Default">
+                  <Button variant="secondary">Cancel</Button>
+                </PreviewCell>
+                <PreviewCell label="Hover preview">
+                  <Button variant="secondary" previewState="hover">
+                    Cancel
+                  </Button>
+                </PreviewCell>
+                <PreviewCell label="Active preview">
+                  <Button variant="secondary" previewState="active">
+                    Cancel
+                  </Button>
+                </PreviewCell>
+                <PreviewCell label="Disabled">
+                  <Button variant="secondary" disabled>
+                    Cancel
+                  </Button>
+                </PreviewCell>
+              </ButtonShowcaseRow>
+
+              <ButtonShowcaseRow title="Ghost">
+                <PreviewCell label="Default">
+                  <Button variant="ghost">View details</Button>
+                </PreviewCell>
+                <PreviewCell label="Hover preview">
+                  <Button variant="ghost" previewState="hover">
+                    View details
+                  </Button>
+                </PreviewCell>
+                <PreviewCell label="Active preview">
+                  <Button variant="ghost" previewState="active">
+                    View details
+                  </Button>
+                </PreviewCell>
+              </ButtonShowcaseRow>
+
+              <ButtonShowcaseRow title="Icon">
+                <PreviewCell label="Default">
+                  <IconButton aria-label="Search" size="md" icon={<Search strokeWidth={1.8} />} />
+                </PreviewCell>
+                <PreviewCell label="Hover">
+                  <IconButton
+                    aria-label="Search hover"
+                    size="md"
+                    previewState="hover"
+                    icon={<Search strokeWidth={1.8} />}
+                  />
+                </PreviewCell>
+                <PreviewCell label="Active">
+                  <IconButton
+                    aria-label="Search selected"
+                    size="md"
+                    previewState="active"
+                    icon={<Search strokeWidth={1.8} />}
+                  />
+                </PreviewCell>
+                <PreviewCell label="Selected">
+                  <IconButton aria-label="Call" size="md" active icon={<Phone strokeWidth={1.8} />} />
+                </PreviewCell>
+              </ButtonShowcaseRow>
+
+              <ButtonShowcaseRow title="Split button">
+                <PreviewCell label="Default">
+                  <SplitButton
+                    label="Create deal"
+                    leftIcon={<Plus />}
+                    menuItems={[
+                      { label: "Create deal", onClick: () => toast({ tone: "info", title: "Create deal" }) },
+                      { label: "Create quote", onClick: () => toast({ tone: "info", title: "Create quote" }) },
+                    ]}
+                  />
+                </PreviewCell>
+                <PreviewCell label="Hover">
+                  <SplitButton label="Create deal" leftIcon={<Plus />} previewState="hover" />
+                </PreviewCell>
+                <PreviewCell label="Active">
+                  <SplitButton label="Create deal" leftIcon={<Plus />} previewState="active" />
+                </PreviewCell>
+              </ButtonShowcaseRow>
+
               <div>
-                <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Variants</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button leftIcon={<Plus size={16} />}>Primary</Button>
-                  <Button variant="secondary">Secondary</Button>
-                  <Button variant="ghost">Ghost</Button>
-                  <Button variant="danger">Danger</Button>
-                  <Button variant="success">Success</Button>
-                  <Button variant="link">Link action</Button>
-                  <Button loading>Saving…</Button>
-                  <Button disabled>Disabled</Button>
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Sizes</p>
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  Sizes · icons · semantic
+                </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button size="sm">Small 32</Button>
                   <Button size="md">Medium 40</Button>
                   <Button size="lg">Large 48</Button>
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Icon buttons</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <IconButton aria-label="Search" size="sm">
-                    <Search strokeWidth={1.8} />
-                  </IconButton>
-                  <IconButton aria-label="Search" size="md">
-                    <Search strokeWidth={1.8} />
-                  </IconButton>
-                  <IconButton aria-label="Search" size="lg">
-                    <Search strokeWidth={1.8} />
-                  </IconButton>
-                  <IconButton aria-label="Call" active>
-                    <Phone strokeWidth={1.8} />
-                  </IconButton>
+                  <Button leftIcon={<Zap />} rightIcon={<Plus />}>
+                    Quick actions
+                  </Button>
+                  <Button variant="danger">Delete</Button>
+                  <Button variant="success">Mark won</Button>
+                  <Button variant="link">Link action</Button>
                   <Tooltip label="More actions">
                     <IconButton aria-label="More">
                       <MoreHorizontal strokeWidth={1.8} />

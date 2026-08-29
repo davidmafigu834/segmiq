@@ -1,5 +1,13 @@
-export { Button, IconButton } from "./Button";
-export type { SalesButtonProps, SalesButtonVariant, SalesButtonSize, IconButtonProps } from "./Button";
+export { Button, IconButton, SplitButton } from "./Button";
+export type {
+  SalesButtonProps,
+  SalesButtonVariant,
+  SalesButtonSize,
+  SalesButtonPreviewState,
+  IconButtonProps,
+  SplitButtonProps,
+  SplitButtonMenuItem,
+} from "./Button";
 
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, WORKSPACE_CARD } from "./Card";
 export type { SalesCardVariant } from "./Card";

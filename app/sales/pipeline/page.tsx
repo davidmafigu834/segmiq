@@ -78,6 +78,7 @@ export default async function SalesPipelinePage() {
       >
         <PipelinePageShell
           userName={session.user?.name ?? "Sales"}
+          userRoleLabel="Agent"
           avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
           unreadNotifications={unreadRes.count ?? 0}
           notificationRole={session.role}
@@ -86,10 +87,12 @@ export default async function SalesPipelinePage() {
           isSolo={session.clientMode === "solo"}
           breadcrumb="Sales / Pipeline"
           title="My pipeline"
-          description="Your inquiries by stage, follow-ups, and work that needs attention."
+          description="Your inquiries by stage — who to contact, who to take viewing, who has an offer."
+          searchPlaceholder="Search inquiries..."
         >
           <RealEstatePipelineBoard
             data={reData}
+            clientId={session.clientId}
             clientName={(clientRow?.name as string) ?? "Company"}
             unreadNotifications={unreadRes.count ?? 0}
             notificationRole={session.role}

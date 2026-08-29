@@ -158,6 +158,7 @@ export function SalesMobileQuickActionsSheet({
   onLogCall,
   onCreateQuote,
   onSchedule,
+  realEstate = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -165,15 +166,22 @@ export function SalesMobileQuickActionsSheet({
   onLogCall: () => void;
   onCreateQuote: () => void;
   onSchedule: () => void;
+  realEstate?: boolean;
 }) {
   if (!open) return null;
 
-  const actions = [
-    { label: "Add lead", icon: UserPlus, run: onAddLead },
-    { label: "Log call", icon: PhoneCall, run: onLogCall },
-    { label: "Create quote", icon: FilePlus2, run: onCreateQuote },
-    { label: "Schedule follow-up", icon: CalendarClock, run: onSchedule },
-  ] as const;
+  const actions = realEstate
+    ? [
+        { label: "Add inquiry", icon: UserPlus, run: onAddLead },
+        { label: "Log call", icon: PhoneCall, run: onLogCall },
+        { label: "Schedule follow-up", icon: CalendarClock, run: onSchedule },
+      ]
+    : [
+        { label: "Add lead", icon: UserPlus, run: onAddLead },
+        { label: "Log call", icon: PhoneCall, run: onLogCall },
+        { label: "Create quote", icon: FilePlus2, run: onCreateQuote },
+        { label: "Schedule follow-up", icon: CalendarClock, run: onSchedule },
+      ];
 
   return (
     <PremiumSheet

@@ -41,7 +41,7 @@ export default async function SalesListingsPage() {
         {...shell}
         breadcrumb="Sales / Listings"
         title="Listings"
-        description="Browse available stock. Create and edit remain manager-only."
+        description="Sale, rental, and development stock you can match to inquiries."
         searchPlaceholder="Search listings..."
       >
         <ListingsManager clientId={session.clientId} readOnly />

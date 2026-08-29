@@ -78,6 +78,7 @@ export default async function ClientPipelinePage({
       >
         <RealEstatePipelineBoard
           data={reData}
+          clientId={clientId}
           clientName={(clientMeta?.name as string) ?? "Company"}
           unreadNotifications={unreadRes.count ?? 0}
           notificationRole={session.role}

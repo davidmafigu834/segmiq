@@ -19,6 +19,9 @@ export function DashboardHeader({
   notificationRole,
   onOpenLog,
   onAddLead,
+  description = "Here's what needs attention across your enquiries and deals today.",
+  userRoleLabel = "Sales Executive",
+  realEstate = false,
 }: {
   firstName: string;
   userName: string;
@@ -27,6 +30,9 @@ export function DashboardHeader({
   notificationRole: UserRole;
   onOpenLog: () => void;
   onAddLead: () => void;
+  description?: string;
+  userRoleLabel?: string;
+  realEstate?: boolean;
 }) {
   const greeting = `Good ${greetingPart()}, ${firstName}`;
 
@@ -34,7 +40,7 @@ export function DashboardHeader({
     <SalesPageHeader
       breadcrumb="Sales / Dashboard"
       title={greeting}
-      description="Here's what needs attention across your enquiries and deals today."
+      description={description}
       actions={
         <>
           <div className="sd-search-wrap hidden min-w-0 shrink layout:inline-flex">
@@ -45,10 +51,10 @@ export function DashboardHeader({
               <NotificationBell initialUnread={unreadNotifications} role={notificationRole} />
               <SalesThemeToggle />
             </div>
-            <SalesQuickActions onAddLead={onAddLead} onLogCall={onOpenLog} />
+            <SalesQuickActions onAddLead={onAddLead} onLogCall={onOpenLog} realEstate={realEstate} />
             <SalesProfileMenu
               userName={userName}
-              userRoleLabel="Sales Executive"
+              userRoleLabel={userRoleLabel}
               avatarUrl={avatarUrl}
               compact
             />

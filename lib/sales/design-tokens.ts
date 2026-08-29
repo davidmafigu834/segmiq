@@ -32,6 +32,8 @@ export const SALES_COLORS = {
 
   brand: "#D4FF4F",
   brandHover: "#C6F23F",
+  brandActive: "#B8E935",
+  ink: "#101828",
   brandSoft: "rgba(212, 255, 79, 0.22)",
   brandSoftSolid: "#EEF4D8",
   brandBorder: "rgba(160, 205, 40, 0.4)",
@@ -72,6 +74,9 @@ export const SALES_COLORS_DARK = {
   borderSubtle: "rgba(126, 150, 205, 0.11)",
   borderStrong: "rgba(126, 150, 205, 0.28)",
   brand: "#D4FF4F",
+  brandHover: "#C8F23F",
+  brandActive: "#B8E935",
+  ink: "#101828",
   brandSoft: "rgba(212, 255, 79, 0.10)",
   brandSelected: "rgba(212, 255, 79, 0.14)",
   success: "#3DDC97",
@@ -97,6 +102,8 @@ export const SALES_SHADOW = {
   dropdown: "0 4px 12px rgba(16, 24, 64, 0.08)",
   popover: "0 8px 24px rgba(16, 24, 64, 0.10)",
   modal: "0 16px 40px rgba(16, 24, 64, 0.12)",
+  button: "0 1px 2px rgba(16, 24, 40, 0.08), 0 2px 6px rgba(16, 24, 40, 0.06)",
+  buttonHover: "0 2px 4px rgba(16, 24, 40, 0.10), 0 4px 10px rgba(16, 24, 40, 0.07)",
 } as const;
 
 /** Button heights from design boards: Small 32 · Medium 40 · Large 48 */

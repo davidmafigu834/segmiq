@@ -20,6 +20,7 @@ export function PipelinePageShell({
   title = "My pipeline",
   description = "Track and manage the Deals you're actively working to win.",
   dense = true,
+  searchPlaceholder = "Search Deals, customers...",
 }: {
   children: ReactNode;
   userName: string;
@@ -35,6 +36,7 @@ export function PipelinePageShell({
   title?: string;
   description?: string;
   dense?: boolean;
+  searchPlaceholder?: string;
 }) {
   return (
     <SalesAppShell
@@ -52,7 +54,7 @@ export function PipelinePageShell({
       title={title}
       description={description}
       dense={dense}
-      searchPlaceholder="Search Deals, customers..."
+      searchPlaceholder={searchPlaceholder}
     >
       {children}
     </SalesAppShell>

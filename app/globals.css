@@ -3849,11 +3849,28 @@ label[for="photo-input"] {
   /* Brand (lime accent — not page background) */
   --sales-brand: #d4ff4f;
   --sales-brand-hover: #c6f23f;
+  --sales-brand-active: #b8e935;
+  --sales-ink: #101828;
   --sales-brand-soft: rgba(212, 255, 79, 0.22);
   --sales-brand-soft-solid: #eef4d8;
   --sales-brand-border: rgba(160, 205, 40, 0.4);
   --sales-brand-text: #101828;
   --sales-brand-fg: #4d7c0f;
+
+  /* Button system — scoped so cards / inputs keep their own chrome */
+  --sales-btn-shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 2px 6px rgba(16, 24, 40, 0.06);
+  --sales-btn-shadow-hover: 0 2px 4px rgba(16, 24, 40, 0.1), 0 4px 10px rgba(16, 24, 40, 0.07);
+  --sales-btn-shadow-active: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --sales-btn-shadow-secondary: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --sales-btn-primary-border: rgba(16, 24, 40, 0.08);
+  --sales-btn-secondary-border: #98a2b3;
+  --sales-btn-secondary-border-hover: #667085;
+  --sales-btn-split-divider: rgba(16, 24, 40, 0.14);
+  --sales-btn-icon-active-bg: rgba(212, 255, 79, 0.12);
+  --sales-btn-icon-active-border: rgba(212, 255, 79, 0.45);
+  --sales-btn-focus-outline: #d4ff4f;
+  --sales-btn-danger-hover: color-mix(in srgb, var(--sales-danger) 88%, #000);
+  --sales-btn-danger-active: color-mix(in srgb, var(--sales-danger) 78%, #000);
 
   /* Sales sidebar — chrome, not white */
   --sales-sidebar-bg: #f4f6fb;
@@ -4079,11 +4096,28 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   /* Brand */
   --sales-brand: #d4ff4f;
   --sales-brand-hover: #c8f23f;
+  --sales-brand-active: #b8e935;
+  --sales-ink: #101828;
   --sales-brand-soft: rgba(212, 255, 79, 0.12);
   --sales-brand-soft-solid: #173056;
   --sales-brand-border: rgba(212, 255, 79, 0.28);
   --sales-brand-text: #101828;
   --sales-brand-fg: #d4ff4f;
+
+  /* Button system — dark surfaces stay token-driven, primary stays lime */
+  --sales-btn-shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.18);
+  --sales-btn-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.32), 0 4px 10px rgba(0, 0, 0, 0.22);
+  --sales-btn-shadow-active: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --sales-btn-shadow-secondary: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --sales-btn-primary-border: rgba(16, 24, 40, 0.2);
+  --sales-btn-secondary-border: rgba(126, 150, 205, 0.36);
+  --sales-btn-secondary-border-hover: rgba(126, 150, 205, 0.5);
+  --sales-btn-split-divider: rgba(16, 24, 40, 0.22);
+  --sales-btn-icon-active-bg: rgba(212, 255, 79, 0.12);
+  --sales-btn-icon-active-border: rgba(212, 255, 79, 0.45);
+  --sales-btn-focus-outline: #d4ff4f;
+  --sales-btn-danger-hover: color-mix(in srgb, var(--sales-danger) 88%, #000);
+  --sales-btn-danger-active: color-mix(in srgb, var(--sales-danger) 78%, #000);
 
   /* Sidebar — slightly deeper than the canvas */
   --sales-sidebar-bg: #050510;

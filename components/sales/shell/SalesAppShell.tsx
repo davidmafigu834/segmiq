@@ -4,6 +4,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Building2,
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -120,9 +121,11 @@ export function SalesPageHeader({
 export function SalesQuickActions({
   onAddLead,
   onLogCall,
+  realEstate = false,
 }: {
   onAddLead?: () => void;
   onLogCall?: () => void;
+  realEstate?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -163,7 +166,7 @@ export function SalesQuickActions({
                 }}
               >
                 <UserPlus size={16} strokeWidth={1.8} aria-hidden />
-                Add lead
+                {realEstate ? "Add inquiry" : "Add lead"}
               </button>
             ) : null}
             {onLogCall ? (
@@ -190,13 +193,17 @@ export function SalesQuickActions({
               Open Sales Hub
             </Link>
             <Link
-              href="/sales/quotes"
+              href={realEstate ? "/sales/listings" : "/sales/quotes"}
               role="menuitem"
               className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
               onClick={() => setOpen(false)}
             >
-              <FileText size={16} strokeWidth={1.8} aria-hidden />
-              View quotations
+              {realEstate ? (
+                <Building2 size={16} strokeWidth={1.8} aria-hidden />
+              ) : (
+                <FileText size={16} strokeWidth={1.8} aria-hidden />
+              )}
+              {realEstate ? "View listings" : "View quotations"}
             </Link>
             <Link
               href="/sales/calendar"

@@ -41,7 +41,7 @@ export default async function SalesOffersPage() {
         {...shell}
         breadcrumb="Sales / Offers"
         title="Offers"
-        description="Track property offers, seller responses and negotiations."
+        description="Bids in play — seller response, counters, and accepted next steps."
       >
         <OffersWorkspace
           clientId={session.clientId}
