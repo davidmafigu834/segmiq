@@ -19,26 +19,12 @@ export function CompanyReportsHeader({
   notificationRole,
   userName,
   avatarUrl,
-  from,
-  to,
-  preset,
-  ownerId,
-  owners,
-  onRange,
-  onOwner,
   onExport,
 }: {
   unreadNotifications: number;
   notificationRole: UserRole;
   userName: string;
   avatarUrl?: string | null;
-  from: Date;
-  to: Date;
-  preset: CompanyReportPresetId;
-  ownerId: string | null;
-  owners: Array<{ id: string; name: string }>;
-  onRange: (from: Date, to: Date, preset: CompanyReportPresetId) => void;
-  onOwner: (ownerId: string | null) => void;
   onExport: () => void;
 }) {
   return (

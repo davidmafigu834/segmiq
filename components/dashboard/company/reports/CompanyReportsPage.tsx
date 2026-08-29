@@ -136,20 +136,6 @@ export function CompanyReportsPage({
         notificationRole={notificationRole}
         userName={userName}
         avatarUrl={avatarUrl}
-        from={from}
-        to={to}
-        preset={preset}
-        ownerId={ownerId}
-        owners={owners}
-        onRange={(nextFrom, nextTo, nextPreset) =>
-          setParams({
-            from: nextFrom.toISOString(),
-            to: nextTo.toISOString(),
-            preset: nextPreset,
-            granularity: suggestGranularity(nextFrom, nextTo),
-          })
-        }
-        onOwner={(id) => setParams({ ownerId: id })}
         onExport={exportReport}
       />
 
