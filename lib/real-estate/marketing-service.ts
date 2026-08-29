@@ -616,7 +616,6 @@ export async function getMarketingDashboard(opts: {
       agentId: id === "__unassigned__" ? null : id,
       name: id === "__unassigned__" ? "Unassigned" : userById.get(id) ?? "Agent",
       assigned: list.length,
-      contacted: list.filter((x) => x.contacted).length,
       uncontacted: list.filter((x) => !x.contacted).length,
       ...fn,
     };
