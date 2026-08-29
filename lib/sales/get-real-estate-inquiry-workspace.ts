@@ -298,7 +298,7 @@ export async function getRealEstateInquiryWorkspace(opts: {
     identity: (lead.name as string | null) || (contact?.name as string | null) || "Inquiry",
     dealSide: (lead.deal_side as string | null) ?? null,
     dealSideLabel: dealSideBadgeLabel(lead.deal_side as string | null),
-    sourceLabel: attr?.sourceLabel ?? source || null,
+    sourceLabel: (attr?.sourceLabel ?? source) || null,
     phone: (lead.phone as string | null) || contact?.phone || null,
     email: (lead.email as string | null) || contact?.email || null,
     ownerId: (lead.assigned_to_id as string | null) ?? null,

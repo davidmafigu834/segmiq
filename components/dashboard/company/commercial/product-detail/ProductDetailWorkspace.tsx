@@ -103,7 +103,10 @@ export function ProductDetailWorkspace({
     if (s.id === "inventory" && form.item_type === "SERVICE") return false;
     return true;
   });
-  const stock = form.item_type === "SERVICE" || !form.track_inventory ? "NOT_TRACKED" : product?.inventory?.status ?? "NOT_TRACKED";
+  const stock =
+    form.item_type === "SERVICE" || !form.track_inventory
+      ? "NOT_TRACKED"
+      : (product?.inventory?.status ?? "NOT_TRACKED");
 
   if (loadError) {
     return (
