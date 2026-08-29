@@ -11,7 +11,6 @@ import {
   offerVsAsking,
 } from "@/lib/real-estate/offers";
 import type { OfferListRow } from "@/lib/real-estate/offer-service";
-import type { OfferListTab } from "@/lib/real-estate/offer-service";
 import { cn } from "@/lib/ui/cn";
 import { CreateOfferSheet, type CreateOfferPrefill } from "./CreateOfferSheet";
 import { OfferDetailPanel, OfferStatusPill } from "./OfferDetailPanel";

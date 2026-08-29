@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { Inbox, Search } from "lucide-react";
 import { DealSideBadge } from "@/components/real-estate/DealSideBadge";
@@ -130,14 +130,17 @@ export function RealEstatePipelineBoard({
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
 
   const q = query.trim().toLowerCase();
-  function matches(item: BoardItem): boolean {
-    if (!q) return true;
-    return [item.name, item.phone, item.ownerName, item.complianceLabel, rePipelineStageLabel(item.stage)]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase()
-      .includes(q);
-  }
+  const matches = useCallback(
+    (item: BoardItem): boolean => {
+      if (!q) return true;
+      return [item.name, item.phone, item.ownerName, item.complianceLabel, rePipelineStageLabel(item.stage)]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
+    },
+    [q]
+  );
 
   const byGroup = useMemo(() => {
     const next: Record<ReBoardColumnId, BoardItem[]> = {
@@ -155,11 +158,11 @@ export function RealEstatePipelineBoard({
       }
     }
     return next;
-  }, [data.columns, q]);
+  }, [data.columns, matches]);
 
   const closedItems = useMemo(
     () => data.closed.flatMap((c) => c.items.filter(matches)),
-    [data.closed, q]
+    [data.closed, matches]
   );
 
   const activeCount = data.columns.reduce((s, c) => s + c.count, 0);

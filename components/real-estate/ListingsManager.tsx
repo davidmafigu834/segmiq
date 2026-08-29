@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Building2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
@@ -166,7 +166,7 @@ export function ListingsManager({
     return () => clearTimeout(t);
   }, [toast]);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [listRes, teamRes, devRes] = await Promise.all([
@@ -190,11 +190,11 @@ export function ListingsManager({
     } finally {
       setLoading(false);
     }
-  }
+  }, [clientId]);
 
   useEffect(() => {
     void load();
-  }, [clientId]);
+  }, [load]);
 
   const counts = useMemo(() => {
     const available = listings.filter((l) => l.status === "available").length;
