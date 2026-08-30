@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Send } from "lucide-react";
 import { listingLabel } from "@/lib/real-estate/helpers";
+import { LISTING_APPROVAL_LABEL, LISTING_STATUS_LABEL, LISTING_TYPE_LABEL } from "@/lib/real-estate/listings";
 import type { ListingRow } from "@/types";
 import { CreateOfferSheet, type CreateOfferPrefill } from "@/components/real-estate/offers/CreateOfferSheet";
 import { ListingOffersSection, OfferDetailPanel } from "@/components/real-estate/offers/OfferDetailPanel";
@@ -82,7 +83,15 @@ export function ListingDetailView({
       <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5">
         <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-sales-text-primary">{listingLabel(listing)}</h2>
         <p className="mt-2 text-[13px] text-sales-text-secondary">
-          {[listing.transaction_type, listing.status].join(" · ")}
+          {[
+            LISTING_TYPE_LABEL[listing.transaction_type],
+            LISTING_STATUS_LABEL[listing.status],
+            listing.approval_status && listing.approval_status !== "approved"
+              ? LISTING_APPROVAL_LABEL[listing.approval_status]
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
           {listing.price != null ? ` · $${Number(listing.price).toLocaleString()}` : ""}
           {listing.bedrooms != null ? ` · ${listing.bedrooms} bed` : ""}
           {listing.bathrooms != null ? ` · ${listing.bathrooms} bath` : ""}
@@ -90,6 +99,29 @@ export function ListingDetailView({
         </p>
         {listing.status === "under_offer" ? (
           <p className="mt-2 text-sm font-medium text-amber-800">Under offer</p>
+        ) : null}
+        {listing.approval_status === "pending_approval" ? (
+          <button
+            type="button"
+            className="mt-3 inline-flex h-10 items-center rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text"
+            onClick={async () => {
+              const res = await fetch(`/api/clients/${clientId}/listings/${listingId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ approval_status: "approved" }),
+              });
+              if (!res.ok) {
+                const j = (await res.json().catch(() => ({}))) as { error?: string };
+                setToast(j.error ?? "Approval failed");
+                return;
+              }
+              const j = (await res.json()) as { listing?: ListingRow };
+              if (j.listing) setListing(j.listing);
+              setToast("Listing approved");
+            }}
+          >
+            Approve listing
+          </button>
         ) : null}
         {listing.description ? (
           <p className="mt-4 text-[13px] text-sales-text-secondary whitespace-pre-wrap">{listing.description}</p>

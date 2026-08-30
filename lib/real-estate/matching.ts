@@ -92,7 +92,7 @@ export function evaluateListingMatch(
 export type ListingSearchFilters = {
   q?: string;
   suburb?: string;
-  transactionType?: "sale" | "rental" | "new_development";
+  transactionType?: "sale" | "rental" | "new_development" | "property_management";
   status?: string;
   minPrice?: number;
   maxPrice?: number;

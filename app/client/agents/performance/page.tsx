@@ -3,10 +3,10 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 import { authOptions } from "@/lib/auth";
-import { getCompanyTeamPageData } from "@/lib/sales/get-company-team-page-data";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { EmptyState } from "@/components/ui";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
+import { getAgentSupervision } from "@/lib/real-estate/agent-supervision";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -26,25 +26,15 @@ export default async function ClientAgentPerformancePage() {
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
 
-  const data = await getCompanyTeamPageData({
-    clientId: session.clientId,
-    actor: {
-      userId: session.userId,
-      role: session.role,
-      clientId: session.clientId,
-    },
-    alsoSells: Boolean(session.alsoSells),
-  });
-
-  const agents = data.members.filter((m) => m.isActive && m.roleGroup === "salesperson");
+  const agents = await getAgentSupervision(session.clientId);
 
   return (
     <ClientManagerLayout
       breadcrumbPage="AGENT PERFORMANCE"
       pageTitle="Agent Performance"
       workspaceShell
-      workspaceTitle="Agent performance"
-      workspaceDescription="Live activity for agents on this company — deals, pipeline and follow-ups."
+      workspaceTitle="Agent supervision"
+      workspaceDescription="Each agent’s enquiries, viewings, follow-ups, offers and concluded transactions."
     >
       <div className="min-w-0 w-full max-w-full">
         {agents.length === 0 ? (
@@ -52,19 +42,20 @@ export default async function ClientAgentPerformancePage() {
             <EmptyState
               icon={Trophy}
               title="No agents to measure yet"
-              description="Invite agents from the Agents page. Performance appears here from live pipeline activity."
+              description="Invite agents from the Agents page. Live activity appears here."
             />
           </div>
         ) : (
           <div className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
-            <table className="w-full min-w-[640px] text-left">
+            <table className="w-full min-w-[720px] text-left">
               <thead>
                 <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
                   <th className="px-5 py-3">Agent</th>
-                  <th className="px-3 py-3 text-right">Active deals</th>
-                  <th className="px-3 py-3 text-right">Pipeline</th>
-                  <th className="px-3 py-3 text-right">Won</th>
-                  <th className="px-5 py-3 text-right">Follow-ups due</th>
+                  <th className="px-3 py-3 text-right">Enquiries</th>
+                  <th className="px-3 py-3 text-right">Viewings</th>
+                  <th className="px-3 py-3 text-right">Follow-ups due</th>
+                  <th className="px-3 py-3 text-right">Offers</th>
+                  <th className="px-5 py-3 text-right">Concluded</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-sales-border-subtle">
@@ -78,10 +69,11 @@ export default async function ClientAgentPerformancePage() {
                         {row.name}
                       </Link>
                     </td>
-                    <td className="px-3 py-3 text-right text-[13px] tabular-nums">{row.activeDeals}</td>
-                    <td className="px-3 py-3 text-right text-[13px] tabular-nums">{row.pipelineValueLabel}</td>
-                    <td className="px-3 py-3 text-right text-[13px] tabular-nums">{row.dealsWon}</td>
-                    <td className="px-5 py-3 text-right text-[13px] tabular-nums">{row.followUpsDue}</td>
+                    <td className="px-3 py-3 text-right text-[13px] tabular-nums">{row.inquiries}</td>
+                    <td className="px-3 py-3 text-right text-[13px] tabular-nums">{row.viewings}</td>
+                    <td className="px-3 py-3 text-right text-[13px] tabular-nums">{row.followUpsDue}</td>
+                    <td className="px-3 py-3 text-right text-[13px] tabular-nums">{row.offers}</td>
+                    <td className="px-5 py-3 text-right text-[13px] tabular-nums">{row.concluded}</td>
                   </tr>
                 ))}
               </tbody>

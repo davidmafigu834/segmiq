@@ -16,6 +16,14 @@ import {
   contactMatchesListing,
 } from "../lib/real-estate/helpers";
 import {
+  canApproveListings,
+  canSubmitListings,
+  defaultApprovalForCreate,
+  isListingLive,
+  isManagedListing,
+  LISTING_STATUS_LABEL,
+} from "../lib/real-estate/listings";
+import {
   evaluateListingMatch,
   listingMatchesSearch,
 } from "../lib/real-estate/matching";
@@ -226,8 +234,18 @@ describe("agent dashboard priority and permissions", () => {
     assert.equal(canManageListings("SALESPERSON"), false);
     assert.equal(canManageListings("CLIENT_MANAGER"), true);
     assert.equal(canManageListings("SUPER_ADMIN"), true);
+    assert.equal(canApproveListings("SALESPERSON"), false);
+    assert.equal(canSubmitListings("SALESPERSON"), true);
+    assert.equal(defaultApprovalForCreate("CLIENT_MANAGER"), "approved");
+    assert.equal(defaultApprovalForCreate("SALESPERSON"), "pending_approval");
+    assert.equal(isListingLive({ status: "available", approval_status: "pending_approval" }), false);
+    assert.equal(isListingLive({ status: "available", approval_status: "approved" }), true);
+    assert.equal(isManagedListing({ transaction_type: "property_management" }), true);
+    assert.equal(LISTING_STATUS_LABEL.let, "Rented");
+    assert.equal(LISTING_STATUS_LABEL.rented, "Rented");
     const src = read("app/api/clients/[clientId]/listings/route.ts");
-    assert.ok(src.includes("canManageListings"));
+    assert.ok(src.includes("canSubmitListings"));
+    assert.ok(src.includes("isListingLive"));
   });
 });
 

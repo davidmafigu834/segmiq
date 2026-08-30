@@ -1,39 +1,24 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { contactMatchesListing, type BuyerMatchContact } from "@/lib/real-estate/helpers";
 import {
-  canManageListings,
-  contactMatchesListing,
-  type BuyerMatchContact,
-} from "@/lib/real-estate/helpers";
+  canApproveListings,
+  canSubmitListings,
+  defaultApprovalForCreate,
+  isListingLive,
+  listingCreateSchema,
+} from "@/lib/real-estate/listings";
 import { listingMatchesSearch } from "@/lib/real-estate/matching";
 import { notifyPropertyMatch } from "@/lib/real-estate/notifications";
 import { background } from "@/lib/background";
 
 export const dynamic = "force-dynamic";
 
-const listingBodySchema = z.object({
-  agent_id: z.string().uuid().nullable().optional(),
-  development_id: z.string().uuid().nullable().optional(),
-  transaction_type: z.enum(["sale", "rental", "new_development"]),
-  status: z.enum(["available", "under_offer", "reserved", "sold", "let"]).optional(),
-  price: z.number().nullable().optional(),
-  bedrooms: z.number().int().nullable().optional(),
-  bathrooms: z.number().int().nullable().optional(),
-  size_sqm: z.number().nullable().optional(),
-  address: z.string().max(500).nullable().optional(),
-  suburb: z.string().max(200).nullable().optional(),
-  description: z.string().max(5000).nullable().optional(),
-  photos: z.array(z.string()).max(50).optional(),
-  mandate_type: z.enum(["sole", "joint", "open"]).nullable().optional(),
-  mandate_expiry_date: z.string().nullable().optional(),
-  lease_term_months: z.number().int().nullable().optional(),
-  external_reference: z.string().max(200).nullable().optional(),
-});
+const listingBodySchema = listingCreateSchema;
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
   const g = await requireClientAccessFromRequest(req, params.clientId);
@@ -83,7 +68,9 @@ export async function GET(req: Request, { params }: { params: { clientId: string
       listingMatchesSearch(row as Parameters<typeof listingMatchesSearch>[0], {
         q: q || undefined,
         suburb: suburb || undefined,
-        transactionType: (transactionType as "sale" | "rental" | "new_development") || undefined,
+        transactionType:
+          (transactionType as "sale" | "rental" | "new_development" | "property_management") ||
+          undefined,
         status: status || undefined,
         minPrice: minPrice ? Number(minPrice) : undefined,
         maxPrice: maxPrice ? Number(maxPrice) : undefined,
@@ -109,8 +96,8 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (!canManageListings(session.role)) {
-    return NextResponse.json({ error: "Listing edits are limited to managers" }, { status: 403 });
+  if (!canSubmitListings(session.role)) {
+    return NextResponse.json({ error: "You cannot create listings" }, { status: 403 });
   }
 
   const parsed = listingBodySchema.safeParse(await req.json().catch(() => ({})));
@@ -132,15 +119,23 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   const body = parsed.data;
   const status = body.status ?? "available";
   const now = new Date().toISOString();
+  const manager = canApproveListings(session.role);
+  let approvalStatus = defaultApprovalForCreate(session.role);
+  if (manager && body.approval_status) approvalStatus = body.approval_status;
+  if (!manager) approvalStatus = body.approval_status === "draft" ? "draft" : "pending_approval";
 
   const { data, error } = await supabase
     .from("listings")
     .insert({
       client_id: params.clientId,
-      agent_id: body.agent_id ?? null,
+      agent_id: body.agent_id ?? (session.role === "SALESPERSON" ? session.userId : null),
       development_id: body.development_id ?? null,
       transaction_type: body.transaction_type,
       status,
+      approval_status: approvalStatus,
+      submitted_for_approval_at: approvalStatus === "pending_approval" ? now : null,
+      approved_at: approvalStatus === "approved" ? now : null,
+      approved_by: approvalStatus === "approved" ? session.userId : null,
       price: body.price ?? null,
       bedrooms: body.bedrooms ?? null,
       bathrooms: body.bathrooms ?? null,
@@ -162,7 +157,7 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Property matching when new available listing is created
-  if (data && status === "available") {
+  if (data && isListingLive(data)) {
     background("listing-property-match", async () => {
       const { data: contacts } = await supabase
         .from("contacts")

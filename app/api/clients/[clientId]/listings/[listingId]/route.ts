@@ -1,33 +1,20 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contactMatchesListing, canManageListings, type BuyerMatchContact } from "@/lib/real-estate/helpers";
+import {
+  canApproveListings,
+  canSubmitListings,
+  listingWriteSchema,
+} from "@/lib/real-estate/listings";
 import { assertComplianceProgressAllowed } from "@/lib/real-estate/compliance-service";
 
 export const dynamic = "force-dynamic";
 
-const patchSchema = z.object({
-  agent_id: z.string().uuid().nullable().optional(),
-  development_id: z.string().uuid().nullable().optional(),
-  transaction_type: z.enum(["sale", "rental", "new_development"]).optional(),
-  status: z.enum(["available", "under_offer", "reserved", "sold", "let"]).optional(),
-  price: z.number().nullable().optional(),
-  bedrooms: z.number().int().nullable().optional(),
-  bathrooms: z.number().int().nullable().optional(),
-  size_sqm: z.number().nullable().optional(),
-  address: z.string().max(500).nullable().optional(),
-  suburb: z.string().max(200).nullable().optional(),
-  description: z.string().max(5000).nullable().optional(),
-  photos: z.array(z.string()).max(50).optional(),
-  mandate_type: z.enum(["sole", "joint", "open"]).nullable().optional(),
-  mandate_expiry_date: z.string().nullable().optional(),
-  lease_term_months: z.number().int().nullable().optional(),
-  external_reference: z.string().max(200).nullable().optional(),
-});
+const patchSchema = listingWriteSchema;
 
 export async function GET(
   req: Request,
@@ -79,8 +66,8 @@ export async function PATCH(
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (!canManageListings(session.role)) {
-    return NextResponse.json({ error: "Listing edits are limited to managers" }, { status: 403 });
+  if (!canSubmitListings(session.role)) {
+    return NextResponse.json({ error: "Listing edits are limited to the agency team" }, { status: 403 });
   }
 
   const parsed = patchSchema.safeParse(await req.json().catch(() => ({})));
@@ -89,8 +76,31 @@ export async function PATCH(
   }
 
   const supabase = createAdminClient();
+  const { data: existing } = await supabase
+    .from("listings")
+    .select("id, agent_id, approval_status")
+    .eq("id", params.listingId)
+    .eq("client_id", params.clientId)
+    .maybeSingle();
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const manager = canApproveListings(session.role);
+  if (!manager) {
+    const own = existing.agent_id === session.userId;
+    const open = existing.approval_status === "draft" || existing.approval_status === "pending_approval";
+    if (!own || !open) {
+      return NextResponse.json(
+        { error: "Agents can only edit their own draft or pending listings" },
+        { status: 403 }
+      );
+    }
+  }
+
   const body = parsed.data;
-  if (body.status === "sold" || body.status === "let") {
+  if (!manager && (body.approval_status === "approved" || body.approval_status === "rejected")) {
+    return NextResponse.json({ error: "Only managers can approve listings" }, { status: 403 });
+  }
+  if (body.status === "sold" || body.status === "let" || body.status === "rented") {
     const gate = await assertComplianceProgressAllowed({
       clientId: params.clientId,
       listingId: params.listingId,
@@ -100,7 +110,8 @@ export async function PATCH(
     }
   }
 
-  const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const now = new Date().toISOString();
+  const update: Record<string, unknown> = { updated_at: now };
   for (const key of Object.keys(body) as (keyof typeof body)[]) {
     if (body[key] !== undefined) update[key] = body[key];
   }
@@ -109,6 +120,16 @@ export async function PATCH(
   if (typeof body.description === "string") update.description = body.description.trim() || null;
   if (typeof body.external_reference === "string") {
     update.external_reference = body.external_reference.trim() || null;
+  }
+  if (body.approval_status === "approved") {
+    update.approved_at = now;
+    update.approved_by = session.userId;
+    update.rejection_reason = null;
+  } else if (body.approval_status === "pending_approval") {
+    update.submitted_for_approval_at = now;
+  } else if (body.approval_status === "rejected") {
+    update.approved_at = null;
+    update.approved_by = session.userId;
   }
 
   const { data, error } = await supabase

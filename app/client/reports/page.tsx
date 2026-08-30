@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CompanyReportsPage } from "@/components/dashboard/company/reports/CompanyReportsPage";
+import { RealEstateReportsWorkspace } from "@/components/real-estate/RealEstateReportsWorkspace";
+import { isRealEstate } from "@/lib/terminology";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -34,12 +36,28 @@ export default async function ClientReportsPage({
       .eq("user_id", session.userId)
       .eq("read", false),
     supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
-    supabase.from("clients").select("logo_url, name").eq("id", clientId).maybeSingle(),
+    supabase.from("clients").select("logo_url, name, business_type").eq("id", clientId).maybeSingle(),
     fetchSalesNavBadges(session.userId, clientId),
   ]);
 
   const whatsappBadge =
     (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+  const reClient = isRealEstate((clientRes.data as { business_type?: string } | null)?.business_type);
+
+  if (reClient) {
+    return (
+      <ClientManagerLayout
+        breadcrumbPage="REPORTS"
+        pageTitle="Reports"
+        workspaceShell
+        workspaceTitle="Reports"
+        workspaceDescription="Enquiries, popular properties, viewings and conversions."
+        navClientId={clientId}
+      >
+        <RealEstateReportsWorkspace clientId={clientId} />
+      </ClientManagerLayout>
+    );
+  }
 
   return (
     <ClientManagerLayout

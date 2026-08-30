@@ -21,6 +21,7 @@ const RE_PHASE1_IDS = [
   "agents",
   "agent-performance",
   "compliance",
+  "feedback",
 ];
 
 describe("company navigation — trades", () => {

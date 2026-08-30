@@ -8,6 +8,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   Columns3,
+  MessageSquare,
   CreditCard,
   FileText,
   Globe,
@@ -55,7 +56,8 @@ export type CompanyNavIconId =
   | "website"
   | "compliance"
   | "reviews"
-  | "performance";
+  | "performance"
+  | "feedback";
 
 export type CompanyNavSectionId =
   | "company"
@@ -115,6 +117,7 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   compliance: Shield,
   reviews: ClipboardCheck,
   performance: Trophy,
+  feedback: MessageSquare,
 };
 
 export const COMPANY_NAV_SECTION_LABEL: Record<CompanyNavSectionId, string> = {
@@ -487,6 +490,15 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "operations",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/reports"),
+  },
+  {
+    id: "feedback",
+    label: "Feedback",
+    href: "/client/feedback",
+    icon: "feedback",
+    section: "operations",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/feedback"),
   },
   {
     id: "customers",

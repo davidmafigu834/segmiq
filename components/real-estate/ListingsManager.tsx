@@ -15,12 +15,20 @@ import {
 import { KpiCard } from "@/components/dashboard/sales/KpiCard";
 import { CardShell } from "@/components/dashboard/sales/KpiCard";
 import { listingLabel } from "@/lib/real-estate/helpers";
-import type { ListingRow, ListingStatus, ListingTransactionType } from "@/types";
+import {
+  isClosedListingStatus,
+  isManagedListing,
+  LISTING_APPROVAL_LABEL,
+  LISTING_STATUS_LABEL,
+  LISTING_TYPE_LABEL,
+  listingStatusTone,
+} from "@/lib/real-estate/listings";
+import type { ListingApprovalStatus, ListingRow, ListingStatus, ListingTransactionType } from "@/types";
 import { cn } from "@/lib/ui/cn";
 
 type AgentOption = { id: string; name: string };
 type DevelopmentOption = { id: string; name: string };
-type StatusTab = "all" | "available" | "under_offer" | "reserved" | "closed";
+type StatusTab = "all" | "available" | "under_offer" | "reserved" | "management" | "approval" | "closed";
 type TypeFilter = "all" | ListingTransactionType;
 
 type ListingForm = {
@@ -61,27 +69,9 @@ const EMPTY: ListingForm = {
   photos: "",
 };
 
-const TYPE_LABEL: Record<ListingTransactionType, string> = {
-  sale: "Sale",
-  rental: "Rental",
-  new_development: "Development",
-};
-
-const STATUS_LABEL: Record<ListingStatus, string> = {
-  available: "Available",
-  under_offer: "Under offer",
-  reserved: "Reserved",
-  sold: "Sold",
-  let: "Let",
-};
-
-function statusTone(status: ListingStatus): "success" | "warning" | "info" | "neutral" | "purple" {
-  if (status === "available") return "success";
-  if (status === "under_offer") return "warning";
-  if (status === "reserved") return "info";
-  if (status === "let") return "purple";
-  return "neutral";
-}
+const TYPE_LABEL = LISTING_TYPE_LABEL;
+const STATUS_LABEL = LISTING_STATUS_LABEL;
+const statusTone = listingStatusTone;
 
 function numOrNull(v: string): number | null {
   const t = v.trim();
@@ -138,10 +128,12 @@ function ListingThumb({ listing }: { listing: ListingRow }) {
 export function ListingsManager({
   clientId,
   readOnly = false,
+  canApprove = !readOnly,
   listingHref,
 }: {
   clientId: string;
   readOnly?: boolean;
+  canApprove?: boolean;
   listingHref?: (id: string) => string;
 }) {
   const [listings, setListings] = useState<ListingRow[]>([]);
@@ -158,7 +150,7 @@ export function ListingsManager({
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [form, setForm] = useState<ListingForm>(EMPTY);
 
-  const hrefFor = listingHref ?? (readOnly ? undefined : (id: string) => `/client/listings/${id}`);
+  const hrefFor = listingHref ?? (canApprove ? (id: string) => `/client/listings/${id}` : undefined);
 
   useEffect(() => {
     if (!toast) return;
@@ -200,8 +192,10 @@ export function ListingsManager({
     const available = listings.filter((l) => l.status === "available").length;
     const underOffer = listings.filter((l) => l.status === "under_offer").length;
     const reserved = listings.filter((l) => l.status === "reserved").length;
-    const closed = listings.filter((l) => l.status === "sold" || l.status === "let").length;
-    return { available, underOffer, reserved, closed, total: listings.length };
+    const management = listings.filter((l) => isManagedListing(l)).length;
+    const approval = listings.filter((l) => l.approval_status === "pending_approval").length;
+    const closed = listings.filter((l) => isClosedListingStatus(l.status)).length;
+    return { available, underOffer, reserved, management, approval, closed, total: listings.length };
   }, [listings]);
 
   const filtered = useMemo(() => {
@@ -210,7 +204,9 @@ export function ListingsManager({
       if (statusTab === "available" && l.status !== "available") return false;
       if (statusTab === "under_offer" && l.status !== "under_offer") return false;
       if (statusTab === "reserved" && l.status !== "reserved") return false;
-      if (statusTab === "closed" && l.status !== "sold" && l.status !== "let") return false;
+      if (statusTab === "management" && !isManagedListing(l)) return false;
+      if (statusTab === "approval" && l.approval_status !== "pending_approval") return false;
+      if (statusTab === "closed" && !isClosedListingStatus(l.status)) return false;
       if (typeFilter !== "all" && l.transaction_type !== typeFilter) return false;
       if (!q) return true;
       return [l.address, l.suburb, l.external_reference, l.description]
@@ -277,6 +273,21 @@ export function ListingsManager({
     };
   }
 
+  async function setApproval(id: string, approval_status: ListingApprovalStatus) {
+    const res = await fetch(`/api/clients/${clientId}/listings/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ approval_status }),
+    });
+    if (!res.ok) {
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      setToast(j.error ?? "Approval failed");
+      return;
+    }
+    setToast(approval_status === "approved" ? "Listing approved" : "Listing rejected");
+    await load();
+  }
+
   async function save() {
     setSaving(true);
     try {
@@ -294,7 +305,13 @@ export function ListingsManager({
         setToast(j.error ?? "Save failed");
         return;
       }
-      setToast(editingId ? "Listing updated" : "Listing created");
+      setToast(
+        editingId
+          ? "Listing updated"
+          : canApprove
+            ? "Listing created"
+            : "Listing submitted for approval"
+      );
       setShowForm(false);
       await load();
     } finally {
@@ -315,7 +332,9 @@ export function ListingsManager({
     { id: "available", label: "Available", count: counts.available },
     { id: "under_offer", label: "Under offer", count: counts.underOffer },
     { id: "reserved", label: "Reserved", count: counts.reserved },
-    { id: "closed", label: "Closed", count: counts.closed },
+    { id: "management", label: "Management", count: counts.management },
+    ...(canApprove ? [{ id: "approval" as const, label: "Approval", count: counts.approval }] : []),
+    { id: "closed", label: "Sold / Rented", count: counts.closed },
   ];
 
   if (loading) {
@@ -371,9 +390,9 @@ export function ListingsManager({
         <KpiCard
           item={{
             id: "closed",
-            label: "Sold / Let",
-            value: String(counts.closed),
-            supporting: "Closed stock",
+            label: canApprove && counts.approval > 0 ? "Pending approval" : "Sold / Rented",
+            value: String(canApprove && counts.approval > 0 ? counts.approval : counts.closed),
+            supporting: canApprove && counts.approval > 0 ? "Waiting on you" : "Closed stock",
             icon: "won",
           }}
         />
@@ -408,6 +427,7 @@ export function ListingsManager({
             <option value="sale">Sale</option>
             <option value="rental">Rental</option>
             <option value="new_development">Development</option>
+            <option value="property_management">Management</option>
           </Select>
           <label className="relative block min-w-0 flex-1 sm:w-56">
             <span className="sr-only">Search listings</span>
@@ -442,7 +462,7 @@ export function ListingsManager({
               listings.length === 0
                 ? readOnly
                   ? "Stock added by your manager will appear here."
-                  : "Add the first sale, rental, or development."
+                  : "Add the first sale, rental, development, or managed property."
                 : "Clear search or switch status to see more."
             }
             action={
@@ -509,9 +529,19 @@ export function ListingsManager({
                         {TYPE_LABEL[listing.transaction_type]}
                       </td>
                       <td className="px-3 py-2">
-                        <Badge tone={statusTone(listing.status)} appearance="soft">
-                          {STATUS_LABEL[listing.status]}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          <Badge tone={statusTone(listing.status)} appearance="soft">
+                            {STATUS_LABEL[listing.status]}
+                          </Badge>
+                          {listing.approval_status && listing.approval_status !== "approved" ? (
+                            <Badge
+                              tone={listing.approval_status === "rejected" ? "danger" : "warning"}
+                              appearance="soft"
+                            >
+                              {LISTING_APPROVAL_LABEL[listing.approval_status]}
+                            </Badge>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-[13px] font-semibold tabular-nums text-sales-text-primary">
                         {money(listing.price)}
@@ -530,6 +560,18 @@ export function ListingsManager({
                           </button>
                         ) : (
                           <div className="flex justify-end gap-1">
+                            {canApprove && listing.approval_status === "pending_approval" ? (
+                              <button
+                                type="button"
+                                className="rounded-[8px] px-2 py-1 text-[11px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
+                                onClick={() => void setApproval(listing.id, "approved")}
+                              >
+                                Approve
+                              </button>
+                            ) : null}
+                            {canApprove ||
+                            listing.approval_status === "draft" ||
+                            listing.approval_status === "pending_approval" ? (
                             <button
                               type="button"
                               className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
@@ -538,14 +580,25 @@ export function ListingsManager({
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
-                            <button
-                              type="button"
-                              className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
-                              onClick={() => void remove(listing.id)}
-                              aria-label="Delete"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
+                                onClick={() => setPreviewId(listing.id)}
+                              >
+                                View
+                              </button>
+                            )}
+                            {canApprove ? (
+                              <button
+                                type="button"
+                                className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
+                                onClick={() => void remove(listing.id)}
+                                aria-label="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            ) : null}
                           </div>
                         )}
                       </td>
@@ -601,11 +654,11 @@ export function ListingsManager({
         <PremiumSheet
           size="lg"
           title={editingId ? "Edit listing" : "New listing"}
-          description="Sale, rental, or development stock."
+          description="Sale, rental, development, or managed stock."
           onClose={() => setShowForm(false)}
           footer={
             <div className="flex items-center justify-between gap-2">
-              {editingId ? (
+              {editingId && canApprove ? (
                 <Button type="button" variant="ghost" size="sm" onClick={() => void remove(editingId)}>
                   Delete
                 </Button>
@@ -634,6 +687,7 @@ export function ListingsManager({
                 <option value="sale">Sale</option>
                 <option value="rental">Rental</option>
                 <option value="new_development">New development</option>
+                <option value="property_management">Property management</option>
               </Select>
             </Field>
             <Field label="Status">
@@ -645,7 +699,9 @@ export function ListingsManager({
                 <option value="under_offer">Under offer</option>
                 <option value="reserved">Reserved</option>
                 <option value="sold">Sold</option>
-                <option value="let">Let</option>
+                <option value="rented">Rented</option>
+                <option value="let">Rented (legacy)</option>
+                <option value="under_management">Under management</option>
               </Select>
             </Field>
             <Field label="Address">
@@ -729,7 +785,7 @@ export function ListingsManager({
                 onChange={(e) => setForm((f) => ({ ...f, mandate_expiry_date: e.target.value }))}
               />
             </Field>
-            {form.transaction_type === "rental" ? (
+            {form.transaction_type === "rental" || form.transaction_type === "property_management" ? (
               <Field label="Lease term (months)">
                 <Input
                   type="number"

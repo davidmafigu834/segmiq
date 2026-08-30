@@ -41,10 +41,10 @@ export default async function SalesListingsPage() {
         {...shell}
         breadcrumb="Sales / Listings"
         title="Listings"
-        description="Sale, rental, and development stock you can match to inquiries."
+        description="Match live stock to inquiries, or submit a listing for manager approval."
         searchPlaceholder="Search listings..."
       >
-        <ListingsManager clientId={session.clientId} readOnly />
+        <ListingsManager clientId={session.clientId} canApprove={false} />
       </SalesAppShell>
     </SalesLayout>
   );

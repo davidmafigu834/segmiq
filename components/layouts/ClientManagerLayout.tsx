@@ -109,6 +109,7 @@ export async function ClientManagerLayout({
         { href: "/client/developments", label: "Developments", icon: "building2" as const },
         { href: "/client/team", label: terms.salesperson.plural, icon: "users" as const },
         { href: "/client/calendar", label: "Calendar", icon: "calendar" as const },
+        { href: "/client/feedback", label: "Feedback", icon: "file-text" as const },
         { href: "/client/marketing", label: "Marketing", icon: "megaphone" as const },
         { href: "/client/reports", label: "Reports", icon: "bar-chart-3" as const },
         { href: "/client/billing", label: "Billing", icon: "receipt" as const },

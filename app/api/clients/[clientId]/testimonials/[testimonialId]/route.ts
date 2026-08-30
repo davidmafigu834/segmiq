@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function PATCH(req: Request, { params }: { params: { clientId: string; testimonialId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const body = await req.json() as Record<string, unknown>;
   const allowed = ["author_name", "author_role", "content", "rating", "photo_url", "video_url", "is_featured", "display_order"];
@@ -30,6 +34,9 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
 export async function DELETE(_req: Request, { params }: { params: { clientId: string; testimonialId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!canAccessClient(session.role, session.clientId, params.clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const supabase = createAdminClient();
   const { error } = await supabase

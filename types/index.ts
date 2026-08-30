@@ -13,8 +13,16 @@ export type LeadSource =
 
 export type BusinessType = "trades" | "real_estate";
 
-export type ListingTransactionType = "sale" | "rental" | "new_development";
-export type ListingStatus = "available" | "under_offer" | "reserved" | "sold" | "let";
+export type ListingTransactionType = "sale" | "rental" | "new_development" | "property_management";
+export type ListingStatus =
+  | "available"
+  | "under_offer"
+  | "reserved"
+  | "sold"
+  | "let"
+  | "rented"
+  | "under_management";
+export type ListingApprovalStatus = "draft" | "pending_approval" | "approved" | "rejected";
 export type MandateType = "sole" | "joint" | "open";
 export type DealSide = "buy_side" | "sell_side" | "landlord_side" | "tenant_side";
 export type OfferStatus = "submitted" | "countered" | "accepted" | "rejected";
@@ -281,6 +289,11 @@ export interface ListingRow {
   development_id: string | null;
   transaction_type: ListingTransactionType;
   status: ListingStatus;
+  approval_status?: ListingApprovalStatus;
+  submitted_for_approval_at?: string | null;
+  approved_at?: string | null;
+  approved_by?: string | null;
+  rejection_reason?: string | null;
   price: number | null;
   bedrooms: number | null;
   bathrooms: number | null;

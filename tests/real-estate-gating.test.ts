@@ -28,6 +28,8 @@ describe("real-estate route guard", () => {
       "app/client/compliance/page.tsx",
       "app/client/marketing/sources/page.tsx",
       "app/client/marketing/website-leads/page.tsx",
+      "app/client/feedback/page.tsx",
+      "app/client/agents/performance/page.tsx",
     ];
     for (const rel of gatedPages) {
       const src = read(rel);

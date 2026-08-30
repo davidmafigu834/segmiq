@@ -99,7 +99,7 @@ export function phonesMatchLoose(a: string | null | undefined, b: string | null 
   return false;
 }
 
-/** Listing create/edit is a manager capability. Salespeople may view and match. */
+/** Approve, delete, and unrestricted edit. Salespeople may submit listings for approval. */
 export function canManageListings(role: string | null | undefined): boolean {
   return role === "SUPER_ADMIN" || role === "CLIENT_MANAGER";
 }
