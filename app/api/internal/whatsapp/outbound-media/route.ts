@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
   try {
     const { body, contentType } = await getObjectWithMeta(key);
-    return new NextResponse(body, {
+    return new NextResponse(new Uint8Array(body), {
       status: 200,
       headers: {
         "content-type": contentType?.trim() || "application/octet-stream",
