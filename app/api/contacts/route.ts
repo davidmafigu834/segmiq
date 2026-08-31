@@ -5,6 +5,9 @@ import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { createLead } from "@/lib/leads/createLead";
+import {
+  MANUAL_LEAD_INITIAL_STATUSES,
+} from "@/lib/customer-hub/manual-lead-intake";
 import { IN_PERSON_HUB_SOURCES } from "@/lib/customer-hub/recent-status";
 import { logFollowUpSet, logWalkInIntake } from "@/lib/lead-events";
 import { notifyDealWon } from "@/lib/notifications";
@@ -42,7 +45,10 @@ const bodySchema = z.object({
   notes: z.string().max(5000).optional(),
   projectType: z.string().max(200).optional(),
   budget: z.string().max(200).optional(),
-  priority: z.enum(["hot", "warm", "cold"]).optional(),
+  priority: z.preprocess(
+    (value) => (value === "" || value == null ? undefined : value),
+    z.enum(["hot", "warm", "cold"]).optional()
+  ),
   assignMode: z.enum(["specific", "round_robin", "pool"]).optional(),
   assigneeId: z.string().uuid().optional(),
   forceNew: z.boolean().optional(),
@@ -52,17 +58,7 @@ const bodySchema = z.object({
   dealValue: z.number().nonnegative().optional(),
   referredBy: z.string().max(200).optional(),
   portalName: z.string().max(200).optional(),
-  initialStatus: z
-    .enum([
-      "NEW",
-      "CONTACTED",
-      "NEGOTIATING",
-      "PROPOSAL_SENT",
-      "WON",
-      "LOST",
-      "NOT_QUALIFIED",
-    ])
-    .optional(),
+  initialStatus: z.enum(MANUAL_LEAD_INITIAL_STATUSES).optional(),
 });
 
 export async function POST(req: Request) {
@@ -74,8 +70,17 @@ export async function POST(req: Request) {
   const json = await req.json().catch(() => null);
   const parsed = bodySchema.safeParse(json);
   if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    const firstField = Object.keys(fieldErrors)[0];
+    const firstMessage = firstField
+      ? fieldErrors[firstField as keyof typeof fieldErrors]?.[0]
+      : undefined;
     return NextResponse.json(
-      { error: "Invalid request", details: parsed.error.flatten() },
+      {
+        error: firstMessage ?? "Invalid request",
+        field: firstField ?? undefined,
+        details: parsed.error.flatten(),
+      },
       { status: 400 }
     );
   }

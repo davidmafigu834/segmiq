@@ -56,6 +56,10 @@ export function resolveOutboundMediaContentType(
   const normalized = reported?.toLowerCase().trim();
   if (normalized) {
     if (normalized === "image/jpg") return "image/jpeg";
+    if (normalized === "application/octet-stream") {
+      const ext = filename.split(".").pop()?.toLowerCase();
+      if (ext && EXT_TO_MIME[ext]) return EXT_TO_MIME[ext] ?? null;
+    }
     if (
       IMAGE_TYPES.has(normalized) ||
       VIDEO_TYPES.has(normalized) ||

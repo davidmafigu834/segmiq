@@ -6,7 +6,10 @@ import { AlertTriangle, Bot, Brain, Loader2 } from "lucide-react";
 import { Button, Switch, SegmentedControl, Select, Input } from "@/components/sales/ui";
 import { SettingsSectionCard } from "./SettingsSectionCard";
 import { ProactiveSettingsSection } from "./ProactiveSettingsSection";
+import { RealEstateAgentSettingsSection } from "./RealEstateAgentSettingsSection";
 import { AgentSectionNav } from "@/components/dashboard/company/agent/AgentSectionNav";
+import type { RealEstateAgentSettings } from "@/lib/agent/real-estate/types";
+import { REAL_ESTATE_AGENT_SETTINGS_DEFAULTS } from "@/lib/agent/real-estate/types";
 import type { ProactiveSettings } from "@/lib/agent/proactive/types";
 import type { LearningSettings } from "@/lib/agent/learning/types";
 
@@ -38,6 +41,7 @@ type AgentSettings = {
   learningEnabled: boolean;
   suggestReplies: boolean;
   salesAgentEnabled: boolean;
+  realEstate?: RealEstateAgentSettings;
 };
 
 const MODE_COPY: Record<AgentSettings["autonomyMode"], string> = {
@@ -109,6 +113,7 @@ export function AgentSettingsSection({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [businessType, setBusinessType] = useState<string>("trades");
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +127,7 @@ export function AgentSettingsSection({
           setSettings(data.settings);
           if (data.proactive) setProactive(data.proactive);
           if (data.learning) setLearning(data.learning);
+          if (typeof data.businessType === "string") setBusinessType(data.businessType);
           setGloballyEnabled(Boolean(data.globallyEnabled));
           if (data.llm && typeof data.llm.provider === "string") {
             setLlm({
@@ -154,6 +160,7 @@ export function AgentSettingsSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...settings,
+          realEstate: settings.realEstate,
           ...(proactive ? { proactive } : {}),
           ...(learning
             ? {
@@ -584,6 +591,21 @@ export function AgentSettingsSection({
             }}
           />
         </SettingsSectionCard>
+      ) : null}
+
+      {businessType === "real_estate" && settings ? (
+        <RealEstateAgentSettingsSection
+          settings={settings.realEstate ?? REAL_ESTATE_AGENT_SETTINGS_DEFAULTS}
+          agentEnabled={settings.enabled}
+          onChange={(rePatch) => {
+            patch({
+              realEstate: {
+                ...(settings.realEstate ?? REAL_ESTATE_AGENT_SETTINGS_DEFAULTS),
+                ...rePatch,
+              },
+            });
+          }}
+        />
       ) : null}
 
       {proactive ? (

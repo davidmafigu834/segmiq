@@ -4,6 +4,7 @@ import type { SendResult } from "@/lib/messaging/log";
 import { getSafeWhatsAppConnection } from "./connections";
 import { isWhatsAppSessionOpen } from "./inbound";
 import { sendCanonicalWhatsAppMedia } from "./message-service";
+import { buildGatewayOutboundMediaUrl } from "./gateway-media-url";
 import {
   placeholderBodyForMedia,
   validateWhatsAppOutboundMedia,
@@ -95,7 +96,10 @@ export async function sendWhatsAppMediaToLead(opts: {
     } else {
       storageKey = generateWhatsAppOutboundKey(clientId, opts.leadId, validated.filename);
       await putObject(storageKey, opts.buffer, validated.mimeType);
-      publicUrl = getPublicUrl(storageKey);
+      publicUrl =
+        connection.providerType === "TEMPORARY_WEB"
+          ? buildGatewayOutboundMediaUrl(storageKey)
+          : getPublicUrl(storageKey);
     }
   } else if (storageKey) {
     if (!isR2Configured()) {
@@ -106,7 +110,10 @@ export async function sendWhatsAppMediaToLead(opts: {
         channel: "whatsapp",
       };
     }
-    publicUrl = getPublicUrl(storageKey);
+    publicUrl =
+      connection.providerType === "TEMPORARY_WEB"
+        ? buildGatewayOutboundMediaUrl(storageKey)
+        : getPublicUrl(storageKey);
   } else {
     return { ok: false, error: "File is required", errorCode: "MISSING_FILE", channel: "whatsapp" };
   }

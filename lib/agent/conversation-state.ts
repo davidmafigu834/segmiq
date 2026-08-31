@@ -1,6 +1,11 @@
 import { now } from "@/lib/clock";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AgentConversationState, AgentConversationStatus } from "./types";
+import {
+  resolveConversationMode,
+  conversationAllowsAutoReply,
+  type AgentConversationMode,
+} from "./real-estate/conversation-mode";
 import { STALE_RESUME_AFTER_MS, isRateLimitHold } from "./stale-resume-policy";
 
 /** Stale lock recovery: a run holding the lock longer than this is dead. */
@@ -19,6 +24,13 @@ function rowToState(row: StateRow): AgentConversationState {
     pausedById: (row.paused_by_id as string | null) ?? null,
     pauseReason: (row.pause_reason as string | null) ?? null,
     humanTakeover: (row.human_takeover as boolean) ?? false,
+    conversationMode:
+      (row.conversation_mode as AgentConversationMode | undefined) ??
+      ((row.human_takeover as boolean)
+        ? "AI_COPILOT"
+        : !(row.agent_enabled as boolean) || (row.status as string) === "PAUSED"
+          ? "HUMAN_ONLY"
+          : "AI_HANDLING"),
     lastAgentMessageAt: (row.last_agent_message_at as string | null) ?? null,
     lastHumanMessageAt: (row.last_human_message_at as string | null) ?? null,
     lastCustomerMessageAt: (row.last_customer_message_at as string | null) ?? null,
@@ -121,6 +133,7 @@ export async function updateConversationAgentState(
     pausedById: string | null;
     pauseReason: string | null;
     humanTakeover: boolean;
+    conversationMode: AgentConversationMode;
     lastAgentMessageAt: string;
     lastHumanMessageAt: string;
     lastCustomerMessageAt: string;
@@ -139,6 +152,7 @@ export async function updateConversationAgentState(
   if (patch.pausedById !== undefined) update.paused_by_id = patch.pausedById;
   if (patch.pauseReason !== undefined) update.pause_reason = patch.pauseReason;
   if (patch.humanTakeover !== undefined) update.human_takeover = patch.humanTakeover;
+  if (patch.conversationMode !== undefined) update.conversation_mode = patch.conversationMode;
   if (patch.lastAgentMessageAt !== undefined) update.last_agent_message_at = patch.lastAgentMessageAt;
   if (patch.lastHumanMessageAt !== undefined) update.last_human_message_at = patch.lastHumanMessageAt;
   if (patch.lastCustomerMessageAt !== undefined)
@@ -156,7 +170,11 @@ export function conversationAllowsAgent(
 ): { allowed: true } | { allowed: false; reason: string } {
   if (!state) return { allowed: true };
   if (!state.agentEnabled) return { allowed: false, reason: "AGENT_DISABLED_FOR_CONVERSATION" };
-  if (state.humanTakeover) return { allowed: false, reason: "HUMAN_TAKEOVER" };
+  const mode = resolveConversationMode(state);
+  if (!conversationAllowsAutoReply(mode)) {
+    if (mode === "AI_COPILOT") return { allowed: false, reason: "HUMAN_TAKEOVER" };
+    return { allowed: false, reason: "HUMAN_ONLY_MODE" };
+  }
   if (state.status === "PAUSED") {
     if (!state.pausedUntil || new Date(state.pausedUntil).getTime() > now.getTime()) {
       return { allowed: false, reason: "PAUSED" };

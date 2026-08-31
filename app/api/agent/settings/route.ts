@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { describeAgentLlm } from "@/lib/agent/provider";
 import {
   getAgentCompanySettings,
@@ -41,10 +42,17 @@ export async function GET(req: Request) {
   const settings = await getAgentCompanySettings(access.clientId);
   const proactive = await getProactiveSettings(access.clientId);
   const learning = await getLearningSettings(access.clientId);
+  const supabase = createAdminClient();
+  const { data: clientRow } = await supabase
+    .from("clients")
+    .select("business_type")
+    .eq("id", access.clientId)
+    .maybeSingle();
   return NextResponse.json({
     settings,
     proactive,
     learning,
+    businessType: (clientRow?.business_type as string | null) ?? "trades",
     globallyEnabled: isAgentGloballyEnabled(),
     learningGloballyEnabled: isLearningGloballyEnabled(),
     llm: describeAgentLlm(),
@@ -100,6 +108,20 @@ const patchSchema = z
         config: z.record(z.unknown()).optional(),
       })
       .partial(),
+    realEstate: z
+      .object({
+        autoRespondAdInquiries: z.boolean(),
+        allowPropertySearch: z.boolean(),
+        allowSendPropertyInfo: z.boolean(),
+        allowOfferViewingSlots: z.boolean(),
+        allowConfirmViewings: z.boolean(),
+        requireViewingApproval: z.boolean(),
+        allowUpdateBuyerRequirements: z.boolean(),
+        allowCreateFollowups: z.boolean(),
+        defaultConversationMode: z.enum(["AI_HANDLING", "AI_COPILOT", "HUMAN_ONLY"]),
+      })
+      .partial()
+      .optional(),
   })
   .partial();
 

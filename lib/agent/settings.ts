@@ -2,6 +2,12 @@ import { quotationAutomationBlockers } from "@/lib/company-brain/readiness";
 import { loadCompanyBrainSnapshot } from "@/lib/company-brain/store";
 import { invalidateBrainCache } from "@/lib/company-brain/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  mergeRealEstateIntoAgentSettings,
+  realEstateSettingsFromRow,
+  realEstateSettingsPatchToColumns,
+} from "./real-estate/settings";
+import type { RealEstateAgentSettings } from "./real-estate/types";
 import type { AgentCompanySettings } from "./types";
 
 /**
@@ -61,14 +67,16 @@ type SettingsRow = Record<string, unknown>;
 
 function rowToSettings(clientId: string, row: SettingsRow | null): AgentCompanySettings {
   const d = AGENT_SETTINGS_DEFAULTS;
-  if (!row) return { clientId, ...d };
+  if (!row) {
+    return mergeRealEstateIntoAgentSettings({ clientId, ...d }, null);
+  }
   const bool = (key: string, fallback: boolean) =>
     typeof row[key] === "boolean" ? (row[key] as boolean) : fallback;
   const num = (key: string, fallback: number) =>
     typeof row[key] === "number" && Number.isFinite(row[key] as number)
       ? (row[key] as number)
       : fallback;
-  return {
+  const base: AgentCompanySettings = {
     clientId,
     enabled: bool("enabled", d.enabled),
     autonomyMode: (row.autonomy_mode as AgentCompanySettings["autonomyMode"]) ?? d.autonomyMode,
@@ -112,6 +120,7 @@ function rowToSettings(clientId: string, row: SettingsRow | null): AgentCompanyS
       d.salesAgentContextualExtraction
     ),
   };
+  return mergeRealEstateIntoAgentSettings(base, row);
 }
 
 export async function getAgentCompanySettings(clientId: string): Promise<AgentCompanySettings> {
@@ -124,9 +133,14 @@ export async function getAgentCompanySettings(clientId: string): Promise<AgentCo
   return rowToSettings(clientId, data as SettingsRow | null);
 }
 
-export type AgentSettingsPatch = Partial<Omit<AgentCompanySettings, "clientId">>;
+export type AgentSettingsPatch = Partial<Omit<AgentCompanySettings, "clientId" | "realEstate">> & {
+  realEstate?: Partial<RealEstateAgentSettings>;
+};
 
-const PATCH_COLUMN_MAP: Record<keyof AgentSettingsPatch, string> = {
+const PATCH_COLUMN_MAP: Record<
+  Exclude<keyof AgentSettingsPatch, "realEstate">,
+  string
+> = {
   enabled: "enabled",
   autonomyMode: "autonomy_mode",
   respondToEnquiries: "respond_to_enquiries",
@@ -190,9 +204,12 @@ export async function updateAgentCompanySettings(
   const supabase = createAdminClient();
   const update: Record<string, unknown> = { client_id: clientId, updated_at: new Date().toISOString() };
   for (const [key, column] of Object.entries(PATCH_COLUMN_MAP) as Array<
-    [keyof AgentSettingsPatch, string]
+    [Exclude<keyof AgentSettingsPatch, "realEstate">, string]
   >) {
     if (patch[key] !== undefined) update[column] = patch[key];
+  }
+  if (patch.realEstate) {
+    Object.assign(update, realEstateSettingsPatchToColumns(patch.realEstate));
   }
   const { data, error } = await supabase
     .from("agent_company_settings")

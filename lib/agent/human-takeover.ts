@@ -1,4 +1,5 @@
 import { updateConversationAgentState } from "./conversation-state";
+import { patchForConversationMode } from "./real-estate/conversation-mode";
 
 /**
  * When a salesperson sends on WhatsApp, the agent must stop competing.
@@ -9,9 +10,9 @@ export async function markConversationHumanTakeover(opts: {
   leadId: string;
 }): Promise<void> {
   try {
+    const modePatch = patchForConversationMode("AI_COPILOT");
     await updateConversationAgentState(opts.clientId, opts.leadId, {
-      humanTakeover: true,
-      status: "HUMAN_HANDLING",
+      ...modePatch,
       lastHumanMessageAt: new Date().toISOString(),
     });
     const { hookHumanTakeover, hookHumanOutbound } = await import("@/lib/agent/proactive");

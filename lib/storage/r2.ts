@@ -110,10 +110,20 @@ export function generateWhatsAppOutboundKey(
 }
 
 export async function getObject(key: string): Promise<Buffer> {
+  const result = await getObjectWithMeta(key);
+  return result.body;
+}
+
+export async function getObjectWithMeta(
+  key: string
+): Promise<{ body: Buffer; contentType: string | null }> {
   const bucket = process.env.CLOUDFLARE_R2_BUCKET_NAME;
   if (!bucket) throw new Error("CLOUDFLARE_R2_BUCKET_NAME is not configured");
   const res = await getR2Client().send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-  return Buffer.from(await res.Body!.transformToByteArray());
+  return {
+    body: Buffer.from(await res.Body!.transformToByteArray()),
+    contentType: typeof res.ContentType === "string" ? res.ContentType : null,
+  };
 }
 
 export function generateComplianceDocKey(

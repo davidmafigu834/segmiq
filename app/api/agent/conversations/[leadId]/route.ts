@@ -8,6 +8,12 @@ import {
 } from "@/lib/agent/conversation-state";
 import { getAgentCompanySettings } from "@/lib/agent/settings";
 import {
+  isAgentConversationMode,
+  patchForConversationMode,
+  resolveConversationMode,
+} from "@/lib/agent/real-estate/conversation-mode";
+import { AGENT_CONVERSATION_MODE_LABELS } from "@/lib/agent/real-estate/types";
+import {
   applySuggestedAgentActions,
   escalateConversationFromHub,
   rejectAgentDraft,
@@ -105,6 +111,11 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     suggestReplies: settings.suggestReplies,
     learningEnabled: learning.enabled,
     autonomyMode: settings.autonomyMode,
+    realEstateSettings: settings.realEstate ?? null,
+    conversationMode: state ? resolveConversationMode(state) : "AI_HANDLING",
+    conversationModeLabel: state
+      ? AGENT_CONVERSATION_MODE_LABELS[resolveConversationMode(state)]
+      : AGENT_CONVERSATION_MODE_LABELS.AI_HANDLING,
     state,
     recentExecutions: executions,
     openEscalation: asRow(openEscalation) ?? null,
@@ -139,12 +150,14 @@ const actionSchema = z.object({
     "enable",
     "takeover",
     "release",
+    "set_mode",
     "send_draft",
     "reject_draft",
     "apply_suggestions",
     "escalate",
     "cancel_proactive",
   ]),
+  mode: z.enum(["AI_HANDLING", "AI_COPILOT", "HUMAN_ONLY"]).optional(),
   pauseMinutes: z.number().int().min(5).max(7 * 24 * 60).optional(),
   pauseFor: z.enum(["indefinite", "1h", "tomorrow"]).optional(),
   reason: z.string().max(300).optional(),
@@ -206,10 +219,10 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
         humanNeededReason: null,
       });
       break;
-    case "takeover":
+    case "takeover": {
+      const modePatch = patchForConversationMode("AI_COPILOT");
       await updateConversationAgentState(access.clientId, access.leadId, {
-        humanTakeover: true,
-        status: "HUMAN_HANDLING",
+        ...modePatch,
         lastHumanMessageAt: now,
       });
       {
@@ -222,12 +235,26 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
         });
       }
       break;
+    }
+    case "set_mode": {
+      if (!parsed.data.mode || !isAgentConversationMode(parsed.data.mode)) {
+        return NextResponse.json({ error: "Invalid mode" }, { status: 400 });
+      }
+      const modePatch = patchForConversationMode(parsed.data.mode);
+      await updateConversationAgentState(access.clientId, access.leadId, modePatch);
+      break;
+    }
     case "release":
-      await updateConversationAgentState(access.clientId, access.leadId, {
-        humanTakeover: false,
-        status: "IDLE",
-        humanNeededReason: null,
-      });
+      {
+        const modePatch = patchForConversationMode("AI_HANDLING");
+        await updateConversationAgentState(access.clientId, access.leadId, {
+          ...modePatch,
+          humanNeededReason: null,
+          pausedUntil: null,
+          pausedById: null,
+          pauseReason: null,
+        });
+      }
       {
         const { hookAgentResumed } = await import("@/lib/agent/proactive");
         void hookAgentResumed({

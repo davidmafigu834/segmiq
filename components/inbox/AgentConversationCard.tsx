@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Bot, ChevronDown, Loader2, Pause, Play } from "lucide-react";
+import { SegmentedControl } from "@/components/sales/ui";
 import type { InboxConversation } from "@/lib/inbox/types";
+import type { AgentConversationMode } from "@/lib/agent/real-estate/types";
 
 type AgentConversationData = {
   agentEnabledForCompany: boolean;
@@ -18,7 +20,11 @@ type AgentConversationData = {
     humanNeededReason: string | null;
     pausedUntil: string | null;
     humanTakeover: boolean;
+    conversationMode?: AgentConversationMode;
   } | null;
+  conversationMode: AgentConversationMode;
+  conversationModeLabel: string;
+  realEstateSettings: Record<string, unknown> | null;
   recentExecutions: Array<{
     id: string;
     state: string;
@@ -45,14 +51,16 @@ type AgentConversationData = {
   } | null;
 };
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  AI_HANDLING: { label: "AI handling", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-  WAITING_ON_CUSTOMER: { label: "AI · waiting on customer", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
-  FOLLOW_UP_SCHEDULED: { label: "AI · follow-up scheduled", className: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
-  HUMAN_NEEDED: { label: "Human needed", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-  PAUSED: { label: "Agent paused", className: "bg-sales-neutral-100 text-sales-text-muted" },
-  HUMAN_HANDLING: { label: "Human handling", className: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
-  IDLE: { label: "Agent ready", className: "bg-sales-neutral-100 text-sales-text-secondary" },
+const MODE_LABELS: Record<AgentConversationMode, string> = {
+  AI_HANDLING: "AI Handling",
+  AI_COPILOT: "Copilot",
+  HUMAN_ONLY: "Human Only",
+};
+
+const MODE_STATUS_CLASS: Record<AgentConversationMode, string> = {
+  AI_HANDLING: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  AI_COPILOT: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+  HUMAN_ONLY: "bg-sales-neutral-100 text-sales-text-muted",
 };
 
 type MenuAction =
@@ -111,13 +119,14 @@ export function AgentConversationCard({
   if (!data?.agentEnabledForCompany && !data?.learningEnabled && !data?.suggestReplies) return null;
 
   const learningOnly = !data.agentEnabledForCompany && Boolean(data.learningEnabled);
-  const status = data.state?.humanTakeover
-    ? "HUMAN_HANDLING"
-    : data.state?.status ?? "IDLE";
+  const conversationMode = data.conversationMode ?? "AI_HANDLING";
   const statusMeta = learningOnly
     ? { label: "Not responding", className: "bg-sales-neutral-100 text-sales-text-muted" }
-    : STATUS_LABELS[status] ?? STATUS_LABELS.IDLE;
-  const isPaused = status === "PAUSED" || data.state?.agentEnabled === false;
+    : {
+        label: MODE_LABELS[conversationMode],
+        className: MODE_STATUS_CLASS[conversationMode],
+      };
+  const isPaused = conversationMode === "HUMAN_ONLY" || data.state?.agentEnabled === false;
   const lastRun = data.recentExecutions.find((run) => run.decision_summary);
   const briefing = data.openEscalation?.briefing ?? null;
 
@@ -131,9 +140,9 @@ export function AgentConversationCard({
         { action: "pause", pauseFor: "tomorrow", label: "Pause until tomorrow" },
         { action: "pause", pauseFor: "indefinite", label: "Pause until resumed" },
         { action: "cancel_proactive", label: "I'll handle the next follow-up" },
-        status === "HUMAN_HANDLING"
-          ? { action: "release", label: "Let agent handle" }
-          : { action: "takeover", label: "I'll take over" },
+        conversationMode === "AI_COPILOT"
+          ? { action: "release", label: "Return to AI handling" }
+          : { action: "takeover", label: "Take over" },
         { action: "escalate", label: "Escalate to human" },
       ];
 
@@ -222,6 +231,27 @@ export function AgentConversationCard({
         </div>
         )}
       </div>
+
+      {!learningOnly && data.agentEnabledForCompany ? (
+        <div className="mt-3">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+            Agent mode
+          </p>
+          <SegmentedControl
+            value={conversationMode}
+            onChange={(mode) => {
+              if (busy) return;
+              void act({ action: "set_mode", mode: mode as AgentConversationMode });
+            }}
+            options={(
+              ["AI_HANDLING", "AI_COPILOT", "HUMAN_ONLY"] as const
+            ).map((mode) => ({
+              value: mode,
+              label: MODE_LABELS[mode],
+            }))}
+          />
+        </div>
+      ) : null}
 
       {typeof data.learningSignals === "number" && data.learningSignals > 0 ? (
         <Link

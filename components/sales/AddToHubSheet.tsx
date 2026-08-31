@@ -18,6 +18,7 @@ import {
   type WalkInIntakeOutcome,
 } from "@/lib/walk-in-intake";
 import { MANUAL_LEAD_STAGES } from "@/lib/customer-hub/manual-lead-stages";
+import type { ManualLeadPriority } from "@/lib/customer-hub/manual-lead-intake";
 import { IN_PERSON_HUB_SOURCES } from "@/lib/customer-hub/recent-status";
 import { HUB_RE_SOURCES } from "@/lib/real-estate/marketing";
 import type { ContactLifecycle, LeadStatus } from "@/types";
@@ -87,7 +88,7 @@ export function AddToHubSheet({
   const [source, setSource] = useState(defaultSource ?? sourceOptions[0]);
   const [referredBy, setReferredBy] = useState("");
   const [portalName, setPortalName] = useState("");
-  const [priority, setPriority] = useState<"hot" | "warm" | "cold">("warm");
+  const [priority, setPriority] = useState<ManualLeadPriority | null>(null);
   const [stage, setStage] = useState<LeadStatus>("NEW");
   const [email, setEmail] = useState(initialContact?.email ?? "");
   const [projectType, setProjectType] = useState("");
@@ -197,7 +198,7 @@ export function AddToHubSheet({
         body.location = location.trim() || undefined;
         body.assigneeId = assigneeId || undefined;
       }
-      if (isLead) body.priority = priority;
+      if (isLead && priority) body.priority = priority;
       if (isLead && !isWalkInFlow) {
         body.initialStatus = stage;
         if (stage === "WON" && dealValue.trim()) {
@@ -224,6 +225,7 @@ export function AddToHubSheet({
       });
       const j = (await res.json().catch(() => ({}))) as {
         error?: string;
+        field?: string;
         existing?: LookupMatch;
       };
       if (res.status === 409 && j.error === "duplicate") {
@@ -279,7 +281,7 @@ export function AddToHubSheet({
                   : "Lead added"
                 : "Customer saved"}
           </p>
-          <p className="mt-1 text-[13px] text-sales-text-secondary">Closing…</p>
+          <p className="mt-1 text-[13px] text-sales-text-secondary">Done — returning to your list…</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -559,6 +561,33 @@ export function AddToHubSheet({
               )}
 
               {isLead && !isWalkInFlow && (
+                <div className="flex flex-col gap-1.5">
+                  <span className={labelClass}>
+                    Priority <span className="text-[11px] font-normal text-sales-text-muted">(optional)</span>
+                  </span>
+                  <div className="flex gap-2">
+                    {(["hot", "warm", "cold"] as const).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPriority((current) => (current === p ? null : p))}
+                        className={`flex-1 rounded-[10px] border px-3 py-2 text-[12.5px] font-medium capitalize transition ${
+                          priority === p
+                            ? `${chipActive} text-sales-text-primary`
+                            : `${chipIdle} text-sales-text-secondary`
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-[11px] text-sales-text-muted">
+                    How urgently you want to work this lead. Leave blank if you are not sure yet.
+                  </span>
+                </div>
+              )}
+
+              {isLead && !isWalkInFlow && (
                 <label className="flex flex-col gap-1.5">
                   <span className={labelClass}>Where are you with them?</span>
                   <select
@@ -575,6 +604,11 @@ export function AddToHubSheet({
                   <span className="text-[11px] text-sales-text-muted">
                     {MANUAL_LEAD_STAGES.find((s) => s.value === stage)?.hint}
                   </span>
+                  {stage === "NOT_QUALIFIED" ? (
+                    <span className="text-[11px] font-medium text-sales-danger">
+                      This closes the lead immediately — do not use for a new referral you plan to work.
+                    </span>
+                  ) : null}
                 </label>
               )}
 
@@ -589,28 +623,6 @@ export function AddToHubSheet({
                     inputMode="decimal"
                   />
                 </label>
-              )}
-
-              {isLead && !isWalkInFlow && (
-                <div className="flex flex-col gap-1.5">
-                  <span className={labelClass}>Priority</span>
-                  <div className="flex gap-2">
-                    {(["hot", "warm", "cold"] as const).map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setPriority(p)}
-                        className={`flex-1 rounded-[10px] border px-3 py-2 text-[12.5px] font-medium capitalize transition ${
-                          priority === p
-                            ? `${chipActive} text-sales-text-primary`
-                            : `${chipIdle} text-sales-text-secondary`
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               )}
 
               <button

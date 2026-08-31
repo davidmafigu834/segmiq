@@ -133,3 +133,22 @@ test("gateway request signatures bind method, path, body, nonce and time", async
   assert.equal((await verifyGatewayRequest({ headers, method: "POST", path: "/api/internal/whatsapp/gateway-events", body, now })).ok, true);
   assert.equal((await verifyGatewayRequest({ headers, method: "POST", path: "/api/internal/whatsapp/gateway-events", body: "tampered", now })).ok, false);
 });
+
+test("signed outbound media URLs let the QR gateway fetch attachments from SegmiQ", () => {
+  process.env.WHATSAPP_GATEWAY_SHARED_SECRET = "test-only-shared-secret-that-is-long-enough";
+  process.env.SEGMIQ_INTERNAL_BASE_URL = "https://app.segmiq.com";
+  const {
+    buildGatewayOutboundMediaUrl,
+    verifyGatewayOutboundMediaToken,
+    isWhatsAppGatewayOutboundKey,
+  } = require("../lib/whatsapp/gateway-media-url") as typeof import("../lib/whatsapp/gateway-media-url");
+  const key = "whatsapp/client-1/outbound/lead-1/123.jpg";
+  assert.equal(isWhatsAppGatewayOutboundKey(key), true);
+  const url = buildGatewayOutboundMediaUrl(key);
+  assert.match(url, /^https:\/\/app\.segmiq\.com\/api\/internal\/whatsapp\/outbound-media\?/);
+  const parsed = new URL(url);
+  const exp = parsed.searchParams.get("exp") ?? "";
+  const sig = parsed.searchParams.get("sig") ?? "";
+  assert.equal(verifyGatewayOutboundMediaToken(key, exp, sig), true);
+  assert.equal(verifyGatewayOutboundMediaToken(key, exp, "deadbeef"), false);
+});

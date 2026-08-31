@@ -21,6 +21,10 @@ import {
 import { replyHandsOffToTeam } from "./team-handoff";
 import { getAgentModelProvider, AgentLlmRateLimitError, type AgentChatMessage, type ModelToolCall } from "./provider";
 import { getAgentCompanySettings, isAgentGloballyEnabled } from "./settings";
+import {
+  patchForConversationMode,
+} from "./real-estate/conversation-mode";
+import { defaultConversationModeForNewThread } from "./real-estate/settings";
 import { runAgentTool, type ExecutedToolCall } from "./tools/execute";
 import { ASSIST_SAFE_TOOLS, TOOL_METADATA, buildToolDefinitions, type AgentToolName } from "./tools/registry";
 import type { ToolExecutionContext } from "./tools/context";
@@ -66,10 +70,27 @@ export async function handleAgentInboundMessage(
     const settings = await getAgentCompanySettings(event.clientId);
     if (!settings.enabled && !settings.suggestReplies) return;
     if (settings.enabled && !settings.respondToEnquiries) return;
+    if (
+      settings.enabled &&
+      settings.realEstate &&
+      event.isNewLead &&
+      !settings.realEstate.autoRespondAdInquiries
+    ) {
+      if (!settings.suggestReplies) return;
+    }
 
-    await updateConversationAgentState(event.clientId, event.leadId, {
-      lastCustomerMessageAt: event.timestamp,
-    });
+    await ensureConversationAgentState(event.clientId, event.leadId);
+    if (event.isNewLead && settings.realEstate) {
+      const modePatch = patchForConversationMode(defaultConversationModeForNewThread(settings));
+      await updateConversationAgentState(event.clientId, event.leadId, {
+        ...modePatch,
+        lastCustomerMessageAt: event.timestamp,
+      });
+    } else {
+      await updateConversationAgentState(event.clientId, event.leadId, {
+        lastCustomerMessageAt: event.timestamp,
+      });
+    }
 
     const state = await ensureConversationAgentState(event.clientId, event.leadId);
     const gate = conversationAllowsAgent(state);
@@ -85,7 +106,8 @@ export async function handleAgentInboundMessage(
 
     // Human takeover: a team member replied recently — the human is handling.
     if (!draftOnly && (await humanRepliedRecently(event.clientId, event.leadId))) {
-      await updateConversationAgentState(event.clientId, event.leadId, { status: "HUMAN_HANDLING" });
+      const copilotPatch = patchForConversationMode("AI_COPILOT");
+      await updateConversationAgentState(event.clientId, event.leadId, copilotPatch);
       log("skip.human_handling", { leadId: event.leadId });
       return;
     }
@@ -313,7 +335,11 @@ export async function runAgentExecution(opts: RunOptions): Promise<AgentRunResul
       .update({ state: "RUNNING", started_at: new Date().toISOString() })
       .eq("id", executionId);
     if (!opts.testMode) {
-      await updateConversationAgentState(opts.clientId, opts.leadId, { status: "AI_HANDLING" });
+      await updateConversationAgentState(opts.clientId, opts.leadId, {
+        status: "AI_HANDLING",
+        conversationMode: "AI_HANDLING",
+        humanTakeover: false,
+      });
     }
 
     const context = await assembleAgentContext({

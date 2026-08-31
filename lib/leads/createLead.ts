@@ -13,6 +13,7 @@ import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { findOpenLeadByPhone, type OpenLeadMatch } from "@/lib/leads/findOpenLeadByPhone";
 import { findReturningAssignee } from "@/lib/whatsapp/assignment";
 import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
+import { scoreFromManualPriority } from "@/lib/customer-hub/manual-lead-intake";
 import {
   applyQualificationToFormData,
   evaluateFacebookQualification,
@@ -426,6 +427,9 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
   );
   storedFormData = fbQual.formData;
 
+  const manualScore = scoreFromManualPriority(manualPriority);
+  const resolvedScore = fbQual.score ?? manualScore;
+
   const leadInsert = {
     client_id: clientId,
     assigned_to_id: assignedId,
@@ -446,10 +450,10 @@ export async function createLead(input: CreateLeadInput): Promise<CreateLeadResu
     follow_up_date: followUpDate ?? null,
     deal_value: dealValue ?? null,
     deal_value_source: dealValue != null && dealValue > 0 ? ("manual" as const) : null,
-    ...(fbQual.score != null
+    ...(resolvedScore != null
       ? {
-          score: fbQual.score,
-          score_breakdown: fbQual.scoreBreakdown ?? null,
+          score: resolvedScore,
+          score_breakdown: fbQual.scoreBreakdown ?? { manual_priority: resolvedScore },
           score_updated_at: new Date().toISOString(),
         }
       : {}),

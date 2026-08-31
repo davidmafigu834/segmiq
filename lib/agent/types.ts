@@ -37,6 +37,8 @@ export const AGENT_CONVERSATION_STATUSES = [
 ] as const;
 export type AgentConversationStatus = (typeof AGENT_CONVERSATION_STATUSES)[number];
 
+export type { AgentConversationMode, RealEstateAgentSettings } from "./real-estate/types";
+
 export const AGENT_INTENTS = [
   "NEW_SALES_ENQUIRY",
   "PRODUCT_QUESTION",
@@ -121,6 +123,8 @@ export type AgentCompanySettings = {
   salesAgentQuotationCreation: boolean;
   salesAgentQuotationUpdate: boolean;
   salesAgentContextualExtraction: boolean;
+  /** Real-estate WhatsApp agent toggles (null-equivalent when client is trades). */
+  realEstate?: import("./real-estate/types").RealEstateAgentSettings;
 };
 
 /** Per-conversation agent state (agent_conversation_state row, camelCased). */
@@ -134,6 +138,7 @@ export type AgentConversationState = {
   pausedById: string | null;
   pauseReason: string | null;
   humanTakeover: boolean;
+  conversationMode: import("./real-estate/types").AgentConversationMode;
   lastAgentMessageAt: string | null;
   lastHumanMessageAt: string | null;
   lastCustomerMessageAt: string | null;

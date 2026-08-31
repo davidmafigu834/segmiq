@@ -537,9 +537,15 @@ async function startConnection(
 
 function mediaHostAllowed(url: URL): boolean {
   if (url.protocol !== "https:") return false;
+  const hostname = url.hostname.toLowerCase();
+  try {
+    if (new URL(appBase).hostname.toLowerCase() === hostname) return true;
+  } catch {
+    // ignore malformed app base
+  }
   const hosts = (process.env.WHATSAPP_GATEWAY_MEDIA_HOSTS ?? "")
     .split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
-  return hosts.includes(url.hostname.toLowerCase());
+  return hosts.includes(hostname);
 }
 
 function outboundMediaKind(input: {
@@ -624,8 +630,19 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
       messageType?: "image" | "video" | "document";
     };
     const digits = input.to?.replace(/\D/g, "") ?? "";
-    const mediaUrl = new URL(input.url ?? "");
-    if (!digits || !mediaHostAllowed(mediaUrl)) return json(response, 400, { ok: false, error: "Invalid media request" });
+    let mediaUrl: URL;
+    try {
+      mediaUrl = new URL(input.url ?? "");
+    } catch {
+      return json(response, 400, { ok: false, error: "Media URL is required" });
+    }
+    if (!digits || !mediaHostAllowed(mediaUrl)) {
+      return json(response, 400, {
+        ok: false,
+        error: "Media host is not allowed for quick connection sends",
+        errorCode: "INVALID_MEDIA_HOST",
+      });
+    }
     if (!maySendManualMessage(session)) {
       return json(response, 429, { ok: false, error: "Too many messages sent. Please wait a moment and try again.", errorCode: "RATE_LIMITED" });
     }

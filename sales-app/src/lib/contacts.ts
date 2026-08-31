@@ -38,10 +38,7 @@ export type CreateLeadInput = {
 };
 
 export async function createManualLead(input: CreateLeadInput): Promise<{ leadId: string }> {
-  const res = await apiPost<
-    | { ok?: boolean; leadId?: string; error?: string; existing?: ContactLookupMatch }
-    | { error: string; existing?: ContactLookupMatch }
-  >("/api/contacts", {
+  const body: Record<string, unknown> = {
     type: "lead",
     phone: input.phone.trim(),
     source: input.source,
@@ -50,11 +47,16 @@ export async function createManualLead(input: CreateLeadInput): Promise<{ leadId
     projectType: input.projectType?.trim() || undefined,
     budget: input.budget?.trim() || undefined,
     notes: input.notes?.trim() || undefined,
-    priority: input.priority ?? "warm",
     initialStatus: input.initialStatus,
     dealValue: input.dealValue,
     forceNew: input.forceNew || undefined,
-  });
+  };
+  if (input.priority) body.priority = input.priority;
+
+  const res = await apiPost<
+    | { ok?: boolean; leadId?: string; error?: string; existing?: ContactLookupMatch }
+    | { error: string; existing?: ContactLookupMatch }
+  >("/api/contacts", body);
 
   if (res.status === 409 && res.data.error === "duplicate") {
     const err = new Error("duplicate") as Error & { existing?: ContactLookupMatch };

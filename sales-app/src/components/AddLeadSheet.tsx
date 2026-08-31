@@ -20,7 +20,7 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [source, setSource] = useState(SOURCES[0]);
-  const [priority, setPriority] = useState<"hot" | "warm" | "cold">("warm");
+  const [priority, setPriority] = useState<"hot" | "warm" | "cold" | null>(null);
   const [stage, setStage] = useState<LeadStatus>("NEW");
   const [dealValue, setDealValue] = useState("");
   const [email, setEmail] = useState("");
@@ -39,7 +39,7 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
     setName("");
     setPhone("");
     setSource(SOURCES[0]);
-    setPriority("warm");
+    setPriority(null);
     setStage("NEW");
     setDealValue("");
     setEmail("");
@@ -89,7 +89,6 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
         name,
         phone,
         source,
-        priority,
         initialStatus: stage,
         email,
         projectType,
@@ -97,6 +96,7 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
         notes,
         forceNew,
       };
+      if (priority) payload.priority = priority;
       if (stage === "WON" && dealValue.trim()) {
         const dv = parseFloat(dealValue.replace(/[^0-9.]/g, ""));
         if (!Number.isNaN(dv)) payload.dealValue = dv;
@@ -236,13 +236,15 @@ export function AddLeadSheet({ open, online, onClose, onCreated }: Props) {
             ) : null}
 
             <div>
-              <p className="mb-2 text-[13px] font-medium text-ink-secondary">Priority</p>
+              <p className="mb-2 text-[13px] font-medium text-ink-secondary">
+                Priority <span className="font-normal text-ink-tertiary">(optional)</span>
+              </p>
               <div className="grid grid-cols-3 gap-2">
                 {(["hot", "warm", "cold"] as const).map((p) => (
                   <button
                     key={p}
                     type="button"
-                    onClick={() => setPriority(p)}
+                    onClick={() => setPriority((current) => (current === p ? null : p))}
                     className={`min-h-[44px] rounded-lg border px-2 text-[14px] font-medium capitalize ${
                       priority === p
                         ? "border-accent bg-accent-muted text-accent"

@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveClientSalesTimezone } from "@/lib/sales/intelligence/daily-plan-service";
 import { locationFromFormData } from "@/lib/sales/calendar/location";
 import { loadQualificationFlow } from "@/lib/whatsapp/load-qualification-flow";
+import { isRealEstate } from "@/lib/terminology";
+import { loadRealEstateAgentContext } from "./real-estate/context";
 import {
   assembleCompanyBrainContext,
   serializeCompanyBrainContext,
@@ -103,6 +105,7 @@ export type AgentContext = {
     why: string[];
     context: CompanyBrainContext;
   } | null;
+  realEstate: import("./real-estate/types").RealEstateAgentContext | null;
 };
 
 const CORE_QUALIFICATION_FIELDS: Array<{ field: string; label: string; column: string }> = [
@@ -131,7 +134,7 @@ export async function assembleAgentContext(opts: {
       .eq("id", opts.leadId)
       .eq("client_id", opts.clientId)
       .maybeSingle(),
-    supabase.from("clients").select("id, name, industry").eq("id", opts.clientId).maybeSingle(),
+    supabase.from("clients").select("id, name, industry, business_type").eq("id", opts.clientId).maybeSingle(),
     resolveClientSalesTimezone(opts.clientId),
   ]);
   if (!lead || !client) {
@@ -360,6 +363,19 @@ export async function assembleAgentContext(opts: {
     console.error("[agent] learned knowledge retrieval failed", err);
   }
 
+  let realEstate: AgentContext["realEstate"] = null;
+  if (isRealEstate(client.business_type)) {
+    try {
+      realEstate = await loadRealEstateAgentContext({
+        clientId: opts.clientId,
+        leadId: opts.leadId,
+        contactId,
+      });
+    } catch (err) {
+      console.error("[agent] real estate context load failed", err);
+    }
+  }
+
   return {
     company: {
       name: client.name as string,
@@ -421,5 +437,6 @@ export async function assembleAgentContext(opts: {
     settings: opts.settings,
     learnedKnowledge,
     companyBrain,
+    realEstate,
   };
 }

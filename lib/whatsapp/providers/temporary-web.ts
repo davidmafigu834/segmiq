@@ -111,9 +111,17 @@ function gatewaySendFailure(error: unknown): ProviderSendResult {
       errorCode: "GATEWAY_OUTDATED",
     };
   }
+  const message = error instanceof Error ? error.message : "Quick connection send failed";
+  if (/invalid media|media host is not allowed/i.test(message)) {
+    return {
+      ok: false,
+      error: "Could not send this file on the quick WhatsApp connection. Try again in a moment or ask your manager to check the gateway media settings.",
+      errorCode: "INVALID_MEDIA_HOST",
+    };
+  }
   return {
     ok: false,
-    error: error instanceof Error ? error.message : "Quick connection send failed",
+    error: message,
     errorCode: "GATEWAY_UNAVAILABLE",
   };
 }
