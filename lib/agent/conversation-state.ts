@@ -1,10 +1,9 @@
 import { now } from "@/lib/clock";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { AgentConversationState, AgentConversationStatus } from "./types";
+import type { AgentConversationState, AgentConversationStatus, AgentConversationMode } from "./types";
 import {
   resolveConversationMode,
   conversationAllowsAutoReply,
-  type AgentConversationMode,
 } from "./real-estate/conversation-mode";
 import { STALE_RESUME_AFTER_MS, isRateLimitHold } from "./stale-resume-policy";
 
