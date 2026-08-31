@@ -647,15 +647,19 @@ export async function searchAgentExecutions(
   let label: string;
   if (opts?.preset === "overnight") {
     const window = resolveOvernightWindow(at);
-    range = { from: window.since, to: window.until, label: window.label };
+    range = { from: window.since, to: window.until, label: window.label, preset: "today" };
     label = window.label;
   } else if (opts?.preset === "last_7") {
-    range = resolveDatePreset("last_30", at);
-    range.from = new Date(at.getTime() - 7 * 24 * 60 * 60 * 1000);
-    label = "Last 7 days";
+    range = {
+      from: new Date(at.getTime() - 7 * 24 * 60 * 60 * 1000),
+      to: at,
+      label: "Last 7 days",
+      preset: "last_30",
+    };
+    label = range.label;
   } else {
     range = resolveDatePreset("today", at);
-    label = "Today";
+    label = range.label;
   }
 
   let query = supabase
