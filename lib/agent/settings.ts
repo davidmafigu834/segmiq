@@ -4,7 +4,6 @@ import { invalidateBrainCache } from "@/lib/company-brain/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   mergeRealEstateIntoAgentSettings,
-  realEstateSettingsFromRow,
   realEstateSettingsPatchToColumns,
 } from "./real-estate/settings";
 import type { RealEstateAgentSettings } from "./real-estate/types";
