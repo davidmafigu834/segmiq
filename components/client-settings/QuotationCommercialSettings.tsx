@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, Checkbox, Input, Select, Skeleton, Switch, TextArea, FieldLabel } from "@/components/sales/ui";
+import { Button, Checkbox, Field, Input, Select, Skeleton, Switch, TextArea } from "@/components/sales/ui";
 import { humanReadablePolicy } from "@/lib/quotations/approval-engine";
 
 type Settings = Record<string, unknown> & {
@@ -342,15 +342,6 @@ export function QuotationCommercialSettings({
           {toast ? <span className="text-[12px] text-sales-success-fg">{toast}</span> : null}
         </div>
       )}
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <FieldLabel>{label}</FieldLabel>
-      {children}
     </div>
   );
 }

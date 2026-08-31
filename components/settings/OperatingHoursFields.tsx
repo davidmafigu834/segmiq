@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox, FieldHint, FieldLabel, Input } from "@/components/sales/ui";
+import { Checkbox, Field, Input } from "@/components/sales/ui";
 import { WEEKDAY_OPTIONS } from "@/lib/sales/intelligence/operating-hours";
 
 export function OperatingHoursFields({
@@ -29,9 +29,8 @@ export function OperatingHoursFields({
 
   return (
     <div className="space-y-4">
-      <div>
-        <FieldLabel>Working days</FieldLabel>
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+      <Field label="Working days">
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
           {WEEKDAY_OPTIONS.map((day) => (
             <Checkbox
               key={day.value}
@@ -42,28 +41,26 @@ export function OperatingHoursFields({
             />
           ))}
         </div>
-      </div>
+      </Field>
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <FieldLabel htmlFor="work-start">Work starts</FieldLabel>
+        <Field label="Work starts" htmlFor="work-start">
           <Input
             id="work-start"
             type="time"
             value={workStartTime}
             onChange={(e) => onStartChange(e.target.value)}
           />
-        </div>
-        <div>
-          <FieldLabel htmlFor="work-end">Work ends</FieldLabel>
+        </Field>
+        <Field label="Work ends" htmlFor="work-end">
           <Input
             id="work-end"
             type="time"
             value={workEndTime}
             onChange={(e) => onEndChange(e.target.value)}
           />
-        </div>
+        </Field>
       </div>
-      {hint ? <FieldHint>{hint}</FieldHint> : null}
+      {hint ? <p className="text-[12px] text-sales-text-muted">{hint}</p> : null}
     </div>
   );
 }

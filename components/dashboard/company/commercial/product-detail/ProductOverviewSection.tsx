@@ -1,6 +1,6 @@
 "use client";
 
-import { FieldError, FieldLabel, Input, Select, Switch, TextArea } from "@/components/sales/ui";
+import { Field, Input, Select, Switch, TextArea } from "@/components/sales/ui";
 import type { CategoryOption, ProductFormState, UnitOption } from "./types";
 
 export function ProductOverviewSection({
@@ -39,8 +39,7 @@ export function ProductOverviewSection({
       <section className="mt-5 rounded-[12px] border border-sales-border bg-sales-surface p-4 sm:p-5">
         <h3 className="text-[13px] font-semibold text-sales-text-primary">Basic information</h3>
         <div className="mt-4 grid grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-3">
-          <Field>
-            <FieldLabel required>Product name</FieldLabel>
+          <Field label="Product name" required>
             <Input
               value={form.name}
               disabled={readOnly}
@@ -48,8 +47,7 @@ export function ProductOverviewSection({
               placeholder="Product name"
             />
           </Field>
-          <Field>
-            <FieldLabel required>Product type</FieldLabel>
+          <Field label="Product type" required>
             <Select
               value={form.item_type}
               disabled={readOnly}
@@ -65,8 +63,7 @@ export function ProductOverviewSection({
               <option value="SERVICE">Service</option>
             </Select>
           </Field>
-          <Field>
-            <FieldLabel required>Category</FieldLabel>
+          <Field label="Category" required>
             <Select
               value={form.category_id}
               disabled={readOnly}
@@ -83,8 +80,7 @@ export function ProductOverviewSection({
             </Select>
           </Field>
 
-          <Field>
-            <FieldLabel required>SKU</FieldLabel>
+          <Field label="SKU" required error={skuError ?? undefined}>
             <Input
               value={form.sku}
               disabled={readOnly}
@@ -92,10 +88,8 @@ export function ProductOverviewSection({
               onChange={(e) => setForm({ sku: e.target.value })}
               placeholder="SKU"
             />
-            <FieldError>{skuError}</FieldError>
           </Field>
-          <Field>
-            <FieldLabel>Brand</FieldLabel>
+          <Field label="Brand">
             <Input
               value={form.brand}
               disabled={readOnly}
@@ -103,8 +97,7 @@ export function ProductOverviewSection({
               placeholder="Brand"
             />
           </Field>
-          <Field>
-            <FieldLabel>Barcode</FieldLabel>
+          <Field label="Barcode">
             <Input
               value={form.barcode}
               disabled={readOnly}
@@ -113,8 +106,7 @@ export function ProductOverviewSection({
             />
           </Field>
 
-          <Field>
-            <FieldLabel required>Unit</FieldLabel>
+          <Field label="Unit" required>
             <Select value={form.unit} disabled={readOnly} onChange={(e) => setForm({ unit: e.target.value })}>
               {(units.length ? units : [{ code: "Each", name: "Each" }]).map((u) => (
                 <option key={u.code} value={u.code}>
@@ -126,8 +118,7 @@ export function ProductOverviewSection({
           <div className="hidden md:block" />
           <div className="hidden md:block" />
 
-          <Field className="md:col-span-3">
-            <FieldLabel>Description</FieldLabel>
+          <Field label="Description" className="md:col-span-3">
             <TextArea
               rows={5}
               value={form.description}
@@ -137,16 +128,14 @@ export function ProductOverviewSection({
             />
           </Field>
 
-          <Field>
-            <FieldLabel required>Status</FieldLabel>
+          <Field label="Status" required>
             <Select value={form.status} disabled={readOnly} onChange={(e) => setForm({ status: e.target.value })}>
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
               <option value="ARCHIVED">Archived</option>
             </Select>
           </Field>
-          <Field>
-            <FieldLabel>Track inventory</FieldLabel>
+          <Field label="Track inventory">
             <div className="flex h-11 items-center gap-3 sm:h-10">
               <Switch
                 checked={form.track_inventory && !isService}
@@ -163,8 +152,4 @@ export function ProductOverviewSection({
       </section>
     </div>
   );
-}
-
-function Field({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={className}>{children}</div>;
 }

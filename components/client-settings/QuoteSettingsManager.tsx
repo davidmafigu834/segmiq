@@ -5,7 +5,7 @@ import { QuoteTemplatesManager } from "@/components/client-settings/QuoteTemplat
 import { QuotationCommercialSettings } from "@/components/client-settings/QuotationCommercialSettings";
 import { SignatureDrawPad } from "@/components/quotations/SignatureDrawPad";
 import { SettingsSectionCard } from "@/components/dashboard/company/settings/SettingsSectionCard";
-import { Button, Input, Skeleton, Tabs, TextArea, FieldLabel } from "@/components/sales/ui";
+import { Button, Field, Input, Skeleton, Tabs, TextArea } from "@/components/sales/ui";
 
 const TABS = [
   { id: "general", label: "General" },
@@ -305,15 +305,6 @@ export function QuoteSettingsManager({ clientId }: { clientId: string }) {
           ) : null}
         </SettingsSectionCard>
       )}
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="min-w-0">
-      <FieldLabel>{label}</FieldLabel>
-      {children}
     </div>
   );
 }

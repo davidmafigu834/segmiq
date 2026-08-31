@@ -12,7 +12,7 @@ import {
   DataTableTd,
   DataTableTh,
   EmptyState,
-  FieldLabel,
+  Field,
   Input,
   Select,
   Switch,
@@ -239,26 +239,22 @@ export function ProductPricingSection({
       <SectionHead title="Pricing" subtitle="Manage the Product's selling and commercial defaults." />
       <Panel title="Current pricing">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div>
-            <FieldLabel>Selling price</FieldLabel>
+          <Field label="Selling price">
             <Input
               value={form.selling_price}
               disabled={readOnly}
               onChange={(e) => setForm({ selling_price: e.target.value })}
             />
-          </div>
-          <div>
-            <FieldLabel>Currency</FieldLabel>
+          </Field>
+          <Field label="Currency">
             <Input value={form.currency} disabled={readOnly} onChange={(e) => setForm({ currency: e.target.value })} />
-          </div>
-          <div>
-            <FieldLabel>Unit</FieldLabel>
+          </Field>
+          <Field label="Unit">
             <Input value={form.unit} disabled readOnly />
-          </div>
-          <div>
-            <FieldLabel>Tax %</FieldLabel>
+          </Field>
+          <Field label="Tax %">
             <Input value={form.tax_rate} disabled={readOnly} onChange={(e) => setForm({ tax_rate: e.target.value })} />
-          </div>
+          </Field>
         </div>
       </Panel>
       <Panel title="Quotation pricing">
@@ -279,20 +275,18 @@ export function ProductPricingSection({
         <Panel title="Internal cost">
           <p className="mb-3 text-[12px] text-sales-text-muted">Visible only with cost permission.</p>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <FieldLabel>Cost price</FieldLabel>
+            <Field label="Cost price">
               <Input
                 value={form.cost_price}
                 disabled={readOnly}
                 onChange={(e) => setForm({ cost_price: e.target.value })}
               />
-            </div>
-            <div>
-              <FieldLabel>Estimated base margin</FieldLabel>
+            </Field>
+            <Field label="Estimated base margin">
               <div className="flex h-11 items-center text-[13px] font-medium tabular-nums text-sales-text-primary sm:h-10">
                 {margin == null ? "—" : `${margin.toFixed(1)}%`}
               </div>
-            </div>
+            </Field>
           </div>
         </Panel>
       ) : null}
@@ -560,23 +554,20 @@ export function ProductQuotationSection({
       </Panel>
       <Panel title="Customer presentation">
         <div className="space-y-4">
-          <div>
-            <FieldLabel>Customer-facing name</FieldLabel>
+          <Field label="Customer-facing name">
             <Input value={form.name} disabled={readOnly} onChange={(e) => setForm({ name: e.target.value })} />
-          </div>
-          <div>
-            <FieldLabel>Quotation description</FieldLabel>
+          </Field>
+          <Field label="Quotation description">
             <TextArea
               rows={4}
               value={form.quotation_description}
               disabled={readOnly}
               onChange={(e) => setForm({ quotation_description: e.target.value })}
             />
-          </div>
-          <div>
-            <FieldLabel>Warranty</FieldLabel>
+          </Field>
+          <Field label="Warranty">
             <Input value={form.warranty} disabled={readOnly} onChange={(e) => setForm({ warranty: e.target.value })} />
-          </div>
+          </Field>
         </div>
       </Panel>
       <Panel title="Commercial control">
@@ -714,15 +705,14 @@ export function ProductDocumentsSection({
         }
       />
       <Panel>
-        <div className="mb-4">
-          <FieldLabel>Product image URL</FieldLabel>
+        <Field label="Product image URL">
           <Input
             value={form.primary_image_url}
             disabled={readOnly}
             onChange={(e) => setForm({ primary_image_url: e.target.value })}
             placeholder="https://…"
           />
-        </div>
+        </Field>
         {form.documents.length === 0 ? (
           <p className="text-[13px] text-sales-text-muted">No documents yet.</p>
         ) : (

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, FieldHint, FieldLabel, Input } from "@/components/sales/ui";
+import { Button, Field, Input } from "@/components/sales/ui";
 
 export function BillingInformationModal({
   clientId,
@@ -67,21 +67,21 @@ export function BillingInformationModal({
       }
     >
       <div className="space-y-4">
-        <div>
-          <FieldLabel htmlFor="billing-company-name">Company</FieldLabel>
+        <Field label="Company" htmlFor="billing-company-name" error={error ?? undefined}>
           <Input
             id="billing-company-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoComplete="organization"
           />
-        </div>
-        <div>
-          <FieldLabel htmlFor="billing-email">Billing contact</FieldLabel>
+        </Field>
+        <Field
+          label="Billing contact"
+          htmlFor="billing-email"
+          hint="Invoices are sent to the company owner email on file."
+        >
           <Input id="billing-email" value={billingEmail ?? ""} readOnly />
-          <FieldHint>Invoices are sent to the company owner email on file.</FieldHint>
-        </div>
-        {error ? <p className="text-[12px] text-sales-danger">{error}</p> : null}
+        </Field>
       </div>
     </PremiumSheet>
   );

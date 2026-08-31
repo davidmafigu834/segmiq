@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CommercialModulePage } from "./CommercialModulePage";
-import { Button, FieldLabel, Input, SearchInput, Select, TextArea, useSalesToast } from "@/components/sales/ui";
+import { Button, Field, Input, SearchInput, Select, TextArea, useSalesToast } from "@/components/sales/ui";
 import type { UserRole } from "@/types";
 import type { CommercialSearchResult } from "@/lib/commercial/types";
 
@@ -135,44 +135,38 @@ export function CompanyPackageEditorPage({
     >
       <div className="mt-4 grid gap-8 lg:grid-cols-2">
         <div className="space-y-3">
-          <div>
-            <FieldLabel>Package name</FieldLabel>
+          <Field label="Package name">
             <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-          </div>
-          <div>
-            <FieldLabel>Code</FieldLabel>
+          </Field>
+          <Field label="Code">
             <Input value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} />
-          </div>
-          <div>
-            <FieldLabel>Customer-facing description</FieldLabel>
+          </Field>
+          <Field label="Customer-facing description">
             <TextArea
               value={form.customer_facing_description}
               onChange={(e) => setForm((f) => ({ ...f, customer_facing_description: e.target.value }))}
             />
-          </div>
+          </Field>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <FieldLabel>Pricing</FieldLabel>
+            <Field label="Pricing">
               <Select value={form.pricing_mode} onChange={(e) => setForm((f) => ({ ...f, pricing_mode: e.target.value }))}>
                 <option value="SUM_OF_ITEMS">Sum of items</option>
                 <option value="FIXED_PRICE">Fixed price</option>
               </Select>
-            </div>
-            <div>
-              <FieldLabel>Status</FieldLabel>
+            </Field>
+            <Field label="Status">
               <Select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
                 <option value="DRAFT">Draft</option>
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
                 <option value="ARCHIVED">Archived</option>
               </Select>
-            </div>
+            </Field>
           </div>
           {form.pricing_mode === "FIXED_PRICE" ? (
-            <div>
-              <FieldLabel>Fixed price</FieldLabel>
+            <Field label="Fixed price">
               <Input value={form.fixed_price} onChange={(e) => setForm((f) => ({ ...f, fixed_price: e.target.value }))} />
-            </div>
+            </Field>
           ) : null}
         </div>
         <div>

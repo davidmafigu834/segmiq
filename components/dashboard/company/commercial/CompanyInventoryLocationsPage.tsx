@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CommercialModulePage } from "./CommercialModulePage";
-import { Button, FieldLabel, Input, Select, useSalesToast } from "@/components/sales/ui";
+import { Button, Field, Input, Select, useSalesToast } from "@/components/sales/ui";
 import type { UserRole } from "@/types";
 
 type Loc = { id: string; name: string; location_type: string; is_default: boolean; status: string };
@@ -139,12 +139,10 @@ export function CompanyInventoryMovementsPage({
     <CommercialModulePage chrome={chrome} breadcrumb="Company / Inventory / Movements" title="Stock movements" description="Every on-hand change is recorded.">
       <div className="mt-4 grid max-w-xl gap-3 rounded-[10px] border border-sales-border p-4">
         <h2 className="text-[14px] font-semibold">Adjust stock</h2>
-        <div>
-          <FieldLabel>Product ID</FieldLabel>
+        <Field label="Product ID">
           <Input value={adjust.productId} onChange={(e) => setAdjust((a) => ({ ...a, productId: e.target.value }))} />
-        </div>
-        <div>
-          <FieldLabel>Location</FieldLabel>
+        </Field>
+        <Field label="Location">
           <Select value={adjust.locationId} onChange={(e) => setAdjust((a) => ({ ...a, locationId: e.target.value }))}>
             <option value="">Select</option>
             {locations.map((l) => (
@@ -153,13 +151,11 @@ export function CompanyInventoryMovementsPage({
               </option>
             ))}
           </Select>
-        </div>
-        <div>
-          <FieldLabel>Adjustment</FieldLabel>
+        </Field>
+        <Field label="Adjustment">
           <Input value={adjust.delta} onChange={(e) => setAdjust((a) => ({ ...a, delta: e.target.value }))} placeholder="+60" />
-        </div>
-        <div>
-          <FieldLabel>Reason</FieldLabel>
+        </Field>
+        <Field label="Reason">
           <Select value={adjust.reason} onChange={(e) => setAdjust((a) => ({ ...a, reason: e.target.value }))}>
             <option>New delivery</option>
             <option>Physical stock count</option>
@@ -168,7 +164,7 @@ export function CompanyInventoryMovementsPage({
             <option>Correction</option>
             <option>Other</option>
           </Select>
-        </div>
+        </Field>
         {adjust.reason === "Other" ? (
           <Input value={adjust.note} onChange={(e) => setAdjust((a) => ({ ...a, note: e.target.value }))} placeholder="Note required" />
         ) : null}

@@ -6,9 +6,7 @@ import type { DealRow, DecisionMakerStatus } from "@/types";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
   Button,
-  FieldError,
-  FieldHint,
-  FieldLabel,
+  Field,
   Input,
   Select,
   SegmentedControl,
@@ -244,10 +242,12 @@ export function DealDetailsEditorSheet({
         ) : null}
 
         <section className="space-y-3">
-          <div>
-            <FieldLabel htmlFor="deal-edit-name" required>
-              Deal name
-            </FieldLabel>
+          <Field
+            label="Deal name"
+            htmlFor="deal-edit-name"
+            required
+            error={fieldErrors.name || undefined}
+          >
             <Input
               ref={nameRef}
               id="deal-edit-name"
@@ -256,10 +256,8 @@ export function DealDetailsEditorSheet({
               placeholder="e.g. 5kW Solar Installation"
               invalid={Boolean(fieldErrors.name)}
             />
-            <FieldError>{fieldErrors.name}</FieldError>
-          </div>
-          <div>
-            <FieldLabel htmlFor="deal-edit-service">Service / project</FieldLabel>
+          </Field>
+          <Field label="Service / project" htmlFor="deal-edit-service">
             <TextArea
               id="deal-edit-service"
               rows={2}
@@ -268,7 +266,7 @@ export function DealDetailsEditorSheet({
               placeholder="What are you trying to win?"
               className="min-h-[64px]"
             />
-          </div>
+          </Field>
         </section>
 
         <section
@@ -299,8 +297,11 @@ export function DealDetailsEditorSheet({
             ]}
           />
           {valueMode === "exact" ? (
-            <div>
-              <FieldLabel htmlFor="deal-edit-exact">Estimated value</FieldLabel>
+            <Field
+              label="Estimated value"
+              htmlFor="deal-edit-exact"
+              error={fieldErrors.exactValue || undefined}
+            >
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-sales-text-muted">
                   {prefix.trim()}
@@ -315,13 +316,15 @@ export function DealDetailsEditorSheet({
                   invalid={Boolean(fieldErrors.exactValue)}
                 />
               </div>
-              <FieldError>{fieldErrors.exactValue}</FieldError>
-            </div>
+            </Field>
           ) : null}
           {valueMode === "range" ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <FieldLabel htmlFor="deal-edit-min">Minimum</FieldLabel>
+              <Field
+                label="Minimum"
+                htmlFor="deal-edit-min"
+                error={fieldErrors.rangeMin || undefined}
+              >
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-sales-text-muted">
                     {prefix.trim()}
@@ -335,10 +338,12 @@ export function DealDetailsEditorSheet({
                     invalid={Boolean(fieldErrors.rangeMin)}
                   />
                 </div>
-                <FieldError>{fieldErrors.rangeMin}</FieldError>
-              </div>
-              <div>
-                <FieldLabel htmlFor="deal-edit-max">Maximum</FieldLabel>
+              </Field>
+              <Field
+                label="Maximum"
+                htmlFor="deal-edit-max"
+                error={fieldErrors.rangeMax || undefined}
+              >
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-sales-text-muted">
                     {prefix.trim()}
@@ -352,8 +357,7 @@ export function DealDetailsEditorSheet({
                     invalid={Boolean(fieldErrors.rangeMax)}
                   />
                 </div>
-                <FieldError>{fieldErrors.rangeMax}</FieldError>
-              </div>
+              </Field>
             </div>
           ) : null}
           {valueMode === "later" ? (
@@ -367,8 +371,7 @@ export function DealDetailsEditorSheet({
         <section className="space-y-3 border-t border-sales-border-subtle pt-5">
           <h3 className="text-[13px] font-semibold text-sales-text-primary">Timing</h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="deal-edit-timeframe">Buying timeframe</FieldLabel>
+            <Field label="Buying timeframe" htmlFor="deal-edit-timeframe">
               <Select
                 id="deal-edit-timeframe"
                 value={buyingTimeframe}
@@ -385,9 +388,12 @@ export function DealDetailsEditorSheet({
                   <option value={buyingTimeframe}>{buyingTimeframe}</option>
                 ) : null}
               </Select>
-            </div>
-            <div>
-              <FieldLabel htmlFor="deal-edit-decision">Expected decision</FieldLabel>
+            </Field>
+            <Field
+              label="Expected decision"
+              htmlFor="deal-edit-decision"
+              error={fieldErrors.expectedDecisionAt || undefined}
+            >
               <Input
                 ref={decisionRef}
                 id="deal-edit-decision"
@@ -396,8 +402,7 @@ export function DealDetailsEditorSheet({
                 onChange={(e) => setExpectedDecisionAt(e.target.value)}
                 invalid={Boolean(fieldErrors.expectedDecisionAt)}
               />
-              <FieldError>{fieldErrors.expectedDecisionAt}</FieldError>
-            </div>
+            </Field>
           </div>
         </section>
 
@@ -410,8 +415,7 @@ export function DealDetailsEditorSheet({
             What happens next?
           </h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="deal-edit-next-label">Next step</FieldLabel>
+            <Field label="Next step" htmlFor="deal-edit-next-label">
               <Select
                 id="deal-edit-next-label"
                 value={
@@ -455,9 +459,13 @@ export function DealDetailsEditorSheet({
                   placeholder="Describe the next step"
                 />
               ) : null}
-            </div>
-            <div>
-              <FieldLabel htmlFor="deal-edit-next-when">When?</FieldLabel>
+            </Field>
+            <Field
+              label="When?"
+              htmlFor="deal-edit-next-when"
+              error={fieldErrors.nextActionAt || undefined}
+              hint="Clear the date to remove the next action."
+            >
               <Input
                 id="deal-edit-next-when"
                 type="datetime-local"
@@ -465,9 +473,7 @@ export function DealDetailsEditorSheet({
                 onChange={(e) => setNextActionAt(e.target.value)}
                 invalid={Boolean(fieldErrors.nextActionAt)}
               />
-              <FieldError>{fieldErrors.nextActionAt}</FieldError>
-              <FieldHint>Clear the date to remove the next action.</FieldHint>
-            </div>
+            </Field>
           </div>
         </section>
 
@@ -475,18 +481,16 @@ export function DealDetailsEditorSheet({
           <h3 className="text-[13px] font-semibold text-sales-text-primary">
             Additional details
           </h3>
-          <div>
-            <FieldLabel htmlFor="deal-edit-location">Location</FieldLabel>
+          <Field label="Location" htmlFor="deal-edit-location">
             <Input
               id="deal-edit-location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Suburb / city"
             />
-          </div>
+          </Field>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="deal-edit-dm">Decision maker</FieldLabel>
+            <Field label="Decision maker" htmlFor="deal-edit-dm">
               <Select
                 id="deal-edit-dm"
                 value={decisionMakerStatus}
@@ -499,17 +503,16 @@ export function DealDetailsEditorSheet({
                 <option value="NO">No</option>
                 <option value="UNKNOWN">Not sure</option>
               </Select>
-            </div>
+            </Field>
             {decisionMakerStatus === "YES" ? (
-              <div>
-                <FieldLabel htmlFor="deal-edit-dm-name">Decision maker name</FieldLabel>
+              <Field label="Decision maker name" htmlFor="deal-edit-dm-name">
                 <Input
                   id="deal-edit-dm-name"
                   value={decisionMakerName}
                   onChange={(e) => setDecisionMakerName(e.target.value)}
                   placeholder="Who decides?"
                 />
-              </div>
+              </Field>
             ) : null}
           </div>
         </section>

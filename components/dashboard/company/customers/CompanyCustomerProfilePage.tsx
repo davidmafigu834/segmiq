@@ -24,7 +24,7 @@ import {
   Avatar,
   Badge,
   Button,
-  FieldLabel,
+  Field,
   Input,
   Select,
   useSalesToast,
@@ -123,8 +123,7 @@ function EditCustomerSheet({
       maxWidthClass="max-w-[460px]"
     >
       <div className="space-y-4">
-        <div>
-          <FieldLabel htmlFor="profile-customer-type">Customer type</FieldLabel>
+        <Field label="Customer type" htmlFor="profile-customer-type">
           <Select
             id="profile-customer-type"
             value={customerType}
@@ -133,30 +132,26 @@ function EditCustomerSheet({
             <option value="individual">Individual</option>
             <option value="company">Company</option>
           </Select>
-        </div>
-        <div>
-          <FieldLabel htmlFor="profile-owner">Relationship owner</FieldLabel>
+        </Field>
+        <Field label="Relationship owner" htmlFor="profile-owner">
           <Select id="profile-owner" value={ownerId} onChange={(event) => setOwnerId(event.target.value)}>
             <option value="">Unassigned</option>
             {owners.map((owner) => (
               <option key={owner.id} value={owner.id}>{owner.name}</option>
             ))}
           </Select>
-        </div>
+        </Field>
         {customerType === "company" ? (
-          <div>
-            <FieldLabel htmlFor="profile-primary-contact">Primary contact</FieldLabel>
+          <Field label="Primary contact" htmlFor="profile-primary-contact">
             <Input id="profile-primary-contact" value={primaryContactName} onChange={(event) => setPrimaryContactName(event.target.value)} />
-          </div>
+          </Field>
         ) : null}
-        <div>
-          <FieldLabel htmlFor="profile-industry">Industry / category</FieldLabel>
+        <Field label="Industry / category" htmlFor="profile-industry">
           <Input id="profile-industry" value={industry} onChange={(event) => setIndustry(event.target.value)} />
-        </div>
-        <div>
-          <FieldLabel htmlFor="profile-location">Location</FieldLabel>
+        </Field>
+        <Field label="Location" htmlFor="profile-location">
           <Input id="profile-location" value={location} onChange={(event) => setLocation(event.target.value)} />
-        </div>
+        </Field>
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : "Save Customer"}</Button>

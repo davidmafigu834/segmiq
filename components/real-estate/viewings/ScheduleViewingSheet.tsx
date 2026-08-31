@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, FieldError, FieldLabel, Input, Select } from "@/components/sales/ui";
+import { Button, Field, Input, Select } from "@/components/sales/ui";
 import {
   CALLBACK_SCHEDULE_LABELS,
   CALLBACK_SCHEDULE_OPTIONS,
@@ -121,10 +121,9 @@ export function ScheduleViewingSheet({
       }
     >
       <div className="space-y-4">
-        <div>
-          <FieldLabel htmlFor="viewing-buyer">Buyer</FieldLabel>
+        <Field label="Buyer" htmlFor="viewing-buyer">
           {contactId && selectedContact ? (
-            <div className="mt-1 flex items-center justify-between rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2">
+            <div className="flex items-center justify-between rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2">
               <p className="text-[13px] font-medium text-sales-text-primary">
                 {selectedContact.name ?? "Buyer"}
               </p>
@@ -146,7 +145,6 @@ export function ScheduleViewingSheet({
                 value={contactQuery}
                 onChange={(event) => setContactQuery(event.target.value)}
                 placeholder="Search by name or phone…"
-                className="mt-1"
               />
               {contacts.length > 0 ? (
                 <ul className="mt-1 max-h-40 overflow-y-auto rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-dropdown">
@@ -169,13 +167,15 @@ export function ScheduleViewingSheet({
               ) : null}
             </>
           )}
-        </div>
+        </Field>
 
-        <div>
-          <FieldLabel htmlFor="viewing-listing">Property</FieldLabel>
+        <Field
+          label="Property"
+          htmlFor="viewing-listing"
+          hint={listings.length === 0 ? "Add a listing before scheduling a viewing." : undefined}
+        >
           <Select
             id="viewing-listing"
-            className="mt-1"
             value={listingId}
             onChange={(event) => setListingId(event.target.value)}
             disabled={listings.length === 0}
@@ -187,17 +187,12 @@ export function ScheduleViewingSheet({
               </option>
             ))}
           </Select>
-          {listings.length === 0 ? (
-            <p className="mt-1 text-[12px] text-sales-text-muted">Add a listing before scheduling a viewing.</p>
-          ) : null}
-        </div>
+        </Field>
 
         {agents.length > 0 ? (
-          <div>
-            <FieldLabel htmlFor="viewing-agent">Agent</FieldLabel>
+          <Field label="Agent" htmlFor="viewing-agent">
             <Select
               id="viewing-agent"
-              className="mt-1"
               value={agentId}
               onChange={(event) => setAgentId(event.target.value)}
             >
@@ -208,12 +203,11 @@ export function ScheduleViewingSheet({
                 </option>
               ))}
             </Select>
-          </div>
+          </Field>
         ) : null}
 
-        <div>
-          <FieldLabel>When</FieldLabel>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <Field label="When">
+          <div className="flex flex-wrap gap-2">
             {CALLBACK_SCHEDULE_OPTIONS.map((option) => (
               <button
                 key={option}
@@ -239,9 +233,9 @@ export function ScheduleViewingSheet({
               onChange={(event) => setCustomCallback(event.target.value)}
             />
           ) : null}
-        </div>
+        </Field>
 
-        {error ? <FieldError>{error}</FieldError> : null}
+        {error ? <p className="text-[13px] text-sales-danger">{error}</p> : null}
       </div>
     </PremiumSheet>
   );

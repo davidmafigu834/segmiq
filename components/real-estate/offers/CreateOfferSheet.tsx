@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, FieldLabel, Input, TextArea } from "@/components/sales/ui";
+import { Button, Field, Input, TextArea } from "@/components/sales/ui";
 import { formatOfferMoney, listingAllowsOffer } from "@/lib/real-estate/offers";
 import { listingLabel } from "@/lib/real-estate/helpers";
 
@@ -157,15 +157,14 @@ export function CreateOfferSheet({
       <div className="space-y-4">
         {error ? <p className="text-[13px] text-sales-danger">{error}</p> : null}
 
-        <div>
-          <FieldLabel>Property</FieldLabel>
+        <Field label="Property">
           {prefill?.listingId ? (
-            <p className="mt-1 text-[14px] font-medium text-sales-text-primary">
+            <p className="text-[14px] font-medium text-sales-text-primary">
               {listing ? listingLabel(listing) : "Selected listing"}
             </p>
           ) : (
             <select
-              className="mt-1 h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px]"
+              className="h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px]"
               value={listingId}
               onChange={(e) => setListingId(e.target.value)}
             >
@@ -181,23 +180,20 @@ export function CreateOfferSheet({
           {listing && !listingOpen ? (
             <p className="mt-1 text-[12px] text-sales-danger">This listing is not open to offers.</p>
           ) : null}
-        </div>
+        </Field>
 
-        <div>
-          <FieldLabel>Listing price</FieldLabel>
-          <p className="mt-1 text-[18px] font-semibold tabular-nums text-sales-text-primary">
+        <Field label="Listing price">
+          <p className="text-[18px] font-semibold tabular-nums text-sales-text-primary">
             {listing?.price != null ? formatOfferMoney(Number(listing.price), currency) : "—"}
           </p>
-        </div>
+        </Field>
 
-        <div>
-          <FieldLabel>Buyer</FieldLabel>
+        <Field label="Buyer">
           {prefill?.contactId ? (
-            <p className="mt-1 text-[14px] font-medium">{prefill.contactName ?? "Selected buyer"}</p>
+            <p className="text-[14px] font-medium">{prefill.contactName ?? "Selected buyer"}</p>
           ) : (
             <>
               <Input
-                className="mt-1"
                 value={contactQuery}
                 onChange={(e) => setContactQuery(e.target.value)}
                 placeholder="Search contacts"
@@ -225,13 +221,12 @@ export function CreateOfferSheet({
               ) : null}
             </>
           )}
-        </div>
+        </Field>
 
         <div className="grid grid-cols-3 gap-2">
-          <div className="col-span-2">
-            <FieldLabel>Offer amount</FieldLabel>
+          <Field label="Offer amount" className="col-span-2">
             <Input
-              className="mt-1 h-12 text-[18px] font-semibold tabular-nums"
+              className="h-12 text-[18px] font-semibold tabular-nums"
               inputMode="decimal"
               type="number"
               min={1}
@@ -240,11 +235,10 @@ export function CreateOfferSheet({
               onChange={(e) => setAmount(e.target.value)}
               placeholder="145000"
             />
-          </div>
-          <div>
-            <FieldLabel>Currency</FieldLabel>
+          </Field>
+          <Field label="Currency">
             <select
-              className="mt-1 h-12 w-full rounded-[10px] border border-sales-border bg-sales-surface px-2 text-[13px]"
+              className="h-12 w-full rounded-[10px] border border-sales-border bg-sales-surface px-2 text-[13px]"
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
             >
@@ -254,35 +248,30 @@ export function CreateOfferSheet({
                 </option>
               ))}
             </select>
-          </div>
+          </Field>
         </div>
 
-        <div>
-          <FieldLabel>Conditions</FieldLabel>
+        <Field label="Conditions">
           <TextArea
-            className="mt-1"
             rows={3}
             value={conditions}
             onChange={(e) => setConditions(e.target.value)}
             placeholder="e.g. Cash purchase."
           />
-        </div>
+        </Field>
 
-        <div>
-          <FieldLabel>Expiry</FieldLabel>
-          <Input className="mt-1" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
-        </div>
+        <Field label="Expiry">
+          <Input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+        </Field>
 
-        <div>
-          <FieldLabel>Internal note</FieldLabel>
+        <Field label="Internal note">
           <TextArea
-            className="mt-1"
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Visible to your team only."
           />
-        </div>
+        </Field>
       </div>
     </PremiumSheet>
   );

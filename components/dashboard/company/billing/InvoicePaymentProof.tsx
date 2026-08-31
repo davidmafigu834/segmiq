@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, FieldLabel, Input, Select } from "@/components/sales/ui";
+import { Button, Field, Input, Select } from "@/components/sales/ui";
 import { PAYMENT_METHODS } from "@/lib/billing/format";
 import type { CompanyBillingInvoice } from "@/lib/billing/company-billing-types";
 
@@ -59,8 +59,7 @@ export function InvoicePaymentProof({ invoice }: { invoice: CompanyBillingInvoic
       <p className="text-[13px] text-sales-text-secondary">
         Transfer the invoice amount using the published payment details, then upload proof.
       </p>
-      <div>
-        <FieldLabel htmlFor={`proof-method-${invoice.id}`}>Payment method</FieldLabel>
+      <Field label="Payment method" htmlFor={`proof-method-${invoice.id}`}>
         <Select
           id={`proof-method-${invoice.id}`}
           value={method}
@@ -72,25 +71,22 @@ export function InvoicePaymentProof({ invoice }: { invoice: CompanyBillingInvoic
             </option>
           ))}
         </Select>
-      </div>
-      <div>
-        <FieldLabel htmlFor={`proof-ref-${invoice.id}`}>Reference (optional)</FieldLabel>
+      </Field>
+      <Field label="Reference (optional)" htmlFor={`proof-ref-${invoice.id}`} optional>
         <Input
           id={`proof-ref-${invoice.id}`}
           value={reference}
           onChange={(e) => setReference(e.target.value)}
         />
-      </div>
-      <div>
-        <FieldLabel htmlFor={`proof-file-${invoice.id}`}>Proof file</FieldLabel>
+      </Field>
+      <Field label="Proof file" htmlFor={`proof-file-${invoice.id}`} error={error ?? undefined}>
         <Input
           id={`proof-file-${invoice.id}`}
           type="file"
           accept="image/*,.pdf"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
-      </div>
-      {error ? <p className="text-[12px] text-sales-danger">{error}</p> : null}
+      </Field>
       <Button variant="secondary" size="sm" loading={busy} onClick={() => void submit()}>
         Submit payment proof
       </Button>

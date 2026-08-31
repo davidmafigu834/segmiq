@@ -15,7 +15,6 @@ import {
   LayoutList,
   MessageCircle,
   MoreHorizontal,
-  MoreHorizontal,
   Phone,
   Plus,
   Search,

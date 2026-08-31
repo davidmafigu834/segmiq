@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import { Badge, Button, FieldLabel, IconButton, Input, TextArea } from "@/components/sales/ui";
+import { Badge, Button, Field, IconButton, Input, TextArea } from "@/components/sales/ui";
 import { cn } from "@/lib/ui/cn";
 import { listingLabel } from "@/lib/real-estate/helpers";
 import {
@@ -545,16 +545,18 @@ export function OfferDetailPanel({
 
         {action === "counter" ? (
           <ActionSheet title="Seller counter" onClose={() => setAction(null)}>
-            <FieldLabel>Counter amount</FieldLabel>
-            <Input
-              className="mt-1 h-12 text-[18px] font-semibold tabular-nums"
-              type="number"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <FieldLabel className="mt-3">Seller notes / conditions</FieldLabel>
-            <TextArea className="mt-1" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+            <Field label="Counter amount">
+              <Input
+                className="h-12 text-[18px] font-semibold tabular-nums"
+                type="number"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </Field>
+            <Field label="Seller notes / conditions" className="mt-3">
+              <TextArea rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+            </Field>
             <Button
               variant="primary"
               className="mt-3 w-full"
@@ -570,16 +572,18 @@ export function OfferDetailPanel({
 
         {action === "revise" ? (
           <ActionSheet title="Buyer revised offer" onClose={() => setAction(null)}>
-            <FieldLabel>New amount</FieldLabel>
-            <Input
-              className="mt-1 h-12 text-[18px] font-semibold tabular-nums"
-              type="number"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <FieldLabel className="mt-3">Conditions / notes</FieldLabel>
-            <TextArea className="mt-1" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+            <Field label="New amount">
+              <Input
+                className="h-12 text-[18px] font-semibold tabular-nums"
+                type="number"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </Field>
+            <Field label="Conditions / notes" className="mt-3">
+              <TextArea rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+            </Field>
             <Button
               variant="primary"
               className="mt-3 w-full"
@@ -639,28 +643,29 @@ export function OfferDetailPanel({
 
         {action === "reject" ? (
           <ActionSheet title="Reject offer" onClose={() => setAction(null)}>
-            <FieldLabel>Reason</FieldLabel>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {RE_OFFER_REJECT_REASONS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`rounded-full border px-2.5 py-1 text-[12px] ${
-                    reason === r ? "border-sales-brand-border bg-sales-brand-soft" : "border-sales-border"
-                  }`}
-                  onClick={() => setReason(r)}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-            <TextArea
-              className="mt-3"
-              rows={2}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Additional detail"
-            />
+            <Field label="Reason">
+              <div className="flex flex-wrap gap-1.5">
+                {RE_OFFER_REJECT_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    className={`rounded-full border px-2.5 py-1 text-[12px] ${
+                      reason === r ? "border-sales-brand-border bg-sales-brand-soft" : "border-sales-border"
+                    }`}
+                    onClick={() => setReason(r)}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+              <TextArea
+                className="mt-3"
+                rows={2}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Additional detail"
+              />
+            </Field>
             <Button
               variant="danger"
               className="mt-3 w-full"

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Bell, Mail } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import { Button, FieldError, FieldHint, FieldLabel, Input, Switch } from "@/components/sales/ui";
+import { Button, Field, Input, Switch } from "@/components/sales/ui";
 import { SettingsSectionCard, SettingsInfoGrid } from "./SettingsSectionCard";
 import { SettingsNeedHelpCard } from "./CompanySettingsRail";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -93,29 +93,30 @@ export function ProfilePersonalSection({
             onChange={(e) => void onAvatar(e.target.files?.[0])}
           />
           <div className="min-w-0 flex-1 space-y-4">
-            <div>
-              <FieldLabel htmlFor="me-name">Name</FieldLabel>
+            <Field label="Name" htmlFor="me-name">
               <Input id="me-name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div>
-              <FieldLabel htmlFor="me-email">Login email</FieldLabel>
+            </Field>
+            <Field
+              label="Login email"
+              htmlFor="me-email"
+              hint="Contact SegmiQ support to change your login email."
+            >
               <Input id="me-email" value={user.email} disabled />
-              <FieldHint>Contact SegmiQ support to change your login email.</FieldHint>
-            </div>
+            </Field>
           </div>
         </div>
       </SettingsSectionCard>
 
       <SettingsSectionCard title="Contact Information" description="WhatsApp alerts for new leads and won deals use this number.">
-        <FieldLabel htmlFor="me-phone">Phone</FieldLabel>
-        <Input
-          id="me-phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+263 77 123 4567"
-          invalid={Boolean(phoneError)}
-        />
-        {phoneError ? <FieldError>{phoneError}</FieldError> : null}
+        <Field label="Phone" htmlFor="me-phone" error={phoneError ?? undefined}>
+          <Input
+            id="me-phone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+263 77 123 4567"
+            invalid={Boolean(phoneError)}
+          />
+        </Field>
         <div className="mt-5 flex justify-end">
           <Button variant="primary" size="md" loading={saving} onClick={() => void save()}>
             Save changes
@@ -178,20 +179,19 @@ export function ProfileAccountSection({
       description="Changing your password signs you out of other devices. Two-factor authentication is not available yet."
     >
       <div className="space-y-4">
-        <div>
-          <FieldLabel htmlFor="pw-current">Current password</FieldLabel>
+        <Field label="Current password" htmlFor="pw-current">
           <Input id="pw-current" type="password" autoComplete="current-password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
-        </div>
-        <div>
-          <FieldLabel htmlFor="pw-new">New password</FieldLabel>
+        </Field>
+        <Field
+          label="New password"
+          htmlFor="pw-new"
+          hint="At least 8 characters, including a number or symbol."
+        >
           <Input id="pw-new" type="password" autoComplete="new-password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
-          <FieldHint>At least 8 characters, including a number or symbol.</FieldHint>
-        </div>
-        <div>
-          <FieldLabel htmlFor="pw-confirm">Confirm new password</FieldLabel>
+        </Field>
+        <Field label="Confirm new password" htmlFor="pw-confirm" error={confirmError ?? undefined}>
           <Input id="pw-confirm" type="password" autoComplete="new-password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} invalid={Boolean(confirmError)} />
-          {confirmError ? <FieldError>{confirmError}</FieldError> : null}
-        </div>
+        </Field>
       </div>
       <div className="mt-5 flex justify-end">
         <Button

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CommercialModulePage } from "./CommercialModulePage";
-import { Button, FieldLabel, Select, useSalesToast } from "@/components/sales/ui";
+import { Button, Field, Select, useSalesToast } from "@/components/sales/ui";
 import type { UserRole } from "@/types";
 
 export function CompanyProductsImportPage({
@@ -50,14 +50,13 @@ export function CompanyProductsImportPage({
     >
       <div className="mt-4 max-w-xl space-y-4">
         <input type="file" accept=".csv,.xlsx" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        <div>
-          <FieldLabel>Duplicates</FieldLabel>
+        <Field label="Duplicates">
           <Select value={duplicateMode} onChange={(e) => setDuplicateMode(e.target.value)}>
             <option value="SKIP">Skip existing SKUs</option>
             <option value="UPDATE">Update existing SKUs</option>
             <option value="CREATE">Create new (block duplicate SKU)</option>
           </Select>
-        </div>
+        </Field>
         <div className="flex gap-2">
           <Button variant="secondary" size="md" disabled={!file || busy} onClick={() => void run(true)}>
             Preview

@@ -20,7 +20,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  FieldLabel,
+  Field,
   Input,
   Skeleton,
   Switch,
@@ -316,24 +316,22 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
               </div>
 
               <div className="grid gap-4">
-                <div>
-                  <FieldLabel htmlFor="profile-name">Display name</FieldLabel>
+                <Field label="Display name" htmlFor="profile-name">
                   <Input
                     id="profile-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="mt-1.5 w-full"
+                    className="w-full"
                   />
-                </div>
-                <div>
-                  <FieldLabel htmlFor="profile-role">Role</FieldLabel>
+                </Field>
+                <Field label="Role" htmlFor="profile-role">
                   <Input
                     id="profile-role"
                     value="Sales Executive"
                     readOnly
-                    className="mt-1.5 w-full cursor-not-allowed bg-sales-surface-subtle text-sales-text-muted"
+                    className="w-full cursor-not-allowed bg-sales-surface-subtle text-sales-text-muted"
                   />
-                </div>
+                </Field>
               </div>
             </CardContent>
           </Card>
@@ -344,9 +342,12 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
               <CardTitle>Contact details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <FieldLabel htmlFor="profile-email">Email</FieldLabel>
-                <div className="relative mt-1.5">
+              <Field
+                label="Email"
+                htmlFor="profile-email"
+                hint="Sign-in email cannot be changed from Profile."
+              >
+                <div className="relative">
                   <Mail
                     size={16}
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
@@ -358,13 +359,18 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
                     className="cursor-not-allowed bg-sales-surface-subtle pl-9 text-sales-text-muted"
                   />
                 </div>
-                <p className="mt-1.5 text-[12px] text-sales-text-muted">
-                  Sign-in email cannot be changed from Profile.
-                </p>
-              </div>
-              <div>
-                <FieldLabel htmlFor="profile-phone">Phone</FieldLabel>
-                <div className="relative mt-1.5">
+              </Field>
+              <Field
+                label="Phone"
+                htmlFor="profile-phone"
+                error={phoneError ?? undefined}
+                hint={
+                  phoneError
+                    ? undefined
+                    : "Used for WhatsApp lead alerts. International format (E.164)."
+                }
+              >
+                <div className="relative">
                   <Phone
                     size={16}
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
@@ -382,14 +388,7 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
                     invalid={Boolean(phoneError)}
                   />
                 </div>
-                {phoneError ? (
-                  <p className="mt-1.5 text-[12px] text-sales-danger">{phoneError}</p>
-                ) : (
-                  <p className="mt-1.5 text-[12px] text-sales-text-muted">
-                    Used for WhatsApp lead alerts. International format (E.164).
-                  </p>
-                )}
-              </div>
+              </Field>
             </CardContent>
           </Card>
 
@@ -496,26 +495,22 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
 
               {pwOpen ? (
                 <div className="space-y-3 rounded-[12px] border border-sales-border-subtle bg-sales-surface-subtle p-3">
-                  <div>
-                    <FieldLabel htmlFor="current-pw">Current password</FieldLabel>
+                  <Field label="Current password" htmlFor="current-pw">
                     <Input
                       id="current-pw"
                       type="password"
                       value={currentPw}
                       onChange={(e) => setCurrentPw(e.target.value)}
                       autoComplete="current-password"
-                      className="mt-1.5"
                     />
-                  </div>
-                  <div>
-                    <FieldLabel htmlFor="new-pw">New password</FieldLabel>
+                  </Field>
+                  <Field label="New password" htmlFor="new-pw">
                     <Input
                       id="new-pw"
                       type="password"
                       value={newPw}
                       onChange={(e) => setNewPw(e.target.value)}
                       autoComplete="new-password"
-                      className="mt-1.5"
                     />
                     {newPw ? (
                       <p className="mt-1 text-[11px] text-sales-text-muted">
@@ -534,18 +529,16 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
                         </span>
                       </p>
                     ) : null}
-                  </div>
-                  <div>
-                    <FieldLabel htmlFor="confirm-pw">Confirm new password</FieldLabel>
+                  </Field>
+                  <Field label="Confirm new password" htmlFor="confirm-pw">
                     <Input
                       id="confirm-pw"
                       type="password"
                       value={confirmPw}
                       onChange={(e) => setConfirmPw(e.target.value)}
                       autoComplete="new-password"
-                      className="mt-1.5"
                     />
-                  </div>
+                  </Field>
                   <div className="flex gap-2">
                     <Button
                       variant="secondary"

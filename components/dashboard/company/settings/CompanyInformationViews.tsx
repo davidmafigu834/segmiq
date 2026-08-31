@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, FieldError, FieldHint, FieldLabel, Input, Select, TextArea } from "@/components/sales/ui";
+import { Button, Field, Input, Select, TextArea } from "@/components/sales/ui";
 import { SettingsSectionCard, SettingsInfoGrid } from "./SettingsSectionCard";
 import { SettingsFormDrawer } from "./SettingsFormDrawer";
 import { companyNameInitials } from "@/lib/sales/navigation/company-nav-config";
@@ -313,42 +313,40 @@ function EditCompanyInformationDrawer({
       saving={saving}
     >
       <div>
-        <FieldLabel htmlFor="co-name">Company Name</FieldLabel>
-        <Input id="co-name" value={name} onChange={(e) => setName(e.target.value)} invalid={Boolean(errors.name)} />
-        {errors.name ? <FieldError>{errors.name}</FieldError> : null}
-      </div>
-      <div>
-        <FieldLabel htmlFor="co-email">Company Email</FieldLabel>
-        <Input
-          id="co-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          invalid={Boolean(errors.email)}
-        />
-        {errors.email ? <FieldError>{errors.email}</FieldError> : <FieldHint>Used on quotes and customer-facing materials.</FieldHint>}
-      </div>
-      <div>
-        <FieldLabel htmlFor="co-phone">Phone Number</FieldLabel>
-        <Input id="co-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-      </div>
-      <div>
-        <FieldLabel htmlFor="co-web">Website</FieldLabel>
-        <Input id="co-web" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="segmiq.com" />
-      </div>
-      <div>
-        <FieldLabel htmlFor="co-industry">Industry</FieldLabel>
-        <Input id="co-industry" list="industry-options" value={industry} onChange={(e) => setIndustry(e.target.value)} />
-        <datalist id="industry-options">
-          {INDUSTRY_OPTIONS.map((opt) => (
-            <option key={opt} value={opt} />
-          ))}
-        </datalist>
-      </div>
-      <div>
-        <FieldLabel>Company ID</FieldLabel>
-        <Input value={profile.slug} disabled />
-        <FieldHint>Public company identifier. Change it under Branding.</FieldHint>
+        <Field label="Company Name" htmlFor="co-name" error={errors.name || undefined}>
+          <Input id="co-name" value={name} onChange={(e) => setName(e.target.value)} invalid={Boolean(errors.name)} />
+        </Field>
+        <Field
+          label="Company Email"
+          htmlFor="co-email"
+          error={errors.email || undefined}
+          hint={errors.email ? undefined : "Used on quotes and customer-facing materials."}
+        >
+          <Input
+            id="co-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            invalid={Boolean(errors.email)}
+          />
+        </Field>
+        <Field label="Phone Number" htmlFor="co-phone">
+          <Input id="co-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </Field>
+        <Field label="Website" htmlFor="co-web">
+          <Input id="co-web" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="segmiq.com" />
+        </Field>
+        <Field label="Industry" htmlFor="co-industry">
+          <Input id="co-industry" list="industry-options" value={industry} onChange={(e) => setIndustry(e.target.value)} />
+          <datalist id="industry-options">
+            {INDUSTRY_OPTIONS.map((opt) => (
+              <option key={opt} value={opt} />
+            ))}
+          </datalist>
+        </Field>
+        <Field label="Company ID" hint="Public company identifier. Change it under Branding.">
+          <Input value={profile.slug} disabled />
+        </Field>
       </div>
     </SettingsFormDrawer>
   );
@@ -402,14 +400,12 @@ function EditBusinessAddressDrawer({
       onSave={() => void save()}
       saving={saving}
     >
-      <div>
-        <FieldLabel htmlFor="co-address">Address</FieldLabel>
+      <Field label="Address" htmlFor="co-address">
         <TextArea id="co-address" value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />
-      </div>
-      <div>
-        <FieldLabel htmlFor="co-country">Country</FieldLabel>
+      </Field>
+      <Field label="Country" htmlFor="co-country">
         <Input id="co-country" value={country} onChange={(e) => setCountry(e.target.value)} />
-      </div>
+      </Field>
     </SettingsFormDrawer>
   );
 }
@@ -478,24 +474,25 @@ function EditBusinessInformationDrawer({
       onSave={() => void save()}
       saving={saving}
     >
-      <div>
-        <FieldLabel htmlFor="co-type">Business Type</FieldLabel>
+      <Field label="Business Type" htmlFor="co-type">
         <Select id="co-type" value={businessType} onChange={(e) => setBusinessType(e.target.value)}>
           <option value="trades">Trades</option>
           <option value="real_estate">Real estate</option>
         </Select>
-      </div>
-      <div>
-        <FieldLabel htmlFor="co-years">Years in operation</FieldLabel>
+      </Field>
+      <Field label="Years in operation" htmlFor="co-years">
         <Input
           id="co-years"
           inputMode="numeric"
           value={years}
           onChange={(e) => setYears(e.target.value.replace(/[^\d]/g, ""))}
         />
-      </div>
-      <div>
-        <FieldLabel htmlFor="co-tz">Time Zone</FieldLabel>
+      </Field>
+      <Field
+        label="Time Zone"
+        htmlFor="co-tz"
+        hint="Stored as an IANA timezone. Existing timestamps stay in UTC."
+      >
         <Select id="co-tz" value={tz} onChange={(e) => setTz(e.target.value)}>
           {COMPANY_TIMEZONES.map((option) => (
             <option key={option.value} value={option.value}>
@@ -504,8 +501,7 @@ function EditBusinessInformationDrawer({
           ))}
           {COMPANY_TIMEZONES.some((option) => option.value === tz) ? null : <option value={tz}>{tz}</option>}
         </Select>
-        <FieldHint>Stored as an IANA timezone. Existing timestamps stay in UTC.</FieldHint>
-      </div>
+      </Field>
     </SettingsFormDrawer>
   );
 }
@@ -592,7 +588,7 @@ function EditOperatingHoursDrawer({
         onEndChange={setWorkEndTime}
         hint="Default is Monday–Friday, 8:00am–5:00pm. Salespeople can override this on Goals."
       />
-      {error ? <FieldError>{error}</FieldError> : null}
+      {error ? <p className="text-[13px] text-sales-danger">{error}</p> : null}
     </SettingsFormDrawer>
   );
 }

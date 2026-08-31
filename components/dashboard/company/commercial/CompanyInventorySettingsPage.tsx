@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CommercialModulePage } from "./CommercialModulePage";
-import { Button, FieldLabel, Select, Switch, useSalesToast } from "@/components/sales/ui";
+import { Button, Field, Select, Switch, useSalesToast } from "@/components/sales/ui";
 import type { UserRole } from "@/types";
 
 type Settings = {
@@ -73,8 +73,7 @@ export function CompanyInventorySettingsPage({
       }
     >
       <div className="mt-4 max-w-xl space-y-4">
-        <div>
-          <FieldLabel>Provider</FieldLabel>
+        <Field label="Provider">
           <Select
             value={settings.provider}
             onChange={(e) => setSettings({ ...settings, provider: e.target.value as Settings["provider"] })}
@@ -82,9 +81,8 @@ export function CompanyInventorySettingsPage({
             <option value="SEGMIQ">SEGMIQ</option>
             <option value="EXTERNAL">External (read-only stub)</option>
           </Select>
-        </div>
-        <div>
-          <FieldLabel>Default location</FieldLabel>
+        </Field>
+        <Field label="Default location">
           <Select
             value={settings.defaultLocationId ?? ""}
             onChange={(e) => setSettings({ ...settings, defaultLocationId: e.target.value || null })}
@@ -96,9 +94,8 @@ export function CompanyInventorySettingsPage({
               </option>
             ))}
           </Select>
-        </div>
-        <div>
-          <FieldLabel>Agent stock disclosure</FieldLabel>
+        </Field>
+        <Field label="Agent stock disclosure">
           <Select
             value={settings.agentDisclosure}
             onChange={(e) => setSettings({ ...settings, agentDisclosure: e.target.value as Settings["agentDisclosure"] })}
@@ -107,7 +104,7 @@ export function CompanyInventorySettingsPage({
             <option value="GENERAL">In stock / limited / unavailable</option>
             <option value="HIDDEN">Hidden</option>
           </Select>
-        </div>
+        </Field>
         <label className="flex items-center justify-between gap-3 text-[13px]">
           Allow negative stock
           <Switch

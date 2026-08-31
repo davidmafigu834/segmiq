@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Upload } from "lucide-react";
-import { Button, FieldHint, FieldLabel, Input, Radio, Select, TextArea } from "@/components/sales/ui";
+import { Button, Field, Input, Radio, Select, TextArea } from "@/components/sales/ui";
 import { SettingsSectionCard, SettingsInfoGrid } from "./SettingsSectionCard";
 import { CompanyAccountSummaryCard } from "./CompanySettingsRail";
 import { companyNameInitials } from "@/lib/sales/navigation/company-nav-config";
@@ -127,20 +127,21 @@ export function CompanyBrandingSection({
         description="Control how your company appears across SegmiQ documents and customer-facing materials."
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <FieldLabel htmlFor="brand-slug">Public page ID</FieldLabel>
+          <Field
+            label="Public page ID"
+            htmlFor="brand-slug"
+            hint="Lowercase letters, numbers, and hyphens. This is also your Company ID."
+          >
             <Input id="brand-slug" value={slug} onChange={(e) => setSlug(e.target.value)} />
-            <FieldHint>Lowercase letters, numbers, and hyphens. This is also your Company ID.</FieldHint>
-          </div>
-          <div>
-            <FieldLabel htmlFor="brand-tagline">Brand tagline</FieldLabel>
+          </Field>
+          <Field label="Brand tagline" htmlFor="brand-tagline">
             <Input
               id="brand-tagline"
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
               maxLength={200}
             />
-          </div>
+          </Field>
         </div>
         {publicUrl ? (
           <p className="mt-3 text-[12px] text-sales-text-secondary">
@@ -209,8 +210,9 @@ export function CompanyBrandingSection({
         title="Document Branding"
         description="Footer text printed on quotation PDFs. Quote terms and numbering stay in Quotation settings."
       >
-        <FieldLabel htmlFor="brand-footer">Quote footer</FieldLabel>
-        <TextArea id="brand-footer" value={footer} onChange={(e) => setFooter(e.target.value)} rows={3} />
+        <Field label="Quote footer" htmlFor="brand-footer">
+          <TextArea id="brand-footer" value={footer} onChange={(e) => setFooter(e.target.value)} rows={3} />
+        </Field>
         <Link href="/client/quote-settings" className="mt-3 inline-block text-[13px] font-medium text-sales-text-primary underline-offset-2 hover:underline">
           Open quotation settings
         </Link>
@@ -264,15 +266,16 @@ export function CompanyBusinessDetailsSection({
         description="Operational details that sit alongside your company profile."
       >
         <div className="space-y-4">
-          <div>
-            <FieldLabel htmlFor="bd-tagline">Capability tagline</FieldLabel>
+          <Field label="Capability tagline" htmlFor="bd-tagline">
             <Input id="bd-tagline" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={200} />
-          </div>
-          <div>
-            <FieldLabel htmlFor="bd-sla">Lead response SLA (hours)</FieldLabel>
+          </Field>
+          <Field
+            label="Lead response SLA (hours)"
+            htmlFor="bd-sla"
+            hint="Uncontacted-lead alerts use this window."
+          >
             <Input id="bd-sla" inputMode="numeric" value={hours} onChange={(e) => setHours(e.target.value)} />
-            <FieldHint>Uncontacted-lead alerts use this window.</FieldHint>
-          </div>
+          </Field>
         </div>
         <div className="mt-5 flex justify-end">
           <Button variant="primary" size="md" loading={saving} onClick={() => void save()}>
@@ -332,27 +335,32 @@ export function CompanyLocalizationSection({
         <SettingsInfoGrid rows={[{ label: "Language", value: "English" }]} />
         <p className="mt-2 text-[12px] text-sales-text-muted">SegmiQ is currently available in English only.</p>
         <div className="mt-4">
-          <FieldLabel htmlFor="loc-dial">Default dial code</FieldLabel>
-          <Select id="loc-dial" value={dial} onChange={(e) => setDial(e.target.value)}>
-            {DIAL_CODES.map((code) => (
-              <option key={code.value} value={code.value}>
-                {code.label}
-              </option>
-            ))}
-          </Select>
+          <Field label="Default dial code" htmlFor="loc-dial">
+            <Select id="loc-dial" value={dial} onChange={(e) => setDial(e.target.value)}>
+              {DIAL_CODES.map((code) => (
+                <option key={code.value} value={code.value}>
+                  {code.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
         </div>
       </SettingsSectionCard>
       <SettingsSectionCard title="Date & Time" description="IANA timezone used by Calendar, campaigns, and activity display.">
-        <FieldLabel htmlFor="loc-tz">Time Zone</FieldLabel>
-        <Select id="loc-tz" value={tz} onChange={(e) => setTz(e.target.value)}>
-          {COMPANY_TIMEZONES.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-          {COMPANY_TIMEZONES.some((option) => option.value === tz) ? null : <option value={tz}>{tz}</option>}
-        </Select>
-        <FieldHint>Changing timezone updates display only. Stored timestamps remain UTC.</FieldHint>
+        <Field
+          label="Time Zone"
+          htmlFor="loc-tz"
+          hint="Changing timezone updates display only. Stored timestamps remain UTC."
+        >
+          <Select id="loc-tz" value={tz} onChange={(e) => setTz(e.target.value)}>
+            {COMPANY_TIMEZONES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+            {COMPANY_TIMEZONES.some((option) => option.value === tz) ? null : <option value={tz}>{tz}</option>}
+          </Select>
+        </Field>
       </SettingsSectionCard>
       <div className="flex justify-end">
         <Button variant="primary" size="md" loading={saving} onClick={() => void save()}>
@@ -469,18 +477,17 @@ export function CompanyPreferencesSection({
         description="Default numbering, tax, and terms for new quotations."
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <FieldLabel htmlFor="pref-prefix">Quote prefix</FieldLabel>
+          <Field label="Quote prefix" htmlFor="pref-prefix">
             <Input id="pref-prefix" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
-          </div>
-          <div>
-            <FieldLabel htmlFor="pref-tax">Default tax rate (%)</FieldLabel>
+          </Field>
+          <Field label="Default tax rate (%)" htmlFor="pref-tax">
             <Input id="pref-tax" value={tax} onChange={(e) => setTax(e.target.value)} />
-          </div>
+          </Field>
         </div>
         <div className="mt-4">
-          <FieldLabel htmlFor="pref-terms">Default terms</FieldLabel>
-          <TextArea id="pref-terms" value={terms} onChange={(e) => setTerms(e.target.value)} rows={4} />
+          <Field label="Default terms" htmlFor="pref-terms">
+            <TextArea id="pref-terms" value={terms} onChange={(e) => setTerms(e.target.value)} rows={4} />
+          </Field>
         </div>
         <div className="mt-5 flex justify-end">
           <Button variant="primary" size="md" loading={saving} onClick={() => void saveQuotes()}>
