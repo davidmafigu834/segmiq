@@ -25,6 +25,7 @@ import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { CompanyWhatsAppHeader } from "./CompanyWhatsAppHeader";
 import { CompanyConversationInsightRail } from "./CompanyConversationInsightRail";
 import { SalesIntelligenceRail } from "./SalesIntelligenceRail";
+import { RealEstateIntelligenceRail } from "./RealEstateIntelligenceRail";
 import { SupportIntelligenceRail } from "./SupportIntelligenceRail";
 import { SalespersonHubHeader } from "./SalespersonHubHeader";
 import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
@@ -88,6 +89,7 @@ export function TeamInbox({
   const [contextRevision, setContextRevision] = useState(0);
   const [salespeople, setSalespeople] = useState(initialSalespeople);
   const [companyName, setCompanyName] = useState("");
+  const [businessType, setBusinessType] = useState<"trades" | "real_estate">("trades");
   const [whatsappConnection, setWhatsAppConnection] = useState<SafeWhatsAppConnection | null>(null);
   const [agentActive, setAgentActive] = useState(false);
   const [dailyPlanQueue, setDailyPlanQueue] = useState<SalesActionRecommendation[]>([]);
@@ -105,6 +107,7 @@ export function TeamInbox({
   const pendingSelectionRef = useRef<string | null>(null);
   const activeIdRef = useRef<string | null>(null);
   const whatsappMode = !!backHref;
+  const realEstateHub = businessType === "real_estate";
 
   useEffect(() => {
     activeIdRef.current = activeId;
@@ -187,8 +190,10 @@ export function TeamInbox({
   useEffect(() => {
     fetch(`/api/clients/${clientId}/company-profile`)
       .then((r) => r.json())
-      .then((d: { client?: { name?: string } }) => {
+      .then((d: { client?: { name?: string; business_type?: string } }) => {
         if (d.client?.name) setCompanyName(d.client.name);
+        if (d.client?.business_type === "real_estate") setBusinessType("real_estate");
+        else setBusinessType("trades");
       })
       .catch(() => {});
   }, [clientId]);
@@ -453,6 +458,7 @@ export function TeamInbox({
                 hubTitle={pageTitle}
                 showHubBranding={showListHubBranding}
                 agentActive={agentActive}
+                realEstateHub={realEstateHub}
               />
             ) : null}
             {resizable ? (
@@ -569,6 +575,26 @@ export function TeamInbox({
                   }}
                   onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
                   panelWidth={resizable ? intelWidth : undefined}
+                />
+              ) : realEstateHub ? (
+                <RealEstateIntelligenceRail
+                  conversation={active}
+                  open={intelOpenEffective}
+                  refreshKey={contextRevision}
+                  onUpdated={() => {
+                    setContextRevision((value) => value + 1);
+                    void loadConversations({ silent: true });
+                  }}
+                  onCollapse={() => {
+                    if (paneNav) setMobilePane("thread");
+                    else if (resizable) toggleIntelCollapsed();
+                    else setIntelOpen(false);
+                  }}
+                  onMobileBack={paneNav ? () => setMobilePane("thread") : undefined}
+                  mobileFullScreen={paneNav}
+                  mobileTopClass={mobileIntelTop}
+                  panelWidth={resizable ? intelWidth : undefined}
+                  panelAnimated={resizable}
                 />
               ) : (
                 <SalesIntelligenceRail

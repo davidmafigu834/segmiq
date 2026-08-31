@@ -14,7 +14,9 @@ export type QuickIntent =
   | "LEARNING_WEEK"
   | "LEARNING_CONFLICTS"
   | "LEARNING_CORRECTIONS"
-  | "LEARNING_FAQS";
+  | "LEARNING_FAQS"
+  | "OVERNIGHT_AGENT"
+  | "VIEWING_APPROVALS";
 
 const QUICK: Array<{ intent: QuickIntent; re: RegExp }> = [
   { intent: "OPERATIONAL_SUMMARY", re: /what needs (my )?attention|needs attention today|^attention$/i },
@@ -23,7 +25,9 @@ const QUICK: Array<{ intent: QuickIntent; re: RegExp }> = [
   { intent: "CUSTOMERS_WAITING", re: /customers? waiting|waiting for (us|salesperson|a reply)|unhandled chats|who is waiting/i },
   { intent: "DEALS_NO_NEXT_ACTION", re: /no next action|deals? (at risk|gone cold|inactive)|stuck deals/i },
   { intent: "TODAY_APPOINTMENTS", re: /appointments? today|site visits? today|what('s| is) on (the )?calendar/i },
-  { intent: "AGENT_ACTIVITY", re: /what did (segmiq )?agent handle|agent activity|enquir(?:y|ies) (did )?agent/i },
+  { intent: "OVERNIGHT_AGENT", re: /what did (segmiq )?agent do overnight|overnight agent summary|agent overnight/i },
+  { intent: "VIEWING_APPROVALS", re: /viewing approvals? waiting|approve viewing|viewings? waiting for approval/i },
+  { intent: "AGENT_ACTIVITY", re: /what did (segmiq )?agent handle|agent activity overnight|enquir(?:y|ies) (did )?agent handle/i },
   { intent: "PROACTIVE_TODAY", re: /proactive|follow-?ups? (scheduled|planned|tomorrow)|what is (segmiq|agent) planning/i },
   { intent: "TEAM_PERFORMANCE", re: /how is the (sales )?team|team perform/i },
   { intent: "OVERDUE_TASKS", re: /overdue (tasks?|follow-?ups?)/i },

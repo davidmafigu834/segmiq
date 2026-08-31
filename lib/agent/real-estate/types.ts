@@ -76,6 +76,20 @@ export type RealEstateBuyerRequirementsContext = {
   };
 };
 
+export type RealEstateViewingAgentContext = {
+  agentId: string | null;
+  agentName: string | null;
+  routeReason: string;
+  routeReasonLabel: string;
+};
+
+export type RealEstateUpcomingViewingContext = {
+  id: string;
+  listingLabel: string;
+  scheduledAt: string;
+  status: string;
+};
+
 export type RealEstateAgentContext = {
   dealSide: string | null;
   dealSideLabel: string | null;
@@ -83,4 +97,6 @@ export type RealEstateAgentContext = {
   originatingListing: RealEstateListingContext | null;
   attribution: RealEstateAttributionContext | null;
   buyerRequirements: RealEstateBuyerRequirementsContext | null;
+  viewingAgent: RealEstateViewingAgentContext | null;
+  upcomingViewings: RealEstateUpcomingViewingContext[];
 };

@@ -11,6 +11,8 @@ import type { DealRow } from "@/types";
 import { conversationHref, managerHref } from "./hrefs";
 import { attentionReply } from "./copy";
 import type { AttentionItem, AttentionSnapshot, ManagerActor, ManagerSeverity } from "./types";
+import { isRealEstate } from "@/lib/terminology";
+import { loadOvernightAgentSummary } from "@/lib/agent/real-estate/overnight-summary";
 
 export { attentionReply };
 
@@ -70,6 +72,7 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
     jobsFailed,
     jobsHuman,
     learningRes,
+    clientRes,
   ] = await Promise.all([
     supabase
       .from("quotations")
@@ -129,6 +132,7 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
       .or("comparison_state.eq.CONFLICTS,risk_level.eq.VERY_HIGH,risk_level.eq.HIGH,type.eq.CORRECTION")
       .order("last_observed_at", { ascending: false })
       .limit(8),
+    supabase.from("clients").select("business_type").eq("id", clientId).maybeSingle(),
   ]);
 
   const nameByUser = new Map(
@@ -181,25 +185,33 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
   };
   const waitingCustomers: AttentionItem[] = [];
   const humanNeeded: AttentionItem[] = [];
+  const viewingApprovals: AttentionItem[] = [];
   for (const s of asRows<StateRow>(statesRes.data)) {
     const lead = leadById.get(s.lead_id);
     if (s.status === "HUMAN_NEEDED") {
-      humanNeeded.push({
-        id: `human:${s.lead_id}`,
-        type: "AGENT_HUMAN_NEEDED",
-        severity: "HIGH",
+      const isViewingApproval = s.human_needed_reason === "VIEWING_APPROVAL";
+      const item: AttentionItem = {
+        id: isViewingApproval ? `viewing:${s.lead_id}` : `human:${s.lead_id}`,
+        type: isViewingApproval ? "VIEWING_APPROVAL" : "AGENT_HUMAN_NEEDED",
+        severity: isViewingApproval ? "URGENT" : "HIGH",
         entityType: "CONVERSATION",
         entityId: s.lead_id,
-        title: `${lead?.name || "Customer"} needs a human`,
-        reason: s.human_needed_reason || "SegmiQ Agent handed this conversation to a person",
+        title: isViewingApproval
+          ? `Viewing approval · ${lead?.name || "Customer"}`
+          : `${lead?.name || "Customer"} needs a human`,
+        reason: isViewingApproval
+          ? "SegmiQ Agent needs approval to schedule a viewing"
+          : s.human_needed_reason || "SegmiQ Agent handed this conversation to a person",
         ownerName: lead?.assigned_to_id ? nameByUser.get(lead.assigned_to_id) ?? null : null,
         ownerId: lead?.assigned_to_id ?? null,
         valueLabel: null,
         waitingLabel: waitingLabel(minutesAgo(s.last_customer_message_at, at)),
         href: conversationHref(s.lead_id),
-        recommendedActions: ["Open conversation"],
-        rank: rank("HIGH", minutesAgo(s.last_customer_message_at, at) ?? 0),
-      });
+        recommendedActions: isViewingApproval ? ["Approve viewing", "Open conversation"] : ["Open conversation"],
+        rank: rank(isViewingApproval ? "URGENT" : "HIGH", minutesAgo(s.last_customer_message_at, at) ?? 0),
+      };
+      if (isViewingApproval) viewingApprovals.push(item);
+      else humanNeeded.push(item);
     }
     const cust = Date.parse(s.last_customer_message_at ?? "") || 0;
     const human = Date.parse(s.last_human_message_at ?? "") || 0;
@@ -229,7 +241,7 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
       }
     }
   }
-  items.push(...humanNeeded, ...waitingCustomers);
+  items.push(...viewingApprovals, ...humanNeeded, ...waitingCustomers);
 
   const deals = asRows<DealRow>(dealsRes.data);
   for (const deal of deals) {
@@ -402,6 +414,8 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
   const top = items.slice(0, 40);
 
   const count = (type: string) => top.filter((i) => i.type === type).length;
+  const reClient = isRealEstate((clientRes.data as { business_type?: string } | null)?.business_type);
+  const overnight = reClient ? await loadOvernightAgentSummary({ clientId, at }) : null;
   const brief = {
     customersWaiting: waitingCustomers.length,
     quoteApprovals: count("QUOTE_APPROVAL") || asRows(quotesRes.data).length,
@@ -411,6 +425,9 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
     humanNeeded: humanNeeded.length,
     failedProactive: failedToday.length,
     supportOpen: asRows(supportRes.data).length,
+    viewingApprovalsPending: viewingApprovals.length,
+    agentExecutionsOvernight: overnight?.executionsCompleted ?? undefined,
+    agentRepliesSent: overnight?.repliesSent ?? undefined,
   };
 
   const allGroups: AttentionSnapshot["groups"] = [
@@ -420,6 +437,9 @@ export async function getManagerAttention(actor: ManagerActor): Promise<Attentio
     { type: "OVERDUE_FOLLOW_UP", label: "Overdue follow-ups", count: brief.overdueFollowUps, severity: "NORMAL" },
     { type: "APPOINTMENT_TODAY", label: "Appointments today", count: brief.appointmentsToday, severity: "LOW" },
     { type: "AGENT_HUMAN_NEEDED", label: "Agent handoffs", count: brief.humanNeeded, severity: "HIGH" },
+    ...(brief.viewingApprovalsPending
+      ? [{ type: "VIEWING_APPROVAL", label: "Viewing approvals", count: brief.viewingApprovalsPending, severity: "URGENT" as const }]
+      : []),
     { type: "PROACTIVE_FAILED", label: "Failed proactive actions", count: brief.failedProactive, severity: "HIGH" },
     { type: "SUPPORT_OPEN", label: "Open support", count: brief.supportOpen, severity: "NORMAL" },
     {

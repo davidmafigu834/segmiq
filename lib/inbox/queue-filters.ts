@@ -22,6 +22,8 @@ export const INBOX_FILTER_LABELS: Record<InboxFilter, string> = {
   waiting_customer: "Waiting for customer",
   quotes_sent: "Quotes sent",
   human_needed: "Human needed",
+  ai_handling: "AI handling",
+  viewing_requests: "Viewing requests",
 };
 
 export const INBOX_FILTER_ORDER: InboxFilter[] = [
@@ -110,6 +112,16 @@ export function matchesInboxFilter(
       return hasQuoteSent(c);
     case "human_needed":
       return c.agentStatus === "HUMAN_NEEDED";
+    case "ai_handling":
+      return (
+        c.agentStatus === "AI_HANDLING" ||
+        c.agentStatus === "WAITING_ON_CUSTOMER" ||
+        c.agentStatus === "FOLLOW_UP_SCHEDULED"
+      );
+    case "viewing_requests":
+      return (
+        c.agentStatus === "HUMAN_NEEDED" && c.agentHumanNeededReason === "VIEWING_APPROVAL"
+      );
     default:
       return true;
   }

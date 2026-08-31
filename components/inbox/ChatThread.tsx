@@ -38,6 +38,7 @@ import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
 import { SalesConversationAssist } from "./SalesConversationAssist";
 import { AssetDrawer } from "./AssetDrawer";
 import { AgentComposerAssist } from "./AgentComposerAssist";
+import { AgentActionCards } from "./AgentActionCards";
 import { SalespersonComposerToolbar } from "./SalespersonComposerToolbar";
 import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
 import { ManagerComposerToolbar } from "./ManagerComposerToolbar";
@@ -1168,7 +1169,13 @@ export function ChatThread({
             </div>
           ) : null}
           {isWhatsApp && conversation ? (
-            <AgentComposerAssist
+            <>
+              <AgentActionCards
+                leadId={conversation.id}
+                canSend={canSend}
+                onUpdated={onMessagesChange}
+              />
+              <AgentComposerAssist
               leadId={conversation.id}
               canSend={canSend}
               onEditDraft={(text) => {
@@ -1187,6 +1194,7 @@ export function ChatThread({
                   .catch(() => {});
               }}
             />
+            </>
           ) : null}
           {salespersonHub && isWhatsApp && !isSupport ? (
             <SalespersonComposerToolbar

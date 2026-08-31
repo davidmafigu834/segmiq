@@ -27,6 +27,7 @@ import {
 import { defaultConversationModeForNewThread } from "./real-estate/settings";
 import { runAgentTool, type ExecutedToolCall } from "./tools/execute";
 import { ASSIST_SAFE_TOOLS, TOOL_METADATA, buildToolDefinitions, type AgentToolName } from "./tools/registry";
+import { evaluateRealEstateToolPolicy, isReAgentTool, RE_ASSIST_SAFE_TOOLS } from "./real-estate/policy";
 import type { ToolExecutionContext } from "./tools/context";
 import type { AgentCompanySettings, InboundConversationEvent } from "./types";
 import { asRow } from "./rows";
@@ -591,7 +592,13 @@ async function reasonAndAct(
   // Expose only tools the current policy could ever allow, so the model does
   // not plan around unavailable actions.
   const availableTools = (Object.keys(TOOL_METADATA) as AgentToolName[]).filter((name) => {
-    if (settings.autonomyMode === "ASSIST") return ASSIST_SAFE_TOOLS.has(name);
+    if (isReAgentTool(name)) {
+      if (!settings.realEstate) return false;
+      if (!evaluateRealEstateToolPolicy(name, settings.realEstate).allowed) return false;
+    }
+    if (settings.autonomyMode === "ASSIST") {
+      return ASSIST_SAFE_TOOLS.has(name) || (isReAgentTool(name) && RE_ASSIST_SAFE_TOOLS.has(name));
+    }
     return evaluateToolPolicy(TOOL_METADATA[name], settings).allowed;
   });
 

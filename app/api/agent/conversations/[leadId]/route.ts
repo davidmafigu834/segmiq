@@ -15,11 +15,16 @@ import {
 import { AGENT_CONVERSATION_MODE_LABELS } from "@/lib/agent/real-estate/types";
 import {
   applySuggestedAgentActions,
+  applyAgentActionById,
+  approveViewingFromHub,
   escalateConversationFromHub,
   rejectAgentDraft,
   sendAgentDraft,
   suggestedActionsFromRows,
 } from "@/lib/agent/hub-actions";
+import { buildAgentActionCards } from "@/lib/agent/hub-action-cards";
+import { buildHandoffForLead, loadReIntelligenceForLead } from "@/lib/agent/real-estate/intelligence";
+import { isRealEstate } from "@/lib/terminology";
 import { asRow, asRows } from "@/lib/agent/rows";
 
 export const dynamic = "force-dynamic";
@@ -47,12 +52,13 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
   const access = await resolveLeadAccess(req, params.leadId);
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
 
-  const [state, settings] = await Promise.all([
+  const supabase = createAdminClient();
+  const [state, settings, clientRow] = await Promise.all([
     getConversationAgentState(access.clientId, access.leadId),
     getAgentCompanySettings(access.clientId),
+    supabase.from("clients").select("business_type").eq("id", access.clientId).maybeSingle(),
   ]);
-
-  const supabase = createAdminClient();
+  const realEstateClient = isRealEstate(clientRow.data?.business_type);
   const { data: recentExecutions } = await supabase
     .from("agent_executions")
     .select("id, state, intents, confidence, decision_summary, customer_reply, reply_status, created_at")
@@ -106,6 +112,25 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     ? await conversationLearningSummary(access.clientId, access.leadId)
     : { evidence: [], candidates: [] };
 
+  const openEscalationRow = asRow(openEscalation) ?? null;
+  const actionCards = buildAgentActionCards({
+    blockedActions: suggestedActions,
+    openEscalation: openEscalationRow,
+  });
+
+  const [handoffSummary, reIntelligence] = realEstateClient
+    ? await Promise.all([
+        buildHandoffForLead({
+          clientId: access.clientId,
+          leadId: access.leadId,
+          decisionSummary: latest?.decision_summary ?? null,
+          escalationSummary: openEscalationRow?.summary ?? null,
+          escalationBriefing: openEscalationRow?.briefing ?? null,
+        }),
+        loadReIntelligenceForLead({ clientId: access.clientId, leadId: access.leadId }),
+      ])
+    : [null, null];
+
   return NextResponse.json({
     agentEnabledForCompany: settings.enabled,
     suggestReplies: settings.suggestReplies,
@@ -118,7 +143,11 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
       : AGENT_CONVERSATION_MODE_LABELS.AI_HANDLING,
     state,
     recentExecutions: executions,
-    openEscalation: asRow(openEscalation) ?? null,
+    openEscalation: openEscalationRow,
+    actionCards,
+    handoffSummary,
+    reIntelligence,
+    realEstateHub: realEstateClient,
     draftedReply: drafted?.customer_reply
       ? { executionId: drafted.id, text: drafted.customer_reply }
       : null,
@@ -154,9 +183,16 @@ const actionSchema = z.object({
     "send_draft",
     "reject_draft",
     "apply_suggestions",
+    "apply_action",
+    "approve_viewing",
     "escalate",
     "cancel_proactive",
   ]),
+  actionId: z.string().uuid().optional(),
+  escalationId: z.string().uuid().optional(),
+  listing_id: z.string().uuid().optional(),
+  date: z.string().max(32).optional(),
+  time: z.string().max(16).optional(),
   mode: z.enum(["AI_HANDLING", "AI_COPILOT", "HUMAN_ONLY"]).optional(),
   pauseMinutes: z.number().int().min(5).max(7 * 24 * 60).optional(),
   pauseFor: z.enum(["indefinite", "1h", "tomorrow"]).optional(),
@@ -172,7 +208,8 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
   const parsed = actionSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
-  const { action, pauseMinutes, pauseFor, reason, reply } = parsed.data;
+  const { action, pauseMinutes, pauseFor, reason, reply, actionId, escalationId, listing_id, date, time } =
+    parsed.data;
   const now = new Date().toISOString();
 
   switch (action) {
@@ -294,6 +331,36 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
       });
       const state = await getConversationAgentState(access.clientId, access.leadId);
       return NextResponse.json({ state, applied: result.applied, failed: result.failed });
+    }
+    case "apply_action": {
+      if (!actionId) return NextResponse.json({ error: "actionId required" }, { status: 400 });
+      const result = await applyAgentActionById({
+        clientId: access.clientId,
+        leadId: access.leadId,
+        actionId,
+      });
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 409 });
+      const state = await getConversationAgentState(access.clientId, access.leadId);
+      return NextResponse.json({ state, applied: [result.label] });
+    }
+    case "approve_viewing": {
+      if (!date?.trim() || !time?.trim()) {
+        return NextResponse.json({ error: "date and time required" }, { status: 400 });
+      }
+      const result = await approveViewingFromHub({
+        clientId: access.clientId,
+        leadId: access.leadId,
+        escalationId: escalationId ?? null,
+        input: {
+          listing_id: listing_id ?? undefined,
+          date: date.trim(),
+          time: time.trim(),
+          customer_request: reason?.trim() || undefined,
+        },
+      });
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 409 });
+      const state = await getConversationAgentState(access.clientId, access.leadId);
+      return NextResponse.json({ state, applied: ["Schedule viewing"] });
     }
     case "escalate": {
       const supabase = createAdminClient();

@@ -15,6 +15,7 @@ import {
   resolveUserByName,
   searchAppointments,
   searchConversations,
+  searchAgentExecutions,
   searchDeals,
   searchFollowUps,
   searchLeads,
@@ -95,6 +96,8 @@ export const MANAGER_TOOL_DEFINITIONS: AgentToolDefinition[] = [
   { name: "search_follow_ups", description: "Canonical follow-up work on leads.follow_up_date.", inputSchema: { type: "object", properties: { overdue: { type: "boolean" }, ownerName: { type: "string" } } } },
   { name: "search_appointments", description: "Callbacks on call_logs.callback_at.", inputSchema: { type: "object", properties: { preset: { type: "string" } } } },
   { name: "search_conversations", description: "WhatsApp conversations / Agent state.", inputSchema: { type: "object", properties: { waiting: { type: "boolean" }, humanNeeded: { type: "boolean" }, support: { type: "boolean" } } } },
+  { name: "search_agent_executions", description: "SegmiQ Agent execution history for customer WhatsApp conversations. Use preset overnight for what the agent handled since close of business.", inputSchema: { type: "object", properties: { preset: { type: "string", enum: ["overnight", "today", "last_7"] } } } },
+  { name: "get_overnight_agent_summary", description: "Summarise what SegmiQ Agent handled overnight for a real-estate company: completions, replies sent, viewing approvals, handoffs.", inputSchema: { type: "object", properties: {} } },
   { name: "search_support", description: "Open support cases.", inputSchema: { type: "object", properties: {} } },
   { name: "search_proactive", description: "Scheduled/skipped/failed Proactive Agent evaluations — not guaranteed messages.", inputSchema: { type: "object", properties: { failed: { type: "boolean" }, skipped: { type: "boolean" }, preset: { type: "string" } } } },
   { name: "get_pipeline_summary", description: "Counts and quoted value by Deal stage. Backend arithmetic only.", inputSchema: { type: "object", properties: {} } },
@@ -431,8 +434,55 @@ export async function executeManagerTool(opts: {
       waiting: Boolean(input.waiting),
       humanNeeded: Boolean(input.humanNeeded),
       support: Boolean(input.support),
+      viewingApproval: Boolean(input.viewingApproval),
     });
     return { name, ok: true, summary: { count: block.totalMatched }, blocks: [block], phase: "Checking conversations" };
+  }
+
+  if (name === "search_agent_executions") {
+    const preset =
+      input.preset === "today" || input.preset === "last_7" || input.preset === "overnight"
+        ? input.preset
+        : "overnight";
+    const block = await searchAgentExecutions(actor, { preset });
+    return {
+      name,
+      ok: true,
+      summary: { count: block.totalMatched, preset },
+      blocks: [block, { type: "text", text: tableReply(block) }],
+      phase: "Reviewing SegmiQ Agent activity",
+    };
+  }
+
+  if (name === "get_overnight_agent_summary") {
+    const { loadOvernightAgentSummary } = await import("@/lib/agent/real-estate/overnight-summary");
+    const summary = await loadOvernightAgentSummary({ clientId: actor.clientId });
+    const text = [
+      summary.summaryLine,
+      "",
+      ...summary.highlights.map((line) => `• ${line}`),
+      summary.topTools.length
+        ? `\nTop tools: ${summary.topTools.map((t) => `${t.tool} (${t.count})`).join(", ")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+    return {
+      name,
+      ok: true,
+      summary: summary as unknown as Record<string, unknown>,
+      blocks: [
+        { type: "text", text },
+        {
+          type: "suggestions",
+          actions: [
+            { label: "Viewing approvals", prompt: "Show viewing approvals waiting" },
+            { label: "Agent activity", prompt: "What did SegmiQ Agent handle overnight?" },
+          ],
+        },
+      ],
+      phase: "Summarising overnight Agent activity",
+    };
   }
 
   if (name === "search_support") {
@@ -864,7 +914,7 @@ export async function executeConfirmedTool(opts: {
 
 function briefFromSnapshot(snapshot: import("./types").AttentionSnapshot): string {
   const b = snapshot.brief;
-  return [
+  const lines = [
     "TODAY'S SALES BRIEF",
     "",
     `Customers: ${b.customersWaiting} waiting for a response`,
@@ -874,7 +924,16 @@ function briefFromSnapshot(snapshot: import("./types").AttentionSnapshot): strin
     `Appointments: ${b.appointmentsToday} today`,
     `SegmiQ Agent: ${b.humanNeeded} Human Needed · ${b.failedProactive} failed proactive actions`,
     `Support: ${b.supportOpen} unresolved`,
-  ].join("\n");
+  ];
+  if (typeof b.viewingApprovalsPending === "number" && b.viewingApprovalsPending > 0) {
+    lines.push(`Viewings: ${b.viewingApprovalsPending} approval${b.viewingApprovalsPending === 1 ? "" : "s"} waiting`);
+  }
+  if (typeof b.agentExecutionsOvernight === "number") {
+    lines.push(
+      `Agent overnight: ${b.agentExecutionsOvernight} handled · ${b.agentRepliesSent ?? 0} repl${(b.agentRepliesSent ?? 0) === 1 ? "y" : "ies"} sent`
+    );
+  }
+  return lines.join("\n");
 }
 
 export { reassignLeadsAction, createFollowUpsAction, decideQuotationAction };

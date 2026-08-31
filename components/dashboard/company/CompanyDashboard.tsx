@@ -12,6 +12,10 @@ import { CompanyPipelineSnapshotCard } from "./CompanyPipelineSnapshotCard";
 import { CompanyDealsAtRiskCard } from "./CompanyDealsAtRiskCard";
 import { CompanyRevenueTrendCard } from "./CompanyRevenueTrendCard";
 import { CompanyRecentActivityCard } from "./CompanyRecentActivityCard";
+import {
+  ReAgentOvernightBanner,
+  ReAgentTeamVisibilityTable,
+} from "./agent/ReAgentOvernightBanner";
 import type { CompanySalesDashboardData } from "./types";
 import type { UserRole } from "@/types";
 
@@ -50,6 +54,10 @@ export function CompanyDashboard({
         avatarUrl={avatarUrl}
         canAddLead
       />
+
+      {data.businessType === "real_estate" && data.reAgentOvernight ? (
+        <ReAgentOvernightBanner summary={data.reAgentOvernight} />
+      ) : null}
 
       <div className="layout:hidden">
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
@@ -95,6 +103,10 @@ export function CompanyDashboard({
       </div>
 
       <CompanyPipelineSnapshotCard stages={data.pipelineSnapshot} />
+
+      {data.businessType === "real_estate" && data.reAgentTeam?.length ? (
+        <ReAgentTeamVisibilityTable rows={data.reAgentTeam} />
+      ) : null}
 
       <div className="grid w-full grid-cols-1 items-start gap-2.5 lg:grid-cols-2 xl:grid-cols-3 layout:gap-3">
         <CompanyDealsAtRiskCard

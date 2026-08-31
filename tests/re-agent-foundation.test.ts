@@ -111,6 +111,13 @@ describe("serializeRealEstateAgentContext", () => {
         capturedAt: "2026-08-31T10:00:00.000Z",
       },
       buyerRequirements: null,
+      viewingAgent: {
+        agentId: "agent-1",
+        agentName: "Rumbidzai Ncube",
+        routeReason: "listing_agent",
+        routeReasonLabel: "listing agent",
+      },
+      upcomingViewings: [],
     });
     assert.match(text, /12 Burnside Road/);
     assert.match(text, /155000/);
@@ -126,6 +133,8 @@ describe("serializeRealEstateAgentContext", () => {
       originatingListing: null,
       attribution: null,
       buyerRequirements: null,
+      viewingAgent: null,
+      upcomingViewings: [],
     });
     assert.match(text, /No property linked/);
     assert.match(text, /No campaign or ad attribution/);

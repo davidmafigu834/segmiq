@@ -1284,6 +1284,15 @@ export async function getCompanySalesDashboard(opts: {
   const teamCalendarOverdueCount = calendarItems.filter((i) => i.overdue).length;
   const teamCalendar = calendarItems.slice(0, 24);
 
+  let reAgentOvernight = null;
+  let reAgentTeam: Awaited<ReturnType<typeof import("@/lib/agent/real-estate/manager-dashboard").loadReManagerAgentDashboard>>["team"] = [];
+  if (isRealEstate(businessType)) {
+    const { loadReManagerAgentDashboard } = await import("@/lib/agent/real-estate/manager-dashboard");
+    const reDashboard = await loadReManagerAgentDashboard({ clientId });
+    reAgentOvernight = reDashboard.overnight;
+    reAgentTeam = reDashboard.team;
+  }
+
   return {
     clientId,
     clientName,
@@ -1335,5 +1344,7 @@ export async function getCompanySalesDashboard(opts: {
       unassignedLeads: unassigned,
       avgResponseMinutes,
     },
+    reAgentOvernight,
+    reAgentTeam,
   };
 }

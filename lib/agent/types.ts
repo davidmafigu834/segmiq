@@ -39,6 +39,17 @@ export type AgentConversationStatus = (typeof AGENT_CONVERSATION_STATUSES)[numbe
 
 export type { AgentConversationMode, RealEstateAgentSettings } from "./real-estate/types";
 
+export const RE_AGENT_INTENTS = [
+  "BUY_PROPERTY",
+  "RENT_PROPERTY",
+  "SELL_PROPERTY",
+  "VIEWING_REQUEST",
+  "PROPERTY_MATCH_REQUEST",
+  "PRICE_OBJECTION",
+  "PROPERTY_QUESTION",
+] as const;
+export type ReAgentIntent = (typeof RE_AGENT_INTENTS)[number];
+
 export const AGENT_INTENTS = [
   "NEW_SALES_ENQUIRY",
   "PRODUCT_QUESTION",
@@ -56,6 +67,7 @@ export const AGENT_INTENTS = [
   "EXISTING_DEAL_QUESTION",
   "GENERAL_MESSAGE",
   "HUMAN_REQUEST",
+  ...RE_AGENT_INTENTS,
 ] as const;
 export type AgentIntent = (typeof AGENT_INTENTS)[number];
 

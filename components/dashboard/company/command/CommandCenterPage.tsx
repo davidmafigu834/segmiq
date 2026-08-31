@@ -22,9 +22,10 @@ const QUICK_PROMPTS = [
   { label: "What needs attention?", prompt: "What needs my attention today?" },
   { label: "Approval queue", prompt: "Show quotations waiting for approval" },
   { label: "Customers waiting", prompt: "Which customers are waiting for us?" },
+  { label: "Agent overnight", prompt: "What did SegmiQ Agent do overnight?" },
+  { label: "Viewing approvals", prompt: "Show viewing approvals waiting" },
   { label: "Deals at risk", prompt: "Show Deals with no next action" },
   { label: "Today's appointments", prompt: "What appointments do we have today?" },
-  { label: "Agent activity", prompt: "Show conversations waiting for a human" },
 ];
 
 export function CommandCenterPage({

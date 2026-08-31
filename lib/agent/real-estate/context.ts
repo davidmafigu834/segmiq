@@ -5,6 +5,8 @@ import type { ListingTransactionType } from "@/types";
 import { getLeadAttribution } from "@/lib/real-estate/marketing-service";
 import { formatBudgetRange } from "@/lib/real-estate/requirements";
 import { requirementCompleteness } from "@/lib/real-estate/requirements";
+import { evaluateMatchReadiness } from "./readiness";
+import { resolveViewingAgent, VIEWING_ROUTE_REASON_LABELS } from "./routing";
 import { dealSideBadgeLabel } from "@/lib/terminology";
 import type { RealEstateAgentContext, RealEstateListingContext } from "./types";
 
@@ -104,16 +106,18 @@ export async function loadRealEstateAgentContext(opts: {
   }
 
   let buyerRequirements: RealEstateAgentContext["buyerRequirements"] = null;
+  let customerPhone: string | null = null;
   if (opts.contactId) {
     const { data: contact } = await supabase
       .from("contacts")
       .select(
-        "buyer_budget_min, buyer_budget_max, buyer_bedrooms_wanted, buyer_area_preference, buyer_timeline"
+        "buyer_budget_min, buyer_budget_max, buyer_bedrooms_wanted, buyer_area_preference, buyer_timeline, phone"
       )
       .eq("id", opts.contactId)
       .eq("client_id", opts.clientId)
       .maybeSingle();
     if (contact) {
+      customerPhone = (contact.phone as string | null) ?? null;
       const fields = {
         buyer_budget_min: contact.buyer_budget_min as number | null,
         buyer_budget_max: contact.buyer_budget_max as number | null,
@@ -138,6 +142,51 @@ export async function loadRealEstateAgentContext(opts: {
     }
   }
 
+  const viewingRoute = await resolveViewingAgent({
+    clientId: opts.clientId,
+    leadId: opts.leadId,
+    contactId: opts.contactId,
+    listingId: linkedListingId ?? originatingListing?.id ?? null,
+    phone: customerPhone,
+  });
+
+  let upcomingViewings: RealEstateAgentContext["upcomingViewings"] = [];
+  if (opts.contactId) {
+    const nowIso = new Date().toISOString();
+    const { data: clientListings } = await supabase
+      .from("listings")
+      .select("id, address, suburb, external_reference")
+      .eq("client_id", opts.clientId);
+    const listingIds = (clientListings ?? []).map((row) => row.id as string);
+    if (listingIds.length) {
+      const { data: viewings } = await supabase
+        .from("viewings")
+        .select("id, listing_id, scheduled_at, status")
+        .eq("contact_id", opts.contactId)
+        .in("listing_id", listingIds)
+        .eq("status", "scheduled")
+        .gte("scheduled_at", nowIso)
+        .order("scheduled_at", { ascending: true })
+        .limit(5);
+      const listingById = new Map(
+        (clientListings ?? []).map((row) => [
+          row.id as string,
+          listingLabel({
+            address: row.address as string | null,
+            suburb: row.suburb as string | null,
+            external_reference: row.external_reference as string | null,
+          }),
+        ])
+      );
+      upcomingViewings = (viewings ?? []).map((row) => ({
+        id: row.id as string,
+        listingLabel: listingById.get(row.listing_id as string) ?? "Listing",
+        scheduledAt: row.scheduled_at as string,
+        status: row.status as string,
+      }));
+    }
+  }
+
   return {
     dealSide,
     dealSideLabel: dealSideBadgeLabel(dealSide),
@@ -155,6 +204,13 @@ export async function loadRealEstateAgentContext(opts: {
         }
       : null,
     buyerRequirements,
+    viewingAgent: {
+      agentId: viewingRoute.agentId,
+      agentName: viewingRoute.agentName,
+      routeReason: viewingRoute.reason,
+      routeReasonLabel: VIEWING_ROUTE_REASON_LABELS[viewingRoute.reason] ?? viewingRoute.reason,
+    },
+    upcomingViewings,
   };
 }
 
@@ -222,10 +278,42 @@ export function serializeRealEstateAgentContext(ctx: RealEstateAgentContext): st
         r.areaPreference ? `Preferred areas: ${r.areaPreference}` : "Preferred areas: not captured",
         r.timeline ? `Timeline: ${r.timeline}` : "Timeline: not captured",
         `Matching readiness: ${r.completeness.statusLabel} (${r.completeness.summary})`,
+        `Agent guidance: ${evaluateMatchReadiness(ctx.dealSide, {
+          buyer_budget_min: r.budgetMin,
+          buyer_budget_max: r.budgetMax,
+          buyer_bedrooms_wanted: r.bedroomsWanted,
+          buyer_area_preference: r.areaPreference,
+          buyer_timeline: r.timeline,
+        }).guidance}`,
       ]
         .filter(Boolean)
         .join("\n")
     );
+  }
+
+  if (ctx.viewingAgent) {
+    lines.push(
+      [
+        "-- Routed viewing agent (deterministic; use for viewing coordination) --",
+        ctx.viewingAgent.agentName
+          ? `Agent: ${ctx.viewingAgent.agentName}`
+          : "Agent: not assigned yet",
+        `Route reason: ${ctx.viewingAgent.routeReasonLabel}`,
+      ].join("\n")
+    );
+  }
+
+  if (ctx.upcomingViewings.length) {
+    lines.push(
+      [
+        "-- Upcoming viewings for this customer --",
+        ...ctx.upcomingViewings.map(
+          (v) => `${v.listingLabel}: ${v.scheduledAt} (${v.status})`
+        ),
+      ].join("\n")
+    );
+  } else {
+    lines.push("-- Upcoming viewings --\nNo upcoming viewings scheduled for this customer.");
   }
 
   lines.push(

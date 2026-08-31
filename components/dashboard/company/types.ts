@@ -4,6 +4,8 @@ import type {
   SalesKpiItem,
   SalesPipelineSnapshotStage,
 } from "@/components/dashboard/sales/types";
+import type { ReOvernightAgentSummary } from "@/lib/agent/real-estate/overnight-summary";
+import type { ReAgentTeamVisibilityRow } from "@/lib/agent/real-estate/manager-dashboard";
 import type { BusinessType } from "@/lib/terminology";
 
 export type CompanyFocusSeverity = "critical" | "high" | "medium" | "info";
@@ -141,4 +143,6 @@ export type CompanySalesDashboardData = {
     unassignedLeads: number;
     avgResponseMinutes: number | null;
   };
+  reAgentOvernight?: ReOvernightAgentSummary | null;
+  reAgentTeam?: ReAgentTeamVisibilityRow[];
 };

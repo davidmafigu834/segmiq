@@ -147,6 +147,48 @@ export const TOOL_INPUT_SCHEMAS = {
   agent_notify_owner: z.object({
     message: z.string().min(5).max(300),
   }),
+  "listing.search": z.object({
+    query: z.string().max(200).optional(),
+    suburb: z.string().max(100).optional(),
+    transaction_type: z.enum(["sale", "rental"]).optional(),
+    limit: z.number().int().min(1).max(12).optional(),
+  }),
+  "listing.get": z.object({
+    listing_id: z.string().uuid(),
+  }),
+  "property.match": z.object({
+    limit: z.number().int().min(1).max(3).optional(),
+    exclude_listing_ids: z.array(z.string().uuid()).max(10).optional(),
+  }),
+  "buyer_requirements.update": z.object({
+    budget_min: z.number().positive().max(100_000_000).optional(),
+    budget_max: z.number().positive().max(100_000_000).optional(),
+    bedrooms_wanted: z.number().int().min(1).max(20).optional(),
+    area_preference: z.string().max(200).optional(),
+    timeline: z.string().max(120).optional(),
+    confidence: z.number().min(0).max(1),
+    evidence: z.string().max(200).optional(),
+  }),
+  "listing.send_match": z.object({
+    listing_id: z.string().uuid(),
+    note: z.string().max(300).optional(),
+  }),
+  "viewing.get_availability": z.object({
+    listing_id: z.string().uuid().optional(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD"),
+  }),
+  "viewing.request_approval": z.object({
+    listing_id: z.string().uuid().optional(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD"),
+    time: z.string().regex(/^\d{2}:\d{2}$/, "HH:mm (24h, company timezone)"),
+    customer_request: z.string().max(400).optional(),
+  }),
+  "viewing.schedule": z.object({
+    listing_id: z.string().uuid().optional(),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD"),
+    time: z.string().regex(/^\d{2}:\d{2}$/, "HH:mm (24h, company timezone)"),
+    customer_request: z.string().max(400).optional(),
+  }),
 } as const;
 
 export type AgentToolName = keyof typeof TOOL_INPUT_SCHEMAS;
@@ -314,6 +356,62 @@ export const TOOL_METADATA: Record<AgentToolName, AgentToolMetadata> = {
     reversible: true,
     readOnly: false,
   },
+  "listing.search": {
+    name: "listing.search",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "listing.get": {
+    name: "listing.get",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "property.match": {
+    name: "property.match",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "buyer_requirements.update": {
+    name: "buyer_requirements.update",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: false,
+  },
+  "listing.send_match": {
+    name: "listing.send_match",
+    riskLevel: "MEDIUM",
+    customerVisible: true,
+    reversible: false,
+    readOnly: false,
+  },
+  "viewing.get_availability": {
+    name: "viewing.get_availability",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: true,
+  },
+  "viewing.request_approval": {
+    name: "viewing.request_approval",
+    riskLevel: "LOW",
+    customerVisible: false,
+    reversible: true,
+    readOnly: false,
+  },
+  "viewing.schedule": {
+    name: "viewing.schedule",
+    riskLevel: "MEDIUM",
+    customerVisible: true,
+    reversible: false,
+    readOnly: false,
+  },
 };
 
 /**
@@ -343,6 +441,14 @@ export const TOOL_DISPLAY_NAMES: Record<AgentToolName, string> = {
   conversation_add_internal_note: "Add internal note",
   agent_escalate: "Escalate to human",
   agent_notify_owner: "Notify owner",
+  "listing.search": "Search listings",
+  "listing.get": "Get listing",
+  "property.match": "Match properties",
+  "buyer_requirements.update": "Update buyer requirements",
+  "listing.send_match": "Send property alert",
+  "viewing.get_availability": "Check viewing slots",
+  "viewing.request_approval": "Request viewing approval",
+  "viewing.schedule": "Schedule viewing",
 };
 
 export const ASSIST_SAFE_TOOLS: ReadonlySet<AgentToolName> = new Set([
@@ -407,6 +513,22 @@ const TOOL_DESCRIPTIONS: Record<AgentToolName, string> = {
     "Stop autonomous handling and bring a human in. Marks the conversation HUMAN NEEDED and notifies the owner. REQUIRED in the same turn whenever your reply says you will ask, check, or confirm with the team. Also use when the customer asks for a person, disputes pricing, complains, or you are not confident how to proceed.",
   agent_notify_owner:
     "Send a short internal notification to the conversation owner without stopping the conversation.",
+  "listing.search":
+    "Search this agency's available property listings by suburb, transaction type or keywords. Returns canonical listing facts only. Use before discussing specific properties.",
+  "listing.get":
+    "Get one property listing by id with address, price, bedrooms, status and description excerpt. Never invent facts beyond this result.",
+  "property.match":
+    "Find up to 3 available listings that match the contact's captured buyer requirements (budget, bedrooms, area). Only call when matching readiness is READY TO MATCH. Returns ranked matches with reasons — describe at most 3 in WhatsApp.",
+  "buyer_requirements.update":
+    "Save buyer or tenant requirements the customer explicitly stated: budget range, bedrooms wanted, preferred area/suburb, timeline. Confidence must be ≥ 0.6; include their words as evidence. Use after price objections to capture a revised budget before property.match.",
+  "listing.send_match":
+    "Send the Meta PROPERTY_MATCH_ALERT WhatsApp template for one listing to this customer. Also records the listing as interested. Use only for a strong match they asked to receive — your reply should still summarize the property.",
+  "viewing.get_availability":
+    "Check real free slots for the routed viewing agent on a date. Considers existing callbacks and scheduled viewings. Only call when slot offering is enabled. Never invent times — offer only available_times returned.",
+  "viewing.request_approval":
+    "Ask the routed listing/viewing agent to approve a requested viewing time. Use when company policy requires agent approval before confirmation. Notify the agent internally — do not tell the customer the viewing is confirmed.",
+  "viewing.schedule":
+    "Book a property viewing and send the customer a WhatsApp confirmation. Requires a confirmed date and time in company timezone. Check availability first when slot offering is enabled. Blocked when viewing approval is required until a human approves.",
 };
 
 function zodShapeToJsonSchema(name: AgentToolName): Record<string, unknown> {
@@ -621,6 +743,76 @@ function zodShapeToJsonSchema(name: AgentToolName): Record<string, unknown> {
       type: "object",
       properties: { message: { type: "string" } },
       required: ["message"],
+    },
+    "listing.search": {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        suburb: { type: "string" },
+        transaction_type: { type: "string", enum: ["sale", "rental"] },
+        limit: { type: "integer", minimum: 1, maximum: 12 },
+      },
+    },
+    "listing.get": {
+      type: "object",
+      properties: { listing_id: { type: "string" } },
+      required: ["listing_id"],
+    },
+    "property.match": {
+      type: "object",
+      properties: {
+        limit: { type: "integer", minimum: 1, maximum: 3 },
+        exclude_listing_ids: { type: "array", items: { type: "string" } },
+      },
+    },
+    "buyer_requirements.update": {
+      type: "object",
+      properties: {
+        budget_min: { type: "number" },
+        budget_max: { type: "number" },
+        bedrooms_wanted: { type: "integer", minimum: 1, maximum: 20 },
+        area_preference: { type: "string" },
+        timeline: { type: "string" },
+        confidence: { type: "number", minimum: 0, maximum: 1 },
+        evidence: { type: "string" },
+      },
+      required: ["confidence"],
+    },
+    "listing.send_match": {
+      type: "object",
+      properties: {
+        listing_id: { type: "string" },
+        note: { type: "string" },
+      },
+      required: ["listing_id"],
+    },
+    "viewing.get_availability": {
+      type: "object",
+      properties: {
+        listing_id: { type: "string" },
+        date: { type: "string", description: "YYYY-MM-DD in company timezone" },
+      },
+      required: ["date"],
+    },
+    "viewing.request_approval": {
+      type: "object",
+      properties: {
+        listing_id: { type: "string" },
+        date: { type: "string", description: "YYYY-MM-DD in company timezone" },
+        time: { type: "string", description: "HH:mm 24h in company timezone" },
+        customer_request: { type: "string" },
+      },
+      required: ["date", "time"],
+    },
+    "viewing.schedule": {
+      type: "object",
+      properties: {
+        listing_id: { type: "string" },
+        date: { type: "string", description: "YYYY-MM-DD in company timezone" },
+        time: { type: "string", description: "HH:mm 24h in company timezone" },
+        customer_request: { type: "string" },
+      },
+      required: ["date", "time"],
     },
   };
   return schemas[name];

@@ -11,6 +11,7 @@ import { REASON_CODE_LABELS } from "@/lib/agent/proactive/types";
 import { reportTrend } from "@/lib/sales/company-reports/metrics";
 import type { DealRow } from "@/types";
 import { resolveDatePreset, type ResolvedRange } from "./dates";
+import { resolveOvernightWindow } from "@/lib/agent/real-estate/overnight-summary";
 import { conversationHref, managerHref } from "./hrefs";
 import { MAX_QUERY_ROWS, type ManagerActor, type ResultRow, type TableBlock } from "./types";
 
@@ -462,7 +463,7 @@ export async function searchAppointments(actor: ManagerActor, range?: ResolvedRa
 
 export async function searchConversations(
   actor: ManagerActor,
-  filters: { waiting?: boolean; humanNeeded?: boolean; support?: boolean }
+  filters: { waiting?: boolean; humanNeeded?: boolean; support?: boolean; viewingApproval?: boolean }
 ): Promise<TableBlock> {
   const supabase = createAdminClient();
   const { data } = await supabase
@@ -480,6 +481,11 @@ export async function searchConversations(
   }>(data);
   let picked = states;
   if (filters.humanNeeded) picked = picked.filter((s) => s.status === "HUMAN_NEEDED");
+  if (filters.viewingApproval) {
+    picked = picked.filter(
+      (s) => s.status === "HUMAN_NEEDED" && s.human_needed_reason === "VIEWING_APPROVAL"
+    );
+  }
   if (filters.waiting) {
     picked = picked.filter((s) => {
       const c = Date.parse(s.last_customer_message_at ?? "") || 0;
@@ -628,6 +634,97 @@ export async function searchProactive(actor: ManagerActor, opts?: { failed?: boo
     truncated: false,
     totalMatched: rows.length,
     filtersLabel: null,
+  };
+}
+
+export async function searchAgentExecutions(
+  actor: ManagerActor,
+  opts?: { preset?: "overnight" | "today" | "last_7"; completedOnly?: boolean }
+): Promise<TableBlock> {
+  const supabase = createAdminClient();
+  const at = now();
+  let range: ResolvedRange;
+  let label: string;
+  if (opts?.preset === "overnight") {
+    const window = resolveOvernightWindow(at);
+    range = { from: window.since, to: window.until, label: window.label };
+    label = window.label;
+  } else if (opts?.preset === "last_7") {
+    range = resolveDatePreset("last_30", at);
+    range.from = new Date(at.getTime() - 7 * 24 * 60 * 60 * 1000);
+    label = "Last 7 days";
+  } else {
+    range = resolveDatePreset("today", at);
+    label = "Today";
+  }
+
+  let query = supabase
+    .from("agent_executions")
+    .select(
+      "id, lead_id, state, intents, decision_summary, reply_status, created_at, trigger_kind"
+    )
+    .eq("client_id", actor.clientId)
+    .eq("trigger_kind", "INBOUND")
+    .gte("created_at", range.from.toISOString())
+    .lte("created_at", range.to.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(MAX_QUERY_ROWS);
+  if (opts?.completedOnly !== false) {
+    query = query.in("state", ["COMPLETED", "WAITING_FOR_HUMAN", "FAILED"]);
+  }
+  const { data } = await query;
+  type ExecutionRow = {
+    id: string;
+    lead_id: string;
+    state: string;
+    intents: string[] | null;
+    decision_summary: string | null;
+    reply_status: string | null;
+    created_at: string;
+    trigger_kind: string | null;
+  };
+  const executions = asRows<ExecutionRow>(data);
+  const leadIds = Array.from(new Set(executions.map((e) => e.lead_id).filter(Boolean)));
+  const { data: leadsData } = leadIds.length
+    ? await supabase.from("leads").select("id, name, assigned_to_id").in("id", leadIds)
+    : { data: [] };
+  const names = await userNames(actor.clientId);
+  const leadMap = new Map(
+    asRows<{ id: string; name: string | null; assigned_to_id: string | null }>(leadsData).map((l) => [
+      l.id,
+      l,
+    ])
+  );
+  const rows: ResultRow[] = executions.map((e) => {
+    const lead = leadMap.get(e.lead_id);
+    const intent = e.intents?.[0]?.replace(/_/g, " ").toLowerCase() ?? "general";
+    return {
+      id: e.id,
+      entityType: "AGENT_ACTIVITY" as const,
+      title: lead?.name || "Customer conversation",
+      subtitle: e.decision_summary || intent,
+      status: e.state.replace(/_/g, " "),
+      valueLabel: e.reply_status,
+      ownerName: lead?.assigned_to_id ? names.get(lead.assigned_to_id) ?? null : null,
+      ownerId: lead?.assigned_to_id ?? null,
+      href: conversationHref(e.lead_id),
+      meta: { createdAt: e.created_at, intent },
+    };
+  });
+  return {
+    type: "table",
+    entityType: "AGENT_ACTIVITY",
+    title: `SegmiQ Agent activity · ${label}`,
+    columns: [
+      { key: "title", label: "Customer" },
+      { key: "status", label: "State" },
+      { key: "subtitle", label: "Summary" },
+      { key: "ownerName", label: "Owner" },
+    ],
+    rows,
+    truncated: executions.length >= MAX_QUERY_ROWS,
+    totalMatched: rows.length,
+    filtersLabel: label,
   };
 }
 

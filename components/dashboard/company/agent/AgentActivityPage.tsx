@@ -19,6 +19,12 @@ import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDa
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button, Tabs, ToastProvider, useSalesToast } from "@/components/sales/ui";
 import { AgentSectionNav } from "@/components/dashboard/company/agent/AgentSectionNav";
+import {
+  ReAgentOvernightBanner,
+  ReAgentTeamVisibilityTable,
+} from "@/components/dashboard/company/agent/ReAgentOvernightBanner";
+import type { ReOvernightAgentSummary } from "@/lib/agent/real-estate/overnight-summary";
+import type { ReAgentTeamVisibilityRow } from "@/lib/agent/real-estate/manager-dashboard";
 import { cn } from "@/lib/ui/cn";
 import type { UserRole } from "@/types";
 
@@ -166,13 +172,18 @@ function AgentActivityInner({
   const [selected, setSelected] = useState<ExecutionRow | null>(null);
   const [detail, setDetail] = useState<{ actions: ActionRow[]; execution: Record<string, unknown> } | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [reOvernight, setReOvernight] = useState<ReOvernightAgentSummary | null>(null);
+  const [reTeam, setReTeam] = useState<ReAgentTeamVisibilityRow[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [res, jobsRes] = await Promise.all([
+      const [res, jobsRes, reRes] = await Promise.all([
         fetch(`/api/agent/activity?tab=${tab}&clientId=${encodeURIComponent(clientId)}`, { cache: "no-store" }),
         fetch(`/api/agent/proactive/jobs?view=upcoming&clientId=${encodeURIComponent(clientId)}`, {
+          cache: "no-store",
+        }),
+        fetch(`/api/agent/real-estate/manager-dashboard?clientId=${encodeURIComponent(clientId)}`, {
           cache: "no-store",
         }),
       ]);
@@ -193,6 +204,14 @@ function AgentActivityInner({
             leadId: j.leadId,
           }))
         );
+      }
+      if (reRes.ok) {
+        const reData = await reRes.json();
+        setReOvernight(reData.overnight ?? null);
+        setReTeam(reData.team ?? []);
+      } else {
+        setReOvernight(null);
+        setReTeam([]);
       }
     } finally {
       setLoading(false);
@@ -279,6 +298,9 @@ function AgentActivityInner({
             </Button>
           }
         />
+
+        {reOvernight ? <ReAgentOvernightBanner summary={reOvernight} /> : null}
+        {reTeam.length ? <ReAgentTeamVisibilityTable rows={reTeam} /> : null}
 
         <AgentSectionNav />
 

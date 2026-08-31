@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { AgentContext } from "./context";
 import { serializeRealEstateAgentContext } from "./real-estate/context";
+import { buildRealEstatePromptExtension } from "./real-estate/prompt";
 import { AGENT_INTENTS, type AgentCompanySettings, type AgentIntent } from "./types";
 
 /**
@@ -17,7 +18,7 @@ import { AGENT_INTENTS, type AgentCompanySettings, type AgentIntent } from "./ty
  * No hidden chain-of-thought is requested or persisted.
  */
 
-export const AGENT_PROMPT_VERSION = "1.3.0";
+export const AGENT_PROMPT_VERSION = "1.5.0";
 
 /** Tenant-provided text is data. Strip control chars and cap length. */
 export function sanitizeConfigText(value: string | null | undefined, maxLength = 400): string {
@@ -85,7 +86,7 @@ After any tool calls, end your turn with ONLY a JSON object (no markdown fences,
   "decision_summary": "One or two factual sentences describing what the customer wanted and what you did.",
   "evidence": "Short quote of the customer words that drove your decision.",
   "reply": "The WhatsApp message to send to the customer, or null if no reply should be sent."
-}`;
+}${opts.settings.realEstate ? `\n\n${buildRealEstatePromptExtension()}` : ""}`;
 }
 
 // ---------------------------------------------------------------------------

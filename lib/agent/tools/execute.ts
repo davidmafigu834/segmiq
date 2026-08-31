@@ -6,7 +6,20 @@ import { parseLeadFields } from "@/lib/lead-helpers";
 import { createAgentEscalation } from "../escalation";
 import { saveCustomerMemoryUpdates } from "../memory";
 import { notifyAgentAlert } from "../notifications";
+import { evaluateRealEstateToolPolicy, isReAgentTool } from "../real-estate/policy";
 import { evaluateToolPolicy } from "../policy";
+import {
+  executeBuyerRequirementsUpdate,
+  executeListingGet,
+  executeListingSearch,
+  executeListingSendMatch,
+  executePropertyMatch,
+} from "../real-estate/tools";
+import {
+  executeViewingGetAvailability,
+  executeViewingRequestApproval,
+  executeViewingSchedule,
+} from "../real-estate/viewing-tools";
 import type { AgentEscalationReason } from "../types";
 import {
   executeGetAvailability,
@@ -582,6 +595,14 @@ const EXECUTORS: Record<AgentToolName, Executor> = {
   conversation_add_internal_note: executeAddInternalNote as Executor,
   agent_escalate: executeEscalate as Executor,
   agent_notify_owner: executeNotifyOwner as Executor,
+  "listing.search": executeListingSearch as Executor,
+  "listing.get": executeListingGet as Executor,
+  "property.match": executePropertyMatch as Executor,
+  "buyer_requirements.update": executeBuyerRequirementsUpdate as Executor,
+  "listing.send_match": executeListingSendMatch as Executor,
+  "viewing.get_availability": executeViewingGetAvailability as Executor,
+  "viewing.request_approval": executeViewingRequestApproval as Executor,
+  "viewing.schedule": executeViewingSchedule as Executor,
 };
 
 export type ExecutedToolCall = {
@@ -613,6 +634,21 @@ export async function runAgentTool(
 
   const metadata = TOOL_METADATA[toolName];
 
+  if (isReAgentTool(toolName)) {
+    const reDecision = evaluateRealEstateToolPolicy(toolName, ctx.settings.realEstate);
+    if (!reDecision.allowed) {
+      return {
+        toolName,
+        status: "BLOCKED",
+        riskLevel: metadata.riskLevel,
+        blockedReason: reDecision.reason,
+        result: toolFailure(
+          `Blocked by Real Estate Agent policy: ${reDecision.reason} Explain to the customer that a human agent will help, or escalate.`
+        ),
+      };
+    }
+  }
+
   if (ctx.operationalRuleKeys?.includes("NEVER_SEND_QUOTE") && toolName === "quotation_send") {
     return {
       toolName,
@@ -636,6 +672,22 @@ export async function runAgentTool(
       status: "INVALID",
       riskLevel: metadata.riskLevel,
       result: toolFailure(validation.error),
+    };
+  }
+
+  if (
+    toolName === "viewing.schedule" &&
+    ctx.settings.realEstate?.requireViewingApproval &&
+    !opts?.humanApproved
+  ) {
+    return {
+      toolName,
+      status: "BLOCKED",
+      riskLevel: metadata.riskLevel,
+      blockedReason: "Viewing confirmation requires listing agent approval.",
+      result: toolFailure(
+        "Blocked: viewing confirmation requires listing agent approval. Use viewing.request_approval and tell the customer you are checking with the agent. A human can approve the schedule action in the Hub."
+      ),
     };
   }
 

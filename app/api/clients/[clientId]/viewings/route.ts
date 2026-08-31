@@ -4,10 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { appendInterestedListingIds } from "@/lib/real-estate/helpers";
+import { createScheduledViewing } from "@/lib/real-estate/viewing-service";
 import { logReActivity } from "@/lib/lead-events";
 import {
-  notifyViewingConfirmation,
   notifyViewingFeedbackRequest,
 } from "@/lib/real-estate/notifications";
 import { background } from "@/lib/background";
@@ -114,56 +113,25 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
 
   const agentId = body.agent_id ?? session.userId;
 
-  const { data: viewing, error } = await supabase
-    .from("viewings")
-    .insert({
-      contact_id: body.contact_id,
-      listing_id: body.listing_id,
-      agent_id: agentId,
-      scheduled_at: body.scheduled_at,
-      status: "scheduled",
-    })
-    .select("*")
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Append listing to interested list
-  const nextIds = appendInterestedListingIds(contact.interested_listing_ids, body.listing_id);
-  await supabase
-    .from("contacts")
-    .update({ interested_listing_ids: nextIds, updated_at: new Date().toISOString() })
-    .eq("id", contact.id);
-
-  background("viewing-confirmation", async () => {
-    const { data: agent } = await supabase
-      .from("users")
-      .select("name")
-      .eq("id", agentId)
-      .maybeSingle();
-    await notifyViewingConfirmation({
-      clientId: params.clientId,
-      to: contact.phone,
-      contactName: contact.name,
-      listing,
-      scheduledAt: body.scheduled_at,
-      agentName: (agent?.name as string) ?? null,
-    });
-  });
-
-  await logViewingActivity({
+  const created = await createScheduledViewing({
     clientId: params.clientId,
-    contactId: contact.id as string,
+    contactId: body.contact_id,
+    listingId: body.listing_id,
+    agentId,
+    scheduledAt: body.scheduled_at,
     actor: {
       id: session.userId,
       name: session.user?.name ?? "Agent",
       role: session.role,
     },
-    summary: "Viewing scheduled",
-    kind: "viewing_scheduled",
+    notifyCustomer: true,
   });
 
-  return NextResponse.json({ viewing }, { status: 201 });
+  if (!created.ok) {
+    return NextResponse.json({ error: created.error }, { status: 500 });
+  }
+
+  return NextResponse.json({ viewing: created.viewing }, { status: 201 });
 }
 
 async function logViewingActivity(opts: {

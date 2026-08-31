@@ -43,6 +43,7 @@ type Props = {
   hubTitle?: string;
   showHubBranding?: boolean;
   agentActive?: boolean;
+  realEstateHub?: boolean;
 };
 
 export function ConversationList({
@@ -71,6 +72,7 @@ export function ConversationList({
   hubTitle = "WhatsApp Sales Hub",
   showHubBranding = false,
   agentActive = false,
+  realEstateHub = false,
 }: Props) {
   const [sort, setSort] = useState<ConversationSort>("newest");
   const [sortOpen, setSortOpen] = useState(false);
@@ -107,6 +109,7 @@ export function ConversationList({
     ...(showMine ? (["mine"] as InboxFilter[]) : []),
     "awaiting_reply",
     "human_needed",
+    ...(realEstateHub ? (["viewing_requests", "ai_handling"] as InboxFilter[]) : []),
     "follow_up_due",
   ];
   const salespersonAdvancedFilters: InboxFilter[] = [

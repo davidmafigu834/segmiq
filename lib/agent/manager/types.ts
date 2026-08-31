@@ -80,6 +80,10 @@ export type AttentionSnapshot = {
     humanNeeded: number;
     failedProactive: number;
     supportOpen: number;
+    /** Real-estate manager visibility (Phase 5). */
+    viewingApprovalsPending?: number;
+    agentExecutionsOvernight?: number;
+    agentRepliesSent?: number;
   };
   sources: Record<string, number>;
 };

@@ -26,7 +26,9 @@ export type InboxFilter =
   | "awaiting_reply"
   | "waiting_customer"
   | "quotes_sent"
-  | "human_needed";
+  | "human_needed"
+  | "ai_handling"
+  | "viewing_requests";
 
 export type InboxAssignee = {
   id: string;

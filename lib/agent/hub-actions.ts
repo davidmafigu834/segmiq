@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendCanonicalWhatsAppText } from "@/lib/whatsapp/message-service";
 import { createAgentEscalation } from "./escalation";
+import { updateConversationAgentState } from "./conversation-state";
 import { getAgentCompanySettings } from "./settings";
 import { runAgentTool } from "./tools/execute";
 import { TOOL_DISPLAY_NAMES, TOOL_METADATA, type AgentToolName, isRegisteredTool } from "./tools/registry";
@@ -16,6 +17,7 @@ const SUGGESTABLE_TOOLS = new Set<AgentToolName>([
   "quotation_send",
   "conversation_transfer_support",
   "lead_update_qualification",
+  "viewing.schedule",
 ]);
 
 export type SuggestedAgentAction = {
@@ -207,6 +209,98 @@ export async function applySuggestedAgentActions(opts: {
     else failed.push(label);
   }
   return { applied, failed };
+}
+
+export async function applyAgentActionById(opts: {
+  clientId: string;
+  leadId: string;
+  actionId: string;
+}): Promise<{ ok: true; label: string } | { ok: false; error: string }> {
+  const supabase = createAdminClient();
+  const { data: actionRow } = await supabase
+    .from("agent_execution_actions")
+    .select("id, tool_name, input_summary, execution_id, status")
+    .eq("id", opts.actionId)
+    .maybeSingle();
+  const action = asRow<{
+    id: string;
+    tool_name: string;
+    input_summary: Record<string, unknown> | null;
+    execution_id: string;
+    status: string;
+  }>(actionRow);
+  if (!action || action.status !== "BLOCKED") {
+    return { ok: false, error: "Pending action not found" };
+  }
+  if (!isRegisteredTool(action.tool_name) || !SUGGESTABLE_TOOLS.has(action.tool_name)) {
+    return { ok: false, error: "This action cannot be approved" };
+  }
+
+  const ctx = await buildToolContext(opts);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const executed = await runAgentTool(ctx, action.tool_name, action.input_summary ?? {}, {
+    humanApproved: true,
+  });
+  await supabase.from("agent_execution_actions").insert({
+    execution_id: action.execution_id,
+    client_id: opts.clientId,
+    tool_name: executed.toolName,
+    risk_level: executed.riskLevel,
+    status: executed.status,
+    input_summary: action.input_summary,
+    result_summary: executed.result.summary,
+    blocked_reason: executed.blockedReason ?? null,
+    error: executed.result.error ?? null,
+    created_record_type: executed.result.createdRecordType ?? null,
+    created_record_id: executed.result.createdRecordId ?? null,
+  });
+
+  const label = TOOL_DISPLAY_NAMES[action.tool_name as AgentToolName] ?? action.tool_name;
+  if (executed.status !== "EXECUTED") {
+    return { ok: false, error: executed.result.error ?? `Could not apply ${label}` };
+  }
+  return { ok: true, label };
+}
+
+export async function approveViewingFromHub(opts: {
+  clientId: string;
+  leadId: string;
+  input: {
+    listing_id?: string;
+    date: string;
+    time: string;
+    customer_request?: string;
+  };
+  escalationId?: string | null;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const ctx = await buildToolContext(opts);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+
+  const executed = await runAgentTool(ctx, "viewing.schedule", opts.input, { humanApproved: true });
+  if (executed.status !== "EXECUTED") {
+    return { ok: false, error: executed.result.error ?? "Could not schedule viewing" };
+  }
+
+  if (opts.escalationId) {
+    const supabase = createAdminClient();
+    await supabase
+      .from("agent_escalations")
+      .update({
+        status: "RESOLVED",
+        resolved_at: new Date().toISOString(),
+      })
+      .eq("id", opts.escalationId)
+      .eq("lead_id", opts.leadId);
+  }
+
+  await updateConversationAgentState(opts.clientId, opts.leadId, {
+    status: "AI_HANDLING",
+    humanNeededReason: null,
+    humanTakeover: false,
+  });
+
+  return { ok: true };
 }
 
 export async function escalateConversationFromHub(opts: {
