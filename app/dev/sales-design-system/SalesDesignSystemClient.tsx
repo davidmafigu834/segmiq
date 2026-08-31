@@ -1202,6 +1202,7 @@ function MenusShowcaseSection() {
 function NavigationShowcaseSection() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [docTab, setDocTab] = useState("overview");
+  const [topBarSearch, setTopBarSearch] = useState("");
   const sidebarWidth = sidebarCollapsed ? SALES_LAYOUT.sidebarCollapsed : SALES_LAYOUT.sidebarExpanded;
 
   const sidebarItems = [
@@ -1308,7 +1309,12 @@ function NavigationShowcaseSection() {
             <div className="overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface">
               <div className="flex h-14 items-center gap-2 border-b border-sales-border-subtle px-3">
                 <div className="hidden min-w-0 flex-1 items-center gap-2 sm:flex">
-                  <SearchInput placeholder="Search leads, deals, customers…" className="max-w-[280px]" />
+                  <SearchInput
+                    value={topBarSearch}
+                    onChange={setTopBarSearch}
+                    placeholder="Search leads, deals, customers…"
+                    className="max-w-[280px]"
+                  />
                 </div>
                 <div className="ml-auto flex items-center gap-1.5">
                   <IconButton aria-label="Notifications" icon={<Bell size={16} strokeWidth={1.8} />} />
