@@ -19,7 +19,6 @@ import {
   sortLeadSourceRows,
   type LeadSourceCompanySort,
   type LeadSourceCompanyTab,
-  type LeadSourceDatePreset,
   type LeadSourceRow,
 } from "@/lib/real-estate/lead-sources";
 import type { UserRole } from "@/types";

@@ -1,7 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listingLabel } from "@/lib/real-estate/helpers";
 import {
-  isClosedListingStatus,
   isManagedListing,
   LISTING_TYPE_LABEL,
 } from "@/lib/real-estate/listings";
