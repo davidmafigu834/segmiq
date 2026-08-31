@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type HTMLAttributes } from "react";
+import { type HTMLAttributes } from "react";
 import {
   Calendar,
   Check,
@@ -16,6 +16,10 @@ import {
   Avatar,
   Badge,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   IconButton,
   Progress,
   Skeleton,
@@ -92,99 +96,30 @@ function MoreMenu({
   onCreateDeal: () => void;
   onOpenDeal: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
-
   return (
-    <div className="relative flex-1" ref={ref}>
-      <button
-        type="button"
-        className="flex min-h-[44px] w-full flex-col items-center justify-center gap-1 rounded-[10px] border border-sales-border bg-[#151815]/[0.02] px-1 py-2 text-[11px] font-medium text-sales-text-secondary hover:border-sales-border-strong hover:bg-sales-surface-hover hover:text-sales-text-primary dark:bg-[#151815]"
-        onClick={() => setOpen((v) => !v)}
-      >
+    <div className="relative flex-1">
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger className="flex min-h-[44px] w-full flex-col items-center justify-center gap-1 rounded-[10px] border border-sales-border bg-[#151815]/[0.02] px-1 py-2 text-[11px] font-medium text-sales-text-secondary hover:border-sales-border-strong hover:bg-sales-surface-hover hover:text-sales-text-primary dark:bg-[#151815]">
         <MoreHorizontal size={16} strokeWidth={1.8} />
         More
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
-        >
-          {canReassign ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onAssign();
-              }}
-            >
-              Assign Lead
-            </button>
-          ) : null}
-          {canModify ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onSchedule();
-              }}
-            >
-              Schedule follow-up
-            </button>
-          ) : null}
-          {hasDeal ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onOpenDeal();
-              }}
-            >
-              Open Deal
-            </button>
-          ) : canModify && !notQualified ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onCreateDeal();
-              }}
-            >
-              Create Deal
-            </button>
-          ) : null}
-          {canModify && !notQualified && !hasDeal ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-danger hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onNotQualified();
-              }}
-            >
-              Mark Not Qualified
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48">
+        {canReassign ? <DropdownMenuItem onSelect={onAssign}>Assign Lead</DropdownMenuItem> : null}
+        {canModify ? (
+          <DropdownMenuItem onSelect={onSchedule}>Schedule follow-up</DropdownMenuItem>
+        ) : null}
+        {hasDeal ? (
+          <DropdownMenuItem onSelect={onOpenDeal}>Open Deal</DropdownMenuItem>
+        ) : canModify && !notQualified ? (
+          <DropdownMenuItem onSelect={onCreateDeal}>Create Deal</DropdownMenuItem>
+        ) : null}
+        {canModify && !notQualified && !hasDeal ? (
+          <DropdownMenuItem destructive onSelect={onNotQualified}>
+            Mark Not Qualified
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

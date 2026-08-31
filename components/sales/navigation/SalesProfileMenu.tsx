@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { ChevronDown, CircleHelp, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import { ExitImpersonationMenuItem } from "@/components/agency/ExitImpersonationMenuItem";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/sales/ui";
 import {
   displaySalesName,
   salesNameInitials,
@@ -30,40 +37,20 @@ export function SalesProfileMenu({
   helpLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    function onPointer(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onPointer);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onPointer);
-    };
-  }, [open]);
+  const router = useRouter();
 
   const name = displaySalesName(userName);
   const initials = salesNameInitials(userName);
 
   return (
-    <div className="relative shrink-0" ref={rootRef}>
-      <button
-        type="button"
+    <DropdownMenu open={open} onOpenChange={setOpen} align="end">
+      <DropdownMenuTrigger
         className={cn(
           "inline-flex h-10 items-center gap-2 rounded-[10px] border border-transparent px-1.5 transition-colors duration-150",
           "hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
           open && "bg-sales-surface-hover"
         )}
-        aria-expanded={open}
-        aria-haspopup="menu"
         aria-label="Account menu"
-        onClick={() => setOpen((v) => !v)}
       >
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -96,63 +83,34 @@ export function SalesProfileMenu({
           )}
           aria-hidden
         />
-      </button>
+      </DropdownMenuTrigger>
 
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 z-[50] mt-2 w-56 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
-        >
-          <div className="border-b border-sales-border-subtle px-3 py-2.5 lg:hidden">
-            <p className="truncate text-[13px] font-semibold text-sales-text-primary">{name}</p>
-            <p className="truncate text-[11px] text-sales-text-muted">{userRoleLabel}</p>
-          </div>
-          <Link
-            href={profileHref}
-            role="menuitem"
-            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-            onClick={() => setOpen(false)}
-          >
-            <UserRound size={16} strokeWidth={1.8} aria-hidden />
-            My profile
-          </Link>
-          <Link
-            href={profileHref}
-            role="menuitem"
-            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-            onClick={() => setOpen(false)}
-          >
-            <ShieldCheck size={16} strokeWidth={1.8} aria-hidden />
-            Account & security
-          </Link>
-          <Link
-            href={helpHref}
-            role="menuitem"
-            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-            onClick={() => setOpen(false)}
-          >
-            <CircleHelp size={16} strokeWidth={1.8} aria-hidden />
-            {helpLabel}
-          </Link>
-          <div className="my-1 border-t border-sales-border-subtle" />
-          <ExitImpersonationMenuItem
-            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-60"
-            onSelect={() => setOpen(false)}
-          />
-          <button
-            type="button"
-            role="menuitem"
-            className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-            onClick={() => {
-              setOpen(false);
-              void signOut({ callbackUrl: "/login" });
-            }}
-          >
-            <LogOut size={16} strokeWidth={1.8} aria-hidden />
-            Sign out
-          </button>
+      <DropdownMenuContent className="w-56">
+        <div className="border-b border-sales-border-subtle px-3 py-2.5 lg:hidden">
+          <p className="truncate text-[13px] font-semibold text-sales-text-primary">{name}</p>
+          <p className="truncate text-[11px] text-sales-text-muted">{userRoleLabel}</p>
         </div>
-      ) : null}
-    </div>
+        <DropdownMenuItem icon={<UserRound size={16} strokeWidth={1.8} />} onSelect={() => router.push(profileHref)}>
+          My profile
+        </DropdownMenuItem>
+        <DropdownMenuItem icon={<ShieldCheck size={16} strokeWidth={1.8} />} onSelect={() => router.push(profileHref)}>
+          Account & security
+        </DropdownMenuItem>
+        <DropdownMenuItem icon={<CircleHelp size={16} strokeWidth={1.8} />} onSelect={() => router.push(helpHref)}>
+          {helpLabel}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <ExitImpersonationMenuItem
+          className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-60"
+          onSelect={() => setOpen(false)}
+        />
+        <DropdownMenuItem
+          icon={<LogOut size={16} strokeWidth={1.8} />}
+          onSelect={() => void signOut({ callbackUrl: "/login" })}
+        >
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -8,10 +8,9 @@ import {
   Filter,
   Inbox,
   Search,
-  X,
 } from "lucide-react";
 import Link from "next/link";
-import { EmptyState, SegmentedControl, useSalesToast } from "@/components/sales/ui";
+import { EmptyState, ActiveFiltersBar, FilterPill, SegmentedControl, useSalesToast } from "@/components/sales/ui";
 import {
   PipelineDealCard,
   type PipelineDealCardItem,
@@ -260,11 +259,12 @@ export function DealsBoard({
   );
 
   const activeFilterChips = useMemo(() => {
-    const chips: { key: string; label: string; clear: () => void }[] = [];
+    const chips: { key: string; label: string; value: string; clear: () => void }[] = [];
     for (const s of filters.stages) {
       chips.push({
         key: `stage-${s}`,
-        label: DEAL_STAGE_LABEL[s],
+        label: "Stage",
+        value: DEAL_STAGE_LABEL[s],
         clear: () =>
           setFilters((f) => ({ ...f, stages: f.stages.filter((x) => x !== s) })),
       });
@@ -272,21 +272,24 @@ export function DealsBoard({
     if (filters.atRisk) {
       chips.push({
         key: "at-risk",
-        label: "At Risk",
+        label: "Status",
+        value: "At Risk",
         clear: () => setFilters((f) => ({ ...f, atRisk: false })),
       });
     }
     if (filters.noNextAction) {
       chips.push({
         key: "no-next",
-        label: "No Next Action",
+        label: "Status",
+        value: "No Next Action",
         clear: () => setFilters((f) => ({ ...f, noNextAction: false })),
       });
     }
     for (const src of filters.sources) {
       chips.push({
         key: `src-${src}`,
-        label: src.charAt(0).toUpperCase() + src.slice(1),
+        label: "Source",
+        value: src.charAt(0).toUpperCase() + src.slice(1),
         clear: () =>
           setFilters((f) => ({
             ...f,
@@ -297,14 +300,16 @@ export function DealsBoard({
     if (filters.hasQuote === "yes") {
       chips.push({
         key: "quote-yes",
-        label: "Has Quote",
+        label: "Quote",
+        value: "Has Quote",
         clear: () => setFilters((f) => ({ ...f, hasQuote: "any" })),
       });
     }
     if (filters.hasQuote === "no") {
       chips.push({
         key: "quote-no",
-        label: "No Quote",
+        label: "Quote",
+        value: "No Quote",
         clear: () => setFilters((f) => ({ ...f, hasQuote: "any" })),
       });
     }
@@ -596,26 +601,11 @@ export function DealsBoard({
       </div>
 
       {activeFilterChips.length > 0 && tab === "active" ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <ActiveFiltersBar onClearAll={clearFilters} showClearAll={activeFilterChips.length > 1}>
           {activeFilterChips.map((c) => (
-            <button
-              key={c.key}
-              type="button"
-              onClick={c.clear}
-              className="inline-flex items-center gap-1 rounded-full border border-sales-border bg-sales-surface px-2.5 py-1 text-[11px] font-medium text-sales-text-label hover:border-sales-border-strong"
-            >
-              {c.label}
-              <X className="h-3 w-3 text-sales-text-muted" />
-            </button>
+            <FilterPill key={c.key} label={c.label} value={c.value} onRemove={c.clear} />
           ))}
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="text-[11px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
-          >
-            Clear all
-          </button>
-        </div>
+        </ActiveFiltersBar>
       ) : null}
     </div>
   );

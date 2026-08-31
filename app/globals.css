@@ -3902,6 +3902,11 @@ label[for="photo-input"] {
   --sales-field-shortcut-bg: var(--sales-surface-subtle);
   --sales-field-shortcut-border: var(--sales-border);
 
+  /* Menu / select / filter pill */
+  --sales-menu-hover: rgba(16, 24, 40, 0.04);
+  --sales-filter-pill-bg: #f5f7fc;
+  --sales-filter-pill-border: #d0d5dd;
+
   /* Control system — Switch / Checkbox / Radio / Segmented */
   --sales-control-focus-outline: #d4ff4f;
   --sales-control-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px rgba(212, 255, 79, 0.55);
@@ -4224,6 +4229,11 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-field-placeholder: var(--sales-text-disabled);
   --sales-field-shortcut-bg: rgba(16, 36, 73, 0.9);
   --sales-field-shortcut-border: rgba(130, 151, 198, 0.2);
+
+  /* Menu / select / filter pill */
+  --sales-menu-hover: rgba(255, 255, 255, 0.045);
+  --sales-filter-pill-bg: rgba(16, 36, 73, 0.72);
+  --sales-filter-pill-border: rgba(130, 151, 198, 0.2);
 
   /* Control system — Switch / Checkbox / Radio / Segmented */
   --sales-control-focus-outline: #d4ff4f;
@@ -4689,11 +4699,27 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-icon-b
   }
 }
 
+.sales-menu-surface {
+  animation: sales-menu-in var(--sales-menu-motion, 160ms ease-out);
+}
+
+@keyframes sales-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sales-modal-backdrop,
   .sales-modal-surface,
   .sales-toast-item,
-  .sales-skeleton {
+  .sales-skeleton,
+  .sales-menu-surface {
     animation: none !important;
   }
   .sales-modal-backdrop {

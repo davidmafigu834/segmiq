@@ -36,6 +36,11 @@ import {
   DataTableToolbar,
   DataTableToolbarGroup,
   DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   MenuSelect,
   SearchInput,
   Skeleton,
@@ -157,146 +162,48 @@ function RowMenu({
   onNotQualified: () => void;
 }) {
   const { terminology } = useCompanyWorkspace();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
-
   const notQualified = row.lifecycle === "NOT_QUALIFIED";
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        aria-label="More actions"
-        title="More actions"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-      >
-        <MoreHorizontal size={16} strokeWidth={1.8} />
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
+    <div onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger
+          aria-label="More actions"
+          title="More actions"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            role="menuitem"
-            className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-            onClick={() => {
-              setOpen(false);
-              onView();
-            }}
-          >
+          <MoreHorizontal size={16} strokeWidth={1.8} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-48">
+          <DropdownMenuItem onSelect={onView}>
             View {terminology.lead.singular}
-          </button>
-          {row.phone ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onCall();
-              }}
-            >
-              Call
-            </button>
-          ) : null}
+          </DropdownMenuItem>
+          {row.phone ? <DropdownMenuItem onSelect={onCall}>Call</DropdownMenuItem> : null}
           {row.phone || String(row.sourceRaw ?? "").toUpperCase().includes("WHATSAPP") ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onWhatsApp();
-              }}
-            >
-              Open WhatsApp
-            </button>
+            <DropdownMenuItem onSelect={onWhatsApp}>Open WhatsApp</DropdownMenuItem>
           ) : null}
           {row.canModify ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onSchedule();
-              }}
-            >
-              Schedule follow-up
-            </button>
+            <DropdownMenuItem onSelect={onSchedule}>Schedule follow-up</DropdownMenuItem>
           ) : null}
           {canReassign ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onAssign();
-              }}
-            >
-            Assign / Reassign
-            </button>
+            <DropdownMenuItem onSelect={onAssign}>Assign / Reassign</DropdownMenuItem>
           ) : null}
           {row.hasDeal ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onOpenDeal();
-              }}
-            >
-              Open Deal
-            </button>
+            <DropdownMenuItem onSelect={onOpenDeal}>Open Deal</DropdownMenuItem>
           ) : row.canModify && !notQualified ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onCreateDeal();
-              }}
-            >
-              Create Deal
-            </button>
+            <DropdownMenuItem onSelect={onCreateDeal}>Create Deal</DropdownMenuItem>
           ) : null}
           {row.canModify && !notQualified && !row.hasDeal ? (
             <>
-              <div className="my-1 border-t border-sales-border-subtle" />
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full px-3 py-2 text-left text-[13px] text-sales-danger hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onNotQualified();
-                }}
-              >
+              <DropdownMenuSeparator />
+              <DropdownMenuItem destructive onSelect={onNotQualified}>
                 Mark Not Qualified
-              </button>
+              </DropdownMenuItem>
             </>
           ) : null}
-        </div>
-      ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

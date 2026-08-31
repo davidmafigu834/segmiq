@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import {
   CalendarClock,
   ChevronLeft,
@@ -21,6 +20,10 @@ import {
   DataTableTd,
   DataTableTh,
   EmptyState,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   MenuSelect,
   SearchInput,
 } from "@/components/sales/ui";
@@ -81,59 +84,33 @@ function RowMenu({
   onWhatsApp: () => void;
   onComplete: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: MouseEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-  const item =
-    "flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover";
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        aria-label={`More actions for ${row.contact_name ?? "viewing"}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((value) => !value);
-        }}
-      >
-        <MoreHorizontal size={16} strokeWidth={1.8} />
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
+    <div onClick={(event) => event.stopPropagation()}>
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger
+          aria-label={`More actions for ${row.contact_name ?? "viewing"}`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
           onClick={(event) => event.stopPropagation()}
         >
-          <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onView(); }}>
-            View viewing
-          </button>
+          <MoreHorizontal size={16} strokeWidth={1.8} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-48">
+          <DropdownMenuItem onSelect={onView}>View viewing</DropdownMenuItem>
           {row.contact_phone ? (
-            <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onCall(); }}>
-              <Phone size={14} /> Call
-            </button>
+            <DropdownMenuItem icon={<Phone size={14} />} onSelect={onCall}>
+              Call
+            </DropdownMenuItem>
           ) : null}
           {row.contact_phone ? (
-            <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onWhatsApp(); }}>
-              <SiWhatsapp size={14} color="#25D366" /> WhatsApp
-            </button>
+            <DropdownMenuItem icon={<SiWhatsapp size={14} color="#25D366" />} onSelect={onWhatsApp}>
+              WhatsApp
+            </DropdownMenuItem>
           ) : null}
           {row.status === "scheduled" ? (
-            <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onComplete(); }}>
-              Mark completed
-            </button>
+            <DropdownMenuItem onSelect={onComplete}>Mark completed</DropdownMenuItem>
           ) : null}
-        </div>
-      ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

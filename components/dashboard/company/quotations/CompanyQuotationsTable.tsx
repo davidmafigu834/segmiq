@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
   ChevronDown,
@@ -36,6 +36,10 @@ import {
   DataTableToolbar,
   DataTableToolbarGroup,
   DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   MenuSelect,
 } from "@/components/sales/ui";
 import {
@@ -494,69 +498,57 @@ function RowMenu({
   onOpenCustomer: () => void;
   onOpenWorkspace: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function close(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
   const canRevise = ["sent", "viewed", "rejected", "expired"].includes(row.effectiveStatus);
 
-  function action(icon: ReactNode, label: string, handler: () => void) {
-    return (
-      <button
-        type="button"
-        role="menuitem"
-        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12px] text-sales-text-primary hover:bg-sales-surface-hover"
-        onClick={() => {
-          setOpen(false);
-          handler();
-        }}
-      >
-        <span className="text-sales-text-muted [&_svg]:h-3.5 [&_svg]:w-3.5">{icon}</span>
-        {label}
-      </button>
-    );
-  }
-
   return (
-    <div className="relative inline-flex" ref={ref}>
-      <button
-        type="button"
-        aria-label={`Actions for ${displayQuoteNumber(row)}`}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
-        onClick={(event) => {
-          event.stopPropagation();
-          setOpen((value) => !value);
-        }}
-      >
-        <MoreHorizontal size={16} strokeWidth={1.8} />
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className={cn(
-            "absolute right-0 z-40 w-56 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover",
-            alignUp ? "bottom-9" : "top-9"
-          )}
+    <div className="inline-flex" onClick={(event) => event.stopPropagation()}>
+      <DropdownMenu align="end" side={alignUp ? "top" : "bottom"}>
+        <DropdownMenuTrigger
+          aria-label={`Actions for ${displayQuoteNumber(row)}`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
           onClick={(event) => event.stopPropagation()}
         >
-          {action(<ExternalLink />, "Open quotation", onView)}
-          {alsoSells ? action(<FilePenLine />, "Open quotation workspace", onOpenWorkspace) : null}
-          {alsoSells && row.effectiveStatus === "draft" ? action(<FilePenLine />, "Edit", onEdit) : null}
-          {action(<Download />, "View PDF", onPdf)}
-          {alsoSells && canRevise ? action(<FilePlus2 />, "Create revision", onRevise) : null}
-          {alsoSells ? action(<Copy />, "Duplicate", onDuplicate) : null}
-          {row.dealId ? action(<ExternalLink />, "Open Deal", onOpenDeal) : null}
-          {row.contactId ? action(<ExternalLink />, "Open customer", onOpenCustomer) : null}
-        </div>
-      ) : null}
+          <MoreHorizontal size={16} strokeWidth={1.8} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56">
+          <DropdownMenuItem icon={<ExternalLink />} onSelect={onView}>
+            Open quotation
+          </DropdownMenuItem>
+          {alsoSells ? (
+            <DropdownMenuItem icon={<FilePenLine />} onSelect={onOpenWorkspace}>
+              Open quotation workspace
+            </DropdownMenuItem>
+          ) : null}
+          {alsoSells && row.effectiveStatus === "draft" ? (
+            <DropdownMenuItem icon={<FilePenLine />} onSelect={onEdit}>
+              Edit
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem icon={<Download />} onSelect={onPdf}>
+            View PDF
+          </DropdownMenuItem>
+          {alsoSells && canRevise ? (
+            <DropdownMenuItem icon={<FilePlus2 />} onSelect={onRevise}>
+              Create revision
+            </DropdownMenuItem>
+          ) : null}
+          {alsoSells ? (
+            <DropdownMenuItem icon={<Copy />} onSelect={onDuplicate}>
+              Duplicate
+            </DropdownMenuItem>
+          ) : null}
+          {row.dealId ? (
+            <DropdownMenuItem icon={<ExternalLink />} onSelect={onOpenDeal}>
+              Open Deal
+            </DropdownMenuItem>
+          ) : null}
+          {row.contactId ? (
+            <DropdownMenuItem icon={<ExternalLink />} onSelect={onOpenCustomer}>
+              Open customer
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

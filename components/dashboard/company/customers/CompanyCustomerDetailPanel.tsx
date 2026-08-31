@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
+import { type HTMLAttributes, type ReactNode } from "react";
 import { BriefcaseBusiness, CalendarDays, ExternalLink, Mail, MapPin, MoreHorizontal, Phone, ReceiptText, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { cn } from "@/lib/ui/cn";
-import { Avatar, Badge, Button, IconButton, Skeleton } from "@/components/sales/ui";
+import { Avatar, Badge, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, IconButton, Skeleton } from "@/components/sales/ui";
 import type { CompanyCustomerActivity, CompanyCustomerDetail, CompanyCustomerRow } from "./types";
 
 function Section({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
@@ -17,15 +17,24 @@ function ActionTile({ label, disabled, href, onClick, children }: { label: strin
 }
 
 function MoreMenu({ detail, onViewDetails, onViewDeals }: { detail: CompanyCustomerDetail | null; onViewDetails: () => void; onViewDeals: () => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: MouseEvent) => { if (!ref.current?.contains(event.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-  return <div className="relative flex-1" ref={ref}><button type="button" aria-haspopup="menu" aria-expanded={open} className="flex min-h-[48px] w-full flex-col items-center justify-center gap-1 rounded-[10px] border border-sales-border bg-[#151815]/[0.02] px-1 py-2 text-[11px] font-medium text-sales-text-secondary hover:bg-sales-surface-hover dark:bg-[#151815]" onClick={() => setOpen((value) => !value)}><MoreHorizontal size={16} />More</button>{open ? <div role="menu" className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"><button type="button" role="menuitem" className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-sales-surface-hover" onClick={() => { setOpen(false); onViewDetails(); }}><ExternalLink size={14} />View full details</button><button type="button" role="menuitem" disabled={!detail} className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-sales-surface-hover disabled:opacity-40" onClick={() => { setOpen(false); onViewDeals(); }}><BriefcaseBusiness size={14} />View Deals ({detail?.totalDeals ?? 0})</button></div> : null}</div>;
+  return (
+    <div className="relative flex-1">
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger className="flex min-h-[48px] w-full flex-col items-center justify-center gap-1 rounded-[10px] border border-sales-border bg-[#151815]/[0.02] px-1 py-2 text-[11px] font-medium text-sales-text-secondary hover:border-sales-border-strong hover:bg-sales-surface-hover hover:text-sales-text-primary dark:bg-[#151815]">
+          <MoreHorizontal size={16} />
+          More
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-48">
+          <DropdownMenuItem icon={<ExternalLink size={14} />} onSelect={onViewDetails}>
+            View full details
+          </DropdownMenuItem>
+          <DropdownMenuItem icon={<BriefcaseBusiness size={14} />} disabled={!detail} onSelect={onViewDeals}>
+            View Deals ({detail?.totalDeals ?? 0})
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 }
 
 function ActivityIcon({ activity }: { activity: CompanyCustomerActivity }) {

@@ -74,6 +74,17 @@ export type { AlertTone } from "./Feedback";
 
 export { BrandIcon, Tooltip } from "./BrandIcon";
 
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "./DropdownMenu";
+
+export { FilterPill, ActiveFiltersBar } from "./FilterPill";
+
 export { KpiStat, Trend, MetricValue, LeadIdentity } from "./DataDisplay";
 export { Timeline, ActivityRow, Milestone } from "./Timeline";
 export type { TimelineItem } from "./Timeline";

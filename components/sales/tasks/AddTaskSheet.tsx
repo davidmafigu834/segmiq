@@ -5,7 +5,7 @@ import { addDays, format } from "date-fns";
 import { Search } from "lucide-react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button } from "@/components/sales/ui/Button";
-import { FieldLabel, Input, Select } from "@/components/sales/ui/Input";
+import { Field, Input, Select } from "@/components/sales/ui";
 import { useSalesToast } from "@/components/sales/ui/Toast";
 import { toDateKey } from "@/lib/sales/calendar/format";
 
@@ -110,9 +110,8 @@ export function AddTaskSheet({
       }
     >
       <div className="space-y-4">
-        <div>
-          <FieldLabel>Related lead</FieldLabel>
-          <div className="relative mt-1.5">
+        <Field label="Related lead">
+          <div className="relative">
             <Search
               size={14}
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
@@ -153,11 +152,10 @@ export function AddTaskSheet({
               ))
             )}
           </ul>
-        </div>
+        </Field>
 
-        <div>
-          <FieldLabel>Due date</FieldLabel>
-          <div className="mt-1.5 flex flex-wrap gap-2">
+        <Field label="Due date">
+          <div className="flex flex-wrap gap-2">
             {quickDates.map((d) => (
               <button
                 key={d.value}
@@ -179,16 +177,13 @@ export function AddTaskSheet({
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
-        </div>
+        </Field>
 
-        <div>
-          <FieldLabel>Due time</FieldLabel>
-          <p className="mt-1 text-[12px] text-sales-text-muted">
-            Timed callbacks are set when logging a call. Date scheduling uses the lead follow-up
-            date.
-          </p>
+        <Field
+          label="Due time"
+          hint="Timed callbacks are set when logging a call. Date scheduling uses the lead follow-up date."
+        >
           <Select
-            className="mt-1.5"
             value={time}
             onChange={(e) => setTime(e.target.value)}
             aria-label="Preferred time note"
@@ -199,7 +194,7 @@ export function AddTaskSheet({
               </option>
             ))}
           </Select>
-        </div>
+        </Field>
 
         {error ? <p className="text-[13px] text-sales-danger">{error}</p> : null}
       </div>

@@ -29,6 +29,11 @@ import {
   DataTableToolbar,
   DataTableToolbarGroup,
   DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   SearchInput,
   Skeleton,
   Tabs,
@@ -87,92 +92,36 @@ function RowMenu({
   onReassign: () => void;
   onDeactivate: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
-
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        aria-label={`Actions for ${row.name}`}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-      >
-        <MoreHorizontal size={16} strokeWidth={1.8} />
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
+    <div onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger
+          aria-label={`Actions for ${row.name}`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            role="menuitem"
-            className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-            onClick={() => {
-              setOpen(false);
-              onViewProfile();
-            }}
-          >
-            View profile
-          </button>
+          <MoreHorizontal size={16} strokeWidth={1.8} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-48">
+          <DropdownMenuItem onSelect={onViewProfile}>View profile</DropdownMenuItem>
           {canSetGoals ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onSetGoal();
-              }}
-            >
+            <DropdownMenuItem onSelect={onSetGoal}>
               {row.hasGoal ? "Edit Goal" : "Set Goal"}
-            </button>
+            </DropdownMenuItem>
           ) : null}
           {canReassign ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onReassign();
-              }}
-            >
-              Reassign Leads
-            </button>
+            <DropdownMenuItem onSelect={onReassign}>Reassign Leads</DropdownMenuItem>
           ) : null}
           {canManage && row.isActive ? (
             <>
-              <div className="my-1 border-t border-sales-border-subtle" />
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full px-3 py-2 text-left text-[13px] text-sales-danger hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onDeactivate();
-                }}
-              >
+              <DropdownMenuSeparator />
+              <DropdownMenuItem destructive onSelect={onDeactivate}>
                 Deactivate
-              </button>
+              </DropdownMenuItem>
             </>
           ) : null}
-        </div>
-      ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

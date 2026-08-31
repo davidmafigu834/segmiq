@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import Link from "next/link";
+import { type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight, UserPlus, Users, Zap } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
-import { Button } from "@/components/sales/ui/Button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/sales/ui";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { greetingPart } from "@/lib/sales/sales-dashboard-view";
 import { cn } from "@/lib/ui/cn";
@@ -73,7 +78,7 @@ export function CompanyDashboardHeader({
   hideTitleBlock?: boolean;
 }) {
   const { terminology } = useCompanyWorkspace();
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps("direct");
   const firstName = userName.trim().split(/\s+/)[0] || "there";
@@ -97,63 +102,37 @@ export function CompanyDashboardHeader({
             {primaryAction !== undefined ? (
               primaryAction
             ) : (
-              <div className="relative">
-                <Button
-                  variant="primary"
-                  size="md"
-                  className="sales-btn-primary"
-                  aria-expanded={open}
-                  aria-haspopup="menu"
-                  aria-label="Quick actions"
-                  onClick={() => setOpen((v) => !v)}
-                  leftIcon={<Zap size={15} strokeWidth={1.8} />}
-                  rightIcon={<ChevronDown size={14} strokeWidth={1.8} />}
-                >
+              <DropdownMenu align="end">
+                <DropdownMenuTrigger className="sales-btn-primary inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold text-[#11170A] shadow-sm transition-colors hover:opacity-95 focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]">
+                  <Zap size={15} strokeWidth={1.8} aria-hidden />
                   Quick actions
-                </Button>
-                {open ? (
-                  <>
-                    <button
-                      type="button"
-                      className="fixed inset-0 z-20 cursor-default"
-                      aria-label="Close quick actions"
-                      onClick={() => setOpen(false)}
-                    />
-                    <div
-                      role="menu"
-                      className="absolute right-0 z-[40] mt-2 w-56 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
-                    >
-                      {canAddLead ? (
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="flex w-full items-center gap-2.5 px-2.5 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                          onClick={() => {
-                            setOpen(false);
-                            openAddHubSheet();
-                          }}
-                        >
-                          <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-sales-surface-subtle text-sales-text-secondary">
-                            <UserPlus size={14} strokeWidth={1.8} aria-hidden />
-                          </span>
-                          {terminology.actions.addLead}
-                        </button>
-                      ) : null}
-                      <Link
-                        href="/client/team?invite=1"
-                        role="menuitem"
-                        className="flex items-center gap-2.5 px-2.5 py-2 text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                        onClick={() => setOpen(false)}
-                      >
+                  <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  {canAddLead ? (
+                    <DropdownMenuItem
+                      icon={
                         <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-sales-surface-subtle text-sales-text-secondary">
-                          <Users size={14} strokeWidth={1.8} aria-hidden />
+                          <UserPlus size={14} strokeWidth={1.8} aria-hidden />
                         </span>
-                        Add {terminology.salesperson.singular.toLowerCase()}
-                      </Link>
-                    </div>
-                  </>
-                ) : null}
-              </div>
+                      }
+                      onSelect={openAddHubSheet}
+                    >
+                      {terminology.actions.addLead}
+                    </DropdownMenuItem>
+                  ) : null}
+                  <DropdownMenuItem
+                    icon={
+                      <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-sales-surface-subtle text-sales-text-secondary">
+                        <Users size={14} strokeWidth={1.8} aria-hidden />
+                      </span>
+                    }
+                    onSelect={() => router.push("/client/team?invite=1")}
+                  >
+                    Add {terminology.salesperson.singular.toLowerCase()}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
             <SalesProfileMenu

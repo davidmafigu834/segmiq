@@ -8,18 +8,25 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  Copy,
+  Edit,
   Filter,
+  Info,
   LayoutList,
+  MessageCircle,
+  MoreHorizontal,
   MoreHorizontal,
   Phone,
   Plus,
   Search,
   Settings,
   Trash2,
+  UserPlus,
   Users,
   Zap,
 } from "lucide-react";
 import {
+  ActiveFiltersBar,
   ActivityRow,
   Alert,
   Avatar,
@@ -53,10 +60,16 @@ import {
   DataTableToolbar,
   DataTableToolbarGroup,
   DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Field,
   FieldError,
   FieldHint,
   FieldLabel,
+  FilterPill,
   FormActions,
   FormFields,
   FormSection,
@@ -73,6 +86,7 @@ import {
   LeadScoreBadge,
   MetaPill,
   MetricValue,
+  MenuSelect,
   Milestone,
   PipelineStageBadge,
   Progress,
@@ -101,6 +115,7 @@ import {
   SALES_FEEDBACK,
   SALES_FIELD_HEIGHT,
   SALES_FORM,
+  SALES_MENU,
   SALES_OVERLAY,
   SALES_RADIUS,
   SALES_SHADOW,
@@ -122,6 +137,7 @@ const NAV = [
   { id: "table", label: "06 — Tables" },
   { id: "overlays", label: "07 — Overlays & Feedback" },
   { id: "forms", label: "08 — Forms & Inputs" },
+  { id: "menus", label: "09 — Menus & Pills" },
   { id: "timeline", label: "Timeline" },
   { id: "charts", label: "Charts" },
   { id: "misc", label: "Icons & misc" },
@@ -1016,6 +1032,157 @@ function FormsShowcaseSection() {
             <li>Keep labels visible · placeholders are format guidance only · use correct input types</li>
             <li>Non-empty does not mean success · validate with real application rules · associate errors via aria-describedby</li>
             <li>Input groups share one outer border and focus-within treatment · danger applies to the whole group</li>
+          </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function MenusShowcaseSection() {
+  const [owner, setOwner] = useState("sarah");
+  const [docFilters, setDocFilters] = useState([
+    { key: "stage", label: "Stage", value: "Negotiating" },
+    { key: "score", label: "Score", value: "Hot", valueClassName: "text-sales-danger" },
+    { key: "source", label: "Source", value: "WhatsApp" },
+  ]);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12px] text-sales-text-secondary">
+          Surface secondary actions · choose values · brief guidance · active filters. Documentation examples only.
+        </p>
+        <SalesThemeToggle />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-4">
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Dropdown menu</CardTitle>
+            <CardDescription>Actions · menu / menuitem · portal positioned</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
+                Actions
+                <MoreHorizontal size={16} strokeWidth={1.8} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem icon={<LayoutList size={16} strokeWidth={1.8} />}>
+                  View details
+                </DropdownMenuItem>
+                <DropdownMenuItem icon={<Edit size={16} strokeWidth={1.8} />}>Edit lead</DropdownMenuItem>
+                <DropdownMenuItem icon={<UserPlus size={16} strokeWidth={1.8} />}>
+                  Assign to teammate
+                </DropdownMenuItem>
+                <DropdownMenuItem icon={<MessageCircle size={16} strokeWidth={1.8} />}>
+                  Send WhatsApp
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem icon={<Copy size={16} strokeWidth={1.8} />}>Duplicate</DropdownMenuItem>
+                <DropdownMenuItem destructive icon={<Trash2 size={16} strokeWidth={1.8} />}>
+                  Delete lead
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Select / MenuSelect</CardTitle>
+            <CardDescription>Listbox · restrained selected wash</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Field label="Assign owner">
+              <MenuSelect
+                variant="field"
+                aria-label="Assign owner"
+                value={owner}
+                onChange={setOwner}
+                options={[
+                  { value: "sarah", label: "Sarah Ndlovu", description: "Sales Manager" },
+                  { value: "james", label: "James K.", description: "Account Executive" },
+                  { value: "unassigned", label: "Unassigned" },
+                ]}
+              />
+            </Field>
+            <MenuSelect
+              size="sm"
+              aria-label="Sort"
+              value="recent"
+              onChange={() => {}}
+              options={[
+                { value: "recent", label: "Most recent" },
+                { value: "score", label: "Highest score" },
+              ]}
+            />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Tooltip</CardTitle>
+            <CardDescription>~{SALES_MENU.tooltipShowDelayMs}ms show · compact dark chip</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap items-center gap-4 pt-2">
+            <Tooltip label="Lead Score combines engagement, fit, and recency.">
+              <IconButton aria-label="What is Lead Score?">
+                <Info strokeWidth={1.8} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip label="Opens the full record detail panel.">
+              <Button size="sm" variant="secondary">
+                Hover me
+              </Button>
+            </Tooltip>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Filter pills</CardTitle>
+            <CardDescription>Active constraints · removable · neutral shell</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ActiveFiltersBar
+              showClearAll={docFilters.length > 1}
+              onClearAll={() => setDocFilters([])}
+            >
+              {docFilters.map((filter) => (
+                <FilterPill
+                  key={filter.key}
+                  label={filter.label}
+                  value={filter.value}
+                  valueClassName={filter.valueClassName}
+                  icon={filter.key === "source" ? <BrandIcon brand="whatsapp" size={14} /> : undefined}
+                  onRemove={() => setDocFilters((items) => items.filter((f) => f.key !== filter.key))}
+                  removeLabel={`Remove ${filter.label}: ${filter.value} filter`}
+                />
+              ))}
+            </ActiveFiltersBar>
+            <div className="flex items-center gap-2 text-[12px] text-sales-text-muted">
+              <MetaPill>WhatsApp</MetaPill>
+              <span>passive metadata · not a filter pill</span>
+            </div>
+            <Button size="sm" variant="secondary">
+              + Add filter
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card variant="flat">
+        <CardContent className="space-y-2 pt-4 text-[12px] leading-relaxed text-sales-text-secondary">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            Accessibility & placement
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>DropdownMenu uses menu/menuitem · MenuSelect uses listbox/option · Tooltip uses role=tooltip + aria-describedby</li>
+            <li>Default placement bottom-start · collision padding ~{SALES_MENU.viewportPadding}px · max height ~{SALES_MENU.maxHeight}px</li>
+            <li>Menu hover uses neutral wash · selected select option uses restrained lime-soft · destructive actions stay danger</li>
+            <li>Filter pills are interactive constraints with remove controls · MetaPill remains passive metadata</li>
           </ul>
         </CardContent>
       </Card>
@@ -2186,6 +2353,15 @@ function ShowcaseInner() {
             description="Field composition · states & validation · input groups · form layout. Composes Phase 02 primitives."
           >
             <FormsShowcaseSection />
+          </Section>
+
+          {/* ── Menus & Pills ──────────────────────────────────── */}
+          <Section
+            id="menus"
+            title="09 — Menus, Dropdowns & Pills"
+            description="Dropdown actions · MenuSelect values · tooltip guidance · active filter pills."
+          >
+            <MenusShowcaseSection />
           </Section>
 
           {/* ── Timeline ───────────────────────────────────────── */}

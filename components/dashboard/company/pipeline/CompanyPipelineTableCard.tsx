@@ -28,6 +28,13 @@ import {
   DataTableToolbar,
   DataTableToolbarGroup,
   DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  FilterPill,
+  ActiveFiltersBar,
   MenuSelect,
   PipelineStageBadge,
   SearchInput,
@@ -102,129 +109,42 @@ function RowMenu({
   onMarkWon: () => void;
   onMarkLost: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
   const closed = row.stage === "WON" || row.stage === "LOST";
 
-  useEffect(() => {
-    if (!open) return;
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
-
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        aria-label="More actions"
-        title="More actions"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-      >
-        <MoreHorizontal size={16} strokeWidth={1.8} />
-      </button>
-      {open ? (
-        <div
-          role="menu"
-          className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
+    <div onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger
+          aria-label="More actions"
+          title="More actions"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            role="menuitem"
-            className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-            onClick={() => {
-              setOpen(false);
-              onViewDeal();
-            }}
-          >
-            View Deal
-          </button>
+          <MoreHorizontal size={16} strokeWidth={1.8} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-48">
+          <DropdownMenuItem onSelect={onViewDeal}>View Deal</DropdownMenuItem>
           {row.canModify && !closed ? (
             <>
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onLogActivity();
-                }}
-              >
-                Log Activity
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onSchedule();
-                }}
-              >
-                Schedule Follow-up
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onChangeStage();
-                }}
-              >
-                Change Stage
-              </button>
+              <DropdownMenuItem onSelect={onLogActivity}>Log Activity</DropdownMenuItem>
+              <DropdownMenuItem onSelect={onSchedule}>Schedule Follow-up</DropdownMenuItem>
+              <DropdownMenuItem onSelect={onChangeStage}>Change Stage</DropdownMenuItem>
             </>
           ) : null}
           {canReassign ? (
-            <button
-              type="button"
-              role="menuitem"
-              className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => {
-                setOpen(false);
-                onChangeOwner();
-              }}
-            >
-              Change Owner
-            </button>
+            <DropdownMenuItem onSelect={onChangeOwner}>Change Owner</DropdownMenuItem>
           ) : null}
           {row.canModify && !closed ? (
             <>
-              <div className="my-1 border-t border-sales-border-subtle" />
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onMarkWon();
-                }}
-              >
-                Mark Won
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full px-3 py-2 text-left text-[13px] text-sales-danger hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onMarkLost();
-                }}
-              >
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={onMarkWon}>Mark Won</DropdownMenuItem>
+              <DropdownMenuItem destructive onSelect={onMarkLost}>
                 Mark Lost
-              </button>
+              </DropdownMenuItem>
             </>
           ) : null}
-        </div>
-      ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
@@ -381,17 +301,18 @@ function FilterChips({
   owners: CompanyPipelineOwnerOption[];
   onChange: (next: CompanyPipelineFilters) => void;
 }) {
-  const chips: { key: string; label: string; clear: () => void }[] = [];
+  const chips: { key: string; label: string; value: string; clear: () => void }[] = [];
   if (filters.ownerId !== "all") {
     const name = owners.find((o) => o.id === filters.ownerId)?.name ?? "Owner";
     chips.push({
       key: "owner",
-      label: `Owner: ${name}`,
+      label: "Owner",
+      value: name,
       clear: () => onChange({ ...filters, ownerId: "all" }),
     });
   }
   if (filters.health !== "all") {
-    const label =
+    const value =
       filters.health === "at_risk"
         ? "At Risk"
         : filters.health === "needs_attention"
@@ -399,14 +320,16 @@ function FilterChips({
           : "On track";
     chips.push({
       key: "health",
-      label,
+      label: "Health",
+      value,
       clear: () => onChange({ ...filters, health: "all" }),
     });
   }
   if (filters.nextAction !== "all") {
     chips.push({
       key: "next",
-      label:
+      label: "Next action",
+      value:
         filters.nextAction === "none"
           ? "No Next Action"
           : filters.nextAction === "overdue"
@@ -420,25 +343,18 @@ function FilterChips({
   if (filters.source !== "all") {
     chips.push({
       key: "source",
-      label: `Source: ${filters.source}`,
+      label: "Source",
+      value: filters.source,
       clear: () => onChange({ ...filters, source: "all" }),
     });
   }
   if (chips.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5 px-4 pb-3 sm:px-5">
+    <ActiveFiltersBar className="px-4 pb-3 sm:px-5" showClearAll={false}>
       {chips.map((c) => (
-        <button
-          key={c.key}
-          type="button"
-          className="inline-flex items-center gap-1 rounded-full border border-sales-border bg-sales-surface-subtle px-2.5 py-0.5 text-[11px] text-sales-text-secondary hover:border-sales-border-strong"
-          onClick={c.clear}
-        >
-          {c.label}
-          <span aria-hidden>×</span>
-        </button>
+        <FilterPill key={c.key} label={c.label} value={c.value} onRemove={c.clear} />
       ))}
-    </div>
+    </ActiveFiltersBar>
   );
 }
 

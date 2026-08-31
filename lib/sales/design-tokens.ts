@@ -138,6 +138,21 @@ export const SALES_FORM = {
   twoColumnMinWidth: 480,
 } as const;
 
+/** Menus, selects, tooltips, filter pills */
+export const SALES_MENU = {
+  minWidth: 180,
+  maxHeight: 320,
+  itemHeight: 40,
+  itemHeightCompact: 36,
+  itemHeightTouch: 44,
+  offset: 6,
+  viewportPadding: 8,
+  motionMs: 160,
+  tooltipShowDelayMs: 300,
+  tooltipHideDelayMs: 100,
+  tooltipMaxWidth: 260,
+} as const;
+
 /** Button heights from design boards: Small 32 · Medium 40 · Large 48 */
 export const SALES_BUTTON_HEIGHT = {
   sm: 32,

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, FieldError, FieldLabel, Input, MenuSelect } from "@/components/sales/ui";
+import { Button, Field, Input, MenuSelect } from "@/components/sales/ui";
 import { formatDealCurrency } from "@/lib/sales/format";
 import {
   goalPeriodBounds,
@@ -144,21 +144,22 @@ export function SetGoalDialog({
       }
     >
       <div className="space-y-4">
-        <div>
-          <FieldLabel>Goal type</FieldLabel>
+        <Field label="Goal type">
           <MenuSelect
             aria-label="Goal type"
             value="REVENUE_WON"
             onChange={() => undefined}
             options={[{ value: "REVENUE_WON", label: "Revenue won" }]}
-            className="mt-1.5 w-full"
+            className="w-full"
           />
-        </div>
+        </Field>
 
-        <div>
-          <FieldLabel>Period</FieldLabel>
+        <Field
+          label="Period"
+          hint={`${format(bounds.periodStart, "d MMM yyyy")} – ${format(bounds.periodEnd, "d MMM yyyy")}`}
+        >
           {mode === "edit" ? (
-            <p className="mt-1.5 rounded-[10px] border border-sales-border bg-sales-surface-hover px-3 py-2.5 text-[13px] font-medium text-sales-text-primary">
+            <p className="rounded-[10px] border border-sales-border bg-sales-surface-hover px-3 py-2.5 text-[13px] font-medium text-sales-text-primary">
               {goalPeriodBounds(periodKey).label}
             </p>
           ) : (
@@ -167,17 +168,22 @@ export function SetGoalDialog({
               value={periodKey}
               onChange={setPeriodKey}
               options={periodOptions}
-              className="mt-1.5 w-full"
+              className="w-full"
             />
           )}
-          <p className="mt-1.5 text-[12px] text-sales-text-muted">
-            {format(bounds.periodStart, "d MMM yyyy")} – {format(bounds.periodEnd, "d MMM yyyy")}
-          </p>
-        </div>
+        </Field>
 
-        <div>
-          <FieldLabel htmlFor="goal-target">Target amount</FieldLabel>
-          <div className="relative mt-1.5">
+        <Field
+          label="Target amount"
+          htmlFor="goal-target"
+          error={error ?? undefined}
+          hint={
+            amount && Number(String(amount).replace(/,/g, "")) > 0
+              ? formatDealCurrency(Number(String(amount).replace(/,/g, "")), { currency })
+              : undefined
+          }
+        >
+          <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] font-medium text-sales-text-muted">
               {prefix.trim()}
             </span>
@@ -188,16 +194,10 @@ export function SetGoalDialog({
               onChange={(e) => setAmount(e.target.value)}
               className="pl-8"
               placeholder="10000"
-              aria-invalid={!!error}
+              invalid={!!error}
             />
           </div>
-          {amount && Number(String(amount).replace(/,/g, "")) > 0 ? (
-            <p className="mt-1.5 text-[12px] text-sales-text-muted">
-              {formatDealCurrency(Number(String(amount).replace(/,/g, "")), { currency })}
-            </p>
-          ) : null}
-          {error ? <FieldError>{error}</FieldError> : null}
-        </div>
+        </Field>
       </div>
     </PremiumSheet>
   );

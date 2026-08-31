@@ -15,9 +15,7 @@ import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
   Avatar,
   Button,
-  FieldError,
-  FieldHint,
-  FieldLabel,
+  Field,
   Input,
   Select,
   SegmentedControl,
@@ -470,10 +468,12 @@ export function CreateDealSheet({
 
         {/* Deal */}
         <section className="space-y-3 border-t border-sales-border-subtle pt-5">
-          <div>
-            <FieldLabel htmlFor="create-deal-name" required>
-              Deal name
-            </FieldLabel>
+          <Field
+            label="Deal name"
+            htmlFor="create-deal-name"
+            required
+            error={fieldErrors.name || undefined}
+          >
             <Input
               ref={nameRef}
               id="create-deal-name"
@@ -484,19 +484,17 @@ export function CreateDealSheet({
               invalid={Boolean(fieldErrors.name)}
               autoComplete="off"
             />
-            <FieldError>{fieldErrors.name}</FieldError>
-          </div>
+          </Field>
 
           {(!serviceSummary.trim() || serviceSummary.trim() !== name.trim()) && (
-            <div>
-              <FieldLabel htmlFor="create-deal-service">Service / project</FieldLabel>
+            <Field label="Service / project" htmlFor="create-deal-service">
               <Input
                 id="create-deal-service"
                 value={serviceSummary}
                 onChange={(e) => setServiceSummary(e.target.value)}
                 placeholder="What are you trying to win?"
               />
-            </div>
+            </Field>
           )}
         </section>
 
@@ -527,8 +525,11 @@ export function CreateDealSheet({
           />
 
           {valueMode === "exact" ? (
-            <div>
-              <FieldLabel htmlFor="create-deal-exact">Estimated value</FieldLabel>
+            <Field
+              label="Estimated value"
+              htmlFor="create-deal-exact"
+              error={fieldErrors.exactValue || undefined}
+            >
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-sales-text-muted">
                   {prefix.trim()}
@@ -543,14 +544,16 @@ export function CreateDealSheet({
                   invalid={Boolean(fieldErrors.exactValue)}
                 />
               </div>
-              <FieldError>{fieldErrors.exactValue}</FieldError>
-            </div>
+            </Field>
           ) : null}
 
           {valueMode === "range" ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
-                <FieldLabel htmlFor="create-deal-min">Minimum</FieldLabel>
+              <Field
+                label="Minimum"
+                htmlFor="create-deal-min"
+                error={fieldErrors.rangeMin || undefined}
+              >
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-sales-text-muted">
                     {prefix.trim()}
@@ -565,10 +568,12 @@ export function CreateDealSheet({
                     invalid={Boolean(fieldErrors.rangeMin)}
                   />
                 </div>
-                <FieldError>{fieldErrors.rangeMin}</FieldError>
-              </div>
-              <div>
-                <FieldLabel htmlFor="create-deal-max">Maximum</FieldLabel>
+              </Field>
+              <Field
+                label="Maximum"
+                htmlFor="create-deal-max"
+                error={fieldErrors.rangeMax || undefined}
+              >
                 <div className="relative">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-sales-text-muted">
                     {prefix.trim()}
@@ -583,8 +588,7 @@ export function CreateDealSheet({
                     invalid={Boolean(fieldErrors.rangeMax)}
                   />
                 </div>
-                <FieldError>{fieldErrors.rangeMax}</FieldError>
-              </div>
+              </Field>
             </div>
           ) : null}
 
@@ -604,8 +608,7 @@ export function CreateDealSheet({
             <h3 className="text-[13px] font-semibold text-sales-text-primary">Timing</h3>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="create-deal-timeframe">Buying timeframe</FieldLabel>
+            <Field label="Buying timeframe" htmlFor="create-deal-timeframe">
               <Select
                 id="create-deal-timeframe"
                 value={buyingTimeframe}
@@ -622,9 +625,12 @@ export function CreateDealSheet({
                   <option value={buyingTimeframe}>{buyingTimeframe}</option>
                 ) : null}
               </Select>
-            </div>
-            <div>
-              <FieldLabel htmlFor="create-deal-decision">Expected decision</FieldLabel>
+            </Field>
+            <Field
+              label="Expected decision"
+              htmlFor="create-deal-decision"
+              error={fieldErrors.expectedDecisionAt || undefined}
+            >
               <Input
                 id="create-deal-decision"
                 type="date"
@@ -632,8 +638,7 @@ export function CreateDealSheet({
                 onChange={(e) => setExpectedDecisionAt(e.target.value)}
                 invalid={Boolean(fieldErrors.expectedDecisionAt)}
               />
-              <FieldError>{fieldErrors.expectedDecisionAt}</FieldError>
-            </div>
+            </Field>
           </div>
         </section>
 
@@ -655,8 +660,7 @@ export function CreateDealSheet({
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <FieldLabel htmlFor="create-deal-next-label">Next step</FieldLabel>
+            <Field label="Next step" htmlFor="create-deal-next-label">
               <Select
                 id="create-deal-next-label"
                 value={
@@ -700,9 +704,12 @@ export function CreateDealSheet({
                   placeholder="Describe the next step"
                 />
               ) : null}
-            </div>
-            <div>
-              <FieldLabel htmlFor="create-deal-next-when">When?</FieldLabel>
+            </Field>
+            <Field
+              label="When?"
+              htmlFor="create-deal-next-when"
+              error={fieldErrors.nextActionAt || undefined}
+            >
               <Input
                 id="create-deal-next-when"
                 type="datetime-local"
@@ -710,8 +717,7 @@ export function CreateDealSheet({
                 onChange={(e) => setNextActionAt(e.target.value)}
                 invalid={Boolean(fieldErrors.nextActionAt)}
               />
-              <FieldError>{fieldErrors.nextActionAt}</FieldError>
-            </div>
+            </Field>
           </div>
 
           {showNextActionWarn ? (
@@ -728,22 +734,25 @@ export function CreateDealSheet({
                 />
                 Create Deal without next action
               </label>
-              <FieldError>{fieldErrors.nextAction}</FieldError>
+              {fieldErrors.nextAction ? (
+                <p className="mt-2 text-[12px] text-sales-danger">{fieldErrors.nextAction}</p>
+              ) : null}
             </div>
           ) : null}
         </section>
 
         {/* Notes */}
         <section className="space-y-2 border-t border-sales-border-subtle pt-5">
-          <FieldLabel htmlFor="create-deal-notes">Deal notes</FieldLabel>
-          <TextArea
-            id="create-deal-notes"
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add anything important from your conversation..."
-            className="min-h-[72px]"
-          />
+          <Field label="Deal notes" htmlFor="create-deal-notes">
+            <TextArea
+              id="create-deal-notes"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add anything important from your conversation..."
+              className="min-h-[72px]"
+            />
+          </Field>
         </section>
 
         {/* More details */}
@@ -762,18 +771,16 @@ export function CreateDealSheet({
           </button>
           {moreOpen ? (
             <div className="mt-2 space-y-3 pb-1">
-              <div>
-                <FieldLabel htmlFor="create-deal-location">Location</FieldLabel>
+              <Field label="Location" htmlFor="create-deal-location">
                 <Input
                   id="create-deal-location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="Suburb / city"
                 />
-              </div>
+              </Field>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <FieldLabel htmlFor="create-deal-dm">Decision maker</FieldLabel>
+                <Field label="Decision maker" htmlFor="create-deal-dm">
                   <Select
                     id="create-deal-dm"
                     value={decisionMakerStatus}
@@ -786,21 +793,23 @@ export function CreateDealSheet({
                     <option value="NO">No</option>
                     <option value="UNKNOWN">Not sure</option>
                   </Select>
-                </div>
+                </Field>
                 {decisionMakerStatus === "YES" ? (
-                  <div>
-                    <FieldLabel htmlFor="create-deal-dm-name">Decision maker name</FieldLabel>
+                  <Field label="Decision maker name" htmlFor="create-deal-dm-name">
                     <Input
                       id="create-deal-dm-name"
                       value={decisionMakerName}
                       onChange={(e) => setDecisionMakerName(e.target.value)}
                       placeholder="Who decides?"
                     />
-                  </div>
+                  </Field>
                 ) : null}
               </div>
-              <div>
-                <FieldLabel htmlFor="create-deal-need">Customer requirement</FieldLabel>
+              <Field
+                label="Customer requirement"
+                htmlFor="create-deal-need"
+                hint="Updates discovery on the Lead when the Deal is created."
+              >
                 <TextArea
                   id="create-deal-need"
                   rows={2}
@@ -809,8 +818,7 @@ export function CreateDealSheet({
                   placeholder="What does the customer need?"
                   className="min-h-[64px]"
                 />
-                <FieldHint>Updates discovery on the Lead when the Deal is created.</FieldHint>
-              </div>
+              </Field>
             </div>
           ) : null}
         </section>

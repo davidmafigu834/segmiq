@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
-import Link from "next/link";
+import { type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
@@ -32,7 +31,12 @@ import {
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { ToastProvider } from "@/components/sales/ui/Toast";
 import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount";
-import { Button } from "@/components/sales/ui/Button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/sales/ui";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import type { UserRole } from "@/types";
@@ -127,96 +131,56 @@ export function SalesQuickActions({
   onLogCall?: () => void;
   realEstate?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
   return (
     <div className="relative hidden layout:block">
-      <Button
-        variant="primary"
-        size="md"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label="Quick actions"
-        data-course-target="dashboard-quick-actions"
-        onClick={() => setOpen((v) => !v)}
-        leftIcon={<Zap size={16} strokeWidth={1.8} />}
-        rightIcon={<ChevronDown size={14} strokeWidth={1.8} />}
-      >
-        Quick actions
-      </Button>
-      {open ? (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-20 cursor-default"
-            aria-label="Close quick actions"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            role="menu"
-            className="absolute right-0 z-[40] mt-2 w-56 overflow-hidden rounded-sales-lg border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger
+          className="sales-btn-primary inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold text-[#11170A] shadow-sm transition-colors hover:opacity-95 focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+          aria-label="Quick actions"
+          data-course-target="dashboard-quick-actions"
+        >
+          <Zap size={16} strokeWidth={1.8} aria-hidden />
+          Quick actions
+          <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56">
+          {onAddLead ? (
+            <DropdownMenuItem icon={<UserPlus size={16} strokeWidth={1.8} />} onSelect={onAddLead}>
+              {realEstate ? "Add inquiry" : "Add lead"}
+            </DropdownMenuItem>
+          ) : null}
+          {onLogCall ? (
+            <DropdownMenuItem icon={<Phone size={16} strokeWidth={1.8} />} onSelect={onLogCall}>
+              Log call
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem
+            icon={<BrandIcon brand="whatsapp" size={16} />}
+            onSelect={() => router.push("/sales/inbox")}
           >
-            {onAddLead ? (
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onAddLead();
-                }}
-              >
-                <UserPlus size={16} strokeWidth={1.8} aria-hidden />
-                {realEstate ? "Add inquiry" : "Add lead"}
-              </button>
-            ) : null}
-            {onLogCall ? (
-              <button
-                type="button"
-                role="menuitem"
-                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                onClick={() => {
-                  setOpen(false);
-                  onLogCall();
-                }}
-              >
-                <Phone size={16} strokeWidth={1.8} aria-hidden />
-                Log call
-              </button>
-            ) : null}
-            <Link
-              href="/sales/inbox"
-              role="menuitem"
-              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => setOpen(false)}
-            >
-              <BrandIcon brand="whatsapp" size={16} />
-              Open Sales Hub
-            </Link>
-            <Link
-              href={realEstate ? "/sales/listings" : "/sales/quotes"}
-              role="menuitem"
-              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => setOpen(false)}
-            >
-              {realEstate ? (
+            Open Sales Hub
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            icon={
+              realEstate ? (
                 <Building2 size={16} strokeWidth={1.8} aria-hidden />
               ) : (
                 <FileText size={16} strokeWidth={1.8} aria-hidden />
-              )}
-              {realEstate ? "View listings" : "View quotations"}
-            </Link>
-            <Link
-              href="/sales/calendar"
-              role="menuitem"
-              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-              onClick={() => setOpen(false)}
-            >
-              <CalendarDays size={16} strokeWidth={1.8} aria-hidden />
-              View calendar
-            </Link>
-          </div>
-        </>
-      ) : null}
+              )
+            }
+            onSelect={() => router.push(realEstate ? "/sales/listings" : "/sales/quotes")}
+          >
+            {realEstate ? "View listings" : "View quotations"}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            icon={<CalendarDays size={16} strokeWidth={1.8} />}
+            onSelect={() => router.push("/sales/calendar")}
+          >
+            View calendar
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

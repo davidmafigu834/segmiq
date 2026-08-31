@@ -20,6 +20,13 @@ import {
   formatLeadIntent,
   type PipelineActiveStage,
 } from "@/lib/sales/pipeline-display";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/sales/ui";
 import { useRouter } from "next/navigation";
 import { isActiveConvertLaterPick } from "@/lib/convert-later-picks";
 import type { LeadRow } from "@/types";
@@ -56,7 +63,6 @@ export function PipelineLeadCard({
 }) {
   const router = useRouter();
   const [picking, setPicking] = useState(false);
-  const [moveOpen, setMoveOpen] = useState(false);
   const [moving, setMoving] = useState(false);
   const source = sourceMeta(lead);
   const name = lead.name?.trim() || "Unnamed lead";
@@ -111,12 +117,8 @@ export function PipelineLeadCard({
     onOpenLogSheet(lead.id, "whatsapp");
   }
 
-  async function handleMoveStage(e: MouseEvent, next: PipelineActiveStage) {
-    e.stopPropagation();
-    if (moving || !onLeadUpdated || next === lead.status) {
-      setMoveOpen(false);
-      return;
-    }
+  async function handleMoveStage(next: PipelineActiveStage) {
+    if (moving || !onLeadUpdated || next === lead.status) return;
     setMoving(true);
     try {
       const res = await fetch(`/api/leads/${lead.id}`, {
@@ -130,7 +132,6 @@ export function PipelineLeadCard({
       if (res.ok && json.lead) onLeadUpdated(json.lead);
     } finally {
       setMoving(false);
-      setMoveOpen(false);
     }
   }
 
@@ -256,54 +257,30 @@ export function PipelineLeadCard({
           <Plus size={15} strokeWidth={1.8} aria-hidden />
         </button>
         {onLeadUpdated && moveTargets.length > 0 ? (
-          <div className="relative layout:hidden">
-            <button
-              type="button"
-              className={btn}
-              aria-label={`Move ${name} to another stage`}
-              title="Move stage"
-              aria-expanded={moveOpen}
-              disabled={moving}
-              onClick={(e) => {
-                e.stopPropagation();
-                setMoveOpen((v) => !v);
-              }}
-            >
-              <ArrowRightLeft size={15} strokeWidth={1.8} aria-hidden />
-            </button>
-            {moveOpen ? (
-              <>
-                <button
-                  type="button"
-                  className="fixed inset-0 z-20"
-                  aria-label="Close move menu"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMoveOpen(false);
-                  }}
-                />
-                <div
-                  role="menu"
-                  className="absolute bottom-full left-0 z-30 mb-1.5 w-44 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.1)]"
-                >
-                  <p className="px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
-                    Move to
-                  </p>
-                  {moveTargets.map((stage) => (
-                    <button
-                      key={stage}
-                      type="button"
-                      role="menuitem"
-                      className="flex w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                      disabled={moving}
-                      onClick={(e) => void handleMoveStage(e, stage)}
-                    >
-                      {PIPELINE_STAGE_LABEL[stage]}
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : null}
+          <div className="layout:hidden" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu side="top" align="start">
+              <DropdownMenuTrigger
+                className={btn}
+                aria-label={`Move ${name} to another stage`}
+                title="Move stage"
+                disabled={moving}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ArrowRightLeft size={15} strokeWidth={1.8} aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-44">
+                <DropdownMenuLabel>Move to</DropdownMenuLabel>
+                {moveTargets.map((stage) => (
+                  <DropdownMenuItem
+                    key={stage}
+                    disabled={moving}
+                    onSelect={() => void handleMoveStage(stage)}
+                  >
+                    {PIPELINE_STAGE_LABEL[stage]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         ) : null}
         <button

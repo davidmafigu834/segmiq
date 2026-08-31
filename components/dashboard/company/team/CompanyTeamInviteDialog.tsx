@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { MailCheck } from "lucide-react";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, FieldError, FieldLabel, Input } from "@/components/sales/ui";
+import { Button, Field, Input } from "@/components/sales/ui";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 
 export function CompanyTeamInviteDialog({
@@ -116,21 +116,18 @@ export function CompanyTeamInviteDialog({
       }
     >
       <div className="space-y-4">
-        <div>
-          <FieldLabel htmlFor="invite-name">Name</FieldLabel>
+        <Field label="Name" htmlFor="invite-name">
           <Input id="invite-name" value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div>
-          <FieldLabel htmlFor="invite-email">Email</FieldLabel>
+        </Field>
+        <Field label="Email" htmlFor="invite-email">
           <Input
             id="invite-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-        </div>
-        <div>
-          <FieldLabel htmlFor="invite-phone">Phone (optional)</FieldLabel>
+        </Field>
+        <Field label="Phone (optional)" htmlFor="invite-phone" optional>
           <Input
             id="invite-phone"
             inputMode="tel"
@@ -138,8 +135,8 @@ export function CompanyTeamInviteDialog({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
-        </div>
-        {error ? <FieldError>{error}</FieldError> : null}
+        </Field>
+        {error ? <p className="text-[13px] text-sales-danger">{error}</p> : null}
       </div>
     </PremiumSheet>
   );

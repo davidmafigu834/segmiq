@@ -2,8 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Bot, ChevronDown, Loader2, Pause, Play } from "lucide-react";
-import { SegmentedControl } from "@/components/sales/ui";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  SegmentedControl,
+} from "@/components/sales/ui";
 import type { InboxConversation } from "@/lib/inbox/types";
 import type { AgentConversationMode } from "@/lib/agent/real-estate/types";
 
@@ -82,7 +89,7 @@ export function AgentConversationCard({
 }) {
   const [data, setData] = useState<AgentConversationData | null>(null);
   const [busy, setBusy] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
 
   const load = useCallback(async () => {
     try {
@@ -101,7 +108,6 @@ export function AgentConversationCard({
   const act = useCallback(
     async (body: Record<string, unknown>) => {
       setBusy(true);
-      setMenuOpen(false);
       try {
         await fetch(`/api/agent/conversations/${leadId}`, {
           method: "PATCH",
@@ -174,61 +180,38 @@ export function AgentConversationCard({
             Learning
           </Link>
         ) : (
-          <div className="relative">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setMenuOpen((open) => !open)}
-            className="inline-flex h-7 items-center gap-1 rounded-[7px] border border-sales-border bg-sales-surface px-2 text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-50"
-            aria-expanded={menuOpen}
-            aria-haspopup="menu"
-          >
-            {busy ? <Loader2 size={11} className="animate-spin" /> : isPaused ? <Play size={11} /> : <Pause size={11} />}
-            Agent
-            <ChevronDown size={11} />
-          </button>
-          {menuOpen ? (
-            <>
-              <button
-                type="button"
-                className="fixed inset-0 z-20 cursor-default"
-                aria-label="Close agent menu"
-                onClick={() => setMenuOpen(false)}
-              />
-              <div
-                role="menu"
-                className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-[0_8px_24px_rgba(16,24,40,0.08)]"
-              >
-                {menuItems.map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    role="menuitem"
-                    className="flex w-full px-3 py-1.5 text-left text-[11px] text-sales-text-primary hover:bg-sales-surface-hover"
-                    onClick={() =>
-                      void act(
-                        item.action === "pause"
-                          ? { action: "pause", pauseFor: item.pauseFor }
-                          : { action: item.action }
-                      )
-                    }
-                  >
-                    {item.label}
-                  </button>
-                ))}
-                {activityHref ? (
-                  <Link
-                    href={activityHref}
-                    className="flex w-full px-3 py-1.5 text-left text-[11px] text-sales-text-primary hover:bg-sales-surface-hover"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    View AI activity
-                  </Link>
-                ) : null}
-              </div>
-            </>
-          ) : null}
-        </div>
+          <DropdownMenu align="end">
+            <DropdownMenuTrigger
+              disabled={busy}
+              className="inline-flex h-7 items-center gap-1 rounded-[7px] border border-sales-border bg-sales-surface px-2 text-[10px] font-medium text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-50"
+            >
+              {busy ? <Loader2 size={11} className="animate-spin" /> : isPaused ? <Play size={11} /> : <Pause size={11} />}
+              Agent
+              <ChevronDown size={11} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              {menuItems.map((item) => (
+                <DropdownMenuItem
+                  key={item.label}
+                  className="text-[11px]"
+                  onSelect={() =>
+                    void act(
+                      item.action === "pause"
+                        ? { action: "pause", pauseFor: item.pauseFor }
+                        : { action: item.action }
+                    )
+                  }
+                >
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+              {activityHref ? (
+                <DropdownMenuItem className="text-[11px]" onSelect={() => router.push(activityHref)}>
+                  View AI activity
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
