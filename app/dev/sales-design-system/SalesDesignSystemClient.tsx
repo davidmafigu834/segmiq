@@ -79,7 +79,7 @@ const NAV = [
   { id: "typography", label: "Typography" },
   { id: "spacing", label: "Spacing & elevation" },
   { id: "buttons", label: "Buttons" },
-  { id: "inputs", label: "Inputs" },
+  { id: "inputs", label: "Inputs & Search" },
   { id: "controls", label: "Controls" },
   { id: "badges", label: "Badges & status" },
   { id: "cards", label: "Cards & KPIs" },
@@ -164,7 +164,11 @@ function ShowcaseInner() {
   const [checked, setChecked] = useState(true);
   const [radio, setRadio] = useState("a");
   const [q, setQ] = useState("");
+  const [qFilled, setQFilled] = useState("Acme Solar");
   const [selectVal, setSelectVal] = useState("whatsapp");
+  const [notesFilled, setNotesFilled] = useState(
+    "Discussed rooftop capacity and next-step site survey."
+  );
   const crmTheme = useCrmThemeOptional();
 
   return (
@@ -497,51 +501,147 @@ function ShowcaseInner() {
             </div>
           </Section>
 
-          {/* ── Inputs ─────────────────────────────────────────── */}
-          <Section id="inputs" title="Inputs" description="Lime focus · red invalid · search with ⌘K.">
-            <div className="grid max-w-xl gap-5">
+          {/* ── Inputs & Search ────────────────────────────────── */}
+          <Section
+            id="inputs"
+            title="02 — Inputs & Search"
+            description="Quiet default · neutral hover · soft SegmiQ lime focus · danger wins when invalid. Hover/focus rows use previewState (showcase only)."
+          >
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[12px] text-sales-text-secondary">
+                Validate both themes with the page toggle. Desktop height 40 · touch 44 · text 16px on phones.
+              </p>
+              <SalesThemeToggle />
+            </div>
+
+            <div className="space-y-8">
+              <ButtonShowcaseRow title="Search input">
+                <PreviewCell label="Empty">
+                  <div className="w-[280px]">
+                    <SearchInput
+                      value={q}
+                      onChange={setQ}
+                      placeholder="Search leads, deals, customers…"
+                      shortcutHint
+                    />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Focus preview">
+                  <div className="w-[280px]">
+                    <SearchInput
+                      value=""
+                      onChange={() => {}}
+                      placeholder="Search leads, deals, customers…"
+                      shortcutHint
+                      previewState="focus"
+                    />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="With query">
+                  <div className="w-[280px]">
+                    <SearchInput
+                      value={qFilled}
+                      onChange={setQFilled}
+                      onClear={() => setQFilled("")}
+                      placeholder="Search leads, deals, customers…"
+                      shortcutHint
+                    />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Disabled">
+                  <div className="w-[280px]">
+                    <SearchInput
+                      value=""
+                      onChange={() => {}}
+                      placeholder="Search leads, deals, customers…"
+                      disabled
+                    />
+                  </div>
+                </PreviewCell>
+              </ButtonShowcaseRow>
+
+              <ButtonShowcaseRow title="Text input">
+                <PreviewCell label="Default">
+                  <div className="w-[240px]">
+                    <Input placeholder="Company name" />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Hover preview">
+                  <div className="w-[240px]">
+                    <Input placeholder="Company name" previewState="hover" />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Focused preview">
+                  <div className="w-[240px]">
+                    <Input placeholder="Company name" previewState="focus" />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Filled">
+                  <div className="w-[240px]">
+                    <Input defaultValue="Acme Energy" />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Invalid">
+                  <div className="w-[240px]">
+                    <Input invalid placeholder="This field is required" />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Disabled">
+                  <div className="w-[240px]">
+                    <Input disabled value="Read-only display value" readOnly />
+                  </div>
+                </PreviewCell>
+              </ButtonShowcaseRow>
+
+              <ButtonShowcaseRow title="Textarea">
+                <PreviewCell label="Default">
+                  <div className="w-[280px]">
+                    <TextArea placeholder="Call summary…" rows={3} />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Filled">
+                  <div className="w-[280px]">
+                    <TextArea value={notesFilled} onChange={(e) => setNotesFilled(e.target.value)} rows={3} />
+                  </div>
+                </PreviewCell>
+                <PreviewCell label="Invalid">
+                  <div className="w-[280px]">
+                    <TextArea invalid placeholder="Notes are required…" rows={3} />
+                  </div>
+                </PreviewCell>
+              </ButtonShowcaseRow>
+
               <div>
-                <FieldLabel htmlFor="ds-name" required>
-                  Customer name
-                </FieldLabel>
-                <Input id="ds-name" placeholder="Tendai Moyo" />
-                <FieldHint>As it appears on the lead card.</FieldHint>
-              </div>
-              <div>
-                <FieldLabel htmlFor="ds-err">Required field</FieldLabel>
-                <Input id="ds-err" invalid placeholder="This field is required" />
-                <FieldError>This field is required</FieldError>
-              </div>
-              <div>
-                <FieldLabel htmlFor="ds-search">Search</FieldLabel>
-                <SearchInput
-                  id="ds-search"
-                  value={q}
-                  onChange={setQ}
-                  placeholder="Search leads…"
-                  shortcutHint
-                />
-              </div>
-              <div>
-                <FieldLabel htmlFor="ds-select">Lead source</FieldLabel>
-                <Select
-                  id="ds-select"
-                  value={selectVal}
-                  onChange={(e) => setSelectVal(e.target.value)}
-                >
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="facebook">Facebook</option>
-                  <option value="website">Website</option>
-                  <option value="referral">Referral</option>
-                </Select>
-              </div>
-              <div>
-                <FieldLabel htmlFor="ds-notes">Notes</FieldLabel>
-                <TextArea id="ds-notes" placeholder="Call summary…" rows={3} />
-              </div>
-              <div>
-                <FieldLabel>Disabled</FieldLabel>
-                <Input disabled value="Read only value" readOnly />
+                <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  Field text
+                </p>
+                <div className="grid max-w-xl gap-5">
+                  <div>
+                    <FieldLabel htmlFor="ds-name" required>
+                      Customer name
+                    </FieldLabel>
+                    <Input id="ds-name" placeholder="Tendai Moyo" />
+                    <FieldHint>This information will be visible to your team members.</FieldHint>
+                  </div>
+                  <div>
+                    <FieldLabel htmlFor="ds-err">Email</FieldLabel>
+                    <Input id="ds-err" invalid defaultValue="not-an-email" />
+                    <FieldError>Enter a valid email address.</FieldError>
+                  </div>
+                  <div>
+                    <FieldLabel htmlFor="ds-select">Lead source</FieldLabel>
+                    <Select
+                      id="ds-select"
+                      value={selectVal}
+                      onChange={(e) => setSelectVal(e.target.value)}
+                    >
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="website">Website</option>
+                      <option value="referral">Referral</option>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
           </Section>

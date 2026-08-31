@@ -24,7 +24,12 @@ export {
   FieldError,
   FieldHint,
 } from "./Input";
-export type { SalesInputProps } from "./Input";
+export type {
+  SalesInputProps,
+  SalesInputPreviewState,
+  SalesTextAreaProps,
+  SearchInputProps,
+} from "./Input";
 
 export { Switch, Checkbox, Radio, SegmentedControl, Tabs } from "./Controls";
 export type { SegmentOption, TabItem } from "./Controls";

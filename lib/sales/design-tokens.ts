@@ -113,6 +113,13 @@ export const SALES_BUTTON_HEIGHT = {
   lg: 48,
 } as const;
 
+/** Field heights: touch 44 · desktop 40 · compact 32 */
+export const SALES_FIELD_HEIGHT = {
+  touch: 44,
+  md: 40,
+  compact: 32,
+} as const;
+
 export const SALES_Z = {
   base: 0,
   sticky: 20,

@@ -3882,6 +3882,22 @@ label[for="photo-input"] {
   --sales-btn-danger-hover: color-mix(in srgb, var(--sales-danger) 88%, #000);
   --sales-btn-danger-active: color-mix(in srgb, var(--sales-danger) 78%, #000);
 
+  /* Field system — quiet chrome; lime only on focus */
+  --sales-field-bg: var(--sales-surface);
+  --sales-field-border: #d0d5dd;
+  --sales-field-border-hover: #b8c0cc;
+  --sales-field-shadow: inset 0 1px 0 rgba(16, 24, 40, 0.015), 0 1px 2px rgba(16, 24, 40, 0.025);
+  --sales-field-focus-border: rgba(212, 255, 79, 0.65);
+  --sales-field-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.12);
+  --sales-field-danger-border: #f04438;
+  --sales-field-danger-ring: 0 0 0 3px rgba(240, 68, 56, 0.1);
+  --sales-field-disabled-bg: #f2f4f7;
+  --sales-field-disabled-border: #eaecf0;
+  --sales-field-readonly-bg: var(--sales-surface-subtle);
+  --sales-field-placeholder: #98a2b3;
+  --sales-field-shortcut-bg: var(--sales-surface-subtle);
+  --sales-field-shortcut-border: var(--sales-border);
+
   /* Sales sidebar — chrome, not white */
   --sales-sidebar-bg: #f4f6fb;
   --sales-sidebar-border: #e2e8f0;
@@ -4128,6 +4144,22 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-btn-focus-outline: #d4ff4f;
   --sales-btn-danger-hover: color-mix(in srgb, var(--sales-danger) 88%, #000);
   --sales-btn-danger-active: color-mix(in srgb, var(--sales-danger) 78%, #000);
+
+  /* Field system — elevated navy, soft cool border, lime focus only */
+  --sales-field-bg: rgba(10, 27, 57, 0.84);
+  --sales-field-border: rgba(130, 151, 198, 0.16);
+  --sales-field-border-hover: rgba(130, 151, 198, 0.28);
+  --sales-field-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --sales-field-focus-border: rgba(212, 255, 79, 0.65);
+  --sales-field-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.12);
+  --sales-field-danger-border: var(--sales-danger);
+  --sales-field-danger-ring: 0 0 0 3px rgba(255, 93, 115, 0.12);
+  --sales-field-disabled-bg: var(--sales-neutral-100);
+  --sales-field-disabled-border: var(--sales-border-subtle);
+  --sales-field-readonly-bg: var(--sales-surface);
+  --sales-field-placeholder: var(--sales-text-disabled);
+  --sales-field-shortcut-bg: rgba(16, 36, 73, 0.9);
+  --sales-field-shortcut-border: rgba(130, 151, 198, 0.2);
 
   /* Sidebar — slightly deeper than the canvas */
   --sales-sidebar-bg: #050510;

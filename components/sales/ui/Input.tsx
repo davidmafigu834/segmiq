@@ -1,6 +1,13 @@
 "use client";
 
-import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, type SelectHTMLAttributes } from "react";
+import {
+  forwardRef,
+  useRef,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from "react";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
 
@@ -8,50 +15,176 @@ import { cn } from "@/lib/ui/cn";
  * 16px text below `sm` prevents iOS Safari from zooming the viewport on focus;
  * it steps back down to the 13px board size on larger screens.
  */
-const fieldText = "text-[16px] sm:text-[13px]";
-const fieldHeight = "h-11 sm:h-10";
+const fieldText = "text-[16px] font-normal sm:text-[13px] placeholder:font-normal";
 
-const fieldBase =
-  "w-full rounded-sales-md border border-sales-border-strong bg-sales-surface text-sales-text-primary placeholder:text-sales-text-muted outline-none transition-[border-color,box-shadow] duration-150 focus:border-sales-brand focus:shadow-[var(--sales-focus-ring)] disabled:cursor-not-allowed disabled:bg-sales-neutral-100 disabled:text-sales-text-disabled disabled:opacity-70";
+/** Touch ≥44 · desktop 40 · compact 32 (desktop) / 40 (touch). */
+const fieldHeight = "h-11 min-h-11 sm:h-10 sm:min-h-10";
+const fieldHeightCompact = "h-10 min-h-10 sm:h-8 sm:min-h-8";
 
-const fieldInvalid =
-  "border-sales-danger focus:border-sales-danger focus:shadow-[var(--sales-focus-ring-danger)]";
+const fieldMotion =
+  "transition-[border-color,box-shadow,background-color,color] duration-[140ms] ease motion-reduce:transition-none";
+
+const fieldBase = cn(
+  "w-full rounded-[8px] border bg-[var(--sales-field-bg)] text-sales-text-primary outline-none",
+  "border-[var(--sales-field-border)] shadow-[var(--sales-field-shadow)]",
+  "placeholder:text-[var(--sales-field-placeholder)]",
+  fieldMotion,
+  "hover:border-[var(--sales-field-border-hover)]",
+  "focus:border-[var(--sales-field-focus-border)] focus:shadow-[var(--sales-field-focus-ring)]",
+  "focus-visible:border-[var(--sales-field-focus-border)] focus-visible:shadow-[var(--sales-field-focus-ring)]",
+  "disabled:cursor-not-allowed disabled:border-[var(--sales-field-disabled-border)]",
+  "disabled:bg-[var(--sales-field-disabled-bg)] disabled:text-sales-text-disabled",
+  "disabled:shadow-none disabled:hover:border-[var(--sales-field-disabled-border)]",
+  "read-only:bg-[var(--sales-field-readonly-bg)] read-only:hover:border-[var(--sales-field-border)]",
+  "read-only:focus:border-[var(--sales-field-focus-border)] read-only:focus:shadow-[var(--sales-field-focus-ring)]"
+);
+
+const fieldInvalid = cn(
+  "border-[var(--sales-field-danger-border)]",
+  "hover:border-[var(--sales-field-danger-border)]",
+  "focus:border-[var(--sales-field-danger-border)] focus:shadow-[var(--sales-field-danger-ring)]",
+  "focus-visible:border-[var(--sales-field-danger-border)] focus-visible:shadow-[var(--sales-field-danger-ring)]"
+);
+
+const fieldIconSlot =
+  "pointer-events-none absolute top-1/2 flex -translate-y-1/2 items-center justify-center text-sales-text-muted [&_svg]:size-4";
+
+/* Hide native search clear so our accessible control owns the right slot. */
+const searchNativeClearHide =
+  "[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden";
+
+/** Showcase-only. Applies hover/focus chrome without changing production interaction. */
+export type SalesInputPreviewState = "hover" | "focus";
 
 export type SalesInputProps = InputHTMLAttributes<HTMLInputElement> & {
   compact?: boolean;
   invalid?: boolean;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
+  rightAccessory?: ReactNode;
+  /** Showcase-only visual state. Do not use on product pages. */
+  previewState?: SalesInputPreviewState;
 };
 
-export const Input = forwardRef<HTMLInputElement, SalesInputProps>(
-  function Input({ className, compact, invalid, ...props }, ref) {
-    return (
-      <input
-        ref={ref}
-        aria-invalid={invalid || undefined}
-        className={cn(
-          fieldBase,
-          fieldText,
-          compact ? "h-10 px-3 sm:h-9" : `${fieldHeight} px-3`,
-          invalid && fieldInvalid,
-          className
-        )}
-        {...props}
-      />
-    );
+function previewFieldClass(previewState?: SalesInputPreviewState, invalid?: boolean) {
+  if (!previewState) return null;
+  if (invalid) {
+    return previewState === "focus"
+      ? "border-[var(--sales-field-danger-border)] shadow-[var(--sales-field-danger-ring)]"
+      : "border-[var(--sales-field-danger-border)]";
   }
-);
+  if (previewState === "hover") {
+    return "border-[var(--sales-field-border-hover)]";
+  }
+  return "border-[var(--sales-field-focus-border)] shadow-[var(--sales-field-focus-ring)]";
+}
 
-export const TextArea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  function TextArea({ className, ...props }, ref) {
-    return (
-      <textarea
-        ref={ref}
-        className={cn(fieldBase, fieldText, "min-h-[88px] resize-y px-3 py-2.5", className)}
-        {...props}
-      />
-    );
-  }
-);
+function fieldHorizontalPad(hasLeft: boolean, hasRight: boolean) {
+  if (hasLeft && hasRight) return "pl-10 pr-10";
+  if (hasLeft) return "pl-10 pr-3";
+  if (hasRight) return "pl-3 pr-10";
+  return "px-3";
+}
+
+export const Input = forwardRef<HTMLInputElement, SalesInputProps>(function Input(
+  {
+    className,
+    compact,
+    invalid,
+    leftIcon,
+    rightIcon,
+    rightAccessory,
+    previewState,
+    disabled,
+    readOnly,
+    ...props
+  },
+  ref
+) {
+  const right = rightAccessory ?? rightIcon;
+  const hasLeft = Boolean(leftIcon);
+  const hasRight = Boolean(right);
+  const wrapped = hasLeft || hasRight;
+
+  const input = (
+    <input
+      ref={ref}
+      aria-invalid={invalid || undefined}
+      disabled={disabled}
+      readOnly={readOnly}
+      data-preview={previewState || undefined}
+      className={cn(
+        fieldBase,
+        fieldText,
+        compact ? fieldHeightCompact : fieldHeight,
+        fieldHorizontalPad(hasLeft, hasRight),
+        invalid && fieldInvalid,
+        previewFieldClass(previewState, invalid),
+        !wrapped && className
+      )}
+      {...props}
+    />
+  );
+
+  if (!wrapped) return input;
+
+  return (
+    <div className={cn("group relative w-full", className)}>
+      {hasLeft ? (
+        <span
+          className={cn(
+            fieldIconSlot,
+            "left-3 transition-colors duration-[140ms] ease group-focus-within:text-sales-text-secondary"
+          )}
+          aria-hidden="true"
+        >
+          {leftIcon}
+        </span>
+      ) : null}
+      {input}
+      {hasRight ? (
+        <span
+          className={cn(
+            fieldIconSlot,
+            "right-3 transition-colors duration-[140ms] ease group-focus-within:text-sales-text-secondary"
+          )}
+          aria-hidden="true"
+        >
+          {right}
+        </span>
+      ) : null}
+    </div>
+  );
+});
+
+export type SalesTextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  invalid?: boolean;
+  /** Showcase-only visual state. Do not use on product pages. */
+  previewState?: SalesInputPreviewState;
+};
+
+export const TextArea = forwardRef<HTMLTextAreaElement, SalesTextAreaProps>(function TextArea(
+  { className, invalid, previewState, ...props },
+  ref
+) {
+  return (
+    <textarea
+      ref={ref}
+      aria-invalid={invalid || undefined}
+      data-preview={previewState || undefined}
+      className={cn(
+        fieldBase,
+        fieldText,
+        "min-h-[96px] resize-y px-3 py-2.5 sm:min-h-[88px]",
+        "[scrollbar-width:thin]",
+        invalid && fieldInvalid,
+        previewFieldClass(previewState, invalid),
+        className
+      )}
+      {...props}
+    />
+  );
+});
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
   function Select({ className, ...props }, ref) {
@@ -74,6 +207,23 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
   }
 );
 
+export type SearchInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onClear?: () => void;
+  placeholder?: string;
+  className?: string;
+  id?: string;
+  name?: string;
+  disabled?: boolean;
+  /** Show ⌘K hint when empty (design-system boards / desktop). */
+  shortcutHint?: boolean;
+  /** Alias of `shortcutHint` for call-site clarity. */
+  showShortcut?: boolean;
+  /** Showcase-only visual state. Do not use on product pages. */
+  previewState?: SalesInputPreviewState;
+};
+
 export function SearchInput({
   value,
   onChange,
@@ -81,49 +231,76 @@ export function SearchInput({
   placeholder = "Search…",
   className,
   id,
+  name,
+  disabled,
   shortcutHint = false,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onClear?: () => void;
-  placeholder?: string;
-  className?: string;
-  id?: string;
-  /** Show ⌘K hint when empty (design-system boards) */
-  shortcutHint?: boolean;
-}) {
+  showShortcut,
+  previewState,
+}: SearchInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const showKbd = Boolean(showShortcut ?? shortcutHint);
+  const hasQuery = value.length > 0;
+
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("group relative w-full", className)}>
       <Search
         size={16}
         strokeWidth={1.8}
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
-        aria-hidden
+        className={cn(
+          "pointer-events-none absolute left-3 top-1/2 z-[1] size-4 -translate-y-1/2 text-sales-text-muted",
+          "transition-colors duration-[140ms] ease",
+          "group-focus-within:text-sales-text-secondary",
+          previewState === "focus" && "text-sales-text-secondary"
+        )}
+        aria-hidden="true"
       />
-      <Input
+      <input
+        ref={inputRef}
         id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className={cn("pl-9", value || shortcutHint ? "pr-12" : "pr-9")}
+        name={name}
         type="search"
+        value={value}
+        disabled={disabled}
+        autoComplete="off"
+        placeholder={placeholder}
+        data-preview={previewState || undefined}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          fieldBase,
+          fieldText,
+          fieldHeight,
+          "pl-10 pr-10",
+          searchNativeClearHide,
+          previewFieldClass(previewState, false)
+        )}
       />
-      {value ? (
+      {hasQuery && !disabled ? (
         <button
           type="button"
-          className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-sales-sm text-sales-text-muted transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--sales-focus-outline)]"
+          className={cn(
+            "absolute right-1.5 top-1/2 z-[1] flex h-9 w-9 -translate-y-1/2 items-center justify-center",
+            "rounded-[6px] text-sales-text-muted transition-colors duration-[140ms] ease",
+            "hover:bg-sales-surface-hover hover:text-sales-text-primary",
+            "focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1",
+            "focus-visible:outline-[var(--sales-focus-outline)]"
+          )}
           aria-label="Clear search"
           onClick={() => {
             onChange("");
             onClear?.();
+            inputRef.current?.focus();
           }}
         >
-          <X size={14} strokeWidth={1.8} />
+          <X size={14} strokeWidth={1.8} aria-hidden="true" />
         </button>
-      ) : shortcutHint ? (
+      ) : showKbd ? (
         <kbd
-          className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted sm:block"
-          aria-hidden
+          className={cn(
+            "pointer-events-none absolute right-2.5 top-1/2 z-[1] hidden h-[22px] -translate-y-1/2 items-center",
+            "rounded-[5px] border border-[var(--sales-field-shortcut-border)] bg-[var(--sales-field-shortcut-bg)]",
+            "px-1.5 text-[11px] font-medium tabular-nums text-sales-text-muted sm:inline-flex"
+          )}
+          aria-hidden="true"
         >
           ⌘K
         </kbd>
@@ -156,10 +333,10 @@ export function FieldLabel({
 
 export function FieldError({ children }: { children?: React.ReactNode }) {
   if (!children) return null;
-  return <p className="mt-1 text-[12px] text-sales-danger">{children}</p>;
+  return <p className="mt-1.5 text-[12px] font-normal text-sales-danger">{children}</p>;
 }
 
 export function FieldHint({ children }: { children?: React.ReactNode }) {
   if (!children) return null;
-  return <p className="mt-1 text-[12px] text-sales-text-secondary">{children}</p>;
+  return <p className="mt-1.5 text-[12px] font-normal text-sales-text-muted">{children}</p>;
 }
