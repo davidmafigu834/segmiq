@@ -1,18 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { SalesPerformanceTrendChart } from "@/components/sales/ui/Charts";
 import { formatCurrencyUsd } from "@/lib/format";
 
 export type GrowthTrendPoint = {
@@ -22,14 +12,6 @@ export type GrowthTrendPoint = {
   won: number;
   revenue: number;
 };
-
-function compactCurrency(value: number): string {
-  if (!Number.isFinite(value)) return "—";
-  if (Math.abs(value) >= 1000) {
-    return `$${Math.round(value / 1000)}K`;
-  }
-  return `$${Math.round(value)}`;
-}
 
 function TrendBadge({ pct }: { pct: number | null }) {
   if (pct === null) {
@@ -88,6 +70,16 @@ export function GrowthTrendChart({ data }: { data: GrowthTrendPoint[] }) {
   );
 
   const hasAny = totals.leads > 0 || totals.won > 0 || totals.revenue > 0;
+  const chartData = useMemo(
+    () =>
+      data.map((d) => ({
+        label: d.label,
+        leadsCreated: d.leads,
+        dealsWon: d.won,
+        revenue: d.revenue,
+      })),
+    [data]
+  );
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-card)] p-5">
@@ -102,7 +94,6 @@ export function GrowthTrendChart({ data }: { data: GrowthTrendPoint[] }) {
         </div>
       </div>
 
-      {/* Summary stats */}
       <div className="mb-6 grid grid-cols-1 gap-3 min-[640px]:grid-cols-3">
         {(
           [
@@ -140,80 +131,7 @@ export function GrowthTrendChart({ data }: { data: GrowthTrendPoint[] }) {
 
       {hasAny ? (
         <div className="h-[260px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
-                axisLine={{ stroke: "var(--border)" }}
-                tickLine={false}
-              />
-              <YAxis
-                yAxisId="left"
-                width={32}
-                tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-              />
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                width={48}
-                tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => compactCurrency(Number(v))}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "var(--surface-sidebar)",
-                  border: "1px solid var(--surface-sidebar-border)",
-                  borderRadius: 6,
-                  color: "var(--text-on-dark)",
-                  fontSize: 12,
-                }}
-                formatter={(value, name) => {
-                  if (name === "Revenue won") {
-                    return [formatCurrencyUsd(Number(value)), name];
-                  }
-                  return [Number(value), name as string];
-                }}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-                iconType="circle"
-                iconSize={8}
-              />
-              <Bar
-                yAxisId="left"
-                dataKey="leads"
-                name="Leads"
-                fill="var(--accent)"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={40}
-              />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="won"
-                name="Deals won"
-                stroke="var(--success)"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="revenue"
-                name="Revenue won"
-                stroke="var(--warning)"
-                strokeWidth={2}
-                dot={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
+          <SalesPerformanceTrendChart data={chartData} />
         </div>
       ) : (
         <div className="flex h-[200px] flex-col items-center justify-center text-center">

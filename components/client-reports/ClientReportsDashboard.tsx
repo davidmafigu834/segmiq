@@ -5,17 +5,11 @@ import useSWR from "swr";
 import { useSearchParams } from "next/navigation";
 import { format, parseISO } from "date-fns";
 import {
-  Cell,
-  ComposedChart,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+  SalesDonutChart,
+  SalesMultiLineChart,
+  SalesSparkline,
+} from "@/components/sales/ui/Charts";
+import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import type { ClientReportPayload } from "@/lib/client-report";
 import { formatCurrencyUsd } from "@/lib/format";
@@ -73,6 +67,7 @@ function HeroPill({ value }: { value: number }) {
 }
 
 export function ClientReportsDashboard() {
+  const colors = useSalesChartColors();
   const searchParams = useSearchParams();
   const qs = searchParams.toString();
   const key = qs ? `/api/reports/client?${qs}` : null;
@@ -208,25 +203,12 @@ export function ClientReportsDashboard() {
           ) : (
             <>
               <div className="mx-auto mt-4 h-[220px] w-full max-w-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={donutData} dataKey="value" nameKey="name" innerRadius="58%" outerRadius="85%" paddingAngle={2}>
-                      {donutData.map((e) => (
-                        <Cell key={e.key} fill={e.fill} stroke="var(--surface-card)" />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "var(--surface-sidebar)",
-                        border: "1px solid var(--surface-sidebar-border)",
-                        borderRadius: 6,
-                        color: "var(--text-on-dark)",
-                        fontSize: 12,
-                      }}
-                      formatter={(v, name) => [Number(v ?? 0), String(name ?? "")]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+                <SalesDonutChart
+                  data={donutData.map((e) => ({ name: e.name, value: e.value, color: e.fill }))}
+                  showLegend={false}
+                  centerLabel="Leads"
+                  centerValue={donutTotal}
+                />
               </div>
               <ul className="mt-4 space-y-2 text-sm">
                 {[
@@ -354,12 +336,10 @@ export function ClientReportsDashboard() {
                   label: "14d volume",
                   align: "right",
                   render: (row: ClientReportPayload["team"][number]) => {
-                    const spark = row.last14DaysLeads.map((y, i) => ({ i: String(i), y }));
+                    const spark = row.last14DaysLeads.map((y, i) => ({ label: String(i), value: y }));
                     return (
-                      <div className="inline-flex justify-end">
-                        <LineChart width={88} height={36} data={spark} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
-                          <Line type="monotone" dataKey="y" stroke="var(--accent)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                        </LineChart>
+                      <div className="inline-flex h-9 w-[88px] justify-end">
+                        <SalesSparkline data={spark} height={36} color={colors.brand} />
                       </div>
                     );
                   },
@@ -408,37 +388,17 @@ export function ClientReportsDashboard() {
         <p className="font-mono text-[11px] uppercase text-[var(--text-tertiary)]">Trend</p>
         <h2 className="text-[18px] font-semibold text-[var(--text-primary)]">Leads vs won</h2>
         <div className="mt-4 h-[220px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data.leadsOverTime} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
-              <XAxis
-                dataKey="date"
-                tickFormatter={(d) => format(parseISO(String(d)), "MMM d")}
-                tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
-                axisLine={{ stroke: "var(--border)" }}
-                tickLine={false}
-              />
-              <YAxis
-                width={28}
-                tick={{ fill: "var(--text-tertiary)", fontSize: 11, fontFamily: "var(--font-mono)" }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "var(--surface-sidebar)",
-                  border: "1px solid var(--surface-sidebar-border)",
-                  borderRadius: 6,
-                  color: "var(--text-on-dark)",
-                  fontSize: 12,
-                  fontFamily: "var(--font-mono)",
-                }}
-                labelFormatter={(l) => format(parseISO(String(l)), "MMM d, yyyy")}
-              />
-              <Line type="monotone" dataKey="leads" stroke="var(--text-tertiary)" strokeWidth={2} dot={false} name="Leads" />
-              <Line type="monotone" dataKey="won" stroke="var(--accent)" strokeWidth={2} dot={false} name="Won" />
-            </ComposedChart>
-          </ResponsiveContainer>
+          <SalesMultiLineChart
+            data={data.leadsOverTime}
+            xKey="date"
+            labelFormatter={(d) => format(parseISO(String(d)), "MMM d, yyyy")}
+            series={[
+              { dataKey: "leads", name: "Leads", color: colors.textMuted },
+              { dataKey: "won", name: "Won", color: colors.brand },
+            ]}
+            showLegend={false}
+            emptyTitle="No trend data for this period"
+          />
         </div>
       </section>
     </div>

@@ -755,6 +755,7 @@ export function SalesTasksClient() {
                     <div className="h-[120px] w-[120px] shrink-0">
                       <SalesDonutChart
                         centerLabel="Total tasks"
+                        showLegend={false}
                         data={[
                           {
                             name: "Pending",

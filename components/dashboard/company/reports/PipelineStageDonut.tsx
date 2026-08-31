@@ -1,13 +1,11 @@
 "use client";
 
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { SalesDonutChart } from "@/components/sales/ui/Charts";
 import { MenuSelect } from "@/components/sales/ui";
 import { DEAL_STAGE_ACCENT } from "@/lib/sales/deals";
-import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
 import { formatDealCurrency } from "@/lib/sales/format";
 import type { PipelineStageSlice } from "@/lib/sales/company-reports/metrics";
 import { ReportChartCard } from "./ReportChartCard";
-import { ReportTooltip } from "./ReportTooltip";
 
 export function PipelineStageDonut({
   slices,
@@ -28,13 +26,15 @@ export function PipelineStageDonut({
   onRetry?: () => void;
   onStageClick?: (stage: string) => void;
 }) {
-  const colors = useSalesChartColors();
   const data = slices.map((s) => ({
-    ...s,
-    chartValue: mode === "value" ? s.value : s.count,
-    fill: DEAL_STAGE_ACCENT[s.stage],
+    name: s.label,
+    value: mode === "value" ? s.value : s.count,
+    color: DEAL_STAGE_ACCENT[s.stage],
+    stage: s.stage,
+    raw: s,
   }));
   const empty = activeCount === 0 || data.length === 0;
+  const totalValue = data.reduce((n, x) => n + x.raw.value, 0);
 
   return (
     <ReportChartCard
@@ -66,58 +66,16 @@ export function PipelineStageDonut({
       ) : (
         <div className="flex h-full min-h-0 items-center gap-3 overflow-hidden">
           <div className="relative h-[132px] w-[132px] shrink-0 sm:h-[148px] sm:w-[148px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  dataKey="chartValue"
-                  nameKey="label"
-                  innerRadius="62%"
-                  outerRadius="88%"
-                  paddingAngle={2}
-                  stroke={colors.surface}
-                >
-                  {data.map((s) => (
-                    <Cell
-                      key={s.stage}
-                      fill={s.fill}
-                      className={onStageClick ? "cursor-pointer" : undefined}
-                      onClick={() => onStageClick?.(s.stage)}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    const row = payload?.[0]?.payload as (typeof data)[number] | undefined;
-                    if (!row) return null;
-                    return (
-                      <ReportTooltip
-                        active={active}
-                        label={row.label}
-                        rows={[
-                          {
-                            name: mode === "value" ? "Pipeline value" : "Deals",
-                            value:
-                              mode === "value"
-                                ? formatDealCurrency(row.value, { currency })
-                                : String(row.count),
-                            color: row.fill,
-                          },
-                        ]}
-                      />
-                    );
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <p className="text-[20px] font-semibold tabular-nums leading-none text-sales-text-primary">
-                {activeCount}
-              </p>
-              <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
-                Active Deals
-              </p>
-            </div>
+            <SalesDonutChart
+              data={data.map((s) => ({ name: s.name, value: s.value, color: s.color }))}
+              showLegend={false}
+              centerLabel="Active Deals"
+              centerValue={activeCount}
+              onSliceClick={(slice) => {
+                const match = data.find((d) => d.name === slice.name);
+                if (match) onStageClick?.(match.stage);
+              }}
+            />
           </div>
           <ul className="min-w-0 flex-1 space-y-1.5 overflow-y-auto pr-0.5" aria-label="Active Deal stages">
             {data.map((s) => (
@@ -127,15 +85,17 @@ export function PipelineStageDonut({
                   className="flex w-full items-center gap-2 text-left text-[12px]"
                   onClick={() => onStageClick?.(s.stage)}
                 >
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.fill }} aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-sales-text-secondary">{s.label}</span>
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-sales-text-secondary">{s.name}</span>
                   <span className="shrink-0 tabular-nums text-sales-text-primary">
-                    {mode === "value" ? formatDealCurrency(s.value, { currency, compact: true }) : s.count}
+                    {mode === "value"
+                      ? formatDealCurrency(s.raw.value, { currency, compact: true })
+                      : s.raw.count}
                   </span>
                   <span className="w-10 shrink-0 text-right tabular-nums text-sales-text-muted">
                     {mode === "value"
-                      ? `${s.value > 0 ? Math.round((s.value / Math.max(1, data.reduce((n, x) => n + x.value, 0))) * 100) : 0}%`
-                      : `${Math.round(s.pct)}%`}
+                      ? `${s.raw.value > 0 ? Math.round((s.raw.value / Math.max(1, totalValue)) * 100) : 0}%`
+                      : `${Math.round(s.raw.pct)}%`}
                   </span>
                 </button>
               </li>

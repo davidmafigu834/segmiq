@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { Avatar, Badge } from "@/components/sales/ui";
+import { Avatar, Badge, SalesDonutChart } from "@/components/sales/ui";
 import { GoalProgressRing } from "./GoalProgressRing";
 import { displayCompositionLabel } from "@/lib/terminology";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
@@ -31,29 +30,12 @@ function Donut({
   }
   return (
     <div className="relative h-[120px] w-[120px] shrink-0">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={slices}
-            dataKey="value"
-            nameKey="name"
-            innerRadius="62%"
-            outerRadius="88%"
-            paddingAngle={2}
-            stroke="none"
-          >
-            {slices.map((s) => (
-              <Cell key={s.name} fill={s.color} />
-            ))}
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
-      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <p className="text-[18px] font-semibold tabular-nums leading-none text-sales-text-primary">
-          {centerValue}
-        </p>
-        <p className="mt-0.5 text-[10px] text-sales-text-muted">{centerLabel}</p>
-      </div>
+      <SalesDonutChart
+        data={slices}
+        showLegend={false}
+        centerLabel={centerLabel}
+        centerValue={centerValue}
+      />
     </div>
   );
 }

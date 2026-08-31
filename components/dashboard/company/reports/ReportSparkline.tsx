@@ -1,6 +1,6 @@
 "use client";
 
-import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { SalesSparkline } from "@/components/sales/ui/Charts";
 import { cn } from "@/lib/ui/cn";
 
 export function ReportSparkline({
@@ -21,21 +21,15 @@ export function ReportSparkline({
       </div>
     );
   }
-  const points = data.map((y, i) => ({ i, y }));
+
+  const chartData = data.map((value, i) => ({ label: String(i), value }));
+
   return (
-    <div className={cn("h-8 w-full", className)} aria-hidden>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 4, right: 0, bottom: 2, left: 0 }}>
-          <Line
-            type="monotone"
-            dataKey="y"
-            stroke={color}
-            strokeWidth={1.6}
-            dot={false}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
+    <SalesSparkline
+      data={chartData}
+      color={color}
+      height={32}
+      className={cn("h-8", className)}
+    />
   );
 }

@@ -69,6 +69,7 @@ export function QuotePerformanceCard({
               <SalesDonutChart
                 data={slices.map((s) => ({ name: s.label, value: s.count, color: s.color }))}
                 centerLabel="Total"
+                showLegend={false}
                 emptyTitle="No quotations yet"
               />
             </div>

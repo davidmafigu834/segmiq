@@ -233,6 +233,25 @@ export const SALES_CHART_SERIES = [
   SALES_COLORS.teal,
 ] as const;
 
+/** Standard chart heights (px) — preserve existing layouts when heights already set inline. */
+export const SALES_CHART = {
+  sparkline: 72,
+  compact: 200,
+  standard: 260,
+  large: 340,
+  animationMs: 350,
+} as const;
+
+export const SALES_CHART_SEMANTIC = {
+  brand: SALES_COLORS.brand,
+  success: SALES_COLORS.success,
+  info: SALES_COLORS.info,
+  warning: SALES_COLORS.warning,
+  danger: SALES_COLORS.danger,
+  neutral: SALES_COLORS.textMuted,
+  comparison: SALES_COLORS.purple,
+} as const;
+
 export const PIPELINE_STAGE_COLORS = {
   NEW: SALES_COLORS.info,
   CONTACTED: SALES_COLORS.success,

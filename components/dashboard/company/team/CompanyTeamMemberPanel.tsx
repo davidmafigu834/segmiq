@@ -16,24 +16,15 @@ import {
   User,
   X,
 } from "lucide-react";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { cn } from "@/lib/ui/cn";
 import {
   Avatar,
   Badge,
   Button,
   IconButton,
+  SalesAreaChart,
   Skeleton,
 } from "@/components/sales/ui";
-import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
 import { formatDealCurrency } from "@/lib/sales/format";
 import { GoalProgressRing } from "./GoalProgressRing";
 import type { CompanyTeamMemberOverview, CompanyTeamMemberTableRow } from "./types";
@@ -90,7 +81,6 @@ function PerformanceChart({
   hasHistory: boolean;
   currency: string;
 }) {
-  const colors = useSalesChartColors();
   if (!hasHistory) {
     return (
       <div className="flex min-h-[140px] items-center justify-center px-2 text-center">
@@ -100,54 +90,15 @@ function PerformanceChart({
   }
   return (
     <div className="h-[140px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="memberPerfFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#D4FF4F" stopOpacity={0.28} />
-              <stop offset="100%" stopColor="#D4FF4F" stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid stroke={colors.grid} vertical={false} strokeDasharray="3 6" />
-          <XAxis
-            dataKey="label"
-            tick={{ fill: colors.textMuted, fontSize: 10 }}
-            axisLine={false}
-            tickLine={false}
-          />
-          <YAxis
-            width={40}
-            tick={{ fill: colors.textMuted, fontSize: 10 }}
-            axisLine={false}
-            tickLine={false}
-            tickFormatter={(v) =>
-              Number(v) >= 1000 ? `${Math.round(Number(v) / 1000)}k` : String(v)
-            }
-          />
-          <Tooltip
-            contentStyle={{
-              background: colors.surfaceRaised,
-              border: `1px solid ${colors.border}`,
-              borderRadius: 10,
-              color: colors.textPrimary,
-              fontSize: 12,
-            }}
-            formatter={(value) => [
-              formatDealCurrency(Number(value ?? 0), { currency }),
-              "Won revenue",
-            ]}
-          />
-          <Area
-            type="monotone"
-            dataKey="value"
-            stroke="#D4FF4F"
-            strokeWidth={2}
-            fill="url(#memberPerfFill)"
-            dot={{ r: 3, fill: "#D4FF4F", stroke: colors.surface, strokeWidth: 1 }}
-            activeDot={{ r: 4, fill: "#D4FF4F", stroke: colors.surface }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <SalesAreaChart
+        data={points}
+        dataKey="value"
+        xKey="label"
+        valueFormat="currency"
+        currency={currency}
+        primaryName="Won revenue"
+        emptyTitle="Not enough performance history yet"
+      />
     </div>
   );
 }

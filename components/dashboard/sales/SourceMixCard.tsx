@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { Footprints, Globe2, MoreHorizontal, UserRoundPlus } from "lucide-react";
 import { SiFacebook, SiWhatsapp } from "react-icons/si";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import {
   buildLeadSources,
   LEAD_SOURCE_PERIOD_OPTIONS,
@@ -12,8 +11,7 @@ import {
 } from "@/lib/sales/sales-dashboard-view";
 import type { SalesLeadSourceItem } from "./types";
 import { CardShell } from "./KpiCard";
-import { MenuSelect } from "@/components/sales/ui/MenuSelect";
-import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
+import { MenuSelect, SalesDonutChart } from "@/components/sales/ui";
 
 function SourceIcon({ brand }: { brand: SalesLeadSourceItem["brand"] }) {
   if (brand === "whatsapp") {
@@ -47,7 +45,6 @@ export function SourceMixCard({ data }: { data: SalesDashboardRaw }) {
   const [period, setPeriod] = useState<LeadSourcePeriod>("this_month");
   const sources = useMemo(() => buildLeadSources(data, period), [data, period]);
   const total = sources.reduce((s, x) => s + x.count, 0);
-  const chartColors = useSalesChartColors();
   const chartData = sources.filter((s) => s.count > 0);
 
   return (
@@ -74,41 +71,16 @@ export function SourceMixCard({ data }: { data: SalesDashboardRaw }) {
         ) : (
           <div className="flex flex-col gap-4">
             <div className="relative mx-auto h-[160px] w-[160px]" aria-label={`${total} enquiries by source`}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    dataKey="count"
-                    nameKey="label"
-                    innerRadius={48}
-                    outerRadius={72}
-                    paddingAngle={2}
-                    stroke={chartColors.surfaceRaised}
-                    strokeWidth={1}
-                  >
-                    {chartData.map((s) => (
-                      <Cell key={s.id} fill={BRAND_COLORS[s.brand]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: chartColors.surfaceRaised,
-                      border: `1px solid ${chartColors.border}`,
-                      borderRadius: 10,
-                      color: chartColors.textPrimary,
-                      fontSize: 12,
-                    }}
-                    formatter={(value, name) => [
-                      `${value ?? 0} (${total > 0 ? Math.round((Number(value ?? 0) / total) * 100) : 0}%)`,
-                      String(name ?? ""),
-                    ]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <p className="text-[24px] font-bold tabular-nums tracking-[-0.04em] text-sales-text-primary">{total}</p>
-                <p className="text-[10px] font-medium text-sales-text-muted">Enquiries</p>
-              </div>
+              <SalesDonutChart
+                data={chartData.map((s) => ({
+                  name: s.label,
+                  value: s.count,
+                  color: BRAND_COLORS[s.brand],
+                }))}
+                showLegend={false}
+                centerLabel="Enquiries"
+                centerValue={total}
+              />
             </div>
 
             <ul className="space-y-2">

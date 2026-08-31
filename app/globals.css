@@ -4129,6 +4129,9 @@ label[for="photo-input"] {
   --sales-chart-grid: #e2e8f0;
   --sales-chart-axis: #667085;
   --sales-chart-track: #eef1f6;
+  --sales-chart-comparison: #8b5cf6;
+  --sales-chart-neutral: #667085;
+  --sales-chart-tooltip-bg: #ffffff;
   --sales-surface-raised: #ffffff;
   --sales-surface-selected: #eef4d8;
   --sales-bg-subtle: #f4f6fb;
@@ -4362,6 +4365,9 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-chart-grid: rgba(126, 150, 205, 0.12);
   --sales-chart-axis: #7182a7;
   --sales-chart-track: #102449;
+  --sales-chart-comparison: #9366ff;
+  --sales-chart-neutral: #7182a7;
+  --sales-chart-tooltip-bg: #0e2349;
 
   /* Misc */
   --sales-overlay: rgba(2, 8, 20, 0.62);

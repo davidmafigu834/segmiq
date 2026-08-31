@@ -23,7 +23,8 @@ export function OutcomeReasonsCard({
   emptyDescription?: string;
   footer?: string;
 }) {
-  const fill = tone === "danger" ? "bg-[#F97066]" : "bg-[#76C900]";
+  const fill =
+    tone === "danger" ? "bg-sales-danger" : "bg-sales-success";
   const hasRows = rows.length > 0 && rows.some((r) => r.reason !== "No reason recorded" || r.count > 0);
 
   return (

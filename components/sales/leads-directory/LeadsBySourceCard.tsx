@@ -43,6 +43,7 @@ export function LeadsBySourceCard({
               <SalesDonutChart
                 data={slices.map((s) => ({ name: s.label, value: s.count, color: s.color }))}
                 centerLabel="Total"
+                showLegend={false}
               />
             </div>
             <ul className="mt-3 space-y-2">

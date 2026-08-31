@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ResponsiveTable, type ResponsiveTableColumn } from "@/components/ui/ResponsiveTable";
 import { ChevronDown } from "lucide-react";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { SalesDonutChart } from "@/components/sales/ui/Charts";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { LeadDetailPanel } from "@/app/sales/leads/LeadDetailPanel";
 import { openLeadPanel } from "@/store/uiStore";
@@ -89,23 +89,12 @@ function SourceDonut({ bySource, totalLeads }: { bySource: ClientReportPayload["
 
   return (
     <div className="h-[200px] w-full max-w-[280px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            innerRadius="58%"
-            outerRadius="85%"
-            paddingAngle={2}
-            isAnimationActive={false}
-          >
-            {data.map((e) => (
-              <Cell key={e.key} fill={e.fill} stroke="var(--surface-card)" />
-            ))}
-          </Pie>
-        </PieChart>
-      </ResponsiveContainer>
+      <SalesDonutChart
+        data={data.map((e) => ({ name: e.name, value: e.value, color: e.fill }))}
+        showLegend={false}
+        centerLabel="Leads"
+        centerValue={totalLeads}
+      />
     </div>
   );
 }

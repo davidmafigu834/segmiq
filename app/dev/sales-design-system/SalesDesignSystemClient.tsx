@@ -13,6 +13,8 @@ import {
   Edit,
   Ellipsis,
   Filter,
+  FileText,
+  Inbox,
   Info,
   LayoutDashboard,
   LayoutList,
@@ -25,6 +27,7 @@ import {
   Search,
   Settings,
   Trash2,
+  UserCheck,
   UserPlus,
   Users,
   UsersRound,
@@ -100,6 +103,10 @@ import {
   SalesAreaChart,
   SalesBarChart,
   SalesDonutChart,
+  SalesFunnelChart,
+  SalesHeatmap,
+  SalesLineChart,
+  SalesSparkline,
   SearchInput,
   SegmentedControl,
   Select,
@@ -116,6 +123,8 @@ import {
 } from "@/components/sales/ui";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
+  SALES_CHART,
+  SALES_CHART_SEMANTIC,
   SALES_COLORS,
   SALES_FEEDBACK,
   SALES_FIELD_HEIGHT,
@@ -126,6 +135,7 @@ import {
   SALES_RADIUS,
   SALES_SHADOW,
   SALES_TABLE,
+  PIPELINE_STAGE_COLORS,
 } from "@/lib/sales/design-tokens";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import { SalesBreadcrumbs } from "@/components/sales/navigation/SalesBreadcrumbs";
@@ -148,7 +158,7 @@ const NAV = [
   { id: "menus", label: "09 — Menus & Pills" },
   { id: "navigation", label: "10 — Navigation & Layout" },
   { id: "timeline", label: "Timeline" },
-  { id: "charts", label: "Charts" },
+  { id: "charts", label: "11 — Charts & Data Viz" },
   { id: "misc", label: "Icons & misc" },
 ] as const;
 
@@ -1193,6 +1203,246 @@ function MenusShowcaseSection() {
             <li>Menu hover uses neutral wash · selected select option uses restrained lime-soft · destructive actions stay danger</li>
             <li>Filter pills are interactive constraints with remove controls · MetaPill remains passive metadata</li>
           </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ChartsShowcaseSection() {
+  const docRevenueSeries = [
+    { label: "2026-08-04", value: 8200, previous: 7100 },
+    { label: "2026-08-11", value: 12400, previous: 9800 },
+    { label: "2026-08-18", value: 15600, previous: 11200 },
+    { label: "2026-08-25", value: 18900, previous: 14100 },
+  ];
+  const docSparkline = [
+    { label: "W1", value: 6200 },
+    { label: "W2", value: 7800 },
+    { label: "W3", value: 7100 },
+    { label: "W4", value: 9200 },
+    { label: "W5", value: 87450 },
+  ];
+  const docFunnelStages = [
+    { id: "new", label: "New enquiries", count: 1840, color: PIPELINE_STAGE_COLORS.NEW, icon: Inbox },
+    { id: "contacted", label: "Contacted", count: 1320, color: PIPELINE_STAGE_COLORS.CONTACTED, icon: MessageCircle },
+    { id: "qualified", label: "Qualified", count: 1025, color: "var(--sales-cyan)", icon: UserCheck },
+    { id: "proposal", label: "Proposal sent", count: 640, color: PIPELINE_STAGE_COLORS.PROPOSAL_SENT, icon: FileText },
+    { id: "won", label: "Won", count: 218, color: PIPELINE_STAGE_COLORS.WON, icon: CheckCircle2 },
+  ];
+  const docHeatmapCells = Array.from({ length: 31 }, (_, i) => ({
+    date: `2026-08-${String(i + 1).padStart(2, "0")}`,
+    value: [0, 2, 5, 8, 12, 18, 24, 16, 9, 4][i % 10],
+  }));
+
+  const semanticSwatches = [
+    { label: "Brand", token: SALES_CHART_SEMANTIC.brand, note: "Primary series — not generic positive" },
+    { label: "Success", token: SALES_CHART_SEMANTIC.success, note: "Won, accepted, on-target" },
+    { label: "Information", token: SALES_CHART_SEMANTIC.info, note: "New, informational" },
+    { label: "Warning", token: SALES_CHART_SEMANTIC.warning, note: "Thresholds, negotiating" },
+    { label: "Danger", token: SALES_CHART_SEMANTIC.danger, note: "Lost, failed, negative delta" },
+    { label: "Neutral", token: SALES_CHART_SEMANTIC.neutral, note: "Axis, inactive" },
+    { label: "Comparison", token: SALES_CHART_SEMANTIC.comparison, note: "Previous period series" },
+  ] as const;
+
+  return (
+    <div className="space-y-8">
+      <p className="text-[12px] text-sales-text-secondary">
+        Four visualization systems on Recharts + shared tokens. Documentation examples below use static values only — production charts must use real API data or show empty states.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { n: "1", title: "Metric & micro trend", q: "What is the number, and which direction?" },
+          { n: "2", title: "Time series", q: "How is this changing over time?" },
+          { n: "3", title: "Comparison & composition", q: "How do categories compare?" },
+          { n: "4", title: "Process & activity", q: "Where in the process, or when is activity?" },
+        ].map((s) => (
+          <Card key={s.n} variant="flat">
+            <CardContent className="space-y-1 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-brand-fg">System {s.n}</p>
+              <p className="text-[13px] font-semibold text-sales-text-primary">{s.title}</p>
+              <p className="text-[11px] text-sales-text-muted">{s.q}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">1 · KPI & micro trend</CardTitle>
+            <CardDescription>Metric-first · sparkline only when real series exists in production</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-[11px] font-medium uppercase tracking-[0.06em] text-sales-text-muted">Total revenue</p>
+            <MetricValue value="$87,450" />
+            <Trend direction="up" label="23.6% vs last month" />
+            <SalesSparkline data={docSparkline} height={SALES_CHART.sparkline} />
+            <p className="text-[11px] text-sales-text-muted">Updated 2h ago · documentation only</p>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">2 · Line / area · comparison</CardTitle>
+            <CardDescription>Brand primary · violet comparison · subtle grid</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[220px]">
+            <SalesLineChart
+              data={docRevenueSeries}
+              comparisonKey="previous"
+              xKey="label"
+              valueFormat="currency"
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">3a · Bar · categories</CardTitle>
+            <CardDescription>Single brand color for ordinary comparison</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[220px]">
+            <SalesBarChart
+              layout="horizontal"
+              data={[
+                { label: "Facebook Ads", value: 1247 },
+                { label: "WhatsApp", value: 842 },
+                { label: "Referrals", value: 531 },
+                { label: "Website", value: 318 },
+              ]}
+            />
+          </CardContent>
+        </Card>
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">3b · Donut · composition</CardTitle>
+            <CardDescription>Legend + center total · 2–5 categories ideal</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[220px]">
+            <SalesDonutChart
+              data={[
+                { name: "Hot", value: 45, color: SALES_COLORS.danger },
+                { name: "Warm", value: 30, color: SALES_COLORS.warning },
+                { name: "Cold", value: 20, color: SALES_COLORS.info },
+                { name: "Lost", value: 5, color: SALES_COLORS.textMuted },
+              ]}
+              centerLabel="Leads"
+            />
+          </CardContent>
+        </Card>
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">2b · Area · volume</CardTitle>
+            <CardDescription>Faint brand fill · 2px stroke</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[220px]">
+            <SalesAreaChart
+              data={docRevenueSeries.map(({ label, value }) => ({ label, value }))}
+              valueFormat="currency"
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">4a · Funnel · process stages</CardTitle>
+            <CardDescription>Phase 04 stage colors · width from real counts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SalesFunnelChart stages={docFunnelStages} />
+          </CardContent>
+        </Card>
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">4b · Heatmap · activity density</CardTitle>
+            <CardDescription>Sequential brand scale · neutral zero cells</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SalesHeatmap cells={docHeatmapCells} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Chart color system</CardTitle>
+            <CardDescription>Use color to communicate meaning — not decoration</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {semanticSwatches.map((s) => (
+                <li key={s.label} className="flex items-start gap-2 rounded-[8px] border border-sales-border-subtle px-3 py-2">
+                  <span className="mt-0.5 h-4 w-4 shrink-0 rounded-[4px]" style={{ backgroundColor: s.token }} aria-hidden />
+                  <div>
+                    <p className="text-[12px] font-medium text-sales-text-primary">{s.label}</p>
+                    <p className="text-[11px] text-sales-text-muted">{s.note}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Data formatting</CardTitle>
+            <CardDescription>Centralized via <code className="text-[11px]">lib/sales/chart-format.ts</code></CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-2 text-[13px] tabular-nums text-sales-text-primary sm:grid-cols-2">
+            <p>1,234</p>
+            <p>$12,450</p>
+            <p>23.6%</p>
+            <p>18 Aug 2026</p>
+            <p>1.2K / 3.4M</p>
+            <p className="text-sales-success">↑ 23.6%</p>
+            <p className="text-sales-danger">↓ 12.4%</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card variant="flat">
+        <CardHeader>
+          <CardTitle className="text-[14px]">Chart anatomy & best practices</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-6 lg:grid-cols-2">
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Anatomy</p>
+            <ul className="space-y-1 text-[12px] text-sales-text-secondary">
+              <li>Chart title — outside plot canvas (Card header)</li>
+              <li>Legend — only when it adds clarity</li>
+              <li>Y axis — compact formatted ticks</li>
+              <li>Data series — max ~3–4 visible</li>
+              <li>Area fill — very subtle opacity</li>
+              <li>X axis — adaptive date labels</li>
+              <li>Grid lines — horizontal only, subtle</li>
+              <li>Tooltip — elevated data card, tabular numbers</li>
+            </ul>
+          </div>
+          <div>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Best practices</p>
+            <ul className="space-y-1 text-[12px] text-sales-text-secondary">
+              <li>Show only what drives decisions</li>
+              <li>Limit visible series · label clearly</li>
+              <li>Show comparisons only when real data exists</li>
+              <li>Never fabricate data, trends, or forecasts</li>
+              <li>Empty state when zero — not a fake graph</li>
+              <li>Preserve accessibility · respect reduced motion</li>
+              <li>Use tables when precise detail beats a chart</li>
+            </ul>
+          </div>
+          <div className="lg:col-span-2">
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Responsive</p>
+            <p className="text-[12px] text-sales-text-secondary">
+              Desktop: full detail · Tablet: adjust legend/tick density · Mobile: fewer X ticks, legend below donut, horizontal scroll for dense heatmaps. Standard heights: sparkline {SALES_CHART.sparkline}px · compact {SALES_CHART.compact}px · standard {SALES_CHART.standard}px · large {SALES_CHART.large}px.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -2731,60 +2981,13 @@ function ShowcaseInner() {
             </Card>
           </Section>
 
-          {/* ── Charts ─────────────────────────────────────────── */}
-          <Section id="charts" title="Charts" description="Area, bar, and donut wrappers on Recharts.">
-            <div className="grid gap-4 lg:grid-cols-3">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue</CardTitle>
-                  <CardDescription>Area · brand fill</CardDescription>
-                </CardHeader>
-                <CardContent className="h-44">
-                  <SalesAreaChart
-                    data={[
-                      { label: "W1", value: 12000 },
-                      { label: "W2", value: 18000 },
-                      { label: "W3", value: 15000 },
-                      { label: "W4", value: 24800 },
-                      { label: "W5", value: 22100 },
-                    ]}
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Leads created</CardTitle>
-                  <CardDescription>Bar · info series</CardDescription>
-                </CardHeader>
-                <CardContent className="h-44">
-                  <SalesBarChart
-                    data={[
-                      { label: "Mon", value: 8 },
-                      { label: "Tue", value: 14 },
-                      { label: "Wed", value: 11 },
-                      { label: "Thu", value: 19 },
-                      { label: "Fri", value: 12 },
-                    ]}
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>By source</CardTitle>
-                  <CardDescription>Donut</CardDescription>
-                </CardHeader>
-                <CardContent className="h-44">
-                  <SalesDonutChart
-                    data={[
-                      { name: "WhatsApp", value: 42 },
-                      { name: "Facebook", value: 18 },
-                      { name: "Referral", value: 12 },
-                      { name: "Website", value: 8 },
-                    ]}
-                  />
-                </CardContent>
-              </Card>
-            </div>
+          {/* ── Charts & Data Visualization ────────────────────── */}
+          <Section
+            id="charts"
+            title="11 — Charts & Data Visualization"
+            description="Four systems — metric, time series, comparison/composition, process/activity — on Recharts with shared tokens."
+          >
+            <ChartsShowcaseSection />
           </Section>
 
           {/* ── Misc ───────────────────────────────────────────── */}

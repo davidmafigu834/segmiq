@@ -89,8 +89,29 @@ export { KpiStat, Trend, MetricValue, LeadIdentity } from "./DataDisplay";
 export { Timeline, ActivityRow, Milestone } from "./Timeline";
 export type { TimelineItem } from "./Timeline";
 
-export { SalesAreaChart, SalesBarChart, SalesDonutChart, ChartEmptyState } from "./Charts";
-export type { DonutSlice } from "./Charts";
+export {
+  SalesAreaChart,
+  SalesBarChart,
+  SalesDonutChart,
+  SalesLineChart,
+  SalesSparkline,
+  SalesFunnelChart,
+  SalesHeatmap,
+  SalesChartTooltip,
+  SalesMultiLineChart,
+  SalesComparisonBarChart,
+  SalesPerformanceTrendChart,
+  SalesActivityVolumeChart,
+  ChartEmptyState,
+  ChartErrorState,
+} from "./Charts";
+export type {
+  DonutSlice,
+  FunnelChartStage,
+  HeatmapCell,
+  ChartTooltipFormat,
+  LineSeriesConfig,
+} from "./Charts";
 
 export {
   DataTable,

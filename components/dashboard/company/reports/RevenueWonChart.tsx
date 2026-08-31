@@ -1,22 +1,11 @@
 "use client";
 
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { SalesLineChart } from "@/components/sales/ui/Charts";
 import { MenuSelect } from "@/components/sales/ui";
 import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
-import { formatDealCurrency } from "@/lib/sales/format";
-import { formatAxisMoney } from "@/lib/sales/company-reports/metrics";
 import type { ReportGranularity } from "@/lib/sales/company-reports/range";
 import type { ReportTimePoint } from "@/lib/sales/company-reports/types";
 import { ReportChartCard } from "./ReportChartCard";
-import { ReportTooltip } from "./ReportTooltip";
 
 export function RevenueWonChart({
   series,
@@ -81,61 +70,18 @@ export function RevenueWonChart({
         </div>
       ) : (
         <div className="relative h-full min-h-[180px] w-full" aria-label="Revenue Won over time">
-          <div className="absolute inset-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke={colors.grid} vertical={false} strokeDasharray="3 6" />
-              <XAxis
-                dataKey="label"
-                tick={{ fill: colors.axis, fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                interval="preserveStartEnd"
-                minTickGap={28}
-              />
-              <YAxis
-                width={44}
-                tick={{ fill: colors.axis, fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => formatAxisMoney(Number(v), currency)}
-              />
-              <Tooltip
-                content={({ active, label, payload }) => (
-                  <ReportTooltip
-                    active={active}
-                    label={String(label ?? "")}
-                    rows={(payload ?? []).map((p) => ({
-                      name: String(p.name ?? ""),
-                      value: formatDealCurrency(Number(p.value ?? 0), { currency }),
-                      color: String(p.color ?? colors.brand),
-                    }))}
-                  />
-                )}
-              />
-              <Line
-                type="monotone"
-                dataKey="previous"
-                name="Previous period"
-                stroke={colors.textMuted}
-                strokeWidth={1.6}
-                strokeDasharray="5 4"
-                dot={false}
-                isAnimationActive={false}
-              />
-              <Line
-                type="monotone"
-                dataKey="current"
-                name="Revenue Won"
-                stroke={colors.brand}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: colors.brand, stroke: colors.surface }}
-                isAnimationActive={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-          </div>
+          <SalesLineChart
+            data={series}
+            dataKey="current"
+            comparisonKey="previous"
+            xKey="label"
+            valueFormat="currency"
+            currency={currency}
+            primaryName="Revenue Won"
+            comparisonName="Previous period"
+            comparisonDashed
+            comparisonColor={colors.textMuted}
+          />
         </div>
       )}
     </ReportChartCard>

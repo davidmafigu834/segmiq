@@ -4,14 +4,8 @@ import { useMemo, useState } from "react";
 import useSWR from "swr";
 import { format, parseISO } from "date-fns";
 import { X } from "lucide-react";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { SalesMultiLineChart, SalesSparkline } from "@/components/sales/ui/Charts";
+import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
 import { PageHeader, SegmentedTabs } from "@/components/ui";
 import { PulseBar } from "@/components/dashboard/PulseBar";
 import type { LegacyPulseMetric } from "@/components/dashboard/PulseBar";
@@ -60,6 +54,7 @@ export function ClientTeamDashboard({
   clientName: string;
   previewClientId?: string;
 }) {
+  const colors = useSalesChartColors();
   const [period, setPeriod] = useState<TeamPeriodId>("this_month");
   const [modalUserId, setModalUserId] = useState<string | null>(null);
   const [modalTab, setModalTab] = useState<"performance" | "pipeline" | "activity">("performance");
@@ -206,21 +201,11 @@ export function ClientTeamDashboard({
                 </div>
 
                 <div className="mt-4 h-10 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={m.trend.leadsByWeek.map((w) => ({ i: w.week, v: w.count }))}
-                      margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
-                    >
-                      <Line
-                        type="monotone"
-                        dataKey="v"
-                        stroke="var(--accent)"
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <SalesSparkline
+                    data={m.trend.leadsByWeek.map((w) => ({ label: w.week, value: w.count }))}
+                    height={40}
+                    color={colors.brand}
+                  />
                 </div>
 
                 <div className="mt-3 text-[12px] text-[var(--text-tertiary)]">
@@ -292,23 +277,16 @@ export function ClientTeamDashboard({
             {modalTab === "performance" ? (
               <div className="mt-6 space-y-6">
                 <div className="h-[280px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartRows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                      <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} />
-                      <YAxis width={36} tick={{ fontSize: 11 }} allowDecimals={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "var(--surface-sidebar)",
-                          border: "1px solid var(--surface-sidebar-border)",
-                          borderRadius: 6,
-                          color: "var(--text-on-dark)",
-                          fontSize: 12,
-                        }}
-                      />
-                      <Line type="monotone" dataKey="leads" name="Leads" stroke="var(--text-tertiary)" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="wins" name="Wins" stroke="var(--accent)" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <SalesMultiLineChart
+                    data={chartRows}
+                    xKey="week"
+                    showLegend
+                    series={[
+                      { dataKey: "leads", name: "Leads", color: colors.textMuted },
+                      { dataKey: "wins", name: "Wins", color: colors.brand },
+                    ]}
+                    emptyTitle="No performance trend for this period"
+                  />
                 </div>
                 <div className="space-y-2 rounded-md border border-[var(--border)] bg-[var(--surface-card)]-alt p-4 text-sm text-[var(--text-secondary)]">
                   {selectedMember.drillDown.insights.map((line, i) => (

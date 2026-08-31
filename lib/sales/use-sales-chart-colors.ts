@@ -22,6 +22,9 @@ export type SalesChartColors = {
   info: string;
   purple: string;
   teal: string;
+  comparison: string;
+  neutral: string;
+  tooltipBg: string;
   series: readonly string[];
 };
 
@@ -43,6 +46,9 @@ const LIGHT: SalesChartColors = {
   info: SALES_COLORS.info,
   purple: SALES_COLORS.purple,
   teal: SALES_COLORS.teal,
+  comparison: SALES_COLORS.purple,
+  neutral: SALES_COLORS.textMuted,
+  tooltipBg: "#ffffff",
   series: SALES_CHART_SERIES,
 };
 
@@ -64,6 +70,9 @@ const DARK: SalesChartColors = {
   info: "#4D8DFF",
   purple: "#9366FF",
   teal: "#20D4D2",
+  comparison: "#9366FF",
+  neutral: "#7182A7",
+  tooltipBg: "#0E2349",
   series: ["#D4FF4F", "#4D8DFF", "#9366FF", "#F5B82E", "#20D4D2"],
 };
 
@@ -98,6 +107,9 @@ function colorsFromCss(isDark: boolean): SalesChartColors {
     info: readCssVar("--sales-info", base.info),
     purple: readCssVar("--sales-purple", base.purple),
     teal: readCssVar("--sales-teal", base.teal),
+    comparison: readCssVar("--sales-chart-comparison", base.comparison),
+    neutral: readCssVar("--sales-chart-neutral", base.neutral),
+    tooltipBg: readCssVar("--sales-chart-tooltip-bg", base.tooltipBg),
   };
 }
 

@@ -1,17 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { SalesComparisonBarChart } from "@/components/sales/ui/Charts";
 
 const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -57,8 +48,8 @@ export function VolumeTrendChart({ trend }: { trend: VolumeTrendPoint[] }) {
     () =>
       trend.map((t) => ({
         label: monthLabel(t.month, t.year),
-        thisYear: t.count,
-        priorYear: t.prior_count,
+        primary: t.count,
+        comparison: t.prior_count,
       })),
     [trend]
   );
@@ -129,63 +120,15 @@ export function VolumeTrendChart({ trend }: { trend: VolumeTrendPoint[] }) {
 
       {hasAny ? (
         <div className="h-[min(320px,42vw)] min-h-[240px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 12, right: 4, bottom: 4, left: -8 }} barGap={4}>
-              <CartesianGrid stroke="var(--border)" vertical={false} strokeDasharray="4 4" />
-              <XAxis
-                dataKey="label"
-                tick={{ fill: "var(--text-tertiary)", fontSize: 12 }}
-                axisLine={{ stroke: "var(--border)" }}
-                tickLine={false}
-                dy={8}
-              />
-              <YAxis
-                width={36}
-                tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-              />
-              <Tooltip
-                cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                contentStyle={{
-                  backgroundColor: "var(--surface-sidebar)",
-                  border: "1px solid var(--surface-sidebar-border)",
-                  borderRadius: 8,
-                  color: "var(--text-on-dark)",
-                  fontSize: 12,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
-                }}
-                formatter={(value, name) => [
-                  Number(value).toLocaleString(),
-                  name === "thisYear" ? "This year" : "Prior year",
-                ]}
-                labelFormatter={(label) => label}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
-                iconType="circle"
-                iconSize={8}
-                formatter={(value) => (value === "thisYear" ? "This year" : "Prior year")}
-              />
-              <Bar
-                dataKey="priorYear"
-                name="priorYear"
-                fill="var(--bg-quaternary)"
-                stroke="var(--border)"
-                strokeWidth={1}
-                radius={[6, 6, 0, 0]}
-                maxBarSize={48}
-              />
-              <Bar
-                dataKey="thisYear"
-                name="thisYear"
-                fill="var(--accent)"
-                radius={[6, 6, 0, 0]}
-                maxBarSize={48}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <SalesComparisonBarChart
+            data={chartData}
+            primaryKey="primary"
+            comparisonKey="comparison"
+            primaryName="This year"
+            comparisonName="Prior year"
+            valueFormat="number"
+            emptyTitle="No contacts added yet"
+          />
         </div>
       ) : (
         <div className="flex min-h-[240px] flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--bg-quaternary)] px-6 text-center">
