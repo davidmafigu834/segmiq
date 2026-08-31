@@ -33,12 +33,14 @@ It is an operating view for company-scoped visibility: team performance, sales h
 
 1. Header — **Company / Dashboard**, title **Company dashboard**
 2. KPI row (6 commercial metrics)
-3. Focus areas that need attention + Lead → Deal Funnel
-4. Team performance + Top Lead Sources
-5. Pipeline Snapshot (Deals only)
-6. Deals at Risk + Revenue trend + Recent team activity
+3. Focus areas that need attention
+4. **Daily team report** — today’s leads, qualified, contacted, quotations, won, follow-ups per salesperson
+5. Team calendar + Lead → Deal Funnel
+6. Team performance (month) + Top Lead Sources
+7. Pipeline Snapshot (Deals only)
+8. Deals at Risk + Revenue trend + Recent team activity
 
-**Mobile order:** Focus Areas → KPIs → Team cards → At risk → Pipeline empty/snapshot → Funnel → Sources → Revenue → Activity.
+**Mobile order:** Focus Areas → KPIs → Daily team report → Team calendar → Monthly team → At risk → Pipeline empty/snapshot → Funnel → Sources → Revenue → Activity.
 
 ## KPI definitions
 
@@ -63,6 +65,22 @@ Aggregated company signals (max ~3), prioritized:
 4. No next action / Unassigned / Awaiting estimate (when significant)
 
 Empty new company shows onboarding CTA (Add salesperson / Add Lead) — not a broken zero grid.
+
+## Daily team report
+
+Operating board for managers (e.g. Ecolus Energy) — **local calendar day**, one row per active salesperson.
+
+| Column | Definition |
+|--------|------------|
+| **New leads** | Leads created today and assigned to the salesperson (`assigned_to_id`) |
+| **Qualified** | Leads with `qualified_at` today; fallback: created today and currently in a qualified status |
+| **Contacted** | Of today’s new leads for that person, how many are no longer `NEW` |
+| **Quotes prepared** | Quotations with `created_at` today (`prepared_by_id`) — trades only |
+| **Quotes sent** | Quotations with `sent_at` today (`prepared_by_id`) — trades only |
+| **Won** | Deals with `won_at` today (`owner_id`) |
+| **Follow-ups due** | Lead follow-ups + Deal next actions due/overdue (same as monthly team table) |
+
+Summary chips mirror team totals. Banner when any **unassigned** leads were created today. Footer links to `/client/reports?tab=team&preset=today`.
 
 ## Team performance
 
@@ -117,10 +135,10 @@ Partial module failures should not blank the page (modules are computed in one a
 
 Single server function `getCompanySalesDashboard({ clientId, alsoSells })`:
 
-1. Parallel fetch: client, team, leads, deals, wins, goals, events  
+1. Parallel fetch: client, team, leads, deals, wins, goals, events, today’s quotations  
 2. Quotations for active Deal IDs (commercial value)  
 3. Response-time signal batch for 30d / prior 30d lead IDs  
-4. In-memory aggregates for KPIs, focus, team, funnel, sources, pipeline, risk, revenue, activity  
+4. In-memory aggregates for KPIs, focus, daily team report, monthly team, funnel, sources, pipeline, risk, revenue, activity  
 
 Tenant filter: every query uses `client_id = clientId`.
 

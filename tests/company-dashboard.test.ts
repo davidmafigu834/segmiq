@@ -38,4 +38,48 @@ describe("company dashboard metric definitions", () => {
     const displayDirection = raw.direction === "down" ? "up" : "down";
     assert.equal(displayDirection, "up");
   });
+
+  it("daily qualified prefers qualified_at over created_at fallback", () => {
+    const dayStart = new Date("2026-08-31T00:00:00");
+    const dayEnd = new Date("2026-09-01T00:00:00");
+    const inToday = (iso: string | null | undefined) => {
+      if (!iso) return false;
+      const t = new Date(iso);
+      return t >= dayStart && t < dayEnd;
+    };
+    const QUALIFIED = new Set(["QUALIFIED", "CONVERTED_TO_DEAL"]);
+    const isQualifiedToday = (l: {
+      status: string;
+      created_at: string;
+      qualified_at: string | null;
+    }) => {
+      if (l.qualified_at) return inToday(l.qualified_at);
+      return QUALIFIED.has(l.status) && inToday(l.created_at);
+    };
+
+    assert.equal(
+      isQualifiedToday({
+        status: "QUALIFIED",
+        created_at: "2026-08-20T10:00:00",
+        qualified_at: "2026-08-31T09:00:00",
+      }),
+      true
+    );
+    assert.equal(
+      isQualifiedToday({
+        status: "QUALIFIED",
+        created_at: "2026-08-20T10:00:00",
+        qualified_at: null,
+      }),
+      false
+    );
+    assert.equal(
+      isQualifiedToday({
+        status: "QUALIFIED",
+        created_at: "2026-08-31T10:00:00",
+        qualified_at: null,
+      }),
+      true
+    );
+  });
 });

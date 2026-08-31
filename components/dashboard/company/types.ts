@@ -38,6 +38,39 @@ export type CompanyTeamMemberRow = {
   href: string;
 };
 
+/** Per-salesperson activity for the current local calendar day. */
+export type CompanyDailyTeamMemberRow = {
+  id: string;
+  name: string;
+  initials: string;
+  avatarUrl: string | null;
+  roleLabel: string;
+  newLeads: number;
+  qualified: number;
+  contacted: number;
+  quotesPrepared: number;
+  quotesSent: number;
+  dealsWon: number;
+  followUpsDue: number;
+  href: string;
+};
+
+export type CompanyDailyTeamReport = {
+  dateLabel: string;
+  rows: CompanyDailyTeamMemberRow[];
+  totals: {
+    newLeads: number;
+    qualified: number;
+    contacted: number;
+    quotesPrepared: number;
+    quotesSent: number;
+    dealsWon: number;
+    followUpsDue: number;
+    unassignedLeads: number;
+  };
+  viewReportsHref: string;
+};
+
 export type CompanyLeadSourceItem = {
   id: string;
   label: string;
@@ -106,6 +139,7 @@ export type CompanySalesDashboardData = {
   team: CompanyTeamMemberRow[];
   teamTotal: number;
   teamViewAllHref: string;
+  dailyTeamReport: CompanyDailyTeamReport;
   funnel: SalesFunnelStage[];
   conversionRate: number | null;
   conversionDefinition: string;

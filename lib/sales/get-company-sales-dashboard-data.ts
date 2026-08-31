@@ -34,6 +34,8 @@ import type {
   CompanyActivityItem,
   CompanyAtRiskDeal,
   CompanyCalendarItem,
+  CompanyDailyTeamMemberRow,
+  CompanyDailyTeamReport,
   CompanyFocusSignal,
   CompanyLeadSourceItem,
   CompanyRevenuePoint,
@@ -547,6 +549,8 @@ export async function getCompanySalesDashboard(opts: {
   const monthStart = startOfLocalMonth(now);
   const prevMonthStart = new Date(monthStart);
   prevMonthStart.setMonth(prevMonthStart.getMonth() - 1);
+  const dayStart = startOfLocalDay(now);
+  const dayEnd = addDays(dayStart, 1);
   const period30Start = daysAgo(now, 30);
   const period60Start = daysAgo(now, 60);
   const revenueFrom = startOfLocalMonth(new Date(now.getFullYear(), now.getMonth() - 5, 1));
@@ -562,6 +566,7 @@ export async function getCompanySalesDashboard(opts: {
     wonHistoryRes,
     goalsRes,
     eventsRes,
+    quotesTodayRes,
   ] = await Promise.all([
     supabase
       .from("clients")
@@ -578,7 +583,7 @@ export async function getCompanySalesDashboard(opts: {
     supabase
       .from("leads")
       .select(
-        "id, name, status, source, score, created_at, assigned_to_id, follow_up_date"
+        "id, name, status, source, score, created_at, qualified_at, assigned_to_id, follow_up_date"
       )
       .eq("client_id", clientId)
       .or("is_archived.is.null,is_archived.eq.false")
@@ -636,6 +641,12 @@ export async function getCompanySalesDashboard(opts: {
       ])
       .order("created_at", { ascending: false })
       .limit(40),
+    supabase
+      .from("quotations")
+      .select("id, prepared_by_id, status, created_at, sent_at")
+      .eq("client_id", clientId)
+      .or(`created_at.gte.${dayStart.toISOString()},sent_at.gte.${dayStart.toISOString()}`)
+      .limit(2000),
   ]);
 
   type LeadRow = {
@@ -645,6 +656,7 @@ export async function getCompanySalesDashboard(opts: {
     source: string | null;
     score: number | null;
     created_at: string;
+    qualified_at: string | null;
     assigned_to_id: string | null;
     follow_up_date: string | null;
   };
@@ -977,6 +989,123 @@ export async function getCompanySalesDashboard(opts: {
 
   const teamPreview = teamRows.slice(0, TEAM_PREVIEW_LIMIT);
 
+  // --- Daily team report (today's operating view) ---
+  const inToday = (iso: string | null | undefined) => {
+    if (!iso) return false;
+    const t = new Date(iso);
+    return t >= dayStart && t < dayEnd;
+  };
+
+  const isQualifiedToday = (l: LeadRow) => {
+    if (l.qualified_at) return inToday(l.qualified_at);
+    // Fallback for rows never stamped with qualified_at
+    return QUALIFIED_LEAD_STATUSES.has(l.status) && inToday(l.created_at);
+  };
+
+  const newLeadsTodayByOwner = new Map<string, number>();
+  const qualifiedTodayByOwner = new Map<string, number>();
+  const contactedTodayByOwner = new Map<string, number>();
+  let unassignedLeadsToday = 0;
+
+  for (const l of leads) {
+    if (inToday(l.created_at)) {
+      if (!l.assigned_to_id) unassignedLeadsToday += 1;
+      else {
+        newLeadsTodayByOwner.set(
+          l.assigned_to_id,
+          (newLeadsTodayByOwner.get(l.assigned_to_id) ?? 0) + 1
+        );
+        if (CONTACTED_OR_BEYOND.has(l.status)) {
+          contactedTodayByOwner.set(
+            l.assigned_to_id,
+            (contactedTodayByOwner.get(l.assigned_to_id) ?? 0) + 1
+          );
+        }
+      }
+    }
+    if (isQualifiedToday(l) && l.assigned_to_id) {
+      qualifiedTodayByOwner.set(
+        l.assigned_to_id,
+        (qualifiedTodayByOwner.get(l.assigned_to_id) ?? 0) + 1
+      );
+    }
+  }
+
+  const quotesPreparedByOwner = new Map<string, number>();
+  const quotesSentByOwner = new Map<string, number>();
+  for (const q of (quotesTodayRes.data ?? []) as Array<{
+    prepared_by_id: string | null;
+    created_at: string;
+    sent_at: string | null;
+  }>) {
+    if (!q.prepared_by_id) continue;
+    if (inToday(q.created_at)) {
+      quotesPreparedByOwner.set(
+        q.prepared_by_id,
+        (quotesPreparedByOwner.get(q.prepared_by_id) ?? 0) + 1
+      );
+    }
+    if (inToday(q.sent_at)) {
+      quotesSentByOwner.set(
+        q.prepared_by_id,
+        (quotesSentByOwner.get(q.prepared_by_id) ?? 0) + 1
+      );
+    }
+  }
+
+  const dealsWonTodayByOwner = new Map<string, number>();
+  for (const w of wonRows) {
+    if (!w.owner_id || !inToday(w.won_at)) continue;
+    dealsWonTodayByOwner.set(w.owner_id, (dealsWonTodayByOwner.get(w.owner_id) ?? 0) + 1);
+  }
+
+  const dailyTeamRows: CompanyDailyTeamMemberRow[] = team.map((member) => {
+    const name = member.name?.trim() || "Unnamed";
+    return {
+      id: member.id,
+      name,
+      initials: initials(name),
+      avatarUrl: member.avatar_url,
+      roleLabel: roleLabel(member.role, member.also_sells),
+      newLeads: newLeadsTodayByOwner.get(member.id) ?? 0,
+      qualified: qualifiedTodayByOwner.get(member.id) ?? 0,
+      contacted: contactedTodayByOwner.get(member.id) ?? 0,
+      quotesPrepared: quotesPreparedByOwner.get(member.id) ?? 0,
+      quotesSent: quotesSentByOwner.get(member.id) ?? 0,
+      dealsWon: dealsWonTodayByOwner.get(member.id) ?? 0,
+      followUpsDue: followUpsByOwner.get(member.id) ?? 0,
+      href: `/client/team`,
+    };
+  });
+
+  dailyTeamRows.sort(
+    (a, b) =>
+      b.newLeads - a.newLeads ||
+      b.qualified - a.qualified ||
+      b.quotesPrepared - a.quotesPrepared ||
+      b.followUpsDue - a.followUpsDue ||
+      a.name.localeCompare(b.name)
+  );
+
+  const sumDaily = (pick: (r: CompanyDailyTeamMemberRow) => number) =>
+    dailyTeamRows.reduce((s, r) => s + pick(r), 0);
+
+  const dailyTeamReport: CompanyDailyTeamReport = {
+    dateLabel: formatDate(now, "EEE d MMM"),
+    rows: dailyTeamRows,
+    totals: {
+      newLeads: sumDaily((r) => r.newLeads),
+      qualified: sumDaily((r) => r.qualified),
+      contacted: sumDaily((r) => r.contacted),
+      quotesPrepared: sumDaily((r) => r.quotesPrepared),
+      quotesSent: sumDaily((r) => r.quotesSent),
+      dealsWon: sumDaily((r) => r.dealsWon),
+      followUpsDue: sumDaily((r) => r.followUpsDue),
+      unassignedLeads: unassignedLeadsToday,
+    },
+    viewReportsHref: "/client/reports?tab=team&preset=today",
+  };
+
   // --- Funnel ---
   const funnel = buildFunnel({ leadsThisMonth, deals, monthStart });
   const conversionRate = overallConversion(
@@ -1307,6 +1436,7 @@ export async function getCompanySalesDashboard(opts: {
     team: teamPreview,
     teamTotal: teamRows.length,
     teamViewAllHref: "/client/team",
+    dailyTeamReport,
     funnel,
     conversionRate,
     conversionDefinition: "Won Deals this month ÷ Enquiries created this month (period counts, not cohort).",
