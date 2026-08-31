@@ -25,7 +25,7 @@ export function Tooltip({
   label: string;
   children: ReactNode;
   className?: string;
-  side?: "top" | "bottom";
+  side?: "top" | "bottom" | "right";
   maxWidth?: number;
 }) {
   const id = useId();
@@ -83,8 +83,10 @@ export function Tooltip({
         role="tooltip"
         style={{ maxWidth }}
         className={cn(
-          "sales-tooltip pointer-events-none absolute left-1/2 z-[var(--sales-z-tooltip,110)] w-max -translate-x-1/2 rounded-[7px] bg-[#101828] px-2.5 py-1.5 text-[11px] font-medium leading-snug text-white shadow-sales-dropdown",
-          side === "top" ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]",
+          "sales-tooltip pointer-events-none absolute z-[var(--sales-z-tooltip,110)] w-max rounded-[7px] bg-[#101828] px-2.5 py-1.5 text-[11px] font-medium leading-snug text-white shadow-sales-dropdown",
+          side === "right"
+            ? "left-[calc(100%+8px)] top-1/2 -translate-y-1/2"
+            : cn("left-1/2 -translate-x-1/2", side === "top" ? "bottom-[calc(100%+8px)]" : "top-[calc(100%+8px)]"),
           visible ? "opacity-100" : "pointer-events-none opacity-0",
           "transition-opacity duration-150 motion-reduce:transition-none"
         )}
