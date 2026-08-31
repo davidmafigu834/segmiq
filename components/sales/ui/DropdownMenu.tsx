@@ -19,7 +19,7 @@ import { useFloatingPanel, type FloatingAlign, type FloatingSide } from "./useFl
 type DropdownContextValue = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  triggerRef: React.RefObject<HTMLButtonElement | null>;
+  triggerRef: React.RefObject<HTMLButtonElement>;
   menuId: string;
   align: FloatingAlign;
   side: FloatingSide;

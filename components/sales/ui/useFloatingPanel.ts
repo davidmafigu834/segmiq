@@ -39,8 +39,8 @@ export function useFloatingPanel({
   side,
 }: {
   open: boolean;
-  triggerRef: RefObject<HTMLElement | null>;
-  panelRef: RefObject<HTMLElement | null>;
+  triggerRef: RefObject<HTMLElement>;
+  panelRef: RefObject<HTMLElement>;
   align: FloatingAlign;
   side: FloatingSide;
 }) {
