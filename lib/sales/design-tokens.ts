@@ -102,9 +102,28 @@ export const SALES_SHADOW = {
   cardHover: "0 2px 4px rgba(16, 24, 40, 0.05), 0 8px 20px -6px rgba(16, 24, 40, 0.10)",
   dropdown: "0 4px 12px rgba(16, 24, 64, 0.08)",
   popover: "0 8px 24px rgba(16, 24, 64, 0.10)",
-  modal: "0 16px 40px rgba(16, 24, 64, 0.12)",
+  modal: "0 4px 12px rgba(16, 24, 40, 0.06), 0 20px 60px rgba(16, 24, 40, 0.18)",
   button: "0 1px 2px rgba(16, 24, 40, 0.08), 0 2px 6px rgba(16, 24, 40, 0.06)",
   buttonHover: "0 2px 4px rgba(16, 24, 40, 0.10), 0 4px 10px rgba(16, 24, 40, 0.07)",
+} as const;
+
+/** Overlay / feedback rhythm — modals, toasts, alerts, progress, skeleton */
+export const SALES_OVERLAY = {
+  backdropLight: "rgba(2, 8, 20, 0.58)",
+  backdropDark: "rgba(2, 8, 20, 0.62)",
+  backdropBlur: 3,
+  modalMotionMs: 180,
+  drawerMotionMs: 220,
+  toastDurationMs: 4200,
+  toastMaxVisible: 4,
+  toastWidthDesktop: 360,
+} as const;
+
+export const SALES_FEEDBACK = {
+  progressHeight: 8,
+  alertAccentWidth: 3,
+  alertCompactMinHeight: 40,
+  skeletonPulseMs: 1750,
 } as const;
 
 /** Button heights from design boards: Small 32 · Medium 40 · Large 48 */

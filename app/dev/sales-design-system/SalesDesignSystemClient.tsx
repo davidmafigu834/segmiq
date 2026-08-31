@@ -16,6 +16,7 @@ import {
   Plus,
   Search,
   Settings,
+  Trash2,
   Users,
   Zap,
   XCircle,
@@ -68,6 +69,7 @@ import {
   MetricValue,
   Milestone,
   PipelineStageBadge,
+  Progress,
   QuotationStatusBadge,
   Radio,
   SalesAreaChart,
@@ -87,14 +89,18 @@ import {
   Trend,
   useSalesToast,
 } from "@/components/sales/ui";
+import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
   SALES_COLORS,
+  SALES_FEEDBACK,
+  SALES_OVERLAY,
   SALES_RADIUS,
   SALES_SHADOW,
   SALES_TABLE,
 } from "@/lib/sales/design-tokens";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
+import { cn } from "@/lib/ui/cn";
 
 const NAV = [
   { id: "colors", label: "Colors" },
@@ -106,9 +112,9 @@ const NAV = [
   { id: "badges", label: "Tabs, Badges & Status" },
   { id: "cards", label: "Cards" },
   { id: "table", label: "06 — Tables" },
+  { id: "overlays", label: "07 — Overlays & Feedback" },
   { id: "timeline", label: "Timeline" },
   { id: "charts", label: "Charts" },
-  { id: "feedback", label: "Alerts & toasts" },
   { id: "misc", label: "Icons & misc" },
 ] as const;
 
@@ -602,6 +608,216 @@ function TablesShowcaseSection() {
           </ul>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function OverlaysShowcaseSection() {
+  const { toast } = useSalesToast();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12px] text-sales-text-secondary">
+          Clear communication · in context · non-disruptive unless necessary. Documentation examples only.
+        </p>
+        <SalesThemeToggle />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-5">
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Modal</CardTitle>
+            <CardDescription>Focused task · desktop centered · phone bottom sheet</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-[14px] border border-sales-border bg-sales-surface p-4 shadow-sales-modal">
+              <div className="flex items-start justify-between gap-2 border-b border-sales-border-subtle pb-3">
+                <div>
+                  <p className="text-[16px] font-semibold">Configure settings</p>
+                  <p className="mt-0.5 text-[12px] text-sales-text-secondary">
+                    Update defaults for your workspace.
+                  </p>
+                </div>
+                <span className="text-sales-text-muted">×</span>
+              </div>
+              <div className="py-4 text-[12px] text-sales-text-secondary">Scrollable body content</div>
+              <div className="flex justify-end gap-2 border-t border-sales-border-subtle pt-3">
+                <Button size="sm" variant="secondary">
+                  Cancel
+                </Button>
+                <Button size="sm">Save</Button>
+              </div>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => setDeleteOpen(true)}>
+              Open destructive modal
+            </Button>
+            <p className="text-[11px] text-sales-text-muted">Widths: 420 · 520 · 680 · overlay z~80</p>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Drawer / sheet</CardTitle>
+            <CardDescription>Contextual record detail · no invented global drawer</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface-subtle">
+              <div className="flex h-[220px]">
+                <div className="hidden flex-1 bg-sales-bg-subtle p-3 text-[11px] text-sales-text-muted sm:block">
+                  Workspace remains visible
+                </div>
+                <div className="flex w-full max-w-[180px] flex-col border-l border-sales-border bg-sales-surface shadow-sales-modal">
+                  <div className="border-b border-sales-border-subtle px-3 py-2.5">
+                    <p className="text-[13px] font-semibold">Record detail</p>
+                    <p className="text-[11px] text-sales-text-secondary">Secondary context</p>
+                  </div>
+                  <div className="flex gap-2 border-b border-sales-border-subtle px-2 py-2">
+                    <span className="border-b-2 border-sales-brand px-2 py-1 text-[11px] font-medium">
+                      Overview
+                    </span>
+                    <span className="px-2 py-1 text-[11px] text-sales-text-muted">Activity</span>
+                  </div>
+                  <div className="space-y-2 p-3">
+                    <Skeleton className="h-3 w-2/3" />
+                    <Skeleton className="h-8 w-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-sales-text-muted">
+              Desktop: right panel · mobile: full-height / bottom sheet · backdrop only when modal
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Toast</CardTitle>
+            <CardDescription>Brief · top-right · ~{SALES_OVERLAY.toastDurationMs / 1000}s default</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(
+              [
+                ["success", "Saved", "Changes stored successfully."],
+                ["info", "Sync complete", "Latest data is available."],
+                ["warning", "Follow-up due", "Scheduled action needs attention."],
+                ["error", "Action failed", "Try again or check your connection."],
+              ] as const
+            ).map(([tone, title, detail]) => (
+              <div
+                key={tone}
+                className={cn(
+                  "flex gap-2 rounded-[11px] border border-sales-border border-l-[3px] p-2.5",
+                  tone === "success" && "border-l-sales-success bg-sales-success-soft/35",
+                  tone === "info" && "border-l-sales-info bg-sales-info-soft/35",
+                  tone === "warning" && "border-l-sales-warning bg-sales-warning-soft/35",
+                  tone === "error" && "border-l-sales-danger bg-sales-danger-soft/35"
+                )}
+              >
+                <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-current opacity-70" />
+                <div className="min-w-0">
+                  <p className="text-[12px] font-semibold">{title}</p>
+                  <p className="text-[11px] text-sales-text-secondary">{detail}</p>
+                </div>
+              </div>
+            ))}
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <Button size="sm" variant="secondary" onClick={() => toast({ tone: "success", title: "Saved" })}>
+                Trigger
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => toast({ tone: "error", title: "Action failed", description: "Try again." })}
+              >
+                Error
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Inline alert</CardTitle>
+            <CardDescription>Persistent · soft fill · {SALES_FEEDBACK.alertAccentWidth}px accent</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Alert tone="success" compact title="Data saved" />
+            <Alert tone="warning" compact title="Follow-up overdue" />
+            <Alert
+              tone="info"
+              compact
+              title="Integration not connected"
+              action={
+                <Button size="sm" variant="secondary">
+                  Connect
+                </Button>
+              }
+            />
+            <Alert tone="danger" compact title="Payment failed" />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Progress & loading</CardTitle>
+            <CardDescription>{SALES_FEEDBACK.progressHeight}px track · layout skeleton</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Progress value={65} showValue label="Pipeline health" />
+            <Progress value={88} showValue tone="success" label="Quota attainment" />
+            <div className="space-y-2 rounded-[10px] border border-sales-border-subtle p-3">
+              <Skeleton className="h-3 w-1/3" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
+            <p className="text-[11px] text-sales-text-muted">
+              Button loading uses Phase 01 Loader2 · no standalone page spinner required
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card variant="flat">
+        <CardContent className="space-y-2 pt-4 text-[12px] leading-relaxed text-sales-text-secondary">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            Accessibility & timing
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>Modal: focus moves into dialog · Escape closes when allowed · aria-labelledby / aria-describedby</li>
+            <li>Toast: polite status for success/info · assertive alert for errors · max {SALES_OVERLAY.toastMaxVisible} stacked</li>
+            <li>Inline alert: persists until state resolves or user dismisses · not auto-dismissed like toast</li>
+            <li>Progress: numeric value adjacent to track · prefers-reduced-motion respected on skeleton/modal motion</li>
+            <li>Mobile toast sits above SalesBottomNav via .sales-mobile-toast-anchor</li>
+          </ul>
+        </CardContent>
+      </Card>
+
+      {deleteOpen ? (
+        <PremiumSheet
+          size="sm"
+          title="Delete lead"
+          description="This action cannot be undone."
+          icon={<Trash2 size={18} strokeWidth={1.8} className="text-sales-danger" />}
+          onClose={() => setDeleteOpen(false)}
+          footer={
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={() => setDeleteOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={() => setDeleteOpen(false)}>
+                Delete
+              </Button>
+            </div>
+          }
+        >
+          <p className="text-[13px] text-sales-text-secondary">
+            Documentation example only. Production modals preserve existing workflow rules and dirty-close behavior.
+          </p>
+        </PremiumSheet>
+      ) : null}
     </div>
   );
 }
@@ -1753,6 +1969,15 @@ function ShowcaseInner() {
             <TablesShowcaseSection />
           </Section>
 
+          {/* ── Overlays & Feedback ────────────────────────────── */}
+          <Section
+            id="overlays"
+            title="07 — Overlays & Feedback"
+            description="Modal · contextual drawer · toast · inline alert · progress & skeleton. Calm, precise, accessible."
+          >
+            <OverlaysShowcaseSection />
+          </Section>
+
           {/* ── Timeline ───────────────────────────────────────── */}
           <Section id="timeline" title="Timeline" description="Milestones, activity feed, and event list.">
             <div className="grid gap-4 lg:grid-cols-2">
@@ -1872,84 +2097,6 @@ function ShowcaseInner() {
                       { name: "Website", value: 8 },
                     ]}
                   />
-                </CardContent>
-              </Card>
-            </div>
-          </Section>
-
-          {/* ── Feedback ───────────────────────────────────────── */}
-          <Section id="feedback" title="Alerts & toasts" description="Left-accent alerts · toast triggers.">
-            <div className="space-y-3">
-              <Alert tone="success" icon={<CheckCircle2 size={18} strokeWidth={1.8} />} title="Quote sent">
-                Customer received the PDF via WhatsApp.
-              </Alert>
-              <Alert tone="warning" icon={<AlertTriangle size={18} strokeWidth={1.8} />} title="18 overdue follow-ups">
-                Some scheduled follow-ups need attention today.
-              </Alert>
-              <Alert tone="danger" icon={<XCircle size={18} strokeWidth={1.8} />} title="Couldn't send message">
-                Check your WhatsApp connection and try again.
-              </Alert>
-              <Alert tone="info" icon={<Info size={18} strokeWidth={1.8} />} title="New Facebook leads synced">
-                4 leads were added to your pipeline in the last hour.
-              </Alert>
-              <Alert tone="brand" title="Tip">
-                Lime accent alert for product guidance — use sparingly.
-              </Alert>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-2">
-              <Button
-                variant="secondary"
-                onClick={() => toast({ tone: "success", title: "Follow-up scheduled" })}
-              >
-                Toast success
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  toast({
-                    tone: "error",
-                    title: "Couldn't send WhatsApp message",
-                    description: "Check your connection and try again.",
-                  })
-                }
-              >
-                Toast error
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => toast({ tone: "warning", title: "Follow-up due in 15 minutes" })}
-              >
-                Toast warning
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => toast({ tone: "info", title: "Quote sent", description: "PDF delivered." })}
-              >
-                Toast info
-              </Button>
-            </div>
-            <div className="grid gap-4 pt-2 sm:grid-cols-2">
-              <Card>
-                <EmptyState
-                  title="No picks yet"
-                  description="Save a promising lead during a follow-up and it will appear here."
-                  size="compact"
-                  action={
-                    <Button size="sm" variant="secondary">
-                      Browse pipeline
-                    </Button>
-                  }
-                />
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Skeleton loading</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-8 w-full" />
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-4 w-1/2" />
                 </CardContent>
               </Card>
             </div>

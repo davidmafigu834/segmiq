@@ -1,6 +1,6 @@
 "use client";
 
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode, ThHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
 import { EmptyState } from "./Feedback";
@@ -253,20 +253,19 @@ export function DataTableSortableTh({
   const active = sortDirection === "asc" || sortDirection === "desc";
   const Icon =
     sortDirection === "asc" ? ArrowUp : sortDirection === "desc" ? ArrowDown : ArrowUpDown;
+  const ariaSort =
+    sortDirection === "asc"
+      ? "ascending"
+      : sortDirection === "desc"
+        ? "descending"
+        : "none";
 
   return (
-    <DataTableTh compact={compact} align={align} className={className}>
+    <DataTableTh compact={compact} align={align} className={className} aria-sort={ariaSort}>
       <button
         type="button"
         onClick={onSort}
         aria-label={`Sort by ${label}`}
-        aria-sort={
-          sortDirection === "asc"
-            ? "ascending"
-            : sortDirection === "desc"
-              ? "descending"
-              : "none"
-        }
         className={cn(
           "inline-flex items-center gap-1.5 rounded-[6px] transition-colors",
           "hover:text-sales-text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]",

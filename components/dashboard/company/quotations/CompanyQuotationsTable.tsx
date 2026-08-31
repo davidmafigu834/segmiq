@@ -24,7 +24,6 @@ import {
   DataTableBody,
   DataTableCheckboxCell,
   DataTableEl,
-  DataTableEmptyPanel,
   DataTableFooter,
   DataTableHead,
   DataTableMobileItem,

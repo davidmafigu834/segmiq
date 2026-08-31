@@ -18,6 +18,7 @@ export function Alert({
   children,
   action,
   className,
+  compact = false,
 }: {
   tone?: AlertTone;
   icon?: ReactNode;
@@ -25,25 +26,31 @@ export function Alert({
   children?: ReactNode;
   action?: ReactNode;
   className?: string;
+  /** Single-line contextual banners (~40–44px). */
+  compact?: boolean;
 }) {
   return (
     <aside
+      role={tone === "danger" ? "alert" : "status"}
       className={cn(
-        "flex flex-col gap-3 rounded-sales-lg border border-l-[3px] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4",
+        "flex flex-col gap-3 rounded-[10px] border border-l-[3px] px-4 sm:flex-row sm:items-center sm:justify-between",
+        compact ? "min-h-[40px] py-2.5 sm:py-2.5" : "px-4 py-3 sm:px-5 sm:py-3.5",
         toneClass[tone],
         className
       )}
     >
       <div className="flex min-w-0 items-start gap-3">
         {icon ? (
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-surface text-sales-text-primary">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-sales-surface text-sales-text-primary">
             {icon}
           </span>
         ) : null}
         <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-sales-text-primary">{title}</p>
+          <p className="text-[13px] font-semibold leading-snug text-sales-text-primary sm:text-[14px]">
+            {title}
+          </p>
           {children ? (
-            <div className="mt-0.5 break-words text-[13px] text-sales-text-secondary">
+            <div className="mt-0.5 break-words text-[12px] text-sales-text-secondary sm:text-[13px]">
               {children}
             </div>
           ) : null}
@@ -59,10 +66,7 @@ export function Alert({
 export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "animate-pulse rounded-sales-md bg-[var(--sales-skeleton-base,var(--sales-border))] opacity-80",
-        className
-      )}
+      className={cn("sales-skeleton rounded-sales-md", className)}
       aria-hidden
       {...props}
     />
@@ -108,10 +112,14 @@ export function Progress({
   value,
   className,
   tone = "brand",
+  label,
+  showValue = false,
 }: {
   value: number;
   className?: string;
   tone?: "brand" | "success" | "warning" | "danger" | "info";
+  label?: string;
+  showValue?: boolean;
 }) {
   const pct = Math.max(0, Math.min(100, value));
   const fill: Record<string, string> = {
@@ -122,17 +130,34 @@ export function Progress({
     info: "bg-sales-info",
   };
   return (
-    <div
-      className={cn(
-        "h-2 w-full overflow-hidden rounded-full bg-[var(--sales-chart-track,var(--sales-border-subtle))]",
-        className
-      )}
-      role="progressbar"
-      aria-valuenow={pct}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div className={cn("h-full rounded-full transition-[width] duration-150", fill[tone])} style={{ width: `${pct}%` }} />
+    <div className={className}>
+      {label || showValue ? (
+        <div className="mb-1.5 flex items-center justify-between gap-3">
+          {label ? (
+            <span className="text-[12px] font-medium text-sales-text-secondary">{label}</span>
+          ) : (
+            <span />
+          )}
+          {showValue ? (
+            <span className="text-[12px] font-semibold tabular-nums text-sales-text-primary">
+              {pct}%
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      <div
+        className="h-2 w-full overflow-hidden rounded-full bg-[var(--sales-chart-track,var(--sales-border-subtle))]"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label}
+      >
+        <div
+          className={cn("h-full rounded-full transition-[width] duration-300 ease-out", fill[tone])}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }

@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { CheckCircle2, Info, TriangleAlert, X, XCircle } from "lucide-react";
+import { IconButton } from "./Button";
+import { SALES_OVERLAY } from "@/lib/sales/design-tokens";
 import { cn } from "@/lib/ui/cn";
 
 export type ToastTone = "success" | "info" | "warning" | "error";
@@ -40,11 +42,18 @@ const toneIconClass = {
   error: "text-sales-danger",
 } as const;
 
-const toneBorder = {
-  success: "border-sales-success/25",
-  info: "border-sales-info/25",
-  warning: "border-sales-warning/30",
-  error: "border-sales-danger/25",
+const toneAccent = {
+  success: "border-l-sales-success bg-sales-success-soft/35",
+  info: "border-l-sales-info bg-sales-info-soft/35",
+  warning: "border-l-sales-warning bg-sales-warning-soft/35",
+  error: "border-l-sales-danger bg-sales-danger-soft/35",
+} as const;
+
+const toneIconWell = {
+  success: "bg-sales-success-soft text-sales-success",
+  info: "bg-sales-info-soft text-sales-info",
+  warning: "bg-sales-warning-soft text-sales-warning",
+  error: "bg-sales-danger-soft text-sales-danger",
 } as const;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -63,8 +72,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         title: opts.title,
         description: opts.description,
       };
-      setItems((prev) => [...prev.slice(-3), item]);
-      window.setTimeout(() => dismiss(id), 4200);
+      setItems((prev) => [...prev.slice(-(SALES_OVERLAY.toastMaxVisible - 1)), item]);
+      window.setTimeout(() => dismiss(id), SALES_OVERLAY.toastDurationMs);
     },
     [dismiss]
   );
@@ -77,38 +86,43 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         className="sales-mobile-toast-anchor pointer-events-none fixed right-4 top-4 z-[var(--sales-z-toast,100)] flex w-[min(100%-2rem,360px)] flex-col gap-2"
         aria-live="polite"
+        aria-relevant="additions"
       >
         {items.map((item) => {
           const Icon = toneIcon[item.tone];
+          const isError = item.tone === "error";
           return (
             <div
               key={item.id}
               className={cn(
-                "pointer-events-auto flex gap-3 rounded-sales-lg border border-sales-border bg-[var(--sales-surface-raised,var(--sales-surface))] p-3.5 shadow-sales-popover",
-                toneBorder[item.tone]
+                "sales-toast-item pointer-events-auto flex gap-3 rounded-[11px] border border-sales-border border-l-[3px] bg-[var(--sales-surface-raised,var(--sales-surface))] p-3.5 shadow-sales-popover",
+                toneAccent[item.tone]
               )}
-              role="status"
+              role={isError ? "alert" : "status"}
+              aria-live={isError ? "assertive" : "polite"}
             >
-              <Icon
-                size={18}
-                strokeWidth={1.8}
-                className={cn("mt-0.5 shrink-0", toneIconClass[item.tone])}
-                aria-hidden
-              />
+              <span
+                className={cn(
+                  "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
+                  toneIconWell[item.tone]
+                )}
+              >
+                <Icon size={16} strokeWidth={1.8} className={toneIconClass[item.tone]} aria-hidden />
+              </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-sales-text-primary">{item.title}</p>
                 {item.description ? (
                   <p className="mt-0.5 text-[12px] text-sales-text-secondary">{item.description}</p>
                 ) : null}
               </div>
-              <button
-                type="button"
-                className="shrink-0 rounded-sales-sm p-1 text-sales-text-muted hover:text-sales-text-primary"
-                aria-label="Dismiss"
+              <IconButton
+                aria-label="Dismiss notification"
+                size="sm"
+                className="shrink-0 self-start"
                 onClick={() => dismiss(item.id)}
               >
-                <X size={14} strokeWidth={1.8} />
-              </button>
+                <X strokeWidth={1.8} />
+              </IconButton>
             </div>
           );
         })}

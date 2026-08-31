@@ -4112,9 +4112,14 @@ label[for="photo-input"] {
   --sales-surface-raised: #ffffff;
   --sales-surface-selected: #eef4d8;
   --sales-bg-subtle: #f4f6fb;
-  --sales-overlay: rgba(16, 24, 40, 0.35);
-  --sales-skeleton-base: #e2e8f0;
-  --sales-skeleton-highlight: #f4f6fb;
+  --sales-overlay: rgba(2, 8, 20, 0.58);
+  --sales-overlay-blur: 3px;
+  --sales-skeleton-base: #eaecf0;
+  --sales-skeleton-highlight: #f2f4f7;
+  --sales-toast-duration: 4200ms;
+  --sales-progress-height: 8px;
+  --sales-modal-motion: 180ms ease-out;
+  --sales-drawer-motion: 220ms ease-out;
 }
 
 /*
@@ -4330,7 +4335,8 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-chart-track: #102449;
 
   /* Misc */
-  --sales-overlay: rgba(4, 12, 32, 0.62);
+  --sales-overlay: rgba(2, 8, 20, 0.62);
+  --sales-overlay-blur: 3px;
   --sales-skeleton-base: #0c1d3d;
   --sales-skeleton-highlight: #102449;
 
@@ -4600,6 +4606,91 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-icon-b
 .sales-modal-premium {
   color-scheme: inherit;
   color: var(--sales-text-primary);
+}
+
+.sales-modal-backdrop {
+  background: var(--sales-overlay);
+  backdrop-filter: blur(var(--sales-overlay-blur, 0px));
+  animation: sales-modal-backdrop-in var(--sales-modal-motion, 180ms ease-out);
+}
+
+.sales-modal-surface {
+  animation: sales-modal-surface-in var(--sales-modal-motion, 180ms ease-out);
+}
+
+@keyframes sales-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sales-modal-surface-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (min-width: 640px) {
+  @keyframes sales-modal-surface-in {
+    from {
+      opacity: 0;
+      transform: scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+.sales-toast-item {
+  animation: sales-toast-in 180ms ease-out;
+}
+
+@keyframes sales-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sales-skeleton {
+  background-color: var(--sales-skeleton-base);
+  animation: sales-skeleton-pulse 1.75s ease-in-out infinite;
+}
+
+@keyframes sales-skeleton-pulse {
+  0%,
+  100% {
+    background-color: var(--sales-skeleton-base);
+  }
+  50% {
+    background-color: var(--sales-skeleton-highlight);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-modal-backdrop,
+  .sales-modal-surface,
+  .sales-toast-item,
+  .sales-skeleton {
+    animation: none !important;
+  }
+  .sales-modal-backdrop {
+    backdrop-filter: none;
+  }
 }
 .calendar-modal-premium input,
 .calendar-modal-premium textarea,

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { IconButton } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
@@ -47,8 +47,30 @@ export function PremiumSheet({
   className?: string;
   contentClassName?: string;
 }) {
-  const titleId = labelledBy ?? "premium-sheet-title";
+  const reactId = useId();
+  const titleId = labelledBy ?? `premium-sheet-title-${reactId}`;
   const descId = descriptionId ?? (description ? `${titleId}-desc` : undefined);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  useEffect(() => {
+    dialogRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !closeDisabled) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closeDisabled, onClose]);
 
   return (
     <div
@@ -56,13 +78,13 @@ export function PremiumSheet({
         "sales-modal-premium calendar-modal-premium pipeline-drawer-light fixed inset-0 flex items-end justify-center sm:items-center sm:p-4",
         elevateForCourse
           ? // Above course dim (90), below coachmark (92) so the real modal stays visible and coached
-            "z-[91]"
-          : "z-[80]"
+            "z-[var(--sales-z-course-spotlight,91)]"
+          : "z-[var(--sales-z-modal,80)]"
       )}
     >
       <button
         type="button"
-        className="absolute inset-0 z-[70] bg-[var(--sales-overlay)]"
+        className="sales-modal-backdrop absolute inset-0 z-[var(--sales-z-modal-backdrop,70)]"
         aria-label="Close"
         disabled={closeDisabled}
         onClick={() => {
@@ -70,17 +92,19 @@ export function PremiumSheet({
         }}
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal
+        tabIndex={-1}
         aria-labelledby={titleId}
         aria-describedby={descId}
         className={cn(
-          "relative z-[80] flex max-h-[calc(100dvh-64px)] w-full flex-col overflow-hidden rounded-t-[16px] border border-sales-border bg-sales-surface shadow-sales-modal sm:rounded-[16px]",
+          "sales-modal-surface relative z-[var(--sales-z-modal,80)] flex max-h-[calc(100dvh-64px)] w-full flex-col overflow-hidden rounded-t-[16px] border border-sales-border bg-sales-surface shadow-sales-modal sm:rounded-[16px]",
           maxWidthClass ?? widthClass[size],
           className
         )}
       >
-        <div className="flex items-start justify-between gap-3 border-b border-sales-border-subtle bg-sales-surface px-5 py-4">
+        <div className="flex items-start justify-between gap-3 border-b border-sales-border-subtle bg-sales-surface px-5 py-5 sm:py-4">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             {icon ? (
               <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-sales-border bg-sales-surface-subtle text-sales-text-secondary">
@@ -99,7 +123,7 @@ export function PremiumSheet({
               <h2
                 id={titleId}
                 className={cn(
-                  "text-[18px] font-semibold tracking-[-0.02em] text-sales-text-primary",
+                  "text-[17px] font-semibold tracking-[-0.02em] text-sales-text-primary sm:text-[18px]",
                   eyebrow || badge ? "mt-0.5" : ""
                 )}
               >
@@ -108,7 +132,7 @@ export function PremiumSheet({
               {description ? (
                 <p
                   id={descId}
-                  className="mt-1 text-[13px] leading-snug text-sales-text-secondary"
+                  className="mt-1 text-[12px] leading-snug text-sales-text-secondary sm:text-[13px]"
                 >
                   {description}
                 </p>
@@ -139,7 +163,7 @@ export function PremiumSheet({
 
         {footer ? (
           <div
-            className="shrink-0 border-t border-sales-border-subtle bg-sales-surface px-5 py-4"
+            className="sticky bottom-0 shrink-0 border-t border-sales-border-subtle bg-sales-surface px-5 py-4"
             style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom))" }}
           >
             {footer}
