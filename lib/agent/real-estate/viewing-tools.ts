@@ -102,7 +102,7 @@ export async function executeViewingGetAvailability(
     workStartTime: ctx.workStartTime,
     workEndTime: ctx.workEndTime,
   });
-  if ("ok" in availability && availability.ok === false) {
+  if (!availability.ok) {
     return toolFailure(availability.error);
   }
 
@@ -251,7 +251,7 @@ export async function executeViewingSchedule(
     workStartTime: ctx.workStartTime,
     workEndTime: ctx.workEndTime,
   });
-  if ("ok" in availability && availability.ok === false) {
+  if (!availability.ok) {
     return toolFailure(availability.error);
   }
   if (availability.busyLocalTimes.includes(input.time)) {

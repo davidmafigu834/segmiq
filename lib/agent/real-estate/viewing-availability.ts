@@ -9,6 +9,7 @@ const SLOT_MINUTES = 60;
 export type BusySlot = { startIso: string; endIso: string };
 
 export type ViewingAvailabilityResult = {
+  ok: true;
   date: string;
   timezone: string;
   agentId: string;
@@ -147,6 +148,7 @@ export async function getViewingAgentAvailability(opts: {
   const workEndLabel = opts.workEndTime ?? `${String(WORK_END_HOUR).padStart(2, "0")}:00`;
 
   return {
+    ok: true,
     date: opts.localDate,
     timezone: opts.timezone,
     agentId: opts.agentId,
