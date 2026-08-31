@@ -120,6 +120,17 @@ export const SALES_FIELD_HEIGHT = {
   compact: 32,
 } as const;
 
+/** Switch visual size · Segmented track height */
+export const SALES_CONTROL_SIZE = {
+  switchWidth: 36,
+  switchHeight: 20,
+  switchThumb: 14,
+  check: 16,
+  radio: 16,
+  segmentDesktop: 36,
+  segmentTouch: 44,
+} as const;
+
 export const SALES_Z = {
   base: 0,
   sticky: 20,

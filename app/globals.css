@@ -3898,6 +3898,28 @@ label[for="photo-input"] {
   --sales-field-shortcut-bg: var(--sales-surface-subtle);
   --sales-field-shortcut-border: var(--sales-border);
 
+  /* Control system — Switch / Checkbox / Radio / Segmented */
+  --sales-control-focus-outline: #d4ff4f;
+  --sales-control-focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px rgba(212, 255, 79, 0.55);
+  --sales-control-motion: 150ms ease;
+  --sales-switch-track-off: #d0d5dd;
+  --sales-switch-track-off-hover: #b8c0cc;
+  --sales-switch-track-border: rgba(16, 24, 40, 0.08);
+  --sales-switch-thumb-off: #ffffff;
+  --sales-switch-thumb-on: #101828;
+  --sales-switch-thumb-shadow: 0 1px 2px rgba(16, 24, 40, 0.14);
+  --sales-check-border: #98a2b3;
+  --sales-check-border-hover: #667085;
+  --sales-check-bg: #ffffff;
+  --sales-segment-track-bg: #f5f7fc;
+  --sales-segment-track-border: #d0d5dd;
+  --sales-segment-track-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.035);
+  --sales-segment-hover: rgba(16, 24, 40, 0.035);
+  --sales-segment-active-border: rgba(16, 24, 40, 0.07);
+  --sales-segment-active-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --sales-segment-count-active: rgba(16, 24, 40, 0.1);
+  --sales-segment-count-idle: var(--sales-neutral-100);
+
   /* Sales sidebar — chrome, not white */
   --sales-sidebar-bg: #f4f6fb;
   --sales-sidebar-border: #e2e8f0;
@@ -4160,6 +4182,28 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-field-placeholder: var(--sales-text-disabled);
   --sales-field-shortcut-bg: rgba(16, 36, 73, 0.9);
   --sales-field-shortcut-border: rgba(130, 151, 198, 0.2);
+
+  /* Control system — Switch / Checkbox / Radio / Segmented */
+  --sales-control-focus-outline: #d4ff4f;
+  --sales-control-focus-ring: 0 0 0 2px #081a35, 0 0 0 4px rgba(212, 255, 79, 0.45);
+  --sales-control-motion: 150ms ease;
+  --sales-switch-track-off: rgba(113, 130, 165, 0.28);
+  --sales-switch-track-off-hover: rgba(113, 130, 165, 0.4);
+  --sales-switch-track-border: rgba(148, 163, 184, 0.26);
+  --sales-switch-thumb-off: #f7f8fc;
+  --sales-switch-thumb-on: #101828;
+  --sales-switch-thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --sales-check-border: rgba(148, 163, 184, 0.55);
+  --sales-check-border-hover: rgba(148, 163, 184, 0.75);
+  --sales-check-bg: rgba(10, 27, 57, 0.5);
+  --sales-segment-track-bg: rgba(4, 15, 34, 0.72);
+  --sales-segment-track-border: rgba(130, 151, 198, 0.18);
+  --sales-segment-track-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+  --sales-segment-hover: rgba(255, 255, 255, 0.035);
+  --sales-segment-active-border: rgba(16, 24, 40, 0.2);
+  --sales-segment-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --sales-segment-count-active: rgba(16, 24, 40, 0.12);
+  --sales-segment-count-idle: rgba(16, 36, 73, 0.9);
 
   /* Sidebar — slightly deeper than the canvas */
   --sales-sidebar-bg: #050510;

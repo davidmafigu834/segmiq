@@ -32,7 +32,15 @@ export type {
 } from "./Input";
 
 export { Switch, Checkbox, Radio, SegmentedControl, Tabs } from "./Controls";
-export type { SegmentOption, TabItem } from "./Controls";
+export type {
+  SegmentOption,
+  TabItem,
+  SalesSwitchProps,
+  SalesCheckboxProps,
+  SalesRadioProps,
+  SalesSegmentedControlProps,
+  SalesControlPreviewState,
+} from "./Controls";
 export { MenuSelect } from "./MenuSelect";
 export type { MenuSelectOption } from "./MenuSelect";
 

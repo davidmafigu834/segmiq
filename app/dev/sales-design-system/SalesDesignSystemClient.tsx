@@ -3,8 +3,10 @@
 import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
+  CalendarDays,
   CheckCircle2,
   Info,
+  LayoutList,
   MoreHorizontal,
   Phone,
   Plus,
@@ -47,7 +49,6 @@ import {
   MetricValue,
   Milestone,
   PipelineStageBadge,
-  Progress,
   Radio,
   SalesAreaChart,
   SalesBarChart,
@@ -80,7 +81,7 @@ const NAV = [
   { id: "spacing", label: "Spacing & elevation" },
   { id: "buttons", label: "Buttons" },
   { id: "inputs", label: "Inputs & Search" },
-  { id: "controls", label: "Controls" },
+  { id: "controls", label: "Switch & Selectors" },
   { id: "badges", label: "Badges & status" },
   { id: "cards", label: "Cards & KPIs" },
   { id: "table", label: "Table" },
@@ -159,9 +160,12 @@ function Swatch({
 function ShowcaseInner() {
   const { toast } = useSalesToast();
   const [seg, setSeg] = useState<"day" | "week" | "month">("week");
+  const [segCount, setSegCount] = useState<"all" | "open" | "won">("open");
+  const [segIcon, setSegIcon] = useState<"day" | "list">("day");
   const [tab, setTab] = useState("overview");
   const [on, setOn] = useState(true);
   const [checked, setChecked] = useState(true);
+  const [indeterminateDemo] = useState(true);
   const [radio, setRadio] = useState("a");
   const [q, setQ] = useState("");
   const [qFilled, setQFilled] = useState("Acme Solar");
@@ -646,22 +650,137 @@ function ShowcaseInner() {
             </div>
           </Section>
 
-          {/* ── Controls ───────────────────────────────────────── */}
-          <Section id="controls" title="Controls" description="Switch, checkbox, radio, tabs, segmented.">
-            <div className="grid gap-6 lg:grid-cols-2">
+          {/* ── Switch & Selectors ─────────────────────────────── */}
+          <Section
+            id="controls"
+            title="03 — Switch & Selectors"
+            description="Clear state, instant feedback, accessible by default. Neutral at rest · SegmiQ lime when on/selected · controlled focus."
+          >
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[12px] text-sales-text-secondary">
+                Validate both themes with the page toggle. Hover / focus rows use previewState (showcase only).
+              </p>
+              <SalesThemeToggle />
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-2">
+              {/* 01 Switch */}
               <Card>
+                <CardHeader>
+                  <CardTitle>01 Switch</CardTitle>
+                  <CardDescription>Binary on/off control.</CardDescription>
+                </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[13px]">Notifications</span>
-                    <Switch checked={on} onCheckedChange={setOn} aria-label="Notifications" />
-                  </div>
+                  <ButtonShowcaseRow title="States">
+                    <PreviewCell label="Off">
+                      <Switch checked={false} onCheckedChange={() => {}} aria-label="Off" />
+                    </PreviewCell>
+                    <PreviewCell label="On">
+                      <Switch checked={on} onCheckedChange={setOn} aria-label="On" />
+                    </PreviewCell>
+                    <PreviewCell label="Hover off">
+                      <Switch checked={false} onCheckedChange={() => {}} aria-label="Hover off" previewState="hover" />
+                    </PreviewCell>
+                    <PreviewCell label="Hover on">
+                      <Switch checked previewState="hover" onCheckedChange={() => {}} aria-label="Hover on" />
+                    </PreviewCell>
+                    <PreviewCell label="Focus">
+                      <Switch checked={false} onCheckedChange={() => {}} aria-label="Focus" previewState="focus" />
+                    </PreviewCell>
+                    <PreviewCell label="Disabled off">
+                      <Switch checked={false} onCheckedChange={() => {}} aria-label="Disabled off" disabled />
+                    </PreviewCell>
+                    <PreviewCell label="Disabled on">
+                      <Switch checked onCheckedChange={() => {}} aria-label="Disabled on" disabled />
+                    </PreviewCell>
+                  </ButtonShowcaseRow>
+                  <p className="text-[11px] text-sales-text-muted">
+                    Usage: settings toggles. Behavior: role=switch · dark thumb on lime · ~44px touch target.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* 02 Checkbox */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>02 Checkbox</CardTitle>
+                  <CardDescription>Multi-select control.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ButtonShowcaseRow title="States">
+                    <PreviewCell label="Unchecked">
+                      <Checkbox checked={false} onCheckedChange={() => {}} aria-label="Unchecked" />
+                    </PreviewCell>
+                    <PreviewCell label="Checked">
+                      <Checkbox checked={checked} onCheckedChange={setChecked} aria-label="Checked" />
+                    </PreviewCell>
+                    <PreviewCell label="Hover">
+                      <Checkbox checked={false} onCheckedChange={() => {}} aria-label="Hover" previewState="hover" />
+                    </PreviewCell>
+                    <PreviewCell label="Checked hover">
+                      <Checkbox checked onCheckedChange={() => {}} aria-label="Checked hover" previewState="hover" />
+                    </PreviewCell>
+                    <PreviewCell label="Focus">
+                      <Checkbox checked={false} onCheckedChange={() => {}} aria-label="Focus" previewState="focus" />
+                    </PreviewCell>
+                    <PreviewCell label="Indeterminate">
+                      <Checkbox
+                        checked
+                        indeterminate={indeterminateDemo}
+                        onCheckedChange={() => {}}
+                        aria-label="Indeterminate"
+                      />
+                    </PreviewCell>
+                    <PreviewCell label="Disabled">
+                      <Checkbox checked={false} onCheckedChange={() => {}} aria-label="Disabled" disabled />
+                    </PreviewCell>
+                    <PreviewCell label="Disabled checked">
+                      <Checkbox checked onCheckedChange={() => {}} aria-label="Disabled checked" disabled />
+                    </PreviewCell>
+                  </ButtonShowcaseRow>
                   <Checkbox
+                    id="ds-check-label"
                     checked={checked}
                     onCheckedChange={setChecked}
                     label="Include archived leads"
-                    id="ds-check"
                   />
-                  <div className="flex flex-col gap-2">
+                  <p className="text-[11px] text-sales-text-muted">
+                    Usage: multi-select lists. Behavior: 16×16 · 4px radius · dark check on lime · label toggles.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* 03 Radio */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>03 Radio</CardTitle>
+                  <CardDescription>Single-select from a group.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <ButtonShowcaseRow title="States">
+                    <PreviewCell label="Unselected">
+                      <Radio name="ds-r-prev" value="u" checked={false} onChange={() => {}} aria-label="Unselected" id="ds-ru" />
+                    </PreviewCell>
+                    <PreviewCell label="Selected">
+                      <Radio name="ds-r-prev2" value="s" checked onChange={() => {}} id="ds-rs" />
+                    </PreviewCell>
+                    <PreviewCell label="Hover">
+                      <Radio name="ds-r-prev3" value="h" checked={false} onChange={() => {}} previewState="hover" id="ds-rh" />
+                    </PreviewCell>
+                    <PreviewCell label="Selected hover">
+                      <Radio name="ds-r-prev4" value="sh" checked onChange={() => {}} previewState="hover" id="ds-rsh" />
+                    </PreviewCell>
+                    <PreviewCell label="Focus">
+                      <Radio name="ds-r-prev5" value="f" checked={false} onChange={() => {}} previewState="focus" id="ds-rf" />
+                    </PreviewCell>
+                    <PreviewCell label="Disabled">
+                      <Radio name="ds-r-prev6" value="d" checked={false} onChange={() => {}} disabled id="ds-rd" />
+                    </PreviewCell>
+                    <PreviewCell label="Disabled selected">
+                      <Radio name="ds-r-prev7" value="ds" checked onChange={() => {}} disabled id="ds-rds" />
+                    </PreviewCell>
+                  </ButtonShowcaseRow>
+                  <div className="flex flex-col gap-1">
                     <Radio
                       name="ds-radio"
                       value="a"
@@ -679,26 +798,93 @@ function ShowcaseInner() {
                       id="ds-rb"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <p className="text-[12px] text-sales-text-secondary">Progress 68%</p>
-                    <Progress value={68} />
-                    <Progress value={40} tone="info" />
-                    <Progress value={90} tone="success" />
-                  </div>
+                  <p className="text-[11px] text-sales-text-muted">
+                    Usage: one-of-many. Behavior: ring + 8px lime dot · native name grouping · focus ≠ selected.
+                  </p>
                 </CardContent>
               </Card>
+
+              {/* 04 Segmented */}
               <Card>
+                <CardHeader>
+                  <CardTitle>04 Segmented Control</CardTitle>
+                  <CardDescription>Switch between related views.</CardDescription>
+                </CardHeader>
                 <CardContent className="space-y-5">
-                  <SegmentedControl
-                    aria-label="Period"
-                    options={[
-                      { value: "day", label: "Day" },
-                      { value: "week", label: "Week" },
-                      { value: "month", label: "Month" },
-                    ]}
-                    value={seg}
-                    onChange={setSeg}
-                  />
+                  <div>
+                    <p className="mb-2 text-[11px] text-sales-text-muted">Default</p>
+                    <SegmentedControl
+                      aria-label="Period"
+                      options={[
+                        { value: "day", label: "Day" },
+                        { value: "week", label: "Week" },
+                        { value: "month", label: "Month" },
+                      ]}
+                      value={seg}
+                      onChange={setSeg}
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-2 text-[11px] text-sales-text-muted">Hover preview (Day)</p>
+                    <SegmentedControl
+                      aria-label="Period hover"
+                      options={[
+                        { value: "day", label: "Day" },
+                        { value: "week", label: "Week" },
+                        { value: "month", label: "Month" },
+                      ]}
+                      value="week"
+                      onChange={() => {}}
+                      previewHoverValue="day"
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-2 text-[11px] text-sales-text-muted">With count</p>
+                    <SegmentedControl
+                      aria-label="Pipeline filter"
+                      options={[
+                        { value: "all", label: "All", badge: 120 },
+                        { value: "open", label: "Open", badge: 82 },
+                        { value: "won", label: "Won", badge: 68 },
+                      ]}
+                      value={segCount}
+                      onChange={setSegCount}
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-2 text-[11px] text-sales-text-muted">Icon + text</p>
+                    <SegmentedControl
+                      aria-label="View mode"
+                      options={[
+                        {
+                          value: "day",
+                          label: "Day",
+                          icon: <CalendarDays strokeWidth={1.8} />,
+                        },
+                        {
+                          value: "list",
+                          label: "List",
+                          icon: <LayoutList strokeWidth={1.8} />,
+                        },
+                      ]}
+                      value={segIcon}
+                      onChange={setSegIcon}
+                    />
+                  </div>
+                  <p className="text-[11px] text-sales-text-muted">
+                    Usage: local view/filter switching — not page Tabs. Behavior: recessed track · lime active
+                    segment · radiogroup semantics · no label wrap.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-6">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                Page Tabs (unchanged — underline navigation)
+              </p>
+              <Card>
+                <CardContent className="space-y-3 pt-4">
                   <Tabs
                     items={[
                       { id: "overview", label: "Overview" },
@@ -708,10 +894,10 @@ function ShowcaseInner() {
                     value={tab}
                     onChange={setTab}
                   />
-                  <p className="text-[13px] text-sales-text-secondary">
+                  <p className="text-[12px] text-sales-text-secondary">
                     Active tab: <span className="font-semibold text-sales-text-primary">{tab}</span>
                     {" · "}
-                    Segment: <span className="font-semibold text-sales-text-primary">{seg}</span>
+                    Not part of Switch & Selectors — Company page navigation stays underline Tabs.
                   </p>
                 </CardContent>
               </Card>
