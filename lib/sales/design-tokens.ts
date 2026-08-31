@@ -121,6 +121,19 @@ export const SALES_FIELD_HEIGHT = {
   compact: 32,
 } as const;
 
+/** Table row/header rhythm */
+export const SALES_TABLE = {
+  rowHeight: 52,
+  rowHeightComfortable: 56,
+  headerHeight: 44,
+  toolbarMinHeight: 56,
+  footerMinHeight: 52,
+  cellX: 16,
+  cellXCompact: 12,
+  radius: 12,
+  paginationButton: 32,
+} as const;
+
 /** Switch visual size · Segmented track height */
 export const SALES_CONTROL_SIZE = {
   switchWidth: 36,

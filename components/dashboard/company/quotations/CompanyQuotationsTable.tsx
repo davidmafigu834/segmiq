@@ -4,8 +4,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Download,
   ExternalLink,
@@ -17,7 +15,30 @@ import {
   Search,
 } from "lucide-react";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
-import { Avatar, Badge, Button, Checkbox } from "@/components/sales/ui";
+import {
+  Avatar,
+  Badge,
+  Button,
+  Checkbox,
+  DataTableActionsCell,
+  DataTableBody,
+  DataTableCheckboxCell,
+  DataTableEl,
+  DataTableEmptyPanel,
+  DataTableFooter,
+  DataTableHead,
+  DataTableMobileItem,
+  DataTableMobileList,
+  DataTablePagination,
+  DataTableRow,
+  DataTableScroll,
+  DataTableTd,
+  DataTableTh,
+  DataTableToolbar,
+  DataTableToolbarGroup,
+  DataTableWorkspace,
+  MenuSelect,
+} from "@/components/sales/ui";
 import {
   COMPANY_QUOTATIONS_PAGE_SIZE,
   DEFAULT_COMPANY_QUOTATION_FILTERS,
@@ -28,7 +49,6 @@ import {
   companyQuotationIsPendingApproval,
   companyQuotationMoreFiltersActive,
   companyQuotationNextAction,
-  companyQuotationPageItems,
   type CompanyQuotationEmptyKind,
   type CompanyQuotationFilters,
 } from "@/lib/sales/company-quotations";
@@ -695,29 +715,31 @@ export function CompanyQuotationsTable({
   const permissions = data.permissions;
 
   return (
-    <section
-      className="min-w-0 max-w-full overflow-visible workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
+    <DataTableWorkspace
+      className="min-w-0 max-w-full overflow-visible"
       data-course-target="company-quotations-table"
     >
-      <div className="flex min-w-0 flex-col gap-2 border-b border-sales-border-subtle px-3 py-3 sm:px-4 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <Search
-            size={15}
-            strokeWidth={1.8}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
-          />
-          <input
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search quotations, customers or Deals..."
-            className="h-9 w-full rounded-[8px] border border-sales-border bg-sales-surface pl-9 pr-3 text-[12px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-brand-border focus:shadow-[var(--sales-focus-ring)]"
-          />
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+      <DataTableToolbar className="px-3 sm:px-4">
+        <DataTableToolbarGroup className="w-full sm:flex-1">
+          <div className="relative min-w-0 flex-1">
+            <Search
+              size={15}
+              strokeWidth={1.8}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
+            />
+            <input
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search quotations, customers or Deals..."
+              className="h-9 w-full rounded-[8px] border border-sales-border bg-sales-surface pl-9 pr-3 text-[12px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-brand-border focus:shadow-[var(--sales-focus-ring)]"
+            />
+          </div>
+        </DataTableToolbarGroup>
+        <DataTableToolbarGroup align="end">
           <FiltersPopover data={data} filters={filters} onChange={onFiltersChange} />
           <DatePopover filters={filters} onChange={onFiltersChange} />
-        </div>
-      </div>
+        </DataTableToolbarGroup>
+      </DataTableToolbar>
 
       {selectedIds.size > 0 ? (
         <div className="flex items-center justify-between gap-3 border-b border-sales-border-subtle bg-sales-surface-subtle px-4 py-2">
@@ -735,207 +757,201 @@ export function CompanyQuotationsTable({
       ) : null}
 
       {rows.length > 0 && !loadError ? (
-      <div className="hidden min-w-0 max-w-full overflow-x-auto lg:block">
-        <table className="w-full min-w-[980px] border-collapse text-left">
-          <thead className="bg-sales-surface-subtle">
-            <tr className="h-10 border-b border-sales-border-subtle text-[10px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
-              <th className="w-10 px-3 text-center">
-                <span onClick={(event) => event.stopPropagation()}>
+        <DataTableScroll className="hidden min-w-0 max-w-full lg:block">
+          <DataTableEl className="min-w-[980px]">
+            <DataTableHead>
+              <tr>
+                <DataTableTh compact className="w-10 text-center">
                   <Checkbox
                     checked={allPageSelected}
                     onCheckedChange={onTogglePage}
                     aria-label="Select this page"
                   />
-                </span>
-              </th>
-              <th className="w-[14%] px-2">Quote</th>
-              <th className="w-[16%] px-2">Customer / Deal</th>
-              <th className="w-[13%] px-2">Salesperson</th>
-              <th className="w-[10%] px-2">Value</th>
-              {approvalQueue ? (
-                <>
-                  <th className="w-[8%] px-2">Discount</th>
-                  {permissions.canSeeMargin ? <th className="w-[8%] px-2">Margin</th> : null}
-                  <th className="w-[14%] px-2">Why approval</th>
-                  <th className="w-[10%] px-2">Submitted</th>
-                  <th className="w-[8%] px-2">Status</th>
-                </>
-              ) : (
-                <>
-                  <th className="w-[11%] px-2">Commercial</th>
-                  <th className="w-[10%] px-2">Approval</th>
-                  <th className="w-[10%] px-2">Customer</th>
-                  <th className="w-[10%] px-2">Valid until</th>
-                  <th className="w-[9%] px-2">Next action</th>
-                </>
-              )}
-              <th className="w-10 px-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => {
-              const selected = row.id === selectedId;
-              const validity = formatQuoteValidity(row.validUntil, { status: row.effectiveStatus });
-              const engagement = companyQuotationEngagement(row);
-              return (
-                <tr
-                  key={row.id}
-                  data-course-target="company-quotation-row"
-                  className={cn(
-                    "h-[74px] cursor-pointer border-b border-sales-border-subtle transition-colors last:border-b-0 hover:bg-sales-surface-hover",
-                    selected && "bg-sales-brand-soft hover:bg-sales-brand-soft"
-                  )}
-                  onClick={() => onSelect(row.id)}
-                  aria-selected={selected}
-                >
-                  <td className="relative px-3 text-center" onClick={(event) => event.stopPropagation()}>
-                    {selected ? (
-                      <span className="absolute inset-y-0 left-0 w-0.5 bg-sales-brand" aria-hidden />
-                    ) : null}
-                    <Checkbox
-                      checked={selectedIds.has(row.id)}
-                      onCheckedChange={(checked) => onToggleRow(row.id, checked)}
-                      aria-label={`Select ${displayQuoteNumber(row)}`}
-                    />
-                  </td>
-                  <td className="px-2 py-2">
-                    <p className="truncate text-[12px] font-semibold text-sales-text-primary">
-                      {displayQuoteNumber(row)}
-                    </p>
-                    <p className="mt-0.5 text-[10px] text-sales-text-muted">Version {row.revisionNumber}</p>
-                  </td>
-                  <td className="px-2 py-2">
-                    <p className="truncate text-[12px] font-medium text-sales-text-primary">{row.customerName}</p>
-                    <p className="mt-0.5 truncate text-[10px] text-sales-text-muted">
-                      {row.dealName || row.title}
-                    </p>
-                  </td>
-                  <td className="px-2 py-2">
-                    {row.owner ? (
-                      <div className="flex min-w-0 items-center gap-1.5">
-                        <Avatar name={row.owner.name} src={row.owner.avatarUrl} size="xs" />
-                        <span className="truncate text-[11px] text-sales-text-primary">{row.owner.name}</span>
-                      </div>
-                    ) : (
-                      <span className="text-[11px] text-sales-text-muted">Unassigned</span>
-                    )}
-                  </td>
-                  <td className="px-2 py-2 text-[12px] font-semibold tabular-nums text-sales-text-primary">
-                    {formatQuoteAmount(row.amount, row.currency, {
-                      draftUnset: row.effectiveStatus === "draft",
-                    })}
-                  </td>
-                  {approvalQueue ? (
-                    <>
-                      <td className="px-2 py-2 text-[11px] tabular-nums text-sales-text-secondary">
-                        <span className="inline-flex items-center gap-1">
-                          {row.discountPercent != null ? `${row.discountPercent}%` : "—"}
-                          {row.discountExceedsAuthority ? (
-                            <AlertTriangle size={11} className="text-sales-warning-fg" aria-label="Above authority" />
-                          ) : null}
-                        </span>
-                      </td>
-                      {permissions.canSeeMargin ? (
-                        <td className="px-2 py-2 text-[11px] tabular-nums text-sales-text-secondary">
-                          {row.marginPercent != null ? `${row.marginPercent}%` : "—"}
-                        </td>
-                      ) : null}
-                      <td className="px-2 py-2">
-                        <p className="line-clamp-2 text-[11px] text-sales-text-secondary">
-                          {row.approvalReasons[0] || (companyQuotationIsPendingApproval(row) ? "Approval required" : "—")}
-                        </p>
-                      </td>
-                      <td className="whitespace-nowrap px-2 py-2 text-[10px] text-sales-text-secondary">
-                        {relativeTime(row.approvalRequestedAt || row.updatedAt)}
-                      </td>
-                      <td className="px-2 py-2">
-                        <Badge tone="warning" appearance="soft" className="!px-2 !py-0.5 !text-[10px]">
-                          Pending
-                        </Badge>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-2 py-2">
-                        <CommercialCell row={row} permissions={permissions} />
-                      </td>
-                      <td className="px-2 py-2">
-                        <Badge
-                          tone={approvalTone(row.approvalStatus)}
-                          appearance="soft"
-                          className="!px-2 !py-0.5 !text-[10px]"
-                        >
-                          {companyQuotationApprovalLabel(row.approvalStatus)}
-                        </Badge>
-                      </td>
-                      <td className="px-2 py-2">
-                        <Badge
-                          tone={engagementTone(engagement)}
-                          appearance="soft"
-                          className="!px-2 !py-0.5 !text-[10px]"
-                        >
-                          {companyQuotationEngagementLabel(engagement)}
-                        </Badge>
-                      </td>
-                      <td className="px-2 py-2">
-                        <p className="text-[11px] text-sales-text-primary">{validity.primary}</p>
-                        {validity.secondary ? (
-                          <p
-                            className={cn(
-                              "mt-0.5 text-[10px]",
-                              validity.tone === "danger" && "text-sales-danger",
-                              validity.tone === "warning" && "text-sales-warning-fg",
-                              validity.tone === "ok" && "text-sales-text-muted"
-                            )}
-                          >
-                            {validity.secondary.replace(/^in /, "").replace(/^Expires in /, "")}
-                          </p>
+                </DataTableTh>
+                <DataTableTh className="w-[14%]">Quote</DataTableTh>
+                <DataTableTh className="w-[16%]">Customer / Deal</DataTableTh>
+                <DataTableTh className="w-[13%]">Salesperson</DataTableTh>
+                <DataTableTh className="w-[10%]">Value</DataTableTh>
+                {approvalQueue ? (
+                  <>
+                    <DataTableTh className="w-[8%]">Discount</DataTableTh>
+                    {permissions.canSeeMargin ? <DataTableTh className="w-[8%]">Margin</DataTableTh> : null}
+                    <DataTableTh className="w-[14%]">Why approval</DataTableTh>
+                    <DataTableTh className="w-[10%]">Submitted</DataTableTh>
+                    <DataTableTh className="w-[8%]">Status</DataTableTh>
+                  </>
+                ) : (
+                  <>
+                    <DataTableTh className="w-[11%]">Commercial</DataTableTh>
+                    <DataTableTh className="w-[10%]">Approval</DataTableTh>
+                    <DataTableTh className="w-[10%]">Customer</DataTableTh>
+                    <DataTableTh className="w-[10%]">Valid until</DataTableTh>
+                    <DataTableTh className="w-[9%]">Next action</DataTableTh>
+                  </>
+                )}
+                <DataTableTh className="w-10">
+                  <span className="sr-only">Actions</span>
+                </DataTableTh>
+              </tr>
+            </DataTableHead>
+            <DataTableBody>
+              {rows.map((row, index) => {
+                const selected = row.id === selectedId;
+                const validity = formatQuoteValidity(row.validUntil, { status: row.effectiveStatus });
+                const engagement = companyQuotationEngagement(row);
+                return (
+                  <DataTableRow
+                    key={row.id}
+                    selected={selected}
+                    clickable
+                    showSelectedMarker
+                    className="!h-[74px]"
+                    data-course-target="company-quotation-row"
+                    onClick={() => onSelect(row.id)}
+                    aria-selected={selected}
+                  >
+                    <DataTableCheckboxCell compact className="text-center">
+                      <Checkbox
+                        checked={selectedIds.has(row.id)}
+                        onCheckedChange={(checked) => onToggleRow(row.id, checked)}
+                        aria-label={`Select ${displayQuoteNumber(row)}`}
+                      />
+                    </DataTableCheckboxCell>
+                    <DataTableTd compact>
+                      <p className="truncate text-[12px] font-semibold text-sales-text-primary">
+                        {displayQuoteNumber(row)}
+                      </p>
+                      <p className="mt-0.5 text-[10px] text-sales-text-muted">Version {row.revisionNumber}</p>
+                    </DataTableTd>
+                    <DataTableTd compact>
+                      <p className="truncate text-[12px] font-medium text-sales-text-primary">{row.customerName}</p>
+                      <p className="mt-0.5 truncate text-[10px] text-sales-text-muted">
+                        {row.dealName || row.title}
+                      </p>
+                    </DataTableTd>
+                    <DataTableTd compact>
+                      {row.owner ? (
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <Avatar name={row.owner.name} src={row.owner.avatarUrl} size="xs" />
+                          <span className="truncate text-[11px] text-sales-text-primary">{row.owner.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-sales-text-muted">Unassigned</span>
+                      )}
+                    </DataTableTd>
+                    <DataTableTd compact className="text-[12px] font-semibold text-sales-text-primary" numeric>
+                      {formatQuoteAmount(row.amount, row.currency, {
+                        draftUnset: row.effectiveStatus === "draft",
+                      })}
+                    </DataTableTd>
+                    {approvalQueue ? (
+                      <>
+                        <DataTableTd compact className="text-[11px] text-sales-text-secondary" numeric>
+                          <span className="inline-flex items-center gap-1">
+                            {row.discountPercent != null ? `${row.discountPercent}%` : "—"}
+                            {row.discountExceedsAuthority ? (
+                              <AlertTriangle size={11} className="text-sales-warning-fg" aria-label="Above authority" />
+                            ) : null}
+                          </span>
+                        </DataTableTd>
+                        {permissions.canSeeMargin ? (
+                          <DataTableTd compact className="text-[11px] text-sales-text-secondary" numeric>
+                            {row.marginPercent != null ? `${row.marginPercent}%` : "—"}
+                          </DataTableTd>
                         ) : null}
-                      </td>
-                      <td className="px-2 py-2 text-[11px] font-medium text-sales-text-secondary">
-                        {companyQuotationNextAction(row)}
-                      </td>
-                    </>
-                  )}
-                  <td className="px-2 py-2 text-right" onClick={(event) => event.stopPropagation()}>
-                    <RowMenu
-                      row={row}
-                      alignUp={index >= Math.max(4, rows.length - 3)}
-                      alsoSells={permissions.alsoSells}
-                      onView={() => onSelect(row.id)}
-                      onPdf={() => onViewPdf(row)}
-                      onEdit={() => onEdit(row)}
-                      onDuplicate={() => onDuplicate(row)}
-                      onRevise={() => onRevise(row)}
-                      onOpenDeal={() => onOpenDeal(row)}
-                      onOpenCustomer={() => onOpenCustomer(row)}
-                      onOpenWorkspace={() => onOpenWorkspace(row)}
-                    />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                        <DataTableTd compact>
+                          <p className="line-clamp-2 text-[11px] text-sales-text-secondary">
+                            {row.approvalReasons[0] || (companyQuotationIsPendingApproval(row) ? "Approval required" : "—")}
+                          </p>
+                        </DataTableTd>
+                        <DataTableTd compact className="whitespace-nowrap text-[10px] text-sales-text-secondary">
+                          {relativeTime(row.approvalRequestedAt || row.updatedAt)}
+                        </DataTableTd>
+                        <DataTableTd compact>
+                          <Badge tone="warning" appearance="soft" className="!px-2 !py-0.5 !text-[10px]">
+                            Pending
+                          </Badge>
+                        </DataTableTd>
+                      </>
+                    ) : (
+                      <>
+                        <DataTableTd compact>
+                          <CommercialCell row={row} permissions={permissions} />
+                        </DataTableTd>
+                        <DataTableTd compact>
+                          <Badge
+                            tone={approvalTone(row.approvalStatus)}
+                            appearance="soft"
+                            className="!px-2 !py-0.5 !text-[10px]"
+                          >
+                            {companyQuotationApprovalLabel(row.approvalStatus)}
+                          </Badge>
+                        </DataTableTd>
+                        <DataTableTd compact>
+                          <Badge
+                            tone={engagementTone(engagement)}
+                            appearance="soft"
+                            className="!px-2 !py-0.5 !text-[10px]"
+                          >
+                            {companyQuotationEngagementLabel(engagement)}
+                          </Badge>
+                        </DataTableTd>
+                        <DataTableTd compact>
+                          <p className="text-[11px] text-sales-text-primary">{validity.primary}</p>
+                          {validity.secondary ? (
+                            <p
+                              className={cn(
+                                "mt-0.5 text-[10px]",
+                                validity.tone === "danger" && "text-sales-danger",
+                                validity.tone === "warning" && "text-sales-warning-fg",
+                                validity.tone === "ok" && "text-sales-text-muted"
+                              )}
+                            >
+                              {validity.secondary.replace(/^in /, "").replace(/^Expires in /, "")}
+                            </p>
+                          ) : null}
+                        </DataTableTd>
+                        <DataTableTd compact className="text-[11px] font-medium text-sales-text-secondary">
+                          {companyQuotationNextAction(row)}
+                        </DataTableTd>
+                      </>
+                    )}
+                    <DataTableActionsCell className="text-right">
+                      <RowMenu
+                        row={row}
+                        alignUp={index >= Math.max(4, rows.length - 3)}
+                        alsoSells={permissions.alsoSells}
+                        onView={() => onSelect(row.id)}
+                        onPdf={() => onViewPdf(row)}
+                        onEdit={() => onEdit(row)}
+                        onDuplicate={() => onDuplicate(row)}
+                        onRevise={() => onRevise(row)}
+                        onOpenDeal={() => onOpenDeal(row)}
+                        onOpenCustomer={() => onOpenCustomer(row)}
+                        onOpenWorkspace={() => onOpenWorkspace(row)}
+                      />
+                    </DataTableActionsCell>
+                  </DataTableRow>
+                );
+              })}
+            </DataTableBody>
+          </DataTableEl>
+        </DataTableScroll>
       ) : null}
 
       {rows.length > 0 && !loadError ? (
-      <div className="space-y-2 p-3 lg:hidden">
-        {rows.map((row) => {
-          const engagement = companyQuotationEngagement(row);
-          const commercial = companyQuotationCommercialLabel(row, permissions.canSeeMarginPercent);
-          return (
-            <button
-              type="button"
-              key={row.id}
-              data-course-target="company-quotation-row"
-              className={cn(
-                "w-full rounded-[12px] border border-sales-border bg-sales-surface p-3.5 text-left shadow-sales-card transition-colors hover:bg-sales-surface-hover",
-                selectedId === row.id && "border-sales-brand-border bg-sales-brand-soft"
-              )}
-              onClick={() => onSelect(row.id)}
-            >
+        <DataTableMobileList className="space-y-2 p-3 lg:hidden">
+          {rows.map((row) => {
+            const engagement = companyQuotationEngagement(row);
+            const commercial = companyQuotationCommercialLabel(row, permissions.canSeeMarginPercent);
+            return (
+              <DataTableMobileItem
+                key={row.id}
+                selected={selectedId === row.id}
+                onClick={() => onSelect(row.id)}
+                className="rounded-[12px] border border-sales-border bg-sales-surface p-3.5 shadow-sales-card"
+                data-course-target="company-quotation-row"
+              >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-[13px] font-semibold text-sales-text-primary">
@@ -965,10 +981,10 @@ export function CompanyQuotationsTable({
                   </span>
                 )}
               </div>
-            </button>
-          );
-        })}
-      </div>
+              </DataTableMobileItem>
+            );
+          })}
+        </DataTableMobileList>
       ) : null}
 
       {loadError ? (
@@ -1013,65 +1029,27 @@ export function CompanyQuotationsTable({
         </div>
       ) : null}
 
-      <footer className="flex min-h-[52px] flex-col items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-2.5 sm:flex-row">
-        <p className="text-[11px] text-sales-text-muted">
-          Showing {from}–{to} of {total}
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              aria-label="Previous page"
-              disabled={page <= 1}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover disabled:opacity-35"
-              onClick={() => onPageChange(Math.max(1, page - 1))}
-            >
-              <ChevronLeft size={15} />
-            </button>
-            {companyQuotationPageItems(page, pageCount).map((item, index) =>
-              item === "ellipsis" ? (
-                <span key={`ellipsis-${index}`} className="px-1 text-[11px] text-sales-text-muted">
-                  …
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  key={item}
-                  className={cn(
-                    "relative inline-flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 text-[11px] font-medium text-sales-text-secondary",
-                    page === item &&
-                      "bg-sales-surface-subtle font-semibold text-sales-text-primary after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:bg-sales-brand"
-                  )}
-                  onClick={() => onPageChange(item)}
-                >
-                  {item}
-                </button>
-              )
-            )}
-            <button
-              type="button"
-              aria-label="Next page"
-              disabled={page >= pageCount}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover disabled:opacity-35"
-              onClick={() => onPageChange(Math.min(pageCount, page + 1))}
-            >
-              <ChevronRight size={15} />
-            </button>
-          </div>
-          <select
-            aria-label="Results per page"
-            className="h-8 rounded-[8px] border border-sales-border bg-sales-surface px-2 text-[12px] text-sales-text-secondary"
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-          >
-            {[COMPANY_QUOTATIONS_PAGE_SIZE, 25, 50].map((size) => (
-              <option key={size} value={size}>
-                {size} / page
-              </option>
-            ))}
-          </select>
-        </div>
-      </footer>
-    </section>
+      <DataTableFooter className="px-4">
+        <DataTablePagination
+          page={page}
+          pageCount={pageCount}
+          onPageChange={onPageChange}
+          summary={`Showing ${from}–${to} of ${total}`}
+          pageSizeControl={
+            <MenuSelect
+              value={String(pageSize)}
+              onChange={(value) => onPageSizeChange(Number(value))}
+              aria-label="Results per page"
+              size="sm"
+              align="right"
+              options={[COMPANY_QUOTATIONS_PAGE_SIZE, 25, 50].map((size) => ({
+                value: String(size),
+                label: `${size} / page`,
+              }))}
+            />
+          }
+        />
+      </DataTableFooter>
+    </DataTableWorkspace>
   );
 }

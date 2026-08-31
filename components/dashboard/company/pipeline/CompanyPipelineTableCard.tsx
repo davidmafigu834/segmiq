@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   MoreHorizontal,
 } from "lucide-react";
@@ -13,13 +11,23 @@ import {
   Avatar,
   Badge,
   Button,
-  DataTableEl,
-  DataTableHead,
+  DataTableActionsCell,
   DataTableBody,
+  DataTableEl,
+  DataTableEmptyPanel,
+  DataTableFooter,
+  DataTableHead,
+  DataTableMobileItem,
+  DataTableMobileList,
+  DataTablePagination,
   DataTableRow,
-  DataTableTh,
+  DataTableScroll,
+  DataTableTabsBar,
   DataTableTd,
-  EmptyState,
+  DataTableTh,
+  DataTableToolbar,
+  DataTableToolbarGroup,
+  DataTableWorkspace,
   MenuSelect,
   PipelineStageBadge,
   SearchInput,
@@ -434,11 +442,6 @@ function FilterChips({
   );
 }
 
-function pageWindow(page: number, pageCount: number, max = 5): number[] {
-  if (pageCount <= max) return Array.from({ length: pageCount }, (_, i) => i + 1);
-  const start = Math.min(Math.max(1, page - 2), pageCount - max + 1);
-  return Array.from({ length: max }, (_, i) => start + i);
-}
 
 export function CompanyPipelineTableCard({
   rows,
@@ -530,15 +533,8 @@ export function CompanyPipelineTableCard({
         })();
 
   return (
-    <section
-      className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
-      data-course-target="company-pipeline-table"
-    >
-      <div
-        className="scrollbar-hide flex gap-4 overflow-x-auto overscroll-x-contain border-b border-sales-border-subtle px-4 sm:px-5"
-        role="tablist"
-        data-course-target="company-pipeline-tabs"
-      >
+    <DataTableWorkspace data-course-target="company-pipeline-table">
+      <DataTableTabsBar className="px-4 sm:px-5" data-course-target="company-pipeline-tabs">
         {COMPANY_PIPELINE_TABS.map((item) => {
           const active = item.id === tab;
           const count = tabCounts[item.id];
@@ -564,53 +560,57 @@ export function CompanyPipelineTableCard({
             </button>
           );
         })}
-      </div>
+      </DataTableTabsBar>
 
-      <div className="flex flex-col gap-2 border-b border-sales-border-subtle px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
-        <div data-course-target="company-pipeline-search" className="w-full sm:w-[220px]">
-          <SearchInput
-            value={search}
-            onChange={onSearchChange}
-            placeholder="Search Deals..."
-            className="w-full"
+      <DataTableToolbar className="px-4 sm:px-5">
+        <DataTableToolbarGroup>
+          <div data-course-target="company-pipeline-search" className="w-full sm:w-[240px]">
+            <SearchInput
+              value={search}
+              onChange={onSearchChange}
+              placeholder="Search Deals..."
+              className="w-full"
+            />
+          </div>
+          <FiltersPopover
+            filters={filters}
+            owners={owners}
+            sources={sources}
+            onChange={onFiltersChange}
           />
-        </div>
-        <FiltersPopover
-          filters={filters}
-          owners={owners}
-          sources={sources}
-          onChange={onFiltersChange}
-        />
-        <MenuSelect
-          size="sm"
-          aria-label="Group by"
-          value={groupBy}
-          onChange={onGroupByChange}
-          options={[
-            { value: "stage", label: "Group by: Stage" },
-            { value: "owner", label: "Group by: Owner" },
-            { value: "none", label: "Group by: None" },
-          ]}
-        />
-        <MenuSelect
-          size="sm"
-          aria-label="Sort"
-          value={sort}
-          onChange={onSortChange}
-          options={[
-            { value: "next_action", label: "Sort: Next action" },
-            { value: "value", label: "Sort: Deal value" },
-            { value: "expected_decision", label: "Sort: Expected decision" },
-            { value: "newest", label: "Sort: Newest" },
-            { value: "last_activity", label: "Sort: Last activity" },
-            { value: "attention", label: "Sort: Attention" },
-          ]}
-        />
-      </div>
+        </DataTableToolbarGroup>
+        <DataTableToolbarGroup align="end">
+          <MenuSelect
+            size="sm"
+            aria-label="Group by"
+            value={groupBy}
+            onChange={onGroupByChange}
+            options={[
+              { value: "stage", label: "Group by: Stage" },
+              { value: "owner", label: "Group by: Owner" },
+              { value: "none", label: "Group by: None" },
+            ]}
+          />
+          <MenuSelect
+            size="sm"
+            aria-label="Sort"
+            value={sort}
+            onChange={onSortChange}
+            options={[
+              { value: "next_action", label: "Sort: Next action" },
+              { value: "value", label: "Sort: Deal value" },
+              { value: "expected_decision", label: "Sort: Expected decision" },
+              { value: "newest", label: "Sort: Newest" },
+              { value: "last_activity", label: "Sort: Last activity" },
+              { value: "attention", label: "Sort: Attention" },
+            ]}
+          />
+        </DataTableToolbarGroup>
+      </DataTableToolbar>
       <FilterChips filters={filters} owners={owners} onChange={onFiltersChange} />
 
       {loading ? (
-        <div className="hidden md:block">
+        <DataTableScroll className="hidden md:block">
           <table className="w-full">
             <tbody>
               {Array.from({ length: 8 }).map((_, i) => (
@@ -622,9 +622,9 @@ export function CompanyPipelineTableCard({
               ))}
             </tbody>
           </table>
-        </div>
+        </DataTableScroll>
       ) : emptyKind !== "rows" ? (
-        <EmptyState
+        <DataTableEmptyPanel
           title={
             emptyKind === "none"
               ? tab === "WON"
@@ -663,7 +663,7 @@ export function CompanyPipelineTableCard({
         />
       ) : (
         <>
-          <div className="hidden overflow-x-auto md:block">
+          <DataTableScroll className="hidden md:block">
             <DataTableEl>
               <DataTableHead>
                 <tr>
@@ -704,21 +704,17 @@ export function CompanyPipelineTableCard({
                 ))}
               </DataTableBody>
             </DataTableEl>
-          </div>
+          </DataTableScroll>
 
-          <ul className="divide-y divide-sales-border-subtle md:hidden">
+          <DataTableMobileList className="md:hidden">
             {rows.map((row) => (
-              <li key={row.id}>
-                <button
-                  type="button"
-                  data-course-target="company-pipeline-row"
-                  onClick={() => onSelect(row.id)}
-                  className={cn(
-                    "flex w-full flex-col gap-2.5 px-4 py-3.5 text-left",
-                    selectedId === row.id &&
-                      "bg-[rgba(212,255,79,0.16)] dark:bg-[rgba(212,255,79,0.08)]"
-                  )}
-                >
+              <DataTableMobileItem
+                key={row.id}
+                selected={selectedId === row.id}
+                onClick={() => onSelect(row.id)}
+                className="flex flex-col gap-2.5 px-4 py-3.5"
+                data-course-target="company-pipeline-row"
+              >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-[13px] font-semibold text-sales-text-primary">
@@ -751,70 +747,40 @@ export function CompanyPipelineTableCard({
                       </Badge>
                     ) : null}
                   </div>
-                </button>
-              </li>
+              </DataTableMobileItem>
             ))}
-          </ul>
+          </DataTableMobileList>
         </>
       )}
 
       {emptyKind === "rows" || loading ? (
-        <div className="flex flex-col gap-2 border-t border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-[12px] text-sales-text-muted">
-            {loading
-              ? "Loading…"
-              : `Showing ${from} to ${to} of ${total} Deal${total === 1 ? "" : "s"}`}
-          </p>
-          <div className="flex items-center justify-center gap-1">
-            <button
-              type="button"
-              aria-label="Previous page"
-              disabled={page <= 1}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover disabled:opacity-40"
-              onClick={() => onPageChange(page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {pageWindow(page, pageCount).map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={cn(
-                  "inline-flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 text-[13px] font-medium",
-                  n === page
-                    ? "bg-sales-brand-soft font-semibold text-sales-text-primary"
-                    : "text-sales-text-secondary hover:bg-sales-surface-hover"
-                )}
-                onClick={() => onPageChange(n)}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              aria-label="Next page"
-              disabled={page >= pageCount}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover disabled:opacity-40"
-              onClick={() => onPageChange(page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-          <select
-            aria-label="Results per page"
-            className="h-8 rounded-[8px] border border-sales-border bg-sales-surface px-2 text-[12px] text-sales-text-secondary"
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          >
-            {[COMPANY_PIPELINE_PAGE_SIZE, 25, 50].map((n) => (
-              <option key={n} value={n}>
-                {n} / page
-              </option>
-            ))}
-          </select>
-        </div>
+        <DataTableFooter className="px-4 sm:px-5">
+          <DataTablePagination
+            page={page}
+            pageCount={pageCount}
+            onPageChange={onPageChange}
+            summary={
+              loading
+                ? "Loading…"
+                : `Showing ${from} to ${to} of ${total} Deal${total === 1 ? "" : "s"}`
+            }
+            pageSizeControl={
+              <MenuSelect
+                value={String(pageSize)}
+                onChange={(value) => onPageSizeChange(Number(value))}
+                aria-label="Results per page"
+                size="sm"
+                align="right"
+                options={[COMPANY_PIPELINE_PAGE_SIZE, 25, 50].map((n) => ({
+                  value: String(n),
+                  label: `${n} / page`,
+                }))}
+              />
+            }
+          />
+        </DataTableFooter>
       ) : null}
-    </section>
+    </DataTableWorkspace>
   );
 }
 
@@ -865,12 +831,8 @@ function GroupRows({
         <DataTableRow
           key={row.id}
           selected={selectedId === row.id}
+          clickable
           data-course-target="company-pipeline-row"
-          className={cn(
-            "h-[56px] cursor-pointer hover:bg-[#FAFBFC] dark:hover:bg-[#171B17]",
-            selectedId === row.id &&
-              "bg-[rgba(212,255,79,0.16)] hover:bg-[rgba(212,255,79,0.16)] dark:bg-[rgba(212,255,79,0.08)] dark:hover:bg-[rgba(212,255,79,0.08)]"
-          )}
           onClick={() => onSelect(row.id)}
         >
           <DataTableTd className="px-5">
@@ -920,7 +882,7 @@ function GroupRows({
               </span>
             </div>
           </DataTableTd>
-          <DataTableTd className="px-2" onClick={(e) => e.stopPropagation()}>
+          <DataTableActionsCell className="px-2">
             <RowMenu
               row={row}
               canReassign={canReassign}
@@ -932,7 +894,7 @@ function GroupRows({
               onMarkWon={() => onMarkWon(row)}
               onMarkLost={() => onMarkLost(row)}
             />
-          </DataTableTd>
+          </DataTableActionsCell>
         </DataTableRow>
       ))}
     </>

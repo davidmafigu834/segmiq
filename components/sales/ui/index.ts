@@ -67,11 +67,27 @@ export type { DonutSlice } from "./Charts";
 
 export {
   DataTable,
+  DataTableWorkspace,
+  DataTableTabsBar,
+  DataTableToolbar,
+  DataTableToolbarGroup,
+  DataTableScroll,
   DataTableEl,
   DataTableHead,
   DataTableBody,
   DataTableRow,
   DataTableTh,
+  DataTableSortableTh,
   DataTableTd,
+  DataTableCheckboxCell,
+  DataTableActionsCell,
   DataTableEmpty,
+  DataTableEmptyPanel,
+  DataTableSkeleton,
+  DataTableMobileList,
+  DataTableMobileItem,
+  DataTableFooter,
+  DataTablePagination,
+  DataTablePageSizeButton,
 } from "./DataTable";
+export type { DataTableSortDirection, DataTableRowDensity } from "./DataTable";

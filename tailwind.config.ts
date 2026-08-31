@@ -143,6 +143,9 @@ const config: Config = {
           "orange-soft": "var(--sales-orange-soft)",
           "orange-fg": "var(--sales-orange-fg)",
           whatsapp: "var(--sales-whatsapp)",
+          "table-header": "var(--sales-table-header-bg)",
+          "table-hover": "var(--sales-table-hover)",
+          "table-selected": "var(--sales-table-selected)",
         },
       },
       borderRadius: {

@@ -4019,6 +4019,23 @@ label[for="photo-input"] {
   --sales-card-attention-info-bg: color-mix(in srgb, var(--sales-info-soft) 85%, #fff);
   --sales-card-divider: rgba(16, 24, 40, 0.07);
 
+  /* Table system — foundation, interaction, footer */
+  --sales-table-radius: 12px;
+  --sales-table-row-height: 52px;
+  --sales-table-row-height-comfortable: 56px;
+  --sales-table-header-height: 44px;
+  --sales-table-toolbar-min-height: 56px;
+  --sales-table-footer-min-height: 52px;
+  --sales-table-cell-x: 16px;
+  --sales-table-cell-x-compact: 12px;
+  --sales-table-divider: rgba(16, 24, 40, 0.07);
+  --sales-table-header-bg: #f8fafc;
+  --sales-table-hover: rgba(16, 24, 40, 0.03);
+  --sales-table-selected: rgba(212, 255, 79, 0.16);
+  --sales-table-selected-marker: rgba(212, 255, 79, 0.85);
+  --sales-table-pagination-active-bg: var(--sales-brand);
+  --sales-table-pagination-active-fg: var(--sales-ink);
+
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.25);
   --sales-focus-ring-danger: 0 0 0 3px rgba(239, 68, 68, 0.16);
@@ -4293,6 +4310,14 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-card-attention-brand-bg: rgba(212, 255, 79, 0.06);
   --sales-card-attention-info-bg: rgba(77, 141, 255, 0.08);
   --sales-card-divider: rgba(128, 151, 200, 0.09);
+
+  --sales-table-divider: rgba(128, 151, 200, 0.08);
+  --sales-table-header-bg: rgba(16, 36, 73, 0.72);
+  --sales-table-hover: rgba(255, 255, 255, 0.025);
+  --sales-table-selected: rgba(212, 255, 79, 0.08);
+  --sales-table-selected-marker: rgba(212, 255, 79, 0.75);
+  --sales-table-pagination-active-bg: var(--sales-brand);
+  --sales-table-pagination-active-fg: var(--sales-ink);
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.24);

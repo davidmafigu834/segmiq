@@ -9,6 +9,7 @@ import {
   Check,
   CheckCircle2,
   Info,
+  Filter,
   LayoutList,
   MoreHorizontal,
   Phone,
@@ -34,12 +35,25 @@ import {
   CardTitle,
   Checkbox,
   DataTable,
+  DataTableActionsCell,
   DataTableBody,
+  DataTableCheckboxCell,
   DataTableEl,
+  DataTableEmpty,
+  DataTableFooter,
   DataTableHead,
+  DataTableMobileItem,
+  DataTableMobileList,
+  DataTablePagination,
   DataTableRow,
+  DataTableScroll,
+  DataTableSkeleton,
+  DataTableSortableTh,
   DataTableTd,
   DataTableTh,
+  DataTableToolbar,
+  DataTableToolbarGroup,
+  DataTableWorkspace,
   EmptyState,
   FieldError,
   FieldHint,
@@ -77,6 +91,7 @@ import {
   SALES_COLORS,
   SALES_RADIUS,
   SALES_SHADOW,
+  SALES_TABLE,
 } from "@/lib/sales/design-tokens";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
@@ -90,7 +105,7 @@ const NAV = [
   { id: "controls", label: "Switch & Selectors" },
   { id: "badges", label: "Tabs, Badges & Status" },
   { id: "cards", label: "Cards" },
-  { id: "table", label: "Table" },
+  { id: "table", label: "06 — Tables" },
   { id: "timeline", label: "Timeline" },
   { id: "charts", label: "Charts" },
   { id: "feedback", label: "Alerts & toasts" },
@@ -159,6 +174,434 @@ function Swatch({
         <p className={`text-[12px] font-semibold ${textClassName}`}>{name}</p>
         <p className="font-mono text-[11px] text-sales-text-muted">{value}</p>
       </div>
+    </div>
+  );
+}
+
+function TablesShowcaseSection() {
+  const [selectedLead, setSelectedLead] = useState<string | null>(null);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set(["2"]));
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | "none">("asc");
+  const [page, setPage] = useState(2);
+  const [previewHoverId, setPreviewHoverId] = useState<string | null>("3");
+
+  const demoRows = [
+    {
+      id: "1",
+      name: "Tafadzwa Moyo",
+      company: "SunGrid Installations",
+      score: 82,
+      stage: "NEGOTIATING",
+      stageLabel: "Negotiating",
+      owner: "Sarah N.",
+    },
+    {
+      id: "2",
+      name: "Amina Diallo",
+      company: "GreenHome Energy",
+      score: 58,
+      stage: "PROPOSAL_SENT",
+      stageLabel: "Proposal sent",
+      owner: "James K.",
+    },
+    {
+      id: "3",
+      name: "Joe Ncube",
+      company: "Backup Power Co.",
+      score: 21,
+      stage: "CONTACTED",
+      stageLabel: "Contacted",
+      owner: "Unassigned",
+    },
+    {
+      id: "4",
+      name: "Lindiwe Moyo",
+      company: "EcoBuild Projects",
+      score: 74,
+      stage: "NEW",
+      stageLabel: "New",
+      owner: "Sarah N.",
+    },
+  ];
+
+  const allChecked = demoRows.length > 0 && demoRows.every((row) => checkedIds.has(row.id));
+  const someChecked = demoRows.some((row) => checkedIds.has(row.id));
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12px] text-sales-text-secondary">
+          Documentation examples only — not production CRM data. Validate Light / Dark with the toggle.
+        </p>
+        <SalesThemeToggle />
+      </div>
+
+      {/* 01 Default */}
+      <div>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          01 Default table
+        </p>
+        <p className="mb-3 text-[12px] text-sales-text-secondary">
+          One bordered workspace · 12px radius · subtle header · 52px rows · no zebra stripes.
+        </p>
+        <DataTable>
+          <DataTableEl>
+            <DataTableHead>
+              <tr>
+                <DataTableTh>Lead</DataTableTh>
+                <DataTableTh>Company</DataTableTh>
+                <DataTableTh>Score</DataTableTh>
+                <DataTableTh>Stage</DataTableTh>
+                <DataTableTh>Owner</DataTableTh>
+              </tr>
+            </DataTableHead>
+            <DataTableBody>
+              {demoRows.map((row) => (
+                <DataTableRow key={row.id}>
+                  <DataTableTd>
+                    <LeadIdentity name={row.name} size="sm" />
+                  </DataTableTd>
+                  <DataTableTd className="text-sales-text-secondary">{row.company}</DataTableTd>
+                  <DataTableTd>
+                    <LeadScoreBadge score={row.score} />
+                  </DataTableTd>
+                  <DataTableTd>
+                    <PipelineStageBadge status={row.stage} label={row.stageLabel} />
+                  </DataTableTd>
+                  <DataTableTd className="text-[12px] text-sales-text-secondary">{row.owner}</DataTableTd>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTableEl>
+        </DataTable>
+      </div>
+
+      {/* 02 Toolbar */}
+      <div>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          02 Table with toolbar
+        </p>
+        <p className="mb-3 text-[12px] text-sales-text-secondary">
+          Search · filters · primary action · overflow — all inside the same table card.
+        </p>
+        <DataTableWorkspace>
+          <DataTableToolbar>
+            <DataTableToolbarGroup>
+              <SearchInput
+                value=""
+                onChange={() => undefined}
+                placeholder="Search leads…"
+                className="w-full sm:w-[280px]"
+                disabled
+              />
+              <Button variant="secondary" size="sm" leftIcon={<Filter size={14} />}>
+                Filters
+              </Button>
+            </DataTableToolbarGroup>
+            <DataTableToolbarGroup align="end">
+              <Button size="sm" leftIcon={<Plus size={14} />}>
+                New lead
+              </Button>
+              <IconButton aria-label="More table actions" size="sm">
+                <MoreHorizontal strokeWidth={1.8} />
+              </IconButton>
+            </DataTableToolbarGroup>
+          </DataTableToolbar>
+          <DataTableScroll>
+            <DataTableEl>
+              <DataTableHead>
+                <tr>
+                  <DataTableTh>Lead</DataTableTh>
+                  <DataTableTh>Company</DataTableTh>
+                  <DataTableTh>Stage</DataTableTh>
+                  <DataTableTh className="w-12" />
+                </tr>
+              </DataTableHead>
+              <DataTableBody>
+                {demoRows.slice(0, 3).map((row) => (
+                  <DataTableRow key={row.id}>
+                    <DataTableTd>
+                      <LeadIdentity name={row.name} secondary={row.company} size="sm" />
+                    </DataTableTd>
+                    <DataTableTd className="text-sales-text-secondary">{row.company}</DataTableTd>
+                    <DataTableTd>
+                      <PipelineStageBadge status={row.stage} label={row.stageLabel} />
+                    </DataTableTd>
+                    <DataTableActionsCell>
+                      <IconButton aria-label={`Actions for ${row.name}`} size="sm">
+                        <MoreHorizontal strokeWidth={1.8} />
+                      </IconButton>
+                    </DataTableActionsCell>
+                  </DataTableRow>
+                ))}
+              </DataTableBody>
+            </DataTableEl>
+          </DataTableScroll>
+        </DataTableWorkspace>
+      </div>
+
+      {/* 03 Sort + hover */}
+      <div>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          03 Sorted + hover
+        </p>
+        <p className="mb-3 text-[12px] text-sales-text-secondary">
+          Sort affordance on meaningful columns only · hover wash stays barely visible.
+        </p>
+        <DataTable>
+          <DataTableEl>
+            <DataTableHead>
+              <tr>
+                <DataTableSortableTh
+                  label="Lead"
+                  sortDirection={sortDirection}
+                  onSort={() =>
+                    setSortDirection((current) =>
+                      current === "asc" ? "desc" : current === "desc" ? "none" : "asc"
+                    )
+                  }
+                />
+                <DataTableTh>Company</DataTableTh>
+                <DataTableTh>Score</DataTableTh>
+                <DataTableTh>Stage</DataTableTh>
+              </tr>
+            </DataTableHead>
+            <DataTableBody>
+              {demoRows.map((row) => (
+                <DataTableRow
+                  key={row.id}
+                  className={previewHoverId === row.id ? "bg-[var(--sales-table-hover)]" : undefined}
+                  onMouseEnter={() => setPreviewHoverId(row.id)}
+                  onMouseLeave={() => setPreviewHoverId(null)}
+                >
+                  <DataTableTd>
+                    <LeadIdentity name={row.name} size="sm" />
+                  </DataTableTd>
+                  <DataTableTd className="text-sales-text-secondary">{row.company}</DataTableTd>
+                  <DataTableTd>
+                    <LeadScoreBadge score={row.score} />
+                  </DataTableTd>
+                  <DataTableTd>
+                    <PipelineStageBadge status={row.stage} label={row.stageLabel} />
+                  </DataTableTd>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTableEl>
+        </DataTable>
+      </div>
+
+      {/* 04 Selected */}
+      <div>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          04 Selected row
+        </p>
+        <p className="mb-3 text-[12px] text-sales-text-secondary">
+          Soft lime wash · Phase 03 checkbox · no solid lime row · no auto-selected first row.
+        </p>
+        <DataTable>
+          <DataTableEl>
+            <DataTableHead>
+              <tr>
+                <DataTableTh compact className="w-11">
+                  <Checkbox
+                    checked={allChecked}
+                    indeterminate={!allChecked && someChecked}
+                    aria-label="Select all rows"
+                    onCheckedChange={(checked) =>
+                      setCheckedIds(checked ? new Set(demoRows.map((row) => row.id)) : new Set())
+                    }
+                  />
+                </DataTableTh>
+                <DataTableTh>Lead</DataTableTh>
+                <DataTableTh>Score</DataTableTh>
+                <DataTableTh>Stage</DataTableTh>
+                <DataTableTh className="w-12" />
+              </tr>
+            </DataTableHead>
+            <DataTableBody>
+              {demoRows.map((row) => (
+                <DataTableRow
+                  key={row.id}
+                  selected={selectedLead === row.id}
+                  clickable
+                  onClick={() => setSelectedLead(row.id)}
+                >
+                  <DataTableCheckboxCell compact>
+                    <Checkbox
+                      checked={checkedIds.has(row.id)}
+                      aria-label={`Select ${row.name}`}
+                      onCheckedChange={(checked) =>
+                        setCheckedIds((previous) => {
+                          const next = new Set(previous);
+                          if (checked) next.add(row.id);
+                          else next.delete(row.id);
+                          return next;
+                        })
+                      }
+                    />
+                  </DataTableCheckboxCell>
+                  <DataTableTd>
+                    <LeadIdentity name={row.name} size="sm" />
+                  </DataTableTd>
+                  <DataTableTd>
+                    <LeadScoreBadge score={row.score} />
+                  </DataTableTd>
+                  <DataTableTd>
+                    <PipelineStageBadge status={row.stage} label={row.stageLabel} />
+                  </DataTableTd>
+                  <DataTableActionsCell>
+                    <IconButton aria-label={`Actions for ${row.name}`} size="sm">
+                      <MoreHorizontal strokeWidth={1.8} />
+                    </IconButton>
+                  </DataTableActionsCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTableEl>
+        </DataTable>
+      </div>
+
+      {/* 05 Pagination */}
+      <div>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          05 Pagination
+        </p>
+        <p className="mb-3 text-[12px] text-sales-text-secondary">
+          Footer lives inside the table card · active page uses SegmiQ lime · mobile simplifies to Page X of Y.
+        </p>
+        <DataTableWorkspace>
+          <DataTableScroll>
+            <DataTableEl>
+              <DataTableHead>
+                <tr>
+                  <DataTableTh>Lead</DataTableTh>
+                  <DataTableTh>Company</DataTableTh>
+                  <DataTableTh>Stage</DataTableTh>
+                </tr>
+              </DataTableHead>
+              <DataTableBody>
+                {demoRows.slice(0, 2).map((row) => (
+                  <DataTableRow key={row.id}>
+                    <DataTableTd>{row.name}</DataTableTd>
+                    <DataTableTd className="text-sales-text-secondary">{row.company}</DataTableTd>
+                    <DataTableTd>
+                      <PipelineStageBadge status={row.stage} label={row.stageLabel} />
+                    </DataTableTd>
+                  </DataTableRow>
+                ))}
+              </DataTableBody>
+            </DataTableEl>
+          </DataTableScroll>
+          <DataTableFooter>
+            <DataTablePagination
+              page={page}
+              pageCount={18}
+              onPageChange={setPage}
+              summary="Showing 11–20 of 180 results"
+              pageSizeControl={
+                <Button variant="secondary" size="sm">
+                  10 / page
+                </Button>
+              }
+            />
+          </DataTableFooter>
+        </DataTableWorkspace>
+      </div>
+
+      {/* States + anatomy */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card variant="flat">
+          <CardContent className="space-y-3 pt-4 text-[12px] text-sales-text-secondary">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              Table anatomy
+            </p>
+            <ul className="space-y-1.5 leading-relaxed">
+              <li>Toolbar · table head · row · cell · footer · actions menu · pagination</li>
+              <li>Row height: {SALES_TABLE.rowHeight}px default · {SALES_TABLE.rowHeightComfortable}px comfortable</li>
+              <li>Header: {SALES_TABLE.headerHeight}px · cell padding {SALES_TABLE.cellXCompact}–{SALES_TABLE.cellX}px</li>
+              <li>Container radius: {SALES_TABLE.radius}px · checkbox 16px · sort icon 12–14px</li>
+            </ul>
+          </CardContent>
+        </Card>
+        <Card variant="flat">
+          <CardContent className="space-y-4 pt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              States
+            </p>
+            <div className="space-y-3">
+              <div>
+                <p className="mb-2 text-[11px] text-sales-text-muted">Loading</p>
+                <DataTable>
+                  <DataTableEl>
+                    <DataTableHead>
+                      <tr>
+                        <DataTableTh>Lead</DataTableTh>
+                        <DataTableTh>Stage</DataTableTh>
+                        <DataTableTh>Owner</DataTableTh>
+                      </tr>
+                    </DataTableHead>
+                    <DataTableBody>
+                      <DataTableSkeleton columns={3} rows={4} />
+                    </DataTableBody>
+                  </DataTableEl>
+                </DataTable>
+              </div>
+              <div>
+                <p className="mb-2 text-[11px] text-sales-text-muted">Empty</p>
+                <DataTable>
+                  <DataTableEl>
+                    <DataTableHead>
+                      <tr>
+                        <DataTableTh>Lead</DataTableTh>
+                        <DataTableTh>Stage</DataTableTh>
+                      </tr>
+                    </DataTableHead>
+                    <DataTableBody>
+                      <DataTableEmpty
+                        colSpan={2}
+                        title="No leads found"
+                        description="Adjust your filters or add a lead."
+                      />
+                    </DataTableBody>
+                  </DataTableEl>
+                </DataTable>
+              </div>
+              <div>
+                <p className="mb-2 text-[11px] text-sales-text-muted">Mobile cards</p>
+                <DataTableMobileList className="!block rounded-sales-lg border border-sales-border bg-sales-surface p-0 lg:!hidden">
+                  {demoRows.slice(0, 2).map((row) => (
+                    <DataTableMobileItem key={row.id} selected={selectedLead === row.id} onClick={() => setSelectedLead(row.id)}>
+                      <div className="flex items-start justify-between gap-3">
+                        <LeadIdentity name={row.name} secondary={row.company} size="sm" />
+                        <LeadScoreBadge score={row.score} />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <PipelineStageBadge status={row.stage} label={row.stageLabel} />
+                        <MetaPill>WhatsApp</MetaPill>
+                      </div>
+                    </DataTableMobileItem>
+                  ))}
+                </DataTableMobileList>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card variant="flat">
+        <CardContent className="space-y-2 pt-4 text-[12px] leading-relaxed text-sales-text-secondary">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            Best practices
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>Keep column count scannable · sort meaningful lists · reuse semantic badges</li>
+            <li>Never color whole rows by pipeline status · selected wash is the exception</li>
+            <li>Use detail panels for long content · mobile converts to stacked cards, not squeezed tables</li>
+            <li>Do not auto-select the first record · preserve server pagination and existing actions only</li>
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1301,77 +1744,13 @@ function ShowcaseInner() {
             </div>
           </Section>
 
-          {/* ── Table ──────────────────────────────────────────── */}
-          <Section id="table" title="Table" description="Lead list pattern with avatars, stages, and values.">
-            <DataTable>
-              <DataTableEl>
-                <DataTableHead>
-                  <tr>
-                    <DataTableTh>Customer</DataTableTh>
-                    <DataTableTh>Project</DataTableTh>
-                    <DataTableTh>Stage</DataTableTh>
-                    <DataTableTh>Value</DataTableTh>
-                    <DataTableTh>Last activity</DataTableTh>
-                    <DataTableTh className="w-12" />
-                  </tr>
-                </DataTableHead>
-                <DataTableBody>
-                  {[
-                    {
-                      name: "Sipho Khumalo",
-                      project: "Roof solar 5kW",
-                      stage: "NEGOTIATING",
-                      stageLabel: "Negotiating",
-                      value: "$4,200",
-                      activity: "2h ago",
-                    },
-                    {
-                      name: "Amina Diallo",
-                      project: "Inverter upgrade",
-                      stage: "PROPOSAL_SENT",
-                      stageLabel: "Proposal sent",
-                      value: "$1,850",
-                      activity: "Yesterday",
-                    },
-                    {
-                      name: "Joe Ncube",
-                      project: "Battery pack",
-                      stage: "CONTACTED",
-                      stageLabel: "Contacted",
-                      value: "$980",
-                      activity: "3d ago",
-                    },
-                    {
-                      name: "Lindiwe Moyo",
-                      project: "Full home backup",
-                      stage: "WON",
-                      stageLabel: "Won",
-                      value: "$12,400",
-                      activity: "1w ago",
-                    },
-                  ].map((row) => (
-                    <DataTableRow key={row.name}>
-                      <DataTableTd>
-                        <LeadIdentity name={row.name} size="sm" />
-                      </DataTableTd>
-                      <DataTableTd className="text-sales-text-secondary">{row.project}</DataTableTd>
-                      <DataTableTd>
-                        <PipelineStageBadge status={row.stage} label={row.stageLabel} />
-                      </DataTableTd>
-                      <DataTableTd>
-                        <span className="font-semibold tabular-nums">{row.value}</span>
-                      </DataTableTd>
-                      <DataTableTd className="text-sales-text-muted">{row.activity}</DataTableTd>
-                      <DataTableTd>
-                        <IconButton aria-label={`Actions for ${row.name}`} size="sm">
-                          <MoreHorizontal strokeWidth={1.8} />
-                        </IconButton>
-                      </DataTableTd>
-                    </DataTableRow>
-                  ))}
-                </DataTableBody>
-              </DataTableEl>
-            </DataTable>
+          {/* ── Tables ─────────────────────────────────────────── */}
+          <Section
+            id="table"
+            title="06 — Tables"
+            description="Foundation · toolbar · interaction · navigation. One bordered workspace for tabs, filters, rows, and pagination."
+          >
+            <TablesShowcaseSection />
           </Section>
 
           {/* ── Timeline ───────────────────────────────────────── */}

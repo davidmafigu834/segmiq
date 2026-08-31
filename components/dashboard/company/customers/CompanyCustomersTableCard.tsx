@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   BriefcaseBusiness,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   MoreHorizontal,
   Phone,
@@ -18,13 +16,24 @@ import {
   Badge,
   Button,
   Checkbox,
+  DataTableActionsCell,
   DataTableBody,
+  DataTableCheckboxCell,
   DataTableEl,
+  DataTableEmptyPanel,
+  DataTableFooter,
   DataTableHead,
+  DataTableMobileItem,
+  DataTableMobileList,
+  DataTablePagination,
   DataTableRow,
+  DataTableScroll,
+  DataTableTabsBar,
   DataTableTd,
   DataTableTh,
-  EmptyState,
+  DataTableToolbar,
+  DataTableToolbarGroup,
+  DataTableWorkspace,
   MenuSelect,
   SearchInput,
 } from "@/components/sales/ui";
@@ -46,11 +55,7 @@ import { DEFAULT_COMPANY_CUSTOMERS_FILTERS } from "./types";
 function CustomerTypeBadge({ row }: { row: CompanyCustomerRow }) {
   return (
     <Badge
-      tone={
-        row.customerType === "company"
-          ? "success"
-          : "info"
-      }
+      tone={row.customerType === "company" ? "success" : "info"}
       appearance="soft"
       className="!px-2 !py-0.5 !text-[11px] !font-medium"
     >
@@ -106,20 +111,52 @@ function RowMenu({
           className="absolute right-0 z-30 mt-1 w-48 overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface py-1 shadow-sales-popover"
           onClick={(event) => event.stopPropagation()}
         >
-          <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onView(); }}>
+          <button
+            type="button"
+            role="menuitem"
+            className={item}
+            onClick={() => {
+              setOpen(false);
+              onView();
+            }}
+          >
             View Customer
           </button>
           {row.phone ? (
-            <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onCall(); }}>
+            <button
+              type="button"
+              role="menuitem"
+              className={item}
+              onClick={() => {
+                setOpen(false);
+                onCall();
+              }}
+            >
               <Phone size={14} /> Call
             </button>
           ) : null}
           {row.phone ? (
-            <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onWhatsApp(); }}>
+            <button
+              type="button"
+              role="menuitem"
+              className={item}
+              onClick={() => {
+                setOpen(false);
+                onWhatsApp();
+              }}
+            >
               <SiWhatsapp size={14} color="#25D366" /> WhatsApp
             </button>
           ) : null}
-          <button type="button" role="menuitem" className={item} onClick={() => { setOpen(false); onViewDeals(); }}>
+          <button
+            type="button"
+            role="menuitem"
+            className={item}
+            onClick={() => {
+              setOpen(false);
+              onViewDeals();
+            }}
+          >
             <BriefcaseBusiness size={14} /> View Deals ({row.totalDeals})
           </button>
         </div>
@@ -162,66 +199,50 @@ function FiltersPopover({
       </Button>
       {open ? (
         <div className="absolute left-0 z-30 mt-2 w-[270px] rounded-[12px] border border-sales-border bg-sales-surface p-3 shadow-sales-popover">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Active Deals</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+            Active Deals
+          </p>
           <select
             className={selectClass}
             value={filters.activeDeals}
-            onChange={(event) => onChange({ ...filters, activeDeals: event.target.value as CompanyCustomersFilters["activeDeals"] })}
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                activeDeals: event.target.value as CompanyCustomersFilters["activeDeals"],
+              })
+            }
           >
             <option value="all">All</option>
             <option value="yes">Has active Deals</option>
             <option value="no">No active Deals</option>
           </select>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">Customer Value</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.04em] text-sales-text-muted">
+            Customer Value
+          </p>
           <select
             className={selectClass}
             value={filters.customerValue}
-            onChange={(event) => onChange({ ...filters, customerValue: event.target.value as CompanyCustomersFilters["customerValue"] })}
+            onChange={(event) =>
+              onChange({
+                ...filters,
+                customerValue: event.target.value as CompanyCustomersFilters["customerValue"],
+              })
+            }
           >
             <option value="all">All</option>
             <option value="known">Recorded won value</option>
             <option value="not_recorded">Value not recorded</option>
           </select>
-          <Button variant="ghost" size="sm" className="w-full" onClick={() => onChange(DEFAULT_COMPANY_CUSTOMERS_FILTERS)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={() => onChange(DEFAULT_COMPANY_CUSTOMERS_FILTERS)}
+          >
             Reset filters
           </Button>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function PageButtons({ page, pageCount, onChange }: { page: number; pageCount: number; onChange: (page: number) => void }) {
-  const visible = Array.from({ length: pageCount }, (_, index) => index + 1).filter(
-    (value) => pageCount <= 5 || value === 1 || value === pageCount || Math.abs(value - page) <= 1
-  );
-  return (
-    <div className="flex items-center gap-1">
-      <button type="button" aria-label="Previous page" disabled={page <= 1} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-sales-border text-sales-text-secondary disabled:opacity-35" onClick={() => onChange(page - 1)}>
-        <ChevronLeft size={14} />
-      </button>
-      {visible.map((value, index) => (
-        <span key={value} className="contents">
-          {index > 0 && value - visible[index - 1]! > 1 ? <span className="px-1 text-sales-text-muted">…</span> : null}
-          <button
-            type="button"
-            aria-label={`Page ${value}`}
-            aria-current={value === page ? "page" : undefined}
-            className={cn(
-              "h-8 min-w-8 rounded-[8px] border px-2 text-[12px] font-medium",
-              value === page
-                ? "border-sales-brand bg-sales-brand text-[#11170A]"
-                : "border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover"
-            )}
-            onClick={() => onChange(value)}
-          >
-            {value}
-          </button>
-        </span>
-      ))}
-      <button type="button" aria-label="Next page" disabled={page >= pageCount} className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-sales-border text-sales-text-secondary disabled:opacity-35" onClick={() => onChange(page + 1)}>
-        <ChevronRight size={14} />
-      </button>
     </div>
   );
 }
@@ -284,6 +305,8 @@ export function CompanyCustomersTableCard({
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const allChecked = rows.length > 0 && rows.every((row) => checked.has(row.id));
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
 
   const empty = emptyKind !== "rows";
   const emptyTitle =
@@ -298,27 +321,40 @@ export function CompanyCustomersTableCard({
       : "Try changing your search or clearing the active filters.";
 
   return (
-    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
-      <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-        <div className="flex min-w-0 flex-1 gap-4 overflow-x-auto">
-          {COMPANY_CUSTOMERS_TABS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onTabChange(item.id)}
-              className={cn(
-                "relative flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-1 text-[12px] font-medium text-sales-text-secondary",
-                tab === item.id && "font-semibold text-sales-text-primary after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-sales-brand"
-              )}
-            >
-              {item.label}
-              <span className="rounded-full bg-sales-neutral-100 px-1.5 py-0.5 text-[10px] tabular-nums text-sales-text-muted">{tabCounts[item.id]}</span>
-            </button>
-          ))}
-        </div>
-        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-        <SearchInput value={search} onChange={onSearchChange} placeholder="Search customers…" className="min-w-0 w-full sm:w-[220px]" />
+    <DataTableWorkspace className="min-h-[660px]">
+      <DataTableTabsBar>
+        {COMPANY_CUSTOMERS_TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === item.id}
+            onClick={() => onTabChange(item.id)}
+            className={cn(
+              "relative flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-1 text-[12px] font-medium text-sales-text-secondary transition-colors",
+              tab === item.id &&
+                "font-semibold text-sales-text-primary after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-sales-brand"
+            )}
+          >
+            {item.label}
+            <span className="rounded-full bg-sales-neutral-100 px-1.5 py-0.5 text-[10px] tabular-nums text-sales-text-muted">
+              {tabCounts[item.id]}
+            </span>
+          </button>
+        ))}
+      </DataTableTabsBar>
+
+      <DataTableToolbar>
+        <DataTableToolbarGroup>
+          <SearchInput
+            value={search}
+            onChange={onSearchChange}
+            placeholder="Search customers…"
+            className="min-w-0 w-full sm:w-[240px]"
+          />
           <FiltersPopover filters={filters} onChange={onFiltersChange} />
+        </DataTableToolbarGroup>
+        <DataTableToolbarGroup align="end">
           <MenuSelect
             value={filters.customerType}
             onChange={(value) => onFiltersChange({ ...filters, customerType: value })}
@@ -357,88 +393,219 @@ export function CompanyCustomersTableCard({
           <Button variant="secondary" size="sm" aria-label="Table display settings" className="!px-3">
             <SlidersHorizontal size={15} />
           </Button>
-        </div>
-      </div>
+        </DataTableToolbarGroup>
+      </DataTableToolbar>
 
       {empty ? (
-        <div className="flex flex-1 items-center justify-center">
-          <EmptyState
-            title={emptyTitle}
-            description={emptyDescription}
-            action={
-              emptyKind === "none" ? (
-                <Button size="sm" onClick={onAddCustomer}>Add Customer</Button>
-              ) : (
-                <Button size="sm" variant="secondary" onClick={emptyKind === "search" ? onClearSearch : onClearFilters}>Clear {emptyKind === "search" ? "search" : "filters"}</Button>
-              )
-            }
-          />
-        </div>
+        <DataTableEmptyPanel
+          title={emptyTitle}
+          description={emptyDescription}
+          action={
+            emptyKind === "none" ? (
+              <Button size="sm" onClick={onAddCustomer}>
+                Add Customer
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={emptyKind === "search" ? onClearSearch : onClearFilters}
+              >
+                Clear {emptyKind === "search" ? "search" : "filters"}
+              </Button>
+            )
+          }
+        />
       ) : (
         <>
-          <div className="hidden min-w-0 flex-1 overflow-x-auto lg:block">
+          <DataTableScroll className="hidden min-w-0 flex-1 lg:block">
             <DataTableEl className="min-w-[940px]">
               <DataTableHead>
                 <tr>
-                  <DataTableTh className="w-11 !px-3"><Checkbox checked={allChecked} aria-label="Select page" onCheckedChange={(isChecked) => setChecked(isChecked ? new Set(rows.map((row) => row.id)) : new Set())} /></DataTableTh>
+                  <DataTableTh compact className="w-11">
+                    <Checkbox
+                      checked={allChecked}
+                      aria-label="Select page"
+                      onCheckedChange={(isChecked) =>
+                        setChecked(isChecked ? new Set(rows.map((row) => row.id)) : new Set())
+                      }
+                    />
+                  </DataTableTh>
                   <DataTableTh>Customer</DataTableTh>
                   <DataTableTh>Type</DataTableTh>
                   <DataTableTh>Contact</DataTableTh>
                   <DataTableTh>Location</DataTableTh>
                   <DataTableTh>Owner</DataTableTh>
                   <DataTableTh>Last Interaction</DataTableTh>
-                  <DataTableTh className="text-right">Active Deals</DataTableTh>
-                  <DataTableTh className="text-right">Customer Value</DataTableTh>
-                  <DataTableTh className="w-12">Actions</DataTableTh>
+                  <DataTableTh align="right">Active Deals</DataTableTh>
+                  <DataTableTh align="right">Customer Value</DataTableTh>
+                  <DataTableTh className="w-12">
+                    <span className="sr-only">Actions</span>
+                  </DataTableTh>
                 </tr>
               </DataTableHead>
               <DataTableBody>
                 {rows.map((row) => (
-                  <DataTableRow key={row.id} selected={row.id === selectedId} className="h-[62px] cursor-pointer" onClick={() => onSelect(row.id)}>
-                    <DataTableTd className="!px-3" onClick={(event) => event.stopPropagation()}><Checkbox checked={checked.has(row.id)} aria-label={`Select ${row.name}`} onCheckedChange={(isChecked) => setChecked((previous) => { const next = new Set(previous); if (isChecked) next.add(row.id); else next.delete(row.id); return next; })} /></DataTableTd>
+                  <DataTableRow
+                    key={row.id}
+                    selected={row.id === selectedId}
+                    clickable
+                    density="comfortable"
+                    onClick={() => onSelect(row.id)}
+                  >
+                    <DataTableCheckboxCell compact>
+                      <Checkbox
+                        checked={checked.has(row.id)}
+                        aria-label={`Select ${row.name}`}
+                        onCheckedChange={(isChecked) =>
+                          setChecked((previous) => {
+                            const next = new Set(previous);
+                            if (isChecked) next.add(row.id);
+                            else next.delete(row.id);
+                            return next;
+                          })
+                        }
+                      />
+                    </DataTableCheckboxCell>
                     <DataTableTd className="min-w-[180px]">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar name={row.name} size="md" />
                         <div className="min-w-0">
-                          <p className="truncate text-[12.5px] font-semibold text-sales-text-primary">{row.name}</p>
-                          <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">{row.industry ?? row.primaryContactName ?? row.source ?? "Customer"}</p>
+                          <p className="truncate text-[12.5px] font-semibold text-sales-text-primary">
+                            {row.name}
+                          </p>
+                          <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
+                            {row.industry ?? row.primaryContactName ?? row.source ?? "Customer"}
+                          </p>
                         </div>
                       </div>
                     </DataTableTd>
-                    <DataTableTd><CustomerTypeBadge row={row} /></DataTableTd>
-                    <DataTableTd className="min-w-[170px]"><p className="text-[12px]">{row.phone ?? "—"}</p><p className="mt-0.5 max-w-[180px] truncate text-[11px] text-sales-text-muted">{row.email ?? "No email"}</p></DataTableTd>
-                    <DataTableTd className="max-w-[150px] truncate text-[12px]">{row.location ?? "Not recorded"}</DataTableTd>
-                    <DataTableTd>{row.ownerId ? <div className="flex items-center gap-1.5"><Avatar name={row.ownerName ?? "Owner"} src={row.ownerAvatarUrl} size="xs" /><span className="max-w-[90px] truncate text-[12px]">{row.ownerName}</span></div> : <span className="text-[12px] text-sales-text-muted">Unassigned</span>}</DataTableTd>
-                    <DataTableTd className="min-w-[130px]"><p className="text-[12px]">{row.lastInteractionLabel}</p>{row.lastInteractionChannel ? <p className="mt-0.5 text-[11px] text-sales-text-muted">{row.lastInteractionChannel}</p> : null}</DataTableTd>
-                    <DataTableTd className="text-right tabular-nums">{row.activeDeals}</DataTableTd>
-                    <DataTableTd className="max-w-[145px] truncate text-right text-[12px] font-medium tabular-nums" title={row.customerValueLabel}>{row.customerValueLabel}</DataTableTd>
-                    <DataTableTd onClick={(event) => event.stopPropagation()}><RowMenu row={row} onView={() => onSelect(row.id)} onCall={() => onCall(row)} onWhatsApp={() => onWhatsApp(row)} onViewDeals={() => onViewDeals(row)} /></DataTableTd>
+                    <DataTableTd>
+                      <CustomerTypeBadge row={row} />
+                    </DataTableTd>
+                    <DataTableTd className="min-w-[170px]">
+                      <p className="text-[12px]">{row.phone ?? "—"}</p>
+                      <p className="mt-0.5 max-w-[180px] truncate text-[11px] text-sales-text-muted">
+                        {row.email ?? "No email"}
+                      </p>
+                    </DataTableTd>
+                    <DataTableTd className="max-w-[150px] truncate text-[12px]">
+                      {row.location ?? "Not recorded"}
+                    </DataTableTd>
+                    <DataTableTd>
+                      {row.ownerId ? (
+                        <div className="flex items-center gap-1.5">
+                          <Avatar name={row.ownerName ?? "Owner"} src={row.ownerAvatarUrl} size="xs" />
+                          <span className="max-w-[90px] truncate text-[12px]">{row.ownerName}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[12px] text-sales-text-muted">Unassigned</span>
+                      )}
+                    </DataTableTd>
+                    <DataTableTd className="min-w-[130px]">
+                      <p className="text-[12px]">{row.lastInteractionLabel}</p>
+                      {row.lastInteractionChannel ? (
+                        <p className="mt-0.5 text-[11px] text-sales-text-muted">
+                          {row.lastInteractionChannel}
+                        </p>
+                      ) : null}
+                    </DataTableTd>
+                    <DataTableTd numeric>{row.activeDeals}</DataTableTd>
+                    <DataTableTd
+                      numeric
+                      className="max-w-[145px] truncate font-medium"
+                      title={row.customerValueLabel}
+                    >
+                      {row.customerValueLabel}
+                    </DataTableTd>
+                    <DataTableActionsCell>
+                      <RowMenu
+                        row={row}
+                        onView={() => onSelect(row.id)}
+                        onCall={() => onCall(row)}
+                        onWhatsApp={() => onWhatsApp(row)}
+                        onViewDeals={() => onViewDeals(row)}
+                      />
+                    </DataTableActionsCell>
                   </DataTableRow>
                 ))}
               </DataTableBody>
             </DataTableEl>
-          </div>
+          </DataTableScroll>
 
-          <div className="divide-y divide-sales-border-subtle lg:hidden">
+          <DataTableMobileList>
             {rows.map((row) => (
-              <button key={row.id} type="button" onClick={() => onSelect(row.id)} className={cn("w-full p-4 text-left transition-colors hover:bg-sales-surface-hover", row.id === selectedId && "bg-sales-brand-soft")}>
+              <DataTableMobileItem
+                key={row.id}
+                selected={row.id === selectedId}
+                onClick={() => onSelect(row.id)}
+              >
                 <div className="flex items-start gap-3">
                   <Avatar name={row.name} size="lg" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[14px] font-semibold text-sales-text-primary">{row.name}</p><p className="mt-0.5 truncate text-[12px] text-sales-text-muted">{row.industry ?? row.primaryContactName ?? row.email ?? "Customer"}</p></div><CustomerTypeBadge row={row} /></div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]"><div><p className="text-[11px] text-sales-text-muted">Last interaction</p><p className="mt-0.5 text-sales-text-primary">{row.lastInteractionLabel}</p></div><div><p className="text-[11px] text-sales-text-muted">Active Deals</p><p className="mt-0.5 tabular-nums text-sales-text-primary">{row.activeDeals}</p></div><div><p className="text-[11px] text-sales-text-muted">Owner</p><p className="mt-0.5 truncate text-sales-text-primary">{row.ownerName ?? "Unassigned"}</p></div><div><p className="text-[11px] text-sales-text-muted">Customer Value</p><p className="mt-0.5 truncate font-medium tabular-nums text-sales-text-primary">{row.customerValueLabel}</p></div></div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-semibold text-sales-text-primary">
+                          {row.name}
+                        </p>
+                        <p className="mt-0.5 truncate text-[12px] text-sales-text-muted">
+                          {row.industry ?? row.primaryContactName ?? row.email ?? "Customer"}
+                        </p>
+                      </div>
+                      <CustomerTypeBadge row={row} />
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
+                      <div>
+                        <p className="text-[11px] text-sales-text-muted">Last interaction</p>
+                        <p className="mt-0.5 text-sales-text-primary">{row.lastInteractionLabel}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-sales-text-muted">Active Deals</p>
+                        <p className="mt-0.5 tabular-nums text-sales-text-primary">{row.activeDeals}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-sales-text-muted">Owner</p>
+                        <p className="mt-0.5 truncate text-sales-text-primary">
+                          {row.ownerName ?? "Unassigned"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-sales-text-muted">Customer Value</p>
+                        <p className="mt-0.5 truncate font-medium tabular-nums text-sales-text-primary">
+                          {row.customerValueLabel}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </button>
+              </DataTableMobileItem>
             ))}
-          </div>
+          </DataTableMobileList>
         </>
       )}
 
-      <div className="mt-auto flex flex-col gap-3 border-t border-sales-border-subtle px-3 py-3 text-[11px] text-sales-text-muted sm:flex-row sm:items-center sm:justify-between sm:px-4">
-        <span>Showing {total === 0 ? 0 : (page - 1) * pageSize + 1} to {Math.min(page * pageSize, total)} of {total} customers</span>
-        <div className="flex flex-wrap items-center gap-3"><PageButtons page={page} pageCount={pageCount} onChange={onPageChange} /><MenuSelect value={String(pageSize)} onChange={(value) => onPageSizeChange(Number(value))} aria-label="Customers per page" size="sm" align="right" options={[{ value: String(COMPANY_CUSTOMERS_PAGE_SIZE), label: `${COMPANY_CUSTOMERS_PAGE_SIZE} / page` }, { value: "25", label: "25 / page" }, { value: "50", label: "50 / page" }]} /></div>
-      </div>
-    </section>
+      <DataTableFooter>
+        <DataTablePagination
+          page={page}
+          pageCount={pageCount}
+          onPageChange={onPageChange}
+          summary={`Showing ${from} to ${to} of ${total} customers`}
+          pageSizeControl={
+            <MenuSelect
+              value={String(pageSize)}
+              onChange={(value) => onPageSizeChange(Number(value))}
+              aria-label="Customers per page"
+              size="sm"
+              align="right"
+              options={[
+                { value: String(COMPANY_CUSTOMERS_PAGE_SIZE), label: `${COMPANY_CUSTOMERS_PAGE_SIZE} / page` },
+                { value: "25", label: "25 / page" },
+                { value: "50", label: "50 / page" },
+              ]}
+            />
+          }
+        />
+      </DataTableFooter>
+    </DataTableWorkspace>
   );
 }

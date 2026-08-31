@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   Globe,
   MoreHorizontal,
@@ -20,13 +18,24 @@ import {
   Badge,
   Button,
   Checkbox,
-  DataTableEl,
-  DataTableHead,
+  DataTableActionsCell,
   DataTableBody,
+  DataTableCheckboxCell,
+  DataTableEl,
+  DataTableEmptyPanel,
+  DataTableFooter,
+  DataTableHead,
+  DataTableMobileItem,
+  DataTableMobileList,
+  DataTablePagination,
   DataTableRow,
-  DataTableTh,
+  DataTableScroll,
+  DataTableTabsBar,
   DataTableTd,
-  EmptyState,
+  DataTableTh,
+  DataTableToolbar,
+  DataTableToolbarGroup,
+  DataTableWorkspace,
   MenuSelect,
   SearchInput,
   Skeleton,
@@ -449,12 +458,6 @@ function FiltersPopover({
   );
 }
 
-function pageWindow(page: number, pageCount: number, max = 5): number[] {
-  if (pageCount <= max) return Array.from({ length: pageCount }, (_, i) => i + 1);
-  const start = Math.min(Math.max(1, page - 2), pageCount - max + 1);
-  return Array.from({ length: max }, (_, i) => start + i);
-}
-
 function emptyCopy(
   tab: CompanyLeadsTab,
   kind: "none" | "search" | "filters" | "rows",
@@ -583,15 +586,8 @@ export function CompanyLeadsTableCard({
   const copy = emptyCopy(tab, emptyKind, searchQuery, terminology.lead);
 
   return (
-    <section
-      className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card"
-      data-course-target="company-leads-table"
-    >
-      <div
-        className="scrollbar-hide flex gap-4 overflow-x-auto overscroll-x-contain border-b border-sales-border-subtle px-4 sm:px-5"
-        role="tablist"
-        data-course-target="company-leads-tabs"
-      >
+    <DataTableWorkspace data-course-target="company-leads-table">
+      <DataTableTabsBar className="px-4 sm:px-5" data-course-target="company-leads-tabs">
         {COMPANY_LEADS_TABS.map((item) => {
           const active = item.id === tab;
           const count = tabCounts[item.id];
@@ -617,57 +613,59 @@ export function CompanyLeadsTableCard({
             </button>
           );
         })}
-      </div>
+      </DataTableTabsBar>
 
-      <div className="flex flex-col gap-2 border-b border-sales-border-subtle px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
-        <div className="w-full sm:w-[220px]">
+      <DataTableToolbar className="px-4 sm:px-5">
+        <DataTableToolbarGroup>
           <SearchInput
             value={search}
             onChange={onSearchChange}
             placeholder={terminology.actions.searchLeads}
-            className="w-full"
+            className="w-full sm:w-[240px]"
           />
-        </div>
-        <FiltersPopover filters={filters} owners={owners} sources={sources} onChange={onFiltersChange} />
-        <MenuSelect
-          size="sm"
-          aria-label="Source"
-          value={filters.source}
-          onChange={(v) => onFiltersChange({ ...filters, source: v })}
-          options={[
-            { value: "all", label: "Source" },
-            ...sources.map((s) => ({ value: s.key, label: s.label })),
-          ]}
-        />
-        <MenuSelect
-          size="sm"
-          aria-label="Owner"
-          value={filters.ownerId}
-          onChange={(v) => onFiltersChange({ ...filters, ownerId: v })}
-          options={[
-            { value: "all", label: "Owner" },
-            { value: "unassigned", label: "Unassigned" },
-            ...owners.map((o) => ({ value: o.id, label: o.name })),
-          ]}
-        />
-        <MenuSelect
-          size="sm"
-          aria-label="Sort"
-          value={sort}
-          onChange={onSortChange}
-          options={[
-            { value: "newest", label: "Sort: Newest" },
-            { value: "oldest", label: "Sort: Oldest" },
-            { value: "score", label: "Sort: Lead score" },
-            { value: "response_urgency", label: "Sort: Response urgency" },
-            { value: "last_activity", label: "Sort: Last activity" },
-            { value: "next_action", label: "Sort: Next action" },
-          ]}
-        />
-      </div>
+          <FiltersPopover filters={filters} owners={owners} sources={sources} onChange={onFiltersChange} />
+        </DataTableToolbarGroup>
+        <DataTableToolbarGroup align="end">
+          <MenuSelect
+            size="sm"
+            aria-label="Source"
+            value={filters.source}
+            onChange={(v) => onFiltersChange({ ...filters, source: v })}
+            options={[
+              { value: "all", label: "Source" },
+              ...sources.map((s) => ({ value: s.key, label: s.label })),
+            ]}
+          />
+          <MenuSelect
+            size="sm"
+            aria-label="Owner"
+            value={filters.ownerId}
+            onChange={(v) => onFiltersChange({ ...filters, ownerId: v })}
+            options={[
+              { value: "all", label: "Owner" },
+              { value: "unassigned", label: "Unassigned" },
+              ...owners.map((o) => ({ value: o.id, label: o.name })),
+            ]}
+          />
+          <MenuSelect
+            size="sm"
+            aria-label="Sort"
+            value={sort}
+            onChange={onSortChange}
+            options={[
+              { value: "newest", label: "Sort: Newest" },
+              { value: "oldest", label: "Sort: Oldest" },
+              { value: "score", label: "Sort: Lead score" },
+              { value: "response_urgency", label: "Sort: Response urgency" },
+              { value: "last_activity", label: "Sort: Last activity" },
+              { value: "next_action", label: "Sort: Next action" },
+            ]}
+          />
+        </DataTableToolbarGroup>
+      </DataTableToolbar>
 
       {loading ? (
-        <div className="hidden md:block">
+        <DataTableScroll className="hidden md:block">
           <DataTableEl>
             <DataTableHead>
               <tr>
@@ -680,7 +678,7 @@ export function CompanyLeadsTableCard({
             </DataTableHead>
             <DataTableBody>
               {Array.from({ length: 8 }).map((_, i) => (
-                <DataTableRow key={i} className="h-[60px]">
+                <DataTableRow key={i} density="comfortable">
                   {Array.from({ length: 9 }).map((__, j) => (
                     <DataTableTd key={j}>
                       <Skeleton className="h-4 w-full" />
@@ -690,43 +688,39 @@ export function CompanyLeadsTableCard({
               ))}
             </DataTableBody>
           </DataTableEl>
-        </div>
+        </DataTableScroll>
       ) : emptyKind !== "rows" ? (
-        <div className="px-4 py-12 sm:px-5">
-          <EmptyState
-            title={copy.title}
-            description={copy.body}
-            action={
-              emptyKind === "search" ? (
-                <Button variant="secondary" size="sm" onClick={onClearSearch}>
-                  Clear search
-                </Button>
-              ) : emptyKind === "filters" ? (
-                <Button variant="secondary" size="sm" onClick={onClearFilters}>
-                  Clear filters
-                </Button>
-              ) : canAddLead && tab === "all" ? (
-                <Button variant="primary" size="sm" onClick={onAddLead}>
-                  Add {terminology.lead.singular}
-                </Button>
-              ) : undefined
-            }
-          />
-        </div>
+        <DataTableEmptyPanel
+          title={copy.title}
+          description={copy.body}
+          action={
+            emptyKind === "search" ? (
+              <Button variant="secondary" size="sm" onClick={onClearSearch}>
+                Clear search
+              </Button>
+            ) : emptyKind === "filters" ? (
+              <Button variant="secondary" size="sm" onClick={onClearFilters}>
+                Clear filters
+              </Button>
+            ) : canAddLead && tab === "all" ? (
+              <Button variant="primary" size="sm" onClick={onAddLead}>
+                Add {terminology.lead.singular}
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <>
-          <div className="hidden overflow-x-auto md:block">
+          <DataTableScroll className="hidden md:block">
             <DataTableEl className="min-w-[920px]">
               <DataTableHead>
-                <tr className="bg-[#F9FAFB] dark:bg-[#0F120F]">
-                  <DataTableTh className="w-10 px-4">
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={allPageSelected}
-                        aria-label="Select page"
-                        onCheckedChange={(v) => onTogglePage(v)}
-                      />
-                    </div>
+                <tr>
+                  <DataTableTh compact className="w-10">
+                    <Checkbox
+                      checked={allPageSelected}
+                      aria-label="Select page"
+                      onCheckedChange={(v) => onTogglePage(v)}
+                    />
                   </DataTableTh>
                   <DataTableTh>{terminology.lead.singular}</DataTableTh>
                   <DataTableTh className="w-[120px]">Source</DataTableTh>
@@ -755,21 +749,18 @@ export function CompanyLeadsTableCard({
                   <DataTableRow
                     key={row.id}
                     selected={selectedId === row.id}
+                    clickable
+                    density="comfortable"
                     data-course-target="company-lead-row"
-                    className={cn(
-                      "h-[60px] cursor-pointer hover:bg-[#FAFBFC] dark:hover:bg-[#171B17]",
-                      selectedId === row.id &&
-                        "bg-[rgba(212,255,79,0.16)] hover:bg-[rgba(212,255,79,0.16)] dark:bg-[rgba(212,255,79,0.08)] dark:hover:bg-[rgba(212,255,79,0.08)]"
-                    )}
                     onClick={() => onSelect(row.id)}
                   >
-                    <DataTableTd className="px-4" onClick={(e) => e.stopPropagation()}>
+                    <DataTableCheckboxCell compact>
                       <Checkbox
                         checked={selectedIds.has(row.id)}
                         aria-label={`Select ${row.identity}`}
                         onCheckedChange={(v) => onToggleRow(row.id, v)}
                       />
-                    </DataTableTd>
+                    </DataTableCheckboxCell>
                     <DataTableTd>
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar name={row.identity} size="sm" />
@@ -876,7 +867,7 @@ export function CompanyLeadsTableCard({
                         </DataTableTd>
                       </>
                     )}
-                    <DataTableTd onClick={(e) => e.stopPropagation()}>
+                    <DataTableActionsCell>
                       <RowMenu
                         row={row}
                         canReassign={canReassign}
@@ -889,26 +880,22 @@ export function CompanyLeadsTableCard({
                         onOpenDeal={() => onOpenDeal(row)}
                         onNotQualified={() => onNotQualified(row)}
                       />
-                    </DataTableTd>
+                    </DataTableActionsCell>
                   </DataTableRow>
                 ))}
               </DataTableBody>
             </DataTableEl>
-          </div>
+          </DataTableScroll>
 
-          <ul className="divide-y divide-sales-border-subtle md:hidden">
+          <DataTableMobileList className="md:hidden">
             {rows.map((row) => (
-              <li key={row.id}>
-                <button
-                  type="button"
-                  data-course-target="company-lead-row"
-                  onClick={() => onSelect(row.id)}
-                  className={cn(
-                    "flex w-full flex-col gap-2.5 px-4 py-3.5 text-left",
-                    selectedId === row.id &&
-                      "bg-[rgba(212,255,79,0.16)] dark:bg-[rgba(212,255,79,0.08)]"
-                  )}
-                >
+              <DataTableMobileItem
+                key={row.id}
+                selected={selectedId === row.id}
+                onClick={() => onSelect(row.id)}
+                className="flex flex-col gap-2.5 px-4 py-3.5"
+                data-course-target="company-lead-row"
+              >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2.5">
                       <Avatar name={row.identity} size="sm" />
@@ -978,74 +965,44 @@ export function CompanyLeadsTableCard({
                       {row.nextAction.whenLabel ? ` · ${row.nextAction.whenLabel}` : ""}
                     </p>
                   ) : null}
-                </button>
-              </li>
+              </DataTableMobileItem>
             ))}
-          </ul>
+          </DataTableMobileList>
         </>
       )}
 
       {emptyKind === "rows" || loading ? (
-        <div className="flex flex-col gap-2 border-t border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-[12px] text-sales-text-muted">
-            {loading
-              ? "Loading…"
-              : `Showing ${from} to ${to} of ${total} ${
-                  isRealEstate
-                    ? total === 1
-                      ? "inquiry"
-                      : "inquiries"
-                    : `Lead${total === 1 ? "" : "s"}`
-                }`}
-          </p>
-          <div className="flex items-center justify-center gap-1">
-            <button
-              type="button"
-              aria-label="Previous page"
-              disabled={page <= 1}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover disabled:opacity-40"
-              onClick={() => onPageChange(page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {pageWindow(page, pageCount).map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={cn(
-                  "inline-flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 text-[13px] font-medium",
-                  n === page
-                    ? "bg-sales-brand-soft font-semibold text-sales-text-primary"
-                    : "text-sales-text-secondary hover:bg-sales-surface-hover"
-                )}
-                onClick={() => onPageChange(n)}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              aria-label="Next page"
-              disabled={page >= pageCount}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-secondary hover:bg-sales-surface-hover disabled:opacity-40"
-              onClick={() => onPageChange(page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-          <select
-            aria-label="Results per page"
-            className="h-8 rounded-[8px] border border-sales-border bg-sales-surface px-2 text-[12px] text-sales-text-secondary"
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          >
-            {[COMPANY_LEADS_PAGE_SIZE, 25, 50].map((n) => (
-              <option key={n} value={n}>
-                {n} / page
-              </option>
-            ))}
-          </select>
-        </div>
+        <DataTableFooter className="px-4 sm:px-5">
+          <DataTablePagination
+            page={page}
+            pageCount={pageCount}
+            onPageChange={onPageChange}
+            summary={
+              loading
+                ? "Loading…"
+                : `Showing ${from} to ${to} of ${total} ${
+                    isRealEstate
+                      ? total === 1
+                        ? "inquiry"
+                        : "inquiries"
+                      : `Lead${total === 1 ? "" : "s"}`
+                  }`
+            }
+            pageSizeControl={
+              <MenuSelect
+                value={String(pageSize)}
+                onChange={(value) => onPageSizeChange(Number(value))}
+                aria-label="Results per page"
+                size="sm"
+                align="right"
+                options={[COMPANY_LEADS_PAGE_SIZE, 25, 50].map((n) => ({
+                  value: String(n),
+                  label: `${n} / page`,
+                }))}
+              />
+            }
+          />
+        </DataTableFooter>
       ) : null}
 
       {somePageSelected && canReassign ? (
@@ -1065,6 +1022,6 @@ export function CompanyLeadsTableCard({
           </Button>
         </div>
       ) : null}
-    </section>
+    </DataTableWorkspace>
   );
 }

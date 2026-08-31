@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Filter,
   MoreHorizontal,
 } from "lucide-react";
@@ -14,13 +12,23 @@ import {
   Badge,
   Button,
   Checkbox,
-  DataTableEl,
-  DataTableHead,
+  DataTableActionsCell,
   DataTableBody,
+  DataTableEl,
+  DataTableEmptyPanel,
+  DataTableFooter,
+  DataTableHead,
+  DataTableMobileItem,
+  DataTableMobileList,
+  DataTablePagination,
   DataTableRow,
-  DataTableTh,
+  DataTableScroll,
+  DataTableTabsBar,
   DataTableTd,
-  EmptyState,
+  DataTableTh,
+  DataTableToolbar,
+  DataTableToolbarGroup,
+  DataTableWorkspace,
   SearchInput,
   Skeleton,
   Tabs,
@@ -321,29 +329,32 @@ export function CompanyTeamTableCard({
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
-      <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+    <DataTableWorkspace>
+      <DataTableTabsBar className="border-b-0 px-4 sm:px-5">
         <Tabs
           items={tabs}
           value={tab}
           onChange={(id) => onTabChange(id as CompanyTeamTab)}
           className="min-w-0 flex-1 border-b-0"
         />
-        <div className="flex shrink-0 items-center gap-2">
+      </DataTableTabsBar>
+
+      <DataTableToolbar className="px-4 sm:px-5">
+        <DataTableToolbarGroup>
           <SearchInput
             value={search}
             onChange={onSearchChange}
             placeholder={
               businessType === "real_estate" ? "Search agents..." : "Search team members..."
             }
-            className="w-full sm:w-[220px]"
+            className="w-full sm:w-[240px]"
           />
           <FiltersPopover filters={filters} onChange={onFiltersChange} />
-        </div>
-      </div>
+        </DataTableToolbarGroup>
+      </DataTableToolbar>
 
       {loading ? (
-        <div className="hidden md:block">
+        <DataTableScroll className="hidden md:block">
           <table className="w-full">
             <thead>
               <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle">
@@ -364,9 +375,9 @@ export function CompanyTeamTableCard({
               ))}
             </tbody>
           </table>
-        </div>
+        </DataTableScroll>
       ) : emptyKind !== "rows" ? (
-        <EmptyState
+        <DataTableEmptyPanel
           title={
             emptyKind === "none"
               ? businessType === "real_estate"
@@ -409,7 +420,7 @@ export function CompanyTeamTableCard({
         />
       ) : (
         <>
-          <div className="hidden overflow-x-auto md:block">
+          <DataTableScroll className="hidden md:block">
             <DataTableEl className="min-w-[860px]">
               <DataTableHead>
                 <tr>
@@ -431,10 +442,7 @@ export function CompanyTeamTableCard({
                   <DataTableRow
                     key={row.id}
                     selected={selectedId === row.id}
-                    className={cn(
-                      "h-[52px] cursor-pointer sm:h-[52px]",
-                      selectedId === row.id && "bg-[rgba(212,255,79,0.16)] dark:bg-[rgba(212,255,79,0.08)]"
-                    )}
+                    clickable
                     onClick={() => onSelect(row.id)}
                   >
                     <DataTableTd className="px-5">
@@ -482,7 +490,7 @@ export function CompanyTeamTableCard({
                     <DataTableTd>
                       <AttentionBadge attention={row.attention} label={row.attentionLabel} />
                     </DataTableTd>
-                    <DataTableTd className="px-2" onClick={(e) => e.stopPropagation()}>
+                    <DataTableActionsCell className="px-2">
                       <RowMenu
                         row={row}
                         canManage={canManage}
@@ -493,24 +501,21 @@ export function CompanyTeamTableCard({
                         onReassign={() => onReassign(row.id)}
                         onDeactivate={() => onDeactivate(row)}
                       />
-                    </DataTableTd>
+                    </DataTableActionsCell>
                   </DataTableRow>
                 ))}
               </DataTableBody>
             </DataTableEl>
-          </div>
+          </DataTableScroll>
 
-          <ul className="divide-y divide-sales-border-subtle md:hidden">
+          <DataTableMobileList className="md:hidden">
             {rows.map((row) => (
-              <li key={row.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(row.id)}
-                  className={cn(
-                    "flex w-full flex-col gap-3 px-4 py-4 text-left",
-                    selectedId === row.id && "bg-[rgba(212,255,79,0.16)] dark:bg-[rgba(212,255,79,0.08)]"
-                  )}
-                >
+              <DataTableMobileItem
+                key={row.id}
+                selected={selectedId === row.id}
+                onClick={() => onSelect(row.id)}
+                className="flex flex-col gap-3 px-4 py-4"
+              >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar name={row.name} src={row.avatarUrl} size="md" />
@@ -553,70 +558,36 @@ export function CompanyTeamTableCard({
                   ) : (
                     <span className="text-[12px] text-sales-text-muted">No Goal</span>
                   )}
-                </button>
-              </li>
+              </DataTableMobileItem>
             ))}
-          </ul>
+          </DataTableMobileList>
         </>
       )}
 
       {emptyKind === "rows" || loading ? (
-        <div className="flex flex-col gap-2 border-t border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <p className="text-[12px] text-sales-text-muted">
-            {loading ? "Loading…" : `Showing ${from} to ${to} of ${total} results`}
-          </p>
-          <div className="flex items-center justify-center gap-1">
-            <button
-              type="button"
-              aria-label="Previous page"
-              disabled={page <= 1}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-secondary disabled:opacity-40 hover:bg-sales-surface-hover"
-              onClick={() => onPageChange(page - 1)}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: Math.min(3, pageCount) }, (_, i) => {
-              const n = pageCount <= 3 ? i + 1 : Math.min(Math.max(1, page - 1), pageCount - 2) + i;
-              return (
-                <button
-                  key={n}
-                  type="button"
-                  className={cn(
-                    "inline-flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 text-[13px] font-medium",
-                    n === page
-                      ? "bg-sales-brand-soft font-semibold text-sales-text-primary"
-                      : "text-sales-text-secondary hover:bg-sales-surface-hover"
-                  )}
-                  onClick={() => onPageChange(n)}
-                >
-                  {n}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              aria-label="Next page"
-              disabled={page >= pageCount}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-secondary disabled:opacity-40 hover:bg-sales-surface-hover"
-              onClick={() => onPageChange(page + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-          <select
-            aria-label="Results per page"
-            className="h-8 rounded-[8px] border border-sales-border bg-sales-surface px-2 text-[12px] text-sales-text-secondary"
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          >
-            {[COMPANY_TEAM_PAGE_SIZE, 25, 50].map((n) => (
-              <option key={n} value={n}>
-                {n} / page
-              </option>
-            ))}
-          </select>
-        </div>
+        <DataTableFooter className="px-4 sm:px-5">
+          <DataTablePagination
+            page={page}
+            pageCount={pageCount}
+            onPageChange={onPageChange}
+            summary={loading ? "Loading…" : `Showing ${from} to ${to} of ${total} results`}
+            pageSizeControl={
+              <select
+                aria-label="Results per page"
+                className="h-8 rounded-[8px] border border-sales-border bg-sales-surface px-2 text-[12px] text-sales-text-secondary"
+                value={pageSize}
+                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              >
+                {[COMPANY_TEAM_PAGE_SIZE, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} / page
+                  </option>
+                ))}
+              </select>
+            }
+          />
+        </DataTableFooter>
       ) : null}
-    </section>
+    </DataTableWorkspace>
   );
 }
