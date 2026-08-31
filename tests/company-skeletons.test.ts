@@ -56,6 +56,72 @@ describe("company page skeletons", () => {
         grid: COMPANY_KPI_GRID.calendar,
         key: "calendar",
       },
+      {
+        live: "components/real-estate/viewings/CompanyViewingsPage.tsx",
+        skeleton: "components/real-estate/viewings/CompanyViewingsPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.viewings,
+        key: "viewings",
+      },
+      {
+        live: "components/real-estate/lead-sources/CompanyLeadSourcesPage.tsx",
+        skeleton: "components/real-estate/lead-sources/CompanyLeadSourcesPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.sources,
+        key: "sources",
+      },
+      {
+        live: "components/real-estate/offers/OffersWorkspace.tsx",
+        skeleton: "components/real-estate/offers/CompanyOffersPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.offers,
+        key: "offers",
+      },
+      {
+        live: "components/real-estate/ListingsManager.tsx",
+        skeleton: "components/real-estate/listings/CompanyListingsPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.listings,
+        key: "listings",
+      },
+      {
+        live: "components/real-estate/website-leads/CompanyWebsiteLeadsPage.tsx",
+        skeleton: "components/real-estate/website-leads/CompanyWebsiteLeadsPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.websiteLeads,
+        key: "websiteLeads",
+      },
+      {
+        live: "components/real-estate/agent-performance/CompanyAgentPerformancePage.tsx",
+        skeleton: "components/real-estate/agent-performance/CompanyAgentPerformancePageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.agentPerformance,
+        key: "agentPerformance",
+      },
+      {
+        live: "components/real-estate/marketing/RealEstateMarketingWorkspace.tsx",
+        skeleton: "components/real-estate/marketing/CompanyMarketingPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.marketing,
+        key: "marketing",
+      },
+      {
+        live: "components/real-estate/FeedbackWorkspace.tsx",
+        skeleton: "components/real-estate/feedback/CompanyFeedbackPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.feedback,
+        key: "feedback",
+      },
+      {
+        live: "components/real-estate/DevelopmentsManager.tsx",
+        skeleton: "components/real-estate/developments/CompanyDevelopmentsPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.developments,
+        key: "developments",
+      },
+      {
+        live: "components/real-estate/compliance/ComplianceWorkspace.tsx",
+        skeleton: "components/real-estate/compliance/CompanyCompliancePageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.compliance,
+        key: "compliance",
+      },
+      {
+        live: "components/real-estate/RealEstateReportsWorkspace.tsx",
+        skeleton: "components/real-estate/reports/CompanyReReportsPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.reports,
+        key: "reports",
+      },
     ];
 
     for (const pair of pairs) {
@@ -87,6 +153,17 @@ describe("company page skeletons", () => {
       "components/dashboard/company/reports/CompanyReportsPageSkeleton.tsx",
       "components/dashboard/company/settings/CompanySettingsPageSkeleton.tsx",
       "components/dashboard/company/calendar/CompanyCalendarPageSkeleton.tsx",
+      "components/real-estate/viewings/CompanyViewingsPageSkeleton.tsx",
+      "components/real-estate/lead-sources/CompanyLeadSourcesPageSkeleton.tsx",
+      "components/real-estate/offers/CompanyOffersPageSkeleton.tsx",
+      "components/real-estate/listings/CompanyListingsPageSkeleton.tsx",
+      "components/real-estate/website-leads/CompanyWebsiteLeadsPageSkeleton.tsx",
+      "components/real-estate/agent-performance/CompanyAgentPerformancePageSkeleton.tsx",
+      "components/real-estate/marketing/CompanyMarketingPageSkeleton.tsx",
+      "components/real-estate/feedback/CompanyFeedbackPageSkeleton.tsx",
+      "components/real-estate/developments/CompanyDevelopmentsPageSkeleton.tsx",
+      "components/real-estate/compliance/CompanyCompliancePageSkeleton.tsx",
+      "components/real-estate/reports/CompanyReReportsPageSkeleton.tsx",
       "components/inbox/CompanyInboxPageSkeleton.tsx",
     ];
     for (const file of files) {

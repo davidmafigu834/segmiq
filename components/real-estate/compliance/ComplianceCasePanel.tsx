@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Input, TextArea } from "@/components/sales/ui";
+import { Badge, Button, IconButton, Input, TextArea } from "@/components/sales/ui";
 import { COMPLIANCE_RISK_LABEL } from "@/lib/real-estate/compliance";
+import { cn } from "@/lib/ui/cn";
+import { X } from "lucide-react";
 
 type Detail = {
   canCollect: boolean;
@@ -71,11 +73,15 @@ export function ComplianceCasePanel({
   caseId,
   onClose,
   onChanged,
+  overlay = true,
+  stacked = false,
 }: {
   clientId: string;
   caseId: string;
   onClose: () => void;
   onChanged?: () => void;
+  overlay?: boolean;
+  stacked?: boolean;
 }) {
   const [data, setData] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -156,9 +162,23 @@ export function ComplianceCasePanel({
   const status = String(c?.status ?? "");
 
   return (
-    <div className="fixed inset-0 z-[95] flex flex-col bg-sales-bg sm:items-end">
-      <button type="button" className="absolute inset-0 bg-[var(--sales-overlay)]" aria-label="Close" onClick={onClose} />
-      <div className="relative z-[96] flex h-full max-h-[100dvh] w-full flex-col overflow-hidden border-l border-sales-border bg-sales-surface shadow-sales-modal sm:max-w-[640px]">
+    <>
+      {overlay ? (
+        <button
+          type="button"
+          aria-label="Close compliance case"
+          className="fixed inset-0 z-[60] bg-black/25 backdrop-blur-[1px]"
+          onClick={onClose}
+        />
+      ) : null}
+      <aside
+        className={cn(
+          "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+          overlay &&
+            "fixed inset-y-0 right-0 z-[70] w-full max-w-[640px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
+          stacked && overlay && "inset-0 max-w-none rounded-none"
+        )}
+      >
         <header className="border-b border-sales-border-subtle px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -170,9 +190,9 @@ export function ComplianceCasePanel({
               </h2>
               <p className="text-[13px] text-sales-text-secondary">{data?.listingLabel ?? "No property linked"}</p>
             </div>
-            <button type="button" className="text-[12px] text-sales-text-muted" onClick={onClose}>
-              Close
-            </button>
+            <IconButton aria-label="Close compliance case" onClick={onClose}>
+              <X size={16} />
+            </IconButton>
           </div>
           {c ? (
             <div className="mt-2 flex flex-wrap gap-2">
@@ -505,8 +525,8 @@ export function ComplianceCasePanel({
             </ol>
           ) : null}
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }
 

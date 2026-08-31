@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { ComplianceWorkspace } from "@/components/real-estate/compliance/ComplianceWorkspace";
+import { CompanyCompliancePage } from "@/components/real-estate/compliance/CompanyCompliancePage";
+import { CompanyCompliancePageSkeleton } from "@/components/real-estate/compliance/CompanyCompliancePageSkeleton";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
+import { loadCompanyPageChrome } from "@/lib/real-estate/company-page-chrome";
 
 export const dynamic = "force-dynamic";
 
@@ -23,15 +26,18 @@ export default async function ClientCompliancePage() {
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
 
+  const chrome = await loadCompanyPageChrome({
+    userId: session.userId,
+    clientId: session.clientId,
+    userName: session.user?.name ?? "User",
+    role: session.role,
+  });
+
   return (
-    <ClientManagerLayout
-      breadcrumbPage="COMPLIANCE"
-      pageTitle="Compliance"
-      workspaceShell
-      workspaceTitle="Compliance"
-      workspaceDescription="Review client due diligence and transaction compliance."
-    >
-      <ComplianceWorkspace clientId={session.clientId} />
+    <ClientManagerLayout breadcrumbPage="COMPLIANCE" pageTitle="Compliance" hideShellHeader hideShellSidebar>
+      <Suspense fallback={<CompanyCompliancePageSkeleton />}>
+        <CompanyCompliancePage chrome={chrome} clientId={session.clientId} />
+      </Suspense>
     </ClientManagerLayout>
   );
 }

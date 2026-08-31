@@ -4,13 +4,14 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { MarketingOverview } from "@/components/marketing/MarketingOverview";
-import { RealEstateMarketingWorkspace } from "@/components/real-estate/marketing/RealEstateMarketingWorkspace";
+import { CompanyMarketingPage } from "@/components/real-estate/marketing/CompanyMarketingPage";
+import { loadCompanyPageChrome } from "@/lib/real-estate/company-page-chrome";
 
 export const dynamic = "force-dynamic";
 
 export default async function MarketingPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.clientId) redirect("/login");
+  if (!session?.userId || !session.clientId) redirect("/login");
   if (session.role !== "CLIENT_MANAGER") redirect("/login");
 
   const supabase = createAdminClient();
@@ -22,15 +23,16 @@ export default async function MarketingPage() {
   if (!client) redirect("/login");
 
   if (client.business_type === "real_estate") {
+    const chrome = await loadCompanyPageChrome({
+      userId: session.userId,
+      clientId: session.clientId,
+      userName: session.user?.name ?? "User",
+      role: session.role,
+    });
     return (
-      <ClientManagerLayout
-        breadcrumbPage="Marketing"
-        pageTitle="Marketing"
-        workspaceShell
-        workspaceTitle="Marketing"
-        workspaceDescription="See which channels and campaigns are generating real property opportunities."
-      >
-        <RealEstateMarketingWorkspace
+      <ClientManagerLayout breadcrumbPage="Marketing" pageTitle="Marketing" hideShellHeader hideShellSidebar>
+        <CompanyMarketingPage
+          chrome={chrome}
           clientId={session.clientId}
           clientName={(client.name as string | null) || "Company"}
         />

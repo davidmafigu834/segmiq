@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/sales/ui";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 
 type Inventory = {
   total_listed: number;
@@ -39,7 +40,15 @@ const EMPTY: FormState = {
   location: "",
 };
 
-export function DevelopmentsManager({ clientId }: { clientId: string }) {
+export function DevelopmentsManager({
+  clientId,
+  hideAddButton = false,
+  headerCreateNonce = 0,
+}: {
+  clientId: string;
+  hideAddButton?: boolean;
+  headerCreateNonce?: number;
+}) {
   const [rows, setRows] = useState<Development[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,6 +77,11 @@ export function DevelopmentsManager({ clientId }: { clientId: string }) {
   useEffect(() => {
     void load();
   }, [clientId]);
+
+  useEffect(() => {
+    if (headerCreateNonce > 0) openCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headerCreateNonce]);
 
   function openCreate() {
     setEditingId(null);
@@ -126,22 +140,52 @@ export function DevelopmentsManager({ clientId }: { clientId: string }) {
     await load();
   }
 
-  if (loading) return <p className="text-sm text-sales-text-muted">Loading…</p>;
+  if (loading) {
+    return (
+      <div className="space-y-4" aria-busy>
+        <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="shimmer h-[118px] rounded-[14px]" />
+          ))}
+        </div>
+        <div className="shimmer h-[280px] rounded-[14px]" />
+      </div>
+    );
+  }
+
+  const totals = rows.reduce(
+    (acc, d) => ({
+      listed: acc.listed + d.inventory.total_listed,
+      available: acc.available + d.inventory.available,
+      reserved: acc.reserved + d.inventory.reserved,
+      sold: acc.sold + d.inventory.sold,
+    }),
+    { listed: 0, available: 0, reserved: 0, sold: 0 }
+  );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4 sm:space-y-5">
       {toast ? (
         <p className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
           {toast}
         </p>
       ) : null}
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-sales-text-secondary">Inventory by development</p>
-        <Button type="button" variant="primary" size="md" onClick={openCreate} leftIcon={<Plus className="h-4 w-4" />}>
-          Add development
-        </Button>
+      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <CompanyKpiCard item={{ id: "developments", label: "Developments", value: String(rows.length), supporting: "Projects", icon: "companies" }} />
+        <CompanyKpiCard item={{ id: "listed", label: "Listed units", value: String(totals.listed), supporting: "On inventory", icon: "pipeline" }} />
+        <CompanyKpiCard item={{ id: "available", label: "Available", value: String(totals.available), supporting: "Ready to sell", icon: "customers" }} />
+        <CompanyKpiCard item={{ id: "reserved", label: "Reserved", value: String(totals.reserved), supporting: "Held", icon: "followups" }} />
+        <CompanyKpiCard item={{ id: "sold", label: "Sold", value: String(totals.sold), supporting: "Closed", icon: "won" }} />
       </div>
+
+      {!hideAddButton ? (
+        <div className="flex items-center justify-end">
+          <Button type="button" variant="primary" size="md" onClick={openCreate} leftIcon={<Plus className="h-4 w-4" />}>
+            Add development
+          </Button>
+        </div>
+      ) : null}
 
       {showForm ? (
         <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-5 space-y-3">

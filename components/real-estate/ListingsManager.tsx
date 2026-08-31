@@ -1,19 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import Link from "next/link";
-import { Building2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Building2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
+import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
   Badge,
   Button,
+  DataTableBody,
+  DataTableEl,
+  DataTableHead,
+  DataTableRow,
+  DataTableTd,
+  DataTableTh,
   EmptyState,
+  IconButton,
   Input,
+  MenuSelect,
+  SearchInput,
   Select,
   TextArea,
 } from "@/components/sales/ui";
-import { KpiCard } from "@/components/dashboard/sales/KpiCard";
-import { CardShell } from "@/components/dashboard/sales/KpiCard";
 import { listingLabel } from "@/lib/real-estate/helpers";
 import {
   isClosedListingStatus,
@@ -130,12 +138,20 @@ export function ListingsManager({
   readOnly = false,
   canApprove = !readOnly,
   listingHref,
+  hideAddButton = false,
+  headerCreateNonce = 0,
+  onSelectionChange,
 }: {
   clientId: string;
   readOnly?: boolean;
   canApprove?: boolean;
   listingHref?: (id: string) => string;
+  hideAddButton?: boolean;
+  headerCreateNonce?: number;
+  onSelectionChange?: (id: string | null) => void;
 }) {
+  const overlayPanel = useMediaQuery("(max-width: 1279px)");
+  const stackedSplit = useMediaQuery("(max-width: 767px)");
   const [listings, setListings] = useState<ListingRow[]>([]);
   const [agents, setAgents] = useState<AgentOption[]>([]);
   const [developments, setDevelopments] = useState<DevelopmentOption[]>([]);
@@ -188,6 +204,11 @@ export function ListingsManager({
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (headerCreateNonce > 0 && !readOnly) openCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headerCreateNonce]);
+
   const counts = useMemo(() => {
     const available = listings.filter((l) => l.status === "available").length;
     const underOffer = listings.filter((l) => l.status === "under_offer").length;
@@ -219,6 +240,11 @@ export function ListingsManager({
 
   const agentName = (id: string | null) => agents.find((a) => a.id === id)?.name ?? null;
   const preview = listings.find((l) => l.id === previewId) ?? null;
+
+  function selectPreview(id: string | null) {
+    setPreviewId(id);
+    onSelectionChange?.(id);
+  }
 
   function openCreate() {
     setEditingId(null);
@@ -339,122 +365,86 @@ export function ListingsManager({
 
   if (loading) {
     return (
-      <div className="space-y-3" aria-busy aria-label="Loading listings">
-        <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="shimmer h-[96px] rounded-[14px]" />
+      <div className="space-y-4 sm:space-y-5" aria-busy aria-label="Loading listings">
+        <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="shimmer h-[118px] rounded-[14px]" />
           ))}
         </div>
-        <div className="shimmer h-10 rounded-[10px]" />
         <div className="shimmer h-[280px] rounded-[14px]" />
       </div>
     );
   }
 
-  return (
-    <div className="space-y-3">
-      {toast ? (
-        <p className="rounded-[10px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
-          {toast}
-        </p>
-      ) : null}
+  const kpis = [
+    { id: "available", label: "Available", value: counts.available, supporting: "On the market", icon: "companies" as const },
+    { id: "under-offer", label: "Under offer", value: counts.underOffer, supporting: "In negotiation", icon: "deals" as const },
+    { id: "reserved", label: "Reserved", value: counts.reserved, supporting: "Held", icon: "customers" as const },
+    { id: "approval", label: "Pending approval", value: counts.approval, supporting: "Waiting on you", icon: "followups" as const },
+    { id: "closed", label: "Sold / Rented", value: counts.closed, supporting: "Closed stock", icon: "won" as const },
+  ];
 
-      <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
-        <KpiCard
-          item={{
-            id: "available",
-            label: "Available",
-            value: String(counts.available),
-            supporting: "On the market",
-            icon: "companies",
-          }}
-        />
-        <KpiCard
-          item={{
-            id: "under-offer",
-            label: "Under offer",
-            value: String(counts.underOffer),
-            supporting: "In negotiation",
-            icon: "deals",
-          }}
-        />
-        <KpiCard
-          item={{
-            id: "reserved",
-            label: "Reserved",
-            value: String(counts.reserved),
-            supporting: "Held",
-            icon: "customers",
-          }}
-        />
-        <KpiCard
-          item={{
-            id: "closed",
-            label: canApprove && counts.approval > 0 ? "Pending approval" : "Sold / Rented",
-            value: String(canApprove && counts.approval > 0 ? counts.approval : counts.closed),
-            supporting: canApprove && counts.approval > 0 ? "Waiting on you" : "Closed stock",
-            icon: "won",
-          }}
-        />
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex gap-2 overflow-x-auto pb-0.5">
-          {statusTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setStatusTab(tab.id)}
-              className={cn(
-                "min-h-10 shrink-0 rounded-full px-3 text-[12px] font-medium transition-colors",
-                statusTab === tab.id
-                  ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand-border"
-                  : "border border-sales-border bg-sales-surface text-sales-text-secondary hover:text-sales-text-primary"
-              )}
-            >
-              {tab.label} · {tab.count}
-            </button>
-          ))}
+  const table = (
+    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:px-4">
+        <div
+          className="scrollbar-hide flex min-w-0 gap-4 overflow-x-auto overscroll-x-contain"
+          role="tablist"
+          aria-label="Listing status"
+        >
+          {statusTabs.map((item) => {
+            const active = statusTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setStatusTab(item.id)}
+                className={cn(
+                  "relative flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-1 text-[13px] transition-colors duration-150",
+                  active
+                    ? "font-semibold text-sales-text-primary"
+                    : "font-medium text-sales-text-secondary hover:text-sales-text-primary"
+                )}
+              >
+                {item.label}
+                <span className="tabular-nums text-sales-text-muted">{item.count}</span>
+                {active ? (
+                  <span className="absolute inset-x-0 -bottom-px h-[3px] bg-sales-brand" aria-hidden />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
-        <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          <Select
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder="Search address, suburb…"
+            className="min-w-0 w-full sm:w-[240px]"
+          />
+          <MenuSelect
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value as TypeFilter)}
+            onChange={(value) => setTypeFilter(value as TypeFilter)}
             aria-label="Listing type"
-            className="sm:!w-40"
-          >
-            <option value="all">All types</option>
-            <option value="sale">Sale</option>
-            <option value="rental">Rental</option>
-            <option value="new_development">Development</option>
-            <option value="property_management">Management</option>
-          </Select>
-          <label className="relative block min-w-0 flex-1 sm:w-56">
-            <span className="sr-only">Search listings</span>
-            <Search
-              size={15}
-              strokeWidth={1.8}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
-              aria-hidden
-            />
-            <input
-              type="search"
-              placeholder="Search address, suburb…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-10 w-full rounded-[10px] border border-sales-border bg-sales-surface py-2 pl-9 pr-3 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40"
-            />
-          </label>
-          {!readOnly ? (
+            options={[
+              { value: "all", label: "All types" },
+              { value: "sale", label: "Sale" },
+              { value: "rental", label: "Rental" },
+              { value: "new_development", label: "Development" },
+              { value: "property_management", label: "Management" },
+            ]}
+          />
+          {!readOnly && !hideAddButton ? (
             <Button type="button" variant="primary" size="md" onClick={openCreate} leftIcon={<Plus className="h-4 w-4" />}>
               Add listing
             </Button>
           ) : null}
         </div>
       </div>
-
-      <CardShell title="Inventory" className="dashboard-panel--table">
-        {filtered.length === 0 ? (
+      {filtered.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon={<Building2 className="h-4 w-4" strokeWidth={1.5} />}
             title={listings.length === 0 ? "No listings yet" : "No listings match these filters"}
@@ -474,104 +464,81 @@ export function ListingsManager({
             }
             size="compact"
           />
-        ) : (
-          <>
-            <div className="hidden w-full md:block">
-              <table className="dashboard-table w-full table-fixed text-left">
-                <colgroup>
-                  <col className="w-[36%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[10%]" />
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-                    <th className="px-5 py-2.5 font-semibold">Property</th>
-                    <th className="px-3 py-2.5 font-semibold">Type</th>
-                    <th className="px-3 py-2.5 font-semibold">Status</th>
-                    <th className="px-3 py-2.5 font-semibold">Price</th>
-                    <th className="px-3 py-2.5 font-semibold">Agent</th>
-                    <th className="px-5 py-2.5 font-semibold text-right"> </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
-                  {filtered.map((listing) => (
-                    <tr key={listing.id} className="dashboard-list-row h-[56px]">
-                      <td className="px-5 py-2">
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <ListingThumb listing={listing} />
-                          <div className="min-w-0">
-                            {hrefFor ? (
-                              <Link
-                                href={hrefFor(listing.id)}
-                                className="block truncate text-[13px] font-semibold text-sales-text-primary hover:underline"
-                              >
-                                {listingLabel(listing)}
-                              </Link>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setPreviewId(listing.id)}
-                                className="block truncate text-left text-[13px] font-semibold text-sales-text-primary hover:underline"
-                              >
-                                {listingLabel(listing)}
-                              </button>
-                            )}
-                            <p className="truncate text-[11px] text-sales-text-muted">
-                              {specLine(listing) || listing.suburb || "—"}
-                            </p>
-                          </div>
+        </div>
+      ) : (
+        <>
+          <div className="hidden min-w-0 flex-1 overflow-x-auto md:block">
+            <DataTableEl className="min-w-[860px]">
+              <DataTableHead>
+                <tr>
+                  <DataTableTh>Property</DataTableTh>
+                  <DataTableTh>Type</DataTableTh>
+                  <DataTableTh>Status</DataTableTh>
+                  <DataTableTh>Price</DataTableTh>
+                  <DataTableTh>Agent</DataTableTh>
+                  <DataTableTh className="text-right"> </DataTableTh>
+                </tr>
+              </DataTableHead>
+              <DataTableBody>
+                {filtered.map((listing) => (
+                  <DataTableRow
+                    key={listing.id}
+                    selected={listing.id === previewId}
+                    className="h-[56px] cursor-pointer"
+                    onClick={() => selectPreview(listing.id)}
+                  >
+                    <DataTableTd>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <ListingThumb listing={listing} />
+                        <div className="min-w-0">
+                          <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                            {listingLabel(listing)}
+                          </p>
+                          <p className="truncate text-[11px] text-sales-text-muted">
+                            {specLine(listing) || listing.suburb || "—"}
+                          </p>
                         </div>
-                      </td>
-                      <td className="px-3 py-2 text-[12px] text-sales-text-secondary">
-                        {TYPE_LABEL[listing.transaction_type]}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-wrap gap-1">
-                          <Badge tone={statusTone(listing.status)} appearance="soft">
-                            {STATUS_LABEL[listing.status]}
-                          </Badge>
-                          {listing.approval_status && listing.approval_status !== "approved" ? (
-                            <Badge
-                              tone={listing.approval_status === "rejected" ? "danger" : "warning"}
-                              appearance="soft"
-                            >
-                              {LISTING_APPROVAL_LABEL[listing.approval_status]}
-                            </Badge>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-[13px] font-semibold tabular-nums text-sales-text-primary">
-                        {money(listing.price)}
-                      </td>
-                      <td className="px-3 py-2 text-[12px] text-sales-text-secondary">
-                        {agentName(listing.agent_id) ?? "—"}
-                      </td>
-                      <td className="px-5 py-2 text-right">
-                        {readOnly ? (
-                          <button
-                            type="button"
-                            className="text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
-                            onClick={() => setPreviewId(listing.id)}
+                      </div>
+                    </DataTableTd>
+                    <DataTableTd className="text-[12px] text-sales-text-secondary">
+                      {TYPE_LABEL[listing.transaction_type]}
+                    </DataTableTd>
+                    <DataTableTd>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge tone={statusTone(listing.status)} appearance="soft">
+                          {STATUS_LABEL[listing.status]}
+                        </Badge>
+                        {listing.approval_status && listing.approval_status !== "approved" ? (
+                          <Badge
+                            tone={listing.approval_status === "rejected" ? "danger" : "warning"}
+                            appearance="soft"
                           >
-                            View
-                          </button>
-                        ) : (
-                          <div className="flex justify-end gap-1">
-                            {canApprove && listing.approval_status === "pending_approval" ? (
-                              <button
-                                type="button"
-                                className="rounded-[8px] px-2 py-1 text-[11px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
-                                onClick={() => void setApproval(listing.id, "approved")}
-                              >
-                                Approve
-                              </button>
-                            ) : null}
-                            {canApprove ||
-                            listing.approval_status === "draft" ||
-                            listing.approval_status === "pending_approval" ? (
+                            {LISTING_APPROVAL_LABEL[listing.approval_status]}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </DataTableTd>
+                    <DataTableTd className="text-[13px] font-semibold tabular-nums text-sales-text-primary">
+                      {money(listing.price)}
+                    </DataTableTd>
+                    <DataTableTd className="text-[12px] text-sales-text-secondary">
+                      {agentName(listing.agent_id) ?? "—"}
+                    </DataTableTd>
+                    <DataTableTd className="text-right">
+                      {readOnly ? null : (
+                        <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          {canApprove && listing.approval_status === "pending_approval" ? (
+                            <button
+                              type="button"
+                              className="rounded-[8px] px-2 py-1 text-[11px] font-semibold text-sales-text-primary hover:bg-sales-surface-hover"
+                              onClick={() => void setApproval(listing.id, "approved")}
+                            >
+                              Approve
+                            </button>
+                          ) : null}
+                          {canApprove ||
+                          listing.approval_status === "draft" ||
+                          listing.approval_status === "pending_approval" ? (
                             <button
                               type="button"
                               className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
@@ -580,76 +547,177 @@ export function ListingsManager({
                             >
                               <Pencil className="h-4 w-4" />
                             </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
-                                onClick={() => setPreviewId(listing.id)}
-                              >
-                                View
-                              </button>
-                            )}
-                            {canApprove ? (
-                              <button
-                                type="button"
-                                className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
-                                onClick={() => void remove(listing.id)}
-                                aria-label="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            ) : null}
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <ul className="divide-y divide-sales-border-subtle md:hidden">
-              {filtered.map((listing) => (
-                <li key={listing.id} className="flex items-center gap-3 px-4 py-3">
-                  <ListingThumb listing={listing} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-sales-text-primary">
-                      {listingLabel(listing)}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
-                      {TYPE_LABEL[listing.transaction_type]}
-                      {" · "}
-                      {money(listing.price)}
-                      {specLine(listing) ? ` · ${specLine(listing)}` : ""}
-                    </p>
-                  </div>
-                  <Badge tone={statusTone(listing.status)} appearance="soft" className="shrink-0">
-                    {STATUS_LABEL[listing.status]}
-                  </Badge>
-                  {readOnly ? (
-                    <button
-                      type="button"
-                      className="text-[12px] font-semibold text-sales-text-secondary"
-                      onClick={() => setPreviewId(listing.id)}
-                    >
-                      View
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="text-sales-text-secondary"
-                      onClick={() => openEdit(listing)}
-                      aria-label="Edit"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </CardShell>
+                          ) : null}
+                          {canApprove ? (
+                            <button
+                              type="button"
+                              className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
+                              onClick={() => void remove(listing.id)}
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          ) : null}
+                        </div>
+                      )}
+                    </DataTableTd>
+                  </DataTableRow>
+                ))}
+              </DataTableBody>
+            </DataTableEl>
+          </div>
+          <div className="divide-y divide-sales-border-subtle md:hidden">
+            {filtered.map((listing) => (
+              <button
+                key={listing.id}
+                type="button"
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-sales-surface-hover",
+                  listing.id === previewId && "bg-sales-brand-soft"
+                )}
+                onClick={() => selectPreview(listing.id)}
+              >
+                <ListingThumb listing={listing} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                    {listingLabel(listing)}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
+                    {TYPE_LABEL[listing.transaction_type]}
+                    {" · "}
+                    {money(listing.price)}
+                    {specLine(listing) ? ` · ${specLine(listing)}` : ""}
+                  </p>
+                </div>
+                <Badge tone={statusTone(listing.status)} appearance="soft" className="shrink-0">
+                  {STATUS_LABEL[listing.status]}
+                </Badge>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
 
+  const panel = preview ? (
+    <>
+      {overlayPanel ? (
+        <button
+          type="button"
+          aria-label="Close listing details"
+          className="fixed inset-0 z-[60] bg-black/25 backdrop-blur-[1px]"
+          onClick={() => selectPreview(null)}
+        />
+      ) : null}
+      <aside
+        className={cn(
+          "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+          overlayPanel &&
+            "fixed inset-y-0 right-0 z-[70] w-full max-w-[410px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
+          stackedSplit && overlayPanel && "inset-0 max-w-none rounded-none"
+        )}
+      >
+        <div className="flex items-start justify-between gap-3 px-4 py-4 sm:px-5">
+          <div className="min-w-0">
+            <h2 className="truncate text-[17px] font-semibold tracking-[-0.02em] text-sales-text-primary">
+              {listingLabel(preview)}
+            </h2>
+            <p className="mt-0.5 text-[12px] text-sales-text-muted">
+              {[TYPE_LABEL[preview.transaction_type], STATUS_LABEL[preview.status]].join(" · ")}
+            </p>
+          </div>
+          <IconButton aria-label="Close listing details" onClick={() => selectPreview(null)}>
+            <X size={16} />
+          </IconButton>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 sm:px-5">
+          {firstPhoto(preview) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={firstPhoto(preview)!}
+              alt=""
+              className="mb-3 h-40 w-full rounded-[10px] object-cover"
+            />
+          ) : null}
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">
+            <div>
+              <dt className="text-[11px] text-sales-text-muted">Price</dt>
+              <dd className="font-semibold tabular-nums">{money(preview.price)}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-sales-text-muted">Size</dt>
+              <dd>{specLine(preview) || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-sales-text-muted">Agent</dt>
+              <dd>{agentName(preview.agent_id) ?? "Unassigned"}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-sales-text-muted">Reference</dt>
+              <dd>{preview.external_reference || "—"}</dd>
+            </div>
+          </dl>
+          {preview.description ? (
+            <p className="mt-3 whitespace-pre-wrap text-[13px] text-sales-text-secondary">{preview.description}</p>
+          ) : null}
+        </div>
+        <div className="flex gap-2 border-t border-sales-border-subtle px-4 py-3 sm:px-5">
+          {hrefFor ? (
+            <Button
+              variant="primary"
+              size="md"
+              className="flex-1"
+              onClick={() => {
+                window.location.href = hrefFor(preview.id);
+              }}
+            >
+              Open listing
+            </Button>
+          ) : null}
+          {!readOnly ? (
+            <Button variant="secondary" size="md" className="flex-1" onClick={() => openEdit(preview)}>
+              Edit
+            </Button>
+          ) : null}
+        </div>
+      </aside>
+    </>
+  ) : null;
+
+  return (
+    <div className="space-y-4 sm:space-y-5">
+      {toast ? (
+        <p className="rounded-[10px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px] text-sales-text-primary">
+          {toast}
+        </p>
+      ) : null}
+
+      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        {kpis.map((item) => (
+          <CompanyKpiCard
+            key={item.id}
+            item={{
+              id: item.id,
+              label: item.label,
+              value: String(item.value),
+              supporting: item.supporting,
+              icon: item.icon,
+            }}
+          />
+        ))}
+      </div>
+
+      {previewId && !overlayPanel ? (
+        <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,30%)]">
+          {table}
+          <div className="min-h-0 xl:sticky xl:top-0">{panel}</div>
+        </div>
+      ) : (
+        table
+      )}
+
+      {previewId && overlayPanel ? panel : null}
       {showForm && !readOnly ? (
         <PremiumSheet
           size="lg"
@@ -821,56 +889,6 @@ export function ListingsManager({
         </PremiumSheet>
       ) : null}
 
-      {preview ? (
-        <PremiumSheet
-          size="md"
-          title={listingLabel(preview)}
-          description={[TYPE_LABEL[preview.transaction_type], STATUS_LABEL[preview.status]].join(" · ")}
-          onClose={() => setPreviewId(null)}
-          footer={
-            hrefFor ? (
-              <Link
-                href={hrefFor(preview.id)}
-                className="inline-flex h-10 items-center justify-center rounded-[10px] bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text"
-              >
-                Open full listing
-              </Link>
-            ) : undefined
-          }
-        >
-          {firstPhoto(preview) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={firstPhoto(preview)!}
-              alt=""
-              className="mb-3 h-40 w-full rounded-[10px] object-cover"
-            />
-          ) : null}
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
-            <div>
-              <dt className="text-[11px] text-sales-text-muted">Price</dt>
-              <dd className="font-semibold tabular-nums">{money(preview.price)}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-sales-text-muted">Size</dt>
-              <dd>{specLine(preview) || "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-sales-text-muted">Agent</dt>
-              <dd>{agentName(preview.agent_id) ?? "Unassigned"}</dd>
-            </div>
-            <div>
-              <dt className="text-[11px] text-sales-text-muted">Reference</dt>
-              <dd>{preview.external_reference || "—"}</dd>
-            </div>
-          </dl>
-          {preview.description ? (
-            <p className="mt-3 whitespace-pre-wrap text-[13px] text-sales-text-secondary">
-              {preview.description}
-            </p>
-          ) : null}
-        </PremiumSheet>
-      ) : null}
     </div>
   );
 }

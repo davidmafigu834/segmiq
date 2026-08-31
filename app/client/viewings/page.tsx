@@ -1,11 +1,19 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { ViewingsWorkspace, type ViewingWorkspaceRow } from "@/components/real-estate/ViewingsWorkspace";
+import { CompanyViewingsPage } from "@/components/real-estate/viewings/CompanyViewingsPage";
+import { CompanyViewingsPageSkeleton } from "@/components/real-estate/viewings/CompanyViewingsPageSkeleton";
+import type { ViewingWorkspaceRow } from "@/components/real-estate/viewings/types";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
-import { viewingsFetchPlan } from "@/lib/real-estate/viewings";
+import {
+  viewingCompanyKpis,
+  viewingCompanyTabCounts,
+  viewingsFetchPlan,
+} from "@/lib/real-estate/viewings";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +26,7 @@ export default async function ClientViewingsPage() {
   const supabase = createAdminClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("id, name, business_type")
+    .select("id, name, business_type, logo_url")
     .eq("id", session.clientId)
     .maybeSingle();
 
@@ -56,18 +64,28 @@ export default async function ClientViewingsPage() {
 
     const [{ data: contacts }, { data: agents }] = await Promise.all([
       contactIds.length
-        ? supabase.from("contacts").select("id, name").eq("client_id", session.clientId).in("id", contactIds)
-        : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
+        ? supabase.from("contacts").select("id, name, phone, email").eq("client_id", session.clientId).in("id", contactIds)
+        : Promise.resolve({ data: [] as { id: string; name: string | null; phone: string | null; email: string | null }[] }),
       agentIds.length
         ? supabase.from("users").select("id, name").eq("client_id", session.clientId).in("id", agentIds)
         : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
     ]);
 
-    const contactById = new Map((contacts ?? []).map((c) => [c.id as string, (c.name as string | null) ?? null]));
+    const contactById = new Map(
+      (contacts ?? []).map((c) => [
+        c.id as string,
+        {
+          name: (c.name as string | null) ?? null,
+          phone: (c.phone as string | null) ?? null,
+          email: (c.email as string | null) ?? null,
+        },
+      ])
+    );
     const agentById = new Map((agents ?? []).map((a) => [a.id as string, (a.name as string | null) ?? null]));
 
     viewings = (viewingRows ?? []).map((v) => {
       const listing = listingById.get(v.listing_id as string);
+      const contact = contactById.get(v.contact_id as string);
       return {
         id: v.id as string,
         scheduled_at: v.scheduled_at as string,
@@ -77,7 +95,9 @@ export default async function ClientViewingsPage() {
         agent_id: (v.agent_id as string | null) ?? null,
         agent_name: v.agent_id ? agentById.get(v.agent_id as string) ?? null : null,
         contact_id: v.contact_id as string,
-        contact_name: contactById.get(v.contact_id as string) ?? null,
+        contact_name: contact?.name ?? null,
+        contact_phone: contact?.phone ?? null,
+        contact_email: contact?.email ?? null,
         listing_id: v.listing_id as string,
         listing_address: listing?.address ?? null,
         listing_suburb: listing?.suburb ?? null,
@@ -85,15 +105,62 @@ export default async function ClientViewingsPage() {
     });
   }
 
+  const { data: teamUsers } = await supabase
+    .from("users")
+    .select("id, name")
+    .eq("client_id", session.clientId)
+    .order("name", { ascending: true });
+
+  const [unreadRes, userRes, navBadges] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", session.userId)
+      .eq("read", false),
+    supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
+    fetchSalesNavBadges(session.userId, session.clientId),
+  ]);
+
+  const whatsappBadge =
+    (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
+
+  const agents = (teamUsers ?? [])
+    .map((user) => ({
+      id: user.id as string,
+      name: ((user.name as string | null) ?? "").trim() || "Agent",
+    }))
+    .filter((user) => user.id);
+
   return (
     <ClientManagerLayout
       breadcrumbPage="VIEWINGS"
       pageTitle="Viewings"
-      workspaceShell
-      workspaceTitle="Viewings"
-      workspaceDescription="Upcoming and completed property viewings."
+      hideShellHeader
+      hideShellSidebar
     >
-      <ViewingsWorkspace clientId={session.clientId} viewings={viewings} />
+      <Suspense fallback={<CompanyViewingsPageSkeleton />}>
+        <CompanyViewingsPage
+          data={{
+            clientId: session.clientId,
+            clientName: (client.name as string) ?? "Company",
+            rows: viewings,
+            kpis: viewingCompanyKpis(viewings),
+            tabCounts: viewingCompanyTabCounts(viewings),
+            agents,
+            listings: listingRows.map((listing) => ({
+              id: listing.id as string,
+              address: (listing.address as string | null) ?? null,
+              suburb: (listing.suburb as string | null) ?? null,
+            })),
+          }}
+          unreadNotifications={unreadRes.count ?? 0}
+          notificationRole={session.role}
+          userName={session.user?.name ?? "User"}
+          avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
+          companyLogoUrl={(client.logo_url as string | null) ?? null}
+          whatsappBadge={whatsappBadge}
+        />
+      </Suspense>
     </ClientManagerLayout>
   );
 }

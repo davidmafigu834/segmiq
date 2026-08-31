@@ -40,8 +40,8 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
   if (loading || !report) {
     return (
       <div className="space-y-3" aria-busy>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:grid-cols-[repeat(3,minmax(0,1fr))] layout:grid-cols-[repeat(6,minmax(0,1fr))]">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="shimmer h-[96px] rounded-[14px]" />
           ))}
         </div>
@@ -52,7 +52,7 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
 
   return (
     <div className="space-y-3">
-      <div className="dashboard-group grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:grid-cols-[repeat(3,minmax(0,1fr))] layout:grid-cols-[repeat(6,minmax(0,1fr))]">
         <CompanyKpiCard
           item={{
             id: "enquiries",
@@ -89,6 +89,26 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
             value: `${report.stock.available}`,
             supporting: `${report.stock.property_management} under management`,
             icon: "companies",
+            href: "/client/listings",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "offers",
+            label: "Under offer",
+            value: String(report.stock.underOffer),
+            supporting: `${report.stock.sold} sold`,
+            icon: "pipeline",
+            href: "/client/offers",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "sold",
+            label: "Sold / rented",
+            value: String(report.stock.sold + report.stock.rented),
+            supporting: "Closed stock",
+            icon: "won",
             href: "/client/listings",
           }}
         />

@@ -5,6 +5,7 @@ import { MessageSquare, Plus, Star } from "lucide-react";
 import { Badge, Button, EmptyState, Input, Select, TextArea } from "@/components/sales/ui";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { WorkspaceUnderlineTabs } from "@/components/real-estate/workspace-chrome";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import {
   COMPLAINT_CATEGORY_LABEL,
   COMPLAINT_STATUS_LABEL,
@@ -160,12 +161,42 @@ export function FeedbackWorkspace({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4 sm:space-y-5">
       {toast ? (
         <p className="rounded-[10px] border border-sales-border bg-sales-surface px-4 py-2 text-[13px]">
           {toast}
         </p>
       ) : null}
+
+      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3">
+        <CompanyKpiCard
+          item={{
+            id: "feedback",
+            label: "Viewing notes",
+            value: String(feedbackRows.length),
+            supporting: "With comments",
+            icon: "followups",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "complaints",
+            label: "Open complaints",
+            value: String(complaints.filter((c) => c.status === "open").length),
+            supporting: `${complaints.length} logged`,
+            icon: "deals",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "testimonials",
+            label: "Testimonials",
+            value: String(testimonials.length),
+            supporting: "Captured quotes",
+            icon: "won",
+          }}
+        />
+      </div>
 
       <div className="workspace-card overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface">
         <WorkspaceUnderlineTabs

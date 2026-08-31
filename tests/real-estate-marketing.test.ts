@@ -18,6 +18,12 @@ import {
   RE_SOURCE_TYPES,
 } from "../lib/real-estate/marketing";
 import {
+  leadSourceCompanyKpis,
+  leadSourceMatchesTab,
+  leadSourceTabCounts,
+  parseLeadSourceDatePreset,
+} from "../lib/real-estate/lead-sources";
+import {
   listingLookupAllowed,
   mapWebsiteIngestDealSide,
   mapWebsiteIngestSource,
@@ -249,7 +255,10 @@ describe("trades isolation and role boundaries", () => {
     const marketingPage = read("app/client/marketing/page.tsx");
     assert.ok(marketingPage.includes("MarketingOverview"));
     assert.ok(marketingPage.includes("real_estate"));
-    assert.ok(marketingPage.includes("RealEstateMarketingWorkspace"));
+    assert.ok(
+      marketingPage.includes("RealEstateMarketingWorkspace") ||
+        marketingPage.includes("CompanyMarketingPage")
+    );
     const waCampaigns = read("app/client/marketing/campaigns/page.tsx");
     assert.ok(!waCampaigns.includes("re_marketing_campaigns"));
     const ingest = read("app/api/external-leads/submit/route.ts");
@@ -281,5 +290,24 @@ describe("gated marketing pages", () => {
     ]) {
       assert.ok(read(rel).includes("redirectIfNotRealEstate"), `${rel} must call redirectIfNotRealEstate`);
     }
+  });
+});
+
+describe("company lead sources workspace", () => {
+  it("groups paid, inbound and relationship sources onto the company tabs", () => {
+    assert.equal(leadSourceMatchesTab("facebook_ads", "paid"), true);
+    assert.equal(leadSourceMatchesTab("whatsapp", "paid"), false);
+    assert.equal(leadSourceMatchesTab("whatsapp", "inbound"), true);
+    assert.equal(leadSourceMatchesTab("referral", "relationship"), true);
+    assert.equal(leadSourceMatchesTab("manual", "other"), true);
+    assert.equal(parseLeadSourceDatePreset("last_7"), "last_7");
+    assert.equal(parseLeadSourceDatePreset("nope"), "this_month");
+    const rows = [
+      { sourceType: "facebook_ads", label: "Facebook Ads", inquiries: 4, qualified: 2, viewings: 1, offers: 0, accepted: 0, conversion: 0 },
+      { sourceType: "referral", label: "Referral", inquiries: 1, qualified: 1, viewings: 1, offers: 1, accepted: 1, conversion: 100 },
+    ];
+    assert.equal(leadSourceTabCounts(rows).paid, 1);
+    assert.equal(leadSourceTabCounts(rows).relationship, 1);
+    assert.equal(leadSourceCompanyKpis({ inquiries: 5, qualified: 3, viewings: 2, offers: 1, accepted: 1, conversion: 20 }).length, 5);
   });
 });

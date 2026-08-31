@@ -3,7 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import { Badge, Button, FieldLabel, Input, TextArea } from "@/components/sales/ui";
+import { Badge, Button, FieldLabel, IconButton, Input, TextArea } from "@/components/sales/ui";
+import { cn } from "@/lib/ui/cn";
 import { listingLabel } from "@/lib/real-estate/helpers";
 import {
   allowedOfferActions,
@@ -63,12 +64,16 @@ export function OfferDetailPanel({
   complianceHref,
   onClose,
   onChanged,
+  overlay = true,
+  stacked = false,
 }: {
   clientId: string;
   offerId: string;
   complianceHref: string | null;
   onClose: () => void;
   onChanged: () => void;
+  overlay?: boolean;
+  stacked?: boolean;
 }) {
   const [data, setData] = useState<DetailPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -215,10 +220,23 @@ export function OfferDetailPanel({
 
   return (
     <>
-    <div className="fixed inset-0 z-[85] flex flex-col bg-sales-bg sm:items-end">
-      <button type="button" className="absolute inset-0 bg-[var(--sales-overlay)]" aria-label="Close" onClick={onClose} />
-      <div className="relative z-[86] flex h-full max-h-[100dvh] w-full flex-col overflow-hidden border-l border-sales-border bg-sales-surface shadow-sales-modal sm:max-w-[560px]">
-        <header className="flex items-start justify-between gap-3 border-b border-sales-border-subtle px-4 py-3">
+    {overlay ? (
+      <button
+        type="button"
+        aria-label="Close offer details"
+        className="fixed inset-0 z-[60] bg-black/25 backdrop-blur-[1px]"
+        onClick={onClose}
+      />
+    ) : null}
+    <aside
+      className={cn(
+        "flex h-full min-h-[660px] flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card",
+        overlay &&
+          "fixed inset-y-0 right-0 z-[70] w-full max-w-[560px] rounded-none border-y-0 border-r-0 sm:rounded-l-[14px] sm:border-y sm:border-r",
+        stacked && overlay && "inset-0 max-w-none rounded-none"
+      )}
+    >
+        <header className="flex items-start justify-between gap-3 px-4 py-4 sm:px-5">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">Offer</p>
             <h2 className="truncate text-[18px] font-semibold tracking-[-0.03em]">
@@ -228,9 +246,9 @@ export function OfferDetailPanel({
               Offer from {data?.contact?.name ?? "buyer"}
             </p>
           </div>
-          <button type="button" className="rounded-[8px] p-2 hover:bg-sales-surface-hover" onClick={onClose}>
+          <IconButton aria-label="Close offer details" onClick={onClose}>
             <X size={16} />
-          </button>
+          </IconButton>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
@@ -686,8 +704,7 @@ export function OfferDetailPanel({
             </Button>
           </ActionSheet>
         ) : null}
-      </div>
-    </div>
+    </aside>
       {caseId ? (
         <ComplianceCasePanel
           clientId={clientId}

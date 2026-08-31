@@ -1,91 +1,95 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Radio } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { EmptyState } from "@/components/ui";
+import { CompanyLeadSourcesPage } from "@/components/real-estate/lead-sources/CompanyLeadSourcesPage";
+import { CompanyLeadSourcesPageSkeleton } from "@/components/real-estate/lead-sources/CompanyLeadSourcesPageSkeleton";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 import { getMarketingDashboard } from "@/lib/real-estate/marketing-service";
-import { formatConversionPct } from "@/lib/real-estate/marketing";
+import {
+  leadSourceCompanyKpis,
+  leadSourceTabCounts,
+  parseLeadSourceDatePreset,
+} from "@/lib/real-estate/lead-sources";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientLeadSourcesPage() {
+export default async function ClientLeadSourcesPage({
+  searchParams,
+}: {
+  searchParams: { preset?: string };
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.userId || session.role !== "CLIENT_MANAGER" || !session.clientId) {
     redirect("/login");
   }
+
   const supabase = createAdminClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("id, name, business_type")
+    .select("id, name, business_type, logo_url")
     .eq("id", session.clientId)
     .maybeSingle();
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
 
+  const preset = parseLeadSourceDatePreset(searchParams.preset);
   const dash = await getMarketingDashboard({
     clientId: session.clientId,
-    filters: { preset: "this_month" },
+    filters: { preset },
   });
+
+  const funnel = {
+    inquiries: dash.kpis.inquiries,
+    qualified: dash.kpis.qualified,
+    viewings: dash.kpis.viewings,
+    offers: dash.kpis.offers,
+    accepted: dash.kpis.accepted,
+    conversion: dash.rates.inquiryToAccepted,
+  };
+
+  const [unreadRes, userRes, navBadges] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", session.userId)
+      .eq("read", false),
+    supabase.from("users").select("avatar_url").eq("id", session.userId).maybeSingle(),
+    fetchSalesNavBadges(session.userId, session.clientId),
+  ]);
+  const whatsappBadge =
+    (navBadges.hotLeads || 0) + (navBadges.needsReply || 0) + (navBadges.followUpDue || 0);
 
   return (
     <ClientManagerLayout
       breadcrumbPage="LEAD SOURCES"
       pageTitle="Lead Sources"
-      workspaceShell
-      workspaceTitle="Lead sources"
-      workspaceDescription="Where this month’s inquiries came from, and whether they progressed to qualification, viewing and offer."
+      hideShellHeader
+      hideShellSidebar
     >
-      <div className="min-w-0 w-full max-w-full space-y-3">
-        <div className="flex justify-end">
-          <Link href="/client/marketing" className="text-[13px] font-medium text-sales-text-secondary underline">
-            Open marketing
-          </Link>
-        </div>
-        {dash.sources.length === 0 ? (
-          <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
-            <EmptyState
-              icon={Radio}
-              title="No source data yet"
-              description="Source attribution will appear as new inquiries are captured through connected channels."
-            />
-          </div>
-        ) : (
-          <div className="overflow-x-auto workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
-            <table className="w-full min-w-[640px] text-left">
-              <thead>
-                <tr className="border-b border-sales-border-subtle text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
-                  <th className="px-5 py-3">Source</th>
-                  <th className="px-5 py-3 text-right">Inquiries</th>
-                  <th className="px-5 py-3 text-right">Qualified</th>
-                  <th className="px-5 py-3 text-right">Viewings</th>
-                  <th className="px-5 py-3 text-right">Offers</th>
-                  <th className="px-5 py-3 text-right">Accepted</th>
-                  <th className="px-5 py-3 text-right">Conversion</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-sales-border-subtle">
-                {dash.sources.map((row) => (
-                  <tr key={row.sourceType}>
-                    <td className="px-5 py-3 text-[13px] font-medium text-sales-text-primary">{row.label}</td>
-                    <td className="px-5 py-3 text-right text-[13px] tabular-nums">{row.inquiries}</td>
-                    <td className="px-5 py-3 text-right text-[13px] tabular-nums">{row.qualified}</td>
-                    <td className="px-5 py-3 text-right text-[13px] tabular-nums">{row.viewings}</td>
-                    <td className="px-5 py-3 text-right text-[13px] tabular-nums">{row.offers}</td>
-                    <td className="px-5 py-3 text-right text-[13px] tabular-nums">{row.accepted}</td>
-                    <td className="px-5 py-3 text-right text-[13px] tabular-nums">
-                      {formatConversionPct(row.conversion)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <Suspense fallback={<CompanyLeadSourcesPageSkeleton />}>
+        <CompanyLeadSourcesPage
+          data={{
+            clientId: session.clientId,
+            clientName: (client.name as string) ?? "Company",
+            rangeLabel: dash.range.label,
+            preset,
+            kpis: leadSourceCompanyKpis(funnel),
+            rows: dash.sources,
+            tabCounts: leadSourceTabCounts(dash.sources),
+            funnel,
+          }}
+          unreadNotifications={unreadRes.count ?? 0}
+          notificationRole={session.role}
+          userName={session.user?.name ?? "User"}
+          avatarUrl={(userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null}
+          companyLogoUrl={(client.logo_url as string | null) ?? null}
+          whatsappBadge={whatsappBadge}
+        />
+      </Suspense>
     </ClientManagerLayout>
   );
 }

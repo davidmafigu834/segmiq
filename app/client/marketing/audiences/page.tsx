@@ -5,10 +5,12 @@ import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { MarketingHubTabs } from "@/components/marketing/MarketingHubTabs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import Link from "next/link";
+import { CompanyMarketingChildPage } from "@/components/real-estate/marketing/CompanyMarketingChildPage";
+import { loadRealEstateMarketingChildChrome } from "@/lib/real-estate/marketing-child-chrome";
 
 export default async function MarketingAudiencesPage() {
   const session = await getServerSession(authOptions);
-  if (!session?.clientId) redirect("/login");
+  if (!session?.userId || !session.clientId) redirect("/login");
   if (session.role !== "CLIENT_MANAGER") redirect("/login");
 
   const supabase = createAdminClient();
@@ -20,8 +22,8 @@ export default async function MarketingAudiencesPage() {
     .order("segment_type", { ascending: false })
     .order("created_at", { ascending: true });
 
-  return (
-    <ClientManagerLayout breadcrumbPage="Audiences" pageTitle="Marketing Hub" workspaceShell>
+  const body = (
+    <>
       <MarketingHubTabs />
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">Audiences</h2>
@@ -53,6 +55,33 @@ export default async function MarketingAudiencesPage() {
         </Link>
         .
       </p>
+    </>
+  );
+
+  const chrome = await loadRealEstateMarketingChildChrome({
+    userId: session.userId,
+    clientId: session.clientId,
+    userName: session.user?.name ?? "User",
+    role: session.role,
+  });
+
+  if (chrome) {
+    return (
+      <ClientManagerLayout breadcrumbPage="Audiences" pageTitle="Marketing" hideShellHeader hideShellSidebar>
+        <CompanyMarketingChildPage
+          chrome={chrome}
+          title="Audiences"
+          description="CRM segments used to target WhatsApp campaigns."
+        >
+          {body}
+        </CompanyMarketingChildPage>
+      </ClientManagerLayout>
+    );
+  }
+
+  return (
+    <ClientManagerLayout breadcrumbPage="Audiences" pageTitle="Marketing Hub" workspaceShell>
+      {body}
     </ClientManagerLayout>
   );
 }

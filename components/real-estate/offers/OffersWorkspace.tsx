@@ -1,11 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { Handshake, Plus, Search } from "lucide-react";
-import { Button, EmptyState, Select } from "@/components/sales/ui";
-import { KpiCard } from "@/components/dashboard/sales/KpiCard";
-import { CardShell } from "@/components/dashboard/sales/KpiCard";
+import { useRouter } from "next/navigation";
+import { Handshake, Plus } from "lucide-react";
+import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
+import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
+import {
+  Button,
+  DataTableBody,
+  DataTableEl,
+  DataTableHead,
+  DataTableRow,
+  DataTableTd,
+  DataTableTh,
+  EmptyState,
+  MenuSelect,
+  SearchInput,
+} from "@/components/sales/ui";
 import {
   deriveOfferAttention,
   offerVsAsking,
@@ -16,6 +27,14 @@ import { CreateOfferSheet, type CreateOfferPrefill } from "./CreateOfferSheet";
 import { OfferDetailPanel, OfferStatusPill } from "./OfferDetailPanel";
 
 type StatusTab = "active" | "submitted" | "negotiating" | "accepted" | "closed";
+
+const TABS: Array<{ id: StatusTab; label: string }> = [
+  { id: "active", label: "Active" },
+  { id: "submitted", label: "Awaiting seller" },
+  { id: "negotiating", label: "Negotiating" },
+  { id: "accepted", label: "Accepted" },
+  { id: "closed", label: "Closed" },
+];
 
 function initials(name: string | null): string {
   const parts = (name ?? "Buyer").trim().split(/\s+/).filter(Boolean);
@@ -60,12 +79,21 @@ export function OffersWorkspace({
   variant,
   inquiriesHref,
   complianceHref,
+  hideCreateButton = false,
+  headerCreateNonce = 0,
+  onSelectionChange,
 }: {
   clientId: string;
   variant: "manager" | "agent";
   inquiriesHref: string;
   complianceHref: string | null;
+  hideCreateButton?: boolean;
+  headerCreateNonce?: number;
+  onSelectionChange?: (id: string | null) => void;
 }) {
+  const router = useRouter();
+  const overlayPanel = useMediaQuery("(max-width: 1279px)");
+  const stackedSplit = useMediaQuery("(max-width: 767px)");
   const [tab, setTab] = useState<StatusTab>("active");
   const [q, setQ] = useState("");
   const [agentId, setAgentId] = useState("");
@@ -85,6 +113,14 @@ export function OffersWorkspace({
   const [multi, setMulti] = useState<Array<{ listingId: string; propertyLabel: string; count: number }>>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [creating, setCreating] = useState<CreateOfferPrefill | null>(null);
+
+  const select = useCallback(
+    (id: string | null) => {
+      setOpenId(id);
+      onSelectionChange?.(id);
+    },
+    [onSelectionChange]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,34 +147,219 @@ export function OffersWorkspace({
     void load();
   }, [load]);
 
-  const pills: Array<{ id: StatusTab; label: string; count: number }> = [
-    { id: "active", label: "Active", count: summary.active },
-    { id: "submitted", label: "Awaiting seller", count: summary.awaitingSeller },
-    { id: "negotiating", label: "Negotiating", count: summary.negotiating },
-    { id: "accepted", label: "Accepted", count: summary.accepted },
-    { id: "closed", label: "Closed", count: summary.closed },
-  ];
+  useEffect(() => {
+    if (headerCreateNonce > 0) setCreating({});
+  }, [headerCreateNonce]);
+
+  const tabCounts: Record<StatusTab, number> = {
+    active: summary.active,
+    submitted: summary.awaitingSeller,
+    negotiating: summary.negotiating,
+    accepted: summary.accepted,
+    closed: summary.closed,
+  };
 
   const empty = emptyCopy(tab);
 
-  if (loading && offers.length === 0) {
-    return (
-      <div className="space-y-3" aria-busy aria-label="Loading offers">
-        <div className="grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="shimmer h-[96px] rounded-[14px]" />
-          ))}
+  const table = (
+    <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <div className="flex flex-col gap-3 border-b border-sales-border-subtle px-3 py-3 sm:px-4">
+        <div
+          className="scrollbar-hide flex min-w-0 gap-4 overflow-x-auto overscroll-x-contain"
+          role="tablist"
+          aria-label="Offer status"
+        >
+          {TABS.map((item) => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(item.id)}
+                className={cn(
+                  "relative flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-1 text-[13px] transition-colors duration-150",
+                  active
+                    ? "font-semibold text-sales-text-primary"
+                    : "font-medium text-sales-text-secondary hover:text-sales-text-primary"
+                )}
+              >
+                {item.label}
+                <span className="tabular-nums text-sales-text-muted">{tabCounts[item.id]}</span>
+                {active ? (
+                  <span className="absolute inset-x-0 -bottom-px h-[3px] bg-sales-brand" aria-hidden />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
-        <div className="shimmer h-10 rounded-[10px]" />
-        <div className="shimmer h-[280px] rounded-[14px]" />
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <SearchInput
+            value={q}
+            onChange={setQ}
+            placeholder="Search buyer, property, agent…"
+            className="min-w-0 w-full sm:w-[240px]"
+          />
+          {variant === "manager" ? (
+            <MenuSelect
+              value={agentId}
+              onChange={setAgentId}
+              aria-label="Agent"
+              options={[
+                { value: "", label: "All agents" },
+                ...agents.map((a) => ({ value: a.id, label: a.name })),
+              ]}
+            />
+          ) : null}
+          <input
+            type="number"
+            inputMode="decimal"
+            placeholder="Min"
+            aria-label="Minimum offer"
+            value={min}
+            onChange={(e) => setMin(e.target.value)}
+            className="h-10 w-24 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40"
+          />
+          <input
+            type="number"
+            inputMode="decimal"
+            placeholder="Max"
+            aria-label="Maximum offer"
+            value={max}
+            onChange={(e) => setMax(e.target.value)}
+            className="h-10 w-24 rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40"
+          />
+          {!hideCreateButton ? (
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={() => setCreating({})}
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              Create offer
+            </Button>
+          ) : null}
+        </div>
+        {variant === "manager" && multi.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 text-[12px]">
+            <span className="font-semibold text-sales-text-primary">Competing</span>
+            {multi.slice(0, 4).map((listing) => (
+              <button
+                key={listing.listingId}
+                type="button"
+                onClick={() => setQ(listing.propertyLabel)}
+                className="rounded-full border border-sales-border bg-sales-surface-subtle px-2.5 py-1 text-sales-text-secondary hover:text-sales-text-primary"
+              >
+                {listing.propertyLabel} · {listing.count}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
-    );
-  }
+
+      {loading && offers.length === 0 ? (
+        <p className="px-4 py-8 text-[13px] text-sales-text-muted sm:px-5">Loading…</p>
+      ) : offers.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
+          <EmptyState
+            icon={<Handshake className="h-4 w-4" strokeWidth={1.5} />}
+            title={empty.title}
+            description={empty.description}
+            action={
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="primary" size="sm" onClick={() => setCreating({})}>
+                  Create offer
+                </Button>
+                <button
+                  type="button"
+                  className="inline-flex h-8 items-center rounded-[8px] px-3 text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
+                  onClick={() => router.push(inquiriesHref)}
+                >
+                  View inquiries
+                </button>
+              </div>
+            }
+            size="compact"
+          />
+        </div>
+      ) : (
+        <>
+          <div className="hidden min-w-0 flex-1 overflow-x-auto md:block">
+            <DataTableEl className="min-w-[860px]">
+              <DataTableHead>
+                <tr>
+                  <DataTableTh>Buyer / property</DataTableTh>
+                  <DataTableTh>Offer</DataTableTh>
+                  <DataTableTh>Status</DataTableTh>
+                  <DataTableTh>Next</DataTableTh>
+                  {variant === "manager" ? <DataTableTh>Agent</DataTableTh> : null}
+                  <DataTableTh className="text-right">Updated</DataTableTh>
+                </tr>
+              </DataTableHead>
+              <DataTableBody>
+                {offers.map((row) => (
+                  <OfferTableRow
+                    key={row.id}
+                    row={row}
+                    showAgent={variant === "manager"}
+                    selected={row.id === openId}
+                    onOpen={() => select(row.id)}
+                  />
+                ))}
+              </DataTableBody>
+            </DataTableEl>
+          </div>
+          <div className="divide-y divide-sales-border-subtle md:hidden">
+            {offers.map((row) => (
+              <button
+                key={row.id}
+                type="button"
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-sales-surface-hover",
+                  row.id === openId && "bg-sales-brand-soft"
+                )}
+                onClick={() => select(row.id)}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-neutral-100 text-[11px] font-semibold text-sales-text-secondary">
+                  {initials(row.buyerName)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                    {row.buyerName ?? "Buyer"}
+                  </p>
+                  <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
+                    {row.propertyLabel}
+                    {" · "}
+                    {row.currentAmountLabel}
+                  </p>
+                </div>
+                <OfferStatusPill status={row.status} />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+
+  const panel = openId ? (
+    <OfferDetailPanel
+      clientId={clientId}
+      offerId={openId}
+      complianceHref={complianceHref}
+      onClose={() => select(null)}
+      onChanged={() => void load()}
+      overlay={overlayPanel}
+      stacked={stackedSplit}
+    />
+  ) : null;
 
   return (
-    <div className="space-y-3">
-      <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-4">
-        <KpiCard
+    <div className="space-y-4 sm:space-y-5">
+      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-4">
+        <CompanyKpiCard
           item={{
             id: "active",
             label: "Active",
@@ -147,7 +368,7 @@ export function OffersWorkspace({
             icon: "deals",
           }}
         />
-        <KpiCard
+        <CompanyKpiCard
           item={{
             id: "awaiting",
             label: "Awaiting seller",
@@ -156,7 +377,7 @@ export function OffersWorkspace({
             icon: "followups",
           }}
         />
-        <KpiCard
+        <CompanyKpiCard
           item={{
             id: "negotiating",
             label: "Negotiating",
@@ -165,7 +386,7 @@ export function OffersWorkspace({
             icon: "pipeline",
           }}
         />
-        <KpiCard
+        <CompanyKpiCard
           item={{
             id: "accepted",
             label: "Accepted this month",
@@ -176,196 +397,16 @@ export function OffersWorkspace({
         />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex gap-2 overflow-x-auto pb-0.5">
-          {pills.map((pill) => (
-            <button
-              key={pill.id}
-              type="button"
-              onClick={() => setTab(pill.id)}
-              className={cn(
-                "min-h-10 shrink-0 rounded-full px-3 text-[12px] font-medium transition-colors",
-                tab === pill.id
-                  ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand-border"
-                  : "border border-sales-border bg-sales-surface text-sales-text-secondary hover:text-sales-text-primary"
-              )}
-            >
-              {pill.label} · {pill.count}
-            </button>
-          ))}
+      {openId && !overlayPanel ? (
+        <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,30%)]">
+          {table}
+          <div className="min-h-0 xl:sticky xl:top-0">{panel}</div>
         </div>
-        <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-          {variant === "manager" ? (
-            <Select
-              value={agentId}
-              onChange={(e) => setAgentId(e.target.value)}
-              aria-label="Agent"
-              className="sm:!w-40"
-            >
-              <option value="">All agents</option>
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </Select>
-          ) : null}
-          <input
-            type="number"
-            inputMode="decimal"
-            placeholder="Min"
-            aria-label="Minimum offer"
-            value={min}
-            onChange={(e) => setMin(e.target.value)}
-            className="h-10 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40 sm:w-24"
-          />
-          <input
-            type="number"
-            inputMode="decimal"
-            placeholder="Max"
-            aria-label="Maximum offer"
-            value={max}
-            onChange={(e) => setMax(e.target.value)}
-            className="h-10 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40 sm:w-24"
-          />
-          <label className="relative block min-w-0 flex-1 sm:w-56">
-            <span className="sr-only">Search offers</span>
-            <Search
-              size={15}
-              strokeWidth={1.8}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sales-text-muted"
-              aria-hidden
-            />
-            <input
-              type="search"
-              placeholder="Buyer, property, agent…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="h-10 w-full rounded-[10px] border border-sales-border bg-sales-surface py-2 pl-9 pr-3 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-border-strong focus:ring-2 focus:ring-sales-brand/40"
-            />
-          </label>
-          <Button
-            type="button"
-            variant="primary"
-            size="md"
-            onClick={() => setCreating({})}
-            leftIcon={<Plus className="h-4 w-4" />}
-          >
-            Create offer
-          </Button>
-        </div>
-      </div>
+      ) : (
+        table
+      )}
 
-      {variant === "manager" && multi.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2 text-[12px]">
-          <span className="font-semibold text-sales-text-primary">Competing</span>
-          {multi.slice(0, 4).map((l) => (
-            <button
-              key={l.listingId}
-              type="button"
-              onClick={() => setQ(l.propertyLabel)}
-              className="rounded-full border border-sales-border bg-sales-surface-subtle px-2.5 py-1 text-sales-text-secondary hover:text-sales-text-primary"
-            >
-              {l.propertyLabel} · {l.count}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <CardShell
-        title="Offers"
-        className="dashboard-panel--table"
-        action={
-          loading ? (
-            <span className="text-[11px] text-sales-text-muted">Updating…</span>
-          ) : undefined
-        }
-      >
-        {offers.length === 0 ? (
-          <EmptyState
-            icon={<Handshake className="h-4 w-4" strokeWidth={1.5} />}
-            title={empty.title}
-            description={empty.description}
-            action={
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="primary" size="sm" onClick={() => setCreating({})}>
-                  Create offer
-                </Button>
-                <Link
-                  href={inquiriesHref}
-                  className="inline-flex h-8 items-center rounded-[8px] px-3 text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
-                >
-                  View inquiries
-                </Link>
-              </div>
-            }
-            size="compact"
-          />
-        ) : (
-          <>
-            <div className="hidden w-full md:block">
-              <table className="dashboard-table w-full table-fixed text-left">
-                <colgroup>
-                  <col className="w-[34%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[18%]" />
-                  {variant === "manager" ? <col className="w-[10%]" /> : null}
-                  <col className="w-[8%]" />
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-                    <th className="px-5 py-2.5 font-semibold">Buyer / property</th>
-                    <th className="px-3 py-2.5 font-semibold">Offer</th>
-                    <th className="px-3 py-2.5 font-semibold">Status</th>
-                    <th className="px-3 py-2.5 font-semibold">Next</th>
-                    {variant === "manager" ? (
-                      <th className="px-3 py-2.5 font-semibold">Agent</th>
-                    ) : null}
-                    <th className="px-5 py-2.5 font-semibold text-right">Updated</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
-                  {offers.map((row) => (
-                    <OfferTableRow
-                      key={row.id}
-                      row={row}
-                      showAgent={variant === "manager"}
-                      onOpen={() => setOpenId(row.id)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <ul className="divide-y divide-sales-border-subtle md:hidden">
-              {offers.map((row) => (
-                <li key={row.id}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-sales-surface-hover"
-                    onClick={() => setOpenId(row.id)}
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-neutral-100 text-[11px] font-semibold text-sales-text-secondary">
-                      {initials(row.buyerName)}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold text-sales-text-primary">
-                        {row.buyerName ?? "Buyer"}
-                      </p>
-                      <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
-                        {row.propertyLabel}
-                        {" · "}
-                        {row.currentAmountLabel}
-                      </p>
-                    </div>
-                    <OfferStatusPill status={row.status} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </CardShell>
+      {openId && overlayPanel ? panel : null}
 
       {creating ? (
         <CreateOfferSheet
@@ -374,19 +415,9 @@ export function OffersWorkspace({
           onClose={() => setCreating(null)}
           onCreated={(id) => {
             setCreating(null);
-            setOpenId(id);
+            select(id);
             void load();
           }}
-        />
-      ) : null}
-
-      {openId ? (
-        <OfferDetailPanel
-          clientId={clientId}
-          offerId={openId}
-          complianceHref={complianceHref}
-          onClose={() => setOpenId(null)}
-          onChanged={() => void load()}
         />
       ) : null}
     </div>
@@ -396,10 +427,12 @@ export function OffersWorkspace({
 function OfferTableRow({
   row,
   showAgent,
+  selected,
   onOpen,
 }: {
   row: OfferListRow;
   showAgent: boolean;
+  selected: boolean;
   onOpen: () => void;
 }) {
   const vs = useMemo(
@@ -425,8 +458,8 @@ function OfferTableRow({
     attention?.reason === "stale_negotiation";
 
   return (
-    <tr className="dashboard-list-row h-[56px] cursor-pointer" onClick={onOpen}>
-      <td className="px-5 py-2">
+    <DataTableRow selected={selected} className="h-[56px] cursor-pointer" onClick={onOpen}>
+      <DataTableTd>
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sales-neutral-100 text-[11px] font-semibold text-sales-text-secondary">
             {initials(row.buyerName)}
@@ -438,19 +471,19 @@ function OfferTableRow({
             <p className="truncate text-[11px] text-sales-text-muted">{row.propertyLabel}</p>
           </div>
         </div>
-      </td>
-      <td className="px-3 py-2">
+      </DataTableTd>
+      <DataTableTd>
         <p className="text-[13px] font-semibold tabular-nums text-sales-text-primary">
           {row.currentAmountLabel}
         </p>
         <p className="truncate text-[11px] text-sales-text-muted">
           {vs ?? (row.listingPriceLabel ? `Ask ${row.listingPriceLabel}` : "—")}
         </p>
-      </td>
-      <td className="px-3 py-2">
+      </DataTableTd>
+      <DataTableTd>
         <OfferStatusPill status={row.status} />
-      </td>
-      <td className="px-3 py-2">
+      </DataTableTd>
+      <DataTableTd>
         <p
           className={cn(
             "truncate text-[12px]",
@@ -459,11 +492,11 @@ function OfferTableRow({
         >
           {next}
         </p>
-      </td>
+      </DataTableTd>
       {showAgent ? (
-        <td className="px-3 py-2 text-[12px] text-sales-text-secondary">{row.agentName ?? "—"}</td>
+        <DataTableTd className="text-[12px] text-sales-text-secondary">{row.agentName ?? "—"}</DataTableTd>
       ) : null}
-      <td className="px-5 py-2 text-right text-[11px] text-sales-text-muted">{row.lastActivityLabel}</td>
-    </tr>
+      <DataTableTd className="text-right text-[11px] text-sales-text-muted">{row.lastActivityLabel}</DataTableTd>
+    </DataTableRow>
   );
 }

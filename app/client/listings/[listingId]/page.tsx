@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { ListingDetailView } from "@/components/real-estate/ListingDetailView";
+import { CompanyListingDetailPage } from "@/components/real-estate/listings/CompanyListingDetailPage";
+import { CompanyListingsPageSkeleton } from "@/components/real-estate/listings/CompanyListingsPageSkeleton";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
+import { loadCompanyPageChrome } from "@/lib/real-estate/company-page-chrome";
 
 export default async function ClientListingDetailPage({
   params,
@@ -26,15 +29,18 @@ export default async function ClientListingDetailPage({
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
 
+  const chrome = await loadCompanyPageChrome({
+    userId: session.userId,
+    clientId: session.clientId,
+    userName: session.user?.name ?? "User",
+    role: session.role,
+  });
+
   return (
-    <ClientManagerLayout
-      breadcrumbPage="LISTING"
-      pageTitle="Listing"
-      workspaceShell
-      workspaceTitle="Listing"
-      workspaceDescription="Property details, marketing, offers, and buyer matches."
-    >
-      <ListingDetailView clientId={session.clientId} listingId={params.listingId} />
+    <ClientManagerLayout breadcrumbPage="LISTING" pageTitle="Listing" hideShellHeader hideShellSidebar>
+      <Suspense fallback={<CompanyListingsPageSkeleton />}>
+        <CompanyListingDetailPage chrome={chrome} clientId={session.clientId} listingId={params.listingId} />
+      </Suspense>
     </ClientManagerLayout>
   );
 }

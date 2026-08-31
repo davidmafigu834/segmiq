@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { OffersWorkspace } from "@/components/real-estate/offers/OffersWorkspace";
+import { CompanyOffersPage } from "@/components/real-estate/offers/CompanyOffersPage";
+import { CompanyOffersPageSkeleton } from "@/components/real-estate/offers/CompanyOffersPageSkeleton";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
+import { loadCompanyPageChrome } from "@/lib/real-estate/company-page-chrome";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -23,20 +26,18 @@ export default async function ClientOffersPage() {
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
 
+  const chrome = await loadCompanyPageChrome({
+    userId: session.userId,
+    clientId: session.clientId,
+    userName: session.user?.name ?? "User",
+    role: session.role,
+  });
+
   return (
-    <ClientManagerLayout
-      breadcrumbPage="OFFERS"
-      pageTitle="Offers"
-      workspaceShell
-      workspaceTitle="Offers"
-      workspaceDescription="Bids in play — seller response, counters, and accepted next steps."
-    >
-      <OffersWorkspace
-        clientId={session.clientId}
-        variant="manager"
-        inquiriesHref="/client/leads"
-        complianceHref="/client/compliance"
-      />
+    <ClientManagerLayout breadcrumbPage="OFFERS" pageTitle="Offers" hideShellHeader hideShellSidebar>
+      <Suspense fallback={<CompanyOffersPageSkeleton />}>
+        <CompanyOffersPage chrome={chrome} clientId={session.clientId} />
+      </Suspense>
     </ClientManagerLayout>
   );
 }

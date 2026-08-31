@@ -3,7 +3,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { shouldRedirectFromRealEstateRoute } from "../lib/real-estate/gating";
-import { viewingMatchesTab, viewingsFetchPlan } from "../lib/real-estate/viewings";
+import {
+  viewingCompanyKpis,
+  viewingCompanyTabCounts,
+  viewingIsOverdue,
+  viewingIsToday,
+  viewingMatchesCompanyTab,
+  viewingMatchesTab,
+  viewingsFetchPlan,
+} from "../lib/real-estate/viewings";
 
 function read(rel: string) {
   return fs.readFileSync(path.join(process.cwd(), rel), "utf8");
@@ -73,6 +81,35 @@ describe("viewings company scoping", () => {
     assert.equal(viewingMatchesTab("no_show", "cancelled"), true);
     assert.equal(viewingMatchesTab("no_show", "upcoming"), false);
     assert.equal(viewingMatchesTab("scheduled", "all"), true);
+  });
+
+  it("splits upcoming, today, and overdue for the company workspace", () => {
+    const now = Date.parse("2026-08-31T12:00:00.000Z");
+    const upcoming = { status: "scheduled", scheduled_at: "2026-08-31T18:00:00.000Z" };
+    const overdue = { status: "scheduled", scheduled_at: "2026-08-31T09:00:00.000Z" };
+    const done = { status: "completed", scheduled_at: "2026-08-30T09:00:00.000Z" };
+    assert.equal(viewingMatchesCompanyTab(upcoming, "upcoming", now), true);
+    assert.equal(viewingMatchesCompanyTab(overdue, "upcoming", now), false);
+    assert.equal(viewingMatchesCompanyTab(overdue, "overdue", now), true);
+    assert.equal(viewingMatchesCompanyTab(done, "overdue", now), false);
+    assert.equal(viewingIsOverdue("scheduled", overdue.scheduled_at, now), true);
+    const localNow = new Date(now);
+    const todayLocal = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 8, 0, 0);
+    const yesterdayLocal = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate() - 1, 8, 0, 0);
+    assert.equal(viewingIsToday(todayLocal.toISOString(), localNow), true);
+    assert.equal(viewingIsToday(yesterdayLocal.toISOString(), localNow), false);
+    const kpis = viewingCompanyKpis(
+      [
+        { ...upcoming, feedback_text: null },
+        { ...overdue, feedback_text: null },
+        { ...done, feedback_text: null },
+      ],
+      now
+    );
+    assert.equal(kpis.length, 5);
+    assert.equal(kpis[0]?.value, "1");
+    assert.equal(kpis[2]?.value, "1");
+    assert.equal(viewingCompanyTabCounts([upcoming, overdue, done], now).all, 3);
   });
 
   it("loads viewings only after listing ids for the current client", () => {

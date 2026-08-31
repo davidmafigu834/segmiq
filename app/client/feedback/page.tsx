@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { FeedbackWorkspace } from "@/components/real-estate/FeedbackWorkspace";
+import { CompanyFeedbackPage } from "@/components/real-estate/feedback/CompanyFeedbackPage";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
 import { viewingsFetchPlan } from "@/lib/real-estate/viewings";
+import { loadCompanyPageChrome } from "@/lib/real-estate/company-page-chrome";
 
 export const dynamic = "force-dynamic";
 
@@ -89,15 +90,16 @@ export default async function ClientFeedbackPage() {
     });
   }
 
+  const chrome = await loadCompanyPageChrome({
+    userId: session.userId,
+    clientId: session.clientId,
+    userName: session.user?.name ?? "User",
+    role: session.role,
+  });
+
   return (
-    <ClientManagerLayout
-      breadcrumbPage="FEEDBACK"
-      pageTitle="Feedback"
-      workspaceShell
-      workspaceTitle="Feedback"
-      workspaceDescription="Viewing comments, complaints and testimonials for the company owner."
-    >
-      <FeedbackWorkspace clientId={session.clientId} viewings={viewings} />
+    <ClientManagerLayout breadcrumbPage="FEEDBACK" pageTitle="Feedback" hideShellHeader hideShellSidebar>
+      <CompanyFeedbackPage chrome={chrome} clientId={session.clientId} viewings={viewings} />
     </ClientManagerLayout>
   );
 }

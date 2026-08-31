@@ -5,8 +5,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
 import { CompanyReportsPage } from "@/components/dashboard/company/reports/CompanyReportsPage";
-import { RealEstateReportsWorkspace } from "@/components/real-estate/RealEstateReportsWorkspace";
+import { CompanyReReportsPage } from "@/components/real-estate/reports/CompanyReReportsPage";
 import { isRealEstate } from "@/lib/terminology";
+import type { UserRole } from "@/types";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -49,12 +50,22 @@ export default async function ClientReportsPage({
       <ClientManagerLayout
         breadcrumbPage="REPORTS"
         pageTitle="Reports"
-        workspaceShell
-        workspaceTitle="Reports"
-        workspaceDescription="Enquiries, popular properties, viewings and conversions."
+        hideShellHeader
+        hideShellSidebar
         navClientId={clientId}
       >
-        <RealEstateReportsWorkspace clientId={clientId} />
+        <CompanyReReportsPage
+          chrome={{
+            unreadNotifications: unreadRes.count ?? 0,
+            notificationRole: session.role as UserRole,
+            userName: session.user?.name ?? "User",
+            avatarUrl: (userRes.data as { avatar_url?: string | null } | null)?.avatar_url ?? null,
+            companyName: (clientRes.data as { name?: string | null } | null)?.name ?? "Company",
+            companyLogoUrl: (clientRes.data as { logo_url?: string | null } | null)?.logo_url ?? null,
+            whatsappBadge,
+          }}
+          clientId={clientId}
+        />
       </ClientManagerLayout>
     );
   }

@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui";
 import { Badge } from "@/components/sales/ui";
 import { WorkspaceUnderlineTabs } from "@/components/real-estate/workspace-chrome";
 import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
+import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
 import { COMPLIANCE_RISK_LABEL, type ComplianceSettings } from "@/lib/real-estate/compliance";
 import { ComplianceCasePanel } from "./ComplianceCasePanel";
 
@@ -39,10 +40,14 @@ const TABS: Array<{ id: Tab; label: string }> = [
 export function ComplianceWorkspace({
   clientId,
   initialTab = "attention",
+  onSelectionChange,
 }: {
   clientId: string;
   initialTab?: Tab;
+  onSelectionChange?: (id: string | null) => void;
 }) {
+  const overlayPanel = useMediaQuery("(max-width: 1279px)");
+  const stackedSplit = useMediaQuery("(max-width: 767px)");
   const [tab, setTab] = useState<Tab>(initialTab);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -55,6 +60,11 @@ export function ComplianceWorkspace({
     approvedThisMonth: 0,
   });
   const [openId, setOpenId] = useState<string | null>(null);
+
+  function selectCase(id: string | null) {
+    setOpenId(id);
+    onSelectionChange?.(id);
+  }
   const [canReview, setCanReview] = useState(false);
   const [entityType, setEntityType] = useState("");
   const [risk, setRisk] = useState("");
@@ -85,24 +95,8 @@ export function ComplianceWorkspace({
     { label: "Approved this month", value: summary.approvedThisMonth },
   ];
 
-  return (
-    <div className="min-w-0 w-full max-w-full space-y-3">
-      <div className="dashboard-group grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {cards.map((c) => (
-          <CompanyKpiCard
-            key={c.label}
-            item={{
-              id: c.label,
-              label: c.label,
-              value: String(c.value),
-              supporting: "Live",
-              icon: c.label.includes("Restricted") ? "followups" : "deals",
-            }}
-          />
-        ))}
-      </div>
-
-      <section className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
+  const table = (
+      <section className="flex min-h-[660px] min-w-0 flex-col overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-sales-card">
       <WorkspaceUnderlineTabs items={TABS} value={tab} onChange={setTab} />
 
       <div className="flex flex-col gap-2 border-b border-sales-border-subtle px-4 py-3 sm:flex-row sm:px-5">
@@ -144,7 +138,7 @@ export function ComplianceWorkspace({
               <button
                 type="button"
                 className="w-full p-4 text-left hover:bg-sales-surface-hover"
-                onClick={() => setOpenId(row.id)}
+                onClick={() => selectCase(row.id)}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -171,15 +165,45 @@ export function ComplianceWorkspace({
         </ul>
       )}
       </section>
+  );
 
-      {openId ? (
+  const panel = openId ? (
         <ComplianceCasePanel
           clientId={clientId}
           caseId={openId}
-          onClose={() => setOpenId(null)}
+          onClose={() => selectCase(null)}
           onChanged={() => void load()}
+          overlay={overlayPanel}
+          stacked={stackedSplit}
         />
-      ) : null}
+  ) : null;
+
+  return (
+    <div className="min-w-0 w-full max-w-full space-y-3">
+      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        {cards.map((c) => (
+          <CompanyKpiCard
+            key={c.label}
+            item={{
+              id: c.label,
+              label: c.label,
+              value: String(c.value),
+              supporting: "Live",
+              icon: c.label.includes("Restricted") ? "followups" : "deals",
+            }}
+          />
+        ))}
+      </div>
+
+      {openId && !overlayPanel ? (
+        <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,40%)]">
+          {table}
+          <div className="min-h-0 xl:sticky xl:top-0">{panel}</div>
+        </div>
+      ) : (
+        table
+      )}
+      {openId && overlayPanel ? panel : null}
 
       {canReview ? <ComplianceSettingsPanel clientId={clientId} /> : null}
     </div>

@@ -1,10 +1,13 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { DevelopmentsManager } from "@/components/real-estate/DevelopmentsManager";
+import { CompanyDevelopmentsPage } from "@/components/real-estate/developments/CompanyDevelopmentsPage";
+import { CompanyDevelopmentsPageSkeleton } from "@/components/real-estate/developments/CompanyDevelopmentsPageSkeleton";
 import { redirectIfNotRealEstate } from "@/lib/real-estate/gating";
+import { loadCompanyPageChrome } from "@/lib/real-estate/company-page-chrome";
 
 export default async function ClientDevelopmentsPage() {
   const session = await getServerSession(authOptions);
@@ -22,15 +25,23 @@ export default async function ClientDevelopmentsPage() {
   if (!client) redirect("/login");
   redirectIfNotRealEstate(client.business_type);
 
+  const chrome = await loadCompanyPageChrome({
+    userId: session.userId,
+    clientId: session.clientId,
+    userName: session.user?.name ?? "User",
+    role: session.role,
+  });
+
   return (
     <ClientManagerLayout
       breadcrumbPage="DEVELOPMENTS"
       pageTitle="Developments"
-      workspaceShell
-      workspaceTitle="Developments"
-      workspaceDescription="New-development inventory: sold, available, and reserved units."
+      hideShellHeader
+      hideShellSidebar
     >
-      <DevelopmentsManager clientId={session.clientId} />
+      <Suspense fallback={<CompanyDevelopmentsPageSkeleton />}>
+        <CompanyDevelopmentsPage chrome={chrome} clientId={session.clientId} />
+      </Suspense>
     </ClientManagerLayout>
   );
 }

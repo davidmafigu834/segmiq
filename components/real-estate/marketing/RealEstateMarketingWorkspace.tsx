@@ -323,8 +323,8 @@ export function RealEstateMarketingWorkspace({
           <p className="mb-3 text-[12px] text-sales-text-muted">{data.cohortLabel}</p>
 
           {tab === "overview" || tab === "sources" || tab === "campaigns" || tab === "properties" ? (
-            <div className="dashboard-group grid grid-cols-2 gap-3 lg:grid-cols-5">
-              {kpis.map((c) => (
+            <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+              {kpis.slice(0, 5).map((c) => (
                 <CompanyKpiCard
                   key={c.label}
                   item={{
