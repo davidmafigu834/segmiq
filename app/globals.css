@@ -3954,6 +3954,17 @@ label[for="photo-input"] {
   --sales-sidebar-badge-text: #4e6500;
   --sales-sidebar-width: 228px;
   --sales-sidebar-width-collapsed: 68px;
+  --sales-sidebar-current-width: var(--sales-sidebar-width);
+
+  /* App shell layout — Phase 10 */
+  --sales-shell-breakpoint: 1100px;
+  --sales-topbar-height: 56px;
+  --sales-page-padding-x: 16px;
+  --sales-page-padding-x-sm: 24px;
+  --sales-page-padding-x-desktop: 32px;
+  --sales-page-padding-y: 24px;
+  --sales-page-padding-y-dense: 20px;
+  --sales-page-section-gap: 24px;
 
   /* Mobile chrome */
   --sales-mobile-header-height: 56px;
@@ -4260,7 +4271,7 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-tab-divider: rgba(148, 163, 184, 0.1);
 
   /* Sidebar — slightly deeper than the canvas */
-  --sales-sidebar-bg: #050510;
+  --sales-sidebar-bg: #030c1c;
   --sales-sidebar-border: rgba(127, 149, 194, 0.1);
   --sales-sidebar-divider: rgba(127, 149, 194, 0.08);
   --sales-sidebar-text: #cfd8ea;

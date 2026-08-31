@@ -138,6 +138,27 @@ export const SALES_FORM = {
   twoColumnMinWidth: 480,
 } as const;
 
+/** App shell, sidebar, top bar, page padding, responsive chrome */
+export const SALES_LAYOUT = {
+  /** Tailwind `layout:` screen — desktop sidebar vs mobile chrome */
+  shellBreakpointPx: 1100,
+  sidebarExpanded: 228,
+  sidebarCollapsed: 68,
+  sidebarCollapseMs: 200,
+  sidebarCollapsedStorageKey: "segmiq-sales-sidebar-collapsed",
+  mobileHeaderHeight: 56,
+  mobileNavHeight: 64,
+  topBarHeight: 56,
+  pagePaddingXMobile: 16,
+  pagePaddingXTablet: 24,
+  pagePaddingXDesktop: 32,
+  pagePaddingY: 24,
+  pagePaddingYDense: 20,
+  sectionGap: 24,
+  gridGap: 16,
+  bottomNavMaxItems: 5,
+} as const;
+
 /** Menus, selects, tooltips, filter pills */
 export const SALES_MENU = {
   minWidth: 180,

@@ -6,7 +6,6 @@ import {
   Building2,
   CalendarDays,
   ChevronDown,
-  ChevronRight,
   FileText,
   Phone,
   UserPlus,
@@ -16,6 +15,7 @@ import { BrandIcon } from "@/components/sales/ui/BrandIcon";
 import { NotificationBell } from "@/components/NotificationBell";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { SalesSidebar } from "@/components/sales/navigation/SalesSidebar";
+import { SalesBreadcrumbs } from "@/components/sales/navigation/SalesBreadcrumbs";
 import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import { SalesMobileTopBar } from "@/components/sales/navigation/SalesMobileTopBar";
@@ -39,45 +39,8 @@ import {
 } from "@/components/sales/ui";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
+import { cn } from "@/lib/ui/cn";
 import type { UserRole } from "@/types";
-
-function prettyCrumb(part: string) {
-  const trimmed = part.trim();
-  if (!trimmed) return trimmed;
-  if (trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed)) {
-    return trimmed
-      .toLowerCase()
-      .replace(/\bwhatsapp\b/g, "WhatsApp")
-      .replace(/\b\w/g, (c) => c.toUpperCase())
-      .replace(/\bWhatsapp\b/g, "WhatsApp");
-  }
-  return trimmed;
-}
-
-function BreadcrumbTrail({ value }: { value: string }) {
-  const parts = value.split(/\s*\/\s*/).map(prettyCrumb).filter(Boolean);
-  if (parts.length === 0) return null;
-
-  return (
-    <nav aria-label="Breadcrumb" className="min-w-0">
-      <ol className="flex min-w-0 items-center gap-1 text-[12px] leading-none text-sales-text-muted">
-        {parts.map((part, index) => {
-          const last = index === parts.length - 1;
-          return (
-            <li key={`${part}-${index}`} className="flex min-w-0 items-center gap-1">
-              {index > 0 ? (
-                <ChevronRight size={12} strokeWidth={1.8} className="shrink-0 opacity-45" aria-hidden />
-              ) : null}
-              <span className={`truncate ${last ? "font-medium text-sales-text-secondary" : "font-medium"}`}>
-                {part}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
-  );
-}
 
 export function SalesPageHeader({
   breadcrumb,
@@ -95,7 +58,7 @@ export function SalesPageHeader({
   return (
     <header className="min-w-0">
       <div className="hidden items-center gap-3 layout:flex">
-        {breadcrumb ? <BreadcrumbTrail value={breadcrumb} /> : <span className="min-w-0" />}
+        {breadcrumb ? <SalesBreadcrumbs value={breadcrumb} /> : <span className="min-w-0" />}
         {actions ? (
           <div className="ml-auto flex min-w-0 shrink-0 items-center justify-end gap-2">{actions}</div>
         ) : null}
@@ -209,6 +172,8 @@ function SalesAppShellInner({
   className = "",
   searchPlaceholder,
   hideMobileChrome = false,
+  contentFlush = false,
+  realEstate = false,
 }: {
   children: ReactNode;
   userName: string;
@@ -233,6 +198,9 @@ function SalesAppShellInner({
   className?: string;
   searchPlaceholder?: string;
   hideMobileChrome?: boolean;
+  /** Full-height workspace (WhatsApp hub) — no page padding, column flex scroll */
+  contentFlush?: boolean;
+  realEstate?: boolean;
 }) {
   const router = useRouter();
   const { collapsed, toggleCollapsed, width } = useSalesSidebarCollapsed();
@@ -254,7 +222,7 @@ function SalesAppShellInner({
           <SalesThemeToggle />
         </div>
         {showQuickActions ? (
-          <SalesQuickActions onAddLead={openAddHubSheet} onLogCall={onLogCall} />
+          <SalesQuickActions onAddLead={openAddHubSheet} onLogCall={onLogCall} realEstate={realEstate} />
         ) : null}
         <SalesProfileMenu
           userName={userName}
@@ -268,7 +236,10 @@ function SalesAppShellInner({
 
   return (
     <div
-      className={`sales-dashboard-premium dashboard-shell flex h-full max-h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-sales-bg text-sales-text-primary ${className}`}
+      className={cn(
+        "sales-dashboard-premium dashboard-shell flex h-[100dvh] max-h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-sales-bg text-sales-text-primary",
+        className
+      )}
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
@@ -287,7 +258,7 @@ function SalesAppShellInner({
         />
       </div>
 
-      {!hideMobileChrome ? (
+      {!hideMobileChrome && !hideBottomNav ? (
         <SalesMobileTopBar
           isSolo={isSolo}
           userName={userName}
@@ -300,15 +271,23 @@ function SalesAppShellInner({
 
       <div className="dashboard-canvas flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
         <div
-          className={[
-            "relative min-h-0 min-w-0 flex-1 w-full max-w-none overflow-y-auto overscroll-contain sales-mobile-scroll",
-            dense
-              ? "px-4 pb-4 pt-3 sm:px-6 layout:px-7 layout:py-5"
-              : "px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6",
-          ].join(" ")}
+          className={cn(
+            contentFlush
+              ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden sales-mobile-scroll"
+              : "sales-page-content relative min-h-0 min-w-0 flex-1 w-full max-w-none overflow-y-auto overscroll-contain sales-mobile-scroll",
+            !contentFlush && dense && "sales-page-content--dense"
+          )}
         >
           <SegmiQDotWave />
-          <div className={dense ? "relative space-y-3" : "relative space-y-3 layout:space-y-3"}>
+          <div
+            className={
+              contentFlush
+                ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+                : dense
+                  ? "relative space-y-3"
+                  : "relative space-y-3 layout:space-y-3"
+            }
+          >
             {showDefaultHeader && title ? (
               <SalesPageHeader
                 breadcrumb={breadcrumb}
@@ -342,8 +321,9 @@ function SalesAppShellInner({
               if (onLogCall) onLogCall();
               else router.push("/sales/call-now");
             }}
-            onCreateQuote={() => router.push("/sales/quotes")}
+            onCreateQuote={() => router.push(realEstate ? "/sales/listings" : "/sales/quotes")}
             onSchedule={() => router.push("/sales/calendar")}
+            realEstate={realEstate}
           />
         </>
       ) : null}

@@ -141,6 +141,37 @@ html[data-crm-theme="light"] .segmiq-dot-wave {
   display: none;
 }
 
+/* ---------- Phase 10: page content padding (shell-owned) ---------- */
+
+.sales-dashboard-premium .sales-page-content {
+  padding: 12px var(--sales-page-padding-x) 16px;
+}
+
+.sales-dashboard-premium .sales-page-content--dense {
+  padding-top: 12px;
+  padding-bottom: var(--sales-page-padding-y-dense);
+}
+
+@media (min-width: 640px) {
+  .sales-dashboard-premium .sales-page-content {
+    padding-left: var(--sales-page-padding-x-sm);
+    padding-right: var(--sales-page-padding-x-sm);
+  }
+}
+
+@media (min-width: 1100px) {
+  .sales-dashboard-premium .sales-page-content {
+    padding: var(--sales-page-padding-y) var(--sales-page-padding-x-desktop);
+  }
+
+  .sales-dashboard-premium .sales-page-content--dense {
+    padding-top: var(--sales-page-padding-y-dense);
+    padding-bottom: var(--sales-page-padding-y-dense);
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .rounded-xl.border {
   border-radius: 8px;
   background: linear-gradient(145deg, #081a35, #07162e);

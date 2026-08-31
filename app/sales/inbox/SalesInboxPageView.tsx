@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
-import { SalesLayout } from "@/components/layouts/SalesLayout";
-import { SoloLayout } from "@/components/layouts/SoloLayout";
 import { TeamInbox } from "@/components/inbox/TeamInbox";
 import { WhatsAppSalesHubShell } from "@/components/inbox/WhatsAppSalesHubShell";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
@@ -56,7 +54,6 @@ export async function SalesInboxPageView({
 
   const isSolo = session.clientMode === "solo";
   const dashboardHref = isSolo ? "/solo/dashboard" : "/sales/dashboard";
-  const Layout = isSolo ? SoloLayout : SalesLayout;
 
   const [navBadges, userRes] = await Promise.all([
     fetchSalesNavBadges(session.userId, session.clientId),
@@ -84,44 +81,36 @@ export async function SalesInboxPageView({
   const unreadNotifications = userRes.unreadCount;
 
   return (
-    <Layout
-      breadcrumb={breadcrumb}
-      pageTitle={pageTitle}
-      hideShellHeader
-      hideShellSidebar
-      contentFlush
+    <WhatsAppSalesHubShell
+      userName={session.user?.name ?? "Sales"}
+      userRoleLabel={isSolo ? "Owner" : "Sales Executive"}
+      avatarUrl={avatarUrl}
+      unreadNotifications={unreadNotifications}
+      notificationRole={session.role}
+      whatsappBadge={whatsappBadge}
+      tasksBadge={tasksBadge}
+      isSolo={isSolo}
     >
-      <WhatsAppSalesHubShell
-        userName={session.user?.name ?? "Sales"}
-        userRoleLabel={isSolo ? "Owner" : "Sales Executive"}
-        avatarUrl={avatarUrl}
-        unreadNotifications={unreadNotifications}
-        notificationRole={session.role}
-        whatsappBadge={whatsappBadge}
-        tasksBadge={tasksBadge}
-        isSolo={isSolo}
-      >
-        <Suspense fallback={<InboxSuspenseFallback />}>
-          <TeamInbox
-            userName={session.user?.name ?? "User"}
-            userId={session.userId}
-            role={session.role === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON"}
-            alsoSells={session.alsoSells}
-            clientId={session.clientId}
-            roleSubtitle={isSolo ? "Owner" : "Sales Executive"}
-            pipelineHref="/sales/pipeline"
-            settingsHref="/sales/profile"
-            inboxHref="/sales/inbox"
-            teamHref={isSolo ? undefined : dashboardHref}
-            initialFilter={initialFilter}
-            backHref={dashboardHref}
-            pageTitle={pageTitle}
-            breadcrumb={breadcrumb}
-            unreadNotifications={unreadNotifications}
-            avatarUrl={avatarUrl}
-          />
-        </Suspense>
-      </WhatsAppSalesHubShell>
-    </Layout>
+      <Suspense fallback={<InboxSuspenseFallback />}>
+        <TeamInbox
+          userName={session.user?.name ?? "User"}
+          userId={session.userId}
+          role={session.role === "CLIENT_MANAGER" ? "CLIENT_MANAGER" : "SALESPERSON"}
+          alsoSells={session.alsoSells}
+          clientId={session.clientId}
+          roleSubtitle={isSolo ? "Owner" : "Sales Executive"}
+          pipelineHref="/sales/pipeline"
+          settingsHref="/sales/profile"
+          inboxHref="/sales/inbox"
+          teamHref={isSolo ? undefined : dashboardHref}
+          initialFilter={initialFilter}
+          backHref={dashboardHref}
+          pageTitle={pageTitle}
+          breadcrumb={breadcrumb}
+          unreadNotifications={unreadNotifications}
+          avatarUrl={avatarUrl}
+        />
+      </Suspense>
+    </WhatsAppSalesHubShell>
   );
 }

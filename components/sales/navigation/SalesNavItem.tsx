@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { SiWhatsapp } from "react-icons/si";
+import { Tooltip } from "@/components/sales/ui/Tooltip";
 import {
   SALES_NAV_LUCIDE,
   type SalesNavIconId,
@@ -52,11 +53,10 @@ export function SalesNavItem({
   const showBadge = badge != null && badge > 0;
   const label = item.label;
 
-  return (
+  const link = (
     <Link
       href={item.href}
       onClick={onNavigate}
-      title={collapsed ? label : undefined}
       aria-label={collapsed ? (showBadge ? `${label}, ${badge}` : label) : undefined}
       aria-current={active ? "page" : undefined}
       data-course-target={`sales-nav-${item.id}`}
@@ -96,6 +96,16 @@ export function SalesNavItem({
       ) : null}
     </Link>
   );
+
+  if (collapsed) {
+    return (
+      <Tooltip label={label} side="right">
+        {link}
+      </Tooltip>
+    );
+  }
+
+  return link;
 }
 
 export function SalesNavSection({

@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { redirect } from "next/navigation";
 import { getSalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
-import { SalesLayout } from "@/components/layouts/SalesLayout";
 import { fetchSalesNavBadges } from "@/lib/sales/nav-badges";
 import SalesDashboardMain from "./SalesDashboardMain";
 import SalesDashboardSkeleton from "./SalesDashboardSkeleton";
@@ -53,24 +52,16 @@ export default async function SalesDashboardPage() {
   const tasksBadge = navBadges.followUpsToday || navBadges.callNow || 0;
 
   return (
-    <SalesLayout
-      breadcrumb="Sales / DASHBOARD"
-      pageTitle="Dashboard"
-      hideShellHeader
-      hideShellSidebar
-      contentFlush
-    >
-      <Suspense fallback={<SalesDashboardSkeleton />}>
-        <SalesDashboardMain
-          data={data}
-          session={session}
-          unreadNotifications={unread}
-          whatsappBadge={whatsappBadge}
-          tasksBadge={tasksBadge}
-          isSolo={session.clientMode === "solo"}
-          avatarUrl={avatarUrl}
-        />
-      </Suspense>
-    </SalesLayout>
+    <Suspense fallback={<SalesDashboardSkeleton />}>
+      <SalesDashboardMain
+        data={data}
+        session={session}
+        unreadNotifications={unread}
+        whatsappBadge={whatsappBadge}
+        tasksBadge={tasksBadge}
+        isSolo={session.clientMode === "solo"}
+        avatarUrl={avatarUrl}
+      />
+    </Suspense>
   );
 }

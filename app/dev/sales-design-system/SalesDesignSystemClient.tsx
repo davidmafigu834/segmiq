@@ -8,13 +8,18 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  Columns3,
   Copy,
   Edit,
+  Ellipsis,
   Filter,
   Info,
+  LayoutDashboard,
   LayoutList,
+  ListTodo,
   MessageCircle,
   MoreHorizontal,
+  PanelLeftClose,
   Phone,
   Plus,
   Search,
@@ -22,6 +27,7 @@ import {
   Trash2,
   UserPlus,
   Users,
+  UsersRound,
   Zap,
 } from "lucide-react";
 import {
@@ -114,6 +120,7 @@ import {
   SALES_FEEDBACK,
   SALES_FIELD_HEIGHT,
   SALES_FORM,
+  SALES_LAYOUT,
   SALES_MENU,
   SALES_OVERLAY,
   SALES_RADIUS,
@@ -121,6 +128,8 @@ import {
   SALES_TABLE,
 } from "@/lib/sales/design-tokens";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
+import { SalesBreadcrumbs } from "@/components/sales/navigation/SalesBreadcrumbs";
+import { SalesPageHeader } from "@/components/sales/shell/SalesAppShell";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { cn } from "@/lib/ui/cn";
 
@@ -137,6 +146,7 @@ const NAV = [
   { id: "overlays", label: "07 — Overlays & Feedback" },
   { id: "forms", label: "08 — Forms & Inputs" },
   { id: "menus", label: "09 — Menus & Pills" },
+  { id: "navigation", label: "10 — Navigation & Layout" },
   { id: "timeline", label: "Timeline" },
   { id: "charts", label: "Charts" },
   { id: "misc", label: "Icons & misc" },
@@ -1183,6 +1193,281 @@ function MenusShowcaseSection() {
             <li>Menu hover uses neutral wash · selected select option uses restrained lime-soft · destructive actions stay danger</li>
             <li>Filter pills are interactive constraints with remove controls · MetaPill remains passive metadata</li>
           </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function NavigationShowcaseSection() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [docTab, setDocTab] = useState("overview");
+  const sidebarWidth = sidebarCollapsed ? SALES_LAYOUT.sidebarCollapsed : SALES_LAYOUT.sidebarExpanded;
+
+  const sidebarItems = [
+    { label: "Dashboard", icon: LayoutDashboard, active: true, badge: undefined as number | undefined },
+    { label: "Pipeline", icon: Columns3, active: false },
+    { label: "WhatsApp", icon: null as null, active: false, badge: 3 },
+    { label: "Leads", icon: UsersRound, active: false },
+    { label: "Tasks", icon: ListTodo, active: false, badge: 2 },
+  ];
+
+  const bottomItems = ["Dashboard", "Pipeline", "WhatsApp", "Tasks", "More"];
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12px] text-sales-text-secondary">
+          Application chrome only — sidebar, top bar, breadcrumbs, tabs, mobile nav, and layout tokens. Documentation examples; production routes come from{" "}
+          <code className="rounded bg-sales-surface-subtle px-1 py-0.5 text-[11px]">sales-nav-config.ts</code>.
+        </p>
+        <SalesThemeToggle />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Sidebar · expanded / collapsed</CardTitle>
+            <CardDescription>
+              {SALES_LAYOUT.sidebarExpanded}px expanded · {SALES_LAYOUT.sidebarCollapsed}px collapsed · soft lime active wash · 3px rail
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <div
+                className="relative shrink-0 overflow-hidden rounded-[10px] border border-[var(--sales-sidebar-border)] bg-[var(--sales-sidebar-bg)] transition-[width] duration-200 ease-out"
+                style={{ width: sidebarWidth }}
+              >
+                <div className="flex h-14 items-center justify-between px-3">
+                  <span className="text-[11px] font-semibold tracking-tight text-[var(--sales-sidebar-text-active)]">
+                    {sidebarCollapsed ? "Q" : "SegmiQ"}
+                  </span>
+                  <button
+                    type="button"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)]"
+                    aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    onClick={() => setSidebarCollapsed((v) => !v)}
+                  >
+                    <PanelLeftClose size={14} strokeWidth={1.8} />
+                  </button>
+                </div>
+                <div className="px-2 pb-3">
+                  {!sidebarCollapsed ? (
+                    <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--sales-sidebar-muted)]">
+                      Sales
+                    </p>
+                  ) : null}
+                  <div className={cn("flex flex-col gap-1", sidebarCollapsed && "items-center")}>
+                    {sidebarItems.map((item) => (
+                      <div
+                        key={item.label}
+                        className={cn(
+                          "relative flex items-center rounded-[8px] text-[13px]",
+                          sidebarCollapsed ? "h-10 w-10 justify-center" : "h-10 gap-2.5 px-3",
+                          item.active ? "sales-nav-item-active font-semibold" : "text-[var(--sales-sidebar-text)]"
+                        )}
+                      >
+                        {item.active && !sidebarCollapsed ? <span className="sales-nav-rail" aria-hidden /> : null}
+                        {item.icon ? (
+                          <item.icon
+                            size={17}
+                            strokeWidth={1.75}
+                            className={item.active ? "text-[var(--sales-sidebar-icon-active)]" : "text-current"}
+                            aria-hidden
+                          />
+                        ) : (
+                          <BrandIcon brand="whatsapp" size={16} />
+                        )}
+                        {!sidebarCollapsed ? <span className="truncate">{item.label}</span> : null}
+                        {!sidebarCollapsed && item.badge ? (
+                          <Badge size="sm" className="ml-auto">
+                            {item.badge}
+                          </Badge>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="min-w-0 flex-1 space-y-2 text-[12px] text-sales-text-secondary">
+                <p>Inactive: transparent · muted text · neutral hover.</p>
+                <p>Active: lime gradient wash · lime icon · 600 weight · left rail — not a solid lime pill.</p>
+                <p>Collapsed: icons only + Tooltip labels (production).</p>
+                <p>Width token: <code className="font-mono text-[11px]">--sales-sidebar-current-width</code></p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Global top bar + page context</CardTitle>
+            <CardDescription>Global controls in header row · page identity via SalesPageHeader</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface">
+              <div className="flex h-14 items-center gap-2 border-b border-sales-border-subtle px-3">
+                <div className="hidden min-w-0 flex-1 items-center gap-2 sm:flex">
+                  <SearchInput placeholder="Search leads, deals, customers…" className="max-w-[280px]" />
+                </div>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <IconButton aria-label="Notifications" icon={<Bell size={16} strokeWidth={1.8} />} />
+                  <SalesThemeToggle />
+                  <Button size="sm">
+                    <Zap size={14} strokeWidth={1.8} aria-hidden />
+                    Quick actions
+                  </Button>
+                  <Avatar name="Sarah Ndlovu" size="sm" />
+                </div>
+              </div>
+              <div className="space-y-3 p-4">
+                <SalesPageHeader
+                  breadcrumb="Sales / Leads / Lead detail"
+                  title="Leads"
+                  description="Manage and prioritize your active sales conversations."
+                  titleActions={
+                    <Button size="sm" variant="secondary">
+                      Export
+                    </Button>
+                  }
+                />
+              </div>
+            </div>
+            <p className="text-[12px] text-sales-text-secondary">
+              Height ~{SALES_LAYOUT.topBarHeight}px · search uses Phase 02 SearchInput · Quick Actions uses Phase 01 Button + Phase 09 DropdownMenu.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Breadcrumbs</CardTitle>
+            <CardDescription>Hierarchy only · 11–12px · chevron separators</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <SalesBreadcrumbs
+              items={[
+                { label: "Sales", href: "/sales/dashboard" },
+                { label: "Leads", href: "/sales/pipeline" },
+                { label: "Lead detail" },
+              ]}
+            />
+            <SalesBreadcrumbs value="Company / Settings / Integrations" />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Tabs · Phase 04</CardTitle>
+            <CardDescription>Section navigation · underline · not segmented pills</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs
+              items={[
+                { id: "overview", label: "Overview" },
+                { id: "activity", label: "Activity" },
+                { id: "notes", label: "Notes" },
+                { id: "files", label: "Files" },
+              ]}
+              value={docTab}
+              onChange={setDocTab}
+            />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Mobile bottom nav</CardTitle>
+            <CardDescription>
+              {SALES_LAYOUT.mobileNavHeight}px + safe area · max {SALES_LAYOUT.bottomNavMaxItems} primary destinations
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface">
+              <div className="grid h-16 grid-cols-5 items-stretch px-1">
+                {bottomItems.map((label, index) => {
+                  const active = index === 1;
+                  const isMore = label === "More";
+                  return (
+                    <div
+                      key={label}
+                      className={cn(
+                        "flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium",
+                        active ? "text-sales-text-primary" : "text-sales-text-secondary"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "flex h-8 w-11 items-center justify-center rounded-[10px]",
+                          active && "bg-[var(--sales-sidebar-active)]"
+                        )}
+                      >
+                        {isMore ? (
+                          <Ellipsis size={18} strokeWidth={1.75} className={active ? "text-[var(--sales-sidebar-icon-active)]" : undefined} />
+                        ) : label === "WhatsApp" ? (
+                          <BrandIcon brand="whatsapp" size={18} />
+                        ) : (
+                          <LayoutDashboard size={18} strokeWidth={active ? 2 : 1.75} className={active ? "text-[var(--sales-sidebar-icon-active)]" : undefined} />
+                        )}
+                      </span>
+                      <span>{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="mt-3 text-[12px] text-sales-text-secondary">
+              Mobile top bar: {SALES_LAYOUT.mobileHeaderHeight}px · secondary routes in SalesMoreSheet (Phase 07).
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card variant="flat">
+        <CardContent className="grid gap-6 pt-5 lg:grid-cols-2">
+          <div className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              Breakpoints · actual codebase
+            </p>
+            <ul className="space-y-1.5 text-[12px] leading-relaxed text-sales-text-secondary">
+              <li>
+                <strong className="text-sales-text-primary">Shell desktop:</strong> Tailwind{" "}
+                <code className="font-mono text-[11px]">layout:</code> @ {SALES_LAYOUT.shellBreakpointPx}px — sidebar visible, mobile chrome hidden
+              </li>
+              <li>
+                <strong className="text-sales-text-primary">Mobile chrome:</strong> &lt; {SALES_LAYOUT.shellBreakpointPx}px — SalesMobileTopBar + SalesBottomNav
+              </li>
+              <li>
+                <strong className="text-sales-text-primary">Page padding:</strong> {SALES_LAYOUT.pagePaddingXMobile}px mobile ·{" "}
+                {SALES_LAYOUT.pagePaddingXTablet}px tablet · {SALES_LAYOUT.pagePaddingXDesktop}px desktop (shell-owned{" "}
+                <code className="font-mono text-[11px]">.sales-page-content</code>)
+              </li>
+              <li>
+                <strong className="text-sales-text-primary">CRM width:</strong> fluid — no universal 1280px max-width on operational pages
+              </li>
+            </ul>
+          </div>
+          <div className="space-y-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              12-column grid · layout tool
+            </p>
+            <div className="grid grid-cols-12 gap-2 rounded-[10px] border border-dashed border-sales-border p-3">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-8 rounded-[4px] bg-sales-brand/10 text-center text-[9px] leading-8 text-sales-text-muted"
+                >
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+            <p className="text-[12px] text-sales-text-secondary">
+              Documentation grid only — not rendered in production. Dashboard gaps typically 12–16px; section spacing{" "}
+              {SALES_LAYOUT.sectionGap}px.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -2361,6 +2646,15 @@ function ShowcaseInner() {
             description="Dropdown actions · MenuSelect values · tooltip guidance · active filter pills."
           >
             <MenusShowcaseSection />
+          </Section>
+
+          {/* ── Navigation & Layout ────────────────────────────── */}
+          <Section
+            id="navigation"
+            title="10 — Navigation & Layout"
+            description="App shell · sidebar · global top bar · breadcrumbs · tabs · mobile nav · responsive layout tokens."
+          >
+            <NavigationShowcaseSection />
           </Section>
 
           {/* ── Timeline ───────────────────────────────────────── */}

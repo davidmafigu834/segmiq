@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { UserRole } from "@/types";
 import { RetargetingBanners } from "@/components/sales/RetargetingBanner";
 import { useSalesLogSheet } from "@/components/sales/SalesLogFab";
@@ -10,22 +9,8 @@ import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import type { RetargetingStatusView } from "@/lib/retargeting-shared";
 import { buildPerformance } from "@/lib/sales/sales-dashboard-view";
 import type { SalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
-import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
-import { SalesSidebar } from "@/components/sales/navigation/SalesSidebar";
-import { SalesMobileTopBar } from "@/components/sales/navigation/SalesMobileTopBar";
-import { SalesBottomNav } from "@/components/sales/navigation/SalesBottomNav";
-import {
-  SalesMoreSheet,
-  SalesMobileQuickActionsSheet,
-} from "@/components/sales/navigation/SalesMoreSheet";
-import {
-  SalesMobileChromeProvider,
-  useSalesMobileChrome,
-} from "@/components/sales/navigation/SalesMobileChromeContext";
-import { ToastProvider } from "@/components/sales/ui/Toast";
-import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount";
+import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { CourseResumeCard } from "@/components/sales/training/CourseResumeCard";
-import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { DashboardHeader } from "./DashboardHeader";
 import { KpiCard } from "./KpiCard";
 import { PerformanceCard } from "./PerformanceCard";
@@ -65,11 +50,8 @@ function SalesDashboardInner({
   const fullName = s?.user?.name ?? "there";
   const firstName = fullName.split(" ")[0] ?? "there";
   const notificationRole = (s?.role ?? "SALESPERSON") as UserRole;
-  const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
-  const { collapsed, toggleCollapsed, width } = useSalesSidebarCollapsed();
-  const { setQuickActionsOpen, quickActionsOpen } = useSalesMobileChrome();
 
   useEffect(() => {
     setMounted(true);
@@ -78,12 +60,9 @@ function SalesDashboardInner({
   const legacy = data.legacy;
   const { openLogSheet, logSheetProps } = useSalesLogSheet();
   const { sheet } = logSheetProps(legacy.allActiveLeads);
-  const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
+  const { openAddHubSheet } = useAddHubSheet();
   const isRealEstate = Boolean(data.realEstate && data.clientId);
   const roleLabel = isRealEstate ? "Agent" : "Sales Executive";
-  const { hubSheet } = addHubSheetProps(legacy.assignmentMode ?? "direct", {
-    realEstate: isRealEstate,
-  });
 
   const performance = {
     ...buildPerformance(legacy),
@@ -112,56 +91,39 @@ function SalesDashboardInner({
   }
 
   return (
-    <div
-      className="sales-dashboard-premium dashboard-shell flex h-full max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-sales-bg text-sales-text-primary"
-      data-sidebar-collapsed={collapsed ? "true" : "false"}
-      style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
+    <SalesAppShell
+      userName={fullName}
+      userRoleLabel={roleLabel}
+      avatarUrl={avatarUrl}
+      unreadNotifications={unreadNotifications}
+      notificationRole={notificationRole}
+      whatsappBadge={whatsappBadge}
+      tasksBadge={tasksBadge}
+      isSolo={isSolo}
+      assignmentMode={legacy.assignmentMode ?? "direct"}
+      showDefaultHeader={false}
+      onLogCall={() => openLogSheet("")}
+      realEstate={isRealEstate}
     >
-      <div className="hidden layout:contents">
-        <SalesSidebar
-          userName={fullName}
-          userRoleLabel={roleLabel}
-          avatarUrl={avatarUrl}
-          isSolo={isSolo}
-          whatsappBadge={whatsappBadge}
-          tasksBadge={tasksBadge}
-          collapsed={collapsed}
-          onToggleCollapsed={toggleCollapsed}
-        />
-      </div>
-
-      <SalesMobileTopBar
-        isSolo={isSolo}
-        userName={fullName}
-        userRoleLabel={roleLabel}
-        avatarUrl={avatarUrl}
-        unreadNotifications={unreadNotifications}
-        notificationRole={notificationRole}
-      />
-
-      <div className="dashboard-canvas flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
-        <div className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain sales-mobile-scroll px-4 pb-4 pt-3 sm:px-6 layout:px-8 layout:py-6">
-          <SegmiQDotWave />
-          <div className="relative space-y-3 sm:space-y-3">
-          {isRealEstate ? (
-            <>
-              <DashboardHeader
-                firstName={firstName}
-                userName={fullName}
-                avatarUrl={avatarUrl}
-                unreadNotifications={unreadNotifications}
-                notificationRole={notificationRole}
-                onOpenLog={() => openLogSheet("")}
-                onAddLead={openAddHubSheet}
-                description="Here's what needs attention across your inquiries and viewings today."
-                userRoleLabel={roleLabel}
-                realEstate
-              />
-              <CourseResumeCard />
-              <AgentDailyWorkspace clientId={data.clientId!} data={data.realEstate!} />
-            </>
-          ) : (
-            <>
+      {isRealEstate ? (
+        <>
+          <DashboardHeader
+            firstName={firstName}
+            userName={fullName}
+            avatarUrl={avatarUrl}
+            unreadNotifications={unreadNotifications}
+            notificationRole={notificationRole}
+            onOpenLog={() => openLogSheet("")}
+            onAddLead={openAddHubSheet}
+            description="Here's what needs attention across your inquiries and viewings today."
+            userRoleLabel={roleLabel}
+            realEstate
+          />
+          <CourseResumeCard />
+          <AgentDailyWorkspace clientId={data.clientId!} data={data.realEstate!} />
+        </>
+      ) : (
+        <>
           <DashboardHeader
             firstName={firstName}
             userName={fullName}
@@ -190,7 +152,7 @@ function SalesDashboardInner({
                   <>
                     {" "}
                     <Link href="/client/dashboard" className="font-medium text-sales-brand-fg hover:underline">
-                      Return to the manager dashboard
+                      Return to the manager portal
                     </Link>{" "}
                     for full team visibility.
                   </>
@@ -199,7 +161,6 @@ function SalesDashboardInner({
             </div>
           ) : null}
 
-          {/* Mobile: Today's Focus + Plan first */}
           <div className="space-y-4 layout:hidden">
             <TodaysFocusCard
               focus={data.focus}
@@ -220,7 +181,6 @@ function SalesDashboardInner({
             ))}
           </div>
 
-          {/* Desktop Today's Focus */}
           <div className="hidden layout:block">
             <TodaysFocusCard
               focus={data.focus}
@@ -234,7 +194,6 @@ function SalesDashboardInner({
             />
           </div>
 
-          {/* Action tables — full width so columns can breathe */}
           <div className="w-full min-w-0 space-y-4 layout:space-y-5">
             <NewEnquiriesCard
               items={data.priorityEnquiries}
@@ -247,10 +206,8 @@ function SalesDashboardInner({
             <DealsAttentionCard items={data.priorityDeals} hasAnyDeals={data.hasAnyDeals} />
           </div>
 
-          {/* Pipeline snapshot — full width under action work */}
           <PipelineSnapshotCard stages={data.pipelineSnapshot} />
 
-          {/* Intelligence / analytics — own row so they never squeeze tables */}
           <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 layout:gap-5">
             <LeadDealFunnelCard stages={data.funnel} />
             <ActivityTodayCard metrics={data.activityToday} />
@@ -263,40 +220,16 @@ function SalesDashboardInner({
           <div className="hidden layout:block">
             <TodaysSalesPlanStrip {...data.planSummary} />
           </div>
-            </>
-          )}
-        </div>
-        </div>
-      </div>
-
-      <SalesBottomNav isSolo={isSolo} whatsappBadge={whatsappBadge} tasksBadge={tasksBadge} />
-      <SalesMoreSheet isSolo={isSolo} onQuickActions={() => setQuickActionsOpen(true)} />
-      <SalesMobileQuickActionsSheet
-        open={quickActionsOpen}
-        onClose={() => setQuickActionsOpen(false)}
-        onAddLead={() => openAddHubSheet()}
-        onLogCall={() => openLogSheet("")}
-        onCreateQuote={() => router.push(isRealEstate ? "/sales/listings" : "/sales/quotes")}
-        onSchedule={() => router.push("/sales/calendar")}
-        realEstate={isRealEstate}
-      />
+        </>
+      )}
 
       {sheet}
-      {hubSheet}
-    </div>
+    </SalesAppShell>
   );
 }
 
 export function SalesDashboard(props: SalesDashboardProps) {
-  return (
-    <ToastProvider>
-      <SalesMobileChromeProvider>
-        <GuidedCourseMount isSolo={props.isSolo}>
-          <SalesDashboardInner {...props} />
-        </GuidedCourseMount>
-      </SalesMobileChromeProvider>
-    </ToastProvider>
-  );
+  return <SalesDashboardInner {...props} />;
 }
 
 function SalesDashboardSkeletonShell() {
