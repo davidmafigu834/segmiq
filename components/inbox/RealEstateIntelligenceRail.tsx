@@ -158,7 +158,7 @@ export function RealEstateIntelligenceRail({
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex items-center gap-3 border-b border-sales-border-subtle px-4 py-3">
-          <WhatsAppAvatar conversation={conversation} size={40} />
+          <WhatsAppAvatar name={displayName} phone={conversation.phone} size="md" />
           <div className="min-w-0">
             <p className="truncate text-[14px] font-semibold text-sales-text-primary">{displayName}</p>
             {panel?.dealSideLabel ? (
