@@ -112,7 +112,15 @@ export async function GET(req: Request, { params }: { params: { leadId: string }
     ? await conversationLearningSummary(access.clientId, access.leadId)
     : { evidence: [], candidates: [] };
 
-  const openEscalationRow = asRow(openEscalation) ?? null;
+  const openEscalationRow = asRow<{
+    id: string;
+    reason: string;
+    severity: string;
+    summary: string;
+    briefing: Record<string, unknown> | null;
+    status: string;
+    created_at: string;
+  }>(openEscalation);
   const actionCards = buildAgentActionCards({
     blockedActions: suggestedActions,
     openEscalation: openEscalationRow,
