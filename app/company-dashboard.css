@@ -607,6 +607,17 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium aside.fixe
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-nav-item-active {
+  background: var(--sales-sidebar-active-gradient);
+  color: var(--sales-sidebar-text-active);
+  box-shadow: none;
+}
+
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-nav-item-active-collapsed {
+  background: var(--sales-sidebar-active);
+  color: var(--sales-sidebar-text-active);
+}
+
 .sales-dashboard-premium .sales-nav-rail {
   position: absolute;
   left: 0;
@@ -617,6 +628,11 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium aside.fixe
   border-radius: 999px;
   background: #d4ff4f;
   box-shadow: 0 0 12px rgba(212, 255, 79, 0.12);
+}
+
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-nav-rail {
+  background: var(--sales-sidebar-active-indicator);
+  box-shadow: none;
 }
 
 .sales-dashboard-premium aside a:not(.sales-nav-item-active):not(.sales-nav-item-active-collapsed) {
@@ -671,6 +687,34 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(132, 151, 190, 0.42);
+}
+
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll,
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 24, 40, 0.35) transparent;
+}
+
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar,
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-track,
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb,
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollbar-thumb {
+  background: rgba(16, 24, 40, 0.28);
+  border-radius: 999px;
+}
+
+html[data-crm-theme="light"] .sales-dashboard-premium .sales-mobile-scroll::-webkit-scrollbar-thumb:hover,
+html[data-crm-theme="light"] .sales-dashboard-premium aside nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 24, 40, 0.48);
 }
 
 /* ---------- Section headings ---------- */

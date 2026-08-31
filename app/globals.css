@@ -162,18 +162,28 @@ html:has(.crm-theme-light) body {
   color-scheme: light;
 }
 
+html[data-crm-theme="light"],
+html:has(.crm-theme-light) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 24, 40, 0.32) transparent;
+}
+
 html[data-crm-theme="light"]::-webkit-scrollbar-thumb,
 html:has(.crm-theme-light)::-webkit-scrollbar-thumb,
 html[data-crm-theme="light"] body::-webkit-scrollbar-thumb,
-html:has(.crm-theme-light) body::-webkit-scrollbar-thumb {
-  background: rgba(28, 32, 20, 0.18);
+html:has(.crm-theme-light) body::-webkit-scrollbar-thumb,
+html[data-crm-theme="light"] ::-webkit-scrollbar-thumb,
+html:has(.crm-theme-light) ::-webkit-scrollbar-thumb {
+  background: rgba(16, 24, 40, 0.28);
 }
 
 html[data-crm-theme="light"]::-webkit-scrollbar-thumb:hover,
 html:has(.crm-theme-light)::-webkit-scrollbar-thumb:hover,
 html[data-crm-theme="light"] body::-webkit-scrollbar-thumb:hover,
-html:has(.crm-theme-light) body::-webkit-scrollbar-thumb:hover {
-  background: rgba(28, 32, 20, 0.28);
+html:has(.crm-theme-light) body::-webkit-scrollbar-thumb:hover,
+html[data-crm-theme="light"] ::-webkit-scrollbar-thumb:hover,
+html:has(.crm-theme-light) ::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 24, 40, 0.45);
 }
 
 html[data-crm-theme="light"],
