@@ -1062,12 +1062,12 @@ function MenusShowcaseSection() {
             <CardDescription>Actions · menu / menuitem · portal positioned</CardDescription>
           </CardHeader>
           <CardContent>
-            <DropdownMenu>
+            <DropdownMenu align="start">
               <DropdownMenuTrigger className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover">
                 Actions
                 <MoreHorizontal size={16} strokeWidth={1.8} />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
+              <DropdownMenuContent>
                 <DropdownMenuItem icon={<LayoutList size={16} strokeWidth={1.8} />}>
                   View details
                 </DropdownMenuItem>
