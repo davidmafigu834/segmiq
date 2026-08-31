@@ -232,6 +232,7 @@ export async function sendCanonicalWhatsAppMedia(input: {
   actorRole: string;
   mediaId?: string | null;
   mediaStorageKey?: string | null;
+  mediaBytesBase64?: string;
 }): Promise<SendResult & { channel: "whatsapp"; providerType?: string }> {
   const recipient = await resolveCanonicalLeadRecipient(input);
   const context: LogMessageParams = {
@@ -275,6 +276,7 @@ export async function sendCanonicalWhatsAppMedia(input: {
     url: input.url,
     messageType: input.messageType,
     mediaId: input.mediaId,
+    mediaBytesBase64: input.mediaBytesBase64,
   };
   const result = provider.sendMedia
     ? await provider.sendMedia(mediaInput)

@@ -535,17 +535,67 @@ async function startConnection(
   });
 }
 
+function normalizeMediaHostname(hostname: string): string {
+  const lower = hostname.trim().toLowerCase();
+  return lower.startsWith("www.") ? lower.slice(4) : lower;
+}
+
 function mediaHostAllowed(url: URL): boolean {
   if (url.protocol !== "https:") return false;
-  const hostname = url.hostname.toLowerCase();
+  const hostname = normalizeMediaHostname(url.hostname);
+  const allowed = new Set<string>();
   try {
-    if (new URL(appBase).hostname.toLowerCase() === hostname) return true;
+    allowed.add(normalizeMediaHostname(new URL(appBase).hostname));
   } catch {
     // ignore malformed app base
   }
-  const hosts = (process.env.WHATSAPP_GATEWAY_MEDIA_HOSTS ?? "")
-    .split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
-  return hosts.includes(hostname);
+  for (const value of (process.env.WHATSAPP_GATEWAY_MEDIA_HOSTS ?? "").split(",")) {
+    const host = value.trim();
+    if (host) allowed.add(normalizeMediaHostname(host));
+  }
+  return allowed.has(hostname);
+}
+
+function decodeOutboundMediaBytes(mediaBytesBase64: string | undefined): Buffer | null {
+  if (!mediaBytesBase64?.trim()) return null;
+  try {
+    const bytes = Buffer.from(mediaBytesBase64, "base64");
+    return bytes.length > 0 ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveOutboundMediaBytes(input: {
+  url?: string;
+  mediaBytesBase64?: string;
+}): Promise<{ ok: true; bytes: Buffer } | { ok: false; status: number; error: string; errorCode?: string }> {
+  const inline = decodeOutboundMediaBytes(input.mediaBytesBase64);
+  if (inline) {
+    if (inline.length > 20 * 1024 * 1024) {
+      return { ok: false, status: 413, error: "File exceeds 20 MB" };
+    }
+    return { ok: true, bytes: inline };
+  }
+  let mediaUrl: URL;
+  try {
+    mediaUrl = new URL(input.url ?? "");
+  } catch {
+    return { ok: false, status: 400, error: "Media URL is required", errorCode: "INVALID_MEDIA_HOST" };
+  }
+  if (!mediaHostAllowed(mediaUrl)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Media host is not allowed for quick connection sends",
+      errorCode: "INVALID_MEDIA_HOST",
+    };
+  }
+  const mediaResponse = await fetch(mediaUrl, { signal: AbortSignal.timeout(20_000), redirect: "error" });
+  if (!mediaResponse.ok) return { ok: false, status: 502, error: "Media download failed" };
+  const bytes = Buffer.from(await mediaResponse.arrayBuffer());
+  if (bytes.length > 20 * 1024 * 1024) return { ok: false, status: 413, error: "File exceeds 20 MB" };
+  return { ok: true, bytes };
 }
 
 function outboundMediaKind(input: {
@@ -625,31 +675,25 @@ async function handle(request: IncomingMessage, response: ServerResponse): Promi
       to?: string;
       body?: string;
       url?: string;
+      mediaBytesBase64?: string;
       filename?: string;
       mimeType?: string;
       messageType?: "image" | "video" | "document";
     };
     const digits = input.to?.replace(/\D/g, "") ?? "";
-    let mediaUrl: URL;
-    try {
-      mediaUrl = new URL(input.url ?? "");
-    } catch {
-      return json(response, 400, { ok: false, error: "Media URL is required" });
-    }
-    if (!digits || !mediaHostAllowed(mediaUrl)) {
-      return json(response, 400, {
-        ok: false,
-        error: "Media host is not allowed for quick connection sends",
-        errorCode: "INVALID_MEDIA_HOST",
-      });
-    }
+    if (!digits) return json(response, 400, { ok: false, error: "Recipient is required" });
     if (!maySendManualMessage(session)) {
       return json(response, 429, { ok: false, error: "Too many messages sent. Please wait a moment and try again.", errorCode: "RATE_LIMITED" });
     }
-    const mediaResponse = await fetch(mediaUrl, { signal: AbortSignal.timeout(20_000), redirect: "error" });
-    if (!mediaResponse.ok) return json(response, 502, { ok: false, error: "Media download failed" });
-    const bytes = Buffer.from(await mediaResponse.arrayBuffer());
-    if (bytes.length > 20 * 1024 * 1024) return json(response, 413, { ok: false, error: "File exceeds 20 MB" });
+    const resolved = await resolveOutboundMediaBytes(input);
+    if (!resolved.ok) {
+      return json(response, resolved.status, {
+        ok: false,
+        error: resolved.error,
+        errorCode: resolved.errorCode,
+      });
+    }
+    const bytes = resolved.bytes;
     const kind = outboundMediaKind(input);
     const caption = input.body?.trim() || undefined;
     const mimeType = input.mimeType ?? "application/octet-stream";

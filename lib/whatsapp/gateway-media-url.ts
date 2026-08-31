@@ -26,7 +26,9 @@ export function buildGatewayOutboundMediaUrl(storageKey: string): string {
     throw new Error("Invalid outbound media key");
   }
   const base = (
-    process.env.SEGMIQ_INTERNAL_BASE_URL?.trim() || getPublicBaseUrl()
+    process.env.WHATSAPP_GATEWAY_MEDIA_BASE_URL?.trim() ||
+    process.env.SEGMIQ_INTERNAL_BASE_URL?.trim() ||
+    getPublicBaseUrl()
   ).replace(/\/$/, "");
   const exp = Date.now() + MEDIA_URL_TTL_MS;
   const sig = signOutboundMediaKey(storageKey, exp);

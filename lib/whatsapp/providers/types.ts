@@ -82,6 +82,8 @@ export type ProviderSendDocumentInput = ProviderSendTextInput & {
   filename: string;
   mimeType: string;
   url: string;
+  /** Inline payload for QR gateway sends — avoids URL host allowlisting. */
+  mediaBytesBase64?: string;
 };
 
 export type ProviderSendMediaInput = ProviderSendDocumentInput & {

@@ -1,5 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateWhatsAppOutboundKey, getPublicUrl, isR2Configured, putObject } from "@/lib/storage/r2";
+import {
+  generateWhatsAppOutboundKey,
+  getObject,
+  getPublicUrl,
+  isR2Configured,
+  putObject,
+} from "@/lib/storage/r2";
 import type { SendResult } from "@/lib/messaging/log";
 import { getSafeWhatsAppConnection } from "./connections";
 import { isWhatsAppSessionOpen } from "./inbound";
@@ -85,7 +91,7 @@ export async function sendWhatsAppMediaToLead(opts: {
 
   if (opts.buffer) {
     if (!isR2Configured()) {
-      if (connection.providerType === "TEMPORARY_WEB") {
+      if (connection.providerType !== "TEMPORARY_WEB") {
         return {
           ok: false,
           error: "File storage is not configured, so attachments cannot be sent.",
@@ -129,7 +135,7 @@ export async function sendWhatsAppMediaToLead(opts: {
     if (upload.ok) mediaId = upload.id;
   }
 
-  if (!publicUrl && !mediaId) {
+  if (!publicUrl && !mediaId && connection.providerType !== "TEMPORARY_WEB") {
     return {
       ok: false,
       error: "Could not store the file for WhatsApp. Check file storage settings.",
@@ -138,6 +144,29 @@ export async function sendWhatsAppMediaToLead(opts: {
     };
   }
 
+  let mediaBytesBase64: string | undefined;
+  if (connection.providerType === "TEMPORARY_WEB") {
+    let bytes: Buffer | null = opts.buffer ?? null;
+    if (!bytes && storageKey) {
+      try {
+        bytes = await getObject(storageKey);
+      } catch {
+        bytes = null;
+      }
+    }
+    if (!bytes || bytes.length === 0) {
+      return {
+        ok: false,
+        error: "Could not read the file for WhatsApp. Try uploading again.",
+        errorCode: "STORAGE_UNAVAILABLE",
+        channel: "whatsapp",
+      };
+    }
+    mediaBytesBase64 = bytes.toString("base64");
+  }
+
+  const persistUrl =
+    storageKey && isR2Configured() ? getPublicUrl(storageKey) : publicUrl || mediaId || "";
   const body = placeholderBodyForMedia(validated.messageType, validated.filename, opts.caption);
   const result = await sendCanonicalWhatsAppMedia({
     clientId,
@@ -146,13 +175,14 @@ export async function sendWhatsAppMediaToLead(opts: {
     body,
     filename: validated.filename,
     mimeType: validated.mimeType,
-    url: publicUrl || mediaId || "",
+    url: persistUrl,
     messageType: validated.messageType,
     actorId: opts.actorId,
     actorName: opts.actorName,
     actorRole: opts.actorRole,
     mediaId,
     mediaStorageKey: storageKey || null,
+    mediaBytesBase64,
   });
 
   return { ...result, messageType: validated.messageType };

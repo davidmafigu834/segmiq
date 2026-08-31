@@ -41,6 +41,7 @@ async function sendTemporaryDocument(input: {
   filename: string;
   mimeType: string;
   url: string;
+  mediaBytesBase64?: string;
   messageType?: "image" | "video" | "document";
 }): Promise<ProviderSendResult> {
   if (!input.connectionId) {
@@ -57,6 +58,7 @@ async function sendTemporaryDocument(input: {
         filename: input.filename,
         mimeType: input.mimeType,
         url: input.url,
+        mediaBytesBase64: input.mediaBytesBase64,
         messageType: input.messageType,
       },
     });
@@ -73,6 +75,7 @@ async function sendTemporaryMedia(input: {
   filename: string;
   mimeType: string;
   url: string;
+  mediaBytesBase64?: string;
   messageType: "image" | "video" | "document";
 }): Promise<ProviderSendResult> {
   if (!input.connectionId) {
@@ -89,6 +92,7 @@ async function sendTemporaryMedia(input: {
         filename: input.filename,
         mimeType: input.mimeType,
         url: input.url,
+        mediaBytesBase64: input.mediaBytesBase64,
         messageType: input.messageType,
       },
     });
