@@ -7,8 +7,6 @@ import {
   Bell,
   CalendarDays,
   Check,
-  CheckCircle2,
-  Info,
   Filter,
   LayoutList,
   MoreHorizontal,
@@ -19,7 +17,6 @@ import {
   Trash2,
   Users,
   Zap,
-  XCircle,
 } from "lucide-react";
 import {
   ActivityRow,
@@ -55,7 +52,6 @@ import {
   DataTableToolbar,
   DataTableToolbarGroup,
   DataTableWorkspace,
-  EmptyState,
   FieldError,
   FieldHint,
   FieldLabel,
