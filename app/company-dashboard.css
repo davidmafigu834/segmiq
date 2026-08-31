@@ -158,9 +158,9 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .rounded-x
   box-shadow: var(--sales-shadow-card);
 }
 
-/* Workspace cards — same navy as Team / dashboard panels, 14px radius */
+/* Workspace cards — large panels use 14px; Card primitive uses 12px via Tailwind */
 .sales-dashboard-premium .workspace-card {
-  border: 1px solid var(--sales-border-subtle);
+  border: 1px solid var(--sales-card-border, var(--sales-border-subtle));
   border-radius: 14px;
   background: var(--sales-surface);
   box-shadow: var(--sales-shadow-card);
@@ -257,10 +257,10 @@ html[data-crm-theme="light"] .dashboard-group::after {
 .sales-dashboard-premium .dashboard-kpi {
   --kpi-accent: var(--sales-info);
   position: relative;
-  border: 1px solid rgba(115, 142, 199, 0.14);
-  border-radius: 8px;
-  background: var(--sales-surface-raised, var(--sales-surface));
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.04), inset 0 1px rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--sales-card-border, rgba(115, 142, 199, 0.14));
+  border-radius: 12px;
+  background: var(--sales-surface);
+  box-shadow: var(--sales-shadow-card);
 }
 
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .dashboard-kpi {

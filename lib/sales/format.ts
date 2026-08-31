@@ -15,6 +15,7 @@ export const STAGE_LABELS: Record<string, string> = {
   LOST: "Lost",
   NOT_QUALIFIED: "Not qualified",
   QUALIFIED: "Qualified",
+  SCOPING: "Scoping",
   CONVERTED_TO_DEAL: "Deal created",
 };
 

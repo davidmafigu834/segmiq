@@ -432,9 +432,14 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-/* ─── Tabs (page-level underline — not part of Phase 03 redesign) ────────── */
+/* ─── Tabs (page-level underline navigation — Phase 04) ──────────────────── */
 
-export type TabItem = { id: string; label: string };
+export type TabItem = {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  disabled?: boolean;
+};
 
 export function Tabs({
   items,
@@ -447,11 +452,33 @@ export function Tabs({
   onChange: (id: string) => void;
   className?: string;
 }) {
+  const enabled = items.filter((item) => !item.disabled);
+
+  function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (enabled.length === 0) return;
+    const idx = enabled.findIndex((item) => item.id === value);
+    if (idx < 0) return;
+    let next = -1;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      next = (idx + 1) % enabled.length;
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      next = (idx - 1 + enabled.length) % enabled.length;
+    } else if (e.key === "Home") {
+      next = 0;
+    } else if (e.key === "End") {
+      next = enabled.length - 1;
+    }
+    if (next < 0) return;
+    e.preventDefault();
+    onChange(enabled[next].id);
+  }
+
   return (
     <div
       role="tablist"
+      onKeyDown={onKeyDown}
       className={cn(
-        "scrollbar-hide flex gap-4 overflow-x-auto overscroll-x-contain border-b border-sales-border-subtle",
+        "scrollbar-hide flex gap-1 overflow-x-auto overscroll-x-contain border-b border-[var(--sales-tab-divider,var(--sales-border-subtle))]",
         className
       )}
     >
@@ -463,18 +490,36 @@ export function Tabs({
             type="button"
             role="tab"
             aria-selected={active}
-            onClick={() => onChange(item.id)}
+            disabled={item.disabled}
+            tabIndex={active ? 0 : -1}
+            onClick={() => {
+              if (!item.disabled) onChange(item.id);
+            }}
             className={cn(
-              "relative h-11 shrink-0 whitespace-nowrap text-[13px] transition-colors duration-150",
-              "focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]",
+              "relative inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 text-[13px] sm:h-10",
+              "transition-[color,background-color] duration-[140ms] ease motion-reduce:transition-none",
+              "focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+              "focus-visible:outline-[var(--sales-control-focus-outline,#d4ff4f)]",
+              "disabled:cursor-not-allowed disabled:opacity-50",
               active
                 ? "font-semibold text-sales-text-primary"
-                : "font-medium text-sales-text-secondary hover:text-sales-text-primary"
+                : "font-medium text-sales-text-secondary hover:bg-[var(--sales-tab-hover)] hover:text-sales-text-primary"
             )}
           >
-            {item.label}
+            {item.icon ? (
+              <span
+                className="inline-flex size-3.5 shrink-0 items-center justify-center [&_svg]:size-3.5"
+                aria-hidden
+              >
+                {item.icon}
+              </span>
+            ) : null}
+            <span className="leading-none">{item.label}</span>
             {active ? (
-              <span className="absolute inset-x-0 -bottom-px h-[3px] bg-sales-brand" aria-hidden />
+              <span
+                className="absolute inset-x-3 -bottom-px h-[3px] rounded-t-full bg-sales-brand"
+                aria-hidden
+              />
             ) : null}
           </button>
         );

@@ -3919,6 +3919,8 @@ label[for="photo-input"] {
   --sales-segment-active-shadow: 0 1px 2px rgba(16, 24, 40, 0.08);
   --sales-segment-count-active: rgba(16, 24, 40, 0.1);
   --sales-segment-count-idle: var(--sales-neutral-100);
+  --sales-tab-hover: rgba(16, 24, 40, 0.025);
+  --sales-tab-divider: rgba(16, 24, 40, 0.08);
 
   /* Sales sidebar — chrome, not white */
   --sales-sidebar-bg: #f4f6fb;
@@ -3994,9 +3996,8 @@ label[for="photo-input"] {
   --sales-radius-pill: 999px;
 
   /* Shadows — layered so cards read as separated without looking heavy */
-  --sales-shadow-card: 0 1px 2px rgba(16, 24, 64, 0.04), 0 1px 3px -1px rgba(16, 24, 64, 0.03);
-  --sales-shadow-card-hover: 0 1px 2px rgba(16, 24, 64, 0.05),
-    0 8px 20px -8px rgba(16, 24, 64, 0.12);
+  --sales-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 12px rgba(16, 24, 40, 0.04);
+  --sales-shadow-card-hover: 0 2px 4px rgba(16, 24, 40, 0.05), 0 8px 20px -6px rgba(16, 24, 40, 0.1);
   --sales-shadow-raised: 0 1px 2px rgba(16, 24, 64, 0.05), 0 4px 10px -4px rgba(16, 24, 64, 0.07);
   --sales-shadow-popover: 0 1px 2px rgba(16, 24, 64, 0.06), 0 12px 28px -8px rgba(16, 24, 64, 0.16);
   --sales-shadow-modal: 0 2px 6px rgba(16, 24, 64, 0.06), 0 24px 56px -16px rgba(16, 24, 64, 0.22);
@@ -4006,6 +4007,17 @@ label[for="photo-input"] {
   --sales-shadow-md: 0 4px 12px rgba(16, 24, 64, 0.08);
   --sales-shadow-lg: 0 8px 24px rgba(16, 24, 64, 0.1);
   --sales-shadow-xl: 0 16px 40px rgba(16, 24, 64, 0.12);
+
+  /* Card system — surface language shared by Card / KPI / workspace panels */
+  --sales-card-border: rgba(16, 24, 40, 0.09);
+  --sales-card-selected-bg: rgba(212, 255, 79, 0.08);
+  --sales-card-selected-border: rgba(180, 220, 50, 0.65);
+  --sales-card-selected-shadow: 0 0 0 1px rgba(212, 255, 79, 0.05), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --sales-card-attention-warning-bg: color-mix(in srgb, var(--sales-warning-soft) 85%, #fff);
+  --sales-card-attention-danger-bg: color-mix(in srgb, var(--sales-danger-soft) 85%, #fff);
+  --sales-card-attention-brand-bg: color-mix(in srgb, var(--sales-brand-soft-solid) 90%, #fff);
+  --sales-card-attention-info-bg: color-mix(in srgb, var(--sales-info-soft) 85%, #fff);
+  --sales-card-divider: rgba(16, 24, 40, 0.07);
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.25);
@@ -4204,6 +4216,8 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-segment-active-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
   --sales-segment-count-active: rgba(16, 24, 40, 0.12);
   --sales-segment-count-idle: rgba(16, 36, 73, 0.9);
+  --sales-tab-hover: rgba(255, 255, 255, 0.025);
+  --sales-tab-divider: rgba(148, 163, 184, 0.1);
 
   /* Sidebar — slightly deeper than the canvas */
   --sales-sidebar-bg: #050510;
@@ -4258,8 +4272,8 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-switch-thumb: #f7f8fc;
 
   /* Shadows — dark, subtle; not marketing float */
-  --sales-shadow-card: 0 8px 26px rgba(0, 0, 0, 0.12);
-  --sales-shadow-card-hover: 0 12px 36px rgba(0, 0, 0, 0.16);
+  --sales-shadow-card: 0 8px 24px rgba(0, 0, 0, 0.1);
+  --sales-shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.14);
   --sales-shadow-raised: 0 6px 18px rgba(0, 0, 0, 0.12);
   --sales-shadow-popover: 0 20px 60px rgba(0, 0, 0, 0.28);
   --sales-shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.28);
@@ -4268,6 +4282,17 @@ html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
   --sales-shadow-md: 0 8px 22px rgba(4, 12, 32, 0.4);
   --sales-shadow-lg: 0 14px 36px rgba(4, 12, 32, 0.45);
   --sales-shadow-xl: 0 20px 50px rgba(4, 12, 32, 0.5);
+
+  /* Card system — elevated navy, soft cool border, lime only when selected */
+  --sales-card-border: rgba(130, 151, 198, 0.14);
+  --sales-card-selected-bg: rgba(212, 255, 79, 0.055);
+  --sales-card-selected-border: rgba(212, 255, 79, 0.45);
+  --sales-card-selected-shadow: 0 0 0 1px rgba(212, 255, 79, 0.05), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --sales-card-attention-warning-bg: rgba(245, 184, 46, 0.08);
+  --sales-card-attention-danger-bg: rgba(255, 93, 115, 0.08);
+  --sales-card-attention-brand-bg: rgba(212, 255, 79, 0.06);
+  --sales-card-attention-info-bg: rgba(77, 141, 255, 0.08);
+  --sales-card-divider: rgba(128, 151, 200, 0.09);
 
   /* Focus */
   --sales-focus-ring: 0 0 0 3px rgba(212, 255, 79, 0.24);

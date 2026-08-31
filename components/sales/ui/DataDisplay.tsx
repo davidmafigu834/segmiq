@@ -69,7 +69,7 @@ export function KpiStat({ item }: { item: SalesKpiItem }) {
   );
 
   const className =
-    "dashboard-kpi group relative flex h-full min-h-[118px] min-w-0 flex-col p-[18px] sm:min-h-[128px]";
+    "dashboard-kpi group relative flex h-full min-h-[118px] min-w-0 flex-col p-4 sm:min-h-[128px] sm:p-[18px]";
 
   if (item.href) {
     return (
@@ -138,7 +138,7 @@ export function MetricValue({
   return (
     <p
       className={cn(
-        "truncate text-[22px] font-semibold leading-none tracking-[-0.03em] tabular-nums text-sales-text-primary sm:text-[26px] layout:text-[28px]",
+        "truncate text-[22px] font-bold leading-none tracking-[-0.025em] tabular-nums text-sales-text-primary sm:text-[26px] layout:text-[28px]",
         className
       )}
     >

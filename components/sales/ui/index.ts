@@ -10,10 +10,16 @@ export type {
 } from "./Button";
 
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, WORKSPACE_CARD } from "./Card";
-export type { SalesCardVariant } from "./Card";
+export type { SalesCardVariant, SalesCardAttentionTone } from "./Card";
 
-export { Badge, StatusDot, PipelineStageBadge, LeadScoreBadge, MetaPill } from "./Badge";
-export type { BadgeTone, BadgeAppearance, StatusDotTone } from "./Badge";
+export { Badge, StatusDot, PipelineStageBadge, LeadScoreBadge, QuotationStatusBadge, MetaPill } from "./Badge";
+export type {
+  BadgeTone,
+  BadgeAppearance,
+  BadgeSize,
+  StatusDotTone,
+  StatusDotSize,
+} from "./Badge";
 
 export {
   Input,

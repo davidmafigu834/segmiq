@@ -98,7 +98,8 @@ export const SALES_RADIUS = {
 } as const;
 
 export const SALES_SHADOW = {
-  card: "0 1px 2px rgba(16, 24, 64, 0.025)",
+  card: "0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 12px rgba(16, 24, 40, 0.04)",
+  cardHover: "0 2px 4px rgba(16, 24, 40, 0.05), 0 8px 20px -6px rgba(16, 24, 40, 0.10)",
   dropdown: "0 4px 12px rgba(16, 24, 64, 0.08)",
   popover: "0 8px 24px rgba(16, 24, 64, 0.10)",
   modal: "0 16px 40px rgba(16, 24, 64, 0.12)",

@@ -3,7 +3,10 @@
 import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
+  BarChart3,
+  Bell,
   CalendarDays,
+  Check,
   CheckCircle2,
   Info,
   LayoutList,
@@ -11,6 +14,8 @@ import {
   Phone,
   Plus,
   Search,
+  Settings,
+  Users,
   Zap,
   XCircle,
 } from "lucide-react";
@@ -49,6 +54,7 @@ import {
   MetricValue,
   Milestone,
   PipelineStageBadge,
+  QuotationStatusBadge,
   Radio,
   SalesAreaChart,
   SalesBarChart,
@@ -82,8 +88,8 @@ const NAV = [
   { id: "buttons", label: "Buttons" },
   { id: "inputs", label: "Inputs & Search" },
   { id: "controls", label: "Switch & Selectors" },
-  { id: "badges", label: "Badges & status" },
-  { id: "cards", label: "Cards & KPIs" },
+  { id: "badges", label: "Tabs, Badges & Status" },
+  { id: "cards", label: "Cards" },
   { id: "table", label: "Table" },
   { id: "timeline", label: "Timeline" },
   { id: "charts", label: "Charts" },
@@ -162,7 +168,8 @@ function ShowcaseInner() {
   const [seg, setSeg] = useState<"day" | "week" | "month">("week");
   const [segCount, setSegCount] = useState<"all" | "open" | "won">("open");
   const [segIcon, setSegIcon] = useState<"day" | "list">("day");
-  const [tab, setTab] = useState("overview");
+  const [tab, setTab] = useState("pipeline");
+  const [tabIcon, setTabIcon] = useState("leads");
   const [on, setOn] = useState(true);
   const [checked, setChecked] = useState(true);
   const [indeterminateDemo] = useState(true);
@@ -881,192 +888,414 @@ function ShowcaseInner() {
 
             <div className="mt-6">
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
-                Page Tabs (unchanged — underline navigation)
+                Page Tabs → see 04 — Tabs, Badges & Status
               </p>
-              <Card>
-                <CardContent className="space-y-3 pt-4">
-                  <Tabs
-                    items={[
-                      { id: "overview", label: "Overview" },
-                      { id: "activity", label: "Activity" },
-                      { id: "quotes", label: "Quotes" },
-                    ]}
-                    value={tab}
-                    onChange={setTab}
-                  />
-                  <p className="text-[12px] text-sales-text-secondary">
-                    Active tab: <span className="font-semibold text-sales-text-primary">{tab}</span>
-                    {" · "}
-                    Not part of Switch & Selectors — Company page navigation stays underline Tabs.
-                  </p>
-                </CardContent>
-              </Card>
+              <p className="text-[12px] text-sales-text-secondary">
+                Underline Tabs are Phase 04 (not SegmentedControl). Company page navigation stays lime-underline.
+              </p>
             </div>
           </Section>
 
-          {/* ── Badges ─────────────────────────────────────────── */}
-          <Section id="badges" title="Badges & status" description="Soft / outline / solid · stages · intent · dots.">
-            <div className="space-y-4">
+          {/* ── Tabs, Badges & Status ───────────────────────────── */}
+          <Section
+            id="badges"
+            title="04 — Tabs, Badges & Status"
+            description="Communicate clearly, scan instantly, act confidently. Lime for brand navigation · semantic colours for operational state."
+          >
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[12px] text-sales-text-secondary">
+                Validate both themes with the page toggle.
+              </p>
+              <SalesThemeToggle />
+            </div>
+
+            <div className="space-y-8">
+              {/* 01 Tabs */}
               <div>
-                <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Appearances</p>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    [
-                      "neutral",
-                      "brand",
-                      "success",
-                      "warning",
-                      "danger",
-                      "info",
-                      "purple",
-                    ] as const
-                  ).map((tone) => (
-                    <Badge key={`soft-${tone}`} tone={tone}>
-                      Soft {tone}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(
-                    ["neutral", "brand", "success", "warning", "danger", "info", "purple"] as const
-                  ).map((tone) => (
-                    <Badge key={`out-${tone}`} tone={tone} appearance="outline">
-                      Outline {tone}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(
-                    ["neutral", "brand", "success", "warning", "danger", "info", "purple"] as const
-                  ).map((tone) => (
-                    <Badge key={`sol-${tone}`} tone={tone} appearance="solid">
-                      Solid {tone}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Pipeline stages</p>
-                <div className="flex flex-wrap gap-2">
-                  <PipelineStageBadge status="NEW" label="New" />
-                  <PipelineStageBadge status="CONTACTED" label="Contacted" />
-                  <PipelineStageBadge status="NEGOTIATING" label="Negotiating" />
-                  <PipelineStageBadge status="PROPOSAL_SENT" label="Proposal sent" />
-                  <PipelineStageBadge status="WON" label="Won" />
-                  <PipelineStageBadge status="LOST" label="Lost" />
-                  <PipelineStageBadge status="NOT_QUALIFIED" label="Not qualified" />
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">
-                  Intent · Hot ≥70 · Warm 45–69 · Cold &lt;45 (blue)
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  01 Tabs
                 </p>
-                <div className="flex flex-wrap items-center gap-4">
-                  <LeadScoreBadge score={82} />
-                  <LeadScoreBadge score={55} />
-                  <LeadScoreBadge score={30} />
-                  <MetaPill>WhatsApp</MetaPill>
-                  <MetaPill>Website</MetaPill>
-                </div>
+                <p className="mb-3 text-[12px] text-sales-text-secondary">
+                  Where am I? Underline navigation — not a SegmentedControl track. Active = weight 600 + 3px lime underline.
+                </p>
+                <Card>
+                  <CardContent className="space-y-5 pt-4">
+                    <div>
+                      <p className="mb-2 text-[11px] text-sales-text-muted">Default / active (Pipeline)</p>
+                      <Tabs
+                        items={[
+                          { id: "leads", label: "Leads" },
+                          { id: "pipeline", label: "Pipeline" },
+                          { id: "customers", label: "Customers" },
+                          { id: "team", label: "Team" },
+                          { id: "reports", label: "Reports" },
+                          { id: "settings", label: "Settings" },
+                        ]}
+                        value={tab}
+                        onChange={setTab}
+                      />
+                    </div>
+                    <div>
+                      <p className="mb-2 text-[11px] text-sales-text-muted">With icon</p>
+                      <Tabs
+                        items={[
+                          { id: "leads", label: "Leads", icon: <Users strokeWidth={1.8} /> },
+                          { id: "pipeline", label: "Pipeline", icon: <BarChart3 strokeWidth={1.8} /> },
+                          { id: "team", label: "Team", icon: <Users strokeWidth={1.8} /> },
+                          { id: "settings", label: "Settings", icon: <Settings strokeWidth={1.8} /> },
+                        ]}
+                        value={tabIcon}
+                        onChange={setTabIcon}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
+
+              {/* 02 Generic badges */}
               <div>
-                <p className="mb-2 text-[12px] font-medium text-sales-text-secondary">Status dots</p>
-                <div className="flex flex-wrap items-center gap-4 text-[12px] text-sales-text-secondary">
-                  <span className="inline-flex items-center gap-1.5">
-                    <StatusDot tone="success" label="Online" /> Online
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <StatusDot tone="busy" label="Busy" /> Busy
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <StatusDot tone="away" label="Away" /> Away
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <StatusDot tone="offline" label="Offline" /> Offline
-                  </span>
-                </div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  02 Generic badges
+                </p>
+                <p className="mb-3 text-[12px] text-sales-text-secondary">
+                  Small attributes. Soft is default. Brand lime ≠ success green.
+                </p>
+                <Card>
+                  <CardContent className="space-y-4 pt-4">
+                    <div>
+                      <p className="mb-2 text-[11px] text-sales-text-muted">Soft</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          [
+                            "neutral",
+                            "brand",
+                            "success",
+                            "warning",
+                            "danger",
+                            "info",
+                            "purple",
+                            "teal",
+                          ] as const
+                        ).map((tone) => (
+                          <Badge key={`soft-${tone}`} tone={tone}>
+                            {tone}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-2 text-[11px] text-sales-text-muted">Outline</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          ["neutral", "brand", "success", "warning", "danger", "info", "purple", "teal"] as const
+                        ).map((tone) => (
+                          <Badge key={`out-${tone}`} tone={tone} appearance="outline">
+                            {tone}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-2 text-[11px] text-sales-text-muted">Solid (rare)</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          ["neutral", "brand", "success", "warning", "danger", "info", "purple", "teal"] as const
+                        ).map((tone) => (
+                          <Badge key={`sol-${tone}`} tone={tone} appearance="solid">
+                            {tone}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Badge size="sm">sm</Badge>
+                      <Badge size="md">md</Badge>
+                      <Badge size="lg">lg</Badge>
+                      <Badge tone="danger" leftIcon={<Bell strokeWidth={2} />}>
+                        12
+                      </Badge>
+                      <Badge tone="neutral" className="min-w-[22px] justify-center px-1.5">
+                        99+
+                      </Badge>
+                      <MetaPill>WhatsApp</MetaPill>
+                      <MetaPill>Website</MetaPill>
+                      <MetaPill>Referral</MetaPill>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 03 Sales status */}
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  03 Sales status
+                </p>
+                <p className="mb-3 text-[12px] text-sales-text-secondary">
+                  Pipeline process + lead intent. Cold is blue — never grey. Brand lime only for Scoping.
+                </p>
+                <Card>
+                  <CardContent className="space-y-4 pt-4">
+                    <div>
+                      <p className="mb-2 text-[11px] text-sales-text-muted">Pipeline stages</p>
+                      <div className="flex flex-wrap gap-2">
+                        <PipelineStageBadge status="NEW" />
+                        <PipelineStageBadge status="CONTACTED" />
+                        <PipelineStageBadge status="QUALIFIED" />
+                        <PipelineStageBadge status="SCOPING" />
+                        <PipelineStageBadge status="NEGOTIATING" />
+                        <PipelineStageBadge status="PROPOSAL_SENT" />
+                        <PipelineStageBadge status="WON" />
+                        <PipelineStageBadge status="LOST" />
+                        <PipelineStageBadge status="NOT_QUALIFIED" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-2 text-[11px] text-sales-text-muted">
+                        Lead score · Hot ≥70 · Warm 45–69 · Cold &lt;45
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <LeadScoreBadge score={82} />
+                        <LeadScoreBadge score={58} />
+                        <LeadScoreBadge score={21} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 04 Quotation + dots */}
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  04 Quotation status · StatusDot
+                </p>
+                <p className="mb-3 text-[12px] text-sales-text-secondary">
+                  Document lifecycle. Accepted = success green (not brand lime). Domain enum `rejected` displays as Declined.
+                </p>
+                <Card>
+                  <CardContent className="space-y-4 pt-4">
+                    <div className="flex flex-wrap gap-2">
+                      <QuotationStatusBadge status="draft" />
+                      <QuotationStatusBadge status="sent" />
+                      <QuotationStatusBadge status="viewed" />
+                      <QuotationStatusBadge status="accepted" />
+                      <QuotationStatusBadge status="rejected" />
+                      <QuotationStatusBadge status="expired" />
+                    </div>
+                    <div>
+                      <p className="mb-2 text-[11px] text-sales-text-muted">
+                        Also in product (not showcase-primary): pending approval · approved · superseded
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <QuotationStatusBadge status="pending_approval" />
+                        <QuotationStatusBadge status="approved" />
+                        <QuotationStatusBadge status="superseded" />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4 text-[12px] text-sales-text-secondary">
+                      <span className="inline-flex items-center gap-1.5">
+                        <StatusDot tone="success" label="Online" /> Online
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <StatusDot tone="busy" label="Busy" /> Busy
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <StatusDot tone="away" label="Away" /> Away
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <StatusDot tone="offline" label="Offline" /> Offline
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </Section>
 
           {/* ── Cards ──────────────────────────────────────────── */}
-          <Section id="cards" title="Cards & KPIs" description="Standard · selected · attention · KPI pattern.">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <KpiStat
-                item={{
-                  id: "pipeline",
-                  label: "Pipeline value",
-                  value: "$118,450",
-                  supporting: "vs last 30 days",
-                  icon: "pipeline",
-                  trend: { direction: "up", label: "18%" },
-                }}
-              />
-              <KpiStat
-                item={{
-                  id: "won",
-                  label: "Won this month",
-                  value: "12",
-                  supporting: "Closed deals",
-                  icon: "won",
-                  trend: { direction: "up", label: "3 vs last month" },
-                }}
-              />
-              <KpiStat
-                item={{
-                  id: "followups",
-                  label: "Follow-ups due",
-                  value: "18",
-                  supporting: "Needs attention",
-                  icon: "followups",
-                  trend: { direction: "alert", label: "Overdue" },
-                }}
-              />
-              <Card variant="attention">
-                <CardContent>
-                  <p className="text-[12px] font-medium text-sales-danger">Attention</p>
-                  <MetricValue value="18" className="mt-2" />
-                  <p className="mt-2 text-[12px] text-sales-text-secondary">Overdue follow-ups</p>
-                </CardContent>
-              </Card>
+          <Section
+            id="cards"
+            title="05 — Cards"
+            description="Clear structure, subtle depth, and consistent behavior. Base · KPI · Attention · Interactive/Selected."
+          >
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-[12px] text-sales-text-secondary">
+                Showcase content is documentation only — not production CRM data. Validate Light / Dark with the toggle.
+              </p>
+              <SalesThemeToggle />
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              {/* 01 Base */}
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  01 Base / Standard
+                </p>
+                <p className="mb-3 text-[12px] text-sales-text-secondary">
+                  Quiet workspace container. No lime · no hover · 12px radius · restrained shadow.
+                </p>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Account overview</CardTitle>
+                    <CardDescription>Grouped customer summary surface</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <LeadIdentity name="Sipho Khumalo" secondary="Enterprise · Customer" />
+                    <div className="grid grid-cols-3 gap-3 border-t border-[var(--sales-card-divider)] pt-4">
+                      <div>
+                        <p className="text-[11px] text-sales-text-muted">Deals</p>
+                        <p className="mt-1 text-[14px] font-semibold tabular-nums">12</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-sales-text-muted">Open</p>
+                        <p className="mt-1 text-[14px] font-semibold tabular-nums">4</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-sales-text-muted">Won</p>
+                        <p className="mt-1 text-[14px] font-semibold tabular-nums">7</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 02 KPI */}
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  02 KPI
+                </p>
+                <p className="mb-3 text-[12px] text-sales-text-secondary">
+                  Metric-first. Trend uses success/danger — not brand lime. Chart optional in production only when real series exists.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <KpiStat
+                    item={{
+                      id: "pipeline",
+                      label: "Pipeline value",
+                      value: "$118,450",
+                      supporting: "vs last 30 days",
+                      icon: "pipeline",
+                      trend: { direction: "up", label: "12.5%" },
+                    }}
+                  />
+                  <KpiStat
+                    item={{
+                      id: "followups",
+                      label: "Follow-ups due",
+                      value: "18",
+                      supporting: "Needs attention",
+                      icon: "followups",
+                      trend: { direction: "alert", label: "Overdue" },
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* 03 Attention */}
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  03 Attention
+                </p>
+                <p className="mb-3 text-[12px] text-sales-text-secondary">
+                  Soft semantic wash + 3px left accent — not a full neon border.
+                </p>
+                <Card variant="attention" attentionTone="warning">
+                  <CardContent className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-sales-warning-soft text-sales-warning-fg">
+                        <AlertTriangle size={16} strokeWidth={1.8} aria-hidden />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[14px] font-semibold text-sales-text-primary">Action required</p>
+                        <p className="mt-1 text-[13px] leading-relaxed text-sales-text-secondary">
+                          3 deals are stuck in Negotiation for more than 14 days.
+                        </p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="secondary">
+                      Review deals
+                    </Button>
+                  </CardContent>
+                </Card>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <Card variant="attention" attentionTone="danger">
+                    <CardContent className="py-3">
+                      <p className="text-[12px] font-semibold text-sales-danger-fg">Danger tone</p>
+                      <p className="mt-1 text-[12px] text-sales-text-secondary">High-risk / overdue pattern</p>
+                    </CardContent>
+                  </Card>
+                  <Card variant="attention" attentionTone="brand">
+                    <CardContent className="py-3">
+                      <p className="text-[12px] font-semibold text-sales-brand-fg">Brand tone</p>
+                      <p className="mt-1 text-[12px] text-sales-text-secondary">SegmiQ-specific nudge only</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              {/* 04 Interactive / Selected */}
+              <div>
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  04 Interactive / Selected
+                </p>
+                <p className="mb-3 text-[12px] text-sales-text-secondary">
+                  Interactive = neutral + lift on hover. Selected = lime-soft wash + brand border. No neon halo.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Card variant="interactive" tabIndex={0} role="button" aria-label="Interactive card example">
+                    <CardContent>
+                      <p className="text-[12px] font-medium text-sales-text-secondary">Interactive</p>
+                      <p className="mt-2 text-[14px] font-semibold text-sales-text-primary">Hover for lift</p>
+                      <p className="mt-1 text-[12px] text-sales-text-muted">−1px · stronger border · pressed +1px</p>
+                    </CardContent>
+                  </Card>
+                  <Card variant="selected" className="relative">
+                    <span
+                      className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-[6px] bg-sales-brand text-[var(--sales-ink)]"
+                      aria-hidden
+                    >
+                      <Check size={12} strokeWidth={3} />
+                    </span>
+                    <CardContent>
+                      <p className="text-[12px] font-medium text-sales-brand-fg">Selected</p>
+                      <p className="mt-2 text-[14px] font-semibold text-sales-text-primary">Plan option</p>
+                      <p className="mt-1 text-[12px] text-sales-text-secondary">Soft lime wash · brand border</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
+
+            {/* Anatomy + spacing notes */}
+            <div className="mt-8 grid gap-4 lg:grid-cols-2">
               <Card>
-                <CardHeader>
-                  <CardTitle>Standard</CardTitle>
-                  <CardDescription>Default surface card</CardDescription>
+                <CardHeader action={<IconButton aria-label="More" size="sm" icon={<MoreHorizontal strokeWidth={1.8} />} />}>
+                  <CardTitle>Card anatomy</CardTitle>
+                  <CardDescription>Header · content · footer slots</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <LeadIdentity name="Sipho Khumalo" secondary="Solar install · Harare" />
+                <CardContent className="space-y-3">
+                  <LeadIdentity name="Tendai Moyo" secondary="Body / content region" />
+                  <MetricValue value="$42,800" />
+                  <Trend direction="up" label="8.2% vs prior period" />
                 </CardContent>
                 <CardFooter>
                   <Button size="sm" variant="secondary">
-                    View
+                    Secondary
                   </Button>
-                  <Button size="sm" leftIcon={<Phone size={14} />}>
-                    Call
-                  </Button>
+                  <Button size="sm">Primary</Button>
                 </CardFooter>
               </Card>
-              <Card variant="selected">
-                <CardContent>
-                  <p className="mb-3 text-[12px] font-medium text-sales-brand-fg">Selected</p>
-                  <LeadIdentity name="Amina Diallo" secondary="Quote sent" />
-                  <div className="mt-4">
-                    <Trend direction="up" label="Score 74" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card variant="interactive">
-                <CardContent>
-                  <p className="mb-3 text-[12px] font-medium text-sales-text-secondary">Interactive</p>
-                  <div className="flex items-center gap-3">
-                    <Avatar name="Tendai Moyo" />
-                    <div>
-                      <p className="text-[13px] font-semibold">Tendai Moyo</p>
-                      <p className="text-[12px] text-sales-text-secondary">Hover for border lift</p>
-                    </div>
-                  </div>
+              <Card variant="flat">
+                <CardContent className="space-y-3 text-[12px] text-sales-text-secondary">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                    Spacing & radius
+                  </p>
+                  <ul className="space-y-1.5 leading-relaxed">
+                    <li>Padding: 16 mobile · 20 desktop</li>
+                    <li>Radius: 10 compact · 12 default · 14 large workspace</li>
+                    <li>Border: 1px subtle · shadow via --sales-shadow-card</li>
+                    <li>Flat: nested/quiet · no shadow</li>
+                    <li>Static base cards never lift on hover</li>
+                  </ul>
                 </CardContent>
               </Card>
             </div>
