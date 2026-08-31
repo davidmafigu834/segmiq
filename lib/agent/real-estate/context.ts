@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listingLabel } from "@/lib/real-estate/helpers";
-import { LISTING_TYPE_LABEL, type ListingTransactionType } from "@/lib/real-estate/listings";
+import { LISTING_TYPE_LABEL } from "@/lib/real-estate/listings";
+import type { ListingTransactionType } from "@/types";
 import { getLeadAttribution } from "@/lib/real-estate/marketing-service";
 import { formatBudgetRange } from "@/lib/real-estate/requirements";
 import { requirementCompleteness } from "@/lib/real-estate/requirements";
@@ -186,8 +187,8 @@ export function serializeRealEstateAgentContext(ctx: RealEstateAgentContext): st
 
   const listing = ctx.originatingListing;
   if (listing) {
-    const typeLabel =
-      LISTING_TYPE_LABEL[listing.transactionType as ListingTransactionType] ?? listing.transactionType;
+    const tx = listing.transactionType as ListingTransactionType;
+    const typeLabel = LISTING_TYPE_LABEL[tx] ?? listing.transactionType;
     lines.push(
       [
         "-- Originating / linked property (use ONLY these facts; never invent) --",

@@ -101,6 +101,7 @@ function syntheticContext(opts: {
       why: context.why,
       context,
     },
+    realEstate: null,
   };
 }
 
