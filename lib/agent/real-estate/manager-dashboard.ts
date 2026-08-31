@@ -43,7 +43,6 @@ export async function loadReManagerAgentDashboard(opts: {
   ]);
 
   const users = asRows<{ id: string; name: string | null }>(usersData);
-  const nameById = new Map(users.map((u) => [u.id, u.name ?? "Team member"]));
   const humanStates = asRows<{
     lead_id: string;
     status: string;
