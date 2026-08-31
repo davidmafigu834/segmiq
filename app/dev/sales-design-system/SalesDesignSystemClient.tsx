@@ -7,6 +7,7 @@ import {
   Bell,
   CalendarDays,
   Check,
+  CheckCircle2,
   Filter,
   LayoutList,
   MoreHorizontal,
@@ -52,10 +53,19 @@ import {
   DataTableToolbar,
   DataTableToolbarGroup,
   DataTableWorkspace,
+  Field,
   FieldError,
   FieldHint,
   FieldLabel,
+  FormActions,
+  FormFields,
+  FormSection,
+  GroupedInput,
   IconButton,
+  InputAddon,
+  InputGroup,
+  InputGroupAction,
+  InputGroupButton,
   SplitButton,
   Input,
   KpiStat,
@@ -89,6 +99,8 @@ import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
   SALES_COLORS,
   SALES_FEEDBACK,
+  SALES_FIELD_HEIGHT,
+  SALES_FORM,
   SALES_OVERLAY,
   SALES_RADIUS,
   SALES_SHADOW,
@@ -109,6 +121,7 @@ const NAV = [
   { id: "cards", label: "Cards" },
   { id: "table", label: "06 — Tables" },
   { id: "overlays", label: "07 — Overlays & Feedback" },
+  { id: "forms", label: "08 — Forms & Inputs" },
   { id: "timeline", label: "Timeline" },
   { id: "charts", label: "Charts" },
   { id: "misc", label: "Icons & misc" },
@@ -814,6 +827,198 @@ function OverlaysShowcaseSection() {
           </p>
         </PremiumSheet>
       ) : null}
+    </div>
+  );
+}
+
+function FormsShowcaseSection() {
+  const [search, setSearch] = useState("");
+  const [firstName, setFirstName] = useState("Sarah");
+  const [lastName, setLastName] = useState("Ndlovu");
+  const [slug, setSlug] = useState("acme-energy");
+  const [amount, setAmount] = useState("6800");
+  const [unitValue, setUnitValue] = useState("25");
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12px] text-sales-text-secondary">
+          Composes Phase 02 field primitives into layout, states, groups, and validation — documentation only.
+        </p>
+        <SalesThemeToggle />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-5">
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Input types</CardTitle>
+            <CardDescription>Reuse Input · Select · TextArea · Search</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Field label="Customer name" required>
+              <Input placeholder="Example name" autoComplete="name" />
+            </Field>
+            <Field label="Email">
+              <Input type="email" placeholder="name@company.com" autoComplete="email" />
+            </Field>
+            <Field label="Phone">
+              <Input type="tel" placeholder="+263 77 123 4567" autoComplete="tel" />
+            </Field>
+            <Field label="Lead source">
+              <Select defaultValue="whatsapp">
+                <option value="whatsapp">WhatsApp</option>
+                <option value="website">Website</option>
+              </Select>
+            </Field>
+            <Field label="Notes" optional>
+              <TextArea rows={3} placeholder="Call summary…" />
+            </Field>
+            <Field label="Search">
+              <SearchInput value={search} onChange={setSearch} placeholder="Search records…" />
+            </Field>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Field states</CardTitle>
+            <CardDescription>Filled returns neutral · not success</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Field label="Default">
+              <Input placeholder="Company name" />
+            </Field>
+            <Field label="Hover preview">
+              <Input placeholder="Company name" previewState="hover" />
+            </Field>
+            <Field label="Focused preview">
+              <Input placeholder="Company name" previewState="focus" />
+            </Field>
+            <Field label="Filled">
+              <Input defaultValue="Acme Energy" />
+            </Field>
+            <Field label="Disabled">
+              <Input disabled value="Unavailable" />
+            </Field>
+            <Field label="Read only">
+              <Input readOnly defaultValue="Copied but not editable" />
+            </Field>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Validation</CardTitle>
+            <CardDescription>Semantic only when logic provides it</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Field label="Email" error="Enter a valid email address.">
+              <Input type="email" invalid defaultValue="not-an-email" />
+            </Field>
+            <Field label="Budget" warning="This value is unusually high for this segment.">
+              <Input tone="warning" defaultValue="250000" />
+            </Field>
+            <Field label="Account number" success="Verified successfully.">
+              <Input tone="success" defaultValue="ACC-20481" leftIcon={<CheckCircle2 strokeWidth={1.8} />} />
+            </Field>
+            <Field label="Reference" hint="Use your internal reference if available.">
+              <Input placeholder="REF-001" />
+            </Field>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Add-ons</CardTitle>
+            <CardDescription>One connected silhouette · focus-within</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Field label="Amount">
+              <InputGroup>
+                <InputAddon side="left">$</InputAddon>
+                <GroupedInput
+                  addonSide="left"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </InputGroup>
+            </Field>
+            <Field label="Capacity">
+              <InputGroup>
+                <GroupedInput addonSide="left" value={unitValue} onChange={(e) => setUnitValue(e.target.value)} />
+                <InputAddon side="right">kW</InputAddon>
+              </InputGroup>
+            </Field>
+            <Field label="Workspace slug">
+              <InputGroup>
+                <InputAddon side="left">company.com/</InputAddon>
+                <GroupedInput addonSide="left" value={slug} onChange={(e) => setSlug(e.target.value)} />
+              </InputGroup>
+            </Field>
+            <Field label="Email action (example)">
+              <InputGroup>
+                <GroupedInput addonSide="left" type="email" placeholder="name@company.com" />
+                <InputGroupAction>
+                  <InputGroupButton>Verify</InputGroupButton>
+                </InputGroupAction>
+              </InputGroup>
+            </Field>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Form layout</CardTitle>
+            <CardDescription>Single column preferred · 2-col for short pairs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-[560px]">
+              <FormSection
+                title="Contact details"
+                description="Documentation example — not a production workflow."
+              >
+                <FormFields columns={2}>
+                  <Field label="First name" required>
+                    <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                  </Field>
+                  <Field label="Last name" required>
+                    <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                  </Field>
+                  <div className="sm:col-span-2">
+                    <Field label="Notes">
+                      <TextArea rows={3} placeholder="Additional context…" />
+                    </Field>
+                  </div>
+                </FormFields>
+                <FormActions className="pt-4">
+                  <Button variant="secondary">Cancel</Button>
+                  <Button>Save changes</Button>
+                </FormActions>
+              </FormSection>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card variant="flat">
+        <CardContent className="space-y-2 pt-4 text-[12px] leading-relaxed text-sales-text-secondary">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            Spacing & best practices
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              Label → field: {SALES_FORM.labelGap}px · field → hint/error: {SALES_FORM.messageGap}px · field gap:{" "}
+              {SALES_FORM.fieldGap}–{SALES_FORM.fieldGapLoose}px · section gap: {SALES_FORM.sectionGap}–
+              {SALES_FORM.sectionGapLoose}px
+            </li>
+            <li>Desktop field height {SALES_FIELD_HEIGHT.md}px · mobile minimum {SALES_FIELD_HEIGHT.touch}px</li>
+            <li>Keep labels visible · placeholders are format guidance only · use correct input types</li>
+            <li>Non-empty does not mean success · validate with real application rules · associate errors via aria-describedby</li>
+            <li>Input groups share one outer border and focus-within treatment · danger applies to the whole group</li>
+          </ul>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1972,6 +2177,15 @@ function ShowcaseInner() {
             description="Modal · contextual drawer · toast · inline alert · progress & skeleton. Calm, precise, accessible."
           >
             <OverlaysShowcaseSection />
+          </Section>
+
+          {/* ── Forms & Inputs ─────────────────────────────────── */}
+          <Section
+            id="forms"
+            title="08 — Forms & Inputs"
+            description="Field composition · states & validation · input groups · form layout. Composes Phase 02 primitives."
+          >
+            <FormsShowcaseSection />
           </Section>
 
           {/* ── Timeline ───────────────────────────────────────── */}

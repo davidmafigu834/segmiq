@@ -126,6 +126,18 @@ export const SALES_FEEDBACK = {
   skeletonPulseMs: 1750,
 } as const;
 
+/** Form layout & field rhythm */
+export const SALES_FORM = {
+  labelGap: 6,
+  messageGap: 6,
+  fieldGap: 16,
+  fieldGapLoose: 20,
+  sectionGap: 24,
+  sectionGapLoose: 32,
+  maxContentWidth: 640,
+  twoColumnMinWidth: 480,
+} as const;
+
 /** Button heights from design boards: Small 32 · Medium 40 · Large 48 */
 export const SALES_BUTTON_HEIGHT = {
   sm: 32,

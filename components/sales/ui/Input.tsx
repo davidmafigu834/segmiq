@@ -46,6 +46,20 @@ const fieldInvalid = cn(
   "focus-visible:border-[var(--sales-field-danger-border)] focus-visible:shadow-[var(--sales-field-danger-ring)]"
 );
 
+const fieldSuccess = cn(
+  "border-[var(--sales-field-success-border)]",
+  "hover:border-[var(--sales-field-success-border)]",
+  "focus:border-[var(--sales-field-success-border)] focus:shadow-[var(--sales-field-success-ring)]",
+  "focus-visible:border-[var(--sales-field-success-border)] focus-visible:shadow-[var(--sales-field-success-ring)]"
+);
+
+const fieldWarning = cn(
+  "border-[var(--sales-field-warning-border)]",
+  "hover:border-[var(--sales-field-warning-border)]",
+  "focus:border-[var(--sales-field-warning-border)] focus:shadow-[var(--sales-field-warning-ring)]",
+  "focus-visible:border-[var(--sales-field-warning-border)] focus-visible:shadow-[var(--sales-field-warning-ring)]"
+);
+
 const fieldIconSlot =
   "pointer-events-none absolute top-1/2 flex -translate-y-1/2 items-center justify-center text-sales-text-muted [&_svg]:size-4";
 
@@ -59,6 +73,7 @@ export type SalesInputPreviewState = "hover" | "focus";
 export type SalesInputProps = InputHTMLAttributes<HTMLInputElement> & {
   compact?: boolean;
   invalid?: boolean;
+  tone?: "success" | "warning";
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   rightAccessory?: ReactNode;
@@ -66,12 +81,33 @@ export type SalesInputProps = InputHTMLAttributes<HTMLInputElement> & {
   previewState?: SalesInputPreviewState;
 };
 
-function previewFieldClass(previewState?: SalesInputPreviewState, invalid?: boolean) {
+function fieldToneClass(tone?: "success" | "warning", invalid?: boolean) {
+  if (invalid) return fieldInvalid;
+  if (tone === "success") return fieldSuccess;
+  if (tone === "warning") return fieldWarning;
+  return null;
+}
+
+function previewFieldClass(
+  previewState?: SalesInputPreviewState,
+  invalid?: boolean,
+  tone?: "success" | "warning"
+) {
   if (!previewState) return null;
   if (invalid) {
     return previewState === "focus"
       ? "border-[var(--sales-field-danger-border)] shadow-[var(--sales-field-danger-ring)]"
       : "border-[var(--sales-field-danger-border)]";
+  }
+  if (tone === "success") {
+    return previewState === "focus"
+      ? "border-[var(--sales-field-success-border)] shadow-[var(--sales-field-success-ring)]"
+      : "border-[var(--sales-field-success-border)]";
+  }
+  if (tone === "warning") {
+    return previewState === "focus"
+      ? "border-[var(--sales-field-warning-border)] shadow-[var(--sales-field-warning-ring)]"
+      : "border-[var(--sales-field-warning-border)]";
   }
   if (previewState === "hover") {
     return "border-[var(--sales-field-border-hover)]";
@@ -91,6 +127,7 @@ export const Input = forwardRef<HTMLInputElement, SalesInputProps>(function Inpu
     className,
     compact,
     invalid,
+    tone,
     leftIcon,
     rightIcon,
     rightAccessory,
@@ -118,8 +155,8 @@ export const Input = forwardRef<HTMLInputElement, SalesInputProps>(function Inpu
         fieldText,
         compact ? fieldHeightCompact : fieldHeight,
         fieldHorizontalPad(hasLeft, hasRight),
-        invalid && fieldInvalid,
-        previewFieldClass(previewState, invalid),
+        fieldToneClass(tone, invalid),
+        previewFieldClass(previewState, invalid, tone),
         !wrapped && className
       )}
       {...props}
@@ -159,12 +196,13 @@ export const Input = forwardRef<HTMLInputElement, SalesInputProps>(function Inpu
 
 export type SalesTextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   invalid?: boolean;
+  tone?: "success" | "warning";
   /** Showcase-only visual state. Do not use on product pages. */
   previewState?: SalesInputPreviewState;
 };
 
 export const TextArea = forwardRef<HTMLTextAreaElement, SalesTextAreaProps>(function TextArea(
-  { className, invalid, previewState, ...props },
+  { className, invalid, tone, previewState, ...props },
   ref
 ) {
   return (
@@ -177,8 +215,8 @@ export const TextArea = forwardRef<HTMLTextAreaElement, SalesTextAreaProps>(func
         fieldText,
         "min-h-[96px] resize-y px-3 py-2.5 sm:min-h-[88px]",
         "[scrollbar-width:thin]",
-        invalid && fieldInvalid,
-        previewFieldClass(previewState, invalid),
+        fieldToneClass(tone, invalid),
+        previewFieldClass(previewState, invalid, tone),
         className
       )}
       {...props}
@@ -186,26 +224,33 @@ export const TextArea = forwardRef<HTMLTextAreaElement, SalesTextAreaProps>(func
   );
 });
 
-export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
-  function Select({ className, ...props }, ref) {
-    return (
-      <select
-        ref={ref}
-        className={cn(
-          "rounded-sales-md border border-sales-border-strong bg-sales-surface text-sales-text-primary outline-none transition-[border-color,box-shadow] duration-150",
-          "focus:border-sales-brand focus:shadow-[var(--sales-focus-ring)] disabled:cursor-not-allowed disabled:bg-sales-neutral-100 disabled:opacity-70",
-          fieldHeight,
-          fieldText,
-          "px-3",
-          // Default full width unless caller sets a width class / wrapper constrains it
-          className?.match(/\b(!?w-|max-w-)/) ? null : "w-full",
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
+export type SalesSelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  compact?: boolean;
+  invalid?: boolean;
+  tone?: "success" | "warning";
+};
+
+export const Select = forwardRef<HTMLSelectElement, SalesSelectProps>(function Select(
+  { className, compact, invalid, tone, ...props },
+  ref
+) {
+  return (
+    <select
+      ref={ref}
+      aria-invalid={invalid || undefined}
+      className={cn(
+        fieldBase,
+        fieldText,
+        compact ? fieldHeightCompact : fieldHeight,
+        "px-3",
+        fieldToneClass(tone, invalid),
+        className?.match(/\b(!?w-|max-w-)/) ? null : "w-full",
+        className
+      )}
+      {...props}
+    />
+  );
+});
 
 export type SearchInputProps = {
   value: string;
@@ -313,30 +358,43 @@ export function FieldLabel({
   children,
   htmlFor,
   required,
+  optional,
   className,
 }: {
   children: React.ReactNode;
   htmlFor?: string;
   required?: boolean;
+  optional?: boolean;
   className?: string;
 }) {
   return (
     <label
       htmlFor={htmlFor}
-      className={cn("mb-1.5 block text-[12px] font-medium text-sales-text-label", className)}
+      className={cn("mb-1.5 block text-[12px] font-semibold text-sales-text-label", className)}
     >
       {children}
       {required ? <span className="ml-0.5 text-sales-danger">*</span> : null}
+      {optional ? (
+        <span className="ml-1.5 text-[11px] font-normal text-sales-text-muted">Optional</span>
+      ) : null}
     </label>
   );
 }
 
-export function FieldError({ children }: { children?: React.ReactNode }) {
+export function FieldError({ id, children }: { id?: string; children?: React.ReactNode }) {
   if (!children) return null;
-  return <p className="mt-1.5 text-[12px] font-normal text-sales-danger">{children}</p>;
+  return (
+    <p id={id} className="mt-1.5 text-[12px] font-normal text-sales-danger">
+      {children}
+    </p>
+  );
 }
 
-export function FieldHint({ children }: { children?: React.ReactNode }) {
+export function FieldHint({ id, children }: { id?: string; children?: React.ReactNode }) {
   if (!children) return null;
-  return <p className="mt-1.5 text-[12px] font-normal text-sales-text-muted">{children}</p>;
+  return (
+    <p id={id} className="mt-1.5 text-[12px] font-normal text-sales-text-muted">
+      {children}
+    </p>
+  );
 }
