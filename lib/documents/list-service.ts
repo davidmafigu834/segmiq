@@ -141,7 +141,7 @@ export async function listDocumentsFiltered(opts: {
     );
 
     const documents = search.hits
-      .map((hit) => {
+      .map((hit): DocumentListItem | null => {
         const doc = byId.get(hit.documentId);
         if (!doc) return null;
         return {
@@ -150,7 +150,7 @@ export async function listDocumentsFiltered(opts: {
           searchPageNumber: hit.pageNumber,
         };
       })
-      .filter((doc): doc is DocumentListItem => Boolean(doc));
+      .filter((doc): doc is DocumentListItem => doc !== null);
 
     return { documents, total: search.total };
   }
