@@ -4,6 +4,7 @@ export const COMMERCIAL_FLAG_KEYS = [
   "packages.v2.enabled",
   "quotation.productPickerV2",
   "inventory.externalSync",
+  "documents.enabled",
 ] as const;
 
 export type CommercialFlagKey = (typeof COMMERCIAL_FLAG_KEYS)[number];
@@ -16,6 +17,7 @@ export const DEFAULT_COMMERCIAL_FLAGS: CommercialFlags = {
   "packages.v2.enabled": true,
   "quotation.productPickerV2": true,
   "inventory.externalSync": false,
+  "documents.enabled": false,
 };
 
 export function parseCommercialFlags(raw: unknown): CommercialFlags {

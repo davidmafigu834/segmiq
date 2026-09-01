@@ -135,6 +135,22 @@ export function generateComplianceDocKey(
   return `clients/${clientId}/compliance/${caseId}/${Date.now()}.${ext}`;
 }
 
+/** Private company document version storage (SegmiQ Documents module). */
+export function generateDocumentVersionKey(
+  clientId: string,
+  documentId: string,
+  versionId: string,
+  filename: string
+): string {
+  const ext = filename.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+  return `clients/${clientId}/documents/${documentId}/versions/${versionId}/${Date.now()}.${ext}`;
+}
+
+export function isDocumentStorageKeyForClient(clientId: string, storageKey: string): boolean {
+  const prefix = `clients/${clientId}/documents/`;
+  return storageKey.startsWith(prefix) && !storageKey.includes("..");
+}
+
 export async function putObject(
   key: string,
   body: Buffer,

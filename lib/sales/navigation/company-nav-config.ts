@@ -10,6 +10,7 @@ import {
   Columns3,
   MessageSquare,
   CreditCard,
+  FolderOpen,
   FileText,
   Globe,
   Handshake,
@@ -33,6 +34,7 @@ export type CompanyNavBadgeKey = "whatsapp";
 export type CompanyNavIconId =
   | "dashboard"
   | "team"
+  | "documents"
   | "pipeline"
   | "leads"
   | "whatsapp"
@@ -94,6 +96,7 @@ export const COMPANY_SIDEBAR_COLLAPSED_KEY = "segmiq-company-sidebar-collapsed";
 export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, LucideIcon> = {
   dashboard: LayoutDashboard,
   team: Users,
+  documents: FolderOpen,
   pipeline: Columns3,
   leads: UsersRound,
   quotations: FileText,
@@ -176,6 +179,16 @@ export const COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     mobileSlot: "primary",
     mobileLabel: "Team",
     match: (p) => exactOrChild(p, "/client/team"),
+  },
+  {
+    id: "documents",
+    label: "Documents",
+    href: "/client/documents",
+    icon: "documents",
+    section: "company",
+    mobileSlot: "more",
+    mobileLabel: "Documents",
+    match: (p) => exactOrChild(p, "/client/documents"),
   },
   {
     id: "pipeline",
@@ -472,6 +485,15 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "compliance",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/compliance/reviews"),
+  },
+  {
+    id: "documents",
+    label: "Documents",
+    href: "/client/documents",
+    icon: "documents",
+    section: "operations",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/documents"),
   },
   {
     id: "calendar",
