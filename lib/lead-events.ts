@@ -35,6 +35,8 @@ export async function logLeadEvent({
   eventType,
   eventData = {},
   channel,
+  dedupeKey,
+  pinOnCreate,
 }: {
   leadId: string;
   clientId: string;
@@ -42,10 +44,12 @@ export async function logLeadEvent({
   eventType: EventType;
   eventData?: Record<string, unknown>;
   channel?: "call" | "whatsapp" | "in_person";
+  dedupeKey?: string;
+  pinOnCreate?: { userId: string };
 }): Promise<void> {
   const supabase = createAdminClient();
 
-  const { error } = await supabase.from("lead_events").insert({
+  const row = {
     lead_id: leadId,
     client_id: clientId,
     actor_id: actor.id,
@@ -54,7 +58,23 @@ export async function logLeadEvent({
     event_type: eventType,
     event_data: eventData,
     channel: channel ?? null,
-  });
+    dedupe_key: dedupeKey ?? null,
+    pinned_at: pinOnCreate ? new Date().toISOString() : null,
+    pinned_by: pinOnCreate?.userId ?? null,
+  };
+
+  if (dedupeKey) {
+    const { error } = await supabase.from("lead_events").upsert(row, {
+      onConflict: "client_id,dedupe_key",
+      ignoreDuplicates: true,
+    });
+    if (error) {
+      console.error("Failed to log lead event (dedupe):", error);
+    }
+    return;
+  }
+
+  const { error } = await supabase.from("lead_events").insert(row);
 
   if (error) {
     // Never throw — event logging must never break the main action

@@ -170,7 +170,7 @@ const NAV = [
   { id: "forms", label: "08 — Forms & Inputs" },
   { id: "menus", label: "09 — Menus & Pills" },
   { id: "navigation", label: "10 — Navigation & Layout" },
-  { id: "timeline", label: "Timeline" },
+  { id: "timeline", label: "16 — Timeline & Activity" },
   { id: "charts", label: "11 — Charts & Data Viz" },
   { id: "states", label: "12 — Empty States & Feedback" },
   { id: "misc", label: "Icons & misc" },
@@ -3242,8 +3242,12 @@ function ShowcaseInner() {
             <NavigationShowcaseSection />
           </Section>
 
-          {/* ── Timeline ───────────────────────────────────────── */}
-          <Section id="timeline" title="Timeline" description="Milestones, activity feed, and event list.">
+          {/* ── Timeline & Activity (Phase 16) ─────────────────── */}
+          <Section
+            id="timeline"
+            title="16 — Timeline & Activity Feed"
+            description="Four systems — unified timeline, activity intelligence, composer, pinned context. Real Lucide + brand icons only."
+          >
             <div className="grid gap-4 lg:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -3258,31 +3262,35 @@ function ShowcaseInner() {
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Event timeline</CardTitle>
+                  <CardTitle>Activity item (production pattern)</CardTitle>
+                  <CardDescription>Icon well · title · summary · actor · relative time</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(37,211,102,0.12)]">
+                      <BrandIcon brand="whatsapp" size={16} />
+                    </span>
+                    <div>
+                      <p className="text-[13px] font-semibold text-sales-text-primary">WhatsApp sent</p>
+                      <p className="mt-0.5 text-[12px] text-sales-text-secondary">Shared quotation PDF</p>
+                      <p className="mt-1 text-[11px] text-sales-text-muted">Sales rep · 2h ago</p>
+                    </div>
+                  </div>
                   <Timeline
                     items={[
                       {
                         id: "1",
                         title: "Call logged",
-                        description: "Reached — follow-up scheduled for Thursday",
+                        description: "No answer · will retry tomorrow",
                         timeLabel: "10:42 AM",
-                        tone: "brand",
-                      },
-                      {
-                        id: "2",
-                        title: "WhatsApp message sent",
-                        description: "Shared quote PDF",
-                        timeLabel: "Yesterday",
                         tone: "success",
                       },
                       {
-                        id: "3",
-                        title: "Follow-up overdue",
-                        description: "No reply within 48h",
-                        timeLabel: "Mon",
-                        tone: "danger",
+                        id: "2",
+                        title: "Stage changed",
+                        description: "Contacted → Negotiating",
+                        timeLabel: "Yesterday",
+                        tone: "brand",
                       },
                     ]}
                   />
@@ -3291,22 +3299,31 @@ function ShowcaseInner() {
             </div>
             <Card>
               <CardHeader>
-                <CardTitle>Activity rows</CardTitle>
+                <CardTitle>Activity rows (legacy compact list)</CardTitle>
               </CardHeader>
               <div className="divide-y divide-sales-border-subtle">
                 <ActivityRow
                   icon={<BrandIcon brand="whatsapp" size={16} />}
-                  title="WhatsApp reply from Sipho"
-                  detail="Asked about deposit terms"
+                  title="WhatsApp reply"
+                  detail="Customer asked about deposit terms"
                   timeLabel="12m"
                 />
                 <ActivityRow
                   icon={<Phone size={16} className="text-sales-text-secondary" strokeWidth={1.8} />}
-                  title="Outbound call · 4m 12s"
-                  detail="Left voicemail"
+                  title="Call logged"
+                  detail="No answer"
                   timeLabel="1h"
                 />
               </div>
+            </Card>
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>Implemented in production</CardTitle>
+                <CardDescription>
+                  Lead detail Timeline tab · ActivityTimeline · note/call composer · filters · pin · quotation
+                  federation · dedupe on WhatsApp events
+                </CardDescription>
+              </CardHeader>
             </Card>
           </Section>
 

@@ -142,6 +142,7 @@ export async function sendCanonicalWhatsAppText(input: {
         provider_type: provider.type,
       },
       channel: "whatsapp",
+      dedupeKey: result.providerId ? `wa:sent:${result.providerId}` : undefined,
     });
     await supabase.from("leads").update({ updated_at: new Date().toISOString() }).eq("id", input.leadId);
     await afterHumanOutbound(input);

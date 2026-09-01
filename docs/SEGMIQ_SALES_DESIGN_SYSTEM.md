@@ -1011,6 +1011,23 @@ Showcase: `/dev/sales-design-system#table` (development only).
 
 Sort/filter implementation stays page-specific (server query params vs client filter) — Phase 15 standardizes UI, not backend contracts.
 
+## 16 — Timeline & Activity Feed
+
+Four production systems on the existing **`lead_events`** ledger (not a duplicate activity database):
+
+| System | Components / services |
+|--------|----------------------|
+| **Unified timeline** | `ActivityTimeline`, `ActivityItem`, `ActivityIcon`, `buildLeadTimeline()` |
+| **Activity intelligence** | Category filters, timeline search, date grouping, cursor pagination |
+| **Activity composer** | `ActivityComposer` — internal notes + quick no-answer call log |
+| **Pinned context** | `PinnedActivitySection`, `pinned_at` / `pinned_by` on `lead_events` |
+
+**Data rules:** WhatsApp bodies stay in `whatsapp_messages`; quotes in `quotations` / `quotation_events`; calls in `call_logs` with `CALL_LOGGED` mirror events. Timeline references canonical records via `sourceType` + `sourceId`. WhatsApp events use `dedupeKey` (`wa:sent:*`, `wa:recv:*`) to prevent duplicate feed rows.
+
+**Icons:** Lucide for product actions; `SiWhatsapp` (#25D366) for WhatsApp. No emoji stand-ins.
+
+**API:** `GET /api/leads/[leadId]/timeline?cursor&limit&filter&search` · `POST/DELETE .../timeline/[eventId]/pin`
+
 ## Overlay runtime (Phase 13 — superseded by §14)
 
 See **§14 — Overlays & Feedback** above for the consolidated four-system model. Phase 13 introduced `ConfirmDialog`, `Popover`, `OverlayPortal`, and focus-trap wiring; Phase 14 adds `Modal`, `InlineLoading`, `Stepper`, production confirm migrations, and documents the full architecture.

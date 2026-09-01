@@ -441,6 +441,7 @@ export async function handleInboundWhatsAppMessage(opts: {
       message_type: message.type,
     },
     channel: "whatsapp",
+    dedupeKey: providerId ? `wa:recv:${providerId}` : undefined,
   });
 
   const reopenResult = await supabase

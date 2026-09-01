@@ -76,6 +76,14 @@ function leadContext(event: TimelineEventRow) {
   return label;
 }
 
+function noteText(d: Record<string, unknown>): string | null {
+  const note = d.note;
+  const notes = d.notes;
+  if (typeof note === "string" && note.trim()) return note.trim();
+  if (typeof notes === "string" && notes.trim()) return notes.trim();
+  return null;
+}
+
 function EventContent({ event }: { event: TimelineEventRow }) {
   const d = event.event_data;
   const jobLabel = leadContext(event);
@@ -233,7 +241,7 @@ function EventContent({ event }: { event: TimelineEventRow }) {
 
   if (event.event_type === "NOTE_ADDED") {
     const reKind = d.re_kind as string | undefined;
-    const notes = (d.notes as string | null) ?? null;
+    const notes = noteText(d);
     const labels: Record<string, string> = {
       requirements_updated: "Requirements updated",
       property_matched: "Property matched",

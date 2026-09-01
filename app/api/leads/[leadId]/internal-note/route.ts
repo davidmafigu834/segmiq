@@ -8,6 +8,7 @@ import { logLeadEvent } from "@/lib/lead-events";
 
 const bodySchema = z.object({
   note: z.string().min(1).max(2000),
+  pinToTop: z.boolean().optional(),
 });
 
 export async function POST(req: Request, { params }: { params: { leadId: string } }) {
@@ -56,9 +57,11 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
     eventType: "NOTE_ADDED",
     eventData: {
       note: parsed.data.note.trim(),
+      notes: parsed.data.note.trim(),
       internal: true,
       visibility: "internal",
     },
+    pinOnCreate: parsed.data.pinToTop ? { userId: actorId } : undefined,
   });
 
   return NextResponse.json({ ok: true });
