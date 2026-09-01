@@ -128,13 +128,22 @@ function normalizeLeadEvent(
   };
 }
 
+function callLogActorName(users: unknown): string {
+  if (!users) return "Unknown";
+  if (Array.isArray(users)) {
+    const first = users[0] as { name?: string } | undefined;
+    return first?.name ?? "Unknown";
+  }
+  return (users as { name?: string }).name ?? "Unknown";
+}
+
 function normalizeLegacyCallLog(row: {
   id: string;
   outcome: string | null;
   notes: string | null;
   follow_up_date: string | null;
   created_at: string;
-  users: { name: string } | null;
+  actorName: string;
 }): ActivityTimelineItem {
   const data = {
     outcome: row.outcome,
@@ -151,7 +160,7 @@ function normalizeLegacyCallLog(row: {
     summary: callSummary(data),
     occurredAt: row.created_at,
     actorType: "USER",
-    actorName: row.users?.name ?? "Unknown",
+    actorName: row.actorName,
     actorRole: "SALESPERSON",
     actorUserId: null,
     filterCategory: "calls",
@@ -305,7 +314,7 @@ export async function buildLeadTimeline(opts: {
         notes: cl.notes as string | null,
         follow_up_date: cl.follow_up_date as string | null,
         created_at: cl.created_at as string,
-        users: (cl.users as { name: string } | null) ?? null,
+        actorName: callLogActorName(cl.users),
       })
     );
   }
