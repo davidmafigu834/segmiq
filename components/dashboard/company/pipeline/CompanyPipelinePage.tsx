@@ -287,6 +287,7 @@ export function CompanyPipelinePage({
         setDialog({ type: "owner", dealId: selectedRow.id, ownerId: selectedRow.ownerId })
       }
       onChangeStage={(stage) => selectedId && void patchDeal(selectedId, { stage })}
+      clientId={data.clientId}
       overlay={overlayPanel}
       stacked={stackedSplit}
     />

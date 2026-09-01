@@ -44,6 +44,7 @@ import {
   type DealDetailsFocus,
 } from "@/components/sales/deals/DealDetailsEditorSheet";
 import { SalesCommandDrawer } from "@/components/sales/command/SalesCommandDrawer";
+import { EntityDocumentsPanel } from "@/components/dashboard/company/documents/EntityDocumentsPanel";
 
 type NextActionState = {
   hasNextAction: boolean;
@@ -722,6 +723,20 @@ export function DealWorkspaceClient({
 
         {/* Right rail */}
         <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Documents</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EntityDocumentsPanel
+                clientId={deal.client_id}
+                entityType="DEAL"
+                entityId={deal.id}
+                entityLabel={deal.name}
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader
               action={

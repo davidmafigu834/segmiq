@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { FolderTree, Merge, Plus } from "lucide-react";
-import { Button } from "@/components/sales/ui";
+import { CommercialModulePage } from "@/components/dashboard/company/commercial/CommercialModulePage";
+import { Badge, Button } from "@/components/sales/ui";
+import type { UserRole } from "@/types";
 
 type CategoryRow = {
   id: string;
@@ -14,7 +16,21 @@ type CategoryRow = {
   document_count: number;
 };
 
-export function CompanyDocumentCategoriesPage({ clientId }: { clientId: string }) {
+export function CompanyDocumentCategoriesPage({
+  clientId,
+  chrome,
+}: {
+  clientId: string;
+  chrome: {
+    companyName: string;
+    companyLogoUrl?: string | null;
+    userName: string;
+    avatarUrl?: string | null;
+    unreadNotifications: number;
+    notificationRole: UserRole;
+    whatsappBadge?: number;
+  };
+}) {
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
@@ -99,31 +115,28 @@ export function CompanyDocumentCategoriesPage({ clientId }: { clientId: string }
   };
 
   return (
-    <div className="px-4 py-6 md:px-6">
-      <Link href="/client/documents" className="text-sm text-zinc-500 hover:text-lime-300">
-        ← Documents
-      </Link>
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-white">Categories</h1>
-          <p className="mt-1 max-w-2xl text-sm text-zinc-400">
-            Reusable folders for organizing documents. AI reuses existing categories before suggesting
-            new ones; auto-create stays off unless you enable it in settings.
-          </p>
-        </div>
-      </div>
-
+    <CommercialModulePage
+      chrome={chrome}
+      breadcrumb="COMPANY / DOCUMENTS / CATEGORIES"
+      title="Categories"
+      description="Organize documents without relying on folders."
+      titleActions={
+        <Link href="/client/documents" className="text-[13px] font-medium text-sales-brand-fg hover:underline">
+          ← Documents
+        </Link>
+      }
+    >
       {error ? (
-        <p className="mt-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-200">
+        <p className="mb-4 rounded-[10px] border border-sales-danger/25 bg-sales-danger-soft px-4 py-3 text-[13px] text-sales-danger-fg">
           {error}
         </p>
       ) : null}
 
       <form
         onSubmit={(e) => void handleCreate(e)}
-        className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4"
+        className="workspace-card rounded-[12px] border border-sales-border bg-sales-surface p-4"
       >
-        <div className="flex items-center gap-2 text-sm font-medium text-white">
+        <div className="flex items-center gap-2 text-[14px] font-medium text-sales-text-primary">
           <Plus size={16} />
           New category
         </div>
@@ -133,14 +146,14 @@ export function CompanyDocumentCategoriesPage({ clientId }: { clientId: string }
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Category name"
-            className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white"
+            className="rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5 text-[14px] text-sales-text-primary"
           />
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description (optional)"
-            className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white"
+            className="rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5 text-[14px] text-sales-text-primary"
           />
         </div>
         <Button type="submit" variant="primary" size="md" className="mt-3" disabled={creating}>
@@ -148,45 +161,51 @@ export function CompanyDocumentCategoriesPage({ clientId }: { clientId: string }
         </Button>
       </form>
 
-      <div className="mt-6 overflow-x-auto rounded-lg border border-zinc-800">
-        <table className="w-full text-left text-sm">
+      <div className="mt-6 overflow-hidden rounded-[12px] border border-sales-border">
+        <table className="w-full text-left text-[13px]">
           <thead>
-            <tr className="border-b border-zinc-800 text-xs uppercase text-zinc-500">
-              <th className="px-4 py-2.5">Category</th>
-              <th className="px-4 py-2.5">Documents</th>
-              <th className="px-4 py-2.5">Source</th>
+            <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] uppercase tracking-wide text-sales-text-muted">
+              <th className="px-4 py-2.5 font-medium">Category</th>
+              <th className="px-4 py-2.5 font-medium">Documents</th>
+              <th className="px-4 py-2.5 font-medium">Created by</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-zinc-500">
+                <td colSpan={3} className="px-4 py-8 text-center text-sales-text-muted">
                   Loading categories…
                 </td>
               </tr>
             ) : categories.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-zinc-500">
-                  No categories yet. Create one or let document analysis suggest reusable names.
+                <td colSpan={3} className="px-4 py-8 text-center text-sales-text-muted">
+                  No categories yet. SegmiQ will suggest reusable names as documents are analyzed.
                 </td>
               </tr>
             ) : (
               categories.map((cat) => (
-                <tr key={cat.id} className="border-b border-zinc-900">
-                  <td className="px-4 py-3">
+                <tr key={cat.id} className="border-b border-sales-border-subtle last:border-0">
+                  <td className="px-4 py-3.5">
                     <div className="flex items-start gap-2">
-                      <FolderTree size={16} className="mt-0.5 text-zinc-500" />
+                      <FolderTree size={16} className="mt-0.5 text-sales-text-muted" />
                       <div>
-                        <p className="text-white">{cat.name}</p>
+                        <p className="font-medium text-sales-text-primary">{cat.name}</p>
                         {cat.description ? (
-                          <p className="mt-0.5 text-xs text-zinc-500">{cat.description}</p>
+                          <p className="mt-0.5 text-[12px] text-sales-text-muted">{cat.description}</p>
                         ) : null}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">{cat.document_count}</td>
-                  <td className="px-4 py-3 text-zinc-500">
-                    {cat.creation_source === "AGENT" ? "AI" : "Manual"}
+                  <td className="px-4 py-3.5 tabular-nums text-sales-text-secondary">{cat.document_count}</td>
+                  <td className="px-4 py-3.5">
+                    {cat.creation_source === "AGENT" ? (
+                      <Badge tone="brand" size="sm" appearance="soft">
+                        SegmiQ
+                      </Badge>
+                    ) : (
+                      <span className="text-sales-text-muted">Company</span>
+                    )}
                   </td>
                 </tr>
               ))
@@ -196,19 +215,19 @@ export function CompanyDocumentCategoriesPage({ clientId }: { clientId: string }
       </div>
 
       {categories.length > 1 ? (
-        <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950/40 p-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-white">
+        <div className="mt-6 workspace-card rounded-[12px] border border-sales-border bg-sales-surface p-4">
+          <div className="flex items-center gap-2 text-[14px] font-medium text-sales-text-primary">
             <Merge size={16} />
             Merge categories
           </div>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-[12px] text-sales-text-muted">
             Move all documents from the source category into the target, then retire the source.
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <select
               value={mergeSource}
               onChange={(e) => setMergeSource(e.target.value)}
-              className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white"
+              className="rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5 text-[14px] text-sales-text-primary"
             >
               <option value="">Source category</option>
               {categories.map((cat) => (
@@ -220,7 +239,7 @@ export function CompanyDocumentCategoriesPage({ clientId }: { clientId: string }
             <select
               value={mergeTarget}
               onChange={(e) => setMergeTarget(e.target.value)}
-              className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white"
+              className="rounded-[10px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5 text-[14px] text-sales-text-primary"
             >
               <option value="">Target category</option>
               {categories.map((cat) => (
@@ -241,6 +260,6 @@ export function CompanyDocumentCategoriesPage({ clientId }: { clientId: string }
           </Button>
         </div>
       ) : null}
-    </div>
+    </CommercialModulePage>
   );
 }

@@ -1,12 +1,31 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload } from "lucide-react";
+import { Check, FileText, Loader2, Upload } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
+import { formatDocumentBytes } from "@/lib/documents/format";
 import {
   uploadCompanyDocument,
   type UploadFileState,
 } from "@/lib/documents/client-upload";
+import { Badge, Button } from "@/components/sales/ui";
+
+function statusLabel(status: UploadFileState["status"]) {
+  switch (status) {
+    case "uploading":
+      return "Uploading";
+    case "processing":
+      return "Processing";
+    case "ready":
+      return "Ready";
+    case "duplicate":
+      return "Possible duplicate";
+    case "failed":
+      return "Failed";
+    default:
+      return "Pending";
+  }
+}
 
 export function DocumentsUploadZone({
   clientId,
@@ -26,10 +45,7 @@ export function DocumentsUploadZone({
   const processFile = useCallback(
     async (file: File, forceUpload = false) => {
       const id = crypto.randomUUID();
-      setQueue((prev) => [
-        ...prev,
-        { id, file, status: forceUpload ? "uploading" : "uploading" },
-      ]);
+      setQueue((prev) => [...prev, { id, file, status: "uploading" }]);
 
       const result = await uploadCompanyDocument(clientId, file, { forceUpload });
 
@@ -37,11 +53,7 @@ export function DocumentsUploadZone({
         setQueue((prev) =>
           prev.map((item) =>
             item.id === id
-              ? {
-                  ...item,
-                  status: "duplicate",
-                  duplicateOf: result.duplicate,
-                }
+              ? { ...item, status: "duplicate", duplicateOf: result.duplicate }
               : item
           )
         );
@@ -59,9 +71,7 @@ export function DocumentsUploadZone({
 
       setQueue((prev) =>
         prev.map((item) =>
-          item.id === id
-            ? { ...item, status: "processing", documentId: result.documentId }
-            : item
+          item.id === id ? { ...item, status: "processing", documentId: result.documentId } : item
         )
       );
       onUploaded?.();
@@ -96,11 +106,11 @@ export function DocumentsUploadZone({
         }}
         onClick={() => inputRef.current?.click()}
         className={cn(
-          "cursor-pointer rounded-lg border border-dashed transition-colors",
-          compact ? "px-4 py-6" : "px-6 py-10",
+          "cursor-pointer rounded-[12px] border border-dashed transition-colors",
+          compact ? "px-4 py-8" : "px-6 py-12",
           dragOver
-            ? "border-lime-400/60 bg-lime-400/5"
-            : "border-zinc-700 bg-zinc-950/40 hover:border-zinc-600"
+            ? "border-sales-brand-border bg-sales-brand-soft"
+            : "border-sales-border bg-sales-surface-subtle hover:border-sales-border-strong"
         )}
       >
         <input
@@ -115,44 +125,93 @@ export function DocumentsUploadZone({
           }}
         />
         <div className="flex flex-col items-center gap-2 text-center">
-          <Upload className="h-5 w-5 text-zinc-500" strokeWidth={1.5} />
-          <p className="text-sm text-zinc-300">
-            {compact ? "Drop files or click to upload" : "Drag and drop files here"}
+          <Upload className="h-5 w-5 text-sales-text-muted" strokeWidth={1.5} />
+          <p className="text-[14px] font-medium text-sales-text-primary">
+            {compact ? "Drop files or choose files" : "Drop files here"}
           </p>
-          <p className="text-xs text-zinc-500">PDF, Office, images · up to 50MB</p>
+          <p className="text-[12px] text-sales-text-muted">PDF, DOCX, XLSX, images and supported files</p>
         </div>
       </div>
 
       {queue.length > 0 ? (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-4 space-y-2">
           {queue.map((item) => (
             <li
               key={item.id}
-              className="flex items-center justify-between gap-3 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2 text-sm"
+              className="rounded-[10px] border border-sales-border bg-sales-surface px-4 py-3"
             >
-              <span className="min-w-0 truncate text-zinc-200">{item.file.name}</span>
-              <span className="shrink-0 text-xs text-zinc-500">
-                {item.status === "uploading"
-                  ? "Uploading…"
-                  : item.status === "processing"
-                    ? "Processing"
-                    : item.status === "ready"
-                      ? "Ready"
-                      : item.status === "duplicate"
-                        ? "Duplicate"
-                        : item.status === "failed"
-                          ? "Failed"
-                          : "Pending"}
-              </span>
-              {item.status === "duplicate" && item.duplicateOf ? (
-                <button
-                  type="button"
-                  className="shrink-0 text-xs text-lime-400 hover:underline"
-                  onClick={() => void processFile(item.file, true)}
-                >
-                  Upload anyway
-                </button>
-              ) : null}
+              <div className="flex items-start gap-3">
+                <FileText size={18} className="mt-0.5 shrink-0 text-sales-text-muted" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="truncate text-[14px] font-medium text-sales-text-primary">{item.file.name}</p>
+                    <Badge
+                      tone={
+                        item.status === "failed"
+                          ? "danger"
+                          : item.status === "duplicate"
+                            ? "warning"
+                            : item.status === "processing"
+                              ? "info"
+                              : "neutral"
+                      }
+                      size="sm"
+                      appearance="soft"
+                    >
+                      {item.status === "uploading" ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Loader2 size={12} className="animate-spin" />
+                          Uploading
+                        </span>
+                      ) : (
+                        statusLabel(item.status)
+                      )}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-[12px] text-sales-text-muted">{formatDocumentBytes(item.file.size)}</p>
+                  {item.status === "duplicate" && item.duplicateOf ? (
+                    <div className="mt-3 rounded-[8px] border border-sales-warning/25 bg-sales-warning-soft px-3 py-2.5">
+                      <p className="text-[12px] font-medium text-sales-warning-fg">Possible duplicate</p>
+                      <p className="mt-1 text-[12px] text-sales-text-secondary">
+                        Identical to: {item.duplicateOf.title}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {item.duplicateOf.documentId ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.location.href = `/client/documents/${item.duplicateOf!.documentId}`;
+                            }}
+                          >
+                            Open existing
+                          </Button>
+                        ) : null}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void processFile(item.file, true);
+                          }}
+                        >
+                          Upload anyway
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {item.status === "failed" && item.error ? (
+                    <p className="mt-2 text-[12px] text-sales-danger-fg">{item.error}</p>
+                  ) : null}
+                  {item.status === "processing" ? (
+                    <p className="mt-2 inline-flex items-center gap-1 text-[12px] text-sales-text-muted">
+                      <Check size={12} className="text-sales-success-fg" />
+                      Stored · SegmiQ is analyzing
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             </li>
           ))}
         </ul>

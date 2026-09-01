@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { loadCompanyCommercialChrome } from "@/lib/commercial/page-chrome";
+import { CommercialRoute } from "@/components/dashboard/company/commercial/commercial-route";
+import { CompanyDocumentsAttentionPage } from "@/components/dashboard/company/documents/CompanyDocumentsAttentionPage";
 import { isCommercialFlagEnabled } from "@/lib/commercial/flags";
 import { getDocumentsHomeSummary } from "@/lib/documents/list-service";
 import { toDocumentActor } from "@/lib/documents/service";
@@ -12,12 +11,23 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientDocumentsAttentionPage({
+export default async function ClientDocumentsAttentionRoute({
   searchParams,
 }: {
   searchParams: { clientId?: string };
 }) {
-  const chrome = await loadCompanyCommercialChrome(searchParams);
+  return (
+    <CommercialRoute searchParams={searchParams} breadcrumbPage="DOCUMENTS" pageTitle="Attention">
+      {(chrome) => <AttentionContent chrome={chrome} />}
+    </CommercialRoute>
+  );
+}
+
+async function AttentionContent({
+  chrome,
+}: {
+  chrome: Awaited<ReturnType<typeof import("@/lib/commercial/page-chrome").loadCompanyCommercialChrome>>;
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
 
@@ -41,44 +51,5 @@ export default async function ClientDocumentsAttentionPage({
     })
   );
 
-  return (
-    <ClientManagerLayout
-      breadcrumbPage="DOCUMENTS"
-      pageTitle="Needs attention"
-      hideShellHeader
-      hideShellSidebar
-      navClientId={chrome.clientId}
-    >
-      <div className="px-4 py-6 md:px-6">
-        <Link href="/client/documents" className="text-sm text-zinc-500 hover:text-lime-300">
-          ← Documents
-        </Link>
-        <h1 className="mt-4 text-xl font-semibold text-white">Needs attention</h1>
-        <ul className="mt-6 space-y-3">
-          <li className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
-            <span className="text-sm text-zinc-300">Documents needing review</span>
-            <Link
-              href="/client/documents?processingStatus=NEEDS_REVIEW"
-              className="text-sm font-medium text-lime-400 hover:underline"
-            >
-              {summary.attention.needsReview}
-            </Link>
-          </li>
-          <li className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
-            <span className="text-sm text-zinc-300">Failed analysis</span>
-            <Link
-              href="/client/documents?processingStatus=FAILED"
-              className="text-sm font-medium text-lime-400 hover:underline"
-            >
-              {summary.attention.failed}
-            </Link>
-          </li>
-          <li className="flex items-center justify-between rounded-lg border border-zinc-800 px-4 py-3">
-            <span className="text-sm text-zinc-300">Currently processing</span>
-            <span className="text-sm text-zinc-400">{summary.attention.processing}</span>
-          </li>
-        </ul>
-      </div>
-    </ClientManagerLayout>
-  );
+  return <CompanyDocumentsAttentionPage clientId={chrome.clientId} chrome={chrome} summary={summary} />;
 }

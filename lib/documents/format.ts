@@ -63,6 +63,8 @@ export function activityActionLabel(action: string): string {
       return "Analysis completed";
     case "PROCESSING_FAILED":
       return "Analysis failed";
+    case "OBLIGATION_TASK_CREATED":
+      return "Follow-up task created from obligation";
     default:
       return action.replace(/_/g, " ");
   }

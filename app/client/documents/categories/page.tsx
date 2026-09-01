@@ -2,20 +2,30 @@ import { redirect } from "next/navigation";
 import { CompanyDocumentCategoriesPage } from "@/components/dashboard/company/documents/CompanyDocumentCategoriesPage";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
-import { loadCompanyCommercialChrome } from "@/lib/commercial/page-chrome";
+import { CommercialRoute } from "@/components/dashboard/company/commercial/commercial-route";
 import { isCommercialFlagEnabled } from "@/lib/commercial/flags";
 import { loadDocumentCompanySettings } from "@/lib/documents/settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-export default async function ClientDocumentsCategoriesPage({
+export default async function ClientDocumentsCategoriesRoute({
   searchParams,
 }: {
   searchParams: { clientId?: string };
 }) {
-  const chrome = await loadCompanyCommercialChrome(searchParams);
+  return (
+    <CommercialRoute searchParams={searchParams} breadcrumbPage="DOCUMENTS" pageTitle="Categories">
+      {(chrome) => <CategoriesContent chrome={chrome} />}
+    </CommercialRoute>
+  );
+}
+
+async function CategoriesContent({
+  chrome,
+}: {
+  chrome: Awaited<ReturnType<typeof import("@/lib/commercial/page-chrome").loadCompanyCommercialChrome>>;
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
 
@@ -30,15 +40,5 @@ export default async function ClientDocumentsCategoriesPage({
   const settings = await loadDocumentCompanySettings(chrome.clientId);
   if (!flagEnabled || !settings.enabled) redirect("/client/documents");
 
-  return (
-    <ClientManagerLayout
-      breadcrumbPage="DOCUMENTS"
-      pageTitle="Categories"
-      hideShellHeader
-      hideShellSidebar
-      navClientId={chrome.clientId}
-    >
-      <CompanyDocumentCategoriesPage clientId={chrome.clientId} />
-    </ClientManagerLayout>
-  );
+  return <CompanyDocumentCategoriesPage clientId={chrome.clientId} chrome={chrome} />;
 }

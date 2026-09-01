@@ -323,3 +323,49 @@ export async function listDocumentActivity(opts: {
 
   return (data as DocumentActivityRow[]) ?? [];
 }
+
+export async function listDocumentsForEntity(opts: {
+  clientId: string;
+  actor: DocumentActor;
+  entityType: string;
+  entityId: string;
+  limit?: number;
+}): Promise<{ documents: DocumentListItem[]; total: number }> {
+  const supabase = createAdminClient();
+  const limit = Math.min(opts.limit ?? 8, 25);
+
+  const { data: links } = await supabase
+    .from("document_entity_links")
+    .select("document_id")
+    .eq("client_id", opts.clientId)
+    .eq("entity_type", opts.entityType)
+    .eq("entity_id", opts.entityId)
+    .eq("confirmed", true)
+    .order("created_at", { ascending: false })
+    .limit(limit * 2);
+
+  const documentIds = [...new Set((links ?? []).map((r) => r.document_id as string))].slice(0, limit);
+  if (!documentIds.length) return { documents: [], total: 0 };
+
+  const { data, count } = await supabase
+    .from("documents")
+    .select("*, document_types(code, label)", { count: "exact" })
+    .eq("client_id", opts.clientId)
+    .in("id", documentIds)
+    .is("archived_at", null)
+    .order("updated_at", { ascending: false });
+
+  const documents: DocumentListItem[] = [];
+  for (const row of data ?? []) {
+    const policy = await loadAccessPolicy(row.id as string);
+    if (!canViewDocument(opts.actor, row as DocumentRow, policy)) continue;
+    const typeJoin = row.document_types as
+      | { code: string; label: string }
+      | { code: string; label: string }[]
+      | null;
+    const document_type = Array.isArray(typeJoin) ? typeJoin[0] : typeJoin;
+    documents.push({ ...(row as DocumentRow), document_type });
+  }
+
+  return { documents, total: count ?? documents.length };
+}

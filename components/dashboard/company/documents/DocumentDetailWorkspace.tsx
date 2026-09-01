@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Calendar,
   ClipboardList,
+  Download,
   FileText,
   GitCompare,
   History,
@@ -19,11 +20,13 @@ import {
   categoryActionLabel,
   formatDocumentBytes,
   formatDocumentDate,
-  lifecycleStatusLabel,
-  processingStatusLabel,
 } from "@/lib/documents/format";
+import {
+  formatFactValue,
+} from "@/lib/documents/intelligence/profiles";
 import type { DocumentClassificationAuditSummary } from "@/lib/documents/get-document-detail-data";
 import type { DocumentIntelligenceBundle } from "@/lib/documents/intelligence/types";
+import type { DocumentAskCitation } from "@/lib/documents/retrieval/types";
 import {
   DocumentDatesPanel,
   DocumentKeyTermsPanel,
@@ -31,6 +34,19 @@ import {
   DocumentSummaryCard,
 } from "@/components/dashboard/company/documents/DocumentIntelligencePanels";
 import { DocumentRelatedRecordsPanel } from "@/components/dashboard/company/documents/DocumentRelatedRecordsPanel";
+import { AskDocumentsComposer } from "@/components/dashboard/company/documents/shared/AskDocumentsComposer";
+import { DocumentCompareVersionsSheet } from "@/components/dashboard/company/documents/shared/DocumentCompareVersionsSheet";
+import { DocumentPdfViewer } from "@/components/dashboard/company/documents/shared/DocumentPdfViewer";
+import { DocumentProcessingTimeline } from "@/components/dashboard/company/documents/shared/DocumentProcessingTimeline";
+import {
+  DocumentIntelligenceLabel,
+  DocumentSectionHeader,
+  DocumentThumbnail,
+} from "@/components/dashboard/company/documents/shared/document-ui";
+import {
+  DocumentLifecycleBadge,
+  DocumentProcessingBadge,
+} from "@/components/dashboard/company/documents/shared/document-badges";
 import type { EnrichedDocumentEntityLink } from "@/lib/documents/linking/types";
 import type { DocumentActivityRow } from "@/lib/documents/list-service";
 import type {
@@ -38,7 +54,7 @@ import type {
   DocumentRow,
   DocumentVersionRow,
 } from "@/lib/documents/types";
-import { Button } from "@/components/sales/ui";
+import { Badge, Button } from "@/components/sales/ui";
 
 export type DocumentDetailSection =
   | "overview"
@@ -65,6 +81,31 @@ const SECTIONS: Array<{
   { id: "activity", label: "Activity", icon: History },
 ];
 
+function SummaryCell({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "brand" | "warning";
+}) {
+  return (
+    <div className="bg-sales-surface px-3.5 py-2.5">
+      <div className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">{label}</div>
+      <div
+        className={cn(
+          "mt-0.5 text-[15px] font-semibold text-sales-text-primary",
+          tone === "brand" && "text-sales-brand-fg",
+          tone === "warning" && "text-sales-warning-fg"
+        )}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export function DocumentDetailWorkspace({
   clientId,
   document,
@@ -82,6 +123,8 @@ export function DocumentDetailWorkspace({
   canCorrectIntelligence = false,
   canEditLinks = false,
   initialSection = "overview",
+  initialPage,
+  initialHighlight,
 }: {
   clientId: string;
   document: DocumentRow;
@@ -106,11 +149,20 @@ export function DocumentDetailWorkspace({
   canCorrectIntelligence?: boolean;
   canEditLinks?: boolean;
   initialSection?: DocumentDetailSection;
+  initialPage?: number;
+  initialHighlight?: string;
 }) {
   const [section, setSection] = useState<DocumentDetailSection>(initialSection);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [askQuery, setAskQuery] = useState("");
   const [reprocessing, setReprocessing] = useState(false);
+  const [pdfPage, setPdfPage] = useState<number | null>(initialPage ?? null);
+  const [pdfHighlight, setPdfHighlight] = useState<string | null>(initialHighlight ?? null);
+  const [comparePair, setComparePair] = useState<{
+    fromId: string;
+    toId: string;
+    fromLabel: string;
+    toLabel: string;
+  } | null>(null);
 
   const isProcessing = ["QUEUED", "EXTRACTING", "ANALYZING", "INDEXING", "UPLOADED"].includes(
     document.processing_status
@@ -118,9 +170,7 @@ export function DocumentDetailWorkspace({
 
   useEffect(() => {
     if (!isProcessing) return;
-    const timer = window.setInterval(() => {
-      window.location.reload();
-    }, 5000);
+    const timer = window.setInterval(() => window.location.reload(), 5000);
     return () => window.clearInterval(timer);
   }, [isProcessing]);
 
@@ -150,70 +200,96 @@ export function DocumentDetailWorkspace({
     if (section === "document" && !previewUrl) void loadPreview();
   }, [section, previewUrl, loadPreview]);
 
+  useEffect(() => {
+    if (initialPage) setPdfPage(initialPage);
+    if (initialHighlight) setPdfHighlight(initialHighlight);
+  }, [initialPage, initialHighlight]);
+
+  const handleCitationOpen = useCallback((citation: DocumentAskCitation) => {
+    setSection("document");
+    if (citation.pageNumber) setPdfPage(citation.pageNumber);
+    if (citation.excerpt) setPdfHighlight(citation.excerpt);
+  }, []);
+
   const isPdf = version?.mime_type === "application/pdf";
   const isImage = version?.mime_type?.startsWith("image/");
 
-  const headerMeta = useMemo(
-    () => [
-      typeLabel ?? "Document",
-      lifecycleStatusLabel(document.lifecycle_status),
-      processingStatusLabel(document.processing_status),
-    ].join(" · "),
-    [typeLabel, document.lifecycle_status, document.processing_status]
-  );
+  const metaLine = [typeLabel, categoryName].filter(Boolean).join(" · ");
+  const primaryCustomer = links.find((l) => l.entity_type === "CUSTOMER" && l.confirmed);
+
+  const summaryMetrics = useMemo(() => {
+    const contractValue = intelligence.keyTerms.find((f) => f.fact_type === "CONTRACT_VALUE");
+    const expiryRow = intelligence.importantDates.find((d) => d.date_type === "EXPIRY");
+    const activeObligations = intelligence.obligations.filter((o) => o.status !== "CANCELLED").length;
+    const currentVersion = versions.find((v) => v.is_current);
+
+    return {
+      contractValue: contractValue ? formatFactValue(contractValue.value_json) : null,
+      expiry: expiryRow?.date_value
+        ? formatDocumentDate(expiryRow.date_value)
+        : expiryRow?.date_text ?? null,
+      obligations: activeObligations > 0 ? String(activeObligations) : null,
+      related: links.length > 0 ? String(links.length) : null,
+      version: currentVersion ? `V${currentVersion.version_number}` : null,
+    };
+  }, [intelligence, links.length, versions]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#0a0a0a] lg:flex-row">
-      <aside className="shrink-0 border-b border-zinc-800 lg:w-52 lg:border-b-0 lg:border-r">
-        <div className="px-4 py-4 lg:py-5">
-          <Link href="/client/documents" className="text-xs text-zinc-500 hover:text-lime-300">
-            ← Documents
-          </Link>
-        </div>
-        <nav className="flex gap-1 overflow-x-auto px-2 pb-3 lg:flex-col lg:overflow-visible lg:px-3 lg:pb-6">
-          {SECTIONS.map((item) => {
-            const Icon = item.icon;
-            const active = section === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSection(item.id)}
-                className={cn(
-                  "flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors",
-                  active
-                    ? "bg-zinc-900 text-white"
-                    : "text-zinc-400 hover:bg-zinc-950 hover:text-zinc-200"
-                )}
-              >
-                <Icon size={16} strokeWidth={1.5} />
-                {item.label}
-              </button>
-            );
-          })}
-        </nav>
-      </aside>
+    <div className="space-y-4">
+      <Link
+        href="/client/documents"
+        className="inline-flex text-[12px] font-medium text-sales-text-muted hover:text-sales-brand-fg"
+      >
+        ← Documents
+      </Link>
 
-      <div className="min-h-0 flex-1 overflow-auto">
-        <header className="border-b border-zinc-800 px-4 py-5 md:px-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-wide text-zinc-500">{headerMeta}</p>
-              <h1 className="mt-1 text-xl font-semibold text-white">{document.title}</h1>
-              <p className="mt-1 text-sm text-zinc-400">{document.original_file_name}</p>
-              {version ? (
-                <p className="mt-2 text-xs text-zinc-500">
-                  V{version.version_number}
-                  {version.version_label ? ` · ${version.version_label}` : ""}
-                  {" · "}
-                  {formatDocumentBytes(Number(version.size_bytes))}
-                </p>
+      <div className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface">
+        <div className="grid gap-5 border-b border-sales-border-subtle p-4 sm:p-5 lg:grid-cols-[132px_minmax(0,1.15fr)_minmax(240px,0.95fr)] lg:items-start">
+          <DocumentThumbnail mimeType={version?.mime_type} className="mx-auto h-[132px] w-[132px] lg:mx-0" />
+
+          <div className="min-w-0">
+            <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em] text-sales-text-primary sm:text-[30px]">
+              {document.title}
+            </h1>
+            <p className="mt-1 truncate text-[13px] text-sales-text-muted">{document.original_file_name}</p>
+            {metaLine ? <p className="mt-1 text-[13px] text-sales-text-secondary">{metaLine}</p> : null}
+            {primaryCustomer ? (
+              <p className="mt-1 text-[13px] text-sales-text-secondary">{primaryCustomer.label}</p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <DocumentLifecycleBadge status={document.lifecycle_status} />
+              <DocumentProcessingBadge status={document.processing_status} />
+              {policy?.classification === "CONFIDENTIAL" ? (
+                <Badge tone="warning" size="sm" appearance="soft">
+                  Confidential
+                </Badge>
               ) : null}
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            {version ? (
+              <p className="mt-2 text-[12px] text-sales-text-muted">
+                Uploaded {formatDocumentDate(document.created_at)}
+                {version.version_number ? ` · V${version.version_number}` : ""}
+                {" · "}
+                {formatDocumentBytes(Number(version.size_bytes))}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[12px] border border-sales-border bg-sales-border">
+            <SummaryCell label="Contract value" value={summaryMetrics.contractValue ?? "—"} tone="brand" />
+            <SummaryCell label="Expires" value={summaryMetrics.expiry ?? "—"} />
+            <SummaryCell
+              label="Active obligations"
+              value={summaryMetrics.obligations ?? "—"}
+              tone={summaryMetrics.obligations ? "warning" : undefined}
+            />
+            <SummaryCell label="Related records" value={summaryMetrics.related ?? "—"} />
+            <SummaryCell label="Current version" value={summaryMetrics.version ?? "—"} />
+            <div className="col-span-2 flex flex-wrap justify-end gap-2 bg-sales-surface px-3 py-2.5">
               <a href={downloadHref}>
                 <Button variant="secondary" size="md">
-                  Download original
+                  <Download size={15} className="mr-1.5" />
+                  Download
                 </Button>
               </a>
               {(document.processing_status === "FAILED" ||
@@ -229,263 +305,299 @@ export function DocumentDetailWorkspace({
               )}
             </div>
           </div>
+        </div>
 
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              type="text"
-              value={askQuery}
-              onChange={(e) => setAskQuery(e.target.value)}
-              placeholder="Ask this document…"
-              disabled
-              title="Document Q&A arrives in a later phase"
-              className="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-500"
-            />
-            <Button variant="primary" size="md" disabled>
-              Ask
-            </Button>
-          </div>
-        </header>
-
-        <div className="px-4 py-5 md:px-6">
-          {section === "overview" && (
-            <div className="space-y-4">
-              {isProcessing ? (
-                <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-sm text-zinc-400">
-                  {processingStatusLabel(document.processing_status)} — understanding this document…
-                </div>
-              ) : null}
-              {version?.extraction_error ? (
-                <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-100/90">
-                  {version.extraction_error}
-                </div>
-              ) : null}
-              {document.description ? (
-                <p className="text-sm text-zinc-300">{document.description}</p>
-              ) : null}
-              {classification ? (
-                <div className="rounded-lg border border-zinc-800 bg-zinc-950/50 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                    Classification
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {classification.document_type_code ? (
-                      <span className="rounded-full border border-zinc-700 px-2.5 py-1 text-xs text-zinc-200">
-                        {typeLabel ?? classification.document_type_code}
-                      </span>
-                    ) : null}
-                    {categoryName ? (
-                      <span className="rounded-full border border-lime-500/30 bg-lime-500/10 px-2.5 py-1 text-xs text-lime-200">
-                        {categoryName}
-                      </span>
-                    ) : classification.suggested_category_name ? (
-                      <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-100">
-                        Suggested: {classification.suggested_category_name}
-                      </span>
-                    ) : null}
-                    {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-zinc-700 px-2.5 py-1 text-xs text-zinc-300"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="mt-3 text-xs text-zinc-500">
-                    {categoryActionLabel(classification.category_action)}
-                    {classification.type_confidence
-                      ? ` · Type confidence ${classification.type_confidence.toLowerCase()}`
-                      : ""}
-                    {classification.category_action === "AUTO_CREATED" ? (
-                      <span className="text-lime-400"> · New category was created automatically</span>
-                    ) : null}
-                  </p>
-                  {classification.needs_review ? (
-                    <p className="mt-2 text-xs text-amber-200/90">
-                      Review the suggested type or category before relying on this classification.
-                    </p>
+        <div className="grid min-h-[520px] lg:grid-cols-[200px_minmax(0,1fr)]">
+          <nav className="flex gap-1 overflow-x-auto border-b border-sales-border-subtle p-2 lg:sticky lg:top-0 lg:max-h-[calc(100vh-12rem)] lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:border-b-0 lg:border-r lg:p-3">
+            {SECTIONS.map((item) => {
+              const Icon = item.icon;
+              const active = section === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSection(item.id)}
+                  className={cn(
+                    "relative flex min-h-10 shrink-0 items-center gap-2.5 rounded-[9px] px-3 py-2 text-left text-[13px] transition-colors",
+                    active
+                      ? "bg-sales-brand-soft font-medium text-sales-text-primary"
+                      : "font-medium text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
+                  )}
+                >
+                  {active ? (
+                    <span className="absolute bottom-2 left-0 top-2 hidden w-[3px] rounded-full bg-sales-brand lg:block" />
                   ) : null}
-                </div>
-              ) : null}
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-zinc-800 p-3">
-                  <dt className="text-xs text-zinc-500">Lifecycle</dt>
-                  <dd className="mt-1 text-sm text-white">
-                    {lifecycleStatusLabel(document.lifecycle_status)}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-zinc-800 p-3">
-                  <dt className="text-xs text-zinc-500">Processing</dt>
-                  <dd className="mt-1 text-sm text-white">
-                    {processingStatusLabel(document.processing_status)}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-zinc-800 p-3">
-                  <dt className="text-xs text-zinc-500">Access</dt>
-                  <dd className="mt-1 text-sm text-white">
-                    {policy?.scope_type?.replace(/_/g, " ") ?? "Company"}
-                    {policy?.classification ? ` · ${policy.classification}` : ""}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-zinc-800 p-3">
-                  <dt className="text-xs text-zinc-500">Uploaded</dt>
-                  <dd className="mt-1 text-sm text-white">{formatDocumentDate(document.created_at)}</dd>
-                </div>
-              </dl>
-              {content?.plain_text ? (
-                <div className="rounded-lg border border-zinc-800 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                    Extracted text preview
-                  </p>
-                  <p className="mt-2 line-clamp-6 whitespace-pre-wrap text-sm text-zinc-300">
-                    {content.plain_text}
-                  </p>
-                  <p className="mt-2 text-xs text-zinc-600">
-                    {content.word_count} words · {content.char_count} characters ·{" "}
-                    {content.extractor_version}
-                  </p>
-                </div>
-              ) : !isProcessing && document.processing_status !== "FAILED" ? (
-                <DocumentSummaryCard intelligence={intelligence.intelligence} />
-              ) : document.processing_status === "FAILED" ? (
-                <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-8 text-center">
-                  <p className="text-sm text-zinc-400">We couldn&apos;t analyze this document.</p>
-                  <Button
-                    variant="secondary"
-                    size="md"
-                    className="mt-4"
-                    disabled={reprocessing}
-                    onClick={() => void handleReprocess()}
-                  >
-                    Retry analysis
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-          )}
+                  <Icon size={16} strokeWidth={1.8} className="shrink-0" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
 
-          {section === "key_terms" && (
-            <DocumentKeyTermsPanel
-              clientId={clientId}
-              documentId={document.id}
-              keyTerms={intelligence.keyTerms}
-              canCorrect={canCorrectIntelligence}
-            />
-          )}
-          {section === "obligations" && (
-            <DocumentObligationsPanel obligations={intelligence.obligations} />
-          )}
-          {section === "dates" && (
-            <DocumentDatesPanel importantDates={intelligence.importantDates} />
-          )}
-          {section === "related" && (
-            <DocumentRelatedRecordsPanel
-              clientId={clientId}
-              documentId={document.id}
-              links={links}
-              canEdit={canEditLinks}
-            />
-          )}
-
-          {section === "document" && (
-            <div className="space-y-3">
-              {!version ? (
-                <p className="text-sm text-zinc-500">No file version available.</p>
-              ) : isPdf && previewUrl ? (
-                <iframe
-                  title={document.title}
-                  src={previewUrl}
-                  className="h-[70vh] w-full rounded-lg border border-zinc-800 bg-white"
+          <div className="min-w-0 p-4 sm:p-6">
+            {section === "overview" && (
+              <div className="space-y-6">
+                <DocumentSectionHeader
+                  title="Overview"
+                  subtitle="Understand the document without reading every page."
                 />
-              ) : isImage && previewUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={previewUrl}
-                  alt={document.title}
-                  className="max-h-[70vh] rounded-lg border border-zinc-800"
-                />
-              ) : (
-                <div className="rounded-lg border border-zinc-800 px-4 py-10 text-center">
-                  <p className="text-sm text-zinc-400">
-                    Preview is not available for this file type. Download the original to view it.
-                  </p>
-                  <a href={downloadHref} className="mt-3 inline-block text-sm text-lime-400 hover:underline">
-                    Download original
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
-
-          {section === "versions" && (
-            <div className="overflow-x-auto rounded-lg border border-zinc-800">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-800 text-xs uppercase text-zinc-500">
-                    <th className="px-4 py-2.5">Version</th>
-                    <th className="px-4 py-2.5">File</th>
-                    <th className="px-4 py-2.5">Status</th>
-                    <th className="px-4 py-2.5">Uploaded</th>
-                    <th className="px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {versions.map((v) => (
-                    <tr key={v.id} className="border-b border-zinc-900">
-                      <td className="px-4 py-3 text-white">
-                        V{v.version_number}
-                        {v.is_current ? (
-                          <span className="ml-2 text-xs text-lime-400">Current</span>
-                        ) : null}
-                      </td>
-                      <td className="px-4 py-3 text-zinc-400">{v.original_file_name}</td>
-                      <td className="px-4 py-3 text-zinc-500">
-                        {processingStatusLabel(v.processing_status)}
-                      </td>
-                      <td className="px-4 py-3 text-zinc-400">{formatDocumentDate(v.uploaded_at)}</td>
-                      <td className="px-4 py-3">
-                        <a
-                          href={`${downloadHref}?versionId=${v.id}`}
-                          className="text-xs text-lime-400 hover:underline"
-                        >
-                          Download
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {section === "activity" && (
-            <ul className="space-y-2">
-              {activity.length === 0 ? (
-                <li className="text-sm text-zinc-500">No activity recorded yet.</li>
-              ) : (
-                activity.map((row) => (
-                  <li
-                    key={row.id}
-                    className="flex items-start justify-between gap-4 rounded-lg border border-zinc-800 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm text-white">{activityActionLabel(row.action)}</p>
-                      {row.metadata && Object.keys(row.metadata).length > 0 ? (
-                        <p className="mt-1 text-xs text-zinc-500">
-                          {activityMetadataSummary(row.metadata as Record<string, unknown>)}
-                        </p>
+                {isProcessing ? (
+                  <div className="rounded-[12px] border border-sales-border bg-sales-surface-subtle p-4">
+                    <p className="mb-3 text-[13px] font-medium text-sales-text-primary">
+                      Processing timeline
+                    </p>
+                    <DocumentProcessingTimeline status={document.processing_status} />
+                  </div>
+                ) : null}
+                {version?.extraction_error ? (
+                  <div className="rounded-[10px] border border-sales-warning/25 bg-sales-warning-soft px-4 py-3 text-[13px] text-sales-warning-fg">
+                    {version.extraction_error}
+                  </div>
+                ) : null}
+                {classification ? (
+                  <div className="rounded-[12px] border border-sales-border bg-sales-surface-subtle p-4">
+                    <DocumentIntelligenceLabel />
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {typeLabel ? (
+                        <Badge tone="neutral" size="sm" appearance="soft">
+                          {typeLabel}
+                        </Badge>
                       ) : null}
+                      {categoryName ? (
+                        <Badge tone="brand" size="sm" appearance="soft">
+                          {categoryName}
+                        </Badge>
+                      ) : classification.suggested_category_name ? (
+                        <Badge tone="warning" size="sm" appearance="soft">
+                          Suggested: {classification.suggested_category_name}
+                        </Badge>
+                      ) : null}
+                      {tags.map((tag) => (
+                        <Badge key={tag} tone="neutral" size="sm" appearance="outline">
+                          {tag}
+                        </Badge>
+                      ))}
                     </div>
-                    <time className="shrink-0 text-xs text-zinc-500">
-                      {formatDocumentDate(row.created_at)}
-                    </time>
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
+                    <p className="mt-3 text-[12px] text-sales-text-muted">
+                      {categoryActionLabel(classification.category_action)}
+                      {classification.category_action === "AUTO_CREATED" ? " · Created by SegmiQ" : ""}
+                    </p>
+                  </div>
+                ) : null}
+                <DocumentSummaryCard intelligence={intelligence.intelligence} />
+                {document.processing_status === "FAILED" ? (
+                  <div className="rounded-[12px] border border-dashed border-sales-border px-6 py-10 text-center">
+                    <p className="text-[14px] text-sales-text-secondary">Document intelligence unavailable</p>
+                    <p className="mt-1 text-[13px] text-sales-text-muted">
+                      The original file is safe, but SegmiQ couldn&apos;t analyze it.
+                    </p>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      className="mt-4"
+                      disabled={reprocessing}
+                      onClick={() => void handleReprocess()}
+                    >
+                      Retry analysis
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            )}
+
+            {section === "key_terms" && (
+              <div className="space-y-4">
+                <DocumentSectionHeader
+                  title="Key Terms"
+                  subtitle="Important commercial and contractual terms identified in this document."
+                />
+                <DocumentKeyTermsPanel
+                  clientId={clientId}
+                  documentId={document.id}
+                  keyTerms={intelligence.keyTerms}
+                  canCorrect={canCorrectIntelligence}
+                />
+              </div>
+            )}
+
+            {section === "obligations" && (
+              <div className="space-y-4">
+                <DocumentSectionHeader
+                  title="Obligations"
+                  subtitle="What each party has committed to do."
+                />
+                <DocumentObligationsPanel
+                  clientId={clientId}
+                  documentId={document.id}
+                  obligations={intelligence.obligations}
+                />
+              </div>
+            )}
+
+            {section === "dates" && (
+              <div className="space-y-4">
+                <DocumentSectionHeader title="Important dates" subtitle="Chronological dates detected in this document." />
+                <DocumentDatesPanel importantDates={intelligence.importantDates} />
+              </div>
+            )}
+
+            {section === "related" && (
+              <div className="space-y-4">
+                <DocumentSectionHeader title="Related records" subtitle="CRM relationships for this document." />
+                <DocumentRelatedRecordsPanel
+                  clientId={clientId}
+                  documentId={document.id}
+                  links={links}
+                  canEdit={canEditLinks}
+                />
+              </div>
+            )}
+
+            {section === "document" && (
+              <div className="space-y-4">
+                <DocumentSectionHeader title="Document" subtitle="View the original file and ask questions about it." />
+                <AskDocumentsComposer
+                  clientId={clientId}
+                  documentId={document.id}
+                  onCitationOpen={handleCitationOpen}
+                />
+                {isPdf && previewUrl ? (
+                  <DocumentPdfViewer
+                    title={document.title}
+                    previewUrl={previewUrl}
+                    page={pdfPage}
+                    highlight={pdfHighlight}
+                  />
+                ) : isImage && previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={previewUrl} alt={document.title} className="max-h-[72vh] w-full object-contain p-4" />
+                  ) : !version ? (
+                    <p className="p-6 text-[13px] text-sales-text-muted">No file version available.</p>
+                  ) : (
+                    <div className="px-6 py-12 text-center">
+                      <p className="text-[14px] text-sales-text-secondary">
+                        Preview is not available for this file type.
+                      </p>
+                      <a href={downloadHref} className="mt-3 inline-block text-[13px] font-medium text-sales-brand-fg hover:underline">
+                        Download original
+                      </a>
+                    </div>
+                  )}
+              </div>
+            )}
+
+            {section === "versions" && (
+              <div className="space-y-4">
+                <DocumentSectionHeader title="Version history" subtitle="All versions of this document." />
+                <div className="overflow-hidden rounded-[12px] border border-sales-border">
+                  <table className="w-full text-left text-[13px]">
+                    <thead>
+                      <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[11px] uppercase tracking-wide text-sales-text-muted">
+                        <th className="px-4 py-2.5 font-medium">Version</th>
+                        <th className="px-4 py-2.5 font-medium">File</th>
+                        <th className="px-4 py-2.5 font-medium">Status</th>
+                        <th className="px-4 py-2.5 font-medium">Uploaded</th>
+                        <th className="px-4 py-2.5" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {versions.map((v) => (
+                        <tr key={v.id} className="border-b border-sales-border-subtle last:border-0">
+                          <td className="px-4 py-3 font-medium text-sales-text-primary">
+                            V{v.version_number}
+                            {v.is_current ? (
+                              <Badge tone="brand" size="sm" appearance="soft" className="ml-2">
+                                Current
+                              </Badge>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-3 text-sales-text-secondary">{v.original_file_name}</td>
+                          <td className="px-4 py-3">
+                            <DocumentProcessingBadge status={v.processing_status} />
+                          </td>
+                          <td className="px-4 py-3 text-sales-text-muted">{formatDocumentDate(v.uploaded_at)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-3">
+                              {!v.is_current ? (
+                                <button
+                                  type="button"
+                                  className="text-[12px] font-medium text-sales-brand-fg hover:underline"
+                                  onClick={() => {
+                                    const current = versions.find((ver) => ver.is_current);
+                                    if (!current) return;
+                                    setComparePair({
+                                      fromId: v.id,
+                                      toId: current.id,
+                                      fromLabel: `V${v.version_number}`,
+                                      toLabel: `V${current.version_number}`,
+                                    });
+                                  }}
+                                >
+                                  Compare
+                                </button>
+                              ) : null}
+                              <a
+                                href={`${downloadHref}?versionId=${v.id}`}
+                                className="text-[12px] font-medium text-sales-brand-fg hover:underline"
+                              >
+                                Download
+                              </a>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {section === "activity" && (
+              <div className="space-y-4">
+                <DocumentSectionHeader title="Activity" subtitle="Recent actions on this document." />
+                <ul className="space-y-2">
+                  {activity.length === 0 ? (
+                    <li className="text-[13px] text-sales-text-muted">No activity recorded yet.</li>
+                  ) : (
+                    activity.map((row) => (
+                      <li
+                        key={row.id}
+                        className="flex items-start justify-between gap-4 rounded-[10px] border border-sales-border px-4 py-3"
+                      >
+                        <div>
+                          <p className="text-[14px] font-medium text-sales-text-primary">
+                            {activityActionLabel(row.action)}
+                          </p>
+                          {row.metadata && Object.keys(row.metadata).length > 0 ? (
+                            <p className="mt-1 text-[12px] text-sales-text-muted">
+                              {activityMetadataSummary(row.metadata as Record<string, unknown>)}
+                            </p>
+                          ) : null}
+                        </div>
+                        <time className="shrink-0 text-[12px] text-sales-text-muted">
+                          {formatDocumentDate(row.created_at)}
+                        </time>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {comparePair ? (
+        <DocumentCompareVersionsSheet
+          clientId={clientId}
+          documentId={document.id}
+          fromVersionId={comparePair.fromId}
+          toVersionId={comparePair.toId}
+          fromLabel={comparePair.fromLabel}
+          toLabel={comparePair.toLabel}
+          onClose={() => setComparePair(null)}
+        />
+      ) : null}
     </div>
   );
 }

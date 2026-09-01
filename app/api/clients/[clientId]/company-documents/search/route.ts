@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
+import { hasDocumentPermission } from "@/lib/documents/permissions";
 import { searchDocuments } from "@/lib/documents/retrieval";
 import { toDocumentActor } from "@/lib/documents/service";
 
@@ -11,6 +12,11 @@ export async function GET(
 ) {
   const g = await requireClientAccessFromRequest(req, params.clientId);
   if ("error" in g) return g.error;
+
+  const actor = toDocumentActor(g.session);
+  if (!hasDocumentPermission(actor, "documents.ask")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const url = new URL(req.url);
   const q = url.searchParams.get("q")?.trim() ?? "";

@@ -1,9 +1,9 @@
 import { redirect, notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
+import { CommercialRoute } from "@/components/dashboard/company/commercial/commercial-route";
+import { CommercialModulePage } from "@/components/dashboard/company/commercial/CommercialModulePage";
 import { DocumentDetailWorkspace } from "@/components/dashboard/company/documents/DocumentDetailWorkspace";
-import { loadCompanyCommercialChrome } from "@/lib/commercial/page-chrome";
 import { isCommercialFlagEnabled } from "@/lib/commercial/flags";
 import { canCorrectDocumentIntelligence, canEditDocument } from "@/lib/documents/permissions";
 import {
@@ -20,9 +20,36 @@ export default async function ClientDocumentDetailPage({
   searchParams,
 }: {
   params: { documentId: string };
-  searchParams: { clientId?: string; tab?: string };
+  searchParams: { clientId?: string; tab?: string; page?: string; highlight?: string };
 }) {
-  const chrome = await loadCompanyCommercialChrome(searchParams);
+  return (
+    <CommercialRoute searchParams={searchParams} breadcrumbPage="DOCUMENTS" pageTitle="Document">
+      {(chrome) => (
+        <DocumentDetailPageContent
+          chrome={chrome}
+          documentId={params.documentId}
+          tab={searchParams.tab}
+          page={searchParams.page}
+          highlight={searchParams.highlight}
+        />
+      )}
+    </CommercialRoute>
+  );
+}
+
+async function DocumentDetailPageContent({
+  chrome,
+  documentId,
+  tab,
+  page,
+  highlight,
+}: {
+  chrome: Awaited<ReturnType<typeof import("@/lib/commercial/page-chrome").loadCompanyCommercialChrome>>;
+  documentId: string;
+  tab?: string;
+  page?: string;
+  highlight?: string;
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
 
@@ -45,7 +72,7 @@ export default async function ClientDocumentDetailPage({
 
   const result = await getCompanyDocumentDetailData({
     clientId: chrome.clientId,
-    documentId: params.documentId,
+    documentId,
     actor,
   });
 
@@ -54,20 +81,18 @@ export default async function ClientDocumentDetailPage({
     redirect("/client/documents");
   }
 
-  const tab = searchParams.tab;
   const initialSection =
-    tab === "versions" || tab === "activity" || tab === "document"
+    tab === "versions" || tab === "activity" || tab === "document" || tab === "obligations"
       ? tab
       : "overview";
+  const initialPage = page ? Number(page) : undefined;
+  const initialHighlight = highlight ? decodeURIComponent(highlight) : undefined;
 
   return (
-    <ClientManagerLayout
-      breadcrumbPage="DOCUMENTS"
-      pageTitle={result.document.title}
-      hideShellHeader
-      hideShellSidebar
-      navClientId={chrome.clientId}
-      immersive
+    <CommercialModulePage
+      chrome={chrome}
+      breadcrumb={`COMPANY / DOCUMENTS / ${result.document.title.toUpperCase()}`}
+      hideTitleBlock
     >
       <DocumentDetailWorkspace
         clientId={chrome.clientId}
@@ -86,7 +111,9 @@ export default async function ClientDocumentDetailPage({
         canCorrectIntelligence={canCorrectDocumentIntelligence(actor)}
         canEditLinks={canEditDocument(actor)}
         initialSection={initialSection}
+        initialPage={initialPage && !Number.isNaN(initialPage) ? initialPage : undefined}
+        initialHighlight={initialHighlight}
       />
-    </ClientManagerLayout>
+    </CommercialModulePage>
   );
 }

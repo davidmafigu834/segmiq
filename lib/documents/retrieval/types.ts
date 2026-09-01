@@ -49,3 +49,21 @@ export type DocumentSearchResult = {
   chunks: DocumentChunkHit[];
   total: number;
 };
+
+export type DocumentAskCitation = {
+  chunkId: string;
+  documentId: string;
+  documentTitle: string;
+  pageNumber: number | null;
+  sectionHeading: string | null;
+  excerpt: string;
+  score: number;
+};
+
+export type DocumentAskResult = {
+  question: string;
+  answer: string | null;
+  confidence: "HIGH" | "MEDIUM" | "LOW" | null;
+  citations: DocumentAskCitation[];
+  insufficientEvidence: boolean;
+};

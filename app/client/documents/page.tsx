@@ -2,9 +2,8 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { ClientManagerLayout } from "@/components/layouts/ClientManagerLayout";
+import { CommercialRoute } from "@/components/dashboard/company/commercial/commercial-route";
 import { CompanyDocumentsPage } from "@/components/dashboard/company/documents/CompanyDocumentsPage";
-import { loadCompanyCommercialChrome } from "@/lib/commercial/page-chrome";
 import { isCommercialFlagEnabled } from "@/lib/commercial/flags";
 import {
   getCompanyDocumentsPageData,
@@ -35,9 +34,22 @@ export default async function ClientDocumentsPage({
 }: {
   searchParams: Record<string, string | string[] | undefined>;
 }) {
-  const chrome = await loadCompanyCommercialChrome({
-    clientId: typeof searchParams.clientId === "string" ? searchParams.clientId : undefined,
-  });
+  return (
+    <CommercialRoute searchParams={searchParams} breadcrumbPage="DOCUMENTS" pageTitle="Documents">
+      {(chrome) => (
+        <ClientDocumentsPageContent chrome={chrome} searchParams={searchParams} />
+      )}
+    </CommercialRoute>
+  );
+}
+
+async function ClientDocumentsPageContent({
+  chrome,
+  searchParams,
+}: {
+  chrome: Awaited<ReturnType<typeof import("@/lib/commercial/page-chrome").loadCompanyCommercialChrome>>;
+  searchParams: Record<string, string | string[] | undefined>;
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) redirect("/login");
 
@@ -77,23 +89,16 @@ export default async function ClientDocumentsPage({
       };
 
   return (
-    <ClientManagerLayout
-      breadcrumbPage="DOCUMENTS"
-      pageTitle="Documents"
-      hideShellHeader
-      hideShellSidebar
-      navClientId={chrome.clientId}
-    >
-      <Suspense fallback={null}>
-        <CompanyDocumentsPage
-          clientId={chrome.clientId}
-          initialDocuments={data.documents}
-          initialTotal={data.total}
-          summary={data.summary}
-          types={data.types}
-          enabled={enabled}
-        />
-      </Suspense>
-    </ClientManagerLayout>
+    <Suspense fallback={null}>
+      <CompanyDocumentsPage
+        clientId={chrome.clientId}
+        chrome={chrome}
+        initialDocuments={data.documents}
+        initialTotal={data.total}
+        summary={data.summary}
+        types={data.types}
+        enabled={enabled}
+      />
+    </Suspense>
   );
 }

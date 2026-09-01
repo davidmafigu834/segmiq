@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type HTMLAttributes } from "react";
 import Link from "next/link";
 import { Building2, ChevronDown, Phone, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import { cn } from "@/lib/ui/cn";
+import { EntityDocumentsPanel } from "@/components/dashboard/company/documents/EntityDocumentsPanel";
 import {
   Avatar,
   Badge,
@@ -120,6 +120,7 @@ export function CompanyPipelineDealPanel({
   onSchedule,
   onChangeOwner,
   onChangeStage,
+  clientId,
   overlay,
   stacked,
 }: {
@@ -134,6 +135,7 @@ export function CompanyPipelineDealPanel({
   onSchedule: () => void;
   onChangeOwner: () => void;
   onChangeStage: (stage: DealStage) => void;
+  clientId?: string;
   overlay?: boolean;
   stacked?: boolean;
 }) {
@@ -369,6 +371,18 @@ export function CompanyPipelineDealPanel({
               </div>
             </dl>
           </Section>
+
+          {clientId && (data?.id ?? row?.id) ? (
+            <Section>
+              <EntityDocumentsPanel
+                clientId={clientId}
+                entityType="DEAL"
+                entityId={data?.id ?? row!.id}
+                entityLabel={name}
+                compact
+              />
+            </Section>
+          ) : null}
 
           <div className="px-4 py-3.5 sm:px-5">
             <Link

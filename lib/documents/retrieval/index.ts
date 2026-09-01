@@ -1,3 +1,4 @@
+export { askDocuments } from "./ask";
 export { searchDocuments, searchDocumentChunks, retrieveChunksForDocument } from "./search";
 export {
   buildSnippet,
@@ -10,6 +11,8 @@ export {
 } from "./ranking";
 export { DOCUMENT_RETRIEVAL_VERSION } from "./types";
 export type {
+  DocumentAskCitation,
+  DocumentAskResult,
   DocumentChunkHit,
   DocumentSearchFilters,
   DocumentSearchHit,
