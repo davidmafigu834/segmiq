@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, type LucideIcon, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   Area,
   AreaChart,
