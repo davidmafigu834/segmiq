@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Avatar } from "@/components/sales/ui/Avatar";
 import {
   addMonths,
   eachDayOfInterval,
@@ -108,7 +109,6 @@ function MiniMonth({
 
 function AgendaRow({ event, timezone, onSelect }: { event: CompanyCalendarEvent; timezone: string; onSelect: () => void }) {
   const meta = COMPANY_CALENDAR_KIND_META[event.kind];
-  const initials = event.ownerName?.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "?";
   return (
     <button type="button" onClick={onSelect} className="flex w-full items-center gap-2.5 border-b border-sales-border-subtle py-2.5 text-left last:border-0 hover:bg-sales-surface-hover" aria-label={`Open ${event.title}`}>
       <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", meta.className)} data-event-kind={event.kind}><CompanyCalendarEventIcon kind={event.kind} size={14} /></span>
@@ -117,10 +117,7 @@ function AgendaRow({ event, timezone, onSelect }: { event: CompanyCalendarEvent;
         <span className="block truncate text-[12.5px] font-semibold text-sales-text-primary">{event.title}</span>
         <span className="mt-0.5 block truncate text-[11px] text-sales-text-muted">{event.relatedLabel}</span>
         <span className="mt-1 flex min-w-0 items-center gap-1.5 text-[10px] text-sales-text-muted">
-          {event.ownerAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={event.ownerAvatarUrl} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" />
-          ) : <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-sales-brand-soft text-[6px] font-semibold text-sales-text-primary">{initials}</span>}
+          <Avatar name={event.ownerName ?? "Unassigned"} src={event.ownerAvatarUrl} size="2xs" alt="" />
           <span className="truncate">{event.ownerName ?? "Unassigned"}</span>
         </span>
       </span>
@@ -211,7 +208,6 @@ function EventDetail({
   onComplete: () => void;
 }) {
   const meta = COMPANY_CALENDAR_KIND_META[event.kind];
-  const initials = event.ownerName?.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "?";
   return (
     <div className="p-4">
       <button type="button" onClick={onBack} className="inline-flex items-center gap-1 text-[12px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"><ArrowLeft size={14} /> Back to agenda</button>
@@ -225,10 +221,7 @@ function EventDetail({
       <div className="divide-y divide-sales-border-subtle">
         <div className="flex gap-3 py-3.5"><CalendarDays size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Date and time</p><p className="mt-1 text-[12px] text-sales-text-primary">{formatCalendarEventRange(event, timezone)}</p><p className="mt-0.5 text-[10px] text-sales-text-muted">{timezone}</p></div></div>
         <div className="py-3.5"><p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Related {relationLabel(event)}</p><Link href={event.relatedHref} className="mt-2 flex items-center justify-between rounded-[9px] border border-sales-border bg-sales-surface-subtle px-3 py-2.5 hover:border-sales-border-strong"><span className="min-w-0"><span className="block truncate text-[12px] font-semibold text-sales-text-primary">{event.relatedLabel}</span>{event.relatedSecondary ? <span className="mt-0.5 block truncate text-[11px] text-sales-text-muted">{event.relatedSecondary}</span> : null}</span><ExternalLink size={13} className="shrink-0 text-sales-text-muted" /></Link></div>
-        <div className="flex gap-3 py-3.5"><UserRound size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Owner</p><div className="mt-1.5 flex items-center gap-2">{event.ownerAvatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={event.ownerAvatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
-        ) : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sales-surface-subtle text-[9px] font-semibold text-sales-text-primary">{initials}</span>}<span><span className="block text-[12px] text-sales-text-primary">{event.ownerName ?? "Unassigned"}</span>{event.ownerRoleLabel ? <span className="mt-0.5 block text-[10px] text-sales-text-muted">{event.ownerRoleLabel}</span> : null}</span></div></div></div>
+        <div className="flex gap-3 py-3.5"><UserRound size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Owner</p><div className="mt-1.5 flex items-center gap-2"><Avatar name={event.ownerName ?? "Unassigned"} src={event.ownerAvatarUrl} size="sm" alt="" /><span><span className="block text-[12px] text-sales-text-primary">{event.ownerName ?? "Unassigned"}</span>{event.ownerRoleLabel ? <span className="mt-0.5 block text-[10px] text-sales-text-muted">{event.ownerRoleLabel}</span> : null}</span></div></div></div>
         {event.attentionReason ? <div className="rounded-[9px] border border-sales-warning/25 bg-sales-warning-soft px-3 py-2.5 text-[11px] leading-relaxed text-sales-warning-fg"><span className="font-semibold">Needs attention:</span> {event.attentionReason}</div> : null}
         {event.location ? <div className="flex gap-3 py-3.5"><MapPin size={15} className="mt-0.5 shrink-0 text-sales-text-muted" /><div><p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Location</p><p className="mt-1 text-[12px] text-sales-text-primary">{event.location}</p></div></div> : null}
         {event.description ? <div className="py-3.5"><p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">Description</p><p className="mt-1.5 text-[12px] leading-relaxed text-sales-text-secondary">{event.description}</p></div> : null}

@@ -396,7 +396,12 @@ export function CompanyTeamTableCard({
                   >
                     <DataTableTd className="px-5">
                       <div className="flex min-w-0 items-center gap-3">
-                        <Avatar name={row.name} src={row.avatarUrl} size="md" />
+                        <Avatar
+                          name={row.name}
+                          src={row.avatarUrl}
+                          size="md"
+                          presence={row.isActive ? row.presence : null}
+                        />
                         <div className="min-w-0">
                           <p className="truncate text-[13px] font-semibold text-sales-text-primary">
                             {row.name}
@@ -467,7 +472,12 @@ export function CompanyTeamTableCard({
               >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <Avatar name={row.name} src={row.avatarUrl} size="md" />
+                      <Avatar
+                        name={row.name}
+                        src={row.avatarUrl}
+                        size="md"
+                        presence={row.isActive ? row.presence : null}
+                      />
                       <div className="min-w-0">
                         <p className="truncate text-[13px] font-semibold text-sales-text-primary">
                           {row.name}

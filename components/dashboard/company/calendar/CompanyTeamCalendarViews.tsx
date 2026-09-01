@@ -11,6 +11,7 @@ import {
 } from "date-fns";
 import { CalendarDays, Plus, UsersRound } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
+import { Avatar } from "@/components/sales/ui/Avatar";
 import {
   calendarDateKey,
   companyCalendarTeamAttention,
@@ -35,25 +36,14 @@ function parseDateKey(key: string): Date {
   return parseISO(`${key}T12:00:00`);
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "?";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
-}
-
 function OwnerAvatar({ owner, size = "md" }: { owner: CalendarOwner; size?: "sm" | "md" }) {
-  const className = size === "sm" ? "h-7 w-7 text-[9px]" : "h-10 w-10 text-[11px]";
-  if (owner.avatarUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={owner.avatarUrl} alt="" className={cn(className, "shrink-0 rounded-full object-cover")} />
-    );
-  }
   return (
-    <span className={cn(className, "flex shrink-0 items-center justify-center rounded-full bg-sales-brand-soft font-semibold text-sales-text-primary")}>
-      {initials(owner.name)}
-    </span>
+    <Avatar
+      name={owner.name}
+      src={owner.avatarUrl}
+      size={size === "sm" ? "sm" : "lg"}
+      alt=""
+    />
   );
 }
 

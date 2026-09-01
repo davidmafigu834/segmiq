@@ -40,6 +40,8 @@ import {
   companyTeamTitleLabel,
   deriveCompanyTeamAttention,
 } from "@/lib/sales/company-team-metrics";
+import { derivePresenceState } from "@/lib/presence/derive-presence";
+import type { AvailabilityOverride, PresenceState } from "@/lib/presence/constants";
 
 const CLOSED_LEAD = new Set(["WON", "LOST", "NOT_QUALIFIED", "CONVERTED_TO_DEAL"]);
 
@@ -117,6 +119,8 @@ type TeamUser = {
   also_sells: boolean | null;
   avatar_url: string | null;
   is_active: boolean | null;
+  last_seen_at: string | null;
+  availability_override: string | null;
 };
 
 export async function loadQuoteTotalsByDealId(
@@ -321,7 +325,7 @@ export async function getCompanyTeamPageData(opts: {
       .maybeSingle(),
     supabase
       .from("users")
-      .select("id, name, email, phone, role, also_sells, avatar_url, is_active")
+      .select("id, name, email, phone, role, also_sells, avatar_url, is_active, last_seen_at, availability_override")
       .eq("client_id", clientId)
       .in("role", ["SALESPERSON", "CLIENT_MANAGER"])
       .order("name", { ascending: true }),
@@ -519,6 +523,14 @@ export async function getCompanyTeamPageData(opts: {
     });
     const isActive = member.is_active !== false;
     const roleGroup = companyTeamRoleGroup(member.role);
+    const availabilityOverride =
+      (member.availability_override as AvailabilityOverride | null) ?? null;
+    const presence: PresenceState = isActive
+      ? derivePresenceState({
+          lastSeenAt: member.last_seen_at,
+          availabilityOverride,
+        })
+      : "offline";
 
     return {
       id: member.id,
@@ -527,6 +539,9 @@ export async function getCompanyTeamPageData(opts: {
       avatarUrl: member.avatar_url,
       email: member.email,
       phone: member.phone,
+      lastSeenAt: member.last_seen_at,
+      availabilityOverride,
+      presence,
       roleColumn: companyTeamRoleColumn(member.role, member.also_sells),
       titleLabel: companyTeamTitleLabel(member.role, member.also_sells),
       roleGroup,

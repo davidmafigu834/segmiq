@@ -14,7 +14,6 @@ import { SiWhatsapp } from "react-icons/si";
 import { cn } from "@/lib/ui/cn";
 import {
   Avatar,
-  Badge,
   Button,
   ErrorState,
   DropdownMenu,
@@ -22,10 +21,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   IconButton,
-  Progress,
+  LeadScoreBadge,
+  LeadScoreGauge,
+  PipelineStageBadge,
   Skeleton,
 } from "@/components/sales/ui";
-import { companyLeadLifecycleTone } from "@/lib/sales/company-leads-metrics";
 import { SourceBadge } from "./CompanyLeadsTableCard";
 import type { CompanyLeadDetail, CompanyLeadRow } from "./types";
 
@@ -167,7 +167,6 @@ export function CompanyLeadsLeadPanel({
   const lifecycle = data?.lifecycle ?? row?.lifecycle ?? "NEW";
   const lifecycleLabel = data?.lifecycleLabel ?? row?.lifecycleLabel ?? "New";
   const score = data?.leadScore ?? row?.leadScore ?? null;
-  const intent = data?.intent ?? row?.intent;
   const intentLabel = data?.intentLabel ?? row?.intentLabel;
   const notQualified = lifecycle === "NOT_QUALIFIED";
   const hasDeal = data?.hasDeal ?? row?.hasDeal ?? false;
@@ -175,14 +174,6 @@ export function CompanyLeadsLeadPanel({
   const canReassign = data?.canReassign ?? false;
   const canCreateDeal = data?.canCreateDeal ?? false;
   const next = data?.nextAction ?? row?.nextAction;
-  const scoreTone =
-    intent === "hot" ? "success" : intent === "warm" ? "warning" : "info";
-  const scoreColor =
-    intent === "hot"
-      ? "text-sales-success-fg"
-      : intent === "warm"
-        ? "text-sales-warning-fg"
-        : "text-sales-text-primary";
 
   const body = (
     <aside
@@ -202,13 +193,11 @@ export function CompanyLeadsLeadPanel({
               <h2 className="min-w-0 truncate text-[16px] font-semibold leading-snug tracking-[-0.02em] text-sales-text-primary">
                 {name}
               </h2>
-              <Badge
-                tone={companyLeadLifecycleTone(lifecycle)}
-                appearance="soft"
+              <PipelineStageBadge
+                status={lifecycle}
+                label={lifecycleLabel}
                 className="!px-2 !py-0.5 !text-[11px]"
-              >
-                {lifecycleLabel}
-              </Badge>
+              />
             </div>
             {data?.enquiryContext || row?.enquiryContext ? (
               <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">
@@ -223,9 +212,14 @@ export function CompanyLeadsLeadPanel({
             ) : null}
           </div>
         </div>
-        <IconButton aria-label="Close Lead details" onClick={onClose}>
-          <X size={16} strokeWidth={1.8} />
-        </IconButton>
+        <div className="flex shrink-0 items-start gap-2">
+          {score != null && Number.isFinite(score) ? (
+            <LeadScoreGauge score={score} size={56} className="hidden sm:flex" />
+          ) : null}
+          <IconButton aria-label="Close Lead details" onClick={onClose}>
+            <X size={16} strokeWidth={1.8} />
+          </IconButton>
+        </div>
       </div>
 
       {error && !loading ? (
@@ -288,13 +282,15 @@ export function CompanyLeadsLeadPanel({
                   <p className="mt-1 text-[28px] font-semibold tabular-nums text-sales-text-muted">—</p>
                 ) : (
                   <>
-                    <p className={cn("mt-1 text-[36px] font-semibold leading-none tabular-nums", scoreColor)}>
-                      {Math.round(score)}
-                    </p>
-                    {intentLabel ? (
-                      <p className="mt-1.5 text-[12px] font-medium text-sales-text-secondary">{intentLabel}</p>
-                    ) : null}
-                    <Progress value={score} tone={scoreTone} className="mt-2 h-1.5" />
+                    <div className="mt-2 flex items-center gap-3">
+                      <LeadScoreGauge score={score} size={72} className="sm:hidden" />
+                      <div>
+                        <LeadScoreBadge score={score} className="mt-1" />
+                        {intentLabel ? (
+                          <p className="mt-1.5 text-[12px] font-medium text-sales-text-secondary">{intentLabel}</p>
+                        ) : null}
+                      </div>
+                    </div>
                   </>
                 )}
               </div>

@@ -1,20 +1,15 @@
-const PALETTE_VARS = [
-  "var(--avatar-palette-0)",
-  "var(--avatar-palette-1)",
-  "var(--avatar-palette-2)",
-  "var(--avatar-palette-3)",
-  "var(--avatar-palette-4)",
-  "var(--avatar-palette-5)",
-];
+"use client";
 
-function hashName(name: string): number {
-  let sum = 0;
-  for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
-  return Math.abs(sum) % 6;
-}
+import { Avatar, type AvatarSize } from "@/components/sales/ui/Avatar";
+import { getInitials } from "@/lib/ui/initials";
 
-const legacySize: Record<"sm" | "md" | "lg", number> = { sm: 24, md: 32, lg: 64 };
+const LEGACY_SIZE: Record<"sm" | "md" | "lg", AvatarSize> = {
+  sm: "xs",
+  md: "sm",
+  lg: "2xl",
+};
 
+/** @deprecated Prefer `Avatar` from `@/components/sales/ui`. */
 export function ClientAvatar({
   name,
   size = 32,
@@ -22,41 +17,19 @@ export function ClientAvatar({
 }: {
   name: string;
   size?: number | "sm" | "md" | "lg";
-  /** When set, shows photo instead of initials */
   src?: string | null;
 }) {
-  const px = typeof size === "number" ? size : legacySize[size];
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const initials = ((parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? "")).toUpperCase();
-  const bg = PALETTE_VARS[hashName(name)];
-  const fontSize = px * 0.4;
+  let avatarSize: AvatarSize = "md";
+  if (typeof size === "string") {
+    avatarSize = LEGACY_SIZE[size];
+  } else if (size <= 24) avatarSize = "xs";
+  else if (size <= 32) avatarSize = "sm";
+  else if (size <= 40) avatarSize = "md";
+  else if (size <= 48) avatarSize = "lg";
+  else if (size <= 56) avatarSize = "xl";
+  else avatarSize = "2xl";
 
-  if (src?.trim()) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt=""
-        className="inline-block shrink-0 rounded-full object-cover"
-        width={px}
-        height={px}
-      />
-    );
-  }
-
-  return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-medium text-ink-primary"
-      style={{
-        width: px,
-        height: px,
-        backgroundColor: bg,
-        fontSize,
-        fontWeight: 500,
-      }}
-      aria-hidden
-    >
-      {initials}
-    </span>
-  );
+  return <Avatar name={name} src={src} size={avatarSize} />;
 }
+
+export { getInitials };

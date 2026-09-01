@@ -1026,7 +1026,20 @@ Four production systems on the existing **`lead_events`** ledger (not a duplicat
 
 **Icons:** Lucide for product actions; `SiWhatsapp` (#25D366) for WhatsApp. No emoji stand-ins.
 
-**API:** `GET /api/leads/[leadId]/timeline?cursor&limit&filter&search` · `POST/DELETE .../timeline/[eventId]/pin`
+**API:** `GET/POST /api/users/me/presence` · `users.last_seen_at` + `availability_override`
+
+## 17 — Avatars, Identity & Status
+
+Four production systems:
+
+| System | Components |
+|--------|------------|
+| **Avatar** | `Avatar` (sizes 2xs–2xl, circle/square, initials fallback, image error handling, optional presence dot) |
+| **Identity** | `UserIdentity`, `CompanyIdentity`, `LeadIdentity`, `GroupAvatars`, `EntityTypeBadge` |
+| **Sales status** | Reuse `LeadScoreBadge` (Hot ≥70 · Warm 45–69 · Cold <45 blue), `PipelineStageBadge`, `QuotationStatusBadge`, optional `LeadScoreGauge` |
+| **Presence** | `PresenceIndicator`, `usePresenceHeartbeat`, `PresenceHeartbeat`, `POST /api/users/me/presence`, `users.last_seen_at` + `availability_override` |
+
+**Rules:** No fabricated photos or online states. Person avatars circular; company logos square. WhatsApp uses `SiWhatsapp` (#25D366). Legacy `ClientAvatar` and `ScoreBadge` delegate to canonical sales components. Presence thresholds: online ≤2m · away ≤10m · busy/away overrides in profile menu.
 
 ## Overlay runtime (Phase 13 — superseded by §14)
 

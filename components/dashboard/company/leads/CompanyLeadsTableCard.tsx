@@ -15,7 +15,6 @@ import { DealSideBadge } from "@/components/real-estate/DealSideBadge";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import {
   Avatar,
-  Badge,
   Button,
   Checkbox,
   DataTableActionsCell,
@@ -38,18 +37,19 @@ import {
   DataTableToolbarGroup,
   DataTableWorkspace,
   DropdownMenu,
+  LeadScoreBadge,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   MenuSelect,
+  PipelineStageBadge,
   SearchInput,
   Skeleton,
 } from "@/components/sales/ui";
 import {
   COMPANY_LEADS_PAGE_SIZE,
   COMPANY_LEADS_TABS,
-  companyLeadLifecycleTone,
   companyLeadsFiltersActive,
 } from "@/lib/sales/company-leads-metrics";
 import type {
@@ -105,38 +105,11 @@ export function SourceBadge({
   );
 }
 
-function LifecycleBadge({ status, label }: { status: string; label: string }) {
-  return (
-    <Badge
-      tone={companyLeadLifecycleTone(status)}
-      appearance="soft"
-      className="!px-2 !py-0.5 !text-[11px] !font-medium"
-    >
-      {label}
-    </Badge>
-  );
-}
-
-function ScoreCell({ score, intent }: { score: number | null; intent: string | null }) {
+function ScoreCell({ score }: { score: number | null; intent?: string | null }) {
   if (score == null || !Number.isFinite(score)) {
     return <span className="text-[12px] text-sales-text-muted">—</span>;
   }
-  const tone =
-    intent === "hot"
-      ? "bg-[rgba(34,197,94,0.11)] text-[#15803D] dark:text-[#74DB8E]"
-      : intent === "warm"
-        ? "bg-[rgba(245,158,11,0.11)] text-[#B86705] dark:text-[#F6BB59]"
-        : "bg-[rgba(239,68,68,0.09)] text-[#C2413A] dark:text-[#F38B85]";
-  return (
-    <span
-      className={cn(
-        "inline-flex min-w-8 items-center justify-center rounded-[6px] px-2 py-1 text-[11px] font-semibold tabular-nums",
-        tone
-      )}
-    >
-      {Math.round(score)}
-    </span>
-  );
+  return <LeadScoreBadge score={score} showScore />;
 }
 
 function RowMenu({
@@ -713,9 +686,10 @@ export function CompanyLeadsTableCard({
                           </span>
                         </DataTableTd>
                         <DataTableTd>
-                          <LifecycleBadge
+                          <PipelineStageBadge
                             status={row.lifecycle}
                             label={row.reStageLabel ?? row.lifecycleLabel}
+                            className="!px-2 !py-0.5 !text-[11px] !font-medium"
                           />
                         </DataTableTd>
                         <DataTableTd>
@@ -754,7 +728,11 @@ export function CompanyLeadsTableCard({
                           )}
                         </DataTableTd>
                         <DataTableTd>
-                          <LifecycleBadge status={row.lifecycle} label={row.lifecycleLabel} />
+                          <PipelineStageBadge
+                            status={row.lifecycle}
+                            label={row.lifecycleLabel}
+                            className="!px-2 !py-0.5 !text-[11px] !font-medium"
+                          />
                         </DataTableTd>
                         <DataTableTd>
                           <ScoreCell score={row.leadScore} intent={row.intent} />
@@ -823,9 +801,10 @@ export function CompanyLeadsTableCard({
                         </div>
                       </div>
                     </div>
-                    <LifecycleBadge
+                    <PipelineStageBadge
                       status={row.lifecycle}
                       label={isRealEstate ? row.reStageLabel ?? row.lifecycleLabel : row.lifecycleLabel}
+                      className="!px-2 !py-0.5 !text-[11px] !font-medium"
                     />
                   </div>
                   {isRealEstate ? (

@@ -1,6 +1,7 @@
 import type { SalesKpiItem } from "@/components/dashboard/sales/types";
 import type { CompanyActivityItem, CompanyRevenuePoint } from "../types";
 import type { BusinessType } from "@/lib/terminology";
+import type { AvailabilityOverride, PresenceState } from "@/lib/presence/constants";
 
 export type CompanyTeamTab = "all" | "salespeople" | "managers" | "inactive";
 
@@ -15,6 +16,9 @@ export type CompanyTeamMemberTableRow = {
   avatarUrl: string | null;
   email: string | null;
   phone: string | null;
+  lastSeenAt: string | null;
+  availabilityOverride: AvailabilityOverride | null;
+  presence: PresenceState;
   /** Short role for Role column: Salesperson / Sales Manager / Manager */
   roleColumn: string;
   /** Title under name */

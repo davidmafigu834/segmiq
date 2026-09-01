@@ -4,12 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CircleHelp, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { Avatar } from "@/components/sales/ui/Avatar";
 import { useCrmThemeOptional } from "@/components/CrmThemeProvider";
 import { SalesNavItem, SalesNavSection } from "@/components/sales/navigation/SalesNavItem";
 import {
   displaySalesName,
   resolveSalesNavItems,
-  salesNameInitials,
   salesNavItemsBySection,
   type SalesNavBadgeKey,
 } from "@/lib/sales/navigation/sales-nav-config";
@@ -190,18 +190,7 @@ export function SalesSidebar({
             onClick={onCloseMobile}
             className="mx-3 mb-4 flex items-center gap-3 rounded-[10px] border border-[var(--sales-sidebar-border)] px-3 py-2.5 transition-colors hover:bg-[var(--sales-sidebar-hover)]"
           >
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={avatarUrl}
-                alt=""
-                className="h-8 w-8 rounded-full object-cover ring-1 ring-[var(--sales-sidebar-border)]"
-              />
-            ) : (
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--sales-neutral-100)] text-[11px] font-semibold text-sales-text-primary ring-1 ring-[var(--sales-sidebar-border)]">
-                {salesNameInitials(userName)}
-              </span>
-            )}
+            <Avatar name={displaySalesName(userName)} src={avatarUrl} size="sm" alt="" />
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-semibold text-sales-text-primary">
                 {displaySalesName(userName)}

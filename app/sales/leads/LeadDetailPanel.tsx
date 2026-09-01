@@ -42,7 +42,7 @@ import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { DealReadinessCard } from "@/components/sales/deals/DealReadinessCard";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
-import { ConfirmDialog, useSalesToast } from "@/components/sales/ui";
+import { ConfirmDialog, LeadScoreBadge, LeadScoreGauge, useSalesToast } from "@/components/sales/ui";
 import { ConvertWonCustomerSheet } from "@/components/sales/leads/ConvertWonCustomerSheet";
 import { getDealReadiness } from "@/lib/sales/deals/readiness";
 import { formatLeadLifecycle, formatDealStage, isLeadConverted, isLeadOpenForQualification } from "@/lib/sales/deals/display";
@@ -325,7 +325,16 @@ export function LeadDetailPanel({
               {displayName}
             </h2>
             <p className="mt-0.5 truncate text-[12px] text-sales-text-secondary">{subtitle}</p>
+            {score != null && Number.isFinite(score) ? (
+              <div className="mt-1.5 flex items-center gap-2 sm:hidden">
+                <LeadScoreBadge score={score} />
+              </div>
+            ) : null}
           </div>
+
+          {score != null && Number.isFinite(score) ? (
+            <LeadScoreGauge score={score} size={52} className="hidden shrink-0 sm:flex" />
+          ) : null}
 
           <div className="flex shrink-0 items-center gap-0.5">
             {!isReadOnly && !isClosed ? (
@@ -477,17 +486,7 @@ export function LeadDetailPanel({
             <div className="space-y-4 p-4 max-md:pt-3 sm:p-5">
               {score != null && Number.isFinite(score) ? (
                 <div className="flex items-center gap-4 rounded-[12px] border border-sales-border bg-sales-surface-subtle px-4 py-3.5">
-                  <div
-                    className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
-                    style={{
-                      background: `conic-gradient(#2684FF ${Math.min(100, score)}%, var(--sales-border) 0)`,
-                    }}
-                    aria-label={`Lead score ${score}`}
-                  >
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sales-surface text-[15px] font-semibold tabular-nums text-sales-text-primary">
-                      {Math.round(score)}
-                    </div>
-                  </div>
+                  <LeadScoreBadge score={score} />
                   <div className="min-w-0 flex-1">
                     <p className="text-[14px] font-medium text-sales-text-primary">{intentLikelihoodCopy(score)}</p>
                     <p className="mt-0.5 text-[12px] text-sales-text-secondary">

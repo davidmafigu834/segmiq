@@ -47,6 +47,7 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  CompanyIdentity,
   DataTable,
   DataTableActionsCell,
   DataTableBody,
@@ -73,6 +74,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  EntityTypeBadge,
   Field,
   FieldError,
   FieldHint,
@@ -81,6 +83,7 @@ import {
   FormActions,
   FormFields,
   FormSection,
+  GroupAvatars,
   GroupedInput,
   IconButton,
   InputAddon,
@@ -92,11 +95,13 @@ import {
   KpiStat,
   LeadIdentity,
   LeadScoreBadge,
+  LeadScoreGauge,
   MetaPill,
   MetricValue,
   MenuSelect,
   Milestone,
   PipelineStageBadge,
+  PresenceIndicator,
   Progress,
   QuotationStatusBadge,
   Radio,
@@ -119,6 +124,7 @@ import {
   ToastProvider,
   Tooltip,
   Trend,
+  UserIdentity,
   useSalesToast,
   ConfirmDialog,
   EmptyState,
@@ -171,6 +177,7 @@ const NAV = [
   { id: "menus", label: "09 — Menus & Pills" },
   { id: "navigation", label: "10 — Navigation & Layout" },
   { id: "timeline", label: "16 — Timeline & Activity" },
+  { id: "identity", label: "17 — Avatars & Identity" },
   { id: "charts", label: "11 — Charts & Data Viz" },
   { id: "states", label: "12 — Empty States & Feedback" },
   { id: "misc", label: "Icons & misc" },
@@ -3324,6 +3331,103 @@ function ShowcaseInner() {
                   federation · dedupe on WhatsApp events
                 </CardDescription>
               </CardHeader>
+            </Card>
+          </Section>
+
+          {/* ── Avatars, Identity & Status (Phase 17) ─────────── */}
+          <Section
+            id="identity"
+            title="17 — Avatars, Identity & Status"
+            description="Four systems — Avatar · Identity · Sales status (Phase 04) · Presence. Documentation examples only; production uses real profile data."
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Avatar system</CardTitle>
+                <CardDescription>Circle for people · rounded square for companies · initials fallback · optional presence</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Person sizes</p>
+                  <div className="flex flex-wrap items-end gap-4">
+                    {(["2xs", "xs", "sm", "md", "lg", "xl", "2xl"] as const).map((size) => (
+                      <div key={size} className="flex flex-col items-center gap-1.5">
+                        <Avatar name="Doc Example" size={size} />
+                        <span className="text-[10px] text-sales-text-muted">{size}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Company + fallbacks</p>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <CompanyIdentity name="Acme Solar Ltd" secondary="Solar installation company" size="md" />
+                    <Avatar name="Acme Solar Ltd" shape="square" size="lg" />
+                    <Avatar name="Chiedza" size="md" />
+                    <Avatar name="" size="md" />
+                    <Avatar name="Doc Example" size="md" presence="online" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Identity rows</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <UserIdentity
+                    name="Doc Example User"
+                    secondary="Sales Representative"
+                    tertiary="Example branch (docs only)"
+                    size="lg"
+                  />
+                  <LeadIdentity name="Doc Example Lead" secondary="5kW solar enquiry (example)" />
+                  <GroupAvatars
+                    label="Example team: Doc A, Doc B, and 2 others"
+                    members={[
+                      { id: "1", name: "Doc A" },
+                      { id: "2", name: "Doc B" },
+                      { id: "3", name: "Doc C" },
+                      { id: "4", name: "Doc D" },
+                      { id: "5", name: "Doc E" },
+                    ]}
+                  />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sales & entity status</CardTitle>
+                  <CardDescription>Hot ≥70 · Warm 45–69 · Cold &lt;45 (blue). No Very Cold.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <LeadScoreBadge score={82} />
+                    <LeadScoreBadge score={54} />
+                    <LeadScoreBadge score={21} />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <PipelineStageBadge status="NEGOTIATING" />
+                    <QuotationStatusBadge status="SENT" />
+                    <EntityTypeBadge type="DEAL" />
+                    <EntityTypeBadge type="QUOTATION" />
+                  </div>
+                  <LeadScoreGauge score={82} />
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>Presence & availability</CardTitle>
+                <CardDescription>Real heartbeat via POST /api/users/me/presence · never fabricated in production</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-6">
+                <PresenceIndicator state="online" />
+                <PresenceIndicator state="away" />
+                <PresenceIndicator state="busy" />
+                <PresenceIndicator state="offline" />
+              </CardContent>
             </Card>
           </Section>
 

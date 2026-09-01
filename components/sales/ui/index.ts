@@ -72,6 +72,15 @@ export type { ToastTone } from "./Toast";
 export { Alert, Skeleton, EmptyState, Progress, Avatar } from "./Feedback";
 export type { AlertTone } from "./Feedback";
 export { Alert as InlineAlert } from "./Feedback";
+export type { AvatarSize, AvatarShape } from "./Avatar";
+
+export { PresenceIndicator } from "./PresenceIndicator";
+export { GroupAvatars } from "./GroupAvatars";
+export type { GroupAvatarMember } from "./GroupAvatars";
+export { UserIdentity, CompanyIdentity, LeadIdentity } from "./Identity";
+export { EntityTypeBadge } from "./EntityTypeBadge";
+export type { EntityType } from "./EntityTypeBadge";
+export { LeadScoreGauge } from "./LeadScoreGauge";
 
 export { ConfirmDialog } from "./ConfirmDialog";
 
@@ -108,7 +117,7 @@ export {
 
 export { FilterPill, ActiveFiltersBar } from "./FilterPill";
 
-export { KpiStat, Trend, MetricValue, LeadIdentity } from "./DataDisplay";
+export { KpiStat, Trend, MetricValue } from "./DataDisplay";
 export { Timeline, ActivityRow, Milestone } from "./Timeline";
 export type { TimelineItem } from "./Timeline";
 

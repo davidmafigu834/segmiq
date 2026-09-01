@@ -159,52 +159,5 @@ export function Progress({
   );
 }
 
-export function Avatar({
-  name,
-  src,
-  size = "md",
-  className,
-}: {
-  name: string;
-  src?: string | null;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  className?: string;
-}) {
-  const sizes = {
-    xs: "h-6 w-6 text-[10px]",
-    sm: "h-7 w-7 text-[11px]",
-    md: "h-9 w-9 text-[12px]",
-    lg: "h-11 w-11 text-[13px]",
-    xl: "h-[52px] w-[52px] text-[14px]",
-  } as const;
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const initials =
-    parts.length === 0
-      ? "?"
-      : parts.length === 1
-        ? parts[0]!.slice(0, 2).toUpperCase()
-        : `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
-
-  if (src) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt=""
-        className={cn("rounded-full object-cover ring-1 ring-sales-border", sizes[size], className)}
-      />
-    );
-  }
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-center rounded-full bg-[var(--sales-neutral-100)] font-semibold text-sales-text-primary ring-1 ring-sales-border",
-        sizes[size],
-        className
-      )}
-      aria-hidden
-    >
-      {initials}
-    </div>
-  );
-}
+export { Avatar } from "./Avatar";
+export type { AvatarSize, AvatarShape } from "./Avatar";

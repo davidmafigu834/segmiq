@@ -37,6 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/sales/ui";
+import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
 import { cn } from "@/lib/ui/cn";
@@ -244,6 +245,7 @@ function SalesAppShellInner({
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >
+      <PresenceHeartbeat />
       {/* Desktop sidebar only — mobile uses bottom nav */}
       <div className="hidden layout:contents">
         <SalesSidebar

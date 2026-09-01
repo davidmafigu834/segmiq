@@ -6,6 +6,7 @@ import { CompanyMobileTopBar } from "@/components/company/navigation/CompanyMobi
 import { CompanyBottomNav } from "@/components/company/navigation/CompanyBottomNav";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useCompanySidebarCollapsed } from "@/lib/sales/navigation/use-company-sidebar-collapsed";
+import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
 import { normalizeBusinessType, type BusinessType } from "@/lib/terminology";
 import type { UserRole } from "@/types";
@@ -51,6 +52,7 @@ export function CompanyWorkspaceShell({
       data-hide-mobile-nav={hideMobileChrome ? "true" : "false"}
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >
+      <PresenceHeartbeat />
       <div className="hidden layout:contents">
         <CompanySidebar
           companyName={companyName}

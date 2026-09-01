@@ -12,6 +12,7 @@ import {
   startOfWeek,
 } from "date-fns";
 import { AlertTriangle, CalendarDays, CheckCircle2, Plus } from "lucide-react";
+import { Avatar, GroupAvatars } from "@/components/sales/ui";
 import { cn } from "@/lib/ui/cn";
 import {
   COMPANY_CALENDAR_KIND_META,
@@ -55,10 +56,6 @@ function relationLabel(event: CompanyCalendarEvent): string {
   if (event.relationType === "deal") return "Deal";
   if (event.relationType === "customer") return "Customer";
   return "Lead";
-}
-
-function ownerInitials(name: string | null): string {
-  return name?.split(/\s+/).filter(Boolean).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "?";
 }
 
 export function CalendarEventCard({
@@ -375,10 +372,18 @@ export function CompanyMonthView({
                 <span className="block space-y-1">
                   {summaries.slice(0, 2).map(([label, count]) => <span key={label} className="flex items-center justify-between rounded-[6px] bg-sales-surface-subtle px-2 py-1 text-[10px] text-sales-text-secondary"><span>{label}</span><span className="font-semibold text-sales-text-primary">{count}</span></span>)}
                   {summaries.length > 2 ? <span className="block px-1 text-[10px] font-semibold text-sales-brand-fg">+ {summaries.slice(2).reduce((sum, [, count]) => sum + count, 0)} more activities</span> : null}
-                  {owners.length ? <span className="mt-2 flex -space-x-1.5">{owners.map((event) => event.ownerAvatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img key={event.ownerId} src={event.ownerAvatarUrl} alt="" className="h-5 w-5 rounded-full border border-sales-surface object-cover" title={event.ownerName ?? undefined} />
-                  ) : <span key={event.ownerId} className="flex h-5 w-5 items-center justify-center rounded-full border border-sales-surface bg-sales-brand-soft text-[7px] font-semibold text-sales-text-primary" title={event.ownerName ?? undefined}>{event.ownerName?.slice(0, 1).toUpperCase()}</span>)}</span> : null}
+                  {owners.length ? (
+                    <GroupAvatars
+                      size="2xs"
+                      maxVisible={3}
+                      className="mt-2"
+                      members={owners.map((event) => ({
+                        id: event.ownerId ?? event.ownerName ?? event.id,
+                        name: event.ownerName ?? "Unassigned",
+                        src: event.ownerAvatarUrl,
+                      }))}
+                    />
+                  ) : null}
                 </span>
               ) : <span className="text-[11px] text-sales-text-disabled">No activity</span>}
             </button>
@@ -470,10 +475,7 @@ export function AgendaEventRow({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[12px] font-semibold text-sales-text-primary">{event.title}</span>
         <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-sales-text-muted">
-          {event.ownerAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={event.ownerAvatarUrl} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" />
-          ) : <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-sales-brand-soft text-[6px] font-semibold text-sales-text-primary">{ownerInitials(event.ownerName)}</span>}
+          <Avatar name={event.ownerName ?? "Unassigned"} src={event.ownerAvatarUrl} size="2xs" alt="" />
           <span className="truncate">{event.relatedLabel}{event.ownerName ? ` · ${event.ownerName}` : " · Unassigned"}</span>
         </span>
       </span>
