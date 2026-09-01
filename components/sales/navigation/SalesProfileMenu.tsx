@@ -24,9 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/sales/ui";
-import {
-  displaySalesName,
-} from "@/lib/sales/navigation/sales-nav-config";
+import { displaySalesName } from "@/lib/sales/navigation/sales-nav-config";
 import type { AvailabilityOverride, PresenceState } from "@/lib/presence/constants";
 import { PRESENCE_LABEL } from "@/lib/presence/constants";
 import { setAvailabilityOverride } from "@/hooks/usePresenceHeartbeat";
@@ -56,7 +54,7 @@ export function SalesProfileMenu({
   userName: string;
   userRoleLabel?: string;
   avatarUrl?: string | null;
-  /** Avatar-only trigger (narrow desktop / mobile header) */
+  /** Avatar-only trigger on narrow widths */
   compact?: boolean;
   profileHref?: string;
   helpHref?: string;
@@ -121,81 +119,96 @@ export function SalesProfileMenu({
     <DropdownMenu open={open} onOpenChange={setOpen} align="end">
       <DropdownMenuTrigger
         className={cn(
-          "inline-flex h-10 items-center gap-2 rounded-[10px] border border-transparent px-1.5 transition-colors duration-150",
-          "hover:bg-sales-surface-hover focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
-          open && "bg-sales-surface-hover"
+          "inline-flex h-9 max-w-[200px] shrink-0 items-center gap-2 rounded-[8px] border border-transparent py-0 pl-0.5 pr-1.5",
+          "transition-[background-color,border-color,box-shadow] duration-150",
+          "hover:border-sales-border hover:bg-sales-surface-hover",
+          "focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]",
+          open && "border-sales-border bg-sales-surface-hover"
         )}
         aria-label="Account menu"
       >
         <Avatar name={name} src={avatarUrl} size="sm" presence={presence} alt="" />
         {!compact ? (
           <span className="hidden min-w-0 text-left lg:block">
-            <span className="block max-w-[120px] truncate text-[13px] font-semibold text-sales-text-primary">
+            <span className="block max-w-[120px] truncate text-[13px] font-semibold leading-tight text-sales-text-primary">
               {name}
             </span>
-            <span className="block max-w-[120px] truncate text-[11px] text-sales-text-muted">
+            <span className="block max-w-[120px] truncate text-[11px] leading-tight text-sales-text-muted">
               {userRoleLabel}
             </span>
           </span>
-        ) : null}
+        ) : (
+          <span className="hidden min-w-0 text-left xl:block">
+            <span className="block max-w-[108px] truncate text-[13px] font-semibold leading-tight text-sales-text-primary">
+              {name}
+            </span>
+          </span>
+        )}
         <ChevronDown
           size={14}
           strokeWidth={1.8}
           className={cn(
-            "hidden text-sales-text-muted transition-transform duration-150 sm:block",
+            "shrink-0 text-sales-text-muted transition-transform duration-150",
             open && "rotate-180"
           )}
           aria-hidden
         />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-56">
-        <div className="border-b border-sales-border-subtle px-3 py-2.5 lg:hidden">
-          <p className="truncate text-[13px] font-semibold text-sales-text-primary">{name}</p>
-          <p className="truncate text-[11px] text-sales-text-muted">{userRoleLabel}</p>
-          {presence ? (
-            <p className="mt-0.5 text-[11px] text-sales-text-secondary">{PRESENCE_LABEL[presence]}</p>
-          ) : null}
+      <DropdownMenuContent className="w-64 overflow-hidden p-0">
+        <div className="flex items-center gap-3 border-b border-sales-border-subtle bg-sales-surface-subtle/60 px-3 py-3">
+          <Avatar name={name} src={avatarUrl} size="md" presence={presence} alt="" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold text-sales-text-primary">{name}</p>
+            <p className="truncate text-[11px] text-sales-text-muted">{userRoleLabel}</p>
+            {presence ? (
+              <p className="mt-0.5 text-[11px] text-sales-text-secondary">{PRESENCE_LABEL[presence]}</p>
+            ) : null}
+          </div>
         </div>
-        <DropdownMenuItem icon={<UserRound size={16} strokeWidth={1.8} />} onSelect={() => router.push(profileHref)}>
-          My profile
-        </DropdownMenuItem>
-        <DropdownMenuItem icon={<ShieldCheck size={16} strokeWidth={1.8} />} onSelect={() => router.push(profileHref)}>
-          Account & security
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>Availability</DropdownMenuLabel>
-        {AVAILABILITY_OPTIONS.map((option) => {
-          const Icon = option.icon;
-          const selected = activeAvailability === option.value;
-          return (
-            <DropdownMenuItem
-              key={option.value}
-              icon={<Icon size={16} strokeWidth={1.8} />}
-              onSelect={() => void onAvailability(option.value)}
-              disabled={savingAvailability}
-            >
-              <span className="flex flex-1 items-center justify-between gap-2">
-                {option.label}
-                {selected ? <Check size={14} strokeWidth={2} aria-hidden /> : null}
-              </span>
-            </DropdownMenuItem>
-          );
-        })}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem icon={<CircleHelp size={16} strokeWidth={1.8} />} onSelect={() => router.push(helpHref)}>
-          {helpLabel}
-        </DropdownMenuItem>
-        <ExitImpersonationMenuItem
-          className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover disabled:opacity-60"
-          onSelect={() => setOpen(false)}
-        />
-        <DropdownMenuItem
-          icon={<LogOut size={16} strokeWidth={1.8} />}
-          onSelect={() => void signOut({ callbackUrl: "/login" })}
-        >
-          Sign out
-        </DropdownMenuItem>
+
+        <div className="py-1.5">
+          <DropdownMenuItem icon={<UserRound size={16} strokeWidth={1.8} />} onSelect={() => router.push(profileHref)}>
+            My profile
+          </DropdownMenuItem>
+          <DropdownMenuItem icon={<ShieldCheck size={16} strokeWidth={1.8} />} onSelect={() => router.push(profileHref)}>
+            Account & security
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Availability</DropdownMenuLabel>
+          {AVAILABILITY_OPTIONS.map((option) => {
+            const Icon = option.icon;
+            const selected = activeAvailability === option.value;
+            return (
+              <DropdownMenuItem
+                key={option.value}
+                icon={<Icon size={16} strokeWidth={1.8} />}
+                onSelect={() => void onAvailability(option.value)}
+                disabled={savingAvailability}
+              >
+                <span className="flex flex-1 items-center justify-between gap-2">
+                  {option.label}
+                  {selected ? <Check size={14} strokeWidth={2} aria-hidden /> : null}
+                </span>
+              </DropdownMenuItem>
+            );
+          })}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem icon={<CircleHelp size={16} strokeWidth={1.8} />} onSelect={() => router.push(helpHref)}>
+            {helpLabel}
+          </DropdownMenuItem>
+          <ExitImpersonationMenuItem
+            className="flex w-full min-h-10 items-center gap-2 px-3 py-2 text-left text-[13px] font-normal text-sales-text-primary transition-colors hover:bg-[var(--sales-menu-hover,rgba(16,24,40,0.04))] focus-visible:bg-[var(--sales-menu-hover,rgba(16,24,40,0.04))] disabled:cursor-not-allowed disabled:opacity-50"
+            onSelect={() => setOpen(false)}
+          />
+          <DropdownMenuItem
+            destructive
+            icon={<LogOut size={16} strokeWidth={1.8} />}
+            onSelect={() => void signOut({ callbackUrl: "/login" })}
+          >
+            Sign out
+          </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

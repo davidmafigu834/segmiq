@@ -88,6 +88,22 @@ const variantClass: Record<SalesButtonVariant, string> = {
   link: "h-auto min-h-0 bg-transparent border-transparent px-0 text-sales-brand-fg shadow-none hover:underline data-[preview=hover]:underline",
 };
 
+/** Shared trigger chrome for DropdownMenu + top-bar actions (matches Button sizes/variants). */
+export function salesMenuTriggerClass(
+  options: { variant?: SalesButtonVariant; size?: SalesButtonSize } = {}
+): string {
+  const { variant = "primary", size = "sm" } = options;
+  return cn(
+    "inline-flex select-none items-center justify-center whitespace-nowrap font-semibold leading-none tracking-[-0.01em]",
+    "touch-manipulation",
+    motionClass,
+    focusClass,
+    variantClass[variant],
+    sizeClass[size],
+    iconClass[size]
+  );
+}
+
 export type SalesButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: SalesButtonVariant;
   size?: SalesButtonSize;

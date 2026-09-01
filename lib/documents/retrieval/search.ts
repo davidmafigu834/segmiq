@@ -135,22 +135,15 @@ async function filterAccessibleDocuments(
   return out;
 }
 
-export async function searchDocumentChunks(opts: {
-  clientId: string;
-  actor: DocumentActor;
-  query: string;
-  limit?: number;
-  filters?: DocumentSearchFilters;
-}): Promise<DocumentChunkHit[]> {
-  const query = opts.query.trim();
-  if (!query) return [];
-
-  const fts = toFtsQuery(query);
-  const supabase = createAdminClient();
-  const limit = Math.min(opts.limit ?? 24, 60);
-  const filters = opts.filters ?? {};
-  const collectionTypeIds = await resolveCollectionTypeIds(opts.clientId, filters.collection);
-
+function buildChunkQuery(
+  supabase: ReturnType<typeof createAdminClient>,
+  opts: {
+    clientId: string;
+    filters: DocumentSearchFilters;
+    collectionTypeIds: string[];
+    fts: string | null;
+  }
+) {
   let chunkQuery = supabase
     .from("document_chunks")
     .select(
@@ -163,30 +156,70 @@ export async function searchDocumentChunks(opts: {
     )
     .eq("client_id", opts.clientId);
 
-  if (filters.documentId) {
-    chunkQuery = chunkQuery.eq("document_id", filters.documentId);
+  if (opts.filters.documentId) {
+    chunkQuery = chunkQuery.eq("document_id", opts.filters.documentId);
   }
-  if (!filters.includeArchived) {
+  if (!opts.filters.includeArchived) {
     chunkQuery = chunkQuery.is("documents.archived_at", null);
   }
-  if (filters.lifecycleStatus) {
-    chunkQuery = chunkQuery.eq("documents.lifecycle_status", filters.lifecycleStatus);
+  if (opts.filters.lifecycleStatus) {
+    chunkQuery = chunkQuery.eq("documents.lifecycle_status", opts.filters.lifecycleStatus);
   }
-  if (filters.documentTypeId) {
-    chunkQuery = chunkQuery.eq("documents.document_type_id", filters.documentTypeId);
-  } else if (collectionTypeIds.length) {
-    chunkQuery = chunkQuery.in("documents.document_type_id", collectionTypeIds);
+  if (opts.filters.documentTypeId) {
+    chunkQuery = chunkQuery.eq("documents.document_type_id", opts.filters.documentTypeId);
+  } else if (opts.collectionTypeIds.length) {
+    chunkQuery = chunkQuery.in("documents.document_type_id", opts.collectionTypeIds);
   }
 
-  if (fts) {
-    chunkQuery = chunkQuery.textSearch("search_vector", fts, {
+  if (opts.fts) {
+    chunkQuery = chunkQuery.textSearch("search_vector", opts.fts, {
       type: "plain",
       config: "simple",
     });
   }
 
+  return chunkQuery;
+}
+
+export async function searchDocumentChunks(opts: {
+  clientId: string;
+  actor: DocumentActor;
+  query: string;
+  limit?: number;
+  filters?: DocumentSearchFilters;
+  scoreThreshold?: number;
+  overlapThreshold?: number;
+  ftsFallback?: boolean;
+}): Promise<DocumentChunkHit[]> {
+  const query = opts.query.trim();
+  if (!query) return [];
+
+  const fts = toFtsQuery(query);
+  const supabase = createAdminClient();
+  const limit = Math.min(opts.limit ?? 24, 60);
+  const filters = opts.filters ?? {};
+  const collectionTypeIds = await resolveCollectionTypeIds(opts.clientId, filters.collection);
+
+  let chunkQuery = buildChunkQuery(supabase, {
+    clientId: opts.clientId,
+    filters,
+    collectionTypeIds,
+    fts,
+  });
+
   const { data } = await chunkQuery.limit(limit * 4);
   let rows = normalizeChunkRows(data);
+
+  if (!rows.length && fts && opts.ftsFallback) {
+    const fallbackQuery = buildChunkQuery(supabase, {
+      clientId: opts.clientId,
+      filters,
+      collectionTypeIds,
+      fts: null,
+    });
+    const { data: fallbackData } = await fallbackQuery.limit(limit * 8);
+    rows = normalizeChunkRows(fallbackData);
+  }
 
   if (filters.currentVersionOnly !== false) {
     rows = rows.filter((row) => row.version_id === row.documents.current_version_id);
@@ -205,10 +238,13 @@ export async function searchDocumentChunks(opts: {
 
   rows = await filterAccessibleDocuments(opts.actor, rows);
 
+  const scoreThreshold = opts.scoreThreshold ?? 0.18;
+  const overlapThreshold = opts.overlapThreshold ?? 0.2;
+
   return rows
     .map((row) => {
       const overlap = scoreChunkOverlap(query, row.content);
-      const lexical = fts ? 0.72 : 0;
+      const lexical = fts && row.content ? 0.72 : 0;
       const score = fuseSearchScore({
         metadataScore: 0,
         lexicalScore: lexical,
@@ -230,7 +266,7 @@ export async function searchDocumentChunks(opts: {
         score,
       };
     })
-    .filter((row) => row.score >= 0.18 || row.overlapScore >= 0.2)
+    .filter((row) => row.score >= scoreThreshold || row.overlapScore >= overlapThreshold)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }

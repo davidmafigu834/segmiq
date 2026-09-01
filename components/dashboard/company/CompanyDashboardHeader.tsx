@@ -2,17 +2,12 @@
 
 import { type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronRight, UserPlus, Users, Zap } from "lucide-react";
+import { ChevronRight, UserPlus, Users } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { GlobalSearch } from "@/components/shell/GlobalSearch";
 import { SalesThemeToggle } from "@/components/sales/navigation/SalesThemeToggle";
 import { SalesProfileMenu } from "@/components/sales/navigation/SalesProfileMenu";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/sales/ui";
+import { SalesHeaderQuickActions } from "@/components/sales/navigation/SalesHeaderQuickActions";
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { greetingPart } from "@/lib/sales/sales-dashboard-view";
 import { cn } from "@/lib/ui/cn";
@@ -84,6 +79,23 @@ export function CompanyDashboardHeader({
   const firstName = userName.trim().split(/\s+/)[0] || "there";
   const greeting = title ?? `Good ${greetingPart()}, ${firstName}`;
 
+  const quickActionItems = [
+    canAddLead
+      ? {
+          key: "add-lead",
+          label: terminology.actions.addLead,
+          icon: <UserPlus size={16} strokeWidth={1.8} aria-hidden />,
+          onSelect: openAddHubSheet,
+        }
+      : null,
+    {
+      key: "add-team",
+      label: `Add ${terminology.salesperson.singular.toLowerCase()}`,
+      icon: <Users size={16} strokeWidth={1.8} aria-hidden />,
+      onSelect: () => router.push("/client/team?invite=1"),
+    },
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+
   return (
     <>
       <header className="min-w-0">
@@ -102,37 +114,7 @@ export function CompanyDashboardHeader({
             {primaryAction !== undefined ? (
               primaryAction
             ) : (
-              <DropdownMenu align="end">
-                <DropdownMenuTrigger className="sales-btn-primary inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold text-[#11170A] shadow-sm transition-colors hover:opacity-95 focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]">
-                  <Zap size={15} strokeWidth={1.8} aria-hidden />
-                  Quick actions
-                  <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56">
-                  {canAddLead ? (
-                    <DropdownMenuItem
-                      icon={
-                        <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-sales-surface-subtle text-sales-text-secondary">
-                          <UserPlus size={14} strokeWidth={1.8} aria-hidden />
-                        </span>
-                      }
-                      onSelect={openAddHubSheet}
-                    >
-                      {terminology.actions.addLead}
-                    </DropdownMenuItem>
-                  ) : null}
-                  <DropdownMenuItem
-                    icon={
-                      <span className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-sales-surface-subtle text-sales-text-secondary">
-                        <Users size={14} strokeWidth={1.8} aria-hidden />
-                      </span>
-                    }
-                    onSelect={() => router.push("/client/team?invite=1")}
-                  >
-                    Add {terminology.salesperson.singular.toLowerCase()}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <SalesHeaderQuickActions items={quickActionItems} />
             )}
 
             <SalesProfileMenu

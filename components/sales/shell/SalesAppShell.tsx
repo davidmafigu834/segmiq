@@ -5,11 +5,9 @@ import { useRouter } from "next/navigation";
 import {
   Building2,
   CalendarDays,
-  ChevronDown,
   FileText,
   Phone,
   UserPlus,
-  Zap,
 } from "lucide-react";
 import { BrandIcon } from "@/components/sales/ui/BrandIcon";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -31,12 +29,7 @@ import {
 import { useAddHubSheet } from "@/components/sales/AddToHubSheet";
 import { ToastProvider } from "@/components/sales/ui/Toast";
 import { GuidedCourseMount } from "@/components/sales/training/GuidedCourseMount";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/sales/ui";
+import { SalesHeaderQuickActions } from "@/components/sales/navigation/SalesHeaderQuickActions";
 import { PresenceHeartbeat } from "@/components/sales/PresenceHeartbeat";
 import { SegmiQDotWave } from "@/components/dashboard/company/SegmiQDotWave";
 import { useSalesSidebarCollapsed } from "@/lib/sales/navigation/use-sales-sidebar-collapsed";
@@ -96,56 +89,52 @@ export function SalesQuickActions({
   realEstate?: boolean;
 }) {
   const router = useRouter();
+  const items = [
+    onAddLead
+      ? {
+          key: "add-lead",
+          label: realEstate ? "Add inquiry" : "Add lead",
+          icon: <UserPlus size={16} strokeWidth={1.8} aria-hidden />,
+          onSelect: onAddLead,
+        }
+      : null,
+    onLogCall
+      ? {
+          key: "log-call",
+          label: "Log call",
+          icon: <Phone size={16} strokeWidth={1.8} aria-hidden />,
+          onSelect: onLogCall,
+        }
+      : null,
+    {
+      key: "sales-hub",
+      label: "Open Sales Hub",
+      icon: <BrandIcon brand="whatsapp" size={16} />,
+      onSelect: () => router.push("/sales/inbox"),
+    },
+    {
+      key: "quotes",
+      label: realEstate ? "View listings" : "View quotations",
+      icon: realEstate ? (
+        <Building2 size={16} strokeWidth={1.8} aria-hidden />
+      ) : (
+        <FileText size={16} strokeWidth={1.8} aria-hidden />
+      ),
+      onSelect: () => router.push(realEstate ? "/sales/listings" : "/sales/quotes"),
+    },
+    {
+      key: "calendar",
+      label: "View calendar",
+      icon: <CalendarDays size={16} strokeWidth={1.8} aria-hidden />,
+      onSelect: () => router.push("/sales/calendar"),
+    },
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+
   return (
-    <div className="relative hidden layout:block">
-      <DropdownMenu align="end">
-        <DropdownMenuTrigger
-          className="sales-btn-primary inline-flex h-10 items-center gap-2 rounded-[10px] px-3.5 text-[13px] font-semibold text-[#11170A] shadow-sm transition-colors hover:opacity-95 focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
-          aria-label="Quick actions"
-          data-course-target="dashboard-quick-actions"
-        >
-          <Zap size={16} strokeWidth={1.8} aria-hidden />
-          Quick actions
-          <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
-          {onAddLead ? (
-            <DropdownMenuItem icon={<UserPlus size={16} strokeWidth={1.8} />} onSelect={onAddLead}>
-              {realEstate ? "Add inquiry" : "Add lead"}
-            </DropdownMenuItem>
-          ) : null}
-          {onLogCall ? (
-            <DropdownMenuItem icon={<Phone size={16} strokeWidth={1.8} />} onSelect={onLogCall}>
-              Log call
-            </DropdownMenuItem>
-          ) : null}
-          <DropdownMenuItem
-            icon={<BrandIcon brand="whatsapp" size={16} />}
-            onSelect={() => router.push("/sales/inbox")}
-          >
-            Open Sales Hub
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            icon={
-              realEstate ? (
-                <Building2 size={16} strokeWidth={1.8} aria-hidden />
-              ) : (
-                <FileText size={16} strokeWidth={1.8} aria-hidden />
-              )
-            }
-            onSelect={() => router.push(realEstate ? "/sales/listings" : "/sales/quotes")}
-          >
-            {realEstate ? "View listings" : "View quotations"}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            icon={<CalendarDays size={16} strokeWidth={1.8} />}
-            onSelect={() => router.push("/sales/calendar")}
-          >
-            View calendar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <SalesHeaderQuickActions
+      items={items}
+      courseTarget="dashboard-quick-actions"
+    />
   );
 }
 

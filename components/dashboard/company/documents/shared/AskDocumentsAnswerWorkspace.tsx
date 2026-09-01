@@ -83,7 +83,14 @@ export function AskDocumentsAnswerWorkspace({
         </div>
         <div className="px-4 py-4">
           {state.answer ? (
-            <p className="max-w-3xl text-[14px] leading-relaxed text-sales-text-primary">{state.answer}</p>
+            <p className="max-w-3xl whitespace-pre-line text-[14px] leading-relaxed text-sales-text-primary">
+              {state.answer}
+            </p>
+          ) : state.citations.length ? (
+            <p className="text-[14px] text-sales-text-secondary">
+              I found related documents but couldn&apos;t compose a full answer. Review the sources
+              below.
+            </p>
           ) : (
             <p className="text-[14px] text-sales-text-secondary">
               I couldn&apos;t find enough information in your documents to answer that question. Try
@@ -104,13 +111,13 @@ export function AskDocumentsAnswerWorkspace({
             Sources
           </p>
           <ul className="space-y-2">
-            {state.citations.map((citation) => {
+            {state.citations.map((citation, index) => {
               const href = documentId
                 ? `/client/documents/${documentId}?tab=document&page=${citation.pageNumber ?? ""}&highlight=${encodeURIComponent(citation.excerpt.slice(0, 120))}`
                 : `/client/documents/${citation.documentId}?tab=document&page=${citation.pageNumber ?? ""}&highlight=${encodeURIComponent(citation.excerpt.slice(0, 120))}`;
 
               return (
-                <li key={citation.chunkId}>
+                <li key={`${citation.documentId}-${citation.chunkId}-${index}`}>
                   <DocumentSourceCitation
                     title={citation.documentTitle}
                     page={citation.pageNumber}

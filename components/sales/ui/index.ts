@@ -1,4 +1,4 @@
-export { Button, IconButton, SplitButton } from "./Button";
+export { Button, IconButton, SplitButton, salesMenuTriggerClass } from "./Button";
 export type {
   SalesButtonProps,
   SalesButtonVariant,
