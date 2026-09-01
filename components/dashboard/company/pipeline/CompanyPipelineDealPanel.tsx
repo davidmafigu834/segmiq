@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Building2, ChevronDown, Phone, X } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { EntityDocumentsPanel } from "@/components/dashboard/company/documents/EntityDocumentsPanel";
+import { cn } from "@/lib/ui/cn";
 import {
   Avatar,
   Badge,
