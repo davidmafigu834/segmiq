@@ -78,11 +78,12 @@ async function resolveCategory(opts: {
   settings: Awaited<ReturnType<typeof loadDocumentCompanySettings>>;
   categories: Awaited<ReturnType<typeof listActiveCategories>>;
 }): Promise<CategoryMatchResult> {
-  if (!opts.proposedName || !isReusableCategoryName(opts.proposedName)) {
+  const proposedName = opts.proposedName;
+  if (!proposedName || !isReusableCategoryName(proposedName)) {
     return { categoryId: "", categoryName: "", score: 0, action: "SKIPPED" };
   }
 
-  const exact = findCategoryByNormalizedName(opts.categories, opts.proposedName);
+  const exact = findCategoryByNormalizedName(opts.categories, proposedName);
   if (exact) {
     return {
       categoryId: exact.id,
@@ -92,9 +93,9 @@ async function resolveCategory(opts: {
     };
   }
 
-  const ranked = rankCategoryMatches(opts.proposedName, opts.categories).map((row) => ({
+  const ranked = rankCategoryMatches(proposedName, opts.categories).map((row) => ({
     ...row,
-    score: Math.max(row.score, synonymBoost(opts.proposedName, row.name)),
+    score: Math.max(row.score, synonymBoost(proposedName, row.name)),
   }));
 
   ranked.sort((a, b) => b.score - a.score);
@@ -113,7 +114,7 @@ async function resolveCategory(opts: {
   ) {
     const created = await createCategory({
       clientId: opts.clientId,
-      name: opts.proposedName,
+      name: proposedName,
       creationSource: "AGENT",
     });
     if (created) {
@@ -129,7 +130,7 @@ async function resolveCategory(opts: {
   if (opts.settings.suggest_categories_when_uncertain) {
     return {
       categoryId: "",
-      categoryName: opts.proposedName,
+      categoryName: proposedName,
       score: best?.score ?? 0,
       action: "SUGGESTED",
     };
