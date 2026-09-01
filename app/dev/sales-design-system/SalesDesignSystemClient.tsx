@@ -36,7 +36,6 @@ import {
 import {
   ActiveFiltersBar,
   ActivityRow,
-  Alert,
   Avatar,
   Badge,
   BrandIcon,
@@ -132,7 +131,6 @@ import {
   PopoverTrigger,
   SuccessState,
 } from "@/components/sales/ui";
-import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
   SALES_CHART,
   SALES_CHART_SEMANTIC,
