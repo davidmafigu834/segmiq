@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { CommercialModulePage } from "@/components/dashboard/company/commercial/CommercialModulePage";
-import { CommercialModulePage } from "@/components/dashboard/company/commercial/CommercialModulePage";
 import { DocumentsUploadZone } from "./DocumentsUploadZone";
 import type { UserRole } from "@/types";
 
