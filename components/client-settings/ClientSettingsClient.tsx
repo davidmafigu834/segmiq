@@ -7,6 +7,7 @@ import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { QuoteSettingsManager } from "@/components/client-settings/QuoteSettingsManager";
 import { DocumentsManager } from "@/components/client-settings/DocumentsManager";
+import { DocumentsModuleToggle } from "@/components/clients/DocumentsModuleToggle";
 import { WhatsAppInboxSettings } from "@/components/client-settings/WhatsAppInboxSettings";
 import { WebsiteIntegrationPanel } from "@/components/real-estate/WebsiteIntegrationPanel";
 import { getPublicBaseUrl } from "@/lib/constants";
@@ -71,6 +72,7 @@ export function ClientSettingsClient({
   agencyDefaultHours,
   initialTab,
   globalWhatsAppQuickConnectEnabled = false,
+  documentsModuleEnabled = false,
 }: {
   clientId: string;
   initialClient: ClientRow;
@@ -80,6 +82,7 @@ export function ClientSettingsClient({
   agencyDefaultHours: number;
   initialTab?: string;
   globalWhatsAppQuickConnectEnabled?: boolean;
+  documentsModuleEnabled?: boolean;
 }) {
   const TEMP_PASS_TTL_MS = 30 * 24 * 60 * 60 * 1000;
   const tempPassStorageKey = `client-settings-temp-pass:${clientId}`;
@@ -1388,6 +1391,10 @@ export function ClientSettingsClient({
         {tab === "advanced" ? (
           <div className="space-y-6">
             <h2 className="font-display text-2xl">Advanced</h2>
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold text-ink-primary">Platform modules</h3>
+              <DocumentsModuleToggle clientId={clientId} enabled={documentsModuleEnabled} />
+            </section>
             <button
               type="button"
               className="btn-ghost border border-border"
