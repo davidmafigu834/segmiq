@@ -1,4 +1,3 @@
-import { createAdminClient } from "@/lib/supabase/admin";
 import { loadDocumentCompanySettings } from "@/lib/documents/settings";
 import { listDocumentTypes } from "@/lib/documents/service";
 import { extractIntelligenceWithLlm } from "@/lib/documents/intelligence/llm-extract";

@@ -65,17 +65,6 @@ const SECTIONS: Array<{
   { id: "activity", label: "Activity", icon: History },
 ];
 
-function IntelligencePlaceholder({ title }: { title: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-zinc-800 px-4 py-10 text-center">
-      <p className="text-sm font-medium text-zinc-300">{title}</p>
-      <p className="mt-2 text-sm text-zinc-500">
-        Available after document analysis completes. Intelligence extraction ships in a later phase.
-      </p>
-    </div>
-  );
-}
-
 export function DocumentDetailWorkspace({
   clientId,
   document,

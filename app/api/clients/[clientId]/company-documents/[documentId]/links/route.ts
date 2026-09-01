@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireClientAccessFromRequest } from "@/lib/api-guards";
 import {
-  confirmDocumentEntityLink,
   createManualDocumentLink,
   loadDocumentEntityLinks,
-  removeDocumentEntityLink,
   searchContactCandidates,
   searchQuotationCandidates,
 } from "@/lib/documents/linking";

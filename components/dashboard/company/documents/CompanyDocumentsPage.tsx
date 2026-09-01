@@ -17,7 +17,6 @@ export function CompanyDocumentsPage({
   initialDocuments,
   initialTotal,
   summary,
-  types,
   enabled,
 }: {
   clientId: string;

@@ -1,6 +1,5 @@
 import {
   BadgeCheck,
-  BriefcaseBusiness,
   FileText,
   FolderKanban,
   Handshake,

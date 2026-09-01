@@ -21,7 +21,7 @@ function resultFromPlain(plainText: string, pages?: { pageNumber: number; text: 
   };
 }
 
-export async function extractPlainText(buffer: Buffer, mimeType: string): Promise<ExtractionResult> {
+export async function extractPlainText(buffer: Buffer, _mimeType: string): Promise<ExtractionResult> {
   const text = normalizeText(buffer.toString("utf8"));
   if (!text) throw new DocumentExtractionError("EMPTY", "Text file is empty.");
   return resultFromPlain(text);

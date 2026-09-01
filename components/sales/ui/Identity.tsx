@@ -132,8 +132,6 @@ export function LeadIdentity({
   size?: "sm" | "md";
   className?: string;
 }) {
-  const avatarSize: AvatarSize = size === "sm" ? "sm" : "md";
-
   return (
     <UserIdentity
       name={name}

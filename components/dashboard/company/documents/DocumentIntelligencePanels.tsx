@@ -33,7 +33,7 @@ function EvidenceBlock({
       <p className="text-xs text-zinc-500">
         Source: {formatSourceEvidence({ page, clause, section })}
       </p>
-      {excerpt ? <p className="mt-1 text-xs italic text-zinc-400">"{excerpt}"</p> : null}
+      {excerpt ? <p className="mt-1 text-xs italic text-zinc-400">&ldquo;{excerpt}&rdquo;</p> : null}
     </div>
   );
 }
