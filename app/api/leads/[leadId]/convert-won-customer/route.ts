@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: { params: { leadId: string 
   }
 
   const check = await canModifyLead(params.leadId, req);
-  if (!check.ok) {
+  if (!check.allowed) {
     return NextResponse.json({ error: check.reason }, { status: check.status });
   }
 
