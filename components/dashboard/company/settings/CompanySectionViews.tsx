@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Upload } from "lucide-react";
-import { Button, Field, Input, Radio, Select, TextArea } from "@/components/sales/ui";
+import { Button, ConfirmDialog, Field, Input, Radio, Select, TextArea } from "@/components/sales/ui";
 import { SettingsSectionCard, SettingsInfoGrid } from "./SettingsSectionCard";
 import { CompanyAccountSummaryCard } from "./CompanySettingsRail";
 import { companyNameInitials } from "@/lib/sales/navigation/company-nav-config";
@@ -65,6 +65,9 @@ export function CompanyBrandingSection({
   const [footer, setFooter] = useState(quote.footer_note ?? "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [removeLogoOpen, setRemoveLogoOpen] = useState(false);
+  const [removeLogoLoading, setRemoveLogoLoading] = useState(false);
+  const [removeLogoError, setRemoveLogoError] = useState<string | null>(null);
   const publicUrl = profile.slug ? getPublicLandingPageUrl(profile.slug) : null;
 
   async function onUpload(file: File | undefined) {
@@ -83,14 +86,18 @@ export function CompanyBrandingSection({
     }
   }
 
-  async function removeLogo() {
-    if (!window.confirm("Remove the company logo?")) return;
+  async function confirmRemoveLogo() {
+    setRemoveLogoLoading(true);
+    setRemoveLogoError(null);
     try {
       await patchProfile(clientId, { logo_url: null });
       onProfileChange({ logoUrl: null });
       toast({ title: "Company logo removed.", tone: "success" });
+      setRemoveLogoOpen(false);
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : "Couldn't remove logo", tone: "error" });
+      setRemoveLogoError(err instanceof Error ? err.message : "Couldn't remove logo");
+    } finally {
+      setRemoveLogoLoading(false);
     }
   }
 
@@ -181,7 +188,7 @@ export function CompanyBrandingSection({
               Upload new logo
             </Button>
             {profile.logoUrl ? (
-              <Button variant="ghost" size="md" onClick={() => void removeLogo()}>
+              <Button variant="ghost" size="md" onClick={() => setRemoveLogoOpen(true)}>
                 Remove logo
               </Button>
             ) : null}
@@ -223,6 +230,20 @@ export function CompanyBrandingSection({
           Save changes
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={removeLogoOpen}
+        onOpenChange={(open) => {
+          if (!open && !removeLogoLoading) setRemoveLogoOpen(false);
+        }}
+        title="Remove company logo"
+        description="Your logo will be removed from documents and your public profile until you upload a new one."
+        confirmLabel="Remove"
+        destructive
+        loading={removeLogoLoading}
+        error={removeLogoError}
+        onConfirm={() => void confirmRemoveLogo()}
+      />
     </div>
   );
 }

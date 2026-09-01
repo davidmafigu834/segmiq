@@ -42,6 +42,7 @@ import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { DealReadinessCard } from "@/components/sales/deals/DealReadinessCard";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
+import { ConfirmDialog, useSalesToast } from "@/components/sales/ui";
 import { ConvertWonCustomerSheet } from "@/components/sales/leads/ConvertWonCustomerSheet";
 import { getDealReadiness } from "@/lib/sales/deals/readiness";
 import { formatLeadLifecycle, formatDealStage, isLeadConverted, isLeadOpenForQualification } from "@/lib/sales/deals/display";
@@ -55,7 +56,6 @@ import {
   intentLikelihoodCopy,
 } from "@/lib/sales/pipeline-display";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
-import { useSalesToast } from "@/components/sales/ui";
 import { getDealCommercialValue } from "@/lib/sales/deals/commercial-value";
 
 type CallLogApiRow = {
@@ -908,6 +908,8 @@ function AgencyLeadAdminSection({
   const [assigneeId, setAssigneeId] = useState(lead.assigned_to_id ?? "");
   const [handoverNotes, setHandoverNotes] = useState("");
   const [busy, setBusy] = useState<"assign" | "archive" | null>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -963,11 +965,16 @@ function AgencyLeadAdminSection({
   }
 
   async function handleArchive() {
-    if (!window.confirm("Archive this lead? It will be hidden from default lists.")) return;
+    setArchiveError(null);
     setBusy("archive");
     const updated = await patchLead({ is_archived: true });
     setBusy(null);
-    if (updated) onAfterArchive?.();
+    if (updated) {
+      setArchiveOpen(false);
+      onAfterArchive?.();
+    } else {
+      setArchiveError("Could not archive lead.");
+    }
   }
 
   return (
@@ -1013,10 +1020,26 @@ function AgencyLeadAdminSection({
         type="button"
         className="min-h-11 w-full text-left text-[13px] font-medium text-[var(--danger-fg,#B42318)] underline-offset-2 touch-manipulation hover:underline sm:min-h-0 sm:w-auto"
         disabled={busy !== null}
-        onClick={() => void handleArchive()}
+        onClick={() => {
+          setArchiveError(null);
+          setArchiveOpen(true);
+        }}
       >
-        {busy === "archive" ? "Archiving…" : "Archive lead"}
+        Archive lead
       </button>
+      <ConfirmDialog
+        open={archiveOpen}
+        onOpenChange={(open) => {
+          if (!open && busy !== "archive") setArchiveOpen(false);
+        }}
+        title="Archive lead"
+        description="It will be hidden from default lists. You can restore it later from archived views if your workspace supports them."
+        confirmLabel="Archive"
+        destructive
+        loading={busy === "archive"}
+        error={archiveError}
+        onConfirm={() => void handleArchive()}
+      />
     </div>
   );
 }

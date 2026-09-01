@@ -924,24 +924,63 @@ State resolution for fetched lists: **loading → error → filtered empty → e
 
 Retry actions use **primary** lime buttons — not destructive red. Icons use soft semantic wells (neutral / info / danger / success), ~44px, decorative (`aria-hidden`).
 
-## Overlay runtime (Phase 13)
+## 14 — Overlays & Feedback
 
 Showcase: `/dev/sales-design-system#overlays` (development only).
 
-Consolidate on existing primitives — do not add parallel modal libraries.
+Production architecture is **four systems** — not fourteen unrelated components:
+
+| System | Components | Question answered |
+|--------|------------|-------------------|
+| **1 · Blocking overlays** | `Modal` / `PremiumSheet`, `ConfirmDialog` | Must I stop and decide or complete this task? |
+| **2 · Contextual overlays** | `PremiumSheet` (drawer), `Popover`, `Tooltip` | Can I get extra context without leaving my workspace? |
+| **3 · Feedback messaging** | `ToastProvider` / `useSalesToast`, `Alert` / `InlineAlert`, `FieldError` | What just happened or needs my attention? |
+| **4 · Process feedback** | `Stepper`, `InlineLoading`, Phase 12 states | What is the system doing, or where am I in this process? |
+
+Do **not** duplicate Phase 12 (`EmptyState`, `ErrorState`, …) or Phase 01 buttons. Reuse existing primitives — no `ModalV2`, `Toast2`, or parallel libraries.
+
+### System 1 — Blocking overlays
 
 | Component | Role |
 |-----------|------|
-| `PremiumSheet` | Focused modal / mobile bottom sheet (420 · 520 · 680) |
-| `ConfirmDialog` | Destructive or high-friction confirmation — neutral surface, danger footer action |
-| `Popover` | Portalled contextual content — not `DropdownMenu` |
-| `Tooltip` | Short label on hover/focus |
-| `ToastProvider` / `useSalesToast` | Brief async feedback — mount once per workspace shell |
-| `Alert` / `InlineAlert` | Persistent inline banner — same component |
+| `Modal` | Alias for `PremiumSheet` — focused input, decisions, short workflows (420 · 520 · 680) |
+| `ConfirmDialog` | Destructive or high-friction confirmation — neutral surface, danger footer only |
+
+`ConfirmDialog` uses `role="alertdialog"` when destructive, disables backdrop dismiss, and keeps inline errors open while `loading`.
+
+### System 2 — Contextual overlays
+
+| Component | Role |
+|-----------|------|
+| `PremiumSheet` | Right drawer / mobile bottom sheet — record detail, create/edit flows |
+| `Popover` | Portalled contextual content (not `DropdownMenu`) |
+| `Tooltip` | One short sentence on hover/focus |
 
 Infrastructure: `OverlayPortal`, `useFocusTrap` (wired into `PremiumSheet`), z-index tokens `--sales-z-*`.
 
-Focus trap cycles Tab within the dialog and restores focus on close. Escape and backdrop dismiss follow workflow rules (`closeDisabled` while saving).
+### System 3 — Feedback messaging
+
+| Component | Role |
+|-----------|------|
+| `ToastProvider` / `useSalesToast` | Brief async feedback — mount once per workspace shell |
+| `Alert` / `InlineAlert` | Persistent inline banner — soft fill + 3px left accent |
+| `FieldError` | Field-level validation via `Field` |
+
+Toast: neutral surface, semantic icon/accent, max 4 stacked, ~4.2s default. Errors may use assertive live region.
+
+### System 4 — Process feedback
+
+| Component | Role |
+|-----------|------|
+| `Stepper` | Multi-step position (showcase + real wizards only) |
+| `InlineLoading` | Small spinner + label for local async work |
+| Phase 12 states | See §12 — `LoadingState`, `Skeleton`, `ErrorState`, etc. |
+
+CRUD success → Toast. Whole-area setup missing → `InfoState`. List fetch failure → `ErrorState` with real `onRetry`.
 
 Company `/client/*` routes mount `ToastProvider` via `CompanyClientProviders` in `app/client/layout.tsx`.
+
+## Overlay runtime (Phase 13 — superseded by §14)
+
+See **§14 — Overlays & Feedback** above for the consolidated four-system model. Phase 13 introduced `ConfirmDialog`, `Popover`, `OverlayPortal`, and focus-trap wiring; Phase 14 adds `Modal`, `InlineLoading`, `Stepper`, production confirm migrations, and documents the full architecture.
 

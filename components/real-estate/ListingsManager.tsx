@@ -8,6 +8,7 @@ import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
   Badge,
   Button,
+  ConfirmDialog,
   DataTableBody,
   DataTableEl,
   DataTableHead,
@@ -158,6 +159,8 @@ export function ListingsManager({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [statusTab, setStatusTab] = useState<StatusTab>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [query, setQuery] = useState("");
@@ -345,12 +348,18 @@ export function ListingsManager({
     }
   }
 
-  async function remove(id: string) {
-    if (!window.confirm("Delete this listing?")) return;
-    await fetch(`/api/clients/${clientId}/listings/${id}`, { method: "DELETE" });
-    setToast("Listing deleted");
-    setShowForm(false);
-    await load();
+  async function confirmDelete() {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    try {
+      await fetch(`/api/clients/${clientId}/listings/${deleteTargetId}`, { method: "DELETE" });
+      setToast("Listing deleted");
+      setShowForm(false);
+      setDeleteTargetId(null);
+      await load();
+    } finally {
+      setDeleteLoading(false);
+    }
   }
 
   const statusTabs: Array<{ id: StatusTab; label: string; count: number }> = [
@@ -552,7 +561,7 @@ export function ListingsManager({
                             <button
                               type="button"
                               className="rounded-[8px] p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
-                              onClick={() => void remove(listing.id)}
+                              onClick={() => setDeleteTargetId(listing.id)}
                               aria-label="Delete"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -727,7 +736,7 @@ export function ListingsManager({
           footer={
             <div className="flex items-center justify-between gap-2">
               {editingId && canApprove ? (
-                <Button type="button" variant="ghost" size="sm" onClick={() => void remove(editingId)}>
+                <Button type="button" variant="ghost" size="sm" onClick={() => editingId && setDeleteTargetId(editingId)}>
                   Delete
                 </Button>
               ) : (
@@ -888,6 +897,19 @@ export function ListingsManager({
           </div>
         </PremiumSheet>
       ) : null}
+
+      <ConfirmDialog
+        open={Boolean(deleteTargetId)}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) setDeleteTargetId(null);
+        }}
+        title="Delete listing"
+        description="This removes the listing from your workspace. This action cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        loading={deleteLoading}
+        onConfirm={() => void confirmDelete()}
+      />
 
     </div>
   );

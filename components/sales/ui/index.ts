@@ -75,7 +75,14 @@ export { Alert as InlineAlert } from "./Feedback";
 
 export { ConfirmDialog } from "./ConfirmDialog";
 
+export { Modal, PremiumSheet } from "./Modal";
+
 export { Popover, PopoverTrigger, PopoverContent } from "./Popover";
+
+export { InlineLoading } from "./InlineLoading";
+
+export { Stepper } from "./Stepper";
+export type { StepperStep, StepperStepStatus } from "./Stepper";
 
 export { OverlayPortal } from "./OverlayPortal";
 export { useFocusTrap, getFocusableElements } from "./useFocusTrap";

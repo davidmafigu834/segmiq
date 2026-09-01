@@ -45,6 +45,8 @@ export function ConfirmDialog({
       size="sm"
       title={title}
       description={description}
+      dialogRole={destructive ? "alertdialog" : "dialog"}
+      dismissOnBackdrop={!destructive && !loading}
       icon={
         icon ??
         (destructive ? (

@@ -125,11 +125,14 @@ import {
   FilteredEmptyState,
   InfoState,
   InlineAlert,
+  InlineLoading,
   LoadingState,
+  Modal,
   Popover,
   PopoverContent,
   PopoverTrigger,
   SuccessState,
+  Stepper,
 } from "@/components/sales/ui";
 import {
   SALES_CHART,
@@ -162,7 +165,7 @@ const NAV = [
   { id: "badges", label: "Tabs, Badges & Status" },
   { id: "cards", label: "Cards" },
   { id: "table", label: "06 — Tables" },
-  { id: "overlays", label: "07 — Overlays & Feedback" },
+  { id: "overlays", label: "14 — Overlays & Feedback" },
   { id: "forms", label: "08 — Forms & Inputs" },
   { id: "menus", label: "09 — Menus & Pills" },
   { id: "navigation", label: "10 — Navigation & Layout" },
@@ -669,15 +672,48 @@ function TablesShowcaseSection() {
 function OverlaysShowcaseSection() {
   const { toast } = useSalesToast();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const stepperSteps = [
+    { id: "details", label: "Details", status: "completed" as const },
+    { id: "review", label: "Review", status: "current" as const },
+    { id: "complete", label: "Complete", status: "upcoming" as const },
+  ];
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[12px] text-sales-text-secondary">
-          Clear communication · in context · non-disruptive unless necessary. Documentation examples only.
+          Four production systems — blocking overlays · contextual overlays · feedback messaging · process feedback.
+          Showcase examples are documentation only.
         </p>
         <SalesThemeToggle />
       </div>
+
+      <Card variant="flat">
+        <CardHeader>
+          <CardTitle className="text-[14px]">Architecture</CardTitle>
+          <CardDescription>Do not duplicate Phase 12 states or Phase 01 buttons</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 text-[12px] text-sales-text-secondary">
+          <div className="rounded-[10px] border border-sales-border-subtle p-3">
+            <p className="font-semibold text-sales-text-primary">1 · Blocking</p>
+            <p className="mt-1">Modal · ConfirmDialog — must stop and decide</p>
+          </div>
+          <div className="rounded-[10px] border border-sales-border-subtle p-3">
+            <p className="font-semibold text-sales-text-primary">2 · Contextual</p>
+            <p className="mt-1">PremiumSheet · Popover · Tooltip — extra context</p>
+          </div>
+          <div className="rounded-[10px] border border-sales-border-subtle p-3">
+            <p className="font-semibold text-sales-text-primary">3 · Messaging</p>
+            <p className="mt-1">Toast · InlineAlert · FieldError — what happened</p>
+          </div>
+          <div className="rounded-[10px] border border-sales-border-subtle p-3">
+            <p className="font-semibold text-sales-text-primary">4 · Process</p>
+            <p className="mt-1">Stepper · InlineLoading · Phase 12 states</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 xl:grid-cols-5">
         <Card variant="flat" className="xl:col-span-1">
@@ -705,7 +741,10 @@ function OverlaysShowcaseSection() {
               </div>
             </div>
             <Button size="sm" variant="secondary" onClick={() => setDeleteOpen(true)}>
-              Open destructive modal
+              Open destructive confirm
+            </Button>
+            <Button size="sm" variant="secondary" onClick={() => setModalOpen(true)}>
+              Open live modal
             </Button>
             <p className="text-[11px] text-sales-text-muted">Widths: 420 · 520 · 680 · overlay z~80</p>
           </CardContent>
@@ -837,19 +876,33 @@ function OverlaysShowcaseSection() {
         <Card variant="flat" className="xl:col-span-1">
           <CardHeader>
             <CardTitle className="text-[14px]">Progress & loading</CardTitle>
-            <CardDescription>{SALES_FEEDBACK.progressHeight}px track · layout skeleton</CardDescription>
+            <CardDescription>Stepper · inline loading · skeleton</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Stepper steps={stepperSteps} />
             <Progress value={65} showValue label="Pipeline health" />
-            <Progress value={88} showValue tone="success" label="Quota attainment" />
+            <InlineLoading label="Saving changes…" />
             <div className="space-y-2 rounded-[10px] border border-sales-border-subtle p-3">
               <Skeleton className="h-3 w-1/3" />
               <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-3 w-2/3" />
             </div>
             <p className="text-[11px] text-sales-text-muted">
-              Button loading uses Phase 01 Loader2 · no standalone page spinner required
+              Stepper is documentation-only until wired to real multi-step workflows
             </p>
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Tooltip</CardTitle>
+            <CardDescription>Short help · dark neutral · no controls</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            <Tooltip label="Lead score combines engagement, fit, and recency.">
+              <Button size="sm" variant="secondary">
+                Hover me
+              </Button>
+            </Tooltip>
           </CardContent>
         </Card>
       </div>
@@ -860,8 +913,9 @@ function OverlaysShowcaseSection() {
             Accessibility & timing
           </p>
           <ul className="list-disc space-y-1 pl-5">
-            <li>Modal: focus trap + restore on close · Escape closes when allowed · aria-labelledby / aria-describedby</li>
-            <li>ConfirmDialog: neutral modal surface · danger action in footer only · inline error stays open</li>
+            <li>Modal / PremiumSheet: focus trap + restore · Escape · backdrop dismiss when allowed</li>
+            <li>ConfirmDialog: alertdialog for destructive · no backdrop dismiss · inline error stays open</li>
+            <li>Phase 12 states live under #states — reuse EmptyState / ErrorState, do not duplicate here</li>
             <li>Popover: portalled contextual panel · Escape + click-outside · not for action menus</li>
             <li>Toast: polite status for success/info · assertive alert for errors · max {SALES_OVERLAY.toastMaxVisible} stacked</li>
             <li>Inline alert: persists until state resolves or user dismisses · not auto-dismissed like toast</li>
@@ -885,6 +939,27 @@ function OverlaysShowcaseSection() {
             Documentation example only. Production confirms preserve existing workflow rules and real mutations.
           </p>
         </ConfirmDialog>
+      ) : null}
+
+      {modalOpen ? (
+        <Modal
+          size="md"
+          title="Configure settings"
+          description="Update defaults for your workspace."
+          onClose={() => setModalOpen(false)}
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => setModalOpen(false)}>Save</Button>
+            </div>
+          }
+        >
+          <p className="text-[13px] text-sales-text-secondary">
+            Live Modal uses the same PremiumSheet primitive as production sheets and confirms.
+          </p>
+        </Modal>
       ) : null}
     </div>
   );
@@ -3096,8 +3171,8 @@ function ShowcaseInner() {
           {/* ── Overlays & Feedback ────────────────────────────── */}
           <Section
             id="overlays"
-            title="07 — Overlays & Feedback"
-            description="Modal · contextual drawer · toast · inline alert · progress & skeleton. Calm, precise, accessible."
+            title="14 — Overlays & Feedback"
+            description="Four systems: blocking overlays · contextual overlays · feedback messaging · process feedback. Reuses Phase 12 states."
           >
             <OverlaysShowcaseSection />
           </Section>

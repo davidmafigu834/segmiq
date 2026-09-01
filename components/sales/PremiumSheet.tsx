@@ -21,6 +21,8 @@ export function PremiumSheet({
   badge,
   onClose,
   closeDisabled = false,
+  dismissOnBackdrop = true,
+  dialogRole = "dialog",
   elevateForCourse = false,
   children,
   footer,
@@ -38,6 +40,9 @@ export function PremiumSheet({
   badge?: ReactNode;
   onClose: () => void;
   closeDisabled?: boolean;
+  /** When false, backdrop clicks do not dismiss (destructive / unsaved flows). */
+  dismissOnBackdrop?: boolean;
+  dialogRole?: "dialog" | "alertdialog";
   /** Sit above course dim overlay so Practice Mode shows the real modal design. */
   elevateForCourse?: boolean;
   children: ReactNode;
@@ -87,12 +92,12 @@ export function PremiumSheet({
         aria-label="Close"
         disabled={closeDisabled}
         onClick={() => {
-          if (!closeDisabled) onClose();
+          if (!closeDisabled && dismissOnBackdrop) onClose();
         }}
       />
       <div
         ref={dialogRef}
-        role="dialog"
+        role={dialogRole}
         aria-modal
         tabIndex={-1}
         aria-labelledby={titleId}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { Button } from "@/components/sales/ui";
+import { Button, ConfirmDialog } from "@/components/sales/ui";
 import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 
 type Inventory = {
@@ -53,6 +53,8 @@ export function DevelopmentsManager({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -133,11 +135,17 @@ export function DevelopmentsManager({
     }
   }
 
-  async function remove(id: string) {
-    if (!window.confirm("Delete this development?")) return;
-    await fetch(`/api/clients/${clientId}/developments/${id}`, { method: "DELETE" });
-    setToast("Development deleted");
-    await load();
+  async function confirmDelete() {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    try {
+      await fetch(`/api/clients/${clientId}/developments/${deleteTargetId}`, { method: "DELETE" });
+      setToast("Development deleted");
+      setDeleteTargetId(null);
+      await load();
+    } finally {
+      setDeleteLoading(false);
+    }
   }
 
   if (loading) {
@@ -298,7 +306,7 @@ export function DevelopmentsManager({
                         <button
                           type="button"
                           className="rounded-[8px] border border-sales-border p-1.5 text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-danger-fg"
-                          onClick={() => void remove(d.id)}
+                          onClick={() => setDeleteTargetId(d.id)}
                           aria-label="Delete"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -312,6 +320,19 @@ export function DevelopmentsManager({
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={Boolean(deleteTargetId)}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) setDeleteTargetId(null);
+        }}
+        title="Delete development"
+        description="This removes the development and its inventory summary from your workspace."
+        confirmLabel="Delete"
+        destructive
+        loading={deleteLoading}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   );
 }
