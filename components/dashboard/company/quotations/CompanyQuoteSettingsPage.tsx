@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
-import { Button, ToastProvider } from "@/components/sales/ui";
+import { Button } from "@/components/sales/ui";
 import { QuoteSettingsManager } from "@/components/client-settings/QuoteSettingsManager";
 import type { UserRole } from "@/types";
 
@@ -30,8 +30,7 @@ export function CompanyQuoteSettingsPage({
   const router = useRouter();
 
   return (
-    <ToastProvider>
-      <CompanyWorkspaceShell
+    <CompanyWorkspaceShell
         companyName={companyName}
         companyLogoUrl={companyLogoUrl}
         userName={userName}
@@ -62,6 +61,5 @@ export function CompanyQuoteSettingsPage({
         />
         <QuoteSettingsManager clientId={clientId} />
       </CompanyWorkspaceShell>
-    </ToastProvider>
   );
 }

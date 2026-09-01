@@ -14,7 +14,11 @@ import {
   SALES_REPORT_SOURCES,
   type SalesReportPeriodId,
 } from "@/lib/sales/sales-reports-data";
-import { fetchLastCallTimes } from "@/lib/leads/all-leads";
+import { loadResponseSignals } from "@/lib/sales/get-company-team-page-data";
+import {
+  deriveFirstRespondedAt,
+  deriveLastMeaningfulActivityAt,
+} from "@/lib/sales/intelligence/meaningful-activity";
 import { leadScoreBand, leadScoreLabel, isClosedStage } from "@/lib/sales/format";
 import type { LeadStatus } from "@/types";
 import {
@@ -184,7 +188,11 @@ type DbLead = {
   is_archived?: boolean | null;
 };
 
-function mapRow(lead: DbLead, lastContactAt: string | null, now: Date): LeadDirectoryRow {
+function mapRow(
+  lead: DbLead,
+  contact: { firstAt: string | null; lastAt: string | null },
+  now: Date
+): LeadDirectoryRow {
   const score = lead.score != null && Number.isFinite(Number(lead.score)) ? Number(lead.score) : null;
   const company = companyFromFormData(lead.form_data);
   const location = locationFromFormData(lead.form_data);
@@ -195,10 +203,13 @@ function mapRow(lead: DbLead, lastContactAt: string | null, now: Date): LeadDire
     location,
   });
   const src = sourceBucket(lead.source);
-  const neverContacted = !lastContactAt;
+  const neverContacted = !contact.firstAt;
   const followUpOverdue = Boolean(
     lead.follow_up_date && new Date(lead.follow_up_date) < startOfDay(now)
   );
+  const dbStatus = lead.status as LeadStatus;
+  const status =
+    dbStatus === "NEW" && contact.firstAt ? ("CONTACTED" as LeadStatus) : dbStatus;
 
   return {
     id: lead.id,
@@ -213,11 +224,11 @@ function mapRow(lead: DbLead, lastContactAt: string | null, now: Date): LeadDire
     source: lead.source,
     sourceKey: src.key,
     sourceLabel: src.label,
-    status: lead.status as LeadStatus,
+    status,
     score,
     scoreBand: leadScoreBand(score),
     scoreLabel: leadScoreLabel(score),
-    lastContactAt,
+    lastContactAt: contact.lastAt ?? contact.firstAt,
     followUpDate: lead.follow_up_date,
     createdAt: lead.created_at,
     updatedAt: lead.updated_at,
@@ -400,8 +411,16 @@ export async function fetchSalespersonLeadsDirectory(opts: {
   }
 
   const raw = ((leadsData ?? []) as DbLead[]).filter((l) => !l.is_archived);
-  const lastMap = await fetchLastCallTimes(raw.map((l) => l.id));
-  const mapped = raw.map((l) => mapRow(l, lastMap[l.id] ?? null, now));
+  const leadIds = raw.map((l) => l.id);
+  const signals = await loadResponseSignals(leadIds);
+  const mapped = raw.map((l) => {
+    const events = signals.eventsByLead.get(l.id) ?? [];
+    const callAts = signals.callAtsByLead.get(l.id) ?? [];
+    const outboundWa = signals.outboundWaByLead.get(l.id) ?? [];
+    const firstAt = deriveFirstRespondedAt(events, callAts, outboundWa);
+    const lastAt = deriveLastMeaningfulActivityAt(events, callAts, outboundWa);
+    return mapRow(l, { firstAt, lastAt }, now);
+  });
 
   const allTimeCount = mapped.length;
 

@@ -7,7 +7,7 @@ import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
-import { Button, ToastProvider, useSalesToast } from "@/components/sales/ui";
+import { Button, useSalesToast } from "@/components/sales/ui";
 import {
   DEFAULT_VIEWING_COMPANY_FILTERS,
   VIEWING_COMPANY_PAGE_SIZE,
@@ -39,15 +39,7 @@ type CompanyViewingsPageProps = {
   whatsappBadge?: number;
 };
 
-export function CompanyViewingsPage(props: CompanyViewingsPageProps) {
-  return (
-    <ToastProvider>
-      <CompanyViewingsWorkspace {...props} />
-    </ToastProvider>
-  );
-}
-
-function CompanyViewingsWorkspace({
+export function CompanyViewingsPage({
   data,
   unreadNotifications,
   notificationRole,

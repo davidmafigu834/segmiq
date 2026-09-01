@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { persistOutboundWhatsAppMessage } from "./persist-outbound";
 import { resolveWhatsAppProvider } from "./providers/resolver";
 import { isHumanWhatsAppActor, markConversationHumanTakeover } from "@/lib/agent/human-takeover";
+import { markLeadContactedIfNew } from "@/lib/leads/mark-lead-contacted";
 
 async function resolveCanonicalLeadRecipient(input: {
   clientId: string;
@@ -45,10 +46,16 @@ async function afterHumanOutbound(input: {
   clientId: string;
   leadId: string;
   actorId: string | null;
+  actorName: string;
   actorRole: string;
 }) {
   if (!isHumanWhatsAppActor(input)) return;
   await markConversationHumanTakeover({ clientId: input.clientId, leadId: input.leadId });
+  await markLeadContactedIfNew({
+    leadId: input.leadId,
+    clientId: input.clientId,
+    actor: { id: input.actorId, name: input.actorName, role: input.actorRole },
+  });
 }
 
 export async function sendCanonicalWhatsAppText(input: {

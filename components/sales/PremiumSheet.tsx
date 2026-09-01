@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { IconButton } from "@/components/sales/ui/Button";
 import { cn } from "@/lib/ui/cn";
+import { useFocusTrap } from "@/components/sales/ui/useFocusTrap";
 
 const widthClass = {
   sm: "max-w-[420px]",
@@ -52,16 +53,14 @@ export function PremiumSheet({
   const descId = descriptionId ?? (description ? `${titleId}-desc` : undefined);
   const dialogRef = useRef<HTMLDivElement>(null);
 
+  useFocusTrap(dialogRef, true);
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, []);
-
-  useEffect(() => {
-    dialogRef.current?.focus({ preventScroll: true });
   }, []);
 
   useEffect(() => {

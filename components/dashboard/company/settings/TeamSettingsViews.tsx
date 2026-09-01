@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { MoreHorizontal, Search, UserPlus } from "lucide-react";
-import { Badge, Button, EmptyState, ErrorState, FilteredEmptyState, Input, Skeleton } from "@/components/sales/ui";
+import { Badge, Button, ConfirmDialog, EmptyState, ErrorState, FilteredEmptyState, Input, Skeleton } from "@/components/sales/ui";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { SettingsSectionCard } from "./SettingsSectionCard";
 import { CompanyTeamInviteDialog } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
@@ -259,6 +259,8 @@ function MemberAccessDrawer({
   toast: (opts: { title: string; tone?: "success" | "error" | "warning" }) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState<null | "remove" | "promote">(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const isSelf = member.id === currentUserId;
 
   async function patch(body: Record<string, unknown>, success: string) {
@@ -281,19 +283,26 @@ function MemberAccessDrawer({
   }
 
   async function removeAccess() {
-    if (!window.confirm(`${member.name} will lose access. Historical leads, deals, and customers stay in SegmiQ.`)) return;
     setBusy(true);
+    setConfirmError(null);
     try {
       const res = await fetch(`/api/clients/${clientId}/users/${member.id}`, { method: "DELETE" });
       const json = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) throw new Error(json.error ?? "Couldn't remove member");
       toast({ title: "Access removed.", tone: "success" });
+      setConfirm(null);
       onChanged();
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : "Couldn't remove member", tone: "error" });
+      setConfirmError(err instanceof Error ? err.message : "Couldn't remove member");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function confirmPromote() {
+    setConfirmError(null);
+    await patch({ role: "CLIENT_MANAGER" }, "Role updated.");
+    setConfirm(null);
   }
 
   return (
@@ -324,10 +333,7 @@ function MemberAccessDrawer({
             variant="secondary"
             size="md"
             disabled={busy}
-            onClick={() => {
-              if (!window.confirm(`Promote ${member.name} to Company Manager?`)) return;
-              void patch({ role: "CLIENT_MANAGER" }, "Role updated.");
-            }}
+            onClick={() => setConfirm("promote")}
           >
             Promote to manager
           </Button>
@@ -355,13 +361,46 @@ function MemberAccessDrawer({
         >
           {member.is_active ? "Deactivate access" : "Reactivate access"}
         </Button>
-        <Button variant="danger" size="md" disabled={busy || isSelf || lastManager} onClick={() => void removeAccess()}>
+        <Button variant="danger" size="md" disabled={busy || isSelf || lastManager} onClick={() => setConfirm("remove")}>
           Remove access
         </Button>
         {lastManager ? (
           <p className="text-[12px] text-sales-text-muted">At least one company manager is required.</p>
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={confirm === "remove"}
+        onOpenChange={(open) => {
+          if (!open && !busy) {
+            setConfirm(null);
+            setConfirmError(null);
+          }
+        }}
+        title="Remove access"
+        description={`${member.name} will lose access. Historical leads, deals, and customers stay in SegmiQ.`}
+        confirmLabel="Remove access"
+        destructive
+        loading={busy}
+        error={confirmError}
+        onConfirm={() => void removeAccess()}
+      />
+
+      <ConfirmDialog
+        open={confirm === "promote"}
+        onOpenChange={(open) => {
+          if (!open && !busy) {
+            setConfirm(null);
+            setConfirmError(null);
+          }
+        }}
+        title={`Promote ${member.name}?`}
+        description="They will become a Company Manager with full workspace access."
+        confirmLabel="Promote to manager"
+        loading={busy}
+        error={confirmError}
+        onConfirm={() => void confirmPromote()}
+      />
     </PremiumSheet>
   );
 }

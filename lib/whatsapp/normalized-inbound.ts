@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-opener";
 import { handleInboundWhatsAppMessage } from "./inbound";
 import { persistOutboundWhatsAppMessage } from "./persist-outbound";
+import { markLeadContactedIfNew } from "@/lib/leads/mark-lead-contacted";
 import type { NormalizedWhatsAppInbound } from "./providers/types";
 
 export function isSupportedTemporaryChat(remoteChatId: string): boolean {
@@ -93,4 +94,13 @@ export async function ingestNormalizedWhatsAppMessage(message: NormalizedWhatsAp
     channel: "whatsapp",
   });
   await supabase.from("leads").update({ updated_at: new Date().toISOString() }).eq("id", lead.id as string);
+  await markLeadContactedIfNew({
+    leadId: lead.id as string,
+    clientId: message.clientId,
+    actor: {
+      id: (lead.assigned_to_id as string | null) ?? null,
+      name: "Business phone",
+      role: "SALESPERSON",
+    },
+  });
 }

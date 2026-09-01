@@ -10,6 +10,7 @@ import { CompanyTeamMemberPanel } from "./CompanyTeamMemberPanel";
 import { CompanyTeamAnalyticsRow } from "./CompanyTeamAnalyticsRow";
 import { CompanyTeamInviteDialog, useMediaQuery } from "./CompanyTeamInviteDialog";
 import { SetGoalDialog } from "@/components/sales/goals/SetGoalDialog";
+import { ConfirmDialog } from "@/components/sales/ui";
 import { parseGoalPeriodKey } from "@/lib/sales/goals/period";
 import {
   COMPANY_TEAM_PAGE_SIZE,
@@ -62,6 +63,9 @@ export function CompanyTeamPage({
   const [overviewError, setOverviewError] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [goalRow, setGoalRow] = useState<CompanyTeamMemberTableRow | null>(null);
+  const [deactivateRow, setDeactivateRow] = useState<CompanyTeamMemberTableRow | null>(null);
+  const [deactivating, setDeactivating] = useState(false);
+  const [deactivateError, setDeactivateError] = useState<string | null>(null);
 
   const selectedId = searchParams.get("member");
 
@@ -161,14 +165,25 @@ export function CompanyTeamPage({
 
   const panelOpen = Boolean(selectedId && selectedRow);
 
-  async function deactivate(row: CompanyTeamMemberTableRow) {
-    if (!window.confirm(`Deactivate ${row.name}? They will lose access to SegmiQ.`)) return;
-    await fetch(`/api/clients/${data.clientId}/users/${row.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: false }),
-    });
-    router.refresh();
+  async function confirmDeactivate() {
+    if (!deactivateRow) return;
+    setDeactivating(true);
+    setDeactivateError(null);
+    try {
+      const res = await fetch(`/api/clients/${data.clientId}/users/${deactivateRow.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: false }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "Couldn't deactivate member");
+      setDeactivateRow(null);
+      router.refresh();
+    } catch (err) {
+      setDeactivateError(err instanceof Error ? err.message : "Couldn't deactivate member");
+    } finally {
+      setDeactivating(false);
+    }
   }
 
   const left = (
@@ -194,7 +209,7 @@ export function CompanyTeamPage({
         onViewProfile={(id) => router.push(`/client/team/${id}`)}
         onSetGoal={setGoalRow}
         onReassign={(id) => router.push(`/client/leads?assignedToId=${id}`)}
-        onDeactivate={(row) => void deactivate(row)}
+        onDeactivate={(row) => setDeactivateRow(row)}
         onInvite={() => setInviteOpen(true)}
         emptyKind={emptyKind}
       />
@@ -324,6 +339,23 @@ export function CompanyTeamPage({
           }}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={Boolean(deactivateRow)}
+        onOpenChange={(open) => {
+          if (!open && !deactivating) {
+            setDeactivateRow(null);
+            setDeactivateError(null);
+          }
+        }}
+        title={deactivateRow ? `Deactivate ${deactivateRow.name}?` : "Deactivate member"}
+        description="They will lose access to SegmiQ."
+        confirmLabel="Deactivate"
+        destructive
+        loading={deactivating}
+        error={deactivateError}
+        onConfirm={() => void confirmDeactivate()}
+      />
     </CompanyWorkspaceShell>
   );
 }

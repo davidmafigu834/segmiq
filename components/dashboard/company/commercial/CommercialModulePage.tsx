@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
-import { ToastProvider } from "@/components/sales/ui";
 import type { UserRole } from "@/types";
 
 export function CommercialModulePage({
@@ -34,8 +33,7 @@ export function CommercialModulePage({
   children: ReactNode;
 }) {
   return (
-    <ToastProvider>
-      <CompanyWorkspaceShell
+    <CompanyWorkspaceShell
         companyName={chrome.companyName}
         companyLogoUrl={chrome.companyLogoUrl}
         userName={chrome.userName}
@@ -59,6 +57,5 @@ export function CommercialModulePage({
         />
         {children}
       </CompanyWorkspaceShell>
-    </ToastProvider>
   );
 }

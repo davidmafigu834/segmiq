@@ -71,6 +71,14 @@ export type { ToastTone } from "./Toast";
 
 export { Alert, Skeleton, EmptyState, Progress, Avatar } from "./Feedback";
 export type { AlertTone } from "./Feedback";
+export { Alert as InlineAlert } from "./Feedback";
+
+export { ConfirmDialog } from "./ConfirmDialog";
+
+export { Popover, PopoverTrigger, PopoverContent } from "./Popover";
+
+export { OverlayPortal } from "./OverlayPortal";
+export { useFocusTrap, getFocusableElements } from "./useFocusTrap";
 
 export {
   FilteredEmptyState,

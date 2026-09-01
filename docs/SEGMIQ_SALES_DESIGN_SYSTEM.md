@@ -924,4 +924,24 @@ State resolution for fetched lists: **loading → error → filtered empty → e
 
 Retry actions use **primary** lime buttons — not destructive red. Icons use soft semantic wells (neutral / info / danger / success), ~44px, decorative (`aria-hidden`).
 
+## Overlay runtime (Phase 13)
+
+Showcase: `/dev/sales-design-system#overlays` (development only).
+
+Consolidate on existing primitives — do not add parallel modal libraries.
+
+| Component | Role |
+|-----------|------|
+| `PremiumSheet` | Focused modal / mobile bottom sheet (420 · 520 · 680) |
+| `ConfirmDialog` | Destructive or high-friction confirmation — neutral surface, danger footer action |
+| `Popover` | Portalled contextual content — not `DropdownMenu` |
+| `Tooltip` | Short label on hover/focus |
+| `ToastProvider` / `useSalesToast` | Brief async feedback — mount once per workspace shell |
+| `Alert` / `InlineAlert` | Persistent inline banner — same component |
+
+Infrastructure: `OverlayPortal`, `useFocusTrap` (wired into `PremiumSheet`), z-index tokens `--sales-z-*`.
+
+Focus trap cycles Tab within the dialog and restores focus on close. Escape and backdrop dismiss follow workflow rules (`closeDisabled` while saving).
+
+Company `/client/*` routes mount `ToastProvider` via `CompanyClientProviders` in `app/client/layout.tsx`.
 

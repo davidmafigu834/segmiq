@@ -17,7 +17,7 @@ import {
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { Button, Tabs, ToastProvider, useSalesToast } from "@/components/sales/ui";
+import { Button, Tabs, useSalesToast } from "@/components/sales/ui";
 import { AgentSectionNav } from "@/components/dashboard/company/agent/AgentSectionNav";
 import {
   ReAgentOvernightBanner,
@@ -124,24 +124,7 @@ function knowledgeUsedItems(execution: Record<string, unknown> | undefined): Kno
   return [];
 }
 
-export function AgentActivityPage(props: {
-  clientId: string;
-  companyName: string;
-  companyLogoUrl: string | null;
-  userName: string;
-  avatarUrl: string | null;
-  unreadNotifications: number;
-  notificationRole: UserRole;
-  whatsappBadge: number;
-}) {
-  return (
-    <ToastProvider>
-      <AgentActivityInner {...props} />
-    </ToastProvider>
-  );
-}
-
-function AgentActivityInner({
+export function AgentActivityPage({
   clientId,
   companyName,
   companyLogoUrl,

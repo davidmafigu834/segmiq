@@ -7,7 +7,7 @@ import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "@/components/dashboard/company/CompanyDashboardHeader";
 import { useMediaQuery } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
-import { Button, MenuSelect, ToastProvider } from "@/components/sales/ui";
+import { Button, MenuSelect } from "@/components/sales/ui";
 import {
   LEAD_SOURCE_DATE_PRESETS,
   leadSourceCompanyKpis,
@@ -36,15 +36,7 @@ type Props = {
   whatsappBadge?: number;
 };
 
-export function CompanyLeadSourcesPage(props: Props) {
-  return (
-    <ToastProvider>
-      <CompanyLeadSourcesWorkspace {...props} />
-    </ToastProvider>
-  );
-}
-
-function CompanyLeadSourcesWorkspace({
+export function CompanyLeadSourcesPage({
   data,
   unreadNotifications,
   notificationRole,

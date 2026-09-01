@@ -42,6 +42,7 @@ import { LeadIntelligenceCard } from "@/components/leads/LeadIntelligenceCard";
 import { StaleLeadRecovery } from "@/components/leads/StaleLeadRecovery";
 import { DealReadinessCard } from "@/components/sales/deals/DealReadinessCard";
 import { CreateDealSheet } from "@/components/sales/deals/CreateDealSheet";
+import { ConvertWonCustomerSheet } from "@/components/sales/leads/ConvertWonCustomerSheet";
 import { getDealReadiness } from "@/lib/sales/deals/readiness";
 import { formatLeadLifecycle, formatDealStage, isLeadConverted, isLeadOpenForQualification } from "@/lib/sales/deals/display";
 import { formatCallLogHeadline } from "@/lib/call-log-display";
@@ -107,6 +108,7 @@ export function LeadDetailPanel({
   const [moreOpen, setMoreOpen] = useState(false);
   const [closingStatus, setClosingStatus] = useState(false);
   const [createDealOpen, setCreateDealOpen] = useState(false);
+  const [convertWonOpen, setConvertWonOpen] = useState(false);
   const [relatedDeal, setRelatedDeal] = useState<DealRow | null>(null);
   const { toast } = useSalesToast();
   const isMobileDrawer = useMediaQuery("(max-width: 767px)");
@@ -184,6 +186,12 @@ export function LeadDetailPanel({
     },
   });
   const phone = activeLead.phone?.trim() ?? "";
+  const canRecordWonCustomer =
+    canSell &&
+    !isReadOnly &&
+    activeLead.status !== "WON" &&
+    activeLead.status !== "LOST" &&
+    relatedDeal?.stage !== "WON";
 
   function handleClose() {
     closeLeadPanel();
@@ -631,22 +639,39 @@ export function LeadDetailPanel({
                 {!isWhatsAppChat ? <MagicLinkButton token={activeLead.magic_token} /> : null}
               </div>
 
-              {!isReadOnly && !isClosed && !converted ? (
+              {!isReadOnly && (canRecordWonCustomer || (!isClosed && !converted)) ? (
                 <div>
                   <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
                     Qualification
                   </p>
-                  <p className="mb-3 text-[13px] text-sales-text-secondary">
-                    Commercial stages live on Deals. Use call outcomes and Create deal when ready.
-                  </p>
-                  <button
-                    type="button"
-                    disabled={closingStatus}
-                    className="h-10 w-full rounded-[10px] border border-sales-border bg-[var(--sales-neutral-100)] text-[12px] font-medium text-sales-text-secondary"
-                    onClick={() => void handleCloseDeal("NOT_QUALIFIED")}
-                  >
-                    Mark not qualified
-                  </button>
+                  {canRecordWonCustomer ? (
+                    <>
+                      <p className="mb-3 text-[13px] text-sales-text-secondary">
+                        Closed on-site? Record the win and file them as a customer when you&apos;re back online.
+                      </p>
+                      <button
+                        type="button"
+                        className="mb-2 h-10 w-full rounded-[10px] border border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.12)] text-[12px] font-semibold text-sales-text-primary"
+                        onClick={() => setConvertWonOpen(true)}
+                      >
+                        Record won customer
+                      </button>
+                    </>
+                  ) : (
+                    <p className="mb-3 text-[13px] text-sales-text-secondary">
+                      Commercial stages live on Deals. Use call outcomes and Create deal when ready.
+                    </p>
+                  )}
+                  {!isClosed && !converted ? (
+                    <button
+                      type="button"
+                      disabled={closingStatus}
+                      className="h-10 w-full rounded-[10px] border border-sales-border bg-[var(--sales-neutral-100)] text-[12px] font-medium text-sales-text-secondary"
+                      onClick={() => void handleCloseDeal("NOT_QUALIFIED")}
+                    >
+                      Mark not qualified
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -853,6 +878,17 @@ export function LeadDetailPanel({
             });
             router.refresh();
           }
+        }}
+      />
+      <ConvertWonCustomerSheet
+        lead={activeLead}
+        open={convertWonOpen}
+        onClose={() => setConvertWonOpen(false)}
+        onSuccess={({ deal, lead: updatedLead }) => {
+          setRelatedDeal(deal);
+          onLeadUpdated?.(updatedLead);
+          setLogRefresh((k) => k + 1);
+          router.refresh();
         }}
       />
     </>

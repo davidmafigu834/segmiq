@@ -34,7 +34,7 @@ import {
   IntegrationsWhatsAppSection,
 } from "./IntegrationsSettingsViews";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
-import { ToastProvider, useSalesToast } from "@/components/sales/ui";
+import { useSalesToast } from "@/components/sales/ui";
 import {
   settingsPath,
   settingsSectionsFor,
@@ -48,23 +48,7 @@ import type {
 } from "@/lib/settings/company-settings-types";
 import type { UserRole } from "@/types";
 
-export function CompanySettingsPage(props: {
-  data: CompanySettingsPageData;
-  category: SettingsCategory;
-  section: string;
-  unreadNotifications: number;
-  notificationRole: UserRole;
-  whatsappBadge?: number;
-  previewClientId?: string | null;
-}) {
-  return (
-    <ToastProvider>
-      <CompanySettingsPageInner {...props} />
-    </ToastProvider>
-  );
-}
-
-function CompanySettingsPageInner({
+export function CompanySettingsPage({
   data,
   category,
   section,

@@ -130,6 +130,9 @@ function mapRow(opts: {
     status: lead.status,
     activeDealId: lead.active_deal_id,
   });
+  const dbStatus = lead.status as LeadStatus;
+  const lifecycle =
+    dbStatus === "NEW" && opts.firstContactAt ? ("CONTACTED" as LeadStatus) : dbStatus;
 
   return {
     id: lead.id,
@@ -141,8 +144,8 @@ function mapRow(opts: {
     sourceRaw: lead.source,
     phone: lead.phone?.trim() || null,
     email: lead.email?.trim() || null,
-    lifecycle: lead.status as LeadStatus,
-    lifecycleLabel: companyLeadLifecycleLabel(lead.status),
+    lifecycle,
+    lifecycleLabel: companyLeadLifecycleLabel(lifecycle),
     leadScore: score,
     intent: leadScoreBand(score),
     intentLabel: intentLabelForScore(score),
@@ -546,13 +549,17 @@ export async function getCompanyLeadDetail(opts: {
     customerWaiting,
   });
 
+  const dbStatus = leadLite.status as LeadStatus;
+  const lifecycle =
+    dbStatus === "NEW" && firstContactAt ? ("CONTACTED" as LeadStatus) : dbStatus;
+
   return {
     id: leadLite.id,
     identity,
     enquiryContext: enquiryContext(leadLite),
     location: locationFromFormData(leadLite.form_data),
-    lifecycle: leadLite.status as LeadStatus,
-    lifecycleLabel: companyLeadLifecycleLabel(leadLite.status),
+    lifecycle,
+    lifecycleLabel: companyLeadLifecycleLabel(lifecycle),
     notQualifiedReason: leadLite.not_qualified_reason,
     phone,
     email,

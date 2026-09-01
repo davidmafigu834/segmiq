@@ -13,29 +13,12 @@ import { InvoiceDetailDrawer } from "./InvoiceDetailDrawer";
 import { ManageSubscriptionModal } from "./ManageSubscriptionModal";
 import { PaymentInstructionsModal } from "./PaymentInstructionsModal";
 import { BillingInformationModal } from "./BillingInformationModal";
-import { Alert, Button, ToastProvider, useSalesToast } from "@/components/sales/ui";
+import { Alert, Button, useSalesToast } from "@/components/sales/ui";
 import { formatDate } from "@/lib/billing/format";
 import type { CompanyBillingInvoice, CompanyBillingPageData } from "@/lib/billing/company-billing-types";
 import type { UserRole } from "@/types";
 
-export function CompanyBillingPage(props: {
-  data: CompanyBillingPageData;
-  unreadNotifications: number;
-  notificationRole: UserRole;
-  userName: string;
-  avatarUrl?: string | null;
-  companyName?: string;
-  companyLogoUrl?: string | null;
-  whatsappBadge?: number;
-}) {
-  return (
-    <ToastProvider>
-      <CompanyBillingPageInner {...props} />
-    </ToastProvider>
-  );
-}
-
-function CompanyBillingPageInner({
+export function CompanyBillingPage({
   data,
   unreadNotifications,
   notificationRole,

@@ -120,12 +120,17 @@ import {
   Tooltip,
   Trend,
   useSalesToast,
+  ConfirmDialog,
   EmptyState,
-  FilteredEmptyState,
   ErrorState,
-  LoadingState,
-  SuccessState,
+  FilteredEmptyState,
   InfoState,
+  InlineAlert,
+  LoadingState,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  SuccessState,
 } from "@/components/sales/ui";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
@@ -795,9 +800,9 @@ function OverlaysShowcaseSection() {
             <CardDescription>Persistent · soft fill · {SALES_FEEDBACK.alertAccentWidth}px accent</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Alert tone="success" compact title="Data saved" />
-            <Alert tone="warning" compact title="Follow-up overdue" />
-            <Alert
+            <InlineAlert tone="success" compact title="Data saved" />
+            <InlineAlert tone="warning" compact title="Follow-up overdue" />
+            <InlineAlert
               tone="info"
               compact
               title="Integration not connected"
@@ -807,7 +812,27 @@ function OverlaysShowcaseSection() {
                 </Button>
               }
             />
-            <Alert tone="danger" compact title="Payment failed" />
+            <InlineAlert tone="danger" compact title="Payment failed" />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat" className="xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="text-[14px]">Popover</CardTitle>
+            <CardDescription>Portalled contextual content · not a menu</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Popover>
+              <PopoverTrigger className="rounded-[8px] border border-sales-border bg-sales-surface px-3 py-2 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-subtle">
+                View lead summary
+              </PopoverTrigger>
+              <PopoverContent className="w-[260px]">
+                <p className="text-[13px] font-semibold text-sales-text-primary">Lead summary</p>
+                <p className="mt-1 text-[12px] leading-relaxed text-sales-text-secondary">
+                  Rich contextual detail tied to the trigger. Escape or click outside closes.
+                </p>
+              </PopoverContent>
+            </Popover>
           </CardContent>
         </Card>
 
@@ -837,7 +862,9 @@ function OverlaysShowcaseSection() {
             Accessibility & timing
           </p>
           <ul className="list-disc space-y-1 pl-5">
-            <li>Modal: focus moves into dialog · Escape closes when allowed · aria-labelledby / aria-describedby</li>
+            <li>Modal: focus trap + restore on close · Escape closes when allowed · aria-labelledby / aria-describedby</li>
+            <li>ConfirmDialog: neutral modal surface · danger action in footer only · inline error stays open</li>
+            <li>Popover: portalled contextual panel · Escape + click-outside · not for action menus</li>
             <li>Toast: polite status for success/info · assertive alert for errors · max {SALES_OVERLAY.toastMaxVisible} stacked</li>
             <li>Inline alert: persists until state resolves or user dismisses · not auto-dismissed like toast</li>
             <li>Progress: numeric value adjacent to track · prefers-reduced-motion respected on skeleton/modal motion</li>
@@ -847,27 +874,19 @@ function OverlaysShowcaseSection() {
       </Card>
 
       {deleteOpen ? (
-        <PremiumSheet
-          size="sm"
+        <ConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
           title="Delete lead"
           description="This action cannot be undone."
-          icon={<Trash2 size={18} strokeWidth={1.8} className="text-sales-danger" />}
-          onClose={() => setDeleteOpen(false)}
-          footer={
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button variant="secondary" onClick={() => setDeleteOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="danger" onClick={() => setDeleteOpen(false)}>
-                Delete
-              </Button>
-            </div>
-          }
+          confirmLabel="Delete"
+          destructive
+          onConfirm={() => setDeleteOpen(false)}
         >
           <p className="text-[13px] text-sales-text-secondary">
-            Documentation example only. Production modals preserve existing workflow rules and dirty-close behavior.
+            Documentation example only. Production confirms preserve existing workflow rules and real mutations.
           </p>
-        </PremiumSheet>
+        </ConfirmDialog>
       ) : null}
     </div>
   );

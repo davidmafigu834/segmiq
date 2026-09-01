@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CompanyWorkspaceProvider } from "@/components/company/CompanyWorkspaceContext";
+import { CompanyClientProviders } from "@/components/dashboard/company/CompanyClientProviders";
 import { normalizeBusinessType } from "@/lib/terminology";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export default async function ClientRootLayout({ children }: { children: React.R
 
   return (
     <CompanyWorkspaceProvider businessType={normalizeBusinessType(businessType)}>
-      {children}
+      <CompanyClientProviders>{children}</CompanyClientProviders>
     </CompanyWorkspaceProvider>
   );
 }
