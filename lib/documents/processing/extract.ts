@@ -50,11 +50,10 @@ export async function extractCsv(buffer: Buffer): Promise<ExtractionResult> {
 }
 
 export async function extractPdf(buffer: Buffer): Promise<ExtractionResult> {
+  const { PDFParse } = await import("pdf-parse");
+  const parser = new PDFParse({ data: buffer });
   try {
-    const pdfParse = (await import("pdf-parse")).default as (
-      data: Buffer
-    ) => Promise<{ text: string; numpages: number }>;
-    const parsed = await pdfParse(buffer);
+    const parsed = await parser.getText();
     const fullText = normalizeText(parsed.text ?? "");
 
     if (!fullText) {
@@ -76,14 +75,21 @@ export async function extractPdf(buffer: Buffer): Promise<ExtractionResult> {
     }
 
     const pages: { pageNumber: number; text: string }[] = [];
-    const pageChunks = fullText.split(/\f/g);
-    if (pageChunks.length > 1) {
-      pageChunks.forEach((chunk, i) => {
-        const text = normalizeText(chunk);
-        if (text) pages.push({ pageNumber: i + 1, text });
-      });
+    if (parsed.pages.length > 1) {
+      for (const page of parsed.pages) {
+        const text = normalizeText(page.text);
+        if (text) pages.push({ pageNumber: page.num, text });
+      }
     } else {
-      pages.push({ pageNumber: 1, text: fullText });
+      const pageChunks = fullText.split(/\f/g);
+      if (pageChunks.length > 1) {
+        pageChunks.forEach((chunk, i) => {
+          const text = normalizeText(chunk);
+          if (text) pages.push({ pageNumber: i + 1, text });
+        });
+      } else {
+        pages.push({ pageNumber: 1, text: fullText });
+      }
     }
 
     return {
@@ -100,6 +106,8 @@ export async function extractPdf(buffer: Buffer): Promise<ExtractionResult> {
       );
     }
     throw new DocumentExtractionError("CORRUPT", `Could not read PDF: ${message}`);
+  } finally {
+    await parser.destroy().catch(() => undefined);
   }
 }
 
