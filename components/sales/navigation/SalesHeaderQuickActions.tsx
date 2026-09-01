@@ -41,7 +41,7 @@ export function SalesHeaderQuickActions({
           Quick actions
           <ChevronDown size={14} strokeWidth={1.8} aria-hidden />
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
+        <DropdownMenuContent className="w-56 bg-sales-surface shadow-sales-dropdown">
           {items.map((item) => (
             <DropdownMenuItem key={item.key} icon={item.icon} onSelect={item.onSelect}>
               {item.label}

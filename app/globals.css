@@ -3825,7 +3825,8 @@ label[for="photo-input"] {
 .sales-dashboard-premium,
 .pipeline-drawer-light,
 .sales-modal-premium,
-.calendar-modal-premium {
+.calendar-modal-premium,
+.sales-menu-surface {
   /* Surfaces — cool canvas from landing, white cards */
   --sales-bg: #f7f8fc;
   --sales-surface: #ffffff;
@@ -4152,7 +4153,8 @@ label[for="photo-input"] {
 html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium,
 html[data-crm]:not([data-crm-theme="light"]) .pipeline-drawer-light,
 html[data-crm]:not([data-crm-theme="light"]) .sales-modal-premium,
-html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium {
+html[data-crm]:not([data-crm-theme="light"]) .calendar-modal-premium,
+html[data-crm]:not([data-crm-theme="light"]) .sales-menu-surface {
   /*
     Surface hierarchy (canvas → card → nested → raised):
     Purple-tinted navy canvas; cards lift enough to read against it.
@@ -4718,6 +4720,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sd-icon-b
 
 .sales-menu-surface {
   animation: sales-menu-in var(--sales-menu-motion, 160ms ease-out);
+  background-color: var(--sales-surface, #ffffff);
 }
 
 @keyframes sales-menu-in {

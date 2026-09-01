@@ -155,8 +155,8 @@ export function SalesProfileMenu({
         />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-64 overflow-hidden p-0">
-        <div className="flex items-center gap-3 border-b border-sales-border-subtle bg-sales-surface-subtle/60 px-3 py-3">
+      <DropdownMenuContent className="w-64 overflow-hidden bg-sales-surface p-0 shadow-sales-dropdown">
+        <div className="flex items-center gap-3 border-b border-sales-border-subtle bg-sales-surface-subtle px-3 py-3">
           <Avatar name={name} src={avatarUrl} size="md" presence={presence} alt="" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-semibold text-sales-text-primary">{name}</p>
