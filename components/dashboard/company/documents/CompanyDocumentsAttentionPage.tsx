@@ -7,7 +7,6 @@ import type { DocumentsHomeSummary } from "@/lib/documents/list-service";
 import type { UserRole } from "@/types";
 
 export function CompanyDocumentsAttentionPage({
-  clientId,
   chrome,
   summary,
 }: {

@@ -12,7 +12,7 @@ import {
 import { cn } from "@/lib/ui/cn";
 import { formatDocumentDate } from "@/lib/documents/format";
 import type { DocumentListItem } from "@/lib/documents/list-service";
-import { DocumentLifecycleBadge, DocumentProcessingBadge, DocumentTypeBadge } from "./document-badges";
+import { DocumentLifecycleBadge, DocumentTypeBadge } from "./document-badges";
 import { Button, EmptyState, Skeleton } from "@/components/sales/ui";
 
 export function DocumentSectionHeader({

@@ -19,7 +19,6 @@ import {
   Select,
   Skeleton,
 } from "@/components/sales/ui";
-import { cn } from "@/lib/ui/cn";
 import { formatDocumentDate } from "@/lib/documents/format";
 import type { DocumentListItem } from "@/lib/documents/list-service";
 import type { DocumentsHomeSummary } from "@/lib/documents/list-service";
@@ -32,10 +31,13 @@ import {
   DocumentsDisabledState,
   DocumentsEmptyState,
   DocumentThumbnail,
-  DocumentTypeBadge,
   SmartCollectionTile,
 } from "./shared/document-ui";
-import { DocumentLifecycleBadge, DocumentProcessingBadge } from "./shared/document-badges";
+import {
+  DocumentLifecycleBadge,
+  DocumentProcessingBadge,
+  DocumentTypeBadge,
+} from "./shared/document-badges";
 import { DocumentsUploadZone } from "./DocumentsUploadZone";
 
 type Chrome = {

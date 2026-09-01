@@ -114,7 +114,6 @@ export function DocumentDetailWorkspace({
   versions,
   activity,
   policy,
-  content,
   tags = [],
   classification = null,
   categoryName = null,

@@ -8,7 +8,6 @@ import {
 } from "@/lib/documents/intelligence/profiles";
 import type { DocumentIntelligenceBundle } from "@/lib/documents/intelligence/types";
 import { Badge, Button } from "@/components/sales/ui";
-import { DocumentSourceCitation } from "./shared/document-ui";
 import { cn } from "@/lib/ui/cn";
 
 function FactStatusBadge({ status }: { status: string }) {

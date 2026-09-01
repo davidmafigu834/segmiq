@@ -14,13 +14,10 @@ function normalizeLines(text: string): string[] {
  */
 export function compareDocumentVersionText(
   fromText: string,
-  toText: string,
-  opts?: { fromLabel?: string; toLabel?: string }
+  toText: string
 ): DocumentVersionDiffRow[] {
   const fromLines = normalizeLines(fromText || "");
   const toLines = normalizeLines(toText || "");
-  const fromLabel = opts?.fromLabel ?? "Earlier version";
-  const toLabel = opts?.toLabel ?? "Later version";
 
   const rows: DocumentVersionDiffRow[] = [];
 
