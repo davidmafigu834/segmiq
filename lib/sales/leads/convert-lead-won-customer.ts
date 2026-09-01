@@ -11,6 +11,7 @@ import { getManagerPrefs } from "@/lib/notification-prefs";
 import { createDealFromLead } from "@/lib/sales/deals/create-deal";
 import { closeDealWon } from "@/lib/sales/deals/close-deal";
 import { suggestDealName } from "@/lib/sales/deals/create-deal-form";
+import { locationFromFormData } from "@/lib/sales/leads-directory/format";
 import type { DealRow, LeadRow } from "@/types";
 
 export type ConvertLeadWonCustomerInput = {
@@ -122,7 +123,7 @@ export async function convertLeadToWonCustomer(
       name: dealName,
       serviceSummary: lead.project_type ?? null,
       customerNeed: lead.customer_need ?? null,
-      location: input.location ?? lead.location ?? null,
+      location: input.location ?? locationFromFormData(lead.form_data) ?? null,
       salesEstimate: input.wonValue,
       estimatedValue: input.wonValue,
       force: true,
