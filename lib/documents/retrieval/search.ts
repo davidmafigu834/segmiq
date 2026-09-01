@@ -200,7 +200,7 @@ export async function searchDocumentChunks(opts: {
   const filters = opts.filters ?? {};
   const collectionTypeIds = await resolveCollectionTypeIds(opts.clientId, filters.collection);
 
-  let chunkQuery = buildChunkQuery(supabase, {
+  const chunkQuery = buildChunkQuery(supabase, {
     clientId: opts.clientId,
     filters,
     collectionTypeIds,
