@@ -125,6 +125,23 @@ export async function extractDocx(buffer: Buffer): Promise<ExtractionResult> {
   }
 }
 
+export async function extractDoc(buffer: Buffer): Promise<ExtractionResult> {
+  try {
+    const { default: WordExtractor } = await import("word-extractor");
+    const extractor = new WordExtractor();
+    const document = await extractor.extract(buffer);
+    const plainText = normalizeText(document.getBody());
+    if (!plainText) {
+      throw new DocumentExtractionError("EMPTY", "DOC contains no extractable text.");
+    }
+    return resultFromPlain(plainText);
+  } catch (err) {
+    if (err instanceof DocumentExtractionError) throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    throw new DocumentExtractionError("CORRUPT", `Could not read DOC: ${message}`);
+  }
+}
+
 export async function extractXlsx(buffer: Buffer): Promise<ExtractionResult> {
   try {
     const XLSX = await import("xlsx");
@@ -191,6 +208,9 @@ export async function extractByMime(buffer: Buffer, mimeType: string, filename: 
     ext === "docx"
   ) {
     return extractDocx(buffer);
+  }
+  if (mime === "application/msword" || ext === "doc") {
+    return extractDoc(buffer);
   }
   if (
     mime === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||

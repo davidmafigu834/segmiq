@@ -58,7 +58,7 @@ export function validateDocumentFile(
   if (!ext || !ALLOWED_EXTENSIONS.has(ext)) {
     return {
       ok: false,
-      error: "Unsupported file type. Allowed: PDF, DOCX, TXT, CSV, XLSX, PPTX, JPG, PNG.",
+      error: "Unsupported file type. Allowed: PDF, DOC, DOCX, TXT, CSV, XLSX, PPTX, JPG, PNG.",
     };
   }
 

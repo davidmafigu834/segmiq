@@ -1,5 +1,5 @@
 export { DOCUMENT_EXTRACTOR_VERSION, DOCUMENT_WORKER_BATCH_SIZE } from "./constants";
-export { extractByMime, extractCsv, extractPdf, summarizeExtraction } from "./extract";
+export { extractByMime, extractCsv, extractDoc, extractDocx, extractPdf, summarizeExtraction } from "./extract";
 export {
   claimDueDocumentJobs,
   completeDocumentJob,
