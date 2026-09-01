@@ -1,7 +1,7 @@
 "use client";
 
 import { Users } from "lucide-react";
-import { Button, ErrorState, Progress } from "@/components/sales/ui";
+import { ErrorState, Progress } from "@/components/sales/ui";
 import { usageBarTone } from "@/lib/billing/status";
 import type { CompanyBillingUsageMetric } from "@/lib/billing/company-billing-types";
 

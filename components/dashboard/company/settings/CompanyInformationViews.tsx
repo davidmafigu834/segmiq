@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, ErrorState, Field, Input, Select, TextArea } from "@/components/sales/ui";
+import { ErrorState, Field, Input, Select, TextArea } from "@/components/sales/ui";
 import { SettingsSectionCard, SettingsInfoGrid } from "./SettingsSectionCard";
 import { SettingsFormDrawer } from "./SettingsFormDrawer";
 import { companyNameInitials } from "@/lib/sales/navigation/company-nav-config";

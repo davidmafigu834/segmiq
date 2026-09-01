@@ -1399,8 +1399,8 @@ function StatesShowcaseSection() {
           </p>
           <p>
             Icons are decorative (<code className="rounded bg-sales-neutral-100 px-1">aria-hidden</code>). Use{" "}
-            <code className="rounded bg-sales-neutral-100 px-1">role="alert"</code> for urgent errors,{" "}
-            <code className="rounded bg-sales-neutral-100 px-1">role="status"</code> for loading and success completion.
+            <code className="rounded bg-sales-neutral-100 px-1">role=&quot;alert&quot;</code> for urgent errors,{" "}
+            <code className="rounded bg-sales-neutral-100 px-1">role=&quot;status&quot;</code> for loading and success completion.
           </p>
         </CardContent>
       </Card>
