@@ -12,8 +12,8 @@ export { DOCUMENT_INTELLIGENCE_VERSION, KEY_TERM_FACT_TYPES } from "./types";
 export type {
   DocumentFactRow,
   DocumentImportantDateRow,
+  DocumentIntelligenceBundle,
   DocumentIntelligenceRow,
   DocumentObligationRow,
   IntelligenceExtractionResult,
 } from "./types";
-export type { DocumentIntelligenceBundle } from "./read";

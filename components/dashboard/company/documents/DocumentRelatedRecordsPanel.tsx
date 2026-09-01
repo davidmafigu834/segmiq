@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { ExternalLink, Link2, Search } from "lucide-react";
-import type { EnrichedDocumentEntityLink } from "@/lib/documents/linking";
-import { entityTypeLabel } from "@/lib/documents/linking";
+import type { EnrichedDocumentEntityLink } from "@/lib/documents/linking/types";
+import { entityTypeLabel } from "@/lib/documents/linking/hrefs";
 import { Button } from "@/components/sales/ui";
 
 type SearchCandidate = {

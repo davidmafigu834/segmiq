@@ -23,7 +23,7 @@ import {
   processingStatusLabel,
 } from "@/lib/documents/format";
 import type { DocumentClassificationAuditSummary } from "@/lib/documents/get-document-detail-data";
-import type { DocumentIntelligenceBundle } from "@/lib/documents/intelligence";
+import type { DocumentIntelligenceBundle } from "@/lib/documents/intelligence/types";
 import {
   DocumentDatesPanel,
   DocumentKeyTermsPanel,
@@ -31,7 +31,7 @@ import {
   DocumentSummaryCard,
 } from "@/components/dashboard/company/documents/DocumentIntelligencePanels";
 import { DocumentRelatedRecordsPanel } from "@/components/dashboard/company/documents/DocumentRelatedRecordsPanel";
-import type { EnrichedDocumentEntityLink } from "@/lib/documents/linking";
+import type { EnrichedDocumentEntityLink } from "@/lib/documents/linking/types";
 import type { DocumentActivityRow } from "@/lib/documents/list-service";
 import type {
   DocumentAccessPolicyRow,

@@ -5,8 +5,8 @@ import { formatDocumentDate } from "@/lib/documents/format";
 import {
   formatFactValue,
   formatSourceEvidence,
-} from "@/lib/documents/intelligence";
-import type { DocumentIntelligenceBundle } from "@/lib/documents/intelligence";
+} from "@/lib/documents/intelligence/profiles";
+import type { DocumentIntelligenceBundle } from "@/lib/documents/intelligence/types";
 import { Button } from "@/components/sales/ui";
 
 function FactStatusBadge({ status }: { status: string }) {

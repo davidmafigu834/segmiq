@@ -175,3 +175,11 @@ export type DocumentImportantDateRow = {
   status: string;
   created_at: string;
 };
+
+export type DocumentIntelligenceBundle = {
+  intelligence: DocumentIntelligenceRow | null;
+  facts: DocumentFactRow[];
+  keyTerms: DocumentFactRow[];
+  obligations: DocumentObligationRow[];
+  importantDates: DocumentImportantDateRow[];
+};

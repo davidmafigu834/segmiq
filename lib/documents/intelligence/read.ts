@@ -3,17 +3,12 @@ import { KEY_TERM_FACT_TYPES } from "@/lib/documents/intelligence/types";
 import type {
   DocumentFactRow,
   DocumentImportantDateRow,
+  DocumentIntelligenceBundle,
   DocumentIntelligenceRow,
   DocumentObligationRow,
 } from "@/lib/documents/intelligence/types";
 
-export type DocumentIntelligenceBundle = {
-  intelligence: DocumentIntelligenceRow | null;
-  facts: DocumentFactRow[];
-  keyTerms: DocumentFactRow[];
-  obligations: DocumentObligationRow[];
-  importantDates: DocumentImportantDateRow[];
-};
+export type { DocumentIntelligenceBundle } from "@/lib/documents/intelligence/types";
 
 export async function loadDocumentIntelligenceBundle(opts: {
   clientId: string;
