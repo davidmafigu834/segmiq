@@ -40,6 +40,33 @@ type ChunkRow = {
   };
 };
 
+type RawChunkRow = Omit<ChunkRow, "documents"> & {
+  documents: ChunkRow["documents"] | ChunkRow["documents"][] | null;
+};
+
+function normalizeChunkRows(data: unknown): ChunkRow[] {
+  if (!Array.isArray(data)) return [];
+
+  const rows: ChunkRow[] = [];
+  for (const row of data) {
+    if (!row || typeof row !== "object") continue;
+    const raw = row as RawChunkRow;
+    const doc = Array.isArray(raw.documents) ? raw.documents[0] : raw.documents;
+    if (!doc) continue;
+    rows.push({
+      id: raw.id,
+      document_id: raw.document_id,
+      version_id: raw.version_id,
+      chunk_index: raw.chunk_index,
+      content: raw.content,
+      page_number: raw.page_number,
+      section_heading: raw.section_heading,
+      documents: doc,
+    });
+  }
+  return rows;
+}
+
 async function resolveCollectionTypeIds(clientId: string, collection?: string): Promise<string[]> {
   if (!collection) return [];
   const def = getCollectionDefinition(collection);
@@ -159,7 +186,7 @@ export async function searchDocumentChunks(opts: {
   }
 
   const { data } = await chunkQuery.limit(limit * 4);
-  let rows = (data as ChunkRow[]) ?? [];
+  let rows = normalizeChunkRows(data);
 
   if (filters.currentVersionOnly !== false) {
     rows = rows.filter((row) => row.version_id === row.documents.current_version_id);
