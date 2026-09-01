@@ -177,14 +177,12 @@ function defaultYAxisCurrency(v: number): string {
 export function SalesSparkline({
   data,
   dataKey = "value",
-  xKey = "label",
   height = SALES_CHART.sparkline,
   color,
   className,
 }: {
   data: Array<Record<string, string | number>>;
   dataKey?: string;
-  xKey?: string;
   height?: number;
   /** Override stroke/fill color — default brand. */
   color?: string;
@@ -290,7 +288,11 @@ export function SalesLineChart({
           tickLine={false}
         />
         <YAxis
-          domain={[0, Math.ceil(max * 1.1) || 100]}
+          domain={
+            yDomainMinZero
+              ? [0, Math.ceil(max * 1.1) || 100]
+              : ["auto", "auto"]
+          }
           tickFormatter={
             valueFormat === "currency"
               ? defaultYAxisCurrency
@@ -829,14 +831,6 @@ export function SalesHeatmap({
   className?: string;
 }) {
   const colors = useSalesChartColors();
-  const max = Math.max(...cells.map((c) => c.value), 0);
-  const hasAny = cells.some((c) => c.value > 0);
-  if (!cells.length || !hasAny) {
-    return (
-      <ChartEmptyState title={emptyTitle} description={emptyDescription} className={className} />
-    );
-  }
-
   const brandRgb = useMemo(() => {
     if (colors.brand.startsWith("#") && colors.brand.length >= 7) {
       const r = parseInt(colors.brand.slice(1, 3), 16);
@@ -846,6 +840,13 @@ export function SalesHeatmap({
     }
     return { r: 212, g: 255, b: 79 };
   }, [colors.brand]);
+  const max = Math.max(...cells.map((c) => c.value), 0);
+  const hasAny = cells.some((c) => c.value > 0);
+  if (!cells.length || !hasAny) {
+    return (
+      <ChartEmptyState title={emptyTitle} description={emptyDescription} className={className} />
+    );
+  }
 
   return (
     <div className={cn("w-full", className)}>

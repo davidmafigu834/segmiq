@@ -25,7 +25,6 @@ import {
   SalesAreaChart,
   Skeleton,
 } from "@/components/sales/ui";
-import { formatDealCurrency } from "@/lib/sales/format";
 import { GoalProgressRing } from "./GoalProgressRing";
 import type { CompanyTeamMemberOverview, CompanyTeamMemberTableRow } from "./types";
 import type { CompanyActivityItem } from "../types";
