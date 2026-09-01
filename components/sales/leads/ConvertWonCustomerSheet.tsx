@@ -5,6 +5,7 @@ import { CheckCircle2 } from "lucide-react";
 import type { DealRow, LeadRow } from "@/types";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button, Field, Input, Select, TextArea, useSalesToast } from "@/components/sales/ui";
+import { locationFromFormData } from "@/lib/sales/leads-directory/format";
 
 export function ConvertWonCustomerSheet({
   lead,
