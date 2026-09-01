@@ -23,7 +23,7 @@ export function ConvertWonCustomerSheet({
     lead.deal_value != null && lead.deal_value > 0 ? String(lead.deal_value) : ""
   );
   const [customerType, setCustomerType] = useState<"" | "company" | "individual">("");
-  const [location, setLocation] = useState(lead.location ?? "");
+  const [location, setLocation] = useState(locationFromFormData(lead.form_data) ?? "");
   const [primaryContactName, setPrimaryContactName] = useState("");
   const [industry, setIndustry] = useState("");
   const [notes, setNotes] = useState("");
