@@ -15,6 +15,7 @@ export type DocumentListFilters = {
 
 export type DocumentListItem = DocumentRow & {
   document_type?: Pick<DocumentTypeRow, "code" | "label"> | null;
+  mime_type?: string | null;
   searchSnippet?: string | null;
   searchPageNumber?: number | null;
 };
@@ -365,6 +366,25 @@ export async function listDocumentsForEntity(opts: {
       | null;
     const document_type = Array.isArray(typeJoin) ? typeJoin[0] : typeJoin;
     documents.push({ ...(row as DocumentRow), document_type });
+  }
+
+  const versionIds = documents
+    .map((doc) => doc.current_version_id)
+    .filter((id): id is string => Boolean(id));
+  if (versionIds.length) {
+    const { data: versions } = await supabase
+      .from("document_versions")
+      .select("id, mime_type")
+      .eq("client_id", opts.clientId)
+      .in("id", versionIds);
+    const mimeByVersionId = new Map(
+      (versions ?? []).map((v) => [v.id as string, v.mime_type as string])
+    );
+    for (const doc of documents) {
+      if (doc.current_version_id) {
+        doc.mime_type = mimeByVersionId.get(doc.current_version_id) ?? null;
+      }
+    }
   }
 
   return { documents, total: count ?? documents.length };
