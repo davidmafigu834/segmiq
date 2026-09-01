@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MoreHorizontal, Upload } from "lucide-react";
 import { CommercialModulePage } from "@/components/dashboard/company/commercial/CommercialModulePage";
 import {
+  ActiveFiltersBar,
   Button,
   DataTableBody,
   DataTableEl,
@@ -14,12 +15,15 @@ import {
   DataTableScroll,
   DataTableTd,
   DataTableTh,
+  DataTableToolbar,
+  DataTableToolbarGroup,
   DataTableWorkspace,
+  FilterPill,
+  MenuSelect,
   SearchInput,
-  Select,
   Skeleton,
 } from "@/components/sales/ui";
-import { formatDocumentDate } from "@/lib/documents/format";
+import { formatDocumentDate, processingStatusLabel } from "@/lib/documents/format";
 import type { DocumentListItem } from "@/lib/documents/list-service";
 import type { DocumentsHomeSummary } from "@/lib/documents/list-service";
 import type { DocumentTypeRow } from "@/lib/documents/types";
@@ -71,7 +75,8 @@ export function CompanyDocumentsPage({
   const searchParams = useSearchParams();
   const [documents, setDocuments] = useState(initialDocuments);
   const [total, setTotal] = useState(initialTotal);
-  const [listSearch, setListSearch] = useState("");
+  const urlQ = searchParams.get("q") ?? "";
+  const [listSearch, setListSearch] = useState(urlQ);
   const [loading, setLoading] = useState(false);
   const [showUpload, setShowUpload] = useState(searchParams.get("upload") === "1");
 
@@ -79,12 +84,27 @@ export function CompanyDocumentsPage({
   const activeProcessing = searchParams.get("processingStatus");
   const activeType = searchParams.get("documentTypeId");
 
+  useEffect(() => {
+    setListSearch(urlQ);
+  }, [urlQ]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const trimmed = listSearch.trim();
+      if (trimmed === urlQ) return;
+      const params = new URLSearchParams(searchParams.toString());
+      if (trimmed) params.set("q", trimmed);
+      else params.delete("q");
+      router.push(`/client/documents?${params.toString()}`);
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [listSearch, urlQ, searchParams, router]);
+
   const refreshList = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams(searchParams.toString());
       params.set("limit", "25");
-      if (listSearch.trim()) params.set("q", listSearch.trim());
       const res = await fetch(`/api/clients/${clientId}/company-documents?${params}`);
       if (!res.ok) return;
       const data = (await res.json()) as { documents: DocumentListItem[]; total: number };
@@ -93,7 +113,7 @@ export function CompanyDocumentsPage({
     } finally {
       setLoading(false);
     }
-  }, [clientId, listSearch, searchParams]);
+  }, [clientId, searchParams]);
 
   useEffect(() => {
     void refreshList();
@@ -158,6 +178,70 @@ export function CompanyDocumentsPage({
   const collections = summary.collections.filter(
     (c) => !["recent", "needs_attention"].includes(c.id)
   );
+
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{
+      key: string;
+      label: string;
+      value: string;
+      clear: () => void;
+    }> = [];
+
+    if (activeCollection) {
+      const collection =
+        collections.find((c) => c.id === activeCollection) ??
+        summary.collections.find((c) => c.id === activeCollection);
+      chips.push({
+        key: "collection",
+        label: "Collection",
+        value: collection?.label ?? activeCollection,
+        clear: () => setFilter("collection", null),
+      });
+    }
+    if (activeType) {
+      const type = types.find((t) => t.id === activeType);
+      chips.push({
+        key: "type",
+        label: "Type",
+        value: type?.label ?? "Document type",
+        clear: () => setFilter("documentTypeId", null),
+      });
+    }
+    if (activeProcessing) {
+      chips.push({
+        key: "status",
+        label: "Status",
+        value: processingStatusLabel(activeProcessing),
+        clear: () => setFilter("processingStatus", null),
+      });
+    }
+    if (urlQ.trim()) {
+      chips.push({
+        key: "q",
+        label: "Search",
+        value: urlQ.trim(),
+        clear: () => {
+          setListSearch("");
+          setFilter("q", null);
+        },
+      });
+    }
+    return chips;
+  }, [
+    activeCollection,
+    activeProcessing,
+    activeType,
+    collections,
+    summary.collections,
+    types,
+    urlQ,
+    setFilter,
+  ]);
+
+  const clearAllFilters = useCallback(() => {
+    setListSearch("");
+    router.push("/client/documents");
+  }, [router]);
 
   if (!enabled) {
     return (
@@ -266,76 +350,82 @@ export function CompanyDocumentsPage({
 
         <section>
           <DocumentSectionHeader
-            title="Recent documents"
+            title="All documents"
             subtitle={`${total} document${total === 1 ? "" : "s"} in this view`}
           />
 
-          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="flex-1">
-              <SearchInput
-                value={listSearch}
-                onChange={setListSearch}
-                placeholder="Search documents by title or filename…"
-              />
-              <Button variant="secondary" size="md" onClick={() => void refreshList()}>
-                Search
-              </Button>
-            </div>
-            <Select
-              value={activeType ?? ""}
-              onChange={(e) => setFilter("documentTypeId", e.target.value || null)}
-              className="min-w-[140px]"
-            >
-              <option value="">All types</option>
-              {types.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              value={activeProcessing ?? ""}
-              onChange={(e) => setFilter("processingStatus", e.target.value || null)}
-              className="min-w-[140px]"
-            >
-              <option value="">All statuses</option>
-              <option value="READY">Ready</option>
-              <option value="NEEDS_REVIEW">Needs review</option>
-              <option value="FAILED">Failed</option>
-              <option value="PROCESSING">Processing</option>
-            </Select>
-            {(activeCollection || activeProcessing || activeType || listSearch) && (
-              <Button
-                variant="ghost"
-                size="md"
-                onClick={() => {
-                  setListSearch("");
-                  router.push("/client/documents");
-                }}
-              >
-                Clear filters
-              </Button>
-            )}
-          </div>
+          <DataTableWorkspace className="overflow-hidden rounded-[14px] border border-sales-border bg-sales-surface">
+            <DataTableToolbar className="border-b border-sales-border-subtle px-4 py-3 sm:px-5">
+              <DataTableToolbarGroup className="min-w-0 flex-1">
+                <SearchInput
+                  value={listSearch}
+                  onChange={setListSearch}
+                  placeholder="Search by title or filename…"
+                  className="min-w-0 w-full sm:max-w-[320px]"
+                />
+              </DataTableToolbarGroup>
+              <DataTableToolbarGroup align="end" className="flex-wrap">
+                <MenuSelect
+                  value={activeType ?? "all"}
+                  onChange={(value) =>
+                    setFilter("documentTypeId", value === "all" ? null : value)
+                  }
+                  aria-label="Document type"
+                  options={[
+                    { value: "all", label: "All types" },
+                    ...types.map((t) => ({ value: t.id, label: t.label })),
+                  ]}
+                />
+                <MenuSelect
+                  value={activeProcessing ?? "all"}
+                  onChange={(value) =>
+                    setFilter("processingStatus", value === "all" ? null : value)
+                  }
+                  aria-label="Processing status"
+                  options={[
+                    { value: "all", label: "All statuses" },
+                    { value: "READY", label: "Ready" },
+                    { value: "NEEDS_REVIEW", label: "Needs review" },
+                    { value: "FAILED", label: "Failed" },
+                    { value: "PROCESSING", label: "Processing" },
+                  ]}
+                />
+              </DataTableToolbarGroup>
+            </DataTableToolbar>
 
-          {loading ? (
-            <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 py-3">
-                  <Skeleton className="h-11 w-11 rounded-[10px]" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-2/5" />
-                    <Skeleton className="h-3 w-1/4" />
+            {activeFilterChips.length > 0 ? (
+              <ActiveFiltersBar
+                className="border-b border-sales-border-subtle px-4 py-2.5 sm:px-5"
+                onClearAll={clearAllFilters}
+              >
+                {activeFilterChips.map((chip) => (
+                  <FilterPill
+                    key={chip.key}
+                    label={chip.label}
+                    value={chip.value}
+                    onRemove={chip.clear}
+                  />
+                ))}
+              </ActiveFiltersBar>
+            ) : null}
+
+            {loading ? (
+              <div className="p-4 sm:p-5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 py-3">
+                    <Skeleton className="h-11 w-11 rounded-[10px]" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-2/5" />
+                      <Skeleton className="h-3 w-1/4" />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : documents.length === 0 ? (
-            <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface p-6">
-              <DocumentsEmptyState onUpload={() => setShowUpload(true)} />
-            </div>
-          ) : (
-            <DataTableWorkspace>
+                ))}
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="p-6">
+                <DocumentsEmptyState onUpload={() => setShowUpload(true)} />
+              </div>
+            ) : (
               <DataTableScroll>
                 <DataTableEl>
                   <DataTableHead>
@@ -395,8 +485,8 @@ export function CompanyDocumentsPage({
                   </DataTableBody>
                 </DataTableEl>
               </DataTableScroll>
-            </DataTableWorkspace>
-          )}
+            )}
+          </DataTableWorkspace>
         </section>
       </div>
     </CommercialModulePage>
