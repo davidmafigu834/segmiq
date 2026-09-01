@@ -28,20 +28,21 @@ export function useFocusTrap(
     if (!active) return;
     const container = containerRef.current;
     if (!container) return;
+    const trapRoot: HTMLElement = container;
 
     const previouslyFocused =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-    const focusable = getFocusableElements(container);
+    const focusable = getFocusableElements(trapRoot);
     if (focusable.length > 0) {
       focusable[0].focus({ preventScroll: true });
     } else if (focusContainer) {
-      container.focus({ preventScroll: true });
+      trapRoot.focus({ preventScroll: true });
     }
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== "Tab") return;
-      const items = getFocusableElements(container);
+      const items = getFocusableElements(trapRoot);
       if (items.length === 0) {
         e.preventDefault();
         return;
@@ -59,9 +60,9 @@ export function useFocusTrap(
       }
     }
 
-    container.addEventListener("keydown", onKeyDown);
+    trapRoot.addEventListener("keydown", onKeyDown);
     return () => {
-      container.removeEventListener("keydown", onKeyDown);
+      trapRoot.removeEventListener("keydown", onKeyDown);
       if (restoreFocus && previouslyFocused?.isConnected) {
         previouslyFocused.focus({ preventScroll: true });
       }
