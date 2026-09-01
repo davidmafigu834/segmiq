@@ -5,7 +5,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from "luci
 import { cn } from "@/lib/ui/cn";
 import { EmptyState } from "./Feedback";
 import { ErrorState, FilteredEmptyState } from "./states";
-import { IconButton } from "./Button";
+import { IconButton, Button } from "./Button";
 
 export type DataTableSortDirection = "asc" | "desc" | "none";
 export type DataTableRowDensity = "default" | "comfortable";
@@ -92,6 +92,53 @@ export function DataTableToolbarGroup({
       )}
     >
       {children}
+    </div>
+  );
+}
+
+/** Compact bulk-selection bar — count + actions + optional clear. */
+export function DataTableSelectionBar({
+  count,
+  onClear,
+  children,
+  placement = "toolbar",
+  clearLabel = "Clear",
+  className,
+}: {
+  count: number;
+  onClear?: () => void;
+  children?: ReactNode;
+  /** toolbar = below toolbar row; footer = above table footer */
+  placement?: "toolbar" | "footer";
+  clearLabel?: string;
+  className?: string;
+}) {
+  if (count <= 0) return null;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-3 border-sales-border-subtle bg-sales-surface-subtle px-4 py-2.5 sm:px-5",
+        placement === "toolbar" ? "border-b" : "border-t",
+        className
+      )}
+      role="status"
+      aria-live="polite"
+    >
+      <p className="text-[12px] font-medium tabular-nums text-sales-text-secondary">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-sales-brand" aria-hidden />
+          {count} selected
+        </span>
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        {children}
+        {onClear ? (
+          <Button variant="ghost" size="sm" onClick={onClear}>
+            {clearLabel}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }

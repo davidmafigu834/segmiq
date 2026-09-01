@@ -60,6 +60,7 @@ import {
   DataTablePagination,
   DataTableRow,
   DataTableScroll,
+  DataTableSelectionBar,
   DataTableSkeleton,
   DataTableSortableTh,
   DataTableTd,
@@ -164,7 +165,7 @@ const NAV = [
   { id: "controls", label: "Switch & Selectors" },
   { id: "badges", label: "Tabs, Badges & Status" },
   { id: "cards", label: "Cards" },
-  { id: "table", label: "06 — Tables" },
+  { id: "table", label: "15 — Tables & Data" },
   { id: "overlays", label: "14 — Overlays & Feedback" },
   { id: "forms", label: "08 — Forms & Inputs" },
   { id: "menus", label: "09 — Menus & Pills" },
@@ -294,10 +295,35 @@ function TablesShowcaseSection() {
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[12px] text-sales-text-secondary">
-          Documentation examples only — not production CRM data. Validate Light / Dark with the toggle.
+          Extends Phase 06 foundation — four systems for scan, filter, act, and bulk workflows. Documentation data only.
         </p>
         <SalesThemeToggle />
       </div>
+
+      <Card variant="flat">
+        <CardHeader>
+          <CardTitle className="text-[14px]">Four systems</CardTitle>
+          <CardDescription>Phase 06 visual foundation · Phase 15 operational capability</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 text-[12px] text-sales-text-secondary">
+          <div className="rounded-[10px] border border-sales-border-subtle p-3">
+            <p className="font-semibold text-sales-text-primary">1 · Default table</p>
+            <p className="mt-1">Shell · columns · identity · status · pagination</p>
+          </div>
+          <div className="rounded-[10px] border border-sales-border-subtle p-3">
+            <p className="font-semibold text-sales-text-primary">2 · Sort & filter</p>
+            <p className="mt-1">SearchInput · sort headers · filter popover · pills</p>
+          </div>
+          <div className="rounded-[10px] border border-sales-border-subtle p-3">
+            <p className="font-semibold text-sales-text-primary">3 · Row actions</p>
+            <p className="mt-1">Ellipsis menu · domain actions only · danger separated</p>
+          </div>
+          <div className="rounded-[10px] border border-sales-border-subtle p-3">
+            <p className="font-semibold text-sales-text-primary">4 · Selection & bulk</p>
+            <p className="mt-1">Checkboxes · selection bar · real bulk mutations only</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 01 Default */}
       <div>
@@ -454,16 +480,27 @@ function TablesShowcaseSection() {
         </DataTable>
       </div>
 
-      {/* 04 Selected */}
+      {/* 04 Selected + bulk bar */}
       <div>
         <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
-          04 Selected row
+          04 Selection & bulk actions
         </p>
         <p className="mb-3 text-[12px] text-sales-text-secondary">
-          Soft lime wash · Phase 03 checkbox · no solid lime row · no auto-selected first row.
+          Soft lime row wash · DataTableSelectionBar · bulk actions only where backend supports them.
         </p>
-        <DataTable>
-          <DataTableEl>
+        <DataTableWorkspace>
+          {checkedIds.size > 0 ? (
+            <DataTableSelectionBar
+              count={checkedIds.size}
+              onClear={() => setCheckedIds(new Set())}
+            >
+              <Button variant="secondary" size="sm">
+                Assign owner
+              </Button>
+            </DataTableSelectionBar>
+          ) : null}
+          <DataTableScroll>
+            <DataTableEl>
             <DataTableHead>
               <tr>
                 <DataTableTh compact className="w-11">
@@ -522,7 +559,8 @@ function TablesShowcaseSection() {
               ))}
             </DataTableBody>
           </DataTableEl>
-        </DataTable>
+          </DataTableScroll>
+        </DataTableWorkspace>
       </div>
 
       {/* 05 Pagination */}
@@ -3162,8 +3200,8 @@ function ShowcaseInner() {
           {/* ── Tables ─────────────────────────────────────────── */}
           <Section
             id="table"
-            title="06 — Tables"
-            description="Foundation · toolbar · interaction · navigation. One bordered workspace for tabs, filters, rows, and pagination."
+            title="15 — Advanced Tables & Data Display"
+            description="Extends Phase 06 · four systems: default table · sort & filter · row actions · selection & bulk."
           >
             <TablesShowcaseSection />
           </Section>

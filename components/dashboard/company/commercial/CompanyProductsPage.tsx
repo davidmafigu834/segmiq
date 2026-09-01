@@ -6,13 +6,16 @@ import { Box, Plus } from "lucide-react";
 import { CommercialModulePage } from "./CommercialModulePage";
 import {
   Button,
-  DataTable,
   DataTableBody,
   DataTableEl,
+  DataTableFooter,
   DataTableHead,
+  DataTablePagination,
   DataTableRow,
+  DataTableScroll,
   DataTableTd,
   DataTableTh,
+  DataTableWorkspace,
   EmptyState,
   ErrorState,
   FilteredEmptyState,
@@ -42,6 +45,8 @@ type ProductRow = {
   available_qty?: number | null;
   inventory_status?: string;
 };
+
+const PAGE_SIZE = 50;
 
 export function CompanyProductsPage({
   clientId,
@@ -81,10 +86,6 @@ export function CompanyProductsPage({
   }, [q]);
 
   useEffect(() => {
-    setPage(1);
-  }, [dq, type, status, categoryId, brand, inventory]);
-
-  useEffect(() => {
     fetch(`/api/clients/${clientId}/products/categories`)
       .then((r) => r.json())
       .then((j: { categories?: Array<{ id: string; name: string }> }) => setCategories(j.categories ?? []))
@@ -107,7 +108,7 @@ export function CompanyProductsPage({
       type,
       status,
       page: String(page),
-      limit: "50",
+      limit: String(PAGE_SIZE),
     });
     if (categoryId) params.set("categoryId", categoryId);
     if (brand) params.set("brand", brand);
@@ -158,7 +159,9 @@ export function CompanyProductsPage({
     setInventory("ALL");
   }
 
-  const pages = Math.max(1, Math.ceil(total / 50));
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const to = Math.min(page * PAGE_SIZE, total);
   const trueEmpty = !loading && !error && items.length === 0 && typeCounts.all === 0 && !hasFilters;
   const filteredEmpty = !loading && !error && items.length === 0 && !trueEmpty;
 
@@ -236,6 +239,7 @@ export function CompanyProductsPage({
         </div>
       </div>
 
+      <DataTableWorkspace className="mt-4 min-w-0 max-w-full">
         {loading ? (
           <Skeleton className="h-64 w-full" />
         ) : error ? (
@@ -269,84 +273,82 @@ export function CompanyProductsPage({
             description="Try changing your filters or search terms."
           />
         ) : (
-          <DataTable>
-              <DataTableEl>
-                <DataTableHead>
-                  <DataTableRow>
-                    <DataTableTh>Product</DataTableTh>
-                    <DataTableTh>SKU</DataTableTh>
-                    <DataTableTh>Category</DataTableTh>
-                    <DataTableTh className="text-right">Selling price</DataTableTh>
-                    <DataTableTh className="text-right">Available</DataTableTh>
-                    <DataTableTh>Status</DataTableTh>
-                  </DataTableRow>
-                </DataTableHead>
-                <DataTableBody>
-                  {items.map((p) => (
-                    <DataTableRow
-                      key={p.id}
-                      className="cursor-pointer hover:bg-sales-surface-subtle"
-                      onClick={() => router.push(`/client/products/${p.id}`)}
-                    >
-                      <DataTableTd>
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-sales-border bg-sales-surface-subtle">
-                            {p.primary_image_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={p.primary_image_url} alt="" className="h-full w-full object-contain" />
-                            ) : (
-                              <Box size={16} className="text-sales-text-muted" />
-                            )}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="truncate text-[13px] font-medium text-sales-text-primary">{p.name}</div>
-                            <div className="mt-0.5 text-[11px] text-sales-text-muted">
-                              {p.item_type === "SERVICE" ? "Service" : "Product"}
-                              {p.brand ? ` · ${p.brand}` : ""}
-                            </div>
+          <DataTableScroll>
+            <DataTableEl>
+              <DataTableHead>
+                <DataTableRow>
+                  <DataTableTh>Product</DataTableTh>
+                  <DataTableTh>SKU</DataTableTh>
+                  <DataTableTh>Category</DataTableTh>
+                  <DataTableTh className="text-right">Selling price</DataTableTh>
+                  <DataTableTh className="text-right">Available</DataTableTh>
+                  <DataTableTh>Status</DataTableTh>
+                </DataTableRow>
+              </DataTableHead>
+              <DataTableBody>
+                {items.map((p) => (
+                  <DataTableRow
+                    key={p.id}
+                    clickable
+                    onClick={() => router.push(`/client/products/${p.id}`)}
+                  >
+                    <DataTableTd>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-sales-border bg-sales-surface-subtle">
+                          {p.primary_image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.primary_image_url} alt="" className="h-full w-full object-contain" />
+                          ) : (
+                            <Box size={16} className="text-sales-text-muted" />
+                          )}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="truncate text-[13px] font-medium text-sales-text-primary">{p.name}</div>
+                          <div className="mt-0.5 text-[11px] text-sales-text-muted">
+                            {p.item_type === "SERVICE" ? "Service" : "Product"}
+                            {p.brand ? ` · ${p.brand}` : ""}
                           </div>
                         </div>
-                      </DataTableTd>
-                      <DataTableTd className="font-mono text-[12px]">{p.sku || "—"}</DataTableTd>
-                      <DataTableTd>{p.category_name || "—"}</DataTableTd>
-                      <DataTableTd className="text-right tabular-nums">
-                        {formatMoney(Number(p.selling_price) || 0, p.currency)}
-                      </DataTableTd>
-                      <DataTableTd className="text-right tabular-nums">
-                        {p.item_type === "SERVICE" || !p.track_inventory
+                      </div>
+                    </DataTableTd>
+                    <DataTableTd className="font-mono text-[12px]">{p.sku || "—"}</DataTableTd>
+                    <DataTableTd>{p.category_name || "—"}</DataTableTd>
+                    <DataTableTd className="text-right tabular-nums">
+                      {formatMoney(Number(p.selling_price) || 0, p.currency)}
+                    </DataTableTd>
+                    <DataTableTd className="text-right tabular-nums">
+                      {p.item_type === "SERVICE" || !p.track_inventory
+                        ? "—"
+                        : p.available_qty == null
                           ? "—"
-                          : p.available_qty == null
-                            ? "—"
-                            : Number(p.available_qty).toLocaleString()}
-                      </DataTableTd>
-                      <DataTableTd>
-                        <span className="inline-flex items-center gap-1.5 text-[12px] font-medium">
-                          <StatusDot
-                            tone={p.status === "ACTIVE" ? "brand" : p.status === "ARCHIVED" ? "neutral" : "warning"}
-                            size={6}
-                          />
-                          {statusLabel(p.status)}
-                        </span>
-                      </DataTableTd>
-                    </DataTableRow>
-                  ))}
+                          : Number(p.available_qty).toLocaleString()}
+                    </DataTableTd>
+                    <DataTableTd>
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-medium">
+                        <StatusDot
+                          tone={p.status === "ACTIVE" ? "brand" : p.status === "ARCHIVED" ? "neutral" : "warning"}
+                          size={6}
+                        />
+                        {statusLabel(p.status)}
+                      </span>
+                    </DataTableTd>
+                  </DataTableRow>
+                ))}
               </DataTableBody>
             </DataTableEl>
-          </DataTable>
+          </DataTableScroll>
         )}
-        {pages > 1 ? (
-          <div className="flex items-center justify-end gap-2 text-[13px] text-sales-text-secondary">
-            <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-              Previous
-            </Button>
-            <span>
-              {page} / {pages}
-            </span>
-            <Button variant="secondary" size="sm" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
-              Next
-            </Button>
-          </div>
+        {!loading && !error && total > 0 ? (
+          <DataTableFooter className="px-4">
+            <DataTablePagination
+              page={page}
+              pageCount={pageCount}
+              onPageChange={setPage}
+              summary={`Showing ${from}–${to} of ${total} products`}
+            />
+          </DataTableFooter>
         ) : null}
+      </DataTableWorkspace>
     </CommercialModulePage>
   );
 }

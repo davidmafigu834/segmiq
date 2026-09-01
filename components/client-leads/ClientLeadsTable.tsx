@@ -13,7 +13,13 @@ import {
   subDays,
   subMonths,
 } from "date-fns";
-import { Download, Inbox, Search, CheckSquare, Upload } from "lucide-react";
+import { Download, Inbox, Search, Upload } from "lucide-react";
+import {
+  Button,
+  ConfirmDialog,
+  DataTableSelectionBar,
+  MenuSelect,
+} from "@/components/sales/ui";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { StatusPill } from "@/components/StatusPill";
 import { ScoreBadge } from "@/components/ui/ScoreBadge";
@@ -241,7 +247,6 @@ export function ClientLeadsTable({
   const pageRows = sorted.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE);
 
   const visibleIds = useMemo(() => sorted.map((l) => l.id), [sorted]);
-  const hasSelection = selectedIds.size > 0;
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
   const someVisibleSelected = visibleIds.some((id) => selectedIds.has(id));
 
@@ -380,66 +385,50 @@ export function ClientLeadsTable({
 
   return (
     <div>
-      {hasSelection ? (
-        <div className="sticky top-[60px] z-30 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-card px-4 py-3 shadow-sm">
-          <div className="flex items-center gap-3 text-sm text-ink-secondary">
-            <CheckSquare className="h-4 w-4 text-ink-primary" strokeWidth={1.5} />
-            <span>{selectedIds.size} selected</span>
-            {bulkFeedback ? <span className="text-xs text-[var(--status-warning-fg)]">{bulkFeedback}</span> : null}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              className="input-base h-9 min-w-[180px] text-sm"
-              value={bulkAssignee}
-              onChange={(e) => setBulkAssignee(e.target.value)}
-            >
-              <option value="">Unassigned</option>
-              {bulkSalespeople.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="btn-primary h-9 px-4 text-sm"
-              disabled={bulkBusy || (!bulkAssignee && bulkSalespeople.length === 0)}
-              onClick={() => setBulkOpen(true)}
-            >
-              Assign
-            </button>
-          </div>
-          {bulkOpen ? (
-            <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-              <div className="w-full max-w-md rounded-lg border border-border bg-surface-card p-6 shadow-lg">
-                <h2 className="font-display text-xl text-ink-primary">Confirm bulk assignment</h2>
-                <p className="mt-2 text-sm text-ink-secondary">
-                  Assign {selectedIds.size} lead{selectedIds.size === 1 ? "" : "s"} to{" "}
-                  {bulkAssignee ? bulkSalespeople.find((s) => s.id === bulkAssignee)?.name ?? "selected rep" : "Unassigned"}?
-                </p>
-                <div className="mt-6 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    className="btn-ghost h-9 px-3 text-sm"
-                    onClick={() => setBulkOpen(false)}
-                    disabled={bulkBusy}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-primary h-9 px-4 text-sm"
-                    disabled={bulkBusy}
-                    onClick={() => void handleBulkAssign()}
-                  >
-                    {bulkBusy ? "Assigning…" : `Assign ${selectedIds.size}`}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
+      {selectedIds.size > 0 ? (
+        <DataTableSelectionBar
+          count={selectedIds.size}
+          onClear={() => setSelectedIds(new Set())}
+          className="sticky top-[60px] z-30 mb-4 rounded-lg border border-border shadow-sm"
+        >
+          <MenuSelect
+            size="sm"
+            aria-label="Assignee"
+            value={bulkAssignee}
+            onChange={setBulkAssignee}
+            options={[
+              { value: "", label: "Unassigned" },
+              ...bulkSalespeople.map((user) => ({ value: user.id, label: user.name })),
+            ]}
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!bulkAssignee && bulkSalespeople.length === 0}
+            onClick={() => setBulkOpen(true)}
+          >
+            Assign
+          </Button>
+        </DataTableSelectionBar>
       ) : null}
+
+      <ConfirmDialog
+        open={bulkOpen}
+        onOpenChange={(open) => {
+          setBulkOpen(open);
+          if (!open) setBulkFeedback(null);
+        }}
+        title="Confirm bulk assignment"
+        description={`Assign ${selectedIds.size} lead${selectedIds.size === 1 ? "" : "s"} to ${
+          bulkAssignee
+            ? (bulkSalespeople.find((s) => s.id === bulkAssignee)?.name ?? "selected rep")
+            : "Unassigned"
+        }?`}
+        confirmLabel={`Assign ${selectedIds.size}`}
+        loading={bulkBusy}
+        error={bulkFeedback}
+        onConfirm={handleBulkAssign}
+      />
       {!hideHeader ? (
         <header className="mb-8 flex flex-col gap-6 layout:flex-row layout:items-baseline layout:justify-between">
           <div>

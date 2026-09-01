@@ -162,5 +162,8 @@ export {
   DataTableFooter,
   DataTablePagination,
   DataTablePageSizeButton,
+  DataTableSelectionBar,
 } from "./DataTable";
 export type { DataTableSortDirection, DataTableRowDensity } from "./DataTable";
+
+export { useDataTableSelection } from "./useDataTableSelection";

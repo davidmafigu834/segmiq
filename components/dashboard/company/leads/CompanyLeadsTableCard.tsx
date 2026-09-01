@@ -30,6 +30,7 @@ import {
   DataTablePagination,
   DataTableRow,
   DataTableScroll,
+  DataTableSelectionBar,
   DataTableTabsBar,
   DataTableTd,
   DataTableTh,
@@ -425,6 +426,7 @@ export function CompanyLeadsTableCard({
   selectedIds,
   onToggleRow,
   onTogglePage,
+  onClearSelection,
   owners,
   sources,
   canReassign,
@@ -464,6 +466,7 @@ export function CompanyLeadsTableCard({
   selectedIds: Set<string>;
   onToggleRow: (id: string, checked: boolean) => void;
   onTogglePage: (checked: boolean) => void;
+  onClearSelection?: () => void;
   owners: CompanyLeadsOwnerOption[];
   sources: CompanyLeadsSourceOption[];
   canReassign: boolean;
@@ -913,10 +916,11 @@ export function CompanyLeadsTableCard({
       ) : null}
 
       {somePageSelected && canReassign ? (
-        <div className="flex items-center justify-between gap-3 border-t border-sales-border-subtle bg-sales-surface-subtle px-4 py-2.5 sm:px-5">
-          <p className="text-[12px] font-medium text-sales-text-secondary">
-            {selectedIds.size} selected
-          </p>
+        <DataTableSelectionBar
+          count={selectedIds.size}
+          placement="footer"
+          onClear={onClearSelection}
+        >
           <Button
             variant="secondary"
             size="sm"
@@ -927,7 +931,7 @@ export function CompanyLeadsTableCard({
           >
             Assign owner
           </Button>
-        </div>
+        </DataTableSelectionBar>
       ) : null}
     </DataTableWorkspace>
   );

@@ -980,6 +980,37 @@ CRUD success → Toast. Whole-area setup missing → `InfoState`. List fetch fai
 
 Company `/client/*` routes mount `ToastProvider` via `CompanyClientProviders` in `app/client/layout.tsx`.
 
+## 15 — Advanced Tables & Data Display
+
+Showcase: `/dev/sales-design-system#table` (development only).
+
+**Extends Phase 06** — do not create a second table system. Production architecture is four systems:
+
+| System | Components | Question |
+|--------|------------|----------|
+| **1 · Default table** | `DataTableWorkspace`, columns, identity, status, pagination | What records exist? |
+| **2 · Sort & filter** | `SearchInput`, `DataTableSortableTh`, filter popover, `FilterPill`, `ActiveFiltersBar` | Which records do I need now? |
+| **3 · Row actions** | `DataTableActionsCell`, `DropdownMenu` | What can I do with this record? |
+| **4 · Selection & bulk** | `DataTableCheckboxCell`, `DataTableSelectionBar`, `useDataTableSelection` | What can I do with these together? |
+
+### Defaults (Phase 06 — unchanged)
+
+- One bordered workspace: toolbar + table + footer
+- Row height 52px (56px comfortable) · header 44px · 12px radius
+- No zebra · subtle dividers · soft lime selected row wash
+- Desktop table · mobile `DataTableMobileList` cards
+
+### Phase 15 additions
+
+| Primitive | Role |
+|-----------|------|
+| `DataTableSelectionBar` | Compact bulk bar — `{count} selected` + actions + Clear |
+| `useDataTableSelection` | Page-scoped ID selection with indeterminate header state |
+
+**Rules:** Enable checkboxes only where real bulk mutations exist (Company Leads assign, Quotations export). Do not add selection to tables without bulk backend support. Row actions and filters must use real domain fields — no invented actions from showcase examples.
+
+Sort/filter implementation stays page-specific (server query params vs client filter) — Phase 15 standardizes UI, not backend contracts.
+
 ## Overlay runtime (Phase 13 — superseded by §14)
 
 See **§14 — Overlays & Feedback** above for the consolidated four-system model. Phase 13 introduced `ConfirmDialog`, `Popover`, `OverlayPortal`, and focus-trap wiring; Phase 14 adds `Modal`, `InlineLoading`, `Stepper`, production confirm migrations, and documents the full architecture.

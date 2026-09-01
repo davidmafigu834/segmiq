@@ -31,6 +31,7 @@ import {
   DataTablePagination,
   DataTableRow,
   DataTableScroll,
+  DataTableSelectionBar,
   DataTableTd,
   DataTableTh,
   DataTableToolbar,
@@ -662,6 +663,7 @@ export function CompanyQuotationsTable({
   onOpenCustomer,
   onOpenWorkspace,
   onExportSelected,
+  onClearSelection,
   onClearSearch,
   onClear,
   onRetry,
@@ -696,6 +698,7 @@ export function CompanyQuotationsTable({
   onOpenCustomer: (row: CompanyQuotationRow) => void;
   onOpenWorkspace: (row: CompanyQuotationRow) => void;
   onExportSelected: () => void;
+  onClearSelection?: () => void;
   onClearSearch: () => void;
   onClear: () => void;
   onRetry: () => void;
@@ -736,18 +739,11 @@ export function CompanyQuotationsTable({
       </DataTableToolbar>
 
       {selectedIds.size > 0 ? (
-        <div className="flex items-center justify-between gap-3 border-b border-sales-border-subtle bg-sales-surface-subtle px-4 py-2">
-          <p className="text-[12px] font-medium text-sales-text-secondary">
-            {selectedIds.size} selected
-          </p>
-          <button
-            type="button"
-            className="text-[12px] font-semibold text-sales-brand-fg hover:underline"
-            onClick={onExportSelected}
-          >
+        <DataTableSelectionBar count={selectedIds.size} onClear={onClearSelection}>
+          <Button variant="secondary" size="sm" onClick={onExportSelected}>
             Export selected
-          </button>
-        </div>
+          </Button>
+        </DataTableSelectionBar>
       ) : null}
 
       {rows.length > 0 && !loadError ? (

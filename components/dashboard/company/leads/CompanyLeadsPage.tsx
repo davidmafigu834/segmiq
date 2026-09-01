@@ -356,6 +356,7 @@ export function CompanyLeadsPage({
           return next;
         });
       }}
+      onClearSelection={() => setSelectedIds(new Set())}
       owners={data.owners}
       sources={data.sources}
       canReassign={data.canReassign}

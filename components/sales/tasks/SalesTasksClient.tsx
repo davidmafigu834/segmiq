@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -8,8 +8,6 @@ import {
   CalendarDays,
   CheckSquare,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   CircleAlert,
   CircleCheck,
   FileText,
@@ -32,6 +30,22 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  DataTableActionsCell,
+  DataTableBody,
+  DataTableCheckboxCell,
+  DataTableEl,
+  DataTableFooter,
+  DataTableHead,
+  DataTablePagination,
+  DataTableRow,
+  DataTableScroll,
+  DataTableTd,
+  DataTableTh,
+  DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   EmptyState,
   ErrorState,
   IconButton,
@@ -124,7 +138,6 @@ export function SalesTasksClient() {
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps("direct");
 
-  const [menuId, setMenuId] = useState<string | null>(null);
   const [tipDismissed, setTipDismissed] = useState(false);
   const [rescheduleTask, setRescheduleTask] = useState<SalesTaskItem | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState(toDateKey(addDays(new Date(), 1)));
@@ -592,68 +605,61 @@ export function SalesTasksClient() {
               />
             </div>
 
-            <Card className="overflow-hidden border-sales-border shadow-sales-card">
-              <div className="hidden overflow-x-auto overscroll-x-contain md:block">
-                <table className="w-full min-w-[620px] table-fixed border-collapse text-left">
+            <DataTableWorkspace>
+              <DataTableScroll className="hidden md:block">
+                <DataTableEl className="min-w-[620px] table-fixed">
                   <colgroup>
                     <col className="w-11" />
                     <col />
                     <col className="w-[28%]" />
                     <col className="w-11" />
                   </colgroup>
-                  <thead className="border-b border-sales-border-subtle bg-sales-surface-subtle">
-                    <tr className="text-[12px] font-medium text-sales-text-muted">
-                      <th className="px-3 py-3" scope="col">
+                  <DataTableHead>
+                    <tr>
+                      <DataTableTh compact className="w-11">
                         <span className="sr-only">Complete</span>
-                      </th>
-                      <th className="px-2 py-3" scope="col">
-                        Task
-                      </th>
-                      <th className="px-2 py-3" scope="col">
-                        <span className="inline-flex items-center gap-1">
+                      </DataTableTh>
+                      <DataTableTh compact>Task</DataTableTh>
+                      <DataTableTh compact className="w-[28%]">
+                        <span className="inline-flex items-center gap-1 normal-case tracking-normal">
                           Due / Status
                           <ChevronDown size={12} strokeWidth={1.8} aria-hidden />
                         </span>
-                      </th>
-                      <th className="px-2 py-3" scope="col">
+                      </DataTableTh>
+                      <DataTableTh compact className="w-11">
                         <span className="sr-only">Actions</span>
-                      </th>
+                      </DataTableTh>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-sales-border-subtle">
+                  </DataTableHead>
+                  <DataTableBody>
                     {pageRows.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-10">
+                      <DataTableRow className="!h-auto hover:bg-transparent">
+                        <DataTableTd colSpan={4} className="!py-10">
                           <TaskEmpty
                             view={view}
                             filtered={activeFilterCount > 0}
                             onAdd={() => setAddOpen(true)}
                             onClear={clearFilters}
                           />
-                        </td>
-                      </tr>
+                        </DataTableTd>
+                      </DataTableRow>
                     ) : (
                       pageRows.map((task) => (
                         <TaskTableRow
                           key={task.id}
                           task={task}
-                          menuOpen={menuId === task.id}
-                          onToggleMenu={() =>
-                            setMenuId((id) => (id === task.id ? null : task.id))
-                          }
                           onOpen={() => setDetail(task)}
                           onComplete={() => void completeTask(task)}
                           onReschedule={() => {
                             setRescheduleDate(toDateKey(addDays(new Date(), 1)));
                             setRescheduleTask(task);
-                            setMenuId(null);
                           }}
                         />
                       ))
                     )}
-                  </tbody>
-                </table>
-              </div>
+                  </DataTableBody>
+                </DataTableEl>
+              </DataTableScroll>
 
               <div className="space-y-2 p-3 md:hidden">
                 {pageRows.length === 0 ? (
@@ -675,64 +681,35 @@ export function SalesTasksClient() {
                 )}
               </div>
 
-              <div className="flex flex-col gap-3 border-t border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-[12px] tabular-nums text-sales-text-secondary">
-                  Showing {showingFrom} to {showingTo} of {filteredTasks.length} tasks
-                </p>
-                <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
-                  <IconButton
-                    aria-label="Previous page"
-                    size="sm"
-                    disabled={pageSafe <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    <ChevronLeft strokeWidth={1.8} />
-                  </IconButton>
-                  {Array.from({ length: Math.min(pageCount, 5) }).map((_, i) => {
-                    const n = i + 1;
-                    const active = n === pageSafe;
-                    return (
-                      <button
-                        key={n}
-                        type="button"
-                        onClick={() => setPage(n)}
-                        className={cn(
-                          "inline-flex h-8 min-w-8 items-center justify-center rounded-[8px] text-[12px] font-semibold tabular-nums",
-                          active
-                            ? "bg-sales-brand text-sales-brand-text"
-                            : "text-sales-text-secondary hover:bg-sales-surface-hover"
-                        )}
-                      >
-                        {n}
-                      </button>
-                    );
-                  })}
-                  <IconButton
-                    aria-label="Next page"
-                    size="sm"
-                    disabled={pageSafe >= pageCount}
-                    onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-                  >
-                    <ChevronRight strokeWidth={1.8} />
-                  </IconButton>
-                  <MenuSelect
-                    aria-label="Rows per page"
-                    size="sm"
-                    align="right"
-                    className="ml-1"
-                    value={String(pageSize) as "10" | "20" | "50"}
-                    onChange={(v) => {
-                      setPageSize(Number(v));
-                      setPage(1);
-                    }}
-                    options={PAGE_SIZE_OPTIONS.map((n) => ({
-                      value: String(n) as "10" | "20" | "50",
-                      label: `${n} per page`,
-                    }))}
-                  />
-                </div>
-              </div>
-            </Card>
+              <DataTableFooter>
+                <DataTablePagination
+                  page={pageSafe}
+                  pageCount={pageCount}
+                  onPageChange={setPage}
+                  summary={
+                    <span className="tabular-nums text-sales-text-secondary">
+                      Showing {showingFrom} to {showingTo} of {filteredTasks.length} tasks
+                    </span>
+                  }
+                  pageSizeControl={
+                    <MenuSelect
+                      aria-label="Rows per page"
+                      size="sm"
+                      align="right"
+                      value={String(pageSize) as "10" | "20" | "50"}
+                      onChange={(v) => {
+                        setPageSize(Number(v));
+                        setPage(1);
+                      }}
+                      options={PAGE_SIZE_OPTIONS.map((n) => ({
+                        value: String(n) as "10" | "20" | "50",
+                        label: `${n} per page`,
+                      }))}
+                    />
+                  }
+                />
+              </DataTableFooter>
+            </DataTableWorkspace>
           </div>
 
           <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
@@ -1052,19 +1029,16 @@ function TaskEmpty({
 
 function TaskTableRow({
   task,
-  menuOpen,
-  onToggleMenu,
   onOpen,
   onComplete,
   onReschedule,
 }: {
   task: SalesTaskItem;
-  menuOpen: boolean;
-  onToggleMenu: () => void;
   onOpen: () => void;
   onComplete: () => void;
   onReschedule: () => void;
 }) {
+  const router = useRouter();
   const tone = dueDateTone(task);
   const dueClass =
     tone === "danger"
@@ -1074,13 +1048,11 @@ function TaskTableRow({
         : "text-sales-text-secondary";
 
   return (
-    <tr
-      className={cn(
-        "group transition-colors hover:bg-sales-surface-hover",
-        task.completed && "opacity-60"
-      )}
+    <DataTableRow
+      className={cn("group !h-auto", task.completed && "opacity-60")}
+      hoverable
     >
-      <td className="px-3 py-3 align-top">
+      <DataTableCheckboxCell compact className="align-top !py-3">
         <div className="pt-1">
           <Checkbox
             checked={task.completed}
@@ -1091,8 +1063,8 @@ function TaskTableRow({
             disabled={task.completed}
           />
         </div>
-      </td>
-      <td className="px-2 py-3 align-top">
+      </DataTableCheckboxCell>
+      <DataTableTd compact className="align-top !py-3">
         <div className="flex min-w-0 items-start gap-3">
           <button
             type="button"
@@ -1131,8 +1103,8 @@ function TaskTableRow({
             </div>
           </div>
         </div>
-      </td>
-      <td className="px-2 py-3 align-top">
+      </DataTableTd>
+      <DataTableTd compact className="align-top !py-3">
         <div className="flex flex-col items-start gap-1.5">
           <span className={cn("text-[13px] font-medium tabular-nums leading-snug", dueClass)}>
             {formatTaskDueDate(task.dueAt)}
@@ -1145,64 +1117,46 @@ function TaskTableRow({
             {formatTaskStatus(task.status)}
           </Badge>
         </div>
-      </td>
-      <td className="px-2 py-3 align-top">
-        <div className="relative flex justify-end">
-          <button
-            type="button"
-            className="rounded-[8px] p-1.5 text-sales-text-muted opacity-70 transition-opacity hover:bg-sales-surface-hover hover:text-sales-text-primary group-hover:opacity-100"
-            aria-label={`Open ${task.title} actions`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleMenu();
-            }}
-          >
-            <MoreHorizontal size={16} strokeWidth={1.8} />
-          </button>
-          {menuOpen ? (
-            <div className="absolute right-0 top-8 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
-              <MenuItem onClick={onOpen}>Open task</MenuItem>
+      </DataTableTd>
+      <DataTableActionsCell className="align-top !py-3">
+        <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu align="end">
+            <DropdownMenuTrigger
+              aria-label={`Open ${task.title} actions`}
+              className="rounded-[8px] p-1.5 text-sales-text-muted opacity-70 transition-opacity hover:bg-sales-surface-hover hover:text-sales-text-primary group-hover:opacity-100"
+            >
+              <MoreHorizontal size={16} strokeWidth={1.8} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuItem onSelect={onOpen}>Open task</DropdownMenuItem>
               {!task.completed ? (
                 <>
-                  <MenuItem onClick={onComplete}>Mark complete</MenuItem>
-                  <MenuItem onClick={onReschedule}>Reschedule</MenuItem>
+                  <DropdownMenuItem onSelect={onComplete}>Mark complete</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={onReschedule}>Reschedule</DropdownMenuItem>
                 </>
               ) : null}
-              <MenuItem href={task.leadHref}>Open related lead</MenuItem>
+              <DropdownMenuItem onSelect={() => router.push(task.leadHref)}>
+                Open related lead
+              </DropdownMenuItem>
               {task.whatsappHref ? (
-                <MenuItem href={task.whatsappHref}>Message on WhatsApp</MenuItem>
+                <DropdownMenuItem onSelect={() => window.open(task.whatsappHref!, "_blank")}>
+                  Message on WhatsApp
+                </DropdownMenuItem>
               ) : null}
-              {task.phone ? <MenuItem href={`tel:${task.phone}`}>Call</MenuItem> : null}
-            </div>
-          ) : null}
+              {task.phone ? (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    window.location.href = `tel:${task.phone}`;
+                  }}
+                >
+                  Call
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </td>
-    </tr>
-  );
-}
-
-function MenuItem({
-  children,
-  onClick,
-  href,
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-  href?: string;
-}) {
-  const className =
-    "block w-full px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover";
-  if (href) {
-    return (
-      <Link href={href} className={className}>
-        {children}
-      </Link>
-    );
-  }
-  return (
-    <button type="button" className={className} onClick={onClick}>
-      {children}
-    </button>
+      </DataTableActionsCell>
+    </DataTableRow>
   );
 }
 

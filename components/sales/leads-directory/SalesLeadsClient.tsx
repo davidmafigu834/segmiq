@@ -1,17 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  ChevronLeft,
-  ChevronRight,
   Clock3,
   ExternalLink,
   FileText,
   Globe,
   ListFilter,
-  MoreVertical,
+  MoreHorizontal,
   Phone,
   Plus,
   Target,
@@ -26,14 +23,22 @@ import {
   Button,
   Card,
   CardContent,
-  DataTable,
+  DataTableActionsCell,
   DataTableBody,
   DataTableEl,
   DataTableFilteredEmpty,
+  DataTableFooter,
   DataTableHead,
+  DataTablePagination,
   DataTableRow,
+  DataTableScroll,
   DataTableTd,
   DataTableTh,
+  DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   EmptyState,
   ErrorState,
   FilteredEmptyState,
@@ -168,7 +173,6 @@ export function SalesLeadsClient({
   const [page, setPage] = useState(Number(searchParams.get("page") ?? "1") || 1);
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(20);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [menuId, setMenuId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
   const [data, setData] = useState<LeadsDirectoryPayload | null>(null);
@@ -243,14 +247,6 @@ export function SalesLeadsClient({
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, period, source, stage, intent, attention, pageSize]);
-
-  useEffect(() => {
-    const onDoc = () => setMenuId(null);
-    if (menuId) {
-      document.addEventListener("click", onDoc);
-      return () => document.removeEventListener("click", onDoc);
-    }
-  }, [menuId]);
 
   // Deep-link ?lead=
   useEffect(() => {
@@ -701,81 +697,77 @@ export function SalesLeadsClient({
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
             <div className="min-w-0 space-y-4">
-              <Card className="overflow-hidden">
+              <DataTableWorkspace>
                 <div className="flex items-center justify-between border-b border-sales-border-subtle px-4 py-3">
                   <h2 className="text-[14px] font-semibold text-sales-text-primary">Leads</h2>
                   {loading ? <Skeleton className="h-4 w-16" /> : null}
                 </div>
 
-                <div className="hidden md:block">
-                  <DataTable className="rounded-none border-0 shadow-none">
-                    <DataTableEl>
-                      <DataTableHead>
-                        <tr>
-                          <DataTableTh>Lead</DataTableTh>
-                          <DataTableTh>Contact</DataTableTh>
-                          <DataTableTh className="hidden min-[1366px]:table-cell">Company</DataTableTh>
-                          <DataTableTh>Source</DataTableTh>
-                          <DataTableTh>Stage</DataTableTh>
-                          <DataTableTh className="hidden lg:table-cell">Intent</DataTableTh>
-                          <DataTableTh className="hidden xl:table-cell">Last contact</DataTableTh>
-                          <DataTableTh className="w-12 text-right">
-                            <span className="sr-only">Actions</span>
-                          </DataTableTh>
-                        </tr>
-                      </DataTableHead>
-                      <DataTableBody>
-                        {data.leads.length === 0 ? (
-                          <DataTableFilteredEmpty
-                            colSpan={8}
-                            searchQuery={debouncedSearch.trim() || undefined}
-                            onClearSearch={
-                              debouncedSearch.trim() ? () => setSearch("") : undefined
-                            }
-                            onClearFilters={hasTableFilters ? clearAllFilters : undefined}
-                            description={
-                              debouncedSearch.trim()
-                                ? "Try another name, phone number, company or project."
-                                : "Try clearing one or more filters."
-                            }
+                <DataTableScroll className="hidden md:block">
+                  <DataTableEl>
+                    <DataTableHead>
+                      <tr>
+                        <DataTableTh>Lead</DataTableTh>
+                        <DataTableTh>Contact</DataTableTh>
+                        <DataTableTh className="hidden min-[1366px]:table-cell">Company</DataTableTh>
+                        <DataTableTh>Source</DataTableTh>
+                        <DataTableTh>Stage</DataTableTh>
+                        <DataTableTh className="hidden lg:table-cell">Intent</DataTableTh>
+                        <DataTableTh className="hidden xl:table-cell">Last contact</DataTableTh>
+                        <DataTableTh className="w-12 text-right">
+                          <span className="sr-only">Actions</span>
+                        </DataTableTh>
+                      </tr>
+                    </DataTableHead>
+                    <DataTableBody>
+                      {data.leads.length === 0 ? (
+                        <DataTableFilteredEmpty
+                          colSpan={8}
+                          searchQuery={debouncedSearch.trim() || undefined}
+                          onClearSearch={
+                            debouncedSearch.trim() ? () => setSearch("") : undefined
+                          }
+                          onClearFilters={hasTableFilters ? clearAllFilters : undefined}
+                          description={
+                            debouncedSearch.trim()
+                              ? "Try another name, phone number, company or project."
+                              : "Try clearing one or more filters."
+                          }
+                        />
+                      ) : (
+                        data.leads.map((row) => (
+                          <LeadTableRow
+                            key={row.id}
+                            row={row}
+                            selected={selectedId === row.id}
+                            onOpen={() => openLead(row.id)}
+                            onWhatsApp={() => void messageWhatsApp(row)}
+                            onCall={() => {
+                              if (row.phone) window.location.href = `tel:${row.phone}`;
+                            }}
+                            onQuote={() => {
+                              openLeadPanel(row.id, "quote");
+                              const sp = new URLSearchParams(searchParams.toString());
+                              sp.set("lead", row.id);
+                              sp.set("tab", "quote");
+                              router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+                            }}
+                            onTimeline={() => {
+                              openLeadPanel(row.id, "timeline");
+                              const sp = new URLSearchParams(searchParams.toString());
+                              sp.set("lead", row.id);
+                              sp.set("tab", "timeline");
+                              router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+                            }}
+                            onOpenPipeline={() => {
+                              router.push(`/sales/call-now?lead=${row.id}`);
+                            }}
                           />
-                        ) : (
-                          data.leads.map((row) => (
-                            <LeadTableRow
-                              key={row.id}
-                              row={row}
-                              selected={selectedId === row.id}
-                              menuOpen={menuId === row.id}
-                              onToggleMenu={(e) => {
-                                e.stopPropagation();
-                                setMenuId((id) => (id === row.id ? null : row.id));
-                              }}
-                              onOpen={() => openLead(row.id)}
-                              onWhatsApp={() => void messageWhatsApp(row)}
-                              onCall={() => {
-                                if (row.phone) window.location.href = `tel:${row.phone}`;
-                              }}
-                              onQuote={() => {
-                                openLeadPanel(row.id, "quote");
-                                const sp = new URLSearchParams(searchParams.toString());
-                                sp.set("lead", row.id);
-                                sp.set("tab", "quote");
-                                router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
-                              }}
-                              onTimeline={() => {
-                                openLeadPanel(row.id, "timeline");
-                                const sp = new URLSearchParams(searchParams.toString());
-                                sp.set("lead", row.id);
-                                sp.set("tab", "timeline");
-                                router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
-                              }}
-                            />
-                          ))
-                        )}
-                      </DataTableBody>
-                    </DataTableEl>
-                  </DataTable>
-                </div>
+                        ))
+                      )}
+                    </DataTableBody>
+                  </DataTableEl>
+                </DataTableScroll>
 
                 <div className="space-y-3 p-3 md:hidden">
                   {data.leads.length === 0 ? (
@@ -805,82 +797,37 @@ export function SalesLeadsClient({
                 </div>
 
                 {data.meta.totalFiltered > 0 ? (
-                  <div className="flex flex-col gap-3 border-t border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-[12px] text-sales-text-muted">
-                      Showing {showingFrom} to {showingTo} of {data.meta.totalFiltered} leads
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <MenuSelect
-                        aria-label="Rows per page"
-                        size="sm"
-                        value={String(pageSize)}
-                        onChange={(v) => {
-                          const next = Number(v);
-                          if ((PAGE_SIZES as readonly number[]).includes(next)) {
-                            setPageSize(next as (typeof PAGE_SIZES)[number]);
-                            setPage(1);
-                          }
-                        }}
-                        options={PAGE_SIZES.map((n) => ({
-                          value: String(n),
-                          label: `${n} / page`,
-                        }))}
-                      />
-                      <div className="flex items-center gap-1">
-                        <IconButton
-                          aria-label="Previous page"
+                  <DataTableFooter className="px-4 sm:px-5">
+                    <DataTablePagination
+                      page={currentPage}
+                      pageCount={pageCount}
+                      onPageChange={(p) => {
+                        setPage(p);
+                        syncUrl({ page: String(p) });
+                      }}
+                      summary={`Showing ${showingFrom} to ${showingTo} of ${data.meta.totalFiltered} leads`}
+                      pageSizeControl={
+                        <MenuSelect
+                          aria-label="Rows per page"
                           size="sm"
-                          disabled={page <= 1}
-                          onClick={() => {
-                            const p = Math.max(1, page - 1);
-                            setPage(p);
-                            syncUrl({ page: String(p) });
+                          value={String(pageSize)}
+                          onChange={(v) => {
+                            const next = Number(v);
+                            if ((PAGE_SIZES as readonly number[]).includes(next)) {
+                              setPageSize(next as (typeof PAGE_SIZES)[number]);
+                              setPage(1);
+                            }
                           }}
-                        >
-                          <ChevronLeft strokeWidth={1.8} />
-                        </IconButton>
-                        {Array.from({ length: Math.min(pageCount, 5) }, (_, i) => {
-                          let n = i + 1;
-                          if (pageCount > 5) {
-                            const start = Math.min(Math.max(page - 2, 1), pageCount - 4);
-                            n = start + i;
-                          }
-                          return (
-                            <button
-                              key={n}
-                              type="button"
-                              onClick={() => {
-                                setPage(n);
-                                syncUrl({ page: String(n) });
-                              }}
-                              className={cn(
-                                "flex h-8 min-w-[32px] items-center justify-center rounded-[8px] px-2 text-[12px] font-medium",
-                                n === page
-                                  ? "bg-sales-brand text-sales-brand-text"
-                                  : "text-sales-text-secondary hover:bg-sales-surface-hover"
-                              )}
-                            >
-                              {n}
-                            </button>
-                          );
-                        })}
-                        <IconButton
-                          aria-label="Next page"
-                          size="sm"
-                          disabled={page >= pageCount}
-                          onClick={() => {
-                            const p = Math.min(pageCount, page + 1);
-                            setPage(p);
-                            syncUrl({ page: String(p) });
-                          }}
-                        >
-                          <ChevronRight strokeWidth={1.8} />
-                        </IconButton>
-                      </div>
-                    </div>
-                  </div>
+                          options={PAGE_SIZES.map((n) => ({
+                            value: String(n),
+                            label: `${n} / page`,
+                          }))}
+                        />
+                      }
+                    />
+                  </DataTableFooter>
                 ) : null}
-              </Card>
+              </DataTableWorkspace>
             </div>
 
             <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
@@ -954,23 +901,21 @@ export function SalesLeadsClient({
 function LeadTableRow({
   row,
   selected,
-  menuOpen,
-  onToggleMenu,
   onOpen,
   onWhatsApp,
   onCall,
   onQuote,
   onTimeline,
+  onOpenPipeline,
 }: {
   row: LeadDirectoryRow;
   selected: boolean;
-  menuOpen: boolean;
-  onToggleMenu: (e: MouseEvent) => void;
   onOpen: () => void;
   onWhatsApp: () => void;
   onCall: () => void;
   onQuote: () => void;
   onTimeline: () => void;
+  onOpenPipeline: () => void;
 }) {
   const phone = formatLeadPhone(row.phone);
   const last = formatLastContact(row.lastContactAt);
@@ -1074,51 +1019,48 @@ function LeadTableRow({
           ) : null}
         </div>
       </DataTableTd>
-      <DataTableTd className="text-right" onClick={(e) => e.stopPropagation()}>
-        <div className="relative inline-flex justify-end">
-          <IconButton aria-label="Row actions" size="sm" onClick={onToggleMenu}>
-            <MoreVertical strokeWidth={1.8} />
-          </IconButton>
-          {menuOpen ? (
-            <div className="absolute right-0 top-9 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
-              <MenuItem icon={<ExternalLink size={14} />} label="Open lead" onClick={onOpen} />
-              <MenuItem icon={<SiWhatsapp size={14} color="#25D366" />} label="Message on WhatsApp" onClick={onWhatsApp} />
-              {phone ? <MenuItem icon={<Phone size={14} />} label="Call" onClick={onCall} /> : null}
-              <MenuItem icon={<FileText size={14} />} label="Create quote" onClick={onQuote} />
-              <MenuItem icon={<Clock3 size={14} />} label="View timeline" onClick={onTimeline} />
-              <Link
-                href={`/sales/call-now?lead=${row.id}`}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
+      <DataTableActionsCell>
+        <div onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu align="end">
+            <DropdownMenuTrigger
+              aria-label="Row actions"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal size={16} strokeWidth={1.8} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuItem icon={<ExternalLink size={14} />} onSelect={onOpen}>
+                Open lead
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                icon={<SiWhatsapp size={14} color="#25D366" />}
+                onSelect={onWhatsApp}
               >
-                <ExternalLink size={14} strokeWidth={1.8} />
+                Message on WhatsApp
+              </DropdownMenuItem>
+              {phone ? (
+                <DropdownMenuItem icon={<Phone size={14} />} onSelect={onCall}>
+                  Call
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuItem icon={<FileText size={14} />} onSelect={onQuote}>
+                Create quote
+              </DropdownMenuItem>
+              <DropdownMenuItem icon={<Clock3 size={14} />} onSelect={onTimeline}>
+                View timeline
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                icon={<ExternalLink size={14} strokeWidth={1.8} />}
+                onSelect={onOpenPipeline}
+              >
                 Open in pipeline
-              </Link>
-            </div>
-          ) : null}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </DataTableTd>
+      </DataTableActionsCell>
     </DataTableRow>
-  );
-}
-
-function MenuItem({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-      onClick={onClick}
-    >
-      {icon}
-      {label}
-    </button>
   );
 }
 

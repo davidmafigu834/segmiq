@@ -15,10 +15,8 @@ import {
   Avatar,
   Badge,
   Button,
-  Checkbox,
   DataTableActionsCell,
   DataTableBody,
-  DataTableCheckboxCell,
   DataTableEl,
   DataTableEmptyPanel,
   DataTableFooter,
@@ -249,9 +247,7 @@ export function CompanyCustomersTableCard({
   emptyKind: "none" | "search" | "filters" | "rows";
   searchQuery: string;
 }) {
-  const [checked, setChecked] = useState<Set<string>>(new Set());
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const allChecked = rows.length > 0 && rows.every((row) => checked.has(row.id));
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(page * pageSize, total);
 
@@ -369,15 +365,6 @@ export function CompanyCustomersTableCard({
             <DataTableEl className="min-w-[940px]">
               <DataTableHead>
                 <tr>
-                  <DataTableTh compact className="w-11">
-                    <Checkbox
-                      checked={allChecked}
-                      aria-label="Select page"
-                      onCheckedChange={(isChecked) =>
-                        setChecked(isChecked ? new Set(rows.map((row) => row.id)) : new Set())
-                      }
-                    />
-                  </DataTableTh>
                   <DataTableTh>Customer</DataTableTh>
                   <DataTableTh>Type</DataTableTh>
                   <DataTableTh>Contact</DataTableTh>
@@ -400,20 +387,6 @@ export function CompanyCustomersTableCard({
                     density="comfortable"
                     onClick={() => onSelect(row.id)}
                   >
-                    <DataTableCheckboxCell compact>
-                      <Checkbox
-                        checked={checked.has(row.id)}
-                        aria-label={`Select ${row.name}`}
-                        onCheckedChange={(isChecked) =>
-                          setChecked((previous) => {
-                            const next = new Set(previous);
-                            if (isChecked) next.add(row.id);
-                            else next.delete(row.id);
-                            return next;
-                          })
-                        }
-                      />
-                    </DataTableCheckboxCell>
                     <DataTableTd className="min-w-[180px]">
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar name={row.name} size="md" />

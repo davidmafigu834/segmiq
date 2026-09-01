@@ -5,8 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
-  ChevronLeft,
-  ChevronRight,
   CircleDollarSign,
   CircleX,
   Columns3,
@@ -23,18 +21,25 @@ import {
   Button,
   Card,
   CardContent,
-  DataTable,
+  DataTableActionsCell,
   DataTableBody,
   DataTableEl,
   DataTableFilteredEmpty,
+  DataTableFooter,
   DataTableHead,
+  DataTablePagination,
   DataTableRow,
+  DataTableScroll,
   DataTableTd,
   DataTableTh,
+  DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   EmptyState,
   ErrorState,
   FilteredEmptyState,
-  IconButton,
   MenuSelect,
   PipelineStageBadge,
   SearchInput,
@@ -141,7 +146,6 @@ export function WonLostClient() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(10);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [menuId, setMenuId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [data, setData] = useState<WonLostPayload | null>(null);
@@ -263,14 +267,6 @@ export function WonLostClient() {
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, period, source, pageSize]);
-
-  useEffect(() => {
-    const onDoc = () => setMenuId(null);
-    if (menuId) {
-      document.addEventListener("click", onDoc);
-      return () => document.removeEventListener("click", onDoc);
-    }
-  }, [menuId]);
 
   return (
     <div className="w-full space-y-4">
@@ -491,90 +487,75 @@ export function WonLostClient() {
           {/* Main grid */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
             <div className="min-w-0 space-y-4">
-              <Card className="overflow-hidden">
+              <DataTableWorkspace className="overflow-hidden">
                 <div className="flex items-center justify-between border-b border-sales-border-subtle px-4 py-3">
                   <h2 className="text-[14px] font-semibold text-sales-text-primary">Closed deals</h2>
                   {loading ? <Skeleton className="h-4 w-16" /> : null}
                 </div>
 
-                {/* Desktop table */}
-                <div className="hidden md:block">
-                  <DataTable className="rounded-none border-0 shadow-none">
-                    <DataTableEl>
-                      <DataTableHead>
-                        <tr>
-                          <DataTableTh>Customer</DataTableTh>
-                          <DataTableTh className="hidden min-[1366px]:table-cell">Project</DataTableTh>
-                          <DataTableTh>Outcome</DataTableTh>
-                          <DataTableTh className="text-right">Value</DataTableTh>
-                          <DataTableTh>Close date</DataTableTh>
-                          <DataTableTh className="hidden lg:table-cell">Source</DataTableTh>
-                          <DataTableTh className="hidden xl:table-cell">Reason</DataTableTh>
-                          <DataTableTh className="w-12 text-right">
-                            <span className="sr-only">Actions</span>
-                          </DataTableTh>
-                        </tr>
-                      </DataTableHead>
-                      <DataTableBody>
-                        {periodEmpty || filteredDeals.length === 0 ? (
-                          <DataTableFilteredEmpty
-                            colSpan={8}
-                            title={
-                              debouncedSearch.trim()
-                                ? undefined
-                                : outcome === "won"
-                                  ? "No won deals for this period"
-                                  : outcome === "lost"
-                                    ? "No lost deals for this period"
-                                    : periodEmpty
-                                      ? "No closed deals for this period"
-                                      : undefined
-                            }
-                            searchQuery={debouncedSearch.trim() || undefined}
-                            onClearSearch={
-                              debouncedSearch.trim() ? () => setSearch("") : undefined
-                            }
-                            onClearFilters={hasTableFilters ? clearAllFilters : undefined}
-                            description={
-                              debouncedSearch.trim()
-                                ? "Try another customer, project or reason."
-                                : outcome === "won"
-                                  ? "Keep working your active opportunities."
-                                  : outcome === "lost"
-                                    ? "No loss analysis is available for the selected period."
-                                    : "Try a wider date range or different source."
-                            }
+                <DataTableScroll className="hidden md:block">
+                  <DataTableEl>
+                    <DataTableHead>
+                      <tr>
+                        <DataTableTh>Customer</DataTableTh>
+                        <DataTableTh className="hidden min-[1366px]:table-cell">Project</DataTableTh>
+                        <DataTableTh>Outcome</DataTableTh>
+                        <DataTableTh className="text-right">Value</DataTableTh>
+                        <DataTableTh>Close date</DataTableTh>
+                        <DataTableTh className="hidden lg:table-cell">Source</DataTableTh>
+                        <DataTableTh className="hidden xl:table-cell">Reason</DataTableTh>
+                        <DataTableTh className="w-12 text-right">
+                          <span className="sr-only">Actions</span>
+                        </DataTableTh>
+                      </tr>
+                    </DataTableHead>
+                    <DataTableBody>
+                      {periodEmpty || filteredDeals.length === 0 ? (
+                        <DataTableFilteredEmpty
+                          colSpan={8}
+                          title={
+                            debouncedSearch.trim()
+                              ? undefined
+                              : outcome === "won"
+                                ? "No won deals for this period"
+                                : outcome === "lost"
+                                  ? "No lost deals for this period"
+                                  : periodEmpty
+                                    ? "No closed deals for this period"
+                                    : undefined
+                          }
+                          searchQuery={debouncedSearch.trim() || undefined}
+                          onClearSearch={
+                            debouncedSearch.trim() ? () => setSearch("") : undefined
+                          }
+                          onClearFilters={hasTableFilters ? clearAllFilters : undefined}
+                          description={
+                            debouncedSearch.trim()
+                              ? "Try another customer, project or reason."
+                              : outcome === "won"
+                                ? "Keep working your active opportunities."
+                                : outcome === "lost"
+                                  ? "No loss analysis is available for the selected period."
+                                  : "Try a wider date range or different source."
+                          }
+                        />
+                      ) : (
+                        pageRows.map((deal) => (
+                          <DealTableRow
+                            key={deal.id}
+                            deal={deal}
+                            currency={currency}
+                            selected={selectedId === deal.id}
+                            onSelect={() => setSelectedId(deal.id)}
+                            onViewLead={() => openLeadPanel(deal.id)}
+                            onOpenTimeline={() => openLeadPanel(deal.id, "timeline")}
                           />
-                        ) : (
-                          pageRows.map((deal) => (
-                            <DealTableRow
-                              key={deal.id}
-                              deal={deal}
-                              currency={currency}
-                              selected={selectedId === deal.id}
-                              menuOpen={menuId === deal.id}
-                              onSelect={() => setSelectedId(deal.id)}
-                              onToggleMenu={(e) => {
-                                e.stopPropagation();
-                                setMenuId((id) => (id === deal.id ? null : deal.id));
-                              }}
-                              onViewLead={() => {
-                                setMenuId(null);
-                                openLeadPanel(deal.id);
-                              }}
-                              onOpenTimeline={() => {
-                                setMenuId(null);
-                                openLeadPanel(deal.id, "timeline");
-                              }}
-                            />
-                          ))
-                        )}
-                      </DataTableBody>
-                    </DataTableEl>
-                  </DataTable>
-                </div>
+                        ))
+                      )}
+                    </DataTableBody>
+                  </DataTableEl>
+                </DataTableScroll>
 
-                {/* Mobile cards */}
                 <div className="space-y-3 p-3 md:hidden">
                   {filteredDeals.length === 0 ? (
                     <FilteredEmptyState
@@ -620,62 +601,29 @@ export function WonLostClient() {
                 </div>
 
                 {filteredDeals.length > 0 ? (
-                  <div className="flex flex-col gap-3 border-t border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-[12px] tabular-nums text-sales-text-secondary">
-                      Showing {showingFrom} to {showingTo} of {filteredDeals.length} deals
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <IconButton
-                        aria-label="Previous page"
-                        size="sm"
-                        disabled={pageSafe <= 1}
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      >
-                        <ChevronLeft strokeWidth={1.8} />
-                      </IconButton>
-                      {Array.from({ length: Math.min(pageCount, 5) }).map((_, i) => {
-                        const n = i + 1;
-                        const active = n === pageSafe;
-                        return (
-                          <button
-                            key={n}
-                            type="button"
-                            onClick={() => setPage(n)}
-                            className={cn(
-                              "inline-flex h-8 min-w-8 items-center justify-center rounded-[8px] text-[12px] font-semibold tabular-nums",
-                              active
-                                ? "bg-sales-brand text-sales-brand-text"
-                                : "text-sales-text-secondary hover:bg-sales-surface-hover"
-                            )}
-                          >
-                            {n}
-                          </button>
-                        );
-                      })}
-                      <IconButton
-                        aria-label="Next page"
-                        size="sm"
-                        disabled={pageSafe >= pageCount}
-                        onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-                      >
-                        <ChevronRight strokeWidth={1.8} />
-                      </IconButton>
-                      <MenuSelect
-                        aria-label="Rows per page"
-                        size="sm"
-                        align="right"
-                        className="ml-1"
-                        value={String(pageSize) as "10" | "20" | "50"}
-                        onChange={(v) => setPageSize(Number(v) as (typeof PAGE_SIZES)[number])}
-                        options={PAGE_SIZES.map((n) => ({
-                          value: String(n) as "10" | "20" | "50",
-                          label: `${n} / page`,
-                        }))}
-                      />
-                    </div>
-                  </div>
+                  <DataTableFooter>
+                    <DataTablePagination
+                      page={pageSafe}
+                      pageCount={pageCount}
+                      onPageChange={setPage}
+                      summary={`Showing ${showingFrom} to ${showingTo} of ${filteredDeals.length} deals`}
+                      pageSizeControl={
+                        <MenuSelect
+                          aria-label="Rows per page"
+                          size="sm"
+                          align="right"
+                          value={String(pageSize) as "10" | "20" | "50"}
+                          onChange={(v) => setPageSize(Number(v) as (typeof PAGE_SIZES)[number])}
+                          options={PAGE_SIZES.map((n) => ({
+                            value: String(n) as "10" | "20" | "50",
+                            label: `${n} / page`,
+                          }))}
+                        />
+                      }
+                    />
+                  </DataTableFooter>
                 ) : null}
-              </Card>
+              </DataTableWorkspace>
 
               <SelectedDealSnapshot
                 deal={selected}
@@ -768,18 +716,14 @@ function DealTableRow({
   deal,
   currency,
   selected,
-  menuOpen,
   onSelect,
-  onToggleMenu,
   onViewLead,
   onOpenTimeline,
 }: {
   deal: ClosedDealRow;
   currency: string;
   selected: boolean;
-  menuOpen: boolean;
   onSelect: () => void;
-  onToggleMenu: (e: React.MouseEvent) => void;
   onViewLead: () => void;
   onOpenTimeline: () => void;
 }) {
@@ -835,33 +779,25 @@ function DealTableRow({
           {formatOutcomeReason(deal.reason)}
         </span>
       </DataTableTd>
-      <DataTableTd className="text-right" onClick={(e) => e.stopPropagation()}>
-        <div className="relative inline-flex justify-end">
-          <IconButton aria-label="Row actions" size="sm" onClick={onToggleMenu}>
-            <MoreVertical strokeWidth={1.8} />
-          </IconButton>
-          {menuOpen ? (
-            <div className="absolute right-0 top-9 z-30 w-44 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                onClick={onViewLead}
-              >
-                <ExternalLink size={14} strokeWidth={1.8} />
-                View lead
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-                onClick={onOpenTimeline}
-              >
-                <History size={14} strokeWidth={1.8} />
-                Open timeline
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </DataTableTd>
+      <DataTableActionsCell>
+        <DropdownMenu align="end">
+          <DropdownMenuTrigger
+            aria-label="Row actions"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreVertical size={16} strokeWidth={1.8} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-44">
+            <DropdownMenuItem icon={<ExternalLink size={14} strokeWidth={1.8} />} onSelect={onViewLead}>
+              View lead
+            </DropdownMenuItem>
+            <DropdownMenuItem icon={<History size={14} strokeWidth={1.8} />} onSelect={onOpenTimeline}>
+              Open timeline
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </DataTableActionsCell>
     </DataTableRow>
   );
 }

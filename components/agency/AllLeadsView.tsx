@@ -17,7 +17,8 @@ import {
 import { isLeadSlow } from "@/lib/leadStatus";
 import { formatCurrencyUsd, formatTimeAgo } from "@/lib/format";
 import { Sheet } from "@/components/ui/Sheet";
-import { Button } from "@/components/ui/Button";
+import { Button as UiButton } from "@/components/ui/Button";
+import { DataTableSelectionBar, Button } from "@/components/sales/ui";
 
 type SalespersonOpt = { id: string; name: string; client_id: string | null };
 
@@ -389,7 +390,7 @@ export function AllLeadsView({
             </p>
           </div>
           <div className="flex shrink-0 gap-2 self-start sm:self-auto">
-            <Button
+            <UiButton
               variant="secondary"
               size="sm"
               onClick={handleExportCsv}
@@ -397,8 +398,8 @@ export function AllLeadsView({
             >
               <Download className="h-4 w-4" />
               Export CSV
-            </Button>
-            <Button
+            </UiButton>
+            <UiButton
               variant="secondary"
               size="icon"
               onClick={handleExportCsv}
@@ -406,7 +407,7 @@ export function AllLeadsView({
               aria-label="Export CSV"
             >
               <Download className="h-4 w-4" />
-            </Button>
+            </UiButton>
           </div>
         </div>
       </header>
@@ -813,9 +814,9 @@ export function AllLeadsView({
           <SearchX className="mb-4 h-10 w-10 text-ink-tertiary" strokeWidth={1.25} />
           <p className="font-medium text-ink-primary">No leads match your filters</p>
           <p className="mt-2 max-w-sm text-sm text-ink-secondary">Try adjusting your filters or clearing them.</p>
-          <Button variant="secondary" size="sm" className="mt-6" onClick={clearAllFilters}>
+          <UiButton variant="secondary" size="sm" className="mt-6" onClick={clearAllFilters}>
             Clear filters
-          </Button>
+          </UiButton>
         </div>
       ) : null}
 
@@ -1023,26 +1024,18 @@ export function AllLeadsView({
         </div>
       ) : null}
 
-      {selectedIds.size > 0 ? (
-        <div className="safe-bottom fixed bottom-20 left-1/2 z-40 flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 flex-col items-stretch gap-2 rounded-2xl border border-border bg-surface-sidebar px-4 py-3 text-[var(--text-on-dark)] shadow-lg layout:bottom-6 sm:w-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 sm:rounded-full sm:px-5">
-          <span className="text-center text-sm sm:text-left">{selectedIds.size} selected</span>
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            <button type="button" className="min-h-11 flex-1 rounded-md px-3 text-sm hover:bg-white/10 sm:min-h-0 sm:flex-none" onClick={() => setReassignOpen(true)}>
-              Reassign
-            </button>
-            <button type="button" className="min-h-11 flex-1 rounded-md px-3 text-sm hover:bg-white/10 sm:min-h-0 sm:flex-none" onClick={handleBulkExport}>
-              Export selected
-            </button>
-            <button
-              type="button"
-              className="w-full text-xs text-[var(--text-on-dark-dim)] hover:text-[var(--text-on-dark)] sm:w-auto"
-              onClick={() => setSelectedIds(new Set())}
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <DataTableSelectionBar
+        count={selectedIds.size}
+        onClear={() => setSelectedIds(new Set())}
+        className="safe-bottom fixed bottom-20 left-1/2 z-40 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 rounded-2xl border-border bg-surface-sidebar shadow-lg layout:bottom-6 sm:w-auto sm:max-w-none sm:rounded-full border-0"
+      >
+        <Button variant="secondary" size="sm" onClick={() => setReassignOpen(true)}>
+          Reassign
+        </Button>
+        <Button variant="secondary" size="sm" onClick={handleBulkExport}>
+          Export selected
+        </Button>
+      </DataTableSelectionBar>
 
       {reassignOpen ? (
         <div className="fixed inset-0 z-50 flex flex-col bg-surface-overlay md:items-center md:justify-center md:px-4 md:py-8">

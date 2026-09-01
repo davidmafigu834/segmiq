@@ -1,11 +1,13 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import {
   Badge,
   DataTableEl,
+  DataTableFooter,
   DataTableHead,
   DataTableBody,
+  DataTablePagination,
   DataTableRow,
   DataTableTh,
   DataTableTd,
@@ -18,7 +20,6 @@ import { invoiceStatusLabel, invoiceStatusTone } from "@/lib/billing/status";
 import { COMPANY_BILLING_INVOICE_PAGE_SIZE } from "@/lib/billing/company-billing-types";
 import type { CompanyBillingInvoice } from "@/lib/billing/company-billing-types";
 import type { BadgeTone } from "@/components/sales/ui";
-import { cn } from "@/lib/ui/cn";
 
 function statusTone(status: string): BadgeTone {
   const tone = invoiceStatusTone(status);
@@ -50,17 +51,11 @@ export function BillingInvoiceTable({
   const slice = invoices.slice((safePage - 1) * pageSize, safePage * pageSize);
   const from = total === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const to = Math.min(safePage * pageSize, total);
-  const pages = Array.from({ length: Math.min(pageCount, 3) }, (_, i) => {
-    if (pageCount <= 3) return i + 1;
-    if (safePage <= 2) return i + 1;
-    if (safePage >= pageCount - 1) return pageCount - 2 + i;
-    return safePage - 1 + i;
-  });
 
   return (
     <section
       id="billing-invoices"
-      className="sd-card overflow-hidden"
+      className="sd-card overflow-hidden flex min-w-0 flex-col"
       data-course-target="billing-invoices"
     >
       <header className="flex items-center gap-2 px-5 py-4">
@@ -182,45 +177,14 @@ export function BillingInvoiceTable({
             ))}
           </ul>
 
-          <footer className="flex min-h-[52px] flex-col items-center justify-between gap-3 border-t border-sales-border-subtle px-4 py-2.5 sm:flex-row">
-            <p className="text-[11px] text-sales-text-muted">
-              Showing {from}–{to} of {total} invoices
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-label="Previous page"
-                disabled={safePage <= 1}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover disabled:opacity-35"
-                onClick={() => onPageChange(Math.max(1, safePage - 1))}
-              >
-                <ChevronLeft size={15} />
-              </button>
-              {pages.map((n) => (
-                <button
-                  type="button"
-                  key={n}
-                  className={cn(
-                    "relative inline-flex h-8 min-w-8 items-center justify-center rounded-[8px] px-2 text-[11px] font-medium text-sales-text-secondary",
-                    safePage === n &&
-                      "bg-sales-surface-subtle font-semibold text-sales-text-primary after:absolute after:inset-x-1 after:bottom-0 after:h-0.5 after:rounded-full after:bg-sales-brand"
-                  )}
-                  onClick={() => onPageChange(n)}
-                >
-                  {n}
-                </button>
-              ))}
-              <button
-                type="button"
-                aria-label="Next page"
-                disabled={safePage >= pageCount}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover disabled:opacity-35"
-                onClick={() => onPageChange(Math.min(pageCount, safePage + 1))}
-              >
-                <ChevronRight size={15} />
-              </button>
-            </div>
-          </footer>
+          <DataTableFooter>
+            <DataTablePagination
+              page={safePage}
+              pageCount={pageCount}
+              onPageChange={onPageChange}
+              summary={`Showing ${from}–${to} of ${total} invoices`}
+            />
+          </DataTableFooter>
         </>
       )}
     </section>

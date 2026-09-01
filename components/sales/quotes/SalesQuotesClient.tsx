@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  ChevronLeft,
-  ChevronRight,
   CircleCheck,
   CircleX,
   Clock3,
@@ -14,7 +12,7 @@ import {
   FilePlus2,
   FileText,
   ListFilter,
-  MoreVertical,
+  MoreHorizontal,
   Pencil,
   Send,
 } from "lucide-react";
@@ -23,18 +21,25 @@ import {
   Button,
   Card,
   CardContent,
-  DataTable,
+  DataTableActionsCell,
   DataTableBody,
   DataTableEl,
   DataTableFilteredEmpty,
+  DataTableFooter,
   DataTableHead,
+  DataTablePagination,
   DataTableRow,
+  DataTableScroll,
   DataTableTd,
   DataTableTh,
+  DataTableWorkspace,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   EmptyState,
   ErrorState,
   FilteredEmptyState,
-  IconButton,
   MenuSelect,
   SearchInput,
   Skeleton,
@@ -148,7 +153,6 @@ export function SalesQuotesClient() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(10);
-  const [menuId, setMenuId] = useState<string | null>(null);
 
   const [data, setData] = useState<QuotesPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -216,14 +220,6 @@ export function SalesQuotesClient() {
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, period, source, status, pageSize, needsFollowUpOnly]);
-
-  useEffect(() => {
-    const onDoc = () => setMenuId(null);
-    if (menuId) {
-      document.addEventListener("click", onDoc);
-      return () => document.removeEventListener("click", onDoc);
-    }
-  }, [menuId]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -710,79 +706,72 @@ export function SalesQuotesClient() {
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
             <div className="min-w-0 space-y-4">
-              <Card className="overflow-hidden">
+              <DataTableWorkspace className="min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between border-b border-sales-border-subtle px-4 py-3">
                   <h2 className="text-[14px] font-semibold text-sales-text-primary">Quotations</h2>
                   {loading ? <Skeleton className="h-4 w-16" /> : null}
                 </div>
 
-                <div className="hidden md:block">
-                  <DataTable className="rounded-none border-0 shadow-none">
-                    <DataTableEl>
-                      <DataTableHead>
-                        <tr>
-                          <DataTableTh>Quote</DataTableTh>
-                          <DataTableTh>Customer</DataTableTh>
-                          <DataTableTh className="hidden min-[1366px]:table-cell">Project</DataTableTh>
-                          <DataTableTh className="text-right">Amount</DataTableTh>
-                          <DataTableTh>Status</DataTableTh>
-                          <DataTableTh className="hidden lg:table-cell">Sent on</DataTableTh>
-                          <DataTableTh className="hidden xl:table-cell">Valid until</DataTableTh>
-                          <DataTableTh className="w-12 text-right">
-                            <span className="sr-only">Actions</span>
-                          </DataTableTh>
-                        </tr>
-                      </DataTableHead>
-                      <DataTableBody>
-                        {periodEmpty || filtered.length === 0 ? (
-                          <DataTableFilteredEmpty
-                            colSpan={8}
-                            title={
-                              debouncedSearch.trim()
-                                ? undefined
-                                : needsFollowUpOnly
-                                  ? "No quotations need follow-up"
-                                  : periodEmpty
-                                    ? "No quotations for this period"
-                                    : undefined
-                            }
-                            searchQuery={debouncedSearch.trim() || undefined}
-                            onClearSearch={
-                              debouncedSearch.trim() ? () => setSearch("") : undefined
-                            }
-                            onClearFilters={hasTableFilters ? clearAllFilters : undefined}
-                            description={
-                              debouncedSearch.trim()
-                                ? "Try another customer, quote number or project."
-                                : "Try another status, date range or customer."
-                            }
+                <DataTableScroll className="hidden md:block">
+                  <DataTableEl>
+                    <DataTableHead>
+                      <tr>
+                        <DataTableTh>Quote</DataTableTh>
+                        <DataTableTh>Customer</DataTableTh>
+                        <DataTableTh className="hidden min-[1366px]:table-cell">Project</DataTableTh>
+                        <DataTableTh className="text-right">Amount</DataTableTh>
+                        <DataTableTh>Status</DataTableTh>
+                        <DataTableTh className="hidden lg:table-cell">Sent on</DataTableTh>
+                        <DataTableTh className="hidden xl:table-cell">Valid until</DataTableTh>
+                        <DataTableTh className="w-12">
+                          <span className="sr-only">Actions</span>
+                        </DataTableTh>
+                      </tr>
+                    </DataTableHead>
+                    <DataTableBody>
+                      {periodEmpty || filtered.length === 0 ? (
+                        <DataTableFilteredEmpty
+                          colSpan={8}
+                          title={
+                            debouncedSearch.trim()
+                              ? undefined
+                              : needsFollowUpOnly
+                                ? "No quotations need follow-up"
+                                : periodEmpty
+                                  ? "No quotations for this period"
+                                  : undefined
+                          }
+                          searchQuery={debouncedSearch.trim() || undefined}
+                          onClearSearch={
+                            debouncedSearch.trim() ? () => setSearch("") : undefined
+                          }
+                          onClearFilters={hasTableFilters ? clearAllFilters : undefined}
+                          description={
+                            debouncedSearch.trim()
+                              ? "Try another customer, quote number or project."
+                              : "Try another status, date range or customer."
+                          }
+                        />
+                      ) : (
+                        pageRows.map((quote) => (
+                          <QuoteTableRow
+                            key={quote.id}
+                            quote={quote}
+                            onOpen={() => void openQuote(quote.id)}
+                            onDownload={() => void downloadPdf(quote.id, quote.quoteNumber)}
+                            onCopyLink={() => copyLink(quote.publicToken)}
+                            onDuplicate={() => void duplicateQuote(quote.id)}
+                            onRevise={() => void reviseQuote(quote.id)}
+                            onMarkAccepted={() => void setQuoteStatus(quote.id, "accepted")}
+                            onMarkDeclined={() => void setQuoteStatus(quote.id, "rejected")}
+                            onOpenLead={() => openLeadPanel(quote.leadId)}
+                            onOpenCustomer={() => openLeadPanel(quote.leadId, "details")}
                           />
-                        ) : (
-                          pageRows.map((quote) => (
-                            <QuoteTableRow
-                              key={quote.id}
-                              quote={quote}
-                              menuOpen={menuId === quote.id}
-                              onToggleMenu={(e) => {
-                                e.stopPropagation();
-                                setMenuId((id) => (id === quote.id ? null : quote.id));
-                              }}
-                              onOpen={() => void openQuote(quote.id)}
-                              onDownload={() => void downloadPdf(quote.id, quote.quoteNumber)}
-                              onCopyLink={() => copyLink(quote.publicToken)}
-                              onDuplicate={() => void duplicateQuote(quote.id)}
-                              onRevise={() => void reviseQuote(quote.id)}
-                              onMarkAccepted={() => void setQuoteStatus(quote.id, "accepted")}
-                              onMarkDeclined={() => void setQuoteStatus(quote.id, "rejected")}
-                              onOpenLead={() => openLeadPanel(quote.leadId)}
-                              onOpenCustomer={() => openLeadPanel(quote.leadId, "details")}
-                            />
-                          ))
-                        )}
-                      </DataTableBody>
-                    </DataTableEl>
-                  </DataTable>
-                </div>
+                        ))
+                      )}
+                    </DataTableBody>
+                  </DataTableEl>
+                </DataTableScroll>
 
                 {/* Mobile cards */}
                 <div className="space-y-3 p-3 md:hidden">
@@ -817,70 +806,33 @@ export function SalesQuotesClient() {
                 </div>
 
                 {filtered.length > 0 ? (
-                  <div className="flex flex-col gap-3 border-t border-sales-border-subtle px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-[12px] text-sales-text-muted">
-                      Showing {showingFrom} to {showingTo} of {filtered.length} quotes
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <MenuSelect
-                        aria-label="Rows per page"
-                        size="sm"
-                        value={String(pageSize)}
-                        onChange={(v) => {
-                          const next = Number(v);
-                          if ((PAGE_SIZES as readonly number[]).includes(next)) {
-                            setPageSize(next as (typeof PAGE_SIZES)[number]);
-                          }
-                        }}
-                        options={PAGE_SIZES.map((n) => ({
-                          value: String(n),
-                          label: `${n} / page`,
-                        }))}
-                      />
-                      <div className="flex items-center gap-1">
-                        <IconButton
-                          aria-label="Previous page"
+                  <DataTableFooter className="px-4 sm:px-5">
+                    <DataTablePagination
+                      page={pageSafe}
+                      pageCount={pageCount}
+                      onPageChange={setPage}
+                      summary={`Showing ${showingFrom} to ${showingTo} of ${filtered.length} quotes`}
+                      pageSizeControl={
+                        <MenuSelect
+                          aria-label="Rows per page"
                           size="sm"
-                          disabled={pageSafe <= 1}
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        >
-                          <ChevronLeft strokeWidth={1.8} />
-                        </IconButton>
-                        {Array.from({ length: Math.min(pageCount, 5) }, (_, i) => {
-                          let n = i + 1;
-                          if (pageCount > 5) {
-                            const start = Math.min(Math.max(pageSafe - 2, 1), pageCount - 4);
-                            n = start + i;
-                          }
-                          return (
-                            <button
-                              key={n}
-                              type="button"
-                              onClick={() => setPage(n)}
-                              className={cn(
-                                "flex h-8 min-w-[32px] items-center justify-center rounded-[8px] px-2 text-[12px] font-medium",
-                                n === pageSafe
-                                  ? "bg-sales-brand text-sales-brand-text"
-                                  : "text-sales-text-secondary hover:bg-sales-surface-hover"
-                              )}
-                            >
-                              {n}
-                            </button>
-                          );
-                        })}
-                        <IconButton
-                          aria-label="Next page"
-                          size="sm"
-                          disabled={pageSafe >= pageCount}
-                          onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-                        >
-                          <ChevronRight strokeWidth={1.8} />
-                        </IconButton>
-                      </div>
-                    </div>
-                  </div>
+                          value={String(pageSize)}
+                          onChange={(v) => {
+                            const next = Number(v);
+                            if ((PAGE_SIZES as readonly number[]).includes(next)) {
+                              setPageSize(next as (typeof PAGE_SIZES)[number]);
+                            }
+                          }}
+                          options={PAGE_SIZES.map((n) => ({
+                            value: String(n),
+                            label: `${n} / page`,
+                          }))}
+                        />
+                      }
+                    />
+                  </DataTableFooter>
                 ) : null}
-              </Card>
+              </DataTableWorkspace>
             </div>
 
             <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
@@ -937,10 +889,8 @@ export function SalesQuotesClient() {
   );
 }
 
-function QuoteTableRow({
+function QuoteRowMenu({
   quote,
-  menuOpen,
-  onToggleMenu,
   onOpen,
   onDownload,
   onCopyLink,
@@ -952,8 +902,98 @@ function QuoteTableRow({
   onOpenCustomer,
 }: {
   quote: QuoteListRow;
-  menuOpen: boolean;
-  onToggleMenu: (e: MouseEvent) => void;
+  onOpen: () => void;
+  onDownload: () => void;
+  onCopyLink: () => void;
+  onDuplicate: () => void;
+  onRevise: () => void;
+  onMarkAccepted: () => void;
+  onMarkDeclined: () => void;
+  onOpenLead: () => void;
+  onOpenCustomer: () => void;
+}) {
+  const canRevise =
+    quote.effectiveStatus === "sent" ||
+    quote.effectiveStatus === "viewed" ||
+    quote.effectiveStatus === "rejected" ||
+    quote.effectiveStatus === "expired";
+  const canMarkOutcome =
+    quote.effectiveStatus === "sent" || quote.effectiveStatus === "viewed";
+
+  return (
+    <div onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu align="end">
+        <DropdownMenuTrigger
+          aria-label="Row actions"
+          title="Row actions"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-[8px] text-sales-text-muted hover:bg-sales-surface-hover hover:text-sales-text-primary"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MoreHorizontal size={16} strokeWidth={1.8} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-48">
+          <DropdownMenuItem icon={<ExternalLink size={14} />} onSelect={onOpen}>
+            View quote
+          </DropdownMenuItem>
+          {quote.effectiveStatus === "draft" ? (
+            <DropdownMenuItem icon={<Pencil size={14} />} onSelect={onOpen}>
+              Edit quote
+            </DropdownMenuItem>
+          ) : null}
+          {quote.effectiveStatus === "draft" ? (
+            <DropdownMenuItem icon={<Send size={14} />} onSelect={onOpen}>
+              Send quote
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem icon={<Download size={14} />} onSelect={onDownload}>
+            Download PDF
+          </DropdownMenuItem>
+          <DropdownMenuItem icon={<Copy size={14} />} onSelect={onCopyLink}>
+            Copy link
+          </DropdownMenuItem>
+          {canRevise ? (
+            <DropdownMenuItem icon={<FilePlus2 size={14} />} onSelect={onRevise}>
+              Create revised quote
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem icon={<Copy size={14} />} onSelect={onDuplicate}>
+            Duplicate
+          </DropdownMenuItem>
+          {canMarkOutcome ? (
+            <>
+              <DropdownMenuItem icon={<CircleCheck size={14} />} onSelect={onMarkAccepted}>
+                Mark accepted
+              </DropdownMenuItem>
+              <DropdownMenuItem icon={<CircleX size={14} />} onSelect={onMarkDeclined}>
+                Mark declined
+              </DropdownMenuItem>
+            </>
+          ) : null}
+          <DropdownMenuItem icon={<ExternalLink size={14} />} onSelect={onOpenLead}>
+            Open lead
+          </DropdownMenuItem>
+          <DropdownMenuItem icon={<ExternalLink size={14} />} onSelect={onOpenCustomer}>
+            Open customer
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+function QuoteTableRow({
+  quote,
+  onOpen,
+  onDownload,
+  onCopyLink,
+  onDuplicate,
+  onRevise,
+  onMarkAccepted,
+  onMarkDeclined,
+  onOpenLead,
+  onOpenCustomer,
+}: {
+  quote: QuoteListRow;
   onOpen: () => void;
   onDownload: () => void;
   onCopyLink: () => void;
@@ -967,13 +1007,6 @@ function QuoteTableRow({
   const validity = formatQuoteValidity(quote.validUntil, {
     status: quote.effectiveStatus,
   });
-  const canRevise =
-    quote.effectiveStatus === "sent" ||
-    quote.effectiveStatus === "viewed" ||
-    quote.effectiveStatus === "rejected" ||
-    quote.effectiveStatus === "expired";
-  const canMarkOutcome =
-    quote.effectiveStatus === "sent" || quote.effectiveStatus === "viewed";
 
   return (
     <DataTableRow className="h-[64px] cursor-pointer" onClick={onOpen}>
@@ -1052,60 +1085,21 @@ function QuoteTableRow({
           ) : null}
         </div>
       </DataTableTd>
-      <DataTableTd className="text-right" onClick={(e) => e.stopPropagation()}>
-        <div className="relative inline-flex justify-end">
-          <IconButton aria-label="Row actions" size="sm" onClick={onToggleMenu}>
-            <MoreVertical strokeWidth={1.8} />
-          </IconButton>
-          {menuOpen ? (
-            <div className="absolute right-0 top-9 z-30 w-48 overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.10)]">
-              <MenuItem icon={<ExternalLink size={14} />} label="View quote" onClick={onOpen} />
-              {quote.effectiveStatus === "draft" ? (
-                <MenuItem icon={<Pencil size={14} />} label="Edit quote" onClick={onOpen} />
-              ) : null}
-              {quote.effectiveStatus === "draft" ? (
-                <MenuItem icon={<Send size={14} />} label="Send quote" onClick={onOpen} />
-              ) : null}
-              <MenuItem icon={<Download size={14} />} label="Download PDF" onClick={onDownload} />
-              <MenuItem icon={<Copy size={14} />} label="Copy link" onClick={onCopyLink} />
-              {canRevise ? (
-                <MenuItem icon={<FilePlus2 size={14} />} label="Create revised quote" onClick={onRevise} />
-              ) : null}
-              <MenuItem icon={<Copy size={14} />} label="Duplicate" onClick={onDuplicate} />
-              {canMarkOutcome ? (
-                <>
-                  <MenuItem icon={<CircleCheck size={14} />} label="Mark accepted" onClick={onMarkAccepted} />
-                  <MenuItem icon={<CircleX size={14} />} label="Mark declined" onClick={onMarkDeclined} />
-                </>
-              ) : null}
-              <MenuItem icon={<ExternalLink size={14} />} label="Open lead" onClick={onOpenLead} />
-              <MenuItem icon={<ExternalLink size={14} />} label="Open customer" onClick={onOpenCustomer} />
-            </div>
-          ) : null}
-        </div>
-      </DataTableTd>
+      <DataTableActionsCell>
+        <QuoteRowMenu
+          quote={quote}
+          onOpen={onOpen}
+          onDownload={onDownload}
+          onCopyLink={onCopyLink}
+          onDuplicate={onDuplicate}
+          onRevise={onRevise}
+          onMarkAccepted={onMarkAccepted}
+          onMarkDeclined={onMarkDeclined}
+          onOpenLead={onOpenLead}
+          onOpenCustomer={onOpenCustomer}
+        />
+      </DataTableActionsCell>
     </DataTableRow>
-  );
-}
-
-function MenuItem({
-  icon,
-  label,
-  onClick,
-}: {
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-sales-text-primary hover:bg-sales-surface-hover"
-      onClick={onClick}
-    >
-      {icon}
-      {label}
-    </button>
   );
 }
 

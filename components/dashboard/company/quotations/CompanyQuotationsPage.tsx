@@ -336,6 +336,7 @@ export function CompanyQuotationsPage({
       onOpenCustomer={openCustomer}
       onOpenWorkspace={openWorkspace}
       onExportSelected={() => downloadCsv(selectedRows, "selected")}
+      onClearSelection={() => setSelectedIds(new Set())}
       onClearSearch={() => setSearch("")}
       onClear={() => {
         setSearch("");

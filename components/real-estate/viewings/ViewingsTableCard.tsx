@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  CalendarClock,
-  ChevronLeft,
-  ChevronRight,
-  MoreHorizontal,
-  Phone,
-} from "lucide-react";
+import { CalendarClock, MoreHorizontal, Phone } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 import { cn } from "@/lib/ui/cn";
 import {
@@ -15,7 +9,9 @@ import {
   Button,
   DataTableBody,
   DataTableEl,
+  DataTableFooter,
   DataTableHead,
+  DataTablePagination,
   DataTableRow,
   DataTableTd,
   DataTableTh,
@@ -111,53 +107,6 @@ function RowMenu({
           ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
-  );
-}
-
-function PageButtons({ page, pageCount, onChange }: { page: number; pageCount: number; onChange: (page: number) => void }) {
-  const visible = Array.from({ length: pageCount }, (_, index) => index + 1).filter(
-    (value) => pageCount <= 5 || value === 1 || value === pageCount || Math.abs(value - page) <= 1
-  );
-  return (
-    <div className="flex items-center gap-1">
-      <button
-        type="button"
-        aria-label="Previous page"
-        disabled={page <= 1}
-        className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-sales-border text-sales-text-secondary disabled:opacity-35"
-        onClick={() => onChange(page - 1)}
-      >
-        <ChevronLeft size={14} />
-      </button>
-      {visible.map((value, index) => (
-        <span key={value} className="contents">
-          {index > 0 && value - visible[index - 1]! > 1 ? <span className="px-1 text-sales-text-muted">…</span> : null}
-          <button
-            type="button"
-            aria-label={`Page ${value}`}
-            aria-current={value === page ? "page" : undefined}
-            className={cn(
-              "h-8 min-w-8 rounded-[8px] border px-2 text-[12px] font-medium",
-              value === page
-                ? "border-sales-brand bg-sales-brand text-[#11170A]"
-                : "border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover"
-            )}
-            onClick={() => onChange(value)}
-          >
-            {value}
-          </button>
-        </span>
-      ))}
-      <button
-        type="button"
-        aria-label="Next page"
-        disabled={page >= pageCount}
-        className="flex h-8 w-8 items-center justify-center rounded-[8px] border border-sales-border text-sales-text-secondary disabled:opacity-35"
-        onClick={() => onChange(page + 1)}
-      >
-        <ChevronRight size={14} />
-      </button>
     </div>
   );
 }
@@ -465,27 +414,33 @@ export function ViewingsTableCard({
         </>
       )}
 
-      <div className="mt-auto flex flex-col gap-3 border-t border-sales-border-subtle px-3 py-3 text-[11px] text-sales-text-muted sm:flex-row sm:items-center sm:justify-between sm:px-4">
-        <span>
-          Showing {total === 0 ? 0 : (page - 1) * pageSize + 1} to {Math.min(page * pageSize, total)} of {total}{" "}
-          viewings
-        </span>
-        <div className="flex flex-wrap items-center gap-3">
-          <PageButtons page={page} pageCount={pageCount} onChange={onPageChange} />
-          <MenuSelect
-            value={String(pageSize)}
-            onChange={(value) => onPageSizeChange(Number(value))}
-            aria-label="Viewings per page"
-            size="sm"
-            align="right"
-            options={[
-              { value: String(VIEWING_COMPANY_PAGE_SIZE), label: `${VIEWING_COMPANY_PAGE_SIZE} / page` },
-              { value: "25", label: "25 / page" },
-              { value: "50", label: "50 / page" },
-            ]}
-          />
-        </div>
-      </div>
+      <DataTableFooter>
+        <DataTablePagination
+          page={page}
+          pageCount={pageCount}
+          onPageChange={onPageChange}
+          summary={
+            <>
+              Showing {total === 0 ? 0 : (page - 1) * pageSize + 1} to{" "}
+              {Math.min(page * pageSize, total)} of {total} viewings
+            </>
+          }
+          pageSizeControl={
+            <MenuSelect
+              value={String(pageSize)}
+              onChange={(value) => onPageSizeChange(Number(value))}
+              aria-label="Viewings per page"
+              size="sm"
+              align="right"
+              options={[
+                { value: String(VIEWING_COMPANY_PAGE_SIZE), label: `${VIEWING_COMPANY_PAGE_SIZE} / page` },
+                { value: "25", label: "25 / page" },
+                { value: "50", label: "50 / page" },
+              ]}
+            />
+          }
+        />
+      </DataTableFooter>
     </section>
   );
 }
