@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { CommercialModulePage } from "./CommercialModulePage";
-import { Badge, Button, EmptyState, SearchInput } from "@/components/sales/ui";
+import { Badge, Button, EmptyState, ErrorState, FilteredEmptyState, SearchInput, Skeleton } from "@/components/sales/ui";
 import { formatMoney } from "@/lib/quotations/totals";
 import type { UserRole } from "@/types";
 
@@ -29,16 +29,41 @@ export function CompanyPackagesPage({
 }) {
   const router = useRouter();
   const [q, setQ] = useState("");
+  const [dq, setDq] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [items, setItems] = useState<Pkg[]>([]);
+  const [hasAnyPackages, setHasAnyPackages] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const t = window.setTimeout(() => {
-      fetch(`/api/clients/${clientId}/commercial-packages?q=${encodeURIComponent(q)}`)
-        .then((r) => r.json())
-        .then((j: { packages?: Pkg[] }) => setItems(j.packages ?? []));
-    }, 250);
+    const t = window.setTimeout(() => setDq(q), 250);
     return () => window.clearTimeout(t);
-  }, [clientId, q]);
+  }, [q]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/commercial-packages?q=${encodeURIComponent(dq)}`);
+      if (!res.ok) throw new Error("Failed");
+      const j = (await res.json()) as { packages?: Pkg[] };
+      const packages = j.packages ?? [];
+      setItems(packages);
+      if (!dq.trim()) setHasAnyPackages(packages.length > 0);
+    } catch {
+      setError(true);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [clientId, dq]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const trueEmpty = !loading && !error && items.length === 0 && hasAnyPackages === false;
+  const filteredEmpty = !loading && !error && items.length === 0 && !trueEmpty;
 
   return (
     <CommercialModulePage
@@ -55,7 +80,17 @@ export function CompanyPackagesPage({
       <div className="mt-4 flex justify-end">
         <SearchInput value={q} onChange={setQ} placeholder="Search packages…" className="w-full sm:w-[280px]" />
       </div>
-      {items.length === 0 ? (
+      {loading ? (
+        <Skeleton className="mt-8 h-48 w-full" />
+      ) : error ? (
+        <ErrorState
+          title="Unable to load packages"
+          description="We couldn't retrieve your packages right now."
+          onRetry={() => void load()}
+          retryLoading={loading}
+          className="mt-8"
+        />
+      ) : trueEmpty ? (
         <div className="mt-8">
           <EmptyState
             title="Build reusable selling Packages"
@@ -67,6 +102,12 @@ export function CompanyPackagesPage({
             }
           />
         </div>
+      ) : filteredEmpty ? (
+        <FilteredEmptyState
+          searchQuery={dq.trim() || undefined}
+          onClearSearch={dq.trim() ? () => setQ("") : undefined}
+          className="mt-8"
+        />
       ) : (
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((pkg) => (

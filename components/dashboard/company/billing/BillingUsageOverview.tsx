@@ -1,7 +1,7 @@
 "use client";
 
 import { Users } from "lucide-react";
-import { Button, Progress } from "@/components/sales/ui";
+import { Button, ErrorState, Progress } from "@/components/sales/ui";
 import { usageBarTone } from "@/lib/billing/status";
 import type { CompanyBillingUsageMetric } from "@/lib/billing/company-billing-types";
 
@@ -18,19 +18,15 @@ export function BillingUsageOverview({
 }) {
   if (loadError) {
     return (
-      <section
-        className="sd-card overflow-hidden p-5"
-        data-course-target="billing-usage"
-      >
+      <section className="sd-card overflow-hidden p-5" data-course-target="billing-usage">
         <h2 className="text-[15px] font-semibold text-sales-text-primary">Usage Overview</h2>
-        <p className="mt-2 text-[13px] text-sales-text-secondary">
-          Usage information is temporarily unavailable.
-        </p>
-        {onRetry ? (
-          <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
-            Retry
-          </Button>
-        ) : null}
+        <ErrorState
+          title="Unable to load usage"
+          description="Usage information is temporarily unavailable."
+          onRetry={onRetry}
+          size="compact"
+          className="py-6"
+        />
       </section>
     );
   }

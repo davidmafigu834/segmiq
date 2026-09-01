@@ -26,12 +26,14 @@ import {
   DataTable,
   DataTableBody,
   DataTableEl,
-  DataTableEmpty,
+  DataTableFilteredEmpty,
   DataTableHead,
   DataTableRow,
   DataTableTd,
   DataTableTh,
   EmptyState,
+  ErrorState,
+  FilteredEmptyState,
   IconButton,
   MenuSelect,
   SearchInput,
@@ -290,6 +292,23 @@ export function SalesQuotesClient() {
   const neverQuoted = !loading && data && data.meta.allTimeCount === 0;
   const periodEmpty =
     !loading && data && data.meta.allTimeCount > 0 && data.quotes.length === 0 && !debouncedSearch;
+
+  const hasTableFilters =
+    status !== "all" ||
+    source !== "all" ||
+    debouncedSearch.trim().length > 0 ||
+    needsFollowUpOnly ||
+    period !== "this_month";
+
+  function clearAllFilters() {
+    setStatus("all");
+    setSource("all");
+    setPeriod("this_month");
+    setSearch("");
+    setNeedsFollowUpOnly(false);
+    setPage(1);
+    syncUrl({ status: "all", period: "this_month", search: "" });
+  }
 
   async function openQuote(quoteId: string) {
     router.push(`/sales/quotes/${quoteId}`);
@@ -607,14 +626,11 @@ export function SalesQuotesClient() {
       {error && !data ? (
         <Card>
           <CardContent className="py-10">
-            <EmptyState
-              title="Couldn't load quotations"
-              description="Check your connection and try again."
-              action={
-                <Button variant="secondary" size="sm" onClick={() => void load()}>
-                  Retry
-                </Button>
-              }
+            <ErrorState
+              title="Unable to load quotations"
+              description="We couldn't retrieve quotation data right now."
+              onRetry={() => void load()}
+              retryLoading={loading}
             />
           </CardContent>
         </Card>
@@ -719,17 +735,22 @@ export function SalesQuotesClient() {
                       </DataTableHead>
                       <DataTableBody>
                         {periodEmpty || filtered.length === 0 ? (
-                          <DataTableEmpty
+                          <DataTableFilteredEmpty
                             colSpan={8}
                             title={
                               debouncedSearch.trim()
-                                ? `No quotes match “${debouncedSearch.trim()}”`
+                                ? undefined
                                 : needsFollowUpOnly
                                   ? "No quotations need follow-up"
                                   : periodEmpty
                                     ? "No quotations for this period"
-                                    : "No quotations match these filters"
+                                    : undefined
                             }
+                            searchQuery={debouncedSearch.trim() || undefined}
+                            onClearSearch={
+                              debouncedSearch.trim() ? () => setSearch("") : undefined
+                            }
+                            onClearFilters={hasTableFilters ? clearAllFilters : undefined}
                             description={
                               debouncedSearch.trim()
                                 ? "Try another customer, quote number or project."
@@ -766,13 +787,22 @@ export function SalesQuotesClient() {
                 {/* Mobile cards */}
                 <div className="space-y-3 p-3 md:hidden">
                   {periodEmpty || filtered.length === 0 ? (
-                    <EmptyState
+                    <FilteredEmptyState
                       size="compact"
                       title={
                         debouncedSearch.trim()
-                          ? `No quotes match “${debouncedSearch.trim()}”`
-                          : "No quotations match these filters"
+                          ? undefined
+                          : needsFollowUpOnly
+                            ? "No quotations need follow-up"
+                            : periodEmpty
+                              ? "No quotations for this period"
+                              : undefined
                       }
+                      searchQuery={debouncedSearch.trim() || undefined}
+                      onClearSearch={
+                        debouncedSearch.trim() ? () => setSearch("") : undefined
+                      }
+                      onClearFilters={hasTableFilters ? clearAllFilters : undefined}
                       description="Try another status, date range or customer."
                     />
                   ) : (

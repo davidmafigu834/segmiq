@@ -10,7 +10,7 @@ import {
   Search,
 } from "lucide-react";
 import Link from "next/link";
-import { EmptyState, ActiveFiltersBar, FilterPill, SegmentedControl, useSalesToast } from "@/components/sales/ui";
+import { EmptyState, ActiveFiltersBar, FilterPill, FilteredEmptyState, SegmentedControl, useSalesToast } from "@/components/sales/ui";
 import {
   PipelineDealCard,
   type PipelineDealCardItem,
@@ -802,47 +802,29 @@ export function DealsBoard({
     return (
       <div className={cn("relative w-full min-w-0", boardPad)}>
         {toolbar}
-        <EmptyState
-          icon={<Inbox className="h-4 w-4" strokeWidth={1.5} />}
-          title={
-            searchNoMatch
-              ? `No Deals match “${query.trim()}”`
-              : filterNoMatch
-                ? "No Deals match these filters."
-                : "No active Deals yet"
-          }
-          description={
-            searchNoMatch || filterNoMatch
-              ? "Adjust your search or filters to see more Deals."
-              : "Qualified opportunities will appear here once you create a Deal from a Lead."
-          }
-          action={
-            searchNoMatch ? (
-              <button
-                type="button"
-                className="text-[13px] font-medium text-sales-info-fg"
-                onClick={() => setQuery("")}
-              >
-                Clear search
-              </button>
-            ) : filterNoMatch ? (
-              <button
-                type="button"
-                className="text-[13px] font-medium text-sales-info-fg"
-                onClick={clearFilters}
-              >
-                Clear filters
-              </button>
-            ) : (
+        {searchNoMatch || filterNoMatch ? (
+          <FilteredEmptyState
+            searchQuery={searchNoMatch ? query.trim() : undefined}
+            title={filterNoMatch ? "No Deals match these filters" : undefined}
+            description="Adjust your search or filters to see more Deals."
+            onClearSearch={searchNoMatch ? () => setQuery("") : undefined}
+            onClearFilters={filterNoMatch ? clearFilters : undefined}
+          />
+        ) : (
+          <EmptyState
+            icon={<Inbox className="h-4 w-4" strokeWidth={1.5} />}
+            title="No active Deals yet"
+            description="Qualified opportunities will appear here once you create a Deal from a Lead."
+            action={
               <Link
                 href="/sales/call-now"
                 className="inline-flex min-h-11 items-center rounded-sales-md bg-sales-neutral-900 px-4 text-[13px] font-semibold text-white dark:bg-sales-brand dark:text-sales-brand-text"
               >
                 View Leads
               </Link>
-            )
-          }
-        />
+            }
+          />
+        )}
         {drawer}
       </div>
     );

@@ -1,9 +1,10 @@
 "use client";
 
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
 import { EmptyState } from "./Feedback";
+import { ErrorState, FilteredEmptyState } from "./states";
 import { IconButton } from "./Button";
 
 export type DataTableSortDirection = "asc" | "desc" | "none";
@@ -366,6 +367,53 @@ export function DataTableEmpty({
     <tr>
       <td colSpan={colSpan} className="p-0">
         <EmptyState title={title} description={description} action={action} size="compact" />
+      </td>
+    </tr>
+  );
+}
+
+export function DataTableFilteredEmpty({
+  colSpan,
+  ...props
+}: {
+  colSpan: number;
+} & Omit<ComponentProps<typeof FilteredEmptyState>, "size">) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className="p-0">
+        <FilteredEmptyState {...props} size="compact" />
+      </td>
+    </tr>
+  );
+}
+
+export function DataTableError({
+  colSpan,
+  title,
+  description,
+  onRetry,
+  retryLoading,
+  retryLabel,
+}: {
+  colSpan: number;
+  title: string;
+  description?: string;
+  onRetry?: () => void;
+  retryLoading?: boolean;
+  retryLabel?: string;
+}) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className="p-0">
+        <ErrorState
+          title={title}
+          description={description}
+          onRetry={onRetry}
+          retryLoading={retryLoading}
+          retryLabel={retryLabel}
+          size="compact"
+          compactIcon
+        />
       </td>
     </tr>
   );

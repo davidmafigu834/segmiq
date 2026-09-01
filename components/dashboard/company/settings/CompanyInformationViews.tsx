@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Button, Field, Input, Select, TextArea } from "@/components/sales/ui";
+import { Button, ErrorState, Field, Input, Select, TextArea } from "@/components/sales/ui";
 import { SettingsSectionCard, SettingsInfoGrid } from "./SettingsSectionCard";
 import { SettingsFormDrawer } from "./SettingsFormDrawer";
 import { companyNameInitials } from "@/lib/sales/navigation/company-nav-config";
@@ -87,12 +87,12 @@ export function CompanyInformationSection({
         onEdit={profileError ? undefined : () => setEdit("info")}
       >
         {profileError ? (
-          <div>
-            <p className="text-[13px] text-sales-text-secondary">We couldn&apos;t load company information.</p>
-            <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
-              Retry
-            </Button>
-          </div>
+          <ErrorState
+            title="Unable to load company information"
+            description="We couldn't retrieve your company profile right now."
+            onRetry={onRetry}
+            size="compact"
+          />
         ) : (
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
             <CompanyLogoMark name={profile.name} src={profile.logoUrl} />
@@ -109,12 +109,12 @@ export function CompanyInformationSection({
         onEdit={quoteError ? undefined : () => setEdit("address")}
       >
         {quoteError ? (
-          <div>
-            <p className="text-[13px] text-sales-text-secondary">We couldn&apos;t load the business address.</p>
-            <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
-              Retry
-            </Button>
-          </div>
+          <ErrorState
+            title="Unable to load business address"
+            description="We couldn't retrieve your registered address right now."
+            onRetry={onRetry}
+            size="compact"
+          />
         ) : (
           <SettingsInfoGrid
             rows={[

@@ -30,6 +30,7 @@ import {
   DataTableTd,
   DataTableTh,
   EmptyState,
+  ErrorState,
   LeadIdentity,
   MenuSelect,
   PipelineStageBadge,
@@ -205,15 +206,12 @@ export function SalesReportsClient() {
 
       {error ? (
         <ReportCard title="Couldn't load reports">
-          <EmptyState
-            title="Couldn't load performance data"
-            description="Refresh to try again."
+          <ErrorState
+            title="Unable to load performance data"
+            description="We couldn't retrieve report data right now."
+            onRetry={() => void load()}
+            retryLoading={loading}
             size="compact"
-            action={
-              <Button variant="secondary" size="sm" onClick={() => void load()}>
-                Retry
-              </Button>
-            }
           />
         </ReportCard>
       ) : null}

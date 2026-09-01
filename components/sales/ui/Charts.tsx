@@ -33,6 +33,7 @@ import {
 import { SALES_CHART } from "@/lib/sales/design-tokens";
 import { useSalesChartColors } from "@/lib/sales/use-sales-chart-colors";
 import { cn } from "@/lib/ui/cn";
+import { ErrorState } from "./states";
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
@@ -72,26 +73,34 @@ export function ChartEmptyState({
 }
 
 export function ChartErrorState({
-  title = "Could not load chart",
-  description = "Try refreshing the page.",
+  title = "Unable to load chart",
+  description = "We couldn't retrieve chart data right now.",
+  onRetry,
+  retryLoading,
   className,
 }: {
   title?: string;
   description?: string;
+  onRetry?: () => void;
+  retryLoading?: boolean;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        "flex h-full min-h-[120px] flex-col items-center justify-center rounded-sales-md border border-sales-danger/20 bg-sales-danger-soft px-4 text-center",
+        "flex h-full min-h-[120px] items-center justify-center rounded-sales-md border border-dashed border-sales-border bg-sales-surface-subtle px-4",
         className
       )}
-      role="alert"
     >
-      <p className="text-[13px] font-medium text-sales-text-primary">{title}</p>
-      {description ? (
-        <p className="mt-1 text-[12px] text-sales-text-muted">{description}</p>
-      ) : null}
+      <ErrorState
+        title={title}
+        description={description}
+        onRetry={onRetry}
+        retryLoading={retryLoading}
+        size="compact"
+        compactIcon
+        className="py-6"
+      />
     </div>
   );
 }

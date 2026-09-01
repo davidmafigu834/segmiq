@@ -9,6 +9,7 @@ import {
   Avatar,
   Badge,
   Button,
+  ErrorState,
   IconButton,
   PipelineStageBadge,
   Progress,
@@ -161,12 +162,13 @@ export function CompanyPipelineDealPanel({
       </div>
 
       {error && !loading ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 py-10 text-center">
-          <p className="text-[13px] text-sales-text-secondary">We couldn&apos;t load this Deal.</p>
-          <Button variant="secondary" size="sm" onClick={onRetry}>
-            Retry
-          </Button>
-        </div>
+        <ErrorState
+          title="Unable to load deal"
+          description="We couldn't retrieve this deal's details right now."
+          onRetry={onRetry}
+          size="compact"
+          className="flex-1"
+        />
       ) : loading && !data ? (
         <div className="space-y-4 px-5 pb-5">
           <Skeleton className="h-8 w-40" />

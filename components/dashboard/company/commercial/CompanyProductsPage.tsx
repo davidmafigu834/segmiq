@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Plus } from "lucide-react";
 import { CommercialModulePage } from "./CommercialModulePage";
@@ -14,6 +14,8 @@ import {
   DataTableTd,
   DataTableTh,
   EmptyState,
+  ErrorState,
+  FilteredEmptyState,
   SearchInput,
   SegmentedControl,
   Select,
@@ -66,6 +68,7 @@ export function CompanyProductsPage({
   const [inventory, setInventory] = useState("ALL");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [items, setItems] = useState<ProductRow[]>([]);
   const [total, setTotal] = useState(0);
   const [typeCounts, setTypeCounts] = useState({ all: 0, products: 0, services: 0 });
@@ -93,8 +96,12 @@ export function CompanyProductsPage({
   }, [clientId]);
 
   useEffect(() => {
-    let cancelled = false;
+    setPage(1);
+  }, [dq, type, status, categoryId, brand, inventory]);
+
+  const load = useCallback(async () => {
     setLoading(true);
+    setError(false);
     const params = new URLSearchParams({
       q: dq,
       type,
@@ -105,24 +112,55 @@ export function CompanyProductsPage({
     if (categoryId) params.set("categoryId", categoryId);
     if (brand) params.set("brand", brand);
     if (inventory !== "ALL") params.set("inventory", inventory);
-    fetch(`/api/clients/${clientId}/products?${params}`)
-      .then((r) => r.json())
-      .then((j: { items?: ProductRow[]; total?: number; typeCounts?: { all: number; products: number; services: number } }) => {
-        if (cancelled) return;
-        setItems(j.items ?? []);
-        setTotal(j.total ?? 0);
-        if (j.typeCounts) setTypeCounts(j.typeCounts);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const r = await fetch(`/api/clients/${clientId}/products?${params}`);
+      if (!r.ok) throw new Error("Failed");
+      const j = (await r.json()) as {
+        items?: ProductRow[];
+        total?: number;
+        typeCounts?: { all: number; products: number; services: number };
+      };
+      setItems(j.items ?? []);
+      setTotal(j.total ?? 0);
+      if (j.typeCounts) setTypeCounts(j.typeCounts);
+    } catch {
+      setError(true);
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   }, [clientId, dq, type, status, categoryId, brand, inventory, page]);
 
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const hasFilters =
+    Boolean(dq.trim()) ||
+    type !== "ALL" ||
+    status !== "ACTIVE" ||
+    Boolean(categoryId) ||
+    Boolean(brand) ||
+    inventory !== "ALL";
+
+  function clearSearch() {
+    setQ("");
+    setDq("");
+    setPage(1);
+  }
+
+  function clearAllFilters() {
+    clearSearch();
+    setType("ALL");
+    setStatus("ACTIVE");
+    setCategoryId("");
+    setBrand("");
+    setInventory("ALL");
+  }
+
   const pages = Math.max(1, Math.ceil(total / 50));
-  const empty = useMemo(() => !loading && items.length === 0, [loading, items.length]);
+  const trueEmpty = !loading && !error && items.length === 0 && typeCounts.all === 0 && !hasFilters;
+  const filteredEmpty = !loading && !error && items.length === 0 && !trueEmpty;
 
   return (
     <CommercialModulePage
@@ -200,8 +238,16 @@ export function CompanyProductsPage({
 
         {loading ? (
           <Skeleton className="h-64 w-full" />
-        ) : empty ? (
+        ) : error ? (
+          <ErrorState
+            title="Unable to load products"
+            description="We couldn't retrieve your product catalogue right now."
+            onRetry={() => void load()}
+            retryLoading={loading}
+          />
+        ) : trueEmpty ? (
           <EmptyState
+            icon={<Box size={20} strokeWidth={1.8} />}
             title="Set up your Products"
             description="Add products manually, import your existing catalogue, or connect an external inventory source."
             action={
@@ -214,6 +260,13 @@ export function CompanyProductsPage({
                 </Button>
               </div>
             }
+          />
+        ) : filteredEmpty ? (
+          <FilteredEmptyState
+            searchQuery={dq.trim() || undefined}
+            onClearSearch={dq.trim() ? clearSearch : undefined}
+            onClearFilters={hasFilters ? clearAllFilters : undefined}
+            description="Try changing your filters or search terms."
           />
         ) : (
           <DataTable>

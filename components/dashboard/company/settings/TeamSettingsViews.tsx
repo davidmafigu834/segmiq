@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { MoreHorizontal, Search, UserPlus } from "lucide-react";
-import { Badge, Button, Input, Skeleton } from "@/components/sales/ui";
+import { Badge, Button, EmptyState, ErrorState, FilteredEmptyState, Input, Skeleton } from "@/components/sales/ui";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { SettingsSectionCard } from "./SettingsSectionCard";
 import { CompanyTeamInviteDialog } from "@/components/dashboard/company/team/CompanyTeamInviteDialog";
@@ -110,11 +110,32 @@ export function TeamMembersSection({
         <Skeleton className="h-48 w-full rounded-[12px]" />
       ) : error ? (
         <SettingsSectionCard title="Team Members">
-          <p className="text-[13px] text-sales-text-secondary">{error}</p>
-          <Button variant="secondary" size="sm" className="mt-3" onClick={() => void load()}>
-            Retry
-          </Button>
+          <ErrorState
+            title="Unable to load team"
+            description="We couldn't retrieve your team members right now."
+            onRetry={() => void load()}
+            retryLoading={loading}
+            size="compact"
+          />
         </SettingsSectionCard>
+      ) : members.length === 0 ? (
+        <EmptyState
+          title="No team members yet"
+          description="Invite someone to access your company account."
+          size="compact"
+          action={
+            <Button variant="primary" size="sm" onClick={() => setInviteOpen(true)}>
+              Invite Team Member
+            </Button>
+          }
+        />
+      ) : filtered.length === 0 ? (
+        <FilteredEmptyState
+          title="No team members match your search"
+          searchQuery={query.trim() || undefined}
+          onClearSearch={query.trim() ? () => setQuery("") : undefined}
+          size="compact"
+        />
       ) : (
         <>
           <div className="hidden overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface sm:block">

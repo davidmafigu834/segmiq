@@ -11,6 +11,7 @@ import {
 import { countInboxFilters } from "@/lib/inbox/queue-filters";
 import type { InboxConversation, InboxFilter } from "@/lib/inbox/types";
 import { useSalesMobileChrome } from "@/components/sales/navigation/SalesMobileChromeContext";
+import { ErrorState } from "@/components/sales/ui";
 import { ChatThread } from "./ChatThread";
 import { ConversationList } from "./ConversationList";
 import { LeadIntelligencePanel } from "./LeadIntelligencePanel";
@@ -418,17 +419,12 @@ export function TeamInbox({
         {loading ? (
           <InboxSkeleton />
         ) : loadError ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-            <p className="text-[15px] font-semibold text-sales-text-primary">Couldn&apos;t load conversations</p>
-            <p className="text-[13px] text-sales-text-secondary">Check your connection and try again.</p>
-            <button
-              type="button"
-              onClick={() => void loadConversations()}
-              className="rounded-[10px] bg-[#D4FF4F] px-4 py-2 text-[13px] font-semibold text-[#101828] hover:bg-[#c8f244]"
-            >
-              Try again
-            </button>
-          </div>
+          <ErrorState
+            title="Unable to load conversations"
+            description="We couldn't retrieve your WhatsApp conversations right now."
+            onRetry={() => void loadConversations()}
+            className="flex-1"
+          />
         ) : (
           <>
             {!resizable || !listCollapsed ? (

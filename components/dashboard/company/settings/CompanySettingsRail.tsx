@@ -1,7 +1,7 @@
 "use client";
 
 import { Crown, Download, Headphones, Landmark } from "lucide-react";
-import { Badge, Button } from "@/components/sales/ui";
+import { Badge, Button, ErrorState } from "@/components/sales/ui";
 import { SettingsActionRow } from "./SettingsActionRow";
 import { nextBillingLabel, planStatusLabel, teamSeatsLabel } from "@/lib/settings/company-settings-display";
 import { subscriptionStatusTone } from "@/lib/billing/status";
@@ -28,14 +28,12 @@ export function CompanyAccountSummaryCard({
     <section className="rounded-[12px] border border-sales-border bg-sales-surface px-5 py-4">
       <h2 className="text-[15px] font-semibold text-sales-text-primary">Account Summary</h2>
       {error ? (
-        <div className="mt-3">
-          <p className="text-[13px] text-sales-text-secondary">We couldn&apos;t load account summary.</p>
-          {onRetry ? (
-            <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
-              Retry
-            </Button>
-          ) : null}
-        </div>
+        <ErrorState
+          title="Unable to load account summary"
+          description="We couldn't retrieve your account details right now."
+          onRetry={onRetry}
+          size="compact"
+        />
       ) : !account ? (
         <p className="mt-3 text-[13px] text-sales-text-secondary">No active subscription on this company.</p>
       ) : (

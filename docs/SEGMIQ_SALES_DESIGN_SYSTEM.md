@@ -903,4 +903,25 @@ Mobile: header → horizontally scrolling tabs → section selector sheet → st
 
 Dark: page `#0B0D0C`, surface `#111411` / `#151815`, border `#272C27`, left-nav active `rgba(212,255,79,.08–.12)`. Inputs and sheet portals use raised surfaces — no white leaks.
 
+## 12. Empty States & Feedback
+
+Showcase: `/dev/sales-design-system#states` (development only).
+
+Four production systems share one internal `StateLayout` primitive in `@/components/sales/ui`:
+
+| Component | When |
+|-----------|------|
+| `EmptyState` | No records exist in this context yet |
+| `FilteredEmptyState` | Records may exist but the active query returned no matches |
+| `LoadingState` | Unknown wait or label-only load; prefer `Skeleton` / `DataTableSkeleton` when layout is known |
+| `ErrorState` | Expected fetch or section load failed — explain what and wire real `onRetry` only |
+| `SuccessState` | The current view represents a completed workflow (not ordinary CRUD — use Toast) |
+| `InfoState` | Feature unavailable, awaiting setup, or prerequisite missing — not a failure |
+
+Table helpers: `DataTableFilteredEmpty`, `DataTableError`. Charts: `ChartEmptyState`, `ChartErrorState` (compact `ErrorState`, no full red wash).
+
+State resolution for fetched lists: **loading → error → filtered empty → empty → content**. Background refetch must not replace visible data with skeleton.
+
+Retry actions use **primary** lime buttons — not destructive red. Icons use soft semantic wells (neutral / info / danger / success), ~44px, decorative (`aria-hidden`).
+
 

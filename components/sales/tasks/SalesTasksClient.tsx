@@ -33,6 +33,7 @@ import {
   CardTitle,
   Checkbox,
   EmptyState,
+  ErrorState,
   IconButton,
   MenuSelect,
   SalesDonutChart,
@@ -511,15 +512,12 @@ export function SalesTasksClient() {
       {error ? (
         <Card>
           <CardContent className="py-8">
-            <EmptyState
-              title="Couldn't load your tasks"
-              description="Refresh to try again."
+            <ErrorState
+              title="Unable to load tasks"
+              description="We couldn't retrieve your tasks right now."
+              onRetry={() => void load()}
+              retryLoading={loading}
               size="compact"
-              action={
-                <Button variant="secondary" size="sm" onClick={() => void load()}>
-                  Retry
-                </Button>
-              }
             />
           </CardContent>
         </Card>

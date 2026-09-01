@@ -21,6 +21,7 @@ import {
   Avatar,
   Badge,
   Button,
+  ErrorState,
   IconButton,
   SalesAreaChart,
   Skeleton,
@@ -157,14 +158,13 @@ export function CompanyTeamMemberPanel({
       </div>
 
       {error ? (
-        <div className="px-4 py-8 text-center">
-          <p className="text-[13px] font-medium text-sales-text-primary">
-            We couldn&apos;t load this team member&apos;s performance.
-          </p>
-          <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
-            Retry
-          </Button>
-        </div>
+        <ErrorState
+          title="Unable to load performance"
+          description="We couldn't retrieve this team member's performance right now."
+          onRetry={onRetry}
+          size="compact"
+          className="px-4 py-8"
+        />
       ) : loading && !overview ? (
         <div className="space-y-4 px-4 py-4">
           <Skeleton className="h-20 w-full" />

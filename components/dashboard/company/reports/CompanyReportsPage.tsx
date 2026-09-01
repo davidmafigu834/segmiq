@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { Tabs } from "@/components/sales/ui";
+import { ErrorState, Tabs } from "@/components/sales/ui";
 import { CompanyWorkspaceShell } from "@/components/dashboard/company/CompanyWorkspaceShell";
 import { CompanyReportsHeader, DateRangeControl, FiltersControl } from "./CompanyReportsHeader";
 import { ReportOverview } from "./ReportOverview";
@@ -165,12 +165,12 @@ export function CompanyReportsPage({
       </div>
 
       {error && !data ? (
-        <div className="rounded-[12px] border border-sales-danger/30 bg-sales-danger-soft px-4 py-3 text-sm text-sales-danger">
-          {error instanceof Error ? error.message : "Could not load report."}
-          <button type="button" className="ml-3 font-semibold underline" onClick={() => void mutate()}>
-            Retry
-          </button>
-        </div>
+        <ErrorState
+          title="Unable to load reports"
+          description="We couldn't retrieve performance data right now."
+          onRetry={() => void mutate()}
+          retryLoading={isValidating}
+        />
       ) : null}
 
       {isLoading && !data ? <ReportOverviewSkeleton /> : null}

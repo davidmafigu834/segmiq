@@ -13,7 +13,7 @@ import {
   CircleDollarSign,
   Warehouse,
 } from "lucide-react";
-import { Button, IconButton, Skeleton, StatusDot } from "@/components/sales/ui";
+import { Button, ErrorState, IconButton, Skeleton, StatusDot } from "@/components/sales/ui";
 import { formatMoney } from "@/lib/quotations/totals";
 import { cn } from "@/lib/ui/cn";
 import { ProductOverviewSection } from "./ProductOverviewSection";
@@ -110,17 +110,18 @@ export function ProductDetailWorkspace({
 
   if (loadError) {
     return (
-      <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-5 py-10 text-center">
-        <p className="text-[15px] font-semibold text-sales-text-primary">This Product could not be loaded.</p>
-        <p className="mt-1 text-[13px] text-sales-text-secondary">{loadError}</p>
-        <div className="mt-4 flex justify-center gap-2">
-          <Button variant="secondary" size="md" onClick={onRetry}>
-            Retry
-          </Button>
-          <Button variant="secondary" size="md" onClick={() => (window.location.href = "/client/products")}>
-            Back to Products
-          </Button>
-        </div>
+      <div className="workspace-card rounded-[14px] border border-sales-border bg-sales-surface px-5 py-10">
+        <ErrorState
+          title="Unable to load product"
+          description="We couldn't retrieve this product right now."
+          onRetry={onRetry}
+          size="compact"
+          secondaryAction={
+            <Button variant="secondary" size="md" onClick={() => (window.location.href = "/client/products")}>
+              Back to Products
+            </Button>
+          }
+        />
       </div>
     );
   }

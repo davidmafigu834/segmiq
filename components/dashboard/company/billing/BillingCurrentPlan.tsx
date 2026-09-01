@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronDown, Crown } from "lucide-react";
-import { Badge, Button } from "@/components/sales/ui";
+import { Badge, Button, ErrorState } from "@/components/sales/ui";
 import { formatBillingMoney, formatDate } from "@/lib/billing/format";
 import { billedCadenceLabel, subscriptionStatusLabel, subscriptionStatusTone } from "@/lib/billing/status";
 import type { CompanyBillingSubscription } from "@/lib/billing/company-billing-types";
@@ -26,19 +26,15 @@ export function BillingCurrentPlan({
 }) {
   if (loadError) {
     return (
-      <section
-        className="sd-card overflow-hidden p-5"
-        data-course-target="billing-current-plan"
-      >
+      <section className="sd-card overflow-hidden p-5" data-course-target="billing-current-plan">
         <p className="text-[15px] font-semibold text-sales-text-primary">Current Plan</p>
-        <p className="mt-2 text-[13px] text-sales-text-secondary">
-          We couldn&apos;t load your subscription details.
-        </p>
-        {onRetry ? (
-          <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
-            Retry
-          </Button>
-        ) : null}
+        <ErrorState
+          title="Unable to load subscription"
+          description="We couldn't retrieve your subscription details right now."
+          onRetry={onRetry}
+          size="compact"
+          className="py-6"
+        />
       </section>
     );
   }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CommercialModulePage } from "./CommercialModulePage";
-import { Badge, Button, EmptyState } from "@/components/sales/ui";
+import { Badge, Button, EmptyState, ErrorState, Skeleton } from "@/components/sales/ui";
 import type { UserRole } from "@/types";
 
 export function CompanyInventoryPage({
@@ -14,18 +14,32 @@ export function CompanyInventoryPage({
   chrome: Parameters<typeof CommercialModulePage>[0]["chrome"] & { notificationRole: UserRole };
 }) {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [data, setData] = useState<{
     overview?: { stockedSkus: number; lowStock: number; outOfStock: number; locations: number };
     attention?: Array<{ name: string; available: number; reorderLevel: number | null; status: string }>;
     settings?: { provider: string };
   } | null>(null);
 
-  useEffect(() => {
-    fetch(`/api/clients/${clientId}/inventory`)
-      .then((r) => r.json())
-      .then(setData)
-      .catch(() => setData({}));
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await fetch(`/api/clients/${clientId}/inventory`);
+      if (!res.ok) throw new Error("Failed");
+      setData(await res.json());
+    } catch {
+      setError(true);
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   }, [clientId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const overview = data?.overview;
   const attention = data?.attention ?? [];
@@ -50,7 +64,17 @@ export function CompanyInventoryPage({
         </div>
       }
     >
-      {!overview || overview.stockedSkus === 0 ? (
+      {loading ? (
+        <Skeleton className="mt-6 h-64 w-full" />
+      ) : error ? (
+        <ErrorState
+          title="Unable to load inventory"
+          description="We couldn't retrieve inventory data right now."
+          onRetry={() => void load()}
+          retryLoading={loading}
+          className="mt-6"
+        />
+      ) : !overview || overview.stockedSkus === 0 ? (
         <div className="mt-6">
           <EmptyState
             title="No inventory is being tracked yet."

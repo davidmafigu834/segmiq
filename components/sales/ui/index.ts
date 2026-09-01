@@ -72,6 +72,14 @@ export type { ToastTone } from "./Toast";
 export { Alert, Skeleton, EmptyState, Progress, Avatar } from "./Feedback";
 export type { AlertTone } from "./Feedback";
 
+export {
+  FilteredEmptyState,
+  ErrorState,
+  LoadingState,
+  SuccessState,
+  InfoState,
+} from "./states";
+
 export { BrandIcon, Tooltip } from "./BrandIcon";
 
 export {
@@ -130,6 +138,8 @@ export {
   DataTableCheckboxCell,
   DataTableActionsCell,
   DataTableEmpty,
+  DataTableFilteredEmpty,
+  DataTableError,
   DataTableEmptyPanel,
   DataTableSkeleton,
   DataTableMobileList,

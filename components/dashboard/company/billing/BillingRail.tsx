@@ -12,7 +12,7 @@ import {
   Scale,
   Smartphone,
 } from "lucide-react";
-import { Badge, Button } from "@/components/sales/ui";
+import { Badge, Button, ErrorState } from "@/components/sales/ui";
 import { formatBillingMoney, formatDate } from "@/lib/billing/format";
 import {
   billingCycleLabel,
@@ -67,14 +67,13 @@ export function BillingRail({
       >
         <h2 className="text-[15px] font-semibold text-sales-text-primary">Billing Summary</h2>
         {data.errors.subscription ? (
-          <div className="mt-3">
-            <p className="text-[13px] text-sales-text-secondary">We couldn&apos;t load your subscription details.</p>
-            {onRetryPayment ? (
-              <Button variant="secondary" size="sm" className="mt-3" onClick={onRetryPayment}>
-                Retry
-              </Button>
-            ) : null}
-          </div>
+          <ErrorState
+            title="Unable to load subscription"
+            description="We couldn't retrieve your subscription details right now."
+            onRetry={onRetryPayment}
+            size="compact"
+            className="mt-3 py-4"
+          />
         ) : (
           <>
             <dl className="mt-3 space-y-2">
@@ -113,16 +112,13 @@ export function BillingRail({
           ) : null}
         </div>
         {data.errors.paymentMethod ? (
-          <>
-            <p className="mt-3 text-[13px] text-sales-text-secondary">
-              We couldn&apos;t load the payment method.
-            </p>
-            {onRetryPayment ? (
-              <Button variant="secondary" size="sm" className="mt-4 w-full" onClick={onRetryPayment}>
-                Retry
-              </Button>
-            ) : null}
-          </>
+          <ErrorState
+            title="Unable to load payment method"
+            description="We couldn't retrieve your payment method right now."
+            onRetry={onRetryPayment}
+            size="compact"
+            className="mt-3 py-4"
+          />
         ) : data.paymentMethod.kind === "none" ? (
           <>
             <p className="mt-3 text-[13px] text-sales-text-secondary">No payment method added.</p>

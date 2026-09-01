@@ -36,6 +36,9 @@ import {
   DataTableToolbar,
   DataTableToolbarGroup,
   DataTableWorkspace,
+  EmptyState,
+  ErrorState,
+  FilteredEmptyState,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -979,45 +982,47 @@ export function CompanyQuotationsTable({
       ) : null}
 
       {loadError ? (
-        <div className="flex min-h-[300px] flex-col items-center justify-center px-6 py-12 text-center">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-sales-neutral-100 text-sales-text-muted">
-            <FileText size={20} strokeWidth={1.7} />
-          </span>
-          <h3 className="mt-3 text-[14px] font-semibold text-sales-text-primary">
-            We couldn&apos;t load quotations.
-          </h3>
-          <p className="mt-1 max-w-sm text-[12px] text-sales-text-muted">
-            Check your connection and try again.
-          </p>
-          <Button variant="secondary" size="sm" className="mt-4" onClick={onRetry}>
-            Retry
-          </Button>
-        </div>
+        <ErrorState
+          title="Unable to load quotations"
+          description="We couldn't retrieve quotation data right now."
+          onRetry={onRetry}
+          size="compact"
+          className="min-h-[300px]"
+        />
       ) : rows.length === 0 ? (
-        <div className="flex min-h-[300px] flex-col items-center justify-center px-6 py-12 text-center">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-sales-neutral-100 text-sales-text-muted">
-            <FileText size={20} strokeWidth={1.7} />
-          </span>
-          <h3 className="mt-3 text-[14px] font-semibold text-sales-text-primary">{empty.title}</h3>
-          <p className="mt-1 max-w-sm text-[12px] text-sales-text-muted">{empty.body}</p>
-          {emptyKind === "none" && permissions.alsoSells ? (
-            <Button variant="secondary" size="sm" className="mt-4" onClick={onCreate}>
-              Create quotation
-            </Button>
-          ) : emptyKind === "search" ? (
-            <Button variant="secondary" size="sm" className="mt-4" onClick={onClearSearch}>
-              Clear search
-            </Button>
-          ) : emptyKind === "tab" ? (
-            <Button variant="secondary" size="sm" className="mt-4" onClick={onClear}>
-              View all quotations
-            </Button>
-          ) : emptyKind !== "none" ? (
-            <Button variant="secondary" size="sm" className="mt-4" onClick={onClear}>
-              Clear filters
-            </Button>
-          ) : null}
-        </div>
+        emptyKind === "none" ? (
+          <EmptyState
+            icon={<FileText size={20} strokeWidth={1.7} />}
+            title={empty.title}
+            description={empty.body}
+            size="compact"
+            className="min-h-[300px]"
+            action={
+              permissions.alsoSells ? (
+                <Button variant="secondary" size="sm" onClick={onCreate}>
+                  Create quotation
+                </Button>
+              ) : undefined
+            }
+          />
+        ) : (
+          <FilteredEmptyState
+            title={emptyKind === "search" ? undefined : empty.title}
+            description={empty.body}
+            searchQuery={emptyKind === "search" ? searchQuery : undefined}
+            onClearSearch={emptyKind === "search" ? onClearSearch : undefined}
+            onClearFilters={emptyKind === "filters" ? onClear : undefined}
+            size="compact"
+            className="min-h-[300px]"
+            action={
+              emptyKind === "tab" ? (
+                <Button variant="secondary" size="sm" onClick={onClear}>
+                  View all quotations
+                </Button>
+              ) : undefined
+            }
+          />
+        )
       ) : null}
 
       <DataTableFooter className="px-4">

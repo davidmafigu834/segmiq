@@ -25,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  ErrorState,
   MenuSelect,
   Skeleton,
   useSalesToast,
@@ -150,14 +151,11 @@ export function SalesGoalsClient() {
       {error && !data ? (
         <Card>
           <CardContent className="py-10">
-            <EmptyState
-              title="Couldn't load goal progress"
-              description={error}
-              action={
-                <Button variant="secondary" size="sm" onClick={() => void load()}>
-                  Retry
-                </Button>
-              }
+            <ErrorState
+              title="Unable to load goal progress"
+              description="We couldn't retrieve your goal data right now."
+              onRetry={() => void load()}
+              retryLoading={loading}
             />
           </CardContent>
         </Card>

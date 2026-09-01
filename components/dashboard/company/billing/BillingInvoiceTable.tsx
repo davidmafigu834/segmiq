@@ -9,6 +9,8 @@ import {
   DataTableRow,
   DataTableTh,
   DataTableTd,
+  EmptyState,
+  ErrorState,
   Tooltip,
 } from "@/components/sales/ui";
 import { formatBillingMoney, formatDate } from "@/lib/billing/format";
@@ -69,25 +71,20 @@ export function BillingInvoiceTable({
       </header>
 
       {loadError ? (
-        <div className="px-5 pb-8 pt-2 text-center">
-          <p className="text-[14px] font-semibold text-sales-text-primary">We couldn&apos;t load your invoices.</p>
-          {onRetry ? (
-            <button
-              type="button"
-              className="mt-2 text-[13px] font-semibold text-sales-brand-fg hover:underline"
-              onClick={onRetry}
-            >
-              Retry
-            </button>
-          ) : null}
-        </div>
+        <ErrorState
+          title="Unable to load invoices"
+          description="We couldn't retrieve your billing invoices right now."
+          onRetry={onRetry}
+          size="compact"
+          className="px-5 pb-8 pt-2"
+        />
       ) : total === 0 ? (
-        <div className="px-5 pb-8 pt-2 text-center">
-          <p className="text-[14px] font-semibold text-sales-text-primary">No invoices yet.</p>
-          <p className="mt-1 text-[13px] text-sales-text-secondary">
-            Your billing invoices will appear here once generated.
-          </p>
-        </div>
+        <EmptyState
+          title="No invoices yet"
+          description="Your billing invoices will appear here once generated."
+          size="compact"
+          className="px-5 pb-8 pt-2"
+        />
       ) : (
         <>
           <div className="hidden overflow-x-auto md:block">

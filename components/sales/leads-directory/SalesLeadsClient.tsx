@@ -29,12 +29,14 @@ import {
   DataTable,
   DataTableBody,
   DataTableEl,
-  DataTableEmpty,
+  DataTableFilteredEmpty,
   DataTableHead,
   DataTableRow,
   DataTableTd,
   DataTableTh,
   EmptyState,
+  ErrorState,
+  FilteredEmptyState,
   IconButton,
   LeadScoreBadge,
   MenuSelect,
@@ -300,6 +302,33 @@ export function SalesLeadsClient({
     setAttention("none");
     syncUrl({ intent: null, attention: null });
   }
+
+  function clearAllFilters() {
+    setSource("all");
+    setStage("all");
+    setIntent("all");
+    setAttention("none");
+    setSearch("");
+    setPeriod("this_month");
+    setPage(1);
+    syncUrl({
+      source: null,
+      stage: null,
+      intent: null,
+      attention: null,
+      search: null,
+      period: null,
+      page: "1",
+    });
+  }
+
+  const hasTableFilters =
+    source !== "all" ||
+    stage !== "all" ||
+    intent !== "all" ||
+    attention !== "none" ||
+    debouncedSearch.trim().length > 0 ||
+    period !== "this_month";
 
   async function messageWhatsApp(row: LeadDirectoryRow) {
     if (row.sourceKey === "whatsapp" || row.source === "WHATSAPP_INBOUND") {
@@ -591,14 +620,11 @@ export function SalesLeadsClient({
       {error && !data ? (
         <Card>
           <CardContent className="py-10">
-            <EmptyState
-              title="Couldn't load your leads"
-              description="Check your connection and try again."
-              action={
-                <Button variant="secondary" size="sm" onClick={() => void load()}>
-                  Retry
-                </Button>
-              }
+            <ErrorState
+              title="Unable to load leads"
+              description="We couldn't retrieve your leads right now."
+              onRetry={() => void load()}
+              retryLoading={loading}
             />
           </CardContent>
         </Card>
@@ -700,13 +726,13 @@ export function SalesLeadsClient({
                       </DataTableHead>
                       <DataTableBody>
                         {data.leads.length === 0 ? (
-                          <DataTableEmpty
+                          <DataTableFilteredEmpty
                             colSpan={8}
-                            title={
-                              debouncedSearch.trim()
-                                ? `No leads match “${debouncedSearch.trim()}”`
-                                : "No leads match these filters"
+                            searchQuery={debouncedSearch.trim() || undefined}
+                            onClearSearch={
+                              debouncedSearch.trim() ? () => setSearch("") : undefined
                             }
+                            onClearFilters={hasTableFilters ? clearAllFilters : undefined}
                             description={
                               debouncedSearch.trim()
                                 ? "Try another name, phone number, company or project."
@@ -753,10 +779,18 @@ export function SalesLeadsClient({
 
                 <div className="space-y-3 p-3 md:hidden">
                   {data.leads.length === 0 ? (
-                    <EmptyState
+                    <FilteredEmptyState
                       size="compact"
-                      title="No leads match these filters"
-                      description="Try clearing one or more filters."
+                      searchQuery={debouncedSearch.trim() || undefined}
+                      onClearSearch={
+                        debouncedSearch.trim() ? () => setSearch("") : undefined
+                      }
+                      onClearFilters={hasTableFilters ? clearAllFilters : undefined}
+                      description={
+                        debouncedSearch.trim()
+                          ? "Try another name, phone number, company or project."
+                          : "Try clearing one or more filters."
+                      }
                     />
                   ) : (
                     data.leads.map((row) => (

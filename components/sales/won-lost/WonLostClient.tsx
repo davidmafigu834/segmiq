@@ -26,12 +26,14 @@ import {
   DataTable,
   DataTableBody,
   DataTableEl,
-  DataTableEmpty,
+  DataTableFilteredEmpty,
   DataTableHead,
   DataTableRow,
   DataTableTd,
   DataTableTh,
   EmptyState,
+  ErrorState,
+  FilteredEmptyState,
   IconButton,
   MenuSelect,
   PipelineStageBadge,
@@ -238,6 +240,26 @@ export function WonLostClient() {
   const neverClosed = !loading && data && data.totals.closedAllTime === 0;
   const periodEmpty = !loading && data && data.deals.length === 0 && data.totals.closedAllTime > 0;
 
+  const hasTableFilters =
+    outcome !== "all" ||
+    source !== "all" ||
+    debouncedSearch.trim().length > 0 ||
+    period !== "this_month" ||
+    granularityOverride != null;
+
+  function clearAllFilters() {
+    setOutcome("all");
+    setPeriod("this_month");
+    setSource("all");
+    setSearch("");
+    setGranularityOverride(null);
+    setPage(1);
+    const sp = new URLSearchParams(searchParams.toString());
+    sp.delete("outcome");
+    const q = sp.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  }
+
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, period, source, pageSize]);
@@ -386,14 +408,11 @@ export function WonLostClient() {
       {error && !data ? (
         <Card>
           <CardContent className="py-10">
-            <EmptyState
-              title="Couldn't load closed deals"
-              description="Check your connection and try again."
-              action={
-                <Button variant="secondary" size="sm" onClick={() => void load()}>
-                  Retry
-                </Button>
-              }
+            <ErrorState
+              title="Unable to load closed deals"
+              description="We couldn't retrieve your won and lost deals right now."
+              onRetry={() => void load()}
+              retryLoading={loading}
             />
           </CardContent>
         </Card>
@@ -498,17 +517,24 @@ export function WonLostClient() {
                       </DataTableHead>
                       <DataTableBody>
                         {periodEmpty || filteredDeals.length === 0 ? (
-                          <DataTableEmpty
+                          <DataTableFilteredEmpty
                             colSpan={8}
                             title={
                               debouncedSearch.trim()
-                                ? `No closed deals match “${debouncedSearch.trim()}”`
+                                ? undefined
                                 : outcome === "won"
                                   ? "No won deals for this period"
                                   : outcome === "lost"
                                     ? "No lost deals for this period"
-                                    : "No closed deals for this period"
+                                    : periodEmpty
+                                      ? "No closed deals for this period"
+                                      : undefined
                             }
+                            searchQuery={debouncedSearch.trim() || undefined}
+                            onClearSearch={
+                              debouncedSearch.trim() ? () => setSearch("") : undefined
+                            }
+                            onClearFilters={hasTableFilters ? clearAllFilters : undefined}
                             description={
                               debouncedSearch.trim()
                                 ? "Try another customer, project or reason."
@@ -551,31 +577,32 @@ export function WonLostClient() {
                 {/* Mobile cards */}
                 <div className="space-y-3 p-3 md:hidden">
                   {filteredDeals.length === 0 ? (
-                    <EmptyState
+                    <FilteredEmptyState
                       size="compact"
                       title={
                         debouncedSearch.trim()
-                          ? `No closed deals match “${debouncedSearch.trim()}”`
+                          ? undefined
                           : "No closed deals for this period"
                       }
+                      searchQuery={debouncedSearch.trim() || undefined}
+                      onClearSearch={
+                        debouncedSearch.trim() ? () => setSearch("") : undefined
+                      }
+                      onClearFilters={hasTableFilters ? clearAllFilters : undefined}
                       description={
                         debouncedSearch.trim()
                           ? "Try another customer, project or reason."
                           : undefined
                       }
                       action={
-                        debouncedSearch.trim() ? (
-                          <Button variant="ghost" size="sm" onClick={() => setSearch("")}>
-                            Clear search
-                          </Button>
-                        ) : (
+                        !debouncedSearch.trim() && !hasTableFilters ? (
                           <Link
                             href="/sales/pipeline"
                             className="inline-flex h-8 items-center justify-center rounded-[8px] border border-sales-border-strong bg-sales-surface px-3 text-[12px] font-semibold text-sales-text-primary"
                           >
                             View pipeline
                           </Link>
-                        )
+                        ) : undefined
                       }
                     />
                   ) : (

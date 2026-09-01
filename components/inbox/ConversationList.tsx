@@ -15,6 +15,7 @@ import { SalespersonHubHeader } from "./SalespersonHubHeader";
 import type { SafeWhatsAppConnection } from "@/lib/whatsapp/providers/types";
 import { ArrowUpDown, Check, ChevronLeft, ChevronRight, Search, SlidersHorizontal } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
+import { EmptyState, FilteredEmptyState } from "@/components/sales/ui";
 
 type Props = {
   conversations: InboxConversation[];
@@ -395,22 +396,22 @@ export function ConversationList({
         }`}
       >
         {filtered.length === 0 ? (
-          <div className="flex min-h-[260px] flex-col items-center justify-center px-8 py-10 text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] border border-sales-border bg-sales-bg text-[#25D366]">
-              <SiWhatsapp size={22} aria-hidden />
-            </div>
-            <p className="text-[14px] font-semibold text-sales-text-primary">{emptyTitle}</p>
-            <p className="mt-1.5 max-w-[240px] text-[12px] leading-relaxed text-sales-text-secondary">{emptyBody}</p>
-            {search.trim() ? (
-              <button
-                type="button"
-                onClick={() => onSearchChange?.("")}
-                className="mt-3 text-[12px] font-medium text-[#4D7C0F] hover:underline"
-              >
-                Clear search
-              </button>
-            ) : null}
-          </div>
+          conversations.length === 0 ? (
+            <EmptyState
+              icon={<SiWhatsapp size={22} aria-hidden />}
+              title={emptyTitle}
+              description={emptyBody}
+              size="compact"
+            />
+          ) : (
+            <FilteredEmptyState
+              title={search.trim() ? undefined : emptyTitle}
+              description={emptyBody}
+              searchQuery={search.trim() || undefined}
+              onClearSearch={search.trim() ? () => onSearchChange?.("") : undefined}
+              size="compact"
+            />
+          )
         ) : (
           visibleRows.map((c) => (
             <ConversationRow

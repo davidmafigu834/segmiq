@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/ui/cn";
+import { StateLayout, type StateAlign, type StateSize } from "./state-layout";
 
 export type AlertTone = "info" | "warning" | "danger" | "success" | "brand";
 
@@ -79,32 +80,28 @@ export function EmptyState({
   description,
   action,
   size = "standard",
+  align = "center",
   className,
 }: {
   icon?: ReactNode;
   title: string;
   description?: string;
   action?: ReactNode;
-  size?: "compact" | "standard" | "large";
+  size?: StateSize;
+  align?: StateAlign;
   className?: string;
 }) {
-  const pad =
-    size === "compact" ? "py-8" : size === "large" ? "py-12 sm:py-16" : "py-10 sm:py-12";
   return (
-    <div className={cn("flex flex-col items-center justify-center px-4 text-center sm:px-5", pad, className)}>
-      {icon ? (
-        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-sales-md bg-sales-neutral-100 text-sales-text-muted">
-          {icon}
-        </span>
-      ) : null}
-      <p className="text-balance text-[14px] font-semibold text-sales-text-primary">{title}</p>
-      {description ? (
-        <p className="mt-1 max-w-[320px] text-pretty text-[13px] text-sales-text-secondary">
-          {description}
-        </p>
-      ) : null}
-      {action ? <div className="mt-4">{action}</div> : null}
-    </div>
+    <StateLayout
+      icon={icon}
+      title={title}
+      description={description}
+      actions={action}
+      tone="neutral"
+      size={size}
+      align={align}
+      className={className}
+    />
   );
 }
 

@@ -120,6 +120,12 @@ import {
   Tooltip,
   Trend,
   useSalesToast,
+  EmptyState,
+  FilteredEmptyState,
+  ErrorState,
+  LoadingState,
+  SuccessState,
+  InfoState,
 } from "@/components/sales/ui";
 import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import {
@@ -159,6 +165,7 @@ const NAV = [
   { id: "navigation", label: "10 — Navigation & Layout" },
   { id: "timeline", label: "Timeline" },
   { id: "charts", label: "11 — Charts & Data Viz" },
+  { id: "states", label: "12 — Empty States & Feedback" },
   { id: "misc", label: "Icons & misc" },
 ] as const;
 
@@ -1203,6 +1210,198 @@ function MenusShowcaseSection() {
             <li>Menu hover uses neutral wash · selected select option uses restrained lime-soft · destructive actions stay danger</li>
             <li>Filter pills are interactive constraints with remove controls · MetaPill remains passive metadata</li>
           </ul>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function StatesShowcaseSection() {
+  const [retryDemo, setRetryDemo] = useState(false);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[12px] text-sales-text-secondary">
+          Four production systems — empty, loading, error recovery, success & information. Documentation examples only.
+        </p>
+        <SalesThemeToggle />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { n: "1", title: "Empty & filtered empty", q: "Why is there nothing here?" },
+          { n: "2", title: "Loading", q: "Is the system still working?" },
+          { n: "3", title: "Error & recovery", q: "What failed, and how can I recover?" },
+          { n: "4", title: "Success & information", q: "What completed, or what do I need to know?" },
+        ].map((s) => (
+          <Card key={s.n} variant="flat">
+            <CardContent className="space-y-1 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-brand-fg">
+                System {s.n}
+              </p>
+              <p className="text-[13px] font-semibold text-sales-text-primary">{s.title}</p>
+              <p className="text-[11px] text-sales-text-muted">{s.q}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">1 · True empty</CardTitle>
+            <CardDescription>No records exist in this context yet</CardDescription>
+          </CardHeader>
+          <CardContent className="border-t border-sales-border-subtle pt-2">
+            <EmptyState
+              icon={<Inbox size={20} strokeWidth={1.8} />}
+              title="No leads yet"
+              description="New enquiries will appear here once they are captured."
+              action={
+                <Button variant="primary" size="sm" leftIcon={<Plus size={14} strokeWidth={1.8} />}>
+                  Add lead
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">1 · Filtered empty</CardTitle>
+            <CardDescription>Records may exist — the current query returned no matches</CardDescription>
+          </CardHeader>
+          <CardContent className="border-t border-sales-border-subtle pt-2">
+            <FilteredEmptyState
+              onClearFilters={() => {}}
+              description="Try changing your filters or search terms."
+            />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">2 · Loading</CardTitle>
+            <CardDescription>Skeleton first · spinner only for small/unknown waits</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 border-t border-sales-border-subtle pt-4">
+            <DataTable>
+              <DataTableEl>
+                <DataTableHead>
+                  <tr>
+                    <DataTableTh>Lead</DataTableTh>
+                    <DataTableTh>Stage</DataTableTh>
+                    <DataTableTh>Owner</DataTableTh>
+                  </tr>
+                </DataTableHead>
+                <DataTableBody>
+                  <DataTableSkeleton columns={3} rows={4} />
+                </DataTableBody>
+              </DataTableEl>
+            </DataTable>
+            <LoadingState label="Loading leads…" size="compact" />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">3 · Error & recovery</CardTitle>
+            <CardDescription>Retry uses primary action — not destructive red</CardDescription>
+          </CardHeader>
+          <CardContent className="border-t border-sales-border-subtle pt-2">
+            <ErrorState
+              title="Unable to load data"
+              description="We couldn't retrieve this section right now."
+              onRetry={() => {
+                setRetryDemo(true);
+                window.setTimeout(() => setRetryDemo(false), 1200);
+              }}
+              retryLoading={retryDemo}
+            />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">4 · Success</CardTitle>
+            <CardDescription>
+              Full completion views only — ordinary CRUD success still uses Toast (Phase 07)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="border-t border-sales-border-subtle pt-2">
+            <SuccessState
+              title="Import complete"
+              description="42 customers were added successfully."
+              action={
+                <Button variant="primary" size="sm">
+                  View records
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+
+        <Card variant="flat">
+          <CardHeader>
+            <CardTitle className="text-[14px]">4 · Information / setup</CardTitle>
+            <CardDescription>Unavailable or not configured — not a failure</CardDescription>
+          </CardHeader>
+          <CardContent className="border-t border-sales-border-subtle pt-2">
+            <InfoState
+              variant="setup"
+              title="WhatsApp isn't connected"
+              description="Connect your WhatsApp Business account to receive and reply to conversations."
+              action={
+                <Button variant="primary" size="sm">
+                  Connect WhatsApp
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card variant="flat">
+        <CardHeader>
+          <CardTitle className="text-[14px]">When to use each system</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            ["Empty", "No records exist in this workspace context."],
+            ["Filtered empty", "Records may exist but the active query has no matches."],
+            ["Loading", "Data is being fetched — preserve layout with skeleton when possible."],
+            ["Error", "An expected operation failed — explain what and offer real recovery."],
+            ["Success", "The current view represents a completed workflow outcome."],
+            ["Info", "Feature is unavailable, awaiting setup, or needs prerequisite context."],
+          ].map(([title, body]) => (
+            <div key={title} className="rounded-[10px] border border-sales-border-subtle px-3 py-2.5">
+              <p className="text-[12px] font-semibold text-sales-text-primary">{title}</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-sales-text-secondary">{body}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card variant="flat">
+        <CardHeader>
+          <CardTitle className="text-[14px]">Copy & accessibility</CardTitle>
+          <CardDescription>Be specific · explain why · offer the next useful action</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-[12px] text-sales-text-secondary">
+          <p>
+            Prefer titles like <strong className="font-semibold text-sales-text-primary">Unable to load leads</strong>{" "}
+            over vague labels. Avoid “Oops!” or raw error codes in user-facing copy.
+          </p>
+          <p>
+            State resolution order for fetched lists: loading → error → filtered empty → empty → content. Do not show
+            empty while loading or after a failed fetch.
+          </p>
+          <p>
+            Icons are decorative (<code className="rounded bg-sales-neutral-100 px-1">aria-hidden</code>). Use{" "}
+            <code className="rounded bg-sales-neutral-100 px-1">role="alert"</code> for urgent errors,{" "}
+            <code className="rounded bg-sales-neutral-100 px-1">role="status"</code> for loading and success completion.
+          </p>
         </CardContent>
       </Card>
     </div>
@@ -2988,6 +3187,15 @@ function ShowcaseInner() {
             description="Four systems — metric, time series, comparison/composition, process/activity — on Recharts with shared tokens."
           >
             <ChartsShowcaseSection />
+          </Section>
+
+          {/* ── Empty States & Feedback ────────────────────────── */}
+          <Section
+            id="states"
+            title="12 — Empty States & Feedback"
+            description="Empty · filtered empty · loading · error recovery · success · information. Clear, calm, recoverable workspace states."
+          >
+            <StatesShowcaseSection />
           </Section>
 
           {/* ── Misc ───────────────────────────────────────────── */}
