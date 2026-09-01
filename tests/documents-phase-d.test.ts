@@ -6,7 +6,7 @@ import { DOCUMENT_EXTRACTOR_VERSION } from "../lib/documents/processing/constant
 describe("document extraction", () => {
   it("extracts plain text files", async () => {
     const buf = Buffer.from("Hello contract world", "utf8");
-    const result = await extractPlainText(buf, "text/plain");
+    const result = await extractPlainText(buf);
     assert.equal(result.plainText, "Hello contract world");
     assert.equal(result.pages.length, 1);
   });

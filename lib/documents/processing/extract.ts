@@ -21,7 +21,7 @@ function resultFromPlain(plainText: string, pages?: { pageNumber: number; text: 
   };
 }
 
-export async function extractPlainText(buffer: Buffer, _mimeType: string): Promise<ExtractionResult> {
+export async function extractPlainText(buffer: Buffer): Promise<ExtractionResult> {
   const text = normalizeText(buffer.toString("utf8"));
   if (!text) throw new DocumentExtractionError("EMPTY", "Text file is empty.");
   return resultFromPlain(text);
@@ -175,7 +175,7 @@ export async function extractByMime(buffer: Buffer, mimeType: string, filename: 
   const mime = mimeType.toLowerCase();
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
 
-  if (mime === "text/plain" || ext === "txt") return extractPlainText(buffer, mime);
+  if (mime === "text/plain" || ext === "txt") return extractPlainText(buffer);
   if (mime === "text/csv" || ext === "csv") return extractCsv(buffer);
   if (mime === "application/pdf" || ext === "pdf") return extractPdf(buffer);
   if (
