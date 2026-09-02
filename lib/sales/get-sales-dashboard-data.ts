@@ -216,11 +216,15 @@ function mapEnquiryFromPlan(
   const href = source.includes("WHATSAPP")
     ? `/sales/inbox?lead=${leadId}`
     : `/sales/call-now?lead=${leadId}`;
+  const subtitle = q.subtitle?.trim() || null;
+  const statusLike =
+    subtitle &&
+    /^(waiting for reply|contacted|new|qualified|new enquiry)$/i.test(subtitle);
   return {
     id: q.idempotencyKey,
     leadId,
     name: q.customer?.name ?? q.title,
-    projectType: q.customer?.projectType ?? q.subtitle,
+    projectType: q.customer?.projectType ?? (statusLike ? null : subtitle),
     source: q.customer?.source ?? null,
     intent: q.customer?.scoreBand ?? null,
     receivedLabel: q.urgencyLabel ?? "Now",
