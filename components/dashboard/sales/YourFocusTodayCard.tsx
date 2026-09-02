@@ -122,7 +122,7 @@ export function YourFocusTodayCard() {
         <p className="mt-2 text-[15px] font-semibold text-sales-text-primary">You&apos;re clear for now</p>
         <p className="mt-1.5 text-[13px] leading-relaxed text-sales-text-secondary">
           {data?.emptyMessage ||
-            "There are no overdue follow-ups, waiting customers or active Deals requiring immediate action."}
+            "No follow-ups, commitments, or mid-thread replies due. Unread WhatsApp stays in WhatsApp."}
         </p>
         <Link
           href="/sales/pipeline"
@@ -134,11 +134,13 @@ export function YourFocusTodayCard() {
     );
   }
 
-  const { summary, items } = data;
+  const { summary, items, newEnquiries } = data;
+  const enquiryCount = newEnquiries?.length ?? 0;
   const chips = [
     summary.immediate > 0 ? `${summary.immediate} waiting / immediate` : null,
     summary.today > 0 ? `${summary.today} today` : null,
     summary.needsProgress > 0 ? `${summary.needsProgress} need progress` : null,
+    enquiryCount > 0 ? `${enquiryCount} new to draft` : null,
   ].filter(Boolean);
 
   return (
@@ -150,7 +152,11 @@ export function YourFocusTodayCard() {
         <div className="min-w-0">
           <p className="dashboard-focus-kicker">Your focus today</p>
           <p className="mt-2 text-[18px] font-semibold tracking-tight text-sales-text-primary">
-            {summary.total} item{summary.total === 1 ? "" : "s"} need attention
+            {summary.total === 0
+              ? enquiryCount > 0
+                ? "New enquiries ready to draft"
+                : "You're clear for now"
+              : `${summary.total} priorit${summary.total === 1 ? "y" : "ies"} need attention`}
           </p>
           {chips.length ? (
             <p className="mt-1.5 text-[12px] text-sales-text-muted">{chips.join(" · ")}</p>
@@ -160,13 +166,19 @@ export function YourFocusTodayCard() {
           href="/sales/command?view=focus"
           className="mt-2 inline-flex min-h-10 shrink-0 items-center gap-1 rounded-[8px] bg-sales-brand px-3 text-[12px] font-semibold text-sales-brand-fg sm:mt-0"
         >
-          Start my day <ArrowRight size={14} aria-hidden />
+          {summary.total > 0 ? "Start my day" : "Draft replies"} <ArrowRight size={14} aria-hidden />
         </Link>
       </div>
       <div className="border-t border-sales-border px-5 pb-4 sm:px-6">
         {items.map((item, i) => (
           <FocusRow key={item.id} item={item} index={i} />
         ))}
+        {summary.total === 0 && enquiryCount > 0 ? (
+          <p className="py-2 text-[13px] text-sales-text-secondary">
+            {enquiryCount} uncontacted enquir{enquiryCount === 1 ? "y" : "ies"} — summarize & draft in
+            Command, then click Send.
+          </p>
+        ) : null}
         <div className="mt-1 flex flex-wrap gap-2 pt-2">
           {(["IMMEDIATE", "TODAY", "NEEDS_PROGRESS", "WATCH"] as const).map((cls) => {
             const count =

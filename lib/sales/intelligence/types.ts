@@ -157,6 +157,8 @@ export type DailySalesPlanPayload = {
   progress: DailySalesPlanProgress;
   nextBestAction: SalesActionRecommendation | null;
   queue: SalesActionRecommendation[];
+  /** Brand-new uncontacted enquiries — draft/send assist, not main focus. */
+  newEnquiries: SalesActionRecommendation[];
   whatNeedsAttention: Array<{
     id: string;
     text: string;

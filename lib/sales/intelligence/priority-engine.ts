@@ -189,38 +189,46 @@ function generateLeadCandidates(
   const isInbound = INBOUND_LEAD_SOURCES.has(String(lead.source ?? ""));
   const noFirstResponse = !lead.firstRespondedAt;
   const name = lead.name?.trim() || "Unnamed lead";
+  /** Already in an active sales thread — not a brand-new unread WhatsApp chat. */
+  const hasMeaningfulSalesThread = Boolean(
+    lead.firstRespondedAt ||
+      lead.dealId ||
+      lead.openQuote ||
+      lead.followUpDate ||
+      lead.callbackAt ||
+      lead.hasFutureNextAction
+  );
 
-  // 1. Fresh high-intent inbound — no first response
+  // 1. Uncontacted / new enquiries — NOT main Today's Focus.
+  // WhatsApp already surfaces unread. These go to the New Enquiries assist lane.
   if (
     noFirstResponse &&
     (lead.status === "NEW" || lead.status === "CONTACTED") &&
-    intent >= SCORE_HOT_MIN &&
-    ageMinutes <= DEFAULT_FRESH_LEAD_WINDOW_MINUTES * 6
+    (lead.awaitingReplyMinutes != null ||
+      (isInbound && ageMinutes <= DEFAULT_FRESH_LEAD_WINDOW_MINUTES * 12))
   ) {
-    const freshness = clamp(100 - ageMinutes / 2);
+    const freshness = clamp(100 - ageMinutes / 3);
     const score = weightedScore(
       {
         freshness: isInbound ? freshness : freshness * 0.7,
-        intent: intent,
-        responseUrgency: 95,
+        intent: Math.max(intent, 40),
+        responseUrgency: lead.awaitingReplyMinutes != null ? 70 : 50,
         customerWaiting: 0,
         followUpUrgency: 0,
-        stageUrgency: lead.status === "NEW" ? 80 : 50,
-        valueSignal: lead.dealValue ? Math.min(100, lead.dealValue / 500) : 20,
+        stageUrgency: lead.status === "NEW" ? 60 : 40,
+        valueSignal: lead.dealValue ? Math.min(100, lead.dealValue / 500) : 15,
       },
       ctx.weights
     );
-    // Ladder boost for fresh hot inbound
-    const boost = isInbound && ageMinutes <= DEFAULT_FRESH_LEAD_WINDOW_MINUTES ? 18 : intent >= SCORE_HOT_MIN ? 10 : 0;
     out.push(
       baseRec({
         ctx,
         lead,
         actionType: "CONTACT_NEW_LEAD",
-        reasonCode: "HIGH_INTENT_NEW_LEAD",
-        attentionScore: score + boost,
+        reasonCode: intent >= SCORE_HOT_MIN ? "HIGH_INTENT_NEW_LEAD" : "HIGH_INTENT_NEW_LEAD",
+        attentionScore: Math.min(score, 55),
         title: name,
-        subtitle: [band, sourceLabel(lead.source)].filter(Boolean).join(" · ") || null,
+        subtitle: [band, sourceLabel(lead.source), "New enquiry"].filter(Boolean).join(" · ") || null,
         reasonCtx: {
           ageLabel: formatAgeMinutes(ageMinutes),
           sourceLabel: sourceLabel(lead.source),
@@ -228,13 +236,22 @@ function generateLeadCandidates(
         urgencyLabel: `Received ${formatAgeMinutes(ageMinutes)}`,
         dueAt: null,
         availableActions: contactActions(lead),
-        metadata: { projectType: lead.projectType },
+        metadata: {
+          projectType: lead.projectType,
+          focusLane: "new_enquiry",
+          lastInboundWaitingMinutes: lead.awaitingReplyMinutes,
+        },
       })
     );
   }
 
-  // 2. Customer waiting (WhatsApp inbound unanswered)
-  if (lead.awaitingReplyMinutes != null && lead.awaitingReplyMinutes >= 0) {
+  // 2. Customer waiting — ONLY mid-thread (salesperson already engaged / deal / quote / follow-up).
+  // Do not flood Today's Focus with brand-new unread WhatsApp chats.
+  if (
+    hasMeaningfulSalesThread &&
+    lead.awaitingReplyMinutes != null &&
+    lead.awaitingReplyMinutes >= 0
+  ) {
     const wait = lead.awaitingReplyMinutes;
     const waitingScore = clamp(70 + Math.min(30, wait / 2));
     const score = weightedScore(
@@ -243,6 +260,7 @@ function generateLeadCandidates(
         intent,
         responseUrgency: waitingScore,
         freshness: clamp(100 - wait / 5),
+        followUpUrgency: lead.followUpDate || lead.callbackAt ? 40 : 10,
       },
       ctx.weights
     );
@@ -256,11 +274,12 @@ function generateLeadCandidates(
         title: name,
         subtitle: "Waiting for reply",
         reasonCtx: { name, ageLabel: formatAgeMinutes(wait) },
-        urgencyLabel: `Replied ${formatAgeMinutes(wait)}`,
+        urgencyLabel: `Waiting ${formatAgeMinutes(wait)}`,
         dueAt: null,
         availableActions: contactActions(lead).includes("whatsapp")
           ? contactActions(lead)
           : (["whatsapp", ...contactActions(lead)] as AvailableContactAction[]),
+        metadata: { focusLane: "focus", meaningfulThread: true },
       })
     );
   }
@@ -592,6 +611,8 @@ export function rankSalesActions(opts: {
 }): {
   nextBestAction: SalesActionRecommendation | null;
   queue: SalesActionRecommendation[];
+  /** Brand-new uncontacted enquiries — assist lane, not Today's Focus. */
+  newEnquiries: SalesActionRecommendation[];
   all: SalesActionRecommendation[];
   dealActionCount: number;
 } {
@@ -616,7 +637,9 @@ export function rankSalesActions(opts: {
     (opts.ctx.activePipelineValue == null ||
       opts.ctx.activePipelineValue < opts.ctx.remainingGoalValue);
 
-  const meaningfulDealWork = dealActions.filter((c) => c.attentionScore >= 35);
+  const meaningfulDealWork = dealActions.filter(
+    (c) => c.attentionScore >= 35 && c.metadata?.focusLane !== "new_enquiry"
+  );
   if (
     meaningfulDealWork.length === 0 &&
     (opts.ctx.hasConfiguredProspectTarget || coverageLow || opts.leads.filter((l) => isActive(String(l.status))).length === 0)
@@ -653,11 +676,17 @@ export function rankSalesActions(opts: {
     .filter((c) => !isSuppressed(c, states, opts.ctx.now))
     .sort(stableSort);
 
-  const queue = visible.slice(0, limit);
+  const newEnquiries = visible
+    .filter((c) => c.metadata?.focusLane === "new_enquiry")
+    .slice(0, Math.max(limit, 12));
+  const salesWork = visible.filter((c) => c.metadata?.focusLane !== "new_enquiry");
+  const queue = salesWork.slice(0, limit);
+
   return {
     nextBestAction: queue[0] ?? null,
     queue,
-    all: visible,
+    newEnquiries,
+    all: salesWork,
     dealActionCount: meaningfulDealWork.filter((c) => !isSuppressed(c, states, opts.ctx.now)).length,
   };
 }

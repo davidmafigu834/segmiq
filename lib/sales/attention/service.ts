@@ -195,6 +195,14 @@ export async function getTodaysFocus(opts: {
       })
     );
 
+    const fromNewEnquiries: SalesAttentionItem[] = (plan.newEnquiries ?? []).map((rec) =>
+      mapRecommendationToAttentionItem({
+        rec,
+        companyId: opts.clientId,
+        salespersonId: opts.userId,
+      })
+    );
+
     const fromCommitments = commitments
       .filter((c) => {
         if (!c.dueAt) return false;
@@ -211,19 +219,22 @@ export async function getTodaysFocus(opts: {
         })
       );
 
-    let items = mergeFocusItems(fromPlan, fromCommitments);
+    let items = mergeFocusItems(fromPlan, fromCommitments).filter(
+      (i) => i.metadata?.focusLane !== "new_enquiry" && i.type !== "NEW_LEAD_CONTACT"
+    );
+    const newEnquiries = fromNewEnquiries.sort(compareAttentionItems);
 
     if (opts.reconcile !== false) {
       void reconcileAttentionProjections({
         clientId: opts.clientId,
         salespersonId: opts.userId,
-        items,
+        items: [...items, ...newEnquiries],
       }).catch(() => undefined);
       void emitAttentionEvent({
         clientId: opts.clientId,
         salespersonId: opts.userId,
         eventType: "sales_attention.candidates_generated",
-        payload: { total: items.length },
+        payload: { total: items.length, newEnquiries: newEnquiries.length },
       });
     }
 
@@ -269,7 +280,7 @@ export async function getTodaysFocus(opts: {
       );
     }
 
-    const empty = items.length === 0;
+    const empty = items.length === 0 && newEnquiries.length === 0;
     return {
       generatedAt: plan.generatedAt,
       planDate: plan.planDate,
@@ -277,14 +288,17 @@ export async function getTodaysFocus(opts: {
       lastRefreshedLabel: formatRefreshedLabel(plan.generatedAt, plan.timezone),
       summary: fullSummary,
       items,
+      newEnquiries,
       nextBest: items[0] ?? null,
       empty,
       emptyMessage: empty
-        ? "You're clear for now. There are no overdue follow-ups, waiting customers, or active Deals requiring immediate action."
-        : null,
+        ? "You're clear for now — no follow-ups, commitments, or mid-thread replies due. New WhatsApp unread stays in WhatsApp until you want a draft."
+        : items.length === 0 && newEnquiries.length > 0
+          ? "No active sales follow-ups right now. New enquiries are listed below — draft a reply when you're ready."
+          : null,
       planError: false,
       focusModeTitle: plan.focus?.title ?? null,
-      queueVersion: `${plan.planDate}:${plan.generatedAt}:${fullSummary.total}`,
+      queueVersion: `${plan.planDate}:${plan.generatedAt}:${fullSummary.total}:${newEnquiries.length}`,
     };
   } catch {
     return emptyPayload({
@@ -306,6 +320,7 @@ function emptyPayload(opts: {
     lastRefreshedLabel: "",
     summary: { total: 0, immediate: 0, today: 0, needsProgress: 0, watch: 0 },
     items: [],
+    newEnquiries: [],
     nextBest: null,
     empty: true,
     emptyMessage: opts.emptyMessage,
@@ -321,7 +336,11 @@ export async function getAttentionItem(opts: {
   itemId: string;
 }): Promise<SalesAttentionItem | null> {
   const focus = await getTodaysFocus({ ...opts, enrichTop: 1 });
-  return focus.items.find((i) => i.id === opts.itemId || i.fingerprint === opts.itemId) ?? null;
+  return (
+    focus.items.find((i) => i.id === opts.itemId || i.fingerprint === opts.itemId) ??
+    focus.newEnquiries.find((i) => i.id === opts.itemId || i.fingerprint === opts.itemId) ??
+    null
+  );
 }
 
 export async function completeAttentionItem(opts: {

@@ -27,22 +27,48 @@ function buildActions(rec: SalesActionRecommendation, type: SalesAttentionItem["
   const actions: FocusAction[] = [];
 
   if (type === "CUSTOMER_WAITING" || type === "NEW_LEAD_CONTACT") {
-    if (rec.availableActions.includes("whatsapp") && leadId) {
+    if (type === "NEW_LEAD_CONTACT") {
       actions.push({
-        kind: "open_whatsapp",
-        label: "Open WhatsApp",
-        href: `/sales/whatsapp?lead=${leadId}`,
-        primary: type === "CUSTOMER_WAITING",
+        kind: "draft_and_send",
+        label: "Draft reply",
+        prompt: "Draft a first reply for this new enquiry.",
+        primary: true,
       });
-    }
-    if (type === "CUSTOMER_WAITING" || /quot/i.test(rec.reason) || /quot/i.test(rec.subtitle ?? "")) {
       actions.push({
-        kind: "prepare_quotation",
-        label: "Prepare quotation",
-        href: `/sales/command?view=focus&action=quote${leadId ? `&lead=${leadId}` : ""}`,
-        prompt: leadId ? "Create a quotation for this customer." : "Create a quotation.",
-        primary: /quot/i.test(rec.reason) || /quot/i.test(rec.title),
+        kind: "summarize",
+        label: "Summarize",
+        prompt: "Summarize what this new enquiry is asking for.",
       });
+      if (leadId) {
+        actions.push({
+          kind: "open_whatsapp",
+          label: "Open WhatsApp",
+          href: `/sales/whatsapp?lead=${leadId}`,
+        });
+      }
+    } else {
+      if (rec.availableActions.includes("whatsapp") && leadId) {
+        actions.push({
+          kind: "open_whatsapp",
+          label: "Open WhatsApp",
+          href: `/sales/whatsapp?lead=${leadId}`,
+          primary: true,
+        });
+      }
+      actions.push({
+        kind: "draft_message",
+        label: "Draft message",
+        prompt: "Draft a reply for this customer.",
+      });
+      if (/quot/i.test(rec.reason) || /quot/i.test(rec.subtitle ?? "") || /quot/i.test(rec.title)) {
+        actions.push({
+          kind: "prepare_quotation",
+          label: "Prepare quotation",
+          href: `/sales/command?view=focus&action=quote${leadId ? `&lead=${leadId}` : ""}`,
+          prompt: leadId ? "Create a quotation for this customer." : "Create a quotation.",
+          primary: true,
+        });
+      }
     }
   }
 
@@ -176,7 +202,9 @@ function suggestedSummary(rec: SalesActionRecommendation, type: SalesAttentionIt
       case "APPOINTMENT_TODAY":
         return "Review customer context and confirm what you need to accomplish in the meeting.";
       case "NEW_LEAD_CONTACT":
-        return "Make first contact and qualify the enquiry.";
+        return "Review the enquiry, then draft a first reply if helpful.";
+      case "CUSTOMER_WAITING":
+        return "Reply in the active sales thread — this customer is mid-conversation with you.";
       case "PROSPECTING":
         return "Add valid prospects to rebuild pipeline coverage.";
       default:

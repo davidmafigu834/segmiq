@@ -94,7 +94,9 @@ export type FocusActionKind =
   | "call"
   | "snooze"
   | "done"
-  | "not_relevant";
+  | "not_relevant"
+  | "draft_and_send"
+  | "summarize";
 
 export type FocusAction = {
   kind: FocusActionKind;
@@ -166,6 +168,11 @@ export type TodaysFocusPayload = {
   lastRefreshedLabel: string;
   summary: TodaysFocusSummary;
   items: SalesAttentionItem[];
+  /**
+   * Uncontacted / overnight enquiries — not main Today's Focus.
+   * WhatsApp already shows unread; this lane offers summarize + draft + send.
+   */
+  newEnquiries: SalesAttentionItem[];
   nextBest: SalesAttentionItem | null;
   empty: boolean;
   emptyMessage: string | null;

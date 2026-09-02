@@ -80,7 +80,45 @@ export async function runGetTodaysFocus(opts: {
   }
 
   const { summary } = focus;
-  const header = `${summary.total} item${summary.total === 1 ? "" : "s"} need attention · ${summary.immediate} Immediate · ${summary.today} Today · ${summary.needsProgress} Need progress`;
+  const enquiryCount = focus.newEnquiries?.length ?? 0;
+
+  if (focus.items.length === 0 && enquiryCount > 0) {
+    const topEnquiry = focus.newEnquiries[0]!;
+    return {
+      reply: `No active follow-ups right now. ${enquiryCount} new enquir${enquiryCount === 1 ? "y" : "ies"} can be summarized and drafted — WhatsApp already shows unread. Start with ${topEnquiry.customerName || topEnquiry.title}.`,
+      status: "COMPLETED",
+      blocks: [
+        {
+          type: "text",
+          text: `New enquiries (not Today's Focus)\n\n${focus.newEnquiries
+            .slice(0, 6)
+            .map((item, i) => formatItemLine(item, i))
+            .join("\n\n")}`,
+        },
+        {
+          type: "actions",
+          actions: [
+            {
+              label: "Draft & send first reply",
+              href: "/sales/command?view=focus",
+              style: "primary",
+            },
+            {
+              label: "Open WhatsApp",
+              href: topEnquiry.leadId ? `/sales/whatsapp?lead=${topEnquiry.leadId}` : "/sales/whatsapp",
+              style: "secondary",
+            },
+          ],
+        },
+      ],
+      activeLeadId: topEnquiry.leadId,
+      activeDealId: topEnquiry.dealId,
+    };
+  }
+
+  const header = `${summary.total} sales priorit${summary.total === 1 ? "y" : "ies"} · ${summary.immediate} Immediate · ${summary.today} Today · ${summary.needsProgress} Need progress${
+    enquiryCount > 0 ? ` · ${enquiryCount} new enquir${enquiryCount === 1 ? "y" : "ies"} to draft` : ""
+  }`;
   const lines = focus.items.slice(0, 8).map((item, i) => formatItemLine(item, i));
   const reply = `Today's Focus\n\n${header}\n\n${lines.join("\n\n")}`;
 
@@ -107,7 +145,7 @@ export async function runGetTodaysFocus(opts: {
   ];
 
   return {
-    reply: `You have ${summary.total} priorities today. Start with ${top.customerName || top.title}: ${top.suggestedActionSummary}`,
+    reply: `You have ${summary.total} sales priorities today (follow-ups and mid-thread replies — not raw unread chats). Start with ${top.customerName || top.title}: ${top.suggestedActionSummary}`,
     status: "COMPLETED",
     blocks,
     activeLeadId: top.leadId,

@@ -44,6 +44,7 @@ import type {
   SalesPlanSummary,
   SalesActivityTodayMetric,
 } from "@/components/dashboard/sales/types";
+import type { TodaysFocusPayload } from "@/lib/sales/attention/types";
 
 const LEAD_ENQUIRY_ACTIONS = new Set([
   "CONTACT_NEW_LEAD",
@@ -98,6 +99,8 @@ export type SalesDashboardData = {
   pipelineSnapshot: SalesPipelineSnapshotStage[];
   recentActivity: SalesActivityItem[];
   planSummary: SalesPlanSummary;
+  /** Sales Attention Engine — ranked work queue (not goal BUILD/MOVE/CLOSE mode). */
+  todaysFocus: TodaysFocusPayload | null;
   hasAnyDeals: boolean;
   hasAnyLeads: boolean;
   clientId: string | null;
@@ -1107,12 +1110,27 @@ export async function getSalesDashboardData(opts: {
   );
 
   let realEstate: AgentReDashboard | null = null;
+  let todaysFocus: TodaysFocusPayload | null = null;
   if (opts.clientId) {
-    const { data: clientRow } = await supabase
-      .from("clients")
-      .select("business_type")
-      .eq("id", opts.clientId)
-      .maybeSingle();
+    const [{ data: clientRow }, focusResult] = await Promise.all([
+      supabase
+        .from("clients")
+        .select("business_type")
+        .eq("id", opts.clientId)
+        .maybeSingle(),
+      import("@/lib/sales/attention")
+        .then(({ getTodaysFocus }) =>
+          getTodaysFocus({
+            userId: opts.userId,
+            clientId: opts.clientId!,
+            limit: 3,
+            reconcile: false,
+            enrichTop: 0,
+          })
+        )
+        .catch(() => null),
+    ]);
+    todaysFocus = focusResult;
     if (isRealEstate(normalizeBusinessType(clientRow?.business_type))) {
       realEstate = await getAgentRealEstateDashboard({
         clientId: opts.clientId,
@@ -1137,6 +1155,7 @@ export async function getSalesDashboardData(opts: {
     pipelineSnapshot,
     recentActivity,
     planSummary,
+    todaysFocus,
     hasAnyDeals: deals.length > 0,
     hasAnyLeads: legacy.numbers.totalActive > 0 || (leadsMonthRes.data?.length ?? 0) > 0,
     clientId: opts.clientId,

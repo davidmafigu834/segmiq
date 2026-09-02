@@ -55,7 +55,7 @@ function lead(partial: Partial<LeadIntelligenceSignal> & Pick<LeadIntelligenceSi
 }
 
 describe("priority engine ranking", () => {
-  it("ranks hot facebook lead with no response above prospecting", () => {
+  it("puts uncontacted inbound enquiries in newEnquiries lane, not Today's Focus queue", () => {
     const hot = lead({
       id: "hot-1",
       name: "Tafadzwa Moyo",
@@ -65,21 +65,44 @@ describe("priority engine ranking", () => {
       createdAt: "2026-08-11T09:55:00.000Z",
       firstRespondedAt: null,
       lastMeaningfulActivityAt: null,
+      awaitingReplyMinutes: 5,
     });
     const ranked = rankSalesActions({ leads: [hot], ctx: ctx() });
-    assert.ok(ranked.nextBestAction);
-    assert.equal(ranked.nextBestAction!.actionType, "CONTACT_NEW_LEAD");
-    assert.equal(ranked.nextBestAction!.reasonCode, "HIGH_INTENT_NEW_LEAD");
-    assert.ok(!ranked.queue.some((q) => q.actionType === "PROSPECT_NEW_CUSTOMERS"));
+    assert.equal(ranked.newEnquiries[0]?.actionType, "CONTACT_NEW_LEAD");
+    assert.equal(ranked.newEnquiries[0]?.metadata?.focusLane, "new_enquiry");
+    assert.ok(!ranked.queue.some((q) => q.actionType === "CONTACT_NEW_LEAD"));
+    assert.ok(!ranked.queue.some((q) => q.reasonCode === "CUSTOMER_WAITING"));
   });
 
-  it("ranks customer waiting above low-urgency work", () => {
+  it("does not treat brand-new unread as CUSTOMER_WAITING without a sales thread", () => {
+    const unread = lead({
+      id: "unread-1",
+      name: "New Chat",
+      source: "WHATSAPP_INBOUND",
+      status: "NEW",
+      score: 40,
+      createdAt: "2026-08-11T09:00:00.000Z",
+      firstRespondedAt: null,
+      dealId: null,
+      openQuote: null,
+      followUpDate: null,
+      callbackAt: null,
+      hasFutureNextAction: false,
+      awaitingReplyMinutes: 40,
+    });
+    const ranked = rankSalesActions({ leads: [unread], ctx: ctx() });
+    assert.ok(!ranked.all.some((a) => a.reasonCode === "CUSTOMER_WAITING"));
+    assert.ok(ranked.newEnquiries.some((a) => a.sourceEntityId === "unread-1"));
+  });
+
+  it("ranks mid-thread customer waiting in Today's Focus queue", () => {
     const waiting = lead({
       id: "wait-1",
       name: "Sarah",
       status: "NEGOTIATING",
       score: 60,
       awaitingReplyMinutes: 28,
+      firstRespondedAt: "2026-08-10T10:00:00.000Z",
       lastMeaningfulActivityAt: "2026-08-11T09:30:00.000Z",
     });
     const stale = lead({
@@ -169,7 +192,7 @@ describe("priority engine ranking", () => {
     assert.equal(ranked.nextBestAction?.actionType, "PROSPECT_NEW_CUSTOMERS");
   });
 
-  it("promotes new hot inbound over in-progress prospecting", () => {
+  it("keeps new hot inbound in newEnquiries lane (does not displace focus queue)", () => {
     const hot = lead({
       id: "hot-2",
       name: "Tariro",
@@ -179,12 +202,16 @@ describe("priority engine ranking", () => {
       createdAt: "2026-08-11T09:54:00.000Z",
       firstRespondedAt: null,
       lastMeaningfulActivityAt: null,
+      awaitingReplyMinutes: 6,
     });
     const ranked = rankSalesActions({
       leads: [hot],
       ctx: ctx({ prospectsCompletedToday: 6, prospectTarget: 10 }),
     });
-    assert.equal(ranked.nextBestAction?.actionType, "CONTACT_NEW_LEAD");
+    assert.equal(ranked.newEnquiries[0]?.actionType, "CONTACT_NEW_LEAD");
+    assert.ok(!ranked.queue.some((q) => q.actionType === "CONTACT_NEW_LEAD"));
+    // With no mid-thread sales work, prospecting may still fill Today's Focus.
+    assert.equal(ranked.nextBestAction?.actionType, "PROSPECT_NEW_CUSTOMERS");
   });
 });
 

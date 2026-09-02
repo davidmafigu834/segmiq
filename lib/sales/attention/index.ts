@@ -8,6 +8,7 @@ export * from "./next-best-action";
 export * from "./context-summary";
 export * from "./call-brief";
 export * from "./draft-followup";
+export * from "./new-enquiry-assist";
 export * from "./commitments";
 export * from "./commitment-extract";
 export * from "./enrichment";

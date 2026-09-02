@@ -1010,8 +1010,16 @@ export async function fetchDailySalesPlan(opts: {
   if (waitingCount > 0) {
     whatNeedsAttention.push({
       id: "waiting",
-      text: `${waitingCount} customer${waitingCount === 1 ? "" : "s"} waiting for a reply`,
+      text: `${waitingCount} active thread${waitingCount === 1 ? "" : "s"} waiting for your reply`,
       href: "/sales/inbox/needs-reply",
+    });
+  }
+  const newEnquiryCount = ranked.newEnquiries.length;
+  if (newEnquiryCount > 0) {
+    whatNeedsAttention.push({
+      id: "new_enquiries",
+      text: `${newEnquiryCount} new enquir${newEnquiryCount === 1 ? "y" : "ies"} ready to draft`,
+      href: "/sales/command?view=focus",
     });
   }
   if (quoteWaiting > 0) {
@@ -1105,6 +1113,7 @@ export async function fetchDailySalesPlan(opts: {
     },
     nextBestAction: ranked.nextBestAction ? decorate(ranked.nextBestAction) : null,
     queue: ranked.queue.map(decorate),
+    newEnquiries: ranked.newEnquiries.map(decorate),
     whatNeedsAttention: whatNeedsAttention.slice(0, 6),
     goal: {
       hasGoal: Boolean(goal),
