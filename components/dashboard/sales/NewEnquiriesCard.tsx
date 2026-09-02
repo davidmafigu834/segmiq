@@ -43,8 +43,15 @@ function enquirySubtitle(item: SalesEnquiryPriorityItem): string | null {
   const project = item.projectType?.trim();
   if (project && !STATUS_LIKE.test(project)) return project;
   const reason = item.reason?.trim();
-  if (reason && !STATUS_LIKE.test(reason) && reason.length <= 72) return reason;
-  return null;
+  if (!reason || STATUS_LIKE.test(reason)) return null;
+  if (reason.length > 72) return null;
+  // Don't repeat the Received column (waiting / overdue copy).
+  if (/is waiting for your response/i.test(reason)) return null;
+  if (/overdue by/i.test(reason) && /overdue/i.test(item.receivedLabel ?? "")) return null;
+  if (/planned follow-up is overdue/i.test(reason) && /overdue/i.test(item.receivedLabel ?? "")) {
+    return null;
+  }
+  return reason;
 }
 
 function IntentBadge({ intent }: { intent: SalesEnquiryPriorityItem["intent"] }) {
@@ -156,56 +163,69 @@ export function NewEnquiriesCard({
       ) : (
         <>
           {/* Desktop table — scroll on narrow widths instead of crushing actions */}
-          <div className="hidden w-full overflow-x-auto md:block">
-            <table className="dashboard-table w-full table-auto text-left">
-              <thead>
-                <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-                  <th className="w-[1%] max-w-[220px] px-5 py-2.5 font-semibold">Name</th>
-                  <th className="w-[1%] whitespace-nowrap px-2 py-2.5 font-semibold">Source</th>
-                  <th className="w-[1%] whitespace-nowrap px-3 py-2.5 font-semibold">Intent</th>
-                  <th className="w-[1%] whitespace-nowrap px-3 py-2.5 font-semibold">Received</th>
-                  <th className="px-5 py-2.5 text-right font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
-                {items.map((item) => {
-                  const subtitle = enquirySubtitle(item);
-                  return (
-                    <tr key={item.id} className="dashboard-list-row">
-                      <td className="w-[1%] max-w-[220px] px-5 py-3 align-middle">
-                        <Link href={item.href} className="block min-w-0">
-                          <p className="truncate text-[13px] font-semibold text-sales-text-primary">
-                            {item.name}
+          {/* Desktop — grid keeps Source→Actions packed; Name takes remaining space */}
+          <div className="hidden overflow-x-auto md:block">
+            <div
+              className="grid grid-cols-[minmax(140px,1fr)_auto_auto_auto_auto] items-center gap-x-3 border-b border-sales-border-subtle bg-sales-surface-subtle px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted"
+              role="row"
+            >
+              <span role="columnheader">Name</span>
+              <span className="whitespace-nowrap" role="columnheader">
+                Source
+              </span>
+              <span className="whitespace-nowrap" role="columnheader">
+                Intent
+              </span>
+              <span className="whitespace-nowrap" role="columnheader">
+                Received
+              </span>
+              <span className="whitespace-nowrap pr-0.5" role="columnheader">
+                Actions
+              </span>
+            </div>
+            <div className="divide-y divide-[rgba(125,148,194,0.07)]" role="rowgroup">
+              {items.map((item) => {
+                const subtitle = enquirySubtitle(item);
+                return (
+                  <div
+                    key={item.id}
+                    className="dashboard-list-row grid grid-cols-[minmax(140px,1fr)_auto_auto_auto_auto] items-center gap-x-3 px-5 py-3"
+                    role="row"
+                  >
+                    <div className="min-w-0" role="cell">
+                      <Link href={item.href} className="block min-w-0">
+                        <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                          {item.name}
+                        </p>
+                        {subtitle ? (
+                          <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-sales-text-muted">
+                            {subtitle}
                           </p>
-                          {subtitle ? (
-                            <p className="mt-0.5 truncate text-[11px] text-sales-text-muted">
-                              {subtitle}
-                            </p>
-                          ) : null}
-                        </Link>
-                      </td>
-                      <td className="w-[1%] whitespace-nowrap px-2 py-3 align-middle">
-                        <span className="inline-flex items-center gap-1.5 text-[12px] text-sales-text-secondary">
-                          <SourceIcon source={item.source} />
-                          <span>{sourceLabel(item.source)}</span>
-                        </span>
-                      </td>
-                      <td className="w-[1%] whitespace-nowrap px-3 py-3 align-middle">
-                        <IntentBadge intent={item.intent} />
-                      </td>
-                      <td className="w-[1%] whitespace-nowrap px-3 py-3 align-middle text-[12px] tabular-nums text-sales-text-muted">
-                        {item.receivedLabel}
-                      </td>
-                      <td className="px-5 py-3 align-middle">
-                        <div className="flex justify-end">
-                          <EnquiryActions item={item} variant="compact" />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        ) : null}
+                      </Link>
+                    </div>
+                    <div className="whitespace-nowrap" role="cell">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] text-sales-text-secondary">
+                        <SourceIcon source={item.source} />
+                        <span>{sourceLabel(item.source)}</span>
+                      </span>
+                    </div>
+                    <div className="whitespace-nowrap" role="cell">
+                      <IntentBadge intent={item.intent} />
+                    </div>
+                    <div
+                      className="whitespace-nowrap text-[12px] tabular-nums text-sales-text-muted"
+                      role="cell"
+                    >
+                      {item.receivedLabel}
+                    </div>
+                    <div className="whitespace-nowrap" role="cell">
+                      <EnquiryActions item={item} variant="compact" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Mobile cards */}

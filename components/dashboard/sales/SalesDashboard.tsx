@@ -171,6 +171,9 @@ function SalesDashboardInner({
               daysLeftLabel={data.goal?.daysLeftLabel}
               dailyFocusHeadline={data.goal?.dailyFocus?.headline}
               scheduleLine={data.plan?.schedule?.summary}
+              schedule={data.plan?.schedule ?? null}
+              enquiryCount={data.priorityEnquiries.length}
+              dealCount={data.priorityDeals.length}
             />
             <TodaysSalesPlanStrip {...data.planSummary} />
           </div>
@@ -191,6 +194,9 @@ function SalesDashboardInner({
               daysLeftLabel={data.goal?.daysLeftLabel}
               dailyFocusHeadline={data.goal?.dailyFocus?.headline}
               scheduleLine={data.plan?.schedule?.summary}
+              schedule={data.plan?.schedule ?? null}
+              enquiryCount={data.priorityEnquiries.length}
+              dealCount={data.priorityDeals.length}
             />
           </div>
 
