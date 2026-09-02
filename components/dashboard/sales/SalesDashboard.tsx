@@ -17,7 +17,6 @@ import { PerformanceCard } from "./PerformanceCard";
 import { RecentActivityCard } from "./RecentActivityCard";
 import { SourceMixCard } from "./SourceMixCard";
 import { TodaysFocusCard, TodaysSalesPlanStrip } from "./TodaysFocusCard";
-import { YourFocusTodayCard } from "./YourFocusTodayCard";
 import { NewEnquiriesCard } from "./NewEnquiriesCard";
 import { DealsAttentionCard } from "./DealsAttentionCard";
 import { LeadDealFunnelCard } from "./LeadDealFunnelCard";
@@ -163,7 +162,6 @@ function SalesDashboardInner({
           ) : null}
 
           <div className="space-y-4 layout:hidden">
-            <YourFocusTodayCard />
             <TodaysFocusCard
               focus={data.focus}
               coverage={data.coverage}
@@ -184,7 +182,6 @@ function SalesDashboardInner({
           </div>
 
           <div className="hidden space-y-4 layout:block">
-            <YourFocusTodayCard />
             <TodaysFocusCard
               focus={data.focus}
               coverage={data.coverage}
