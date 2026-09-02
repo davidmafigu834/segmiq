@@ -6,6 +6,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { formatTrend } from "../lib/sales/sales-dashboard-display";
 import { calcProgress } from "../lib/sales/goals/progress";
+import {
+  assessDailyReportDay,
+  buildSalespersonDailyNarrative,
+  buildTeamDailySummaryNarrative,
+} from "../lib/sales/company-daily-team-report-narrative";
+import type { CompanyDailyTeamReport } from "../components/dashboard/company/types";
 
 describe("company dashboard metric definitions", () => {
   it("never treats missing previous as infinite growth", () => {
@@ -81,5 +87,87 @@ describe("company dashboard metric definitions", () => {
       }),
       true
     );
+  });
+
+  it("daily team narrative summarizes team totals in prose", () => {
+    const report: CompanyDailyTeamReport = {
+      dateLabel: "Wed 2 Sep",
+      rows: [
+        {
+          id: "a",
+          name: "Benadette Tatenda Fazilahmed",
+          initials: "BT",
+          avatarUrl: null,
+          roleLabel: "Sales Executive",
+          newLeads: 15,
+          qualified: 3,
+          contacted: 11,
+          quotesPrepared: 0,
+          quotesSent: 0,
+          dealsWon: 2,
+          followUpsDue: 1,
+          href: "/client/team",
+        },
+        {
+          id: "b",
+          name: "Tinotenda Ecolus Energy",
+          initials: "TE",
+          avatarUrl: null,
+          roleLabel: "Sales Executive",
+          newLeads: 13,
+          qualified: 3,
+          contacted: 6,
+          quotesPrepared: 1,
+          quotesSent: 0,
+          dealsWon: 1,
+          followUpsDue: 1,
+          href: "/client/team",
+        },
+      ],
+      totals: {
+        newLeads: 28,
+        qualified: 6,
+        contacted: 17,
+        quotesPrepared: 1,
+        quotesSent: 0,
+        dealsWon: 3,
+        followUpsDue: 2,
+        unassignedLeads: 0,
+      },
+      viewReportsHref: "/client/reports?tab=team&preset=today",
+    };
+
+    const summary = buildTeamDailySummaryNarrative(report, {
+      leadSingular: "Lead",
+      leadPlural: "Leads",
+      dealSingular: "Deal",
+      dealPlural: "Deals",
+      showQuotes: true,
+    });
+    assert.match(summary, /28 leads/);
+    assert.match(summary, /3 deals closed/);
+    assert.match(summary, /2 follow-ups due/);
+
+    const ben = buildSalespersonDailyNarrative(report.rows[0]!, report, {
+      leadSingular: "Lead",
+      leadPlural: "Leads",
+      dealSingular: "Deal",
+      dealPlural: "Deals",
+      showQuotes: true,
+    });
+    assert.match(ben, /heaviest inbound load/);
+    assert.match(ben, /2 deals/);
+
+    const tin = buildSalespersonDailyNarrative(report.rows[1]!, report, {
+      leadSingular: "Lead",
+      leadPlural: "Leads",
+      dealSingular: "Deal",
+      dealPlural: "Deals",
+      showQuotes: true,
+    });
+    assert.match(tin, /prepared but not sent/);
+
+    const assessment = assessDailyReportDay(report.rows[1]!, true);
+    assert.equal(assessment.tone, "attention");
   });
 });

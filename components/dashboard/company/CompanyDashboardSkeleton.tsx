@@ -24,7 +24,7 @@ export default function CompanyDashboardSkeleton() {
           <SurfaceCardSkeleton bodyClassName="h-[72px]" />
         </div>
 
-        <SurfaceCardSkeleton bodyClassName="h-[320px]" />
+        <SurfaceCardSkeleton bodyClassName="h-[520px]" />
 
         <div className="grid w-full grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] layout:gap-5">
           <SurfaceCardSkeleton bodyClassName="h-[240px]" />
