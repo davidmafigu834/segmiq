@@ -77,22 +77,21 @@ export function EntitySelector({
 
 export function CommercialCheckSummary({ check }: { check: CommercialCheckPreview }) {
   return (
-    <div>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
-        Commercial Check
-      </p>
-      <ul className="mt-2 space-y-1">
+    <div className="rounded-[10px] border border-sales-border-subtle bg-sales-surface-subtle px-3 py-2.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          Commercial Check
+        </p>
+        <p className="text-[12px] font-medium text-sales-text-primary">{check.readyLabel}</p>
+      </div>
+      <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
         {check.items.map((item) => (
-          <li key={item.id} className="flex items-start gap-2 text-[13px]">
+          <li key={item.id} className="inline-flex items-center gap-1.5 text-[12px] text-sales-text-secondary">
             <CheckIcon status={item.status} />
-            <span className="text-sales-text-primary">{item.label}</span>
-            {item.action && item.status !== "pass" ? (
-              <span className="text-sales-text-muted">· {item.action}</span>
-            ) : null}
+            <span>{item.label}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[13px] font-semibold text-sales-text-primary">{check.readyLabel}</p>
     </div>
   );
 }
@@ -106,31 +105,55 @@ export function QuotationDraftCard({
 }) {
   const cur = preview.currency;
   return (
-    <article className="rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
-        Quotation {preview.isRevision ? "revision" : "draft"}
-      </p>
-      <h3 className="mt-1 text-[18px] font-semibold tracking-[-0.03em] text-sales-text-primary">
-        {preview.quoteNumber}
-      </h3>
-      <p className="mt-0.5 text-[13px] text-sales-text-secondary">
-        {preview.customerName}
-        {preview.dealName ? ` · ${preview.dealName}` : ""}
-      </p>
-      <div className="mt-3 space-y-1.5 border-t border-sales-border-subtle pt-3">
-        {preview.lines.map((line, i) => (
-          <div key={`${line.name}-${i}`} className="flex items-baseline justify-between gap-3 text-[13px]">
-            <span className="min-w-0 text-sales-text-primary">
-              {line.name}
-              <span className="text-sales-text-muted"> · {line.quantity} × {formatSalesMoney(line.unitPrice, cur)}</span>
-            </span>
-            <span className="shrink-0 tabular-nums font-medium text-sales-text-primary">
-              {formatSalesMoney(line.amount, cur)}
+    <article className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface shadow-sales-card">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-sales-border-subtle px-4 py-3.5">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-sales-text-primary">
+              {preview.quoteNumber}
+            </h3>
+            <span className="rounded-[6px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-secondary">
+              {preview.status || (preview.isRevision ? "Revision" : "Draft")}
             </span>
           </div>
-        ))}
+          <p className="mt-1 text-[13px] text-sales-text-secondary">{preview.customerName}</p>
+          {preview.dealName ? (
+            <p className="mt-0.5 text-[12px] text-sales-text-muted">Deal · {preview.dealName}</p>
+          ) : null}
+          {preview.validUntil ? (
+            <p className="mt-0.5 text-[12px] text-sales-text-muted">Valid until {preview.validUntil}</p>
+          ) : null}
+        </div>
       </div>
-      <div className="mt-3 space-y-1 border-t border-sales-border-subtle pt-3 text-[13px]">
+
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[420px] text-left text-[12px]">
+          <thead>
+            <tr className="border-b border-sales-border-subtle text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              <th className="px-4 py-2 font-semibold">Item</th>
+              <th className="px-3 py-2 text-right font-semibold">Qty</th>
+              <th className="px-3 py-2 text-right font-semibold">Unit price</th>
+              <th className="px-4 py-2 text-right font-semibold">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {preview.lines.map((line, i) => (
+              <tr key={`${line.name}-${i}`} className="border-b border-sales-border-subtle/70">
+                <td className="px-4 py-2.5 text-sales-text-primary">{line.name}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-sales-text-secondary">{line.quantity}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-sales-text-secondary">
+                  {formatSalesMoney(line.unitPrice, cur)}
+                </td>
+                <td className="px-4 py-2.5 text-right tabular-nums font-medium text-sales-text-primary">
+                  {formatSalesMoney(line.amount, cur)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="space-y-1 border-b border-sales-border-subtle px-4 py-3 text-[13px]">
         <div className="flex justify-between text-sales-text-secondary">
           <span>Subtotal</span>
           <span className="tabular-nums">{formatSalesMoney(preview.subtotal, cur)}</span>
@@ -145,30 +168,37 @@ export function QuotationDraftCard({
           <span>Total</span>
           <span className="tabular-nums">{formatSalesMoney(preview.total, cur)}</span>
         </div>
-        {preview.validUntil ? (
-          <p className="text-[12px] text-sales-text-muted">Valid until {preview.validUntil}</p>
-        ) : null}
       </div>
-      {preview.inventoryNotes.length ? (
-        <p className="mt-2 text-[12px] text-sales-warning-fg">{preview.inventoryNotes[0]}</p>
-      ) : null}
-      {preview.sendRequested ? (
-        <p className="mt-2 text-[12px] text-sales-text-secondary">
-          I&apos;ve prepared the quotation. Please review it before sending.
-        </p>
-      ) : null}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Link
-          href={preview.href}
-          className="inline-flex min-h-11 items-center justify-center rounded-sales-md bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text shadow-sales-card"
-        >
-          View quotation
-        </Link>
-        {onDiscard ? (
-          <Button type="button" variant="ghost" size="md" onClick={onDiscard}>
-            Discard Draft
-          </Button>
+
+      <div className="space-y-3 px-4 py-3.5">
+        <CommercialCheckSummary check={preview.commercialCheck} />
+        {preview.inventoryNotes.length ? (
+          <p className="text-[12px] text-sales-warning-fg">{preview.inventoryNotes[0]}</p>
         ) : null}
+        {preview.sendRequested ? (
+          <p className="text-[12px] text-sales-text-secondary">
+            Draft prepared for review — send from the quotation workspace.
+          </p>
+        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={preview.href}
+            className="inline-flex min-h-10 items-center justify-center rounded-sales-md bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text shadow-sales-card"
+          >
+            View quotation
+          </Link>
+          <Link
+            href={preview.href}
+            className="inline-flex min-h-10 items-center justify-center rounded-sales-md border border-sales-border-strong bg-sales-surface px-4 text-[13px] font-semibold text-sales-text-primary"
+          >
+            Edit quotation
+          </Link>
+          {onDiscard ? (
+            <Button type="button" variant="ghost" size="md" onClick={onDiscard}>
+              Discard Draft
+            </Button>
+          ) : null}
+        </div>
       </div>
     </article>
   );
@@ -185,6 +215,7 @@ export function SalesCommandBlocks({
   onAction: (prompt: string) => void;
   disabled?: boolean;
 }) {
+  const hasDraft = blocks.some((b) => b.type === "quotation_draft");
   return (
     <div className="space-y-4">
       {blocks.map((block, i) => {
@@ -205,7 +236,10 @@ export function SalesCommandBlocks({
             />
           );
         }
-        if (block.type === "commercial_check") return <CommercialCheckSummary key={i} check={block.check} />;
+        if (block.type === "commercial_check") {
+          if (hasDraft) return null;
+          return <CommercialCheckSummary key={i} check={block.check} />;
+        }
         if (block.type === "choice") {
           return (
             <EntitySelector

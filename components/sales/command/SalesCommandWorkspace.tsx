@@ -2,9 +2,21 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/sales/ui";
+import { ArrowUpRight, BriefcaseBusiness, CalendarDays, FileText, ListTodo, Search, UserRound } from "lucide-react";
+import { Badge, StatusDot } from "@/components/sales/ui";
 import { SalesCommandBlocks } from "@/components/sales/command/blocks";
+import {
+  CommandCommandRow,
+  CommandComposer,
+  CommandEmptyState,
+  CommandExampleChips,
+  CommandExecutionStatus,
+  CommandQuickAction,
+  CommandRailSection,
+  CommandRecentWork,
+  CommandResultHeader,
+  CommandScopeChip,
+} from "@/components/command/CommandPrimitives";
 import type {
   SalesBlock,
   SalesChoice,
@@ -13,6 +25,7 @@ import type {
   SalesRecentWork,
   SalesTurnResult,
 } from "@/lib/agent/sales/types";
+import { cn } from "@/lib/ui/cn";
 
 type Turn = {
   id: string;
@@ -24,6 +37,129 @@ type Turn = {
 function newId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return `cmd-${Date.now()}`;
+}
+
+function SalesContextRail({
+  context,
+  compact,
+  onFindCustomer,
+}: {
+  context: SalesContextCard | null;
+  compact?: boolean;
+  onFindCustomer: () => void;
+}) {
+  if (!context?.customerName) {
+    return (
+      <div className="space-y-4">
+        <CommandRailSection title="Current context">
+          <p className="text-[12px] leading-relaxed text-sales-text-muted">
+            No customer selected. Find a customer or open a Deal to ground SegmiQ in your work.
+          </p>
+          <button
+            type="button"
+            onClick={onFindCustomer}
+            className="mt-2 text-[12px] font-medium text-sales-text-secondary underline-offset-2 hover:underline"
+          >
+            Find customer
+          </button>
+        </CommandRailSection>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <CommandRailSection title="Current context">
+        <div className="rounded-[10px] border border-sales-border bg-sales-surface p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Customer</p>
+          <p className="mt-1 text-[14px] font-semibold text-sales-text-primary">{context.customerName}</p>
+          {context.projectType ? (
+            <p className="mt-0.5 text-[12px] text-sales-text-secondary">{context.projectType}</p>
+          ) : null}
+          {context.customerHref ? (
+            <Link
+              href={context.customerHref}
+              className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-sales-text-secondary hover:text-sales-text-primary"
+            >
+              Open customer
+              <ArrowUpRight size={12} aria-hidden />
+            </Link>
+          ) : null}
+        </div>
+      </CommandRailSection>
+
+      {context.dealName ? (
+        <CommandRailSection title="Deal">
+          <div className="rounded-[10px] border border-sales-border bg-sales-surface p-3">
+            <p className="text-[13px] font-semibold text-sales-text-primary">{context.dealName}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              {context.dealStage ? (
+                <Badge tone="info" appearance="soft" size="sm">
+                  {context.dealStage}
+                </Badge>
+              ) : null}
+            </div>
+            {context.dealHref ? (
+              <Link
+                href={context.dealHref}
+                className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-sales-text-secondary hover:text-sales-text-primary"
+              >
+                Open Deal
+                <ArrowUpRight size={12} aria-hidden />
+              </Link>
+            ) : null}
+          </div>
+        </CommandRailSection>
+      ) : null}
+
+      {context.quotationNumber ? (
+        <CommandRailSection title="Quotation">
+          <div className="rounded-[10px] border border-sales-border bg-sales-surface p-3">
+            <p className="text-[13px] font-semibold text-sales-text-primary">{context.quotationNumber}</p>
+            {context.quotationStatus ? (
+              <p className="mt-0.5 text-[12px] text-sales-text-muted">{context.quotationStatus}</p>
+            ) : null}
+          </div>
+        </CommandRailSection>
+      ) : null}
+
+      {context.conversationId ? (
+        <CommandRailSection title="Conversation">
+          <div className="rounded-[10px] border border-sales-border bg-sales-surface p-3">
+            <p className="text-[12px] text-sales-text-secondary">Linked conversation context is available to SegmiQ.</p>
+            <Link
+              href={`/sales/inbox?lead=${context.leadId ?? context.conversationId}`}
+              className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-sales-text-secondary hover:text-sales-text-primary"
+            >
+              View conversation
+              <ArrowUpRight size={12} aria-hidden />
+            </Link>
+          </div>
+        </CommandRailSection>
+      ) : null}
+
+      {!compact ? (
+        <CommandRailSection title="Quick links">
+          <ul className="overflow-hidden rounded-[10px] border border-sales-border bg-sales-surface">
+            {[
+              { href: "/sales/tasks", label: "Create task", enabled: true },
+              { href: "/sales/calendar", label: "Schedule appointment", enabled: true },
+            ].map((item) => (
+              <li key={item.href} className="border-b border-sales-border-subtle last:border-0">
+                <Link
+                  href={item.href}
+                  className="flex items-center justify-between px-3 py-2.5 text-[12px] font-medium text-sales-text-secondary hover:bg-sales-surface-hover hover:text-sales-text-primary"
+                >
+                  {item.label}
+                  <ArrowUpRight size={12} aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </CommandRailSection>
+      ) : null}
+    </div>
+  );
 }
 
 export function SalesCommandWorkspace({
@@ -46,6 +182,7 @@ export function SalesCommandWorkspace({
   const [recent, setRecent] = useState<SalesRecentWork[]>([]);
   const [enabled, setEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [agentOn, setAgentOn] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
   const composerId = useId();
 
@@ -70,11 +207,14 @@ export function SalesCommandWorkspace({
       }) => {
         if (j.error) {
           setEnabled(false);
+          setAgentOn(false);
           setError(j.error);
           return;
         }
         const surfaceOn = compact ? j.flags?.salesHubCommand !== false : j.flags?.commandCenter !== false;
-        setEnabled(j.flags?.enabled !== false && surfaceOn);
+        const on = j.flags?.enabled !== false && surfaceOn;
+        setEnabled(on);
+        setAgentOn(on);
         if (j.context) setContext(j.context);
         setHasPackages(Boolean(j.hasPackages));
         setSamplePackage(j.samplePackageName ?? null);
@@ -96,7 +236,7 @@ export function SalesCommandWorkspace({
       setError(null);
       setTurns((prev) => [...prev, { id: newId(), role: "user", content: message, blocks: [] }]);
       setLoading(true);
-      setPhase("Working…");
+      setPhase("Understanding request…");
       const commandId = newId();
       try {
         const res = await fetch("/api/agent/sales/command", {
@@ -142,8 +282,8 @@ export function SalesCommandWorkspace({
     [loading, pageContext, sessionId, compact]
   );
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  function onSubmit(e?: FormEvent) {
+    e?.preventDefault();
     void send(input);
   }
 
@@ -154,190 +294,235 @@ export function SalesCommandWorkspace({
     }
   }
 
+  function cancel() {
+    if (sessionId) {
+      void fetch("/api/agent/sales/command", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+    }
+    setLoading(false);
+    setPhase(null);
+  }
+
   const examples = [
     context?.customerName && hasPackages && samplePackage
       ? `Create a quote for this customer using the ${samplePackage} Package.`
       : null,
-    context?.customerName ? "Create a quotation for this customer." : "Create a quotation for…",
+    context?.customerName ? "Create a quotation for this customer." : null,
     hasPackages ? "Quote what the customer requested." : "Prepare a quotation for 100 helmets and 100 reflective vests.",
   ].filter(Boolean) as string[];
 
-  const quick = [
-    { label: "Create quotation", prompt: context?.customerName ? "Create a quotation for this customer." : "Create a quotation for " },
-    { label: "Find customer", prompt: "Find customer " },
-  ];
-
   if (!enabled) {
     return (
-      <div className="rounded-[12px] border border-sales-border bg-sales-surface p-5">
-        <p className="text-[14px] text-sales-text-primary">
-          {error || "Sales Command Center is not enabled for this company."}
-        </p>
+      <div className={cn("p-4", !compact && "mx-auto w-full max-w-4xl")}>
+        <CommandEmptyState
+          title="Sales Command Center unavailable"
+          description={error || "Sales Command Center is not enabled for this company."}
+        />
+      </div>
+    );
+  }
+
+  const composer = (
+    <form onSubmit={onSubmit}>
+      <CommandComposer
+        id={composerId}
+        value={input}
+        onChange={setInput}
+        onSubmit={() => void send(input)}
+        onKeyDown={onKeyDown}
+        placeholder="Ask SegmiQ to prepare a quotation or manage your sales work…"
+        loading={loading}
+        onCancel={cancel}
+        rows={compact ? 2 : 2}
+        scopeChips={
+          <>
+            <CommandScopeChip label="This customer" active={Boolean(context?.customerName)} />
+            <CommandScopeChip label="This Deal" active={Boolean(context?.dealId)} />
+            <CommandScopeChip label="From conversation" active={Boolean(context?.conversationId)} />
+          </>
+        }
+      />
+    </form>
+  );
+
+  const quickActions = (
+    <div className="flex gap-2 overflow-x-auto pb-0.5">
+      <CommandQuickAction
+        icon={<FileText size={14} strokeWidth={1.9} aria-hidden />}
+        label="Create quotation"
+        hint="Prepare a draft"
+        onClick={() => {
+          const prompt = context?.customerName
+            ? "Create a quotation for this customer."
+            : "Create a quotation for ";
+          if (prompt.endsWith(" ")) setInput(prompt);
+          else void send(prompt);
+        }}
+      />
+      <CommandQuickAction
+        icon={<Search size={14} strokeWidth={1.9} aria-hidden />}
+        label="Find customer"
+        hint="Look up a customer"
+        onClick={() => setInput("Find customer ")}
+      />
+      <CommandQuickAction
+        icon={<ListTodo size={14} strokeWidth={1.9} aria-hidden />}
+        label="My follow-ups"
+        hint="Open tasks"
+        onClick={() => {
+          window.location.href = "/sales/tasks";
+        }}
+      />
+      <CommandQuickAction
+        icon={<CalendarDays size={14} strokeWidth={1.9} aria-hidden />}
+        label="Appointments"
+        hint="Open calendar"
+        onClick={() => {
+          window.location.href = "/sales/calendar";
+        }}
+      />
+      <CommandQuickAction
+        icon={<BriefcaseBusiness size={14} strokeWidth={1.9} aria-hidden />}
+        label="My Deals"
+        hint="Open pipeline"
+        onClick={() => {
+          window.location.href = "/sales/pipeline";
+        }}
+      />
+    </div>
+  );
+
+  const results = (
+    <div ref={listRef} className="min-h-0 space-y-4 overflow-y-auto">
+      {turns.length === 0 ? (
+        <>
+          {!compact ? (
+            <CommandEmptyState
+              title="What would you like SegmiQ to do?"
+              description="Start with a quotation, customer or Deal. SegmiQ works through your live sales records."
+            />
+          ) : (
+            <CommandExampleChips examples={examples} onSelect={(ex) => void send(ex)} />
+          )}
+          {!compact && recent.length ? (
+            <CommandRecentWork
+              items={recent.map((r) => ({
+                id: r.quotationId,
+                title: r.quoteNumber,
+                subtitle: `${r.summary}${r.customerName ? ` · ${r.customerName}` : ""}`,
+                href: r.href,
+              }))}
+              viewAllHref="/sales/quotes"
+            />
+          ) : null}
+        </>
+      ) : (
+        turns.map((t) =>
+          t.role === "user" ? (
+            <CommandCommandRow key={t.id} role="user" content={t.content} />
+          ) : (
+            <div key={t.id} className="space-y-3 rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
+              <CommandResultHeader
+                title={
+                  t.blocks.some((b) => b.type === "quotation_draft")
+                    ? "Quotation prepared"
+                    : t.blocks.some((b) => b.type === "choice")
+                      ? "One detail needed"
+                      : t.blocks.some((b) => b.type === "status" && (b.kind === "error" || b.kind === "denied" || b.kind === "blocked"))
+                        ? "Command couldn't complete"
+                        : "Done"
+                }
+                tone={
+                  t.blocks.some((b) => b.type === "status" && (b.kind === "error" || b.kind === "denied" || b.kind === "blocked"))
+                    ? "error"
+                    : t.blocks.some((b) => b.type === "choice")
+                      ? "info"
+                      : "success"
+                }
+              />
+              <SalesCommandBlocks
+                blocks={t.blocks.length ? t.blocks : [{ type: "text", text: t.content }]}
+                disabled={loading}
+                onSelect={(opt) => void send(opt.title, opt)}
+                onAction={(prompt) => void send(prompt)}
+              />
+            </div>
+          )
+        )
+      )}
+      {loading ? <CommandExecutionStatus phase={phase} /> : null}
+    </div>
+  );
+
+  if (compact) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+          {context?.customerName ? (
+            <div className="flex items-center gap-2.5 rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2.5">
+              <UserRound size={16} className="shrink-0 text-sales-text-muted" aria-hidden />
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-semibold text-sales-text-primary">{context.customerName}</p>
+                {context.dealName ? (
+                  <p className="truncate text-[11px] text-sales-text-muted">
+                    {context.dealName}
+                    {context.dealStage ? ` · ${context.dealStage}` : ""}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+          {results}
+        </div>
+        <div className="shrink-0 border-t border-sales-border-subtle px-4 py-3">{composer}</div>
+        {onClose ? (
+          <button type="button" className="sr-only" onClick={onClose}>
+            Close
+          </button>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <div className={compact ? "flex min-h-0 flex-1 flex-col" : "mx-auto flex w-full max-w-3xl flex-col gap-5"}>
-      {context?.customerName ? (
-        <section className="rounded-[12px] border border-sales-border bg-sales-surface px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Working with</p>
-          <p className="mt-1 text-[15px] font-semibold text-sales-text-primary">{context.customerName}</p>
-          {context.projectType ? <p className="text-[12px] text-sales-text-secondary">{context.projectType}</p> : null}
-          {context.dealName ? (
-            <p className="mt-1 text-[12px] text-sales-text-secondary">
-              Deal · {context.dealName}
-              {context.dealStage ? ` · ${context.dealStage}` : ""}
-            </p>
-          ) : null}
-          <div className="mt-2 flex flex-wrap gap-2">
-            {context.customerHref ? (
-              <Link href={context.customerHref} className="text-[12px] font-medium text-sales-text-secondary underline-offset-2 hover:underline">
-                Open customer
-              </Link>
-            ) : null}
-            {context.dealHref ? (
-              <Link href={context.dealHref} className="text-[12px] font-medium text-sales-text-secondary underline-offset-2 hover:underline">
-                Open Deal
-              </Link>
-            ) : null}
-            {!compact ? (
-              <button
-                type="button"
-                className="text-[12px] font-medium text-sales-text-secondary underline-offset-2 hover:underline"
-                onClick={() => setInput("Find customer ")}
-              >
-                Change context
-              </button>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-      <form onSubmit={onSubmit} className="rounded-[12px] border border-sales-border bg-sales-surface p-3 shadow-sales-card">
-        <label htmlFor={composerId} className="sr-only">
-          Command SegmiQ
-        </label>
-        <textarea
-          id={composerId}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          rows={compact ? 2 : 3}
-          disabled={loading}
-          placeholder="Ask SegmiQ to prepare a quotation or manage your sales work…"
-          className="w-full resize-none bg-transparent text-[14px] text-sales-text-primary outline-none placeholder:text-sales-text-muted"
-        />
-        <div className="mt-2 flex items-center justify-between gap-2">
-          {loading ? (
-            <button
-              type="button"
-              className="text-[12px] font-medium text-sales-text-secondary"
-              onClick={() => {
-                if (sessionId) {
-                  void fetch("/api/agent/sales/command", {
-                    method: "DELETE",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ sessionId }),
-                  });
-                }
-                setLoading(false);
-                setPhase(null);
-              }}
-            >
-              Cancel
-            </button>
-          ) : (
-            <span className="text-[12px] text-sales-text-muted">Enter to send</span>
-          )}
-          <Button type="submit" variant="primary" size="sm" disabled={loading || !input.trim()}>
-            {loading ? "Working…" : "Run"}
-          </Button>
+    <div className="flex w-full flex-col gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-sales-border bg-sales-surface px-2.5 py-1">
+          <StatusDot tone={agentOn ? "success" : "neutral"} size="sm" />
+          <span className="text-[11px] font-medium text-sales-text-secondary">Sales Agent</span>
+          <span className="text-[11px] font-semibold text-sales-text-primary">{agentOn ? "Active" : "Off"}</span>
         </div>
-      </form>
-
-      {turns.length === 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {quick.map((q) => (
-            <button
-              key={q.label}
-              type="button"
-              onClick={() => {
-                if (q.prompt.endsWith(" ")) setInput(q.prompt);
-                else void send(q.prompt);
-              }}
-              className="rounded-full border border-sales-border bg-sales-surface px-3 py-1.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
-            >
-              {q.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <div ref={listRef} className={compact ? "min-h-0 flex-1 space-y-5 overflow-y-auto pb-4" : "space-y-5"}>
-        {turns.length === 0 ? (
-          <div>
-            <p className="text-[13px] text-sales-text-secondary">Examples</p>
-            <ul className="mt-2 space-y-1.5">
-              {examples.map((ex) => (
-                <li key={ex}>
-                  <button
-                    type="button"
-                    className="text-left text-[13px] text-sales-text-primary underline-offset-2 hover:underline"
-                    onClick={() => void send(ex)}
-                  >
-                    {ex}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          turns.map((t) => (
-            <div key={t.id}>
-              {t.role === "user" ? (
-                <p className="mb-2 text-[12px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
-                  You · {t.content}
-                </p>
-              ) : (
-                <SalesCommandBlocks
-                  blocks={t.blocks.length ? t.blocks : [{ type: "text", text: t.content }]}
-                  disabled={loading}
-                  onSelect={(opt) => void send(opt.title, opt)}
-                  onAction={(prompt) => void send(prompt)}
-                />
-              )}
-            </div>
-          ))
-        )}
-        {loading ? (
-          <p className="flex items-center gap-2 text-[13px] text-sales-text-muted" role="status">
-            <Loader2 size={14} className="animate-spin" aria-hidden />
-            {phase || "Preparing quotation…"}
-          </p>
-        ) : null}
       </div>
 
-      {!compact && recent.length && turns.length === 0 ? (
-        <section>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Recent Agent work</p>
-          <ul className="mt-2 space-y-1">
-            {recent.map((r) => (
-              <li key={r.quotationId}>
-                <Link href={r.href} className="text-[13px] text-sales-text-primary hover:underline">
-                  {r.quoteNumber} · {r.customerName ?? "Customer"} · {r.summary}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {quickActions}
 
-      {onClose && compact ? (
-        <button type="button" className="sr-only" onClick={onClose}>
-          Close
-        </button>
-      ) : null}
+      <div className="grid grid-cols-1 gap-5 layout:grid-cols-[minmax(0,1fr)_minmax(240px,0.32fr)] layout:gap-6">
+        <div className="min-w-0 space-y-4">
+          {composer}
+          <CommandExampleChips examples={examples} onSelect={(ex) => void send(ex)} />
+          {results}
+        </div>
+        <aside className="hidden min-w-0 layout:block">
+          <div className="sticky top-4 rounded-[12px] border border-sales-border bg-sales-surface-subtle/60 p-4">
+            <SalesContextRail context={context} onFindCustomer={() => setInput("Find customer ")} />
+          </div>
+        </aside>
+      </div>
+
+      <div className="layout:hidden">
+        <details className="rounded-[12px] border border-sales-border bg-sales-surface">
+          <summary className="cursor-pointer list-none px-4 py-3 text-[13px] font-semibold text-sales-text-primary">
+            Current context
+          </summary>
+          <div className="border-t border-sales-border-subtle px-4 py-3">
+            <SalesContextRail context={context} compact onFindCustomer={() => setInput("Find customer ")} />
+          </div>
+        </details>
+      </div>
     </div>
   );
 }
