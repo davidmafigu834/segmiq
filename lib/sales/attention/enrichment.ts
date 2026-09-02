@@ -178,8 +178,15 @@ export async function getOrBuildConversationSummary(opts: {
     leadId: opts.leadId,
   });
   if (cached && cached.contentFingerprint === fp) {
-    const { contentFingerprint: _c, generatedAt: _g, ...summary } = cached;
-    return summary;
+    return {
+      customerNeed: cached.customerNeed,
+      importantRequirements: cached.importantRequirements,
+      whatHappened: cached.whatHappened,
+      customerPosition: cached.customerPosition,
+      openQuestions: cached.openQuestions,
+      commitment: cached.commitment,
+      recommendedContext: cached.recommendedContext,
+    };
   }
 
   const deterministic = buildSalesContextSummary({
