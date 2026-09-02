@@ -521,7 +521,11 @@ export function DealWorkspaceClient({
                       sentAt: currentQuote.sent_at,
                       validUntil: currentQuote.valid_until,
                       approvalStatus: currentQuote.approval_status,
-                      customerResponded: Boolean(currentQuote.responded_at),
+                      customerResponded: Boolean(
+                        currentQuote.customer_response_type ||
+                          currentQuote.status === "accepted" ||
+                          currentQuote.status === "rejected"
+                      ),
                     }
                   : null
               }
