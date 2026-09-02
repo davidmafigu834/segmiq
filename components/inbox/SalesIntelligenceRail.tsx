@@ -32,6 +32,7 @@ import {
   getNextDealStage,
 } from "@/lib/sales/deals";
 import { dealHealthFromAttention } from "@/lib/inbox/deal-health-display";
+import { evaluateDealNextBestAction } from "@/lib/sales/attention/next-best-action";
 import { extractQualificationDisplayFields } from "@/lib/inbox/qualification-display";
 import {
   formatCurrencyAmount,
@@ -443,6 +444,24 @@ export function SalesIntelligenceRail({
   );
   const attention = dealData ? getDealAttentionState(dealData.deal) : null;
   const dealHealthLabel = dealHealthFromAttention(attention);
+  const salesNba = dealData
+    ? evaluateDealNextBestAction({
+        deal: dealData.deal,
+        awaitingReplyMinutes: conversation.awaitingReplyMinutes,
+        openQuote: latestQuote
+          ? {
+              id: latestQuote.id,
+              status: latestQuote.status,
+              sentAt: latestQuote.sent_at,
+              validUntil: latestQuote.valid_until,
+              approvalStatus: latestQuote.approval_status,
+              customerResponded: Boolean(latestQuote.responded_at),
+            }
+          : null,
+        waitUntil: dealData.deal.wait_until,
+        waitReason: dealData.deal.wait_reason,
+      })
+    : null;
   const nextStage = dealData ? getNextDealStage(dealData.deal.stage) : null;
   const dealAge = dealData
     ? Math.max(0, differenceInCalendarDays(new Date(), new Date(dealData.deal.created_at)))
@@ -559,6 +578,39 @@ export function SalesIntelligenceRail({
                 </div>
               </div>
             </RailSection>
+
+            {salesNba && salesNba.actionType !== "NO_ACTION_REQUIRED" ? (
+              <RailSection>
+                {sectionTitle("Next action")}
+                <div className="rounded-[10px] border border-sales-border bg-sales-surface-subtle/50 px-3 py-2.5">
+                  <p className="text-[13px] font-semibold text-sales-text-primary">{salesNba.title}</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-sales-text-secondary">
+                    {salesNba.summary}
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    {salesNba.actionType === "REPLY_TO_CUSTOMER" ||
+                    salesNba.actionType === "FOLLOW_UP" ? (
+                      <Link
+                        href={`/sales/command?view=focus&prompt=${encodeURIComponent(
+                          "Draft a follow-up message for this customer."
+                        )}`}
+                        className="text-[11px] font-semibold text-sales-brand-fg hover:underline"
+                      >
+                        Draft message →
+                      </Link>
+                    ) : null}
+                    {salesNba.actionType === "CREATE_TASK" || salesNba.actionType === "WAIT_UNTIL" ? (
+                      <Link
+                        href={`/sales/deals/${dealData.deal.id}`}
+                        className="text-[11px] font-semibold text-sales-brand-fg hover:underline"
+                      >
+                        Open Deal →
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              </RailSection>
+            ) : null}
 
             <RailSection courseTarget="whatsapp-deal-stage">
               {sectionTitle("Pipeline Stage Controls")}

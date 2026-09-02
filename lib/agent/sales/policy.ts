@@ -60,10 +60,6 @@ const FUTURE: Array<{ re: RegExp; message: string }> = [
     re: /\b(move|change).{0,20}(this )?deal.{0,20}(to )?(negotiat|scoping|proposal|qualified)\b/i,
     message: "Deal stage changes aren't available in Sales Command Center yet. Open the Deal to update the stage.",
   },
-  {
-    re: /\b(what should i (work on|quote)|next best action)\b/i,
-    message: "Next-best-action recommendations aren't available in Sales Command Center yet. Check Today's plan on Dashboard.",
-  },
 ];
 
 export function matchUnsupportedSalesCommand(text: string): string | null {

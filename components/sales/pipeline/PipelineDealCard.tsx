@@ -16,10 +16,9 @@ import type { DealCommercialValue } from "@/lib/sales/deals/commercial-value";
 import {
   DEAL_ACTIVE_STAGES,
   DEAL_STAGE_LABEL,
-  attentionBadgeTone,
-  getDealAttentionState,
   type DealActiveStage,
 } from "@/lib/sales/deals";
+import { resolvePipelineAttentionBadge } from "@/lib/sales/attention/pipeline-badge";
 import { formatLeadSource } from "@/lib/sales/leads-directory/format";
 import { scoreLabel } from "@/lib/inbox/scoring";
 import { isWhatsAppInboundLead, whatsappInboxHref } from "@/lib/leads/whatsapp-lead-display";
@@ -45,6 +44,9 @@ export type PipelineDealCardItem = {
   leadManualPriority: "hot" | "warm" | "cold" | null;
   quoteCount: number;
   latestQuote: PipelineDealQuoteSummary;
+  /** Optional Sales Attention overlays */
+  awaitingReplyMinutes?: number | null;
+  hasOpenCommitmentDue?: boolean;
 };
 
 function intentBadge(
@@ -109,7 +111,15 @@ export function PipelineDealCard({
     quoteCount,
   } = item;
 
-  const attention = useMemo(() => getDealAttentionState(deal), [deal]);
+  const attentionBadge = useMemo(
+    () =>
+      resolvePipelineAttentionBadge({
+        deal,
+        awaitingReplyMinutes: item.awaitingReplyMinutes,
+        hasOpenCommitmentDue: item.hasOpenCommitmentDue,
+      }),
+    [deal, item.awaitingReplyMinutes, item.hasOpenCommitmentDue]
+  );
   const name = customerName?.trim() || "Customer";
   const valueLabel =
     commercial.kind === "pending" ? "Value pending" : commercial.display;
@@ -117,7 +127,7 @@ export function PipelineDealCard({
   const intent = intentBadge(leadScore, leadManualPriority);
   const hasWhatsApp = isWhatsAppInboundLead(leadSource) || Boolean(customerPhone?.trim());
   const hasPhone = Boolean(customerPhone?.trim());
-  const badgeTone = attentionBadgeTone(attention.badge);
+  const badgeTone = attentionBadge?.tone ?? "neutral";
 
   async function moveTo(stage: DealActiveStage) {
     if (practiceMode || moving || stage === deal.stage) {
@@ -215,7 +225,7 @@ export function PipelineDealCard({
             <h3 className="min-w-0 truncate text-[13px] font-semibold tracking-[-0.01em] text-sales-text-primary">
               {name}
             </h3>
-            {attention.badge ? (
+            {attentionBadge ? (
               <Badge
                 tone={
                   badgeTone === "danger"
@@ -229,7 +239,7 @@ export function PipelineDealCard({
                 appearance="soft"
                 className="shrink-0"
               >
-                {attention.badge}
+                {attentionBadge.label}
               </Badge>
             ) : null}
           </div>

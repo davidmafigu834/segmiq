@@ -62,6 +62,29 @@ export async function dispatchInboundToAgentOrQualification(opts: {
     });
   });
 
+  // Sales Attention: extract commitments + invalidate summary cache (Customer Agent off OK)
+  background("segmiqSalesAttentionInbound", async () => {
+    const { extractAndPersistCommitmentsFromMessages } = await import(
+      "@/lib/sales/attention/commitment-extract"
+    );
+    const { invalidateConversationSummary } = await import("@/lib/sales/attention/enrichment");
+    await invalidateConversationSummary({ clientId: opts.clientId, leadId: opts.leadId });
+    await extractAndPersistCommitmentsFromMessages({
+      clientId: opts.clientId,
+      leadId: opts.leadId,
+      salespersonId: opts.ownerId,
+      messages: [
+        {
+          id: opts.messageId,
+          direction: "inbound",
+          body: opts.body,
+          created_at: opts.timestamp,
+        },
+      ],
+      lookbackHours: 1,
+    });
+  });
+
   if (agentActive || suggestReplies) {
     background("segmiqAgentRun", () => handleAgentInboundMessage(event));
     background("segmiqProactiveInbound", async () => {

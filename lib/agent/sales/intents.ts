@@ -133,6 +133,40 @@ export function heuristicParseSalesIntent(
   const t = text.trim();
   if (!t) return null;
 
+  if (
+    /\bwhat should i (focus on|work on|do)( today)?\b/i.test(t) ||
+    /\bwhat do i need to do( today)?\b/i.test(t) ||
+    /\bwho should i follow up\b/i.test(t) ||
+    /\bwhat deals? need (my )?attention\b/i.test(t) ||
+    /\bshow me my priorities\b/i.test(t) ||
+    /\btoday'?s focus\b/i.test(t) ||
+    /\bstart my day\b/i.test(t)
+  ) {
+    return { intent: "GET_TODAYS_FOCUS", items: [] };
+  }
+  if (
+    /\bwhat should i do next\b/i.test(t) ||
+    /\bwhat'?s next\b/i.test(t) ||
+    /\bnext best action\b/i.test(t) ||
+    /\bwho should i (call|contact|message) next\b/i.test(t)
+  ) {
+    return { intent: "NEXT_BEST_ACTION", items: [] };
+  }
+  if (
+    /\b(draft|prepare) (a |the )?(follow[- ]?up|message)\b/i.test(t) ||
+    /\bmake (the |it |this )?(follow[- ]?up |message )?shorter\b/i.test(t) ||
+    /\bdraft a shorter follow-up\b/i.test(t)
+  ) {
+    return { intent: "DRAFT_FOLLOWUP", items: [] };
+  }
+  if (
+    /\bprepare me for (this |the |a )?(call|meeting|appointment)\b/i.test(t) ||
+    /\bcall brief\b/i.test(t) ||
+    /\bprepare (a |the )?call brief\b/i.test(t)
+  ) {
+    return { intent: "PREPARE_CALL_BRIEF", items: [] };
+  }
+
   const sendRequested = /\b(create and send|send it|send (the|this) (quote|quotation))\b/i.test(t);
   const extractFromConversation =
     /\b(what (the customer|they|the client) (asked|requested|want)|from (this|the) conversation|quote what)\b/i.test(

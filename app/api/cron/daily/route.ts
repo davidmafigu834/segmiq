@@ -91,6 +91,15 @@ export async function GET(req: Request) {
     errors.push(`followUp: ${e instanceof Error ? e.message : String(e)}`);
   }
 
+  try {
+    const { sendSalesFocusDigests } = await import("@/lib/sales/attention/morning-digest");
+    const digest = await sendSalesFocusDigests();
+    console.log("[cron daily] Sales focus digests", digest);
+  } catch (e) {
+    console.error("[cron daily] sendSalesFocusDigests", e);
+    errors.push(`salesFocusDigest: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
   let billing: Awaited<ReturnType<typeof runBillingDailyCron>> | undefined;
   try {
     billing = await runBillingDailyCron();

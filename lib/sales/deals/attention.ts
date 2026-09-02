@@ -118,10 +118,10 @@ export function getDealAttentionState(
 
   const last = deal.last_meaningful_activity_at
     ? Date.parse(deal.last_meaningful_activity_at)
-    : Date.parse(deal.updated_at);
+    : NaN;
   const inactivityHours = Number.isFinite(last)
     ? (now.getTime() - last) / 3_600_000
-    : 0;
+    : Number.POSITIVE_INFINITY;
   const threshold = DEFAULT_STAGE_INACTIVITY_HOURS[deal.stage] ?? 72;
   if (inactivityHours >= threshold) {
     const ageLabel =

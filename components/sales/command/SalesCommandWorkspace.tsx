@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { ArrowUpRight, BriefcaseBusiness, CalendarDays, FileText, ListTodo, Search, UserRound } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { ArrowUpRight, BriefcaseBusiness, CalendarDays, Crosshair, FileText, ListTodo, Search, UserRound } from "lucide-react";
 import { Badge, StatusDot } from "@/components/sales/ui";
 import { SalesCommandBlocks } from "@/components/sales/command/blocks";
+import { TodaysFocusPanel } from "@/components/sales/command/TodaysFocusPanel";
 import {
   CommandCommandRow,
   CommandComposer,
@@ -25,6 +27,7 @@ import type {
   SalesRecentWork,
   SalesTurnResult,
 } from "@/lib/agent/sales/types";
+import type { SalesAttentionItem } from "@/lib/sales/attention/types";
 import { cn } from "@/lib/ui/cn";
 
 type Turn = {
@@ -171,6 +174,9 @@ export function SalesCommandWorkspace({
   compact?: boolean;
   onClose?: () => void;
 }) {
+  const searchParams = useSearchParams();
+  const viewFocus = !compact && searchParams.get("view") === "focus";
+  const [focusMode, setFocusMode] = useState(viewFocus);
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -185,6 +191,10 @@ export function SalesCommandWorkspace({
   const [agentOn, setAgentOn] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
   const composerId = useId();
+
+  useEffect(() => {
+    setFocusMode(viewFocus);
+  }, [viewFocus]);
 
   const qs = new URLSearchParams();
   if (pageContext?.conversationId) qs.set("conversationId", pageContext.conversationId);
@@ -282,6 +292,30 @@ export function SalesCommandWorkspace({
     [loading, pageContext, sessionId, compact]
   );
 
+  useEffect(() => {
+    const prompt = searchParams.get("prompt");
+    if (!prompt?.trim() || compact) return;
+    setFocusMode(false);
+    void send(prompt.trim());
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot URL prompt
+  }, []);
+
+  function onFocusDraft(item: SalesAttentionItem) {
+    setFocusMode(false);
+    const prompt = item.actions.find((a) => a.kind === "draft_message")?.prompt
+      || "Draft a follow-up message for this customer.";
+    void send(prompt);
+  }
+
+  function onFocusPrepareQuote(item: SalesAttentionItem) {
+    setFocusMode(false);
+    const prompt = item.actions.find((a) => a.kind === "prepare_quotation" || a.kind === "revise_quotation")?.prompt
+      || (item.type === "QUOTE_REVISION_REQUESTED"
+        ? "Prepare a revised quotation based on the customer's request."
+        : "Create a quotation for this customer.");
+    void send(prompt);
+  }
+
   function onSubmit(e?: FormEvent) {
     e?.preventDefault();
     void send(input);
@@ -351,10 +385,24 @@ export function SalesCommandWorkspace({
   const quickActions = (
     <div className="flex gap-2 overflow-x-auto pb-0.5">
       <CommandQuickAction
+        icon={<Crosshair size={14} strokeWidth={1.9} aria-hidden />}
+        label="Today's Focus"
+        hint="What needs attention"
+        onClick={() => {
+          setFocusMode(true);
+          if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.set("view", "focus");
+            window.history.replaceState({}, "", url.toString());
+          }
+        }}
+      />
+      <CommandQuickAction
         icon={<FileText size={14} strokeWidth={1.9} aria-hidden />}
         label="Create quotation"
         hint="Prepare a draft"
         onClick={() => {
+          setFocusMode(false);
           const prompt = context?.customerName
             ? "Create a quotation for this customer."
             : "Create a quotation for ";
@@ -366,7 +414,10 @@ export function SalesCommandWorkspace({
         icon={<Search size={14} strokeWidth={1.9} aria-hidden />}
         label="Find customer"
         hint="Look up a customer"
-        onClick={() => setInput("Find customer ")}
+        onClick={() => {
+          setFocusMode(false);
+          setInput("Find customer ");
+        }}
       />
       <CommandQuickAction
         icon={<ListTodo size={14} strokeWidth={1.9} aria-hidden />}
@@ -500,29 +551,43 @@ export function SalesCommandWorkspace({
 
       {quickActions}
 
-      <div className="grid grid-cols-1 gap-5 layout:grid-cols-[minmax(0,1fr)_minmax(240px,0.32fr)] layout:gap-6">
-        <div className="min-w-0 space-y-4">
-          {composer}
-          <CommandExampleChips examples={examples} onSelect={(ex) => void send(ex)} />
-          {results}
+      {focusMode ? (
+        <div className="min-h-[60vh] overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface">
+          <TodaysFocusPanel onDraft={onFocusDraft} onPrepareQuote={onFocusPrepareQuote} />
         </div>
-        <aside className="hidden min-w-0 layout:block">
-          <div className="sticky top-4 rounded-[12px] border border-sales-border bg-sales-surface-subtle/60 p-4">
-            <SalesContextRail context={context} onFindCustomer={() => setInput("Find customer ")} />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-5 layout:grid-cols-[minmax(0,1fr)_minmax(240px,0.32fr)] layout:gap-6">
+            <div className="min-w-0 space-y-4">
+              {composer}
+              <CommandExampleChips
+                examples={[
+                  "What should I focus on today?",
+                  ...examples,
+                ]}
+                onSelect={(ex) => void send(ex)}
+              />
+              {results}
+            </div>
+            <aside className="hidden min-w-0 layout:block">
+              <div className="sticky top-4 rounded-[12px] border border-sales-border bg-sales-surface-subtle/60 p-4">
+                <SalesContextRail context={context} onFindCustomer={() => setInput("Find customer ")} />
+              </div>
+            </aside>
           </div>
-        </aside>
-      </div>
 
-      <div className="layout:hidden">
-        <details className="rounded-[12px] border border-sales-border bg-sales-surface">
-          <summary className="cursor-pointer list-none px-4 py-3 text-[13px] font-semibold text-sales-text-primary">
-            Current context
-          </summary>
-          <div className="border-t border-sales-border-subtle px-4 py-3">
-            <SalesContextRail context={context} compact onFindCustomer={() => setInput("Find customer ")} />
+          <div className="layout:hidden">
+            <details className="rounded-[12px] border border-sales-border bg-sales-surface">
+              <summary className="cursor-pointer list-none px-4 py-3 text-[13px] font-semibold text-sales-text-primary">
+                Current context
+              </summary>
+              <div className="border-t border-sales-border-subtle px-4 py-3">
+                <SalesContextRail context={context} compact onFindCustomer={() => setInput("Find customer ")} />
+              </div>
+            </details>
           </div>
-        </details>
-      </div>
+        </>
+      )}
     </div>
   );
 }

@@ -21,6 +21,12 @@ import {
   runUpdateDraft,
   type CommandOutcome,
 } from "./quotation-command";
+import {
+  runDraftFollowup,
+  runGetTodaysFocus,
+  runPrepareCallBrief,
+  runWhatNext,
+} from "./attention-commands";
 
 function log(event: string, data: Record<string, unknown>): void {
   console.log(JSON.stringify({ ts: now().toISOString(), scope: "sales-agent", event, ...data }));
@@ -484,6 +490,18 @@ export async function runSalesCommand(opts: {
       selectedId: intent.customerReference?.id ?? intent.dealReference?.id ?? opts.selection?.id,
       flags,
     });
+  } else if (intent.intent === "GET_TODAYS_FOCUS") {
+    phase = "Loading Today's Focus…";
+    outcome = await runGetTodaysFocus({ actor: opts.actor });
+  } else if (intent.intent === "NEXT_BEST_ACTION") {
+    phase = "Finding next priority…";
+    outcome = await runWhatNext({ actor: opts.actor });
+  } else if (intent.intent === "DRAFT_FOLLOWUP") {
+    phase = "Drafting follow-up…";
+    outcome = await runDraftFollowup({ actor: opts.actor });
+  } else if (intent.intent === "PREPARE_CALL_BRIEF") {
+    phase = "Preparing call brief…";
+    outcome = await runPrepareCallBrief({ actor: opts.actor });
   } else {
     outcome = {
       reply: "That action isn't available through Sales Command Center.",
@@ -539,7 +557,6 @@ const FUTURE_SET = new Set([
   "SHOW_MY_DEALS",
   "SHOW_MY_FOLLOWUPS",
   "SHOW_MY_APPOINTMENTS",
-  "NEXT_BEST_ACTION",
 ]);
 
 export async function loadSalesCommandBootstrap(actor: SalesActor, page: SalesPageContext) {

@@ -48,6 +48,7 @@ async function afterHumanOutbound(input: {
   actorId: string | null;
   actorName: string;
   actorRole: string;
+  body?: string;
 }) {
   if (!isHumanWhatsAppActor(input)) return;
   await markConversationHumanTakeover({ clientId: input.clientId, leadId: input.leadId });
@@ -56,6 +57,36 @@ async function afterHumanOutbound(input: {
     clientId: input.clientId,
     actor: { id: input.actorId, name: input.actorName, role: input.actorRole },
   });
+
+  if (input.body?.trim()) {
+    try {
+      const { background } = await import("@/lib/background");
+      background("segmiqSalesAttentionOutbound", async () => {
+        const { extractAndPersistCommitmentsFromMessages } = await import(
+          "@/lib/sales/attention/commitment-extract"
+        );
+        const { invalidateConversationSummary } = await import(
+          "@/lib/sales/attention/enrichment"
+        );
+        await invalidateConversationSummary({ clientId: input.clientId, leadId: input.leadId });
+        await extractAndPersistCommitmentsFromMessages({
+          clientId: input.clientId,
+          leadId: input.leadId,
+          salespersonId: input.actorId,
+          messages: [
+            {
+              direction: "outbound",
+              body: input.body!,
+              created_at: new Date().toISOString(),
+            },
+          ],
+          lookbackHours: 1,
+        });
+      });
+    } catch {
+      /* never break send */
+    }
+  }
 }
 
 export async function sendCanonicalWhatsAppText(input: {

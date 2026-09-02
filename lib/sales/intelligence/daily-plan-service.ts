@@ -791,7 +791,7 @@ export async function fetchDailySalesPlan(opts: {
       // Deals are past first contact by definition
       firstRespondedAt: derivedFirst ?? d.created_at,
       lastMeaningfulActivityAt:
-        d.last_meaningful_activity_at ?? derivedLast ?? d.updated_at ?? d.created_at,
+        d.last_meaningful_activity_at ?? derivedLast ?? null,
       awaitingReplyMinutes: awaitingMap.get(d.originating_lead_id) ?? null,
       hasFutureNextAction,
       openQuote: openQuote

@@ -14,6 +14,10 @@ export const SALES_INTENTS = [
   "SEARCH_PRODUCT",
   "SEARCH_PACKAGE",
   "COPY_LAST_QUOTATION",
+  "GET_TODAYS_FOCUS",
+  "NEXT_BEST_ACTION",
+  "DRAFT_FOLLOWUP",
+  "PREPARE_CALL_BRIEF",
   "UNSUPPORTED",
 ] as const;
 export type SalesIntentName = (typeof SALES_INTENTS)[number];
@@ -28,7 +32,6 @@ export const FUTURE_SALES_INTENTS = [
   "SHOW_MY_DEALS",
   "SHOW_MY_FOLLOWUPS",
   "SHOW_MY_APPOINTMENTS",
-  "NEXT_BEST_ACTION",
 ] as const;
 export type FutureSalesIntentName = (typeof FUTURE_SALES_INTENTS)[number];
 

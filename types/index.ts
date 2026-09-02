@@ -260,6 +260,9 @@ export interface DealRow {
   decision_maker_name: string | null;
   next_action_at: string | null;
   next_action_label: string | null;
+  /** Intentional wait — suppresses inactivity until date (≠ deal stage). */
+  wait_until?: string | null;
+  wait_reason?: string | null;
   won_value: number | null;
   won_at: string | null;
   lost_at: string | null;

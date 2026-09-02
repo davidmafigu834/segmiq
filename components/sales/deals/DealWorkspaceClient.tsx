@@ -15,6 +15,7 @@ import type { DealCompletenessResult } from "@/lib/sales/deals/completeness";
 import { getDealCompleteness } from "@/lib/sales/deals/completeness";
 import type { DealTimelineItem } from "@/lib/sales/deals/timeline";
 import { getDealNextActionState } from "@/lib/sales/deals/timeline";
+import { DealNextBestActionPanel } from "@/components/sales/deals/DealNextBestActionPanel";
 import { canCreateDealRevision, classifyDealQuotations } from "@/lib/sales/deals/current-quotation";
 import {
   DEAL_ACTIVE_STAGES,
@@ -509,6 +510,23 @@ export function DealWorkspaceClient({
       <div className="grid grid-cols-1 gap-4 layout:grid-cols-[minmax(0,1.7fr)_minmax(280px,1fr)]">
         {/* Main column */}
         <div className="space-y-4">
+          {!closed ? (
+            <DealNextBestActionPanel
+              deal={deal}
+              openQuote={
+                currentQuote
+                  ? {
+                      id: currentQuote.id,
+                      status: currentQuote.status,
+                      sentAt: currentQuote.sent_at,
+                      validUntil: currentQuote.valid_until,
+                      approvalStatus: currentQuote.approval_status,
+                      customerResponded: Boolean(currentQuote.responded_at),
+                    }
+                  : null
+              }
+            />
+          ) : null}
           <Card variant={nextAction.isOverdue ? "attention" : "standard"}>
             <CardHeader>
               <CardTitle>Next action</CardTitle>

@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { authOptions } from "@/lib/auth";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { SalesLayout } from "@/components/layouts/SalesLayout";
@@ -33,7 +34,9 @@ export default async function SalesCommandPage() {
         searchPlaceholder="Search leads, customers, quotes..."
       >
         <div className="px-4 py-4 sm:px-6 layout:px-8">
-          <SalesCommandWorkspace />
+          <Suspense fallback={<div className="shimmer h-40 rounded-[12px]" />}>
+            <SalesCommandWorkspace />
+          </Suspense>
         </div>
       </SalesAppShell>
     </Layout>
