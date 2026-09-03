@@ -387,20 +387,24 @@ export async function runSalesCommand(opts: {
       const selectedTitle = session.pendingInput.options.find((o) => o.id === selectedId)?.title?.trim() || "";
       const itemType =
         session.pendingInput.kind === "PACKAGE" ? "PACKAGE" : session.pendingInput.kind === "SERVICE" ? "SERVICE" : "PRODUCT";
-      intent.items = intent.items.map((it) => {
-        const matchesPending =
-          !pendingQuery ||
-          it.query.trim().toLowerCase() === pendingQuery ||
-          intent.items.length === 1;
-        return matchesPending
-          ? {
-              ...it,
-              id: selectedId,
-              query: selectedTitle || it.query,
-              type: itemType,
-            }
-          : it;
-      });
+      const currentItems = intent?.items ?? [];
+      intent = {
+        ...(intent ?? session.pendingInput.intent),
+        items: currentItems.map((it) => {
+          const matchesPending =
+            !pendingQuery ||
+            it.query.trim().toLowerCase() === pendingQuery ||
+            currentItems.length === 1;
+          return matchesPending
+            ? {
+                ...it,
+                id: selectedId,
+                query: selectedTitle || it.query,
+                type: itemType,
+              }
+            : it;
+        }),
+      };
       if (!intent.items.length) {
         intent.items = [{
           type: itemType,
