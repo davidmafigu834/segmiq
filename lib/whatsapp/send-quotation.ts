@@ -42,8 +42,18 @@ export async function sendQuotationOnWhatsApp(opts: {
 
   // Quick connection uses the provider-neutral document path. It must not
   // upload media to, or fall back to, the Meta transport for a temporary
-  // linked-device tenant.
+  // linked-device tenant. Pass the PDF bytes inline — the gateway only allows
+  // fetching from WHATSAPP_GATEWAY_MEDIA_HOSTS (R2), not segmiq.com quote URLs.
   if (connection.providerType === "TEMPORARY_WEB") {
+    if (!opts.pdfBuffer?.length) {
+      return {
+        ok: false,
+        error: "Could not read the quotation PDF for WhatsApp. Try generating it again.",
+        errorCode: "STORAGE_UNAVAILABLE",
+        channel: "whatsapp",
+        mode: "session_document",
+      };
+    }
     const result = await sendCanonicalWhatsAppDocument({
       clientId: opts.clientId,
       leadId: opts.leadId,
@@ -52,6 +62,7 @@ export async function sendQuotationOnWhatsApp(opts: {
       filename,
       mimeType: "application/pdf",
       url: documentLink,
+      mediaBytesBase64: opts.pdfBuffer.toString("base64"),
       actorId: opts.actorId,
       actorName: opts.actorName,
       actorRole: opts.actorRole,

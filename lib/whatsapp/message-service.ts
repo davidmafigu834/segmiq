@@ -192,6 +192,8 @@ export async function sendCanonicalWhatsAppDocument(input: {
   actorId: string;
   actorName: string;
   actorRole: string;
+  /** Inline PDF/bytes for TEMPORARY_WEB — avoids gateway media-host allowlisting. */
+  mediaBytesBase64?: string;
 }): Promise<SendResult & { channel: "whatsapp"; providerType?: string }> {
   const recipient = await resolveCanonicalLeadRecipient(input);
   const context: LogMessageParams = {
@@ -229,6 +231,7 @@ export async function sendCanonicalWhatsAppDocument(input: {
     filename: input.filename,
     mimeType: input.mimeType,
     url: input.url,
+    mediaBytesBase64: input.mediaBytesBase64,
   });
   await logMessage(result, context);
   if (result.ok) {
