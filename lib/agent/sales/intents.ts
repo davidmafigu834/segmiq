@@ -45,6 +45,8 @@ export const salesIntentSchema = z.object({
   copyLast: z.boolean().optional(),
   searchQuery: z.string().max(160).optional(),
   note: z.string().max(400).optional(),
+  upgrade: z.boolean().optional(),
+  existingSystemHint: z.string().max(80).optional(),
 });
 
 export function validateSalesIntent(raw: unknown): SalesIntent | null {
@@ -56,20 +58,41 @@ export function validateSalesIntent(raw: unknown): SalesIntent | null {
 const QTY_ITEM =
   /(\d+(?:\.\d+)?)\s*(?:x|×)?\s+([A-Za-z0-9][\w\s\-\/&.%]{1,80}?)(?=(?:,| and | \+| with |$))/gi;
 
-function parseQtyItems(text: string): SalesIntentItem[] {
+const UPGRADE_RE =
+  /\b(system\s+upgrade|upgrade\s+(?:quotation|quote)|upgrade\s+for|add[- ]?on\s+(?:quotation|quote)|quotation\s+for\s+(?:a\s+)?(?:system\s+)?upgrade)\b/i;
+
+export function isUpgradeCommand(text: string): boolean {
+  return UPGRADE_RE.test(text);
+}
+
+export function existingSystemHintFromText(text: string): string | undefined {
+  const existing = text.match(
+    /\b(?:existing|current|installed)\s+(\d+(?:\.\d+)?\s*kva(?:\s+[A-Za-z0-9]+){0,3})/i
+  );
+  if (existing?.[1]) return existing[1].replace(/\s+/g, " ").trim();
+  const fromTo = text.match(/\bupgrade\s+(?:from|on)\s+(?:an?\s+)?(\d+(?:\.\d+)?\s*kva(?:\s+[A-Za-z0-9]+){0,3})/i);
+  if (fromTo?.[1]) return fromTo[1].replace(/\s+/g, " ").trim();
+  return undefined;
+}
+
+/** Parse catalogue qty lines. When `productsOnly`, never emit PACKAGE (upgrade add-ons). */
+export function parseQtyItems(text: string, opts?: { productsOnly?: boolean }): SalesIntentItem[] {
   const items: SalesIntentItem[] = [];
-  const lower = text.toLowerCase();
-  // Include decimals so "6.2kva" is not captured as "2kva".
-  const packageMatch = text.match(/(\d+(?:\.\d+)?\s*kva(?:\s+[A-Za-z0-9]+){0,4})(?:\s+package)?/i);
-  if (packageMatch?.[1]) {
-    const q = packageMatch[1].replace(/\s+package$/i, "").trim();
-    items.push({ type: "PACKAGE", query: q, quantity: 1 });
-  } else {
-    const namedPkg = text.match(
-      /(?:the\s+)?([A-Za-z0-9][\w\s\-]{2,60}?)\s+package/i
-    );
-    if (namedPkg?.[1] && !/this|their|a|the same/i.test(namedPkg[1])) {
-      items.push({ type: "PACKAGE", query: namedPkg[1].trim(), quantity: 1 });
+  const productsOnly = Boolean(opts?.productsOnly);
+
+  if (!productsOnly) {
+    // Include decimals so "6.2kva" is not captured as "2kva".
+    const packageMatch = text.match(/(\d+(?:\.\d+)?\s*kva(?:\s+[A-Za-z0-9]+){0,4})(?:\s+package)?/i);
+    if (packageMatch?.[1]) {
+      const q = packageMatch[1].replace(/\s+package$/i, "").trim();
+      items.push({ type: "PACKAGE", query: q, quantity: 1 });
+    } else {
+      const namedPkg = text.match(
+        /(?:the\s+)?([A-Za-z0-9][\w\s\-]{2,60}?)\s+package/i
+      );
+      if (namedPkg?.[1] && !/this|their|a|the same/i.test(namedPkg[1])) {
+        items.push({ type: "PACKAGE", query: namedPkg[1].trim(), quantity: 1 });
+      }
     }
   }
 
@@ -78,9 +101,9 @@ function parseQtyItems(text: string): SalesIntentItem[] {
   );
   if (extra?.[1] && !/note that|delivery/i.test(extra[1])) {
     const q = extra[1].replace(/^(another|an extra|an additional|one|a)\s+/i, "").trim();
-    if (q && q.length < 80) {
-      const qty = /\banother\b|\bone extra\b|\ban additional\b|\bone\b/i.test(lower) ? 1 : 1;
-      items.push({ type: "PRODUCT", query: q.replace(/\.$/, ""), quantity: qty });
+    // Qty forms like "add 6 panels" are handled by QTY_ITEM below.
+    if (q && q.length < 80 && !/^\d/.test(q)) {
+      items.push({ type: "PRODUCT", query: q.replace(/\.$/, ""), quantity: 1 });
     }
   }
 
@@ -89,14 +112,36 @@ function parseQtyItems(text: string): SalesIntentItem[] {
   while ((m = re.exec(text)) !== null) {
     const qty = Number(m[1]);
     const name = (m[2] ?? "").replace(/\.$/, "").trim();
-    if (!name || /kva/i.test(name)) continue;
+    if (!name) continue;
+    if (!productsOnly && /kva/i.test(name)) continue;
+    if (productsOnly && /kva/i.test(name)) continue; // existing system capacity, not an add-on SKU
     if (items.some((it) => it.query.toLowerCase() === name.toLowerCase())) continue;
     items.push({
-      type: /package/i.test(name) ? "PACKAGE" : "PRODUCT",
+      type: productsOnly ? "PRODUCT" : /package/i.test(name) ? "PACKAGE" : "PRODUCT",
       query: name.replace(/\s+package$/i, "").trim(),
       quantity: qty,
     });
   }
+
+  // Upgrade phrases like "upgrade with panels and batteries" without explicit qty
+  if (productsOnly && items.length === 0) {
+    const withClause = text.match(/\b(?:with|adding|include)\s+(.+)$/i)?.[1];
+    if (withClause) {
+      const parts = withClause
+        .split(/\s*(?:,| and | \+|\/)\s*/i)
+        .map((p) => p.replace(/^(an?\s+|the\s+)/i, "").trim())
+        .filter((p) => p.length >= 2 && p.length < 80 && !/kva|this customer|existing/i.test(p));
+      for (const part of parts) {
+        const qtyMatch = part.match(/^(\d+(?:\.\d+)?)\s*(?:x|×)?\s+(.+)$/i);
+        if (qtyMatch) {
+          items.push({ type: "PRODUCT", query: qtyMatch[2]!.trim(), quantity: Number(qtyMatch[1]) || 1 });
+        } else if (!/^(for|to|the|a|an)$/i.test(part)) {
+          items.push({ type: "PRODUCT", query: part, quantity: 1 });
+        }
+      }
+    }
+  }
+
   return items;
 }
 
@@ -236,6 +281,35 @@ export function heuristicParseSalesIntent(
     };
   }
 
+  if (isUpgradeCommand(t)) {
+    const items = parseQtyItems(t, { productsOnly: true }).map((it) => ({
+      ...it,
+      type: "PRODUCT" as const,
+    }));
+    return {
+      intent: "CREATE_QUOTATION",
+      customerReference:
+        customerFromText(t, page) ??
+        (page?.leadId || page?.conversationId || page?.dealId ? { source: "CURRENT_CONTEXT" } : undefined),
+      dealReference:
+        /\bthis deal\b/i.test(t) || page?.dealId
+          ? { source: "CURRENT_CONTEXT" }
+          : undefined,
+      items,
+      upgrade: true,
+      existingSystemHint: existingSystemHintFromText(t),
+      sendRequested,
+      discountPercent: (() => {
+        const d = t.match(/(\d+(?:\.\d+)?)\s*%\s*(off|discount)/i);
+        return d ? Number(d[1]) : null;
+      })(),
+      validityDays: (() => {
+        const v = t.match(/validity\s+(\d+)\s+days?/i);
+        return v ? Number(v[1]) : null;
+      })(),
+    };
+  }
+
   if (
     sendRequested ||
     /\b(quote|quotation|create a quote|prepare a quote|prepare a quotation|create a quotation)\b/i.test(
@@ -319,6 +393,8 @@ export const EMIT_INTENT_TOOL = {
       extractFromConversation: { type: "boolean" },
       copyLast: { type: "boolean" },
       searchQuery: { type: "string" },
+      upgrade: { type: "boolean" },
+      existingSystemHint: { type: "string" },
     },
     required: ["intent"],
   },

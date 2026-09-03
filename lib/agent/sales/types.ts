@@ -94,6 +94,10 @@ export type SalesIntent = {
   copyLast?: boolean;
   searchQuery?: string;
   note?: string;
+  /** Product-only add-on quote for an existing install (Command Center). */
+  upgrade?: boolean;
+  /** Optional hint like "3kVA" when the salesperson mentions the existing system. */
+  existingSystemHint?: string;
 };
 
 export type ProgressStep = {

@@ -345,6 +345,8 @@ export function SalesCommandWorkspace({
       ? `Create a quote for this customer using the ${samplePackage} Package.`
       : null,
     context?.customerName ? "Create a quotation for this customer." : null,
+    context?.customerName ? "Create a system upgrade quotation for this customer." : null,
+    context?.customerName ? "Upgrade with 4 panels and 1 battery." : "Upgrade quotation with 4 panels and 1 battery.",
     hasPackages ? "Quote what the customer requested." : "Prepare a quotation for 100 helmets and 100 reflective vests.",
   ].filter(Boolean) as string[];
 

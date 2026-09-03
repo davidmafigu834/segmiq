@@ -227,20 +227,28 @@ async function resolveItemsOrWait(opts: {
   progress: ProgressStep[];
 }): Promise<{ ok: true; resolved: Array<{ item: SalesIntentItem; catalog: ResolvedCatalogItem; variantId?: string | null }> } | CommandOutcome> {
   const resolved: Array<{ item: SalesIntentItem; catalog: ResolvedCatalogItem; variantId?: string | null }> = [];
+  const forceProduct = Boolean(opts.intent.upgrade);
   for (const item of opts.items) {
+    const prefer: "PACKAGE" | "PRODUCT" | "SERVICE" | "AUTO" = forceProduct
+      ? "PRODUCT"
+      : item.type === "PACKAGE"
+        ? "PACKAGE"
+        : item.type === "SERVICE"
+          ? "SERVICE"
+          : item.type === "PRODUCT"
+            ? "PRODUCT"
+            : "AUTO";
     if (item.id) {
       const byId = await resolveCatalogById({
         actor: opts.actor,
         id: item.id,
-        prefer: item.type === "PACKAGE" ? "PACKAGE" : item.type === "SERVICE" ? "SERVICE" : item.type === "PRODUCT" ? "PRODUCT" : "AUTO",
+        prefer,
       });
       if (byId) {
         resolved.push({ item, catalog: byId, variantId: null });
         continue;
       }
     }
-    const prefer =
-      item.type === "PACKAGE" ? "PACKAGE" : item.type === "SERVICE" ? "SERVICE" : item.type === "PRODUCT" ? "PRODUCT" : "AUTO";
     const match = await resolveCatalogQuery({ actor: opts.actor, query: item.query, prefer });
     if (match.kind === "none") {
       return {
@@ -271,7 +279,7 @@ async function resolveItemsOrWait(opts: {
         match.bothTypes
           ? `“${item.query}” matches both a Package and a Product. Which should I use?`
           : `Which ${item.query.toLowerCase().includes("battery") ? "battery" : "item"} should I use?`;
-      return waiting(prompt, match.values[0]?.type === "PACKAGE" ? "PACKAGE" : "PRODUCT", match.choices ?? [], opts.intent, opts.progress, {
+      return waiting(prompt, match.values[0]?.type === "PACKAGE" && !forceProduct ? "PACKAGE" : "PRODUCT", match.choices ?? [], opts.intent, opts.progress, {
         pendingItemQuery: item.query,
       });
     }
@@ -452,6 +460,17 @@ async function learningNotesFor(opts: {
   return retrieved.items.map((i) => i.title);
 }
 
+function upgradeNotesFor(intent: SalesIntent, existingNote: string | null): string {
+  const hint = (intent.existingSystemHint ?? "").trim();
+  const upgradeLine = hint
+    ? `System upgrade — add-ons to existing ${hint} system.`
+    : "System upgrade — add-ons to existing install.";
+  const prior = (existingNote ?? "").trim();
+  if (!prior) return upgradeLine;
+  if (prior.toLowerCase().includes("system upgrade")) return prior;
+  return `${upgradeLine}\n${prior}`;
+}
+
 export async function runCreateQuotation(opts: {
   actor: SalesActor;
   intent: SalesIntent;
@@ -568,6 +587,63 @@ export async function runCreateQuotation(opts: {
   progress[1] = step("deal", "Deal identified", "done", deal.name);
 
   let intentItems = opts.intent.items;
+  if (opts.intent.upgrade) {
+    intentItems = intentItems.map((it) => ({ ...it, type: "PRODUCT" as const }));
+    if (intentItems.length === 0) {
+      const prompt =
+        "What products should I add for this system upgrade? Name quantities and products (e.g. 4 x 550W panels and 1 lithium battery).";
+      return {
+        reply: prompt,
+        status: "WAITING_FOR_INPUT",
+        pending: {
+          kind: "REQUIREMENTS",
+          prompt,
+          options: [
+            { id: "panels", entityType: "PRODUCT", title: "Solar panels" },
+            { id: "battery", entityType: "PRODUCT", title: "Battery" },
+            { id: "inverter", entityType: "PRODUCT", title: "Inverter" },
+          ],
+          intent: { ...opts.intent, upgrade: true, items: [] },
+          progress: [
+            ...progress.slice(0, 2),
+            step("items", "Items resolved", "running"),
+            ...progress.slice(3),
+          ],
+          extra: { upgradeItems: true },
+        },
+        blocks: [
+          {
+            type: "progress",
+            steps: [
+              ...progress.slice(0, 2),
+              step("items", "Items resolved", "running"),
+              ...progress.slice(3),
+            ],
+          },
+          {
+            type: "requirements",
+            prompt,
+            items: [
+              { label: "Solar panels", quantity: null, status: "UNCERTAIN" },
+              { label: "Batteries", quantity: null, status: "UNCERTAIN" },
+              { label: "Other products", quantity: null, status: "UNCERTAIN" },
+            ],
+          },
+          {
+            type: "actions",
+            actions: [
+              { label: "Add panels + battery", prompt: "4 x panels and 1 battery", style: "primary" },
+              { label: "Cancel", prompt: "cancel" },
+            ],
+          },
+          { type: "status", kind: "partial", message: prompt },
+        ],
+        activeLeadId: cust.leadId,
+        activeDealId: deal.id,
+      };
+    }
+  }
+
   if ((opts.intent.extractFromConversation || intentItems.length === 0) && opts.flags.contextualExtraction) {
     const extraction = await loadConversationExtraction({ clientId: opts.actor.clientId, leadId: cust.leadId });
     if (intentItems.length === 0) {
@@ -733,6 +809,10 @@ export async function runCreateQuotation(opts: {
         paymentTerms = ((template.payment_terms_label as string | null) ?? "").trim() || null;
       }
     }
+  }
+
+  if (opts.intent.upgrade) {
+    notes = upgradeNotesFor(opts.intent, notes);
   }
 
   const { data: lead } = await supabase

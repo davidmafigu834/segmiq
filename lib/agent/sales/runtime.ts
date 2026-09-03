@@ -9,7 +9,7 @@ import { wrapUntrustedContent } from "@/lib/company-brain/authority";
 import { SALES_PROMPT_VERSION, type SalesActor, type SalesBlock, type SalesIntent, type SalesPageContext, type SalesTurnResult } from "./types";
 import { getSalesAgentFlags, salesAgentModelAvailable } from "./settings";
 import { looksLikeCancel, looksLikeConfirm, matchFutureSalesCommand, matchUnsupportedSalesCommand } from "./policy";
-import { EMIT_INTENT_TOOL, heuristicParseSalesIntent, validateSalesIntent } from "./intents";
+import { EMIT_INTENT_TOOL, heuristicParseSalesIntent, parseQtyItems, validateSalesIntent } from "./intents";
 import { buildSalesSystemPrompt } from "./prompt";
 import { appendSalesMessage, createOrGetSalesSession, saveSalesSession } from "./sessions";
 import { companyHasPackages, loadSalesContextCard, samplePackageName } from "./context";
@@ -350,11 +350,17 @@ export async function runSalesCommand(opts: {
   }
 
   let intent: SalesIntent | null = null;
-  if (session.pendingInput && (opts.selection || looksLikeConfirm(message))) {
+  const pendingUpgradeItems = Boolean(session.pendingInput?.extra?.upgradeItems);
+  if (
+    session.pendingInput &&
+    (opts.selection ||
+      looksLikeConfirm(message) ||
+      (pendingUpgradeItems && message.trim().length > 0))
+  ) {
     intent = {
       ...session.pendingInput.intent,
     };
-    const selectedId = opts.selection?.id ?? session.pendingInput.options[0]?.id;
+    const selectedId = opts.selection?.id ?? (looksLikeConfirm(message) ? session.pendingInput.options[0]?.id : undefined);
     if (session.pendingInput.kind === "CUSTOMER" && selectedId) {
       intent.customerReference = { source: "SELECTED", id: selectedId };
     } else if (session.pendingInput.kind === "DEAL" && selectedId) {
@@ -413,8 +419,25 @@ export async function runSalesCommand(opts: {
           id: selectedId,
         }];
       }
-    } else if (session.pendingInput.kind === "REQUIREMENTS" && (looksLikeConfirm(message) || opts.selection)) {
-      intent = session.pendingInput.intent;
+    } else if (session.pendingInput.kind === "REQUIREMENTS") {
+      intent = {
+        ...session.pendingInput.intent,
+        upgrade: session.pendingInput.intent.upgrade || pendingUpgradeItems || undefined,
+      };
+      if (pendingUpgradeItems) {
+        const chipTitle = opts.selection
+          ? session.pendingInput.options.find((o) => o.id === opts.selection!.id)?.title?.trim()
+          : null;
+        const parseSource = chipTitle && !/\d/.test(message) ? `1 x ${chipTitle}` : message;
+        const items = parseQtyItems(parseSource, { productsOnly: true }).map((it) => ({
+          ...it,
+          type: "PRODUCT" as const,
+        }));
+        if (!items.length && chipTitle) {
+          items.push({ type: "PRODUCT", query: chipTitle, quantity: 1 });
+        }
+        intent = { ...intent, items, upgrade: true };
+      }
     }
     await saveSalesSession({ sessionId: session.id, pendingInput: null });
   }
