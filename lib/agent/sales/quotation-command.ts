@@ -27,6 +27,7 @@ import {
   loadAccessibleDeal,
   loadProductVariants,
   resolveCatalogQuery,
+  resolveCatalogById,
   resolveCustomer,
   resolveDealsForCustomer,
   variantQuantitiesMatch,
@@ -228,13 +229,13 @@ async function resolveItemsOrWait(opts: {
   const resolved: Array<{ item: SalesIntentItem; catalog: ResolvedCatalogItem; variantId?: string | null }> = [];
   for (const item of opts.items) {
     if (item.id) {
-      const found = await resolveCatalogQuery({
+      const byId = await resolveCatalogById({
         actor: opts.actor,
-        query: item.query,
+        id: item.id,
         prefer: item.type === "PACKAGE" ? "PACKAGE" : item.type === "SERVICE" ? "SERVICE" : item.type === "PRODUCT" ? "PRODUCT" : "AUTO",
       });
-      if (found.kind === "one") {
-        resolved.push({ item, catalog: found.value });
+      if (byId) {
+        resolved.push({ item, catalog: byId, variantId: null });
         continue;
       }
     }
@@ -258,6 +259,14 @@ async function resolveItemsOrWait(opts: {
       };
     }
     if (match.kind === "many") {
+      // Selection already pinned an id but catalogue search still ambiguous — honour the pick.
+      if (item.id) {
+        const picked = match.values.find((v) => v.id === item.id);
+        if (picked) {
+          resolved.push({ item, catalog: picked, variantId: null });
+          continue;
+        }
+      }
       const prompt =
         match.bothTypes
           ? `“${item.query}” matches both a Package and a Product. Which should I use?`

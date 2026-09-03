@@ -384,6 +384,88 @@ export type ResolvedCatalogItem = {
   pricingMode?: string | null;
 };
 
+export async function resolveCatalogById(opts: {
+  actor: SalesActor;
+  id: string;
+  prefer?: "PACKAGE" | "PRODUCT" | "SERVICE" | "AUTO";
+}): Promise<ResolvedCatalogItem | null> {
+  const id = opts.id.trim();
+  if (!id) return null;
+  const prefer = opts.prefer ?? "AUTO";
+  const supabase = createAdminClient();
+  const canViewProducts = hasCommercialPermission(
+    { userId: opts.actor.userId, role: opts.actor.role, clientId: opts.actor.clientId },
+    "products.view"
+  );
+  const canViewPackages = hasCommercialPermission(
+    { userId: opts.actor.userId, role: opts.actor.role, clientId: opts.actor.clientId },
+    "packages.view"
+  );
+
+  const tryPackage = prefer === "PACKAGE" || prefer === "AUTO";
+  const tryProduct = prefer === "PRODUCT" || prefer === "SERVICE" || prefer === "AUTO";
+
+  if (tryPackage && canViewPackages) {
+    const { data } = await supabase
+      .from("commercial_packages")
+      .select("id, name, pricing_mode, fixed_price, currency, status, can_be_quoted")
+      .eq("client_id", opts.actor.clientId)
+      .eq("id", id)
+      .eq("can_be_quoted", true)
+      .neq("status", "ARCHIVED")
+      .maybeSingle();
+    if (data) {
+      return {
+        type: "PACKAGE",
+        id: data.id as string,
+        name: data.name as string,
+        sku: null,
+        price: data.fixed_price != null ? Number(data.fixed_price) : null,
+        currency: (data.currency as string) || "USD",
+        availability: "NOT_TRACKED",
+        availableQty: null,
+        hasVariants: false,
+        pricingMode: (data.pricing_mode as string | null) ?? null,
+      };
+    }
+  }
+
+  if (tryProduct && canViewProducts) {
+    let q = supabase
+      .from("products")
+      .select("id, name, sku, selling_price, currency, item_type, status, can_be_quoted, track_inventory")
+      .eq("client_id", opts.actor.clientId)
+      .eq("id", id)
+      .eq("can_be_quoted", true)
+      .eq("status", "ACTIVE");
+    if (prefer === "SERVICE") q = q.eq("item_type", "SERVICE");
+    else if (prefer === "PRODUCT") q = q.eq("item_type", "PRODUCT");
+    const { data } = await q.maybeSingle();
+    if (data) {
+      const type = data.item_type === "SERVICE" ? ("SERVICE" as const) : ("PRODUCT" as const);
+      const { count } = await supabase
+        .from("product_variants")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", opts.actor.clientId)
+        .eq("product_id", data.id as string)
+        .eq("status", "ACTIVE");
+      return {
+        type,
+        id: data.id as string,
+        name: data.name as string,
+        sku: (data.sku as string | null) ?? null,
+        price: Number(data.selling_price) || 0,
+        currency: (data.currency as string) || "USD",
+        availability: data.track_inventory ? null : "NOT_TRACKED",
+        availableQty: null,
+        hasVariants: (count ?? 0) > 0,
+      };
+    }
+  }
+
+  return null;
+}
+
 export async function resolveCatalogQuery(opts: {
   actor: SalesActor;
   query: string;

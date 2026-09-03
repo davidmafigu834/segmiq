@@ -383,12 +383,31 @@ export async function runSalesCommand(opts: {
       (session.pendingInput.kind === "PRODUCT" || session.pendingInput.kind === "PACKAGE" || session.pendingInput.kind === "SERVICE") &&
       selectedId
     ) {
-      const pendingQuery = String(session.pendingInput.extra?.pendingItemQuery ?? "");
-      intent.items = intent.items.map((it) =>
-        !pendingQuery || it.query === pendingQuery ? { ...it, id: selectedId } : it
-      );
+      const pendingQuery = String(session.pendingInput.extra?.pendingItemQuery ?? "").trim().toLowerCase();
+      const selectedTitle = session.pendingInput.options.find((o) => o.id === selectedId)?.title?.trim() || "";
+      const itemType =
+        session.pendingInput.kind === "PACKAGE" ? "PACKAGE" : session.pendingInput.kind === "SERVICE" ? "SERVICE" : "PRODUCT";
+      intent.items = intent.items.map((it) => {
+        const matchesPending =
+          !pendingQuery ||
+          it.query.trim().toLowerCase() === pendingQuery ||
+          intent.items.length === 1;
+        return matchesPending
+          ? {
+              ...it,
+              id: selectedId,
+              query: selectedTitle || it.query,
+              type: itemType,
+            }
+          : it;
+      });
       if (!intent.items.length) {
-        intent.items = [{ type: session.pendingInput.kind === "PACKAGE" ? "PACKAGE" : "PRODUCT", query: pendingQuery || "item", quantity: 1, id: selectedId }];
+        intent.items = [{
+          type: itemType,
+          query: selectedTitle || pendingQuery || "item",
+          quantity: 1,
+          id: selectedId,
+        }];
       }
     } else if (session.pendingInput.kind === "REQUIREMENTS" && (looksLikeConfirm(message) || opts.selection)) {
       intent = session.pendingInput.intent;
