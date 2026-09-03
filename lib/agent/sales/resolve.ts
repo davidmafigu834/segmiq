@@ -37,7 +37,37 @@ function scoreName(name: string, query: string): number {
   if (n.includes(q)) return 60;
   const tokens = q.split(/\s+/).filter(Boolean);
   const hits = tokens.filter((t) => n.includes(t)).length;
-  return tokens.length ? (hits / tokens.length) * 40 : 0;
+  let score = tokens.length ? (hits / tokens.length) * 40 : 0;
+
+  // Capacity match: "6kva" / "6 kva" should score against "6.2kVA System", "3.2kva" → "3kVA Lite"
+  const qKva = q.match(/(\d+(?:\.\d+)?)\s*k\s*v\s*a/);
+  const nKva = n.match(/(\d+(?:\.\d+)?)\s*k\s*v\s*a/);
+  if (qKva && nKva) {
+    const qn = Number(qKva[1]);
+    const nn = Number(nKva[1]);
+    if (Number.isFinite(qn) && Number.isFinite(nn)) {
+      if (qn === nn) score = Math.max(score, 92);
+      else if (Math.abs(qn - nn) <= 0.5) score = Math.max(score, 78);
+      else if (Math.floor(qn) === Math.floor(nn)) score = Math.max(score, 70);
+    }
+  }
+  return score;
+}
+
+/** Strip conversational noise so "6kva quotation for this customer" → "6kva". */
+export function normalizeCatalogQuery(raw: string): string {
+  let q = raw.trim();
+  if (!q) return q;
+  q = q
+    .replace(/\b(create|prepare|make|draft|send)\b/gi, " ")
+    .replace(/\b(a|an|the|both|for|this|that|customer|client|deal|system|solar|package|quotation|quote|qoutation)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const kva = raw.match(/(\d+(?:\.\d+)?)\s*k\s*v\s*a(?:\s+[A-Za-z0-9]+){0,3}/i);
+  if (kva?.[0] && (!q || q.length < 2 || !/k\s*v\s*a/i.test(q))) {
+    return kva[0].replace(/\s+/g, " ").trim();
+  }
+  return q || raw.trim();
 }
 
 export type ResolvedCustomer = {
@@ -359,7 +389,7 @@ export async function resolveCatalogQuery(opts: {
   query: string;
   prefer?: "PACKAGE" | "PRODUCT" | "SERVICE" | "AUTO";
 }): Promise<MatchResult<ResolvedCatalogItem> & { choices?: SalesChoice[]; bothTypes?: boolean }> {
-  const q = opts.query.trim();
+  const q = normalizeCatalogQuery(opts.query);
   if (!q) return { kind: "none" };
 
   const prefer = opts.prefer ?? "AUTO";
@@ -391,7 +421,22 @@ export async function resolveCatalogQuery(opts: {
     canSeeCost: false,
   });
 
-  const mapped: ResolvedCatalogItem[] = results.map((r) => ({
+  // kVA queries often miss on exact ilike ("6kva" ⊄ "6.2kVA"); widen to capacity catalogue then score.
+  let pool = results;
+  if (/k\s*v\s*a/i.test(q)) {
+    const broad = await searchCommercialItems({
+      clientId: opts.actor.clientId,
+      q: "kva",
+      types: [...allowedTypes],
+      limit: Math.max(PRODUCT_SEARCH_LIMIT, 24),
+      canSeeCost: false,
+    });
+    const byId = new Map(pool.map((r) => [r.id, r]));
+    for (const r of broad.results) byId.set(r.id, r);
+    pool = [...byId.values()];
+  }
+
+  const mapped: ResolvedCatalogItem[] = pool.map((r) => ({
     type: r.type,
     id: r.id,
     name: r.name,

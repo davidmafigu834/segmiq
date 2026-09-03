@@ -243,10 +243,10 @@ async function resolveItemsOrWait(opts: {
     const match = await resolveCatalogQuery({ actor: opts.actor, query: item.query, prefer });
     if (match.kind === "none") {
       return {
-        reply: `I couldn't find “${item.query}” in the company's Products.`,
+        reply: `I couldn't find “${item.query}” in the company's catalogue.`,
         status: "WAITING_FOR_INPUT",
         blocks: [
-          { type: "status", kind: "partial", message: `I couldn't find “${item.query}” in the company's Products.` },
+          { type: "status", kind: "partial", message: `I couldn't find “${item.query}” in the company's catalogue.` },
           {
             type: "actions",
             actions: [
@@ -710,13 +710,18 @@ export async function runCreateQuotation(opts: {
     if (template && template.client_id === opts.actor.clientId) {
       templateLayoutKey = (template.layout_key as string | null) ?? null;
       templateLayoutVersion = template.layout_version == null ? null : Number(template.layout_version);
-      if (!isBuiltinQuoteTemplate(template as { is_builtin?: boolean; builtin_key?: string | null })) {
+      const builtin = isBuiltinQuoteTemplate(template as { is_builtin?: boolean; builtin_key?: string | null });
+      if (!builtin) {
         taxRate = Number(template.tax_rate) || taxRate;
         otherAmount = Number(template.other_amount) || 0;
         notes = (template.notes as string | null) ?? notes;
         terms = (template.terms as string | null) ?? terms;
         validDays = Number(template.valid_for_days) || validDays;
         paymentTerms = ((template.payment_terms_label as string | null) ?? "").trim() || paymentTerms;
+      } else if (!paymentTerms) {
+        // Company default missing: still inherit payment label from the active (builtin) template
+        // so Command Center drafts are not blocked on "Payment terms missing".
+        paymentTerms = ((template.payment_terms_label as string | null) ?? "").trim() || null;
       }
     }
   }

@@ -29,7 +29,7 @@ export function classifyRequirementStatus(sentence: string): RequirementStatus {
 export function extractRequirementsFromText(text: string): ExtractedRequirement[] {
   const items: ExtractedRequirement[] = [];
   const packageHit = text.match(
-    /(?:want|need|quote).{0,60}?(\d+\s*kva(?:\s+[A-Za-z0-9]+){0,4})(?:\s+package)?/i
+    /(?:want|need|quote).{0,60}?(\d+(?:\.\d+)?\s*kva(?:\s+[A-Za-z0-9]+){0,4})(?:\s+package)?/i
   );
   if (packageHit?.[1]) {
     items.push({

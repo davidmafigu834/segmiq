@@ -59,7 +59,8 @@ const QTY_ITEM =
 function parseQtyItems(text: string): SalesIntentItem[] {
   const items: SalesIntentItem[] = [];
   const lower = text.toLowerCase();
-  const packageMatch = text.match(/(\d+\s*kva(?:\s+[A-Za-z0-9]+){0,4})(?:\s+package)?/i);
+  // Include decimals so "6.2kva" is not captured as "2kva".
+  const packageMatch = text.match(/(\d+(?:\.\d+)?\s*kva(?:\s+[A-Za-z0-9]+){0,4})(?:\s+package)?/i);
   if (packageMatch?.[1]) {
     const q = packageMatch[1].replace(/\s+package$/i, "").trim();
     items.push({ type: "PACKAGE", query: q, quantity: 1 });

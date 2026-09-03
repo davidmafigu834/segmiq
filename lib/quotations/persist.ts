@@ -106,7 +106,13 @@ export async function saveItemsAndTotals(
   if (clean.length > 0) {
     const { error } = await supabase.from("quotation_line_items").insert(clean);
     if (error) {
-      // Fallback without new columns if migration not applied yet
+      const msg = (error.message ?? "").toLowerCase();
+      const missingColumn =
+        msg.includes("column") && (msg.includes("does not exist") || msg.includes("schema cache"));
+      if (!missingColumn) {
+        throw new Error(error.message || "Failed to save quotation line items");
+      }
+      // Fallback without newer columns if migration not applied yet
       const legacy = clean.map((row) => ({
         quotation_id: row.quotation_id,
         catalog_item_id: row.catalog_item_id,
@@ -118,7 +124,10 @@ export async function saveItemsAndTotals(
         group_label: row.group_label,
         sort_order: row.sort_order,
       }));
-      await supabase.from("quotation_line_items").insert(legacy);
+      const { error: legacyErr } = await supabase.from("quotation_line_items").insert(legacy);
+      if (legacyErr) {
+        throw new Error(legacyErr.message || "Failed to save quotation line items");
+      }
     }
   }
 
