@@ -16,6 +16,7 @@ export const RE_ACTIVE_STAGES = [
   "offer_submitted",
   "negotiating",
   "offer_accepted",
+  "transaction_in_progress",
 ] as const;
 
 export const RE_CLOSED_STAGES = ["won", "lost", "not_qualified"] as const;
@@ -48,9 +49,9 @@ export const RE_BOARD_COLUMNS = [
   },
   {
     id: "offer",
-    label: "Offer",
+    label: "Offer / transaction",
     accent: "#16A34A",
-    stages: ["offer_submitted", "negotiating", "offer_accepted"],
+    stages: ["offer_submitted", "negotiating", "offer_accepted", "transaction_in_progress"],
   },
 ] as const;
 
@@ -78,6 +79,7 @@ export const RE_PIPELINE_STAGE_LABEL: Record<RePipelineStage, string> = {
   offer_submitted: "Offer Submitted",
   negotiating: "Negotiating",
   offer_accepted: "Offer Accepted",
+  transaction_in_progress: "Transaction in progress",
   won: "Won",
   lost: "Lost",
   not_qualified: "Not Qualified",
@@ -94,6 +96,7 @@ export const RE_STAGE_GUIDANCE: Record<RePipelineStage, string> = {
   offer_submitted: "Track the seller response and keep the buyer informed.",
   negotiating: "Work terms until both sides agree or the offer closes.",
   offer_accepted: "Start client due diligence, then wait for compliance approval before the sale can complete.",
+  transaction_in_progress: "Track agreements, payments, conveyancing and handover through to completion.",
   won: "This opportunity is closed won.",
   lost: "This opportunity is closed lost.",
   not_qualified: "This inquiry is not a fit to progress.",
@@ -108,6 +111,8 @@ export type RePipelineFacts = {
   hasCompletedViewing?: boolean;
   /** Explicit agent mark — never inferred from a completed viewing alone. */
   markedInterested?: boolean;
+  /** Optional: accepted offer already has an active RE transaction. */
+  hasActiveTransaction?: boolean;
 };
 
 export function resolveRePipelineStage(facts: RePipelineFacts): RePipelineStage {
@@ -117,6 +122,7 @@ export function resolveRePipelineStage(facts: RePipelineFacts): RePipelineStage 
   if (status === "WON") return "won";
 
   const offer = String(facts.offerStatus ?? "").toLowerCase();
+  if (offer === "accepted" && facts.hasActiveTransaction) return "transaction_in_progress";
   if (offer === "accepted") return "offer_accepted";
   if (offer === "countered") return "negotiating";
   if (offer === "submitted") return "offer_submitted";
@@ -204,6 +210,7 @@ export function primaryActionForStage(stage: RePipelineStage): {
     case "offer_submitted":
     case "negotiating":
     case "offer_accepted":
+    case "transaction_in_progress":
       return { id: "offer", label: "Open offer" };
     default:
       return { id: "none", label: "Open inquiry" };

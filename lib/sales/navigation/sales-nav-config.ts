@@ -6,6 +6,7 @@ import {
   Columns3,
   FileText,
   Handshake,
+  Landmark,
   LayoutDashboard,
   ListTodo,
   MessageSquare,
@@ -32,7 +33,8 @@ export type SalesNavIconId =
   | "goals"
   | "toolbox"
   | "listings"
-  | "offers";
+  | "offers"
+  | "transactions";
 
 export type SalesNavMobileSlot = "primary" | "more";
 
@@ -71,6 +73,7 @@ export const SALES_NAV_LUCIDE: Record<Exclude<SalesNavIconId, "whatsapp">, Lucid
   toolbox: Wrench,
   listings: Building2,
   offers: Handshake,
+  transactions: Landmark,
 };
 
 function exactOrChild(pathname: string, href: string): boolean {
@@ -250,10 +253,19 @@ export function resolveSalesNavItems(
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/sales/offers"),
   };
+  const transactionsItem: SalesNavItemConfig = {
+    id: "transactions",
+    label: "Transactions",
+    href: "/sales/transactions",
+    icon: "transactions",
+    section: "sales",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/sales/transactions"),
+  };
   return items.flatMap((item) => {
     if (item.id === "quotes") return [];
     if (item.id === "leads") {
-      return [{ ...item, label: "Inquiries" }, listingsItem, offersItem];
+      return [{ ...item, label: "Inquiries" }, listingsItem, offersItem, transactionsItem];
     }
     return [item];
   });

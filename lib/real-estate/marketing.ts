@@ -11,6 +11,7 @@ export const RE_SOURCE_TYPES = [
   "referral",
   "walk_in",
   "phone",
+  "email",
   "whatsapp",
   "manual",
   "other",
@@ -26,6 +27,7 @@ export const RE_SOURCE_LABEL: Record<ReSourceType, string> = {
   referral: "Referral",
   walk_in: "Walk-in",
   phone: "Phone",
+  email: "Email",
   whatsapp: "WhatsApp",
   manual: "Manual Entry",
   other: "Other",
@@ -62,6 +64,7 @@ export function sourceTypeFromLeadSource(
   if (hub.includes("refer")) return "referral";
   if (hub.includes("walk")) return "walk_in";
   if (hub.includes("phone") || hub.includes("call")) return "phone";
+  if (hub.includes("email") || hub.includes("e-mail")) return "email";
   if (hub.includes("whatsapp")) return "whatsapp";
   if (hub.includes("portal") || hub.includes("property24") || hub.includes("private property")) {
     return "property_portal";
@@ -309,6 +312,7 @@ export const HUB_RE_SOURCES = [
   "Referral",
   "Walk-in",
   "Phone call",
+  "Email",
   "WhatsApp",
   "Manual Entry",
   "Other",

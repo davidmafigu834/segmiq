@@ -15,6 +15,7 @@ import {
   type ReOfferStatus,
 } from "@/lib/real-estate/offers";
 import { listAgentComplianceActions } from "@/lib/real-estate/compliance-service";
+import { listAgentTransactionActions } from "@/lib/real-estate/transaction-service";
 
 export type AgentReDashboard = {
   summary: {
@@ -22,6 +23,7 @@ export type AgentReDashboard = {
     followUpsDue: number;
     viewingsToday: number;
     needingAttention: number;
+    transactionsNeedingAttention: number;
   };
   priorities: PriorityItem[];
   viewingsToday: Array<{
@@ -54,6 +56,13 @@ export type AgentReDashboard = {
     contactName: string;
     why: string;
     nextLabel: string;
+  }>;
+  transactionsNeedingAttention: Array<{
+    id: string;
+    propertyLabel: string;
+    why: string;
+    status: string;
+    leadId: string | null;
   }>;
 };
 
@@ -262,17 +271,28 @@ export async function getAgentRealEstateDashboard(opts: {
     userId: opts.userId,
   });
 
+  const transactionsNeedingAttention = await listAgentTransactionActions({
+    clientId: opts.clientId,
+    userId: opts.userId,
+  });
+
   return {
     summary: {
       newInquiries,
       followUpsDue: followUps.length,
       viewingsToday: viewingsToday.length,
-      needingAttention: ranked.length + offersNeedingAttention.length + complianceActions.length,
+      needingAttention:
+        ranked.length +
+        offersNeedingAttention.length +
+        complianceActions.length +
+        transactionsNeedingAttention.length,
+      transactionsNeedingAttention: transactionsNeedingAttention.length,
     },
     priorities: ranked,
     viewingsToday,
     followUps,
     offersNeedingAttention,
     complianceActions,
+    transactionsNeedingAttention,
   };
 }

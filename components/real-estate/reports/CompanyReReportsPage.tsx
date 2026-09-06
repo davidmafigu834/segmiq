@@ -20,7 +20,7 @@ export function CompanyReReportsPage({
       chrome={chrome}
       breadcrumb="Company / Reports"
       title="Reports"
-      description="Enquiries, popular properties, viewings and conversions."
+      description="Enquiries, popular properties, viewings, conversions, transactions and commission."
       primaryAction={
         <Button
           variant="primary"

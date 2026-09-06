@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { executeFollowUpReminders } from "@/lib/follow-up-reminders";
+import { executeViewingReminders } from "@/lib/real-estate/viewing-reminders";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 /**
  * Timed T-30 follow-up WhatsApp reminders (rep + lead), once each.
+ * Also T-30 viewing reminders for real-estate appointments.
  * Morning digests run on `/api/cron/daily` at 06:00.
  * Also resumes agent threads left in AI_HANDLING after a timed-out LLM run.
  */
@@ -19,7 +21,10 @@ export async function GET(req: Request) {
   }
 
   try {
-    const followUpCallbacks = await executeFollowUpReminders({ t30Only: true });
+    const [followUpCallbacks, viewingReminders] = await Promise.all([
+      executeFollowUpReminders({ t30Only: true }),
+      executeViewingReminders(),
+    ]);
     const { runProactiveWorker } = await import("@/lib/agent/proactive");
     const { recoverStaleAgentConversations } = await import("@/lib/agent/stale-resume");
     const { runLearningWorker } = await import("@/lib/agent/learning/worker");
@@ -28,7 +33,15 @@ export async function GET(req: Request) {
     const learning = await runLearningWorker();
     const { runDocumentProcessingWorker } = await import("@/lib/documents/processing");
     const documents = await runDocumentProcessingWorker();
-    return NextResponse.json({ ok: true, followUpCallbacks, proactive, staleAgent, learning, documents });
+    return NextResponse.json({
+      ok: true,
+      followUpCallbacks,
+      viewingReminders,
+      proactive,
+      staleAgent,
+      learning,
+      documents,
+    });
   } catch (e) {
     console.error("[cron check-followups] executeFollowUpReminders", e);
     return NextResponse.json(

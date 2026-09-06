@@ -88,6 +88,7 @@ export function AgentDailyWorkspace({
   const followUps = data.followUps.slice(0, SIDE_LIMIT);
   const offers = data.offersNeedingAttention.slice(0, SIDE_LIMIT);
   const cases = data.complianceActions.slice(0, SIDE_LIMIT);
+  const transactions = data.transactionsNeedingAttention.slice(0, SIDE_LIMIT);
 
   async function completeFollowUp(leadId: string) {
     setCompletingId(leadId);
@@ -339,7 +340,7 @@ export function AgentDailyWorkspace({
         </CardShell>
       </div>
 
-      {offers.length > 0 || cases.length > 0 ? (
+      {offers.length > 0 || cases.length > 0 || transactions.length > 0 ? (
         <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
           {offers.length > 0 ? (
             <CardShell
@@ -390,6 +391,42 @@ export function AgentDailyWorkspace({
                       primary
                       onClick={() => setOpenCaseId(c.id)}
                     />
+                  </li>
+                ))}
+              </ul>
+            </CardShell>
+          ) : null}
+
+          {transactions.length > 0 ? (
+            <CardShell
+              title="Transactions needing attention"
+              action={
+                <Link
+                  href="/sales/pipeline"
+                  className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
+                >
+                  Pipeline
+                </Link>
+              }
+            >
+              <ul className="divide-y divide-sales-border-subtle">
+                {transactions.map((t) => (
+                  <li key={t.id} className="flex h-[52px] items-center justify-between gap-3 px-5">
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-semibold text-sales-text-primary">
+                        {t.propertyLabel}
+                      </p>
+                      <p className="truncate text-[11px] text-sales-text-muted">{t.why}</p>
+                    </div>
+                    {t.leadId ? (
+                      <RowAction
+                        label="Open"
+                        primary
+                        onClick={() => {
+                          if (t.leadId) setOpenLeadId(t.leadId);
+                        }}
+                      />
+                    ) : null}
                   </li>
                 ))}
               </ul>

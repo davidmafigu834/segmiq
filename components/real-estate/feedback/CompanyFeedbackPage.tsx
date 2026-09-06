@@ -29,7 +29,7 @@ export function CompanyFeedbackPage({
       chrome={chrome}
       breadcrumb="Company / Feedback"
       title="Feedback"
-      description="Viewing comments, complaints and testimonials for the company owner."
+      description="Viewing comments, complaints, testimonials and after-sales check-ins for the company owner."
       primaryAction={null}
     >
       <FeedbackWorkspace clientId={clientId} viewings={viewings} />

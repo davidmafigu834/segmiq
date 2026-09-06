@@ -75,6 +75,12 @@ describe("company page skeletons", () => {
         key: "offers",
       },
       {
+        live: "components/real-estate/transactions/TransactionsWorkspace.tsx",
+        skeleton: "components/real-estate/transactions/CompanyTransactionsPageSkeleton.tsx",
+        grid: COMPANY_KPI_GRID.transactions,
+        key: "transactions",
+      },
+      {
         live: "components/real-estate/ListingsManager.tsx",
         skeleton: "components/real-estate/listings/CompanyListingsPageSkeleton.tsx",
         grid: COMPANY_KPI_GRID.listings,

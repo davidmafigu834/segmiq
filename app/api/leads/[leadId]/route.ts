@@ -14,6 +14,11 @@ import type { LeadStatus } from "@/types";
 import { z } from "zod";
 import { isRoundRobinEligibleUserId } from "@/lib/auth/sales-capabilities";
 import { assertComplianceProgressAllowed } from "@/lib/real-estate/compliance-service";
+import {
+  FOLLOW_UP_UNCHANGED,
+  missingFollowUpMessage,
+  validateActiveLeadFollowUp,
+} from "@/lib/real-estate/follow-up-discipline";
 
 export async function GET(req: Request, { params }: { params: { leadId: string } }) {
   const access = await canReadLead(params.leadId, req);
@@ -80,12 +85,44 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
 
   const supabase = createAdminClient();
 
-  // Fetch previous lead state for event logging
+  // Fetch previous lead state for event logging (+ client business type for RE discipline)
   const { data: previousLead } = await supabase
     .from("leads")
-    .select("client_id, status, assigned_to_id, follow_up_date, deal_value_source")
+    .select(
+      "client_id, status, assigned_to_id, follow_up_date, deal_value_source, clients!leads_client_id_fkey(business_type)"
+    )
     .eq("id", params.leadId)
     .maybeSingle();
+
+  if (!previousLead) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const clientJoin = previousLead.clients as
+    | { business_type?: string | null }
+    | { business_type?: string | null }[]
+    | null;
+  const businessType = Array.isArray(clientJoin)
+    ? clientJoin[0]?.business_type
+    : clientJoin?.business_type;
+
+  const clearingFollowUp =
+    parsed.data.follow_up_date !== undefined && parsed.data.follow_up_date === null;
+  const followUpCheck = validateActiveLeadFollowUp({
+    businessType,
+    previousStatus: previousLead.status as string | null,
+    nextStatus: parsed.data.status,
+    previousFollowUpDate: previousLead.follow_up_date as string | null,
+    nextFollowUpDate:
+      parsed.data.follow_up_date === undefined ? FOLLOW_UP_UNCHANGED : parsed.data.follow_up_date,
+    clearingFollowUp,
+  });
+  if (!followUpCheck.ok) {
+    return NextResponse.json(
+      { error: followUpCheck.error || missingFollowUpMessage() },
+      { status: 400 }
+    );
+  }
 
   if (parsed.data.deal_value !== undefined) {
     const source = previousLead?.deal_value_source as DealValueSource | null | undefined;

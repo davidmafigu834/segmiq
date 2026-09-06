@@ -6,6 +6,7 @@ import {
 } from "@/lib/real-estate/listings";
 import { QUALIFIED_LEAD_STATUSES } from "@/lib/sales/company-leads-metrics";
 import { sourceTypeFromLeadSource, reSourceLabel } from "@/lib/real-estate/marketing";
+import { RE_TRANSACTION_ACTIVE_STATUSES } from "@/lib/real-estate/transactions";
 
 export type OperationsRange = { from: string; to: string };
 
@@ -49,11 +50,33 @@ export type OperationsReport = {
     viewings: number;
     offers: number;
   }>;
+  transactions: {
+    inProgress: number;
+    completed: number;
+    fallenThrough: number;
+    commissionTotal: number;
+  };
+  sales: {
+    completedCount: number;
+    totalAgreedValue: number;
+    commissionTotal: number;
+  };
 };
 
 function pct(part: number, whole: number): number | null {
   if (whole <= 0) return null;
   return Math.round((part / whole) * 1000) / 10;
+}
+
+function commissionTotal(row: {
+  listing_agent_commission_amount?: number | null;
+  selling_agent_commission_amount?: number | null;
+}): number {
+  const listing =
+    row.listing_agent_commission_amount != null ? Number(row.listing_agent_commission_amount) : 0;
+  const selling =
+    row.selling_agent_commission_amount != null ? Number(row.selling_agent_commission_amount) : 0;
+  return (Number.isFinite(listing) ? listing : 0) + (Number.isFinite(selling) ? selling : 0);
 }
 
 export async function getRealEstateOperationsReport(
@@ -64,36 +87,45 @@ export async function getRealEstateOperationsReport(
   const fromIso = new Date(range.from).toISOString();
   const toIso = new Date(range.to).toISOString();
 
-  const [{ data: listings }, { data: leads }, { data: viewings }, { data: offers }] = await Promise.all([
-    supabase
-      .from("listings")
-      .select("id, address, suburb, external_reference, transaction_type, status, approval_status")
-      .eq("client_id", clientId),
-    supabase
-      .from("leads")
-      .select("id, source, status, linked_listing_id, contact_id, created_at")
-      .eq("client_id", clientId)
-      .gte("created_at", fromIso)
-      .lt("created_at", toIso)
-      .or("is_archived.is.null,is_archived.eq.false")
-      .limit(4000),
-    supabase
-      .from("viewings")
-      .select("id, listing_id, contact_id, status, feedback_text, scheduled_at")
-      .gte("scheduled_at", fromIso)
-      .lt("scheduled_at", toIso)
-      .limit(4000),
-    supabase
-      .from("real_estate_offers")
-      .select("id, listing_id, lead_id, status")
-      .eq("client_id", clientId)
-      .limit(4000),
-  ]);
+  const [{ data: listings }, { data: leads }, { data: viewings }, { data: offers }, { data: txns }] =
+    await Promise.all([
+      supabase
+        .from("listings")
+        .select("id, address, suburb, external_reference, transaction_type, status, approval_status")
+        .eq("client_id", clientId),
+      supabase
+        .from("leads")
+        .select("id, source, status, linked_listing_id, contact_id, created_at")
+        .eq("client_id", clientId)
+        .gte("created_at", fromIso)
+        .lt("created_at", toIso)
+        .or("is_archived.is.null,is_archived.eq.false")
+        .limit(4000),
+      supabase
+        .from("viewings")
+        .select("id, listing_id, contact_id, status, feedback_text, scheduled_at")
+        .gte("scheduled_at", fromIso)
+        .lt("scheduled_at", toIso)
+        .limit(4000),
+      supabase
+        .from("real_estate_offers")
+        .select("id, listing_id, lead_id, status")
+        .eq("client_id", clientId)
+        .limit(4000),
+      supabase
+        .from("real_estate_transactions")
+        .select(
+          "id, status, agreed_price, completed_at, listing_agent_commission_amount, selling_agent_commission_amount"
+        )
+        .eq("client_id", clientId)
+        .limit(4000),
+    ]);
 
   const listingIds = new Set((listings ?? []).map((l) => l.id as string));
   const scopedViewings = (viewings ?? []).filter((v) => listingIds.has(v.listing_id as string));
   const listingRows = listings ?? [];
   const leadRows = leads ?? [];
+  const txnRows = txns ?? [];
 
   const stock = {
     sale: listingRows.filter((l) => l.transaction_type === "sale").length,
@@ -125,7 +157,9 @@ export async function getRealEstateOperationsReport(
       .filter((v) => v.status === "scheduled" || v.status === "completed")
       .map((v) => v.contact_id as string)
   );
-  const leadsWithViewing = leadRows.filter((l) => l.contact_id && viewingContacts.has(l.contact_id as string)).length;
+  const leadsWithViewing = leadRows.filter(
+    (l) => l.contact_id && viewingContacts.has(l.contact_id as string)
+  ).length;
 
   const offerLeadIds = new Set(
     (offers ?? [])
@@ -177,6 +211,24 @@ export async function getRealEstateOperationsReport(
     .sort((a, b) => b.enquiries + b.viewings - (a.enquiries + a.viewings))
     .slice(0, 12);
 
+  const activeStatusSet = new Set<string>(RE_TRANSACTION_ACTIVE_STATUSES);
+  const inProgressTxns = txnRows.filter((t) => activeStatusSet.has(String(t.status)));
+  const completedTxns = txnRows.filter((t) => t.status === "completed");
+  const fallenThroughTxns = txnRows.filter((t) => t.status === "fallen_through");
+  const completedInRange = completedTxns.filter((t) => {
+    const at = t.completed_at as string | null;
+    if (!at) return false;
+    const ms = new Date(at).getTime();
+    return ms >= new Date(fromIso).getTime() && ms < new Date(toIso).getTime();
+  });
+
+  const allCommission = txnRows.reduce((sum, t) => sum + commissionTotal(t), 0);
+  const salesCommission = completedInRange.reduce((sum, t) => sum + commissionTotal(t), 0);
+  const salesAgreed = completedInRange.reduce((sum, t) => {
+    const n = Number(t.agreed_price);
+    return sum + (Number.isFinite(n) ? n : 0);
+  }, 0);
+
   return {
     range,
     stock,
@@ -199,5 +251,16 @@ export async function getRealEstateOperationsReport(
       enquiryToWon: pct(won, leadRows.length),
     },
     popularProperties,
+    transactions: {
+      inProgress: inProgressTxns.length,
+      completed: completedTxns.length,
+      fallenThrough: fallenThroughTxns.length,
+      commissionTotal: allCommission,
+    },
+    sales: {
+      completedCount: completedInRange.length,
+      totalAgreedValue: salesAgreed,
+      commissionTotal: salesCommission,
+    },
   };
 }

@@ -349,6 +349,7 @@ function buildRealEstateCompanyKpis(opts: {
   activeInquiries: number;
   underOffer: number;
   activeOffers: number;
+  activeTransactions: number;
   avgResponseMinutes: number | null;
   avgResponseMinutesPrev: number | null;
 }): SalesKpiItem[] {
@@ -385,20 +386,20 @@ function buildRealEstateCompanyKpis(opts: {
       href: "/client/leads",
     },
     {
-      id: "under-offer",
-      label: "Properties Under Offer",
-      value: String(opts.underOffer),
-      supporting: "Listing status",
-      icon: "deals",
-      href: "/client/listings",
-    },
-    {
       id: "active-offers",
       label: "Active Offers",
       value: String(opts.activeOffers),
       supporting: "In negotiation",
       icon: "deals",
       href: "/client/offers",
+    },
+    {
+      id: "active-transactions",
+      label: "Active Transactions",
+      value: String(opts.activeTransactions),
+      supporting: opts.underOffer ? `${opts.underOffer} under offer` : "Post-acceptance",
+      icon: "deals",
+      href: "/client/transactions",
     },
     {
       id: "response",
@@ -1301,6 +1302,12 @@ export async function getCompanySalesDashboard(opts: {
       .eq("client_id", clientId)
       .in("status", ["submitted", "countered", "negotiating"]);
     const activeOffers = offerCountError ? 0 : activeOfferCount ?? 0;
+    const { count: activeTxnCount, error: txnCountError } = await supabase
+      .from("real_estate_transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("client_id", clientId)
+      .in("status", ["draft", "pending_compliance", "in_progress"]);
+    const activeTransactions = txnCountError ? 0 : activeTxnCount ?? 0;
     kpis = buildRealEstateCompanyKpis({
       activeListings: listings.filter((l) => l.status === "available").length,
       upcomingViewings,
@@ -1309,6 +1316,7 @@ export async function getCompanySalesDashboard(opts: {
       avgResponseMinutes,
       avgResponseMinutesPrev,
       activeOffers,
+      activeTransactions,
     });
   } else {
     kpis = buildCompanyKpis({

@@ -53,6 +53,7 @@ export type CompanyNavIconId =
   | "developments"
   | "viewings"
   | "offers"
+  | "transactions"
   | "marketing"
   | "sources"
   | "website"
@@ -114,6 +115,7 @@ export const COMPANY_NAV_LUCIDE: Record<Exclude<CompanyNavIconId, "whatsapp">, L
   developments: Landmark,
   viewings: CalendarCheck,
   offers: Handshake,
+  transactions: Landmark,
   marketing: Megaphone,
   sources: Radio,
   website: Globe,
@@ -378,6 +380,15 @@ export const REAL_ESTATE_COMPANY_NAVIGATION: CompanyNavItemConfig[] = [
     section: "sales",
     mobileSlot: "more",
     match: (p) => exactOrChild(p, "/client/offers"),
+  },
+  {
+    id: "transactions",
+    label: "Transactions",
+    href: "/client/transactions",
+    icon: "transactions",
+    section: "sales",
+    mobileSlot: "more",
+    match: (p) => exactOrChild(p, "/client/transactions"),
   },
   {
     id: "viewings",

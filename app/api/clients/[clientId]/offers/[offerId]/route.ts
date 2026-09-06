@@ -87,6 +87,22 @@ export async function PATCH(
   });
 
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
+
+  if (body.action === "accept") {
+    try {
+      const { startOrGetTransactionFromOffer } = await import(
+        "@/lib/real-estate/transaction-service"
+      );
+      await startOrGetTransactionFromOffer({
+        clientId: params.clientId,
+        offerId: params.offerId,
+        actor: actorFromSession(session),
+      });
+    } catch {
+      // Soft-fail: offer accept must succeed even if transaction bootstrap fails.
+    }
+  }
+
   return NextResponse.json({
     offer: result.offer,
     notifyAvailable: result.notifyAvailable,

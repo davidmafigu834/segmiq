@@ -4,11 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CompanyKpiCard } from "@/components/dashboard/company/CompanyKpiCard";
 import { LISTING_STATUS_LABEL } from "@/lib/real-estate/listings";
+import { formatOfferMoney } from "@/lib/real-estate/offers";
 import type { OperationsReport } from "@/lib/real-estate/operations-report";
 import type { ListingStatus } from "@/types";
 
 function rate(value: number | null): string {
   return value == null ? "—" : `${value}%`;
+}
+
+function money(value: number): string {
+  return formatOfferMoney(value) ?? "US$0";
 }
 
 export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
@@ -110,6 +115,45 @@ export function RealEstateReportsWorkspace({ clientId }: { clientId: string }) {
             supporting: "Closed stock",
             icon: "won",
             href: "/client/listings",
+          }}
+        />
+      </div>
+
+      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-3 md:grid-cols-[repeat(4,minmax(0,1fr))]">
+        <CompanyKpiCard
+          item={{
+            id: "txn_in_progress",
+            label: "Transactions in progress",
+            value: String(report.transactions?.inProgress ?? 0),
+            supporting: `${report.transactions?.fallenThrough ?? 0} fallen through`,
+            icon: "pipeline",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "txn_completed",
+            label: "Transactions completed",
+            value: String(report.transactions?.completed ?? 0),
+            supporting: "All time",
+            icon: "won",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "sales_period",
+            label: "Sales (period)",
+            value: String(report.sales?.completedCount ?? 0),
+            supporting: money(report.sales?.totalAgreedValue ?? 0),
+            icon: "deals",
+          }}
+        />
+        <CompanyKpiCard
+          item={{
+            id: "commission",
+            label: "Commission (period)",
+            value: money(report.sales?.commissionTotal ?? 0),
+            supporting: `${money(report.transactions?.commissionTotal ?? 0)} all open+closed`,
+            icon: "followups",
           }}
         />
       </div>

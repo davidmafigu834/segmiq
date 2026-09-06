@@ -87,6 +87,34 @@ export async function notifyViewingFeedbackRequest(params: {
   });
 }
 
+export async function notifyViewingReminder(params: {
+  clientId: string;
+  to: string | null | undefined;
+  contactName: string | null;
+  listing: { address?: string | null; suburb?: string | null };
+  scheduledAt: string;
+  agentName?: string | null;
+}): Promise<void> {
+  const when = new Date(params.scheduledAt).toLocaleString("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  const property = listingLabel(params.listing);
+  await softSend({
+    to: params.to,
+    template: "VIEWING_REMINDER",
+    variables: {
+      "1": firstName(params.contactName) || "there",
+      "2": property,
+      "3": when,
+      "4": params.agentName?.trim() || "your agent",
+    },
+    fallbackBody: `Hi ${firstName(params.contactName) || "there"}, reminder: your viewing at ${property} is at ${when}.`,
+    clientId: params.clientId,
+    notificationType: "VIEWING_REMINDER",
+  });
+}
+
 export async function notifyPropertyMatch(params: {
   clientId: string;
   to: string | null | undefined;

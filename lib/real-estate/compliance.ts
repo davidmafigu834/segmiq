@@ -107,6 +107,14 @@ export const DEFAULT_INDIVIDUAL_DOC_TYPES = [
   "identification",
   "proof_of_address",
   "source_of_funds",
+  "ownership_documents",
+] as const;
+
+/** Seller-side defaults for property sales (ownership + seller ID). */
+export const DEFAULT_SELLER_DOC_TYPES = [
+  "ownership_documents",
+  "proof_of_ownership",
+  "identity_seller",
 ] as const;
 
 export const DEFAULT_CORPORATE_DOC_TYPES = [
@@ -128,6 +136,9 @@ export const DOCUMENT_TYPE_LABEL: Record<string, string> = {
   beneficial_ownership: "Beneficial ownership information",
   authorised_representative_id: "Authorised representative identification",
   transaction_support: "Supporting transaction documents",
+  ownership_documents: "Ownership / title documents",
+  proof_of_ownership: "Proof of ownership",
+  identity_seller: "Seller identification",
 };
 
 export type ComplianceSettings = {

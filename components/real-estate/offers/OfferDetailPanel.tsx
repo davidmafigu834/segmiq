@@ -346,6 +346,16 @@ export function OfferDetailPanel({
                       Open compliance workspace
                     </Link>
                   ) : null}
+                  <Link
+                    href={
+                      complianceHref?.includes("/client/")
+                        ? "/client/transactions"
+                        : "/sales/transactions"
+                    }
+                    className="mt-2 block text-[12px] font-medium text-sales-brand hover:underline"
+                  >
+                    Open transaction workspace
+                  </Link>
                 </section>
               ) : null}
 

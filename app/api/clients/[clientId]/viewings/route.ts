@@ -10,6 +10,11 @@ import {
   notifyViewingFeedbackRequest,
 } from "@/lib/real-estate/notifications";
 import { background } from "@/lib/background";
+import {
+  FOLLOW_UP_UNCHANGED,
+  missingFollowUpMessage,
+  validateActiveLeadFollowUp,
+} from "@/lib/real-estate/follow-up-discipline";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +31,8 @@ const patchSchema = z.object({
   feedback_text: z.string().max(5000).nullable().optional(),
   feedback_sentiment: z.enum(["positive", "neutral", "negative"]).nullable().optional(),
   agent_id: z.string().uuid().nullable().optional(),
+  /** Required when completing a viewing for an active RE inquiry without an existing follow-up. */
+  follow_up_date: z.string().nullable().optional(),
 });
 
 export async function GET(req: Request, { params }: { params: { clientId: string } }) {
@@ -219,6 +226,63 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   if (body.feedback_sentiment !== undefined) update.feedback_sentiment = body.feedback_sentiment;
   if (body.agent_id !== undefined) update.agent_id = body.agent_id;
 
+  const becameCompleted =
+    body.status === "completed" && (viewingRow as { status?: string }).status !== "completed";
+
+  if (becameCompleted) {
+    const { data: client } = await supabase
+      .from("clients")
+      .select("business_type")
+      .eq("id", params.clientId)
+      .maybeSingle();
+
+    if (client?.business_type === "real_estate") {
+      const contactIdPre = (viewingRow as { contact_id?: string }).contact_id ?? null;
+
+      if (contactIdPre) {
+        const { data: relatedLead } = await supabase
+          .from("leads")
+          .select("id, status, follow_up_date")
+          .eq("client_id", params.clientId)
+          .eq("contact_id", contactIdPre)
+          .or("is_archived.is.null,is_archived.eq.false")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (relatedLead) {
+          const clearingFollowUp =
+            body.follow_up_date !== undefined && body.follow_up_date === null;
+          const followUpCheck = validateActiveLeadFollowUp({
+            businessType: "real_estate",
+            previousStatus: relatedLead.status as string | null,
+            previousFollowUpDate: relatedLead.follow_up_date as string | null,
+            nextFollowUpDate:
+              body.follow_up_date === undefined ? FOLLOW_UP_UNCHANGED : body.follow_up_date,
+            clearingFollowUp,
+            requireIfMissing: true,
+          });
+          if (!followUpCheck.ok) {
+            return NextResponse.json(
+              { error: followUpCheck.error || missingFollowUpMessage() },
+              { status: 400 }
+            );
+          }
+          if (body.follow_up_date) {
+            await supabase
+              .from("leads")
+              .update({
+                follow_up_date: body.follow_up_date,
+                follow_up_source: "HUMAN_CREATED",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", relatedLead.id as string);
+          }
+        }
+      }
+    }
+  }
+
   const { data: updated, error } = await supabase
     .from("viewings")
     .update(update)
@@ -227,9 +291,6 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const becameCompleted =
-    body.status === "completed" && (viewingRow as { status?: string }).status !== "completed";
 
   if (becameCompleted) {
     await logViewingActivity({
