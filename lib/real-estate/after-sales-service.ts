@@ -121,13 +121,17 @@ export async function listAfterSalesCases(opts: {
   const { data } = await query;
   const now = Date.now();
   const rows: AfterSalesListRow[] = (data ?? []).map((r) => {
-    const contact = r.contacts as { name?: string | null } | null;
-    const listing = r.listings as {
+    type ListingJoin = {
       address?: string | null;
       suburb?: string | null;
       external_reference?: string | null;
-    } | null;
-    const agent = r.users as { name?: string | null } | null;
+    };
+    const contactRaw = r.contacts as { name?: string | null } | { name?: string | null }[] | null;
+    const contact = Array.isArray(contactRaw) ? contactRaw[0] ?? null : contactRaw;
+    const listingRaw = r.listings as ListingJoin | ListingJoin[] | null;
+    const listing = Array.isArray(listingRaw) ? listingRaw[0] ?? null : listingRaw;
+    const agentRaw = r.users as { name?: string | null } | { name?: string | null }[] | null;
+    const agent = Array.isArray(agentRaw) ? agentRaw[0] ?? null : agentRaw;
     const status = r.status as AfterSalesStatus;
     const dueAt = (r.due_at as string | null) ?? null;
     const overdue =

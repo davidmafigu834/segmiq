@@ -295,8 +295,11 @@ export async function listRealEstateTransactions(opts: {
   }
 
   const mapped: TransactionListRow[] = (data ?? []).map((r) => {
-    const listing = r.listings as { address?: string | null; suburb?: string | null; external_reference?: string | null } | null;
-    const contact = r.contacts as { name?: string | null } | null;
+    type ListingJoin = { address?: string | null; suburb?: string | null; external_reference?: string | null };
+    const listingRaw = r.listings as ListingJoin | ListingJoin[] | null;
+    const listing = Array.isArray(listingRaw) ? listingRaw[0] ?? null : listingRaw;
+    const contactRaw = r.contacts as { name?: string | null } | { name?: string | null }[] | null;
+    const contact = Array.isArray(contactRaw) ? contactRaw[0] ?? null : contactRaw;
     const agentName = r.buyer_agent_id ? userById.get(r.buyer_agent_id as string) ?? null : null;
     const status = r.status as ReTransactionStatus;
     const currency = (r.currency as string) || "USD";

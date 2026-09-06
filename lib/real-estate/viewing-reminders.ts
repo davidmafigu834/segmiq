@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyViewingReminder } from "@/lib/real-estate/notifications";
-import { listingLabel } from "@/lib/real-estate/helpers";
 
 /** Catch the T-30 mark once with the every-minute cron (28–32 minutes before). */
 const T30_WINDOW_MS = {
@@ -69,17 +68,24 @@ export async function executeViewingReminders(opts?: {
       continue;
     }
 
-    const listing = v.listings as {
+    type ListingJoin = {
       id: string;
       client_id: string;
       address?: string | null;
       suburb?: string | null;
       external_reference?: string | null;
     };
-    const contact = v.contacts as { name?: string | null; phone?: string | null } | null;
-    const agent = v.users as { name?: string | null } | null;
+    const listingRaw = v.listings as ListingJoin | ListingJoin[] | null;
+    const listing = Array.isArray(listingRaw) ? listingRaw[0] ?? null : listingRaw;
+    const contactRaw = v.contacts as
+      | { name?: string | null; phone?: string | null }
+      | { name?: string | null; phone?: string | null }[]
+      | null;
+    const contact = Array.isArray(contactRaw) ? contactRaw[0] ?? null : contactRaw;
+    const agentRaw = v.users as { name?: string | null } | { name?: string | null }[] | null;
+    const agent = Array.isArray(agentRaw) ? agentRaw[0] ?? null : agentRaw;
     const phone = contact?.phone?.trim();
-    if (!phone) {
+    if (!listing?.client_id || !phone) {
       skipped += 1;
       continue;
     }
@@ -118,7 +124,6 @@ export async function executeViewingReminders(opts?: {
     }
   }
 
-  void listingLabel;
   return {
     ok: true,
     scanned: (viewings ?? []).length,
