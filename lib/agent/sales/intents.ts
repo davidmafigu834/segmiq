@@ -24,6 +24,8 @@ const itemSchema = z.object({
     .max(40)
     .optional(),
   id: z.string().uuid().optional(),
+  unitPrice: z.number().min(0).max(10_000_000).optional(),
+  costPrice: z.number().min(0).max(10_000_000).optional(),
 });
 
 const refSchema = z.object({
@@ -61,6 +63,64 @@ const QTY_ITEM =
 const UPGRADE_RE =
   /\b(system\s+upgrade|upgrade\s+(?:quotation|quote)|upgrade\s+for|add[- ]?on\s+(?:quotation|quote)|quotation\s+for\s+(?:a\s+)?(?:system\s+)?upgrade)\b/i;
 
+/**
+ * Parse priced logistics lines: "add transport cost 150", "transport cost of $95",
+ * "add delivery charge 200". Amounts come only from the salesperson's text.
+ */
+export function parseTransportCostItems(text: string): SalesIntentItem[] {
+  const items: SalesIntentItem[] = [];
+  const re =
+    /\b(?:add(?:\s+(?:a|an|the|another))?\s+)?(transport|delivery|freight|logistics|shipping)(?:\s+(?:cost|charge|fee|price))?(?:\s+(?:of|at|for|@|then|:|=))?\s*\$?\s*(\d+(?:[.,]\d{1,2})?)?/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const kind = (m[1] ?? "transport").toLowerCase();
+    const label =
+      kind === "delivery"
+        ? "Delivery"
+        : kind === "freight"
+          ? "Freight"
+          : kind === "logistics"
+            ? "Logistics"
+            : kind === "shipping"
+              ? "Shipping"
+              : "Transport";
+    let amount: number | undefined;
+    if (m[2]) {
+      amount = Number(String(m[2]).replace(",", "."));
+    } else {
+      // Amount may appear later in the same clause: "add transport cost then 150"
+      const after = text.slice(m.index + m[0].length, m.index + m[0].length + 40);
+      const later = after.match(/^\s*(?:then|,|:)?\s*\$?\s*(\d+(?:[.,]\d{1,2})?)/i);
+      if (later?.[1]) amount = Number(String(later[1]).replace(",", "."));
+    }
+    if (amount != null && (!Number.isFinite(amount) || amount < 0)) continue;
+    if (items.some((it) => it.query.toLowerCase() === label.toLowerCase())) continue;
+    const window = text.slice(Math.max(0, m.index - 8), m.index + m[0].length + 12);
+    const isCostPhrase = /\bcost\b/i.test(m[0]) || /\bcost\b/i.test(window);
+    const item: SalesIntentItem = {
+      type: "CUSTOM",
+      query: label,
+      quantity: 1,
+    };
+    if (amount != null) {
+      // Customer-facing line on the Draft; when they said "cost", also record cost_price.
+      item.unitPrice = amount;
+      if (isCostPhrase || /transport|freight|delivery|logistics|shipping/i.test(kind)) {
+        item.costPrice = amount;
+      }
+    }
+    items.push(item);
+  }
+  return items;
+}
+
+/** True when the text is primarily adding a transport/delivery cost line. */
+export function isTransportCostCommand(text: string): boolean {
+  return /\b(add\s+)?(transport|delivery|freight|logistics|shipping)(\s+(cost|charge|fee|price))?\b/i.test(
+    text
+  );
+}
+
 export function isUpgradeCommand(text: string): boolean {
   return UPGRADE_RE.test(text);
 }
@@ -82,7 +142,10 @@ export function parseQtyItems(text: string, opts?: { productsOnly?: boolean }): 
 
   if (!productsOnly) {
     // Include decimals so "6.2kva" is not captured as "2kva".
-    const packageMatch = text.match(/(\d+(?:\.\d+)?\s*kva(?:\s+[A-Za-z0-9]+){0,4})(?:\s+package)?/i);
+    // Stop at conjunctions so "10kVA Lite and add another …" does not swallow the add-on.
+    const packageMatch = text.match(
+      /(\d+(?:\.\d+)?\s*kva(?:\s+(?!and\b|add\b|with\b|for\b|plus\b)[A-Za-z0-9]+){0,4})(?:\s+package)?/i
+    );
     if (packageMatch?.[1]) {
       const q = packageMatch[1].replace(/\s+package$/i, "").trim();
       items.push({ type: "PACKAGE", query: q, quantity: 1 });
@@ -99,10 +162,10 @@ export function parseQtyItems(text: string, opts?: { productsOnly?: boolean }): 
   const extra = text.match(
     /add(?:\s+one|\s+another|\s+an extra|\s+an additional)?\s+(?:extra\s+|additional\s+)?(.+?)(?:\.|$)/i
   );
-  if (extra?.[1] && !/note that|delivery/i.test(extra[1])) {
+  if (extra?.[1] && !/note that|delivery|transport|freight|logistics|shipping/i.test(extra[1])) {
     const q = extra[1].replace(/^(another|an extra|an additional|one|a)\s+/i, "").trim();
-    // Qty forms like "add 6 panels" are handled by QTY_ITEM below.
-    if (q && q.length < 80 && !/^\d/.test(q)) {
+    // Qty forms like "add 6 panels" are handled by QTY_ITEM below; allow "48V … battery".
+    if (q && q.length < 80 && !/^\d+(?:\.\d+)?\s*(?:x|×)?\s+/i.test(q)) {
       items.push({ type: "PRODUCT", query: q.replace(/\.$/, ""), quantity: 1 });
     }
   }
@@ -256,17 +319,32 @@ export function heuristicParseSalesIntent(
     !/\bcreate|prepare|new quote|new quotation\b/i.test(t);
 
   if (isUpdate) {
-    const items = parseQtyItems(t);
-    if (/\banother\b/i.test(t) && items.length === 0) {
+    const transportItems = parseTransportCostItems(t);
+    const items = [...transportItems, ...parseQtyItems(t)].filter((it, idx, arr) => {
+      // Prefer CUSTOM transport over a PRODUCT mis-parse of the same phrase.
+      if (it.type !== "CUSTOM" && transportItems.some((tr) => tr.query.toLowerCase() === it.query.toLowerCase().split(/\s+/)[0])) {
+        return false;
+      }
+      return arr.findIndex((x) => x.type === it.type && x.query.toLowerCase() === it.query.toLowerCase()) === idx;
+    });
+    // Drop catalogue parses that are really the transport phrase (e.g. "transport cost 150").
+    const cleaned = items.filter(
+      (it) =>
+        it.type === "CUSTOM" ||
+        !/^(transport|delivery|freight|logistics|shipping)\b/i.test(it.query)
+    );
+    if (/\banother\b/i.test(t) && cleaned.length === 0) {
       const extra = t.match(/add(?:\s+another)?\s+(.+)/i)?.[1];
-      if (extra) items.push({ type: "PRODUCT", query: extra.replace(/\.$/, "").trim(), quantity: 1 });
+      if (extra && !/transport|delivery|freight|logistics|shipping/i.test(extra)) {
+        cleaned.push({ type: "PRODUCT", query: extra.replace(/\.$/, "").trim(), quantity: 1 });
+      }
     }
     const validity = t.match(/validity\s+(\d+)\s+days?/i);
     const discount = t.match(/(\d+(?:\.\d+)?)\s*%\s*(off|discount)?/i);
     return {
       intent: "UPDATE_DRAFT_QUOTATION",
       quotationReference: { source: "CURRENT_CONTEXT", id: sessionQuotationId ?? undefined },
-      items,
+      items: cleaned,
       validityDays: validity ? Number(validity[1]) : null,
       discountPercent: discount ? Number(discount[1]) : null,
       sendRequested,
@@ -317,7 +395,11 @@ export function heuristicParseSalesIntent(
     ) ||
     extractFromConversation
   ) {
-    const items = parseQtyItems(t);
+    const transportItems = parseTransportCostItems(t);
+    const items = [
+      ...parseQtyItems(t).filter((it) => !/^(transport|delivery|freight|logistics|shipping)\b/i.test(it.query)),
+      ...transportItems,
+    ];
     return {
       intent: "CREATE_QUOTATION",
       customerReference: customerFromText(t, page) ?? (page?.leadId || page?.conversationId ? { source: "CURRENT_CONTEXT" } : undefined),
@@ -336,6 +418,17 @@ export function heuristicParseSalesIntent(
         const v = t.match(/validity\s+(\d+)\s+days?/i);
         return v ? Number(v[1]) : null;
       })(),
+    };
+  }
+
+  // Standalone "add transport cost 150" without an active draft still needs a quote context —
+  // leave to LLM / waiting path; only catch when session already has a draft (handled above).
+  if (isTransportCostCommand(t) && sessionQuotationId) {
+    return {
+      intent: "UPDATE_DRAFT_QUOTATION",
+      quotationReference: { source: "CURRENT_CONTEXT", id: sessionQuotationId },
+      items: parseTransportCostItems(t),
+      sendRequested,
     };
   }
 
@@ -383,6 +476,15 @@ export const EMIT_INTENT_TOOL = {
             query: { type: "string" },
             quantity: { type: "number" },
             variantQuery: { type: "string" },
+            unitPrice: {
+              type: "number",
+              description: "Selling price for CUSTOM lines only, when the salesperson stated the amount.",
+            },
+            costPrice: {
+              type: "number",
+              description:
+                "Unit cost for CUSTOM lines (e.g. transport cost) only when the salesperson stated the amount.",
+            },
           },
           required: ["type", "query", "quantity"],
         },

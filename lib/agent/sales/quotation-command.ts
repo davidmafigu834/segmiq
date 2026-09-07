@@ -220,15 +220,37 @@ async function buildPreview(opts: {
   };
 }
 
+type ResolvedItemRow =
+  | { kind: "catalog"; item: SalesIntentItem; catalog: ResolvedCatalogItem; variantId?: string | null }
+  | { kind: "custom"; item: SalesIntentItem };
+
 async function resolveItemsOrWait(opts: {
   actor: SalesActor;
   items: SalesIntentItem[];
   intent: SalesIntent;
   progress: ProgressStep[];
-}): Promise<{ ok: true; resolved: Array<{ item: SalesIntentItem; catalog: ResolvedCatalogItem; variantId?: string | null }> } | CommandOutcome> {
-  const resolved: Array<{ item: SalesIntentItem; catalog: ResolvedCatalogItem; variantId?: string | null }> = [];
+}): Promise<{ ok: true; resolved: ResolvedItemRow[] } | CommandOutcome> {
+  const resolved: ResolvedItemRow[] = [];
   const forceProduct = Boolean(opts.intent.upgrade);
   for (const item of opts.items) {
+    if (item.type === "CUSTOM") {
+      if (item.unitPrice == null && item.costPrice == null) {
+        const name = item.query.trim() || "Transport";
+        return {
+          reply: `What amount should I use for ${name}? Say e.g. “add ${name.toLowerCase()} cost 150”.`,
+          status: "WAITING_FOR_INPUT",
+          blocks: [
+            {
+              type: "status",
+              kind: "partial",
+              message: `What amount should I use for ${name}?`,
+            },
+          ],
+        };
+      }
+      resolved.push({ kind: "custom", item });
+      continue;
+    }
     const prefer: "PACKAGE" | "PRODUCT" | "SERVICE" | "AUTO" = forceProduct
       ? "PRODUCT"
       : item.type === "PACKAGE"
@@ -245,7 +267,7 @@ async function resolveItemsOrWait(opts: {
         prefer,
       });
       if (byId) {
-        resolved.push({ item, catalog: byId, variantId: null });
+        resolved.push({ kind: "catalog", item, catalog: byId, variantId: null });
         continue;
       }
     }
@@ -271,7 +293,7 @@ async function resolveItemsOrWait(opts: {
       if (item.id) {
         const picked = match.values.find((v) => v.id === item.id);
         if (picked) {
-          resolved.push({ item, catalog: picked, variantId: null });
+          resolved.push({ kind: "catalog", item, catalog: picked, variantId: null });
           continue;
         }
       }
@@ -330,6 +352,7 @@ async function resolveItemsOrWait(opts: {
             );
           }
           resolved.push({
+            kind: "catalog",
             item: { ...item, quantity: alloc.quantity },
             catalog,
             variantId: v.id,
@@ -369,21 +392,40 @@ async function resolveItemsOrWait(opts: {
           title: x.name,
         })), opts.intent, opts.progress);
       }
-      resolved.push({ item, catalog, variantId: v.id });
+      resolved.push({ kind: "catalog", item, catalog, variantId: v.id });
       continue;
     }
-    resolved.push({ item, catalog, variantId: null });
+    resolved.push({ kind: "catalog", item, catalog, variantId: null });
   }
   return { ok: true, resolved };
 }
 
 async function linesFromResolved(
   actor: SalesActor,
-  resolved: Array<{ item: SalesIntentItem; catalog: ResolvedCatalogItem; variantId?: string | null }>
+  resolved: ResolvedItemRow[]
 ): Promise<{ lines: QuotationLineItemInput[]; error?: string; warnings: string[] }> {
   const lines: QuotationLineItemInput[] = [];
   const warnings: string[] = [];
   for (const row of resolved) {
+    if (row.kind === "custom") {
+      const unitPrice = row.item.unitPrice ?? row.item.costPrice ?? 0;
+      const costPrice = row.item.costPrice ?? null;
+      const got = await resolveQuoteItems({
+        clientId: actor.clientId,
+        sourceType: "CUSTOM",
+        quantity: row.item.quantity,
+        custom: {
+          item_name: row.item.query.trim() || "Transport",
+          unit_price: unitPrice,
+          cost_price: costPrice,
+          quantity: row.item.quantity,
+        },
+      });
+      if (got.error) return { lines: [], error: got.error, warnings };
+      lines.push(...got.lines);
+      warnings.push(...got.warnings);
+      continue;
+    }
     if (row.catalog.type === "PACKAGE") {
       const expanded = await expandCommercialPackage({
         clientId: actor.clientId,
@@ -1151,6 +1193,21 @@ export async function runUpdateDraft(opts: {
       };
     }
     for (const add of built.lines) {
+      if (add.source_type === "CUSTOM") {
+        const existingCustom = items.find(
+          (it) =>
+            it.source_type === "CUSTOM" &&
+            (it.item_name || "").trim().toLowerCase() === (add.item_name || "").trim().toLowerCase()
+        );
+        if (existingCustom) {
+          existingCustom.unit_price = Number(add.unit_price) || 0;
+          existingCustom.cost_price = add.cost_price != null ? Number(add.cost_price) : existingCustom.cost_price;
+          existingCustom.quantity = Number(add.quantity) || existingCustom.quantity || 1;
+          continue;
+        }
+        items.push(add);
+        continue;
+      }
       const existing = items.find(
         (it) =>
           it.product_id &&

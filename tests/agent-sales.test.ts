@@ -142,6 +142,65 @@ describe("sales intent parsing", () => {
     assert.equal(intent?.intent, "UPDATE_DRAFT_QUOTATION");
   });
 
+  it("parses add transport cost with amount onto the draft", () => {
+    const intent = heuristicParseSalesIntent(
+      "Add transport cost 150",
+      tendaiPage,
+      "33333333-3333-3333-3333-333333333333"
+    );
+    assert.equal(intent?.intent, "UPDATE_DRAFT_QUOTATION");
+    const transport = intent?.items.find((i) => i.type === "CUSTOM" && /transport/i.test(i.query));
+    assert.ok(transport);
+    assert.equal(transport?.unitPrice, 150);
+    assert.equal(transport?.costPrice, 150);
+  });
+
+  it("parses transport cost then amount", () => {
+    const intent = heuristicParseSalesIntent(
+      "add transport cost then 95",
+      tendaiPage,
+      "33333333-3333-3333-3333-333333333333"
+    );
+    const transport = intent?.items.find((i) => i.type === "CUSTOM");
+    assert.equal(transport?.costPrice, 95);
+    assert.equal(transport?.unitPrice, 95);
+  });
+
+  it("asks later for amount when transport has no price", () => {
+    const intent = heuristicParseSalesIntent(
+      "Add transport cost",
+      tendaiPage,
+      "33333333-3333-3333-3333-333333333333"
+    );
+    const transport = intent?.items.find((i) => i.type === "CUSTOM" && /transport/i.test(i.query));
+    assert.ok(transport);
+    assert.equal(transport?.unitPrice, undefined);
+    assert.equal(transport?.costPrice, undefined);
+  });
+
+  it("includes transport on create quotation commands", () => {
+    const intent = heuristicParseSalesIntent(
+      "Create a quote for this customer using the 10kVA Lite Package and add transport cost $80",
+      tendaiPage
+    );
+    assert.equal(intent?.intent, "CREATE_QUOTATION");
+    assert.ok(intent?.items.some((i) => i.type === "PACKAGE"));
+    const transport = intent?.items.find((i) => i.type === "CUSTOM");
+    assert.equal(transport?.costPrice, 80);
+  });
+
+  it("validates custom priced items in schema", () => {
+    const parsed = validateSalesIntent({
+      intent: "UPDATE_DRAFT_QUOTATION",
+      items: [{ type: "CUSTOM", query: "Transport", quantity: 1, unitPrice: 120, costPrice: 120 }],
+    });
+    assert.equal(parsed?.items[0]?.costPrice, 120);
+  });
+
+  it("does not treat add transport cost as a blocked cost question", () => {
+    assert.equal(matchUnsupportedSalesCommand("Add transport cost 150"), null);
+  });
+
   it("parses copy last quote", () => {
     const intent = heuristicParseSalesIntent("Create same quote as last time.", tendaiPage);
     assert.equal(intent?.intent, "COPY_LAST_QUOTATION");

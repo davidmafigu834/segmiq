@@ -79,6 +79,10 @@ export type SalesIntentItem = {
   variantQuery?: string;
   variantAllocations?: VariantAllocation[];
   id?: string;
+  /** Selling price for CUSTOM lines — only when the salesperson stated an amount. */
+  unitPrice?: number;
+  /** Unit cost for CUSTOM lines (e.g. transport cost) — only when the salesperson stated an amount. */
+  costPrice?: number;
 };
 
 export type SalesIntent = {

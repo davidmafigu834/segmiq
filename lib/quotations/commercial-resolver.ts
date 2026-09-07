@@ -24,6 +24,7 @@ export async function resolveQuoteItems(input: ResolveItemInput): Promise<{
   const warnings: string[] = [];
   if (input.sourceType === "CUSTOM") {
     const c = input.custom ?? {};
+    const costRaw = c.cost_price;
     return {
       lines: [
         {
@@ -34,6 +35,7 @@ export async function resolveQuoteItems(input: ResolveItemInput): Promise<{
           quantity: input.quantity ?? c.quantity ?? 1,
           unit: c.unit ?? "Each",
           sku: c.sku ?? null,
+          cost_price: costRaw != null && Number.isFinite(Number(costRaw)) ? Number(costRaw) : null,
           source_type: "CUSTOM",
           price_override: true,
         } as QuotationLineItemInput,
