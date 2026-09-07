@@ -766,7 +766,12 @@ export async function runCreateQuotation(opts: {
     return itemResult as CommandOutcome;
   }
   const resolved = itemResult.resolved;
-  progress[2] = step("items", "Items resolved", "done", resolved.map((r) => r.catalog.name).join(", "));
+  progress[2] = step(
+    "items",
+    "Items resolved",
+    "done",
+    resolved.map((r) => (r.kind === "custom" ? r.item.query : r.catalog.name)).join(", ")
+  );
 
   const built = await linesFromResolved(opts.actor, resolved);
   if (built.error || !built.lines.length) {
@@ -785,6 +790,7 @@ export async function runCreateQuotation(opts: {
   const invSettings = await getInventorySettings(opts.actor.clientId);
   const inventoryDetails: string[] = [];
   for (const row of resolved) {
+    if (row.kind === "custom") continue;
     if (row.catalog.type === "PACKAGE") {
       const pkg = await getPackage(opts.actor.clientId, row.catalog.id, false);
       if ("availability" in pkg && pkg.availability) {
