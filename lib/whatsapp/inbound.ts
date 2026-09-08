@@ -45,6 +45,7 @@ type InboundPayload = {
 export type WhatsAppContactProfile = {
   waId: string;
   name: string | null;
+  profilePictureUrl?: string | null;
 };
 
 function extractBody(msg: InboundPayload, caption?: string | null): string {
@@ -80,6 +81,7 @@ async function syncWhatsAppIdentity(opts: {
 }) {
   const { supabase, contactId, leadId, phone, profile } = opts;
   const profileName = profile?.name?.trim() || null;
+  const profilePictureUrl = profile?.profilePictureUrl?.trim() || null;
   const waId = profile?.waId?.trim() || phone.replace(/\D/g, "");
   const now = new Date().toISOString();
 
@@ -88,6 +90,9 @@ async function syncWhatsAppIdentity(opts: {
     if (profileName) {
       contactUpdate.whatsapp_profile_name = profileName;
       contactUpdate.name = profileName;
+    }
+    if (profilePictureUrl) {
+      contactUpdate.whatsapp_profile_picture_url = profilePictureUrl;
     }
     await supabase.from("contacts").update(contactUpdate).eq("id", contactId);
   }
@@ -279,6 +284,7 @@ export async function handleInboundWhatsAppMessage(opts: {
     assignedToId = assigneeId;
 
     const profileName = contactProfile?.name?.trim() || null;
+    const profilePictureUrl = contactProfile?.profilePictureUrl?.trim() || null;
     const { data: existingContact } = await supabase
       .from("contacts")
       .select("id, name")
@@ -300,6 +306,7 @@ export async function handleInboundWhatsAppMessage(opts: {
           lifecycle: "cold",
           whatsapp_profile_name: profileName,
           whatsapp_wa_id: contactProfile?.waId ?? phoneDigits,
+          whatsapp_profile_picture_url: profilePictureUrl,
         })
         .select("id")
         .single();

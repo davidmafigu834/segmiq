@@ -48,6 +48,7 @@ export type InboxConversation = {
   contactId: string | null;
   name: string | null;
   whatsappProfileName: string | null;
+  whatsappProfilePictureUrl: string | null;
   phone: string | null;
   location: string | null;
   source: LeadSource | string | null;

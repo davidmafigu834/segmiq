@@ -50,6 +50,17 @@ type StoredAuth = {
 };
 
 const SESSION_PERSIST_DEBOUNCE_MS = 5_000;
+/** Re-fetch contact avatars at most once per day per chat. */
+const PROFILE_PICTURE_TTL_MS = 24 * 60 * 60 * 1_000;
+const PROFILE_PICTURE_MAX_BYTES = 512 * 1024;
+
+type CachedProfilePicture = {
+  fetchedAt: number;
+  /** Present when WhatsApp returned a picture we successfully downloaded. */
+  media: { mimeType: string; base64: string } | null;
+  /** True once this cache entry has been emitted to the app for persistence. */
+  emitted: boolean;
+};
 
 type ManagedSession = {
   connectionId: string;
@@ -72,6 +83,8 @@ type ManagedSession = {
   sentByGateway: Set<string>;
   recentManualSendTimestamps: number[];
   recentMessages: Map<string, WAMessage["message"]>;
+  /** Per-chat profile picture cache (Baileys CDN URLs expire; we download once). */
+  profilePictures: Map<string, CachedProfilePicture>;
 };
 
 const sessions = new Map<string, ManagedSession>();
@@ -279,6 +292,52 @@ function maySendManualMessage(session: ManagedSession): boolean {
   return true;
 }
 
+async function fetchProfilePicture(
+  session: ManagedSession,
+  remoteChatId: string
+): Promise<{ mimeType: string; base64: string } | null | undefined> {
+  const cached = session.profilePictures.get(remoteChatId);
+  const now = Date.now();
+  if (cached && now - cached.fetchedAt < PROFILE_PICTURE_TTL_MS) {
+    if (cached.emitted || !cached.media) return undefined;
+    cached.emitted = true;
+    return cached.media;
+  }
+
+  let media: { mimeType: string; base64: string } | null = null;
+  try {
+    const url = await session.socket.profilePictureUrl(remoteChatId, "preview", 8_000);
+    if (url) {
+      const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (response.ok) {
+        const buffer = Buffer.from(await response.arrayBuffer());
+        if (buffer.length > 0 && buffer.length <= PROFILE_PICTURE_MAX_BYTES) {
+          const contentType = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
+          const mimeType =
+            contentType && contentType.startsWith("image/")
+              ? contentType
+              : "image/jpeg";
+          media = { mimeType, base64: buffer.toString("base64") };
+        }
+      }
+    }
+  } catch (error) {
+    // Privacy settings / no picture / transient WhatsApp errors are common.
+    console.warn(
+      "[whatsapp-gateway] profile picture skipped",
+      remoteChatId,
+      error instanceof Error ? error.message : "unknown"
+    );
+  }
+
+  session.profilePictures.set(remoteChatId, {
+    fetchedAt: now,
+    media,
+    emitted: Boolean(media),
+  });
+  return media ?? undefined;
+}
+
 async function normalizedMessage(session: ManagedSession, message: WAMessage, opts?: { allowMissingTimestamp?: boolean }): Promise<void> {
   const remoteChatId = message.key.remoteJid ?? "";
   const providerMessageId = message.key.id ?? "";
@@ -315,6 +374,7 @@ async function normalizedMessage(session: ManagedSession, message: WAMessage, op
       console.warn("[whatsapp-gateway] media download skipped", error instanceof Error ? error.message : "unknown");
     }
   }
+  const profilePicture = await fetchProfilePicture(session, remoteChatId);
   await emit(session.connectionId, {
     type: "MESSAGE",
     message: {
@@ -325,6 +385,7 @@ async function normalizedMessage(session: ManagedSession, message: WAMessage, op
       messageType: extracted.type,
       body: extracted.body,
       profileName: message.pushName ?? null,
+      profilePicture: profilePicture ?? null,
       direction,
       senderSource: direction === "inbound" ? "CUSTOMER" : "EXTERNAL_BUSINESS_DEVICE",
       media,
@@ -401,6 +462,7 @@ async function startConnection(
     sentByGateway: new Set<string>(),
     recentManualSendTimestamps: [],
     recentMessages,
+    profilePictures: new Map(),
     persistTimer: placeholder.persistTimer,
     persistQueued: placeholder.persistQueued,
   });

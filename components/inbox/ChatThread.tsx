@@ -761,6 +761,7 @@ export function ChatThread({
               <WhatsAppAvatar
                 name={name}
                 phone={conversation.phone}
+                imageUrl={conversation.whatsappProfilePictureUrl}
                 size="sm"
                 className="max-[480px]:h-9 max-[480px]:w-9"
               />

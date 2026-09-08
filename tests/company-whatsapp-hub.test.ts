@@ -10,6 +10,7 @@ function conversation(
     contactId: null,
     name: "Customer",
     whatsappProfileName: null,
+    whatsappProfilePictureUrl: null,
     phone: "+263771234567",
     location: null,
     source: "WHATSAPP_INBOUND",

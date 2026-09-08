@@ -225,7 +225,12 @@ export function CompanyConversationInsightRail({
             <AgentConversationCard leadId={conversation.id} conversation={conversation} activityHref="/client/agent" />
             <AccordionSection index={1} title="Customer Overview">
               <div className="flex items-start gap-3">
-                <WhatsAppAvatar name={name} phone={phone} size="md" />
+                <WhatsAppAvatar
+                  name={name}
+                  phone={phone}
+                  imageUrl={conversation.whatsappProfilePictureUrl}
+                  size="md"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</span>

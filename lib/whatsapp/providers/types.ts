@@ -109,6 +109,12 @@ export type NormalizedWhatsAppInbound = {
   messageType: "text" | "image" | "audio" | "video" | "document" | "sticker" | "location";
   body: string;
   profileName?: string | null;
+  /** Freshly fetched contact avatar (downloaded by the QR gateway). */
+  profilePicture?: {
+    url: string | null;
+    mimeType: string | null;
+    storageKey: string | null;
+  } | null;
   media?: {
     url: string | null;
     mimeType: string | null;

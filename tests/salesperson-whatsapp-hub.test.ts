@@ -10,6 +10,7 @@ function conversation(overrides: Partial<InboxConversation> = {}): InboxConversa
     contactId: "contact-1",
     name: "Customer",
     whatsappProfileName: null,
+    whatsappProfilePictureUrl: null,
     phone: "+263771234567",
     location: "Harare",
     source: "WHATSAPP_INBOUND",

@@ -501,7 +501,12 @@ export function SalesIntelligenceRail({
         ) : loadError && !lead && !dealData ? (
           <div className="p-4">
             <div className="flex items-center gap-3">
-              <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />
+              <WhatsAppAvatar
+                name={name}
+                phone={conversation.phone}
+                imageUrl={conversation.whatsappProfilePictureUrl}
+                size="md"
+              />
               <div className="min-w-0">
                 <div className="truncate text-[14px] font-semibold text-sales-text-primary">{name}</div>
                 <div className="mt-1 flex items-center gap-1.5 text-[12px] text-sales-whatsapp">
@@ -518,7 +523,12 @@ export function SalesIntelligenceRail({
             <RailSection>
               {sectionTitle("Deal & Customer")}
               <div className="flex items-start gap-3">
-                <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />
+                <WhatsAppAvatar
+                  name={name}
+                  phone={conversation.phone}
+                  imageUrl={conversation.whatsappProfilePictureUrl}
+                  size="md"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">
                     {dealData.deal.name}
@@ -759,7 +769,12 @@ export function SalesIntelligenceRail({
           <>
             <RailSection>
               <div className="flex items-start gap-3">
-                <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />
+                <WhatsAppAvatar
+                  name={name}
+                  phone={conversation.phone}
+                  imageUrl={conversation.whatsappProfilePictureUrl}
+                  size="md"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[15px] font-semibold tracking-tight text-sales-text-primary">{name}</div>
                   <div className="mt-1 flex items-center gap-1.5 text-[12.5px] text-sales-whatsapp">

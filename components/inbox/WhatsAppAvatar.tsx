@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { initials } from "@/lib/inbox/assignee-colors";
 
 const AVATAR_COLORS = [
@@ -34,16 +35,22 @@ const SIZE_CLASS = {
 };
 
 export function WhatsAppAvatar({ name, phone, imageUrl, size = "sm", className = "" }: Props) {
+  const [imageFailed, setImageFailed] = useState(false);
   const label = name?.trim() || phone || "Contact";
   const seed = phone?.replace(/\D/g, "") || label;
 
-  if (imageUrl) {
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageUrl]);
+
+  if (imageUrl && !imageFailed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={imageUrl}
         alt={label}
         className={`rounded-full object-cover ${SIZE_CLASS[size]} ${className}`}
+        onError={() => setImageFailed(true)}
       />
     );
   }

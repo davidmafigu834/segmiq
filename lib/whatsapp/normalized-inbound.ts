@@ -27,7 +27,11 @@ export async function ingestNormalizedWhatsAppMessage(message: NormalizedWhatsAp
       connectionId: message.connectionId,
       providerType: message.providerType,
       senderSource: message.senderSource,
-      contactProfile: { waId: message.from.replace(/\D/g, ""), name: message.profileName ?? null },
+      contactProfile: {
+        waId: message.from.replace(/\D/g, ""),
+        name: message.profileName ?? null,
+        profilePictureUrl: message.profilePicture?.url ?? null,
+      },
       message: {
         id: message.providerMessageId,
         from: message.from,
@@ -66,6 +70,18 @@ export async function ingestNormalizedWhatsAppMessage(message: NormalizedWhatsAp
     phoneDigits: phone,
   });
   if (!lead) return;
+
+  const pictureUrl = message.profilePicture?.url?.trim() || null;
+  if (pictureUrl && lead.contact_id) {
+    await supabase
+      .from("contacts")
+      .update({
+        whatsapp_profile_picture_url: pictureUrl,
+        whatsapp_wa_id: message.from.replace(/\D/g, ""),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", lead.contact_id as string);
+  }
 
   const result = await persistOutboundWhatsAppMessage({
     clientId: message.clientId,

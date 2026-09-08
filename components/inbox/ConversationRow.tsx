@@ -99,7 +99,12 @@ export function ConversationRow({
     >
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
-          <WhatsAppAvatar name={name} phone={conversation.phone} size="sm" />
+          <WhatsAppAvatar
+            name={name}
+            phone={conversation.phone}
+            imageUrl={conversation.whatsappProfilePictureUrl}
+            size="sm"
+          />
           {!companyMode && !conversation.activeDealId && conversation.conversationType !== "SUPPORT" ? (
             <LeadIntentBadge score={conversation.score} label={conversation.scoreLabel} variant="dot" />
           ) : null}

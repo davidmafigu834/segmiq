@@ -447,7 +447,12 @@ export function LeadIntelligencePanel({
           {/* Contact / ownership */}
           <section className="border-b border-[#F2F4F7] px-4 py-4">
             <div className="flex items-start gap-3">
-              <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />
+              <WhatsAppAvatar
+                name={name}
+                phone={conversation.phone}
+                imageUrl={conversation.whatsappProfilePictureUrl}
+                size="md"
+              />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[14px] font-semibold text-[#101828]">{name}</div>
                 <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[#667085]">

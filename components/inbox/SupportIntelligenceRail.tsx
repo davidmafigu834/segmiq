@@ -128,7 +128,12 @@ export function SupportIntelligenceRail({
         <AgentConversationCard leadId={conversation.id} conversation={conversation} />
         <section className="border-b border-sales-border-subtle px-4 py-4">
           <div className="flex items-start gap-3">
-            <WhatsAppAvatar name={name} phone={conversation.phone} size="md" />
+            <WhatsAppAvatar
+              name={name}
+              phone={conversation.phone}
+              imageUrl={conversation.whatsappProfilePictureUrl}
+              size="md"
+            />
             <div className="min-w-0">
               <div className="truncate text-[15px] font-semibold text-sales-text-primary">{name}</div>
               <div className="mt-1 text-[12px] tabular-nums text-sales-text-secondary">{conversation.phone || "No phone"}</div>

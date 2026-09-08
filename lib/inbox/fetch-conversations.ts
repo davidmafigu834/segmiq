@@ -218,7 +218,7 @@ async function buildConversations(
       contactIds.length
         ? supabase
             .from("contacts")
-            .select("id, location, name, whatsapp_profile_name, whatsapp_wa_id")
+            .select("id, location, name, whatsapp_profile_name, whatsapp_wa_id, whatsapp_profile_picture_url")
             .in("id", contactIds)
         : Promise.resolve({
             data: [] as {
@@ -227,6 +227,7 @@ async function buildConversations(
               name: string | null;
               whatsapp_profile_name: string | null;
               whatsapp_wa_id: string | null;
+              whatsapp_profile_picture_url: string | null;
             }[],
           }),
       assigneeIds.length
@@ -521,6 +522,9 @@ async function buildConversations(
       name: displayName,
       whatsappProfileName:
         (contact as { whatsapp_profile_name?: string | null } | null)?.whatsapp_profile_name?.trim() ?? null,
+      whatsappProfilePictureUrl:
+        (contact as { whatsapp_profile_picture_url?: string | null } | null)?.whatsapp_profile_picture_url?.trim()
+        ?? null,
       phone: lead.phone,
       location: contactLocation(contact, intel, lead.form_data),
       source: lead.source,

@@ -46,6 +46,10 @@ const eventSchema = z.discriminatedUnion("type", [
       messageType: z.enum(["text", "image", "audio", "video", "document", "sticker", "location"]),
       body: z.string().max(65_536).default(""),
       profileName: z.string().max(160).nullable().optional(),
+      profilePicture: z.object({
+        mimeType: z.string().max(160),
+        base64: z.string().max(1_000_000),
+      }).nullable().optional(),
       direction: z.enum(["inbound", "outbound"]),
       senderSource: z.enum(["CUSTOMER", "EXTERNAL_BUSINESS_DEVICE"]),
       media: z.object({
@@ -69,6 +73,8 @@ const ALLOWED_MEDIA = new Set([
   "video/mp4", "application/pdf", "text/plain",
 ]);
 
+const ALLOWED_PROFILE_PICTURES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
 async function persistInboundMedia(input: {
   clientId: string;
   connectionId: string;
@@ -85,6 +91,29 @@ async function persistInboundMedia(input: {
   await putObject(key, bytes, mimeType, { cacheControl: "private, max-age=0" });
   let url: string | null = null;
   try { url = getPublicUrl(key); } catch { url = null; }
+  return { url, storageKey: key };
+}
+
+async function persistProfilePicture(input: {
+  clientId: string;
+  waId: string;
+  mimeType: string;
+  base64: string;
+}): Promise<{ url: string | null; storageKey: string } | null> {
+  const mimeType = input.mimeType.split(";")[0]?.toLowerCase() ?? "";
+  if (!ALLOWED_PROFILE_PICTURES.has(mimeType)) return null;
+  const bytes = Buffer.from(input.base64, "base64");
+  if (!bytes.length || bytes.length > 512 * 1024) return null;
+  const ext = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
+  const safeWaId = input.waId.replace(/\D/g, "").slice(0, 32) || "unknown";
+  const key = `whatsapp/${input.clientId}/avatars/${safeWaId}.${ext}`;
+  await putObject(key, bytes, mimeType, { cacheControl: "public, max-age=86400" });
+  let url: string | null = null;
+  try {
+    url = `${getPublicUrl(key)}?t=${Date.now()}`;
+  } catch {
+    url = null;
+  }
   return { url, storageKey: key };
 }
 
@@ -159,12 +188,36 @@ export async function POST(request: Request) {
           filename: parsed.message.media.filename ?? null,
         };
       }
+      let profilePicture: NormalizedWhatsAppInbound["profilePicture"] = null;
+      if (parsed.message.profilePicture?.base64) {
+        try {
+          const stored = await persistProfilePicture({
+            clientId: connection.clientId,
+            waId: parsed.message.from,
+            mimeType: parsed.message.profilePicture.mimeType,
+            base64: parsed.message.profilePicture.base64,
+          });
+          if (stored) {
+            profilePicture = {
+              url: stored.url,
+              storageKey: stored.storageKey,
+              mimeType: parsed.message.profilePicture.mimeType,
+            };
+          }
+        } catch (error) {
+          console.warn(
+            "[whatsapp] profile picture persist skipped",
+            error instanceof Error ? error.message : "unknown"
+          );
+        }
+      }
       await ingestNormalizedWhatsAppMessage({
         connectionId: connection.id,
         clientId: connection.clientId,
         providerType: "TEMPORARY_WEB",
         ...parsed.message,
         media,
+        profilePicture,
       });
     } else if (parsed.type === "RECEIPT") {
       await createAdminClient().from("whatsapp_messages").update({
