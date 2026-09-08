@@ -45,6 +45,8 @@ describe("sales overlay components", () => {
     assert.ok(src.includes('role={dialogRole}'));
     assert.ok(src.includes("dismissOnBackdrop"));
     assert.ok(src.includes("Escape"));
+    // Escape drawer stacking contexts (e.g. LeadDetailPanel) so Save / confirm stays clickable
+    assert.ok(src.includes("OverlayPortal"));
   });
 
   it("Popover portals with dismiss handlers", () => {
