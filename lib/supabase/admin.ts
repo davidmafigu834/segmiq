@@ -1,6 +1,18 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
+/** Cap hung PostgREST/Auth calls so serverless routes fail fast instead of burning maxDuration. */
+export const ADMIN_FETCH_TIMEOUT_MS = 12_000;
+
 let cached: SupabaseClient | null = null;
+
+function withAdminFetchTimeout(existing: AbortSignal | null | undefined, timeoutMs: number): AbortSignal {
+  const timeout = AbortSignal.timeout(timeoutMs);
+  if (!existing) return timeout;
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any([existing, timeout]);
+  }
+  return timeout;
+}
 
 export function createAdminClient(): SupabaseClient {
   if (cached) return cached;
@@ -15,7 +27,11 @@ export function createAdminClient(): SupabaseClient {
     // admin GETs (e.g. clients list) can stay stale after inserts.
     global: {
       fetch: (input: RequestInfo | URL, init?: RequestInit) =>
-        fetch(input, { ...init, cache: "no-store" }),
+        fetch(input, {
+          ...init,
+          cache: "no-store",
+          signal: withAdminFetchTimeout(init?.signal, ADMIN_FETCH_TIMEOUT_MS),
+        }),
     },
   });
   return cached;

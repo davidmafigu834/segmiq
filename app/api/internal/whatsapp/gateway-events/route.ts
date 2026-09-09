@@ -18,7 +18,8 @@ import { verifyInternalWhatsAppRequest } from "@/lib/whatsapp/security/verify-in
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 120;
+/** Keep under long hangs; gateway client already aborts at 20s. */
+export const maxDuration = 30;
 
 const base = z.object({ connectionId: z.string().uuid() });
 const eventSchema = z.discriminatedUnion("type", [
@@ -235,6 +236,14 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Gateway event failed" }, { status: 409 });
+    const message = error instanceof Error ? error.message : "Gateway event failed";
+    const timedOut =
+      (error instanceof Error && error.name === "TimeoutError") ||
+      (error instanceof Error && error.name === "AbortError") ||
+      /aborted|timed? ?out/i.test(message);
+    return NextResponse.json(
+      { error: timedOut ? "Upstream database timed out" : message },
+      { status: timedOut ? 503 : 409 }
+    );
   }
 }
