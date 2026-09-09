@@ -133,7 +133,11 @@ describe("company page skeletons", () => {
     for (const pair of pairs) {
       const live = read(pair.live);
       const skeleton = read(pair.skeleton);
-      assert.ok(live.includes(pair.grid), `${pair.live} is missing KPI grid ${pair.grid}`);
+      const usesSharedGridConst = live.includes(`COMPANY_KPI_GRID.${pair.key}`);
+      assert.ok(
+        usesSharedGridConst || live.includes(pair.grid),
+        `${pair.live} is missing KPI grid ${pair.grid}`
+      );
       assert.ok(
         skeleton.includes(`COMPANY_KPI_GRID.${pair.key}`),
         `${pair.skeleton} should use COMPANY_KPI_GRID.${pair.key}`

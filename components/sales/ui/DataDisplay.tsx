@@ -1,36 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  BriefcaseBusiness,
-  CalendarClock,
-  CircleDollarSign,
-  Clock3,
-  Building2,
-  Inbox,
-  UserRound,
-  UsersRound,
-  Target,
-  Trophy,
-} from "lucide-react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/ui/cn";
 import type { SalesKpiItem } from "@/components/dashboard/sales/types";
 import type { CSSProperties } from "react";
-
-const ICON_MAP = {
-  customers: UsersRound,
-  companies: Building2,
-  individuals: UserRound,
-  followups: CalendarClock,
-  pipeline: CircleDollarSign,
-  won: Trophy,
-  conversion: Target,
-  response: Clock3,
-  enquiries: Inbox,
-  deals: BriefcaseBusiness,
-} as const;
 
 const KPI_ACCENT: Record<SalesKpiItem["icon"], string> = {
   customers: "var(--sales-brand)",
@@ -45,31 +19,59 @@ const KPI_ACCENT: Record<SalesKpiItem["icon"], string> = {
   deals: "var(--sales-purple)",
 };
 
-export function KpiStat({ item }: { item: SalesKpiItem }) {
-  const Icon = ICON_MAP[item.icon];
+export type KpiStatVariant = "default" | "primary" | "row";
+
+export function KpiStat({
+  item,
+  variant = "default",
+}: {
+  item: SalesKpiItem;
+  variant?: KpiStatVariant;
+}) {
   const style = { ["--kpi-accent" as string]: KPI_ACCENT[item.icon] } as CSSProperties;
-  const body = (
-    <>
-      <span className="dashboard-kpi-accent" aria-hidden />
-      <div className="flex items-start justify-between gap-2">
-        <p className="dashboard-kpi-label min-w-0">{item.label}</p>
-        <span className="dashboard-kpi-icon">
-          <Icon size={14} strokeWidth={1.8} aria-hidden />
-        </span>
-      </div>
-      <p className="dashboard-kpi-value mt-3 truncate">{item.value || "—"}</p>
-      <div className="mt-auto pt-3">
-        {item.trend ? (
-          <TrendChip direction={item.trend.direction} label={item.trend.label} />
-        ) : (
-          <p className="truncate text-[11px] leading-4 text-sales-text-muted">{item.supporting}</p>
-        )}
-      </div>
-    </>
+  const detail = item.trend ? (
+    <TrendChip direction={item.trend.direction} label={item.trend.label} />
+  ) : (
+    <p className="truncate text-[11px] leading-4 text-sales-text-muted">{item.supporting}</p>
   );
 
-  const className =
-    "dashboard-kpi group relative flex h-full min-h-[118px] min-w-0 flex-col p-4 sm:min-h-[128px] sm:p-[18px]";
+  const body =
+    variant === "row" ? (
+      <>
+        <span className="dashboard-kpi-accent" aria-hidden />
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="dashboard-kpi-label min-w-0">{item.label}</p>
+            <div className="mt-1.5 min-w-0">{detail}</div>
+          </div>
+          <p className="dashboard-kpi-value shrink-0 text-right">{item.value || "—"}</p>
+        </div>
+      </>
+    ) : variant === "primary" ? (
+      <>
+        <span className="dashboard-kpi-accent" aria-hidden />
+        <p className="dashboard-kpi-label min-w-0">{item.label}</p>
+        <p className="dashboard-kpi-value dashboard-kpi-value--primary mt-4 truncate">
+          {item.value || "—"}
+        </p>
+        <div className="mt-auto pt-4">{detail}</div>
+      </>
+    ) : (
+      <>
+        <span className="dashboard-kpi-accent" aria-hidden />
+        <p className="dashboard-kpi-label min-w-0">{item.label}</p>
+        <p className="dashboard-kpi-value mt-2.5 truncate">{item.value || "—"}</p>
+        <div className="mt-auto pt-2">{detail}</div>
+      </>
+    );
+
+  const className = cn(
+    "dashboard-kpi group relative flex min-w-0 focus:outline-none",
+    variant === "row" && "dashboard-kpi--row h-full min-h-[64px] items-center px-3.5 py-3 sm:min-h-[68px] sm:px-4",
+    variant === "primary" &&
+      "dashboard-kpi--primary h-full min-h-[160px] flex-col p-4 sm:min-h-[180px] sm:p-5",
+    variant === "default" && "h-full min-h-[88px] flex-col p-3.5 sm:min-h-[96px]"
+  );
 
   if (item.href) {
     return (
@@ -77,7 +79,7 @@ export function KpiStat({ item }: { item: SalesKpiItem }) {
         href={item.href}
         style={style}
         data-course-target={item.id ? `dashboard-kpi-${item.id}` : undefined}
-        className={cn(className, "focus:outline-none")}
+        className={className}
         aria-label={`View ${item.label}`}
       >
         {body}

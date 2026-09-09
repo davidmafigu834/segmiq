@@ -59,14 +59,41 @@ export function PageHeaderSkeleton({
   );
 }
 
-export function KpiCardSkeleton() {
+export function KpiCardSkeleton({
+  variant = "default",
+}: {
+  variant?: "default" | "primary" | "row";
+}) {
+  if (variant === "primary") {
+    return (
+      <article className="dashboard-kpi dashboard-kpi--primary relative flex h-full min-h-[160px] min-w-0 flex-col justify-between p-4 sm:min-h-[180px] sm:p-5">
+        <span className="dashboard-kpi-accent" aria-hidden />
+        <Skeleton className="h-2.5 w-24" />
+        <Skeleton className="mt-4 h-10 w-32 sm:h-12" />
+        <Skeleton className="mt-auto h-3 w-36" />
+      </article>
+    );
+  }
+
+  if (variant === "row") {
+    return (
+      <article className="dashboard-kpi dashboard-kpi--row relative flex h-full min-h-[64px] min-w-0 items-center px-3.5 py-3 sm:min-h-[68px] sm:px-4">
+        <span className="dashboard-kpi-accent" aria-hidden />
+        <div className="flex w-full min-w-0 items-center justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <Skeleton className="h-2.5 w-24" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+          <Skeleton className="h-7 w-14 shrink-0" />
+        </div>
+      </article>
+    );
+  }
+
   return (
-    <article className="dashboard-kpi relative flex h-full min-h-[118px] min-w-0 flex-col justify-between p-[18px] sm:min-h-[128px]">
+    <article className="dashboard-kpi relative flex h-full min-h-[88px] min-w-0 flex-col justify-between p-3.5 sm:min-h-[96px]">
       <span className="dashboard-kpi-accent" aria-hidden />
-      <div className="flex items-start justify-between gap-2">
-        <Skeleton className="h-3 w-[72%] max-w-[7.5rem]" />
-        <Skeleton className="h-7 w-7 shrink-0 rounded-sales-sm sm:h-8 sm:w-8" />
-      </div>
+      <Skeleton className="h-2.5 w-[72%] max-w-[7.5rem]" />
       <div className="min-w-0">
         <Skeleton className="h-7 w-16 sm:h-8" />
         <Skeleton className="mt-2 h-3 w-24" />
@@ -76,6 +103,21 @@ export function KpiCardSkeleton() {
 }
 
 export function KpiRowSkeleton({ count, gridClass }: { count: number; gridClass: string }) {
+  const isHeroStrip = gridClass.includes("layout:grid-cols-[minmax(220px");
+
+  if (isHeroStrip) {
+    return (
+      <div className={gridClass}>
+        <KpiCardSkeleton variant="primary" />
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 layout:grid-cols-1 layout:gap-2.5">
+          {Array.from({ length: Math.max(count - 1, 0) }, (_, index) => (
+            <KpiCardSkeleton key={index} variant="row" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={gridClass}>
       {Array.from({ length: count }, (_, index) => (

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CompanyKpiCard } from "../CompanyKpiCard";
+import { KpiHeroStrip } from "@/components/sales/ui/KpiHeroStrip";
+import { COMPANY_KPI_GRID } from "@/lib/sales/company-skeleton-grids";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { CompanyTeamTableCard } from "./CompanyTeamTableCard";
@@ -259,11 +260,7 @@ export function CompanyTeamPage({
         }
       />
 
-      <div className="grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-5">
-        {data.kpis.map((item) => (
-          <CompanyKpiCard key={item.id} item={item} />
-        ))}
-      </div>
+      <KpiHeroStrip items={data.kpis} primaryId="pipeline" className={COMPANY_KPI_GRID.team} />
 
       {panelOpen && !overlayPanel ? (
         <div className="grid grid-cols-1 items-stretch gap-4 transition-[grid-template-columns] duration-200 xl:grid-cols-[minmax(0,1fr)_minmax(400px,32%)] xl:gap-[18px]">

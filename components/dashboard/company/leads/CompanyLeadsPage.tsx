@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { CompanyKpiCard } from "../CompanyKpiCard";
+import { COMPANY_KPI_GRID } from "@/lib/sales/company-skeleton-grids";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { CompanyLeadsTableCard } from "./CompanyLeadsTableCard";
@@ -464,7 +465,7 @@ export function CompanyLeadsPage({
       />
 
       <div
-        className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
+        className={COMPANY_KPI_GRID.leads}
         data-course-target="company-leads-kpis"
       >
         {data.kpis.map((item) => {
