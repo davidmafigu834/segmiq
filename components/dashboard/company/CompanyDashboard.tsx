@@ -2,8 +2,7 @@
 
 import { CompanyWorkspaceShell } from "./CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "./CompanyDashboardHeader";
-import { KpiHeroStrip } from "@/components/sales/ui/KpiHeroStrip";
-import { COMPANY_KPI_GRID } from "@/lib/sales/company-skeleton-grids";
+import { CompanyKpiCard } from "./CompanyKpiCard";
 import { CompanyFocusAreasCard } from "./CompanyFocusAreasCard";
 import { CompanyTeamCalendarCard } from "./CompanyTeamCalendarCard";
 import { CompanyFunnelCard } from "./CompanyFunnelCard";
@@ -65,7 +64,11 @@ export function CompanyDashboard({
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />
       </div>
 
-      <KpiHeroStrip items={data.kpis} primaryId="pipeline" className={COMPANY_KPI_GRID.dashboard} />
+      <div className="dashboard-group relative z-[1] grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
+        {data.kpis.map((item) => (
+          <CompanyKpiCard key={item.id} item={item} />
+        ))}
+      </div>
 
       <div className="hidden layout:block">
         <CompanyFocusAreasCard signals={data.focusAreas} viewAllHref={data.focusAreasViewAllHref} />

@@ -4,15 +4,11 @@
  * will fail `tests/company-skeletons.test.ts`.
  */
 export const COMPANY_KPI_GRID = {
-  dashboard:
-    "dashboard-group relative z-[1] grid w-full grid-cols-1 gap-3 layout:grid-cols-[minmax(220px,0.9fr)_minmax(0,1.35fr)] layout:items-stretch",
+  dashboard: "grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6",
   leads: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6",
-  pipeline:
-    "dashboard-group relative z-[1] grid w-full grid-cols-1 gap-3 layout:grid-cols-[minmax(220px,0.9fr)_minmax(0,1.35fr)] layout:items-stretch",
-  team:
-    "dashboard-group relative z-[1] grid w-full grid-cols-1 gap-3 layout:grid-cols-[minmax(220px,0.9fr)_minmax(0,1.35fr)] layout:items-stretch",
-  customers:
-    "dashboard-group relative z-[1] grid w-full grid-cols-1 gap-3 layout:grid-cols-[minmax(220px,0.9fr)_minmax(0,1.35fr)] layout:items-stretch",
+  pipeline: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6",
+  team: "grid w-full grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-5",
+  customers: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   quotations: "grid w-full min-w-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   calendar: "grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6",
   viewings: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
@@ -23,7 +19,7 @@ export const COMPANY_KPI_GRID = {
   websiteLeads: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   agentPerformance: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   marketing: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
-  feedback: "grid w-full grid-cols-2 gap-3 md:grid-cols-4",
+  feedback: "grid w-full grid-cols-2 gap-3 md:grid-cols-3",
   developments: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   compliance: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   reports:

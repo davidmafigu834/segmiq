@@ -12,7 +12,7 @@ import type { SalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
 import { CourseResumeCard } from "@/components/sales/training/CourseResumeCard";
 import { DashboardHeader } from "./DashboardHeader";
-import { KpiHeroStrip } from "@/components/sales/ui/KpiHeroStrip";
+import { KpiCard } from "./KpiCard";
 import { PerformanceCard } from "./PerformanceCard";
 import { RecentActivityCard } from "./RecentActivityCard";
 import { SourceMixCard } from "./SourceMixCard";
@@ -178,7 +178,11 @@ function SalesDashboardInner({
             <TodaysSalesPlanStrip {...data.planSummary} />
           </div>
 
-          <KpiHeroStrip items={data.kpis} primaryId="pipeline" />
+          <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
+            {data.kpis.map((item) => (
+              <KpiCard key={item.id} item={item} />
+            ))}
+          </div>
 
           <div className="hidden space-y-4 layout:block">
             <TodaysFocusCard

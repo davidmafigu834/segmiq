@@ -118,8 +118,6 @@ export {
 export { FilterPill, ActiveFiltersBar } from "./FilterPill";
 
 export { KpiStat, Trend, MetricValue } from "./DataDisplay";
-export type { KpiStatVariant } from "./DataDisplay";
-export { KpiHeroStrip } from "./KpiHeroStrip";
 export { Timeline, ActivityRow, Milestone } from "./Timeline";
 export type { TimelineItem } from "./Timeline";
 

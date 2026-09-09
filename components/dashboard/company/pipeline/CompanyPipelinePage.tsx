@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
-import { KpiHeroStrip } from "@/components/sales/ui/KpiHeroStrip";
-import { COMPANY_KPI_GRID } from "@/lib/sales/company-skeleton-grids";
+import { CompanyKpiCard } from "../CompanyKpiCard";
 import { CompanyWorkspaceShell } from "../CompanyWorkspaceShell";
 import { CompanyDashboardHeader } from "../CompanyDashboardHeader";
 import { CompanyPipelineTableCard } from "./CompanyPipelineTableCard";
@@ -329,8 +328,13 @@ export function CompanyPipelinePage({
         }
       />
 
-      <div data-course-target="company-pipeline-kpis">
-        <KpiHeroStrip items={data.kpis} primaryId="pipeline-value" className={COMPANY_KPI_GRID.pipeline} />
+      <div
+        className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6"
+        data-course-target="company-pipeline-kpis"
+      >
+        {data.kpis.map((item) => (
+          <CompanyKpiCard key={item.id} item={item} />
+        ))}
       </div>
 
       {panelOpen && !overlayPanel ? (
