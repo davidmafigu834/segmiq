@@ -66,7 +66,7 @@ export function KpiCardSkeleton({
 }) {
   if (variant === "primary") {
     return (
-      <article className="dashboard-kpi dashboard-kpi--primary relative flex h-full min-h-[200px] min-w-0 flex-col justify-between p-4 sm:min-h-[240px] sm:p-5">
+      <article className="dashboard-kpi dashboard-kpi--primary relative flex h-full min-h-[160px] min-w-0 flex-col justify-between p-4 sm:min-h-[180px] sm:p-5">
         <span className="dashboard-kpi-accent" aria-hidden />
         <Skeleton className="h-2.5 w-24" />
         <Skeleton className="mt-4 h-10 w-32 sm:h-12" />
@@ -77,7 +77,7 @@ export function KpiCardSkeleton({
 
   if (variant === "row") {
     return (
-      <article className="dashboard-kpi dashboard-kpi--row relative flex min-h-[52px] min-w-0 flex-1 items-center px-3.5 py-2.5 md:min-h-0 md:px-4">
+      <article className="dashboard-kpi dashboard-kpi--row relative flex h-full min-h-[64px] min-w-0 items-center px-3.5 py-3 sm:min-h-[68px] sm:px-4">
         <span className="dashboard-kpi-accent" aria-hidden />
         <div className="flex w-full min-w-0 items-center justify-between gap-3">
           <div className="min-w-0 flex-1 space-y-1.5">
@@ -103,20 +103,16 @@ export function KpiCardSkeleton({
 }
 
 export function KpiRowSkeleton({ count, gridClass }: { count: number; gridClass: string }) {
-  const isHeroStrip = gridClass.includes("md:flex-row");
+  const isHeroStrip = gridClass.includes("layout:grid-cols-[minmax(220px");
 
   if (isHeroStrip) {
     return (
       <div className={gridClass}>
-        <div className="min-w-0 md:w-[min(34%,280px)] md:shrink-0">
-          <KpiCardSkeleton variant="primary" />
-        </div>
-        <div className="relative min-w-0 flex-1">
-          <div className="flex flex-col gap-2 md:absolute md:inset-0">
-            {Array.from({ length: Math.max(count - 1, 0) }, (_, index) => (
-              <KpiCardSkeleton key={index} variant="row" />
-            ))}
-          </div>
+        <KpiCardSkeleton variant="primary" />
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 layout:grid-cols-1 layout:gap-2.5">
+          {Array.from({ length: Math.max(count - 1, 0) }, (_, index) => (
+            <KpiCardSkeleton key={index} variant="row" />
+          ))}
         </div>
       </div>
     );

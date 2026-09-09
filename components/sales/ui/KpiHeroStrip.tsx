@@ -25,7 +25,7 @@ function pickPrimary(
   };
 }
 
-/** Primary pipeline/revenue card on the left; secondary KPIs share its height on the right. */
+/** Primary revenue/pipeline card with compact horizontal KPI rows stacked beside it. */
 export function KpiHeroStrip({
   items,
   primaryId = "pipeline",
@@ -49,16 +49,11 @@ export function KpiHeroStrip({
 
   return (
     <div className={className}>
-      <div className="min-w-0 md:w-[min(34%,280px)] md:shrink-0">
-        <KpiStat item={primary} variant="primary" />
-      </div>
-      {/* Absolute fill so the right stack cannot grow taller than the primary. */}
-      <div className="relative min-w-0 flex-1">
-        <div className="flex flex-col gap-2 md:absolute md:inset-0">
-          {secondary.map((item) => (
-            <KpiStat key={item.id} item={item} variant="row" />
-          ))}
-        </div>
+      <KpiStat item={primary} variant="primary" />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 layout:grid-cols-1 layout:gap-2.5">
+        {secondary.map((item) => (
+          <KpiStat key={item.id} item={item} variant="row" />
+        ))}
       </div>
     </div>
   );

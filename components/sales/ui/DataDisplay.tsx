@@ -67,10 +67,9 @@ export function KpiStat({
 
   const className = cn(
     "dashboard-kpi group relative flex min-w-0 focus:outline-none",
-    variant === "row" &&
-      "dashboard-kpi--row min-h-[52px] flex-1 items-center px-3.5 py-2.5 md:min-h-0 md:px-4",
+    variant === "row" && "dashboard-kpi--row h-full min-h-[64px] items-center px-3.5 py-3 sm:min-h-[68px] sm:px-4",
     variant === "primary" &&
-      "dashboard-kpi--primary h-full min-h-[200px] flex-col justify-between p-4 sm:min-h-[240px] sm:p-5",
+      "dashboard-kpi--primary h-full min-h-[160px] flex-col p-4 sm:min-h-[180px] sm:p-5",
     variant === "default" && "h-full min-h-[88px] flex-col p-3.5 sm:min-h-[96px]"
   );
 

@@ -5,14 +5,14 @@
  */
 export const COMPANY_KPI_GRID = {
   dashboard:
-    "dashboard-group relative z-[1] flex w-full flex-col gap-3 md:flex-row md:items-stretch",
+    "dashboard-group relative z-[1] grid w-full grid-cols-1 gap-3 layout:grid-cols-[minmax(220px,0.9fr)_minmax(0,1.35fr)] layout:items-stretch",
   leads: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6",
   pipeline:
-    "dashboard-group relative z-[1] flex w-full flex-col gap-3 md:flex-row md:items-stretch",
+    "dashboard-group relative z-[1] grid w-full grid-cols-1 gap-3 layout:grid-cols-[minmax(220px,0.9fr)_minmax(0,1.35fr)] layout:items-stretch",
   team:
-    "dashboard-group relative z-[1] flex w-full flex-col gap-3 md:flex-row md:items-stretch",
+    "dashboard-group relative z-[1] grid w-full grid-cols-1 gap-3 layout:grid-cols-[minmax(220px,0.9fr)_minmax(0,1.35fr)] layout:items-stretch",
   customers:
-    "dashboard-group relative z-[1] flex w-full flex-col gap-3 md:flex-row md:items-stretch",
+    "dashboard-group relative z-[1] grid w-full grid-cols-1 gap-3 layout:grid-cols-[minmax(220px,0.9fr)_minmax(0,1.35fr)] layout:items-stretch",
   quotations: "grid w-full min-w-0 grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
   calendar: "grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6",
   viewings: "grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5",
