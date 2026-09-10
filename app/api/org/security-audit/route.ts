@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireSessionFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hasPermission } from "@/lib/auth/rbac/resolve";
+import { hasPermission, type PermissionActor } from "@/lib/auth/rbac/resolve";
 import { P } from "@/lib/auth/rbac/permissions";
 import { assertBrowserOrigin } from "@/lib/auth/origin-check";
 import { requireElevatedSession } from "@/lib/auth/step-up";
@@ -33,13 +33,7 @@ const ORG_AUDIT_EVENTS = [
   "AGENT_CONFIRMATION_REJECTED",
 ] as const;
 
-function actor(session: {
-  userId: string;
-  role: string;
-  clientId: string | null;
-  alsoSells?: boolean;
-  isImpersonating?: boolean;
-}) {
+function actor(session: PermissionActor): PermissionActor {
   return {
     userId: session.userId,
     role: session.role,
