@@ -66,7 +66,7 @@ export function SecuritySettingsPanel({
     setLoading(true);
     try {
       const [sRes, eRes, mRes, pRes] = await Promise.all([
-        fetch("/api/auth/session", { cache: "no-store" }),
+        fetch("/api/auth/sessions", { cache: "no-store" }),
         fetch("/api/auth/security-events?limit=20&offset=0", { cache: "no-store" }),
         fetch("/api/auth/mfa", { cache: "no-store" }),
         fetch("/api/users/me/security-meta", { cache: "no-store" }),
@@ -239,7 +239,7 @@ export function SecuritySettingsPanel({
       );
       if (!ok) return;
     }
-    const res = await fetch(`/api/auth/session?sessionId=${encodeURIComponent(id)}`, {
+    const res = await fetch(`/api/auth/sessions?sessionId=${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
     if (!res.ok) {
@@ -255,7 +255,7 @@ export function SecuritySettingsPanel({
   }
 
   async function revokeOthers() {
-    const res = await fetch("/api/auth/session", {
+    const res = await fetch("/api/auth/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ scope: "others" }),
@@ -273,7 +273,7 @@ export function SecuritySettingsPanel({
       "This will sign you out of SegmiQ on every device, including this one."
     );
     if (!ok) return;
-    const res = await fetch("/api/auth/session", {
+    const res = await fetch("/api/auth/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ scope: "all" }),

@@ -112,8 +112,8 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
         const email = String(credentials.email);
         const password = String(credentials.password);
-        const ip = clientIpFromRequest(req as unknown as Request);
-        const ua = userAgentFromRequest(req as unknown as Request);
+        const ip = clientIpFromRequest({ headers: new Headers(req.headers) });
+        const ua = userAgentFromRequest({ headers: new Headers(req.headers) });
         const emailHash = await hashLoginIdentifier(email);
 
         const rl = await checkDbRateLimit({

@@ -266,14 +266,14 @@ export async function cleanupOldSessions(retainDays = 90): Promise<number> {
   return data?.length ?? 0;
 }
 
-export function clientIpFromRequest(req: Request | null | undefined): string | null {
+export function clientIpFromRequest(req: Pick<Request, "headers"> | null | undefined): string | null {
   if (!req) return null;
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0]?.trim() || null;
   return req.headers.get("x-real-ip");
 }
 
-export function userAgentFromRequest(req: Request | null | undefined): string | null {
+export function userAgentFromRequest(req: Pick<Request, "headers"> | null | undefined): string | null {
   if (!req) return null;
   const ua = req.headers.get("user-agent");
   return ua ? ua.slice(0, 512) : null;
