@@ -22,7 +22,7 @@ import type { ClientMode, UserRole } from "@/types";
 export const dynamic = "force-dynamic";
 
 /** Impersonation sessions expire after 60 minutes max. */
-export const IMPERSONATION_TTL_MS = 60 * 60 * 1000;
+const IMPERSONATION_TTL_MS = 60 * 60 * 1000;
 
 const bodySchema = z.object({
   userId: z.string().uuid(),
