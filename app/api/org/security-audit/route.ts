@@ -49,7 +49,7 @@ function actor(session: {
   };
 }
 
-function summarizeOrgEvent(type: string, meta: Record<string, unknown> | null): string {
+function summarizeOrgEvent(type: string): string {
   switch (type) {
     case "IMPERSONATION_STARTED":
     case "IMPERSONATION_START":
@@ -150,7 +150,7 @@ export async function GET(req: Request) {
       type: row.event_type,
       createdAt: row.created_at,
       userId: row.user_id,
-      summary: summarizeOrgEvent(row.event_type as string, meta),
+      summary: summarizeOrgEvent(row.event_type as string),
       metadata: safeMeta,
     };
   });

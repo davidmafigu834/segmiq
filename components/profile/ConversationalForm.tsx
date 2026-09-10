@@ -53,7 +53,6 @@ function getInitials(name: string): string {
 }
 
 export function ConversationalForm({
-  clientId,
   profileSlug,
   clientName,
   clientLogo,

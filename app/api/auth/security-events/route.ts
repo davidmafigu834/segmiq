@@ -52,13 +52,13 @@ export async function GET(req: Request) {
     type: row.event_type,
     createdAt: row.created_at,
     // Do not expose raw IP; optional safe label from metadata only
-    summary: summarizeEvent(row.event_type as string, row.metadata as Record<string, unknown> | null),
+    summary: summarizeEvent(row.event_type as string),
   }));
 
   return NextResponse.json({ events, limit, offset });
 }
 
-function summarizeEvent(type: string, meta: Record<string, unknown> | null): string {
+function summarizeEvent(type: string): string {
   switch (type) {
     case "LOGIN_SUCCESS":
       return "Successful sign-in";

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { requireSessionFromRequest } from "@/lib/api-guards";
 import { assertBrowserOrigin } from "@/lib/auth/origin-check";
 import { checkSecurityRateLimit } from "@/lib/auth/security-rate-limit";
-import { clientIpFromRequest, userAgentFromRequest } from "@/lib/auth/user-sessions";
+import { clientIpFromRequest } from "@/lib/auth/user-sessions";
 import {
   confirmTotpSetup,
   disableMfa,

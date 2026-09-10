@@ -81,7 +81,6 @@ const DEFAULT_STEPS: FormStepDef[] = [
 ];
 
 export function ProfilePageForm({
-  clientId,
   profileSlug,
   ctaText,
   formSteps,
