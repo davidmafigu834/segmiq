@@ -6,7 +6,7 @@ import { isSuperAdminRole } from "@/lib/auth/roles";
 export type PermissionActor = {
   userId: string;
   role: UserRole;
-  clientId?: string | null;
+  clientId: string | null;
   alsoSells?: boolean | null;
   /** When true, use effective (impersonated) role — never elevate to platform.*. */
   isImpersonating?: boolean;

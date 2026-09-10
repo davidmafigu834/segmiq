@@ -26,7 +26,7 @@ function toActor(
   return {
     userId: auth.userId,
     role: auth.role,
-    clientId: auth.clientId,
+    clientId: auth.clientId ?? null,
     alsoSells: auth.alsoSells,
     isImpersonating: Boolean(auth.isImpersonating),
     sessionId: auth.sessionId,
