@@ -95,7 +95,7 @@ test("manager has org security permissions; salesperson does not", () => {
 test("browser security headers include CSP and Permissions-Policy", () => {
   const prev = process.env.NODE_ENV;
   try {
-    process.env.NODE_ENV = "production";
+    Object.assign(process.env, { NODE_ENV: "production" });
     const headers = securityHeaderList();
     const keys = new Set(headers.map((h) => h.key));
     assert.ok(keys.has("Content-Security-Policy-Report-Only") || keys.has("Content-Security-Policy"));
@@ -103,6 +103,6 @@ test("browser security headers include CSP and Permissions-Policy", () => {
     assert.ok(keys.has("Strict-Transport-Security"));
     assert.ok(keys.has("X-Content-Type-Options"));
   } finally {
-    process.env.NODE_ENV = prev;
+    Object.assign(process.env, { NODE_ENV: prev });
   }
 });

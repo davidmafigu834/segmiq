@@ -2,68 +2,9 @@ import type { PublicQuotationData } from "@/components/quotations/PublicQuotatio
 import type { QuotationLineItemInput } from "@/types";
 import { computeQuotationTotals } from "@/lib/quotations/totals";
 
-export const PUBLIC_QUOTATION_FETCH_SELECT = [
-  "id",
-  "client_id",
-  "lead_id",
-  "deal_id",
-  "quote_number",
-  "revision_number",
-  "status",
-  "customer_name",
-  "sent_at",
-  "valid_until",
-  "viewed_at",
-  "last_viewed_at",
-  "view_count",
-  "created_at",
-  "updated_at",
-  "public_token",
-  "prepared_by_id",
-  "link_revoked_at",
-  "superseded_by_id",
-  "currency",
-  "tax_rate",
-  "other_amount",
-  "discount_percent",
-  "notes",
-  "commercial_notes",
-  "terms",
-  "terms_snapshot",
-  "payment_terms_label",
-  "warranty_terms",
-  "delivery_terms",
-  "pdf_url",
-  "offer_options",
-].join(", ");
+export const PUBLIC_QUOTATION_FETCH_SELECT = "id, client_id, lead_id, deal_id, quote_number, revision_number, status, customer_name, sent_at, valid_until, viewed_at, last_viewed_at, view_count, created_at, updated_at, public_token, prepared_by_id, link_revoked_at, superseded_by_id, currency, tax_rate, other_amount, discount_percent, notes, commercial_notes, terms, terms_snapshot, payment_terms_label, warranty_terms, delivery_terms, pdf_url, offer_options";
 
-export const PUBLIC_QUOTATION_ACTION_SELECT = [
-  "id",
-  "client_id",
-  "lead_id",
-  "deal_id",
-  "quote_number",
-  "revision_number",
-  "status",
-  "customer_name",
-  "customer_phone",
-  "currency",
-  "tax_rate",
-  "other_amount",
-  "discount_percent",
-  "terms",
-  "terms_snapshot",
-  "prepared_by_id",
-  "public_token",
-  "link_revoked_at",
-  "superseded_by_id",
-  "valid_until",
-  "viewed_at",
-  "last_viewed_at",
-  "view_count",
-  "selected_offer_option_id",
-  "customer_configuration",
-].join(", ");
+export const PUBLIC_QUOTATION_ACTION_SELECT = "id, client_id, lead_id, deal_id, quote_number, revision_number, status, customer_name, customer_phone, currency, tax_rate, other_amount, discount_percent, terms, terms_snapshot, prepared_by_id, public_token, link_revoked_at, superseded_by_id, valid_until, viewed_at, last_viewed_at, view_count, selected_offer_option_id, customer_configuration";
 
 type PublicQuoteRow = Record<string, unknown>;
 

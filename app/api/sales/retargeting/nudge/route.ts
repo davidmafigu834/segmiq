@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     clientId,
     {
       id: session!.userId,
-      name: session!.user.name ?? "User",
+      name: session!.user?.name ?? "User",
       role: session!.role,
     },
     source

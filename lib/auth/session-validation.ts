@@ -161,8 +161,7 @@ export async function validateAuthClaims(
   if (
     !deps.skipSessionRegistry &&
     effectiveClientId &&
-    targetRole !== "SUPER_ADMIN" &&
-    targetRole !== "AGENCY_ADMIN"
+    targetRole !== "SUPER_ADMIN"
   ) {
     const supabase = createAdminClient();
     const { data: clientRow } = await supabase

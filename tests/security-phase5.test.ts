@@ -39,7 +39,7 @@ test("TEST cron: rejects missing/wrong secret in production mode", () => {
   const prevNode = process.env.NODE_ENV;
   const prevSecret = process.env.CRON_SECRET;
   try {
-    process.env.NODE_ENV = "production";
+    Object.assign(process.env, { NODE_ENV: "production" });
     process.env.CRON_SECRET = "super-secret-cron-key-32chars!!";
     assert.equal(
       isAuthorizedCronRequest(
@@ -67,7 +67,7 @@ test("TEST cron: rejects missing/wrong secret in production mode", () => {
       false
     );
   } finally {
-    process.env.NODE_ENV = prevNode;
+    Object.assign(process.env, { NODE_ENV: prevNode });
     if (prevSecret === undefined) delete process.env.CRON_SECRET;
     else process.env.CRON_SECRET = prevSecret;
   }

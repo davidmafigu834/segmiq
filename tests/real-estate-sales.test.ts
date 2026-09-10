@@ -171,7 +171,7 @@ describe("matching and listing search", () => {
       description: "House",
       external_reference: null,
       transaction_type: "sale" as const,
-      status: "available",
+      status: "available" as const,
       price: 155000,
       bedrooms: 4,
     };

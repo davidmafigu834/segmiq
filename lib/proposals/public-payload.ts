@@ -1,36 +1,8 @@
 import type { PublicProposalData } from "@/components/proposals/PublicProposalView";
 
-export const PUBLIC_PROPOSAL_SELECT = [
-  "id",
-  "title",
-  "proposal_number",
-  "company_name",
-  "recipient_name",
-  "currency",
-  "valid_until",
-  "subtotal",
-  "discount",
-  "tax_rate",
-  "tax_amount",
-  "total",
-  "terms",
-  "pdf_url",
-  "status",
-  "public_token",
-  "viewed_at",
-  "responded_at",
-  "updated_at",
-].join(", ");
+export const PUBLIC_PROPOSAL_SELECT = "id, title, proposal_number, company_name, recipient_name, currency, valid_until, subtotal, discount, tax_rate, tax_amount, total, terms, pdf_url, status, public_token, viewed_at, responded_at, updated_at";
 
-export const PUBLIC_PROPOSAL_ACTION_SELECT = [
-  PUBLIC_PROPOSAL_SELECT,
-  "recipient_email",
-  "submission_id",
-  "client_id",
-  "proposed_mode",
-  "proposed_plan",
-  "billing_cycle",
-].join(", ");
+export const PUBLIC_PROPOSAL_ACTION_SELECT = "id, title, proposal_number, company_name, recipient_name, currency, valid_until, subtotal, discount, tax_rate, tax_amount, total, terms, pdf_url, status, public_token, viewed_at, responded_at, updated_at, recipient_email, submission_id, client_id, proposed_mode, proposed_plan, billing_cycle";
 
 type ProposalRow = Record<string, unknown>;
 

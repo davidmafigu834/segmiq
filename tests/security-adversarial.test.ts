@@ -219,8 +219,9 @@ test("assertSameTenant throws on cross-tenant", () => {
   assert.throws(
     () =>
       assertSameTenant(
-        { userId: userA, role: "CLIENT_MANAGER", clientId: clientA },
-        clientB
+        clientA,
+        clientB,
+        "CLIENT_MANAGER"
       ),
     (err: unknown) => err instanceof TenantContextError
   );

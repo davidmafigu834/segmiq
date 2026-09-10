@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireSessionFromRequest } from "@/lib/api-guards";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { hasPermission } from "@/lib/auth/rbac/resolve";
+import { hasPermission, type PermissionActor } from "@/lib/auth/rbac/resolve";
 import { P } from "@/lib/auth/rbac/permissions";
 import {
   DEFAULT_ORG_SECURITY_POLICY,
@@ -24,13 +24,7 @@ const patchSchema = z.object({
   allowDataExports: z.boolean().optional(),
 });
 
-function actor(session: {
-  userId: string;
-  role: string;
-  clientId: string | null;
-  alsoSells?: boolean;
-  isImpersonating?: boolean;
-}) {
+function actor(session: PermissionActor): PermissionActor {
   return {
     userId: session.userId,
     role: session.role,

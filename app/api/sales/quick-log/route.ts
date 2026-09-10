@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       actorUserId: session!.userId,
       actor: {
         id: session!.userId,
-        name: session!.user.name ?? "Unknown",
+        name: session!.user?.name ?? "Unknown",
         role: session!.role,
       },
       reachOutcome: reachOutcome as ReachOutcome,

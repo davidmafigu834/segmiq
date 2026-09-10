@@ -293,7 +293,7 @@ export function ClientSettingsClient({
     try {
       await patchClient(data);
       setClient((c) => {
-        const next = { ...c, ...data };
+        const next: typeof c = { ...c, ...data };
         if ("meta_whatsapp_access_token" in data) {
           delete (next as { meta_whatsapp_access_token?: unknown }).meta_whatsapp_access_token;
           next.meta_whatsapp_token_configured = data.meta_whatsapp_access_token != null && data.meta_whatsapp_access_token !== "";
