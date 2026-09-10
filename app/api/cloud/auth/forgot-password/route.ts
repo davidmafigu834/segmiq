@@ -3,6 +3,9 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
 import { randomBytes } from "crypto";
+import { checkDbRateLimit } from "@/lib/auth/db-rate-limit";
+import { clientIpFromRequest } from "@/lib/auth/user-sessions";
+import { hashLoginIdentifier } from "@/lib/auth/security-events";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +27,24 @@ export async function POST(req: Request) {
   }
 
   const { email } = parsed.data;
+  const emailNorm = email.toLowerCase().trim();
+  const ip = clientIpFromRequest(req) ?? "unknown";
+  const emailHash = await hashLoginIdentifier(emailNorm);
+  const rl = await checkDbRateLimit({
+    key: `forgot-password-cloud:${emailHash}:${ip}`,
+    limit: 5,
+    windowMs: 60 * 60_000,
+  });
+  if (!rl.ok) {
+    return NextResponse.json({ success: true });
+  }
+
   const supabase = createAdminClient();
 
   const { data: user } = await supabase
     .from("users")
     .select("id, name, email")
-    .eq("email", email.toLowerCase().trim())
+    .eq("email", emailNorm)
     .eq("is_active", true)
     .maybeSingle();
 

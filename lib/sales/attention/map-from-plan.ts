@@ -132,7 +132,7 @@ function buildActions(rec: SalesActionRecommendation, type: SalesAttentionItem["
       actions.push({
         kind: "view_lead",
         label: "Open customer",
-        href: `/sales/leads/${leadId}`,
+        href: `/sales/leads?lead=${leadId}`,
         primary: true,
       });
       actions.push({
@@ -158,12 +158,12 @@ function buildActions(rec: SalesActionRecommendation, type: SalesAttentionItem["
     actions.push({
       kind: "view_lead",
       label: "Open lead",
-      href: `/sales/leads/${leadId}`,
+      href: `/sales/leads?lead=${leadId}`,
     });
   }
 
   if (rec.availableActions.includes("call") && !actions.some((a) => a.kind === "call")) {
-    actions.push({ kind: "call", label: "Call", href: leadId ? `/sales/leads/${leadId}` : undefined });
+    actions.push({ kind: "call", label: "Call", href: leadId ? `/sales/leads?lead=${leadId}` : undefined });
   }
 
   actions.push({ kind: "snooze", label: "Snooze" });

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { canAccessClient } from "@/lib/auth/permissions";
+import { hasPermission, P } from "@/lib/auth/rbac";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertRealEstateClient } from "@/lib/real-estate/offer-service";
 import {
@@ -48,7 +49,18 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   if (!canAccessClient(session.role, session.clientId, params.clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (session.role !== "CLIENT_MANAGER" && session.role !== "SUPER_ADMIN") {
+  if (
+    !hasPermission(
+      {
+        userId: session.userId,
+        role: session.role,
+        clientId: session.clientId,
+        alsoSells: session.alsoSells,
+        isImpersonating: Boolean(session.isImpersonating),
+      },
+      P.SETTINGS_MANAGE
+    )
+  ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (!(await assertRealEstateClient(params.clientId))) {

@@ -19,6 +19,9 @@ import {
   matchCampaignForIngest,
   recordFirstTouchAttribution,
 } from "@/lib/real-estate/marketing-service";
+import { hashWebsiteApiKey } from "@/lib/auth/website-api-keys";
+import { checkDbRateLimit } from "@/lib/auth/db-rate-limit";
+import { clientIpFromRequest } from "@/lib/auth/user-sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -70,17 +73,31 @@ export async function POST(req: Request) {
     }
 
     const supabase = createAdminClient();
-    const { data: client, error: clientErr } = await supabase
-      .from("clients")
-      .select(
-        "id, name, dial_code, assignment_mode, is_active, is_archived, business_type, website_integration_api_key, send_prospect_confirmation"
-      )
-      .eq("website_integration_api_key", apiKey)
-      .maybeSingle();
+    const keyHash = hashWebsiteApiKey(apiKey);
+    const selectCols =
+      "id, name, dial_code, assignment_mode, is_active, is_archived, business_type, website_integration_api_key_hash, send_prospect_confirmation";
 
-    if (clientErr || !client) {
+    const rl = await checkDbRateLimit({
+      key: `external-leads:${keyHash.slice(0, 32)}:${clientIpFromRequest(req) ?? "unknown"}`,
+      limit: 120,
+      windowMs: 60_000,
+    });
+    if (!rl.ok) {
+      return NextResponse.json(
+        softFail("Rate limited", { retry_after_sec: rl.retryAfterSec }).body,
+        { status: 200 }
+      );
+    }
+
+    const { data: byHash, error: hashErr } = await supabase
+      .from("clients")
+      .select(selectCols)
+      .eq("website_integration_api_key_hash", keyHash)
+      .maybeSingle();
+    if (hashErr || !byHash) {
       return NextResponse.json(softFail("Invalid api_key").body, { status: 200 });
     }
+    const client = byHash as Record<string, unknown>;
     if (client.is_active === false || client.is_archived === true) {
       return NextResponse.json(softFail("Client inactive").body, { status: 200 });
     }

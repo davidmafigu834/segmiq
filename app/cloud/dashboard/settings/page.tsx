@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { secureSignOut } from "@/components/auth/SessionLifecycle";
 import { Loader2, Save, ExternalLink, Eye, EyeOff, HardDrive, Droplets, LogOut, Upload, Camera, X } from "lucide-react";
 import { AndroidAppDownload } from "@/app/cloud/components/AndroidAppDownload";
 import { CloudAdminGate } from "@/app/cloud/components/CloudAdminGate";
@@ -777,7 +778,7 @@ export default function CloudSettingsPage() {
         <section className="pb-4">
           <button
             type="button"
-            onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
+            onClick={() => void secureSignOut("/cloud/login")}
             className="cloud-card flex w-full items-center justify-center gap-2 border-red-200/70 py-4 text-[14px] font-semibold text-red-500 transition-transform active:scale-[0.99]"
           >
             <LogOut className="h-4 w-4" />

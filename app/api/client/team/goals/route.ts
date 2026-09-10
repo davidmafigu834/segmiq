@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { requireRoles } from "@/lib/api-guards";
+import { requirePermission } from "@/lib/auth/rbac/require";
+import { P } from "@/lib/auth/rbac/permissions";
 import { canManageClientTeam } from "@/lib/auth/permissions";
+import { assertBrowserOrigin } from "@/lib/auth/origin-check";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   createSalesGoal,
@@ -12,15 +14,20 @@ import { parseGoalPeriodKey } from "@/lib/sales/goals/period";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const guard = await requireRoles(["CLIENT_MANAGER", "SUPER_ADMIN"]);
-  if (guard.error) return guard.error;
-  const { session } = guard;
+  const origin = assertBrowserOrigin(req);
+  if (!origin.ok) {
+    return NextResponse.json({ error: origin.error }, { status: origin.status });
+  }
 
-  const clientId = session!.clientId;
+  const guard = await requirePermission(P.TEAM_MANAGE, req);
+  if ("error" in guard) return guard.error;
+  const { auth: session } = guard;
+
+  const clientId = session.clientId;
   if (!clientId) {
     return NextResponse.json({ error: "clientId required" }, { status: 400 });
   }
-  if (!canManageClientTeam(session!, clientId)) {
+  if (!canManageClientTeam(session, clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -61,7 +68,7 @@ export async function POST(req: Request) {
     const goal = await createSalesGoal({
       clientId,
       salespersonId,
-      createdById: session!.userId,
+      createdById: session.userId,
       targetValue,
       periodKey,
       currency: body.currency || "USD",
@@ -81,15 +88,20 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const guard = await requireRoles(["CLIENT_MANAGER", "SUPER_ADMIN"]);
-  if (guard.error) return guard.error;
-  const { session } = guard;
+  const origin = assertBrowserOrigin(req);
+  if (!origin.ok) {
+    return NextResponse.json({ error: origin.error }, { status: origin.status });
+  }
 
-  const clientId = session!.clientId;
+  const guard = await requirePermission(P.TEAM_MANAGE, req);
+  if ("error" in guard) return guard.error;
+  const { auth: session } = guard;
+
+  const clientId = session.clientId;
   if (!clientId) {
     return NextResponse.json({ error: "clientId required" }, { status: 400 });
   }
-  if (!canManageClientTeam(session!, clientId)) {
+  if (!canManageClientTeam(session, clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

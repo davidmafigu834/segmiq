@@ -1033,7 +1033,7 @@ export async function fetchDailySalesPlan(opts: {
     whatNeedsAttention.push({
       id: "hot",
       text: `${hotUncontacted} high-intent enquir${hotUncontacted === 1 ? "y" : "ies"} not yet contacted`,
-      href: "/sales/call-now",
+      href: "/sales/leads",
     });
   }
   if (noNext > 0) {

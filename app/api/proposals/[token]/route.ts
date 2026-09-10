@@ -4,6 +4,10 @@ import {
   provisionClientFromProposal,
   notifyStaffOfProposalResponse,
 } from "@/lib/proposals/provision";
+import {
+  buildPublicProposalPayload,
+  PUBLIC_PROPOSAL_ACTION_SELECT,
+} from "@/lib/proposals/public-payload";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +18,7 @@ async function loadByToken(token: string) {
   const supabase = createAdminClient();
   const { data: proposal } = await supabase
     .from("agency_proposals")
-    .select("*")
+    .select(PUBLIC_PROPOSAL_ACTION_SELECT)
     .eq("public_token", token)
     .maybeSingle();
   return { supabase, proposal };
@@ -49,11 +53,20 @@ export async function GET(_req: Request, { params }: { params: { token: string }
   ]);
 
   return NextResponse.json({
-    proposal: {
-      ...proposal,
-      sections: sections ?? [],
-      items: items ?? [],
-    },
+    proposal: buildPublicProposalPayload({
+      token: params.token,
+      proposal: proposal as Record<string, unknown>,
+      sections: (sections ?? []) as Array<Record<string, unknown>>,
+      items: (items ?? []) as Array<Record<string, unknown>>,
+      brand: {
+        companyName: "Segmiq",
+        logoUrl: null,
+        brandColor: "#0F7A4F",
+        companyEmail: null,
+        companyPhone: null,
+        footerNote: null,
+      },
+    }),
   });
 }
 

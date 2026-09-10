@@ -13,6 +13,7 @@ import {
   matchCampaignForIngest,
   recordFirstTouchAttribution,
 } from "@/lib/real-estate/marketing-service";
+import { revealFbPageToken } from "@/lib/facebook/client-tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -369,9 +370,19 @@ export async function POST(req: Request) {
           continue;
         }
 
+        const pageToken = await revealFbPageToken(client.fb_access_token, client.id as string);
+        if (!pageToken) {
+          fbLog("fb.webhook.no_client_match", { page_id, form_id, reason: "token_unavailable" });
+          continue;
+        }
+
         await processLead({
           leadgen_id,
-          client: client as ClientRow,
+          client: {
+            id: client.id as string,
+            fb_access_token: pageToken,
+            business_type: (client as { business_type?: string | null }).business_type,
+          },
           webhookValue: value as Record<string, unknown>,
         });
       }

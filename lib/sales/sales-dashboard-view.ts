@@ -285,7 +285,7 @@ export function buildPriorityTasks(
       taskDetail: task.detail,
       phone: lead.phone,
       formData: lead.form_data ?? null,
-      href: `/sales/call-now?lead=${lead.id}`,
+      href: `/sales/leads?lead=${lead.id}`,
     };
   });
 }
@@ -314,7 +314,7 @@ export function buildPipelineStages(
         name: lead.name?.trim() || "Unnamed lead",
         industry: getPipelineIndustry(lead),
         valueLabel: formatDealValue(resolved.amount, { compact: true }),
-        href: `/sales/call-now?lead=${lead.id}`,
+        href: `/sales/leads?lead=${lead.id}`,
       };
     });
     return {
@@ -535,7 +535,7 @@ export function buildRecentActivity(data: SalesDashboardRaw): SalesActivityItem[
       title,
       detail,
       timeLabel: timeAgo(event.created_at),
-      href: `/sales/call-now?lead=${event.lead_id}`,
+      href: `/sales/leads?lead=${event.lead_id}`,
     };
   });
 
@@ -551,7 +551,7 @@ export function buildRecentActivity(data: SalesDashboardRaw): SalesActivityItem[
       title: value ? `${name} won deal worth ${value}` : `${name} won`,
       detail: win.days_to_close != null ? `${win.days_to_close}d to close` : null,
       timeLabel: timeAgo(win.created_at),
-      href: win.lead_id ? `/sales/call-now?lead=${win.lead_id}` : "/sales/won-lost",
+      href: win.lead_id ? `/sales/leads?lead=${win.lead_id}` : "/sales/won-lost",
     };
   });
 

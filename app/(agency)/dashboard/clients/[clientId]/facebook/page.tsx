@@ -24,8 +24,12 @@ export default async function FacebookPage({ params }: { params: { clientId: str
     .limit(1)
     .maybeSingle();
 
+  // SECURITY: never pass raw Meta tokens into client components.
   const initial: FacebookClientSnapshot = {
-    fb_access_token: (client.fb_access_token as string | null) ?? null,
+    fb_connected: Boolean(
+      (client.fb_access_token as string | null)?.trim() ||
+        (client.fb_user_access_token as string | null)?.trim()
+    ),
     fb_access_token_expires_at: (client.fb_access_token_expires_at as string | null) ?? null,
     fb_ad_account_id: (client.fb_ad_account_id as string | null) ?? null,
     fb_page_id: (client.fb_page_id as string | null) ?? null,

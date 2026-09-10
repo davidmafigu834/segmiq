@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getFacebookGraphBase } from "@/lib/facebook-graph";
 import { fbLog } from "@/lib/facebook/log";
+import { sealAndStoreFbTokens } from "@/lib/facebook/client-tokens";
 
 const FB_API = getFacebookGraphBase();
 
@@ -102,22 +103,16 @@ export async function GET(req: Request) {
     }
 
     const supabase = createAdminClient();
-    const { error: upErr } = await supabase
-      .from("clients")
-      .update({
-        fb_access_token: userToken,
-        fb_user_access_token: userToken,
-        fb_access_token_expires_at: expiresAt,
-        fb_token_expired_at: null,
-        fb_connected_by_user_id: session.userId,
-        fb_connected_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", clientId);
-
-    if (upErr) {
-      throw new Error(upErr.message);
-    }
+    // SECURITY: seal Meta tokens at rest; never store plaintext after connect.
+    await sealAndStoreFbTokens(supabase, clientId, {
+      fb_access_token: userToken,
+      fb_user_access_token: userToken,
+      fb_access_token_expires_at: expiresAt,
+      fb_token_expired_at: null,
+      fb_connected_by_user_id: session.userId,
+      fb_connected_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
 
     cookieStore.delete("fb_oauth_state");
 

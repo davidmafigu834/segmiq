@@ -18,7 +18,10 @@ export async function POST(req: Request) {
 
   if (parsed.data.decision === "cancel") {
     const { markConfirmation } = await import("@/lib/agent/manager/confirmations");
-    await markConfirmation(parsed.data.confirmationId, "CANCELLED");
+    const ok = await markConfirmation(access.actor, parsed.data.confirmationId, "CANCELLED");
+    if (!ok) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     return NextResponse.json({
       reply: "Cancelled. No changes were made.",
       blocks: [{ type: "status", kind: "done", message: "Cancelled. No changes were made." }],

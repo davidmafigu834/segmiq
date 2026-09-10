@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { jwtVerify } from "jose";
 import { homeForRole } from "@/lib/auth/impersonation";
 import { isSuperAdminRole, normalizeUserRole } from "@/lib/auth/roles";
+import { isMfaRestrictedAllowlistedPath } from "@/lib/auth/mfa/allowlist";
 import {
   fetchMiddlewareCrmSubscriptionStatus,
   fetchMiddlewareSessionVersion,
@@ -28,6 +30,12 @@ export async function middleware(req: NextRequest) {
     host === "cloud.segmiq.com" ||
     host === "cloud.localhost";
   const isBlogSubdomain = host === "blog.segmiq.com" || host.startsWith("blog.localhost");
+
+  // Phase 6.2 — API MFA enrolment gate (matcher includes /api/*).
+  // Does not redirect unauthenticated APIs; only blocks restricted sessions.
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    return enforceApiMfaEnrolmentGate(req);
+  }
 
   // Blog subdomain: rewrite to internal /blog/* (public URLs have no /blog prefix)
   if (isBlogSubdomain) {
@@ -231,6 +239,13 @@ export async function middleware(req: NextRequest) {
   const alsoSells = Boolean((token as { alsoSells?: boolean }).alsoSells);
   const isImpersonating = Boolean((token as { realUserId?: string | null }).realUserId);
   const cid = (token as { clientId?: string | null }).clientId;
+  const mfaEnrolmentRequired = Boolean(
+    (token as { mfaEnrolmentRequired?: boolean }).mfaEnrolmentRequired
+  );
+  // Restricted MFA sessions may only reach enrolment / recovery surfaces.
+  if (mfaEnrolmentRequired && !isMfaEnrolmentPageAllowed(path, role)) {
+    return NextResponse.redirect(new URL(mfaEnrolmentPageForRole(role), req.url));
+  }
   const isGatedRole = role === "CLIENT_MANAGER" || role === "SALESPERSON";
   const gateExempt =
     path === "/client/blocked" ||
@@ -247,7 +262,8 @@ export async function middleware(req: NextRequest) {
     needBilling && cid ? fetchMiddlewareCrmSubscriptionStatus(cid) : Promise.resolve(null),
   ]);
 
-  if (uid && dbSv !== null && dbSv !== tokenSv) {
+  // Fail closed: if session_version cannot be loaded, treat the session as expired.
+  if (uid && (dbSv === null || dbSv !== tokenSv)) {
     return sessionExpiredRedirect(req);
   }
 
@@ -331,6 +347,95 @@ function sessionExpiredRedirect(req: NextRequest): NextResponse {
   return NextResponse.redirect(signOut);
 }
 
+function mfaEnrolmentPageForRole(role: UserRole | string): string {
+  if (isSuperAdminRole(role)) return "/dashboard/settings?tab=account&enrollMfa=1";
+  if (role === "SALESPERSON") return "/sales/profile";
+  return "/client/settings/security";
+}
+
+function isMfaEnrolmentPageAllowed(path: string, role: UserRole | string): boolean {
+  if (path === "/login" || path === "/forgot-password" || path === "/reset-password") return true;
+  if (path.startsWith("/client/settings")) return true;
+  if (path === "/sales/profile" || path.startsWith("/sales/profile/")) return true;
+  if (path.startsWith("/dashboard/settings")) return true;
+  if (path === "/client/blocked" || path === "/sales/blocked" || path === "/solo/blocked") return true;
+  if (path.startsWith("/client/billing") || path.startsWith("/solo/billing")) return true;
+  // Allow landing on the role home redirect target only when it is the enrol page.
+  const enrol = mfaEnrolmentPageForRole(role).split("?")[0]!;
+  return path === enrol || path.startsWith(enrol + "/");
+}
+
+function isPublicApiPath(path: string): boolean {
+  if (path.startsWith("/api/auth")) return true;
+  if (path.startsWith("/api/facebook/webhook")) return true;
+  if (path.startsWith("/api/leads/submit")) return true;
+  if (path.startsWith("/api/leads/magic/")) return true;
+  if (path.startsWith("/api/onboard/")) return true;
+  if (path.startsWith("/api/proposals/")) return true;
+  if (path.startsWith("/api/quotes/")) return true;
+  if (path.startsWith("/api/public/")) return true;
+  if (path.startsWith("/api/cron/")) return true;
+  if (path.startsWith("/api/security/csp-report")) return true;
+  if (path.startsWith("/api/whatsapp/gateway")) return true;
+  return false;
+}
+
+function mfaEnrolmentDeniedApi(): NextResponse {
+  return NextResponse.json(
+    {
+      error: "MFA_ENROLMENT_REQUIRED",
+      message: "Complete two-step verification before using SegmiQ.",
+      enrollPath: "/client/settings/security",
+    },
+    { status: 403 }
+  );
+}
+
+/**
+ * Edge gate for cookie + Bearer sessions that still require MFA enrolment.
+ * Unauthenticated requests pass through so route handlers return their own 401.
+ */
+async function enforceApiMfaEnrolmentGate(req: NextRequest): Promise<NextResponse> {
+  const path = req.nextUrl.pathname;
+  if (isPublicApiPath(path) || isMfaRestrictedAllowlistedPath(path)) {
+    return NextResponse.next();
+  }
+
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) return NextResponse.next();
+
+  // next-auth getToken can throw on malformed Authorization (known advisory).
+  // Fail closed for this gate only — do not take down the request pipeline.
+  let token: Awaited<ReturnType<typeof getToken>> = null;
+  try {
+    token = await getToken({ req, secret });
+  } catch {
+    token = null;
+  }
+  if (token && Boolean((token as { mfaEnrolmentRequired?: boolean }).mfaEnrolmentRequired)) {
+    return mfaEnrolmentDeniedApi();
+  }
+
+  const header = req.headers.get("authorization");
+  if (header?.startsWith("Bearer ")) {
+    const raw = header.slice(7).trim();
+    if (raw) {
+      try {
+        const { payload } = await jwtVerify(raw, new TextEncoder().encode(secret), {
+          algorithms: ["HS256"],
+        });
+        if (Boolean(payload.mfaEnrolmentRequired)) {
+          return mfaEnrolmentDeniedApi();
+        }
+      } catch {
+        // Invalid bearer — leave to route auth.
+      }
+    }
+  }
+
+  return NextResponse.next();
+}
+
 async function staleSessionRedirect(
   req: NextRequest,
   uid: string | undefined,
@@ -338,8 +443,11 @@ async function staleSessionRedirect(
 ): Promise<NextResponse | null> {
   if (!uid) return null;
   const dbSv = await fetchMiddlewareSessionVersion(uid);
-  if (dbSv === null || dbSv === tokenSv) return null;
-  return sessionExpiredRedirect(req);
+  // Fail closed: missing DB version → session expired (same as version mismatch).
+  if (dbSv === null || dbSv !== tokenSv) {
+    return sessionExpiredRedirect(req);
+  }
+  return null;
 }
 
 function cloudDashboardPath(isCloudSubdomain: boolean): string {
@@ -487,9 +595,10 @@ function localBlogDevRewrite(path: string): string | null {
 }
 
 export const config = {
-  // Skip all Next.js internals (dev + prod), API routes, and static assets — otherwise
-  // middleware can run on e.g. /_next/webpack-hmr and return HTML redirects, breaking JS chunks (MIME errors).
+  // Pages: skip Next internals and static assets.
+  // APIs: included for MFA enrolment gate only (see enforceApiMfaEnrolmentGate).
   matcher: [
-    "/((?!_next/|api/|favicon\\.ico|favicon/|manifest\\.json|manifest\\.webmanifest|sw\\.js|icons/|downloads/|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|html|apk)$).*)",
+    "/((?!_next/|favicon\\.ico|favicon/|manifest\\.json|manifest\\.webmanifest|sw\\.js|icons/|downloads/|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|html|apk)$).*)",
+    "/api/:path*",
   ],
 };

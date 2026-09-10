@@ -216,7 +216,7 @@ async function main() {
   if (jdId) await seedClient(jdId, "JD");
   if (bsId) await seedClient(bsId, "Bright");
 
-  console.log("Seed complete. Admin: admin@leadstaq.com / admin123");
+  console.log("Seed complete. Admin: admin@leadstaq.com (password set from seed script — not logged)");
   console.log("Client IDs:", { jdId, bsId, admin: admin?.id });
 }
 

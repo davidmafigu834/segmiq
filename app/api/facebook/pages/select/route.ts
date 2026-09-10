@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAgencyAdmin } from "@/lib/auth/permissions";
 import { graphCall } from "@/lib/facebook/graph";
 import { fbLog } from "@/lib/facebook/log";
+import { loadClientFbGraphTokens, sealAndStoreFbTokens } from "@/lib/facebook/client-tokens";
 
 export async function POST(req: Request) {
   const check = await requireAgencyAdmin();
@@ -23,24 +24,18 @@ export async function POST(req: Request) {
   }
 
   const supabase = createAdminClient();
-  const { data: client, error: cErr } = await supabase
-    .from("clients")
-    .select("fb_access_token, fb_user_access_token")
-    .eq("id", clientId)
-    .maybeSingle();
-
-  if (cErr || !client?.fb_access_token) {
+  const { pageToken, userToken } = await loadClientFbGraphTokens(clientId, supabase);
+  const graphUserToken = userToken || pageToken;
+  if (!graphUserToken) {
     return NextResponse.json({ error: "Not connected" }, { status: 400 });
   }
 
-  const userToken = client.fb_access_token as string;
-  const preservedUserToken =
-    (client.fb_user_access_token as string | null) ?? (client.fb_access_token as string);
+  const preservedUserToken = userToken || pageToken;
 
   const pageFields = encodeURIComponent("id,name,access_token");
   const pageRes = await graphCall<{ id?: string; name?: string; access_token?: string }>(
     `/${pageId}?fields=${pageFields}`,
-    userToken,
+    graphUserToken,
     { clientId }
   );
 
@@ -69,21 +64,14 @@ export async function POST(req: Request) {
     console.warn("[facebook pages/select] subscribed_apps:", subRes.error.message);
   }
 
-  const { error: upErr } = await supabase
-    .from("clients")
-    .update({
-      fb_access_token: page.access_token,
-      fb_user_access_token: preservedUserToken,
-      fb_page_id: page.id,
-      fb_page_name: page.name ?? null,
-      fb_webhook_verified: webhookOk,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", clientId);
-
-  if (upErr) {
-    return NextResponse.json({ error: upErr.message }, { status: 500 });
-  }
+  await sealAndStoreFbTokens(supabase, clientId, {
+    fb_access_token: page.access_token,
+    fb_user_access_token: preservedUserToken,
+    fb_page_id: page.id,
+    fb_page_name: page.name ?? null,
+    fb_webhook_verified: webhookOk,
+    updated_at: new Date().toISOString(),
+  });
 
   fbLog("fb.page.selected", { clientId, pageId: page.id });
   return NextResponse.json({ ok: true, pageName: page.name });

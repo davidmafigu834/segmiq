@@ -27,6 +27,7 @@ import {
   useSalesToast,
 } from "@/components/sales/ui";
 import { CrmThemeSetting } from "@/components/settings/CrmThemeSetting";
+import { SecuritySettingsPanel } from "@/components/settings/SecuritySettingsPanel";
 import { parseSalesPrefs, type SalesNotificationPrefs } from "@/lib/notification-prefs";
 import { cn } from "@/lib/ui/cn";
 
@@ -575,6 +576,10 @@ export function SalesProfileClient({ initialEmail }: { initialEmail: string }) {
               </div>
             </CardContent>
           </Card>
+
+          <SecuritySettingsPanel
+            toast={(opts) => toast({ title: opts.title, tone: opts.tone === "error" ? "error" : "success" })}
+          />
 
           {(clientName || agencyContact) && (
             <Card>

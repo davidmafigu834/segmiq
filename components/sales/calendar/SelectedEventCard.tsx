@@ -52,7 +52,7 @@ export function SelectedEventCard({
     ? `/sales/deals/${event.dealId}`
     : isWhatsAppInboundLead(event.source)
       ? whatsappInboxHref(event.leadId)
-      : `/sales/call-now?lead=${event.leadId}`;
+      : `/sales/leads?lead=${event.leadId}`;
   const whatsappHref = whatsappInboxHref(event.leadId);
   const customerLabel = event.customerName ?? "Customer";
   const salesContext = getEventSalesContext(event);
@@ -178,7 +178,7 @@ export function SelectedEventCard({
             ) : null}
           </ul>
           <Link
-            href={`/sales/call-now?lead=${event.leadId}`}
+            href={`/sales/leads?lead=${event.leadId}`}
             className="mt-1.5 inline-block text-[12px] font-semibold text-[#2684FF] underline-offset-2 hover:underline"
           >
             Open lead
@@ -188,7 +188,7 @@ export function SelectedEventCard({
 
       {event.quoteNumber ? (
         <Link
-          href={`/sales/call-now?lead=${event.leadId}&tab=quote`}
+          href={`/sales/leads?lead=${event.leadId}&tab=quote`}
           className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#2684FF] underline-offset-2 hover:underline"
         >
           <FileText size={13} strokeWidth={1.8} aria-hidden />

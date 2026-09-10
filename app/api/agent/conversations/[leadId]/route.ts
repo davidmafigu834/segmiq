@@ -216,6 +216,23 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
   const parsed = actionSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
+  const { hasPermission } = await import("@/lib/auth/rbac/resolve");
+  const { P } = await import("@/lib/auth/rbac/permissions");
+  const actor = {
+    userId: access.auth.userId,
+    role: access.auth.role,
+    clientId: access.auth.clientId,
+    alsoSells: access.auth.alsoSells,
+    isImpersonating: access.auth.isImpersonating,
+  };
+  if (
+    (parsed.data.action === "send_draft" || parsed.data.action === "apply_suggestions" || parsed.data.action === "apply_action") &&
+    !hasPermission(actor, P.WHATSAPP_SEND) &&
+    !hasPermission(actor, P.AGENT_APPROVE)
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { action, pauseMinutes, pauseFor, reason, reply, actionId, escalationId, listing_id, date, time } =
     parsed.data;
   const now = new Date().toISOString();
@@ -325,6 +342,9 @@ export async function PATCH(req: Request, { params }: { params: { leadId: string
         clientId: access.clientId,
         leadId: access.leadId,
         reply,
+        actorId: access.auth.userId,
+        actorName: null,
+        actorRole: access.auth.role,
       });
       if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: 409 });
       break;

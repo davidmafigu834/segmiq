@@ -1,5 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import type { UserRole } from "@/types";
 
@@ -16,8 +14,8 @@ export async function requireProposalAdmin(
   | { allowed: true; actor: ProposalActor }
   | { allowed: false; reason: string; status: 401 | 403 }
 > {
-  const auth = req ? await getAuthFromRequest(req) : null;
-  const session = auth ?? (await getServerSession(authOptions));
+  // Never fall through to getServerSession after MFA/auth denial.
+  const session = await getAuthFromRequest(req);
   if (!session?.userId) return { allowed: false, reason: "Unauthorized", status: 401 };
   if (session.role !== "SUPER_ADMIN") return { allowed: false, reason: "Forbidden", status: 403 };
 
@@ -25,7 +23,7 @@ export async function requireProposalAdmin(
     allowed: true,
     actor: {
       id: session.userId,
-      name: (session as { user?: { name?: string | null } }).user?.name ?? "Segmiq",
+      name: "Segmiq",
       role: "SUPER_ADMIN",
     },
   };

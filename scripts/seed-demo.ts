@@ -384,7 +384,7 @@ async function main() {
   console.log("\n✅ Demo seed complete.\n");
   console.log("   Company: SunVolt Solar (Zimbabwe) — Facebook lead form connected");
   console.log(`   Leads created: ${totalLeads}\n`);
-  console.log("   Demo logins (password for all: " + DEMO_PASSWORD + ")");
+  console.log("   Demo logins (shared demo password — not logged; see DEMO_PASSWORD in script)");
   console.log("   ┌──────────────┬────────────────────────┐");
   console.log(`   │ Manager      │ ${MANAGER.email.padEnd(22)} │`);
   console.log(`   │ Salesperson  │ ${SALES_PRIMARY.email.padEnd(22)} │`);

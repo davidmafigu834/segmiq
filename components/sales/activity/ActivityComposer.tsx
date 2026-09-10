@@ -161,7 +161,7 @@ export function ActivityComposer({
           />
           <div className="flex flex-wrap items-center justify-between gap-2">
             <a
-              href={`/sales/call-now?lead=${leadId}`}
+              href={`/sales/leads?lead=${leadId}`}
               className="inline-flex h-9 items-center justify-center rounded-[8px] border border-sales-border bg-sales-surface px-3 text-[13px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
             >
               Open full call logger

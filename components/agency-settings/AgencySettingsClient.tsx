@@ -7,6 +7,7 @@ import { format, parseISO } from "date-fns";
 import { MailCheck } from "lucide-react";
 import { VerticalSettingsNav } from "@/components/settings/VerticalSettingsNav";
 import { CrmThemeSetting } from "@/components/settings/CrmThemeSetting";
+import { SecuritySettingsPanel } from "@/components/settings/SecuritySettingsPanel";
 import { ClientAvatar } from "@/components/ClientAvatar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -680,6 +681,10 @@ export function AgencySettingsClient() {
                 {saving ? "Updating…" : "Update password"}
               </Button>
             </section>
+
+            <SecuritySettingsPanel
+              toast={(opts) => setToast(opts.title)}
+            />
 
             <CrmThemeSetting />
           </div>

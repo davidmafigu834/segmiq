@@ -1,5 +1,5 @@
 /**
- * Salesperson Leads directory (sidebar: Leads → /sales/call-now).
+ * Salesperson Leads directory (sidebar: Leads → /sales/leads).
  * Distinct from My Pipeline (/sales/pipeline).
  */
 

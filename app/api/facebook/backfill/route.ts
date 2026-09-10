@@ -6,6 +6,7 @@ import { requireAgencyAdmin } from "@/lib/auth/permissions";
 import { createLead } from "@/lib/leads/createLead";
 import { graphCall } from "@/lib/facebook/graph";
 import { fbLog } from "@/lib/facebook/log";
+import { loadClientFbGraphTokens } from "@/lib/facebook/client-tokens";
 
 const lastBackfillByClient = new Map<string, number>();
 const COOLDOWN_MS = 60_000;
@@ -41,11 +42,13 @@ export async function POST(req: Request) {
   const supabase = createAdminClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("id, fb_access_token, fb_form_id")
+    .select("id, fb_form_id")
     .eq("id", clientId)
     .maybeSingle();
 
-  if (!client?.fb_access_token || !client?.fb_form_id) {
+  const { pageToken } = await loadClientFbGraphTokens(clientId, supabase);
+
+  if (!pageToken || !client?.fb_form_id) {
     return NextResponse.json({ error: "Facebook not connected for this client" }, { status: 400 });
   }
 
@@ -68,7 +71,7 @@ export async function POST(req: Request) {
   const stats = { fetched: 0, created: 0, duplicates: 0, failed: 0 };
 
   for (let page = 0; page < 10; page++) {
-    const result = await graphCall<LeadsPage>(pathOrUrl, client.fb_access_token as string, { clientId });
+    const result = await graphCall<LeadsPage>(pathOrUrl, pageToken, { clientId });
 
     if (!result.ok) {
       fbLog("fb.backfill.completed", {

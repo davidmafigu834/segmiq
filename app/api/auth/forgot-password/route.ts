@@ -3,17 +3,36 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmail } from '@/lib/email/resend';
 import { passwordResetEmail } from '@/lib/email/templates/password-reset';
 import crypto from 'crypto';
+import { checkDbRateLimit } from '@/lib/auth/db-rate-limit';
+import { clientIpFromRequest } from '@/lib/auth/user-sessions';
+import { hashLoginIdentifier } from '@/lib/auth/security-events';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-  const { email } = await req.json();
+  const { email } = await req.json().catch(() => ({} as { email?: unknown }));
 
   if (!email || typeof email !== 'string') {
     return NextResponse.json(
       { error: 'Email is required' },
       { status: 400 }
     );
+  }
+
+  const emailNorm = email.toLowerCase().trim();
+  const ip = clientIpFromRequest(req) ?? 'unknown';
+  const emailHash = await hashLoginIdentifier(emailNorm);
+  const rl = await checkDbRateLimit({
+    key: `forgot-password:${emailHash}:${ip}`,
+    limit: 5,
+    windowMs: 60 * 60_000,
+  });
+  if (!rl.ok) {
+    // Same generic success body — do not reveal rate limiting to attackers.
+    return NextResponse.json({
+      success: true,
+      message: 'If an account exists with that email, a reset link has been sent.',
+    });
   }
 
   const supabase = createAdminClient();
@@ -30,7 +49,7 @@ export async function POST(req: Request) {
   const { data: user } = await supabase
     .from('users')
     .select('id, name, email, role, is_active')
-    .eq('email', email.toLowerCase().trim())
+    .eq('email', emailNorm)
     .in('role', ['SUPER_ADMIN', 'CLIENT_MANAGER', 'SALESPERSON'])
     .eq('is_active', true)
     .maybeSingle();

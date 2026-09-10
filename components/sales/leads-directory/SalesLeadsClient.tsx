@@ -760,7 +760,7 @@ export function SalesLeadsClient({
                               router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
                             }}
                             onOpenPipeline={() => {
-                              router.push(`/sales/call-now?lead=${row.id}`);
+                              router.push(`/sales/leads?lead=${row.id}`);
                             }}
                           />
                         ))

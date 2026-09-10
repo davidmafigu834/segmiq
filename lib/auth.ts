@@ -1,7 +1,14 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { verifyPassword } from "@/lib/password";
+import { validateAuthClaims } from "@/lib/auth/session-validation";
 import { fetchAuthUserByEmail, fetchClientMode } from "@/lib/supabase/auth-rest";
+import { createUserSession, clientIpFromRequest, userAgentFromRequest } from "@/lib/auth/user-sessions";
+import { recordSecurityEvent, hashLoginIdentifier } from "@/lib/auth/security-events";
+import { checkDbRateLimit } from "@/lib/auth/db-rate-limit";
+import { JWT_MAX_AGE_SEC } from "@/lib/auth/session-policy";
+import { userNeedsMfaChallenge, mustEnrollMfa } from "@/lib/auth/mfa/service";
+import { labelSessionDevice } from "@/lib/auth/session-labels";
 import type { ClientMode, UserRole } from "@/types";
 
 export class AuthDatabaseUnavailableError extends Error {
@@ -25,6 +32,9 @@ export type VerifiedUser = {
   clientMode: ClientMode;
   alsoSells: boolean;
   sessionVersion: number;
+  sessionId?: string;
+  /** Restricted session — MFA enrolment still required before CRM APIs. */
+  mfaEnrolmentRequired?: boolean;
 };
 
 /** Shared credential check used by NextAuth and the field-app bearer token endpoint. */
@@ -98,13 +108,133 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) return null;
-        return verifyCredentials(credentials.email, credentials.password);
+        const email = String(credentials.email);
+        const password = String(credentials.password);
+        const ip = clientIpFromRequest(req as unknown as Request);
+        const ua = userAgentFromRequest(req as unknown as Request);
+        const emailHash = await hashLoginIdentifier(email);
+
+        const rl = await checkDbRateLimit({
+          key: `login:${emailHash}:${ip ?? "unknown"}`,
+          limit: 10,
+          windowMs: 15 * 60_000,
+        });
+        if (!rl.ok) {
+          void recordSecurityEvent({
+            eventType: "LOGIN_FAILED",
+            ip,
+            userAgent: ua,
+            metadata: {
+              emailHash,
+              reason: "rate_limited",
+              retryAfterSec: rl.retryAfterSec,
+            },
+          });
+          return null;
+        }
+
+        let user: VerifiedUser | null;
+        try {
+          user = await verifyCredentials(email, password);
+        } catch (e) {
+          if (e instanceof AuthDatabaseUnavailableError) throw e;
+          user = null;
+        }
+
+        if (!user) {
+          void recordSecurityEvent({
+            eventType: "LOGIN_FAILED",
+            ip,
+            userAgent: ua,
+            metadata: {
+              emailHash,
+              reason: "invalid_credentials_or_inactive",
+            },
+          });
+          return null;
+        }
+
+        // MFA-enabled accounts must complete /api/auth/mfa/login — never issue a full session here.
+        const mfaNeed = await userNeedsMfaChallenge(user.id, user.role);
+        if (mfaNeed.required) {
+          void recordSecurityEvent({
+            eventType: "LOGIN_FAILED",
+            userId: user.id,
+            clientId: user.clientId,
+            ip,
+            userAgent: ua,
+            metadata: { reason: "mfa_required", channel: "web_credentials" },
+          });
+          return null;
+        }
+
+        // Policy requires MFA but user not enrolled → restricted enrolment session only.
+        const enrolmentRequired = await mustEnrollMfa(user.id, user.role, {
+          clientId: user.clientId,
+        });
+
+        // SECURITY: new session id after successful authentication (session fixation).
+        const sessionRow = await createUserSession({
+          userId: user.id,
+          clientId: user.clientId,
+          role: user.role,
+          sessionType: "WEB",
+          sessionVersion: user.sessionVersion,
+          ip,
+          userAgent: ua,
+          authStrength: "password",
+          metadata: enrolmentRequired
+            ? { mfaEnrolmentRequired: true, restricted: true }
+            : {},
+        });
+
+        void recordSecurityEvent({
+          eventType: "LOGIN_SUCCESS",
+          userId: user.id,
+          clientId: user.clientId,
+          sessionId: sessionRow.id,
+          ip,
+          userAgent: ua,
+          metadata: {
+            sessionType: "WEB",
+            mfaEnrolmentRequired: enrolmentRequired,
+          },
+        });
+        void recordSecurityEvent({
+          eventType: "SESSION_CREATED",
+          userId: user.id,
+          clientId: user.clientId,
+          sessionId: sessionRow.id,
+          ip,
+          userAgent: ua,
+          metadata: {
+            sessionType: "WEB",
+            mfaEnrolmentRequired: enrolmentRequired,
+          },
+        });
+
+        const label = labelSessionDevice({ sessionType: "WEB", userAgent: ua });
+        void import("@/lib/email/templates/security-alert").then(({ sendSecurityNotification, shouldSendNewSignInEmail }) => {
+          if (!enrolmentRequired && shouldSendNewSignInEmail(user.id, label.deviceName)) {
+            void sendSecurityNotification({
+              to: user.email,
+              kind: "new_sign_in",
+              deviceLabel: label.deviceName,
+            });
+          }
+        });
+
+        return {
+          ...user,
+          sessionId: sessionRow.id,
+          mfaEnrolmentRequired: enrolmentRequired,
+        };
       },
     }),
   ],
-  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  session: { strategy: "jwt", maxAge: JWT_MAX_AGE_SEC },
   pages: { signIn: "/login" },
   cookies: {
     sessionToken: {
@@ -137,6 +267,10 @@ export const authOptions: NextAuthOptions = {
         token.clientMode = (user as { clientMode?: ClientMode }).clientMode ?? "team";
         token.alsoSells = Boolean((user as { alsoSells?: boolean }).alsoSells);
         token.sessionVersion = (user as { sessionVersion?: number }).sessionVersion ?? 0;
+        token.sessionId = (user as { sessionId?: string }).sessionId ?? null;
+        token.mfaEnrolmentRequired = Boolean(
+          (user as { mfaEnrolmentRequired?: boolean }).mfaEnrolmentRequired
+        );
         token.email = (user as { email?: string | null }).email ?? null;
         token.name = (user as { name?: string | null }).name ?? null;
         token.realUserId = null;
@@ -150,12 +284,50 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      const valid = await validateAuthClaims(
+        {
+          userId: String(token.userId ?? ""),
+          role: ((token.role as string) === "AGENCY_ADMIN" ? "SUPER_ADMIN" : token.role) as UserRole,
+          clientId: (token.clientId as string | null | undefined) ?? null,
+          alsoSells: Boolean(token.alsoSells),
+          sessionVersion:
+            typeof token.sessionVersion === "number"
+              ? token.sessionVersion
+              : Number.isInteger(token.sessionVersion)
+                ? Number(token.sessionVersion)
+                : undefined,
+          realUserId: (token.realUserId as string | null | undefined) ?? null,
+          sessionId: (token.sessionId as string | null | undefined) ?? null,
+        },
+        { touchActivity: false }
+      );
+      if (!valid.ok) {
+        console.warn("[auth] Session rejected:", valid.reason);
+        session.userId = "";
+        session.role = "SALESPERSON";
+        session.clientId = null;
+        session.clientMode = "team";
+        session.alsoSells = false;
+        session.sessionId = null;
+        session.realUserId = null;
+        session.realUserName = null;
+        session.isImpersonating = false;
+        if (session.user) {
+          session.user.id = "";
+          session.user.email = null;
+          session.user.name = null;
+        }
+        return session;
+      }
       session.userId = token.userId as string;
       session.role =
         ((token.role as string) === "AGENCY_ADMIN" ? "SUPER_ADMIN" : token.role) as UserRole;
       session.clientId = (token.clientId as string | null) ?? null;
       session.clientMode = (token.clientMode as ClientMode | undefined) ?? "team";
       session.alsoSells = Boolean(token.alsoSells);
+      session.sessionVersion = valid.claims.sessionVersion;
+      session.sessionId = valid.claims.sessionId ?? null;
+      session.mfaEnrolmentRequired = Boolean(token.mfaEnrolmentRequired);
       session.realUserId = (token.realUserId as string | null | undefined) ?? null;
       session.realUserName = (token.realUserName as string | null | undefined) ?? null;
       session.isImpersonating = Boolean(token.realUserId);

@@ -25,10 +25,10 @@ function entityHref(rec: SalesActionRecommendation): string {
     (rec.sourceEntityType === "deal" ? rec.sourceEntityId : null);
   if (dealId) return `/sales/deals/${dealId}`;
   const id = rec.customer?.leadId ?? rec.sourceEntityId;
-  if (!id) return "/sales/call-now";
+  if (!id) return "/sales/leads";
   const source = String(rec.customer?.source ?? "");
   if (source.includes("WHATSAPP")) return `/sales/inbox?lead=${id}`;
-  return `/sales/call-now?lead=${id}`;
+  return `/sales/leads?lead=${id}`;
 }
 
 export function FocusModeOverlay({

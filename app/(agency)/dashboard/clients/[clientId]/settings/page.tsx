@@ -9,6 +9,7 @@ import { ClientSettingsClient } from "@/components/client-settings/ClientSetting
 import { fetchRoundRobinEligibleUsers } from "@/lib/auth/sales-capabilities";
 import { isTemporaryWhatsAppFeatureEnabled } from "@/lib/whatsapp/feature-flags";
 import { getDocumentsModuleAccess } from "@/lib/documents/settings";
+import { sanitizeClientSecrets } from "@/lib/integrations/token-vault";
 
 export const dynamic = "force-dynamic";
 
@@ -81,7 +82,7 @@ export default async function ClientSettingsPage({
       >
         <ClientSettingsClient
           clientId={params.clientId}
-          initialClient={client as Record<string, unknown>}
+          initialClient={sanitizeClientSecrets(client as Record<string, unknown>)}
           initialSalespeople={(salespeople ?? []) as never}
           initialManagers={(managers ?? []) as never}
           initialInstantForms={(instantForms ?? []) as { id: string; name: string; status: string }[]}

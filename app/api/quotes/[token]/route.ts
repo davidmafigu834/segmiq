@@ -6,9 +6,9 @@ import { logStatusChanged } from "@/lib/lead-events";
 import { proposalDealValueUpdate } from "@/lib/deal-value";
 import { logQuotationEvent } from "@/lib/quotations/events";
 import { recordCustomerView } from "@/lib/quotations/engagement";
-import { computeQuotationTotals } from "@/lib/quotations/totals";
 import { computeCustomerSelectedTotals } from "@/lib/quotations/selected-totals";
 import { notifyQuotationAlert } from "@/lib/quotations/notify";
+import { buildPublicQuotationPayload, PUBLIC_QUOTATION_ACTION_SELECT, PUBLIC_QUOTATION_FETCH_SELECT } from "@/lib/quotations/public-payload";
 import type { QuotationLineItemInput } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ async function loadByToken(token: string) {
   const supabase = createAdminClient();
   const { data: quote } = await supabase
     .from("quotations")
-    .select("*")
+    .select(PUBLIC_QUOTATION_ACTION_SELECT)
     .eq("public_token", token)
     .maybeSingle();
   return { supabase, quote };
@@ -62,7 +62,12 @@ async function setDealNextAction(
 
 /** Public quotation fetch — marks as viewed on first genuine customer open. */
 export async function GET(req: Request, { params }: { params: { token: string } }) {
-  const { supabase, quote } = await loadByToken(params.token);
+  const supabase = createAdminClient();
+  const { data: quote } = await supabase
+    .from("quotations")
+    .select(PUBLIC_QUOTATION_FETCH_SELECT)
+    .eq("public_token", params.token)
+    .maybeSingle();
   if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (quote.link_revoked_at) {
     return NextResponse.json({ error: "This link is no longer active" }, { status: 410 });
@@ -126,18 +131,11 @@ export async function GET(req: Request, { params }: { params: { token: string } 
       .maybeSingle(),
   ]);
 
-  const lineInputs = (items ?? []) as QuotationLineItemInput[];
-  const totals = computeQuotationTotals(lineInputs, {
-    fallbackTaxRate: Number(quote.tax_rate) || 0,
-    otherAmount: Number(quote.other_amount) || 0,
-    discountPercent: Number(quote.discount_percent) || 0,
-  });
-
   return NextResponse.json({
-    quotation: {
-      ...quote,
-      items: items ?? [],
-      computed: totals,
+    quotation: buildPublicQuotationPayload({
+      token: params.token,
+      quote: quote as Record<string, unknown>,
+      items: (items ?? []) as Array<Record<string, unknown>>,
       brand: {
         companyName: (client?.name as string | null) || "Company",
         logoUrl: (client?.logo_url as string | null) ?? null,
@@ -159,7 +157,7 @@ export async function GET(req: Request, { params }: { params: { token: string } 
         requireName: Boolean(settings?.require_acceptance_name),
         requireCheckbox: settings?.require_acceptance_checkbox !== false,
       },
-    },
+    }),
   });
 }
 

@@ -20,7 +20,7 @@ test("middleware REST URLs stay scoped to one user or one CRM subscription", () 
   );
 });
 
-test("middleware reads take the first row and fail open on errors or empty results", async () => {
+test("middleware reads take the first row and return null on errors or empty results", async () => {
   const prevUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const prevKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";

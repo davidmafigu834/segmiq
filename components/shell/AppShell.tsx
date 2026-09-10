@@ -102,7 +102,7 @@ export function AppShell({
     if (href === "/sales/dashboard") return pathname === "/sales/dashboard";
     if (href === "/sales/pipeline") return pathname === "/sales/pipeline";
     if (href === "/sales/inbox") return isWhatsAppSalesHubPath(pathname);
-    if (href === "/sales/call-now") return pathname === "/sales/call-now";
+    if (href === "/sales/leads") return pathname === "/sales/leads" || pathname === "/sales/call-now";
     if (href === "/sales/recover") return pathname === "/sales/recover";
     if (href === "/sales/followups") return pathname.startsWith("/sales/followups");
     if (href === "/sales/reports") return pathname.startsWith("/sales/reports");

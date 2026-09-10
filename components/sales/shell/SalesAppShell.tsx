@@ -310,7 +310,7 @@ function SalesAppShellInner({
             onAddLead={() => openAddHubSheet()}
             onLogCall={() => {
               if (onLogCall) onLogCall();
-              else router.push("/sales/call-now");
+              else router.push("/sales/leads");
             }}
             onCreateQuote={() => router.push(realEstate ? "/sales/listings" : "/sales/quotes")}
             onSchedule={() => router.push("/sales/calendar")}

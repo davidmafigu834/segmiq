@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageClientTeam } from "@/lib/auth/permissions";
+import { bumpSessionVersion, deactivateOrgUser } from "@/lib/auth/offboard";
 import { migrateUncontactedLeads } from "@/lib/leads/migrateUncontactedLeads";
 import { getNextRoundRobinOrder } from "@/lib/auth/sales-capabilities";
 import { normalizeToE164 } from "@/lib/phone-validate";
@@ -27,12 +28,6 @@ const patchSchema = z
     { message: "Provide is_active, role, and/or also_sells" }
   );
 
-async function bumpSessionVersion(supabase: ReturnType<typeof createAdminClient>, userId: string) {
-  const { data: row } = await supabase.from("users").select("session_version").eq("id", userId).maybeSingle();
-  const next = Number((row as { session_version?: number } | null)?.session_version ?? 0) + 1;
-  await supabase.from("users").update({ session_version: next }).eq("id", userId);
-}
-
 /** Refresh the active browser session when also_sells changes for the signed-in (or impersonated) user. */
 async function refreshAlsoSellsInSession(
   session: {
@@ -40,6 +35,8 @@ async function refreshAlsoSellsInSession(
     role: UserRole;
     clientId: string | null;
     clientMode?: ClientMode;
+    sessionId?: string | null;
+    sessionVersion?: number;
     isImpersonating?: boolean;
     realUserId?: string | null;
     realUserName?: string | null;
@@ -56,13 +53,31 @@ async function refreshAlsoSellsInSession(
     .eq("id", versionUserId)
     .maybeSingle();
 
+  const sessionVersion = Number(
+    (versionRow as { session_version?: number } | null)?.session_version ?? 0
+  );
+  let sessionId = session.sessionId ?? null;
+  if (!sessionId) {
+    const { createUserSession } = await import("@/lib/auth/user-sessions");
+    const row = await createUserSession({
+      userId: session.userId,
+      clientId: session.clientId,
+      role: session.role,
+      sessionType: "WEB",
+      sessionVersion,
+      metadata: { reason: "also_sells_refresh" },
+    });
+    sessionId = row.id;
+  }
+
   await setSessionToken({
     userId: session.userId,
     role: session.role,
     clientId: session.clientId,
     clientMode: session.clientMode ?? "team",
     alsoSells,
-    sessionVersion: Number((versionRow as { session_version?: number } | null)?.session_version ?? 0),
+    sessionVersion,
+    sessionId,
     email: session.user?.email ?? null,
     name: session.user?.name ?? "User",
     realUserId: session.realUserId ?? null,
@@ -268,6 +283,11 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
   return NextResponse.json({ ok: true, migration, requiresReauth });
 }
 
+/**
+ * SECURITY:
+ * Organisation employee "remove" is soft-offboarding (INACTIVE + session revoke),
+ * not hard delete. Historical leads/deals/activities keep referencing the user.
+ */
 export async function DELETE(_req: Request, { params }: { params: { clientId: string; userId: string } }) {
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
@@ -277,14 +297,10 @@ export async function DELETE(_req: Request, { params }: { params: { clientId: st
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  if (params.userId === session.userId) {
-    return NextResponse.json({ error: "You cannot remove yourself" }, { status: 400 });
-  }
-
   const supabase = createAdminClient();
   const { data: u } = await supabase
     .from("users")
-    .select("id, role, client_id, also_sells")
+    .select("id, role, client_id, also_sells, is_active")
     .eq("id", params.userId)
     .maybeSingle();
   if (!u || u.client_id !== params.clientId) {
@@ -296,22 +312,10 @@ export async function DELETE(_req: Request, { params }: { params: { clientId: st
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (role === "CLIENT_MANAGER") {
-    const { count } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true })
-      .eq("client_id", params.clientId)
-      .eq("role", "CLIENT_MANAGER")
-      .eq("is_active", true);
-    if ((count ?? 0) <= 1) {
-      return NextResponse.json({ error: "At least one company manager is required." }, { status: 400 });
-    }
-  }
-
   const actorName = session.user?.name ?? "Manager";
   const actor = { id: session.userId, name: actorName, role: session.role ?? "UNKNOWN" };
 
-  if (role === "SALESPERSON" || Boolean(u.also_sells)) {
+  if ((role === "SALESPERSON" || Boolean(u.also_sells)) && u.is_active !== false) {
     await migrateUncontactedLeads(supabase, {
       clientId: params.clientId,
       fromUserId: params.userId,
@@ -323,7 +327,15 @@ export async function DELETE(_req: Request, { params }: { params: { clientId: st
     });
   }
 
-  const { error } = await supabase.from("users").delete().eq("id", params.userId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  const result = await deactivateOrgUser({
+    supabase,
+    clientId: params.clientId,
+    userId: params.userId,
+    actorUserId: session.userId,
+  });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  return NextResponse.json({ ok: true, deactivated: true, requiresReauth: true });
 }

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FacebookQualificationPanel } from "./FacebookQualificationPanel";
 
 export type FacebookClientSnapshot = {
-  fb_access_token: string | null;
+  fb_connected: boolean;
   fb_access_token_expires_at: string | null;
   fb_ad_account_id: string | null;
   fb_page_id: string | null;
@@ -20,7 +20,7 @@ export type FacebookClientSnapshot = {
 /** Stable key so we re-sync `snap` when RSC passes new `initial` after OAuth (object reference may not change). */
 function facebookInitialSignature(i: FacebookClientSnapshot): string {
   return [
-    i.fb_access_token ?? "",
+    String(i.fb_connected),
     i.fb_ad_account_id ?? "",
     i.fb_page_id ?? "",
     i.fb_form_id ?? "",
@@ -126,7 +126,7 @@ export function FacebookConnectPanel({
 
   const initialSig = useMemo(() => facebookInitialSignature(initial), [initial]);
 
-  const hasToken = Boolean(snap.fb_access_token);
+  const hasToken = Boolean(snap.fb_connected);
   const hasAdAccount = Boolean(snap.fb_ad_account_id);
   const hasPage = Boolean(snap.fb_page_id);
   const hasForm = Boolean(snap.fb_form_id);
@@ -380,7 +380,7 @@ export function FacebookConnectPanel({
       return;
     }
     setSnap({
-      fb_access_token: null,
+      fb_connected: false,
       fb_access_token_expires_at: null,
       fb_ad_account_id: null,
       fb_page_id: null,

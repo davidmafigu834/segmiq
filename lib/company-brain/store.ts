@@ -724,6 +724,8 @@ export async function loadApprovedChunks(
 }
 
 export async function searchApprovedChunks(clientId: string, query: string, limit = 6): Promise<KnowledgeChunk[]> {
+  // SECURITY: Autonomous Agent may only retrieve APPROVED knowledge for this client.
+  // DRAFT / ARCHIVED / OUTDATED documents are never Agent-readable via this path.
   const supabase = createAdminClient();
   const { data: approved } = await supabase
     .from("company_brain_knowledge_documents")

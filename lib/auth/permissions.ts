@@ -36,6 +36,67 @@ type AuthSession = {
   alsoSells?: boolean | null;
 };
 
+/**
+ * Pure lead ACL after the row is loaded (Phase 6.1).
+ * Tenant mismatch fails closed before assignment checks.
+ */
+export function evaluateLeadModifyAccess(
+  session: AuthSession,
+  scope: LeadScope
+):
+  | { allowed: true; lead: LeadScope; userId: string; role: UserRole }
+  | { allowed: false; reason: string; status: 401 | 403 | 404 } {
+  if (!session?.userId) {
+    return { allowed: false, reason: "Unauthorized", status: 401 };
+  }
+  if (session.role === "SUPER_ADMIN") {
+    return {
+      allowed: true,
+      lead: scope,
+      userId: session.userId,
+      role: session.role,
+    };
+  }
+  if (session.clientId !== scope.client_id) {
+    return { allowed: false, reason: "Not found", status: 404 };
+  }
+  if (session.role === "CLIENT_MANAGER" && !canActAsSalesperson(session)) {
+    return { allowed: false, reason: CLIENT_MANAGER_READ_ONLY, status: 403 };
+  }
+  if (canActAsSalesperson(session)) {
+    if (scope.assigned_to_id !== session.userId) {
+      return { allowed: false, reason: "Forbidden", status: 403 };
+    }
+    return {
+      allowed: true,
+      lead: scope,
+      userId: session.userId,
+      role: session.role as UserRole,
+    };
+  }
+  return { allowed: false, reason: "Forbidden", status: 403 };
+}
+
+export function evaluateLeadReadAccess(
+  session: AuthSession,
+  scope: LeadScope,
+  assignmentMode?: string | null
+): { ok: true } | { ok: false; status: 401 | 404 } {
+  if (!session?.userId) return { ok: false, status: 401 };
+  if (session.role === "SUPER_ADMIN") return { ok: true };
+  if (session.clientId !== scope.client_id) return { ok: false, status: 404 };
+  if (session.role === "CLIENT_MANAGER") return { ok: true };
+  if (canActAsSalesperson(session)) {
+    if (scope.assigned_to_id === session.userId) return { ok: true };
+    if (!scope.assigned_to_id && scope.client_id === session.clientId) {
+      const mode = assignmentMode ?? "direct";
+      if (mode === "pool" || mode === "direct") return { ok: true };
+    }
+    return { ok: false, status: 404 };
+  }
+  return { ok: false, status: 404 };
+}
+
 export function canReassignLeads(session: {
   userId?: string | null;
   role?: UserRole | null;
@@ -47,7 +108,8 @@ export function canReassignLeads(session: {
   return false;
 }
 
-/** Invite, deactivate, or remove salespeople on a client team. */
+/** Invite, deactivate, or remove salespeople on a client team.
+ * Maps to permission `team.manage` (see lib/auth/rbac). */
 export function canManageClientTeam(session: {
   userId?: string | null;
   role?: UserRole | null;
@@ -63,8 +125,8 @@ export async function canModifyLead(
   | { allowed: true; lead: LeadScope; userId: string; role: UserRole }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
 > {
-  const auth = req ? await getAuthFromRequest(req) : null;
-  const session = (auth ?? (await getServerSession(authOptions))) as AuthSession | null;
+  // Never fall through to getServerSession after MFA/auth denial.
+  const session = (await getAuthFromRequest(req)) as AuthSession | null;
   if (!session?.userId) {
     return { allowed: false, reason: "Unauthorized", status: 401 };
   }
@@ -85,22 +147,7 @@ export async function canModifyLead(
     assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
   };
 
-  if (session.role === "CLIENT_MANAGER" && !canActAsSalesperson(session)) {
-    return { allowed: false, reason: CLIENT_MANAGER_READ_ONLY, status: 403 };
-  }
-
-  if (session.role === "SUPER_ADMIN") {
-    return { allowed: true, lead: scope, userId: session.userId, role: session.role };
-  }
-
-  if (canActAsSalesperson(session)) {
-    if (scope.assigned_to_id !== session.userId) {
-      return { allowed: false, reason: "Forbidden", status: 403 };
-    }
-    return { allowed: true, lead: scope, userId: session.userId, role: session.role as UserRole };
-  }
-
-  return { allowed: false, reason: "Forbidden", status: 403 };
+  return evaluateLeadModifyAccess(session, scope);
 }
 
 /** Client-scoped resource access: super admin can touch any client; everyone else only their own. */
@@ -118,7 +165,8 @@ export function canManageClientProfile(role: string | null | undefined): boolean
   return role === "SUPER_ADMIN" || role === "CLIENT_MANAGER" || role === "SALESPERSON";
 }
 
-/** SegmiQ Cloud settings, billing, team invites: managers and salespeople on their client; super admin on any. */
+/** SegmiQ Cloud settings & team admin: managers on their client; super admin on any.
+ * SECURITY: salespeople must not manage Cloud team or company settings. */
 export function canManageCloudSettings(
   session: {
     userId?: string | null;
@@ -129,10 +177,7 @@ export function canManageCloudSettings(
 ): boolean {
   if (!session?.userId) return false;
   if (session.role === "SUPER_ADMIN") return true;
-  if (
-    (session.role === "CLIENT_MANAGER" || session.role === "SALESPERSON")
-    && session.clientId === clientId
-  ) {
+  if (session.role === "CLIENT_MANAGER" && session.clientId === clientId) {
     return true;
   }
   return false;
@@ -146,8 +191,8 @@ export async function canReadLead(
   leadId: string,
   req?: Request
 ): Promise<{ ok: true } | { ok: false; status: 401 | 404 }> {
-  const auth = req ? await getAuthFromRequest(req) : null;
-  const session = (auth ?? (await getServerSession(authOptions))) as AuthSession | null;
+  // Never fall through to getServerSession after MFA/auth denial.
+  const session = (await getAuthFromRequest(req)) as AuthSession | null;
   if (!session?.userId) {
     return { ok: false, status: 401 };
   }
@@ -163,16 +208,20 @@ export async function canReadLead(
     return { ok: false, status: 404 };
   }
 
+  const scope: LeadScope = {
+    client_id: lead.client_id as string,
+    assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
+  };
+
   if (session.role === "SUPER_ADMIN") {
     return { ok: true };
   }
 
-  // Company oversight is broader than the manager's optional personal sales
-  // queue. `alsoSells` adds write capabilities but must never narrow reads.
+  if (session.clientId !== lead.client_id) {
+    return { ok: false, status: 404 };
+  }
+
   if (session.role === "CLIENT_MANAGER") {
-    if (lead.client_id !== session.clientId) {
-      return { ok: false, status: 404 };
-    }
     return { ok: true };
   }
 
@@ -180,19 +229,17 @@ export async function canReadLead(
     if (lead.assigned_to_id === session.userId) {
       return { ok: true };
     }
-    if (
-      !lead.assigned_to_id &&
-      lead.client_id === session.clientId
-    ) {
+    if (!lead.assigned_to_id && lead.client_id === session.clientId) {
       const { data: client } = await supabase
         .from("clients")
         .select("assignment_mode")
         .eq("id", lead.client_id as string)
         .maybeSingle();
-      const mode = (client?.assignment_mode as string | null) ?? "direct";
-      if (mode === "pool" || mode === "direct") {
-        return { ok: true };
-      }
+      return evaluateLeadReadAccess(
+        session,
+        scope,
+        (client?.assignment_mode as string | null) ?? "direct"
+      );
     }
     return { ok: false, status: 404 };
   }

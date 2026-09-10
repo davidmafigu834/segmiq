@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAgencyAdmin } from "@/lib/auth/permissions";
-import { getMarketingAccessToken } from "@/lib/facebook/campaigns";
 import { fbLog } from "@/lib/facebook/log";
+import { loadClientFbGraphTokens } from "@/lib/facebook/client-tokens";
 
 export async function POST(req: Request) {
   const check = await requireAgencyAdmin();
@@ -24,25 +24,12 @@ export async function POST(req: Request) {
 
   const normalized = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
 
-  const supabase = createAdminClient();
-  const { data: client, error: cErr } = await supabase
-    .from("clients")
-    .select("fb_access_token, fb_user_access_token")
-    .eq("id", clientId)
-    .maybeSingle();
-
-  if (
-    cErr ||
-    !getMarketingAccessToken({
-      id: clientId,
-      fb_access_token: (client?.fb_access_token as string | null) ?? null,
-      fb_user_access_token: (client?.fb_user_access_token as string | null) ?? null,
-      fb_ad_account_id: null,
-    })
-  ) {
+  const { pageToken, userToken } = await loadClientFbGraphTokens(clientId);
+  if (!(userToken || pageToken)) {
     return NextResponse.json({ error: "Not connected" }, { status: 400 });
   }
 
+  const supabase = createAdminClient();
   const { error: upErr } = await supabase
     .from("clients")
     .update({

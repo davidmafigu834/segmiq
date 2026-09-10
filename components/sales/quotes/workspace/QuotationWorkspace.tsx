@@ -874,7 +874,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
             </div>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <Link
-                href={`/sales/leads?leadId=${payload.customer.leadId}`}
+                href={`/sales/leads?lead=${payload.customer.leadId}`}
                 className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full bg-sales-neutral-100 px-2.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
               >
                 <span className="truncate">{payload.customer.name}</span>
@@ -1553,7 +1553,7 @@ function CommercialRail({
 
       <RailCard title="Linked Records">
         <div className="space-y-2 text-[12.5px]">
-          <LinkRow label="Customer" value={payload.customer.name} href={`/sales/leads?leadId=${payload.customer.leadId}`} />
+          <LinkRow label="Customer" value={payload.customer.name} href={`/sales/leads?lead=${payload.customer.leadId}`} />
           {payload.deal ? (
             <LinkRow label="Deal" value={payload.deal.title} href={`/sales/deals/${payload.deal.id}`} />
           ) : (

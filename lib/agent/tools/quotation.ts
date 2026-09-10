@@ -366,6 +366,21 @@ export async function executeSendQuotation(
     return toolFailure("Quotation not found for this customer.");
   }
 
+  // Idempotent: already sent → do not re-send WhatsApp.
+  if (full.status === "sent" || full.status === "viewed" || full.status === "accepted") {
+    const existingToken = (full.public_token as string | null) ?? null;
+    const link = existingToken ? `${getPublicBaseUrl()}/quote/${existingToken}` : null;
+    return toolSuccess(
+      {
+        quotation_id: full.id,
+        already_sent: true,
+        public_link: link,
+        sent_to_customer: true,
+      },
+      { type: "quotation", id: full.id as string }
+    );
+  }
+
   const evaluation = await evaluateQuotation(ctx.clientId, full);
   const connection = await getSafeWhatsAppConnection(ctx.clientId);
 
@@ -411,11 +426,31 @@ export async function executeSendQuotation(
   const totalLabel = `${currency} ${evaluation.total.toLocaleString()}`;
   const waMessage = `Hi ${customerFirst}, please find your quotation ${quoteNumber} from ${companyName} — total ${totalLabel}. View and respond here: ${link}`;
 
-  await supabase
+  // Claim send with conditional update to reduce double-send races.
+  const { data: claimed, error: claimErr } = await supabase
     .from("quotations")
     .update({ public_token: publicToken, status: "sent", sent_at: sentAt, updated_at: sentAt })
     .eq("id", input.quotation_id)
-    .eq("client_id", ctx.clientId);
+    .eq("client_id", ctx.clientId)
+    .in("status", ["draft", "approved", "pending_approval"])
+    .select("id")
+    .maybeSingle();
+
+  if (claimErr || !claimed) {
+    // Another worker may have sent concurrently — treat as success if now sent.
+    const again = await loadQuotationWithItems(supabase, input.quotation_id);
+    if (again && (again.status === "sent" || again.status === "viewed" || again.status === "accepted")) {
+      return toolSuccess(
+        {
+          quotation_id: again.id,
+          already_sent: true,
+          sent_to_customer: true,
+        },
+        { type: "quotation", id: again.id as string }
+      );
+    }
+    return toolFailure("Could not claim quotation for send (status changed).");
+  }
 
   const sendResult = await sendCanonicalWhatsAppText({
     clientId: ctx.clientId,

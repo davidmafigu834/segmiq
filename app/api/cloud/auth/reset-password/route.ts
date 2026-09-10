@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPassword } from "@/lib/password";
+import { bumpSessionVersion } from "@/lib/auth/offboard";
+import { recordSecurityEvent } from "@/lib/auth/security-events";
 
 export const dynamic = "force-dynamic";
 
@@ -51,21 +53,9 @@ export async function POST(req: Request) {
 
   const hashed = await hashPassword(password);
 
-  const { data: userRow } = await supabase
-    .from("users")
-    .select("session_version")
-    .eq("id", typedToken.user_id)
-    .maybeSingle();
-
-  const currentVersion =
-    (userRow as { session_version?: number } | null)?.session_version ?? 0;
-
   const { error: updateErr } = await supabase
     .from("users")
-    .update({
-      password: hashed,
-      session_version: currentVersion + 1,
-    })
+    .update({ password: hashed, password_changed_at: new Date().toISOString() })
     .eq("id", typedToken.user_id);
 
   if (updateErr) {
@@ -73,14 +63,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to reset password" }, { status: 500 });
   }
 
-  const { error: tokenErr } = await supabase
-    .from("password_reset_tokens")
-    .update({ used: true })
-    .eq("token", token);
+  await bumpSessionVersion(supabase, typedToken.user_id, { revokeReason: "PASSWORD_RESET" });
+  void recordSecurityEvent({
+    eventType: "PASSWORD_RESET",
+    userId: typedToken.user_id,
+  });
 
-  if (tokenErr) {
-    console.error("[cloud/reset-password] token mark-used failed:", tokenErr);
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("email")
+    .eq("id", typedToken.user_id)
+    .maybeSingle();
+  if (userRow?.email) {
+    const { sendSecurityNotification } = await import("@/lib/email/templates/security-alert");
+    void sendSecurityNotification({ to: String(userRow.email), kind: "password_reset" });
   }
+
+  await supabase.from("password_reset_tokens").update({ used: true }).eq("token", token);
 
   return NextResponse.json({ success: true });
 }

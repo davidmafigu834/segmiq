@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { secureSignOut } from "@/components/auth/SessionLifecycle";
 import {
   UserCircle, CreditCard, Users, BarChart2,
   HelpCircle, MessageCircle, ChevronRight, LogOut, Tag,
@@ -172,7 +173,7 @@ export default function MorePage() {
 
       <button
         type="button"
-        onClick={() => void signOut({ callbackUrl: "/cloud/login" })}
+        onClick={() => void secureSignOut("/cloud/login")}
         className="cloud-card mb-6 flex h-[52px] w-full items-center justify-center gap-2 border-red-200/70 text-[14px] font-bold text-[var(--cloud-danger)]"
       >
         <LogOut size={16} />

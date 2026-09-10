@@ -41,13 +41,16 @@ export function courseEventForPathname(pathname: string): CourseEventName | null
   if (
     pathname === "/sales/pipeline" ||
     pathname.startsWith("/sales/pipeline/") ||
-    pathname === "/sales/leads" ||
-    pathname.startsWith("/sales/leads/") ||
     pathname.startsWith("/sales/deals/")
   ) {
     return "NAVIGATED_TO_PIPELINE";
   }
-  if (pathname === "/sales/call-now" || pathname.startsWith("/sales/call-now/")) {
+  if (
+    pathname === "/sales/leads" ||
+    pathname.startsWith("/sales/leads/") ||
+    pathname === "/sales/call-now" ||
+    pathname.startsWith("/sales/call-now/")
+  ) {
     return "NAVIGATED_TO_LEADS";
   }
   if (pathname === "/sales/tasks" || pathname.startsWith("/sales/tasks/")) {

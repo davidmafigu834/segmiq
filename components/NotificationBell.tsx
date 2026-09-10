@@ -124,7 +124,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
       return `/sales/inbox?lead=${n.lead_id}`;
     }
     if (n.lead_id) {
-      if (role === "SALESPERSON") return `/sales/call-now?lead=${n.lead_id}`;
+      if (role === "SALESPERSON") return `/sales/leads?lead=${n.lead_id}`;
       if (role === "CLIENT_MANAGER") return `/client/leads/pipeline?lead=${n.lead_id}`;
       return `/dashboard/leads?lead=${n.lead_id}`;
     }

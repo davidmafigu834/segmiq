@@ -348,13 +348,17 @@ export async function getWebsiteIntegrationState(clientId: string) {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("clients")
-    .select("website_integration_api_key, website_integration_key_rotated_at")
+    .select(
+      "website_integration_api_key, website_integration_api_key_hash, website_integration_api_key_prefix, website_integration_key_rotated_at"
+    )
     .eq("id", clientId)
     .maybeSingle();
-  const key = (data?.website_integration_api_key as string | null) ?? null;
+  const legacy = (data?.website_integration_api_key as string | null) ?? null;
+  const hash = (data?.website_integration_api_key_hash as string | null) ?? null;
+  const prefix = (data?.website_integration_api_key_prefix as string | null) ?? null;
   return {
-    hasKey: Boolean(key),
-    masked: maskWebsiteApiKey(key),
+    hasKey: Boolean(hash || legacy),
+    masked: prefix ? `${prefix}••••••••` : maskWebsiteApiKey(legacy),
     rotatedAt: (data?.website_integration_key_rotated_at as string | null) ?? null,
   };
 }

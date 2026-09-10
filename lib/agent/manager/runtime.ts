@@ -19,6 +19,7 @@ import {
   type ResultSet,
 } from "./sessions";
 import { getConfirmation, markConfirmation, versionsStillMatch } from "./confirmations";
+import { evaluateWritePolicy } from "./policy";
 import { isManagerAgentEnabled, type ManagerActor, type ManagerBlock, type ManagerTurnResult } from "./types";
 
 const MAX_TURNS = 6;
@@ -172,7 +173,7 @@ export async function runManagerTurn(opts: {
   }
 
   if (session.pendingConfirmationId && looksLikeCancel(message)) {
-    await markConfirmation(session.pendingConfirmationId, "CANCELLED");
+    await markConfirmation(opts.actor, session.pendingConfirmationId, "CANCELLED");
     await saveSessionState({ sessionId: session.id, pendingConfirmationId: null });
     const reply = "Cancelled. No changes were made.";
     const blocks: ManagerBlock[] = [{ type: "status", kind: "done", message: reply }];
@@ -345,7 +346,7 @@ export async function confirmManagerAction(opts: {
     };
   }
   if (Date.parse(confirmation.expiresAt) < now().getTime()) {
-    await markConfirmation(confirmation.id, "EXPIRED");
+    await markConfirmation(opts.actor, confirmation.id, "EXPIRED");
     return {
       reply: "This preview expired. Ask again to review the current records.",
       blocks: [{ type: "status", kind: "error", message: "This preview expired. Ask again to review the current records." }],
@@ -353,9 +354,9 @@ export async function confirmManagerAction(opts: {
       phase: null,
     };
   }
-  const fresh = await versionsStillMatch(confirmation.entityVersions);
+  const fresh = await versionsStillMatch(confirmation.entityVersions, opts.actor.clientId);
   if (!fresh) {
-    await markConfirmation(confirmation.id, "STALE");
+    await markConfirmation(opts.actor, confirmation.id, "STALE");
     return {
       reply: "The record changed after this preview. Please review the current version.",
       blocks: [{ type: "status", kind: "error", message: "The record changed after this preview. Please review the current version." }],
@@ -363,12 +364,35 @@ export async function confirmManagerAction(opts: {
       phase: null,
     };
   }
+
+  // Re-authorize at execute time — confirmation row alone is not sufficient.
+  const recordCount = Array.isArray(confirmation.args.leadIds)
+    ? (confirmation.args.leadIds as unknown[]).length
+    : 1;
+  const dealId =
+    typeof confirmation.args.dealId === "string" ? confirmation.args.dealId : undefined;
+  const policy = await evaluateWritePolicy({
+    actor: opts.actor,
+    toolName: confirmation.toolName,
+    recordCount,
+    dealId,
+  });
+  if (!policy.allowed) {
+    await markConfirmation(opts.actor, confirmation.id, "CANCELLED");
+    return {
+      reply: policy.reason,
+      blocks: [{ type: "status", kind: "denied", message: policy.reason }],
+      executionId: null,
+      phase: null,
+    };
+  }
+
   const run = await executeConfirmedTool({
     actor: opts.actor,
     toolName: confirmation.toolName,
     args: confirmation.args,
   });
-  await markConfirmation(confirmation.id, run.ok ? "CONFIRMED" : "STALE", run.summary);
+  await markConfirmation(opts.actor, confirmation.id, run.ok ? "CONFIRMED" : "STALE", run.summary);
   const executionId = await persistExecution({
     actor: opts.actor,
     sessionId: "",

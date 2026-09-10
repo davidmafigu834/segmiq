@@ -21,8 +21,11 @@ export async function GET(req: Request, { params }: { params: { executionId: str
   if (!execution) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const clientId = execution.client_id;
-  const inTenant = auth.role === "SUPER_ADMIN" || auth.clientId === clientId;
-  if (!inTenant) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // SECURITY: fail closed + no existence leak across tenants.
+  // Impersonating SUPER_ADMIN uses effective role/clientId from resolveApiAuth.
+  const inTenant =
+    (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) || auth.clientId === clientId;
+  if (!inTenant) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const [{ data: actions }, { data: lead }, { data: escalations }] = await Promise.all([
     supabase

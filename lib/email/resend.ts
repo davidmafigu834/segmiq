@@ -1,12 +1,19 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export type EmailAttachment = {
   filename: string;
   /** Raw file bytes. Resend accepts a Buffer here. */
   content: Buffer;
 };
+
+let resendClient: Resend | null = null;
+
+function getResend(): Resend | null {
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) return null;
+  if (!resendClient) resendClient = new Resend(key);
+  return resendClient;
+}
 
 export async function sendEmail({
   to,
@@ -20,8 +27,16 @@ export async function sendEmail({
   attachments?: EmailAttachment[];
 }): Promise<{ success: boolean; error?: string }> {
   try {
+    const resend = getResend();
+    if (!resend) {
+      return { success: false, error: "RESEND_API_KEY not configured" };
+    }
+    const from = process.env.RESEND_FROM_EMAIL;
+    if (!from) {
+      return { success: false, error: "RESEND_FROM_EMAIL not configured" };
+    }
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL!,
+      from,
       to,
       subject,
       html,

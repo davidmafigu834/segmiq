@@ -105,9 +105,7 @@ export const SALES_NAVIGATION: SalesNavItemConfig[] = [
     mobileSlot: "primary",
     mobileLabel: "Pipeline",
     match: (p) =>
-      exactOrChild(p, "/sales/pipeline") ||
-      exactOrChild(p, "/sales/leads") ||
-      exactOrChild(p, "/sales/deals"),
+      exactOrChild(p, "/sales/pipeline") || exactOrChild(p, "/sales/deals"),
   },
   {
     id: "whatsapp",
@@ -123,11 +121,12 @@ export const SALES_NAVIGATION: SalesNavItemConfig[] = [
   {
     id: "leads",
     label: "Leads",
-    href: "/sales/call-now",
+    href: "/sales/leads",
     icon: "leads",
     section: "sales",
     mobileSlot: "more",
-    match: (p) => exactOrChild(p, "/sales/call-now"),
+    match: (p) =>
+      exactOrChild(p, "/sales/leads") || exactOrChild(p, "/sales/call-now"),
   },
   {
     id: "quotes",

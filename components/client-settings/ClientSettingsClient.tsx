@@ -284,7 +284,7 @@ export function ClientSettingsClient({
   async function saveWhatsAppInbox(data: {
     meta_whatsapp_phone_number_id: string | null;
     meta_whatsapp_display_number: string | null;
-    meta_whatsapp_access_token: string | null;
+    meta_whatsapp_access_token?: string | null;
     assignment_mode: "direct" | "pool" | "round_robin";
     whatsapp_qualification_enabled: boolean;
     whatsapp_instant_form_id: string | null;
@@ -292,7 +292,14 @@ export function ClientSettingsClient({
     setSaving(true);
     try {
       await patchClient(data);
-      setClient((c) => ({ ...c, ...data }));
+      setClient((c) => {
+        const next = { ...c, ...data };
+        if ("meta_whatsapp_access_token" in data) {
+          delete (next as { meta_whatsapp_access_token?: unknown }).meta_whatsapp_access_token;
+          next.meta_whatsapp_token_configured = data.meta_whatsapp_access_token != null && data.meta_whatsapp_access_token !== "";
+        }
+        return next;
+      });
       setToast("Saved WhatsApp inbox settings.");
     } catch (e) {
       setToast(e instanceof Error ? e.message : "Error");
@@ -1274,7 +1281,7 @@ export function ClientSettingsClient({
             clientName={String(client.name ?? "Client")}
             initialPhoneNumberId={String(client.meta_whatsapp_phone_number_id ?? "")}
             initialDisplayNumber={String(client.meta_whatsapp_display_number ?? "")}
-            initialAccessToken={String(client.meta_whatsapp_access_token ?? "")}
+            tokenConfigured={Boolean(client.meta_whatsapp_token_configured)}
             initialAssignmentMode={
               (client.assignment_mode as "direct" | "pool" | "round_robin" | undefined) ?? "round_robin"
             }

@@ -10,7 +10,8 @@ type Props = {
   clientName: string;
   initialPhoneNumberId: string;
   initialDisplayNumber: string;
-  initialAccessToken: string;
+  /** True when a company-specific Meta WA token is stored (value never sent to browser). */
+  tokenConfigured: boolean;
   initialAssignmentMode: "direct" | "pool" | "round_robin";
   initialQualificationEnabled: boolean;
   initialInstantFormId: string | null;
@@ -22,7 +23,8 @@ type Props = {
   onSave: (data: {
     meta_whatsapp_phone_number_id: string | null;
     meta_whatsapp_display_number: string | null;
-    meta_whatsapp_access_token: string | null;
+    /** Omit to leave unchanged; null clears; string replaces. */
+    meta_whatsapp_access_token?: string | null;
     assignment_mode: "direct" | "pool" | "round_robin";
     whatsapp_qualification_enabled: boolean;
     whatsapp_instant_form_id: string | null;
@@ -76,7 +78,7 @@ export function WhatsAppInboxSettings({
   clientName,
   initialPhoneNumberId,
   initialDisplayNumber,
-  initialAccessToken,
+  tokenConfigured,
   initialAssignmentMode,
   initialQualificationEnabled,
   initialInstantFormId,
@@ -89,7 +91,9 @@ export function WhatsAppInboxSettings({
 }: Props) {
   const [phoneNumberId, setPhoneNumberId] = useState(initialPhoneNumberId);
   const [displayNumber, setDisplayNumber] = useState(initialDisplayNumber);
-  const [accessToken, setAccessToken] = useState(initialAccessToken);
+  // SECURITY: write-only — never hydrate with the stored secret.
+  const [accessToken, setAccessToken] = useState("");
+  const [clearToken, setClearToken] = useState(false);
   const [assignmentMode, setAssignmentMode] = useState(initialAssignmentMode);
   const [qualificationEnabled, setQualificationEnabled] = useState(initialQualificationEnabled);
   const [instantFormId, setInstantFormId] = useState(initialInstantFormId ?? "");
@@ -104,7 +108,8 @@ export function WhatsAppInboxSettings({
     () =>
       phoneNumberId.trim() !== initialPhoneNumberId.trim() ||
       displayNumber.trim() !== initialDisplayNumber.trim() ||
-      accessToken.trim() !== initialAccessToken.trim() ||
+      Boolean(accessToken.trim()) ||
+      clearToken ||
       assignmentMode !== initialAssignmentMode ||
       qualificationEnabled !== initialQualificationEnabled ||
       (instantFormId && publishedForms.some((f) => f.id === instantFormId) ? instantFormId : null) !==
@@ -115,7 +120,7 @@ export function WhatsAppInboxSettings({
       displayNumber,
       initialDisplayNumber,
       accessToken,
-      initialAccessToken,
+      clearToken,
       assignmentMode,
       initialAssignmentMode,
       qualificationEnabled,
@@ -257,14 +262,33 @@ export function WhatsAppInboxSettings({
             autoComplete="off"
             className="mt-1 w-full rounded-md border border-border bg-surface-card px-3 py-2 font-mono text-sm"
             value={accessToken}
-            onChange={(e) => setAccessToken(e.target.value)}
-            placeholder="Leave blank to use platform token from Vercel"
+            onChange={(e) => {
+              setAccessToken(e.target.value);
+              setClearToken(false);
+            }}
+            placeholder={
+              tokenConfigured
+                ? "Token saved — paste a new value to replace"
+                : "Leave blank to use platform token from Vercel"
+            }
           />
           <p className="mt-1 text-xs text-ink-secondary">
             Only needed if this company&apos;s WhatsApp Business Account uses its own System User token. Otherwise
             set <code className="font-mono">META_WHATSAPP_ACCESS_TOKEN</code> once in Vercel for all clients on
-            your Meta app.
+            your Meta app. Stored tokens are never shown in the browser.
           </p>
+          {tokenConfigured ? (
+            <button
+              type="button"
+              className="mt-2 text-xs text-ink-secondary underline"
+              onClick={() => {
+                setAccessToken("");
+                setClearToken(true);
+              }}
+            >
+              Remove company token (use platform token)
+            </button>
+          ) : null}
         </label>
 
         <fieldset className="space-y-3">
@@ -349,16 +373,21 @@ export function WhatsAppInboxSettings({
           type="button"
           className="btn-primary"
           disabled={saving || !dirty}
-          onClick={() =>
-            void onSave({
+          onClick={() => {
+            const payload: Parameters<Props["onSave"]>[0] = {
               meta_whatsapp_phone_number_id: phoneNumberId.trim() || null,
               meta_whatsapp_display_number: displayNumber.trim() || null,
-              meta_whatsapp_access_token: accessToken.trim() || null,
               assignment_mode: assignmentMode,
               whatsapp_qualification_enabled: qualificationEnabled,
               whatsapp_instant_form_id: resolvedInstantFormId || null,
-            })
-          }
+            };
+            if (clearToken) {
+              payload.meta_whatsapp_access_token = null;
+            } else if (accessToken.trim()) {
+              payload.meta_whatsapp_access_token = accessToken.trim();
+            }
+            void onSave(payload);
+          }}
         >
           Save WhatsApp settings
         </button>

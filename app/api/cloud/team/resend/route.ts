@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageCloudSettings } from "@/lib/auth/permissions";
+import { bumpSessionVersion } from "@/lib/auth/offboard";
 import { hashPassword } from "@/lib/password";
 import { Resend } from "resend";
 
@@ -66,10 +67,13 @@ export async function POST(req: Request) {
   const tempPassword = randomPassword();
   const hashedPw = await hashPassword(tempPassword);
 
+  const nextSv = await bumpSessionVersion(supabase, userId);
+
   const { error: updateErr } = await supabase
     .from("users")
-    .update({ password: hashedPw })
-    .eq("id", userId);
+    .update({ password: hashedPw, session_version: nextSv })
+    .eq("id", userId)
+    .eq("client_id", clientId);
 
   if (updateErr) {
     console.error("[cloud/team/resend] password update:", updateErr);

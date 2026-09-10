@@ -98,7 +98,7 @@ export default async function SalesPipelinePage() {
             notificationRole={session.role}
             userName={session.user?.name ?? "Sales"}
             embedded
-            inquiryBaseHref="/sales/call-now"
+            inquiryBaseHref="/sales/leads"
           />
         </PipelinePageShell>
       </SalesLayout>

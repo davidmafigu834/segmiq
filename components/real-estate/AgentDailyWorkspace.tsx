@@ -114,7 +114,7 @@ export function AgentDailyWorkspace({
             value: String(data.summary.newInquiries),
             supporting: "Today",
             icon: "enquiries",
-            href: "/sales/call-now",
+            href: "/sales/leads",
           }}
         />
         <KpiCard

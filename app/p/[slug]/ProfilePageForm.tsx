@@ -82,10 +82,12 @@ const DEFAULT_STEPS: FormStepDef[] = [
 
 export function ProfilePageForm({
   clientId,
+  profileSlug,
   ctaText,
   formSteps,
 }: {
   clientId: string;
+  profileSlug: string;
   accentColor: string;
   ctaText: string;
   formSteps: FormStepDef[];
@@ -131,7 +133,7 @@ export function ProfilePageForm({
       const res = await fetch("/api/public/submit-lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, formData }),
+        body: JSON.stringify({ profileSlug, formData }),
       });
       if (res.ok) {
         setSubmitName(values["name"] ?? "");

@@ -28,6 +28,93 @@ function cloudRewrites(host) {
   ];
 }
 
+function r2ConnectSrc() {
+  const raw = process.env.CLOUDFLARE_R2_PUBLIC_URL?.trim();
+  if (!raw) return "https://*.r2.dev https://*.r2.cloudflarestorage.com";
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return "https://*.r2.dev https://*.r2.cloudflarestorage.com";
+  }
+}
+
+function supabaseConnectSrc() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  if (!raw) return "https://*.supabase.co";
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return "https://*.supabase.co";
+  }
+}
+
+function buildCsp() {
+  const appDomain = (process.env.NEXT_PUBLIC_APP_DOMAIN || "segmiq.com")
+    .replace(/^https?:\/\//i, "")
+    .split("/")[0]
+    .split(":")[0];
+  const connect = [
+    "'self'",
+    supabaseConnectSrc(),
+    r2ConnectSrc(),
+    "https://graph.facebook.com",
+    "https://www.facebook.com",
+    `https://*.${appDomain}`,
+    `https://${appDomain}`,
+  ].join(" ");
+  const img = [
+    "'self'",
+    "data:",
+    "blob:",
+    "https://*.supabase.co",
+    "https://*.fbcdn.net",
+    "https://scontent.xx.fbcdn.net",
+    r2ConnectSrc(),
+    "https://images.unsplash.com",
+  ].join(" ");
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'self'",
+    "form-action 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    `img-src ${img}`,
+    "font-src 'self' data:",
+    `connect-src ${connect}`,
+    "worker-src 'self' blob:",
+    "media-src 'self' blob:",
+    "report-uri /api/security/csp-report",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
+function securityHeaders() {
+  const isProd = process.env.NODE_ENV === "production";
+  const enforceCsp = process.env.CSP_ENFORCE === "true";
+  const headers = [
+    { key: "X-Content-Type-Options", value: "nosniff" },
+    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    { key: "X-Frame-Options", value: "SAMEORIGIN" },
+    {
+      key: "Permissions-Policy",
+      value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), interest-cohort=()",
+    },
+    {
+      key: enforceCsp ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only",
+      value: buildCsp(),
+    },
+  ];
+  if (isProd) {
+    headers.push({
+      key: "Strict-Transport-Security",
+      value: "max-age=31536000; includeSubDomains",
+    });
+  }
+  return headers;
+}
+
 const nextConfig = {
   // Avoid webpack splitting issues with Supabase in Server Components / RSC (missing vendor-chunks).
   experimental: {
@@ -74,11 +161,7 @@ const nextConfig = {
     return [
       {
         source: "/(.*)",
-        headers: [
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        ],
+        headers: securityHeaders(),
       },
     ];
   },

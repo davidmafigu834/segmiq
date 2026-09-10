@@ -64,7 +64,7 @@ export function buildGoalRecommendations(input: RecommendationInput): GoalRecomm
     tips.push({
       id: "hot",
       text: `Contact ${input.highIntentUncontacted} high-intent lead${input.highIntentUncontacted === 1 ? "" : "s"} waiting for outreach.`,
-      href: "/sales/call-now",
+      href: "/sales/leads",
     });
   }
 

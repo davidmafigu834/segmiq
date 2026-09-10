@@ -817,7 +817,7 @@ export function DealsBoard({
             description="Qualified opportunities will appear here once you create a Deal from a Lead."
             action={
               <Link
-                href="/sales/call-now"
+                href="/sales/leads"
                 className="inline-flex min-h-11 items-center rounded-sales-md bg-sales-neutral-900 px-4 text-[13px] font-semibold text-white dark:bg-sales-brand dark:text-sales-brand-text"
               >
                 View Leads

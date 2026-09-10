@@ -1,5 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { hasPermission } from "@/lib/auth/rbac";
+import { P } from "@/lib/auth/rbac";
 import type { UserRole } from "@/types";
 
 export type WhatsAppConnectionAdmin = {
@@ -12,9 +14,19 @@ export function canManageWhatsAppConnection(session: {
   userId?: string | null;
   clientId?: string | null;
   role?: UserRole | null;
-} | null): session is { userId: string; clientId: string; role: "CLIENT_MANAGER" } {
-  return Boolean(
-    session?.userId && session.clientId && session.role === "CLIENT_MANAGER"
+  alsoSells?: boolean | null;
+  isImpersonating?: boolean;
+} | null): boolean {
+  if (!session?.userId || !session.clientId) return false;
+  return hasPermission(
+    {
+      userId: session.userId,
+      role: session.role ?? "SALESPERSON",
+      clientId: session.clientId,
+      alsoSells: session.alsoSells,
+      isImpersonating: session.isImpersonating,
+    },
+    P.WHATSAPP_CONNECTION_MANAGE
   );
 }
 
@@ -29,7 +41,11 @@ export async function requireWhatsAppConnectionAdmin(): Promise<
   }
   return {
     ok: true,
-    admin: { userId: session.userId, clientId: session.clientId, role: session.role },
+    admin: {
+      userId: session.userId,
+      clientId: session.clientId as string,
+      role: session.role,
+    },
   };
 }
 
@@ -39,7 +55,20 @@ export async function requireWhatsAppTenantMember(): Promise<
 > {
   const session = await getServerSession(authOptions);
   if (!session?.userId) return { ok: false, status: 401, error: "Unauthorized" };
-  if (!session.clientId || !["CLIENT_MANAGER", "SALESPERSON"].includes(session.role ?? "")) {
+  if (!session.clientId) {
+    return { ok: false, status: 403, error: "Forbidden" };
+  }
+  const canView = hasPermission(
+    {
+      userId: session.userId,
+      role: session.role,
+      clientId: session.clientId,
+      alsoSells: session.alsoSells,
+      isImpersonating: Boolean(session.isImpersonating),
+    },
+    P.WHATSAPP_CONNECTION_VIEW
+  );
+  if (!canView) {
     return { ok: false, status: 403, error: "Forbidden" };
   }
   return {

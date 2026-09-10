@@ -1,6 +1,7 @@
 import { encode } from "next-auth/jwt";
 import { cookies } from "next/headers";
 import type { ClientMode, UserRole } from "@/types";
+import { JWT_MAX_AGE_SEC } from "@/lib/auth/session-policy";
 
 export function getSessionCookieName(): string {
   return process.env.NODE_ENV === "production"
@@ -22,7 +23,7 @@ export function getSessionCookieOptions() {
             .split("/")[0]
             .split(":")[0]
         : undefined,
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: JWT_MAX_AGE_SEC,
   };
 }
 
@@ -33,6 +34,7 @@ export type SessionTokenPayload = {
   clientMode: ClientMode;
   alsoSells?: boolean;
   sessionVersion: number;
+  sessionId: string;
   email: string | null;
   name: string;
   realUserId?: string | null;
@@ -51,6 +53,7 @@ export async function setSessionToken(payload: SessionTokenPayload): Promise<voi
       clientMode: payload.clientMode,
       alsoSells: Boolean(payload.alsoSells),
       sessionVersion: payload.sessionVersion,
+      sessionId: payload.sessionId,
       email: payload.email,
       name: payload.name,
       sub: payload.userId,
@@ -58,8 +61,12 @@ export async function setSessionToken(payload: SessionTokenPayload): Promise<voi
       realUserName: payload.realUserName ?? null,
     },
     secret,
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: JWT_MAX_AGE_SEC,
   });
 
   cookies().set(getSessionCookieName(), token, getSessionCookieOptions());
+}
+
+export async function clearSessionCookie(): Promise<void> {
+  cookies().set(getSessionCookieName(), "", { ...getSessionCookieOptions(), maxAge: 0 });
 }

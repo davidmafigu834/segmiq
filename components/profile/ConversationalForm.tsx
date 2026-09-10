@@ -27,6 +27,7 @@ export type RequestedPackage = {
 
 type Props = {
   clientId: string;
+  profileSlug: string;
   clientName: string;
   clientLogo?: string;
   formTitle: string;
@@ -53,6 +54,7 @@ function getInitials(name: string): string {
 
 export function ConversationalForm({
   clientId,
+  profileSlug,
   clientName,
   clientLogo,
   formTitle,
@@ -158,7 +160,7 @@ export function ConversationalForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clientId,
+          profileSlug,
           formData: answers,
           source: "LANDING_PAGE",
           ...(requestedPackage ? { requestedPackage } : {}),

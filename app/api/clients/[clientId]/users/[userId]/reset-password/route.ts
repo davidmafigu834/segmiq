@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageClientTeam } from "@/lib/auth/permissions";
+import { bumpSessionVersion } from "@/lib/auth/offboard";
 import { generateTemporaryPassword, hashPassword } from "@/lib/password";
 import { sendEmail } from "@/lib/email/resend";
 import { temporaryPasswordResetEmail } from "@/lib/email/templates/temporary-password-reset";
@@ -51,12 +52,13 @@ export async function POST(_req: Request, { params }: { params: { clientId: stri
 
   const tempPass = generateTemporaryPassword();
   const hash = await hashPassword(tempPass);
-  const currentVersion = Number((user as { session_version?: number }).session_version ?? 0);
+  await bumpSessionVersion(supabase, params.userId);
 
   const { error: updateErr } = await supabase
     .from("users")
-    .update({ password: hash, session_version: currentVersion + 1 })
-    .eq("id", params.userId);
+    .update({ password: hash })
+    .eq("id", params.userId)
+    .eq("client_id", params.clientId);
 
   if (updateErr) {
     console.error("[client users reset-password]", updateErr);

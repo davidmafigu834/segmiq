@@ -4,6 +4,7 @@ import { requireAgencyAdmin } from "@/lib/auth/permissions";
 import { fbLog } from "@/lib/facebook/log";
 import { fetchFacebookFormQuestions } from "@/lib/facebook/form-questions";
 import { defaultRulesFromQuestions } from "@/lib/facebook/qualification";
+import { loadClientFbGraphTokens } from "@/lib/facebook/client-tokens";
 
 export async function POST(req: Request) {
   const check = await requireAgencyAdmin();
@@ -54,7 +55,8 @@ export async function POST(req: Request) {
   }
 
   const previousFormId = (current as { fb_form_id?: string | null } | null)?.fb_form_id ?? null;
-  const token = (current as { fb_access_token?: string | null } | null)?.fb_access_token ?? null;
+  const { pageToken } = await loadClientFbGraphTokens(clientId, supabase);
+  const token = pageToken;
 
   const update: Record<string, unknown> = {
     fb_form_id: formId,

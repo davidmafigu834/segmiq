@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { signOut } from "next-auth/react";
+import { secureSignOut } from "@/components/auth/SessionLifecycle";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { ShellIcon } from "./shell-icons";
 import { ClientAvatar } from "@/components/ClientAvatar";
@@ -416,7 +416,7 @@ export function AgencySidebar({
             <button
               type="button"
               className="block w-full px-3 py-2 text-left text-[14px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => void secureSignOut("/login")}
             >
               Sign out
             </button>

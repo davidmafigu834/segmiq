@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
+import { hasPermission } from "@/lib/auth/rbac/resolve";
+import { P } from "@/lib/auth/rbac/permissions";
 import { runManagerTurn, getManagerAttention } from "@/lib/agent/manager";
 import type { ManagerActor } from "@/lib/agent/manager/types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,6 +15,22 @@ export async function resolveManagerActor(req: Request): Promise<
 > {
   const auth = await resolveApiAuth(req);
   if (!auth) return { ok: false, status: 401, error: "Unauthorized" };
+
+  if (
+    !hasPermission(
+      {
+        userId: auth.userId,
+        role: auth.role,
+        clientId: auth.clientId,
+        alsoSells: auth.alsoSells,
+        isImpersonating: auth.isImpersonating,
+      },
+      P.AGENT_USE
+    )
+  ) {
+    return { ok: false, status: 403, error: "Forbidden" };
+  }
+
   const url = new URL(req.url);
   const requested = url.searchParams.get("clientId");
   let clientId: string | null = null;

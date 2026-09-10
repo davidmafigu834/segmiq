@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { secureSignOut } from "@/components/auth/SessionLifecycle";
 import {
   Grid, Folder, Camera, Users, Settings, LayoutGrid, LogOut,
   Bell, CreditCard, HelpCircle, BarChart2, Tag, ChevronsUpDown,
@@ -411,7 +412,7 @@ export default function CloudDashboardShell({
                 setSidebarMenuOpen(false);
                 router.push("/cloud/dashboard/settings");
               }}
-              onSignOut={() => void signOut({ callbackUrl: "/cloud/login" })}
+              onSignOut={() => void secureSignOut("/cloud/login")}
             />
           </div>
         </div>
@@ -466,7 +467,7 @@ export default function CloudDashboardShell({
                     setHeaderMenuOpen(false);
                     router.push("/cloud/dashboard/settings");
                   }}
-                  onSignOut={() => void signOut({ callbackUrl: "/cloud/login" })}
+                  onSignOut={() => void secureSignOut("/cloud/login")}
                 />
               </div>
             </div>

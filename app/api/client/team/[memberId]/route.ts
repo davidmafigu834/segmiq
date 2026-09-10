@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireRoles } from "@/lib/api-guards";
+import { requirePermission } from "@/lib/auth/rbac/require";
+import { P } from "@/lib/auth/rbac/permissions";
 import { getCompanyTeamMemberOverview } from "@/lib/sales/get-company-team-member-overview";
 
 export const dynamic = "force-dynamic";
@@ -8,17 +9,17 @@ export async function GET(
   req: Request,
   { params }: { params: { memberId: string } }
 ) {
-  const guard = await requireRoles(["CLIENT_MANAGER", "SUPER_ADMIN"]);
-  if (guard.error) return guard.error;
-  const { session } = guard;
+  const guard = await requirePermission(P.TEAM_MANAGE, req);
+  if ("error" in guard) return guard.error;
+  const { auth } = guard;
 
   const { searchParams } = new URL(req.url);
-  const clientId = searchParams.get("clientId") || session!.clientId;
+  const clientId = searchParams.get("clientId") || auth.clientId;
 
   if (!clientId) {
     return NextResponse.json({ error: "clientId required" }, { status: 400 });
   }
-  if (session!.role === "CLIENT_MANAGER" && session!.clientId !== clientId) {
+  if (auth.role === "CLIENT_MANAGER" && auth.clientId !== clientId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -26,7 +27,7 @@ export async function GET(
     const data = await getCompanyTeamMemberOverview({
       clientId,
       memberId: params.memberId,
-      alsoSells: Boolean(session!.alsoSells),
+      alsoSells: Boolean(auth.alsoSells),
     });
     if (!data) {
       return NextResponse.json({ error: "Team member not found" }, { status: 404 });

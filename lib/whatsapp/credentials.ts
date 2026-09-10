@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { revealMetaWhatsAppToken } from "@/lib/facebook/client-tokens";
 
 export type WhatsAppSendConfig = {
   phoneNumberId: string;
@@ -15,8 +16,14 @@ export function isPlausibleMetaAccessToken(token: string | null | undefined): bo
 
 /**
  * Resolve Meta Cloud API credentials for a client.
- * Each company connects their own WhatsApp number (Phone number ID on `clients`).
- * Access token is read from the client row when set, otherwise the platform env token.
+ *
+ * SECURITY (Phase 5):
+ * - Prefer per-organisation sealed token + phone_number_id.
+ * - Platform env token is NOT used as a silent fallback when the client has its own
+ *   phone_number_id (prevents cross-tenant WABA blast radius).
+ * - Platform fallback only when:
+ *   - no clientId (legacy platform path), OR
+ *   - client has neither phone nor token and META_WHATSAPP_ALLOW_PLATFORM_FALLBACK=true
  */
 export async function resolveWhatsAppSendConfig(
   clientId: string | null | undefined
@@ -25,11 +32,12 @@ export async function resolveWhatsAppSendConfig(
     process.env.META_WHATSAPP_ACCESS_TOKEN?.trim() ||
     process.env.FB_ACCESS_TOKEN?.trim() ||
     "";
+  const platformPhone = process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim() || "";
+  const allowPlatformFallback = process.env.META_WHATSAPP_ALLOW_PLATFORM_FALLBACK === "true";
 
   if (!clientId) {
-    const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim();
-    if (!phoneNumberId || !platformToken) return null;
-    return { phoneNumberId, accessToken: platformToken, displayNumber: null };
+    if (!platformPhone || !platformToken) return null;
+    return { phoneNumberId: platformPhone, accessToken: platformToken, displayNumber: null };
   }
 
   const supabase = createAdminClient();
@@ -39,19 +47,37 @@ export async function resolveWhatsAppSendConfig(
     .eq("id", clientId)
     .maybeSingle();
 
-  const phoneNumberId =
-    (client?.meta_whatsapp_phone_number_id as string | null)?.trim() ||
-    process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim() ||
-    "";
+  const clientPhone = (client?.meta_whatsapp_phone_number_id as string | null)?.trim() || "";
+  const revealed = await revealMetaWhatsAppToken(
+    client?.meta_whatsapp_access_token as string | null,
+    clientId
+  );
+  const clientToken = revealed?.trim() || "";
 
-  const clientToken = (client?.meta_whatsapp_access_token as string | null)?.trim() || "";
-  const accessToken = isPlausibleMetaAccessToken(clientToken) ? clientToken : platformToken;
+  if (clientPhone && isPlausibleMetaAccessToken(clientToken)) {
+    return {
+      phoneNumberId: clientPhone,
+      accessToken: clientToken,
+      displayNumber: (client?.meta_whatsapp_display_number as string | null)?.trim() || null,
+    };
+  }
 
-  if (!phoneNumberId || !accessToken) return null;
+  // Client configured a number but token missing/invalid — do not silently use platform token.
+  if (clientPhone && !isPlausibleMetaAccessToken(clientToken)) {
+    if (allowPlatformFallback && platformToken) {
+      return {
+        phoneNumberId: clientPhone,
+        accessToken: platformToken,
+        displayNumber: (client?.meta_whatsapp_display_number as string | null)?.trim() || null,
+      };
+    }
+    return null;
+  }
 
-  return {
-    phoneNumberId,
-    accessToken,
-    displayNumber: (client?.meta_whatsapp_display_number as string | null)?.trim() || null,
-  };
+  // No client phone — optional explicit platform fallback for legacy tenants.
+  if (allowPlatformFallback && platformPhone && platformToken) {
+    return { phoneNumberId: platformPhone, accessToken: platformToken, displayNumber: null };
+  }
+
+  return null;
 }

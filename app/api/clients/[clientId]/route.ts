@@ -5,6 +5,8 @@ import { requireRoles } from "@/lib/api-guards";
 import { archiveClient } from "@/lib/clients/archive";
 import { isClientSlugAvailable } from "@/lib/clients/slug";
 import { isPlausibleMetaAccessToken } from "@/lib/whatsapp/credentials";
+import { sealMetaWhatsAppToken } from "@/lib/facebook/client-tokens";
+import { sanitizeClientSecrets } from "@/lib/integrations/token-vault";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +30,8 @@ const patchSchema = z
       .optional()
       .nullable(),
     meta_whatsapp_display_number: z.string().max(32).optional().nullable(),
-    meta_whatsapp_access_token: z.string().max(500).optional().nullable(),
+    // SECURITY: write-only; never echoed. Allow long Meta tokens.
+    meta_whatsapp_access_token: z.string().max(4000).optional().nullable(),
     assignment_mode: z.enum(["direct", "pool", "round_robin"]).optional(),
     business_type: z.enum(["trades", "real_estate"]).optional(),
     whatsapp_qualification_enabled: z.boolean().optional(),
@@ -116,7 +119,8 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
         { status: 400 }
       );
     }
-    update.meta_whatsapp_access_token = token;
+    // SECURITY: seal at rest; never return plaintext in the response.
+    update.meta_whatsapp_access_token = await sealMetaWhatsAppToken(token, params.clientId);
   }
   if (body.assignment_mode !== undefined) update.assignment_mode = body.assignment_mode;
   if (body.business_type !== undefined) update.business_type = body.business_type;
@@ -160,5 +164,5 @@ export async function PATCH(req: Request, { params }: { params: { clientId: stri
       .eq("client_id", params.clientId);
   }
 
-  return NextResponse.json({ client });
+  return NextResponse.json({ client: sanitizeClientSecrets(client as Record<string, unknown>) });
 }

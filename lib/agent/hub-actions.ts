@@ -45,6 +45,10 @@ export async function sendAgentDraft(opts: {
   clientId: string;
   leadId: string;
   reply?: string;
+  /** Human Hub actor — required for correct takeover + audit attribution. */
+  actorId?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
 }): Promise<{ ok: true; reply: string } | { ok: false; error: string }> {
   const execution = await latestDraftedExecution(opts.leadId, opts.clientId);
   const original = (execution?.customer_reply ?? "").trim();
@@ -76,14 +80,15 @@ export async function sendAgentDraft(opts: {
     }
   }
 
+  const humanId = opts.actorId?.trim() || null;
   const sendResult = await sendCanonicalWhatsAppText({
     clientId: opts.clientId,
     leadId: opts.leadId,
     to: "",
     body: reply,
-    actorId: null,
-    actorName: "SegmiQ Agent",
-    actorRole: "SYSTEM",
+    actorId: humanId,
+    actorName: humanId ? opts.actorName ?? "SegmiQ user" : "SegmiQ Agent",
+    actorRole: humanId ? opts.actorRole ?? "SALESPERSON" : "SYSTEM",
   });
   if (!sendResult.ok) return { ok: false, error: sendResult.error ?? "Send failed" };
 

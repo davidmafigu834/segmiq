@@ -1,5 +1,3 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types";
@@ -21,8 +19,8 @@ export async function canManageQuotationForLead(
   | { allowed: true; lead: LeadScope; actor: Actor }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
 > {
-  const auth = req ? await getAuthFromRequest(req) : null;
-  const session = auth ?? (await getServerSession(authOptions));
+  // Never fall through to getServerSession after MFA/auth denial.
+  const session = await getAuthFromRequest(req);
   if (!session?.userId) return { allowed: false, reason: "Unauthorized", status: 401 };
 
   const supabase = createAdminClient();
@@ -49,6 +47,9 @@ export async function canManageQuotationForLead(
     return { allowed: true, lead: scope, actor };
   }
   if (session.role === "SALESPERSON") {
+    if (session.clientId !== scope.client_id) {
+      return { allowed: false, reason: "Not found", status: 404 };
+    }
     if (scope.assigned_to_id !== session.userId) return { allowed: false, reason: "Forbidden", status: 403 };
     return { allowed: true, lead: scope, actor };
   }

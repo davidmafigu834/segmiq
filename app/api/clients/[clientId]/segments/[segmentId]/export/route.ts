@@ -9,6 +9,11 @@ import {
   RETARGETING_GRADUATED_KEY,
 } from "@/lib/audience-segments";
 import { syncRetargetingForClient } from "@/lib/retargeting";
+import { assertBrowserOrigin } from "@/lib/auth/origin-check";
+import { requireElevatedSession } from "@/lib/auth/step-up";
+import { parseOrgSecurityPolicy } from "@/lib/auth/org-security-policy";
+import { recordSecurityEvent } from "@/lib/auth/security-events";
+import { clientIpFromRequest, userAgentFromRequest } from "@/lib/auth/user-sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +28,11 @@ export async function GET(
   req: Request,
   { params }: { params: { clientId: string; segmentId: string } }
 ) {
+  const origin = assertBrowserOrigin(req);
+  if (!origin.ok) {
+    return NextResponse.json({ error: origin.error }, { status: origin.status });
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,7 +46,24 @@ export async function GET(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const elev = await requireElevatedSession({
+    sessionId: session.sessionId,
+    userId: session.userId,
+  });
+  if (!elev.ok) {
+    return NextResponse.json({ error: elev.error }, { status: elev.status });
+  }
+
   const supabase = createAdminClient();
+  const { data: clientPolicyRow } = await supabase
+    .from("clients")
+    .select("security_policy")
+    .eq("id", params.clientId)
+    .maybeSingle();
+  const orgPolicy = parseOrgSecurityPolicy(clientPolicyRow?.security_policy);
+  if (!orgPolicy.allowDataExports && session.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Data exports disabled by organisation policy" }, { status: 403 });
+  }
 
   const { data: segment } = await supabase
     .from("audience_segments")
@@ -98,6 +125,11 @@ export async function POST(
   req: Request,
   { params }: { params: { clientId: string; segmentId: string } }
 ) {
+  const origin = assertBrowserOrigin(req);
+  if (!origin.ok) {
+    return NextResponse.json({ error: origin.error }, { status: origin.status });
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -111,7 +143,25 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const elev = await requireElevatedSession({
+    sessionId: session.sessionId,
+    userId: session.userId,
+  });
+  if (!elev.ok) {
+    return NextResponse.json({ error: elev.error }, { status: elev.status });
+  }
+
   const supabase = createAdminClient();
+
+  const { data: clientPolicyRow } = await supabase
+    .from("clients")
+    .select("security_policy")
+    .eq("id", params.clientId)
+    .maybeSingle();
+  const orgPolicy = parseOrgSecurityPolicy(clientPolicyRow?.security_policy);
+  if (!orgPolicy.allowDataExports && session.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Data exports disabled by organisation policy" }, { status: 403 });
+  }
 
   const { data: segment } = await supabase
     .from("audience_segments")
@@ -156,6 +206,16 @@ export async function POST(
     exported_by_name: session.user.name ?? null,
     contact_count: leads.length,
     fields_exported: exportFields,
+  });
+
+  void recordSecurityEvent({
+    eventType: "DATA_EXPORT",
+    userId: session.userId,
+    clientId: params.clientId,
+    sessionId: session.sessionId,
+    ip: clientIpFromRequest(req),
+    userAgent: userAgentFromRequest(req),
+    metadata: { kind: "segment", segmentId: params.segmentId, count: leads.length },
   });
 
   // Update segment metadata

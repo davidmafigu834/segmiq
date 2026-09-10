@@ -8,6 +8,7 @@ import {
   parseFacebookQualificationRules,
 } from "@/lib/facebook/qualification";
 import { fbLog } from "@/lib/facebook/log";
+import { loadClientFbGraphTokens } from "@/lib/facebook/client-tokens";
 
 /** Sync Meta Instant Form questions onto the client and merge into qualification rules. */
 export async function POST(req: Request) {
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
   const { data: client, error: cErr } = await supabase
     .from("clients")
     .select(
-      "id, fb_access_token, fb_form_id, fb_qualification_rules, fb_qualification_enabled"
+      "id, fb_form_id, fb_qualification_rules, fb_qualification_enabled"
     )
     .eq("id", clientId)
     .maybeSingle();
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Client not found" }, { status: 404 });
   }
 
-  const token = client.fb_access_token as string | null;
+  const { pageToken: token } = await loadClientFbGraphTokens(clientId, supabase);
   const formId = client.fb_form_id as string | null;
   if (!token || !formId) {
     return NextResponse.json(

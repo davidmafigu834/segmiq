@@ -11,6 +11,7 @@ import {
 import { getProactiveSettings, updateProactiveSettings } from "@/lib/agent/proactive/settings";
 import { getLearningSettings, updateLearningSettings } from "@/lib/agent/learning/settings";
 import { isLearningGloballyEnabled, presetPatch } from "@/lib/agent/learning/policy";
+import { assertBrowserOrigin } from "@/lib/auth/origin-check";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,24 @@ async function resolveManagerClient(req: Request): Promise<
 > {
   const auth = await resolveApiAuth(req);
   if (!auth) return { ok: false, status: 401, error: "Unauthorized" };
+
+  const { hasPermission } = await import("@/lib/auth/rbac/resolve");
+  const { P } = await import("@/lib/auth/rbac/permissions");
+  if (
+    !hasPermission(
+      {
+        userId: auth.userId,
+        role: auth.role,
+        clientId: auth.clientId,
+        alsoSells: auth.alsoSells,
+        isImpersonating: auth.isImpersonating,
+      },
+      P.AGENT_MANAGE
+    )
+  ) {
+    return { ok: false, status: 403, error: "Forbidden" };
+  }
+
   const url = new URL(req.url);
   const requested = url.searchParams.get("clientId");
   if (auth.role === "SUPER_ADMIN") {
@@ -126,6 +145,11 @@ const patchSchema = z
   .partial();
 
 export async function PATCH(req: Request) {
+  const origin = assertBrowserOrigin(req);
+  if (!origin.ok) {
+    return NextResponse.json({ error: origin.error }, { status: origin.status });
+  }
+
   const access = await resolveManagerClient(req);
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
 

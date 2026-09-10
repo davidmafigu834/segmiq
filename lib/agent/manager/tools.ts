@@ -839,6 +839,32 @@ export async function executeConfirmedTool(opts: {
   args: Record<string, unknown>;
 }): Promise<ToolRun> {
   const { actor, toolName, args } = opts;
+
+  /** Defense: only tools that create confirmations may execute via confirmation. */
+  const CONFIRMABLE = new Set([
+    "reassign_leads",
+    "create_follow_ups",
+    "approve_quotation",
+    "reject_quotation",
+    "request_quote_changes",
+    "update_deal_stage",
+    "close_deal_won",
+    "close_deal_lost",
+    "cancel_proactive_job",
+    "adjust_inventory",
+    "approve_learning_candidate",
+    "reject_learning_candidate",
+  ]);
+  if (!CONFIRMABLE.has(toolName)) {
+    return {
+      name: toolName,
+      ok: false,
+      summary: { error: "not_confirmable" },
+      blocks: [{ type: "status", kind: "denied", message: "This action cannot be confirmed." }],
+      phase: "Denied",
+    };
+  }
+
   if (toolName === "reassign_leads") {
     const leadIds = z.array(z.string()).parse(args.leadIds);
     const toUserId = String(args.toUserId);

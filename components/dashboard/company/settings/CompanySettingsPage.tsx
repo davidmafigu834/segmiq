@@ -25,6 +25,7 @@ import {
   ProfilePersonalSection,
   NotificationsAlertsSection,
 } from "./ProfileSettingsViews";
+import { SecuritySettingsPanel } from "@/components/settings/SecuritySettingsPanel";
 import { TeamMembersSection } from "./TeamSettingsViews";
 import { AgentSettingsSection } from "./AgentSettingsViews";
 import { CompanyBrainSettingsSection } from "./CompanyBrainSettingsViews";
@@ -270,7 +271,7 @@ export function CompanySettingsPage({
 
             {category === "data" ? <CompanyDataSection /> : null}
 
-            {category === "security" ? <ProfileAccountSection toast={toast} /> : null}
+            {category === "security" ? <SecuritySettingsPanel toast={toast} /> : null}
 
             {showCompanyRail ? (
               <div className="mt-4 layout:hidden">

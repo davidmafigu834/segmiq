@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { secureSignOut } from "@/components/auth/SessionLifecycle";
 import {
   Check,
   ChevronDown,
@@ -204,7 +204,7 @@ export function SalesProfileMenu({
           <DropdownMenuItem
             destructive
             icon={<LogOut size={16} strokeWidth={1.8} />}
-            onSelect={() => void signOut({ callbackUrl: "/login" })}
+            onSelect={() => void secureSignOut("/login")}
           >
             Sign out
           </DropdownMenuItem>

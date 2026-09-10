@@ -10,12 +10,15 @@ export async function GET(req: Request, { params }: { params: { token: string } 
   const supabase = createAdminClient();
   const { data: quote } = await supabase
     .from("quotations")
-    .select("id, status, quote_number")
+    .select("id, status, quote_number, link_revoked_at")
     .eq("public_token", params.token)
     .maybeSingle();
 
   if (!quote || quote.status === "draft") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (quote.link_revoked_at) {
+    return NextResponse.json({ error: "This link is no longer active" }, { status: 410 });
   }
 
   const origin = new URL(req.url).origin || getPublicBaseUrl();
@@ -27,7 +30,7 @@ export async function GET(req: Request, { params }: { params: { token: string } 
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `inline; filename="${output.filename}"`,
-      "Cache-Control": "public, max-age=300",
+      "Cache-Control": "private, max-age=60",
     },
   });
 }

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAgencyAdmin } from "@/lib/auth/permissions";
 import { graphCall } from "@/lib/facebook/graph";
 import { fbLog } from "@/lib/facebook/log";
+import { loadClientFbGraphTokens } from "@/lib/facebook/client-tokens";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(req: Request) {
   const check = await requireAgencyAdmin();
@@ -19,18 +20,20 @@ export async function GET(req: Request) {
   const supabase = createAdminClient();
   const { data: client, error: cErr } = await supabase
     .from("clients")
-    .select("fb_access_token, fb_page_id")
+    .select("fb_page_id")
     .eq("id", clientId)
     .maybeSingle();
 
-  if (cErr || !client?.fb_access_token || !client.fb_page_id) {
+  const { pageToken } = await loadClientFbGraphTokens(clientId, supabase);
+
+  if (cErr || !pageToken || !client?.fb_page_id) {
     return NextResponse.json({ error: "Connect a Page first" }, { status: 400 });
   }
 
   const fields = encodeURIComponent("id,name,status");
   const result = await graphCall<{ data?: { id: string; name: string; status?: string }[] }>(
     `/${client.fb_page_id}/leadgen_forms?fields=${fields}`,
-    client.fb_access_token as string,
+    pageToken,
     { clientId }
   );
 

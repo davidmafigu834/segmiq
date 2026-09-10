@@ -556,6 +556,7 @@ const CATALOGUE: CatalogueSpec[] = [
   { key: "ecolus:24v-100ah-lithium", name: "24V 100Ah Lithium Battery", item_type: "PRODUCT" },
   { key: "ecolus:48v-100ah-lithium", name: "48V 100Ah Lithium Battery", item_type: "PRODUCT" },
   { key: "ecolus:3kva-inverter", name: "3kVA Inverter", item_type: "PRODUCT" },
+  { key: "ecolus:4.2kva-inverter", name: "4.2kVA Inverter", item_type: "PRODUCT" },
   { key: "ecolus:6.2kva-inverter", name: "6.2kVA Inverter", item_type: "PRODUCT" },
   { key: "ecolus:10kva-inverter", name: "10kVA Inverter", item_type: "PRODUCT" },
   {
@@ -605,6 +606,20 @@ const PACKAGES: PackageSpec[] = [
       { productKey: "ecolus:450w-mono-panel", qty: 4 },
       { productKey: "ecolus:24v-100ah-lithium", qty: 1 },
       { productKey: "ecolus:3kva-inverter", qty: 1 },
+      { productKey: "ecolus:materials-accessories", qty: 1 },
+      { productKey: "ecolus:labour-installation", qty: 1 },
+    ],
+  },
+  {
+    name: "4.2kVA System",
+    price: 1250,
+    description:
+      "4.2kVA solar system Package including five 450W mono panels, lithium battery, inverter, materials and accessories, labour and installation.",
+    capability: "It can power: 10 Lights, TV Set, Radio, Laptop & Phone Charging, Fridges, Deep Freezer.",
+    equipment: [
+      { productKey: "ecolus:450w-mono-panel", qty: 5 },
+      { productKey: "ecolus:24v-100ah-lithium", qty: 1 },
+      { productKey: "ecolus:4.2kva-inverter", qty: 1 },
       { productKey: "ecolus:materials-accessories", qty: 1 },
       { productKey: "ecolus:labour-installation", qty: 1 },
     ],
@@ -1082,6 +1097,8 @@ async function main() {
           "battery",
           "3kva",
           "3kVA",
+          "4.2kva",
+          "4.2kVA",
           "6.2kva",
           "6.2kVA",
           "10kva",
@@ -1437,7 +1454,7 @@ async function main() {
       situation: "What packages do you have",
       customer_message: "What packages do you have?",
       preferred_response:
-        "Ecolus currently has standard residential solar Packages including 3kVA Lite, 3kVA Premium, 6.2kVA System, 10kVA Lite and 10kVA Premium. If you tell me what you'd like the system to power, I can help narrow down the relevant options.",
+        "Ecolus currently has standard residential solar Packages including 3kVA Lite, 3kVA Premium, 4.2kVA System, 6.2kVA System, 10kVA Lite and 10kVA Premium. If you tell me what you'd like the system to power, I can help narrow down the relevant options.",
       why_preferred: "Retrieve live Active Package records rather than reciting this example from memory.",
       category: "PRICING_REQUEST",
     },
@@ -1613,6 +1630,14 @@ Published guidance: 8 Lights, TV Set, Radio, Laptop & Phone Charging, Small Frid
 4 × 450W Mono Panel
 1 × 24V 100Ah Lithium Battery
 1 × 3kVA Inverter
+Materials & Accessories
+Labour & Installation
+Published guidance: 10 Lights, TV Set, Radio, Laptop & Phone Charging, Fridges, Deep Freezer.
+
+4.2kVA System — USD 1,250
+5 × 450W Mono Panel
+1 × 24V 100Ah Lithium Battery
+1 × 4.2kVA Inverter
 Materials & Accessories
 Labour & Installation
 Published guidance: 10 Lights, TV Set, Radio, Laptop & Phone Charging, Fridges, Deep Freezer.
@@ -1848,12 +1873,15 @@ Ecolus also advertises emergency service 24/7.`,
         );
       }
 
-      const imageFile = imageDir ? resolve(imageDir, PACKAGE_IMAGE_FILES[spec.name]) : null;
+      const imageName = PACKAGE_IMAGE_FILES[spec.name];
+      const imageFile = imageDir && imageName ? resolve(imageDir, imageName) : null;
       let image: { url: string; key: string } | null = null;
       if (imageFile && existsSync(imageFile)) {
         image = await uploadPackageImage(clientId, spec.name, imageFile);
-      } else if (imageDir) {
-        note(`Package image → ${spec.name}`, PACKAGE_IMAGE_FILES[spec.name], `File not found in ${imageDir}.`);
+      } else if (imageDir && imageName) {
+        note(`Package image → ${spec.name}`, imageName, `File not found in ${imageDir}.`);
+      } else if (!imageName) {
+        note(`Package image → ${spec.name}`, "none", "No package artwork file mapped yet.");
       }
 
       const header = {

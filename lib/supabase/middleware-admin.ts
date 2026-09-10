@@ -56,7 +56,7 @@ export async function fetchMiddlewareFirstRow<T extends Record<string, unknown>>
   }
 }
 
-/** Returns the DB session version, or null when the check must fail open. */
+/** Returns the DB session version, or null when the read fails / user missing (middleware fails closed). */
 export async function fetchMiddlewareSessionVersion(
   userId: string,
   options?: { fetchImpl?: MiddlewareFetch; timeoutMs?: number }

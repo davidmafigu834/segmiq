@@ -1,9 +1,11 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { hashPassword } from '@/lib/password';
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { hashPassword } from "@/lib/password";
+import { bumpSessionVersion } from "@/lib/auth/offboard";
+import { recordSecurityEvent } from "@/lib/auth/security-events";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 const schema = z.object({
   token: z.string().min(64),
@@ -15,72 +17,66 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Token and password are required' }, { status: 400 });
+    return NextResponse.json({ error: "Token and password are required" }, { status: 400 });
   }
 
   const { token, password } = parsed.data;
   const supabase = createAdminClient();
 
-  // Fetch and validate the token
   const { data: resetToken } = await supabase
-    .from('password_reset_tokens')
-    .select('id, user_id, expires_at, used')
-    .eq('token', token)
+    .from("password_reset_tokens")
+    .select("id, user_id, expires_at, used")
+    .eq("token", token)
     .maybeSingle();
 
   if (!resetToken) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
+    return NextResponse.json({ error: "Invalid token" }, { status: 400 });
   }
 
   const typedToken = resetToken as { id: string; user_id: string; expires_at: string; used: boolean };
 
   if (typedToken.used) {
-    return NextResponse.json({ error: 'Token already used' }, { status: 400 });
+    return NextResponse.json({ error: "Token already used" }, { status: 400 });
   }
 
   if (new Date(typedToken.expires_at) < new Date()) {
-    return NextResponse.json({ error: 'Token has expired' }, { status: 400 });
+    return NextResponse.json({ error: "Token has expired" }, { status: 400 });
   }
 
-  // Hash the new password
   const hashed = await hashPassword(password);
 
-  // Fetch current session_version then increment manually
-  const { data: userRow } = await supabase
-    .from('users')
-    .select('session_version')
-    .eq('id', typedToken.user_id)
-    .maybeSingle();
-
-  const currentVersion = (userRow as { session_version?: number } | null)?.session_version ?? 0;
-
-  // Update password and increment session_version to invalidate all existing sessions
   const { error: updateErr } = await supabase
-    .from('users')
-    .update({
-      password: hashed,
-      session_version: currentVersion + 1,
-    })
-    .eq('id', typedToken.user_id);
+    .from("users")
+    .update({ password: hashed, password_changed_at: new Date().toISOString() })
+    .eq("id", typedToken.user_id);
 
   if (updateErr) {
-    console.error('[reset-password] password update failed:', updateErr);
-    return NextResponse.json({ error: 'Failed to reset password' }, { status: 500 });
+    console.error("[reset-password] password update failed:", updateErr);
+    return NextResponse.json({ error: "Failed to reset password" }, { status: 500 });
   }
 
-  const { error: tokenErr } = await supabase
-    .from('password_reset_tokens')
-    .update({ used: true })
-    .eq('id', typedToken.id);
+  await bumpSessionVersion(supabase, typedToken.user_id, { revokeReason: "PASSWORD_RESET" });
+  void recordSecurityEvent({
+    eventType: "PASSWORD_RESET",
+    userId: typedToken.user_id,
+  });
 
-  if (tokenErr) {
-    console.error('[reset-password] token mark-used failed:', tokenErr);
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("email")
+    .eq("id", typedToken.user_id)
+    .maybeSingle();
+  if (userRow?.email) {
+    const { sendSecurityNotification } = await import("@/lib/email/templates/security-alert");
+    void sendSecurityNotification({ to: String(userRow.email), kind: "password_reset" });
   }
 
-  return NextResponse.json({ success: true });
+  await supabase.from("password_reset_tokens").update({ used: true }).eq("id", typedToken.id);
+
+  return NextResponse.json({ ok: true });
 }

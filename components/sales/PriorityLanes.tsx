@@ -15,7 +15,7 @@ const LANE_META: Record<LeadLane, { eyebrow: string; title: string }> = {
 };
 
 function defaultSeeAllHref(lane: LeadLane): string | null {
-  if (lane === "call_now") return "/sales/call-now";
+  if (lane === "call_now") return "/sales/leads";
   if (lane === "recover") return "/sales/recover";
   return null;
 }

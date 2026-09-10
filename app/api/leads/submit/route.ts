@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { createLead } from "@/lib/leads/createLead";
 import { sourceFromString } from "@/lib/lead-helpers";
 import { processLeadIntelligence } from "@/lib/lead-intelligence";
+import { resolvePublishedProfileLeadTarget } from "@/lib/lead-ingest/public-target";
 import { z } from "zod";
 
 const bodySchema = z.object({
-  clientId: z.string().uuid(),
+  profileSlug: z.string().min(1),
   source: z.string(),
   formData: z.record(z.unknown()),
   facebookLeadId: z.string().optional(),
@@ -25,7 +26,12 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }
-    const { clientId, source, formData, facebookLeadId, requestedPackage } = parsed.data;
+    const { profileSlug, source, formData, facebookLeadId, requestedPackage } = parsed.data;
+    const target = await resolvePublishedProfileLeadTarget(profileSlug);
+    if (!target) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const clientId = target.clientId;
 
     const src = sourceFromString(source);
     if (src === "FACEBOOK" && !facebookLeadId) {

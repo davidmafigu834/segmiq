@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ensureProposalSettings } from "@/lib/proposals/proposal-number";
 import { PublicProposalView, type PublicProposalData } from "@/components/proposals/PublicProposalView";
+import { buildPublicProposalPayload, PUBLIC_PROPOSAL_SELECT } from "@/lib/proposals/public-payload";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -22,7 +23,7 @@ export default async function PublicProposalPage({ params }: { params: { token: 
   const supabase = createAdminClient();
   const { data: proposal } = await supabase
     .from("agency_proposals")
-    .select("*")
+    .select(PUBLIC_PROPOSAL_SELECT)
     .eq("public_token", params.token)
     .maybeSingle();
 
@@ -58,35 +59,14 @@ export default async function PublicProposalPage({ params }: { params: { token: 
     proposal.status !== "accepted" &&
     proposal.status !== "rejected";
 
-  const data: PublicProposalData = {
+  const data: PublicProposalData = buildPublicProposalPayload({
     token: params.token,
-    status: expired ? "expired" : (proposal.status as PublicProposalData["status"]),
-    title: (proposal.title as string | null) || "Proposal",
-    proposalNumber: (proposal.proposal_number as string | null) ?? null,
-    companyName: (proposal.company_name as string | null) ?? null,
-    recipientName: (proposal.recipient_name as string | null) ?? null,
-    currency: (proposal.currency as string | null) || "USD",
-    validUntil: (proposal.valid_until as string | null) ?? null,
-    subtotal: Number(proposal.subtotal) || 0,
-    discount: Number(proposal.discount) || 0,
-    taxRate: Number(proposal.tax_rate) || 0,
-    taxAmount: Number(proposal.tax_amount) || 0,
-    total: Number(proposal.total) || 0,
-    terms: (proposal.terms as string | null) ?? null,
-    pdfUrl: (proposal.pdf_url as string | null) ?? null,
-    sections: (sections ?? []).map((s) => ({
-      kind: s.kind as string,
-      heading: (s.heading as string | null) ?? null,
-      body: (s.body as string | null) ?? null,
-    })),
-    items: (items ?? []).map((it) => ({
-      item_name: it.item_name as string,
-      description: (it.description as string | null) ?? null,
-      unit_price: Number(it.unit_price) || 0,
-      quantity: Number(it.quantity) || 0,
-      amount: Number(it.amount) || 0,
-      group_label: (it.group_label as string | null) ?? null,
-    })),
+    proposal: {
+      ...(proposal as Record<string, unknown>),
+      status: expired ? "expired" : proposal.status,
+    },
+    sections: (sections ?? []) as Array<Record<string, unknown>>,
+    items: (items ?? []) as Array<Record<string, unknown>>,
     brand: {
       companyName: (settings.company_name as string | null) || "Segmiq",
       logoUrl: (settings.logo_url as string | null) ?? null,
@@ -95,7 +75,7 @@ export default async function PublicProposalPage({ params }: { params: { token: 
       companyPhone: (settings.company_phone as string | null) ?? null,
       footerNote: (settings.footer_note as string | null) ?? null,
     },
-  };
+  });
 
   return <PublicProposalView data={data} />;
 }

@@ -3,12 +3,18 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSession } from "@/lib/api-guards";
 import { verifyPassword } from "@/lib/password";
+import { assertBrowserOrigin } from "@/lib/auth/origin-check";
+import { elevateSession } from "@/lib/auth/step-up";
+import { isMfaEnabled, verifyActiveTotp } from "@/lib/auth/mfa/service";
+import { recordSecurityEvent } from "@/lib/auth/security-events";
+import { revokeAllUserSessions } from "@/lib/auth/user-sessions";
 
 export const dynamic = "force-dynamic";
 
 const bodySchema = z.object({
   newEmail: z.string().email("Enter a valid email address"),
   currentPassword: z.string().min(1, "Current password is required"),
+  totpCode: z.string().optional(),
 });
 
 function normalizeEmail(raw: string): string {
@@ -16,6 +22,11 @@ function normalizeEmail(raw: string): string {
 }
 
 export async function POST(req: Request) {
+  const origin = assertBrowserOrigin(req);
+  if (!origin.ok) {
+    return NextResponse.json({ error: origin.error }, { status: origin.status });
+  }
+
   const g = await requireSession();
   if ("error" in g) return g.error;
 
@@ -50,9 +61,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "That email is already in use" }, { status: 409 });
   }
 
-  const ok = await verifyPassword(parsed.data.currentPassword, String((row as { password?: string }).password ?? ""));
+  const ok = await verifyPassword(
+    parsed.data.currentPassword,
+    String((row as { password?: string }).password ?? "")
+  );
   if (!ok) {
     return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 });
+  }
+
+  const sessionId = (g.session as { sessionId?: string | null }).sessionId ?? null;
+  const mfaOn = await isMfaEnabled(g.session.userId);
+  if (mfaOn) {
+    if (!parsed.data.totpCode || !(await verifyActiveTotp(g.session.userId, parsed.data.totpCode))) {
+      return NextResponse.json({ error: "Authenticator code required" }, { status: 403 });
+    }
+  } else if (sessionId) {
+    await elevateSession({
+      sessionId,
+      userId: g.session.userId,
+      password: parsed.data.currentPassword,
+    });
   }
 
   const nextSv = Number((row as { session_version?: number }).session_version ?? 0) + 1;
@@ -72,6 +100,19 @@ export async function POST(req: Request) {
     console.error("[users/me/email POST]", updateErr);
     return NextResponse.json({ error: updateErr.message }, { status: 500 });
   }
+
+  await revokeAllUserSessions({
+    userId: g.session.userId,
+    reason: "ADMIN_REVOKED",
+    exceptSessionId: sessionId,
+  });
+
+  void recordSecurityEvent({
+    eventType: "EMAIL_CHANGED",
+    userId: g.session.userId,
+    clientId: g.session.clientId,
+    sessionId,
+  });
 
   return NextResponse.json({ ok: true, email: newEmail, sessionVersion: nextSv });
 }

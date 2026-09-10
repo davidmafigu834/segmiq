@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import { createLead } from "@/lib/leads/createLead";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { processLeadIntelligence } from "@/lib/lead-intelligence";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { resolvePublishedProfileLeadTarget } from "@/lib/lead-ingest/public-target";
+
+type SubmitLeadBody = {
+  profileSlug?: string;
+  formData?: Record<string, unknown>;
+};
 
 export async function POST(req: Request) {
-  const { clientId, formData } = (await req.json()) as {
-    clientId: string;
-    formData: Record<string, unknown>;
-  };
-
-  if (!clientId) {
-    return NextResponse.json({ error: "clientId is required" }, { status: 400 });
+  const { profileSlug, formData } = (await req.json()) as SubmitLeadBody;
+  if (!profileSlug) {
+    return NextResponse.json({ error: "profileSlug is required" }, { status: 400 });
   }
+  const target = await resolvePublishedProfileLeadTarget(profileSlug);
+  if (!target) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const clientId = target.clientId;
   // Enrich with minimal metadata for Phase B smart mapping (location/urgency)
   // Non-blocking: if this fails, we still create the lead.
   let enriched = formData ?? {};

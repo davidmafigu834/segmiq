@@ -7,6 +7,7 @@ import {
   type FbCampaignsDatePreset,
   type ClientCampaignsRow,
 } from "@/lib/facebook/campaigns";
+import { loadClientFbGraphTokens } from "@/lib/facebook/client-tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,8 @@ export async function GET(req: Request) {
       .eq("id", filterIds[0])
       .maybeSingle();
     if (one) {
-      const token = (one.fb_user_access_token as string | null) || (one.fb_access_token as string | null);
+      const tokens = await loadClientFbGraphTokens(one.id as string, supabase);
+      const token = tokens.userToken || tokens.pageToken;
       let err = "Not connected";
       if (token && !(one.fb_ad_account_id as string | null)) {
         err = "Ad account not selected";
@@ -78,7 +80,14 @@ export async function GET(req: Request) {
       if (refresh) {
         bustCampaignsCache(c.id);
       }
-      const { campaigns, error: fetchErr } = await fetchClientCampaigns(c, datePreset, {
+      const tokens = await loadClientFbGraphTokens(c.id, supabase);
+      const revealed: ClientCampaignsRow = {
+        id: c.id,
+        fb_access_token: tokens.pageToken,
+        fb_user_access_token: tokens.userToken,
+        fb_ad_account_id: c.fb_ad_account_id,
+      };
+      const { campaigns, error: fetchErr } = await fetchClientCampaigns(revealed, datePreset, {
         bypassCache: refresh,
       });
       return {

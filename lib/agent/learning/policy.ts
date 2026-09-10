@@ -57,6 +57,7 @@ const SECRET_PATTERNS: Array<{ re: RegExp; label: string }> = [
   { re: /\bpassword\s*[:=]\s*\S+/i, label: "password" },
   { re: /\b(api[_-]?key|secret[_-]?key|access[_-]?token)\s*[:=]\s*\S+/i, label: "credential" },
   { re: /\bBearer\s+[A-Za-z0-9\-._~+/]+=*/i, label: "token" },
+  { re: /\bEAA[A-Za-z0-9]{20,}/g, label: "meta_token" },
   { re: /\b(?:\d[ -]*?){13,19}\b/, label: "card" },
   { re: /\b(otp|verification code|pin)\s*[:=]?\s*\d{4,8}\b/i, label: "otp" },
   { re: /\bcost\s*(price|of goods)?\s*[:=]?\s*[$£€]?\s*\d/i, label: "cost" },

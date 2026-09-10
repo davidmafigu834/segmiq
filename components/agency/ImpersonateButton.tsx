@@ -19,13 +19,24 @@ export function ImpersonateButton({
 
   async function handleClick() {
     if (loading) return;
+    const reason = window.prompt(
+      `Support reason for viewing as ${userName} (min 8 characters):`,
+      ""
+    );
+    if (reason == null) return;
+    const trimmed = reason.trim();
+    if (trimmed.length < 8) {
+      setError("Provide a support reason (at least 8 characters)");
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/agency/impersonate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId, reason: trimmed }),
       });
       const data = (await res.json()) as { redirectTo?: string; error?: string };
       if (!res.ok) {

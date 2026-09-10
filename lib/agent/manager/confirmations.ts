@@ -91,12 +91,16 @@ export async function getConfirmation(
 }
 
 export async function markConfirmation(
+  actor: ManagerActor,
   id: string,
   status: "CONFIRMED" | "CANCELLED" | "STALE" | "EXPIRED",
-  result?: Record<string, unknown>
-): Promise<void> {
-  const supabase = createAdminClient();
-  await supabase
+  result?: Record<string, unknown>,
+  deps?: {
+    createClient?: typeof createAdminClient;
+  }
+): Promise<boolean> {
+  const supabase = (deps?.createClient ?? createAdminClient)();
+  const { data } = await supabase
     .from("agent_manager_confirmations")
     .update({
       status,
@@ -104,17 +108,43 @@ export async function markConfirmation(
       result: result ?? null,
     })
     .eq("id", id)
-    .eq("status", "PENDING");
+    .eq("client_id", actor.clientId)
+    .eq("user_id", actor.userId)
+    .eq("status", "PENDING")
+    .select("id")
+    .maybeSingle();
+  return Boolean(data);
 }
 
+const VERSION_TABLES_WITH_CLIENT = new Set([
+  "leads",
+  "deals",
+  "quotations",
+  "agent_proactive_jobs",
+  "learning_candidates",
+  "inventory_balances",
+]);
+
+/**
+ * Staleness check for confirmation previews.
+ * SECURITY: when clientId is provided, version rows must match the same tenant.
+ */
 export async function versionsStillMatch(
-  entityVersions: Record<string, string>
+  entityVersions: Record<string, string>,
+  clientId?: string | null
 ): Promise<boolean> {
   const supabase = createAdminClient();
   for (const [key, version] of Object.entries(entityVersions)) {
     const [table, id] = key.split(":");
     if (!table || !id) continue;
-    const { data } = await supabase.from(table).select("updated_at").eq("id", id).maybeSingle();
+    let q = supabase.from(table).select("updated_at").eq("id", id);
+    if (clientId && VERSION_TABLES_WITH_CLIENT.has(table)) {
+      q = q.eq("client_id", clientId);
+    }
+    const { data } = await q.maybeSingle();
+    if (clientId && VERSION_TABLES_WITH_CLIENT.has(table) && !data) {
+      return false;
+    }
     const updated = (data as { updated_at?: string } | null)?.updated_at;
     if (updated && updated !== version) return false;
   }

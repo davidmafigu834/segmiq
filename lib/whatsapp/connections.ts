@@ -271,7 +271,35 @@ export async function transitionWhatsAppConnection(input: {
     .select("id, client_id, provider_type, status, is_primary, display_name, phone_number, provider_account_id, connected_at, last_seen_at, last_error_code, last_error_message")
     .single();
   if (error || !data) throw new Error(error?.message ?? "Could not update WhatsApp connection");
-  return mapConnection(data as ConnectionRow);
+  const mapped = mapConnection(data as ConnectionRow);
+
+  // Security audit — no session material.
+  try {
+    const { recordSecurityEvent } = await import("@/lib/auth/security-events");
+    const eventType =
+      input.to === "CONNECTED"
+        ? current.status === "CONNECTED"
+          ? "WHATSAPP_RECONNECTED"
+          : "WHATSAPP_CONNECTED"
+        : input.to === "DISCONNECTED"
+          ? "WHATSAPP_DISCONNECTED"
+          : null;
+    if (eventType) {
+      void recordSecurityEvent({
+        eventType,
+        clientId: mapped.clientId,
+        metadata: {
+          connectionId: mapped.id,
+          status: mapped.status,
+          providerType: mapped.providerType,
+        },
+      });
+    }
+  } catch {
+    /* never fail connection update on audit */
+  }
+
+  return mapped;
 }
 
 export async function storeWhatsAppQr(input: {
@@ -291,6 +319,16 @@ export async function storeWhatsAppQr(input: {
     updated_at: new Date().toISOString(),
   });
   if (error) throw new Error(error.message);
+  try {
+    const { recordSecurityEvent } = await import("@/lib/auth/security-events");
+    void recordSecurityEvent({
+      eventType: "WHATSAPP_QR_GENERATED",
+      clientId: input.clientId,
+      metadata: { connectionId: input.connectionId },
+    });
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function readWhatsAppQrChallenge(connectionId: string, clientId: string): Promise<{

@@ -1,9 +1,3 @@
-/**
- * Deal authorization helpers — mirror lead permissions.
- */
-
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { getAuthFromRequest } from "@/lib/auth/getAuthFromRequest";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
@@ -30,8 +24,8 @@ export async function canReadDeal(
   | { ok: true; deal: DealScope; userId: string; role: UserRole }
   | { ok: false; status: 401 | 403 | 404 }
 > {
-  const auth = req ? await getAuthFromRequest(req) : null;
-  const session = (auth ?? (await getServerSession(authOptions))) as AuthSession | null;
+  // Never fall through to getServerSession after MFA/auth denial.
+  const session = (await getAuthFromRequest(req)) as AuthSession | null;
   if (!session?.userId) return { ok: false, status: 401 };
 
   const supabase = createAdminClient();
@@ -63,6 +57,8 @@ export async function canReadDeal(
   }
 
   if (canActAsSalesperson(session)) {
+    // Tenant mismatch before ownership (corrupt owner_id must not cross tenants).
+    if (session.clientId !== scope.client_id) return { ok: false, status: 404 };
     if (scope.owner_id !== session.userId) return { ok: false, status: 403 };
     return {
       ok: true,
@@ -82,8 +78,8 @@ export async function canModifyDeal(
   | { allowed: true; deal: DealScope; userId: string; role: UserRole }
   | { allowed: false; reason: string; status: 401 | 403 | 404 }
 > {
-  const auth = req ? await getAuthFromRequest(req) : null;
-  const session = (auth ?? (await getServerSession(authOptions))) as AuthSession | null;
+  // Never fall through to getServerSession after MFA/auth denial.
+  const session = (await getAuthFromRequest(req)) as AuthSession | null;
   if (!session?.userId) {
     return { allowed: false, reason: "Unauthorized", status: 401 };
   }
@@ -114,6 +110,9 @@ export async function canModifyDeal(
   }
 
   if (canActAsSalesperson(session)) {
+    if (session.clientId !== scope.client_id) {
+      return { allowed: false, reason: "Not found", status: 404 };
+    }
     if (scope.owner_id !== session.userId) {
       return { allowed: false, reason: "Forbidden", status: 403 };
     }

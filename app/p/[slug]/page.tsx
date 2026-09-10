@@ -700,6 +700,7 @@ export default async function ProfilePage({
             <div className="rounded-2xl border border-[rgba(247,244,239,0.12)] bg-[rgba(247,244,239,0.06)] p-5 [&_input::placeholder]:text-[rgba(247,244,239,0.4)] [&_textarea::placeholder]:text-[rgba(247,244,239,0.4)]">
               <ConversationalForm
                 clientId={clientId}
+                profileSlug={params.slug}
                 clientName={clientName}
                 clientLogo={client?.logo_url ?? undefined}
                 formTitle={conversationalFormTitle}

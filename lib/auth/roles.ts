@@ -15,9 +15,9 @@ export function normalizeUserRole(role: string | null | undefined): UserRole | n
   return null;
 }
 
-/** Client-side / role-only check for Cloud admin surfaces. */
+/** Client-side / role-only check for Cloud admin surfaces (managers + platform). */
 export function isCloudAdminRole(role: UserRole | string | null | undefined): boolean {
-  return isSuperAdminRole(role) || role === "CLIENT_MANAGER" || role === "SALESPERSON";
+  return isSuperAdminRole(role) || role === "CLIENT_MANAGER";
 }
 
 /** Company profile & branding roles (no client scope). */

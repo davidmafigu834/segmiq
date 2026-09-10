@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canManageCloudSettings } from "@/lib/auth/permissions";
+import { bumpSessionVersion } from "@/lib/auth/offboard";
 import { migrateUncontactedLeads } from "@/lib/leads/migrateUncontactedLeads";
 
 export const dynamic = "force-dynamic";
@@ -79,8 +80,15 @@ export async function PATCH(req: Request) {
   const { error } = await supabase
     .from("users")
     .update({ is_active })
-    .eq("id", userId);
+    .eq("id", userId)
+    .eq("client_id", targetClientId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, migration });
+
+  // SECURITY: revoke web + mobile sessions when deactivating.
+  if (!is_active) {
+    await bumpSessionVersion(supabase, userId);
+  }
+
+  return NextResponse.json({ ok: true, migration, requiresReauth: !is_active });
 }

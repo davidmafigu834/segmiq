@@ -54,7 +54,7 @@ export const SETTINGS_SECTIONS: Record<SettingsCategory, SettingsSection[]> = {
     { id: "company-brain", label: "Company Brain", icon: "brain" },
   ],
   data: [{ id: "export", label: "Export", icon: "download" }],
-  security: [{ id: "authentication", label: "Authentication", icon: "shield" }],
+  security: [{ id: "overview", label: "Security", icon: "shield" }],
 };
 
 export const SETTINGS_DEFAULT_SECTION: Record<SettingsCategory, string> = {
@@ -65,7 +65,7 @@ export const SETTINGS_DEFAULT_SECTION: Record<SettingsCategory, string> = {
   integrations: "apps",
   automation: "assignment",
   data: "export",
-  security: "authentication",
+  security: "overview",
 };
 
 export function isSettingsCategory(value: string | undefined): value is SettingsCategory {

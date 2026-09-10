@@ -29,8 +29,10 @@ export async function PATCH(req: Request, { params }: { params: { escalationId: 
   if (!escalation) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const clientId = escalation.client_id;
-  if (auth.role !== "SUPER_ADMIN" && auth.clientId !== clientId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const inTenant =
+    (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) || auth.clientId === clientId;
+  if (!inTenant) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const body = await req.json().catch(() => null);

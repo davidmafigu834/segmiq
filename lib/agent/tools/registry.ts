@@ -451,6 +451,10 @@ export const TOOL_DISPLAY_NAMES: Record<AgentToolName, string> = {
   "viewing.schedule": "Schedule viewing",
 };
 
+/**
+ * Tools allowed without confirmation in ASSIST mode.
+ * SECURITY: do not include CRM mutations (e.g. memory_update) — ASSIST is recommendations/reads + escalate.
+ */
 export const ASSIST_SAFE_TOOLS: ReadonlySet<AgentToolName> = new Set([
   "catalog_search",
   "product.search",
@@ -462,7 +466,6 @@ export const ASSIST_SAFE_TOOLS: ReadonlySet<AgentToolName> = new Set([
   "brain_lookup",
   "calendar_get_availability",
   "quotation_get_current",
-  "memory_update",
   "conversation_add_internal_note",
   "agent_escalate",
   "agent_notify_owner",

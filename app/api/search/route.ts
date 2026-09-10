@@ -39,6 +39,8 @@ export async function GET(req: Request) {
   const role = session.role as UserRole;
   const userId = session.userId;
   const clientId = session.clientId ?? null;
+  // SECURITY: impersonation must never inherit platform-wide search.
+  const isPlatformAdmin = role === "SUPER_ADMIN" && !session.isImpersonating;
 
   type Row = {
     type: "lead" | "client" | "user";
@@ -59,7 +61,12 @@ export async function GET(req: Request) {
 
   const salesScoped = canActAsSalesperson({ userId, role, alsoSells: session.alsoSells });
 
-  if (role === "CLIENT_MANAGER" && clientId && !salesScoped) {
+  // SECURITY: tenant users must always filter by client_id (fail closed).
+  // Platform SUPER_ADMIN may search across tenants intentionally.
+  if (!isPlatformAdmin) {
+    if (!clientId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     leadsQ = leadsQ.eq("client_id", clientId);
   }
   if (salesScoped) {
@@ -70,7 +77,7 @@ export async function GET(req: Request) {
   for (const lead of leads ?? []) {
     const cl = (lead as { clients?: { name?: string; slug?: string } | null }).clients;
     const href = salesScoped
-      ? `/sales/call-now?lead=${lead.id}`
+      ? `/sales/leads?lead=${lead.id}`
       : role === "CLIENT_MANAGER"
         ? `/client/leads/pipeline?lead=${lead.id}`
         : `/dashboard/leads?lead=${lead.id}`;
@@ -84,7 +91,7 @@ export async function GET(req: Request) {
     });
   }
 
-  if (role === "SUPER_ADMIN") {
+  if (isPlatformAdmin) {
     const { data: clients } = await supabase
       .from("clients")
       .select("id, name, slug, industry")
@@ -102,7 +109,7 @@ export async function GET(req: Request) {
     }
   }
 
-  if (role === "SUPER_ADMIN" || role === "CLIENT_MANAGER") {
+  if (isPlatformAdmin || role === "CLIENT_MANAGER") {
     let usersQ = supabase
       .from("users")
       .select("id, name, email, role, client_id, clients(name)")
@@ -110,7 +117,11 @@ export async function GET(req: Request) {
       .in("role", ["SALESPERSON", "CLIENT_MANAGER"])
       .or(`name.ilike.${pattern},email.ilike.${pattern}`)
       .limit(6);
-    if (role === "CLIENT_MANAGER" && clientId) {
+    // SECURITY: managers without a tenant context must not see all users.
+    if (!isPlatformAdmin) {
+      if (!clientId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
       usersQ = usersQ.eq("client_id", clientId);
     }
     const { data: users } = await usersQ;
@@ -118,7 +129,7 @@ export async function GET(req: Request) {
       const u = user as { id: string; name: string; email: string; role: string; client_id: string | null; clients?: { name?: string } | null };
       const clientName = u.clients?.name;
       const href =
-        role === "SUPER_ADMIN" && u.client_id
+        isPlatformAdmin && u.client_id
           ? `/dashboard/clients/${u.client_id}/team`
           : "/client/team";
       results.push({

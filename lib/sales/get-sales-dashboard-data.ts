@@ -151,7 +151,7 @@ function buildCommercialKpis(c: SalesDashboardCommercial): SalesKpiItem[] {
       supporting: "Today",
       trend: trendVs(c.newEnquiriesToday, c.newEnquiriesYesterday, "vs yesterday"),
       icon: "enquiries",
-      href: "/sales/call-now",
+      href: "/sales/leads",
     },
     {
       id: "active-deals",
@@ -215,7 +215,7 @@ function mapEnquiryFromPlan(
   const source = String(q.customer?.source ?? "");
   const href = source.includes("WHATSAPP")
     ? `/sales/inbox?lead=${leadId}`
-    : `/sales/call-now?lead=${leadId}`;
+    : `/sales/leads?lead=${leadId}`;
   const subtitle = q.subtitle?.trim() || null;
   const statusLike =
     subtitle &&
@@ -649,7 +649,7 @@ function enrichRecentActivity(
       title,
       detail,
       timeLabel: timeAgo(event.created_at),
-      href: `/sales/call-now?lead=${event.lead_id}`,
+      href: `/sales/leads?lead=${event.lead_id}`,
     });
   }
 
@@ -691,7 +691,7 @@ function enrichRecentActivity(
       title: value ? `${name} won Deal worth ${value}` : `Deal won — ${name}`,
       detail: win.days_to_close != null ? `${win.days_to_close}d to close` : null,
       timeLabel: timeAgo(win.created_at),
-      href: win.lead_id ? `/sales/call-now?lead=${win.lead_id}` : "/sales/won-lost",
+      href: win.lead_id ? `/sales/leads?lead=${win.lead_id}` : "/sales/won-lost",
     });
   }
 
@@ -1014,7 +1014,7 @@ export async function getSalesDashboardData(opts: {
           reason: l.priorityLabel || "Needs attention",
           phone: l.phone,
           availableActions: actions,
-          href: `/sales/call-now?lead=${l.id}`,
+          href: `/sales/leads?lead=${l.id}`,
         };
       });
     priorityEnquiries.push(...fallback);

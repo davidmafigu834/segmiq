@@ -39,6 +39,12 @@ function LoginFormInner() {
   const [workspaceState, setWorkspaceState] = useState<SegmiQPreloaderState | "idle">("idle");
   const resolvingWorkspace = useRef(false);
 
+  const [mfaStep, setMfaStep] = useState(false);
+  const [challengeId, setChallengeId] = useState<string | null>(null);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [useRecovery, setUseRecovery] = useState(false);
+
   const reason = searchParams.get("reason");
   const banner = reasonBanner(reason);
   const callbackUrl = searchParams.get("callbackUrl");
@@ -70,8 +76,6 @@ function LoginFormInner() {
       const data = (await res.json()) as { home?: string };
       if (!data.home) throw new Error("Workspace route missing");
 
-      // A document navigation keeps the real workspace preloader visible while
-      // middleware and the destination Server Component finish their auth/scope gates.
       window.location.assign(data.home);
     } catch {
       resolvingWorkspace.current = false;
@@ -102,6 +106,64 @@ function LoginFormInner() {
     setLoading(true);
     setError(null);
     try {
+      if (mfaStep && challengeId && challengeToken) {
+        const complete = await fetch("/api/auth/mfa/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "complete",
+            challengeId,
+            challengeToken,
+            totpCode: useRecovery ? undefined : mfaCode.trim(),
+            recoveryCode: useRecovery ? mfaCode.trim() : undefined,
+            channel: "web",
+          }),
+        });
+        const json = (await complete.json().catch(() => ({}))) as { error?: string };
+        if (!complete.ok) {
+          setError(json.error ?? "Verification failed. Try again.");
+          return;
+        }
+        await resolveWorkspace();
+        return;
+      }
+
+      const prepare = await fetch("/api/auth/mfa/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "prepare",
+          email: email.trim(),
+          password,
+        }),
+      });
+      const prepJson = (await prepare.json().catch(() => ({}))) as {
+        mfaRequired?: boolean;
+        challengeId?: string;
+        challengeToken?: string;
+        error?: string;
+      };
+      if (prepare.status === 401) {
+        setError("Email or password is incorrect.");
+        return;
+      }
+      if (prepare.status === 503) {
+        setError("Sign-in is temporarily unavailable because the database is slow. Please try again in a minute.");
+        return;
+      }
+      if (!prepare.ok) {
+        setError(prepJson.error ?? "Sign-in failed.");
+        return;
+      }
+
+      if (prepJson.mfaRequired && prepJson.challengeId && prepJson.challengeToken) {
+        setMfaStep(true);
+        setChallengeId(prepJson.challengeId);
+        setChallengeToken(prepJson.challengeToken);
+        setMfaCode("");
+        return;
+      }
+
       const res = await signIn("credentials", {
         redirect: false,
         email: email.trim(),
@@ -145,14 +207,18 @@ function LoginFormInner() {
           className="text-[28px] font-semibold leading-tight tracking-[-0.03em] text-[var(--marketing-text-heading)] sm:text-[30px]"
           style={{ fontWeight: 650 }}
         >
-          Welcome back
+          {mfaStep ? "Two-step verification" : "Welcome back"}
         </h1>
         <p className="mt-2 text-[14px] leading-relaxed text-[var(--marketing-text-secondary)]">
-          Sign in to your SegmiQ account.
+          {mfaStep
+            ? useRecovery
+              ? "Enter one of your recovery codes."
+              : "Enter the 6-digit code from your authenticator app."
+            : "Sign in to your SegmiQ account."}
         </p>
       </div>
 
-      {banner ? (
+      {banner && !mfaStep ? (
         <div
           role="status"
           className={`mt-7 flex items-start gap-2.5 rounded-[9px] border px-3.5 py-3 text-[13px] ${
@@ -171,69 +237,117 @@ function LoginFormInner() {
       ) : null}
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit} noValidate>
-        <div>
-          <label
-            className="mb-1.5 block text-[13px] font-medium text-[var(--marketing-text-label)]"
-            htmlFor="email"
-          >
-            Email address
-          </label>
-          <input
-            id="email"
-            type="email"
-            inputMode="email"
-            autoCapitalize="off"
-            autoComplete="email"
-            placeholder="you@company.com"
-            required
-            disabled={loading}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? "login-error" : undefined}
-            className={inputClass}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        {!mfaStep ? (
+          <>
+            <div>
+              <label
+                className="mb-1.5 block text-[13px] font-medium text-[var(--marketing-text-label)]"
+                htmlFor="email"
+              >
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                inputMode="email"
+                autoCapitalize="off"
+                autoComplete="email"
+                placeholder="you@company.com"
+                required
+                disabled={loading}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "login-error" : undefined}
+                className={inputClass}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
 
-        <div>
-          <div className="mb-1.5 flex items-center justify-between gap-3">
+            <div>
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <label
+                  className="text-[13px] font-medium text-[var(--marketing-text-label)]"
+                  htmlFor="password"
+                >
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-[12px] font-semibold text-[var(--marketing-link)] transition-colors hover:text-[var(--marketing-link-hover)]"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  required
+                  disabled={loading}
+                  aria-invalid={error ? true : undefined}
+                  aria-describedby={error ? "login-error" : undefined}
+                  className={`${inputClass} pr-12`}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-1.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg text-[var(--marketing-text-muted)] transition-colors hover:text-[var(--marketing-text)]"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div>
             <label
-              className="text-[13px] font-medium text-[var(--marketing-text-label)]"
-              htmlFor="password"
+              className="mb-1.5 block text-[13px] font-medium text-[var(--marketing-text-label)]"
+              htmlFor="mfa-code"
             >
-              Password
+              {useRecovery ? "Recovery code" : "Authenticator code"}
             </label>
-            <Link
-              href="/forgot-password"
-              className="text-[12px] font-semibold text-[var(--marketing-link)] transition-colors hover:text-[var(--marketing-link-hover)]"
-            >
-              Forgot password?
-            </Link>
-          </div>
-          <div className="relative">
             <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              placeholder="Enter your password"
+              id="mfa-code"
+              inputMode={useRecovery ? "text" : "numeric"}
+              autoComplete="one-time-code"
+              placeholder={useRecovery ? "XXXX-XXXX-XX" : "000000"}
               required
               disabled={loading}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? "login-error" : undefined}
-              className={`${inputClass} pr-12`}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              className={inputClass}
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value)}
             />
             <button
               type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-1.5 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-lg text-[var(--marketing-text-muted)] transition-colors hover:text-[var(--marketing-text)]"
+              className="mt-2 text-[12px] font-semibold text-[var(--marketing-link)]"
+              onClick={() => {
+                setUseRecovery((v) => !v);
+                setMfaCode("");
+                setError(null);
+              }}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {useRecovery ? "Use authenticator app instead" : "Use a recovery code"}
+            </button>
+            <button
+              type="button"
+              className="mt-2 ml-4 text-[12px] font-semibold text-[var(--marketing-text-secondary)]"
+              onClick={() => {
+                setMfaStep(false);
+                setChallengeId(null);
+                setChallengeToken(null);
+                setMfaCode("");
+                setUseRecovery(false);
+              }}
+            >
+              Back
             </button>
           </div>
-        </div>
+        )}
 
         {error ? (
           <div
@@ -255,23 +369,27 @@ function LoginFormInner() {
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              Signing in…
+              {mfaStep ? "Verifying…" : "Signing in…"}
             </>
+          ) : mfaStep ? (
+            "Verify"
           ) : (
             "Sign in"
           )}
         </button>
       </form>
 
-      <p className="mt-6 text-[13px] leading-relaxed text-[var(--marketing-text-secondary)]">
-        Accounts are provisioned by SegmiQ.{" "}
-        <Link
-          href="/contact"
-          className="font-semibold text-[var(--marketing-link)] hover:text-[var(--marketing-link-hover)]"
-        >
-          Need access?
-        </Link>
-      </p>
+      {!mfaStep ? (
+        <p className="mt-6 text-[13px] leading-relaxed text-[var(--marketing-text-secondary)]">
+          Accounts are provisioned by SegmiQ.{" "}
+          <Link
+            href="/contact"
+            className="font-semibold text-[var(--marketing-link)] hover:text-[var(--marketing-link-hover)]"
+          >
+            Need access?
+          </Link>
+        </p>
+      ) : null}
       </div>
     </>
   );
