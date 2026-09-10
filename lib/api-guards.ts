@@ -28,10 +28,15 @@ export type GuardSession = {
   mfaEnrolmentRequired?: boolean;
 };
 
+/** Discriminated-style result so `guard.error` / `"error" in guard` both typecheck. */
+export type ApiGuardResult =
+  | { error: NextResponse; session?: undefined }
+  | { session: GuardSession; error?: undefined };
+
 async function enforceMfa(
   session: GuardSession,
   req?: Request
-): Promise<{ error: NextResponse } | null> {
+): Promise<{ error: NextResponse; session?: undefined } | null> {
   const assurance: MfaAssurance =
     session.mfaSatisfied != null
       ? {
@@ -52,7 +57,7 @@ async function enforceMfa(
   return null;
 }
 
-export async function requireSession(req?: Request) {
+export async function requireSession(req?: Request): Promise<ApiGuardResult> {
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
@@ -71,7 +76,7 @@ export async function requireSession(req?: Request) {
 }
 
 /** Cookie session or Bearer JWT — for mobile app routes that used requireSession. */
-export async function requireSessionFromRequest(req: Request) {
+export async function requireSessionFromRequest(req: Request): Promise<ApiGuardResult> {
   const auth = await getAuthFromRequest(req);
   if (!auth?.userId) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
@@ -91,16 +96,19 @@ export async function requireSessionFromRequest(req: Request) {
   return { session };
 }
 
-export async function requireClientAccessFromRequest(req: Request, clientId: string) {
+export async function requireClientAccessFromRequest(
+  req: Request,
+  clientId: string
+): Promise<ApiGuardResult> {
   const g = await requireSessionFromRequest(req);
-  if ("error" in g) return g;
+  if (g.error) return g;
   if (!canAccessClient(g.session.role, g.session.clientId, clientId)) {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   }
   return g;
 }
 
-export async function requireRoles(roles: UserRole[], req?: Request) {
+export async function requireRoles(roles: UserRole[], req?: Request): Promise<ApiGuardResult> {
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
@@ -121,7 +129,10 @@ export async function requireRoles(roles: UserRole[], req?: Request) {
 }
 
 /** Cookie session or Bearer JWT — for mobile app API routes. */
-export async function requireRolesFromRequest(req: Request, roles: UserRole[]) {
+export async function requireRolesFromRequest(
+  req: Request,
+  roles: UserRole[]
+): Promise<ApiGuardResult> {
   const auth = await getAuthFromRequest(req);
   if (!auth?.userId) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
@@ -145,7 +156,7 @@ export async function requireRolesFromRequest(req: Request, roles: UserRole[]) {
 }
 
 /** Salesperson or manager with also_sells enabled. */
-export async function requireSalesActor(req?: Request) {
+export async function requireSalesActor(req?: Request): Promise<ApiGuardResult> {
   const session = await getServerSession(authOptions);
   if (!session?.userId) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
@@ -166,7 +177,7 @@ export async function requireSalesActor(req?: Request) {
 }
 
 /** Bearer or cookie — salesperson or selling manager. */
-export async function requireSalesActorFromRequest(req: Request) {
+export async function requireSalesActorFromRequest(req: Request): Promise<ApiGuardResult> {
   const auth = await getAuthFromRequest(req);
   if (!auth?.userId) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
