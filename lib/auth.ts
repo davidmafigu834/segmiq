@@ -304,7 +304,7 @@ export const authOptions: NextAuthOptions = {
       if (!valid.ok) {
         console.warn("[auth] Session rejected:", valid.reason);
         session.userId = "";
-        session.role = "SALESPERSON";
+        session.role = "" as UserRole;
         session.clientId = null;
         session.clientMode = "team";
         session.alsoSells = false;

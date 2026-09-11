@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "crypto";
+
 /**
  * MFA recovery codes — high-entropy, hashed at rest, single-use.
  * Never log plaintext codes.
@@ -43,6 +45,17 @@ export async function hashChallengeToken(token: string): Promise<string> {
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+export function challengeHashesEqual(a: string, b: string): boolean {
+  try {
+    const ba = Buffer.from(a, "hex");
+    const bb = Buffer.from(b, "hex");
+    if (ba.length !== bb.length) return false;
+    return timingSafeEqual(ba, bb);
+  } catch {
+    return false;
+  }
 }
 
 export function generateChallengeToken(): string {

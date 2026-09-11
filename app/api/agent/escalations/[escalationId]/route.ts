@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
+import { evaluateLeadModifyAccess } from "@/lib/auth/permissions";
 import { updateConversationAgentState } from "@/lib/agent/conversation-state";
 import { asRow } from "@/lib/agent/rows";
 
@@ -33,6 +34,24 @@ export async function PATCH(req: Request, { params }: { params: { escalationId: 
     (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) || auth.clientId === clientId;
   if (!inTenant) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const isManager =
+    auth.role === "CLIENT_MANAGER" || (auth.role === "SUPER_ADMIN" && !auth.isImpersonating);
+  if (!isManager) {
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("client_id, assigned_to_id")
+      .eq("id", escalation.lead_id)
+      .maybeSingle();
+    if (!lead) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const mod = evaluateLeadModifyAccess(auth, {
+      client_id: lead.client_id as string,
+      assigned_to_id: (lead.assigned_to_id as string | null) ?? null,
+    });
+    if (!mod.allowed) {
+      return NextResponse.json({ error: mod.reason }, { status: mod.status });
+    }
   }
 
   const body = await req.json().catch(() => null);

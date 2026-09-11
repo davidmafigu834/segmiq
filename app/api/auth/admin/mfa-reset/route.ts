@@ -7,7 +7,9 @@ import { disableMfa, verifyActiveTotp } from "@/lib/auth/mfa/service";
 import { recordSecurityEvent } from "@/lib/auth/security-events";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkSecurityRateLimit } from "@/lib/auth/security-rate-limit";
-import { clientIpFromRequest } from "@/lib/auth/user-sessions";
+import { clientIpFromRequest, revokeAllUserSessions } from "@/lib/auth/user-sessions";
+import { bumpSessionVersion } from "@/lib/auth/offboard";
+import { sendSecurityNotification } from "@/lib/email/templates/security-alert";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +82,11 @@ export async function POST(req: Request) {
   }
 
   await disableMfa({ userId: target.id as string });
+  await bumpSessionVersion(supabase, target.id as string, { revokeReason: "ADMIN_REVOKED" });
+  await revokeAllUserSessions({
+    userId: target.id as string,
+    reason: "ADMIN_REVOKED",
+  });
 
   void recordSecurityEvent({
     eventType: "MFA_ADMIN_RESET",
@@ -92,6 +99,13 @@ export async function POST(req: Request) {
       targetRole: target.role,
     },
   });
+
+  if (target.email) {
+    void sendSecurityNotification({
+      to: String(target.email),
+      kind: "mfa_disabled",
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

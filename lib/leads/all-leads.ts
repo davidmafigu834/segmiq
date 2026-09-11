@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isLeadSlow } from "@/lib/leadStatus";
 import type { LeadSource, LeadStatus } from "@/types";
 import { endOfMonth, endOfDay, startOfDay, startOfMonth, subDays, subMonths } from "date-fns";
+import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
 
 export type LeadFilters = {
   status: LeadStatus | "all" | "uncontacted";
@@ -247,9 +248,11 @@ function applyCommonFilters(
   if (from) out = out.gte("created_at", from.toISOString());
   if (to) out = out.lte("created_at", to.toISOString());
   if (f.search) {
-    const esc = f.search.replace(/%/g, "").replace(/,/g, "");
-    const s = `%${esc}%`;
-    out = out.or(`name.ilike.${s},phone.ilike.${s},email.ilike.${s},project_type.ilike.${s}`);
+    const esc = sanitizePostgrestSearchTerm(f.search);
+    if (esc) {
+      const s = `%${esc}%`;
+      out = out.or(`name.ilike.${s},phone.ilike.${s},email.ilike.${s},project_type.ilike.${s}`);
+    }
   }
   return out;
 }

@@ -69,6 +69,7 @@ export async function requirePermission(
     userId: actorSource.userId,
     role: actorSource.role,
     clientId: actorSource.clientId ?? null,
+    sessionId: actorSource.sessionId ?? null,
   });
   const mfaGate = assertMfaApiAccess(assurance, req ?? null);
   if (!mfaGate.ok) return { error: mfaGate.response };
@@ -107,6 +108,7 @@ export async function requireAnyPermission(
     userId: actorSource.userId,
     role: actorSource.role,
     clientId: actorSource.clientId ?? null,
+    sessionId: actorSource.sessionId ?? null,
   });
   const mfaGate = assertMfaApiAccess(assurance, req ?? null);
   if (!mfaGate.ok) return { error: mfaGate.response };

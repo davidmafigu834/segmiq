@@ -4,6 +4,7 @@ import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseLifecycleFilter } from "@/lib/customer-hub/contact-filters";
 import { CONTACT_LIFECYCLE_LABELS, isContactLifecycle, type ContactLifecycle } from "@/lib/customer-hub/lifecycle";
+import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
   }
 
   const lifecycle = parseLifecycleFilter(url.searchParams.get("lifecycle"));
-  const q = (url.searchParams.get("q") ?? "").trim().replace(/[,()%*\\:]/g, "");
+  const q = sanitizePostgrestSearchTerm(url.searchParams.get("q") ?? "");
 
   const supabase = createAdminClient();
   let query = supabase

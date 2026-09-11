@@ -11,6 +11,7 @@ import {
   normalizeRecoveryCode,
   generateChallengeToken,
   hashChallengeToken,
+  challengeHashesEqual,
 } from "@/lib/auth/mfa/recovery-codes";
 import {
   MFA_SETUP_TTL_MS,
@@ -282,7 +283,7 @@ export async function verifyLoginChallenge(opts: {
   }
 
   const expectedHash = await hashChallengeToken(opts.challengeToken);
-  if (expectedHash !== row.token_hash) {
+  if (!challengeHashesEqual(expectedHash, String(row.token_hash ?? ""))) {
     return { ok: false, reason: "challenge_invalid" };
   }
 

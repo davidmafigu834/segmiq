@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireRoles } from "@/lib/api-guards";
+import { canAccessClient } from "@/lib/auth/permissions";
 import { recordRetargetingNudge } from "@/lib/retargeting";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "clientId required" }, { status: 400 });
   }
 
-  if (session!.role === "CLIENT_MANAGER" && session!.clientId !== clientId) {
+  if (!canAccessClient(session!.role, session!.clientId, clientId)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

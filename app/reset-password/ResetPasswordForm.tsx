@@ -16,7 +16,6 @@ function ResetPasswordInner() {
   const [validating, setValidating] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);
   const [tokenError, setTokenError] = useState("");
-  const [userName, setUserName] = useState("");
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -37,7 +36,6 @@ function ResetPasswordInner() {
       .then((data) => {
         if (data.valid) {
           setTokenValid(true);
-          setUserName(data.userName || "");
         } else {
           setTokenError(
             data.error === "Token expired"
@@ -58,8 +56,8 @@ function ResetPasswordInner() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (password.length < 12) {
+      setError("Password must be at least 12 characters.");
       return;
     }
     if (password !== confirm) {
@@ -146,8 +144,7 @@ function ResetPasswordInner() {
     );
   }
 
-  const firstName = userName.split(" ")[0];
-  const lengthOk = password.length >= 8;
+  const lengthOk = password.length >= 12;
   const matchOk = confirm.length > 0 && password === confirm;
 
   return (
@@ -156,10 +153,10 @@ function ResetPasswordInner() {
         className="text-[28px] font-semibold tracking-[-0.03em] text-[var(--marketing-text-heading)] sm:text-[30px]"
         style={{ fontWeight: 650 }}
       >
-        {firstName ? `New password, ${firstName}` : "Set new password"}
+        Set new password
       </h1>
       <p className="mt-2 text-[14px] leading-relaxed text-[var(--marketing-text-secondary)]">
-        Choose a strong password. Minimum 8 characters.
+        Choose a strong password. Minimum 12 characters.
       </p>
 
       <form className="mt-8 space-y-[18px]" onSubmit={handleSubmit}>

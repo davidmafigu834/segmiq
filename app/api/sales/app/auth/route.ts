@@ -8,6 +8,7 @@ import {
   userAgentFromRequest,
 } from "@/lib/auth/user-sessions";
 import { recordSecurityEvent, hashLoginIdentifier } from "@/lib/auth/security-events";
+import { checkDbRateLimit } from "@/lib/auth/db-rate-limit";
 import { JWT_MAX_AGE_SEC } from "@/lib/auth/session-policy";
 import { userNeedsMfaChallenge, createLoginChallenge, mustEnrollMfa } from "@/lib/auth/mfa/service";
 import { labelSessionDevice } from "@/lib/auth/session-labels";
@@ -60,6 +61,22 @@ export async function POST(req: Request) {
   const ip = clientIpFromRequest(req);
   const ua = userAgentFromRequest(req);
   if (!email || !password) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const emailHash = await hashLoginIdentifier(email);
+  const rl = await checkDbRateLimit({
+    key: `mobile-sales-login:${emailHash}:${ip ?? "unknown"}`,
+    limit: 10,
+    windowMs: 15 * 60_000,
+  });
+  if (!rl.ok) {
+    void recordSecurityEvent({
+      eventType: "LOGIN_FAILED",
+      ip,
+      userAgent: ua,
+      metadata: { emailHash, channel: "mobile_sales", reason: "rate_limited" },
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

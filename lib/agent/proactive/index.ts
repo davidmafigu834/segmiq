@@ -8,7 +8,15 @@ export { emitDomainEvent } from "./events";
 export { runProactiveWorker, reconcileProactiveJobs } from "./reconciliation";
 export { evaluateProactiveJob, runDueProactiveJobs } from "./evaluate";
 export { getProactiveSettings, updateProactiveSettings, isProactiveGloballyEnabled } from "./settings";
-export { listJobs, getJob, cancelJobs, upcomingJobForLead, countJobsToday, scheduleEvaluation } from "./jobs";
+export {
+  listJobs,
+  getJob,
+  cancelJobs,
+  cancelJobById,
+  upcomingJobForLead,
+  countJobsToday,
+  scheduleEvaluation,
+} from "./jobs";
 export * from "./hooks";
 export { REASON_CODE_LABELS } from "./types";
 export type { ProactiveSettings, ProactiveJob, DomainEvent, ReasonCode, ProactiveConfig } from "./types";

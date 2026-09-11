@@ -52,6 +52,7 @@ export function SecuritySettingsPanel({
   const [savingPw, setSavingPw] = useState(false);
 
   const [setupOpen, setSetupOpen] = useState(false);
+  const [setupPassword, setSetupPassword] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState<string | null>(null);
   const [setupCode, setSetupCode] = useState("");
@@ -123,13 +124,17 @@ export function SecuritySettingsPanel({
   }
 
   async function startMfaSetup() {
+    if (!setupPassword.trim()) {
+      toast({ title: "Enter your current password to start setup.", tone: "error" });
+      return;
+    }
     setBusyMfa(true);
     setRecoveryCodes(null);
     try {
       const res = await fetch("/api/auth/mfa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "setup_start" }),
+        body: JSON.stringify({ action: "setup_start", password: setupPassword }),
       });
       const json = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -144,6 +149,7 @@ export function SecuritySettingsPanel({
       if (!res.ok) throw new Error(json.error ?? "Could not start setup");
       setQrDataUrl(json.qrDataUrl ?? null);
       setManualKey(json.manualKey ?? null);
+      setSetupPassword("");
       setSetupOpen(true);
       setSetupCode("");
     } catch (err) {
@@ -474,10 +480,19 @@ export function SecuritySettingsPanel({
             ) : null}
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-3">
+          <div className="space-y-3">
             <p className="text-[13px] text-sales-text-secondary">
               Use Google Authenticator, Microsoft Authenticator, 1Password, or any TOTP app.
             </p>
+            <Field label="Confirm password to begin" htmlFor="mfa-setup-pw">
+              <Input
+                id="mfa-setup-pw"
+                type="password"
+                autoComplete="current-password"
+                value={setupPassword}
+                onChange={(e) => setSetupPassword(e.target.value)}
+              />
+            </Field>
             <Button variant="primary" size="sm" loading={busyMfa} onClick={() => void startMfaSetup()}>
               Set up
             </Button>

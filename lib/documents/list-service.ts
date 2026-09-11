@@ -3,6 +3,7 @@ import { DOCUMENT_COLLECTIONS, getCollectionDefinition, type DocumentCollectionI
 import { canViewDocument } from "@/lib/documents/permissions";
 import { searchDocuments } from "@/lib/documents/retrieval";
 import type { DocumentActor, DocumentRow, DocumentTypeRow, DocumentVersionRow } from "@/lib/documents/types";
+import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
 
 export type DocumentListFilters = {
   q?: string;
@@ -174,8 +175,10 @@ export async function listDocumentsFiltered(opts: {
     query = query.is("archived_at", null);
   }
   if (filters.q?.trim()) {
-    const term = filters.q.trim().replace(/[%_]/g, "");
-    query = query.or(`title.ilike.%${term}%,original_file_name.ilike.%${term}%`);
+    const term = sanitizePostgrestSearchTerm(filters.q);
+    if (term) {
+      query = query.or(`title.ilike.%${term}%,original_file_name.ilike.%${term}%`);
+    }
   }
   if (filters.lifecycleStatus) {
     query = query.eq("lifecycle_status", filters.lifecycleStatus);

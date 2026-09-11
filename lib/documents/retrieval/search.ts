@@ -15,6 +15,7 @@ import type {
   DocumentSearchHit,
   DocumentSearchResult,
 } from "@/lib/documents/retrieval/types";
+import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
 
 type ChunkRow = {
   id: string;
@@ -306,8 +307,10 @@ export async function searchDocuments(opts: {
   else if (collectionTypeIds.length) metadataQuery = metadataQuery.in("document_type_id", collectionTypeIds);
   if (filters.documentId) metadataQuery = metadataQuery.eq("id", filters.documentId);
 
-  const term = query.replace(/[%_]/g, "");
-  metadataQuery = metadataQuery.or(`title.ilike.%${term}%,original_file_name.ilike.%${term}%`);
+  const term = sanitizePostgrestSearchTerm(query);
+  if (term) {
+    metadataQuery = metadataQuery.or(`title.ilike.%${term}%,original_file_name.ilike.%${term}%`);
+  }
 
   const [{ data: metadataDocs }, chunks] = await Promise.all([
     metadataQuery,

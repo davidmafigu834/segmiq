@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
-import { randomBytes } from "crypto";
 import { checkDbRateLimit } from "@/lib/auth/db-rate-limit";
 import { clientIpFromRequest } from "@/lib/auth/user-sessions";
 import { hashLoginIdentifier } from "@/lib/auth/security-events";
+import {
+  generatePasswordResetToken,
+  insertPasswordResetToken,
+  invalidateUnusedResetTokens,
+} from "@/lib/auth/password-reset-tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -41,23 +45,25 @@ export async function POST(req: Request) {
 
   const supabase = createAdminClient();
 
+  // Cloud-eligible roles only — do not issue cloud reset links for agency admins.
   const { data: user } = await supabase
     .from("users")
-    .select("id, name, email")
+    .select("id, name, email, role")
     .eq("email", emailNorm)
     .eq("is_active", true)
+    .in("role", ["CLIENT_MANAGER", "SALESPERSON"])
     .maybeSingle();
 
   if (user) {
     const typedUser = user as { id: string; name: string; email: string };
-    const token = randomBytes(32).toString("hex");
+    const token = generatePasswordResetToken();
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
-    await supabase.from("password_reset_tokens").insert({
-      user_id: typedUser.id,
-      token,
-      expires_at: expiresAt,
-      used: false,
+    await invalidateUnusedResetTokens(typedUser.id);
+    await insertPasswordResetToken({
+      userId: typedUser.id,
+      rawToken: token,
+      expiresAt,
     });
 
     const resendKey = process.env.RESEND_API_KEY;

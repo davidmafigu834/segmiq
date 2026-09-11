@@ -4,6 +4,7 @@ import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { contactIdsForHubFilter, parseLifecycleFilter } from "@/lib/customer-hub/contact-filters";
 import { enrichContactsWithLeads } from "@/lib/customer-hub/enrich-contacts-with-leads";
+import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
 
 export const dynamic = "force-dynamic";
 const PAGE_SIZE = 50;
@@ -32,7 +33,8 @@ export async function GET(req: Request) {
   const hubFilter = url.searchParams.get("hubFilter");
   // Phase 1 alias — prefer lifecycle=cold|aware
   const relationship = url.searchParams.get("relationship");
-  const q = (url.searchParams.get("q") ?? "").trim().replace(/[,()%*\\:]/g, "");
+  const q = (url.searchParams.get("q") ?? "").trim();
+  const qSafe = sanitizePostgrestSearchTerm(q);
 
   const supabase = createAdminClient();
 
@@ -61,7 +63,7 @@ export async function GET(req: Request) {
     }
     query = query.in("id", Array.from(filterIds));
   }
-  if (q) query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%`);
+  if (qSafe) query = query.or(`name.ilike.%${qSafe}%,phone.ilike.%${qSafe}%`);
   query = query.order("updated_at", { ascending: false }).range(from, to);
 
   const { data: contacts, count, error } = await query;

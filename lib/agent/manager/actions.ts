@@ -11,7 +11,7 @@ import {
 import { logQuotationEvent } from "@/lib/quotations/events";
 import { notifyQuotationAlert } from "@/lib/quotations/notify";
 import { updateConversationAgentState } from "@/lib/agent/conversation-state";
-import { cancelJobs, getJob } from "@/lib/agent/proactive/jobs";
+import { cancelJobById, getJob } from "@/lib/agent/proactive/jobs";
 import { REASON_CODE_LABELS } from "@/lib/agent/proactive/types";
 import { asRow, asRows } from "@/lib/agent/rows";
 import { closeDealLost, closeDealWon, updateDealStage } from "@/lib/sales/deals/close-deal";
@@ -419,22 +419,21 @@ export async function cancelProactiveAction(opts: {
 }): Promise<ActionOutcome> {
   const job = await getJob(opts.jobId, opts.actor.clientId);
   if (!job) return { ok: false, message: "Scheduled action not found.", changed: 0, skipped: 0, failed: 1, code: "NOT_FOUND" };
-  const n = await cancelJobs({
+  const ok = await cancelJobById({
+    jobId: job.id,
     clientId: opts.actor.clientId,
     reason: opts.reason || "Cancelled from Command Center",
-    leadId: job.leadId ?? undefined,
-    quotationId: job.quotationId ?? undefined,
     cancelledById: opts.actor.userId,
   });
   const label = job.reasonCode
     ? REASON_CODE_LABELS[job.reasonCode as keyof typeof REASON_CODE_LABELS] || job.triggerType
     : job.triggerType;
   return {
-    ok: n > 0,
-    message: n > 0 ? `Cancelled: ${label}.` : "Nothing was scheduled to cancel.",
-    changed: n,
+    ok,
+    message: ok ? `Cancelled: ${label}.` : "Nothing was scheduled to cancel.",
+    changed: ok ? 1 : 0,
     skipped: 0,
-    failed: n > 0 ? 0 : 1,
+    failed: ok ? 0 : 1,
   };
 }
 

@@ -53,6 +53,27 @@ export async function POST(req: Request) {
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: "A proof file is required" }, { status: 400 });
   }
+  if (file.size > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: "Proof file must be 10MB or less" }, { status: 400 });
+  }
+
+  const allowedMimes = new Set([
+    "application/pdf",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+  ]);
+  const name = sanitizeFileName(file.name);
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  const allowedExt = new Set(["pdf", "jpg", "jpeg", "png", "webp"]);
+  const mime = (file.type || "").toLowerCase();
+  if (!allowedExt.has(ext) || (mime && !allowedMimes.has(mime))) {
+    return NextResponse.json(
+      { error: "Proof must be a PDF or image (JPG, PNG, WEBP)" },
+      { status: 400 }
+    );
+  }
 
   const supabase = createAdminClient();
   const { data: invoice } = await supabase
@@ -93,13 +114,14 @@ export async function POST(req: Request) {
 
   const paymentId = payment.id as string;
   const buffer = Buffer.from(await file.arrayBuffer());
-  const key = `billing/proofs/${paymentId}/${sanitizeFileName(file.name)}`;
-  await putObject(key, buffer, file.type || "application/octet-stream");
+  const key = `billing/proofs/${paymentId}/${name}`;
+  const contentType = mime && allowedMimes.has(mime) ? mime : "application/octet-stream";
+  await putObject(key, buffer, contentType);
   await supabase.from("payment_proofs").insert({
     payment_id: paymentId,
     file_url: getPublicUrl(key),
-    file_name: file.name,
-    file_type: file.type || null,
+    file_name: name,
+    file_type: contentType === "application/octet-stream" ? null : contentType,
     uploaded_by: userId,
   });
 

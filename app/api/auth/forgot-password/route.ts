@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmail } from '@/lib/email/resend';
 import { passwordResetEmail } from '@/lib/email/templates/password-reset';
-import crypto from 'crypto';
 import { checkDbRateLimit } from '@/lib/auth/db-rate-limit';
 import { clientIpFromRequest } from '@/lib/auth/user-sessions';
 import { hashLoginIdentifier } from '@/lib/auth/security-events';
+import {
+  generatePasswordResetToken,
+  insertPasswordResetToken,
+  invalidateUnusedResetTokens,
+} from '@/lib/auth/password-reset-tokens';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,29 +64,19 @@ export async function POST(req: Request) {
 
   const typedUser = user as { id: string; name: string; email: string; role: string };
 
-  // Generate a secure token
-  const token = crypto.randomBytes(32).toString('hex');
+  const token = generatePasswordResetToken();
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
-  // Invalidate any existing unused tokens for this user
-  await supabase
-    .from('password_reset_tokens')
-    .update({ used: true })
-    .eq('user_id', typedUser.id)
-    .eq('used', false);
+  await invalidateUnusedResetTokens(typedUser.id);
 
-  // Insert new token
-  const { error: tokenError } = await supabase
-    .from('password_reset_tokens')
-    .insert({
-      user_id: typedUser.id,
-      token,
-      expires_at: expiresAt,
-      used: false,
-    });
+  const inserted = await insertPasswordResetToken({
+    userId: typedUser.id,
+    rawToken: token,
+    expiresAt,
+  });
 
-  if (tokenError) {
-    console.error('[forgot-password] Failed to create reset token:', tokenError);
+  if (!inserted.ok) {
+    console.error('[forgot-password] Failed to create reset token:', inserted.error);
     return successResponse;
   }
 

@@ -77,8 +77,9 @@ async function verifyBearerToken(req: Request): Promise<ApiAuth | null> {
       userId: valid.claims.userId,
       role: valid.claims.role,
       clientId: valid.claims.clientId,
+      sessionId: valid.claims.sessionId ?? null,
     });
-    // Phase 6.2: restricted enrolment sessions must not authenticate CRM APIs.
+    // Phase 6.2: restricted enrolment / MFA-unproven sessions must not authenticate CRM APIs.
     if (!assertMfaApiAccess(mfa, req).ok) return null;
     return {
       userId: valid.claims.userId,
@@ -125,8 +126,9 @@ export async function resolveApiAuth(req: Request): Promise<ApiAuth | null> {
       userId: valid.claims.userId,
       role: valid.claims.role,
       clientId: valid.claims.clientId,
+      sessionId: valid.claims.sessionId ?? null,
     });
-    // Phase 6.2: restricted enrolment sessions must not authenticate CRM APIs.
+    // Phase 6.2: restricted enrolment / MFA-unproven sessions must not authenticate CRM APIs.
     if (!assertMfaApiAccess(mfa, req).ok) return null;
     return {
       userId: valid.claims.userId,

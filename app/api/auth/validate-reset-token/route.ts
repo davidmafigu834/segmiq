@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { findValidPasswordResetToken } from '@/lib/auth/password-reset-tokens';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,30 +11,11 @@ export async function GET(req: Request) {
     return NextResponse.json({ valid: false, error: 'Token missing' }, { status: 400 });
   }
 
-  const supabase = createAdminClient();
-
-  const { data } = await supabase
-    .from('password_reset_tokens')
-    .select('id, expires_at, used, users(name, email)')
-    .eq('token', token)
-    .maybeSingle();
-
+  const data = await findValidPasswordResetToken(token);
   if (!data) {
-    return NextResponse.json({ valid: false, error: 'Invalid token' }, { status: 404 });
+    return NextResponse.json({ valid: false, error: 'Invalid or expired token' }, { status: 404 });
   }
 
-  const typedData = data as unknown as { id: string; expires_at: string; used: boolean; users: { name: string; email: string } | null };
-
-  if (typedData.used) {
-    return NextResponse.json({ valid: false, error: 'Token already used' }, { status: 400 });
-  }
-
-  if (new Date(typedData.expires_at) < new Date()) {
-    return NextResponse.json({ valid: false, error: 'Token expired' }, { status: 400 });
-  }
-
-  return NextResponse.json({
-    valid: true,
-    userName: typedData.users?.name ?? '',
-  });
+  // Do not leak PII (name/email) for token validation.
+  return NextResponse.json({ valid: true });
 }

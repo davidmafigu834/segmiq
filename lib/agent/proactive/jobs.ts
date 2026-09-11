@@ -203,6 +203,18 @@ export async function cancelJobs(opts: {
   leadId?: string;
   cancelledById?: string | null;
 }): Promise<number> {
+  // SECURITY: require a secondary scope so a bare clientId cannot wipe the tenant.
+  const hasScope =
+    Boolean(opts.leadId) ||
+    Boolean(opts.quotationId) ||
+    Boolean(opts.appointmentId) ||
+    Boolean(opts.dealId) ||
+    Boolean(opts.triggerTypes?.length);
+  if (!hasScope) {
+    console.warn("[proactive] cancelJobs refused: missing secondary scope");
+    return 0;
+  }
+
   const supabase = createAdminClient();
   let query = supabase
     .from("agent_proactive_jobs")
@@ -222,6 +234,31 @@ export async function cancelJobs(opts: {
   if (opts.leadId) query = query.eq("lead_id", opts.leadId);
   const { data } = await query.select("id");
   return data?.length ?? 0;
+}
+
+/** Cancel a single proactive job by id (preferred for user-facing cancel). */
+export async function cancelJobById(opts: {
+  jobId: string;
+  clientId: string;
+  reason: string;
+  cancelledById?: string | null;
+}): Promise<boolean> {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from("agent_proactive_jobs")
+    .update({
+      status: "CANCELLED",
+      skip_reason: opts.reason,
+      cancelled_reason: opts.reason,
+      cancelled_by_id: opts.cancelledById ?? null,
+      updated_at: now().toISOString(),
+    })
+    .eq("id", opts.jobId)
+    .eq("client_id", opts.clientId)
+    .in("status", ["SCHEDULED", "WAITING_FOR_CHANNEL", "WAITING_FOR_HUMAN", "WAITING_FOR_POLICY"])
+    .select("id")
+    .maybeSingle();
+  return Boolean(data);
 }
 
 export async function getJob(jobId: string, clientId?: string): Promise<ProactiveJob | null> {

@@ -182,7 +182,10 @@ export async function middleware(req: NextRequest) {
   if (path.startsWith("/api/quotes/")) return NextResponse.next();
   if (path.startsWith("/api/cron/")) {
     const secret = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-    if (secret === process.env.CRON_SECRET || process.env.NODE_ENV === "development") {
+    const cronSecret = process.env.CRON_SECRET;
+    const allowInsecureDev =
+      process.env.NODE_ENV === "development" && process.env.ALLOW_INSECURE_CRON === "true";
+    if ((cronSecret && secret === cronSecret) || allowInsecureDev) {
       return NextResponse.next();
     }
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -427,7 +430,14 @@ async function enforceApiMfaEnrolmentGate(req: NextRequest): Promise<NextRespons
   }
 
   const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) return NextResponse.next();
+  if (!secret) {
+    // Fail closed: without a signing secret we cannot validate MFA enrolment claims.
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 503 });
+    }
+    console.warn("[middleware] NEXTAUTH_SECRET missing — MFA enrolment gate skipped in development");
+    return NextResponse.next();
+  }
 
   // next-auth getToken can throw on malformed Authorization (known advisory).
   // Fail closed for this gate only — do not take down the request pipeline.

@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 }
 
 const actionSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("setup_start"), password: z.string().min(1).optional() }),
+  z.object({ action: z.literal("setup_start"), password: z.string().min(1) }),
   z.object({ action: z.literal("setup_confirm"), code: z.string().min(6).max(12) }),
   z.object({
     action: z.literal("disable"),
@@ -92,6 +92,17 @@ export async function POST(req: Request) {
 
   try {
     if (body.action === "setup_start") {
+      const { verifyPassword } = await import("@/lib/password");
+      if (
+        !body.password ||
+        !userRow?.password ||
+        !(await verifyPassword(body.password, String(userRow.password)))
+      ) {
+        return NextResponse.json(
+          { error: "Current password is required to start two-step setup" },
+          { status: 403 }
+        );
+      }
       const result = await startTotpSetup({
         userId: g.session.userId,
         email: email || "user@segmiq.com",
@@ -127,6 +138,12 @@ export async function POST(req: Request) {
           })
           .eq("id", g.session.sessionId);
       }
+      // Force other devices to re-authenticate with MFA
+      await revokeAllUserSessions({
+        userId: g.session.userId,
+        reason: "ADMIN_REVOKED",
+        exceptSessionId: g.session.sessionId,
+      });
       return NextResponse.json({ ok: true, recoveryCodes });
     }
 

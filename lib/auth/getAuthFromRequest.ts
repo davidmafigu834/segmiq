@@ -22,8 +22,9 @@ export async function getAuthFromRequest(req?: Request): Promise<ApiAuth | null>
     userId: session.userId,
     role: session.role,
     clientId: session.clientId ?? null,
+    sessionId: session.sessionId ?? null,
   });
-  // No Request → cannot allowlist; enrolment-required must not grant CRM auth.
+  // No Request → cannot allowlist; MFA-unsatisfied must not grant CRM auth.
   if (!assertMfaApiAccess(mfa, null).ok) return null;
 
   return {

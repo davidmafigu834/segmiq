@@ -4,12 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { UserRole } from "@/types";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
+import { sanitizePostgrestSearchTerm } from "@/lib/security/postgrest-filter";
 
 export const dynamic = "force-dynamic";
-
-function esc(s: string): string {
-  return s.replace(/%/g, "").replace(/,/g, "").trim();
-}
 
 function statusLabel(status: string): string {
   return String(status).replaceAll("_", " ").toLowerCase();
@@ -29,7 +26,7 @@ export async function GET(req: Request) {
   if (!qRaw.length) {
     return NextResponse.json({ results: [] });
   }
-  const q = esc(qRaw);
+  const q = sanitizePostgrestSearchTerm(qRaw);
   if (!q.length) {
     return NextResponse.json({ results: [] });
   }

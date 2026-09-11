@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSalesActor } from "@/lib/api-guards";
+import { canAccessClient } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -7,11 +8,16 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const guard = await requireSalesActor();
   if (guard.error) return guard.error;
+  const { session } = guard;
 
   const body = await req.json().catch(() => ({}));
   const clientId = body.clientId as string | undefined;
   if (!clientId) {
     return NextResponse.json({ error: "clientId required" }, { status: 400 });
+  }
+
+  if (!canAccessClient(session!.role, session!.clientId, clientId)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const end = new Date();

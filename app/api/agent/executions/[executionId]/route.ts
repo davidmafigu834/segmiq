@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveApiAuth } from "@/lib/auth/resolveApiAuth";
+import { evaluateLeadReadAccess } from "@/lib/auth/permissions";
 import { asRow, asRows } from "@/lib/agent/rows";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,22 @@ export async function GET(req: Request, { params }: { params: { executionId: str
   const inTenant =
     (auth.role === "SUPER_ADMIN" && !auth.isImpersonating) || auth.clientId === clientId;
   if (!inTenant) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const isManager =
+    auth.role === "CLIENT_MANAGER" || (auth.role === "SUPER_ADMIN" && !auth.isImpersonating);
+  if (!isManager) {
+    const { data: leadRow } = await supabase
+      .from("leads")
+      .select("client_id, assigned_to_id")
+      .eq("id", execution.lead_id)
+      .maybeSingle();
+    if (!leadRow) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const read = evaluateLeadReadAccess(auth, {
+      client_id: leadRow.client_id as string,
+      assigned_to_id: (leadRow.assigned_to_id as string | null) ?? null,
+    });
+    if (!read.ok) return NextResponse.json({ error: "Not found" }, { status: read.status });
+  }
 
   const [{ data: actions }, { data: lead }, { data: escalations }] = await Promise.all([
     supabase
