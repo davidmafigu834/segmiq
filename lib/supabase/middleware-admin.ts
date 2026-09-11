@@ -6,6 +6,8 @@
  * ROUTING_MIDDLEWARE_HAS_TIMED_OUT on /client/dashboard.
  */
 
+import { idleTtlMsForRole } from "@/lib/auth/session-policy";
+
 export const MIDDLEWARE_DB_TIMEOUT_MS = 2_000;
 
 export type MiddlewareFetch = (
@@ -19,6 +21,10 @@ export function middlewareRestUrl(baseUrl: string, table: string, query: string)
 
 export function sessionVersionQuery(userId: string): string {
   return `select=session_version&id=eq.${encodeURIComponent(userId)}`;
+}
+
+export function userSessionAliveQuery(sessionId: string): string {
+  return `select=id,user_id,revoked_at,expires_at,last_seen_at,metadata&id=eq.${encodeURIComponent(sessionId)}`;
 }
 
 export function crmSubscriptionQuery(clientId: string): string {
@@ -68,6 +74,50 @@ export async function fetchMiddlewareSessionVersion(
   );
   if (!row) return null;
   return Number(row.session_version ?? 0);
+}
+
+type MiddlewareSessionRow = {
+  id?: string;
+  user_id?: string;
+  revoked_at?: string | null;
+  expires_at?: string;
+  last_seen_at?: string;
+  metadata?: { idleTtlMs?: number } | null;
+};
+
+/**
+ * Whether the JWT's user_sessions row is still usable (not revoked / expired / idle).
+ * Missing or dead rows return false. Callers should fail closed (same as session_version).
+ */
+export async function fetchMiddlewareSessionAlive(
+  sessionId: string,
+  userId: string,
+  role: string,
+  options?: { fetchImpl?: MiddlewareFetch; timeoutMs?: number; nowMs?: number }
+): Promise<boolean | null> {
+  if (!sessionId) return false;
+  const row = await fetchMiddlewareFirstRow<MiddlewareSessionRow>(
+    "user_sessions",
+    userSessionAliveQuery(sessionId),
+    options
+  );
+  // Missing registry row must not keep browsing alive.
+  if (!row) return false;
+  if (row.user_id && row.user_id !== userId) return false;
+  if (row.revoked_at) return false;
+
+  const now = options?.nowMs ?? Date.now();
+  if (row.expires_at && new Date(row.expires_at).getTime() <= now) return false;
+
+  const idleFromMeta =
+    row.metadata && typeof row.metadata.idleTtlMs === "number" ? Number(row.metadata.idleTtlMs) : null;
+  const idleMs =
+    idleFromMeta && Number.isFinite(idleFromMeta) && idleFromMeta > 0
+      ? idleFromMeta
+      : idleTtlMsForRole(role);
+  if (row.last_seen_at && new Date(row.last_seen_at).getTime() + idleMs <= now) return false;
+
+  return true;
 }
 
 /** Returns the CRM subscription status, or null when the check must fail open. */

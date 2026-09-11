@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
+import { shouldTreatApi401AsSessionExpiry } from "@/lib/auth/session-expiry-client";
 
 const LOGOUT_CHANNEL = "segmiq-auth";
 const EXPIRED_EVENT = "segmiq:session-expired";
@@ -84,7 +85,7 @@ export function SessionLifecycle() {
       const res = await origFetch(...args);
       if (res.status === 401 && wasAuthed.current && !isPublicPath(pathname)) {
         const url = typeof args[0] === "string" ? args[0] : args[0] instanceof Request ? args[0].url : "";
-        if (url.includes("/api/") && !url.includes("/api/auth/")) {
+        if (shouldTreatApi401AsSessionExpiry(url)) {
           window.dispatchEvent(new Event(EXPIRED_EVENT));
         }
       }

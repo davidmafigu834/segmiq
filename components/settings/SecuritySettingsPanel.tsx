@@ -136,6 +136,11 @@ export function SecuritySettingsPanel({
         qrDataUrl?: string;
         manualKey?: string;
       };
+      if (res.status === 401) {
+        toast({ title: "Your session expired. Sign in again to set up two-step verification.", tone: "error" });
+        await secureSignOut(`/login?reason=session&next=${encodeURIComponent("/dashboard/settings?tab=account")}`);
+        return;
+      }
       if (!res.ok) throw new Error(json.error ?? "Could not start setup");
       setQrDataUrl(json.qrDataUrl ?? null);
       setManualKey(json.manualKey ?? null);

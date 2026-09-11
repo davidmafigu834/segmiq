@@ -7,6 +7,7 @@ import { isSuperAdminRole, normalizeUserRole } from "@/lib/auth/roles";
 import { isMfaRestrictedAllowlistedPath } from "@/lib/auth/mfa/allowlist";
 import {
   fetchMiddlewareCrmSubscriptionStatus,
+  fetchMiddlewareSessionAlive,
   fetchMiddlewareSessionVersion,
 } from "@/lib/supabase/middleware-admin";
 import type { ClientMode, UserRole } from "@/types";
@@ -123,8 +124,19 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(url);
       }
       const tokenSv = Number((token as { sessionVersion?: number }).sessionVersion ?? 0);
-      const uid = (token as { realUserId?: string | null }).realUserId ?? (token as { userId?: string }).userId;
-      const staleSession = await staleSessionRedirect(req, uid, tokenSv);
+      const effectiveUserId = (token as { userId?: string }).userId;
+      const realUserId = (token as { realUserId?: string | null }).realUserId ?? null;
+      const uid = realUserId ?? effectiveUserId;
+      const sessionId = (token as { sessionId?: string | null }).sessionId ?? null;
+      const role = (normalizeUserRole(token.role as string) ?? (token.role as UserRole)) as UserRole;
+      const staleSession = await staleSessionRedirect(
+        req,
+        uid,
+        tokenSv,
+        sessionId,
+        role,
+        effectiveUserId ?? uid
+      );
       if (staleSession) return staleSession;
     }
 
@@ -233,11 +245,15 @@ export async function middleware(req: NextRequest) {
   }
 
   const tokenSv = Number((token as { sessionVersion?: number }).sessionVersion ?? 0);
-  const uid = (token as { realUserId?: string | null }).realUserId ?? (token as { userId?: string }).userId;
+  const effectiveUserId = (token as { userId?: string }).userId;
+  const realUserId = (token as { realUserId?: string | null }).realUserId ?? null;
+  // session_version is checked against the real admin when impersonating.
+  const uid = realUserId ?? effectiveUserId;
+  const sessionId = (token as { sessionId?: string | null }).sessionId ?? null;
   const role = (normalizeUserRole(token.role as string) ?? (token.role as UserRole)) as UserRole;
   const clientMode = (token as { clientMode?: ClientMode }).clientMode ?? "team";
   const alsoSells = Boolean((token as { alsoSells?: boolean }).alsoSells);
-  const isImpersonating = Boolean((token as { realUserId?: string | null }).realUserId);
+  const isImpersonating = Boolean(realUserId);
   const cid = (token as { clientId?: string | null }).clientId;
   const mfaEnrolmentRequired = Boolean(
     (token as { mfaEnrolmentRequired?: boolean }).mfaEnrolmentRequired
@@ -257,13 +273,22 @@ export async function middleware(req: NextRequest) {
     path.startsWith("/solo/billing/");
   const needBilling = isGatedRole && !isImpersonating && !gateExempt && Boolean(cid);
 
-  const [dbSv, subStatus] = await Promise.all([
+  const sessionOwnerId = effectiveUserId ?? uid;
+  const [dbSv, sessionAlive, subStatus] = await Promise.all([
     uid ? fetchMiddlewareSessionVersion(uid) : Promise.resolve(null),
+    sessionOwnerId && sessionId
+      ? fetchMiddlewareSessionAlive(sessionId, String(sessionOwnerId), role)
+      : Promise.resolve(uid ? false : null),
     needBilling && cid ? fetchMiddlewareCrmSubscriptionStatus(cid) : Promise.resolve(null),
   ]);
 
   // Fail closed: if session_version cannot be loaded, treat the session as expired.
   if (uid && (dbSv === null || dbSv !== tokenSv)) {
+    return sessionExpiredRedirect(req);
+  }
+  // JWT alone is not enough — idle / revoked / missing user_sessions must force re-login.
+  // Otherwise settings pages render while /api/auth/mfa returns Unauthorized.
+  if (uid && sessionAlive !== true) {
     return sessionExpiredRedirect(req);
   }
 
@@ -439,12 +464,22 @@ async function enforceApiMfaEnrolmentGate(req: NextRequest): Promise<NextRespons
 async function staleSessionRedirect(
   req: NextRequest,
   uid: string | undefined,
-  tokenSv: number
+  tokenSv: number,
+  sessionId?: string | null,
+  role?: UserRole | string,
+  sessionOwnerId?: string | null
 ): Promise<NextResponse | null> {
   if (!uid) return null;
   const dbSv = await fetchMiddlewareSessionVersion(uid);
   // Fail closed: missing DB version → session expired (same as version mismatch).
   if (dbSv === null || dbSv !== tokenSv) {
+    return sessionExpiredRedirect(req);
+  }
+  const owner = sessionOwnerId || uid;
+  if (sessionId && role) {
+    const alive = await fetchMiddlewareSessionAlive(sessionId, owner, role);
+    if (alive !== true) return sessionExpiredRedirect(req);
+  } else if (!sessionId) {
     return sessionExpiredRedirect(req);
   }
   return null;
