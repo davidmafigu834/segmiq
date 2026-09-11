@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { phonesMatch } from "@/lib/leads/phone-match";
+import { phoneOrFilter, phonesMatch } from "@/lib/leads/phone-match";
 import {
   fetchRoundRobinEligibleUsers,
   isRoundRobinEligibleUserId,
@@ -46,11 +46,50 @@ export async function findReturningAssignee(opts: {
   const { supabase, clientId, phoneDigits } = opts;
   if (!phoneDigits) return null;
 
+  const phoneFilter = phoneOrFilter(phoneDigits, ["phone"]);
+  const contactFilter = phoneOrFilter(phoneDigits, ["phone", "whatsapp_wa_id"]);
+
+  // Prefer assignee from contact-linked history (survives quiet periods / closed leads).
+  const { data: contacts } = await supabase
+    .from("contacts")
+    .select("id, phone, whatsapp_wa_id")
+    .eq("client_id", clientId)
+    .or(contactFilter)
+    .limit(25);
+
+  const contactIds = (contacts ?? [])
+    .filter(
+      (c) =>
+        phonesMatch(c.phone as string | null, phoneDigits) ||
+        phonesMatch(c.whatsapp_wa_id as string | null, phoneDigits)
+    )
+    .map((c) => c.id as string);
+
+  if (contactIds.length) {
+    const { data: contactLeads } = await supabase
+      .from("leads")
+      .select("assigned_to_id, phone, updated_at")
+      .eq("client_id", clientId)
+      .in("contact_id", contactIds)
+      .not("assigned_to_id", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(25);
+
+    for (const row of contactLeads ?? []) {
+      const assigneeId = (row.assigned_to_id as string | null) ?? null;
+      if (!assigneeId) continue;
+      const eligible = await isRoundRobinEligibleUserId(supabase, clientId, assigneeId);
+      if (eligible) return assigneeId;
+    }
+  }
+
+  // Phone-keyed lead history (not "last 50 any-phone leads").
   const { data: priorLeads } = await supabase
     .from("leads")
     .select("assigned_to_id, phone, status, updated_at")
     .eq("client_id", clientId)
     .not("assigned_to_id", "is", null)
+    .or(phoneFilter)
     .order("updated_at", { ascending: false })
     .limit(50);
 
