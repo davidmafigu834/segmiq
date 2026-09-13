@@ -4,6 +4,7 @@ import { Lock } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { canActAsSalesperson } from "@/lib/auth/sales-capabilities";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SecureSignOutLink } from "@/components/auth/SecureSignOutLink";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +35,7 @@ export default async function SalesBlockedPage() {
         <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
           Your workspace is temporarily unavailable. Please contact your manager to restore access.
         </p>
-        <a
-          href="/api/auth/signout?callbackUrl=/login"
-          className="mt-6 inline-flex items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-white/[0.03]"
-        >
-          Sign out
-        </a>
+        <SecureSignOutLink className="mt-6 inline-flex items-center justify-center rounded-md border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-white/[0.03]" />
       </div>
     </div>
   );

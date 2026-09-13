@@ -370,9 +370,36 @@ const CLOUD_RESERVED_SEGMENTS = new Set([
 ]);
 
 function sessionExpiredRedirect(req: NextRequest): NextResponse {
-  const signOut = new URL("/api/auth/signout", req.url);
-  signOut.searchParams.set("callbackUrl", "/login?reason=session");
-  return NextResponse.redirect(signOut);
+  // Middleware can only redirect (GET). NextAuth's GET /api/auth/signout shows a
+  // confirmation page, which is confusing for idle/expired sessions. Clear the
+  // JWT cookie and send the user straight to login with the session-expired reason.
+  const url = req.nextUrl.clone();
+  url.pathname = "/login";
+  url.search = "";
+  url.searchParams.set("reason", "session");
+
+  const res = NextResponse.redirect(url);
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieName = isProd
+    ? "__Secure-next-auth.session-token"
+    : "next-auth.session-token";
+  const domain = isProd
+    ? "." +
+      (process.env.NEXT_PUBLIC_APP_DOMAIN ?? "segmiq.com")
+        .replace(/^https?:\/\//i, "")
+        .split("/")[0]!
+        .split(":")[0]!
+    : undefined;
+
+  res.cookies.set(cookieName, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: isProd,
+    ...(domain ? { domain } : {}),
+    maxAge: 0,
+  });
+  return res;
 }
 
 function mfaEnrolmentPageForRole(role: UserRole | string): string {

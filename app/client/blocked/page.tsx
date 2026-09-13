@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { ClientBillingView } from "@/components/billing/ClientBillingView";
 import { getClientBillingData } from "@/lib/billing/client-billing-data";
 import { formatMoney } from "@/lib/billing/format";
+import { SecureSignOutLink } from "@/components/auth/SecureSignOutLink";
 
 export const dynamic = "force-dynamic";
 
@@ -28,12 +29,7 @@ export default async function ClientBlockedPage() {
           >
             Segmiq
           </span>
-          <a
-            href="/api/auth/signout?callbackUrl=/login"
-            className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-          >
-            Sign out
-          </a>
+          <SecureSignOutLink className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" />
         </div>
 
         <div className="rounded-xl border border-[var(--warning-border)] bg-[var(--warning-muted)] p-5 md:p-6">
