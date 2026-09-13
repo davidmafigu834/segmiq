@@ -16,7 +16,7 @@ import { KpiCard } from "./KpiCard";
 import { PerformanceCard } from "./PerformanceCard";
 import { RecentActivityCard } from "./RecentActivityCard";
 import { SourceMixCard } from "./SourceMixCard";
-import { TodaysFocusCard, TodaysSalesPlanStrip } from "./TodaysFocusCard";
+import { TodaysFocusCard } from "./TodaysFocusCard";
 import { NewEnquiriesCard } from "./NewEnquiriesCard";
 import { DealsAttentionCard } from "./DealsAttentionCard";
 import { LeadDealFunnelCard } from "./LeadDealFunnelCard";
@@ -68,23 +68,10 @@ function SalesDashboardInner({
     ...buildPerformance(legacy),
     daysLeftLabel: data.goal?.daysLeftLabel ?? null,
   };
-  const goalProgressPct =
-    data.goal?.hasGoal &&
-    data.goal.targetValue != null &&
-    data.goal.targetValue > 0 &&
-    data.goal.achievedValue != null
-      ? Math.min(100, Math.round((data.goal.achievedValue / data.goal.targetValue) * 100))
-      : performance.hasTarget
-        ? performance.progressPct
-        : null;
-
-  const prospectCommitment = data.plan?.progress.commitments.find((c) => c.kind === "NEW_PROSPECTS");
-  const prospectProgress =
-    prospectCommitment && prospectCommitment.target > 0
-      ? { completed: prospectCommitment.completed, target: prospectCommitment.target }
-      : null;
 
   const retargetingStatuses = (legacy.retargetingStatuses ?? []) as RetargetingStatusView[];
+  const planQueue = data.plan?.queue ?? [];
+  const planProgress = data.plan?.progress ?? null;
 
   if (!mounted) {
     return <SalesDashboardSkeletonShell />;
@@ -164,18 +151,14 @@ function SalesDashboardInner({
           <div className="space-y-4 layout:hidden">
             <TodaysFocusCard
               focus={data.focus}
-              coverage={data.coverage}
-              goalProgressPct={goalProgressPct}
-              prospectProgress={prospectProgress}
+              queue={planQueue}
+              progress={planProgress}
               error={data.planError}
-              daysLeftLabel={data.goal?.daysLeftLabel}
-              dailyFocusHeadline={data.goal?.dailyFocus?.headline}
-              scheduleLine={data.plan?.schedule?.summary}
-              schedule={data.plan?.schedule ?? null}
-              enquiryCount={data.priorityEnquiries.length}
-              dealCount={data.priorityDeals.length}
+              clientId={data.clientId}
+              onAddProspect={openAddHubSheet}
+              fallbackEnquiries={data.priorityEnquiries}
+              fallbackDeals={data.priorityDeals}
             />
-            <TodaysSalesPlanStrip {...data.planSummary} />
           </div>
 
           <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
@@ -187,16 +170,13 @@ function SalesDashboardInner({
           <div className="hidden space-y-4 layout:block">
             <TodaysFocusCard
               focus={data.focus}
-              coverage={data.coverage}
-              goalProgressPct={goalProgressPct}
-              prospectProgress={prospectProgress}
+              queue={planQueue}
+              progress={planProgress}
               error={data.planError}
-              daysLeftLabel={data.goal?.daysLeftLabel}
-              dailyFocusHeadline={data.goal?.dailyFocus?.headline}
-              scheduleLine={data.plan?.schedule?.summary}
-              schedule={data.plan?.schedule ?? null}
-              enquiryCount={data.priorityEnquiries.length}
-              dealCount={data.priorityDeals.length}
+              clientId={data.clientId}
+              onAddProspect={openAddHubSheet}
+              fallbackEnquiries={data.priorityEnquiries}
+              fallbackDeals={data.priorityDeals}
             />
           </div>
 
@@ -222,10 +202,6 @@ function SalesDashboardInner({
           </div>
 
           {performance.hasTarget ? <PerformanceCard performance={performance} /> : null}
-
-          <div className="hidden layout:block">
-            <TodaysSalesPlanStrip {...data.planSummary} />
-          </div>
         </>
       )}
 
