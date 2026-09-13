@@ -7,6 +7,7 @@ import {
   type SessionRevokeReason,
   type SessionType,
 } from "@/lib/auth/session-policy";
+import { STEP_UP_TTL_MS } from "@/lib/auth/mfa/policy";
 import type { UserRole } from "@/types";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -83,6 +84,10 @@ export async function createUserSession(input: CreateUserSessionInput): Promise<
 
   const expiresAt = new Date(now + absoluteMs).toISOString();
   const authStrength = input.authStrength ?? (input.mfaVerifiedAt ? "password_mfa" : "password");
+  // Fresh MFA login counts as a short step-up window for sensitive actions (e.g. impersonation).
+  const elevatedUntil = input.mfaVerifiedAt
+    ? new Date(now + STEP_UP_TTL_MS).toISOString()
+    : null;
   const { data, error } = await supabase
     .from("user_sessions")
     .insert({
@@ -101,6 +106,7 @@ export async function createUserSession(input: CreateUserSessionInput): Promise<
       metadata: meta,
       mfa_verified_at: input.mfaVerifiedAt ?? null,
       auth_strength: authStrength,
+      ...(elevatedUntil ? { elevated_until: elevatedUntil } : {}),
     })
     .select("*")
     .single();
