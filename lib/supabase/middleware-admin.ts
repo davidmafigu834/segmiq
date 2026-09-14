@@ -15,6 +15,11 @@ export type MiddlewareFetch = (
   init?: RequestInit
 ) => Promise<Response>;
 
+type MiddlewareLookupResult<T> =
+  | { status: "found"; row: T }
+  | { status: "missing" }
+  | { status: "unavailable" };
+
 export function middlewareRestUrl(baseUrl: string, table: string, query: string): string {
   return `${baseUrl.replace(/\/$/, "")}/rest/v1/${table}?${query}`;
 }
@@ -36,9 +41,18 @@ export async function fetchMiddlewareFirstRow<T extends Record<string, unknown>>
   query: string,
   options?: { fetchImpl?: MiddlewareFetch; timeoutMs?: number }
 ): Promise<T | null> {
+  const result = await fetchMiddlewareFirstRowResult<T>(table, query, options);
+  return result.status === "found" ? result.row : null;
+}
+
+async function fetchMiddlewareFirstRowResult<T extends Record<string, unknown>>(
+  table: string,
+  query: string,
+  options?: { fetchImpl?: MiddlewareFetch; timeoutMs?: number }
+): Promise<MiddlewareLookupResult<T>> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
+  if (!url || !key) return { status: "unavailable" };
 
   const fetchImpl = options?.fetchImpl ?? fetch;
   const timeoutMs = options?.timeoutMs ?? MIDDLEWARE_DB_TIMEOUT_MS;
@@ -53,27 +67,29 @@ export async function fetchMiddlewareFirstRow<T extends Record<string, unknown>>
       cache: "no-store",
       signal: AbortSignal.timeout(timeoutMs),
     });
-    if (!res.ok) return null;
+    if (!res.ok) return { status: "unavailable" };
     const data = (await res.json()) as unknown;
-    if (!Array.isArray(data) || data.length === 0) return null;
-    return (data[0] ?? null) as T | null;
+    if (!Array.isArray(data)) return { status: "unavailable" };
+    if (data.length === 0) return { status: "missing" };
+    return { status: "found", row: data[0] as T };
   } catch {
-    return null;
+    return { status: "unavailable" };
   }
 }
 
-/** Returns the DB session version, or null when the read fails / user missing (middleware fails closed). */
+/** Returns the DB session version, null for a missing user, or undefined on a transient failure. */
 export async function fetchMiddlewareSessionVersion(
   userId: string,
   options?: { fetchImpl?: MiddlewareFetch; timeoutMs?: number }
-): Promise<number | null> {
-  const row = await fetchMiddlewareFirstRow<{ session_version?: number }>(
+): Promise<number | null | undefined> {
+  const result = await fetchMiddlewareFirstRowResult<{ session_version?: number }>(
     "users",
     sessionVersionQuery(userId),
     options
   );
-  if (!row) return null;
-  return Number(row.session_version ?? 0);
+  if (result.status === "unavailable") return undefined;
+  if (result.status === "missing") return null;
+  return Number(result.row.session_version ?? 0);
 }
 
 type MiddlewareSessionRow = {
@@ -87,7 +103,7 @@ type MiddlewareSessionRow = {
 
 /**
  * Whether the JWT's user_sessions row is still usable (not revoked / expired / idle).
- * Missing or dead rows return false. Callers should fail closed (same as session_version).
+ * Missing or dead rows return false. A transient read failure returns null.
  */
 export async function fetchMiddlewareSessionAlive(
   sessionId: string,
@@ -96,13 +112,15 @@ export async function fetchMiddlewareSessionAlive(
   options?: { fetchImpl?: MiddlewareFetch; timeoutMs?: number; nowMs?: number }
 ): Promise<boolean | null> {
   if (!sessionId) return false;
-  const row = await fetchMiddlewareFirstRow<MiddlewareSessionRow>(
+  const result = await fetchMiddlewareFirstRowResult<MiddlewareSessionRow>(
     "user_sessions",
     userSessionAliveQuery(sessionId),
     options
   );
+  if (result.status === "unavailable") return null;
   // Missing registry row must not keep browsing alive.
-  if (!row) return false;
+  if (result.status === "missing") return false;
+  const row = result.row;
   if (row.user_id && row.user_id !== userId) return false;
   if (row.revoked_at) return false;
 

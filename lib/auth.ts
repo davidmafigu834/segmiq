@@ -284,24 +284,30 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      const valid = await validateAuthClaims(
-        {
-          userId: String(token.userId ?? ""),
-          role: ((token.role as string) === "AGENCY_ADMIN" ? "SUPER_ADMIN" : token.role) as UserRole,
-          clientId: (token.clientId as string | null | undefined) ?? null,
-          alsoSells: Boolean(token.alsoSells),
-          sessionVersion:
-            typeof token.sessionVersion === "number"
-              ? token.sessionVersion
-              : Number.isInteger(token.sessionVersion)
-                ? Number(token.sessionVersion)
-                : undefined,
-          realUserId: (token.realUserId as string | null | undefined) ?? null,
-          sessionId: (token.sessionId as string | null | undefined) ?? null,
-        },
-        { touchActivity: false }
-      );
-      if (!valid.ok) {
+      const claims = {
+        userId: String(token.userId ?? ""),
+        role: ((token.role as string) === "AGENCY_ADMIN" ? "SUPER_ADMIN" : token.role) as UserRole,
+        clientId: (token.clientId as string | null | undefined) ?? null,
+        alsoSells: Boolean(token.alsoSells),
+        sessionVersion:
+          typeof token.sessionVersion === "number"
+            ? token.sessionVersion
+            : Number.isInteger(token.sessionVersion)
+              ? Number(token.sessionVersion)
+              : undefined,
+        realUserId: (token.realUserId as string | null | undefined) ?? null,
+        sessionId: (token.sessionId as string | null | undefined) ?? null,
+      };
+      let valid: Awaited<ReturnType<typeof validateAuthClaims>> | null = null;
+      try {
+        valid = await validateAuthClaims(claims, { touchActivity: false });
+      } catch (error) {
+        // NextAuth deletes the JWT cookie when this callback throws. During a
+        // temporary database outage, retain the cryptographically signed claims
+        // and let the next request retry server-authoritative validation.
+        console.warn("[auth] Session validation temporarily unavailable:", error);
+      }
+      if (valid && !valid.ok) {
         console.warn("[auth] Session rejected:", valid.reason);
         session.userId = "";
         session.role = "" as UserRole;
@@ -325,8 +331,8 @@ export const authOptions: NextAuthOptions = {
       session.clientId = (token.clientId as string | null) ?? null;
       session.clientMode = (token.clientMode as ClientMode | undefined) ?? "team";
       session.alsoSells = Boolean(token.alsoSells);
-      session.sessionVersion = valid.claims.sessionVersion;
-      session.sessionId = valid.claims.sessionId ?? null;
+      session.sessionVersion = valid?.claims.sessionVersion ?? Number(token.sessionVersion ?? 0);
+      session.sessionId = valid?.claims.sessionId ?? claims.sessionId;
       session.mfaEnrolmentRequired = Boolean(token.mfaEnrolmentRequired);
       session.realUserId = (token.realUserId as string | null | undefined) ?? null;
       session.realUserName = (token.realUserName as string | null | undefined) ?? null;

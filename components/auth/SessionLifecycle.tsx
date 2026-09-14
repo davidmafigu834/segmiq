@@ -38,6 +38,7 @@ export function SessionLifecycle() {
   const [banner, setBanner] = useState(false);
   const handling = useRef(false);
   const wasAuthed = useRef(false);
+  const confirmingExpiry = useRef(false);
 
   useEffect(() => {
     if (status === "authenticated" && session?.userId) {
@@ -85,8 +86,26 @@ export function SessionLifecycle() {
       const res = await origFetch(...args);
       if (res.status === 401 && wasAuthed.current && !isPublicPath(pathname)) {
         const url = typeof args[0] === "string" ? args[0] : args[0] instanceof Request ? args[0].url : "";
-        if (shouldTreatApi401AsSessionExpiry(url)) {
-          window.dispatchEvent(new Event(EXPIRED_EVENT));
+        if (shouldTreatApi401AsSessionExpiry(url) && !confirmingExpiry.current) {
+          // Routes can use 401 for a denied operation or upstream integration even
+          // while the login is healthy. Confirm the actual session before signing
+          // out this tab and broadcasting a logout to every other open tab.
+          confirmingExpiry.current = true;
+          void origFetch("/api/auth/session", {
+            credentials: "include",
+            cache: "no-store",
+          })
+            .then(async (sessionRes) => {
+              if (!sessionRes.ok) return;
+              const current = (await sessionRes.json()) as { userId?: string } | null;
+              if (!current?.userId) window.dispatchEvent(new Event(EXPIRED_EVENT));
+            })
+            .catch(() => {
+              // A network/database failure is retryable and must not erase the cookie.
+            })
+            .finally(() => {
+              confirmingExpiry.current = false;
+            });
         }
       }
       return res;

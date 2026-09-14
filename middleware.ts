@@ -285,13 +285,14 @@ export async function middleware(req: NextRequest) {
     needBilling && cid ? fetchMiddlewareCrmSubscriptionStatus(cid) : Promise.resolve(null),
   ]);
 
-  // Fail closed: if session_version cannot be loaded, treat the session as expired.
-  if (uid && (dbSv === null || dbSv !== tokenSv)) {
+  // Only destroy the cookie after an authoritative invalid result. A transient
+  // PostgREST timeout is not evidence that the signed session was revoked.
+  if (uid && dbSv !== undefined && (dbSv === null || dbSv !== tokenSv)) {
     return sessionExpiredRedirect(req);
   }
   // JWT alone is not enough — idle / revoked / missing user_sessions must force re-login.
   // Otherwise settings pages render while /api/auth/mfa returns Unauthorized.
-  if (uid && sessionAlive !== true) {
+  if (uid && sessionAlive === false) {
     return sessionExpiredRedirect(req);
   }
 
@@ -508,14 +509,15 @@ async function staleSessionRedirect(
 ): Promise<NextResponse | null> {
   if (!uid) return null;
   const dbSv = await fetchMiddlewareSessionVersion(uid);
-  // Fail closed: missing DB version → session expired (same as version mismatch).
-  if (dbSv === null || dbSv !== tokenSv) {
+  // Preserve a valid signed cookie during a transient PostgREST failure. A missing
+  // user (null) or a real version mismatch still invalidates it immediately.
+  if (dbSv !== undefined && (dbSv === null || dbSv !== tokenSv)) {
     return sessionExpiredRedirect(req);
   }
   const owner = sessionOwnerId || uid;
   if (sessionId && role) {
     const alive = await fetchMiddlewareSessionAlive(sessionId, owner, role);
-    if (alive !== true) return sessionExpiredRedirect(req);
+    if (alive === false) return sessionExpiredRedirect(req);
   } else if (!sessionId) {
     return sessionExpiredRedirect(req);
   }

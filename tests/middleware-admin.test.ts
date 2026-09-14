@@ -154,6 +154,19 @@ test("middleware reads take the first row and return null on errors or empty res
       },
     });
     assert.equal(hung, null);
+
+    const unavailableVersion = await fetchMiddlewareSessionVersion("user-1", {
+      fetchImpl: async () => new Response("down", { status: 503 }),
+    });
+    assert.equal(unavailableVersion, undefined);
+
+    const unavailableSession = await fetchMiddlewareSessionAlive(
+      "sess-1",
+      "user-1",
+      "SUPER_ADMIN",
+      { fetchImpl: async () => new Response("down", { status: 503 }) }
+    );
+    assert.equal(unavailableSession, null);
   } finally {
     if (prevUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     else process.env.NEXT_PUBLIC_SUPABASE_URL = prevUrl;

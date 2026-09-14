@@ -142,11 +142,12 @@ export async function validateUserSession(
   const skipSideEffects = opts.sessionRow !== undefined;
   if (row === undefined) {
     const supabase = opts.supabase ?? createAdminClient();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_sessions")
       .select("*")
       .eq("id", opts.sessionId)
       .maybeSingle();
+    if (error) throw new Error(`Session registry unavailable: ${error.message}`);
     row = (data as UserSessionRow | null) ?? null;
   }
   if (!row) return { ok: false, reason: "session_missing" };

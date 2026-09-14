@@ -62,11 +62,12 @@ export type AuthValidationResult =
 
 async function fetchAuthUserById(userId: string): Promise<AuthUserRow | null> {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("users")
     .select("id, role, client_id, is_active, session_version, also_sells")
     .eq("id", userId)
     .maybeSingle();
+  if (error) throw new Error(`Auth user lookup unavailable: ${error.message}`);
   return (data as AuthUserRow | null) ?? null;
 }
 
@@ -164,11 +165,14 @@ export async function validateAuthClaims(
     targetRole !== "SUPER_ADMIN"
   ) {
     const supabase = createAdminClient();
-    const { data: clientRow } = await supabase
+    const { data: clientRow, error: clientError } = await supabase
       .from("clients")
       .select("is_active, is_archived, security_suspended_at")
       .eq("id", effectiveClientId)
       .maybeSingle();
+    if (clientError) {
+      throw new Error(`Auth client lookup unavailable: ${clientError.message}`);
+    }
     if (clientRow) {
       if (clientRow.is_active === false || clientRow.is_archived === true) {
         return { ok: false, reason: "client_inactive" };
