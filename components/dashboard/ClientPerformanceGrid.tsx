@@ -6,19 +6,14 @@ import type { ClientPerfRow } from "@/lib/dashboard-data";
 
 export function ClientPerformanceGrid({ rows }: { rows: ClientPerfRow[] }) {
   return (
-    <section className="mt-12">
+    <section className="mt-12 border-t border-[var(--border-strong)] pt-8">
       <div className="mb-5 flex flex-col gap-4 min-[640px]:flex-row min-[640px]:items-end min-[640px]:justify-between">
-        <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-            03 / PORTFOLIO
-          </p>
-          <h2 className="mt-1 text-[18px] font-semibold text-[var(--text-primary)]">
-            Client performance
-          </h2>
-        </div>
+        <h2 className="font-display text-[19px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+          Client performance
+        </h2>
         <Link
           href="/dashboard/clients"
-          className="text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="whitespace-nowrap rounded-sm text-[12px] font-medium text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
         >
           View all clients →
         </Link>
@@ -32,7 +27,7 @@ export function ClientPerformanceGrid({ rows }: { rows: ClientPerfRow[] }) {
           <NewClientButton />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 layout:grid-cols-3">
+        <div className="divide-y divide-[var(--border)] border-y border-[var(--border-strong)]">
           {rows.map((r) => (
             <ClientCard key={r.id} row={r} />
           ))}

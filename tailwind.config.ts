@@ -24,8 +24,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["var(--font-geist-sans)", "Geist", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-dm-serif)", "Georgia", "ui-serif", "serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
         quotation: ["var(--font-quotation)", "Roboto", "sans-serif"],
       },

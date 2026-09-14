@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Activity } from "lucide-react";
 import type { ActivityEventDTO, ActivityEventKind } from "@/lib/activity-feed-types";
 import { formatTimeAgo } from "@/lib/format";
@@ -22,15 +22,16 @@ const labelFor: Record<ActivityEventKind, string> = {
 };
 
 const bulletClass: Record<ActivityEventKind, string> = {
-  NEW_LEAD: "bg-[#3B82F6]",
+  NEW_LEAD: "bg-[var(--activity-new)]",
   DEAL_WON: "bg-accent",
-  FOLLOW_UP_SET: "bg-[#F59E0B]",
-  FLAGGED: "bg-[#DC2626]",
-  NOT_QUALIFIED: "bg-[#9CA3AF]",
-  CONTACTED: "bg-[#10B981]",
+  FOLLOW_UP_SET: "bg-[var(--activity-follow)]",
+  FLAGGED: "bg-[var(--activity-flag)]",
+  NOT_QUALIFIED: "bg-[var(--activity-nq)]",
+  CONTACTED: "bg-[var(--activity-contacted)]",
 };
 
 export function ActivityFeed() {
+  const reduceMotion = useReducedMotion();
   const { data } = useSWR<{ events: ActivityEventDTO[] }>("/api/activity", fetcher, {
     refreshInterval: 30_000,
   });
@@ -38,36 +39,29 @@ export function ActivityFeed() {
 
   return (
     <div>
-      <div className="mb-5 flex flex-col gap-3 min-[480px]:flex-row min-[480px]:items-end min-[480px]:justify-between">
-        <div>
-          <p className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
-            <span>02 / Live</span>
-            <motion.span
-              className="relative inline-flex h-2 w-2 rounded-full bg-accent"
-              aria-hidden
-              animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </p>
-          <h2 className="mt-1 text-[18px] font-semibold text-[var(--text-primary)]">Activity</h2>
-        </div>
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="font-display text-[19px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Activity</h2>
+        <span className="inline-flex items-center gap-2 text-[11px] font-medium text-[var(--text-tertiary)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
+          Live updates
+        </span>
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--border)] pb-3">
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-[#3B82F6]" aria-hidden />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--activity-new)]" aria-hidden />
           New lead
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-[#DC2626]" aria-hidden />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--activity-flag)]" aria-hidden />
           Flagged
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-[#F59E0B]" aria-hidden />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--activity-follow)]" aria-hidden />
           Follow-up
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-[#10B981]" aria-hidden />
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--activity-contacted)]" aria-hidden />
           Contacted
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-tertiary)]">
@@ -83,10 +77,10 @@ export function ActivityFeed() {
               <motion.li
                 key={e.id}
                 layout
-                initial={{ opacity: 0, y: -12 }}
+                initial={{ opacity: 0, y: reduceMotion ? 0 : -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.24 }}
+                exit={{ opacity: 0, y: reduceMotion ? 0 : -6 }}
+                transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.16, 1, 0.3, 1] }}
                 className="relative border-b border-[var(--border)] py-3.5 pl-6 last:border-b-0"
               >
                 <span

@@ -40,8 +40,8 @@ body {
   /* ?? Accent ? lime (Leadstaq brand) ?? */
   --accent: #d4ff4f;
   --accent-hover: #c8f244;
-  --accent-ink: #000000;
-  --accent-foreground: #000000;
+  --accent-ink: oklch(17% 0.025 265);
+  --accent-foreground: oklch(17% 0.025 265);
   --accent-fg: var(--accent);
   --accent-muted: rgba(212, 255, 79, 0.1);
   --accent-border: rgba(212, 255, 79, 0.3);
@@ -106,17 +106,30 @@ body {
   --topbar-border: rgba(176, 196, 255, 0.14);
 
   /* ?? Transitions ?? */
-  --transition-fast: 100ms ease;
-  --transition-base: 150ms ease;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+  --transition-fast: var(--dur-micro) var(--ease-out);
+  --transition-base: var(--dur-short) var(--ease-out);
 
   /* Legacy aliases */
   --background: #06152e;
   --foreground: #f7f8fc;
 
   /* Font role aliases — Inter is the platform sans, matching landing */
-  --font-serif: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-dm-serif), Georgia, ui-serif, serif;
   --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+
+  /* Dashboard categorical signals */
+  --pipeline-contacted: oklch(59% 0.105 250);
+  --pipeline-qualified: oklch(69% 0.115 82);
+  --pipeline-negotiating: oklch(66% 0.17 43);
+  --source-referral: oklch(70% 0.13 302);
 
   /* ?? Status pill tokens (dashboard) ?? */
   --status-new-bg: rgba(0, 112, 243, 0.12);
@@ -150,6 +163,7 @@ body {
   --activity-follow: #f59e0b;
   --activity-flag: #ff4444;
   --activity-nq: #555555;
+  --activity-contacted: var(--success);
 }
 
 /* CRM / dashboard light mode — cool white canvas, matching landing light */
@@ -189,7 +203,7 @@ html:has(.crm-theme-light) ::-webkit-scrollbar-thumb:hover {
 html[data-crm-theme="light"],
 .crm-theme-light {
   --bg-primary: #f7f8fc;
-  --bg-secondary: #ffffff;
+  --bg-secondary: oklch(99% 0.004 105);
   --bg-tertiary: #f4f6fb;
   --bg-quaternary: #e8ecf4;
 
@@ -197,19 +211,19 @@ html[data-crm-theme="light"],
   --surface-sidebar-elevated: #f7f8fc;
   --surface-sidebar-border: rgba(16, 24, 40, 0.08);
   --surface-canvas: #f7f8fc;
-  --surface-card: #ffffff;
+  --surface-card: oklch(99% 0.004 105);
   --surface-card-alt: #f5f7fc;
   --surface-overlay: rgba(16, 24, 40, 0.45);
-  --surface-input: #ffffff;
-  --surface-modal: #ffffff;
-  --surface-dropdown: #ffffff;
+  --surface-input: oklch(99% 0.004 105);
+  --surface-modal: oklch(99% 0.004 105);
+  --surface-dropdown: oklch(99% 0.004 105);
   --bg-card: var(--surface-card);
 
   --text-primary: #101828;
   --text-secondary: #475467;
   --text-tertiary: #667085;
   --text-disabled: #98a2b3;
-  --text-inverse: #ffffff;
+  --text-inverse: oklch(99% 0.004 105);
   --text-on-dark: #101828;
   --text-on-dark-dim: #475467;
 
@@ -3385,6 +3399,7 @@ html:has(.cloud-surface-dark) body::-webkit-scrollbar-track {
   display: none;
 }
 
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench · tone: utilitarian · anchor hue: lime */
 /* Agency dashboard (CRM) design tokens — dark navy, matching landing */
 :root {
   --ag-bg: #06152e;
@@ -3412,7 +3427,7 @@ html:has(.cloud-surface-dark) body::-webkit-scrollbar-track {
   --ag-error: #ff4444;
   --ag-error-muted: rgba(255, 68, 68, 0.1);
 
-  --ag-font-display: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  --ag-font-display: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
   --ag-font-body: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -3455,7 +3470,7 @@ html[data-crm] .crm-shell-main {
 html[data-crm] .font-display,
 html[data-crm] .font-serif,
 .sales-dashboard-premium {
-  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ?? Skeleton shimmer animation ?? */
@@ -3589,7 +3604,7 @@ label[for="photo-input"] {
 }
 
 .ag-fade-in {
-  animation: ag-fade-up 0.4s ease forwards;
+  animation: ag-fade-up var(--dur-long, 420ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
   opacity: 0;
 }
 

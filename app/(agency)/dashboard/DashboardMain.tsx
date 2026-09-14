@@ -1,5 +1,4 @@
 import { BarChart2 } from "lucide-react";
-import { Card, CardBody } from "@/components/ui/Card";
 import { PulseBar } from "@/components/dashboard/PulseBar";
 import { buildPulseMetrics } from "@/components/dashboard/pulse-metrics";
 import { FlagAlert } from "@/components/dashboard/FlagAlert";
@@ -11,9 +10,9 @@ import { fetchAgencyDashboardData } from "@/lib/dashboard-data";
 
 const PIPELINE_STAGES = [
   { key: "NEW", label: "New", barClass: "bg-[var(--text-tertiary)]" },
-  { key: "CONTACTED", label: "Contacted", barClass: "bg-[#4A7AB5]" },
-  { key: "QUALIFIED", label: "Qualified", barClass: "bg-[#C49A3C]" },
-  { key: "NEGOTIATING", label: "Negotiating", barClass: "bg-[#E8602C]" },
+  { key: "CONTACTED", label: "Contacted", barClass: "bg-[var(--pipeline-contacted)]" },
+  { key: "QUALIFIED", label: "Qualified", barClass: "bg-[var(--pipeline-qualified)]" },
+  { key: "NEGOTIATING", label: "Negotiating", barClass: "bg-[var(--pipeline-negotiating)]" },
   { key: "WON", label: "Won", barClass: "bg-[var(--success)]" },
   { key: "LOST", label: "Lost", barClass: "bg-[var(--error)]" },
 ];
@@ -67,7 +66,7 @@ export async function DashboardMain() {
     <>
       <QuickActions />
 
-      <div className="ag-fade-in ag-delay-1">
+      <div>
         <PulseBar metrics={pulse} />
       </div>
 
@@ -75,25 +74,21 @@ export async function DashboardMain() {
         <FlagAlert rows={d.uncontactedFlags} totalCount={totalFlagged} href="/dashboard/leads?filter=uncontacted" />
       ) : null}
 
-      <div className="ag-fade-in ag-delay-2 flex flex-col gap-8 min-[1100px]:max-h-[min(72dvh,calc(100dvh-15rem))] min-[1100px]:min-h-0 min-[1100px]:flex-row min-[1100px]:items-stretch">
-        <div className="min-h-0 min-w-0 min-[1100px]:flex-[1.6] min-[1100px]:overflow-y-auto min-[1100px]:overflow-x-hidden min-[1100px]:pr-2 min-[1100px]:overscroll-contain">
+      <section aria-label="Lead operations" className="grid gap-8 border-y border-[var(--border-strong)] py-8 min-[1100px]:max-h-[min(72dvh,calc(100dvh-15rem))] min-[1100px]:min-h-0 min-[1100px]:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] min-[1100px]:gap-0">
+        <div className="min-h-0 min-w-0 min-[1100px]:overflow-y-auto min-[1100px]:overflow-x-hidden min-[1100px]:pr-8 min-[1100px]:overscroll-contain">
           <RecentLeadsTable rows={d.recentLeads} agencyFooter />
         </div>
-        <div className="min-h-0 min-w-0 min-[1100px]:flex-1 min-[1100px]:overflow-y-auto min-[1100px]:overflow-x-hidden min-[1100px]:overscroll-contain">
+        <div className="min-h-0 min-w-0 min-[1100px]:overflow-y-auto min-[1100px]:overflow-x-hidden min-[1100px]:border-l min-[1100px]:border-[var(--border)] min-[1100px]:pl-8 min-[1100px]:overscroll-contain">
           <ActivityFeed />
         </div>
-      </div>
+      </section>
 
-      <div className="ag-fade-in ag-delay-3 mt-10 grid grid-cols-1 gap-6 min-[800px]:grid-cols-2">
+      <section aria-label="Pipeline and lead-source analysis" className="mt-12 grid grid-cols-1 border-y border-[var(--border-strong)] min-[800px]:grid-cols-2">
 
         {/* Pipeline */}
-        <Card>
-          <CardBody>
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
-            Pipeline
-          </p>
-          <h2 className="mb-5 text-[18px] font-semibold text-[var(--text-primary)]">
-            Lead stages
+        <article className="py-7 min-[800px]:pr-8">
+          <h2 className="mb-6 font-display text-[19px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+            Pipeline by stage
           </h2>
 
           {Object.values(d.pipelineByStatus).every((v) => v === 0) ? (
@@ -114,11 +109,11 @@ export async function DashboardMain() {
                     </span>
                     <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
                       <div
-                        className={`h-full rounded-full transition-[width] duration-700 ${stage.barClass}`}
-                        style={{ width: `${pct}%` }}
+                        className={`h-full w-full origin-left rounded-full transition-transform duration-500 ease-[var(--ease-out)] ${stage.barClass}`}
+                        style={{ transform: `scaleX(${pct / 100})` }}
                       />
                     </div>
-                    <span className="w-8 shrink-0 text-right font-display text-[17px] font-semibold text-[var(--text-primary)]">
+                    <span className="w-8 shrink-0 text-right font-display tabular-nums text-[17px] font-semibold text-[var(--text-primary)]">
                       {count}
                     </span>
                   </div>
@@ -126,17 +121,12 @@ export async function DashboardMain() {
               })}
             </div>
           )}
-          </CardBody>
-        </Card>
+        </article>
 
         {/* Lead sources */}
-        <Card>
-          <CardBody>
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[var(--text-tertiary)]">
-            Sources
-          </p>
-          <h2 className="mb-5 text-[18px] font-semibold text-[var(--text-primary)]">
-            Lead sources
+        <article className="border-t border-[var(--border)] py-7 min-[800px]:border-l min-[800px]:border-t-0 min-[800px]:pl-8">
+          <h2 className="mb-6 font-display text-[19px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+            Leads by source
           </h2>
 
           <div className="flex flex-col gap-3">
@@ -150,11 +140,11 @@ export async function DashboardMain() {
                   </span>
                   <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--bg-quaternary)]">
                     <div
-                      className={`h-full rounded-full bg-[var(--accent)] transition-[width] duration-700 ${hasSourceData ? "opacity-100" : "opacity-25"}`}
-                      style={{ width: hasSourceData ? `${pct}%` : `${GHOST_WIDTHS[source.key] ?? 0}%` }}
+                      className={`h-full w-full origin-left rounded-full bg-[var(--accent)] transition-transform duration-500 ease-[var(--ease-out)] ${hasSourceData ? "opacity-100" : "opacity-25"}`}
+                      style={{ transform: `scaleX(${(hasSourceData ? pct : GHOST_WIDTHS[source.key] ?? 0) / 100})` }}
                     />
                   </div>
-                  <span className="w-8 shrink-0 text-right font-display text-[17px] font-semibold text-[var(--text-primary)]">
+                  <span className="w-8 shrink-0 text-right font-display tabular-nums text-[17px] font-semibold text-[var(--text-primary)]">
                     {hasSourceData ? count : "—"}
                   </span>
                 </div>
@@ -167,12 +157,11 @@ export async function DashboardMain() {
               Lead source data will appear here
             </p>
           )}
-          </CardBody>
-        </Card>
+        </article>
 
-      </div>
+      </section>
 
-      <div className="ag-fade-in ag-delay-4">
+      <div>
         <ClientPerformanceGrid rows={d.clientPerf} />
       </div>
     </>

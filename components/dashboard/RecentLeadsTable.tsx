@@ -34,7 +34,7 @@ function SourceCell({ source }: { source: LeadSource }) {
   if (source === "REFERRAL") {
     return (
       <span className="inline-flex items-center gap-1.5 text-[12px] text-[var(--text-secondary)]">
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-purple-400" />
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--source-referral)]" />
         Referral
       </span>
     );
@@ -49,7 +49,7 @@ function SourceCell({ source }: { source: LeadSource }) {
 
 export function RecentLeadsTable({
   rows,
-  eyebrow = "01 / Activity",
+  eyebrow,
   title = "Recent leads",
   showSourceFilters = true,
   agencyFooter = false,
@@ -151,8 +151,10 @@ export function RecentLeadsTable({
     <div>
       <div className="mb-5 flex flex-col gap-4 min-[640px]:flex-row min-[640px]:items-end min-[640px]:justify-between">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">{eyebrow}</p>
-          <h2 className="mt-1 text-[18px] font-semibold text-[var(--text-primary)]">{title}</h2>
+          {eyebrow ? (
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--text-tertiary)]">{eyebrow}</p>
+          ) : null}
+          <h2 className="font-display text-[19px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">{title}</h2>
         </div>
         {showSourceFilters ? (
           <SegmentedTabs
@@ -187,7 +189,7 @@ export function RecentLeadsTable({
           <span className="text-[12px] text-[var(--text-tertiary)]">Showing latest 10 leads</span>
           <Link
             href="/dashboard/leads"
-            className="text-[12px] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+            className="whitespace-nowrap rounded-sm text-[12px] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
           >
             View all leads →
           </Link>

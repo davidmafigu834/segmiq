@@ -54,8 +54,14 @@ export function ResponsiveTable<T>({
             <tr
               key={rowKey(row)}
               onClick={() => onRowClick?.(row)}
+              onKeyDown={(event) => {
+                if (!onRowClick || (event.key !== "Enter" && event.key !== " ")) return;
+                event.preventDefault();
+                onRowClick(row);
+              }}
+              tabIndex={onRowClick ? 0 : undefined}
               className={[
-                "border-b border-[var(--border)]",
+                "border-b border-[var(--border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]",
                 onRowClick ? "ag-row-hover cursor-pointer" : "",
                 rowClassName?.(row) ?? "",
               ]
@@ -106,7 +112,7 @@ export function ResponsiveTable<T>({
                 type="button"
                 onClick={() => onRowClick(row)}
                 className={[
-                  "w-full rounded-md border border-[var(--border)] bg-surface-card p-4 text-left hover:bg-surface-card-alt hover:border-[var(--border-hover)] transition-colors",
+                  "w-full rounded-md border border-[var(--border)] bg-surface-card p-4 text-left transition-[background-color,border-color,transform] duration-150 ease-[var(--ease-out)] hover:border-[var(--border-hover)] hover:bg-surface-card-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] active:translate-y-px",
                   extra ?? "",
                 ]
                   .filter(Boolean)

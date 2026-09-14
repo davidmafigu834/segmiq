@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter, Instrument_Serif, DM_Sans, DM_Serif_Display, Roboto } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import "./segmiq-atmosphere.css";
@@ -88,7 +89,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.className} ${inter.variable} ${instrumentSerif.variable} ${GeistMono.variable} ${dmSans.variable} ${dmSerif.variable} ${quotationRoboto.variable}`}
+      className={`${inter.className} ${inter.variable} ${GeistSans.variable} ${instrumentSerif.variable} ${GeistMono.variable} ${dmSans.variable} ${dmSerif.variable} ${quotationRoboto.variable}`}
     >
       <head>
         {/* Prevent CRM/sales theme flash before hydration */}

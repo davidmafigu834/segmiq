@@ -12,9 +12,12 @@ type RecSummary = { count: number; hasCritical: boolean };
 export function ClientCard({ row }: { row: ClientPerfRow }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [barWidth, setBarWidth] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [recSummary, setRecSummary] = useState<RecSummary | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/clients/${row.id}/recommendations`)
@@ -31,11 +34,6 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
   }, [row.id]);
 
   useEffect(() => {
-    const t = requestAnimationFrame(() => setBarWidth(Math.min(100, Math.max(0, row.slaComplianceRate))));
-    return () => cancelAnimationFrame(t);
-  }, [row.slaComplianceRate]);
-
-  useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     }
@@ -43,33 +41,41 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
     return () => document.removeEventListener("click", onDoc);
   }, []);
 
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (confirmOpen && !dialog.open) dialog.showModal();
+    if (!confirmOpen && dialog.open) dialog.close();
+  }, [confirmOpen]);
+
   async function handleTogglePause() {
     const newState = !row.is_active;
-    const ok = window.confirm(
-      newState
-        ? `Resume ${row.name}?`
-        : `Pause ${row.name}? Their landing page will return 404 and no new leads will be accepted.`
-    );
-    if (!ok) return;
-    setMenuOpen(false);
-    const res = await fetch(`/api/clients/${row.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ is_active: newState }),
-    });
-    if (res.ok) {
+    setIsSaving(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/clients/${row.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: newState }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setActionError(body.error ?? "We couldn’t update this client. Try again.");
+        return;
+      }
+      setConfirmOpen(false);
       router.refresh();
-    } else {
-      const j = (await res.json().catch(() => ({}))) as { error?: string };
-      window.alert(j.error ?? "Failed to update client");
+    } finally {
+      setIsSaving(false);
     }
   }
 
   return (
+    <>
     <div
       role="link"
       tabIndex={0}
-      className="ag-card-hover group relative block cursor-pointer rounded-xl border border-[var(--border)] bg-surface-card p-5"
+      className="group relative block cursor-pointer rounded-lg px-3 py-6 transition-colors duration-150 ease-[var(--ease-out)] hover:bg-[var(--bg-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] sm:px-4"
       onClick={() => router.push(`/dashboard/clients/${row.id}`)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -80,7 +86,7 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
     >
       {row.hasFlag ? (
         <span
-          className="absolute right-4 top-4 h-2 w-2 rounded-full bg-[#DC2626]"
+          className="absolute right-4 top-4 h-2 w-2 rounded-full bg-[var(--error)]"
           aria-label="Has uncontacted leads over limit"
         />
       ) : null}
@@ -117,7 +123,7 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
         <div className={`relative shrink-0 ${row.hasFlag ? "absolute right-9 top-4" : ""}`} ref={menuRef}>
           <button
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)] transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--text-tertiary)] transition-colors hover:bg-[var(--bg-quaternary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             aria-label="More"
             onClick={(e) => {
               e.stopPropagation();
@@ -166,7 +172,9 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
                 className="w-full px-3 py-1.5 text-left text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  void handleTogglePause();
+                  setMenuOpen(false);
+                  setActionError(null);
+                  setConfirmOpen(true);
                 }}
               >
                 {row.is_active ? "Pause client" : "Resume client"}
@@ -208,8 +216,8 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
       <div className="mt-5">
         <div className="h-[3px] w-full overflow-hidden rounded-full bg-[var(--border)]">
           <div
-            className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-[400ms] ease-out"
-            style={{ width: `${barWidth}%` }}
+            className="h-full w-full origin-left rounded-full bg-[var(--accent)] transition-transform duration-[400ms] ease-[var(--ease-out)]"
+            style={{ transform: `scaleX(${Math.min(100, Math.max(0, row.slaComplianceRate)) / 100})` }}
           />
         </div>
         <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
@@ -217,5 +225,51 @@ export function ClientCard({ row }: { row: ClientPerfRow }) {
         </p>
       </div>
     </div>
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={`client-status-title-${row.id}`}
+      aria-describedby={`client-status-description-${row.id}`}
+      className="m-auto w-[min(92vw,28rem)] rounded-xl border border-[var(--border-strong)] bg-[var(--surface-modal)] p-0 text-[var(--text-primary)] shadow-[var(--shadow-modal)] backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      onCancel={(event) => {
+        event.preventDefault();
+        if (!isSaving) setConfirmOpen(false);
+      }}
+      onClose={() => setConfirmOpen(false)}
+    >
+      <div className="p-6">
+        <h2 id={`client-status-title-${row.id}`} className="font-display text-xl font-semibold tracking-[-0.025em]">
+          {row.is_active ? `Pause ${row.name}?` : `Resume ${row.name}?`}
+        </h2>
+        <p id={`client-status-description-${row.id}`} className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)]">
+          {row.is_active
+            ? "Their landing page will be unavailable and new leads will stop until you resume the client."
+            : "Their landing page will return and can accept new leads again."}
+        </p>
+        {actionError ? (
+          <p role="alert" className="mt-4 rounded-md border border-[var(--error-border)] bg-[var(--error-muted)] px-3 py-2 text-sm text-[var(--error)]">
+            {actionError}
+          </p>
+        ) : null}
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            disabled={isSaving}
+            className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-[var(--border)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-tertiary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50"
+            onClick={() => setConfirmOpen(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={isSaving}
+            className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-foreground)] transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-[var(--accent-hover)] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-modal)] disabled:cursor-wait disabled:opacity-60"
+            onClick={() => void handleTogglePause()}
+          >
+            {isSaving ? "Updating…" : row.is_active ? "Pause client" : "Resume client"}
+          </button>
+        </div>
+      </div>
+    </dialog>
+    </>
   );
 }

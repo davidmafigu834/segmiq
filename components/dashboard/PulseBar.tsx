@@ -1,9 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Info } from "lucide-react";
 import type { PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 import { EmptyValue } from "@/components/EmptyValue";
-import { Card, CardBody } from "@/components/ui/Card";
 
 export type { PulseBarMetric } from "@/components/dashboard/pulse-metrics";
 
@@ -32,6 +32,7 @@ function normalizeMetric(m: PulseBarMetric | LegacyPulseMetric): PulseBarMetric 
 
 export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMetric)[] }) {
   const list = metrics.map(normalizeMetric);
+  const [openHelp, setOpenHelp] = useState<number | null>(null);
   const layoutColumnClass =
     list.length >= 6
       ? "layout:grid-cols-6"
@@ -46,9 +47,8 @@ export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMe
     list.length >= 3 ? "md:grid-cols-3" : list.length === 2 ? "md:grid-cols-2" : "md:grid-cols-1";
 
   return (
-    <Card className="mb-8 w-full">
-      <CardBody>
-      <div className={`grid grid-cols-2 gap-4 sm:gap-6 ${mdColumnClass} ${layoutColumnClass}`}>
+    <section aria-label="Key performance indicators" className="mb-8 w-full border-y border-[var(--border-strong)] py-5 sm:py-6">
+      <div className={`grid grid-cols-2 gap-x-5 gap-y-6 sm:gap-x-7 ${mdColumnClass} ${layoutColumnClass}`}>
         {list.map((m, i) => (
           <div key={`${m.eyebrow}-${i}`} className="flex flex-col gap-1">
             <div className="flex items-center gap-1">
@@ -56,13 +56,34 @@ export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMe
                 {m.eyebrow}
               </p>
               {"eyebrowTooltip" in m && m.eyebrowTooltip ? (
-                <span title={m.eyebrowTooltip} className="inline-flex cursor-help" aria-label={m.eyebrowTooltip}>
-                  <Info className="h-3 w-3 shrink-0 opacity-70 text-[var(--text-tertiary)]" strokeWidth={1.5} />
+                <span className="relative inline-flex">
+                  <button
+                    type="button"
+                    aria-label={`About ${m.eyebrow}`}
+                    aria-describedby={`pulse-help-${i}`}
+                    aria-expanded={openHelp === i}
+                    className="relative inline-flex h-5 w-5 items-center justify-center rounded-sm text-[var(--text-tertiary)] before:absolute before:-inset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    onClick={() => setOpenHelp((current) => (current === i ? null : i))}
+                    onFocus={() => setOpenHelp(i)}
+                    onBlur={() => setOpenHelp(null)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setOpenHelp(null);
+                    }}
+                  >
+                    <Info className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                  </button>
+                  <span
+                    id={`pulse-help-${i}`}
+                    role="tooltip"
+                    className={`absolute left-1/2 top-full z-20 mt-2 w-52 -translate-x-1/2 rounded-md border border-[var(--border)] bg-[var(--surface-dropdown)] px-3 py-2 text-[12px] font-normal normal-case leading-relaxed tracking-normal text-[var(--text-secondary)] shadow-[var(--shadow-md)] transition-opacity duration-150 ease-[var(--ease-out)] ${openHelp === i ? "opacity-100" : "pointer-events-none opacity-0"}`}
+                  >
+                    {m.eyebrowTooltip}
+                  </span>
                 </span>
               ) : null}
             </div>
 
-            <p className="font-display text-2xl font-semibold leading-none text-[var(--text-primary)] sm:text-3xl layout:text-4xl">
+            <p aria-live="polite" className="font-display tabular-nums text-2xl font-semibold leading-none tracking-[-0.035em] text-[var(--text-primary)] sm:text-3xl layout:text-4xl">
               {m.emptyLabel ? <EmptyValue label={m.emptyLabel} /> : m.value}
             </p>
 
@@ -82,7 +103,6 @@ export function PulseBar({ metrics }: { metrics: (PulseBarMetric | LegacyPulseMe
           </div>
         ))}
       </div>
-      </CardBody>
-    </Card>
+    </section>
   );
 }

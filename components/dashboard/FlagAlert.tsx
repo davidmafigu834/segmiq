@@ -21,7 +21,7 @@ export function FlagAlert({ rows, totalCount, href }: { rows: UncontactedFlagRow
       <p className="min-w-0 flex-1 text-[12px] text-[var(--error)]">{text}</p>
       <Link
         href={href}
-        className="shrink-0 text-[12px] font-medium text-[var(--error)] underline-offset-2 hover:underline"
+        className="shrink-0 whitespace-nowrap rounded-sm text-[12px] font-medium text-[var(--error)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--error)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]"
       >
         Review →
       </Link>
