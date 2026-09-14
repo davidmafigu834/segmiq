@@ -48,6 +48,7 @@ async function enforceMfa(
           userId: session.userId,
           role: session.role,
           clientId: session.clientId,
+          sessionId: session.sessionId,
         });
   const gate = assertMfaApiAccess(assurance, req ?? null);
   if (!gate.ok) return { error: gate.response };

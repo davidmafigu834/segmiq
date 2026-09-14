@@ -56,8 +56,18 @@ export async function elevateSession(opts: {
     }
   }
 
+  const now = new Date().toISOString();
   const elevatedUntil = new Date(Date.now() + STEP_UP_TTL_MS).toISOString();
-  await db.from("user_sessions").update({ elevated_until: elevatedUntil }).eq("id", opts.sessionId);
+  await db
+    .from("user_sessions")
+    .update({
+      elevated_until: elevatedUntil,
+      // A successful TOTP challenge also supplies the missing MFA proof for an
+      // older password-only session. Without this, MFA-gated APIs keep returning
+      // MFA_REQUIRED even after the user enters a valid code.
+      ...(mfaOn ? { mfa_verified_at: now, auth_strength: "password_mfa" } : {}),
+    })
+    .eq("id", opts.sessionId);
 
   void recordSecurityEvent({
     eventType: "STEP_UP_SUCCESS",

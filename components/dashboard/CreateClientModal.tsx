@@ -35,6 +35,8 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
 
   const reset = useCallback(() => {
     setCreationMode("invite");
@@ -56,6 +58,8 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
     setError(null);
     setSuccess(null);
     setSubmitting(false);
+    setMfaRequired(false);
+    setMfaCode("");
   }, []);
 
   useEffect(() => {
@@ -148,6 +152,33 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
 
     setSubmitting(true);
     try {
+      if (mfaRequired) {
+        const code = mfaCode.trim();
+        if (code.length < 6) {
+          setError("Enter the 6-digit code from your authenticator app.");
+          return;
+        }
+        const stepUpRes = await fetch("/api/auth/mfa", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "step_up", totpCode: code }),
+        });
+        const stepUp = (await stepUpRes.json().catch(() => ({}))) as {
+          error?: string;
+          reason?: string;
+        };
+        if (!stepUpRes.ok) {
+          setError(
+            stepUp.reason === "totp_required"
+              ? "That authenticator code is invalid or expired. Try the latest code."
+              : stepUp.error || "Could not verify your authenticator code."
+          );
+          return;
+        }
+        setMfaRequired(false);
+        setMfaCode("");
+      }
+
       const endpoint = creationMode === "manual" ? "/api/clients/manual" : "/api/clients";
       const body =
         creationMode === "manual"
@@ -182,6 +213,16 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
       };
 
       if (!res.ok) {
+        if (j.error === "MFA_REQUIRED") {
+          setMfaRequired(true);
+          setMfaCode("");
+          setError(null);
+          return;
+        }
+        if (j.error === "MFA_ENROLMENT_REQUIRED") {
+          setError("Set up two-step verification in Account Settings before creating a client.");
+          return;
+        }
         setError(typeof j.error === "string" ? j.error : "Could not create client");
         return;
       }
@@ -446,6 +487,29 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
                 </>
               ) : null}
 
+              {mfaRequired ? (
+                <div className="rounded-lg border border-border bg-surface-card-alt p-4">
+                  <label className="block text-[12px] font-semibold text-ink-primary" htmlFor="new-client-mfa-code">
+                    Confirm with your authenticator
+                  </label>
+                  <p className="mt-1 text-xs text-ink-secondary">
+                    Enter the current code from your authenticator app, then submit again. Your client details will be kept.
+                  </p>
+                  <input
+                    id="new-client-mfa-code"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    maxLength={12}
+                    className="input-base mt-3 h-11 w-full font-mono text-base tracking-[0.2em] md:h-10 md:text-sm"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\s/g, ""))}
+                    placeholder="6-digit code"
+                  />
+                </div>
+              ) : null}
+
               {error ? <p className="text-sm text-[var(--status-lost-fg)]">{error}</p> : null}
               {success ? <p className="text-sm text-[var(--success-fg)]">{success}</p> : null}
             </div>
@@ -459,6 +523,8 @@ export function CreateClientModal({ open, onClose }: { open: boolean; onClose: (
                 ? creationMode === "manual"
                   ? "Creating…"
                   : "Sending…"
+                : mfaRequired
+                  ? "Verify & continue"
                 : creationMode === "manual"
                   ? "Create client"
                   : "Send onboarding link"}
