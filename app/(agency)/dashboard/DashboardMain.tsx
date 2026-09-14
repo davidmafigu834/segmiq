@@ -74,11 +74,11 @@ export async function DashboardMain() {
         <FlagAlert rows={d.uncontactedFlags} totalCount={totalFlagged} href="/dashboard/leads?filter=uncontacted" />
       ) : null}
 
-      <section aria-label="Lead operations" className="grid gap-8 border-y border-[var(--border-strong)] py-8 min-[1100px]:max-h-[min(72dvh,calc(100dvh-15rem))] min-[1100px]:min-h-0 min-[1100px]:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] min-[1100px]:gap-0">
-        <div className="min-h-0 min-w-0 min-[1100px]:overflow-y-auto min-[1100px]:overflow-x-hidden min-[1100px]:pr-8 min-[1100px]:overscroll-contain">
+      <section aria-label="Lead operations" className="grid items-start gap-8 border-y border-[var(--border-strong)] py-8 min-[1100px]:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] min-[1100px]:gap-0">
+        <div className="min-w-0 min-[1100px]:pr-8">
           <RecentLeadsTable rows={d.recentLeads} agencyFooter />
         </div>
-        <div className="min-h-0 min-w-0 min-[1100px]:overflow-y-auto min-[1100px]:overflow-x-hidden min-[1100px]:border-l min-[1100px]:border-[var(--border)] min-[1100px]:pl-8 min-[1100px]:overscroll-contain">
+        <div className="min-w-0 min-[1100px]:border-l min-[1100px]:border-[var(--border)] min-[1100px]:pl-8">
           <ActivityFeed />
         </div>
       </section>
