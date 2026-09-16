@@ -25,11 +25,17 @@ function QuotesFallback() {
           <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
+      <div className="space-y-6">
         <Skeleton className="h-[420px] rounded-sales-xl" />
-        <div className="space-y-4">
-          <Skeleton className="h-[230px] rounded-sales-xl" />
-          <Skeleton className="h-[200px] rounded-sales-xl" />
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-36 rounded-[6px]" />
+            <Skeleton className="h-4 w-80 max-w-full rounded-[6px]" />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+            <Skeleton className="h-[260px] rounded-sales-xl" />
+            <Skeleton className="h-[260px] rounded-sales-xl" />
+          </div>
         </div>
       </div>
     </div>

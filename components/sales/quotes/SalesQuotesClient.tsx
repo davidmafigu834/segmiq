@@ -704,8 +704,8 @@ export function SalesQuotesClient() {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
-            <div className="min-w-0 space-y-4">
+          <div className="space-y-6">
+            <div className="min-w-0">
               <DataTableWorkspace className="min-w-0 overflow-hidden">
                 <div className="flex items-center justify-between border-b border-sales-border-subtle px-4 py-3">
                   <h2 className="text-[14px] font-semibold text-sales-text-primary">Quotations</h2>
@@ -835,34 +835,56 @@ export function SalesQuotesClient() {
               </DataTableWorkspace>
             </div>
 
-            <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-              <QuoteActivityCard
-                items={data.activity}
-                loading={loading}
-                onOpen={onActivityOpen}
-              />
-              {data.meta.hasTemplates ? (
-                <Card className="border-[rgba(160,205,40,0.35)] bg-[rgba(212,255,79,0.12)]">
-                  <CardContent className="p-5">
-                    <p className="text-[14px] font-semibold text-sales-text-primary">
-                      Need a quote faster?
-                    </p>
-                    <p className="mt-1.5 text-[13px] text-sales-text-secondary">
-                      Use saved quote templates to create consistent quotations faster.
-                    </p>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="mt-3 h-9 rounded-[10px] bg-sales-surface"
-                      leftIcon={<FilePlus2 size={14} strokeWidth={1.8} />}
-                      onClick={() => setCreateOpen(true)}
-                    >
-                      Create from template
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : null}
-            </div>
+            <section className="space-y-3" aria-labelledby="quotation-activity-heading">
+              <div>
+                <h2
+                  id="quotation-activity-heading"
+                  className="text-[15px] font-semibold text-sales-text-primary"
+                >
+                  Quotation activity
+                </h2>
+                <p className="mt-1 text-[12px] text-sales-text-muted">
+                  Recent customer engagement and shortcuts for creating the next quotation.
+                </p>
+              </div>
+              <div
+                className={cn(
+                  "grid items-stretch gap-4",
+                  data.meta.hasTemplates && "lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]"
+                )}
+              >
+                <div className="min-w-0 [&>*]:h-full">
+                  <QuoteActivityCard
+                    items={data.activity}
+                    loading={loading}
+                    onOpen={onActivityOpen}
+                  />
+                </div>
+                {data.meta.hasTemplates ? (
+                  <Card className="h-full border-[rgba(160,205,40,0.35)] bg-[rgba(212,255,79,0.12)]">
+                    <CardContent className="flex h-full flex-col justify-between p-5 sm:p-6">
+                      <div>
+                        <p className="text-[15px] font-semibold text-sales-text-primary">
+                          Need a quote faster?
+                        </p>
+                        <p className="mt-2 max-w-md text-[13px] leading-5 text-sales-text-secondary">
+                          Use saved quote templates to create consistent quotations faster.
+                        </p>
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="mt-5 h-10 w-fit rounded-[10px] bg-sales-surface"
+                        leftIcon={<FilePlus2 size={14} strokeWidth={1.8} />}
+                        onClick={() => setCreateOpen(true)}
+                      >
+                        Create from template
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : null}
+              </div>
+            </section>
           </div>
         </>
       ) : null}
