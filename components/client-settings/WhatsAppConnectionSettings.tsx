@@ -211,7 +211,7 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
                   <button type="button" disabled={busy} onClick={() => setModalOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#D4FF4F] px-4 py-2.5 text-sm font-semibold text-[#101828] disabled:opacity-50">
                     <QrCode size={17} /> View connection
                   </button>
-                  {["ERROR", "RECONNECT_REQUIRED", "INITIALIZING"].includes(connection.status) ? (
+                  {["ERROR", "RECONNECT_REQUIRED", "INITIALIZING", "RECONNECTING"].includes(connection.status) ? (
                     <button type="button" disabled={busy} onClick={() => void reconnect()} className="inline-flex items-center gap-2 rounded-lg border border-[--border-strong] px-4 py-2.5 text-sm font-semibold text-[--text-primary] disabled:opacity-50">
                       <RefreshCw size={16} /> Reconnect
                     </button>
@@ -282,7 +282,7 @@ export function WhatsAppConnectionSettings({ embedded = false }: { embedded?: bo
                 <Smartphone size={20} className="mt-0.5 shrink-0 text-sales-text-secondary" />
                 <p className="text-xs leading-relaxed text-sales-text-secondary">On the business phone, open WhatsApp → Linked devices → Link a device, then scan this code. Keep the phone online while connecting.</p>
               </div>
-              {["ERROR", "RECONNECT_REQUIRED", "INITIALIZING"].includes(connection.status) || data?.qrExpired ? (
+              {["ERROR", "RECONNECT_REQUIRED", "INITIALIZING", "RECONNECTING"].includes(connection.status) || data?.qrExpired ? (
                 <button type="button" disabled={busy} onClick={() => void reconnect()} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#D4FF4F] px-4 py-2.5 text-sm font-semibold text-[#101828] disabled:opacity-50"><RefreshCw size={16} /> {busy ? "Starting service…" : "Generate a new code"}</button>
               ) : null}
             </div>

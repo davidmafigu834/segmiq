@@ -73,6 +73,23 @@ test("a restarted gateway can resume live connections without a new QR scan", ()
   assert.equal(canTransitionWhatsAppConnection("RECONNECTING", "CONNECTED"), true);
 });
 
+test("a stranded reconnect remains recoverable by a company manager", async () => {
+  const source = await import("node:fs/promises").then(({ readFile }) =>
+    readFile("components/client-settings/WhatsAppConnectionSettings.tsx", "utf8")
+  );
+  assert.match(
+    source,
+    /\["ERROR", "RECONNECT_REQUIRED", "INITIALIZING", "RECONNECTING"\]\.includes\(connection\.status\)/
+  );
+});
+
+test("gateway retries a transient session-restore lookup failure", async () => {
+  const source = await import("node:fs/promises").then(({ readFile }) =>
+    readFile("services/whatsapp-gateway/index.ts", "utf8")
+  );
+  assert.match(source, /setTimeout\(\(\) => void restoreSessions\(\), RESTORE_LOOKUP_RETRY_MS\)\.unref\(\)/);
+});
+
 test("a restore whose stored session is rejected ends in RECONNECT_REQUIRED, not a QR loop", () => {
   assert.equal(canTransitionWhatsAppConnection("RECONNECTING", "RECONNECT_REQUIRED"), true);
   // An unattended reconnect must never publish a QR code, so this transition

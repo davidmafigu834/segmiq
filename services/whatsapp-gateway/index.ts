@@ -53,6 +53,7 @@ const SESSION_PERSIST_DEBOUNCE_MS = 5_000;
 /** Re-fetch contact avatars at most once per day per chat. */
 const PROFILE_PICTURE_TTL_MS = 24 * 60 * 60 * 1_000;
 const PROFILE_PICTURE_MAX_BYTES = 512 * 1024;
+const RESTORE_LOOKUP_RETRY_MS = 30_000;
 
 type CachedProfilePicture = {
   fetchedAt: number;
@@ -809,6 +810,7 @@ async function restoreSessions(): Promise<void> {
       "[whatsapp-gateway] session restore lookup failed",
       error instanceof Error ? error.message : "unknown"
     );
+    setTimeout(() => void restoreSessions(), RESTORE_LOOKUP_RETRY_MS).unref();
     return;
   }
   if (restorable.length === 0) return;
