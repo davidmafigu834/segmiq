@@ -26,12 +26,18 @@ function LeadsFallback() {
           <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
+      <div className="space-y-6">
         <Skeleton className="h-[420px] rounded-sales-xl" />
-        <div className="space-y-4">
-          <Skeleton className="h-[220px] rounded-sales-xl" />
-          <Skeleton className="h-[200px] rounded-sales-xl" />
-          <Skeleton className="h-[220px] rounded-sales-xl" />
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-28 rounded-[6px]" />
+            <Skeleton className="h-4 w-72 max-w-full rounded-[6px]" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Skeleton className="h-[260px] rounded-sales-xl" />
+            <Skeleton className="h-[260px] rounded-sales-xl" />
+            <Skeleton className="h-[260px] rounded-sales-xl md:col-span-2 xl:col-span-1" />
+          </div>
         </div>
       </div>
     </div>

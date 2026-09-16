@@ -695,8 +695,8 @@ export function SalesLeadsClient({
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
-            <div className="min-w-0 space-y-4">
+          <div className="space-y-6">
+            <div className="min-w-0">
               <DataTableWorkspace>
                 <div className="flex items-center justify-between border-b border-sales-border-subtle px-4 py-3">
                   <h2 className="text-[14px] font-semibold text-sales-text-primary">Leads</h2>
@@ -830,24 +830,43 @@ export function SalesLeadsClient({
               </DataTableWorkspace>
             </div>
 
-            <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-              <LeadsBySourceCard
-                slices={data.bySource.slices}
-                total={data.bySource.total}
-                loading={loading}
-              />
-              <LeadStageOverviewCard
-                slices={data.byStage.slices}
-                total={data.byStage.total}
-                loading={loading}
-              />
-              <HotLeadsCard
-                leads={data.hotLeads}
-                loading={loading}
-                onOpen={openLead}
-                onViewAll={applyHotFilter}
-              />
-            </div>
+            <section className="space-y-3" aria-labelledby="lead-insights-heading">
+              <div>
+                <h2
+                  id="lead-insights-heading"
+                  className="text-[15px] font-semibold text-sales-text-primary"
+                >
+                  Lead insights
+                </h2>
+                <p className="mt-1 text-[12px] text-sales-text-muted">
+                  Source mix, pipeline distribution and high-intent opportunities.
+                </p>
+              </div>
+              <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="min-w-0 [&>*]:h-full">
+                  <LeadsBySourceCard
+                    slices={data.bySource.slices}
+                    total={data.bySource.total}
+                    loading={loading}
+                  />
+                </div>
+                <div className="min-w-0 [&>*]:h-full">
+                  <LeadStageOverviewCard
+                    slices={data.byStage.slices}
+                    total={data.byStage.total}
+                    loading={loading}
+                  />
+                </div>
+                <div className="min-w-0 md:col-span-2 xl:col-span-1 [&>*]:h-full">
+                  <HotLeadsCard
+                    leads={data.hotLeads}
+                    loading={loading}
+                    onOpen={openLead}
+                    onViewAll={applyHotFilter}
+                  />
+                </div>
+              </div>
+            </section>
           </div>
         </>
       ) : null}
