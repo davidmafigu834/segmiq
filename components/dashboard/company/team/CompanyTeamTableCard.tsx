@@ -46,7 +46,11 @@ import type {
   CompanyTeamTab,
 } from "./types";
 import { DEFAULT_COMPANY_TEAM_FILTERS } from "./types";
-import { COMPANY_TEAM_PAGE_SIZE, companyTeamFiltersActive } from "@/lib/sales/company-team-metrics";
+import {
+  COMPANY_TEAM_PAGE_SIZE,
+  REAL_ESTATE_TEAM_PAGE_SIZE,
+  companyTeamFiltersActive,
+} from "@/lib/sales/company-team-metrics";
 import { useCompanyWorkspace } from "@/components/company/CompanyWorkspaceContext";
 import { displayRoleColumn, displayTitleLabel } from "@/lib/terminology";
 
@@ -537,7 +541,7 @@ export function CompanyTeamTableCard({
                 value={pageSize}
                 onChange={(e) => onPageSizeChange(Number(e.target.value))}
               >
-                {[COMPANY_TEAM_PAGE_SIZE, 25, 50].map((n) => (
+                {[COMPANY_TEAM_PAGE_SIZE, REAL_ESTATE_TEAM_PAGE_SIZE, 50].map((n) => (
                   <option key={n} value={n}>
                     {n} / page
                   </option>

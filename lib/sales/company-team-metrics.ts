@@ -11,6 +11,11 @@ import type {
 } from "@/components/dashboard/company/team/types";
 
 export const COMPANY_TEAM_PAGE_SIZE = 10;
+export const REAL_ESTATE_TEAM_PAGE_SIZE = 25;
+
+export function getCompanyTeamInitialPageSize(businessType: string | null | undefined): number {
+  return businessType === "real_estate" ? REAL_ESTATE_TEAM_PAGE_SIZE : COMPANY_TEAM_PAGE_SIZE;
+}
 export const HOT_LEAD_SCORE_THRESHOLD = 70;
 
 const COMPOSITION_COLORS: Record<CompanyTeamRoleGroup, string> = {

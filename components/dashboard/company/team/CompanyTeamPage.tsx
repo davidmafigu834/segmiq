@@ -13,7 +13,7 @@ import { SetGoalDialog } from "@/components/sales/goals/SetGoalDialog";
 import { ConfirmDialog } from "@/components/sales/ui";
 import { parseGoalPeriodKey } from "@/lib/sales/goals/period";
 import {
-  COMPANY_TEAM_PAGE_SIZE,
+  getCompanyTeamInitialPageSize,
   companyTeamFiltersActive,
   matchesCompanyTeamFilters,
   matchesCompanyTeamSearch,
@@ -57,7 +57,7 @@ export function CompanyTeamPage({
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filters, setFilters] = useState<CompanyTeamFilters>(DEFAULT_COMPANY_TEAM_FILTERS);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(COMPANY_TEAM_PAGE_SIZE);
+  const [pageSize, setPageSize] = useState(() => getCompanyTeamInitialPageSize(data.businessType));
   const [overview, setOverview] = useState<CompanyTeamMemberOverview | null>(null);
   const [overviewLoading, setOverviewLoading] = useState(false);
   const [overviewError, setOverviewError] = useState<string | null>(null);

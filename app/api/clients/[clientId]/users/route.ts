@@ -145,44 +145,52 @@ export async function POST(req: Request, { params }: { params: { clientId: strin
     .eq("email", email)
     .maybeSingle();
 
+  const duplicateIsSameAccount =
+    Boolean(dupe) &&
+    (dupe?.client_id as string | null) === params.clientId &&
+    (dupe?.role as string | null) === parsed.data.role;
+
+  if (duplicateIsSameAccount && dupe?.is_active !== false) {
+    return NextResponse.json(
+      {
+        error:
+          parsed.data.role === "SALESPERSON"
+            ? `${String(dupe?.name ?? email)} is already an active salesperson.`
+            : `${String(dupe?.name ?? email)} is already an active manager.`,
+      },
+      { status: 409 }
+    );
+  }
+
   if (parsed.data.role === "SALESPERSON") {
-    const reactivatingActive =
-      Boolean(dupe) &&
-      (dupe?.client_id as string | null) === params.clientId &&
-      (dupe?.role as string | null) === "SALESPERSON" &&
-      dupe?.is_active !== false;
-    if (!reactivatingActive) {
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("plan")
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("plan")
+      .eq("client_id", params.clientId)
+      .eq("product", "crm")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const planKey = sub && isCrmPlan(sub.plan as string) ? (sub.plan as "starter" | "growth" | "scale") : null;
+    const limit = planKey ? CRM_PLAN_SEATS[planKey] : null;
+    if (limit != null) {
+      const { count } = await supabase
+        .from("users")
+        .select("*", { count: "exact", head: true })
         .eq("client_id", params.clientId)
-        .eq("product", "crm")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      const planKey = sub && isCrmPlan(sub.plan as string) ? (sub.plan as "starter" | "growth" | "scale") : null;
-      const limit = planKey ? CRM_PLAN_SEATS[planKey] : null;
-      if (limit != null) {
-        const { count } = await supabase
-          .from("users")
-          .select("*", { count: "exact", head: true })
-          .eq("client_id", params.clientId)
-          .eq("role", "SALESPERSON")
-          .eq("is_active", true);
-        if ((count ?? 0) >= limit) {
-          return NextResponse.json(
-            { error: `This plan includes ${limit} salesperson seats. Upgrade your plan to invite more.` },
-            { status: 400 }
-          );
-        }
+        .eq("role", "SALESPERSON")
+        .eq("is_active", true);
+      if ((count ?? 0) >= limit) {
+        return NextResponse.json(
+          { error: `This plan includes ${limit} salesperson seats. Upgrade your plan to invite more.` },
+          { status: 400 }
+        );
       }
     }
   }
 
   if (dupe) {
-    const sameClient = (dupe.client_id as string | null) === params.clientId;
-    const sameRole = (dupe.role as string | null) === parsed.data.role;
-    if (sameClient && sameRole) {
+    if (duplicateIsSameAccount) {
       const tempPass = randomBytes(12).toString("base64url").slice(0, 16);
       const hash = await hashPassword(tempPass);
       const updates: Record<string, unknown> = {

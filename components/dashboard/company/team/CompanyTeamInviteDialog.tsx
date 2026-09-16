@@ -28,13 +28,29 @@ export function CompanyTeamInviteDialog({
   } | null>(null);
 
   async function handleSave() {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+    if (!trimmedName || !trimmedEmail || (isRealEstate && !trimmedPhone)) {
+      setError(
+        isRealEstate
+          ? "Name, email, and phone are required for an agent."
+          : "Name and email are required."
+      );
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
       const res = await fetch(`/api/clients/${clientId}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: "SALESPERSON", name, email, phone }),
+        body: JSON.stringify({
+          role: "SALESPERSON",
+          name: trimmedName,
+          email: trimmedEmail,
+          phone: trimmedPhone,
+        }),
       });
       const json = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -46,7 +62,7 @@ export function CompanyTeamInviteDialog({
         return;
       }
       setResult({
-        email,
+        email: trimmedEmail,
         emailSent: json.emailSent === true,
         temporaryPassword: json.temporaryPassword,
       });
@@ -61,7 +77,7 @@ export function CompanyTeamInviteDialog({
   if (result) {
     return (
       <PremiumSheet
-        title="Team member invited"
+        title={isRealEstate ? "Agent invited" : "Team member invited"}
         onClose={onClose}
         size="md"
         footer={
@@ -127,11 +143,16 @@ export function CompanyTeamInviteDialog({
             onChange={(e) => setEmail(e.target.value)}
           />
         </Field>
-        <Field label="Phone (optional)" htmlFor="invite-phone" optional>
+        <Field
+          label={isRealEstate ? "Phone" : "Phone (optional)"}
+          htmlFor="invite-phone"
+          optional={!isRealEstate}
+        >
           <Input
             id="invite-phone"
             inputMode="tel"
             placeholder="+263…"
+            required={isRealEstate}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />

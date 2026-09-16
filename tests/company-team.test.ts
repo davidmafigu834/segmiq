@@ -7,12 +7,18 @@ import {
   companyTeamRoleColumn,
   companyTeamWinRate,
   deriveCompanyTeamAttention,
+  getCompanyTeamInitialPageSize,
   matchesCompanyTeamFilters,
   matchesCompanyTeamSearch,
   matchesCompanyTeamTab,
 } from "../lib/sales/company-team-metrics";
 
 describe("company team metric definitions", () => {
+  it("shows more than ten agents by default for real-estate teams", () => {
+    assert.equal(getCompanyTeamInitialPageSize("real_estate"), 25);
+    assert.equal(getCompanyTeamInitialPageSize("trades"), 10);
+  });
+
   it("win rate is Won / (Won + Lost) and null when nothing is closed", () => {
     assert.equal(companyTeamWinRate(3, 1), 75);
     assert.equal(companyTeamWinRate(0, 0), null);
