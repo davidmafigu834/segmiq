@@ -59,6 +59,7 @@ export default async function SalesQuotesPage() {
     >
       <SalesAppShell
         {...shell}
+        dense
         breadcrumb="Sales / Quotations"
         title="Quotations"
         description="Create, send and follow up on commercial offers for active Deals."

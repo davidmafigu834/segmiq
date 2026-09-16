@@ -406,36 +406,9 @@ export function SalesQuotesClient() {
     <div className="w-full space-y-4">
       {!neverQuoted ? (
         <>
-          {/* Header actions */}
+          {/* Primary filters and actions */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="md"
-              className="h-10 min-w-0 flex-1 rounded-[10px] md:hidden md:flex-none"
-              leftIcon={<ListFilter size={16} strokeWidth={1.8} />}
-              onClick={() => setFiltersOpen(true)}
-            >
-              Filters
-              {drawerFilterCount > 0 ? (
-                <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
-                  {drawerFilterCount}
-                </span>
-              ) : null}
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              className="h-10 shrink-0 rounded-[10px] md:ml-auto"
-              leftIcon={<FilePlus2 size={16} strokeWidth={1.8} />}
-              onClick={() => setCreateOpen(true)}
-            >
-              Create quote
-            </Button>
-          </div>
-
-          {/* Filters */}
-          <div className="hidden flex-col gap-3 md:flex sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="hidden min-w-0 flex-1 items-center gap-2 xl:flex">
               <MenuSelect
                 aria-label="Date range"
                 value={period}
@@ -462,7 +435,7 @@ export function SalesQuotesClient() {
                 leadingIcon={<ListFilter size={14} strokeWidth={1.8} />}
                 options={QUOTES_SOURCES.map((s) => ({ value: s.id, label: s.label }))}
               />
-              <div className="min-w-[240px] flex-1 basis-[280px] sm:max-w-[360px]">
+              <div className="min-w-[180px] flex-1 basis-[240px] xl:max-w-[340px]">
                 <SearchInput
                   placeholder="Search quotes..."
                   value={search}
@@ -473,8 +446,21 @@ export function SalesQuotesClient() {
                 />
               </div>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-              <div className="relative">
+            <Button
+              variant="secondary"
+              size="md"
+              className="h-10 min-w-0 flex-1 rounded-[10px] xl:hidden"
+              leftIcon={<ListFilter size={16} strokeWidth={1.8} />}
+              onClick={() => setFiltersOpen(true)}
+            >
+              Filters
+              {drawerFilterCount > 0 ? (
+                <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
+                  {drawerFilterCount}
+                </span>
+              ) : null}
+            </Button>
+            <div className="relative hidden shrink-0 xl:block">
                 <Button
                   variant="secondary"
                   size="md"
@@ -527,22 +513,30 @@ export function SalesQuotesClient() {
                     </div>
                   </>
                 ) : null}
-              </div>
-              <Button
-                variant="secondary"
-                size="md"
-                className="h-10 shrink-0 rounded-[10px]"
-                leftIcon={<Download size={16} strokeWidth={1.8} />}
-                onClick={exportCsv}
-                disabled={!filtered.length}
-              >
-                Export
-              </Button>
             </div>
+            <Button
+              variant="secondary"
+              size="md"
+              className="hidden h-10 shrink-0 rounded-[10px] xl:inline-flex"
+              leftIcon={<Download size={16} strokeWidth={1.8} />}
+              onClick={exportCsv}
+              disabled={!filtered.length}
+            >
+              Export
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              className="h-10 shrink-0 rounded-[10px]"
+              leftIcon={<FilePlus2 size={16} strokeWidth={1.8} />}
+              onClick={() => setCreateOpen(true)}
+            >
+              Create quote
+            </Button>
           </div>
 
           {filtersOpen ? (
-            <div className="md:hidden">
+            <div className="xl:hidden">
               <PremiumSheet
                 title="Filters"
                 description="Period, status, source, and search"
@@ -1191,11 +1185,17 @@ function QuotesSkeleton() {
           <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
+      <div className="space-y-6">
         <Skeleton className="h-[420px] rounded-sales-xl" />
-        <div className="space-y-4">
-          <Skeleton className="h-[230px] rounded-sales-xl" />
-          <Skeleton className="h-[200px] rounded-sales-xl" />
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-36 rounded-[6px]" />
+            <Skeleton className="h-4 w-80 max-w-full rounded-[6px]" />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+            <Skeleton className="h-[260px] rounded-sales-xl" />
+            <Skeleton className="h-[260px] rounded-sales-xl" />
+          </div>
         </div>
       </div>
     </div>
