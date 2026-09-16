@@ -166,7 +166,7 @@ export function NewEnquiriesCard({
           {/* Desktop — grid keeps Source→Actions packed; Name takes remaining space */}
           <div className="hidden overflow-x-auto md:block">
             <div
-              className="grid grid-cols-[minmax(140px,1fr)_auto_auto_auto_auto] items-center gap-x-3 border-b border-sales-border-subtle bg-sales-surface-subtle px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted"
+              className="grid grid-cols-[minmax(140px,1fr)_auto_auto_auto_auto] items-center gap-x-3 border-b border-sales-border-subtle bg-[var(--sales-table-header-bg)] px-5 py-3.5 text-[11px] font-medium tracking-[0.01em] text-sales-text-muted"
               role="row"
             >
               <span role="columnheader">Name</span>
@@ -189,7 +189,7 @@ export function NewEnquiriesCard({
                 return (
                   <div
                     key={item.id}
-                    className="dashboard-list-row grid grid-cols-[minmax(140px,1fr)_auto_auto_auto_auto] items-center gap-x-3 px-5 py-3"
+                    className="dashboard-list-row grid min-h-[62px] grid-cols-[minmax(140px,1fr)_auto_auto_auto_auto] items-center gap-x-3 px-5 py-3 transition-colors duration-150 hover:bg-[var(--sales-table-hover)]"
                     role="row"
                   >
                     <div className="min-w-0" role="cell">
@@ -229,11 +229,11 @@ export function NewEnquiriesCard({
           </div>
 
           {/* Mobile cards */}
-          <ul className="divide-y divide-sales-border-subtle md:hidden">
+          <ul className="grid gap-2.5 bg-sales-surface-subtle p-3 md:hidden">
             {items.map((item) => {
               const subtitle = enquirySubtitle(item);
               return (
-                <li key={item.id} className="px-4 py-3.5">
+                <li key={item.id} className="rounded-sales-md border border-sales-border bg-sales-surface px-4 py-3.5 shadow-sales-sm">
                   <div className="flex items-start justify-between gap-3">
                     <Link href={item.href} className="min-w-0 flex-1">
                       <p className="truncate text-[14px] font-semibold text-sales-text-primary">

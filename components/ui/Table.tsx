@@ -1,8 +1,8 @@
 import { cn } from "@/lib/ui/cn";
 
-/** Vercel-style table primitives. Wrap in a Card shell for the bordered container. */
+/** List-style table primitives. Wrap in a Card shell for the bordered container. */
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
-  return <table className={cn("w-full text-sm", className)} {...props} />;
+  return <table className={cn("w-full border-collapse text-sm", className)} {...props} />;
 }
 
 export function TableHeader({
@@ -27,8 +27,8 @@ export function TableRow({
   return (
     <tr
       className={cn(
-        "border-b border-[var(--border)]",
-        isHeader ? "" : "last:border-0 hover:bg-white/[0.02]",
+        "border-b border-[var(--border)] transition-colors duration-150",
+        isHeader ? "bg-surface-card-alt" : "last:border-0 hover:bg-surface-card-alt",
         className
       )}
       {...props}
@@ -44,7 +44,7 @@ export function TableHead({
   return (
     <th
       className={cn(
-        "px-4 py-3 text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)] whitespace-nowrap",
+        "whitespace-nowrap px-[18px] py-3.5 text-[11px] font-medium tracking-[0.01em] text-[var(--text-tertiary)]",
         align === "right" ? "text-right" : "text-left",
         className
       )}
@@ -61,7 +61,7 @@ export function TableCell({
   return (
     <td
       className={cn(
-        "px-4 py-3 text-[var(--text-primary)]",
+        "px-[18px] py-4 leading-5 text-[var(--text-primary)]",
         align === "right" ? "text-right tabular-nums" : "",
         className
       )}

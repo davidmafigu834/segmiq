@@ -33,14 +33,14 @@ export function ResponsiveTable<T>({
   return (
     <>
       <div className="hidden overflow-x-auto lg:block">
-      <table className={["w-full", minWidthClassName ?? ""].filter(Boolean).join(" ")}>
+      <table className={["w-full border-collapse", minWidthClassName ?? ""].filter(Boolean).join(" ")}>
         <thead>
-          <tr className="border-b border-[var(--border-strong)]">
+          <tr className="border-b border-[var(--border)] bg-surface-card-alt">
             {columns.map((col) => (
               <th
                 key={col.key}
                 style={col.width ? { width: col.width } : undefined}
-                className={`px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.06em] text-[var(--text-tertiary)] whitespace-nowrap ${
+                className={`whitespace-nowrap px-[18px] py-3.5 text-[11px] font-medium tracking-[0.01em] text-[var(--text-tertiary)] ${
                   col.align === "right" ? "text-right" : "text-left"
                 }`}
               >
@@ -61,15 +61,15 @@ export function ResponsiveTable<T>({
               }}
               tabIndex={onRowClick ? 0 : undefined}
               className={[
-                "border-b border-[var(--border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]",
-                onRowClick ? "ag-row-hover cursor-pointer" : "",
+                "border-b border-[var(--border)] transition-colors duration-150 last:border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]",
+                onRowClick ? "ag-row-hover cursor-pointer hover:bg-surface-card-alt" : "",
                 rowClassName?.(row) ?? "",
               ]
                 .filter(Boolean)
                 .join(" ")}
             >
               {columns.map((col) => (
-                <td key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-4 py-3 text-[13px] text-[var(--text-primary)] ${col.align === "right" ? "text-right" : ""}`}>
+                <td key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-[18px] py-4 text-[13px] leading-5 text-[var(--text-primary)] ${col.align === "right" ? "text-right tabular-nums" : ""}`}>
                   {col.render(row)}
                 </td>
               ))}
@@ -79,7 +79,7 @@ export function ResponsiveTable<T>({
       </table>
       </div>
 
-      <div className="space-y-2 lg:hidden">
+      <div className="space-y-2.5 lg:hidden">
         {rows.map((row) => {
           const extra = rowClassName?.(row);
           const primary = columns.filter((c) => c.mobilePrimary);
@@ -112,7 +112,7 @@ export function ResponsiveTable<T>({
                 type="button"
                 onClick={() => onRowClick(row)}
                 className={[
-                  "w-full rounded-md border border-[var(--border)] bg-surface-card p-4 text-left transition-[background-color,border-color,transform] duration-150 ease-[var(--ease-out)] hover:border-[var(--border-hover)] hover:bg-surface-card-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] active:translate-y-px",
+                  "w-full rounded-[10px] border border-[var(--border)] bg-surface-card p-4 text-left shadow-sm transition-[background-color,border-color,box-shadow] duration-150 ease-[var(--ease-out)] hover:border-[var(--border-hover)] hover:bg-surface-card-alt focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)]",
                   extra ?? "",
                 ]
                   .filter(Boolean)
@@ -125,7 +125,7 @@ export function ResponsiveTable<T>({
           return (
             <div
               key={rowKey(row)}
-              className={["w-full rounded-md border border-[var(--border)] bg-surface-card p-4", extra ?? ""].filter(Boolean).join(" ")}
+              className={["w-full rounded-[10px] border border-[var(--border)] bg-surface-card p-4 shadow-sm", extra ?? ""].filter(Boolean).join(" ")}
             >
               {inner}
             </div>

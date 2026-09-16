@@ -68,20 +68,20 @@ export function DealsAttentionCard({
                 <col className="w-[22%]" />
               </colgroup>
               <thead>
-                <tr className="border-b border-sales-border-subtle bg-sales-surface-subtle text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-                  <th className="px-5 py-2.5 font-semibold">Deal</th>
-                  <th className="px-3 py-2.5 font-semibold">Customer</th>
-                  <th className="px-3 py-2.5 font-semibold">Stage</th>
-                  <th className="px-3 py-2.5 font-semibold">Estimated value</th>
-                  <th className="px-3 py-2.5 font-semibold">Next action</th>
-                  <th className="px-5 py-2.5 font-semibold">Why it needs attention</th>
+                <tr className="border-b border-sales-border-subtle bg-[var(--sales-table-header-bg)] text-[11px] font-medium tracking-[0.01em] text-sales-text-muted">
+                  <th className="px-5 py-3.5 font-medium">Deal</th>
+                  <th className="px-3 py-3.5 font-medium">Customer</th>
+                  <th className="px-3 py-3.5 font-medium">Stage</th>
+                  <th className="px-3 py-3.5 font-medium">Estimated value</th>
+                  <th className="px-3 py-3.5 font-medium">Next action</th>
+                  <th className="px-5 py-3.5 font-medium">Why it needs attention</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[rgba(125,148,194,0.07)]">
                 {items.map((item) => (
                   <tr
                     key={item.id}
-                    className="dashboard-list-row h-[56px]"
+                    className="dashboard-list-row h-[62px] transition-colors duration-150 hover:bg-[var(--sales-table-hover)]"
                   >
                     <td className="px-5 py-2">
                       <Link
@@ -139,10 +139,10 @@ export function DealsAttentionCard({
             </table>
           </div>
 
-          <ul className="divide-y divide-sales-border-subtle md:hidden">
+          <ul className="grid gap-2.5 bg-sales-surface-subtle p-3 md:hidden">
             {items.map((item) => (
-              <li key={item.id} className="px-4 py-3.5">
-                <Link href={item.href} className="block">
+              <li key={item.id} className="rounded-sales-md border border-sales-border bg-sales-surface px-4 py-3.5 shadow-sales-sm">
+                <Link href={item.href} className="block rounded-[8px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-[14px] font-semibold text-sales-text-primary">{item.name}</p>
                     {item.atRisk ? (

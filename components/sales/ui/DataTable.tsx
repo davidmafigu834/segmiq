@@ -11,11 +11,11 @@ export type DataTableSortDirection = "asc" | "desc" | "none";
 export type DataTableRowDensity = "default" | "comfortable";
 
 const tableShellClass =
-  "overflow-hidden rounded-sales-lg border border-sales-border bg-sales-surface shadow-sales-card";
+  "overflow-hidden rounded-sales-xl border border-sales-border bg-sales-surface shadow-sales-card";
 
 const rowHeightClass: Record<DataTableRowDensity, string> = {
-  default: "h-[var(--sales-table-row-height,52px)]",
-  comfortable: "h-[var(--sales-table-row-height-comfortable,56px)]",
+  default: "h-[var(--sales-table-row-height,58px)]",
+  comfortable: "h-[var(--sales-table-row-height-comfortable,64px)]",
 };
 
 /** One bordered table workspace — tabs, toolbar, table, and footer live inside. */
@@ -199,7 +199,7 @@ export function DataTableHead({
   return (
     <thead
       className={cn(
-        "border-b border-[var(--sales-table-divider)] bg-[var(--sales-table-header-bg)] text-[10px] font-semibold uppercase tracking-[0.07em] text-sales-text-muted",
+        "border-b border-[var(--sales-table-divider)] bg-[var(--sales-table-header-bg)] text-[11px] font-medium tracking-[0.01em] text-sales-text-muted",
         className
       )}
       {...props}
@@ -243,7 +243,7 @@ export function DataTableRow({
     <tr
       className={cn(
         rowHeightClass[density],
-        "transition-colors duration-150",
+        "group transition-colors duration-150",
         canHover && "hover:bg-[var(--sales-table-hover)]",
         clickable && "cursor-pointer",
         selected && "bg-[var(--sales-table-selected)] hover:bg-[var(--sales-table-selected)]",
@@ -272,7 +272,7 @@ export function DataTableTh({
     <th
       scope="col"
       className={cn(
-        "h-[var(--sales-table-header-height,44px)] whitespace-nowrap px-[var(--sales-table-cell-x,16px)] py-0 font-semibold align-middle",
+        "h-[var(--sales-table-header-height,46px)] whitespace-nowrap px-[var(--sales-table-cell-x,18px)] py-0 font-medium align-middle",
         compact && "px-[var(--sales-table-cell-x-compact,12px)]",
         align === "right" && "text-right",
         align === "center" && "text-center",
@@ -349,7 +349,7 @@ export function DataTableTd({
   return (
     <td
       className={cn(
-        "px-[var(--sales-table-cell-x,16px)] py-0 text-[13px] text-sales-text-primary align-middle",
+        "px-[var(--sales-table-cell-x,18px)] py-0 text-[13px] leading-5 text-sales-text-primary align-middle",
         compact && "px-[var(--sales-table-cell-x-compact,12px)]",
         (align === "right" || numeric) && "text-right tabular-nums",
         align === "center" && "text-center",
@@ -520,7 +520,7 @@ export function DataTableMobileList({
   return (
     <div
       className={cn(
-        "divide-y divide-[var(--sales-table-divider)] lg:hidden",
+        "grid gap-2.5 bg-sales-surface-subtle p-3 lg:hidden",
         className
       )}
     >
@@ -542,8 +542,9 @@ export function DataTableMobileItem({
   children: ReactNode;
 } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "className" | "type">) {
   const classes = cn(
-    "w-full p-4 text-left transition-colors hover:bg-[var(--sales-table-hover)]",
-    selected && "bg-[var(--sales-table-selected)] hover:bg-[var(--sales-table-selected)]",
+    "w-full rounded-sales-md border border-sales-border bg-sales-surface p-4 text-left shadow-sales-sm transition-[background-color,border-color,box-shadow] duration-150 hover:border-sales-border-strong hover:bg-[var(--sales-table-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--sales-focus-outline)]",
+    selected &&
+      "border-[var(--sales-table-selected-marker)] bg-[var(--sales-table-selected)] hover:bg-[var(--sales-table-selected)]",
     className
   );
 
