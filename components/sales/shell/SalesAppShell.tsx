@@ -89,7 +89,6 @@ export function SalesQuickActions({
   realEstate?: boolean;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const items = [
     onAddLead
       ? {
@@ -194,6 +193,7 @@ function SalesAppShellInner({
   realEstate?: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { collapsed, toggleCollapsed, width } = useSalesSidebarCollapsed();
   const { openAddHubSheet, addHubSheetProps } = useAddHubSheet();
   const { hubSheet } = addHubSheetProps(assignmentMode);
