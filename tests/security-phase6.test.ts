@@ -21,15 +21,21 @@ import { securityHeaderList } from "@/lib/security/browser-headers";
 test("org policy: defaults and clamps", () => {
   const p = parseOrgSecurityPolicy({
     mfaRequirement: "all",
-    idleTtlHours: 99,
+    idleTtlHours: 999,
     absoluteTtlHours: 2,
     allowDataExports: false,
   });
   assert.equal(p.mfaRequirement, "all");
-  assert.equal(p.idleTtlHours, 24);
+  assert.equal(p.idleTtlHours, 336);
   assert.equal(p.absoluteTtlHours, 8);
   assert.equal(p.allowDataExports, false);
   assert.deepEqual(parseOrgSecurityPolicy(null).mfaRequirement, DEFAULT_ORG_SECURITY_POLICY.mfaRequirement);
+});
+
+test("org policy allows the 336-hour platform session default", () => {
+  const p = parseOrgSecurityPolicy({ idleTtlHours: 336, absoluteTtlHours: 999 });
+  assert.equal(p.idleTtlHours, 336);
+  assert.equal(p.absoluteTtlHours, 336);
 });
 
 test("org MFA requirement by role + grace", () => {

@@ -12,17 +12,19 @@ import type { UserRole } from "@/types";
  */
 
 export const ACTIVITY_TOUCH_INTERVAL_MS = 5 * 60 * 1000;
+export const PLATFORM_SESSION_TTL_HOURS = 336;
+const PLATFORM_SESSION_TTL_MS = PLATFORM_SESSION_TTL_HOURS * 60 * 60 * 1000;
 
 /** Absolute lifetime from login */
 export const ABSOLUTE_TTL_MS = {
-  STANDARD: 7 * 24 * 60 * 60 * 1000, // salesperson / manager
-  SUPER_ADMIN: 24 * 60 * 60 * 1000,
+  STANDARD: PLATFORM_SESSION_TTL_MS,
+  SUPER_ADMIN: PLATFORM_SESSION_TTL_MS,
 } as const;
 
 /** Idle timeout from last_seen_at (human activity only) */
 export const IDLE_TTL_MS = {
-  STANDARD: 8 * 60 * 60 * 1000,
-  SUPER_ADMIN: 2 * 60 * 60 * 1000,
+  STANDARD: PLATFORM_SESSION_TTL_MS,
+  SUPER_ADMIN: PLATFORM_SESSION_TTL_MS,
 } as const;
 
 export type SessionType = "WEB" | "MOBILE";

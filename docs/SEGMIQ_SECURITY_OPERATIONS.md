@@ -9,7 +9,7 @@
 Managers: **Settings → Security → Organisation policy**
 
 - MFA requirement: off | managers | all (grace via `mfaGraceUntil`)  
-- Idle TTL hours (1–24) / absolute TTL hours (8–168)  
+- Idle TTL hours (1–336) / absolute TTL hours (8–336); platform defaults are 336 hours for both
 - Allow / deny data exports  
 
 API: `GET/PATCH /api/org/security-policy` (PATCH requires origin + step-up).

@@ -7,9 +7,9 @@ export type OrgMfaRequirement = "off" | "managers" | "all";
 
 export type OrgSecurityPolicy = {
   mfaRequirement: OrgMfaRequirement;
-  /** Idle timeout hours (human activity). Clamped 1–24. */
+  /** Idle timeout hours (human activity). Clamped 1–336. */
   idleTtlHours: number | null;
-  /** Absolute session lifetime hours. Clamped 8–168. */
+  /** Absolute session lifetime hours. Clamped 8–336. */
   absoluteTtlHours: number | null;
   /** ISO timestamp — until then MFA policy prompts but does not hard-block CRM. */
   mfaGraceUntil: string | null;
@@ -25,9 +25,9 @@ export const DEFAULT_ORG_SECURITY_POLICY: OrgSecurityPolicy = {
 };
 
 const IDLE_MIN = 1;
-const IDLE_MAX = 24;
+const IDLE_MAX = 336;
 const ABS_MIN = 8;
-const ABS_MAX = 168; // 7d
+const ABS_MAX = 336; // 14d
 
 export function parseOrgSecurityPolicy(raw: unknown): OrgSecurityPolicy {
   const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};

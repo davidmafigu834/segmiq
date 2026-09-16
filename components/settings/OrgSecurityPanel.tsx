@@ -143,11 +143,11 @@ export function OrgSecurityPanel({
               </select>
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Idle timeout (hours, 1–24)">
+              <Field label="Idle timeout (hours, 1–336)">
                 <input
                   type="number"
                   min={1}
-                  max={24}
+                  max={336}
                   className="w-full rounded-md border border-border bg-surface px-3 py-2 text-[13px]"
                   value={policy.idleTtlHours ?? ""}
                   placeholder="Default"
@@ -160,11 +160,11 @@ export function OrgSecurityPanel({
                   }}
                 />
               </Field>
-              <Field label="Absolute session (hours, 8–168)">
+              <Field label="Absolute session (hours, 8–336)">
                 <input
                   type="number"
                   min={8}
-                  max={168}
+                  max={336}
                   className="w-full rounded-md border border-border bg-surface px-3 py-2 text-[13px]"
                   value={policy.absoluteTtlHours ?? ""}
                   placeholder="Default"

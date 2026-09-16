@@ -4,10 +4,10 @@
 
 | Role | Idle timeout | Absolute lifetime |
 |---|---|---|
-| SALESPERSON / CLIENT_MANAGER | 8 hours | 7 days |
-| SUPER_ADMIN | 2 hours | 24 hours |
+| SALESPERSON / CLIENT_MANAGER | 336 hours (14 days) | 336 hours (14 days) |
+| SUPER_ADMIN | 336 hours (14 days) | 336 hours (14 days) |
 
-JWT `maxAge` upper bound = 7 days. SUPER_ADMIN absolute/idle enforced via `user_sessions`.
+JWT `maxAge` upper bound = 336 hours (14 days). Absolute and idle limits are enforced via `user_sessions` for every role.
 
 ## Activity
 

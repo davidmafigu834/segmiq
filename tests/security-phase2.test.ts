@@ -6,6 +6,7 @@ import {
   ABSOLUTE_TTL_MS,
   IDLE_TTL_MS,
   JWT_MAX_AGE_SEC,
+  PLATFORM_SESSION_TTL_HOURS,
 } from "@/lib/auth/session-policy";
 import { validateUserSession, type UserSessionRow } from "@/lib/auth/user-sessions";
 import { sanitizeEventMetadata } from "@/lib/auth/security-events";
@@ -31,7 +32,13 @@ function activeSession(overrides: Partial<UserSessionRow> = {}): UserSessionRow 
   };
 }
 
-test("TEST policy: standard vs SUPER_ADMIN durations", () => {
+test("TEST policy: every platform role defaults to a 336-hour session", () => {
+  const expected = 336 * 60 * 60 * 1000;
+  assert.equal(PLATFORM_SESSION_TTL_HOURS, 336);
+  assert.equal(ABSOLUTE_TTL_MS.STANDARD, expected);
+  assert.equal(ABSOLUTE_TTL_MS.SUPER_ADMIN, expected);
+  assert.equal(IDLE_TTL_MS.STANDARD, expected);
+  assert.equal(IDLE_TTL_MS.SUPER_ADMIN, expected);
   assert.equal(absoluteTtlMsForRole("SALESPERSON"), ABSOLUTE_TTL_MS.STANDARD);
   assert.equal(absoluteTtlMsForRole("CLIENT_MANAGER"), ABSOLUTE_TTL_MS.STANDARD);
   assert.equal(absoluteTtlMsForRole("SUPER_ADMIN"), ABSOLUTE_TTL_MS.SUPER_ADMIN);
@@ -191,9 +198,9 @@ test("active session within idle/absolute windows passes", async () => {
   assert.equal(result.ok, true);
 });
 
-test("SUPER_ADMIN idle is stricter than salesperson", async () => {
+test("SUPER_ADMIN and salesperson use the same platform idle default", async () => {
   const now = Date.now();
-  const lastSeen = new Date(now - IDLE_TTL_MS.SUPER_ADMIN - 1000).toISOString();
+  const lastSeen = new Date(now - IDLE_TTL_MS.SUPER_ADMIN + 1000).toISOString();
   const row = activeSession({ last_seen_at: lastSeen });
   const asAdmin = await validateUserSession({
     sessionId: row.id,
@@ -211,7 +218,7 @@ test("SUPER_ADMIN idle is stricter than salesperson", async () => {
     nowMs: now,
     sessionRow: row,
   });
-  assert.equal(asAdmin.ok, false);
+  assert.equal(asAdmin.ok, true);
   assert.equal(asRep.ok, true);
 });
 
