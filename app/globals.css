@@ -4065,7 +4065,7 @@ label[for="photo-input"] {
   --sales-table-cell-x: 18px;
   --sales-table-cell-x-compact: 12px;
   --sales-table-divider: rgba(16, 24, 40, 0.055);
-  --sales-table-header-bg: rgba(248, 250, 252, 0.72);
+  --sales-table-header-bg: #f3f6f8;
   --sales-table-hover: rgba(16, 24, 40, 0.035);
   --sales-table-selected: rgba(212, 255, 79, 0.16);
   --sales-table-selected-marker: rgba(212, 255, 79, 0.85);
@@ -4366,7 +4366,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-menu-surface {
   --sales-card-divider: rgba(128, 151, 200, 0.09);
 
   --sales-table-divider: rgba(128, 151, 200, 0.065);
-  --sales-table-header-bg: rgba(16, 36, 73, 0.46);
+  --sales-table-header-bg: rgba(16, 36, 73, 0.76);
   --sales-table-hover: rgba(255, 255, 255, 0.035);
   --sales-table-selected: rgba(212, 255, 79, 0.08);
   --sales-table-selected-marker: rgba(212, 255, 79, 0.75);

@@ -301,7 +301,7 @@ export function WonLostClient() {
             leadingIcon={<ListFilter size={14} strokeWidth={1.8} />}
             options={WON_LOST_SOURCES.map((s) => ({ value: s.id, label: s.label }))}
           />
-          <div className="min-w-[200px] flex-1 sm:max-w-[260px]">
+          <div className="min-w-[260px] flex-1 basis-[300px] sm:max-w-[380px]">
             <SearchInput
               placeholder="Search customer, deal, reason..."
               value={search}
@@ -500,7 +500,7 @@ export function WonLostClient() {
                         <DataTableTh>Customer</DataTableTh>
                         <DataTableTh className="hidden min-[1366px]:table-cell">Project</DataTableTh>
                         <DataTableTh>Outcome</DataTableTh>
-                        <DataTableTh className="text-right">Value</DataTableTh>
+                        <DataTableTh align="right">Value</DataTableTh>
                         <DataTableTh>Close date</DataTableTh>
                         <DataTableTh className="hidden lg:table-cell">Source</DataTableTh>
                         <DataTableTh className="hidden xl:table-cell">Reason</DataTableTh>
@@ -737,11 +737,11 @@ function DealTableRow({
       onClick={onSelect}
       onDoubleClick={onViewLead}
     >
-      <DataTableTd>
+      <DataTableTd primary>
         <div className="flex min-w-0 items-center gap-2.5">
           <Avatar name={deal.name ?? "?"} size="sm" />
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-medium text-sales-text-primary">
+            <p className="truncate text-[13px] font-semibold text-sales-text-primary">
               {deal.name?.trim() || "Unnamed"}
             </p>
             {deal.phone ? (
@@ -763,7 +763,7 @@ function DealTableRow({
           label={deal.status === "WON" ? "WON" : "LOST"}
         />
       </DataTableTd>
-      <DataTableTd className="text-right tabular-nums">
+      <DataTableTd numeric>
         {formatValueDisplay(deal.dealValue, currency)}
       </DataTableTd>
       <DataTableTd>

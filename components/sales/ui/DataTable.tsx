@@ -325,8 +325,8 @@ export function DataTableSortableTh({
           size={13}
           strokeWidth={1.8}
           className={cn(
-            "shrink-0",
-            sortDirection === "none" ? "opacity-45" : "text-sales-brand-fg"
+            "shrink-0 text-sales-brand-fg transition-opacity",
+            sortDirection === "none" ? "opacity-65" : "opacity-100"
           )}
           aria-hidden
         />
@@ -340,11 +340,14 @@ export function DataTableTd({
   compact,
   align = "left",
   numeric,
+  primary,
   ...props
 }: React.TdHTMLAttributes<HTMLTableCellElement> & {
   compact?: boolean;
   align?: "left" | "right" | "center";
   numeric?: boolean;
+  /** Marks the record identity cell so it anchors the row hierarchy. */
+  primary?: boolean;
 }) {
   return (
     <td
@@ -353,6 +356,7 @@ export function DataTableTd({
         compact && "px-[var(--sales-table-cell-x-compact,12px)]",
         (align === "right" || numeric) && "text-right tabular-nums",
         align === "center" && "text-center",
+        primary && "font-semibold",
         className
       )}
       {...props}
@@ -391,6 +395,7 @@ export function DataTableActionsCell({
 }) {
   return (
     <DataTableTd
+      align="right"
       className={cn("w-12", className)}
       onClick={(event) => event.stopPropagation()}
     >

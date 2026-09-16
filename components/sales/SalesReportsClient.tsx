@@ -858,9 +858,9 @@ function OpportunitiesTable({
               <tr>
                 <DataTableTh className="w-[28%]">Customer</DataTableTh>
                 {showProject ? <DataTableTh className="w-[22%]">Project</DataTableTh> : null}
-                {showScore ? <DataTableTh className="w-[12%]">Score</DataTableTh> : null}
+                {showScore ? <DataTableTh align="right" className="w-[12%]">Score</DataTableTh> : null}
                 <DataTableTh className="w-[17%]">Stage</DataTableTh>
-                <DataTableTh className="w-[14%]">Value</DataTableTh>
+                <DataTableTh align="right" className="w-[14%]">Value</DataTableTh>
                 <DataTableTh className="w-[16%]">Last activity</DataTableTh>
               </tr>
             </DataTableHead>
@@ -873,7 +873,7 @@ function OpportunitiesTable({
                     window.location.href = row.href;
                   }}
                 >
-                  <DataTableTd>
+                  <DataTableTd primary>
                     <LeadIdentity name={row.name} size="sm" href={row.href} />
                   </DataTableTd>
                   {showProject ? (
@@ -882,14 +882,14 @@ function OpportunitiesTable({
                     </DataTableTd>
                   ) : null}
                   {showScore ? (
-                    <DataTableTd className="tabular-nums text-sales-text-secondary">
+                    <DataTableTd numeric className="text-sales-text-secondary">
                       {row.score ?? "—"}
                     </DataTableTd>
                   ) : null}
                   <DataTableTd>
                     <PipelineStageBadge status={row.status} label={formatStageLabel(row.status)} />
                   </DataTableTd>
-                  <DataTableTd>
+                  <DataTableTd numeric>
                     <span className="font-semibold tabular-nums">
                       {row.value > 0 ? formatDealCurrency(row.value, { currency }) : "—"}
                     </span>
@@ -1030,27 +1030,27 @@ function SourcesTab({ data, currency }: { data: SalesReportsPayload; currency: s
           <DataTableHead>
             <tr>
               <DataTableTh>Source</DataTableTh>
-              <DataTableTh>Leads created</DataTableTh>
-              <DataTableTh>Deals won</DataTableTh>
-              <DataTableTh>Won value</DataTableTh>
-              <DataTableTh>Conversion</DataTableTh>
+              <DataTableTh align="right">Leads created</DataTableTh>
+              <DataTableTh align="right">Deals won</DataTableTh>
+              <DataTableTh align="right">Won value</DataTableTh>
+              <DataTableTh align="right">Conversion</DataTableTh>
             </tr>
           </DataTableHead>
           <DataTableBody>
             {rows.map((s) => (
               <DataTableRow key={s.key}>
-                <DataTableTd>
+                <DataTableTd primary>
                   <span className="inline-flex items-center gap-2 font-medium">
                     <SourceIcon sourceKey={s.key} />
                     {s.label}
                   </span>
                 </DataTableTd>
-                <DataTableTd className="tabular-nums">{s.leadsCreated}</DataTableTd>
-                <DataTableTd className="tabular-nums">{s.dealsWon}</DataTableTd>
-                <DataTableTd className="tabular-nums">
+                <DataTableTd numeric>{s.leadsCreated}</DataTableTd>
+                <DataTableTd numeric>{s.dealsWon}</DataTableTd>
+                <DataTableTd numeric>
                   {s.wonValue > 0 ? formatDealCurrency(s.wonValue, { currency }) : "—"}
                 </DataTableTd>
-                <DataTableTd className="tabular-nums">
+                <DataTableTd numeric>
                   {formatPercent(s.conversionRate)}
                 </DataTableTd>
               </DataTableRow>

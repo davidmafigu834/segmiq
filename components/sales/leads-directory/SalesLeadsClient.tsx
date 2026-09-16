@@ -381,7 +381,7 @@ export function SalesLeadsClient({
             }}
             options={LEADS_PERIODS.map((p) => ({ value: p.id, label: p.label }))}
           />
-          <div className="min-w-[180px] flex-1 basis-[180px] sm:max-w-[240px] sm:flex-none">
+          <div className="min-w-[240px] flex-1 basis-[280px] sm:max-w-[360px]">
             <SearchInput
               placeholder="Search leads..."
               value={search}
@@ -926,7 +926,7 @@ function LeadTableRow({
       selected={selected}
       onClick={onOpen}
     >
-      <DataTableTd>
+      <DataTableTd primary>
         <div className="flex min-w-0 items-center gap-2.5">
           <Avatar name={formatLeadName(row.name, row.phone)} size="sm" />
           <div className="min-w-0">

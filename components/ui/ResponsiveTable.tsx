@@ -69,7 +69,13 @@ export function ResponsiveTable<T>({
                 .join(" ")}
             >
               {columns.map((col) => (
-                <td key={col.key} style={col.width ? { width: col.width } : undefined} className={`px-[18px] py-4 text-[13px] leading-5 text-[var(--text-primary)] ${col.align === "right" ? "text-right tabular-nums" : ""}`}>
+                <td
+                  key={col.key}
+                  style={col.width ? { width: col.width } : undefined}
+                  className={`px-[18px] py-4 text-[13px] leading-5 text-[var(--text-primary)] ${
+                    col.mobilePrimary ? "font-semibold" : ""
+                  } ${col.align === "right" ? "text-right tabular-nums" : ""}`}
+                >
                   {col.render(row)}
                 </td>
               ))}

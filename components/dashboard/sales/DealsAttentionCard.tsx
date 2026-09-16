@@ -72,7 +72,7 @@ export function DealsAttentionCard({
                   <th className="px-5 py-3.5 font-medium">Deal</th>
                   <th className="px-3 py-3.5 font-medium">Customer</th>
                   <th className="px-3 py-3.5 font-medium">Stage</th>
-                  <th className="px-3 py-3.5 font-medium">Estimated value</th>
+                  <th className="px-3 py-3.5 text-right font-medium">Estimated value</th>
                   <th className="px-3 py-3.5 font-medium">Next action</th>
                   <th className="px-5 py-3.5 font-medium">Why it needs attention</th>
                 </tr>
@@ -102,7 +102,7 @@ export function DealsAttentionCard({
                     <td className="px-3 py-2">
                       <StageBadge label={item.stageLabel} />
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-3 py-2 text-right">
                       <p
                         className={cn(
                           "truncate text-[13px] font-semibold tabular-nums",

@@ -462,7 +462,7 @@ export function SalesQuotesClient() {
                 leadingIcon={<ListFilter size={14} strokeWidth={1.8} />}
                 options={QUOTES_SOURCES.map((s) => ({ value: s.id, label: s.label }))}
               />
-              <div className="min-w-[180px] flex-1 sm:max-w-[240px]">
+              <div className="min-w-[240px] flex-1 basis-[280px] sm:max-w-[360px]">
                 <SearchInput
                   placeholder="Search quotes..."
                   value={search}
@@ -719,7 +719,7 @@ export function SalesQuotesClient() {
                         <DataTableTh>Quote</DataTableTh>
                         <DataTableTh>Customer</DataTableTh>
                         <DataTableTh className="hidden min-[1366px]:table-cell">Project</DataTableTh>
-                        <DataTableTh className="text-right">Amount</DataTableTh>
+                        <DataTableTh align="right">Amount</DataTableTh>
                         <DataTableTh>Status</DataTableTh>
                         <DataTableTh className="hidden lg:table-cell">Sent on</DataTableTh>
                         <DataTableTh className="hidden xl:table-cell">Valid until</DataTableTh>
@@ -1010,7 +1010,7 @@ function QuoteTableRow({
 
   return (
     <DataTableRow className="h-[64px] cursor-pointer" onClick={onOpen}>
-      <DataTableTd>
+      <DataTableTd primary>
         <div className="min-w-0">
           <p className="truncate text-[13px] font-semibold text-sales-text-primary">
             {formatQuoteNumber(quote.quoteNumber)}
@@ -1042,7 +1042,7 @@ function QuoteTableRow({
           {quote.projectType?.trim() || "—"}
         </span>
       </DataTableTd>
-      <DataTableTd className="text-right tabular-nums">
+      <DataTableTd numeric>
         <span className="text-[13px] font-medium text-sales-text-primary">
           {formatQuoteAmount(quote.total, quote.currency, {
             draftUnset: quote.effectiveStatus === "draft",
