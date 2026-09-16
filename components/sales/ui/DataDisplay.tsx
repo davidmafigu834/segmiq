@@ -62,7 +62,7 @@ export function KpiStat({ item }: { item: SalesKpiItem }) {
         {item.trend ? (
           <TrendChip direction={item.trend.direction} label={item.trend.label} />
         ) : (
-          <p className="truncate text-[11px] leading-4 text-sales-text-muted">{item.supporting}</p>
+          <p className="truncate text-[12px] leading-4 text-sales-text-muted">{item.supporting}</p>
         )}
       </div>
     </>

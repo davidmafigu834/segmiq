@@ -84,7 +84,7 @@ function EnquiryActions({
   const compact = variant === "compact";
   const btnClass = compact
     ? "dashboard-action-btn inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-sales-md transition-colors hover:bg-sales-surface-hover"
-    : "dashboard-action-btn inline-flex min-h-10 items-center justify-center gap-1.5 rounded-sales-md px-3 text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover";
+    : "dashboard-action-btn inline-flex min-h-11 items-center justify-center gap-1.5 rounded-sales-md px-3 text-[12px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover";
 
   return (
     <div
@@ -145,7 +145,7 @@ export function NewEnquiriesCard({
       action={
         <Link
           href="/sales/call-now"
-          className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
+          className="inline-flex min-h-11 items-center rounded-[8px] px-2 text-[12px] font-medium text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
         >
           View all leads
         </Link>

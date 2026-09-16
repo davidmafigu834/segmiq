@@ -27,7 +27,7 @@ export function DealsAttentionCard({
       action={
         <Link
           href="/sales/pipeline"
-          className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
+          className="inline-flex min-h-11 items-center rounded-[8px] px-2 text-[12px] font-medium text-sales-text-secondary transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
         >
           View all deals
         </Link>

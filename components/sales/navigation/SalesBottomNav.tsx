@@ -107,12 +107,18 @@ export function SalesBottomNav({
               >
                 <NavIcon icon={item.icon} active={active} emphasized={isWa} />
                 {showBadge ? (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-sales-brand px-1 text-[9px] font-semibold text-sales-brand-text">
+                  <span
+                    className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-sales-brand px-1 text-[9px] font-semibold text-sales-brand-text"
+                    aria-hidden="true"
+                  >
                     {badge! > 99 ? "99+" : badge}
                   </span>
                 ) : null}
               </span>
               <span className="max-w-full truncate leading-none">{item.mobileLabel ?? item.label}</span>
+              {showBadge ? (
+                <span className="sr-only">{`${badge! > 99 ? "More than 99" : badge} pending`}</span>
+              ) : null}
             </Link>
           );
         })}

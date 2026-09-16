@@ -824,3 +824,77 @@ html[data-crm-theme="light"] .sales-dashboard-premium .dashboard-kpi-label,
 html[data-crm-theme="light"] .dashboard-focus-kicker {
   color: var(--sales-text-muted);
 }
+
+/* ---------- Sales portal refinement ----------
+   Keep work surfaces calm and consistent across dashboard, pipeline,
+   calendar, tasks, reports, and detail pages. */
+
+.sales-dashboard-premium[data-sales-portal="true"] .sales-page-stack {
+  width: 100%;
+  max-width: 1600px;
+  margin-inline: auto;
+}
+
+.sales-dashboard-premium[data-sales-portal="true"] .sales-mobile-scroll {
+  scroll-padding-top: 88px;
+  scroll-padding-bottom: calc(var(--sales-mobile-nav-height, 64px) + 24px);
+}
+
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-panel,
+.sales-dashboard-premium[data-sales-portal="true"] .sd-card:not(.dashboard-kpi),
+.sales-dashboard-premium[data-sales-portal="true"] .workspace-card,
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi {
+  border-color: var(--sales-card-border, var(--sales-border-subtle));
+  border-radius: 12px;
+  background: var(--sales-surface);
+  box-shadow: var(--sales-shadow-card);
+}
+
+html[data-crm]:not([data-crm-theme="light"])
+  .sales-dashboard-premium[data-sales-portal="true"] {
+  --segmiq-canvas:
+    radial-gradient(720px circle at 0% -8%, rgba(147, 51, 234, 0.12), transparent 62%),
+    radial-gradient(680px circle at 100% -10%, rgba(77, 141, 255, 0.08), transparent 60%),
+    linear-gradient(180deg, #080916 0%, #070814 100%);
+}
+
+html[data-crm]:not([data-crm-theme="light"])
+  .sales-dashboard-premium[data-sales-portal="true"] .dashboard-panel,
+html[data-crm]:not([data-crm-theme="light"])
+  .sales-dashboard-premium[data-sales-portal="true"] .sd-card:not(.dashboard-kpi),
+html[data-crm]:not([data-crm-theme="light"])
+  .sales-dashboard-premium[data-sales-portal="true"] .workspace-card,
+html[data-crm]:not([data-crm-theme="light"])
+  .sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi {
+  background: var(--sales-surface);
+  border-color: var(--sales-card-border, var(--sales-border-subtle));
+  box-shadow: var(--sales-shadow-card);
+}
+
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-panel-header {
+  min-height: 52px;
+  padding: 12px 16px;
+}
+
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-group::after,
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi-accent {
+  display: none;
+}
+
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi-value,
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi-label,
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-focus-title,
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-focus-kicker {
+  color: var(--sales-text-primary);
+}
+
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-kpi-label,
+.sales-dashboard-premium[data-sales-portal="true"] .dashboard-focus-kicker {
+  color: var(--sales-text-muted);
+}
+
+@media (min-width: 1100px) {
+  .sales-dashboard-premium[data-sales-portal="true"] .sales-mobile-scroll {
+    scroll-padding-bottom: 32px;
+  }
+}

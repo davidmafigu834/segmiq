@@ -93,7 +93,7 @@ export function SalesSidebar({
           {drawer ? (
             <button
               type="button"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Close menu"
               onClick={onCloseMobile}
             >
@@ -102,7 +102,7 @@ export function SalesSidebar({
           ) : onToggleCollapsed && !collapsedMode ? (
             <button
               type="button"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Collapse sidebar"
               title="Collapse sidebar"
               onClick={onToggleCollapsed}
@@ -114,7 +114,7 @@ export function SalesSidebar({
           {onToggleCollapsed && collapsedMode && !drawer ? (
             <button
               type="button"
-              className="absolute bottom-1 left-1/2 inline-flex h-7 w-7 -translate-x-1/2 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
+              className="absolute bottom-0 left-1/2 inline-flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-[8px] text-[var(--sales-sidebar-icon)] hover:bg-[var(--sales-sidebar-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
               aria-label="Expand sidebar"
               title="Expand sidebar"
               onClick={onToggleCollapsed}
@@ -153,7 +153,7 @@ export function SalesSidebar({
                 />
               ))}
               {collapsedMode ? (
-                <a
+                <Link
                   href="/sales/training"
                   title="Help & Support"
                   aria-label="Help & Support"
@@ -162,9 +162,9 @@ export function SalesSidebar({
                   onClick={onCloseMobile}
                 >
                   <CircleHelp size={17} strokeWidth={1.75} aria-hidden />
-                </a>
+                </Link>
               ) : (
-                <a
+                <Link
                   href="/sales/training"
                   data-course-target="sales-nav-training"
                   className="flex h-10 items-center gap-2.5 rounded-[8px] px-3 text-[13px] font-medium text-[var(--sales-sidebar-text)] transition-colors duration-150 hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)] focus-visible:outline-none focus-visible:shadow-[var(--sales-focus-ring)]"
@@ -178,7 +178,7 @@ export function SalesSidebar({
                   />
                   Help & Support
                   <span className="sr-only"> — Training</span>
-                </a>
+                </Link>
               )}
             </SalesNavSection>
           </div>

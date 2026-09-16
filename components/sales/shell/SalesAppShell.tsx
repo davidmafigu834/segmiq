@@ -1,7 +1,7 @@
 "use client";
 
-import { type CSSProperties, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, type CSSProperties, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Building2,
   CalendarDays,
@@ -89,6 +89,7 @@ export function SalesQuickActions({
   realEstate?: boolean;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const items = [
     onAddLead
       ? {
@@ -198,6 +199,13 @@ function SalesAppShellInner({
   const { hubSheet } = addHubSheetProps(assignmentMode);
   const { quickActionsOpen, setQuickActionsOpen, hideBottomNav } = useSalesMobileChrome();
 
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("sales-main-content")?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
+
   const desktopActions = (
     <>
       {showSearch ? (
@@ -232,8 +240,15 @@ function SalesAppShellInner({
       )}
       data-sidebar-collapsed={collapsed ? "true" : "false"}
       data-hide-mobile-nav={hideBottomNav ? "true" : "false"}
+      data-sales-portal="true"
       style={{ ["--sales-sidebar-current-width" as string]: `${width}px` } as CSSProperties}
     >
+      <a
+        href="#sales-main-content"
+        className="fixed left-3 top-3 z-[1000] -translate-y-20 rounded-[8px] bg-sales-brand px-4 py-2 text-[13px] font-semibold text-sales-brand-text shadow-sales-raised transition-transform focus:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand focus-visible:ring-offset-2"
+      >
+        Skip to main content
+      </a>
       <PresenceHeartbeat />
       {/* Desktop sidebar only — mobile uses bottom nav */}
       <div className="hidden layout:contents">
@@ -261,8 +276,11 @@ function SalesAppShellInner({
       ) : null}
 
       <div className="dashboard-canvas flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[padding] duration-200 ease-out layout:pl-[var(--sales-sidebar-current-width)]">
-        <div
+        <main
+          id="sales-main-content"
+          tabIndex={-1}
           className={cn(
+            "focus:outline-none",
             contentFlush
               ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden sales-mobile-scroll"
               : "sales-page-content relative min-h-0 min-w-0 flex-1 w-full max-w-none overflow-y-auto overscroll-contain sales-mobile-scroll",
@@ -275,8 +293,8 @@ function SalesAppShellInner({
               contentFlush
                 ? "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
                 : dense
-                  ? "relative space-y-3"
-                  : "relative space-y-3 layout:space-y-3"
+                  ? "sales-page-stack relative space-y-3"
+                  : "sales-page-stack relative space-y-4 layout:space-y-5"
             }
           >
             {showDefaultHeader && title ? (
@@ -290,7 +308,7 @@ function SalesAppShellInner({
             ) : null}
             {children}
           </div>
-        </div>
+        </main>
       </div>
 
       {!hideMobileChrome ? (
