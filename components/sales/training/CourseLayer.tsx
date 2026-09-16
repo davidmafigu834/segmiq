@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useGuidedCourse } from "./GuidedCourseProvider";
-import { CourseWelcomeModal } from "./CourseWelcomeModal";
 import { CourseCoachmark } from "./CourseCoachmark";
 import { CourseSpotlight } from "./CourseSpotlight";
 import { CourseHud } from "./CourseHud";
@@ -11,7 +10,7 @@ import { CourseLessonComplete } from "./CourseLessonComplete";
 import { CourseCompletionModal } from "./CourseCompletionModal";
 import { findCourseTarget } from "@/lib/sales/training/course-targets";
 
-export function CourseLayer({ isExistingUser }: { isExistingUser?: boolean }) {
+export function CourseLayer() {
   const {
     ready,
     uiMode,
@@ -110,8 +109,6 @@ export function CourseLayer({ isExistingUser }: { isExistingUser?: boolean }) {
 
   return (
     <>
-      {uiMode === "welcome" ? <CourseWelcomeModal isExistingUser={isExistingUser} /> : null}
-
       {(uiMode === "active" || uiMode === "practice") && activeStep ? (
         <>
           <CourseSpotlight

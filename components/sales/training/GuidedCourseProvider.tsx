@@ -15,10 +15,7 @@ import {
   canManualAdvance,
   completeCurrentStep,
   DEFAULT_CAPABILITIES,
-  disableAutoWelcome,
-  dismissWelcome,
   goToPreviousStep,
-  hideDashboardCard,
   replayLesson,
   resolveStep,
   skipLesson,
@@ -69,9 +66,6 @@ type GuidedCourseContextValue = {
   continueCourse: () => void;
   pause: () => void;
   exit: () => void;
-  dismissWelcomeLater: () => void;
-  neverAutoShow: () => void;
-  hideCard: () => void;
   next: () => void;
   back: () => void;
   skipCurrentLesson: () => void;
@@ -96,12 +90,9 @@ function useIsMobileLayout() {
 export function GuidedCourseProvider({
   children,
   capabilities,
-  isExistingUser = false,
 }: {
   children: ReactNode;
   capabilities?: Partial<CourseCapabilities>;
-  /** Existing upgraded users see "Meet SegmiQ 2.0" copy */
-  isExistingUser?: boolean;
 }) {
   const caps = useMemo(
     () => ({ ...DEFAULT_CAPABILITIES, ...capabilities }),
@@ -115,7 +106,6 @@ export function GuidedCourseProvider({
   const [progress, setProgress] = useState<GuidedLearningProgress>(defaultGuidedProgress);
   const [uiMode, setUiMode] = useState<GuidedCourseUiMode>("idle");
   const [practice, setPractice] = useState<PracticeScenarioState>(() => createPracticeSeed());
-  const [sessionWelcomeShown, setSessionWelcomeShown] = useState(false);
 
   const persist = useCallback((next: GuidedLearningProgress) => {
     setProgress(next);
@@ -180,16 +170,7 @@ export function GuidedCourseProvider({
         return;
       }
 
-      const shouldWelcome =
-        loaded.autoShowWelcome &&
-        !loaded.welcomeDismissedAt &&
-        (loaded.status === "NOT_STARTED" || loaded.status === "DISMISSED") &&
-        !sessionWelcomeShown;
-
-      if (shouldWelcome) {
-        setUiMode("welcome");
-        setSessionWelcomeShown(true);
-      } else if (loaded.status === "IN_PROGRESS" && loaded.currentStepId) {
+      if (loaded.status === "IN_PROGRESS" && loaded.currentStepId) {
         // Resume quietly — user continues via card / HUD, not forced overlay every load
         setUiMode("paused");
       }
@@ -282,15 +263,6 @@ export function GuidedCourseProvider({
       persist({ ...progress, lastSeenAt: new Date().toISOString() });
       setUiMode("paused");
     },
-    dismissWelcomeLater: () => {
-      persist(dismissWelcome(progress));
-      setUiMode("idle");
-    },
-    neverAutoShow: () => {
-      persist(disableAutoWelcome(dismissWelcome(progress)));
-      setUiMode("idle");
-    },
-    hideCard: () => persist(hideDashboardCard(progress)),
     next: () => {
       const step = resolveStep(progress, caps);
       if (!step || !canManualAdvance(step)) return;
@@ -330,7 +302,7 @@ export function GuidedCourseProvider({
   return (
     <GuidedCourseContext.Provider value={value}>
       {children}
-      <CourseLayer isExistingUser={isExistingUser} />
+      <CourseLayer />
       {activePracticeScenario ? (
         <PracticeScenarioHost scenario={activePracticeScenario} />
       ) : null}

@@ -12,7 +12,7 @@ export function GuidedCourseMount({
   isSolo?: boolean;
 }) {
   return (
-    <GuidedCourseProvider isExistingUser={false} capabilities={{ whatsapp: true, goals: true, quotes: true }}>
+    <GuidedCourseProvider capabilities={{ whatsapp: true, goals: true, quotes: true }}>
       {/* isSolo reserved for future route rewriting in course steps */}
       <span className="hidden" data-sales-mode={isSolo ? "solo" : "team"} aria-hidden />
       {children}

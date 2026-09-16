@@ -10,7 +10,6 @@ import type { RetargetingStatusView } from "@/lib/retargeting-shared";
 import { buildPerformance } from "@/lib/sales/sales-dashboard-view";
 import type { SalesDashboardData } from "@/lib/sales/get-sales-dashboard-data";
 import { SalesAppShell } from "@/components/sales/shell/SalesAppShell";
-import { CourseResumeCard } from "@/components/sales/training/CourseResumeCard";
 import { DashboardHeader } from "./DashboardHeader";
 import { KpiCard } from "./KpiCard";
 import { PerformanceCard } from "./PerformanceCard";
@@ -106,7 +105,6 @@ function SalesDashboardInner({
             userRoleLabel={roleLabel}
             realEstate
           />
-          <CourseResumeCard />
           <AgentDailyWorkspace clientId={data.clientId!} data={data.realEstate!} />
         </>
       ) : (
@@ -120,8 +118,6 @@ function SalesDashboardInner({
             onOpenLog={() => openLogSheet("")}
             onAddLead={openAddHubSheet}
           />
-
-          <CourseResumeCard />
 
           {retargetingStatuses.length > 0 ? (
             <RetargetingBanners statuses={retargetingStatuses} />

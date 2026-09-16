@@ -129,7 +129,6 @@ export type GuidedLearningProgress = {
 
 export type GuidedCourseUiMode =
   | "idle"
-  | "welcome"
   | "active"
   | "paused"
   | "lesson_complete"
