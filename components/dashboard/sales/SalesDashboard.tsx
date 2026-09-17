@@ -144,7 +144,7 @@ function SalesDashboardInner({
             </div>
           ) : null}
 
-          <div className="space-y-4 layout:hidden">
+          <div className="space-y-4">
             <TodaysFocusCard
               focus={data.focus}
               queue={planQueue}
@@ -161,19 +161,6 @@ function SalesDashboardInner({
             {data.kpis.map((item) => (
               <KpiCard key={item.id} item={item} />
             ))}
-          </div>
-
-          <div className="hidden space-y-4 layout:block">
-            <TodaysFocusCard
-              focus={data.focus}
-              queue={planQueue}
-              progress={planProgress}
-              error={data.planError}
-              clientId={data.clientId}
-              onAddProspect={openAddHubSheet}
-              fallbackEnquiries={data.priorityEnquiries}
-              fallbackDeals={data.priorityDeals}
-            />
           </div>
 
           <div className="w-full min-w-0 space-y-4 layout:space-y-5">
