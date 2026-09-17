@@ -16,8 +16,6 @@ import { PerformanceCard } from "./PerformanceCard";
 import { RecentActivityCard } from "./RecentActivityCard";
 import { SourceMixCard } from "./SourceMixCard";
 import { TodaysFocusCard } from "./TodaysFocusCard";
-import { NewEnquiriesCard } from "./NewEnquiriesCard";
-import { DealsAttentionCard } from "./DealsAttentionCard";
 import { LeadDealFunnelCard } from "./LeadDealFunnelCard";
 import { ActivityTodayCard } from "./ActivityTodayCard";
 import { PipelineSnapshotCard } from "./PipelineSnapshotCard";
@@ -161,18 +159,6 @@ function SalesDashboardInner({
             {data.kpis.map((item) => (
               <KpiCard key={item.id} item={item} />
             ))}
-          </div>
-
-          <div className="w-full min-w-0 space-y-4 layout:space-y-5">
-            <NewEnquiriesCard
-              items={data.priorityEnquiries}
-              emptyHint={
-                data.priorityDeals.length > 0
-                  ? "Focus on Deals requiring attention below."
-                  : undefined
-              }
-            />
-            <DealsAttentionCard items={data.priorityDeals} hasAnyDeals={data.hasAnyDeals} />
           </div>
 
           <PipelineSnapshotCard stages={data.pipelineSnapshot} />
