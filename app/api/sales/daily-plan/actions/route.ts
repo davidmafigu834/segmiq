@@ -14,7 +14,7 @@ const bodySchema = z.object({
   idempotencyKey: z.string().min(1),
   actionType: z.string().min(1),
   reasonCode: z.string().min(1),
-  sourceEntityType: z.enum(["lead", "quotation", "task", "goal", "none"]).default("lead"),
+  sourceEntityType: z.enum(["lead", "deal", "quotation", "task", "goal", "none"]).default("lead"),
   sourceEntityId: z.string().uuid().nullable().optional(),
   action: z.enum(["complete", "snooze", "skip", "resolve"]),
   snoozedUntil: z.string().datetime().nullable().optional(),

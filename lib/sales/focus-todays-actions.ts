@@ -170,7 +170,12 @@ function pickPrimaryCta(rec: SalesActionRecommendation, href: string): FocusPrim
   }
 
   if (type === "CREATE_QUOTE" || actions.has("create_quote")) {
-    return { kind: "create_quote", label: "Create quotation", href };
+    const dealId = dealIdFrom(rec);
+    return {
+      kind: "create_quote",
+      label: "Create quotation",
+      href: dealId ? `/sales/quotes?dealId=${encodeURIComponent(dealId)}` : "/sales/quotes",
+    };
   }
 
   if (

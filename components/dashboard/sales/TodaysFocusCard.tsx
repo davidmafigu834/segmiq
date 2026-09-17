@@ -12,7 +12,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/sales/ui/DropdownMenu";
-import { buildWhatsAppUrl, fetchClientWhatsAppMeta, normalizePhoneForWhatsApp, openExternalUrl, openWhatsAppAndLog } from "@/lib/whatsapp-opener";
+import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import { cn } from "@/lib/ui/cn";
 import type { DailySalesPlanProgress, FocusModeResult, SalesActionRecommendation } from "@/lib/sales/intelligence/types";
 import type { SalesDealAttentionItem, SalesEnquiryPriorityItem } from "@/components/dashboard/sales/types";
@@ -34,9 +34,13 @@ async function postPlanAction(
       sourceEntityId: rec.sourceEntityId,
       action,
       ...(action === "snooze" ? { snoozePreset: "later_today" as const } : {}),
+      ...(action === "skip" ? { skipReason: "Dismissed from today's focus" } : {}),
     }),
   });
-  if (!res.ok) throw new Error("Failed to update action");
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(body?.error || "Failed to update action");
+  }
 }
 
 function PrimaryCtaButton({
@@ -201,19 +205,20 @@ function suggestedMessage(row: FocusActionRow): string {
 }
 
 function SuggestedNextStep({
-  row, clientId, onAddProspect, draft, onDraftChange,
+  row, clientId, onAddProspect, draft, onDraftChange, onActionFinished,
 }: {
   row: FocusActionRow;
   clientId: string | null;
   onAddProspect?: () => void;
   draft: string;
   onDraftChange: (message: string) => void;
+  onActionFinished: (id: string, action: "complete" | "snooze" | "skip") => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  const canMessage = Boolean(row.phone && row.availableActions.includes("whatsapp") && row.primary.kind !== "call");
+  const canMessage = Boolean(row.leadId && row.phone && row.availableActions.includes("whatsapp") && row.primary.kind !== "call");
   const rec = row.recommendation;
   const quoteId = rec?.sourceEntityType === "quotation" ? rec.sourceEntityId
     : typeof rec?.metadata?.quotationId === "string" ? rec.metadata.quotationId
@@ -228,16 +233,29 @@ function SuggestedNextStep({
   )}`;
 
   async function reviewMessage() {
-    if (busy || !draft.trim()) return;
+    if (busy || !draft.trim() || !row.leadId) return;
     setBusy(true);
     setError(null);
     try {
-      const meta = clientId ? await fetchClientWhatsAppMeta(clientId) : null;
-      const digits = normalizePhoneForWhatsApp(row.phone, meta?.dial_code);
-      if (!digits) throw new Error("This customer needs a valid phone number before opening WhatsApp.");
-      openExternalUrl(buildWhatsAppUrl(digits, draft.trim()));
+      const res = await fetch(`/api/leads/${encodeURIComponent(row.leadId)}/send-message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: draft.trim() }),
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) throw new Error(body?.error || "Could not send this WhatsApp message.");
+
+      if (row.recommendation) {
+        try {
+          await postPlanAction(row.recommendation, "complete");
+        } catch {
+          setError("Message sent, but the action could not be marked complete. Use the menu to finish it.");
+          return;
+        }
+      }
+      onActionFinished(row.id, "complete");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not open WhatsApp. Please try again.");
+      setError(err instanceof Error ? err.message : "Could not send this WhatsApp message.");
     } finally {
       setBusy(false);
     }
@@ -255,8 +273,8 @@ function SuggestedNextStep({
       {canMessage ? (
         <div className={styles.messageSection}>
           <div className={styles.messageHeading}>
-            <h4>Suggested message</h4>
-            <Link className={styles.draftLink} href={commandHref}><Pencil size={16} aria-hidden />Draft with SegmiQ</Link>
+            <h4>Suggested starting message</h4>
+            <Link className={styles.draftLink} href={commandHref}><Pencil size={16} aria-hidden />Draft in SegmiQ</Link>
           </div>
           <textarea
             ref={input}
@@ -269,7 +287,7 @@ function SuggestedNextStep({
           />
           <div className={styles.messageActions}>
             <button type="button" className={styles.primaryButton} onClick={() => void reviewMessage()} disabled={busy || !draft.trim()}>
-              <SiWhatsapp size={23} aria-hidden />{busy ? "Opening WhatsApp…" : "Review & send"}
+              <SiWhatsapp size={20} aria-hidden />{busy ? "Sending…" : "Send WhatsApp"}
             </button>
             <button type="button" className={styles.outlineButton} onClick={() => {
               setEditing(!editing);
@@ -375,9 +393,9 @@ export function TodaysFocusCard({
                       </div>
                       <p className={styles.reason}>{row.reason}</p>
                       <div className={styles.cardFooter}>
-                        <button type="button" onClick={() => setSelectedId(row.id)} className={styles.details} aria-label={`View details for ${row.customerName}`} aria-pressed={active}>View details <ArrowRight size={18} aria-hidden /></button>
+                        <Link href={row.href} className={styles.details} aria-label={`Open details for ${row.customerName}`}>View details <ArrowRight size={18} aria-hidden /></Link>
                         {!active ? <button type="button" className={styles.outlineButton} onClick={() => setSelectedId(row.id)}>
-                          {waitingForReply ? "Review reply" : row.primary.kind === "call" ? "Prepare call" : "Review action"}
+                          Review action
                         </button> : null}
                       </div>
                     </div>
@@ -394,6 +412,7 @@ export function TodaysFocusCard({
             onAddProspect={onAddProspect}
             draft={drafts[selected.id] ?? suggestedMessage(selected)}
             onDraftChange={(message) => setDrafts((previous) => ({ ...previous, [selected.id]: message }))}
+            onActionFinished={onDismissed}
           />
         </div>
       ) : (
