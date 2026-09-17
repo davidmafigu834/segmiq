@@ -142,6 +142,12 @@ function SalesDashboardInner({
             </div>
           ) : null}
 
+          <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
+            {data.kpis.map((item) => (
+              <KpiCard key={item.id} item={item} />
+            ))}
+          </div>
+
           <div className="space-y-4">
             <TodaysFocusCard
               focus={data.focus}
@@ -153,12 +159,6 @@ function SalesDashboardInner({
               fallbackEnquiries={data.priorityEnquiries}
               fallbackDeals={data.priorityDeals}
             />
-          </div>
-
-          <div className="dashboard-group relative z-[1] grid grid-cols-2 gap-3 min-[900px]:grid-cols-3 xl:grid-cols-6">
-            {data.kpis.map((item) => (
-              <KpiCard key={item.id} item={item} />
-            ))}
           </div>
 
           <PipelineSnapshotCard stages={data.pipelineSnapshot} />
