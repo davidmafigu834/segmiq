@@ -1,44 +1,23 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
-  CheckCircle2,
-  Crosshair,
-  MoreHorizontal,
-  Phone,
+  AlertCircle, ArrowRight, CalendarDays, CheckCircle2, Clock3, Crosshair,
+  ExternalLink, FileText, ListTodo, MessageCircle, MoreHorizontal, Pencil,
+  Phone, Sparkles, UserRound,
 } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
-import { Badge } from "@/components/sales/ui";
-import { Card, CardContent } from "@/components/sales/ui";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/sales/ui/DropdownMenu";
-import { Progress } from "@/components/sales/ui";
-import { openWhatsAppAndLog } from "@/lib/whatsapp-opener";
+import { buildWhatsAppUrl, fetchClientWhatsAppMeta, normalizePhoneForWhatsApp, openExternalUrl, openWhatsAppAndLog } from "@/lib/whatsapp-opener";
 import { cn } from "@/lib/ui/cn";
-import type {
-  DailySalesPlanProgress,
-  FocusModeResult,
-  SalesActionRecommendation,
-} from "@/lib/sales/intelligence/types";
-import type {
-  SalesDealAttentionItem,
-  SalesEnquiryPriorityItem,
-} from "@/components/dashboard/sales/types";
-import {
-  buildFocusActionRows,
-  type FocusActionRow,
-  type FocusPriorityTier,
-} from "@/lib/sales/focus-todays-actions";
-
-const DESKTOP_LIMIT = 5;
-const MOBILE_LIMIT = 3;
+import type { DailySalesPlanProgress, FocusModeResult, SalesActionRecommendation } from "@/lib/sales/intelligence/types";
+import type { SalesDealAttentionItem, SalesEnquiryPriorityItem } from "@/components/dashboard/sales/types";
+import { buildFocusActionRows, type FocusActionRow } from "@/lib/sales/focus-todays-actions";
+import styles from "./TodaysFocusCard.module.css";
 
 async function postPlanAction(
   rec: SalesActionRecommendation,
@@ -58,35 +37,6 @@ async function postPlanAction(
     }),
   });
   if (!res.ok) throw new Error("Failed to update action");
-}
-
-function PriorityBadge({ tier }: { tier: FocusPriorityTier }) {
-  const tone =
-    tier === "URGENT"
-      ? "bg-sales-danger-soft text-sales-danger-fg"
-      : tier === "HIGH"
-        ? "bg-sales-warning-soft text-sales-warning-fg"
-        : "bg-sales-info-soft text-sales-info-fg";
-  return (
-    <span
-      className={cn(
-        "inline-flex rounded-sales-sm px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em]",
-        tone
-      )}
-    >
-      {tier}
-    </span>
-  );
-}
-
-function SignalDot({ tier }: { tier: FocusPriorityTier }) {
-  const color =
-    tier === "URGENT"
-      ? "bg-sales-danger"
-      : tier === "HIGH"
-        ? "bg-sales-warning"
-        : "bg-sales-info";
-  return <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", color)} aria-hidden />;
 }
 
 function PrimaryCtaButton({
@@ -159,20 +109,22 @@ function ActionRowMenu({
   onDismissed,
 }: {
   row: FocusActionRow;
-  onDismissed: (id: string) => void;
+  onDismissed: (id: string, action: "complete" | "snooze" | "skip") => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const canMutate = Boolean(row.recommendation);
 
   const run = useCallback(
     async (action: "complete" | "snooze" | "skip") => {
       if (busy || !row.recommendation) return;
       setBusy(true);
+      setError(null);
       try {
         await postPlanAction(row.recommendation, action);
-        onDismissed(row.id);
+        onDismissed(row.id, action);
       } catch {
-        /* keep row visible */
+        setError("Could not update this action. Please try again.");
       } finally {
         setBusy(false);
       }
@@ -181,7 +133,7 @@ function ActionRowMenu({
   );
 
   return (
-    <DropdownMenu align="end">
+    <div className={styles.menu}><DropdownMenu align="end">
       <DropdownMenuTrigger
         className="inline-flex h-9 w-9 items-center justify-center rounded-sales-md text-sales-text-muted transition-colors hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
         aria-label={`More actions for ${row.customerName}`}
@@ -221,155 +173,131 @@ function ActionRowMenu({
           </>
         ) : null}
       </DropdownMenuContent>
-    </DropdownMenu>
+    </DropdownMenu>{error ? <p role="alert" className={styles.error}>{error}</p> : null}</div>
   );
 }
 
-function FocusActionRowView({
-  row,
-  clientId,
-  onAddProspect,
-  onDismissed,
-  mobileHidden,
+
+function statusLabel(row: FocusActionRow): string {
+  switch (row.recommendation?.reasonCode) {
+    case "QUOTE_EXPIRING": return "Quote expiring";
+    case "FOLLOWUP_OVERDUE": return "Follow-up overdue";
+    case "CUSTOMER_WAITING": return row.signal || "Waiting for your reply";
+    case "FOLLOWUP_DUE_TODAY": return "Follow-up today";
+    case "QUOTE_WAITING": return "Quote awaiting reply";
+    case "QUOTE_VIEWED": return "Quote viewed";
+    default: return row.signal || row.commercialState || "Next action";
+  }
+}
+
+function suggestedMessage(row: FocusActionRow): string {
+  const firstName = row.customerName.trim().split(/\s+/)[0] || "there";
+  if (row.recommendation?.actionType === "RESPOND_TO_CUSTOMER") {
+    return `Hi ${firstName}, thank you for your message. How can I help you with the next step?`;
+  }
+  const subject = row.recommendation?.actionType === "FOLLOW_UP_QUOTE"
+    ? "your quotation" : row.opportunityLabel ? `your ${row.opportunityLabel}` : "your enquiry";
+  return `Hi ${firstName}, following up on ${subject}. Would you like to discuss the next step?`;
+}
+
+function SuggestedNextStep({
+  row, clientId, onAddProspect, draft, onDraftChange,
 }: {
   row: FocusActionRow;
   clientId: string | null;
   onAddProspect?: () => void;
-  onDismissed: (id: string) => void;
-  mobileHidden?: boolean;
+  draft: string;
+  onDraftChange: (message: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const canMessage = Boolean(row.phone && row.availableActions.includes("whatsapp") && row.primary.kind !== "call");
+  const rec = row.recommendation;
+  const quoteId = rec?.sourceEntityType === "quotation" ? rec.sourceEntityId
+    : typeof rec?.metadata?.quotationId === "string" ? rec.metadata.quotationId
+    : typeof rec?.metadata?.quoteId === "string" ? rec.metadata.quoteId : null;
+  const firstName = row.customerName.trim().split(/\s+/)[0];
+  const title = rec?.actionType === "RESPOND_TO_CUSTOMER" ? `Reply to ${firstName}`
+    : row.primary.kind === "add_prospect" ? "Build your pipeline"
+    : row.primary.kind === "create_quote" ? `Prepare a quote for ${firstName}`
+    : `Follow up with ${firstName}`;
+  const commandHref = `/sales/command?prompt=${encodeURIComponent(
+    `Help me draft a message for ${row.customerName}. Context: ${row.reason}${row.opportunityLabel ? ` Opportunity: ${row.opportunityLabel}.` : ""}`
+  )}`;
+
+  async function reviewMessage() {
+    if (busy || !draft.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const meta = clientId ? await fetchClientWhatsAppMeta(clientId) : null;
+      const digits = normalizePhoneForWhatsApp(row.phone, meta?.dial_code);
+      if (!digits) throw new Error("This customer needs a valid phone number before opening WhatsApp.");
+      openExternalUrl(buildWhatsAppUrl(digits, draft.trim()));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not open WhatsApp. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <li
-      className={cn(
-        "group border-b border-sales-border-subtle last:border-b-0",
-        mobileHidden && "hidden layout:block"
-      )}
-    >
-      {/* Desktop / tablet layout */}
-      <div className="hidden items-start gap-3 px-5 py-3.5 transition-colors group-hover:bg-sales-surface-hover/40 sm:px-6 md:flex">
-        <div className="flex w-[72px] shrink-0 flex-col items-start gap-1.5 pt-0.5">
-          <span className="text-[12px] font-semibold tabular-nums text-sales-text-muted">
-            {row.rank}
-          </span>
-          <PriorityBadge tier={row.priority} />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <Link href={row.href} className="block min-w-0 focus-visible:outline-none">
-            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <p className="truncate text-[14px] font-semibold tracking-[-0.01em] text-sales-text-primary group-hover:underline">
-                {row.customerName}
-              </p>
-              {row.valueLabel ? (
-                <span className="shrink-0 text-[13px] font-semibold tabular-nums text-sales-text-primary">
-                  {row.valueLabel}
-                </span>
-              ) : null}
-            </div>
-            {row.opportunityLabel ? (
-              <p className="mt-0.5 truncate text-[13px] text-sales-text-secondary">
-                {row.opportunityLabel}
-              </p>
-            ) : null}
-            <p className="mt-1.5 text-[13px] leading-snug text-sales-text-secondary">
-              {row.reason}
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-              {row.commercialState ? (
-                <span className="text-[11px] font-medium text-sales-text-muted">
-                  {row.commercialState}
-                </span>
-              ) : null}
-              {row.signal ? (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sales-text-muted">
-                  <SignalDot tier={row.priority} />
-                  {row.signal}
-                </span>
-              ) : null}
-            </div>
-          </Link>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
-          <PrimaryCtaButton
-            row={row}
-            clientId={clientId}
-            onAddProspect={onAddProspect}
-            className="min-w-[132px]"
+    <aside className={styles.suggestion} aria-label="Suggested next step">
+      <p className={styles.eyebrow}><Sparkles size={26} aria-hidden />Suggested next step</p>
+      <h3>{title}</h3>
+      <div className={styles.reasons}>
+        <h4>Why this matters</h4>
+        <p><AlertCircle size={20} aria-hidden className={row.priority === "URGENT" ? styles.dangerIcon : styles.accent} /><span>{statusLabel(row)}</span></p>
+        <p><MessageCircle size={22} aria-hidden /><span>{row.reason}</span></p>
+      </div>
+      {canMessage ? (
+        <div className={styles.messageSection}>
+          <div className={styles.messageHeading}>
+            <h4>Suggested message</h4>
+            <Link className={styles.draftLink} href={commandHref}><Pencil size={16} aria-hidden />Draft with SegmiQ</Link>
+          </div>
+          <textarea
+            ref={input}
+            aria-label={`Suggested message to ${row.customerName}`}
+            className={styles.message}
+            value={draft}
+            readOnly={!editing}
+            onChange={(event) => onDraftChange(event.target.value)}
+            rows={3}
           />
-          <ActionRowMenu row={row} onDismissed={onDismissed} />
-        </div>
-      </div>
-
-      {/* Mobile stacked layout */}
-      <div className="flex flex-col gap-3 px-4 py-3.5 transition-colors group-hover:bg-sales-surface-hover/40 md:hidden">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-2.5">
-            <span className="pt-0.5 text-[12px] font-semibold tabular-nums text-sales-text-muted">
-              {row.rank}
-            </span>
-            <div className="min-w-0">
-              <div className="mb-1.5">
-                <PriorityBadge tier={row.priority} />
-              </div>
-              <Link href={row.href} className="block min-w-0">
-                <p className="truncate text-[14px] font-semibold text-sales-text-primary">
-                  {row.customerName}
-                </p>
-                {row.opportunityLabel ? (
-                  <p className="mt-0.5 truncate text-[13px] text-sales-text-secondary">
-                    {row.opportunityLabel}
-                  </p>
-                ) : null}
-              </Link>
-            </div>
+          <div className={styles.messageActions}>
+            <button type="button" className={styles.primaryButton} onClick={() => void reviewMessage()} disabled={busy || !draft.trim()}>
+              <SiWhatsapp size={23} aria-hidden />{busy ? "Opening WhatsApp…" : "Review & send"}
+            </button>
+            <button type="button" className={styles.outlineButton} onClick={() => {
+              setEditing(!editing);
+              if (!editing) requestAnimationFrame(() => input.current?.focus());
+            }}><Pencil size={20} aria-hidden />{editing ? "Done editing" : "Edit draft"}</button>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            {row.valueLabel ? (
-              <span className="text-[13px] font-semibold tabular-nums text-sales-text-primary">
-                {row.valueLabel}
-              </span>
-            ) : null}
-            <ActionRowMenu row={row} onDismissed={onDismissed} />
-          </div>
+          {error ? <p className={styles.error} role="alert">{error}</p> : null}
         </div>
-
-        <p className="text-[13px] leading-snug text-sales-text-secondary">{row.reason}</p>
-
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          {row.commercialState ? (
-            <span className="text-[11px] font-medium text-sales-text-muted">
-              {row.commercialState}
-            </span>
-          ) : null}
-          {row.signal ? (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-sales-text-muted">
-              <SignalDot tier={row.priority} />
-              {row.signal}
-            </span>
-          ) : null}
+      ) : (
+        <div className={styles.messageSection}>
+          <h4>Next action</h4>
+          <p className={styles.nextActionCopy}>{row.recommendation?.recommendedActionLabel || row.primary.label}</p>
+          <PrimaryCtaButton row={row} clientId={clientId} onAddProspect={onAddProspect} className={styles.primaryButton} />
         </div>
-
-        <PrimaryCtaButton
-          row={row}
-          clientId={clientId}
-          onAddProspect={onAddProspect}
-          className="w-full"
-        />
+      )}
+      <div className={styles.relatedLinks}>
+        {row.leadId ? <Link href={`/sales/inbox?lead=${encodeURIComponent(row.leadId)}`}>Open conversation <ExternalLink size={15} aria-hidden /></Link> : null}
+        <Link href={quoteId ? `/sales/quotes/${encodeURIComponent(quoteId)}` : row.href}>
+          {quoteId ? "View quotation" : row.dealId ? "View deal" : "View details"}<ExternalLink size={15} aria-hidden />
+        </Link>
       </div>
-    </li>
+    </aside>
   );
 }
 
 export function TodaysFocusCard({
-  focus,
-  queue = [],
-  progress = null,
-  error,
-  clientId = null,
-  onAddProspect,
-  fallbackEnquiries = [],
-  fallbackDeals = [],
+  focus, queue = [], progress = null, error, clientId = null, onAddProspect,
+  fallbackEnquiries = [], fallbackDeals = [],
 }: {
   focus: FocusModeResult | null;
   queue?: SalesActionRecommendation[];
@@ -381,216 +309,110 @@ export function TodaysFocusCard({
   fallbackDeals?: SalesDealAttentionItem[];
 }) {
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set());
-
-  const onDismissed = useCallback((id: string) => {
-    setDismissed((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-  }, []);
-
-  if (error && queue.length === 0 && fallbackEnquiries.length === 0 && fallbackDeals.length === 0) {
-    return (
-      <Card className="dashboard-panel dashboard-panel--attention overflow-hidden border-0 shadow-none">
-        <CardContent className="px-5 py-5 sm:px-6">
-          <p className="dashboard-focus-kicker">What should I focus on today?</p>
-          <p className="mt-3 text-[15px] font-semibold text-sales-text-primary">
-            Priorities couldn&apos;t load
-          </p>
-          <p className="mt-1.5 text-[13px] text-sales-text-secondary">
-            Your CRM data is unchanged — open tasks to keep working.
-          </p>
-          <Link
-            href="/sales/tasks"
-            className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-sales-md bg-sales-brand px-4 text-[13px] font-semibold text-sales-ink"
-          >
-            Open tasks <ArrowRight size={14} aria-hidden />
-          </Link>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!focus) return null;
-
-  const visibleQueue = queue.filter((q) => {
-    const key = q.idempotencyKey || q.id;
-    return !dismissed.has(key);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [localCompleted, setLocalCompleted] = useState(0);
+  const onDismissed = useCallback((id: string, action: "complete" | "snooze" | "skip") => {
+    setDismissed((previous) => new Set(previous).add(id));
+    if (action === "complete") {
+      setLocalCompleted((count) => Math.max(count, progress?.priorityCompleted ?? 0) + 1);
+    }
+  }, [progress?.priorityCompleted]);
+  const sourceRows = buildFocusActionRows(queue, {
+    limit: Math.max(queue.length, fallbackEnquiries.length + fallbackDeals.length, 3),
+    fallbackEnquiries, fallbackDeals,
   });
-  const allRows = buildFocusActionRows(visibleQueue, {
-    limit: DESKTOP_LIMIT,
-    fallbackEnquiries: fallbackEnquiries.filter((e) => !dismissed.has(e.id)),
-    fallbackDeals: fallbackDeals.filter((d) => !dismissed.has(d.id)),
-  });
-  const fallbackCount =
-    fallbackEnquiries.filter((e) => !dismissed.has(e.id)).length +
-    fallbackDeals.filter((d) => !dismissed.has(d.id)).length;
-  const totalActions = visibleQueue.length > 0 ? visibleQueue.length : fallbackCount;
-  const remaining =
-    progress != null
-      ? Math.max(0, progress.priorityTotal - progress.priorityCompleted)
-      : Math.max(0, totalActions);
-  const completed = progress?.priorityCompleted ?? 0;
-  const priorityTotal = progress?.priorityTotal ?? totalActions;
-  const progressPct =
-    priorityTotal > 0 ? Math.min(100, Math.round((completed / priorityTotal) * 100)) : 0;
-  const showProgress =
-    progress != null && priorityTotal > 0 && !progress.planComplete;
-  const caughtUp = allRows.length === 0;
+  const remainingRows = sourceRows.filter((row) => !dismissed.has(row.id));
+  const topRows = remainingRows.slice(0, 3);
+  const selected = topRows.find((row) => row.id === selectedId) ?? topRows[0];
+  const completed = Math.max(progress?.priorityCompleted ?? 0, localCompleted);
+  const total = Math.max(progress?.priorityTotal ?? sourceRows.length, completed);
+  const percent = total > 0 ? Math.min(100, completed / total * 100) : 0;
+  const waiting = remainingRows.filter((row) => row.recommendation?.reasonCode === "CUSTOMER_WAITING" || row.recommendation?.actionType === "RESPOND_TO_CUSTOMER").length;
+  const quotes = remainingRows.filter((row) => row.recommendation?.actionType === "FOLLOW_UP_QUOTE").length;
+  const scheduled = remainingRows.filter((row) => ["COMPLETE_FOLLOW_UP", "COMPLETE_SCHEDULED_CALL", "COMPLETE_APPOINTMENT"].includes(row.recommendation?.actionType ?? "")).length;
 
+  if (!focus && !error && sourceRows.length === 0) return null;
   return (
-    <Card
-      data-course-target="dashboard-todays-focus"
-      className="dashboard-panel dashboard-panel--attention dashboard-panel--focus overflow-hidden border-0 shadow-none"
-    >
-      <CardContent className="p-0">
-        {/* Header */}
-        <div className="border-b border-sales-border-subtle px-5 py-4 sm:px-6 sm:py-5">
-          <div className="flex flex-col gap-4 layout:flex-row layout:items-start layout:justify-between">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-3">
-                <span className="dashboard-focus-icon mt-0.5 hidden sm:flex" aria-hidden>
-                  <Crosshair size={16} strokeWidth={1.8} />
-                </span>
-                <div className="min-w-0">
-                  <h2 className="dashboard-focus-title">What should I focus on today?</h2>
-                  <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-sales-text-secondary sm:text-[14px]">
-                    SegmiQ has analysed your enquiries, deals and activity to identify the actions
-                    most likely to move revenue today.
-                  </p>
-                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                    <Badge tone="brand" appearance="soft" size="sm">
-                      {focus.mode === "BUILD"
-                        ? "Build pipeline"
-                        : focus.mode === "CLOSE"
-                          ? "Close opportunities"
-                          : "Move deals"}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Link
-              href="/sales/command?view=focus"
-              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 self-start rounded-sales-md border border-sales-border px-3 text-[13px] font-semibold text-sales-text-secondary transition-colors hover:border-sales-border-strong hover:bg-sales-surface-hover hover:text-sales-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sales-brand"
-            >
-              Ask SegmiQ
-              <ArrowRight size={14} aria-hidden />
-            </Link>
-          </div>
+    <section className={styles.workspace} data-course-target="dashboard-todays-focus" aria-label="What should I focus on today?">
+      <header className={styles.header}>
+        <div className={styles.headingGroup}>
+          <span className={styles.targetIcon}><Crosshair size={32} strokeWidth={1.5} aria-hidden /></span>
+          <div><h2>What should I focus on today?</h2><p>Your next best actions, based on conversations and deals.</p></div>
         </div>
-
-        {/* Actions */}
-        <div className="px-0 pb-1">
-          <div className="flex items-center justify-between gap-3 px-5 py-3 sm:px-6">
-            <div className="flex min-w-0 items-center gap-2">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
-                Top actions for you
-              </p>
-              {totalActions > 0 ? (
-                <span className="inline-flex rounded-sales-sm bg-sales-neutral-100 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sales-text-secondary">
-                  {totalActions} action{totalActions === 1 ? "" : "s"}
-                </span>
-              ) : null}
-            </div>
-            <Link
-              href="/sales/tasks"
-              className="text-[12px] font-medium text-sales-text-secondary transition-colors hover:text-sales-text-primary"
-            >
-              View all →
-            </Link>
-          </div>
-
-          {caughtUp ? (
-            <div className="mx-5 mb-5 rounded-[10px] border border-sales-border-subtle bg-sales-surface-subtle/60 px-5 py-6 text-center sm:mx-6">
-              <CheckCircle2
-                size={22}
-                className="mx-auto text-sales-success"
-                strokeWidth={1.8}
-                aria-hidden
-              />
-              <p className="mt-3 text-[15px] font-semibold text-sales-text-primary">
-                You&apos;re caught up
-              </p>
-              <p className="mx-auto mt-1.5 max-w-md text-[13px] leading-relaxed text-sales-text-secondary">
-                No urgent sales actions need your attention right now.
-              </p>
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-                <Link
-                  href="/sales/pipeline"
-                  className="inline-flex min-h-11 items-center gap-1.5 rounded-sales-md bg-sales-brand px-4 text-[13px] font-semibold text-sales-ink"
-                >
-                  Review pipeline <ArrowRight size={14} aria-hidden />
-                </Link>
-                <Link
-                  href="/sales/leads"
-                  className="inline-flex min-h-11 items-center text-[13px] font-semibold text-sales-text-secondary hover:text-sales-text-primary"
-                >
-                  Find opportunities →
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <ul>
-              {allRows.map((row, index) => (
-                <FocusActionRowView
-                  key={row.id}
-                  row={row}
-                  clientId={clientId}
-                  onAddProspect={onAddProspect}
-                  onDismissed={onDismissed}
-                  mobileHidden={index >= MOBILE_LIMIT}
-                />
-              ))}
+        <Link href="/sales/command?view=focus" className={styles.outlineButton}>Ask SegmiQ <ArrowRight size={20} aria-hidden /></Link>
+      </header>
+      <div className={styles.summary}>
+        <span><ListTodo size={25} aria-hidden />{remainingRows.length} {remainingRows.length === 1 ? "action" : "actions"}</span>
+        <span><UserRound size={25} aria-hidden />{waiting} waiting for you</span>
+        <span><FileText size={25} aria-hidden />{quotes} {quotes === 1 ? "quote" : "quotes"} to follow up</span>
+        <span><CalendarDays size={25} aria-hidden />{scheduled} scheduled follow-ups</span>
+      </div>
+      {selected ? (
+        <div className={styles.content}>
+          <div className={styles.priorities}>
+            <div className={styles.listHeading}><h3>Start here</h3><span>Top {topRows.length}</span></div>
+            <ul className={styles.cards}>
+              {topRows.map((row, index) => {
+                const active = row.id === selected.id;
+                const waitingForReply = row.recommendation?.reasonCode === "CUSTOMER_WAITING";
+                const tone = waitingForReply || row.priority === "HIGH" ? "warning" : row.priority === "URGENT" ? "danger" : "neutral";
+                return (
+                  <li key={row.id} className={cn(styles.actionCard, active && styles.selected)}>
+                    <span className={cn(styles.avatar, styles[`avatar${index}`])} aria-hidden>
+                      {row.customerName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}
+                    </span>
+                    <div className={styles.cardBody}>
+                      <div className={styles.cardHeading}>
+                        <div className={styles.identity}>
+                          <button type="button" aria-pressed={active} onClick={() => setSelectedId(row.id)} className={styles.customer}>{row.customerName}</button>
+                          {row.opportunityLabel || row.valueLabel ? <p>{[row.opportunityLabel, row.valueLabel].filter(Boolean).join(" · ")}</p> : null}
+                        </div>
+                        <span className={cn(styles.status, styles[tone])}>
+                          {tone === "warning" ? <Clock3 size={18} aria-hidden /> : <AlertCircle size={18} aria-hidden />}
+                          {statusLabel(row)}
+                        </span>
+                      </div>
+                      <p className={styles.reason}>{row.reason}</p>
+                      <div className={styles.cardFooter}>
+                        <button type="button" onClick={() => setSelectedId(row.id)} className={styles.details} aria-label={`View details for ${row.customerName}`} aria-pressed={active}>View details <ArrowRight size={18} aria-hidden /></button>
+                        {!active ? <button type="button" className={styles.outlineButton} onClick={() => setSelectedId(row.id)}>
+                          {waitingForReply ? "Review reply" : row.primary.kind === "call" ? "Prepare call" : "Review action"}
+                        </button> : null}
+                      </div>
+                    </div>
+                    <ActionRowMenu row={row} onDismissed={onDismissed} />
+                  </li>
+                );
+              })}
             </ul>
-          )}
-
-          {!caughtUp && totalActions > MOBILE_LIMIT ? (
-            <div className="border-t border-sales-border-subtle px-5 py-3 layout:hidden sm:px-6">
-              <Link
-                href="/sales/tasks"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-sales-md border border-sales-border text-[13px] font-semibold text-sales-text-primary transition-colors hover:bg-sales-surface-hover"
-              >
-                View all actions
-                <ArrowRight size={14} aria-hidden />
-              </Link>
-            </div>
-          ) : null}
+          </div>
+          <SuggestedNextStep
+            key={selected.id}
+            row={selected}
+            clientId={clientId}
+            onAddProspect={onAddProspect}
+            draft={drafts[selected.id] ?? suggestedMessage(selected)}
+            onDraftChange={(message) => setDrafts((previous) => ({ ...previous, [selected.id]: message }))}
+          />
         </div>
-
-        {/* Folded plan progress (replaces separate TodaysSalesPlanStrip when data exists) */}
-        {showProgress ? (
-          <div
-            data-course-target="dashboard-sales-plan"
-            className="border-t border-sales-border-subtle px-5 py-4 sm:px-6"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[12px] font-semibold text-sales-text-primary">Today&apos;s progress</p>
-              <p className="text-[12px] tabular-nums text-sales-text-muted">
-                {completed} completed · {remaining} remaining
-              </p>
-            </div>
-            <div className="mt-2.5">
-              <Progress value={progressPct} className="h-1.5" tone="brand" />
-            </div>
-          </div>
-        ) : progress?.planComplete ? (
-          <div
-            data-course-target="dashboard-sales-plan"
-            className="flex items-center gap-2 border-t border-sales-border-subtle px-5 py-3.5 text-[13px] font-medium text-sales-success sm:px-6"
-          >
-            <CheckCircle2 size={16} aria-hidden />
-            Today&apos;s sales plan is complete
-          </div>
-        ) : (
-          <div data-course-target="dashboard-sales-plan" className="sr-only">
-            Today&apos;s sales plan
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      ) : (
+        <div className={styles.empty}>
+          <CheckCircle2 size={30} aria-hidden />
+          <h3>{error ? "Priorities couldn’t load" : "You’re caught up"}</h3>
+          <p>{error ? "Open your tasks to keep working." : "No urgent sales actions need your attention right now."}</p>
+          <Link className={styles.outlineButton} href={error ? "/sales/tasks" : "/sales/pipeline"}>{error ? "Open tasks" : "Review pipeline"}<ArrowRight size={18} aria-hidden /></Link>
+        </div>
+      )}
+      <footer className={styles.progressFooter} data-course-target="dashboard-sales-plan">
+        <h4>Today’s progress</h4>
+        <div className={styles.progressTrack} role="progressbar" aria-label="Today's action progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)} aria-valuetext={`${completed} of ${total} completed`}>
+          <span style={{ width: `${percent}%` }} />
+        </div>
+        <span className={styles.progressCount}>{completed} of {total} completed</span>
+        <Link className={styles.details} href="/sales/command?view=focus">View all {remainingRows.length} actions <ArrowRight size={18} aria-hidden /></Link>
+      </footer>
+    </section>
   );
 }
 
