@@ -6,7 +6,6 @@ import { cn } from "@/lib/ui/cn";
 
 export function ToolCard({
   icon: Icon,
-  iconTint: _iconTint,
   title,
   description,
   actionLabel,
@@ -16,7 +15,6 @@ export function ToolCard({
   featured,
 }: {
   icon: LucideIcon;
-  iconTint: string;
   title: string;
   description: string;
   actionLabel: string;

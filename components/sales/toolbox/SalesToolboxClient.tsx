@@ -54,7 +54,6 @@ type ToolDef = {
   keywords: string[];
   section: "quick" | "capture" | "follow_up" | "assets";
   icon: typeof UserRoundPlus;
-  iconTint: string;
   featured?: boolean;
 };
 
@@ -67,7 +66,6 @@ const TOOLS: ToolDef[] = [
     keywords: ["lead", "add", "new", "enquiry", "customer"],
     section: "quick",
     icon: UserRoundPlus,
-    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
     featured: true,
   },
   {
@@ -78,7 +76,6 @@ const TOOLS: ToolDef[] = [
     keywords: ["call", "log", "phone", "outcome"],
     section: "quick",
     icon: PhoneCall,
-    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
     featured: true,
   },
   {
@@ -89,7 +86,6 @@ const TOOLS: ToolDef[] = [
     keywords: ["quote", "quotation", "pricing", "proposal"],
     section: "quick",
     icon: FilePlus2,
-    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
     featured: true,
   },
   {
@@ -100,7 +96,6 @@ const TOOLS: ToolDef[] = [
     keywords: ["schedule", "follow-up", "followup", "calendar", "meeting"],
     section: "quick",
     icon: CalendarClock,
-    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
     featured: true,
   },
   {
@@ -111,7 +106,6 @@ const TOOLS: ToolDef[] = [
     keywords: ["event", "capture", "walk-in", "exhibition", "trade"],
     section: "capture",
     icon: ClipboardList,
-    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
   },
   {
     id: "follow_ups",
@@ -121,7 +115,6 @@ const TOOLS: ToolDef[] = [
     keywords: ["follow-up", "due", "overdue", "tasks", "reminders"],
     section: "follow_up",
     icon: ListTodo,
-    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
   },
   {
     id: "quick_replies",
@@ -131,7 +124,6 @@ const TOOLS: ToolDef[] = [
     keywords: ["quick", "replies", "whatsapp", "templates", "messages"],
     section: "follow_up",
     icon: MessageSquareText,
-    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
   },
   {
     id: "upload_photos",
@@ -141,7 +133,6 @@ const TOOLS: ToolDef[] = [
     keywords: ["photos", "upload", "images", "media", "project"],
     section: "assets",
     icon: Image,
-    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
   },
 ];
 
@@ -466,7 +457,6 @@ export function SalesToolboxClient({
             <ToolCard
               key={tool.id}
               icon={tool.icon}
-              iconTint={tool.iconTint}
               title={tool.title}
               description={tool.description}
               actionLabel={tool.actionLabel}
@@ -500,7 +490,6 @@ export function SalesToolboxClient({
                     <ToolCard
                       key={tool.id}
                       icon={tool.icon}
-                      iconTint={tool.iconTint}
                       title={tool.title}
                       description={tool.description}
                       actionLabel={tool.actionLabel}
@@ -555,7 +544,6 @@ export function SalesToolboxClient({
                       <ToolCard
                         key={`recent-${tool.id}`}
                         icon={tool.icon}
-                        iconTint={tool.iconTint}
                         title={tool.title}
                         description={tool.description}
                         actionLabel={tool.actionLabel}
