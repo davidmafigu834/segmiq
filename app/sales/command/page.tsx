@@ -20,7 +20,7 @@ export default async function SalesCommandPage() {
 
   return (
     <Layout
-      breadcrumb="Sales / COMMAND"
+      breadcrumb="Sales / Command"
       pageTitle="Sales Command Center"
       hideShellHeader
       hideShellSidebar

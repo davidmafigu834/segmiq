@@ -34,8 +34,8 @@ export function WeekCalendar({
     now.getHours() <= 17;
 
   return (
-    <div className="overflow-hidden workspace-card rounded-[14px] border border-sales-border bg-sales-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-      <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-sales-border bg-sales-surface-hover">
+    <div className="cal-card overflow-hidden rounded-sales-md border border-sales-border-subtle bg-sales-surface shadow-none">
+      <div className="grid grid-cols-[52px_repeat(7,minmax(0,1fr))] border-b border-sales-border-subtle bg-sales-surface-hover">
         <div />
         {days.map((day) => {
           const key = toDateKey(day);
@@ -47,12 +47,12 @@ export function WeekCalendar({
               onClick={() => onSelectDate(key)}
               className="px-1 py-2.5 text-center transition-colors hover:bg-sales-surface"
             >
-              <span className="block text-[10px] font-medium uppercase text-sales-text-muted">
+              <span className="block text-[10px] font-medium text-sales-text-muted">
                 {format(day, "EEE")}
               </span>
               <span
                 className={[
-                  "mx-auto mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-semibold",
+                  "mx-auto mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-sales-md text-[13px] font-semibold",
                   today ? "bg-sales-brand text-sales-brand-text" : "text-sales-text-primary",
                 ].join(" ")}
               >
@@ -151,9 +151,9 @@ function WeekEventBlock({
       className={[
         "w-full rounded-[6px] border px-1.5 py-1 text-left transition-colors duration-150",
         selected
-          ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.14)]"
-          : "border-sales-border bg-sales-surface hover:border-sales-border-strong",
-        event.overdue ? "border-l-2 border-l-[#EF4444]" : "",
+          ? "border-sales-brand/40 bg-sales-brand-soft"
+          : "border-sales-border-subtle bg-sales-surface hover:border-sales-border-strong",
+        event.overdue ? "border-sales-danger/40" : "",
       ].join(" ")}
       aria-label={`Open ${event.customerName ?? getEventTypeLabel(event.kind)}`}
     >

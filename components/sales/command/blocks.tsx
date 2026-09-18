@@ -79,7 +79,7 @@ export function CommercialCheckSummary({ check }: { check: CommercialCheckPrevie
   return (
     <div className="rounded-[10px] border border-sales-border-subtle bg-sales-surface-subtle px-3 py-2.5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+        <p className="text-[11px] font-semibold text-sales-text-muted">
           Commercial Check
         </p>
         <p className="text-[12px] font-medium text-sales-text-primary">{check.readyLabel}</p>
@@ -105,14 +105,14 @@ export function QuotationDraftCard({
 }) {
   const cur = preview.currency;
   return (
-    <article className="overflow-hidden rounded-[12px] border border-sales-border bg-sales-surface shadow-sales-card">
+    <article className="overflow-hidden rounded-[12px] border border-sales-border-subtle bg-sales-surface shadow-none">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-sales-border-subtle px-4 py-3.5">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-sales-text-primary">
               {preview.quoteNumber}
             </h3>
-            <span className="rounded-[6px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-sales-text-secondary">
+            <span className="rounded-[6px] border border-sales-border bg-sales-surface-subtle px-1.5 py-0.5 text-[10px] font-semibold text-sales-text-secondary">
               {preview.status || (preview.isRevision ? "Revision" : "Draft")}
             </span>
           </div>
@@ -129,7 +129,7 @@ export function QuotationDraftCard({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[420px] text-left text-[12px]">
           <thead>
-            <tr className="border-b border-sales-border-subtle text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            <tr className="border-b border-sales-border-subtle text-[10px] font-semibold text-sales-text-muted">
               <th className="px-4 py-2 font-semibold">Item</th>
               <th className="px-3 py-2 text-right font-semibold">Qty</th>
               <th className="px-3 py-2 text-right font-semibold">Unit price</th>
@@ -183,7 +183,7 @@ export function QuotationDraftCard({
         <div className="flex flex-wrap gap-2">
           <Link
             href={preview.href}
-            className="inline-flex min-h-10 items-center justify-center rounded-sales-md bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text shadow-sales-card"
+            className="inline-flex min-h-10 items-center justify-center rounded-sales-md bg-sales-brand px-4 text-[13px] font-semibold text-sales-brand-text shadow-none"
           >
             View quotation
           </Link>
@@ -313,7 +313,7 @@ export function SalesCommandBlocks({
                     className={cn(
                       "inline-flex min-h-11 items-center justify-center rounded-sales-md px-4 text-[13px] font-semibold",
                       a.style === "primary"
-                        ? "bg-sales-brand text-sales-brand-text shadow-sales-card"
+                        ? "bg-sales-brand text-sales-brand-text"
                         : "border border-sales-border-strong bg-sales-surface text-sales-text-primary"
                     )}
                   >

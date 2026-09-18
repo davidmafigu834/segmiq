@@ -24,14 +24,14 @@ export function SolarTemplateFieldsPanel({
   }
 
   return (
-    <div className="space-y-3 rounded-sales-md border border-sales-border bg-sales-surface p-4">
+    <div className="space-y-3 rounded-sales-md border border-sales-border-subtle bg-sales-surface p-4 shadow-none">
       <div>
-        <h2 className="text-[15px] font-semibold">Residential Solar Details</h2>
+        <h2 className="text-[15px] font-semibold">Residential solar details</h2>
         <p className="mt-0.5 text-[12.5px] text-sales-text-secondary">
           Template presentation fields — they are not Deal columns and are not required to send unless your company says so.
         </p>
       </div>
-      <FieldGroup title="Site / Property">
+      <FieldGroup title="Site / property">
         {site.map((f) => (
           <Field
             key={f.key}
@@ -42,7 +42,7 @@ export function SolarTemplateFieldsPanel({
           />
         ))}
       </FieldGroup>
-      <FieldGroup title="System Performance">
+      <FieldGroup title="System performance">
         {performance.map((f) => (
           <Field
             key={f.key}
@@ -65,7 +65,7 @@ export function SolarTemplateFieldsPanel({
         ))}
       </FieldGroup>
       <label className="block">
-        <span className="mb-1 block text-[11px] uppercase tracking-wide text-sales-text-muted">Project summary</span>
+        <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Project summary</span>
         <textarea
           className={FIELD}
           rows={3}
@@ -76,7 +76,7 @@ export function SolarTemplateFieldsPanel({
         />
       </label>
       <label className="block">
-        <span className="mb-1 block text-[11px] uppercase tracking-wide text-sales-text-muted">Hero image URL (optional)</span>
+        <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">Hero image URL (optional)</span>
         <input
           className={FIELD}
           disabled={readOnly}
@@ -111,7 +111,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11px] uppercase tracking-wide text-sales-text-muted">
+      <span className="mb-1 block text-[11px] font-medium text-sales-text-muted">
         {def.label}
         {def.unit ? ` (${def.unit})` : ""}
       </span>

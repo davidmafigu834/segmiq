@@ -41,7 +41,7 @@ export default async function SalesWonLostPage() {
 
   return (
     <Layout
-      breadcrumb="Sales / WON & LOST"
+      breadcrumb="Sales / Won & Lost"
       pageTitle="Won & Lost"
       hideShellHeader
       hideShellSidebar

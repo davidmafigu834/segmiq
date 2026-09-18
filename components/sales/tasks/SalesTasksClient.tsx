@@ -5,11 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CalendarClock,
-  CalendarDays,
   CheckSquare,
   ChevronDown,
-  CircleAlert,
-  CircleCheck,
   FileText,
   Filter,
   Lightbulb,
@@ -309,7 +306,7 @@ export function SalesTasksClient() {
       <DailySalesIntelligencePanel onRequestAddProspect={() => openAddHubSheet()} />
 
       <div className="pt-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+        <p className="text-[11px] font-semibold text-sales-text-muted">
           Traditional tasks
         </p>
       </div>
@@ -399,7 +396,7 @@ export function SalesTasksClient() {
                           type="button"
                           onClick={() => toggleQuick(key)}
                           className={cn(
-                            "rounded-full border px-2.5 py-1.5 text-[12px] font-medium transition-colors",
+                            "rounded-sales-md border px-2.5 py-1.5 text-[12px] font-medium transition-colors",
                             quickFilters.includes(key)
                               ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
                               : "border-sales-border text-sales-text-secondary hover:bg-sales-surface-hover"
@@ -485,7 +482,7 @@ export function SalesTasksClient() {
                               type="button"
                               onClick={() => toggleQuick(key)}
                               className={cn(
-                                "rounded-full border px-2.5 py-1.5 text-[12px] font-medium transition-colors",
+                                "rounded-sales-md border px-2.5 py-1.5 text-[12px] font-medium transition-colors",
                                 quickFilters.includes(key)
                                   ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
                                   : "border-sales-border text-sales-text-secondary hover:bg-sales-surface-hover"
@@ -541,68 +538,62 @@ export function SalesTasksClient() {
       {data ? (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-w-0 space-y-4">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <ReportKpiCard
-                label="Due today"
-                value={String(data.kpis.dueToday)}
-                supporting={
-                  data.kpis.dueToday === 0 ? "Nothing due today" : undefined
-                }
-                trend={
-                  data.kpis.dueTodayHighPriority > 0
-                    ? {
-                        direction: "alert",
-                        label: `${data.kpis.dueTodayHighPriority} high priority`,
-                      }
-                    : null
-                }
-                icon={CalendarClock}
-                iconTint="bg-[#FFFAEB] text-[#B54708]"
-              />
-              <ReportKpiCard
-                label="This week"
-                value={String(data.kpis.thisWeek)}
-                supporting={
-                  data.kpis.thisWeekOverdue > 0 ? undefined : undefined
-                }
-                trend={
-                  data.kpis.thisWeekOverdue > 0
-                    ? {
-                        direction: "alert",
-                        label: `${data.kpis.thisWeekOverdue} overdue`,
-                      }
-                    : null
-                }
-                icon={CalendarDays}
-                iconTint="bg-[#F4F3FF] text-[#6941C6]"
-              />
-              <ReportKpiCard
-                label="Completed"
-                value={String(data.kpis.completedThisWeek)}
-                tip="Tasks completed by clearing the follow-up date."
-                trend={
-                  completedTrend && completedTrend.direction !== "none"
-                    ? {
-                        direction: completedTrend.direction,
-                        label: `${completedTrend.label} vs last week`,
-                      }
-                    : null
-                }
-                icon={CircleCheck}
-                iconTint="bg-sales-success-soft text-sales-success-fg"
-              />
-              <ReportKpiCard
-                label="Overdue"
-                value={String(data.kpis.overdue)}
-                supporting={data.kpis.overdue === 0 ? "You're up to date" : undefined}
-                trend={
-                  data.kpis.overdue > 0
-                    ? { direction: "alert", label: "Needs attention" }
-                    : null
-                }
-                icon={CircleAlert}
-                iconTint="bg-sales-danger-soft text-sales-danger-fg"
-              />
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <ReportKpiCard
+                  label="Due today"
+                  value={String(data.kpis.dueToday)}
+                  supporting={
+                    data.kpis.dueToday === 0 ? "Nothing due today" : undefined
+                  }
+                  trend={
+                    data.kpis.dueTodayHighPriority > 0
+                      ? {
+                          direction: "alert",
+                          label: `${data.kpis.dueTodayHighPriority} high priority`,
+                        }
+                      : null
+                  }
+                />
+                <ReportKpiCard
+                  label="This week"
+                  value={String(data.kpis.thisWeek)}
+                  trend={
+                    data.kpis.thisWeekOverdue > 0
+                      ? {
+                          direction: "alert",
+                          label: `${data.kpis.thisWeekOverdue} overdue`,
+                        }
+                      : null
+                  }
+                />
+                <ReportKpiCard
+                  label="Completed"
+                  value={String(data.kpis.completedThisWeek)}
+                  tip="Tasks completed by clearing the follow-up date."
+                  trend={
+                    completedTrend && completedTrend.direction !== "none"
+                      ? {
+                          direction: completedTrend.direction,
+                          label: `${completedTrend.label} vs last week`,
+                        }
+                      : null
+                  }
+                />
+              </div>
+              <div className="border-t border-sales-border-subtle pt-3">
+                <ReportKpiCard
+                  variant="secondary"
+                  label="Overdue"
+                  value={String(data.kpis.overdue)}
+                  supporting={data.kpis.overdue === 0 ? "You're up to date" : undefined}
+                  trend={
+                    data.kpis.overdue > 0
+                      ? { direction: "alert", label: "Needs attention" }
+                      : null
+                  }
+                />
+              </div>
             </div>
 
             <DataTableWorkspace>
@@ -877,7 +868,7 @@ export function SalesTasksClient() {
                     type="button"
                     onClick={() => toggleQuick(key)}
                     className={cn(
-                      "rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                      "rounded-sales-md border px-2.5 py-1 text-[11px] font-medium",
                       quickFilters.includes(key)
                         ? "border-sales-brand-border bg-sales-brand-soft text-sales-text-primary"
                         : "border-sales-border text-sales-text-secondary hover:bg-sales-surface-hover"
@@ -888,7 +879,7 @@ export function SalesTasksClient() {
                 ))}
                 <span
                   title="Site visit tasks aren’t available in SegmiQ yet"
-                  className="cursor-not-allowed rounded-full border border-dashed border-sales-border px-2.5 py-1 text-[11px] font-medium text-sales-text-muted"
+                  className="cursor-not-allowed rounded-sales-md border border-dashed border-sales-border px-2.5 py-1 text-[11px] font-medium text-sales-text-muted"
                 >
                   Site visits
                 </span>
@@ -1090,7 +1081,7 @@ function TaskTableRow({
               {task.title}
             </button>
             <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="inline-flex h-5 items-center rounded-full bg-[var(--sales-neutral-100)] px-2 text-[11px] font-medium text-sales-text-secondary">
+              <span className="inline-flex h-5 items-center rounded-sales-sm bg-[var(--sales-neutral-100)] px-2 text-[11px] font-medium text-sales-text-secondary">
                 {task.typeLabel}
               </span>
               <Link
@@ -1182,7 +1173,7 @@ function MobileTaskCard({
         />
         <button type="button" className="min-w-0 flex-1 text-left" onClick={onOpen}>
           <p className="text-[14px] font-semibold text-sales-text-primary">{task.title}</p>
-          <span className="mt-1 inline-flex h-5 items-center rounded-full bg-[var(--sales-neutral-100)] px-2 text-[11px] font-medium text-sales-text-secondary">
+          <span className="mt-1 inline-flex h-5 items-center rounded-sales-sm bg-[var(--sales-neutral-100)] px-2 text-[11px] font-medium text-sales-text-secondary">
             {task.typeLabel}
           </span>
         </button>

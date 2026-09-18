@@ -74,7 +74,7 @@ function SalesContextRail({
     <div className="space-y-5">
       <CommandRailSection title="Current context">
         <div className="rounded-[10px] border border-sales-border bg-sales-surface p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">Customer</p>
+          <p className="text-[10px] font-semibold text-sales-text-muted">Customer</p>
           <p className="mt-1 text-[14px] font-semibold text-sales-text-primary">{context.customerName}</p>
           {context.projectType ? (
             <p className="mt-0.5 text-[12px] text-sales-text-secondary">{context.projectType}</p>
@@ -477,7 +477,7 @@ export function SalesCommandWorkspace({
           t.role === "user" ? (
             <CommandCommandRow key={t.id} role="user" content={t.content} />
           ) : (
-            <div key={t.id} className="space-y-3 rounded-[12px] border border-sales-border bg-sales-surface p-4 shadow-sales-card">
+            <div key={t.id} className="space-y-3 rounded-[12px] border border-sales-border-subtle bg-sales-surface p-4 shadow-none">
               <CommandResultHeader
                 title={
                   t.blocks.some((b) => b.type === "quotation_draft")
@@ -544,7 +544,7 @@ export function SalesCommandWorkspace({
     <div className="flex w-full flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0" />
-        <div className="inline-flex items-center gap-2 rounded-full border border-sales-border bg-sales-surface px-2.5 py-1">
+        <div className="inline-flex items-center gap-2 rounded-sales-sm border border-sales-border bg-sales-surface px-2.5 py-1">
           <StatusDot tone={agentOn ? "success" : "neutral"} size="sm" />
           <span className="text-[11px] font-medium text-sales-text-secondary">Sales Agent</span>
           <span className="text-[11px] font-semibold text-sales-text-primary">{agentOn ? "Active" : "Off"}</span>

@@ -41,12 +41,12 @@ export function MonthCalendar({
   const days = useMemo(() => buildCalendarGrid(month), [month]);
 
   return (
-    <div className="calendar-premium-month cal-card w-full overflow-hidden rounded-[14px] border-sales-border bg-sales-surface text-sales-text-primary">
+    <div className="calendar-premium-month cal-card w-full overflow-hidden rounded-sales-md border-sales-border-subtle bg-sales-surface text-sales-text-primary">
       <div className="grid grid-cols-7 border-b border-[var(--sales-border-subtle)] bg-sales-surface-hover">
         {WEEKDAYS.map((d) => (
           <div
             key={d}
-            className="px-1.5 py-2 text-center text-[11px] font-medium uppercase tracking-[0.06em] text-sales-text-muted"
+            className="px-1.5 py-2 text-center text-[11px] font-medium text-sales-text-muted"
           >
             {d}
           </div>
@@ -69,7 +69,7 @@ export function MonthCalendar({
               className={[
                 "cal-day-cell relative border-b border-r border-[var(--sales-border-subtle)] p-1.5 transition-colors duration-150",
                 selected
-                  ? "bg-[rgba(212,255,79,0.04)] shadow-[inset_0_0_0_1px_rgba(160,210,30,0.55)]"
+                  ? "bg-sales-brand-soft shadow-[inset_0_0_0_1px_var(--sales-brand-border)]"
                   : "hover:bg-sales-surface-hover",
                 !inMonth ? "bg-sales-surface-subtle" : "bg-sales-surface",
               ].join(" ")}
@@ -82,13 +82,13 @@ export function MonthCalendar({
               >
                 <span
                   className={[
-                    "inline-flex h-6 w-6 items-center justify-center rounded-full text-[12px] font-semibold",
+                    "inline-flex h-6 w-6 items-center justify-center rounded-sales-md text-[12px] font-semibold",
                     selected && today
                       ? "bg-sales-brand text-sales-brand-text"
                       : selected
                         ? "bg-sales-brand text-sales-brand-text"
                         : today
-                          ? "bg-[rgba(212,255,79,0.35)] text-sales-text-primary ring-1 ring-[rgba(160,210,30,0.45)]"
+                          ? "bg-sales-brand-soft text-sales-text-primary ring-1 ring-sales-brand/40"
                           : inMonth
                             ? "text-sales-text-primary"
                             : "text-sales-text-disabled",

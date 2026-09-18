@@ -70,7 +70,7 @@ export function SalesCommandDrawer({
               >
                 Command SegmiQ
               </p>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-sales-border bg-sales-surface px-2 py-0.5 text-[10px] font-medium text-sales-text-secondary">
+              <span className="inline-flex items-center gap-1.5 rounded-sales-sm border border-sales-border bg-sales-surface px-2 py-0.5 text-[10px] font-medium text-sales-text-secondary">
                 <StatusDot tone="success" size="sm" />
                 Active
               </span>

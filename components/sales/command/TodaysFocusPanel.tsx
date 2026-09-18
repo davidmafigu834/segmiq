@@ -191,7 +191,7 @@ export function TodaysFocusPanel({
   if (!data || data.empty) {
     return (
       <div className={cn("p-4", className)}>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+        <p className="text-[11px] font-semibold text-sales-text-muted">
           Today&apos;s Focus
         </p>
         <p className="mt-2 text-[16px] font-semibold text-sales-text-primary">You&apos;re clear for now</p>
@@ -223,7 +223,7 @@ export function TodaysFocusPanel({
       <div className="shrink-0 border-b border-sales-border px-4 py-3 sm:px-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            <p className="text-[11px] font-semibold text-sales-text-muted">
               Today&apos;s Focus
             </p>
             <p className="mt-1 text-[16px] font-semibold text-sales-text-primary">
@@ -292,7 +292,7 @@ export function TodaysFocusPanel({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                        <span className="text-[10px] font-semibold text-sales-text-muted">
                           {attentionTypeLabel(item.type)}
                         </span>
                         <Badge
@@ -372,7 +372,7 @@ export function TodaysFocusPanel({
 
       {newEnquiries.length > 0 ? (
         <div className="shrink-0 border-t border-sales-border px-4 py-4 sm:px-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          <p className="text-[11px] font-semibold text-sales-text-muted">
             New enquiries
           </p>
           <p className="mt-1 text-[13px] text-sales-text-secondary">
@@ -414,7 +414,7 @@ export function TodaysFocusPanel({
                           {assist.customerSaid.length > 200 ? "…" : ""}”
                         </p>
                       ) : null}
-                      <label className="block text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                      <label className="block text-[11px] font-semibold text-sales-text-muted">
                         Draft reply
                         <textarea
                           value={draftEdits[item.id] ?? assist.suggestedDraft}
@@ -490,13 +490,13 @@ function FocusDetail({
     <div className={cn("space-y-3", compact && "space-y-2")}>
       {!compact ? (
         <>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          <p className="text-[10px] font-semibold text-sales-text-muted">
             Why now
           </p>
           <p className="text-[13px] leading-relaxed text-sales-text-primary">{item.whyNow}</p>
           {lastDiscussion ? (
             <>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              <p className="text-[10px] font-semibold text-sales-text-muted">
                 Last discussion
               </p>
               <p className="text-[13px] leading-relaxed text-sales-text-secondary">{lastDiscussion}</p>
@@ -510,7 +510,7 @@ function FocusDetail({
               Load conversation context
             </button>
           ) : null}
-          <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+          <p className="text-[10px] font-semibold text-sales-text-muted">
             Suggested next step
           </p>
           <p className="text-[13px] leading-relaxed text-sales-text-primary">

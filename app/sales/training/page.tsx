@@ -20,7 +20,7 @@ export default async function SalesTrainingPage() {
 
   return (
     <Layout
-      breadcrumb="Sales / TRAINING"
+      breadcrumb="Sales / Training"
       pageTitle="Training"
       hideShellHeader
       hideShellSidebar

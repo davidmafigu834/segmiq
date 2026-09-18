@@ -4539,7 +4539,7 @@ html[data-crm]:not([data-crm-theme="light"]) .sales-dashboard-premium .sales-mob
   color: var(--sales-text-primary);
 }
 .sales-dashboard-premium .sales-nav-item-active {
-  background: var(--sales-sidebar-active-gradient);
+  background: var(--sales-sidebar-active);
   color: var(--sales-sidebar-text-active);
   font-weight: 600;
 }
@@ -4916,9 +4916,9 @@ html:has(.sales-ds-showcase) body {
 .sales-dashboard-premium .calendar-premium .cal-card,
 .calendar-premium .cal-card {
   background-color: var(--sales-surface) !important;
-  border: 1px solid var(--sales-border);
-  border-radius: 12px;
-  box-shadow: var(--sales-shadow-card);
+  border: 1px solid var(--sales-border-subtle, var(--sales-border));
+  border-radius: 10px;
+  box-shadow: none;
   color: var(--sales-text-primary);
 }
 

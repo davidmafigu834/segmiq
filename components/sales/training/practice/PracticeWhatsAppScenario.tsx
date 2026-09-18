@@ -25,7 +25,7 @@ export function PracticeWhatsAppScenario() {
             className={
               m.from === "customer"
                 ? "max-w-[85%] rounded-[12px] bg-sales-surface-subtle px-3 py-2 text-[13px] text-sales-text-primary"
-                : "ml-auto max-w-[85%] rounded-[12px] bg-[rgba(212,255,79,0.25)] px-3 py-2 text-[13px] text-sales-text-primary"
+                : "ml-auto max-w-[85%] rounded-[12px] bg-sales-brand-soft px-3 py-2 text-[13px] text-sales-text-primary"
             }
           >
             {m.text}
@@ -33,7 +33,7 @@ export function PracticeWhatsAppScenario() {
         ))}
       </div>
       <div className="border-t border-sales-border p-3" data-course-target="practice-whatsapp-quick-reply">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+        <p className="mb-2 text-[11px] font-semibold text-sales-text-muted">
           Quick replies
         </p>
         <div className="flex flex-col gap-2">

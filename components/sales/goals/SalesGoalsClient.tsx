@@ -47,7 +47,7 @@ import { cn } from "@/lib/ui/cn";
 function SourceIcon({ sourceKey }: { sourceKey: string }) {
   if (sourceKey === "whatsapp") return <SiWhatsapp size={14} color="#25D366" aria-hidden />;
   if (sourceKey === "facebook") return <SiFacebook size={14} color="#2684FF" aria-hidden />;
-  if (sourceKey === "referral") return <Users size={14} strokeWidth={1.8} className="text-[#8B5CF6]" />;
+  if (sourceKey === "referral") return <Users size={14} strokeWidth={1.8} className="text-sales-text-secondary" />;
   if (sourceKey === "website") return <Globe size={14} strokeWidth={1.8} className="text-[#F59E0B]" />;
   return <MoreHorizontal size={14} strokeWidth={1.8} className="text-sales-text-muted" />;
 }
@@ -228,7 +228,7 @@ export function SalesGoalsClient() {
                       <dt className="text-[12px] text-sales-text-muted">monthly target</dt>
                     </div>
                     <div>
-                      <dd className="text-[16px] font-semibold tabular-nums text-[#8B5CF6]">
+                      <dd className="text-[16px] font-semibold tabular-nums text-sales-text-secondary">
                         {data.lifecycle === "completed_shortfall"
                           ? formatDealCurrency(data.progress.shortfall, { currency })
                           : data.progress.aboveTarget > 0
@@ -365,7 +365,7 @@ function NoGoalState({
     <div className="space-y-4">
       <Card>
         <CardContent className="flex flex-col items-center px-6 py-12 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[rgba(212,255,79,0.22)] text-sales-text-primary">
+          <span className="flex h-12 w-12 items-center justify-center rounded-sales-md bg-sales-brand-soft text-sales-text-primary">
             <Target size={22} strokeWidth={1.8} aria-hidden />
           </span>
           <h3 className="mt-4 text-[18px] font-semibold text-sales-text-primary">
@@ -428,7 +428,7 @@ function UpcomingGoal({
     <Card>
       <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[12px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+          <p className="text-[12px] font-medium text-sales-text-muted">
             Upcoming
           </p>
           <h3 className="mt-1 text-[18px] font-semibold text-sales-text-primary">

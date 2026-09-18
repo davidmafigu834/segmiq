@@ -66,21 +66,21 @@ export function MiniCalendar({
                 onClick={() => onSelectDate(key)}
                 className={[
                   "flex min-w-[44px] flex-[1_0_44px] snap-center flex-col items-center rounded-[9px] px-1.5 py-1.5 transition-colors duration-150",
-                  selectedDay ? "bg-[rgba(212,255,79,0.35)]" : "hover:bg-sales-surface-hover",
+                  selectedDay ? "bg-sales-brand-soft" : "hover:bg-sales-surface-hover",
                 ].join(" ")}
                 aria-label={format(day, "EEEE d MMMM")}
                 aria-pressed={selectedDay}
               >
-                <span className="text-[10px] font-medium uppercase text-sales-text-muted">
+                <span className="text-[10px] font-medium text-sales-text-muted">
                   {format(day, "EEE").slice(0, 2)}
                 </span>
                 <span
                   className={[
-                    "mt-0.5 flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-semibold",
+                    "mt-0.5 flex h-7 w-7 items-center justify-center rounded-sales-md text-[13px] font-semibold",
                     selectedDay
                       ? "bg-sales-brand text-sales-brand-text"
                       : today
-                        ? "ring-1 ring-[rgba(160,210,30,0.55)] text-sales-text-primary"
+                        ? "ring-1 ring-sales-brand/50 text-sales-text-primary"
                         : "text-sales-text-primary",
                   ].join(" ")}
                 >
@@ -109,7 +109,7 @@ export function MiniCalendar({
         {WEEKDAYS.map((d) => (
           <div
             key={d}
-            className="py-0.5 text-center text-[10px] font-medium uppercase tracking-wide text-sales-text-muted"
+            className="py-0.5 text-center text-[10px] font-medium text-sales-text-muted"
           >
             {d}
           </div>
@@ -131,11 +131,11 @@ export function MiniCalendar({
                 if (!inMonth) onMonthChange(startOfMonth(day));
               }}
               className={[
-                "relative flex h-8 flex-col items-center justify-center rounded-full text-[12px] transition-colors duration-150",
+                "relative flex h-8 flex-col items-center justify-center rounded-sales-md text-[12px] transition-colors duration-150",
                 selected
                   ? "bg-sales-brand font-semibold text-sales-brand-text"
                   : today
-                    ? "font-semibold text-sales-text-primary ring-1 ring-[rgba(160,210,30,0.55)]"
+                    ? "font-semibold text-sales-text-primary ring-1 ring-sales-brand/50"
                     : inMonth
                       ? "font-medium text-sales-text-primary hover:bg-[var(--sales-neutral-100)]"
                       : "text-sales-text-muted hover:bg-sales-surface-hover",

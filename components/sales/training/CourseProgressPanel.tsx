@@ -33,7 +33,7 @@ export function CourseProgressPanel() {
               key={lesson.id}
               className={cn(
                 "rounded-[8px] px-2 py-1.5 text-[12px]",
-                current && "bg-[rgba(212,255,79,0.18)] text-sales-text-primary",
+                current && "bg-sales-brand-soft text-sales-text-primary",
                 !current && done && "text-sales-text-secondary",
                 !current && !done && "text-sales-text-muted"
               )}

@@ -875,7 +875,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <Link
                 href={`/sales/leads?lead=${payload.customer.leadId}`}
-                className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full bg-sales-neutral-100 px-2.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+                className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-sales-md bg-sales-neutral-100 px-2.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
               >
                 <span className="truncate">{payload.customer.name}</span>
                 {payload.customer.hasWhatsApp ? (
@@ -885,7 +885,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
               {payload.deal ? (
                 <Link
                   href={`/sales/deals/${payload.deal.id}`}
-                  className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full bg-sales-neutral-100 px-2.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
+                  className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-sales-md bg-sales-neutral-100 px-2.5 text-[12px] font-medium text-sales-text-primary hover:bg-sales-surface-hover"
                 >
                   <Briefcase className="h-3.5 w-3.5 shrink-0 text-sales-text-muted" />
                   <span className="truncate">{payload.deal.title}</span>
@@ -895,7 +895,7 @@ export function QuotationWorkspace({ quotationId, initial }: Props) {
                   type="button"
                   disabled={readOnly}
                   onClick={() => setDealPickerOpen(true)}
-                  className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-sales-border-strong bg-sales-surface px-2.5 text-[12px] font-semibold text-sales-text-secondary hover:border-sales-brand hover:text-sales-text-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-7 items-center gap-1.5 rounded-sales-md border border-dashed border-sales-border-strong bg-sales-surface px-2.5 text-[12px] font-semibold text-sales-text-secondary hover:border-sales-brand hover:text-sales-text-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Link a Deal
@@ -1358,8 +1358,8 @@ function MoreItem({
 
 function RailCard({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <div className="rounded-sales-md border border-sales-border bg-sales-surface">
-      <div className="flex items-center justify-between border-b border-sales-border px-3.5 py-2.5">
+    <div className="rounded-sales-md border border-sales-border-subtle bg-sales-surface shadow-none">
+      <div className="flex items-center justify-between border-b border-sales-border-subtle px-3.5 py-2.5">
         <p className="text-[13px] font-semibold text-sales-text-primary">{title}</p>
         {action}
       </div>
@@ -1433,7 +1433,7 @@ function CommercialRail({
         </div>
       </RailCard>
 
-      <RailCard title="Commercial Overview">
+      <RailCard title="Commercial overview">
         <div className="space-y-2.5 text-[12.5px]">
           <div className="flex items-center justify-between gap-2">
             <span className="text-sales-text-secondary">Version</span>
@@ -1518,7 +1518,7 @@ function CommercialRail({
       ) : null}
 
       {payload.quotation.sent_at ? (
-        <RailCard title="Customer Engagement">
+        <RailCard title="Customer engagement">
           <div className="space-y-1.5 text-[12.5px]">
             <Row label="Sent" value={formatDisplayDate(payload.quotation.sent_at)} />
             <Row
@@ -1551,7 +1551,7 @@ function CommercialRail({
         </RailCard>
       ) : null}
 
-      <RailCard title="Linked Records">
+      <RailCard title="Linked records">
         <div className="space-y-2 text-[12.5px]">
           <LinkRow label="Customer" value={payload.customer.name} href={`/sales/leads?lead=${payload.customer.leadId}`} />
           {payload.deal ? (
@@ -1562,7 +1562,7 @@ function CommercialRail({
               <button
                 type="button"
                 onClick={onLinkDeal}
-                className="inline-flex h-7 items-center gap-1 rounded-full border border-dashed border-sales-border-strong px-2.5 text-[12px] font-semibold text-sales-text-secondary hover:border-sales-brand hover:text-sales-text-primary"
+                className="inline-flex h-7 items-center gap-1 rounded-sales-md border border-dashed border-sales-border-strong px-2.5 text-[12px] font-semibold text-sales-text-secondary hover:border-sales-brand hover:text-sales-text-primary"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Link a Deal
@@ -1586,7 +1586,7 @@ function CommercialRail({
         </div>
       </RailCard>
 
-      <RailCard title="Next Best Action">
+      <RailCard title="Next best action">
         <p className="text-[14px] font-semibold text-sales-text-primary">{nba.title}</p>
         {nba.detail ? (
           <p className="mt-1 text-[12px] text-sales-text-secondary">{nba.detail}</p>
@@ -1998,7 +1998,7 @@ function OverviewTab({
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] uppercase tracking-wide text-sales-text-muted">{label}</p>
+      <p className="text-[11px] font-medium text-sales-text-muted">{label}</p>
       <p className="mt-0.5 text-[13.5px] font-medium text-sales-text-primary">{value}</p>
     </div>
   );
@@ -2139,12 +2139,12 @@ function ItemsTab(props: {
                 <div className="hidden overflow-x-auto md:block">
                   <table className="w-full min-w-[720px] text-left text-[12.5px]">
                     <thead>
-                      <tr className="border-b border-sales-border text-[11px] uppercase tracking-wide text-sales-text-muted">
+                      <tr className="border-b border-sales-border text-[11px] text-sales-text-muted">
                         <th className="px-3 py-2 font-medium">Item</th>
                         <th className="px-3 py-2 font-medium">Description</th>
                         <th className="px-3 py-2 font-medium">Qty</th>
                         <th className="px-3 py-2 font-medium">Unit</th>
-                        <th className="px-3 py-2 font-medium">Unit Price</th>
+                        <th className="px-3 py-2 font-medium">Unit price</th>
                         <th className="px-3 py-2 font-medium">Discount</th>
                         <th className="px-3 py-2 font-medium">Tax</th>
                         <th className="px-3 py-2 font-medium">Total</th>
@@ -2297,7 +2297,7 @@ function ItemsTab(props: {
 function StripField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10.5px] font-medium uppercase tracking-wide text-sales-text-muted">{label}</p>
+      <p className="text-[10.5px] font-medium text-sales-text-muted">{label}</p>
       <p className="text-[13px] font-semibold text-sales-text-primary">{value}</p>
     </div>
   );
@@ -2348,7 +2348,7 @@ function LineRow({
             )}
             {item.sku ? <p className="text-[11px] text-sales-text-muted">{item.sku}</p> : null}
             {!item.catalog_item_id ? (
-              <p className="text-[10px] font-medium uppercase tracking-wide text-sales-text-muted">Custom</p>
+              <p className="text-[10px] font-medium text-sales-text-muted">Custom</p>
             ) : null}
           </div>
         </div>
@@ -2975,7 +2975,7 @@ function ProductPicker({
             key={k}
             type="button"
             className={cn(
-              "rounded-full px-2.5 py-1 text-[11px] font-medium capitalize",
+              "rounded-sales-md px-2.5 py-1 text-[11px] font-medium capitalize",
               kind === k ? "bg-sales-brand-soft text-sales-brand-text" : "text-sales-text-secondary"
             )}
             onClick={() => setKind(k)}
@@ -3243,7 +3243,7 @@ function ChannelChip({ active, onClick, label }: { active: boolean; onClick: () 
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-[12.5px] font-medium",
+        "rounded-sales-md border px-3 py-1.5 text-[12.5px] font-medium",
         active
           ? "border-sales-brand bg-[var(--sales-brand-soft-solid)] text-sales-brand-text"
           : "border-sales-border text-sales-text-secondary"

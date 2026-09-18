@@ -512,7 +512,7 @@ export function LeadDetailPanel({
 
               {isWhatsAppChat ? (
                 <div className="rounded-[12px] border border-[#D1FADF] bg-[#F6FEF9] p-4">
-                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--success-fg,#027A48)]">
+                  <p className="mb-1 text-[11px] font-medium text-[var(--success-fg,#027A48)]">
                     WhatsApp conversation
                   </p>
                   <p className="mb-3 text-[13px] leading-relaxed text-sales-text-secondary">
@@ -536,7 +536,7 @@ export function LeadDetailPanel({
               <HandoverBanner leadId={activeLead.id} />
 
               <div className="rounded-[12px] border border-sales-border bg-sales-surface p-3 text-[13px]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                <p className="text-[11px] font-medium text-sales-text-muted">
                   Lead lifecycle
                 </p>
                 <p className="mt-1 font-medium text-sales-text-primary">
@@ -546,7 +546,7 @@ export function LeadDetailPanel({
 
               {converted && (activeLead.active_deal_id || relatedDeal?.id) ? (
                 <div className="rounded-[12px] border border-[rgba(212,255,79,0.45)] bg-[rgba(212,255,79,0.1)] p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  <p className="text-[11px] font-medium text-sales-text-muted">
                     Related Deal
                   </p>
                   {relatedDeal ? (
@@ -631,7 +631,7 @@ export function LeadDetailPanel({
                 {activeLead.email ? (
                   <div className="min-w-0 break-all text-[13px] text-sales-text-secondary">{activeLead.email}</div>
                 ) : null}
-                <div className="text-[11px] uppercase tracking-wide text-sales-text-muted">
+                <div className="text-[11px] tracking-normal text-sales-text-muted">
                   Source · {isWhatsAppChat ? "WhatsApp" : isFacebook ? "Facebook Instant Form" : activeLead.source} ·{" "}
                   {format(new Date(activeLead.created_at), "MMM d, yyyy")}
                 </div>
@@ -640,7 +640,7 @@ export function LeadDetailPanel({
 
               {!isReadOnly && (canRecordWonCustomer || (!isClosed && !converted)) ? (
                 <div>
-                  <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  <p className="mb-3 text-[11px] font-medium text-sales-text-muted">
                     Qualification
                   </p>
                   {canRecordWonCustomer ? (
@@ -676,7 +676,7 @@ export function LeadDetailPanel({
 
               {!isReadOnly ? (
                 <div>
-                  <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+                  <p className="mb-2.5 text-[11px] font-medium text-sales-text-muted">
                     Quick actions
                   </p>
                   <div className="flex gap-2">
@@ -822,7 +822,7 @@ export function LeadDetailPanel({
 
             {role === "CLIENT_MANAGER" || (role === "SUPER_ADMIN" && isReadOnly) ? (
               <div className="space-y-3 border-t border-sales-border p-4 sm:p-5 max-md:pb-6">
-                <div className="font-mono text-[11px] uppercase text-sales-text-muted">Assignment</div>
+                <div className="font-mono text-[11px] text-sales-text-muted">Assignment</div>
                 <p className="text-[13px] text-sales-text-secondary">
                   {activeLead.assigned_to_id
                     ? "Move this lead to another salesperson on your team."
@@ -978,7 +978,7 @@ function AgencyLeadAdminSection({
 
   return (
     <div className="space-y-4 border-t border-sales-border p-4 sm:p-5 max-md:pb-6">
-      <div className="font-mono text-[11px] uppercase text-sales-text-muted">Agency</div>
+      <div className="font-mono text-[11px] text-sales-text-muted">Agency</div>
       {msg ? <p className="text-[13px] text-[var(--danger-fg,#B42318)]">{msg}</p> : null}
       <div>
         <label className="mb-1 block text-[12px] font-medium text-sales-text-secondary" htmlFor={`reassign-${lead.id}`}>
@@ -1069,7 +1069,7 @@ function CallHistory({ leadId, refreshKey }: { leadId: string; refreshKey: numbe
 
   return (
     <div>
-      <div className="font-mono text-[11px] uppercase text-sales-text-muted">Call history</div>
+      <div className="font-mono text-[11px] text-sales-text-muted">Call history</div>
       {error ? <p className="mt-2 text-[13px] text-sales-text-secondary">{error}</p> : null}
       {!error && logs === null ? <p className="mt-2 text-[13px] text-sales-text-muted">Loading…</p> : null}
       {logs && logs.length === 0 ? <p className="mt-2 text-[13px] text-sales-text-muted">No calls logged yet.</p> : null}
@@ -1115,7 +1115,7 @@ function CallHistoryOutcome({ log }: { log: CallLogApiRow }) {
           className={
             isLost
               ? "text-[13px] text-sales-text-primary"
-              : "font-mono text-[11px] font-normal uppercase tracking-wide text-sales-text-secondary"
+              : "font-mono text-[11px] font-normal tracking-normal text-sales-text-secondary"
           }
         >
           {isLost && log.reason ? `— ${log.reason}` : headline}

@@ -11,7 +11,7 @@ export function CourseHud({ collapsed }: { collapsed?: boolean }) {
     return (
       <div className="fixed bottom-20 right-4 z-[var(--sales-z-course-coach,92)] layout:bottom-6">
         <div
-          className="sales-modal-premium flex items-center gap-2 rounded-[12px] border border-sales-border bg-sales-surface px-3 py-2 shadow-sales-card"
+          className="sales-modal-premium flex items-center gap-2 rounded-[12px] border border-sales-border bg-sales-surface px-3 py-2 shadow-none"
           style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}
         >
           <span className="text-[12px] font-medium text-sales-text-primary">SegmiQ 2.0 Course</span>
@@ -28,7 +28,7 @@ export function CourseHud({ collapsed }: { collapsed?: boolean }) {
     <div
       className={cn(
         "sales-modal-premium fixed right-4 top-3 z-[var(--sales-z-course-coach,92)] hidden layout:flex",
-        "items-center gap-2 rounded-[12px] border border-sales-border bg-sales-surface px-3 py-1.5 shadow-sales-card"
+        "items-center gap-2 rounded-[12px] border border-sales-border bg-sales-surface px-3 py-1.5 shadow-none"
       )}
       style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}
     >

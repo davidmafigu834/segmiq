@@ -94,7 +94,7 @@ export function SelectedEventCard({
       <dl className="space-y-2">
         {event.customerName ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
+            <dt className="text-[11px] font-medium text-sales-text-muted">
               Customer
             </dt>
             <dd>
@@ -110,7 +110,7 @@ export function SelectedEventCard({
 
         {event.pipelineStage ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
+            <dt className="text-[11px] font-medium text-sales-text-muted">
               Pipeline
             </dt>
             <dd>
@@ -123,13 +123,13 @@ export function SelectedEventCard({
 
         {event.phone ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
+            <dt className="text-[11px] font-medium text-sales-text-muted">
               Phone
             </dt>
             <dd>
               <a
                 href={`tel:${event.phone}`}
-                className="font-mono text-[13px] text-[#2684FF] underline-offset-2 hover:underline"
+                className="font-mono text-[13px] text-sales-text-primary underline-offset-2 hover:underline"
               >
                 {event.phone}
               </a>
@@ -139,7 +139,7 @@ export function SelectedEventCard({
 
         {event.location ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
+            <dt className="text-[11px] font-medium text-sales-text-muted">
               Location
             </dt>
             <dd className="text-[13px] text-sales-text-primary">{event.location}</dd>
@@ -147,7 +147,7 @@ export function SelectedEventCard({
         ) : null}
 
         <div>
-          <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
+          <dt className="text-[11px] font-medium text-sales-text-muted">
             Time
           </dt>
           <dd className="text-[13px] text-sales-text-primary">{formatEventRange(event)}</dd>
@@ -155,7 +155,7 @@ export function SelectedEventCard({
 
         {event.notes ? (
           <div>
-            <dt className="text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
+            <dt className="text-[11px] font-medium text-sales-text-muted">
               Notes
             </dt>
             <dd className="text-[13px] text-sales-text-primary">{event.notes}</dd>
@@ -165,7 +165,7 @@ export function SelectedEventCard({
 
       {(event.pipelineStage || event.quoteStatus) && !event.overdue ? (
         <div className="mt-3 rounded-[8px] border border-sales-border bg-sales-surface-subtle px-2.5 py-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sales-text-muted">
+          <p className="text-[11px] font-semibold text-sales-text-muted">
             Prepare for this event
           </p>
           <ul className="mt-1 space-y-0.5 text-[12px] text-sales-text-secondary">
@@ -179,7 +179,7 @@ export function SelectedEventCard({
           </ul>
           <Link
             href={`/sales/leads?lead=${event.leadId}`}
-            className="mt-1.5 inline-block text-[12px] font-semibold text-[#2684FF] underline-offset-2 hover:underline"
+            className="mt-1.5 inline-block text-[12px] font-semibold text-sales-text-primary underline-offset-2 hover:underline"
           >
             Open lead
           </Link>
@@ -189,7 +189,7 @@ export function SelectedEventCard({
       {event.quoteNumber ? (
         <Link
           href={`/sales/leads?lead=${event.leadId}&tab=quote`}
-          className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#2684FF] underline-offset-2 hover:underline"
+          className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-sales-text-primary underline-offset-2 hover:underline"
         >
           <FileText size={13} strokeWidth={1.8} aria-hidden />
           View quote

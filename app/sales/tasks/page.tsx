@@ -35,7 +35,7 @@ export default async function SalesTasksPage() {
 
   return (
     <Layout
-      breadcrumb="Sales / TASKS"
+      breadcrumb="Sales / Tasks"
       pageTitle="Tasks"
       hideShellHeader
       hideShellSidebar

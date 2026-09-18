@@ -5,7 +5,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   CircleCheck,
   CircleX,
-  Clock3,
   Copy,
   Download,
   ExternalLink,
@@ -455,7 +454,7 @@ export function SalesQuotesClient() {
             >
               Filters
               {drawerFilterCount > 0 ? (
-                <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
+                <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-sales-sm bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
                   {drawerFilterCount}
                 </span>
               ) : null}
@@ -470,7 +469,7 @@ export function SalesQuotesClient() {
                 >
                   Filters
                   {drawerFilterCount > 0 ? (
-                    <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
+                    <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-sales-sm bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
                       {drawerFilterCount}
                     </span>
                   ) : null}
@@ -614,7 +613,7 @@ export function SalesQuotesClient() {
       {loading && !data ? <QuotesSkeleton /> : null}
 
       {error && !data ? (
-        <Card>
+        <Card className="shadow-none">
           <CardContent className="py-10">
             <ErrorState
               title="Unable to load quotations"
@@ -627,7 +626,7 @@ export function SalesQuotesClient() {
       ) : null}
 
       {neverQuoted ? (
-        <Card>
+        <Card className="shadow-none">
           <CardContent className="py-12">
             <EmptyState
               icon={<FileText size={20} strokeWidth={1.8} />}
@@ -650,52 +649,48 @@ export function SalesQuotesClient() {
 
       {data && !neverQuoted ? (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-            <ReportKpiCard
-              label="Total quotations"
-              value={String(data.kpis.total.value)}
-              trend={data.kpis.total.trend}
-              icon={FileText}
-              iconTint="bg-[#F4F3FF] text-[#8B5CF6]"
-            />
-            <ReportKpiCard
-              label="Drafts"
-              value={String(data.kpis.drafts.value)}
-              supporting={
-                data.kpis.drafts.pctOfTotal != null
-                  ? `${data.kpis.drafts.pctOfTotal}% of total`
-                  : undefined
-              }
-              icon={FileText}
-              iconTint="bg-sales-neutral-100 text-sales-text-secondary"
-              tip="Draft quotations still being built."
-            />
-            <ReportKpiCard
-              label="Awaiting customer"
-              value={String(data.kpis.pending.value)}
-              supporting={
-                data.kpis.pending.pctOfTotal != null
-                  ? `${data.kpis.pending.pctOfTotal}% of total`
-                  : undefined
-              }
-              icon={Clock3}
-              iconTint="bg-[#FFFAEB] text-[#F59E0B]"
-              tip="Sent or viewed quotes awaiting a customer response."
-            />
-            <ReportKpiCard
-              label="Expiring soon"
-              value={String(data.kpis.expiringSoon.value)}
-              icon={Clock3}
-              iconTint="bg-sales-warning-soft text-sales-warning-fg"
-              tip="Awaiting-customer quotations within 3 days of valid-until."
-            />
-            <ReportKpiCard
-              label="Accepted"
-              value={String(data.kpis.accepted.value)}
-              trend={data.kpis.accepted.trend}
-              icon={CircleCheck}
-              iconTint="bg-sales-success-soft text-sales-success-fg"
-            />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <ReportKpiCard
+                label="Total quotations"
+                value={String(data.kpis.total.value)}
+                trend={data.kpis.total.trend}
+              />
+              <ReportKpiCard
+                label="Awaiting customer"
+                value={String(data.kpis.pending.value)}
+                supporting={
+                  data.kpis.pending.pctOfTotal != null
+                    ? `${data.kpis.pending.pctOfTotal}% of total`
+                    : undefined
+                }
+                tip="Sent or viewed quotes awaiting a customer response."
+              />
+              <ReportKpiCard
+                label="Accepted"
+                value={String(data.kpis.accepted.value)}
+                trend={data.kpis.accepted.trend}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-x-6 border-t border-sales-border-subtle pt-3">
+              <ReportKpiCard
+                variant="secondary"
+                label="Drafts"
+                value={String(data.kpis.drafts.value)}
+                supporting={
+                  data.kpis.drafts.pctOfTotal != null
+                    ? `${data.kpis.drafts.pctOfTotal}% of total`
+                    : undefined
+                }
+                tip="Draft quotations still being built."
+              />
+              <ReportKpiCard
+                variant="secondary"
+                label="Expiring soon"
+                value={String(data.kpis.expiringSoon.value)}
+                tip="Awaiting-customer quotations within 3 days of valid-until."
+              />
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -855,27 +850,25 @@ export function SalesQuotesClient() {
                   />
                 </div>
                 {data.meta.hasTemplates ? (
-                  <Card className="h-full border-[rgba(160,205,40,0.35)] bg-[rgba(212,255,79,0.12)]">
-                    <CardContent className="flex h-full flex-col justify-between p-5 sm:p-6">
-                      <div>
-                        <p className="text-[15px] font-semibold text-sales-text-primary">
-                          Need a quote faster?
-                        </p>
-                        <p className="mt-2 max-w-md text-[13px] leading-5 text-sales-text-secondary">
-                          Use saved quote templates to create consistent quotations faster.
-                        </p>
-                      </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="mt-5 h-10 w-fit rounded-[10px] bg-sales-surface"
-                        leftIcon={<FilePlus2 size={14} strokeWidth={1.8} />}
-                        onClick={() => setCreateOpen(true)}
-                      >
-                        Create from template
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <div className="flex h-full flex-col justify-between border-t border-sales-border-subtle pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+                    <div>
+                      <p className="text-[15px] font-semibold text-sales-text-primary">
+                        Need a quote faster?
+                      </p>
+                      <p className="mt-2 max-w-md text-[13px] leading-5 text-sales-text-secondary">
+                        Use saved templates to create consistent quotations faster.
+                      </p>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-5 h-10 w-fit rounded-[10px]"
+                      leftIcon={<FilePlus2 size={14} strokeWidth={1.8} />}
+                      onClick={() => setCreateOpen(true)}
+                    >
+                      Create from template
+                    </Button>
+                  </div>
                 ) : null}
               </div>
             </section>
@@ -1125,7 +1118,7 @@ function MobileQuoteCard({ quote, onOpen }: { quote: QuoteListRow; onOpen: () =>
     <button
       type="button"
       onClick={onOpen}
-      className="w-full rounded-[12px] border border-sales-border bg-sales-surface p-3.5 text-left shadow-sales-card"
+      className="w-full rounded-sales-md border border-sales-border-subtle bg-sales-surface p-3.5 text-left shadow-none"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -1180,21 +1173,27 @@ function MobileQuoteCard({ quote, onOpen }: { quote: QuoteListRow; onOpen: () =>
 function QuotesSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
-        ))}
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[104px] rounded-sales-md" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-x-6 border-t border-sales-border-subtle pt-3">
+          <Skeleton className="h-12 rounded-[6px]" />
+          <Skeleton className="h-12 rounded-[6px]" />
+        </div>
       </div>
       <div className="space-y-6">
-        <Skeleton className="h-[420px] rounded-sales-xl" />
+        <Skeleton className="h-[420px] rounded-sales-md" />
         <div className="space-y-3">
           <div className="space-y-2">
             <Skeleton className="h-5 w-36 rounded-[6px]" />
             <Skeleton className="h-4 w-80 max-w-full rounded-[6px]" />
           </div>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-            <Skeleton className="h-[260px] rounded-sales-xl" />
-            <Skeleton className="h-[260px] rounded-sales-xl" />
+            <Skeleton className="h-[260px] rounded-sales-md" />
+            <Skeleton className="h-[260px] rounded-sales-md" />
           </div>
         </div>
       </div>

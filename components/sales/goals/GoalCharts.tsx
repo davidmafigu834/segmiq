@@ -92,7 +92,7 @@ export function GoalProgressChart({
 const SOURCE_COLORS: Record<string, string> = {
   whatsapp: "#25D366",
   facebook: "#2684FF",
-  referral: "#8B5CF6",
+  referral: "#52525B",
   website: "#F59E0B",
   manual: "#14B8A6",
   other: "var(--sales-text-muted)",

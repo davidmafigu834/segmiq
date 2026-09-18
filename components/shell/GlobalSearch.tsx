@@ -216,7 +216,7 @@ export function GlobalSearch({
 
               {grouped.map((group) => (
                 <div key={group.type}>
-                  <div className="bg-surface-card-alt px-5 py-2 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">
+                  <div className="bg-surface-card-alt px-5 py-2 text-[11px] font-medium text-ink-tertiary">
                     {group.label}
                   </div>
                   {group.items.map((item) => {

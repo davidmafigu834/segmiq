@@ -18,7 +18,7 @@ export function CourseCompletionModal() {
         style={{ backgroundColor: "var(--sales-surface, #FFFFFF)" }}
       >
         <div
-          className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(212,255,79,0.35)] text-[18px] font-bold text-sales-brand-text"
+          className="mb-4 flex h-10 w-10 items-center justify-center rounded-sales-md bg-sales-brand-soft text-[18px] font-bold text-sales-brand-text"
           aria-hidden
         >
           ✓

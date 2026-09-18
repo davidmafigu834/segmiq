@@ -286,17 +286,17 @@ export function CreateQuoteDialog({
                         <div className="flex items-center gap-2">
                           <p className="text-[13px] font-semibold">{t.name}</p>
                           {t.is_builtin ? (
-                            <span className="rounded-full bg-sales-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted">
+                            <span className="rounded-sales-sm bg-sales-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-sales-text-muted">
                               Built-in
                             </span>
                           ) : null}
                           {recommended ? (
-                            <span className="rounded-full px-1.5 py-0.5 text-[10px] font-medium" style={{ background: "#A3C639" }}>
+                            <span className="rounded-sales-sm bg-sales-brand-soft px-1.5 py-0.5 text-[10px] font-medium text-sales-brand-text">
                               Suggested
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-sales-text-muted">
+                        <p className="mt-0.5 text-[11px] font-medium text-sales-text-muted">
                           {t.category || (solar ? "Solar" : "Template")}
                           {solar ? " · Visual" : ""}
                         </p>

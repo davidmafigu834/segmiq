@@ -129,7 +129,7 @@ export function GoalsIntelligenceSection() {
           <CardContent className="space-y-3 p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <Target size={16} className="text-sales-brand-fg" aria-hidden />
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+              <p className="text-[11px] font-semibold text-sales-text-muted">
                 Your current focus
               </p>
             </div>
@@ -153,7 +153,7 @@ export function GoalsIntelligenceSection() {
 
         <Card>
           <CardContent className="space-y-3 p-4 sm:p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            <p className="text-[11px] font-semibold text-sales-text-muted">
               Goal coverage
             </p>
             {plan.goal.remainingValue != null ? (
@@ -197,7 +197,7 @@ export function GoalsIntelligenceSection() {
       {plan.whatNeedsAttention.length > 0 ? (
         <Card>
           <CardContent className="p-4 sm:p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            <p className="text-[11px] font-semibold text-sales-text-muted">
               What needs attention
             </p>
             <ul className="mt-3 divide-y divide-sales-border-subtle">
@@ -220,7 +220,7 @@ export function GoalsIntelligenceSection() {
       <Card>
         <CardContent className="space-y-4 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            <p className="text-[11px] font-semibold text-sales-text-muted">
               Today&apos;s commitments
             </p>
             <Button

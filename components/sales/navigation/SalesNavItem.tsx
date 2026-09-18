@@ -73,22 +73,19 @@ export function SalesNavItem({
           : "font-medium text-[var(--sales-sidebar-text)] hover:bg-[var(--sales-sidebar-hover)] hover:text-[var(--sales-sidebar-text-hover)]"
       )}
     >
-      {active && !collapsed ? (
-        <span className="sales-nav-rail" aria-hidden />
-      ) : null}
       <NavIcon icon={item.icon} active={active} collapsed={collapsed} />
       {!collapsed ? (
         <>
           <span className="min-w-0 flex-1 truncate text-[13px] leading-snug">{label}</span>
           {showBadge ? (
-            <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-[6px] bg-[var(--sales-sidebar-badge-bg)] px-1.5 text-[10px] font-semibold tabular-nums text-[var(--sales-sidebar-badge-text)]">
+            <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-sales-sm bg-[var(--sales-sidebar-badge-bg)] px-1.5 text-[10px] font-semibold tabular-nums text-[var(--sales-sidebar-badge-text)]">
               {badge! > 99 ? "99+" : badge}
             </span>
           ) : null}
         </>
       ) : showBadge ? (
         <span
-          className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--sales-sidebar-badge-bg)] px-1 text-[9px] font-semibold tabular-nums text-[var(--sales-sidebar-badge-text)]"
+          className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-sales-sm bg-[var(--sales-sidebar-badge-bg)] px-1 text-[9px] font-semibold tabular-nums text-[var(--sales-sidebar-badge-text)]"
           aria-hidden
         >
           {badge! > 9 ? "9+" : badge}
@@ -120,7 +117,7 @@ export function SalesNavSection({
   return (
     <div className={cn(collapsed ? "px-2" : "px-3")}>
       {!collapsed ? (
-        <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--sales-sidebar-muted)]">
+        <p className="mb-1.5 px-3 text-[11px] font-semibold text-[var(--sales-sidebar-muted)]">
           {label}
         </p>
       ) : (

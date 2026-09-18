@@ -7,14 +7,14 @@ const KIND_META: Record<
   CalendarEventKind,
   { label: string; color: string; tint: string }
 > = {
-  FOLLOW_UP: { label: "Follow-up", color: "#22C55E", tint: "rgba(34,197,94,0.08)" },
-  CALL: { label: "Call", color: "#14B8A6", tint: "rgba(20,184,166,0.08)" },
-  QUOTE_REVIEW: { label: "Quote review", color: "#F59E0B", tint: "rgba(245,158,11,0.08)" },
-  SITE_VISIT: { label: "Site visit", color: "#2684FF", tint: "rgba(38,132,255,0.08)" },
+  FOLLOW_UP: { label: "Follow-up", color: "#16A34A", tint: "rgba(22,163,74,0.08)" },
+  CALL: { label: "Call", color: "#0F766E", tint: "rgba(15,118,110,0.08)" },
+  QUOTE_REVIEW: { label: "Quote review", color: "#B54708", tint: "rgba(181,71,8,0.08)" },
+  SITE_VISIT: { label: "Site visit", color: "#2563EB", tint: "rgba(37,99,235,0.08)" },
   INSTALLATION_MEETING: {
     label: "Installation meeting",
-    color: "#8B5CF6",
-    tint: "rgba(139,92,246,0.08)",
+    color: "#52525B",
+    tint: "rgba(82,82,91,0.10)",
   },
   PERSONAL: { label: "Personal", color: "#98A2B3", tint: "rgba(152,162,179,0.10)" },
 };

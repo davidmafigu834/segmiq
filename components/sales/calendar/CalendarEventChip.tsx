@@ -25,17 +25,12 @@ export function CalendarEventChip({
         onClick();
       }}
       className={[
-        "cal-event-chip flex w-full items-start gap-1 rounded-[6px] border bg-sales-surface px-1 py-0.5 text-left transition-[border-color,box-shadow] duration-150",
+        "cal-event-chip flex w-full items-start gap-1 rounded-[6px] border bg-sales-surface px-1 py-0.5 text-left transition-[border-color,background-color] duration-150",
         selected
-          ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.1)]"
-          : "border-sales-border hover:border-sales-border-strong hover:shadow-[0_1px_2px_rgba(16,24,40,0.05)]",
-        event.overdue ? "border-l-2 !border-l-[#F97066]" : "",
+          ? "border-sales-brand/40 bg-sales-brand-soft"
+          : "border-sales-border-subtle hover:border-sales-border-strong",
+        event.overdue ? "border-sales-danger/40" : "",
       ].join(" ")}
-      style={
-        event.overdue
-          ? undefined
-          : { borderLeftWidth: 2, borderLeftColor: getEventTypeColor(event.kind) }
-      }
       aria-label={`Open ${customer ?? label} ${label}`}
     >
       <span

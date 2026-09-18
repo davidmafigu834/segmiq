@@ -55,7 +55,7 @@ function NavRows({
             className={cn(
               "flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-[14px] font-medium transition-colors",
               active
-                ? "bg-[rgba(212,255,79,0.18)] text-sales-text-primary"
+                ? "bg-sales-brand-soft text-sales-text-primary"
                 : "text-sales-text-primary hover:bg-sales-surface-hover"
             )}
             aria-current={active ? "page" : undefined}
@@ -100,7 +100,7 @@ export function SalesMoreSheet({
       <div className="space-y-5 pb-[env(safe-area-inset-bottom,0px)]">
         <button
           type="button"
-          className="flex min-h-12 w-full items-center gap-3 rounded-[12px] border border-sales-border bg-[rgba(212,255,79,0.14)] px-4 text-left text-[14px] font-semibold text-sales-text-primary"
+          className="flex min-h-12 w-full items-center gap-3 rounded-sales-md border border-sales-border-subtle bg-sales-brand-soft px-4 text-left text-[14px] font-semibold text-sales-text-primary"
           onClick={() => {
             close();
             onQuickActions();
@@ -111,14 +111,14 @@ export function SalesMoreSheet({
         </button>
 
         <section>
-          <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+          <p className="mb-1.5 px-3 text-[11px] font-semibold text-sales-text-muted">
             Sales
           </p>
           <NavRows items={salesMore} pathname={pathname} onNavigate={close} />
         </section>
 
         <section>
-          <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+          <p className="mb-1.5 px-3 text-[11px] font-semibold text-sales-text-muted">
             Tools
           </p>
           <NavRows items={toolsMore} pathname={pathname} onNavigate={close} />
@@ -134,7 +134,7 @@ export function SalesMoreSheet({
         </section>
 
         <section>
-          <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+          <p className="mb-1.5 px-3 text-[11px] font-semibold text-sales-text-muted">
             Account
           </p>
           <Link

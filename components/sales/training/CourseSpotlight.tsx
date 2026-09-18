@@ -66,7 +66,7 @@ export function CourseSpotlight({
       />
       {/* ring around target — pointer-events none */}
       <div
-        className="pointer-events-none fixed rounded-[10px] ring-2 ring-[#D4FF4F] shadow-[0_0_0_3px_rgba(212,255,79,0.25)]"
+        className="pointer-events-none fixed rounded-[10px] ring-2 ring-sales-brand shadow-[0_0_0_3px_var(--sales-brand-soft)]"
         style={{
           top,
           left,

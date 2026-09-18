@@ -24,10 +24,10 @@ export const PIPELINE_STAGE_LABEL: Record<PipelineActiveStage, string> = {
 };
 
 export const PIPELINE_STAGE_ACCENT: Record<PipelineActiveStage, string> = {
-  NEW: "#2684FF",
-  CONTACTED: "#22C55E",
-  NEGOTIATING: "#F59E0B",
-  PROPOSAL_SENT: "#8B5CF6",
+  NEW: "#4D8DFF",
+  CONTACTED: "#3DDC97",
+  NEGOTIATING: "#F5B82E",
+  PROPOSAL_SENT: "#7182A7",
 };
 
 export function formatPipelineStage(status: string): string {

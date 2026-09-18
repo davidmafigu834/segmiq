@@ -11,10 +11,6 @@ import {
   MoreHorizontal,
   Phone,
   Plus,
-  Target,
-  Trophy,
-  TrendingUp,
-  UserRoundPlus,
   UsersRound,
 } from "lucide-react";
 import { SiFacebook, SiWhatsapp } from "react-icons/si";
@@ -88,8 +84,8 @@ const PAGE_SIZES = [20, 50, 100] as const;
 function SourceIcon({ sourceKey }: { sourceKey: string }) {
   if (sourceKey === "whatsapp") return <SiWhatsapp size={14} color="#25D366" aria-hidden />;
   if (sourceKey === "facebook") return <SiFacebook size={14} color="#2684FF" aria-hidden />;
-  if (sourceKey === "website") return <Globe size={14} strokeWidth={1.8} className="text-[#8B5CF6]" />;
-  if (sourceKey === "referral") return <UsersRound size={14} strokeWidth={1.8} className="text-[#F59E0B]" />;
+  if (sourceKey === "website") return <Globe size={14} strokeWidth={1.8} className="text-sales-text-secondary" />;
+  if (sourceKey === "referral") return <UsersRound size={14} strokeWidth={1.8} className="text-sales-text-secondary" />;
   return <Globe size={14} strokeWidth={1.8} className="text-sales-text-muted" />;
 }
 
@@ -650,49 +646,45 @@ export function SalesLeadsClient({
 
       {data && !neverLeads ? (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-            <ReportKpiCard
-              label="Total leads"
-              value={String(data.kpis.total.value)}
-              trend={data.kpis.total.trend}
-              icon={UsersRound}
-              iconTint="bg-[#F4F3FF] text-[#8B5CF6]"
-            />
-            <ReportKpiCard
-              label={data.kpis.newInPeriod.label}
-              value={String(data.kpis.newInPeriod.value)}
-              icon={UserRoundPlus}
-              iconTint="bg-[#FFFAEB] text-[#F59E0B]"
-            />
-            <ReportKpiCard
-              label="Hot leads"
-              value={String(data.kpis.hot.value)}
-              icon={Target}
-              iconTint="bg-sales-danger-soft text-sales-danger"
-              tip="Score ≥ 70 (SegmiQ Hot threshold)."
-            />
-            <ReportKpiCard
-              label="Won deals"
-              value={String(data.kpis.won.value)}
-              trend={data.kpis.won.trend}
-              icon={Trophy}
-              iconTint="bg-sales-success-soft text-sales-success-fg"
-            />
-            <ReportKpiCard
-              label="Conversion rate"
-              value={
-                data.kpis.conversionRate.value == null
-                  ? "—"
-                  : `${data.kpis.conversionRate.value}%`
-              }
-              trend={data.kpis.conversionRate.trend}
-              supporting={
-                data.kpis.conversionRate.value == null ? "No closed deals yet" : undefined
-              }
-              icon={TrendingUp}
-              iconTint="bg-sales-success-soft text-sales-success-fg"
-              tip={data.kpis.conversionRate.formula}
-            />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <ReportKpiCard
+                label="Total leads"
+                value={String(data.kpis.total.value)}
+                trend={data.kpis.total.trend}
+              />
+              <ReportKpiCard
+                label="Hot leads"
+                value={String(data.kpis.hot.value)}
+                tip="Score ≥ 70 (SegmiQ Hot threshold)."
+              />
+              <ReportKpiCard
+                label={data.kpis.newInPeriod.label}
+                value={String(data.kpis.newInPeriod.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-x-6 border-t border-sales-border-subtle pt-3">
+              <ReportKpiCard
+                variant="secondary"
+                label="Won deals"
+                value={String(data.kpis.won.value)}
+                trend={data.kpis.won.trend}
+              />
+              <ReportKpiCard
+                variant="secondary"
+                label="Conversion rate"
+                value={
+                  data.kpis.conversionRate.value == null
+                    ? "—"
+                    : `${data.kpis.conversionRate.value}%`
+                }
+                trend={data.kpis.conversionRate.trend}
+                supporting={
+                  data.kpis.conversionRate.value == null ? "No closed deals yet" : undefined
+                }
+                tip={data.kpis.conversionRate.formula}
+              />
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -842,22 +834,22 @@ export function SalesLeadsClient({
                   Source mix, pipeline distribution and high-intent opportunities.
                 </p>
               </div>
-              <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <div className="min-w-0 [&>*]:h-full">
+              <div className="grid items-start gap-4 layout:grid-cols-12">
+                <div className="min-w-0 layout:col-span-5">
                   <LeadsBySourceCard
                     slices={data.bySource.slices}
                     total={data.bySource.total}
                     loading={loading}
                   />
                 </div>
-                <div className="min-w-0 [&>*]:h-full">
+                <div className="min-w-0 layout:col-span-4">
                   <LeadStageOverviewCard
                     slices={data.byStage.slices}
                     total={data.byStage.total}
                     loading={loading}
                   />
                 </div>
-                <div className="min-w-0 md:col-span-2 xl:col-span-1 [&>*]:h-full">
+                <div className="min-w-0 layout:col-span-3">
                   <HotLeadsCard
                     leads={data.hotLeads}
                     loading={loading}
@@ -1095,7 +1087,7 @@ function MobileLeadCard({
   const phone = formatLeadPhone(row.phone);
   const last = formatLastContact(row.lastContactAt);
   return (
-    <div className="rounded-[12px] border border-sales-border bg-sales-surface p-3.5 shadow-sales-card">
+    <div className="rounded-[10px] border border-sales-border bg-sales-surface p-3.5">
       <button type="button" onClick={onOpen} className="w-full text-left">
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -1162,18 +1154,16 @@ function MobileLeadCard({
 function LeadsSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-[96px] rounded-[10px]" />
         ))}
       </div>
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_310px]">
-        <Skeleton className="h-[420px] rounded-sales-xl" />
-        <div className="space-y-4">
-          <Skeleton className="h-[220px] rounded-sales-xl" />
-          <Skeleton className="h-[200px] rounded-sales-xl" />
-          <Skeleton className="h-[220px] rounded-sales-xl" />
-        </div>
+      <Skeleton className="h-14 rounded-[8px]" />
+      <div className="grid grid-cols-1 gap-4 layout:grid-cols-12">
+        <Skeleton className="h-[280px] rounded-[10px] layout:col-span-5" />
+        <Skeleton className="h-[280px] rounded-[10px] layout:col-span-4" />
+        <Skeleton className="h-[280px] rounded-[10px] layout:col-span-3" />
       </div>
     </div>
   );

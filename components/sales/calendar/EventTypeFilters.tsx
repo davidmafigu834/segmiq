@@ -50,7 +50,7 @@ export function EventTypeFilters({
                 </span>
                 <input
                   type="checkbox"
-                  className="h-3.5 w-3.5 rounded border-sales-border-strong accent-[#22C55E]"
+                  className="h-3.5 w-3.5 rounded border-sales-border-strong accent-sales-brand"
                   checked={checked}
                   disabled={!supported}
                   onChange={() => onToggle(kind)}

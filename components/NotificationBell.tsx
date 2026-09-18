@@ -156,7 +156,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
         <Bell className="h-4 w-4" strokeWidth={1.75} />
         {unreadCount > 0 ? (
           <span
-            className="absolute right-1 top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-sales-brand px-1 text-[10px] font-semibold leading-none text-sales-brand-text ring-2 ring-sales-bg"
+            className="absolute right-1 top-1 flex h-[16px] min-w-[16px] items-center justify-center rounded-sales-sm bg-sales-brand px-1 text-[10px] font-semibold leading-none text-sales-brand-text ring-2 ring-sales-bg"
             aria-hidden
           >
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -228,7 +228,7 @@ export function NotificationBell({ initialUnread = 0, role }: { initialUnread?: 
                     <div className="flex items-start gap-3">
                       {!n.read ? <div className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> : null}
                       <div className={n.read ? "pl-[12px]" : ""}>
-                        <div className="mb-1 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-tertiary">
+                        <div className="mb-1 text-[11px] font-medium text-ink-tertiary">
                           {labelForType(n.type)}
                         </div>
                         <p className="text-sm leading-snug text-ink-primary">{n.message}</p>

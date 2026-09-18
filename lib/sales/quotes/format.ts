@@ -18,8 +18,7 @@ export type QuoteStatusTone =
   | "success"
   | "warning"
   | "danger"
-  | "info"
-  | "purple";
+  | "info";
 
 export const QUOTE_STATUS_LABEL: Record<QuotationStatus, string> = {
   draft: "Draft",
@@ -49,7 +48,7 @@ export function getQuoteStatusTone(status: QuotationStatus): QuoteStatusTone {
     case "sent":
       return "info";
     case "viewed":
-      return "purple";
+      return "info";
     case "accepted":
       return "success";
     case "rejected":

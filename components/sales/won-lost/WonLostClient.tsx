@@ -5,16 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Archive,
-  CircleDollarSign,
-  CircleX,
   Columns3,
   Download,
   ExternalLink,
   History,
   ListFilter,
   MoreVertical,
-  TrendingUp,
-  Trophy,
 } from "lucide-react";
 import {
   Avatar,
@@ -319,7 +315,7 @@ export function WonLostClient() {
           >
             Filters
             {mobileFilterCount > 0 ? (
-              <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
+              <span className="ml-1.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded-sales-sm bg-sales-brand px-1.5 text-[11px] font-semibold text-sales-brand-text">
                 {mobileFilterCount}
               </span>
             ) : null}
@@ -438,50 +434,46 @@ export function WonLostClient() {
       {data && !neverClosed ? (
         <>
           {/* KPIs */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-            <ReportKpiCard
-              label="Won deals"
-              value={String(data.kpis.wonDeals.value)}
-              trend={data.kpis.wonDeals.trend}
-              icon={Trophy}
-              iconTint="bg-sales-success-soft text-sales-success-fg"
-            />
-            <ReportKpiCard
-              label="Lost deals"
-              value={String(data.kpis.lostDeals.value)}
-              trend={data.kpis.lostDeals.trend}
-              icon={CircleX}
-              iconTint="bg-sales-danger-soft text-sales-danger"
-            />
-            <ReportKpiCard
-              label="Win rate"
-              value={
-                data.kpis.winRate.value == null ? "—" : `${data.kpis.winRate.value}%`
-              }
-              trend={data.kpis.winRate.trend}
-              icon={TrendingUp}
-              iconTint="bg-sales-success-soft text-sales-success-fg"
-              tip="Percentage of closed deals that were won."
-            />
-            <ReportKpiCard
-              label="Revenue won"
-              value={formatValueDisplay(data.kpis.revenueWon.value, currency)}
-              trend={data.kpis.revenueWon.trend}
-              icon={CircleDollarSign}
-              iconTint="bg-sales-success-soft text-sales-success-fg"
-            />
-            <ReportKpiCard
-              label="Lost value"
-              value={formatValueDisplay(data.kpis.lostValue.value, currency)}
-              trend={data.kpis.lostValue.trend}
-              icon={CircleDollarSign}
-              iconTint="bg-sales-danger-soft text-sales-danger"
-              tip={
-                data.kpis.lostValue.recordedCount < data.kpis.lostValue.lostCount
-                  ? "Based on lost deals with a recorded value."
-                  : "Total recorded value of lost opportunities."
-              }
-            />
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <ReportKpiCard
+                label="Won deals"
+                value={String(data.kpis.wonDeals.value)}
+                trend={data.kpis.wonDeals.trend}
+              />
+              <ReportKpiCard
+                label="Lost deals"
+                value={String(data.kpis.lostDeals.value)}
+                trend={data.kpis.lostDeals.trend}
+              />
+              <ReportKpiCard
+                label="Win rate"
+                value={
+                  data.kpis.winRate.value == null ? "—" : `${data.kpis.winRate.value}%`
+                }
+                trend={data.kpis.winRate.trend}
+                tip="Percentage of closed deals that were won."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-x-6 border-t border-sales-border-subtle pt-3">
+              <ReportKpiCard
+                variant="secondary"
+                label="Revenue won"
+                value={formatValueDisplay(data.kpis.revenueWon.value, currency)}
+                trend={data.kpis.revenueWon.trend}
+              />
+              <ReportKpiCard
+                variant="secondary"
+                label="Lost value"
+                value={formatValueDisplay(data.kpis.lostValue.value, currency)}
+                trend={data.kpis.lostValue.trend}
+                tip={
+                  data.kpis.lostValue.recordedCount < data.kpis.lostValue.lostCount
+                    ? "Based on lost deals with a recorded value."
+                    : "Total recorded value of lost opportunities."
+                }
+              />
+            </div>
           </div>
 
           {/* Main grid */}
@@ -820,7 +812,7 @@ function MobileDealCard({
       type="button"
       onClick={onSelect}
       className={cn(
-        "w-full rounded-[12px] border border-sales-border bg-sales-surface p-3.5 text-left shadow-sales-card",
+        "w-full rounded-sales-md border border-sales-border-subtle bg-sales-surface p-3.5 text-left shadow-none",
         selected && "border-[rgba(160,205,40,0.5)] bg-[#F3F7E8]"
       )}
     >
@@ -948,7 +940,7 @@ function SelectedDealSnapshot({
 
             {deal.note ? (
               <div className="rounded-[10px] border border-sales-border-subtle bg-sales-surface-subtle px-3 py-2.5">
-                <p className="text-[11px] font-medium uppercase tracking-[0.04em] text-sales-text-muted">
+                <p className="text-[11px] font-medium text-sales-text-muted">
                   Note
                 </p>
                 <p className="mt-1 text-[13px] text-sales-text-secondary">{deal.note}</p>
@@ -978,17 +970,23 @@ function SelectedDealSnapshot({
 function WonLostSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-[118px] rounded-[12px]" />
-        ))}
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[104px] rounded-sales-md" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-x-6 border-t border-sales-border-subtle pt-3">
+          <Skeleton className="h-12 rounded-[6px]" />
+          <Skeleton className="h-12 rounded-[6px]" />
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <Skeleton className="h-[420px] rounded-[12px]" />
+        <Skeleton className="h-[420px] rounded-sales-md" />
         <div className="space-y-4">
-          <Skeleton className="h-[230px] rounded-[12px]" />
-          <Skeleton className="h-[200px] rounded-[12px]" />
-          <Skeleton className="h-[200px] rounded-[12px]" />
+          <Skeleton className="h-[230px] rounded-sales-md" />
+          <Skeleton className="h-[200px] rounded-sales-md" />
+          <Skeleton className="h-[200px] rounded-sales-md" />
         </div>
       </div>
     </div>

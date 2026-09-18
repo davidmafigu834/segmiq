@@ -67,7 +67,7 @@ const PERF_COLORS: Record<QuotePerformanceSlice["key"], string> = {
   accepted: "#16A34A",
   pending: "#F59E0B",
   declined: "#EF4444",
-  expired: "#8B5CF6",
+  expired: "#71717A",
 };
 
 export function isQuotesPeriod(v: string): v is QuotesPeriodId {

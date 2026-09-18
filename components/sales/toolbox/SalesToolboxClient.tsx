@@ -67,7 +67,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["lead", "add", "new", "enquiry", "customer"],
     section: "quick",
     icon: UserRoundPlus,
-    iconTint: "bg-sales-brand-soft text-sales-brand-fg",
+    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
     featured: true,
   },
   {
@@ -78,7 +78,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["call", "log", "phone", "outcome"],
     section: "quick",
     icon: PhoneCall,
-    iconTint: "bg-sales-teal-soft text-sales-teal",
+    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
     featured: true,
   },
   {
@@ -89,7 +89,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["quote", "quotation", "pricing", "proposal"],
     section: "quick",
     icon: FilePlus2,
-    iconTint: "bg-sales-purple-soft text-sales-purple",
+    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
     featured: true,
   },
   {
@@ -100,7 +100,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["schedule", "follow-up", "followup", "calendar", "meeting"],
     section: "quick",
     icon: CalendarClock,
-    iconTint: "bg-sales-warning-soft text-sales-warning",
+    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
     featured: true,
   },
   {
@@ -111,7 +111,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["event", "capture", "walk-in", "exhibition", "trade"],
     section: "capture",
     icon: ClipboardList,
-    iconTint: "bg-sales-info-soft text-sales-info",
+    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
   },
   {
     id: "follow_ups",
@@ -121,7 +121,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["follow-up", "due", "overdue", "tasks", "reminders"],
     section: "follow_up",
     icon: ListTodo,
-    iconTint: "bg-sales-warning-soft text-sales-warning",
+    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
   },
   {
     id: "quick_replies",
@@ -131,7 +131,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["quick", "replies", "whatsapp", "templates", "messages"],
     section: "follow_up",
     icon: MessageSquareText,
-    iconTint: "bg-sales-success-soft text-sales-success-fg",
+    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
   },
   {
     id: "upload_photos",
@@ -141,7 +141,7 @@ const TOOLS: ToolDef[] = [
     keywords: ["photos", "upload", "images", "media", "project"],
     section: "assets",
     icon: Image,
-    iconTint: "bg-sales-success-soft text-sales-success",
+    iconTint: "bg-sales-neutral-100 text-sales-text-secondary",
   },
 ];
 

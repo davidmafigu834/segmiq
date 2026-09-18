@@ -66,7 +66,7 @@ export function AgendaView({
     <div className="cal-card space-y-4 border-sales-border bg-sales-surface p-4 text-sales-text-primary">
       {overdue.length > 0 ? (
         <section>
-          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-sales-danger">
+          <h3 className="mb-2 text-[12px] font-semibold text-sales-danger">
             Overdue
           </h3>
           <ul className="space-y-1.5">
@@ -84,7 +84,7 @@ export function AgendaView({
 
       {groups.map((group) => (
         <section key={group.dateKey}>
-          <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-sales-text-secondary">
+          <h3 className="mb-2 text-[12px] font-semibold text-sales-text-secondary">
             {group.label}
           </h3>
           <ul className="space-y-1.5">
@@ -126,8 +126,8 @@ function AgendaRow({
         className={[
           "flex w-full flex-col gap-2 rounded-[10px] border px-3 py-2.5 transition-colors duration-150 sm:flex-row sm:items-start",
           selected
-            ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.08)]"
-            : "border-sales-border hover:border-sales-border-strong hover:bg-sales-surface-hover",
+            ? "border-sales-brand/40 bg-sales-brand-soft"
+            : "border-sales-border-subtle hover:border-sales-border-strong hover:bg-sales-surface-hover",
         ].join(" ")}
       >
         <button

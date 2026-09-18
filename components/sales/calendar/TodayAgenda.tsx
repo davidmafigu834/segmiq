@@ -87,7 +87,7 @@ export function TodayAgenda({
                       "grid w-full grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-2.5 px-3.5 py-3 text-left transition-colors duration-150",
                       "min-h-[58px]",
                       selected
-                        ? "bg-[rgba(212,255,79,0.10)] shadow-[inset_3px_0_0_0_#D4FF4F]"
+                        ? "bg-sales-brand-soft"
                         : "hover:bg-sales-surface-hover",
                     ].join(" ")}
                     aria-label={`Open ${event.customerName ?? getEventTypeLabel(event.kind)} ${eventTitle(event)}`}
@@ -109,7 +109,7 @@ export function TodayAgenda({
                             {eventTitle(event)}
                           </span>
                           {isNext ? (
-                            <span className="shrink-0 rounded-[4px] bg-[rgba(212,255,79,0.4)] px-1 py-px text-[9px] font-bold uppercase tracking-wide text-sales-text-primary">
+                            <span className="shrink-0 rounded-sales-sm bg-sales-brand-soft px-1.5 py-px text-[10px] font-semibold text-sales-text-primary">
                               Next
                             </span>
                           ) : null}
@@ -129,7 +129,7 @@ export function TodayAgenda({
 
                     <span className="shrink-0 self-center">
                       <span
-                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none"
+                        className="inline-flex items-center rounded-sales-sm px-2 py-0.5 text-[10px] font-semibold leading-none"
                         style={{
                           background: typeTint,
                           color: typeColor,

@@ -25,15 +25,15 @@ function activityIcon(type: QuoteActivityItem["type"]) {
   const props = { size: 14, strokeWidth: 1.8 as const };
   switch (type) {
     case "accepted":
-      return <CircleCheck {...props} className="text-[#16A34A]" />;
+      return <CircleCheck {...props} className="text-sales-success-fg" />;
     case "declined":
       return <CircleX {...props} className="text-sales-danger" />;
     case "viewed":
-      return <Eye {...props} className="text-[#8B5CF6]" />;
+      return <Eye {...props} className="text-sales-text-secondary" />;
     case "sent":
-      return <Send {...props} className="text-[#2684FF]" />;
+      return <Send {...props} className="text-sales-text-secondary" />;
     case "expired":
-      return <Clock3 {...props} className="text-[#F59E0B]" />;
+      return <Clock3 {...props} className="text-sales-warning-fg" />;
     default:
       return <FileText {...props} className="text-sales-text-muted" />;
   }
@@ -55,8 +55,8 @@ export function QuoteActivityCard({
   onOpen: (item: QuoteActivityItem) => void;
 }) {
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="px-5 pb-2 pt-4">
+    <Card className="overflow-hidden shadow-none">
+      <CardHeader className="border-b-0 px-5 pb-2 pt-4">
         <CardTitle className="text-[14px] font-semibold">Recent activity</CardTitle>
       </CardHeader>
       <CardContent className="px-0 pb-0 pt-1">

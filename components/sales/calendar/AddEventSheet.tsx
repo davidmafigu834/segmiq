@@ -28,7 +28,7 @@ import { PremiumSheet } from "@/components/sales/PremiumSheet";
 import { Button } from "@/components/sales/ui/Button";
 
 const fieldClass =
-  "h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none transition-colors placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]";
+  "h-11 w-full rounded-[10px] border border-sales-border bg-sales-surface px-3 text-[13px] text-sales-text-primary outline-none transition-colors placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-sales-brand/25";
 
 export function AddEventSheet({
   leads,
@@ -272,9 +272,9 @@ export function AddEventSheet({
                       setTitle("");
                     }}
                     className={[
-                      "flex min-h-[44px] flex-col items-start rounded-[10px] border px-2.5 py-2 text-left transition-colors",
+                      "flex min-h-[44px] flex-col items-start rounded-sales-md border px-2.5 py-2 text-left transition-colors",
                       active
-                        ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.16)]"
+                        ? "border-sales-brand/40 bg-sales-brand-soft"
                         : "border-sales-border bg-sales-surface hover:bg-sales-surface-hover",
                     ].join(" ")}
                     aria-pressed={active}
@@ -319,7 +319,7 @@ export function AddEventSheet({
               {presetDeal ? "Deal" : "Lead / customer"}
             </label>
             {presetDeal ? (
-              <div id="cal-add-deal" className="rounded-[12px] border border-[rgba(160,210,30,0.45)] bg-[rgba(212,255,79,0.08)] p-3">
+              <div id="cal-add-deal" className="rounded-sales-md border border-sales-brand/40 bg-sales-brand-soft p-3">
                 <p className="truncate text-[13px] font-semibold text-sales-text-primary">{presetDeal.name}</p>
                 <p className="mt-1 text-[12px] text-sales-text-secondary">
                   {[presetDeal.phone, presetDeal.stage?.replace(/_/g, " ")].filter(Boolean).join(" · ") || "Active Deal"}
@@ -346,7 +346,7 @@ export function AddEventSheet({
             </div>
 
             {selected ? (
-              <div className="mt-2 rounded-[12px] border border-[rgba(160,210,30,0.45)] bg-[rgba(212,255,79,0.08)] p-3">
+              <div className="mt-2 rounded-sales-md border border-sales-brand/40 bg-sales-brand-soft p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-semibold text-sales-text-primary">
@@ -407,7 +407,7 @@ export function AddEventSheet({
                         className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-sales-surface-hover"
                       >
                         <span
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-sales-text-primary"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sales-md text-[11px] font-semibold text-sales-text-primary"
                           style={{ background: getEventTypeTint(kind) }}
                         >
                           {name.slice(0, 1).toUpperCase()}
@@ -463,9 +463,9 @@ export function AddEventSheet({
                     type="button"
                     onClick={() => setDate(q.value)}
                     className={[
-                      "inline-flex h-8 items-center rounded-full border px-2.5 text-[11px] font-semibold transition-colors",
+                      "inline-flex h-8 items-center rounded-sales-md border px-2.5 text-[11px] font-semibold transition-colors",
                       active
-                        ? "border-[rgba(160,210,30,0.55)] bg-[rgba(212,255,79,0.22)] text-sales-text-primary"
+                        ? "border-sales-brand/40 bg-sales-brand-soft text-sales-text-primary"
                         : "border-sales-border bg-sales-surface text-sales-text-secondary hover:bg-sales-surface-hover",
                     ].join(" ")}
                   >
@@ -495,7 +495,7 @@ export function AddEventSheet({
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               placeholder="What should you prepare for this meeting?"
-              className="w-full resize-none rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2.5 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-[rgba(212,255,79,0.35)]"
+              className="w-full resize-none rounded-[10px] border border-sales-border bg-sales-surface px-3 py-2.5 text-[13px] text-sales-text-primary outline-none placeholder:text-sales-text-muted focus:border-sales-brand focus:ring-2 focus:ring-sales-brand/25"
             />
             <p className="mt-1 text-[11px] text-sales-text-muted">
               Notes stay on this calendar view until refresh. Use Log note on the event for CRM history.

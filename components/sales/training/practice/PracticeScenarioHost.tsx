@@ -23,7 +23,7 @@ export function PracticeScenarioHost({ scenario }: { scenario: PracticeScenarioI
     >
       <div className="mx-auto max-w-3xl">
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="rounded-[6px] bg-sales-brand-soft px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-brand-text">
+          <span className="rounded-[6px] bg-sales-brand-soft px-2 py-0.5 text-[11px] font-semibold text-sales-brand-text">
             Practice
           </span>
           <p className="text-[12px] text-sales-text-secondary">

@@ -21,7 +21,7 @@ export function TrainingPageClient() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="rounded-[16px] border border-sales-border bg-sales-surface p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[rgba(212,255,79,0.28)]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-sales-brand-soft">
             <GraduationCap size={20} className="text-sales-brand-text" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
@@ -77,7 +77,7 @@ export function TrainingPageClient() {
               key={lesson.id}
               className={cn(
                 "flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-sales-border bg-sales-surface px-4 py-3",
-                current && "border-[rgba(160,205,40,0.45)] bg-[rgba(212,255,79,0.08)]"
+                current && "border-sales-brand/40 bg-sales-brand-soft"
               )}
             >
               <div className="min-w-0">

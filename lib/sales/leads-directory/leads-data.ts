@@ -75,10 +75,10 @@ export const CONVERSION_FORMULA = "Won ÷ closed (Won + Lost)";
 
 const SOURCE_COLORS: Record<Exclude<LeadsSourceFilter, "all">, string> = {
   whatsapp: "#25D366",
-  facebook: "#2684FF",
-  website: "#8B5CF6",
-  referral: "#F59E0B",
-  manual: "#14B8A6",
+  facebook: "#4D8DFF",
+  website: "#7182A7",
+  referral: "#F5B82E",
+  manual: "#20D4D2",
   other: "#98A2B3",
 };
 

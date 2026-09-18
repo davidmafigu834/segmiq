@@ -7,7 +7,6 @@ import {
   CalendarClock,
   CalendarDays,
   CircleCheck,
-  CircleDollarSign,
   Clock3,
   Download,
   FileText,
@@ -17,8 +16,6 @@ import {
   Phone,
   Target,
   TrendingUp,
-  Trophy,
-  UsersRound,
 } from "lucide-react";
 import {
   Button,
@@ -280,71 +277,66 @@ function OverviewTab({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <ReportKpiCard
-          label="Leads created"
-          value={String(k.leadsCreated.value)}
-          trend={trendWithVs(k.leadsCreated.trend, periodLabel)}
-          icon={UsersRound}
-          iconTint="bg-sales-success-soft text-sales-success-fg"
-        />
-        <ReportKpiCard
-          label="Deals won"
-          value={String(k.dealsWon.value)}
-          supporting={
-            k.dealsWon.value > 0
-              ? formatDealCurrency(k.dealsWon.wonValue, { currency })
-              : undefined
-          }
-          trend={trendWithVs(k.dealsWon.trend, periodLabel)}
-          icon={Trophy}
-          iconTint="bg-[#EFF6FF] text-[#2563EB]"
-        />
-        <ReportKpiCard
-          label="Pipeline value"
-          value={formatDealCurrency(k.pipelineValue.value, { currency })}
-          tip="Current value of your open assigned deals (point-in-time, not period total)."
-          trend={trendWithVs(k.pipelineValue.trend, periodLabel)}
-          icon={CircleDollarSign}
-          iconTint="bg-[#F5F3FF] text-[#7C3AED]"
-        />
-        <ReportKpiCard
-          label="Conversion rate"
-          value={formatPercent(k.conversionRate.value)}
-          supporting={k.conversionRate.supporting}
-          tip="Deals won divided by deals closed (won + lost) during the selected period."
-          trend={
-            conversionPts == null
-              ? null
-              : {
-                  direction: k.conversionRate.trend.direction,
-                  label: `${conversionPts > 0 ? "+" : ""}${conversionPts} pts ${vsLabel(periodLabel)}`,
-                }
-          }
-          icon={TrendingUp}
-          iconTint="bg-[#FFF7ED] text-[#EA580C]"
-        />
-        <ReportKpiCard
-          label="Avg. response time"
-          value={formatResponseTime(k.avgResponseMinutes.value)}
-          supporting={k.avgResponseMinutes.supporting}
-          icon={Clock3}
-          iconTint="bg-[#EFF8FF] text-[#2563EB]"
-        />
-        <ReportKpiCard
-          label="Follow-ups completed"
-          value={String(k.followUpsCompleted.value)}
-          supporting={
-            k.followUpsCompleted.overdue > 0 ? undefined : k.followUpsCompleted.supporting
-          }
-          trend={
-            k.followUpsCompleted.overdue > 0
-              ? { direction: "alert", label: `${k.followUpsCompleted.overdue} overdue` }
-              : null
-          }
-          icon={CircleCheck}
-          iconTint="bg-[var(--sales-brand-soft-solid,#EEF4D8)] text-sales-brand-fg"
-        />
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-3">
+          <ReportKpiCard
+            label="Leads created"
+            value={String(k.leadsCreated.value)}
+            trend={trendWithVs(k.leadsCreated.trend, periodLabel)}
+          />
+          <ReportKpiCard
+            label="Deals won"
+            value={String(k.dealsWon.value)}
+            supporting={
+              k.dealsWon.value > 0
+                ? formatDealCurrency(k.dealsWon.wonValue, { currency })
+                : undefined
+            }
+            trend={trendWithVs(k.dealsWon.trend, periodLabel)}
+          />
+          <ReportKpiCard
+            label="Pipeline value"
+            value={formatDealCurrency(k.pipelineValue.value, { currency })}
+            tip="Current value of your open assigned deals (point-in-time, not period total)."
+            trend={trendWithVs(k.pipelineValue.trend, periodLabel)}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-sales-border-subtle pt-3 sm:grid-cols-3">
+          <ReportKpiCard
+            variant="secondary"
+            label="Conversion rate"
+            value={formatPercent(k.conversionRate.value)}
+            supporting={k.conversionRate.supporting}
+            tip="Deals won divided by deals closed (won + lost) during the selected period."
+            trend={
+              conversionPts == null
+                ? null
+                : {
+                    direction: k.conversionRate.trend.direction,
+                    label: `${conversionPts > 0 ? "+" : ""}${conversionPts} pts ${vsLabel(periodLabel)}`,
+                  }
+            }
+          />
+          <ReportKpiCard
+            variant="secondary"
+            label="Avg. response time"
+            value={formatResponseTime(k.avgResponseMinutes.value)}
+            supporting={k.avgResponseMinutes.supporting}
+          />
+          <ReportKpiCard
+            variant="secondary"
+            label="Follow-ups completed"
+            value={String(k.followUpsCompleted.value)}
+            supporting={
+              k.followUpsCompleted.overdue > 0 ? undefined : k.followUpsCompleted.supporting
+            }
+            trend={
+              k.followUpsCompleted.overdue > 0
+                ? { direction: "alert", label: `${k.followUpsCompleted.overdue} overdue` }
+                : null
+            }
+          />
+        </div>
       </div>
 
       <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
@@ -371,7 +363,7 @@ function OverviewTab({
               <span className="h-2 w-2 rounded-full bg-sales-info" /> Deals won
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-sales-purple" /> {revenueLabel}
+              <span className="h-2 w-2 rounded-full bg-sales-text-secondary" /> {revenueLabel}
             </span>
           </div>
           <div className="h-[220px]">
@@ -537,7 +529,7 @@ function GoalProgress({ data, currency }: { data: SalesReportsPayload; currency:
               cy="54"
               r={r}
               fill="none"
-              stroke="#D4FF4F"
+              stroke="var(--sales-brand)"
               strokeWidth={8}
               strokeLinecap="round"
               strokeDasharray={c}
@@ -596,8 +588,8 @@ function GoalProgress({ data, currency }: { data: SalesReportsPayload; currency:
 const SOURCE_BAR: Record<string, string> = {
   whatsapp: "#25D366",
   facebook: "#1877F2",
-  referral: "#8B5CF6",
-  website: "#F59E0B",
+  referral: "#52525B",
+  website: "#B54708",
   manual: "var(--sales-text-secondary)",
   other: "var(--sales-text-muted)",
 };
@@ -630,7 +622,7 @@ function LeadSourcesList({ data }: { data: SalesReportsPayload }) {
               className="h-full rounded-full"
               style={{
                 width: `${Math.max(s.pct, 4)}%`,
-                background: SOURCE_BAR[s.key] ?? "#D4FF4F",
+                background: SOURCE_BAR[s.key] ?? "var(--sales-brand)",
               }}
             />
           </div>
@@ -772,13 +764,13 @@ function FollowUpBlock({ data }: { data: SalesReportsPayload }) {
         <MetricMini
           label="Best time to follow up"
           value={f.bestTime}
-          icon={<TrendingUp size={14} strokeWidth={1.8} className="text-sales-purple" />}
+          icon={<TrendingUp size={14} strokeWidth={1.8} className="text-sales-text-secondary" />}
         />
       ) : (
         <div className="rounded-sales-md border border-sales-border-subtle bg-sales-surface px-3 py-3">
           <div className="flex items-start justify-between gap-2">
             <p className="text-[11px] text-sales-text-muted">Best time to follow up</p>
-            <TrendingUp size={14} strokeWidth={1.8} className="text-sales-purple" aria-hidden />
+            <TrendingUp size={14} strokeWidth={1.8} className="text-sales-text-secondary" aria-hidden />
           </div>
           <p className="mt-2 text-[20px] font-semibold text-sales-text-primary">—</p>
           <p className="mt-1 text-[12px] leading-snug text-sales-text-secondary">
@@ -1078,10 +1070,17 @@ function ActivityTab({ data }: { data: SalesReportsPayload }) {
 function ReportsSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-[108px] rounded-sales-xl" />
-        ))}
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[104px] rounded-sales-md" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-sales-border-subtle pt-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={`s-${i}`} className="h-12 rounded-[6px]" />
+          ))}
+        </div>
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
         <Skeleton className="h-[340px] rounded-sales-xl" />

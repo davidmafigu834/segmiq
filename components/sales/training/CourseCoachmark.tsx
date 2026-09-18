@@ -80,7 +80,7 @@ export function CourseCoachmark({
   const body = (
     <>
       {step.label ? (
-        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-sales-text-muted">
+        <p className="text-[11px] font-semibold text-sales-text-muted">
           {step.label}
         </p>
       ) : null}

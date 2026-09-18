@@ -20,7 +20,7 @@ export function LeadStageOverviewCard({
   loading?: boolean;
 }) {
   return (
-    <Card>
+    <Card className="shadow-none">
       <CardHeader className="border-b-0 px-5 pb-2 pt-4">
         <CardTitle className="text-[14px] font-semibold">Lead stages overview</CardTitle>
       </CardHeader>

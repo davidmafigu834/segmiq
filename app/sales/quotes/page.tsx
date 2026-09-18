@@ -20,21 +20,27 @@ function QuotesFallback() {
         <Skeleton className="h-10 w-36 rounded-[10px]" />
       </div>
       <Skeleton className="h-10 w-full max-w-3xl rounded-sales-md" />
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-[118px] rounded-sales-xl" />
-        ))}
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[104px] rounded-sales-md" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-x-6 border-t border-sales-border-subtle pt-3">
+          <Skeleton className="h-12 rounded-[6px]" />
+          <Skeleton className="h-12 rounded-[6px]" />
+        </div>
       </div>
       <div className="space-y-6">
-        <Skeleton className="h-[420px] rounded-sales-xl" />
+        <Skeleton className="h-[420px] rounded-sales-md" />
         <div className="space-y-3">
           <div className="space-y-2">
             <Skeleton className="h-5 w-36 rounded-[6px]" />
             <Skeleton className="h-4 w-80 max-w-full rounded-[6px]" />
           </div>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-            <Skeleton className="h-[260px] rounded-sales-xl" />
-            <Skeleton className="h-[260px] rounded-sales-xl" />
+            <Skeleton className="h-[260px] rounded-sales-md" />
+            <Skeleton className="h-[260px] rounded-sales-md" />
           </div>
         </div>
       </div>
