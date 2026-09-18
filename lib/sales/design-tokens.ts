@@ -4,11 +4,11 @@
  */
 
 export const SALES_COLORS = {
-  bg: "#F7F8FC",
-  surface: "#FFFFFF",
-  surfaceSubtle: "#F5F7FC",
-  surfaceHover: "#EEF1F8",
-  surfaceActive: "#E8EDF8",
+  bg: "#F4F6FB",
+  surface: "#F9FAFC",
+  surfaceSubtle: "#F1F4FA",
+  surfaceHover: "#E8EDF6",
+  surfaceActive: "#E0E7F2",
 
   neutral900: "#101828",
   neutral700: "#344054",
@@ -16,9 +16,9 @@ export const SALES_COLORS = {
   neutral400: "#667085",
   neutral300: "#D0D5DD",
   neutral200: "#E4E7EC",
-  neutral100: "#F4F6FB",
-  neutral50: "#F7F8FC",
-  neutral0: "#FFFFFF",
+  neutral100: "#F1F4FA",
+  neutral50: "#F4F6FB",
+  neutral0: "#F9FAFC",
 
   textPrimary: "#101828",
   textSecondary: "#475467",

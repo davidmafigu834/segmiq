@@ -34,9 +34,9 @@ export function DealsAttentionCard({
       }
     >
       {!hasAnyDeals ? (
-        <div className="px-5 py-5 text-center">
+        <div className="px-5 py-5 text-left">
           <p className="text-[13px] font-medium text-sales-text-primary">No active Deals yet.</p>
-          <p className="mt-1 text-[12px] text-sales-text-muted">
+          <p className="mt-1 max-w-prose text-[12px] text-sales-text-muted">
             Qualify your enquiries and create a Deal when a genuine opportunity is confirmed.
           </p>
           <Link
@@ -47,11 +47,11 @@ export function DealsAttentionCard({
           </Link>
         </div>
       ) : items.length === 0 ? (
-        <div className="px-5 py-5 text-center">
+        <div className="px-5 py-5 text-left">
           <p className="text-[13px] font-medium text-sales-text-primary">
             No Deals need attention right now.
           </p>
-          <p className="mt-1 text-[12px] text-sales-text-muted">
+          <p className="mt-1 max-w-prose text-[12px] text-sales-text-muted">
             Active Deals with clear next actions stay out of this list.
           </p>
         </div>

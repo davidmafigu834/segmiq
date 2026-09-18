@@ -3461,7 +3461,7 @@ html[data-crm] body,
 html[data-crm] .crm-shell-main {
   background-color: var(--bg-primary);
   background-image: var(--crm-canvas-atmosphere);
-  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
   letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -3470,7 +3470,7 @@ html[data-crm] .crm-shell-main {
 html[data-crm] .font-display,
 html[data-crm] .font-serif,
 .sales-dashboard-premium {
-  font-family: var(--font-geist-sans), Geist, ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ?? Skeleton shimmer animation ?? */
@@ -3842,12 +3842,12 @@ label[for="photo-input"] {
 .sales-modal-premium,
 .calendar-modal-premium,
 .sales-menu-surface {
-  /* Surfaces — cool canvas from landing, white cards */
-  --sales-bg: #f7f8fc;
-  --sales-surface: #ffffff;
-  --sales-surface-subtle: #f5f7fc;
-  --sales-surface-hover: #eef1f8;
-  --sales-surface-active: #e8edf8;
+  /* Surfaces — cool tinted canvas (not pure white) */
+  --sales-bg: #f4f6fb;
+  --sales-surface: #f9fafc;
+  --sales-surface-subtle: #f1f4fa;
+  --sales-surface-hover: #e8edf6;
+  --sales-surface-active: #e0e7f2;
 
   /* Neutral scale */
   --sales-neutral-900: #101828;
@@ -3856,9 +3856,9 @@ label[for="photo-input"] {
   --sales-neutral-400: #667085;
   --sales-neutral-300: #d0d5dd;
   --sales-neutral-200: #e4e7ec;
-  --sales-neutral-100: #f4f6fb;
-  --sales-neutral-50: #f7f8fc;
-  --sales-neutral-0: #ffffff;
+  --sales-neutral-100: #f1f4fa;
+  --sales-neutral-50: #f4f6fb;
+  --sales-neutral-0: #f9fafc;
 
   /* Text */
   --sales-text-primary: #101828;

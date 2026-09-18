@@ -6,8 +6,14 @@ import type { SalesKpiItem } from "./types";
 import { Card, CardHeader, CardTitle } from "@/components/sales/ui/Card";
 
 /** @deprecated Prefer KpiStat from @/components/sales/ui — kept as thin alias. */
-export function KpiCard({ item }: { item: SalesKpiItem }) {
-  return <KpiStat item={item} />;
+export function KpiCard({
+  item,
+  variant = "primary",
+}: {
+  item: SalesKpiItem;
+  variant?: "primary" | "secondary";
+}) {
+  return <KpiStat item={item} variant={variant} />;
 }
 
 export function CardShell({

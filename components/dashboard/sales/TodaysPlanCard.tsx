@@ -54,7 +54,7 @@ export function TodaysPlanCard() {
       <CardContent className="space-y-3 p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sales-text-muted">
+            <p className="text-[11px] font-medium text-sales-text-muted">
               Today&apos;s plan
             </p>
             <p className="mt-1 text-[15px] font-semibold text-sales-text-primary">

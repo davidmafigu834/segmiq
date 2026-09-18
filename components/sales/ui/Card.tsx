@@ -34,8 +34,7 @@ const variantClass: Record<SalesCardVariant, string> = {
     "border-[var(--sales-card-selected-border)] shadow-[var(--sales-card-selected-shadow)]"
   ),
   attention: cn(
-    "relative overflow-hidden rounded-sales-lg border border-[var(--sales-card-border,var(--sales-border-subtle))] shadow-sales-card",
-    "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-['']"
+    "relative overflow-hidden rounded-sales-lg border border-[var(--sales-card-border,var(--sales-border-subtle))] shadow-sales-card"
   ),
   flat: cn(
     "rounded-sales-lg border border-[var(--sales-card-border,var(--sales-border-subtle))] bg-sales-surface-subtle shadow-none"
@@ -43,10 +42,10 @@ const variantClass: Record<SalesCardVariant, string> = {
 };
 
 const attentionToneClass: Record<SalesCardAttentionTone, string> = {
-  warning: "bg-[var(--sales-card-attention-warning-bg)] before:bg-sales-warning",
-  danger: "bg-[var(--sales-card-attention-danger-bg)] before:bg-sales-danger",
-  brand: "bg-[var(--sales-card-attention-brand-bg)] before:bg-sales-brand",
-  info: "bg-[var(--sales-card-attention-info-bg)] before:bg-sales-info",
+  warning: "bg-[var(--sales-card-attention-warning-bg)]",
+  danger: "bg-[var(--sales-card-attention-danger-bg)]",
+  brand: "bg-[var(--sales-card-attention-brand-bg)]",
+  info: "bg-[var(--sales-card-attention-info-bg)]",
 };
 
 /** Large workspace panels (14px). Prefer `<Card>` for new compact surfaces. */
@@ -62,7 +61,7 @@ export function Card({
   ...props
 }: HTMLAttributes<HTMLElement> & {
   variant?: SalesCardVariant;
-  /** Used when variant="attention". Soft wash + 3px left accent. */
+  /** Used when variant="attention". Soft wash only (no side stripe). */
   attentionTone?: SalesCardAttentionTone;
 }) {
   return (
